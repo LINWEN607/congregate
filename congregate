@@ -1,0 +1,14 @@
+#!/bin/bash
+
+if [ ! -f config.json ]; then
+    ./config.sh
+fi
+
+arg="$1"
+
+case $arg in
+    list)
+    ./list_projects.sh;;
+    config)
+    ./config.sh;;
+esac

@@ -1,8 +1,0 @@
-#!/bin/bash
-
-out=$(curl -s --request GET --header "PRIVATE-TOKEN: r9hUzwdzyytCRo-sxfJz" ec2-54-196-10-177.compute-1.amazonaws.com/api/v4/projects)
-ids=$(echo $out | jq '.[]|.id')
-for x in $ids; do
-	echo $x
-done
-
