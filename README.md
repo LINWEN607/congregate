@@ -4,6 +4,11 @@ Come together, right now
 
 ...over me
 
+## Dependencies
+
+- [jq](https://stedolan.github.io/jq/download/)
+- [cURL](https://curl.haxx.se/download.html)
+
 ## Major Goal - CLI Tool
 
 Assist with migrating contents of multiple GitLab instances into a single (monolithic?) GitLab instance.

@@ -6,9 +6,13 @@ fi
 
 arg="$1"
 
+cmd_args=${@:2}
+
 case $arg in
     list)
     ./list_projects.sh;;
     config)
     ./config.sh;;
+    stage)
+    ./stage_projects.sh $cmd_args;;
 esac
