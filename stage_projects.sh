@@ -19,7 +19,11 @@ else
     staging=$(jq -n '[]')
     for project in $@
     do
-        project=$(echo $projects | jq --argjson i "$project" '.[] | select(.id == $i)')
+        if  [ "$project" -eq "$project" ] 2> /dev/null; then
+            project=$(echo $projects | jq --argjson i "$project" '.[] | select(.id == $i)')
+        else
+            project=$(echo $projects | jq --arg i "$project" '.[] | select(.name == $i)')
+        fi
         id=$(echo $project | jq -r ".id")
         name=$(echo $project | jq -r ".name")
         staging=$(echo $staging | jq --arg name "$name" --arg id "$id" '. += [{"id": $id, "name": $name}]')
