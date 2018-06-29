@@ -22,6 +22,28 @@ echo "4. Access token to use for child instance"
 read child_instance_token
 config=$(echo $config | jq --arg i "$child_instance_token" '. + {child_instance_token: $i}')
 
+echo "5. Staging location type for exported projects? (default: filesystem)"
+read location
+if [ -z $location ]; then
+    config=$(echo $config | jq '. + {location: "filesystem"}')
+    location="filesystem"
+else
+    config=$(echo $config | jq --arg i "$location" '. + {location: $i}')
+fi
+
+if [ "$location" == "filesystem" ]; then
+    echo "6. Path for exported projects? (default: ./)"
+    read path
+    if [ -z $path ]; then
+        config=$(echo $config | jq '. + {path: "./"}')
+    else
+        config=$(echo $config | jq --arg i "$path" '. + {path: $i}')
+    fi
+elif [ "$location" == "aws" ] || [ "$location" == "AWS" ]; then
+    asdf="asdf"
+    #generate pre-signed url here
+fi
+
 config=$(jq -n --argjson i "$config" '{config: $i}')
 echo $config | jq . > config.json
 
