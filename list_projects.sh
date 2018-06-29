@@ -6,7 +6,7 @@ token=$(echo $config | jq -r '.child_instance_token')
 
 echo "Listing projects from $host"
 
-out=$(curl -s --request GET --header "PRIVATE-TOKEN: $token" $host/api/v4/projects)
+out=$(curl -s --request GET --header "PRIVATE-TOKEN: $token" $host/api/v4/projects?simple=true)
 
 echo $out | jq . > project_json.json
 
