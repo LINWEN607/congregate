@@ -32,7 +32,7 @@ else
 fi
 
 if [ "$location" == "filesystem" ]; then
-    echo "6. Path for exported projects? (default: ./)"
+    echo "6. Absolute path for exported projects? (default: $(pwd))"
     read path
     if [ -z $path ]; then
         config=$(echo $config | jq '. + {path: "./"}')

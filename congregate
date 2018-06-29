@@ -15,4 +15,6 @@ case $arg in
     ./config.sh;;
     stage)
     ./stage_projects.sh $cmd_args;;
+    migrate)
+    ./migrate_projects.sh;;
 esac
