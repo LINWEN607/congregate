@@ -8,6 +8,9 @@ childToken=$(echo $config | jq -r '.child_instance_token')
 parentHost=$(echo $config | jq -r '.parent_instance_host')
 parentToken=$(echo $config | jq -r '.parent_instance_token')
 location=$(echo $config | jq -r '.location')
+bucket_name=$(echo $config | jq -r '.bucket_name')
+access_key=$(echo $config | jq -r '.access_key')
+secret_key=$(echo $config | jq -r '.secret_key')
 
 users=$(cat users.json | jq .)
 for ((i=0;i<`echo $users | jq '. | length'`;i++));
@@ -43,6 +46,10 @@ for ((i=0;i<`echo $files | jq '. | length'`;i++)); do
         fileName=$(echo ${downloadArray[${#downloadArray[@]}-1]} | tr -d "'")
         fullFilePath=$(echo "$path/$fileName")
         curl --request POST --header "PRIVATE-TOKEN: $parentToken" --form "path=$name" --form "file=@$fullFilePath" --form "namespace=$namespace" $parentHost/api/v4/projects/import
+    elif [ "$location" == "aws" ] || [ "$location" == "AWS" ]; then
+        echo "Exporting $name to S3"
+        presigned_url=$(python presigned.py $bucket_name exports)
+        curl --request POST --header "PRIVATE-TOKEN: $childToken" $childHost/api/v4/projects/$id/export --data "upload[http_method]=POST&upload[url]=$presigned_url"
     fi
 done
 

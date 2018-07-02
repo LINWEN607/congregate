@@ -3,12 +3,6 @@
 config=$(cat config.json | jq '.config')
 host=$(echo $config | jq -r '.child_instance_host')
 token=$(echo $config | jq -r '.child_instance_token')
-config=$(cat config.json | jq '.config')
-childHost=$(echo $config | jq -r '.child_instance_host')
-childToken=$(echo $config | jq -r '.child_instance_token')
-parentHost=$(echo $config | jq -r '.parent_instance_host')
-parentToken=$(echo $config | jq -r '.parent_instance_token')
-location=$(echo $config | jq -r '.location')
 
 users=$(curl -s --request GET --header "PRIVATE-TOKEN: $token" $host/api/v4/users | jq 'del(.[] | select(.id == 1))')
 jsonArray=$(jq -n '[]')
