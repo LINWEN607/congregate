@@ -15,6 +15,7 @@ workingDir=$(pwd)
 for ((i=0;i<`echo $files | jq '. | length'`;i++)); do
     name=$(echo $files | jq -r ".[$i].name")
     id=$(echo $files | jq -r ".[$i].id")
+    namespace=$(echo $files | jq -r ".[$i].namespace")
     if [ $location == "filesystem" ]; then
         echo "Exporting $name to $path"
         curl -s --request POST --header "PRIVATE-TOKEN: $childToken" $childHost/api/v4/projects/$id/export
@@ -25,7 +26,7 @@ for ((i=0;i<`echo $files | jq '. | length'`;i++)); do
         downloadArray=($download)
         fileName=$(echo ${downloadArray[${#downloadArray[@]}-1]} | tr -d "'")
         fullFilePath=$(echo "$path/$fileName")
-        curl --request POST --header "PRIVATE-TOKEN: $parentToken" --form "path=$name" --form "file=@$fullFilePath" $parentHost/api/v4/projects/import
+        curl --request POST --header "PRIVATE-TOKEN: $parentToken" --form "path=$name" --form "file=@$fullFilePath" --form "namespace=$namespace" $parentHost/api/v4/projects/import
     fi
 done
 

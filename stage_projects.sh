@@ -13,7 +13,8 @@ if [ "$1" = "all" ] || [ "$1" = "." ]; then
     do
         id=$(echo $projects | jq -r ".[$i] .id")
         name=$(echo $projects | jq -r ".[$i] .name")
-        staging=$(echo $staging | jq --arg name "$name" --arg id "$id" '. += [{"id": $id, "name": $name}]')
+        namespace=$(echo $projects | jq -r ".[$i] .path_with_namespace" | cut -d/ -f 1)
+        staging=$(echo $staging | jq --arg name "$name" --arg id "$id" --arg namespace "$namespace" '. += [{"id": $id, "name": $name, "namespace": $namespace}]')
     done
 else
     staging=$(jq -n '[]')
@@ -26,7 +27,8 @@ else
         fi
         id=$(echo $project | jq -r ".id")
         name=$(echo $project | jq -r ".name")
-        staging=$(echo $staging | jq --arg name "$name" --arg id "$id" '. += [{"id": $id, "name": $name}]')
+        namespace=$(echo $project | jq -r ".path_with_namespace" | cut -d/ -f 1)
+        staging=$(echo $staging | jq --arg name "$name" --arg id "$id" --arg namespace "$namespace" '. += [{"id": $id, "name": $name, "namespace": $namespace}]')
     done
 fi
 
