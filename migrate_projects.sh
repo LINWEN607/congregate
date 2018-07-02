@@ -9,6 +9,22 @@ parentHost=$(echo $config | jq -r '.parent_instance_host')
 parentToken=$(echo $config | jq -r '.parent_instance_token')
 location=$(echo $config | jq -r '.location')
 
+users=$(cat users.json | jq .)
+for ((i=0;i<`echo $users | jq '. | length'`;i++));
+do
+    user=$(echo $users | jq ".[$i]")
+    curl --request POST --header "PRIVATE-TOKEN: $parentToken" -H "Content-Type: application/json" -d "$user" $parentHost/api/v4/users
+done
+
+groups=$(cat groups.json | jq .)
+for ((i=0;i<`echo $groups | jq '. | length'`;i++));
+do
+    group=$(echo $groups | jq ".[$i]")
+    echo $group
+    curl --request POST --header "PRIVATE-TOKEN: $parentToken" -H "Content-Type: application/json" -d "$group" $parentHost/api/v4/groups
+done
+
+
 path=$(echo $config | jq -r '.path')
 workingDir=$(pwd)
 
