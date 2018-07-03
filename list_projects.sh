@@ -19,3 +19,7 @@ for ((i=0;i<`echo $project_info | jq '. | length'`;i++)); do
     nt=$'\n'
     echo "[id: $id] $name: $description"
 done
+
+./group_cleanup.sh
+
+./user_cleanup.sh

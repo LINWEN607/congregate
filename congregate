@@ -17,4 +17,8 @@ case $arg in
     ./stage_projects.sh $cmd_args;;
     migrate)
     ./migrate_projects.sh;;
+    retrieve-groups)
+    ./group_cleanup.sh status;;
+    retrieve-users)
+    ./user_cleanup.sh status;;
 esac
