@@ -40,8 +40,17 @@ if [ "$location" == "filesystem" ]; then
         config=$(echo $config | jq --arg i "$path" '. + {path: $i}')
     fi
 elif [ "$location" == "aws" ] || [ "$location" == "AWS" ]; then
-    asdf="asdf"
-    #generate pre-signed url here
+    echo "6. Bucket name:"
+    read bucket_name
+    config=$(echo $config | jq --arg i "$bucket_name" '. + {bucket_name: $i}')
+    echo "6. Access key for S3 bucket:"
+    read access_key
+    config=$(echo $config | jq --arg i "$access_key" '. + {access_key: $i}')
+    aws configure set aws_access_key_id $access_key
+    echo "7. Secret key for S3 bucket:"
+    read secret_key
+    config=$(echo $config | jq --arg i "$secret_key" '. + {secret_key: $i}')
+    aws configure set aws_secret_access_key $secret_key
 fi
 
 config=$(jq -n --argjson i "$config" '{config: $i}')
