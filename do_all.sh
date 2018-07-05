@@ -14,4 +14,4 @@ fi
 
 ./stage_projects.sh all
 
-./migrate.sh
+./migrate_projects.sh
