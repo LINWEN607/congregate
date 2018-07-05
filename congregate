@@ -21,4 +21,6 @@ case $arg in
     ./group_cleanup.sh status;;
     retrieve-users)
     ./user_cleanup.sh status;;
+    do_all)
+    ./do_all.sh;;
 esac
