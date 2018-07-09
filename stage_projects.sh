@@ -5,7 +5,7 @@ if [ ! -f project_json.json ]; then
     ./list_projects > /dev/null
 fi
 
-projects=$(cat project_json.json)
+projects=$(cat data/project_json.json)
 
 if [ "$1" = "all" ] || [ "$1" = "." ]; then
     staging=$(jq -n '[]')
@@ -33,5 +33,5 @@ else
 fi
 
 if [[ ! -z $staging ]]; then
-    echo $staging | jq . > stage.json
+    echo $staging | jq . > data/stage.json
 fi

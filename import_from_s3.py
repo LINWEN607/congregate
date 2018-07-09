@@ -2,6 +2,7 @@ import requests
 import urllib
 import json
 import sys
+import os
 
 name = sys.argv[1]
 namespace = sys.argv[2]
@@ -9,7 +10,9 @@ presigned_url = sys.argv[3]
 
 filename = "%s.tar.gz" % name
 
-with open('config.json') as f:
+app_path = os.getenv("CONGREGATE_PATH")
+
+with open('%s/data/config.json' % app_path) as f:
     data = json.load(f)["config"]
 
 api_url = data["parent_instance_host"]

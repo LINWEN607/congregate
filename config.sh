@@ -54,6 +54,6 @@ elif [ "$location" == "aws" ] || [ "$location" == "AWS" ]; then
 fi
 
 config=$(jq -n --argjson i "$config" '{config: $i}')
-echo $config | jq . > config.json
+echo $config | jq . > ${CONGREGATE_PATH}/data/config.json
 
 echo "Congregate has been successfully configured"

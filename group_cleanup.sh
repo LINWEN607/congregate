@@ -1,6 +1,6 @@
 #!/bin/bash
 
-config=$(cat config.json | jq '.config')
+config=$(cat ${CONGREGATE_PATH}/data/config.json | jq '.config')
 host=$(echo $config | jq -r '.child_instance_host')
 token=$(echo $config | jq -r '.child_instance_token')
 
@@ -13,7 +13,7 @@ do
     jsonArray=$(echo $jsonArray | jq --argjson i "$cleanup" '. += [$i]')
 done
 
-echo $jsonArray | jq . > groups.json
+echo $jsonArray | jq . > ${CONGREGATE_PATH}/data/groups.json
 
 if [ "$1" = "status" ]; then
     num=$(echo $jsonArray | jq '.[] | length')
