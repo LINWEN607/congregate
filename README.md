@@ -56,6 +56,7 @@ ubuntu/debian
 - `migrate`: Queue migration
 - `retrieve-groups`: Retrieve groups from child instance. This is bundled into `list`
 - `retrieve-users`: Retrieve users from child instance. This is bundled into `list`
+- `do_all`: Performs configuration, project staging, and migration
 
 ## Major Goal - CLI Tool
 
