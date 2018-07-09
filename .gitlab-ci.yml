@@ -1,0 +1,21 @@
+image: codenvy/python27:latest
+
+stages:
+  - build
+
+archive project:
+  stage: build
+  script:
+    - mkdir congregate-${CI_COMMIT_TAG}
+    - cp *.sh congregate-${CI_COMMIT_TAG}
+    - cp *.py congregate-${CI_COMMIT_TAG}
+    - cp congregate congregate-${CI_COMMIT_TAG}
+    - cp Pipfile* congregate-${CI_COMMIT_TAG}
+    - tar -czvf congregate-${CI_COMMIT_TAG}.tar.gz congregate-${CI_COMMIT_TAG}
+  artifacts:
+    paths:
+      - congregate-${CI_COMMIT_TAG}.tar.gz
+  only:
+    - tags
+
+

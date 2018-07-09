@@ -1,6 +1,6 @@
 #!/bin/bash
 
-config=$(cat config.json | jq '.config')
+config=$(cat ${CONGREGATE_PATH}/data/config.json | jq '.config')
 host=$(echo $config | jq -r '.child_instance_host')
 token=$(echo $config | jq -r '.child_instance_token')
 
@@ -8,7 +8,7 @@ echo "Listing projects from $host"
 
 out=$(curl -s --request GET --header "PRIVATE-TOKEN: $token" $host/api/v4/projects?simple=true)
 
-echo $out | jq . > project_json.json
+echo $out | jq . > ${CONGREGATE_PATH}/data/project_json.json
 
 project_info=$(echo $out | jq '[.[] | {id: .id, name: .name, name_with_namespace: .name_with_namespace, description: .description}]')
 for ((i=0;i<`echo $project_info | jq '. | length'`;i++)); do
@@ -20,6 +20,6 @@ for ((i=0;i<`echo $project_info | jq '. | length'`;i++)); do
     echo "[id: $id] $name: $description"
 done
 
-./group_cleanup.sh
+${CONGREGATE_PATH}/group_cleanup.sh
 
-./user_cleanup.sh
+${CONGREGATE_PATH}/user_cleanup.sh
