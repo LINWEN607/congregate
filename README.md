@@ -12,9 +12,23 @@ Come together, right now
 
 ## Setup
 
+### Installing Congregate
+
+1. Navigate to the CI/CD section of this project
+2. Download the latest tar.gz of congregate
+3. Run the following commands:
+
+```bash
+tar -zxvf congregate-${version}.tar.gz
+export CONGREGATE_PATH=/path/to/congregate
+cp congregate /usr/local/bin
+```
+
+Note: Instead of exporting an environment variable within your shell session, you can also add `CONGREGATE_PATH` to `bash_profile` or an init.d script. This is a bit more of a permanent solution than just exporting the variable within the session. 
+
 ### Install & Use PipEnv
 
-```
+```bash
 pip install pipenv
 # install depdencies from Pipfile
 pipenv install
@@ -34,7 +48,7 @@ ubuntu/debian
 
 ## Usage
 
-`./congregate <command> <added-parameters>`
+`congregate <command> <added-parameters>`
 
 - `config`: configure parameters like instance hosts, tokens, storage locations
 - `list`: List all available projects

@@ -15,5 +15,7 @@ archive project:
   artifacts:
     paths:
       - congregate-${CI_COMMIT_TAG}.tar.gz
+  only:
+    - tags
 
 
