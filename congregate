@@ -16,8 +16,7 @@ case $arg in
     stage)
     ${CONGREGATE_PATH}/stage_projects.sh $cmd_args;;
     migrate)
-    pipenv shell;
-    ${CONGREGATE_PATH}/migrate_projects.sh;;
+    pipenv run ${CONGREGATE_PATH}/migrate_projects.sh;;
     retrieve-groups)
     ${CONGREGATE_PATH}/group_cleanup.sh status;;
     retrieve-users)

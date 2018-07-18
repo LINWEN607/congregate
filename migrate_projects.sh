@@ -20,7 +20,7 @@ do
         -H "Content-Type: application/json" -d "$user" $parentHost/api/v4/users
 done
 
-groups=$(cat groups.json | jq .)
+groups=$(cat ${CONGREGATE_PATH}/data/groups.json | jq .)
 for ((i=0;i<`echo $groups | jq '. | length'`;i++));
 do
     group=$(echo $groups | jq ".[$i]")
@@ -61,7 +61,8 @@ for ((i=0;i<`echo $files | jq '. | length'`;i++)); do
         # Add status check here
 
         presigned_get_url=$(python ${CONGREGATE_PATH}/presigned.py $bucket_name $name.tar.gz GET)
-        python import_from_s3.py $name $namespace $presigned_get_url
+        imported_json=$(python import_from_s3.py $name $namespace $presigned_get_url)
+        python variable_migration.py "$imported_json" $id
     fi
 done
 
