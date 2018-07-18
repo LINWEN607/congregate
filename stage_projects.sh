@@ -2,10 +2,10 @@
 
 ## Checking for cached project file
 if [ ! -f project_json.json ]; then
-    ./list_projects > /dev/null
+    ${CONGREGATE_PATH}/list_projects.sh > /dev/null
 fi
 
-projects=$(cat data/project_json.json)
+projects=$(cat ${CONGREGATE_PATH}/data/project_json.json)
 
 if [ "$1" = "all" ] || [ "$1" = "." ]; then
     staging=$(jq -n '[]')
@@ -33,5 +33,5 @@ else
 fi
 
 if [[ ! -z $staging ]]; then
-    echo $staging | jq . > data/stage.json
+    echo $staging | jq . > ${CONGREGATE_PATH}/data/stage.json
 fi
