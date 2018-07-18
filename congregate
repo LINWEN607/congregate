@@ -1,5 +1,12 @@
 #!/bin/bash
 
+# Congregate - GitLab instance migration utility 
+#
+# Copyright (c) 2018 - GitLab
+#
+# Master script for running congregate
+#
+
 if [ ! -f ${CONGREGATE_PATH}/data/config.json ]; then
     ${CONGREGATE_PATH}/config.sh
 fi

@@ -1,3 +1,9 @@
+"""
+Congregate - GitLab instance migration utility 
+
+Copyright (c) 2018 - GitLab
+"""
+
 import os
 import urllib
 import urllib2
