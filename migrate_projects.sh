@@ -20,6 +20,10 @@ do
         -H "Content-Type: application/json" -d "$user" $parentHost/api/v4/users
 done
 
+$new_users=$(curl --header "PRIVATE-TOKEN: $parentToken" -H "Content-Type: application/json" $parentHost/api/v4/users)
+
+echo $new_users | jq . > ${CONGREGATE_PATH}/data/new_users.json
+
 groups=$(cat ${CONGREGATE_PATH}/data/groups.json | jq .)
 for ((i=0;i<`echo $groups | jq '. | length'`;i++));
 do
@@ -28,7 +32,6 @@ do
     curl --request POST --header "PRIVATE-TOKEN: $parentToken" \
         -H "Content-Type: application/json" -d "$group" $parentHost/api/v4/groups
 done
-
 
 path=$(echo $config | jq -r '.path')
 workingDir=$(pwd)
@@ -65,5 +68,7 @@ for ((i=0;i<`echo $files | jq '. | length'`;i++)); do
         python variable_migration.py "$imported_json" $id
     fi
 done
+
+
 
 cd $workingDir
