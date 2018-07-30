@@ -51,6 +51,8 @@ if __name__ == "__main__":
             obj["name"] = projects[i]["name"]
             obj["namespace"] = projects[i]["path_with_namespace"]
             obj["visibilty"] = projects[i]["visibility"]
+            response = generate_response(config["child_instance_host"], config["child_instance_token"], projects[i]["id"], None, "projects")
+            obj["members"] = json.loads(response.read())
             staging.append(obj)
     else:
         for i in range(1, len(sys.argv)):

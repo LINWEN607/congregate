@@ -12,13 +12,13 @@ if [ ! -f ${CONGREGATE_PATH}/data/config.json ]; then
 fi
 
 if [ ! -f ${CONGREGATE_PATH}/data/users.json ]; then
-    ${CONGREGATE_PATH}/user_cleanup.sh
+    python ${CONGREGATE_PATH}/users.py --retrieve=True}
 fi
 
 if [ ! -f ${CONGREGATE_PATH}/data/groups.json ]; then
-    ${CONGREGATE_PATH}/group_cleanup.sh
+    python ${CONGREGATE_PATH}/groups.py --retrieve=True
 fi
 
-${CONGREGATE_PATH}/stage_projects.sh all
+python ${CONGREGATE_PATH}/stage_projects.py all
 
 ${CONGREGATE_PATH}/migrate_projects.sh

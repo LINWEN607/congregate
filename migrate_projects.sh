@@ -25,32 +25,11 @@ bucket_name=$(echo $config | jq -r '.bucket_name')
 access_key=$(echo $config | jq -r '.access_key')
 secret_key=$(echo $config | jq -r '.secret_key')
 
-# Migrating user info
-users=$(cat ${CONGREGATE_PATH}/data/users.json | jq .)
-for ((i=0;i<`echo $users | jq '. | length'`;i++));
-do
-    user=$(echo $users | jq ".[$i]")
-    curl --request POST --header "PRIVATE-TOKEN: $parentToken" \
-        -H "Content-Type: application/json" -d "$user" $parentHost/api/v4/users
-done
-
-# Retrieving user info from parent instance for re-mapping
-$new_users=$(curl --header "PRIVATE-TOKEN: $parentToken" -H "Content-Type: application/json" $parentHost/api/v4/users)
-echo $new_users | jq . > ${CONGREGATE_PATH}/data/new_users.json
+# Migrating user info and update members in groups and projects
+python ${CONGREGATE_PATH}/users.py --migrate=True --update=True
 
 # Migrating group info
-groups=$(cat ${CONGREGATE_PATH}/data/groups.json | jq .)
-for ((i=0;i<`echo $groups | jq '. | length'`;i++));
-do
-    group=$(echo $groups | jq ".[$i]")
-    echo $group
-    curl --request POST --header "PRIVATE-TOKEN: $parentToken" \
-        -H "Content-Type: application/json" -d "$group" $parentHost/api/v4/groups
-done
-
-# Retrieving group info from parent instance for re-mapping
-$new_groups=$(curl --header "PRIVATE-TOKEN: $parentToken" -H "Content-Type: application/json" $parentHost/api/v4/groups)
-echo $new_users | jq . > ${CONGREGATE_PATH}/data/new_groups.json
+python ${CONGREGATE_PATH}/groups.py --migrate=True
 
 # Retrieving usable path information
 path=$(echo $config | jq -r '.path')

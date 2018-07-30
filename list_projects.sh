@@ -29,7 +29,7 @@ for ((i=0;i<`echo $project_info | jq '. | length'`;i++)); do
 done
 
 # Retrieve user info from child instance
-${CONGREGATE_PATH}/group_cleanup.sh
+python ${CONGREGATE_PATH}/groups.py --retrieve=True --quiet=True
 
 # Retrieve group info from child instance
-${CONGREGATE_PATH}/user_cleanup.sh
+python ${CONGREGATE_PATH}/users.py --retrieve=True --quiet=True

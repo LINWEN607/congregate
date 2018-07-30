@@ -21,7 +21,7 @@ case $arg in
     config)
     ${CONGREGATE_PATH}/config.sh;;
     stage)
-    ${CONGREGATE_PATH}/stage_projects.sh $cmd_args;;
+    pipenv run ${CONGREGATE_PATH}/stage_projects.py $cmd_args;;
     migrate)
     pipenv run ${CONGREGATE_PATH}/migrate_projects.sh;;
     retrieve-groups)
