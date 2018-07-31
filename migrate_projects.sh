@@ -55,6 +55,8 @@ for ((i=0;i<`echo $files | jq '. | length'`;i++)); do
             --form "path=$name" \
             --form "file=@$fullFilePath" \
             --form "namespace=$namespace" $parentHost/api/v4/projects/import
+        
+        python projects.py --migrate=True
     # Migrating projects from AWS S3 bucket
     elif [ "$location" == "aws" ] || [ "$location" == "AWS" ]; then
         echo "Exporting $name to S3"
@@ -69,8 +71,12 @@ for ((i=0;i<`echo $files | jq '. | length'`;i++)); do
         presigned_get_url=$(python ${CONGREGATE_PATH}/presigned.py $bucket_name $name.tar.gz GET)
         # Retrieving response from importing project
         imported_json=$(python import_from_s3.py $name $namespace $presigned_get_url)
+
         # Migrating project-specific variables to new instance
         python variable_migration.py "$imported_json" $id
+
+        # Updating project members
+        python projects.py --migrate=True
     fi
 done
 

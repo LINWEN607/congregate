@@ -12,9 +12,6 @@ def generate_post_request(host, token, api, data):
         'Private-Token': token,
         'Content-Type': 'application/json'
     }
-    print url
-    print headers
-    print data
     req = urllib2.Request(url, headers=headers, data=data)
     response = urllib2.urlopen(req)
     return response
