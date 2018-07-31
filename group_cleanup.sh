@@ -1,5 +1,12 @@
 #!/bin/bash
 
+# Congregate - GitLab instance migration utility 
+#
+# Copyright (c) 2018 - GitLab
+#
+# Script used to retrieve and clean up group info from child instance
+#
+
 config=$(cat ${CONGREGATE_PATH}/data/config.json | jq '.config')
 host=$(echo $config | jq -r '.child_instance_host')
 token=$(echo $config | jq -r '.child_instance_token')

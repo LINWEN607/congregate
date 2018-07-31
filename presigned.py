@@ -1,3 +1,9 @@
+"""
+Congregate - GitLab instance migration utility 
+
+Copyright (c) 2018 - GitLab
+"""
+
 import boto3
 from botocore.client import Config
 import sys

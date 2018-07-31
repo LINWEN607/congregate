@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Congregate - GitLab instance migration utility 
+#
+# Copyright (c) 2018 - GitLab
 #
 # Bash script to generate configuration JSON for congregate
 #

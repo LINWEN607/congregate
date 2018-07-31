@@ -1,3 +1,9 @@
+"""
+Congregate - GitLab instance migration utility 
+
+Copyright (c) 2018 - GitLab
+"""
+
 import requests
 import urllib
 import json
@@ -12,6 +18,7 @@ filename = "%s.tar.gz" % name
 
 app_path = os.getenv("CONGREGATE_PATH")
 
+# Loading project config
 with open('%s/data/config.json' % app_path) as f:
     data = json.load(f)["config"]
 
@@ -31,4 +38,6 @@ headers = {
 }
 
 r = requests.post(url, headers=headers, data=data, files=files)
+
+# Returning response
 print r.text
