@@ -50,7 +50,10 @@ def migrate_group_info():
     for group in groups:
         members = group["members"]
         group.pop("members")
-        api.generate_post_request(parent_host, parent_token, "groups", json.dumps(group))
+        try:
+            api.generate_post_request(parent_host, parent_token, "groups", json.dumps(group))
+        except urllib2.HTTPError, e:
+            print "Group already exists"
         new_group = json.load(api.generate_get_request(parent_host, parent_token, "groups?search=%s" % group["name"]))
 
         if new_group[0]["name"] == group["name"]:

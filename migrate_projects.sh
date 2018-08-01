@@ -40,6 +40,7 @@ for ((i=0;i<`echo $files | jq '. | length'`;i++)); do
     name=$(echo $files | jq -r ".[$i].name")
     id=$(echo $files | jq -r ".[$i].id")
     namespace=$(echo $files | jq -r ".[$i].namespace")
+    project_json=$(echo $files | jq -r ".[$i]")
     # Migration projects from filesystem storage
     if [ $location == "filesystem" ]; then
         echo "Exporting $name to $path"
@@ -60,23 +61,10 @@ for ((i=0;i<`echo $files | jq '. | length'`;i++)); do
     # Migrating projects from AWS S3 bucket
     elif [ "$location" == "aws" ] || [ "$location" == "AWS" ]; then
         echo "Exporting $name to S3"
-        presigned_put_url=$(python ${CONGREGATE_PATH}/presigned.py $bucket_name $name.tar.gz PUT)
-        curl --request POST --header "PRIVATE-TOKEN: $childToken" $childHost/api/v4/projects/$id/export \
-            --data "upload[http_method]=PUT" \
-            --data-urlencode "upload[url]=$presigned_put_url"
-        
         # TODO: Add status check
 
-        # Retrieving presigned url from AWS
-        presigned_get_url=$(python ${CONGREGATE_PATH}/presigned.py $bucket_name $name.tar.gz GET)
-        # Retrieving response from importing project
-        imported_json=$(python import_from_s3.py $name $namespace $presigned_get_url)
+        python ${CONGREGATE_PATH}/projects.py --project_json "$project_json"
 
-        # Migrating project-specific variables to new instance
-        python variable_migration.py "$imported_json" $id
-
-        # Updating project members
-        python projects.py --migrate=True
     fi
 done
 

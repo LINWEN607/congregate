@@ -37,7 +37,8 @@ def update_user_info():
             if user["id"] == 1:
                 root_index = new_users.index(user)
                 break
-        new_users.pop(root_index)
+        if root_index:
+            new_users.pop(root_index)
         
         json.dump(new_users, f, indent=4)
 
