@@ -13,7 +13,7 @@ token=$(echo $config | jq -r '.child_instance_token')
 
 echo "Listing projects from $host"
 
-out=$(curl -s --request GET --header "PRIVATE-TOKEN: $token" $host/api/v4/projects)
+out=$(curl -s --request GET --header "PRIVATE-TOKEN: $token" "$host/api/v4/projects?page=1&per_page=100")
 
 echo $out | jq . > ${CONGREGATE_PATH}/data/project_json.json
 
