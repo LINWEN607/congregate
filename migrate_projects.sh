@@ -26,10 +26,10 @@ access_key=$(echo $config | jq -r '.access_key')
 secret_key=$(echo $config | jq -r '.secret_key')
 
 # Migrating user info and update members in groups and projects
-python ${CONGREGATE_PATH}/users.py --migrate=True --update=True
+python ${CONGREGATE_PATH}/migration/users.py --migrate=True --update=True
 
 # Migrating group info
-python ${CONGREGATE_PATH}/groups.py --migrate=True
+python ${CONGREGATE_PATH}/migration/groups.py --migrate=True
 
 # Retrieving usable path information
 path=$(echo $config | jq -r '.path')
@@ -63,7 +63,7 @@ for ((i=0;i<`echo $files | jq '. | length'`;i++)); do
         echo "Exporting $name to S3"
         # TODO: Add status check
 
-        python ${CONGREGATE_PATH}/projects.py --project_json "$project_json"
+        python ${CONGREGATE_PATH}/migration/projects.py --project_json "$project_json"
 
     fi
 done
