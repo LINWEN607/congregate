@@ -8,7 +8,7 @@
 #
 
 if [ ! -f ${CONGREGATE_PATH}/data/config.json ]; then
-    ${CONGREGATE_PATH}/config.sh
+    pipenv run ${CONGREGATE_PATH}/cli/config.py
 fi
 
 arg="$1"
@@ -19,7 +19,7 @@ case $arg in
     list)
     ${CONGREGATE_PATH}/list_projects.sh;;
     config)
-    ${CONGREGATE_PATH}/config.sh;;
+    pipenv run ${CONGREGATE_PATH}/cli/config.py;;
     stage)
     pipenv run ${CONGREGATE_PATH}/stage_projects.py $cmd_args;;
     migrate)

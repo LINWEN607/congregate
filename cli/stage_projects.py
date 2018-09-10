@@ -10,6 +10,9 @@ import urllib2
 import json
 import sys
 import subprocess
+from helpers import conf
+
+
 
 app_path = os.getenv("CONGREGATE_PATH")
 staging = []
@@ -23,15 +26,13 @@ def generate_response(host, token, id, data, api):
     response = urllib2.urlopen(req)
     return response
 
-if __name__ == "__main__":
+def stage_projects(projects_to_stage):
     if (not os.path.isfile('%s/data/project_json.json' % app_path)):
         #TODO: rewrite this logic to handle subprocess more efficiently
         cmd = "%s/list_projects.sh > /dev/null" % app_path
         subprocess.call(cmd.split())
 
-    # Loading project config
-    with open('%s/data/config.json' % app_path) as f:
-        config = json.load(f)["config"]
+    config = conf.ig()
 
     # Loading projects information
     with open('%s/data/project_json.json' % app_path) as f:
@@ -44,7 +45,7 @@ if __name__ == "__main__":
         id_num = projects[i]["id"]
         rewritten_projects[id_num] = new_obj
 
-    if sys.argv[1] == "all" or sys.argv[1] == ".":
+    if projects_to_stage[1] == "all" or projects_to_stage[1] == ".":
         for i in range(len(projects)):
             obj = {}
             obj["id"] = projects[i]["id"]
@@ -52,33 +53,36 @@ if __name__ == "__main__":
             obj["namespace"] = projects[i]["path_with_namespace"].split("/")[0]
             obj["path_with_namespace"] = projects[i]["path_with_namespace"]
             obj["visibilty"] = projects[i]["visibility"]
-            response = generate_response(config["child_instance_host"], config["child_instance_token"], projects[i]["id"], None, "projects")
+            response = generate_response(config.child_host, config.child_token, projects[i]["id"], None, "projects")
             obj["members"] = json.loads(response.read())
             staging.append(obj)
     else:
-        for i in range(1, len(sys.argv)):
+        for i in range(1, len(projects_to_stage)):
             obj = {}
             # Hacky check for id or project name by explicitly checking variable type
             try:
-                if (isinstance(int(sys.argv[i]), int)):
-                    key = sys.argv[i]
+                if (isinstance(int(projects_to_stage[i]), int)):
+                    key = projects_to_stage[i]
                     # Retrieve object from better formatted object
                     project = rewritten_projects[int(key)]
             except ValueError:
                 # Iterate over original project_json.json file
                 for j in range(len(projects)):
-                    if projects[j]["name"] == sys.argv[i]:
+                    if projects[j]["name"] == projects_to_stage[i]:
                         project = projects[j]
 
             obj["id"] = project["id"]
             obj["name"] = project["name"]
             obj["namespace"] = project["path_with_namespace"]
             obj["visibilty"] = project["visibility"]
-            response = generate_response(config["child_instance_host"], config["child_instance_token"], project["id"], None, "projects")
+            response = generate_response(config.child_host, config.child_token, project["id"], None, "projects")
             obj["members"] = json.loads(response.read())
             staging.append(obj)
 
     if (len(staging) > 0):
         with open("%s/data/stage.json" % app_path, "wb") as f:
             f.write(json.dumps(staging, indent=4))
+
+if __name__ == "__main__":
+    stage_projects(sys.argv)
 

@@ -57,7 +57,7 @@ for ((i=0;i<`echo $files | jq '. | length'`;i++)); do
             --form "file=@$fullFilePath" \
             --form "namespace=$namespace" $parentHost/api/v4/projects/import
         
-        python projects.py --migrate=True
+        python ${CONGREGATE_PATH}/migration/projects.py --migrate=True
     # Migrating projects from AWS S3 bucket
     elif [ "$location" == "aws" ] || [ "$location" == "AWS" ]; then
         echo "Exporting $name to S3"
