@@ -26,10 +26,10 @@ access_key=$(echo $config | jq -r '.access_key')
 secret_key=$(echo $config | jq -r '.secret_key')
 
 # Migrating user info and update members in groups and projects
-python ${CONGREGATE_PATH}/users.py --migrate=True --update=True
+pipenv run python ${CONGREGATE_PATH}/migration/users.py --migrate=True --update=True
 
 # Migrating group info
-python ${CONGREGATE_PATH}/groups.py --migrate=True
+pipenv run python ${CONGREGATE_PATH}/migration/groups.py --migrate=True
 
 # Retrieving usable path information
 path=$(echo $config | jq -r '.path')
@@ -57,13 +57,13 @@ for ((i=0;i<`echo $files | jq '. | length'`;i++)); do
             --form "file=@$fullFilePath" \
             --form "namespace=$namespace" $parentHost/api/v4/projects/import
         
-        python projects.py --migrate=True
+        pipenv run python ${CONGREGATE_PATH}/migration/projects.py --migrate=True
     # Migrating projects from AWS S3 bucket
     elif [ "$location" == "aws" ] || [ "$location" == "AWS" ]; then
         echo "Exporting $name to S3"
         # TODO: Add status check
 
-        python ${CONGREGATE_PATH}/projects.py --project_json "$project_json"
+        pipenv run python ${CONGREGATE_PATH}/migration/projects.py --project_json "$project_json"
 
     fi
 done

@@ -7,27 +7,5 @@
 # Master script for running congregate
 #
 
-if [ ! -f ${CONGREGATE_PATH}/data/config.json ]; then
-    ${CONGREGATE_PATH}/config.sh
-fi
-
-arg="$1"
-
-cmd_args=${@:2}
-
-case $arg in
-    list)
-    ${CONGREGATE_PATH}/list_projects.sh;;
-    config)
-    ${CONGREGATE_PATH}/config.sh;;
-    stage)
-    pipenv run ${CONGREGATE_PATH}/stage_projects.py $cmd_args;;
-    migrate)
-    pipenv run ${CONGREGATE_PATH}/migrate_projects.sh;;
-    retrieve-groups)
-    ${CONGREGATE_PATH}/group_cleanup.sh status;;
-    retrieve-users)
-    ${CONGREGATE_PATH}/user_cleanup.sh status;;
-    do_all)
-    ${CONGREGATE_PATH}/do_all.sh;;
-esac
+cd ${CONGREGATE_PATH}
+pipenv run python congregate.py $@
