@@ -13,7 +13,7 @@ def do_all():
     if not os.path.isfile("%s/data/groups.json" % app_path):
         groups.retrieve_group_info()
     stage_projects.stage_projects([None, "all"])
-    subprocess.call(["%s/migrate_projects.sh" % app_path])
+    projects.migrate()
 
 if __name__ == "__main__":
     do_all()
