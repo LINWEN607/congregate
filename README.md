@@ -6,8 +6,8 @@ Come together, right now
 
 ## Dependencies
 
-- [jq](https://stedolan.github.io/jq/download/)
-- [cURL](https://curl.haxx.se/download.html)
+- Python 2.7
+- [AWS CLI](https://aws.amazon.com/cli/)
 - [PipEnv](https://docs.pipenv.org/)
 
 ## Setup
@@ -35,16 +35,6 @@ pipenv install
 # start up python virtualenv
 pipenv shell
 ```
-
-### Installing jq
-
-macOS
-
-`brew install jq`
-
-ubuntu/debian
-
-`sudo apt-get install jq`
 
 ## Usage
 
