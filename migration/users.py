@@ -8,7 +8,7 @@ import os
 import sys
 import json
 import argparse
-from helpers import api
+from helpers import api, conf
 
 app_path = os.getenv("CONGREGATE_PATH")
 
@@ -19,6 +19,7 @@ child_host = config["child_instance_host"]
 child_token = config["child_instance_token"]
 parent_host = config["parent_instance_host"]
 parent_token = config["parent_instance_token"]
+quiet = False
 
 def update_users(obj, new_users):
     for i in range(len(obj)):
@@ -60,7 +61,7 @@ def update_user_info():
     with open("%s/data/groups.json" % app_path, "wb") as f:
         json.dump(groups, f, indent=4)
 
-def retrieve_user_info():
+def retrieve_user_info(quiet=False):
     users = json.load(api.generate_get_request(child_host, child_token, "users"))
     root_index = None
     for user in users:

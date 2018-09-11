@@ -22,7 +22,7 @@ child_token = config["child_instance_token"]
 parent_host = config["parent_instance_host"]
 parent_token = config["parent_instance_token"]
 
-def retrieve_group_info():
+def retrieve_group_info(quiet=False):
     groups = json.load(api.generate_get_request(child_host, child_token, "groups"))
 
     for group in groups:

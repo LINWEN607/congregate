@@ -17,7 +17,7 @@ cmd_args=${@:2}
 
 case $arg in
     list)
-    ${CONGREGATE_PATH}/list_projects.sh;;
+    pipenv run python ${CONGREGATE_PATH}/cli/list_projects.py;;
     config)
     pipenv run ${CONGREGATE_PATH}/cli/config.py;;
     stage)
