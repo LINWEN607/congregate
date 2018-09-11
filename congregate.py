@@ -29,7 +29,7 @@ elif arg == "config":
 elif arg == "stage":
     stage_projects.stage_projects(cmd_args)
 elif arg == "migrate":
-    subprocess.call("%s/migrate_projects.sh" % app_path)
+    projects.migrate()
 elif arg == "retrieve-groups":
     groups.retrieve_group_info()
 elif arg == "retrieve-users":

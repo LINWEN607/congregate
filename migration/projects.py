@@ -14,9 +14,9 @@ import urllib2
 import time
 from helpers import api
 from helpers.conf import ig
+from migration import users, groups
 from aws.presigned import generate_presigned_url
 from aws.import_from_s3 import import_from_s3
-
 
 conf = ig()
 
@@ -26,7 +26,8 @@ parent_host = conf.parent_host
 parent_token = conf.parent_token
 
 def export_project(project):
-    project = json.loads(project)
+    if isinstance(project, str):
+        project = json.loads(project)
     name = project["name"] + ".tar.gz"
     presigned_put_url = generate_presigned_url(name, "PUT")
     upload = [
@@ -45,18 +46,33 @@ def export_project(project):
        pass
 
 def import_project(project):
-    project_json = json.loads(project)
-    name = project_json["name"]
-    namespace = project_json["namespace"]
+    if isinstance(project, str):
+        project = json.loads(project)
+    name = project["name"]
+    namespace = project["namespace"]
     presigned_get_url = generate_presigned_url(name + ".tar.gz", "GET")
     exported = False
     import_response = None
 
     while not exported:
         import_response = import_from_s3(name, namespace, presigned_get_url)
-        if import_response is not None:
-            print "%s has been exported and import is occurring" % name
-            exported = True
+        if "\"message\":" in import_response:
+            print import_response
+            return None
+        elif import_response is not None:
+            print import_response
+            import_id = json.loads(import_response)["id"]
+            status = api.generate_get_request(conf.parent_host, conf.parent_token, "projects/%d/import" % import_id)
+            if isinstance(status, str):
+                status = json.load(status)
+            else:
+                status = json.loads(status.read())
+            if status["import_status"] == "finished":
+                print "%s has been exported and import is occurring" % name
+                exported = True
+            else:
+                print "Waiting on %s to export" % name
+                time.sleep(0.5)
         else:
             print "Waiting on %s to export" % name
             time.sleep(0.5)
@@ -102,10 +118,52 @@ def migrate_variables(import_response, id):
         api.generate_post_request(conf.parent_host, conf.parent_token, "projects/%d/variables" % import_response["id"], wrapped_data)
 
 def migrate_projects(project_json):
+    if isinstance(project_json, str):
+        project_json = json.loads(project_json)
     export_project(project_json)
     import_json = import_project(project_json)
-    migrate_variables(import_json, json.loads(project_json)["id"])
-    migrate_project_info()
+    print project_json
+    if import_json is not None:
+        migrate_variables(import_json, project_json["id"])
+        migrate_project_info()
+
+def migrate():
+    with open("%s/data/stage.json" % app_path, "r") as f:
+        files = json.load(f)
+    
+    users.migrate_user_info()
+    users.update_user_info()
+    groups.migrate_group_info()
+
+    working_dir = os.getcwd()
+
+    for f in files:
+        name = f["name"]
+        id = f["id"]
+        namespace = f["namespace"]
+        if conf.location == "filesystem":
+            print "Exporting %s to %s" % (name, conf.filesystem_path)
+            api.generate_post_request(conf.child_host, conf.child_token, "projects/%d/export" % id, "")
+            if working_dir != conf.filesystem_path:
+                os.chdir(conf.filesystem_path)
+            download = api.generate_get_request(conf.child_host, conf.child_token, "projects/%d/export/download" % id)
+            filename = download.info().getheader("Content-Disposition").split("=")[1]
+            with open("%s/downloads/%s" % (conf.filesystem_path, filename), "w") as f:
+                f.write(download)
+            
+            data = {
+                "path": name,
+                "file": "%s/downloads/%s" % (conf.filesystem_path, filename),
+                "namespace": namespace
+            }
+
+            api.generate_post_request(conf.parent_host, conf.parent_token, "projects/import", urllib.urlencode(data))
+
+            migrate_project_info()
+
+        elif (conf.location).lower() == "aws":
+            print "Exporting %s to S3" % name
+            migrate_projects(f)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Handle project-related tasks')

@@ -13,21 +13,10 @@ import subprocess
 from helpers import conf
 from helpers import api
 
-
-
 app_path = os.getenv("CONGREGATE_PATH")
-staging = []
-
-def generate_response(host, token, id, data, api):
-    url = "%s/api/v4/%s/%d/members" % (host, api, int(id))
-    headers = {
-        'Private-Token': token
-    }
-    req = urllib2.Request(url, headers=headers, data=data)
-    response = urllib2.urlopen(req)
-    return response
 
 def stage_projects(projects_to_stage):
+    staging = []
     if (not os.path.isfile('%s/data/project_json.json' % app_path)):
         #TODO: rewrite this logic to handle subprocess more efficiently
         cmd = "%s/list_projects.sh > /dev/null" % app_path
@@ -46,7 +35,7 @@ def stage_projects(projects_to_stage):
         id_num = projects[i]["id"]
         rewritten_projects[id_num] = new_obj
 
-    if projects_to_stage[1] == "all" or projects_to_stage[1] == ".":
+    if projects_to_stage[0] == "all" or projects_to_stage[0] == ".":
         for i in range(len(projects)):
             obj = {}
             obj["id"] = projects[i]["id"]
@@ -54,11 +43,11 @@ def stage_projects(projects_to_stage):
             obj["namespace"] = projects[i]["path_with_namespace"].split("/")[0]
             obj["path_with_namespace"] = projects[i]["path_with_namespace"]
             obj["visibilty"] = projects[i]["visibility"]
-            response = generate_response(config.child_host, config.child_token, projects[i]["id"], None, "projects")
+            response = api.generate_get_request(config.child_host, config.child_token, "projects/%d/members" % int(projects[i]["id"]))
             obj["members"] = json.loads(response.read())
             staging.append(obj)
     else:
-        for i in range(1, len(projects_to_stage)):
+        for i in range(0, len(projects_to_stage)):
             obj = {}
             # Hacky check for id or project name by explicitly checking variable type
             try:
@@ -74,9 +63,9 @@ def stage_projects(projects_to_stage):
 
             obj["id"] = project["id"]
             obj["name"] = project["name"]
-            obj["namespace"] = project["path_with_namespace"]
+            obj["namespace"] = project["path_with_namespace"].split("/")[0]
             obj["visibilty"] = project["visibility"]
-            response = generate_response(config.child_host, config.child_token, project["id"], None, "projects")
+            response = api.generate_get_request(config.child_host, config.child_token, "projects/%d/members" % int(project["id"]))
             obj["members"] = json.loads(response.read())
             staging.append(obj)
 
