@@ -1,17 +1,19 @@
 import json
 import os
+import urllib
+import math
 from helpers import conf
 from helpers import api
 from migration import groups, users
 
 app_path = os.getenv("CONGREGATE_PATH")
+config = conf.ig()
 
 def list_projects():
-    config = conf.ig()
 
     print "Listing projects from %s" % config.child_host
 
-    projects = json.load(api.generate_get_request(config.child_host, config.child_token, "projects?page=1&per_page=100"))
+    projects = list(api.list_all(config.child_host, config.child_token, "projects"))
 
     with open("%s/data/project_json.json" % app_path, "wb") as f:
         json.dump(projects, f, indent=4)
