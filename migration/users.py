@@ -62,7 +62,7 @@ def update_user_info():
         json.dump(groups, f, indent=4)
 
 def retrieve_user_info(quiet=False):
-    users = json.load(api.generate_get_request(child_host, child_token, "users"))
+    users = list(api.list_all(child_host, child_token, "users"))
     root_index = None
     for user in users:
         # Removing root user
