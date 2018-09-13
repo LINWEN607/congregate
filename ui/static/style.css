@@ -1,5 +1,6 @@
 body {
     margin: 0;
+    font-family: Arial, Helvetica, sans-serif;
 }
 
 .header {
@@ -24,6 +25,7 @@ nav div {
 
 nav ul {
     padding: 0;
+    margin-bottom: 0.95em;
 }
 
 nav ul li {
@@ -32,7 +34,15 @@ nav ul li {
 
 nav ul li a {
     padding: 1em;
-    border: 1px solid #000;
+    border-top: 1px solid #000;
+    border-right: 1px solid #000;
+    border-left: 1px solid #000;
+    color: #000;
+    text-decoration: none;
+}
+
+nav ul li a:hover {
+    text-decoration: underline;
 }
 
 .content {
@@ -44,6 +54,7 @@ nav ul li a {
     border: 1px solid #000;
     border-spacing: 0;
     width: 100%;
+    table-layout: auto;
 }
 
 .content table tr th {

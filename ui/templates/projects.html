@@ -18,11 +18,12 @@ Projects
     </tr>
   {% for d in data %}
     <tr>
-        <td><input id = {{ d.id }} type = "checkbox"></td>
+        <td><input id = {{ d.id }} type = "checkbox" class = "project_checkbox"></td>
         <td>{{ d.id }}</td>
         <td>{{ d.path }}</td>
         <td>{{ d.description }}</td>
     </tr>
   {% endfor %}
   </table>
+  <button id = "stage_button">Stage</button>
 {% endblock %}
