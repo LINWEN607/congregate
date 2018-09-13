@@ -1,0 +1,64 @@
+body {
+    margin: 0;
+}
+
+.header {
+    padding: 0.5em;
+    background-color: #00cc66;
+}
+
+.header h1 {
+    width: 80%;
+    margin: 0 auto;
+    padding: 0.5em;
+}
+
+nav {
+    width: 80%;
+    margin: 0 auto;
+}
+
+nav div {
+    display: inline;
+}
+
+nav ul {
+    padding: 0;
+}
+
+nav ul li {
+    display: inline-block;
+}
+
+nav ul li a {
+    padding: 1em;
+    border: 1px solid #000;
+}
+
+.content {
+    width: 80%;
+    margin: 0 auto;
+}
+
+.content table {
+    border: 1px solid #000;
+    border-spacing: 0;
+    width: 100%;
+}
+
+.content table tr th {
+    margin: 0;
+    padding: 0.5em;
+    border-bottom: 2px solid #000;
+    text-align: left;
+}
+
+.content table tr td{
+    margin: 0;
+    padding: 0.5em;
+    border-bottom: 1px solid #000;
+}
+
+.content table tr td input {
+    width: 100%;
+}

@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}
+Congregate by GitLab
+{% endblock %}
+
+{% block header %}
+Projects
+{% endblock %}
+
+{% block content %}
+  <table>
+    <tr>
+        <th><input id = "select_all" type = "checkbox">Staged</th>
+        <th>ID</th>
+        <th>Project Name</th>
+        <th>Description</th>
+    </tr>
+  {% for d in data %}
+    <tr>
+        <td><input id = {{ d.id }} type = "checkbox"></td>
+        <td>{{ d.id }}</td>
+        <td>{{ d.path }}</td>
+        <td>{{ d.description }}</td>
+    </tr>
+  {% endfor %}
+  </table>
+{% endblock %}

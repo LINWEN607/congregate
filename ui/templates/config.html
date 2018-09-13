@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block title %}
+Congregate by GitLab
+{% endblock %}
+
+{% block header %}
+Configuration
+{% endblock %}
+
+{% block content %}
+    <table>
+        <tr>
+            <th>Key</th>
+            <th>Value</th>
+        </tr>
+        {% for key, value in data.config.items() %}
+            <tr>
+                <td>{{ key }}</td>
+                <td><input type = "text" value = {{ value }}></td>
+            </tr>
+        {% endfor %}
+    </table>
+{% endblock %}
