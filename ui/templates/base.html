@@ -17,4 +17,7 @@
 </nav>
 <section class="content">
   {% block content %}{% endblock %}
+  <div class = "button_wrapper">
+        <button id = {% block button_id %}{% endblock %} class = "button">{% block button_label %}{% endblock %}</button>
+    </div>
 </section>

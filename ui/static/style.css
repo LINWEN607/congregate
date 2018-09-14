@@ -55,6 +55,7 @@ nav ul li a:hover {
     border-spacing: 0;
     width: 100%;
     table-layout: auto;
+    margin-bottom: 4em;
 }
 
 .content table tr th {
@@ -72,4 +73,21 @@ nav ul li a:hover {
 
 .content table tr td input {
     width: 100%;
+}
+
+.button_wrapper {
+    position: fixed;
+    top: 94%;
+    width: 80%;
+    background-color: rgba(0,0,0, 0.5);
+    padding: 1em 0;
+}
+
+.button {
+    display: block;
+    margin: 0 auto;
+    cursor: pointer;
+    width: 15%;
+    height: 10%;
+    font-size: 1.25em;
 }

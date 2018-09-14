@@ -24,8 +24,6 @@ window.onload = function() {
                     ids.push(checkboxes[i].id);
                 }
             }
-            console.log("AJAX?");
-            console.log(ids);
             $.ajax({
                 type: "POST",
                 url: "stage",
@@ -34,7 +32,18 @@ window.onload = function() {
                     console.log("staged files");
                 }
             });
-            console.log("AJAX?");
+        });
+    }
+    var projects_table = document.getElementById("projects_table");
+    if (projects_table) {
+        $.ajax({
+            type: "GET",
+            url: "data/stage",
+            success: function(data) {
+                for (var i = 0; i < data.length; i++) {
+                    document.getElementById(data[i].id).checked = true;
+                }
+            }
         });
     }
 };

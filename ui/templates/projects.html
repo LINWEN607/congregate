@@ -9,7 +9,7 @@ Projects
 {% endblock %}
 
 {% block content %}
-  <table>
+  <table id = "projects_table">
     <tr>
         <th><input id = "select_all" type = "checkbox">Staged</th>
         <th>ID</th>
@@ -25,5 +25,8 @@ Projects
     </tr>
   {% endfor %}
   </table>
-  <button id = "stage_button">Stage</button>
+
 {% endblock %}
+
+{% block button_id %}stage_button{% endblock %}
+{% block button_label %}Stage{% endblock %}
