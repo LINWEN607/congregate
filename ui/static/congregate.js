@@ -2,7 +2,7 @@ window.onload = function() {
     var select_all = document.getElementById("select_all");
     if (select_all) {
         select_all.addEventListener("click", function() {
-            var checkboxes = document.getElementsByClassName("project_checkbox");
+            var checkboxes = document.getElementsByClassName("checkbox");
             if (select_all.checked) {
                 for (var i = 0; i < checkboxes.length; i++) {
                     checkboxes[i].checked = true;
@@ -28,8 +28,8 @@ window.onload = function() {
                 type: "POST",
                 url: "stage",
                 data: ids.toString(),
-                success: function() {
-                    console.log("staged files");
+                success: function(data) {
+                    console.log(data);
                 }
             });
         });

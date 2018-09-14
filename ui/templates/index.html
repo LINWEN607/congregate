@@ -9,8 +9,14 @@ Home
 {% endblock %}
 
 {% block content %}
-    Welcome to congregate
+    <div class = "content_wrapper">
+        <ul><h1>Status</h1>
+            {% for key, value in data.items() %}
+                <li>{{ key }}: {{ value }}</li>
+            {% endfor %}
+        </ul>
+    </div>
 {% endblock %}
 
-{% block button_id %}"" style = "display: none"{% endblock %}
-{% block button_label %}Stage{% endblock %}
+{% block button_id %}migrate_button{% endblock %}
+{% block button_label %}Migrate{% endblock %}

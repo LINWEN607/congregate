@@ -91,3 +91,7 @@ nav ul li a:hover {
     height: 10%;
     font-size: 1.25em;
 }
+
+.content_wrapper {
+    border: 1px solid #000;
+}

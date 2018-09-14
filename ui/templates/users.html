@@ -11,14 +11,14 @@ Users
 {% block content %}
   <table>
     <tr>
-        <th>Staged</th>
+        <th><input id = "select_all" type = "checkbox">Staged</th>
         <th>Name</th>
         <th>Username</th>
         <th>Email</th>
     </tr>
   {% for d in data %}
     <tr>
-        <td><input id = "{{ d.id }}" type = "checkbox"></td>
+        <td><input id = "{{ d.id }}" type = "checkbox" class = "checkbox users_checkbox"></td>
         <td>{{ d.name }}</td>
         <td>{{ d.username }}</td>
         <td>{{ d.email }}</td>

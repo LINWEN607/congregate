@@ -20,3 +20,16 @@ def stage():
     projects = request.get_data().split(",")
     stage_projects.stage_projects(projects)
     return "staged %s projects" % len(projects)
+
+def get_counts():
+    total_projects = len(get_data("project_json"))
+    staged_projects = len(get_data("stage"))
+    total_users = len(get_data("users"))
+    staged_users = 0
+    total_groups = len(get_data("groups"))
+    staged_groups = 0
+    return {
+        "Staged Projects": "%s/%s" % (staged_projects, total_projects),
+        "Staged Groups": "%s/%s" % (staged_groups, total_groups),
+        "Staged Users": "%s/%s" % (staged_users, total_users)
+    }

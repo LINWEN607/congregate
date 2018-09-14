@@ -2,14 +2,15 @@ from flask import render_template
 from flask import Response
 from flask import stream_with_context
 from . import app
-from models import get_data
+from models import get_data, get_counts
 import time
 
 
 @app.route("/")
 @app.route("/home")
 def home_page():
-    return render_template("index.html")
+    data = get_counts()
+    return render_template("index.html", data=data)
 
 @app.route("/projects")
 def project_page():
@@ -29,7 +30,6 @@ def group_page():
 @app.route("/config")
 def config_page():
     data = dict(get_data("config"))
-    print data
     return render_template("config.html", data=data)
 
 @app.route('/large')
