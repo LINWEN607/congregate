@@ -46,7 +46,7 @@ def update_user_info():
     with open("%s/data/stage.json" % app_path, "r") as f:
         staged_projects = json.load(f)
 
-    with open("%s/data/groups.json" % app_path, "r") as f:
+    with open("%s/data/staged_groups.json" % app_path, "r") as f:
         groups = json.load(f)
 
     with open("%s/data/new_users.json" % app_path, "r") as f:
@@ -58,7 +58,7 @@ def update_user_info():
     with open("%s/data/stage.json" % app_path, "wb") as f:
         json.dump(staged_projects, f, indent=4)
     
-    with open("%s/data/groups.json" % app_path, "wb") as f:
+    with open("%s/data/staged_groups.json" % app_path, "wb") as f:
         json.dump(groups, f, indent=4)
 
 def retrieve_user_info(quiet=False):
@@ -98,7 +98,7 @@ def retrieve_user_info(quiet=False):
         print "Retrieved %d users. Check users.json to see all retrieved groups" % len(users)
 
 def migrate_user_info():
-    with open('%s/data/users.json' % app_path, "r") as f:
+    with open('%s/data/staged_users.json' % app_path, "r") as f:
         users = json.load(f)
     
     for user in users:
