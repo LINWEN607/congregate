@@ -10,7 +10,10 @@ import sys
 import subprocess
 import argparse
 import urllib2
-from helpers import api
+try:
+    from helpers import conf, api
+except ImportError:
+    from congregate.helpers import conf, api
 
 app_path = os.getenv("CONGREGATE_PATH")
 
@@ -74,6 +77,18 @@ def migrate_group_info():
             if not root_user_present:
                 print "removing root user from group"
                 api.generate_delete_request(parent_host, parent_token, "/groups/%d/members/1" % new_group[0]["id"])
+
+def append_groups(groups):
+    with open("%s/data/groups.json" % app_path, "r") as f:
+        group_file = json.load(f)
+    with open("%s/data/staged_groups.json" % app_path, "r") as f:
+        staged_groups = json.load(f)
+    for group in groups:
+        for g in group_file:
+            if group == g["path"]:
+                staged_groups.append(g)
+    with open("%s/data/staged_groups.json" % app_path, "w") as f:
+        json.dump(staged_groups, f)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Handle group-related tasks')

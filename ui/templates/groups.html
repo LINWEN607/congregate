@@ -9,7 +9,7 @@ Groups
 {% endblock %}
 
 {% block content %}
-  <table>
+  <table id = "groups_table">
     <tr>
         <th><input id = "select_all" type = "checkbox">Staged</th>
         <th>Name</th>
@@ -18,7 +18,7 @@ Groups
     </tr>
   {% for d in data %}
     <tr>
-        <td><input id = "{{ d.id }}" type = "checkbox" class = "checkbox group_checkbox"></td>
+        <td><input id = "{{ d.path }}" type = "checkbox" class = "checkbox group_checkbox"></td>
         <td>{{ d.name }}</td>
         <td>{{ d.visibility }}</td>
         <td>{{ d.path }}</td>

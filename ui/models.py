@@ -3,6 +3,8 @@ import json
 from . import app
 from flask import request, jsonify
 from congregate.cli import stage_projects
+from congregate.migration.groups import append_groups
+from congregate.migration.users import append_users
 
 app_path = os.getenv("CONGREGATE_PATH")
 
@@ -20,6 +22,18 @@ def stage():
     projects = request.get_data().split(",")
     stage_projects.stage_projects(projects)
     return "staged %s projects" % len(projects)
+
+@app.route("/append_users", methods=['POST'])
+def add_users():
+    users = request.get_data().split(",")
+    append_users(users)
+    return "added %s users" % len(users)
+
+@app.route("/append_groups", methods=['POST'])
+def add_groups():
+    groups = request.get_data().split(",")
+    append_groups(groups)
+    return "added %s groups" % len(groups)
 
 def get_counts():
     total_projects = len(get_data("project_json"))

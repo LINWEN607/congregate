@@ -34,6 +34,47 @@ window.onload = function() {
             });
         });
     }
+    var stage_button = document.getElementById("stage_groups");
+    if (stage_button) {
+        stage_button.addEventListener("click", function() {
+            var checkboxes = document.getElementsByClassName("group_checkbox");
+            var ids = [];
+            for (var i = 0; i < checkboxes.length; i++) {
+                if (checkboxes[i].checked) {
+                    ids.push(checkboxes[i].id);
+                }
+            }
+            $.ajax({
+                type: "POST",
+                url: "append_groups",
+                data: ids.toString(),
+                success: function(data) {
+                    console.log(data);
+                }
+            });
+        });
+    }
+
+    var stage_button = document.getElementById("stage_users");
+    if (stage_button) {
+        stage_button.addEventListener("click", function() {
+            var checkboxes = document.getElementsByClassName("users_checkbox");
+            var ids = [];
+            for (var i = 0; i < checkboxes.length; i++) {
+                if (checkboxes[i].checked) {
+                    ids.push(checkboxes[i].id);
+                }
+            }
+            $.ajax({
+                type: "POST",
+                url: "append_users",
+                data: ids.toString(),
+                success: function(data) {
+                    console.log(data);
+                }
+            });
+        });
+    }
     var projects_table = document.getElementById("projects_table");
     if (projects_table) {
         $.ajax({
@@ -42,6 +83,30 @@ window.onload = function() {
             success: function(data) {
                 for (var i = 0; i < data.length; i++) {
                     document.getElementById(data[i].id).checked = true;
+                }
+            }
+        });
+    }
+    var projects_table = document.getElementById("users_table");
+    if (projects_table) {
+        $.ajax({
+            type: "GET",
+            url: "data/staged_users",
+            success: function(data) {
+                for (var i = 0; i < data.length; i++) {
+                    document.getElementById(data[i].username).checked = true;
+                }
+            }
+        });
+    }
+    var projects_table = document.getElementById("groups_table");
+    if (projects_table) {
+        $.ajax({
+            type: "GET",
+            url: "data/staged_groups",
+            success: function(data) {
+                for (var i = 0; i < data.length; i++) {
+                    document.getElementById(data[i].path).checked = true;
                 }
             }
         });
