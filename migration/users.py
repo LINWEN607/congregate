@@ -98,7 +98,7 @@ def retrieve_user_info(quiet=False):
         print "Retrieved %d users. Check users.json to see all retrieved groups" % len(users)
 
 def migrate_user_info():
-    with open('%s/data/users.json' % app_path, "r") as f:
+    with open('%s/data/staged_users.json' % app_path, "r") as f:
         users = json.load(f)
     
     for user in users:
