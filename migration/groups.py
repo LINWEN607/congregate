@@ -44,7 +44,7 @@ def retrieve_group_info(quiet=False):
 def migrate_group_info():
     if not os.path.isfile("%s/data/groups.json" % app_path):
         retrieve_group_info()
-    with open("%s/data/groups.json" % app_path, "r") as f:
+    with open("%s/data/staged_groups.json" % app_path, "r") as f:
         groups = json.load(f)
     
     for group in groups:

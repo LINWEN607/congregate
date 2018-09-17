@@ -56,10 +56,10 @@ def import_project(project):
 
     while not exported:
         import_response = import_from_s3(name, namespace, presigned_get_url)
-        if "\"message\":" in import_response:
-            print import_response
-            return None
-        elif import_response is not None:
+        if import_response is not None:
+            if "\"message\":" in import_response:
+                print import_response
+                break
             print import_response
             import_id = json.loads(import_response)["id"]
             status = api.generate_get_request(conf.parent_host, conf.parent_token, "projects/%d/import" % import_id)
@@ -123,6 +123,7 @@ def migrate_projects(project_json):
     export_project(project_json)
     import_json = import_project(project_json)
     print project_json
+    print import_json
     if import_json is not None:
         migrate_variables(import_json, project_json["id"])
         migrate_project_info()

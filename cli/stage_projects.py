@@ -17,6 +17,8 @@ app_path = os.getenv("CONGREGATE_PATH")
 
 def stage_projects(projects_to_stage):
     staging = []
+    staged_users = []
+    staged_groups = []
     if (not os.path.isfile('%s/data/project_json.json' % app_path)):
         #TODO: rewrite this logic to handle subprocess more efficiently
         cmd = "%s/list_projects.sh > /dev/null" % app_path
@@ -28,12 +30,21 @@ def stage_projects(projects_to_stage):
     with open('%s/data/project_json.json' % app_path) as f:
         projects = json.load(f)
 
+    with open("%s/data/groups.json" % app_path, "r") as f:
+        groups = json.load(f)
+
     # Rewriting projects to retrieve objects by ID more efficiently
     rewritten_projects = {}
     for i in range(len(projects)):
         new_obj = projects[i]
         id_num = projects[i]["id"]
         rewritten_projects[id_num] = new_obj
+
+    rewritten_groups = {}
+    for i in range(len(groups)):
+        new_obj = groups[i]
+        group_name = groups[i]["path"]
+        rewritten_groups[group_name] = new_obj
 
     if projects_to_stage[0] == "all" or projects_to_stage[0] == ".":
         for i in range(len(projects)):
@@ -44,7 +55,24 @@ def stage_projects(projects_to_stage):
             obj["path_with_namespace"] = projects[i]["path_with_namespace"]
             obj["visibilty"] = projects[i]["visibility"]
             response = api.generate_get_request(config.child_host, config.child_token, "projects/%d/members" % int(projects[i]["id"]))
-            obj["members"] = json.loads(response.read())
+            members = json.loads(response.read())
+            with open("%s/data/users.json" % app_path, "r") as f:
+                users = json.load(f)
+            
+            rewritten_users = {}
+            for i in range(len(users)):
+                new_obj = users[i]
+                id_num = users[i]["username"]
+                rewritten_users[id_num] = new_obj
+            for member in members:
+                if member["username"] != "root":
+                    staged_users.append(rewritten_users[member["username"]])
+            
+            if projects[i]["namespace"]["kind"] == "group":
+                group_to_stage = projects[i]["namespace"]["path"]
+                staged_groups.append(rewritten_groups[group_to_stage])
+
+            obj["members"] = members
             staging.append(obj)
     else:
         for i in range(0, len(projects_to_stage)):
@@ -66,12 +94,33 @@ def stage_projects(projects_to_stage):
             obj["namespace"] = project["path_with_namespace"].split("/")[0]
             obj["visibilty"] = project["visibility"]
             response = api.generate_get_request(config.child_host, config.child_token, "projects/%d/members" % int(project["id"]))
-            obj["members"] = json.loads(response.read())
+            members = json.loads(response.read())
+            with open("%s/data/users.json" % app_path, "r") as f:
+                users = json.load(f)
+            
+            rewritten_users = {}
+            for i in range(len(users)):
+                new_obj = users[i]
+                id_num = users[i]["username"]
+                rewritten_users[id_num] = new_obj
+            for member in members:
+                if member["username"] != "root":
+                    staged_users.append(rewritten_users[member["username"]])
+            
+            if project["namespace"]["kind"] == "group":
+                group_to_stage = project["namespace"]["path"]
+                staged_groups.append(rewritten_groups[group_to_stage])
+
+            obj["members"] = members
             staging.append(obj)
 
     if (len(staging) > 0):
         with open("%s/data/stage.json" % app_path, "wb") as f:
             f.write(json.dumps(staging, indent=4))
+        with open("%s/data/staged_users.json" % app_path, "wb") as f:
+            f.write(json.dumps(staged_users, indent=4))
+        with open("%s/data/staged_groups.json" % app_path, "wb") as f:
+            f.write(json.dumps(staged_groups, indent=4))
 
 if __name__ == "__main__":
     stage_projects(sys.argv)
