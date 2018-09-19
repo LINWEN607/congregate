@@ -88,7 +88,7 @@ def append_groups(groups):
             if group == g["path"]:
                 staged_groups.append(g)
     with open("%s/data/staged_groups.json" % app_path, "w") as f:
-        json.dump(staged_groups, f)
+        json.dump(staged_groups, f, indent=4)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Handle group-related tasks')

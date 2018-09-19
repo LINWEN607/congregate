@@ -16,8 +16,8 @@ Configuration
         </tr>
         {% for key, value in data.config.items() %}
             <tr>
-                <td>{{ key }}</td>
-                <td><input type = "text" value = {{ value }}></td>
+                <td class = "config_key">{{ key }}</td>
+                <td><input type = "text" class = "config_value" value = {{ value }}></td>
             </tr>
         {% endfor %}
     </table>

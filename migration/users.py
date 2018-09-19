@@ -117,7 +117,7 @@ def append_users(users):
             if user == u["username"]:
                 staged_users.append(u)
     with open("%s/data/staged_users.json" % app_path, "w") as f:
-        json.dump(staged_users, f)
+        json.dump(staged_users, f, indent=4)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Handle user-related tasks')

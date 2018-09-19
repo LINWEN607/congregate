@@ -3,6 +3,7 @@ import json
 from . import app
 from flask import request, jsonify
 from congregate.cli import stage_projects
+from congregate.cli.config import update_config
 from congregate.migration.groups import append_groups
 from congregate.migration.users import append_users
 
@@ -35,13 +36,19 @@ def add_groups():
     append_groups(groups)
     return "added %s groups" % len(groups)
 
+@app.route("/update_config", methods=['POST'])
+def update_config_post():
+    config = request.get_data()
+    update_config(config)
+    return "Updated config"
+
 def get_counts():
     total_projects = len(get_data("project_json"))
     staged_projects = len(get_data("stage"))
     total_users = len(get_data("users"))
-    staged_users = 0
+    staged_users = len(get_data("staged_users"))
     total_groups = len(get_data("groups"))
-    staged_groups = 0
+    staged_groups = len(get_data("staged_groups"))
     return {
         "Staged Projects": "%s/%s" % (staged_projects, total_projects),
         "Staged Groups": "%s/%s" % (staged_groups, total_groups),
