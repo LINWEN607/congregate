@@ -51,11 +51,7 @@ def migrate_group_info():
             api.generate_post_request(config.parent_host, config.parent_token, "groups", json.dumps(group))
         except urllib2.HTTPError, e:
             print "Group already exists"
-        try:
-            new_group = json.load(api.generate_get_request(config.parent_host, config.parent_token, "groups?search=%s" % group["name"]))
-        except urllib2.HTTPError, e:
-            print e
-            new_group = None
+        new_group = json.load(api.generate_get_request(config.parent_host, config.parent_token, "groups?search=%s" % group["path"]))
         if new_group is not None:
             if new_group[0]["name"] == group["name"]:
                 root_user_present = False

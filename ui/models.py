@@ -6,6 +6,7 @@ from congregate.cli import stage_projects
 from congregate.cli.config import update_config
 from congregate.migration.groups import append_groups
 from congregate.migration.users import append_users
+from congregate.migration.projects import migrate
 
 app_path = os.getenv("CONGREGATE_PATH")
 
@@ -41,6 +42,10 @@ def update_config_post():
     config = request.get_data()
     update_config(config)
     return "Updated config"
+
+@app.route("/migrate", methods=['GET'])
+def migrate_projects_get():
+    migrate()
 
 def get_counts():
     total_projects = len(get_data("project_json"))

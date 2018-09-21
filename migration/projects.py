@@ -141,7 +141,11 @@ def migrate():
     for f in files:
         name = f["name"]
         id = f["id"]
-        namespace = f["namespace"]
+        if conf.parent_id is not None:
+            parent_namespace = json.load(api.generate_get_request(conf.parent_host, conf.parent_token, "groups/%d" % conf.parent_id))
+            namespace = "%s/%s" % (parent_namespace["path"], f["namespace"])
+        else:
+            namespace = f["namespace"]
         if conf.location == "filesystem":
             print "Exporting %s to %s" % (name, conf.filesystem_path)
             api.generate_post_request(conf.child_host, conf.child_token, "projects/%d/export" % id, "")
