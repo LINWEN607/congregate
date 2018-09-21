@@ -37,7 +37,6 @@ elif arg == "retrieve-users":
 elif arg == "do_all":
     do_all.do_all()
 elif arg == "ui":
-    current_dir = os.getcwd()
     os.environ["FLASK_APP"] = "%s/ui" % app_path
     os.chdir(app_path)
     run_ui = "pipenv run flask run"
