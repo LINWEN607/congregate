@@ -68,7 +68,7 @@ nav ul li a:hover {
 .content table tr td{
     margin: 0;
     padding: 0.5em;
-    border-bottom: 1px solid #000;
+    border-bottom: 1px solid #ccc;
 }
 
 .content table tr td input {
@@ -93,5 +93,5 @@ nav ul li a:hover {
 }
 
 .content_wrapper {
-    border: 1px solid #000;
+    border: 1px solid;
 }

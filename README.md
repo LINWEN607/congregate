@@ -58,6 +58,6 @@ This tool covers the following processes:
 - Import those projects to the parent GitLab instance
 - Provide logs to document and monitor the process
 
-## Far Away Goal - UI integration
+## Far Away Goal - Native UI integration (Since congregate has a basic UI)
 
 The UI integration will help provide all of the features of the CLI directly within a GitLab instance and leverage Meltano for metrics.
