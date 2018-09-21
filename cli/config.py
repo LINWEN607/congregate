@@ -9,19 +9,26 @@ def config():
 
     print "##Configuring congregate"
 
-    parent_instance_host = raw_input("1. Host of parent instance (destination instance) ")
+    parent_instance_host = raw_input("%s. Host of parent instance (destination instance) " % str(len(config) + 1))
     config["parent_instance_host"] = parent_instance_host
 
-    parent_instance_token = raw_input("2. Access token to use for parent instance ")
+    parent_instance_token = raw_input("%s. Access token to use for parent instance " % str(len(config) + 1))
     config["parent_instance_token"] = parent_instance_token
 
-    child_instance_host = raw_input("3. Host of child instance (destination instance) ")
+    child_instance_host = raw_input("%s. Host of child instance (destination instance) " % str(len(config) + 1))
     config["child_instance_host"] = child_instance_host
 
-    child_instance_token = raw_input("4. Access token to use for child instance ")
+    child_instance_token = raw_input("%s. Access token to use for child instance " % str(len(config) + 1))
     config["child_instance_token"] = child_instance_token
 
-    location = raw_input("5. Staging location type for exported projects? (default: filesystem) ")
+    parent_id = raw_input("Are you migrating the entire instance to a group? For example, migrating to our SaaS solution? (default: no)")
+    if parent_id is None:
+        pass
+    else:
+        parent_id = raw_input("%s. Please input the parent group ID (You can find this in the parent group -> settings -> general)" % str(len(config) + 1))
+        config["parent_id"] = int(parent_id)
+
+    location = raw_input("%s. Staging location type for exported projects? (default: filesystem) " % str(len(config) + 1))
     if location is None:
         config["location"] = "filesystem"
         location = "filesystem"
@@ -29,19 +36,20 @@ def config():
         config["location"] = location
 
     if location == "filesystem":
-        path = raw_input("6. Absolute path for exported projects? (default: %s) " % os.getcwd())
+        path = raw_input("%s. Absolute path for exported projects? (default: %s) " % (str(len(config) + 1), os.getcwd()))
         if path is None:
             config["path"] = os.getcwd()
         else:
             config["path"] = path
+
     elif location.lower() == "aws":
-        bucket_name = raw_input("6. Bucket name: ")
+        bucket_name = raw_input("%s. Bucket name: " % str(len(config) + 1))
         config["bucket_name"] = bucket_name
-        access_key = raw_input("7. Access key for S3 bucket: ")
+        access_key = raw_input("%s. Access key for S3 bucket: " % str(len(config) + 1))
         config["access_key"] = access_key
         command = "aws configure set aws_access_key_id %s" % access_key
         subprocess.call(command.split(" "))
-        secret_key = raw_input("8. Secret key for S3 bucket: ")
+        secret_key = raw_input("%s. Secret key for S3 bucket: " % str(len(config) + 1))
         config["secret_key"] = secret_key
         command = "aws configure set aws_secret_access_key %s" % secret_key
         subprocess.call(command.split(" "))

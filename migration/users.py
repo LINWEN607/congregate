@@ -9,9 +9,9 @@ import sys
 import json
 import argparse
 try:
-    from helpers import conf, api
+    from helpers import conf, api, misc_utils
 except ImportError:
-    from congregate.helpers import conf, api
+    from congregate.helpers import conf, api, misc_utils
 
 app_path = os.getenv("CONGREGATE_PATH")
 
@@ -117,7 +117,7 @@ def append_users(users):
             if user == u["username"]:
                 staged_users.append(u)
     with open("%s/data/staged_users.json" % app_path, "w") as f:
-        json.dump(staged_users, f, indent=4)
+        json.dump(misc_utils.remove_dupes(staged_users), f, indent=4)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Handle user-related tasks')
