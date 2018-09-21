@@ -47,6 +47,7 @@ pipenv shell
 - `retrieve-groups`: Retrieve groups from child instance. This is bundled into `list`
 - `retrieve-users`: Retrieve users from child instance. This is bundled into `list`
 - `do_all`: Performs configuration, project staging, and migration
+- `ui`: Deploys UI to localhost:5000
 
 ## Major Goal - CLI Tool
 
