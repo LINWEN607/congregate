@@ -10,8 +10,11 @@ import urllib2
 import json
 import sys
 import subprocess
-from helpers import conf
-from helpers import api
+try:
+    from helpers import conf, api
+except ImportError:
+    from congregate.helpers import conf, api
+
 
 app_path = os.getenv("CONGREGATE_PATH")
 

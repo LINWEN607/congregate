@@ -1,0 +1,23 @@
+<!doctype html>
+<title>{% block title %}{% endblock %}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script src = "{{ url_for('static', filename='congregate.js') }}"></script>
+<div class = "header">
+    <h1>Congregate by GitLab - {% block header %}{% endblock %}</h1>
+</div>
+<nav>
+    <ul>
+        <li><a href = {{ url_for('home_page') }}>Home</a></li>
+        <li><a href = {{ url_for('project_page') }}>Projects</a></li>
+        <li><a href = {{ url_for('group_page') }}>Groups</a></li>
+        <li><a href = {{ url_for('user_page') }}>Users</a></li>
+        <li><a href = {{ url_for('config_page') }}>Config</a></li>
+    </ul>
+</nav>
+<section class="content">
+  {% block content %}{% endblock %}
+  <div class = "button_wrapper">
+        <button id = {% block button_id %}{% endblock %} class = "button">{% block button_label %}{% endblock %}</button>
+    </div>
+</section>

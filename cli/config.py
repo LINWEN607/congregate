@@ -54,5 +54,12 @@ def config():
 
     print "Congregate has been successfully configured"
 
+def update_config(config_data):
+    with open("%s/data/config.json" % app_path, "r") as f:
+        data = json.load(f)
+    data["config"] = json.loads(config_data)
+    with open("%s/data/config.json" % app_path, "w") as f:
+        json.dump(data, f, indent=4)
+
 if __name__ == "__main__":
     config()

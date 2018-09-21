@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}
+Congregate by GitLab
+{% endblock %}
+
+{% block header %}
+Home
+{% endblock %}
+
+{% block content %}
+    <div class = "content_wrapper">
+        <ul><h1>Status</h1>
+            {% for key, value in data.items() %}
+                <li>{{ key }}: {{ value }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+{% endblock %}
+
+{% block button_id %}migrate_button{% endblock %}
+{% block button_label %}Migrate{% endblock %}

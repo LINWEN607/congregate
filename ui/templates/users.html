@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block title %}
+Congregate by GitLab
+{% endblock %}
+
+{% block header %}
+Users
+{% endblock %}
+
+{% block content %}
+  <table id = "users_table">
+    <tr>
+        <th><input id = "select_all" type = "checkbox">Staged</th>
+        <th>Name</th>
+        <th>Username</th>
+        <th>Email</th>
+    </tr>
+  {% for d in data %}
+    <tr>
+        <td><input id = "{{ d.username }}" type = "checkbox" class = "checkbox users_checkbox"></td>
+        <td>{{ d.name }}</td>
+        <td>{{ d.username }}</td>
+        <td>{{ d.email }}</td>
+    </tr>
+  {% endfor %}
+  </table>
+{% endblock %}
+
+{% block button_id %}stage_users{% endblock %}
+{% block button_label %}Stage{% endblock %}

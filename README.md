@@ -47,6 +47,7 @@ pipenv shell
 - `retrieve-groups`: Retrieve groups from child instance. This is bundled into `list`
 - `retrieve-users`: Retrieve users from child instance. This is bundled into `list`
 - `do_all`: Performs configuration, project staging, and migration
+- `ui`: Deploys UI to localhost:5000
 
 ## Major Goal - CLI Tool
 
@@ -58,6 +59,6 @@ This tool covers the following processes:
 - Import those projects to the parent GitLab instance
 - Provide logs to document and monitor the process
 
-## Far Away Goal - UI integration
+## Far Away Goal - Native UI integration (Since congregate has a basic UI)
 
 The UI integration will help provide all of the features of the CLI directly within a GitLab instance and leverage Meltano for metrics.

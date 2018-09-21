@@ -1,0 +1,97 @@
+body {
+    margin: 0;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+.header {
+    padding: 0.5em;
+    background-color: #00cc66;
+}
+
+.header h1 {
+    width: 80%;
+    margin: 0 auto;
+    padding: 0.5em;
+}
+
+nav {
+    width: 80%;
+    margin: 0 auto;
+}
+
+nav div {
+    display: inline;
+}
+
+nav ul {
+    padding: 0;
+    margin-bottom: 0.95em;
+}
+
+nav ul li {
+    display: inline-block;
+}
+
+nav ul li a {
+    padding: 1em;
+    border-top: 1px solid #000;
+    border-right: 1px solid #000;
+    border-left: 1px solid #000;
+    color: #000;
+    text-decoration: none;
+}
+
+nav ul li a:hover {
+    text-decoration: underline;
+}
+
+.content {
+    width: 80%;
+    margin: 0 auto;
+}
+
+.content table {
+    border: 1px solid #000;
+    border-spacing: 0;
+    width: 100%;
+    table-layout: auto;
+    margin-bottom: 4em;
+}
+
+.content table tr th {
+    margin: 0;
+    padding: 0.5em;
+    border-bottom: 2px solid #000;
+    text-align: left;
+}
+
+.content table tr td{
+    margin: 0;
+    padding: 0.5em;
+    border-bottom: 1px solid #ccc;
+}
+
+.content table tr td input {
+    width: 100%;
+}
+
+.button_wrapper {
+    position: fixed;
+    top: 94%;
+    width: 80%;
+    background-color: rgba(0,0,0, 0.5);
+    padding: 1em 0;
+}
+
+.button {
+    display: block;
+    margin: 0 auto;
+    cursor: pointer;
+    width: 15%;
+    height: 10%;
+    font-size: 1.25em;
+}
+
+.content_wrapper {
+    border: 1px solid;
+}

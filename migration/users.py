@@ -8,7 +8,10 @@ import os
 import sys
 import json
 import argparse
-from helpers import api, conf
+try:
+    from helpers import conf, api
+except ImportError:
+    from congregate.helpers import conf, api
 
 app_path = os.getenv("CONGREGATE_PATH")
 
@@ -103,6 +106,18 @@ def migrate_user_info():
     
     for user in users:
         api.generate_post_request(parent_host, parent_token, "users", json.dumps(user))
+
+def append_users(users):
+    with open("%s/data/users.json" % app_path, "r") as f:
+        user_file = json.load(f)
+    with open("%s/data/staged_users.json" % app_path, "r") as f:
+        staged_users = json.load(f)
+    for user in users:
+        for u in user_file:
+            if user == u["username"]:
+                staged_users.append(u)
+    with open("%s/data/staged_users.json" % app_path, "w") as f:
+        json.dump(staged_users, f, indent=4)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Handle user-related tasks')

@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}
+Congregate by GitLab
+{% endblock %}
+
+{% block header %}
+Configuration
+{% endblock %}
+
+{% block content %}
+    <table>
+        <tr>
+            <th>Key</th>
+            <th>Value</th>
+        </tr>
+        {% for key, value in data.config.items() %}
+            <tr>
+                <td class = "config_key">{{ key }}</td>
+                <td><input type = "text" class = "config_value" value = {{ value }}></td>
+            </tr>
+        {% endfor %}
+    </table>
+{% endblock %}
+
+{% block button_id %}update_config_button{% endblock %}
+{% block button_label %}Update{% endblock %}
