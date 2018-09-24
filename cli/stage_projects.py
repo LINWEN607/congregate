@@ -107,9 +107,9 @@ def stage_projects(projects_to_stage):
             
             if project["namespace"]["kind"] == "group":
                 group_to_stage = project["namespace"]["path"]
-                if group_to_stage["parent_id"] is None:
+                if rewritten_groups[group_to_stage]["parent_id"] is None:
                     if config.parent_id is not None:
-                        group_to_stage["parent_id"] = config.parent_id
+                        rewritten_groups[group_to_stage]["parent_id"] = config.parent_id
                 staged_groups.append(rewritten_groups[group_to_stage])
                 if len(rewritten_groups[group_to_stage]["members"]) > 0:
                     for member in rewritten_groups[group_to_stage]["members"]:

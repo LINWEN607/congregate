@@ -46,6 +46,7 @@ def update_config_post():
 @app.route("/migrate", methods=['GET'])
 def migrate_projects_get():
     migrate()
+    return "Migrated projects"
 
 def get_counts():
     total_projects = len(get_data("project_json"))
