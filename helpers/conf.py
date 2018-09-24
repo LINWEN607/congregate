@@ -57,4 +57,8 @@ class ig:
     @property
     def filesystem_path(self):
         return self.config["path"]
+
+    @property
+    def parent_id(self):
+        return self.config["parent_id"]
     

@@ -12,13 +12,20 @@ import argparse
 import urllib
 import urllib2
 import time
-from helpers import api
-from helpers.conf import ig
-from migration import users, groups
-from aws.presigned import generate_presigned_url
-from aws.import_from_s3 import import_from_s3
+try:
+    from helpers import conf, api, misc_utils
+    from migration import users, groups
+    from aws.presigned import generate_presigned_url
+    from aws.import_from_s3 import import_from_s3
+except ImportError:
+    from congregate.helpers import conf, api, misc_utils
+    from congregate.migration import users, groups
+    from congregate.aws.presigned import generate_presigned_url
+    from congregate.aws.import_from_s3 import import_from_s3
 
-conf = ig()
+
+
+conf = conf.ig()
 
 app_path = os.getenv("CONGREGATE_PATH")
 
@@ -49,7 +56,18 @@ def import_project(project):
     if isinstance(project, str):
         project = json.loads(project)
     name = project["name"]
-    namespace = project["namespace"]
+    user_project = False
+    for member in project["members"]:
+        if project["namespace"] == member["username"]:
+            user_project = True
+            namespace = project["namespace"]
+            break
+    if not user_project:
+        if conf.parent_id is not None:
+            response = json.load(api.generate_get_request(conf.parent_host, conf.parent_token, "groups/%d" % conf.parent_id))
+            namespace = "%s/%s" % (response["path"], project["namespace"])
+        else:
+            namespace = project["namespace"]
     presigned_get_url = generate_presigned_url(name + ".tar.gz", "GET")
     exported = False
     import_response = None
@@ -141,7 +159,11 @@ def migrate():
     for f in files:
         name = f["name"]
         id = f["id"]
-        namespace = f["namespace"]
+        if conf.parent_id is not None:
+            parent_namespace = json.load(api.generate_get_request(conf.parent_host, conf.parent_token, "groups/%d" % conf.parent_id))
+            namespace = "%s/%s" % (parent_namespace["path"], f["namespace"])
+        else:
+            namespace = f["namespace"]
         if conf.location == "filesystem":
             print "Exporting %s to %s" % (name, conf.filesystem_path)
             api.generate_post_request(conf.child_host, conf.child_token, "projects/%d/export" % id, "")

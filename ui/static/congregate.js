@@ -135,4 +135,17 @@ function register_events() {
             });
         });
     }
+
+    var stage_button = document.getElementById("migrate_button");
+    if (stage_button) {
+        stage_button.addEventListener("click", function() {
+            $.ajax({
+                type: "GET",
+                url: "migrate",
+                success: function(data) {
+                    console.log(data);
+                }
+            });
+        });
+    }
 }

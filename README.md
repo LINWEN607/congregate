@@ -49,6 +49,10 @@ pipenv shell
 - `do_all`: Performs configuration, project staging, and migration
 - `ui`: Deploys UI to localhost:5000
 
+## Important Note
+
+The GitLab import/export API versions need to match between instances. [This documentation](https://docs.gitlab.com/ee/user/project/settings/import_export.html) shows which versions of the API exist in each version of GitLab
+
 ## Major Goal - CLI Tool
 
 Assist with migrating contents of multiple GitLab instances into a single (monolithic?) GitLab instance.

@@ -11,9 +11,9 @@ import json
 import sys
 import subprocess
 try:
-    from helpers import conf, api
+    from helpers import conf, api, misc_utils
 except ImportError:
-    from congregate.helpers import conf, api
+    from congregate.helpers import conf, api, misc_utils
 
 
 app_path = os.getenv("CONGREGATE_PATH")
@@ -36,6 +36,9 @@ def stage_projects(projects_to_stage):
     with open("%s/data/groups.json" % app_path, "r") as f:
         groups = json.load(f)
 
+    with open("%s/data/users.json" % app_path, "r") as f:
+                users = json.load(f)
+
     # Rewriting projects to retrieve objects by ID more efficiently
     rewritten_projects = {}
     for i in range(len(projects)):
@@ -49,6 +52,12 @@ def stage_projects(projects_to_stage):
         group_name = groups[i]["path"]
         rewritten_groups[group_name] = new_obj
 
+    rewritten_users = {}
+    for i in range(len(users)):
+        new_obj = users[i]
+        id_num = users[i]["username"]
+        rewritten_users[id_num] = new_obj
+
     if projects_to_stage[0] == "all" or projects_to_stage[0] == ".":
         for i in range(len(projects)):
             obj = {}
@@ -59,14 +68,7 @@ def stage_projects(projects_to_stage):
             obj["visibilty"] = projects[i]["visibility"]
             response = api.generate_get_request(config.child_host, config.child_token, "projects/%d/members" % int(projects[i]["id"]))
             members = json.loads(response.read())
-            with open("%s/data/users.json" % app_path, "r") as f:
-                users = json.load(f)
             
-            rewritten_users = {}
-            for i in range(len(users)):
-                new_obj = users[i]
-                id_num = users[i]["username"]
-                rewritten_users[id_num] = new_obj
             for member in members:
                 if member["username"] != "root":
                     staged_users.append(rewritten_users[member["username"]])
@@ -98,32 +100,31 @@ def stage_projects(projects_to_stage):
             obj["visibilty"] = project["visibility"]
             response = api.generate_get_request(config.child_host, config.child_token, "projects/%d/members" % int(project["id"]))
             members = json.loads(response.read())
-            with open("%s/data/users.json" % app_path, "r") as f:
-                users = json.load(f)
-            
-            rewritten_users = {}
-            for i in range(len(users)):
-                new_obj = users[i]
-                id_num = users[i]["username"]
-                rewritten_users[id_num] = new_obj
             for member in members:
                 if member["username"] != "root":
+                    print "stagimg %s" % rewritten_users[member["username"]]
                     staged_users.append(rewritten_users[member["username"]])
             
             if project["namespace"]["kind"] == "group":
                 group_to_stage = project["namespace"]["path"]
+                if rewritten_groups[group_to_stage]["parent_id"] is None:
+                    if config.parent_id is not None:
+                        rewritten_groups[group_to_stage]["parent_id"] = config.parent_id
                 staged_groups.append(rewritten_groups[group_to_stage])
+                if len(rewritten_groups[group_to_stage]["members"]) > 0:
+                    for member in rewritten_groups[group_to_stage]["members"]:
+                        staged_users.append(rewritten_users[member["username"]])
 
             obj["members"] = members
             staging.append(obj)
 
     if (len(staging) > 0):
         with open("%s/data/stage.json" % app_path, "wb") as f:
-            f.write(json.dumps(staging, indent=4))
+            f.write(json.dumps(misc_utils.remove_dupes(staging), indent=4))
         with open("%s/data/staged_users.json" % app_path, "wb") as f:
-            f.write(json.dumps(staged_users, indent=4))
+            f.write(json.dumps(misc_utils.remove_dupes(staged_users), indent=4))
         with open("%s/data/staged_groups.json" % app_path, "wb") as f:
-            f.write(json.dumps(staged_groups, indent=4))
+            f.write(json.dumps(misc_utils.remove_dupes(staged_groups), indent=4))
 
 if __name__ == "__main__":
     stage_projects(sys.argv)

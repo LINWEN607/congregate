@@ -9,8 +9,11 @@ import urllib
 import json
 import sys
 import os
-from helpers import conf
-
+try:
+    from helpers import conf
+except ImportError:
+    from congregate.helpers import conf
+    
 conf = conf.ig()
 
 def import_from_s3(name, namespace, presigned_url):

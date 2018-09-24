@@ -11,6 +11,7 @@ import os, sys, subprocess
 from helpers import conf
 from migration import users, groups, projects
 from cli import list_projects, stage_projects, do_all
+from cli import config as configure
 
 app_path = os.getenv("CONGREGATE_PATH")
 config = conf.ig()
@@ -25,7 +26,7 @@ cmd_args = sys.argv[2:]
 if arg == "list":
     list_projects.list_projects()
 elif arg == "config":
-    config.config()
+    configure.config()
 elif arg == "stage":
     stage_projects.stage_projects(cmd_args)
 elif arg == "migrate":
