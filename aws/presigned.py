@@ -7,7 +7,10 @@ Copyright (c) 2018 - GitLab
 import boto3
 from botocore.client import Config
 import sys
-from helpers import conf
+try:
+    from helpers import conf
+except ImportError:
+    from congregate.helpers import conf
 
 s3 = boto3.client('s3', config=Config(signature_version='s3v4'))
 conf = conf.ig()

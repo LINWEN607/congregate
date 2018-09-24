@@ -12,13 +12,20 @@ import argparse
 import urllib
 import urllib2
 import time
-from helpers import api
-from helpers.conf import ig
-from migration import users, groups
-from aws.presigned import generate_presigned_url
-from aws.import_from_s3 import import_from_s3
+try:
+    from helpers import conf, api, misc_utils
+    from migration import users, groups
+    from aws.presigned import generate_presigned_url
+    from aws.import_from_s3 import import_from_s3
+except ImportError:
+    from congregate.helpers import conf, api, misc_utils
+    from congregate.migration import users, groups
+    from congregate.aws.presigned import generate_presigned_url
+    from congregate.aws.import_from_s3 import import_from_s3
 
-conf = ig()
+
+
+conf = conf.ig()
 
 app_path = os.getenv("CONGREGATE_PATH")
 
