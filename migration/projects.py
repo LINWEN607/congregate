@@ -56,11 +56,18 @@ def import_project(project):
     if isinstance(project, str):
         project = json.loads(project)
     name = project["name"]
-    if conf.parent_id is not None:
-        response = json.load(api.generate_get_request(conf.parent_host, conf.parent_token, "groups/%d" % conf.parent_id))
-        namespace = "%s/%s" % (response["path"], project["namespace"])
-    else:
-        namespace = project["namespace"]
+    user_project = False
+    for member in project["members"]:
+        if project["namespace"] == member["username"]:
+            user_project = True
+            namespace = project["namespace"]
+            break
+    if not user_project:
+        if conf.parent_id is not None:
+            response = json.load(api.generate_get_request(conf.parent_host, conf.parent_token, "groups/%d" % conf.parent_id))
+            namespace = "%s/%s" % (response["path"], project["namespace"])
+        else:
+            namespace = project["namespace"]
     presigned_get_url = generate_presigned_url(name + ".tar.gz", "GET")
     exported = False
     import_response = None
