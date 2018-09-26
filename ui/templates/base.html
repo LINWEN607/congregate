@@ -1,23 +1,58 @@
 <!doctype html>
-<title>{% block title %}{% endblock %}</title>
-<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-<script src = "{{ url_for('static', filename='congregate.js') }}"></script>
-<div class = "header">
-    <h1>Congregate by GitLab - {% block header %}{% endblock %}</h1>
-</div>
-<nav>
-    <ul>
-        <li><a href = {{ url_for('home_page') }}>Home</a></li>
-        <li><a href = {{ url_for('project_page') }}>Projects</a></li>
-        <li><a href = {{ url_for('group_page') }}>Groups</a></li>
-        <li><a href = {{ url_for('user_page') }}>Users</a></li>
-        <li><a href = {{ url_for('config_page') }}>Config</a></li>
-    </ul>
-</nav>
-<section class="content">
-  {% block content %}{% endblock %}
-  <div class = "button_wrapper">
-        <button id = {% block button_id %}{% endblock %} class = "button">{% block button_label %}{% endblock %}</button>
+<head>
+    <title>{% block title %}{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap/css/bootstrap.min.css') }}">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="{{ url_for('static', filename='bootstrap/js/bootstrap.min.js') }}"></script>
+    <script src = "{{ url_for('static', filename='congregate.js') }}"></script>
+</head>
+<body>
+    <div class="alert header">
+        <div class="row">
+            <div class="col-2"></div>
+            <div class="col-8">
+                <h2>Congregate by GitLab</h2>
+            </div>
+        </div>
     </div>
-</section>
+    <nav>
+        {% set navigation_bar = [
+            (url_for('home_page'), 'home', 'Home'),
+            (url_for('project_page'), 'projects', 'Projects'),
+            (url_for('group_page'), 'groups', 'Groups'),
+            (url_for('user_page'), 'users', 'Users'),
+            (url_for('config_page'), 'config', 'Config')
+        ] -%}
+        
+        {% set active_page = active_page|default('index') -%}
+        <ul class="nav nav-pills nav-fill">
+            {% for href, id, caption in navigation_bar %}
+            <li class="nav-item">
+                <a {% if id == active_page %} class="nav-link active" {% else %} class="nav-link" {% endif %} href="{{ href|e }}">{{ caption|e }}</a>
+            </li>
+            {% endfor %}
+        </ul>
+    </nav>
+    <section class="content">
+        {% block content %}{% endblock %}
+    </section>
+
+    <footer class="footer">
+        <div class="container">
+            <button id = {% block button_id %}{% endblock %} class="btn btn-warning btn-lg">{% block button_label %}{% endblock %}</button>
+        </div>
+    </footer>
+
+    <script>
+        jQuery(document).ready(function($) {
+            $(".clickable-row").click(function(e) {
+                let id = $(this).data("thisid");
+                let chk = $('#' + id);
+                if (!(id == e.target.id)) {
+                    chk.prop("checked", !chk.prop("checked"))
+                }
+            });
+        });
+    </script>
+</body>

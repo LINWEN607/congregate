@@ -1,26 +1,39 @@
 {% extends "base.html" %}
+{% set active_page = "config" %}
 
 {% block title %}
 Congregate by GitLab
 {% endblock %}
 
-{% block header %}
-Configuration
-{% endblock %}
-
 {% block content %}
-    <table>
-        <tr>
-            <th>Key</th>
-            <th>Value</th>
-        </tr>
-        {% for key, value in data.config.items() %}
-            <tr>
-                <td class = "config_key">{{ key }}</td>
-                <td><input type = "text" class = "config_value" value = {{ value }}></td>
-            </tr>
-        {% endfor %}
-    </table>
+
+    <div class="card">
+        <div class="card-header">
+            <h2>Config</h2>
+        </div>
+        <div class="card-body">
+            <table class="table table-striped table-bordered table-hover">
+                <thead class="thead-light">
+                <tr>
+                    <th scope="col">Key</th>
+                    <th scope="col">Value</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for key, value in data.config.items() %}
+                    <tr>
+                        <td class = "config_key">{{ key }}</td>
+                        <td>
+                            <div class="form-group">
+                            <input type = "text" class = "config_value form-control" value = {{ value }}>
+                            </div>  
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 {% endblock %}
 
 {% block button_id %}update_config_button{% endblock %}
