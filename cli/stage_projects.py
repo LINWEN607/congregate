@@ -49,7 +49,7 @@ def stage_projects(projects_to_stage):
     rewritten_groups = {}
     for i in range(len(groups)):
         new_obj = groups[i]
-        group_name = groups[i]["path"]
+        group_name = groups[i]["id"]
         rewritten_groups[group_name] = new_obj
 
     rewritten_users = {}
@@ -106,11 +106,14 @@ def stage_projects(projects_to_stage):
                     staged_users.append(rewritten_users[member["username"]])
             
             if project["namespace"]["kind"] == "group":
-                group_to_stage = project["namespace"]["path"]
+                group_to_stage = project["namespace"]["id"]
                 if rewritten_groups[group_to_stage]["parent_id"] is None:
                     if config.parent_id is not None:
                         rewritten_groups[group_to_stage]["parent_id"] = config.parent_id
                 staged_groups.append(rewritten_groups[group_to_stage])
+                if "child_ids" in rewritten_groups[group_to_stage]:
+                    for sub in rewritten_groups[group_to_stage]["child_ids"]:
+                        staged_groups.append(rewritten_groups[sub])
                 if len(rewritten_groups[group_to_stage]["members"]) > 0:
                     for member in rewritten_groups[group_to_stage]["members"]:
                         staged_users.append(rewritten_users[member["username"]])

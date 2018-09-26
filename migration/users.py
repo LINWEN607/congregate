@@ -8,6 +8,7 @@ import os
 import sys
 import json
 import argparse
+from urllib2 import HTTPError
 try:
     from helpers import conf, api, misc_utils
 except ImportError:
@@ -105,7 +106,11 @@ def migrate_user_info():
         users = json.load(f)
     
     for user in users:
-        api.generate_post_request(parent_host, parent_token, "users", json.dumps(user))
+        try:
+            api.generate_post_request(parent_host, parent_token, "users", json.dumps(user))
+        except HTTPError, e:
+            if e.code == 409:
+                print "User already exists"
 
 def append_users(users):
     with open("%s/data/users.json" % app_path, "r") as f:

@@ -35,7 +35,7 @@ parent_token = conf.parent_token
 def export_project(project):
     if isinstance(project, str):
         project = json.loads(project)
-    name = project["name"] + ".tar.gz"
+    name = "%s_%s.tar.gz" % (project["namespace"], project["name"])
     presigned_put_url = generate_presigned_url(name, "PUT")
     upload = [
         "upload[http_method]=PUT",
@@ -56,6 +56,7 @@ def import_project(project):
     if isinstance(project, str):
         project = json.loads(project)
     name = project["name"]
+    filename = "%s_%s.tar.gz" % (project["namespace"], project["name"])
     user_project = False
     for member in project["members"]:
         if project["namespace"] == member["username"]:
@@ -68,34 +69,39 @@ def import_project(project):
             namespace = "%s/%s" % (response["path"], project["namespace"])
         else:
             namespace = project["namespace"]
-    presigned_get_url = generate_presigned_url(name + ".tar.gz", "GET")
+    presigned_get_url = generate_presigned_url(filename, "GET")
     exported = False
     import_response = None
 
     while not exported:
         import_response = import_from_s3(name, namespace, presigned_get_url)
+        import_id = None
         if import_response is not None:
-            if "\"message\":" in import_response:
-                print import_response
-                break
             print import_response
-            import_id = json.loads(import_response)["id"]
-            status = api.generate_get_request(conf.parent_host, conf.parent_token, "projects/%d/import" % import_id)
-            if isinstance(status, str):
-                status = json.load(status)
-            else:
-                status = json.loads(status.read())
-            if status["import_status"] == "finished":
-                print "%s has been exported and import is occurring" % name
-                exported = True
+            import_response = json.loads(import_response)
+            if import_response.get("id") is not None:
+                import_id = import_response["id"]
+            elif import_response.get("message") is not None:
+                if "Name has already been taken" in import_response.get("message"):
+                    search_response = json.load(api.generate_get_request(conf.parent_host, conf.parent_token, "projects?search=%s" % project["name"]))
+                    if len(search_response) > 0:
+                        for proj in search_response:
+                            if proj["name"] == project["name"] and proj["namespace"]["name"] == project["namespace"]:
+                                import_id = proj["id"]
+                                break
+            if import_id is not None:
+                status = json.load(api.generate_get_request(conf.parent_host, conf.parent_token, "projects/%d/import" % import_id))
+                if status["import_status"] == "finished":
+                    print "%s has been exported and import is occurring" % name
+                    exported = True
+                elif status["import_status"] == "failed":
+                    print "%s failed to import" % name
+                    exported = True
             else:
                 print "Waiting on %s to export" % name
                 time.sleep(0.5)
-        else:
-            print "Waiting on %s to export" % name
-            time.sleep(0.5)
     
-    return import_response
+    return import_id
 
 def migrate_project_info():
     with open("%s/data/stage.json" % app_path, "r") as f:
@@ -125,25 +131,25 @@ def migrate_project_info():
                     print "removing root user from project"
                     api.generate_delete_request(parent_host, parent_token, "projects/%d/members/1" % new_project[0]["id"])
 
-def migrate_variables(import_response, id):
+def migrate_variables(import_id, id):
     response = api.generate_get_request(conf.child_host, conf.child_token, "projects/%d/variables" % id)
     response_json = json.loads(response.read())
 
     for i in range(len(response_json)):
         appended_data = response_json[i]
         appended_data["environment_scope"] = "*"
-        wrapped_data = urllib.urlencode(appended_data)
-        api.generate_post_request(conf.parent_host, conf.parent_token, "projects/%d/variables" % import_response["id"], wrapped_data)
+        wrapped_data = json.dumps(appended_data)
+        api.generate_post_request(conf.parent_host, conf.parent_token, "projects/%d/variables" % import_id, wrapped_data)
 
 def migrate_projects(project_json):
     if isinstance(project_json, str):
         project_json = json.loads(project_json)
     export_project(project_json)
-    import_json = import_project(project_json)
+    import_id = import_project(project_json)
     print project_json
-    print import_json
-    if import_json is not None:
-        migrate_variables(import_json, project_json["id"])
+    print import_id
+    if import_id is not None:
+        migrate_variables(import_id, project_json["id"])
         migrate_project_info()
 
 def migrate():
