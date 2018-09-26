@@ -107,6 +107,7 @@ def migrate_user_info():
     
     for user in users:
         try:
+            user["skip_confirmation"] = True
             api.generate_post_request(parent_host, parent_token, "users", json.dumps(user))
         except HTTPError, e:
             if e.code == 409:
