@@ -55,6 +55,16 @@ The GitLab import/export API versions need to match between instances. [This doc
 
 ### Development Environment Setup
 
+**Live reloading for UI development and backend development without a debugger**
+
+You will need to turn on debugging in the flask app to see a mostly live reload of the UI. Create the following environment variable before deploying the UI
+
+```bash
+export FLASK_DEBUG=1
+```
+
+For the UI, you will still need to save the file in your editor and refresh the page, but it's better than restarting flask every time. The app will live reload every time a .py file is changed and saved.
+
 **Configuring VS Code for Debugging**
 
 Refer to [this how-to](https://code.visualstudio.com/docs/python/debugging) for setting up the base debugging settings for a python app in VS Code. Then replace the default flask configuration for this:
@@ -79,6 +89,8 @@ Refer to [this how-to](https://code.visualstudio.com/docs/python/debugging) for 
 }
 
 ```
+
+To reload the app in debugging mode, you will need to click the `refresh` icon in VS code. Currently VS code doesn't support live reloading flask apps on save.
 
 ## Major Goal - CLI Tool
 
