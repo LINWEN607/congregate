@@ -49,13 +49,13 @@ Note: Instead of exporting an environment variable within your shell session, yo
 - `do_all`: Performs configuration, project staging, and migration
 - `ui`: Deploys UI to localhost:5000
 
-#### Important Note
+**Important Note**
 
 The GitLab import/export API versions need to match between instances. [This documentation](https://docs.gitlab.com/ee/user/project/settings/import_export.html) shows which versions of the API exist in each version of GitLab
 
 ### Development Environment Setup
 
-#### Configuring VS Code for Debugging
+**Configuring VS Code for Debugging**
 
 Refer to [this how-to](https://code.visualstudio.com/docs/python/debugging) for setting up the base debugging settings for a python app in VS Code. Then replace the default flask configuration for this:
 
