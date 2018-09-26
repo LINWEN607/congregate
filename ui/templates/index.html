@@ -1,18 +1,23 @@
 {% extends "base.html" %}
+{% set active_page = "home" %}
 
 {% block title %}
 Congregate by GitLab
 {% endblock %}
 
-{% block header %}
-Home
-{% endblock %}
-
 {% block content %}
-    <div class = "content_wrapper">
-        <ul><h1>Status</h1>
+    <div class="card">
+        <div class="card-header">
+            <h2>Status</h2>
+        </div>
+        <ul class="list-group list-group-flush">
             {% for key, value in data.items() %}
-                <li>{{ key }}: {{ value }}</li>
+                <li class="list-group-item">
+                    <h5 class="card-title">
+                        {{ key }}: 
+                        <span class="badge badge-secondary">{{ value }}</span>
+                    </h5>
+                </li>
             {% endfor %}
         </ul>
     </div>
