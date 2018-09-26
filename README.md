@@ -24,6 +24,8 @@ pipenv shell
 
 ### Installing Congregate (end-user)
 
+From **tar.gz**:
+
 1. Navigate to the CI/CD section of this project
 2. Download the latest tar.gz of congregate
 3. Run the following commands:
@@ -33,6 +35,26 @@ tar -zxvf congregate-${version}.tar.gz
 export CONGREGATE_PATH=/path/to/congregate
 cp congregate /usr/local/bin
 ```
+
+From **source**:
+
+1. Clone this repo
+2. Run the following commands:
+
+```bash
+cd /path/to/congregate
+export CONGREGATE_PATH=/path/to/congregate
+cp congregate /usr/local/bin
+```
+
+Run the following commands to configure congregate and retrieve info from the child instance:
+
+```bash
+congregate config
+congregate list
+```
+
+With congregate configured and projects, groups, and users retrieved, you should be ready to use the tool or test your changes.
 
 Note: Instead of exporting an environment variable within your shell session, you can also add `CONGREGATE_PATH` to `bash_profile` or an init.d script. This is a bit more of a permanent solution than just exporting the variable within the session. 
 
@@ -54,6 +76,8 @@ Note: Instead of exporting an environment variable within your shell session, yo
 The GitLab import/export API versions need to match between instances. [This documentation](https://docs.gitlab.com/ee/user/project/settings/import_export.html) shows which versions of the API exist in each version of GitLab
 
 ### Development Environment Setup
+
+Once congregate is installed
 
 **Live reloading for UI development and backend development without a debugger**
 
