@@ -27,5 +27,15 @@ def list_projects():
     groups.retrieve_group_info(quiet=True)
     users.retrieve_user_info(quiet=True)
 
+    staged_files = ["stage", "staged_groups", "staged_users"]
+
+    for filename in staged_files:
+        write_empty_file(filename)
+
+def write_empty_file(filename):
+    if not os.path.isfile("%s/data/%s.json" % (app_path, filename)):
+        with open("%s/data/%s.json" % (app_path, filename), "w") as f:
+            f.write("[]")
+
 if __name__ == "__main__":
     list_projects()

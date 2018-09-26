@@ -2,11 +2,19 @@ import os
 import json
 from . import app
 from flask import request, jsonify
-from congregate.cli import stage_projects
-from congregate.cli.config import update_config
-from congregate.migration.groups import append_groups
-from congregate.migration.users import append_users
-from congregate.migration.projects import migrate
+
+try:
+    from congregate.cli import stage_projects
+    from congregate.cli.config import update_config
+    from congregate.migration.groups import append_groups
+    from congregate.migration.users import append_users
+    from congregate.migration.projects import migrate
+except ImportError:
+    from cli import stage_projects
+    from cli.config import update_config
+    from migration.groups import append_groups
+    from migration.users import append_users
+    from migration.projects import migrate
 
 app_path = os.getenv("CONGREGATE_PATH")
 

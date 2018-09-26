@@ -12,7 +12,17 @@ Come together, right now
 
 ## Setup
 
-### Installing Congregate
+### Install & Use PipEnv (required for end-user and development setups)
+
+```bash
+pip install pipenv
+# install depdencies from Pipfile
+pipenv install
+# start up python virtualenv
+pipenv shell
+```
+
+### Installing Congregate (end-user)
 
 1. Navigate to the CI/CD section of this project
 2. Download the latest tar.gz of congregate
@@ -26,17 +36,7 @@ cp congregate /usr/local/bin
 
 Note: Instead of exporting an environment variable within your shell session, you can also add `CONGREGATE_PATH` to `bash_profile` or an init.d script. This is a bit more of a permanent solution than just exporting the variable within the session. 
 
-### Install & Use PipEnv
-
-```bash
-pip install pipenv
-# install depdencies from Pipfile
-pipenv install
-# start up python virtualenv
-pipenv shell
-```
-
-## Usage
+### Usage
 
 `congregate <command> <added-parameters>`
 
@@ -49,9 +49,36 @@ pipenv shell
 - `do_all`: Performs configuration, project staging, and migration
 - `ui`: Deploys UI to localhost:5000
 
-## Important Note
+**Important Note**
 
 The GitLab import/export API versions need to match between instances. [This documentation](https://docs.gitlab.com/ee/user/project/settings/import_export.html) shows which versions of the API exist in each version of GitLab
+
+### Development Environment Setup
+
+**Configuring VS Code for Debugging**
+
+Refer to [this how-to](https://code.visualstudio.com/docs/python/debugging) for setting up the base debugging settings for a python app in VS Code. Then replace the default flask configuration for this:
+
+```json
+
+{
+    "name": "Python: Flask (0.11.x or later)",
+    "type": "python",
+    "request": "launch",
+    "module": "flask",
+    "env": {
+        "PYTHONPATH": "${workspaceRoot}",
+        "CONGREGATE_PATH": "/path/to/congregate",
+        "FLASK_APP": "${CONGREGATE_PATH}/ui"
+    },
+    "args": [
+        "run",
+        "--no-debugger",
+        "--no-reload"
+    ]
+}
+
+```
 
 ## Major Goal - CLI Tool
 
