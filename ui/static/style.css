@@ -49,3 +49,7 @@ nav ul li a:hover {
 .content_wrapper {
     border: 1px solid;
 }
+
+#migration-status {
+    display: none;
+}

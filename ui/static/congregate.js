@@ -139,11 +139,24 @@ function register_events() {
     var stage_button = document.getElementById("migrate_button");
     if (stage_button) {
         stage_button.addEventListener("click", function() {
+            var migrationStatus = document.getElementById("migration-status");
+            migrationStatus.style.display = "block";
+            var output = document.getElementById('logs');
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', 'log');
+            xhr.send();
+
+            var updateLog = setInterval(function() {
+                output.innerHTML = xhr.responseText;
+            }, 1000);
+
             $.ajax({
                 type: "GET",
                 url: "migrate",
                 success: function(data) {
                     console.log(data);
+                    clearInterval(updateLog);
+                    output.innerHTML = data;
                 }
             });
         });

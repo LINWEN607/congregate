@@ -10,22 +10,20 @@ import sys
 import subprocess
 import argparse
 import urllib2
+import logging
 try:
     from helpers import conf, api, misc_utils
 except ImportError:
     from congregate.helpers import conf, api, misc_utils
 
 app_path = os.getenv("CONGREGATE_PATH")
-
+logging.getLogger(__name__)
 config = conf.ig()
 
 def traverse_groups(base_groups, transient_list, parent_group=None):
-    #print base_groups
-    print "##"
     if parent_group is not None:
         parent_group["child_ids"] = []
     for group in base_groups:
-        print group["name"]
         group.pop("web_url")
         group.pop("full_name")
         group.pop("full_path")
@@ -37,16 +35,12 @@ def traverse_groups(base_groups, transient_list, parent_group=None):
         subgroups = json.load(api.generate_get_request(config.child_host, config.child_token, "groups/%s/subgroups" % str(group["id"])))
         if parent_group is not None:
             parent_group["child_ids"].append(group["id"])
-            print "Parent Group: %s" % parent_group["name"]
-            print "Child Group: %s" % group["name"]
         if len(subgroups) > 0:
             parent_group = transient_list[-1]
-            #print parent_group
-            #print parent_group
-            print "traversing into a subgroup"
+            logging.info("traversing into a subgroup")
             traverse_groups(subgroups, transient_list, parent_group)
         else:
-            print "No subgroups found"
+            logging.info("No subgroups found")
         parent_group = None
             
 
@@ -60,7 +54,7 @@ def retrieve_group_info(quiet=False):
         json.dump(groups, f, indent=4)
     
     if not quiet:
-        print "Retrieved %d groups. Check groups.json to see all retrieved groups" % len(groups)
+        logging.info("Retrieved %d groups. Check groups.json to see all retrieved groups" % len(groups))
 
 def migrate_group_info():
     if not os.path.isfile("%s/data/groups.json" % app_path):
@@ -90,7 +84,7 @@ def traverse_and_migrate(groups, rewritten_groups, parent_id=None):
             try:
                 api.generate_post_request(config.parent_host, config.parent_token, "groups", json.dumps(group))
             except urllib2.HTTPError, e:
-                print "Group already exists"
+                logging.info("Group already exists")
             new_group = json.load(api.generate_get_request(config.parent_host, config.parent_token, "groups?search=%s" % group["path"]))
             if new_group is not None and len(new_group) > 0:
                 if new_group[0]["name"] == group["name"]:
@@ -106,10 +100,10 @@ def traverse_and_migrate(groups, rewritten_groups, parent_id=None):
                         try:
                             api.generate_post_request(config.parent_host, config.parent_token, "groups/%d/members" % new_group[0]["id"], json.dumps(new_member))
                         except urllib2.HTTPError, e:
-                            print e
+                            logging.error(e)
 
                     if not root_user_present:
-                        print "removing root user from group"
+                        logging.info("removing root user from group")
                         api.generate_delete_request(config.parent_host, config.parent_token, "groups/%d/members/1" % new_group[0]["id"])
 
                     if has_children:
