@@ -10,6 +10,7 @@ awscli = "*"
 "boto3" = "*"
 requests = "*"
 flask = "*"
+dnd = {git = "https://gitlab.com/leopardm/dnd"}
 
 [requires]
 python_version = "2.7"
