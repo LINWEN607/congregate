@@ -20,6 +20,8 @@ pip install pipenv
 pipenv install
 # start up python virtualenv
 pipenv shell
+# install ui dependencies
+pipenv run dnd install
 ```
 
 ### Installing Congregate (end-user)
