@@ -1,6 +1,4 @@
-from flask import render_template
-from flask import Response
-from flask import stream_with_context
+from flask import render_template, Response, stream_with_context, send_from_directory
 from . import app
 from models import get_data, get_counts
 import time
@@ -31,6 +29,10 @@ def group_page():
 def config_page():
     data = dict(get_data("config"))
     return render_template("config.html", data=data)
+
+@app.route('/base/<path:filename>')
+def base_static(filename):
+    return send_from_directory(app.root_path + '/../js-packages/', filename)
 
 @app.route('/large')
 def generate_stream():
