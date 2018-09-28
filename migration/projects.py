@@ -155,8 +155,8 @@ def migrate():
     with open("%s/data/stage.json" % app_path, "r") as f:
         files = json.load(f)
     
-    users.migrate_user_info()
-    users.update_user_info()
+    new_users = users.migrate_user_info()
+    users.update_user_info(new_users)
     groups.migrate_group_info()
 
     working_dir = os.getcwd()

@@ -59,70 +59,72 @@ def stage_projects(projects_to_stage):
         new_obj = users[i]
         id_num = users[i]["username"]
         rewritten_users[id_num] = new_obj
-
-    if projects_to_stage[0] == "all" or projects_to_stage[0] == ".":
-        for i in range(len(projects)):
-            obj = {}
-            obj["id"] = projects[i]["id"]
-            obj["name"] = projects[i]["name"]
-            obj["namespace"] = projects[i]["path_with_namespace"].split("/")[0]
-            obj["path_with_namespace"] = projects[i]["path_with_namespace"]
-            obj["visibilty"] = projects[i]["visibility"]
-            response = api.generate_get_request(config.child_host, config.child_token, "projects/%d/members" % int(projects[i]["id"]))
-            members = json.loads(response.read())
-            
-            for member in members:
-                if member["username"] != "root":
-                    staged_users.append(rewritten_users[member["username"]])
-            
-            if projects[i]["namespace"]["kind"] == "group":
-                group_to_stage = projects[i]["namespace"]["path"]
-                staged_groups.append(rewritten_groups[group_to_stage])
-
-            obj["members"] = members
-            staging.append(obj)
-    else:
-        for i in range(0, len(projects_to_stage)):
-            obj = {}
-            # Hacky check for id or project name by explicitly checking variable type
-            try:
-                if (isinstance(int(projects_to_stage[i]), int)):
-                    key = projects_to_stage[i]
-                    # Retrieve object from better formatted object
-                    project = rewritten_projects[int(key)]
-            except ValueError:
-                # Iterate over original project_json.json file
-                for j in range(len(projects)):
-                    if projects[j]["name"] == projects_to_stage[i]:
-                        project = projects[j]
-
-            obj["id"] = project["id"]
-            obj["name"] = project["name"]
-            obj["namespace"] = project["path_with_namespace"].split("/")[0]
-            obj["visibilty"] = project["visibility"]
-            response = api.generate_get_request(config.child_host, config.child_token, "projects/%d/members" % int(project["id"]))
-            members = json.loads(response.read())
-            for member in members:
-                if member["username"] != "root":
-                    logging.info("Staging user (%s)" % member["username"])
-                    staged_users.append(rewritten_users[member["username"]])
-            
-            if project["namespace"]["kind"] == "group":
-                group_to_stage = project["namespace"]["id"]
-                if rewritten_groups[group_to_stage]["parent_id"] is None:
-                    if config.parent_id is not None:
-                        rewritten_groups[group_to_stage]["parent_id"] = config.parent_id
-                staged_groups.append(rewritten_groups[group_to_stage])
-                if "child_ids" in rewritten_groups[group_to_stage]:
-                    for sub in rewritten_groups[group_to_stage]["child_ids"]:
-                        staged_groups.append(rewritten_groups[sub])
-                if len(rewritten_groups[group_to_stage]["members"]) > 0:
-                    for member in rewritten_groups[group_to_stage]["members"]:
+    if not projects_to_stage[0] == '':
+        if projects_to_stage[0] == "all" or projects_to_stage[0] == ".":
+            for i in range(len(projects)):
+                obj = {}
+                obj["id"] = projects[i]["id"]
+                obj["name"] = projects[i]["name"]
+                obj["namespace"] = projects[i]["path_with_namespace"].split("/")[0]
+                obj["path_with_namespace"] = projects[i]["path_with_namespace"]
+                obj["visibilty"] = projects[i]["visibility"]
+                response = api.generate_get_request(config.child_host, config.child_token, "projects/%d/members" % int(projects[i]["id"]))
+                members = json.loads(response.read())
+                
+                for member in members:
+                    if member["username"] != "root":
                         staged_users.append(rewritten_users[member["username"]])
+                
+                if projects[i]["namespace"]["kind"] == "group":
+                    group_to_stage = projects[i]["namespace"]["path"]
+                    staged_groups.append(rewritten_groups[group_to_stage])
 
-            obj["members"] = members
-            logging.info("Staging project (%s)" % obj["name"])
-            staging.append(obj)
+                obj["members"] = members
+                staging.append(obj)
+        else:
+            for i in range(0, len(projects_to_stage)):
+                obj = {}
+                # Hacky check for id or project name by explicitly checking variable type
+                try:
+                    if (isinstance(int(projects_to_stage[i]), int)):
+                        key = projects_to_stage[i]
+                        # Retrieve object from better formatted object
+                        project = rewritten_projects[int(key)]
+                except ValueError:
+                    # Iterate over original project_json.json file
+                    for j in range(len(projects)):
+                        if projects[j]["name"] == projects_to_stage[i]:
+                            project = projects[j]
+
+                obj["id"] = project["id"]
+                obj["name"] = project["name"]
+                obj["namespace"] = project["path_with_namespace"].split("/")[0]
+                obj["visibilty"] = project["visibility"]
+                response = api.generate_get_request(config.child_host, config.child_token, "projects/%d/members" % int(project["id"]))
+                members = json.loads(response.read())
+                for member in members:
+                    if member["username"] != "root":
+                        logging.info("Staging user (%s)" % member["username"])
+                        staged_users.append(rewritten_users[member["username"]])
+                
+                if project["namespace"]["kind"] == "group":
+                    group_to_stage = project["namespace"]["id"]
+                    if rewritten_groups[group_to_stage]["parent_id"] is None:
+                        if config.parent_id is not None:
+                            rewritten_groups[group_to_stage]["parent_id"] = config.parent_id
+                    staged_groups.append(rewritten_groups[group_to_stage])
+                    if "child_ids" in rewritten_groups[group_to_stage]:
+                        for sub in rewritten_groups[group_to_stage]["child_ids"]:
+                            staged_groups.append(rewritten_groups[sub])
+                    if len(rewritten_groups[group_to_stage]["members"]) > 0:
+                        for member in rewritten_groups[group_to_stage]["members"]:
+                            staged_users.append(rewritten_users[member["username"]])
+
+                obj["members"] = members
+                logging.info("Staging project (%s)" % obj["name"])
+                staging.append(obj)
+    else:
+        staging = []
 
     if (len(staging) > 0):
         with open("%s/data/stage.json" % app_path, "wb") as f:
@@ -131,6 +133,9 @@ def stage_projects(projects_to_stage):
             f.write(json.dumps(misc_utils.remove_dupes(staged_users), indent=4))
         with open("%s/data/staged_groups.json" % app_path, "wb") as f:
             f.write(json.dumps(misc_utils.remove_dupes(staged_groups), indent=4))
+    else:
+        with open("%s/data/stage.json" % app_path, "wb") as f:
+            f.write("[]")
 
 if __name__ == "__main__":
     stage_projects(sys.argv)
