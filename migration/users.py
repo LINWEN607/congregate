@@ -35,9 +35,12 @@ def update_users(obj, new_users):
                     member["id"] = new_user["id"]
     return obj
 
-def update_user_info():
+def update_user_info(new_ids):
     with open("%s/data/new_users.json" % app_path, "w") as f:
-        new_users = json.load(api.generate_get_request(parent_host, parent_token, "users"))
+        new_users = []
+        for new_id in new_ids:
+            new_user = json.load(api.generate_get_request(parent_host, parent_token, "/users?id=%s" % new_id))[0]
+            new_users.append(new_user)
         
         root_index = None
         for user in new_users:
@@ -104,22 +107,25 @@ def retrieve_user_info(quiet=False):
         logging.info("Retrieved %d users. Check users.json to see all retrieved groups" % len(users))
 
 def migrate_user_info():
+    new_ids = []
     with open('%s/data/staged_users.json' % app_path, "r") as f:
         users = json.load(f)
-    
     for user in users:
         try:
             user["skip_confirmation"] = True
-            api.generate_post_request(parent_host, parent_token, "users", json.dumps(user))
+            response = api.generate_post_request(parent_host, parent_token, "users", json.dumps(user))
+            new_ids.append(json.load(response)["id"])
         except HTTPError, e:
             if e.code == 409:
                 logging.info("User already exists")
+    return new_ids
+    
 
 def append_users(users):
+    print users
     with open("%s/data/users.json" % app_path, "r") as f:
         user_file = json.load(f)
-    with open("%s/data/staged_users.json" % app_path, "r") as f:
-        staged_users = json.load(f)
+    staged_users = []
     for user in users:
         for u in user_file:
             if user == u["username"]:
