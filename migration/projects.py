@@ -12,6 +12,7 @@ import argparse
 import urllib
 import urllib2
 import time
+import logging
 try:
     from helpers import conf, api, misc_utils
     from migration import users, groups
@@ -26,7 +27,7 @@ except ImportError:
 
 
 conf = conf.ig()
-
+logging.getLogger(__name__)
 app_path = os.getenv("CONGREGATE_PATH")
 
 parent_host = conf.parent_host
@@ -77,7 +78,7 @@ def import_project(project):
         import_response = import_from_s3(name, namespace, presigned_get_url)
         import_id = None
         if import_response is not None:
-            print import_response
+            logging.debug(import_response)
             import_response = json.loads(import_response)
             if import_response.get("id") is not None:
                 import_id = import_response["id"]
@@ -92,13 +93,13 @@ def import_project(project):
             if import_id is not None:
                 status = json.load(api.generate_get_request(conf.parent_host, conf.parent_token, "projects/%d/import" % import_id))
                 if status["import_status"] == "finished":
-                    print "%s has been exported and import is occurring" % name
+                    logging.info("%s has been exported and import is occurring" % name)
                     exported = True
                 elif status["import_status"] == "failed":
-                    print "%s failed to import" % name
+                    logging.info("%s failed to import" % name)
                     exported = True
             else:
-                print "Waiting on %s to export" % name
+                logging.info("Waiting on %s to export" % name)
                 time.sleep(0.5)
     
     return import_id
@@ -125,10 +126,10 @@ def migrate_project_info():
                     try:
                         api.generate_post_request(parent_host, parent_token, "projects/%d/members" % new_project[0]["id"], json.dumps(new_member))
                     except urllib2.HTTPError, e:
-                        print e
+                        logging.error(e)
 
                 if not root_user_present:
-                    print "removing root user from project"
+                    logging.info("removing root user from project")
                     api.generate_delete_request(parent_host, parent_token, "projects/%d/members/1" % new_project[0]["id"])
 
 def migrate_variables(import_id, id):
@@ -146,8 +147,6 @@ def migrate_projects(project_json):
         project_json = json.loads(project_json)
     export_project(project_json)
     import_id = import_project(project_json)
-    print project_json
-    print import_id
     if import_id is not None:
         migrate_variables(import_id, project_json["id"])
         migrate_project_info()
@@ -171,7 +170,7 @@ def migrate():
         else:
             namespace = f["namespace"]
         if conf.location == "filesystem":
-            print "Exporting %s to %s" % (name, conf.filesystem_path)
+            logging.ingo("Exporting %s to %s" % (name, conf.filesystem_path))
             api.generate_post_request(conf.child_host, conf.child_token, "projects/%d/export" % id, "")
             if working_dir != conf.filesystem_path:
                 os.chdir(conf.filesystem_path)
@@ -191,7 +190,7 @@ def migrate():
             migrate_project_info()
 
         elif (conf.location).lower() == "aws":
-            print "Exporting %s to S3" % name
+            logging.info("Exporting %s to S3" % name)
             migrate_projects(f)
 
 if __name__ == "__main__":

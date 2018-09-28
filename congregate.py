@@ -12,8 +12,10 @@ from helpers import conf
 from migration import users, groups, projects
 from cli import list_projects, stage_projects, do_all
 from cli import config as configure
+import logging
 
 app_path = os.getenv("CONGREGATE_PATH")
+logging.basicConfig(filename='%s/congregate.log' % app_path, level=logging.INFO)
 config = conf.ig()
 
 if not os.path.isfile("%s/data/config.json" % app_path):

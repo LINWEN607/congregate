@@ -2,12 +2,14 @@ import json
 import os
 import urllib
 import math
+import logging
 from helpers import conf
 from helpers import api
 from migration import groups, users
 
 app_path = os.getenv("CONGREGATE_PATH")
 config = conf.ig()
+logging.getLogger(__name__)
 
 def list_projects():
 

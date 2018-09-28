@@ -8,6 +8,7 @@ import os
 import sys
 import json
 import argparse
+import logging
 from urllib2 import HTTPError
 try:
     from helpers import conf, api, misc_utils
@@ -15,6 +16,7 @@ except ImportError:
     from congregate.helpers import conf, api, misc_utils
 
 app_path = os.getenv("CONGREGATE_PATH")
+logging.getLogger(__name__)
 
 with open('%s/data/config.json' % app_path) as f:
         config = json.load(f)["config"]
@@ -99,7 +101,7 @@ def retrieve_user_info(quiet=False):
         json.dump(users, f, indent=4)
     
     if not quiet:
-        print "Retrieved %d users. Check users.json to see all retrieved groups" % len(users)
+        logging.info("Retrieved %d users. Check users.json to see all retrieved groups" % len(users))
 
 def migrate_user_info():
     with open('%s/data/staged_users.json' % app_path, "r") as f:
@@ -111,7 +113,7 @@ def migrate_user_info():
             api.generate_post_request(parent_host, parent_token, "users", json.dumps(user))
         except HTTPError, e:
             if e.code == 409:
-                print "User already exists"
+                logging.info("User already exists")
 
 def append_users(users):
     with open("%s/data/users.json" % app_path, "r") as f:

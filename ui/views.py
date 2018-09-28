@@ -1,8 +1,10 @@
 from flask import render_template, Response, stream_with_context, send_from_directory
 from . import app
 from models import get_data, get_counts
-import time
+from time import sleep
+import subprocess, os
 
+app_path = os.getenv("CONGREGATE_PATH")
 
 @app.route("/")
 @app.route("/home")
@@ -34,10 +36,17 @@ def config_page():
 def base_static(filename):
     return send_from_directory(app.root_path + '/../js-packages/', filename)
 
-@app.route('/large')
+@app.route('/log')
 def generate_stream():
     def generate():
-        for x in range(0, 100):
-            time.sleep(0.5)
-            yield str(x)
+        last_line = ""
+        while True:
+            output = subprocess.check_output(['tail', '-n 1', '%s/congregate.log' % app_path])
+            if output == last_line:
+                yield ""
+            else:
+                last_line = output
+                yield "<br>" + output.split(":")[-1]
+            sleep(1)
+
     return Response(stream_with_context(generate()))

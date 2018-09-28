@@ -10,6 +10,7 @@ import urllib2
 import json
 import sys
 import subprocess
+import logging
 try:
     from helpers import conf, api, misc_utils
 except ImportError:
@@ -17,6 +18,7 @@ except ImportError:
 
 
 app_path = os.getenv("CONGREGATE_PATH")
+logging.getLogger(__name__)
 
 def stage_projects(projects_to_stage):
     staging = []
@@ -102,7 +104,7 @@ def stage_projects(projects_to_stage):
             members = json.loads(response.read())
             for member in members:
                 if member["username"] != "root":
-                    print "stagimg %s" % rewritten_users[member["username"]]
+                    logging.info("Staging user (%s)" % member["username"])
                     staged_users.append(rewritten_users[member["username"]])
             
             if project["namespace"]["kind"] == "group":
@@ -119,6 +121,7 @@ def stage_projects(projects_to_stage):
                         staged_users.append(rewritten_users[member["username"]])
 
             obj["members"] = members
+            logging.info("Staging project (%s)" % obj["name"])
             staging.append(obj)
 
     if (len(staging) > 0):
