@@ -1,6 +1,6 @@
 import urllib
 import urllib2
-import requests
+from requests import delete, put
 from math import ceil as math_ceil
 from json import loads as json_loads
 
@@ -35,6 +35,21 @@ def generate_post_request(host, token, api, data, headers=None):
     response = urllib2.urlopen(req)
     return response
 
+def generate_put_request(host, token, api, data, headers=None):
+    """
+        Generates PUT request to GitLab API.
+        You will need to provide the GL host, access token, specific api url, and any data.
+    """
+    url = "%s/api/v4/%s" % (host, api)
+    if headers is None:
+        headers = {
+            'Private-Token': token,
+            'Content-Type': 'application/json'
+        }
+    print url
+    response = put(url, headers=headers, data=data)
+    return response
+
 def generate_delete_request(host, token, api):
     """
         Generates DELETE request to GitLab API.
@@ -44,7 +59,7 @@ def generate_delete_request(host, token, api):
     headers = {
         'Private-Token': token
     }
-    response = requests.delete(url, headers=headers)
+    response = delete(url, headers=headers)
     return response
 
 def get_count(host, token, api):

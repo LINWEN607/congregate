@@ -31,7 +31,7 @@ window.onload = function() {
             url: "data/staged_groups",
             success: function(data) {
                 for (var i = 0; i < data.length; i++) {
-                    document.getElementById(data[i].path).checked = true;
+                    document.getElementById(data[i].id).checked = true;
                 }
             }
         });

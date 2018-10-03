@@ -1,7 +1,7 @@
 from flask import render_template, Response, stream_with_context, send_from_directory
 from . import app
 from models import get_data, get_counts
-from time import sleep
+#from time import sleep
 import subprocess, os
 
 app_path = os.getenv("CONGREGATE_PATH")
@@ -47,6 +47,6 @@ def generate_stream():
             else:
                 last_line = output
                 yield "<br>" + output.split(":")[-1]
-            sleep(1)
+            subprocess.call(['sleep', '1'])
 
     return Response(stream_with_context(generate()))

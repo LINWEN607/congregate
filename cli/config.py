@@ -1,6 +1,10 @@
 import os
 import subprocess
 import json
+try:
+    from helpers.api import generate_get_request
+except ImportError:
+    from congregate.helpers.api import generate_get_request
 
 app_path = os.getenv("CONGREGATE_PATH")
 
@@ -14,6 +18,8 @@ def config():
 
     parent_instance_token = raw_input("%s. Access token to use for parent instance " % str(len(config) + 1))
     config["parent_instance_token"] = parent_instance_token
+
+    config["parent_user_id"] = get_user(parent_instance_host, parent_instance_token)
 
     child_instance_host = raw_input("%s. Host of child instance (destination instance) " % str(len(config) + 1))
     config["child_instance_host"] = child_instance_host
@@ -68,6 +74,10 @@ def update_config(config_data):
     data["config"] = json.loads(config_data)
     with open("%s/data/config.json" % app_path, "w") as f:
         json.dump(data, f, indent=4)
+
+def get_user(parent_instance_host, parent_instance_token):
+    response = generate_get_request(parent_instance_host, parent_instance_token, "user")
+    return json.load(response)["id"]
 
 if __name__ == "__main__":
     config()

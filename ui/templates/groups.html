@@ -15,6 +15,7 @@ Congregate by GitLab
           <thead class="thead-light">
             <tr>
                 <th scope="col"><input id = "select_all" type = "checkbox">Staged</th>
+                <th scope="col">ID</th>
                 <th scope="col">Name</th>
                 <th scope="col">Visibility</th>
                 <th scope="col">Path</th>
@@ -23,7 +24,8 @@ Congregate by GitLab
           <tbody>
           {% for d in data %}
             <tr class="clickable-row" data-thisid="{{d.path}}">
-                <td scope="row"><input id = "{{ d.path }}" type = "checkbox" class = "checkbox group_checkbox"></td>
+                <td scope="row"><input id = "{{ d.id }}" type = "checkbox" class = "checkbox group_checkbox"></td>
+                <td>{{ d.id }}</td>
                 <td>{{ d.name }}</td>
                 <td>{{ d.visibility }}</td>
                 <td>{{ d.path }}</td>
