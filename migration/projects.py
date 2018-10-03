@@ -54,6 +54,9 @@ def export_project(project):
        pass
 
 def import_project(project):
+    """
+        Imports project to parent GitLab instance. Formats users, groups, migration info(aws, filesystem) during import process
+    """
     if isinstance(project, str):
         project = json.loads(project)
     name = project["name"]
@@ -73,11 +76,11 @@ def import_project(project):
     presigned_get_url = generate_presigned_url(filename, "GET")
     exported = False
     import_response = None
-
+    timeout = 0
     while not exported:
         import_response = import_from_s3(name, namespace, presigned_get_url)
         import_id = None
-        if import_response is not None:
+        if import_response is not None and len(import_response) > 0:
             logging.debug(import_response)
             import_response = json.loads(import_response)
             if import_response.get("id") is not None:
@@ -95,16 +98,26 @@ def import_project(project):
                 if status["import_status"] == "finished":
                     logging.info("%s has been exported and import is occurring" % name)
                     exported = True
+                    mirror_repo(project, import_id)
                 elif status["import_status"] == "failed":
                     logging.info("%s failed to import" % name)
                     exported = True
             else:
-                logging.info("Waiting on %s to export" % name)
-                time.sleep(0.5)
+                if timeout < 30:
+                    logging.info("Waiting on %s to export" % name)
+                    timeout += 0.5
+                    time.sleep(0.5)
+                else:
+                    logging.info("Aborting export. Time limit exceeded")
+                    break
     
     return import_id
 
+
 def migrate_project_info():
+    """
+        Subsequent function to update project info AFTER import
+    """
     with open("%s/data/stage.json" % app_path, "r") as f:
         projects = json.load(f)
     
@@ -116,7 +129,7 @@ def migrate_project_info():
             if new_project[0]["name"] == project["name"]:
                 root_user_present = False
                 for member in members:
-                    if member["id"] == 1:
+                    if member["id"] == conf.parent_user_id:
                         root_user_present = True
                     new_member = {
                         "user_id": member["id"],
@@ -130,8 +143,48 @@ def migrate_project_info():
 
                 if not root_user_present:
                     logging.info("removing root user from project")
-                    api.generate_delete_request(parent_host, parent_token, "projects/%d/members/1" % new_project[0]["id"])
+                    api.generate_delete_request(parent_host, parent_token, "projects/%d/members/%d" % (new_project[0]["id"], conf.parent_user_id))
 
+def mirror_repo(project, import_id):
+    """
+        Sets up mirrored repo to allow a soft cut-over during the migration process.
+        
+        NOTE: Only works on GitLab EE instances
+    """
+    split_url = project["http_url_to_repo"].split("://")
+    protocol = split_url[0]
+    repo_url = split_url[1]
+    for member in project["members"]:
+        if member["access_level"] >= 40:
+            mirror_user_id = member["id"]
+            mirror_user_name = member["username"]
+            break
+    import_url = "%s://%s:%s@%s" % (protocol, mirror_user_name, conf.child_token, repo_url)
+    print import_url
+    mirror_data = {
+        "mirror": True,
+        "mirror_user_id": mirror_user_id,
+        "import_url": import_url
+    }
+
+    response = api.generate_put_request(parent_host, parent_token, "projects/%d" % import_id, json.dumps(mirror_data))
+    print response.text
+
+def remove_mirror(project_id):
+    """
+        Removes repo mirror information after migration process is complete
+        
+        NOTE: Only works on GitLab EE instances
+    """
+    mirror_data = {
+        "mirror": False,
+        "mirror_user_id": None,
+        "import_url": None
+    }
+
+    logging.info("Removing mirror from project %d" % project_id)
+    api.generate_put_request(conf.parent_host, conf.parent_token, "projects/%d" % project_id, json.dumps(mirror_data))
+    
 def migrate_variables(import_id, id):
     response = api.generate_get_request(conf.child_host, conf.child_token, "projects/%d/variables" % id)
     response_json = json.loads(response.read())
@@ -170,7 +223,7 @@ def migrate():
         else:
             namespace = f["namespace"]
         if conf.location == "filesystem":
-            logging.ingo("Exporting %s to %s" % (name, conf.filesystem_path))
+            logging.info("Exporting %s to %s" % (name, conf.filesystem_path))
             api.generate_post_request(conf.child_host, conf.child_token, "projects/%d/export" % id, "")
             if working_dir != conf.filesystem_path:
                 os.chdir(conf.filesystem_path)

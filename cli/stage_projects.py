@@ -53,6 +53,7 @@ def stage_projects(projects_to_stage):
         new_obj = groups[i]
         group_name = groups[i]["id"]
         rewritten_groups[group_name] = new_obj
+    existing_parent_ids = []
 
     rewritten_users = {}
     for i in range(len(users)):
@@ -68,6 +69,7 @@ def stage_projects(projects_to_stage):
                 obj["namespace"] = projects[i]["path_with_namespace"].split("/")[0]
                 obj["path_with_namespace"] = projects[i]["path_with_namespace"]
                 obj["visibilty"] = projects[i]["visibility"]
+                obj["http_url_to_repo"] = projects[i]["http_url_to_repo"]
                 response = api.generate_get_request(config.child_host, config.child_token, "projects/%d/members" % int(projects[i]["id"]))
                 members = json.loads(response.read())
                 
@@ -98,8 +100,9 @@ def stage_projects(projects_to_stage):
 
                 obj["id"] = project["id"]
                 obj["name"] = project["name"]
-                obj["namespace"] = project["path_with_namespace"].split("/")[0]
+                obj["namespace"] = project["path_with_namespace"].split("/")[-2]
                 obj["visibilty"] = project["visibility"]
+                obj["http_url_to_repo"] = project["http_url_to_repo"]
                 response = api.generate_get_request(config.child_host, config.child_token, "projects/%d/members" % int(project["id"]))
                 members = json.loads(response.read())
                 for member in members:
@@ -112,19 +115,26 @@ def stage_projects(projects_to_stage):
                     if rewritten_groups[group_to_stage]["parent_id"] is None:
                         if config.parent_id is not None:
                             rewritten_groups[group_to_stage]["parent_id"] = config.parent_id
+                    else:
+                        existing_parent_ids.append(rewritten_groups[group_to_stage]["id"])
                     staged_groups.append(rewritten_groups[group_to_stage])
                     if "child_ids" in rewritten_groups[group_to_stage]:
                         for sub in rewritten_groups[group_to_stage]["child_ids"]:
                             staged_groups.append(rewritten_groups[sub])
                     if len(rewritten_groups[group_to_stage]["members"]) > 0:
                         for member in rewritten_groups[group_to_stage]["members"]:
-                            staged_users.append(rewritten_users[member["username"]])
+                            if rewritten_users.get(member["username"]):
+                                staged_users.append(rewritten_users[member["username"]])
 
                 obj["members"] = members
                 logging.info("Staging project (%s)" % obj["name"])
                 staging.append(obj)
     else:
         staging = []
+
+    for group in staged_groups:
+        if group["parent_id"] not in existing_parent_ids:
+            group["parent_id"] = config.parent_id
 
     if (len(staging) > 0):
         with open("%s/data/stage.json" % app_path, "wb") as f:

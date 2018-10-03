@@ -123,9 +123,12 @@ def append_groups(groups):
     staged_groups = []
     for group in groups:
         for g in group_file:
-            if group == g["path"]:
+            if int(group) == g["id"]:
                 if g["parent_id"] is None:
                     if config.parent_id is not None:
+                        g["parent_id"] = config.parent_id
+                else:
+                    if g["parent_id"] not in groups:
                         g["parent_id"] = config.parent_id
                 staged_groups.append(g)
     with open("%s/data/staged_groups.json" % app_path, "w") as f:

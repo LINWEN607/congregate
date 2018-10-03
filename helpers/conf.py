@@ -62,3 +62,10 @@ class ig:
     def parent_id(self):
         return self.config["parent_id"]
     
+    @property
+    def child_username(self):
+        return self.config["child_username"]
+
+    @property
+    def parent_user_id(self):
+        return self.config["parent_user_id"]
