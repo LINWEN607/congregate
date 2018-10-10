@@ -17,10 +17,13 @@ Come together, right now
 ```bash
 pip install pipenv
 # install depdencies from Pipfile
+cd /path/to/congregate
 pipenv install
 # start up python virtualenv
+cd /path/to/congregate
 pipenv shell
 # install ui dependencies
+cd /path/to/congregate
 pipenv run dnd install
 ```
 
