@@ -98,7 +98,8 @@ def import_project(project):
                 if status["import_status"] == "finished":
                     logging.info("%s has been exported and import is occurring" % name)
                     exported = True
-                    mirror_repo(project, import_id)
+                    if conf.mirror_username is not None:
+                        mirror_repo(project, import_id)
                 elif status["import_status"] == "failed":
                     logging.info("%s failed to import" % name)
                     exported = True
@@ -154,13 +155,17 @@ def mirror_repo(project, import_id):
     split_url = project["http_url_to_repo"].split("://")
     protocol = split_url[0]
     repo_url = split_url[1]
-    for member in project["members"]:
-        if member["access_level"] >= 40:
-            mirror_user_id = member["id"]
-            mirror_user_name = member["username"]
-            break
+    # for member in project["members"]:
+    #     if member["access_level"] >= 40:
+    #         mirror_user_id = member["id"]
+    #         mirror_user_name = member["username"]
+    #         break
+    
+    mirror_user_name = conf.mirror_username
+    mirror_user_id = conf.parent_user_id
+
     import_url = "%s://%s:%s@%s" % (protocol, mirror_user_name, conf.child_token, repo_url)
-    print import_url
+    logging.debug(import_url)
     mirror_data = {
         "mirror": True,
         "mirror_user_id": mirror_user_id,
@@ -168,7 +173,7 @@ def mirror_repo(project, import_id):
     }
 
     response = api.generate_put_request(parent_host, parent_token, "projects/%d" % import_id, json.dumps(mirror_data))
-    print response.text
+    logging.debug(response.text)
 
 def remove_mirror(project_id):
     """
@@ -207,44 +212,60 @@ def migrate_projects(project_json):
 def migrate():
     with open("%s/data/stage.json" % app_path, "r") as f:
         files = json.load(f)
-    
+    with open("%s/data/staged_groups.json" % app_path, "r") as f:
+        groups_file = json.load(f)
+
+    logging.info("Migrating user info")
     new_users = users.migrate_user_info()
-    users.update_user_info(new_users)
-    groups.migrate_group_info()
+
+    if len(new_users) > 0:
+        users.update_user_info(new_users)
+    else:
+        users.update_user_info(new_users, overwrite=False)
+    
+    if len(groups_file) > 0:
+        logging.info("Migrating group info")
+        groups.migrate_group_info()
+    else:
+        logging.info("No groups to migrate")
 
     working_dir = os.getcwd()
 
-    for f in files:
-        name = f["name"]
-        id = f["id"]
-        if conf.parent_id is not None:
-            parent_namespace = json.load(api.generate_get_request(conf.parent_host, conf.parent_token, "groups/%d" % conf.parent_id))
-            namespace = "%s/%s" % (parent_namespace["path"], f["namespace"])
-        else:
-            namespace = f["namespace"]
-        if conf.location == "filesystem":
-            logging.info("Exporting %s to %s" % (name, conf.filesystem_path))
-            api.generate_post_request(conf.child_host, conf.child_token, "projects/%d/export" % id, "")
-            if working_dir != conf.filesystem_path:
-                os.chdir(conf.filesystem_path)
-            download = api.generate_get_request(conf.child_host, conf.child_token, "projects/%d/export/download" % id)
-            filename = download.info().getheader("Content-Disposition").split("=")[1]
-            with open("%s/downloads/%s" % (conf.filesystem_path, filename), "w") as f:
-                f.write(download)
-            
-            data = {
-                "path": name,
-                "file": "%s/downloads/%s" % (conf.filesystem_path, filename),
-                "namespace": namespace
-            }
+    if len(files) > 0:
+        logging.info("Migrating project info")
+        for f in files:
+            name = f["name"]
+            id = f["id"]
+            if conf.parent_id is not None:
+                parent_namespace = json.load(api.generate_get_request(conf.parent_host, conf.parent_token, "groups/%d" % conf.parent_id))
+                namespace = "%s/%s" % (parent_namespace["path"], f["namespace"])
+            else:
+                namespace = f["namespace"]
+            if conf.location == "filesystem":
+                logging.info("Exporting %s to %s" % (name, conf.filesystem_path))
+                api.generate_post_request(conf.child_host, conf.child_token, "projects/%d/export" % id, "")
+                if working_dir != conf.filesystem_path:
+                    os.chdir(conf.filesystem_path)
+                download = api.generate_get_request(conf.child_host, conf.child_token, "projects/%d/export/download" % id)
+                filename = download.info().getheader("Content-Disposition").split("=")[1]
+                with open("%s/downloads/%s" % (conf.filesystem_path, filename), "w") as f:
+                    f.write(download)
+                
+                data = {
+                    "path": name,
+                    "file": "%s/downloads/%s" % (conf.filesystem_path, filename),
+                    "namespace": namespace
+                }
 
-            api.generate_post_request(conf.parent_host, conf.parent_token, "projects/import", urllib.urlencode(data))
+                api.generate_post_request(conf.parent_host, conf.parent_token, "projects/import", urllib.urlencode(data))
 
-            migrate_project_info()
+                migrate_project_info()
 
-        elif (conf.location).lower() == "aws":
-            logging.info("Exporting %s to S3" % name)
-            migrate_projects(f)
+            elif (conf.location).lower() == "aws":
+                logging.info("Exporting %s to S3" % name)
+                migrate_projects(f)
+    else:
+        logging.info("No projects to migrate")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Handle project-related tasks')

@@ -19,7 +19,9 @@ def config():
     parent_instance_token = raw_input("%s. Access token to use for parent instance " % str(len(config) + 1))
     config["parent_instance_token"] = parent_instance_token
 
-    config["parent_user_id"] = get_user(parent_instance_host, parent_instance_token)
+    parent_user_info = get_user(parent_instance_host, parent_instance_token)
+
+    config["parent_user_id"] = parent_user_info["id"]
 
     child_instance_host = raw_input("%s. Host of child instance (destination instance) " % str(len(config) + 1))
     config["child_instance_host"] = child_instance_host
@@ -28,11 +30,18 @@ def config():
     config["child_instance_token"] = child_instance_token
 
     parent_id = raw_input("Are you migrating the entire instance to a group? For example, migrating to our SaaS solution? (default: no)")
-    if parent_id is None:
+    if parent_id is None or parent_id == "no":
         pass
     else:
         parent_id = raw_input("%s. Please input the parent group ID (You can find this in the parent group -> settings -> general)" % str(len(config) + 1))
         config["parent_id"] = int(parent_id)
+
+    mirror_user = raw_input("Are you planning a soft cut-over migration? (Mirroring repos to keep both instances around) (default: no)")
+    if mirror_user is None or mirror_user == "no":
+        pass
+    else:
+        mirror_user = parent_user_info["username"]
+        config["mirror_username"] = mirror_user
 
     location = raw_input("%s. Staging location type for exported projects? (default: filesystem) " % str(len(config) + 1))
     if location is None:
@@ -77,7 +86,7 @@ def update_config(config_data):
 
 def get_user(parent_instance_host, parent_instance_token):
     response = generate_get_request(parent_instance_host, parent_instance_token, "user")
-    return json.load(response)["id"]
+    return json.load(response)
 
 if __name__ == "__main__":
     config()
