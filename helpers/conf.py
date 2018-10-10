@@ -60,7 +60,7 @@ class ig:
 
     @property
     def parent_id(self):
-        return self.config["parent_id"]
+        return self.config.get("parent_id", None)
     
     @property
     def child_username(self):
@@ -68,4 +68,8 @@ class ig:
 
     @property
     def parent_user_id(self):
-        return self.config["parent_user_id"]
+        return self.config.get("parent_user_id", None)
+    
+    @property
+    def mirror_username(self):
+        return self.config.get("mirror_username", None)

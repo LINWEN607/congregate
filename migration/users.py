@@ -35,22 +35,23 @@ def update_users(obj, new_users):
                     member["id"] = new_user["id"]
     return obj
 
-def update_user_info(new_ids):
-    with open("%s/data/new_users.json" % app_path, "w") as f:
-        new_users = []
-        for new_id in new_ids:
-            new_user = json.load(api.generate_get_request(parent_host, parent_token, "/users?id=%s" % new_id))[0]
-            new_users.append(new_user)
-        
-        root_index = None
-        for user in new_users:
-            if user["id"] == 1:
-                root_index = new_users.index(user)
-                break
-        if root_index:
-            new_users.pop(root_index)
-        
-        json.dump(new_users, f, indent=4)
+def update_user_info(new_ids, overwrite=True):
+    if overwrite:
+        with open("%s/data/new_users.json" % app_path, "w") as f:
+            new_users = []
+            for new_id in new_ids:
+                new_user = json.load(api.generate_get_request(parent_host, parent_token, "/users?id=%s" % new_id))[0]
+                new_users.append(new_user)
+            
+            root_index = None
+            for user in new_users:
+                if user["id"] == 1:
+                    root_index = new_users.index(user)
+                    break
+            if root_index:
+                new_users.pop(root_index)
+            
+            json.dump(new_users, f, indent=4)
 
     with open("%s/data/stage.json" % app_path, "r") as f:
         staged_projects = json.load(f)
@@ -118,11 +119,17 @@ def migrate_user_info():
         except HTTPError, e:
             if e.code == 409:
                 logging.info("User already exists")
+                try:
+                    logging.info("Appending %s to new_users.json" % user["email"])
+                    response = api.generate_get_request(parent_host, parent_token, "users?search=%s" % user["email"])
+                    new_ids.append(json.load(response)[0]["id"])
+                except HTTPError, e:
+                    logging.info(e)
+
     return new_ids
     
 
 def append_users(users):
-    print users
     with open("%s/data/users.json" % app_path, "r") as f:
         user_file = json.load(f)
     staged_users = []
@@ -156,5 +163,7 @@ if __name__ == "__main__":
     if migrate:
         migrate_user_info()
     if update:
-        update_user_info()
+        # TODO: fix this
+        print "update through the UI"
+        #update_user_info()
 
