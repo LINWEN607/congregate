@@ -12,6 +12,7 @@ awscli = "*"
 requests = "*"
 flask = "*"
 dnd = {git = "https://gitlab.com/leopardm/dnd"}
+futures = "*"
 
 [requires]
 python_version = "2.7"

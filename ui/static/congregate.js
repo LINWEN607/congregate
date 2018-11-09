@@ -11,6 +11,25 @@ window.onload = function() {
                 }
             }
         });
+        // var last_activity_at = document.getElementsByClassName("last_activity");
+        // var namespace = document.getElementsByClassName("namespace");
+        // var timestamp = new Date().getTime() - (56 * 24 * 60 * 60 * 1000)
+        // if (last_activity_at) {
+        //     for (var i = 0; i < last_activity_at.length; i++) {
+        //         current_date_object = last_activity_at[i];
+        //         var d = new Date(current_date_object.innerHTML);
+        //         if (d.getTime() < timestamp) {
+        //             current_date_object.style.color = "red";
+        //             var row = current_date_object.parentNode.getAttribute("data-thisid");
+        //             namespaceType = namespace[i].innerHTML.split("(");
+        //             if (namespaceType[1].includes("group")) {
+        //                 document.getElementById(row).checked = true;
+        //             }
+        //         }
+        //         var n = d.toUTCString();
+        //         current_date_object.innerHTML = n;
+        //     }
+        // }
     }
     var projects_table = document.getElementById("users_table");
     if (projects_table) {
@@ -64,12 +83,24 @@ function register_events() {
                     ids.push(checkboxes[i].id);
                 }
             }
+
+            var output = document.getElementById('stage_log');
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', 'log');
+            xhr.send();
+
+            var updateLog = setInterval(function() {
+                document.getElementById('stage_log').innerHTML = xhr.responseText;
+            }, 1000);
+
             $.ajax({
                 type: "POST",
                 url: "stage",
                 data: ids.toString(),
                 success: function(data) {
                     console.log(data);
+                    clearInterval(updateLog);
+                    output.innerHTML = data;
                 }
             });
         });
@@ -141,7 +172,7 @@ function register_events() {
         stage_button.addEventListener("click", function() {
             var migrationStatus = document.getElementById("migration-status");
             migrationStatus.style.display = "block";
-            var output = document.getElementById('logs');
+            var output = document.getElementById('stage_log');
             var xhr = new XMLHttpRequest();
             xhr.open('GET', 'log');
             xhr.send();
