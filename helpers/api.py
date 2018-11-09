@@ -3,7 +3,9 @@ import urllib2
 from requests import delete, put
 from math import ceil as math_ceil
 from json import loads as json_loads
+from helpers import logger
 
+l = logger.congregate_logger(__name__)
 
 def generate_get_request(host, token, api):
     """
@@ -14,7 +16,7 @@ def generate_get_request(host, token, api):
     headers = {
         'Private-Token': token,
         'Content-Type': 'application/json'
-    }
+    } 
     req = urllib2.Request(url, headers=headers)
     response = urllib2.urlopen(req)
     return response
@@ -46,7 +48,6 @@ def generate_put_request(host, token, api, data, headers=None):
             'Private-Token': token,
             'Content-Type': 'application/json'
         }
-    print url
     response = put(url, headers=headers, data=data)
     return response
 
@@ -95,13 +96,11 @@ def list_all(host, token, api):
     start_page = (start_at / PER_PAGE) + 1 # pages are 1-indexed
     end_page = int(math_ceil(float(end_at) / float(PER_PAGE)))
 
-    #logging.info("List projects from page %d to page %d.", start_page, end_page)
 
     current_page = start_page
 
     while current_page <= end_page:
-        #logging.info("Listing page %d" % current_page)
-        print "Retrieving %d %s" % (PER_PAGE * current_page, api)
+        l.logger.info("Retrieving %d %s" % (PER_PAGE * current_page, api))
         query = {
             "page": current_page,
             "per_page": PER_PAGE
@@ -114,11 +113,10 @@ def list_all(host, token, api):
         data = json_loads(response.read())
 
         for project in data:
-            # Do something with this project
-            #logging.info("I have found project %s" % project["name_with_namespace"])
             yield project
 
         if len(data) < PER_PAGE:
             break
 
         current_page += 1
+        

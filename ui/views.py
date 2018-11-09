@@ -46,7 +46,12 @@ def generate_stream():
                 yield ""
             else:
                 last_line = output
-                yield "<br>" + output.split(":")[-1]
+                yield "<p>" + output.split("|")[-1] + "</p>"
             subprocess.call(['sleep', '1'])
 
     return Response(stream_with_context(generate()))
+
+@app.route('/logLine')
+def return_last_line():
+    output = subprocess.check_output(['tail', '-n 1', '%s/congregate.log' % app_path])
+    return output.split(":")[-1]

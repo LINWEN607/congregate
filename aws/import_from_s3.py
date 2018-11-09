@@ -9,6 +9,7 @@ import urllib
 import json
 import sys
 import os
+from io import BytesIO
 try:
     from helpers import conf
 except ImportError:
@@ -16,19 +17,20 @@ except ImportError:
     
 conf = conf.ig()
 
-def import_from_s3(name, namespace, presigned_url):
-    s3_file = urllib.urlopen(presigned_url)
-    if s3_file.info().type != "application/xml":
-        url =  '%s/api/v4/projects/import' % (conf.parent_host)
-        files = {'file': s3_file}
-        data = {
-            "path": name,
-            "namespace": namespace
-        }
-        headers = {
-            'Private-Token': conf.parent_token
-        }
+def import_from_s3(name, namespace, presigned_url, filename):
+    #s3_file = urllib.urlopen(presigned_url)
+    with requests.get(presigned_url, stream=True) as r:
+        if r.headers["content-type"] != "application/xml":
+            url = '%s/api/v4/projects/import' % (conf.parent_host)
+            #files = {'file': (filename, r.content)}
+            data = {
+                "path": name,
+                "namespace": namespace
+            }
+            headers = {
+                'Private-Token': conf.parent_token
+            }
 
-        r = requests.post(url, headers=headers, data=data, files=files)
-        return r.text
-    return None
+            r = requests.post(url, headers=headers, data=data, files={'file': (filename, BytesIO(r.content))})
+            return r.text
+        return None
