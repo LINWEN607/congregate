@@ -53,3 +53,20 @@ nav ul li a:hover {
 #migration-status {
     display: none;
 }
+
+#stage_log {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    width: 50%;
+    line-height: 60px; /* Vertically center the text there */
+    background-color: #ccc;
+}
+
+#stage_log > p:not(:last-child) {
+    display: none;
+}
+
+#stage_log > p:last_child {
+    display: block;
+}

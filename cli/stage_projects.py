@@ -13,12 +13,14 @@ import subprocess
 import logging
 try:
     from helpers import conf, api, misc_utils
+    from helpers import logger as log
 except ImportError:
     from congregate.helpers import conf, api, misc_utils
+    from congregate.helpers import logger as log
 
 
 app_path = os.getenv("CONGREGATE_PATH")
-logging.getLogger(__name__)
+l = log.congregate_logger(__name__)
 
 def stage_projects(projects_to_stage):
     staging = []
@@ -103,11 +105,12 @@ def stage_projects(projects_to_stage):
                 obj["namespace"] = project["path_with_namespace"].split("/")[-2]
                 obj["visibilty"] = project["visibility"]
                 obj["http_url_to_repo"] = project["http_url_to_repo"]
+                obj["project_type"] = project["namespace"]["kind"]
                 response = api.generate_get_request(config.child_host, config.child_token, "projects/%d/members" % int(project["id"]))
                 members = json.loads(response.read())
                 for member in members:
                     if member["username"] != "root":
-                        logging.info("Staging user (%s)" % member["username"])
+                        l.logger.info("Staging user (%s)" % member["username"])
                         staged_users.append(rewritten_users[member["username"]])
                 
                 if project["namespace"]["kind"] == "group":
@@ -127,7 +130,7 @@ def stage_projects(projects_to_stage):
                                 staged_users.append(rewritten_users[member["username"]])
 
                 obj["members"] = members
-                logging.info("Staging project (%s)" % obj["name"])
+                l.logger.info("Staging project (%s) [%d/%d]" % (obj["name"], len(staging), len(projects_to_stage)))
                 staging.append(obj)
     else:
         staging = []
@@ -135,7 +138,6 @@ def stage_projects(projects_to_stage):
     for group in staged_groups:
         if group["parent_id"] not in existing_parent_ids:
             group["parent_id"] = config.parent_id
-
     if (len(staging) > 0):
         with open("%s/data/stage.json" % app_path, "wb") as f:
             f.write(json.dumps(misc_utils.remove_dupes(staging), indent=4))

@@ -3,10 +3,17 @@ app = Flask(__name__)
 
 from . import views
 from . import models
+import os
 
-import logging, os
+import logging
+
+try:
+    from helpers import logger as log
+except ImportError:
+    from congregate.helpers import logger as log
 
 app_path = os.getenv("CONGREGATE_PATH")
-logging.basicConfig(filename='%s/congregate.log' % app_path, level=logging.INFO)
-log = logging.getLogger('werkzeug')
-log.setLevel(logging.ERROR)
+
+l = log.congregate_logger('werkzeug')
+
+l.logger.setLevel(logging.ERROR)

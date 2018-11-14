@@ -5,11 +5,12 @@ import math
 import logging
 from helpers import conf
 from helpers import api
+from helpers import logger as log
 from migration import groups, users
 
 app_path = os.getenv("CONGREGATE_PATH")
 config = conf.ig()
-logging.getLogger(__name__)
+l = log.congregate_logger(__name__)
 
 def list_projects():
 

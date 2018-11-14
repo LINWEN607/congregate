@@ -23,7 +23,7 @@ def generate_presigned_url(key, method):
             'Bucket': conf.bucket_name,
             'Key': key
         },
-        ExpiresIn=240,
+        ExpiresIn=3600,
         HttpMethod=method
     )
 

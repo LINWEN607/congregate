@@ -18,6 +18,8 @@ Congregate by GitLab
                 <th scope="col">ID</th>
                 <th scope="col">Project Name</th>
                 <th scope="col">Description</th>
+                <th scope="col">Namespace</th>
+                <th scope="col">Last Activity At</th>
             </tr>
           </thead>
           <tbody>
@@ -27,6 +29,8 @@ Congregate by GitLab
                   <td>{{ d.id }}</td>
                   <td>{{ d.path }}</td>
                   <td>{{ d.description }}</td>
+                  <td class = "namespace">{{ d.namespace.name }}({{ d.namespace.kind }})</td>
+                  <td class = "last_activity">{{ d.last_activity_at }}</td>
               </tr>
             {% endfor %}
           </tbody>
