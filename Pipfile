@@ -3,6 +3,11 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 name = "pypi"
 
+[[source]]
+url = "https://testpypi.python.org/simple"
+verify_ssl = true
+name = "testpypi"
+
 [dev-packages]
 pylint = "<2.0.0"
 
@@ -11,7 +16,8 @@ awscli = "*"
 "boto3" = "*"
 requests = "*"
 flask = "*"
-dnd = {git = "https://gitlab.com/leopardm/dnd"}
+futures = "*"
+danger-noodle = {index = "https://test.pypi.org/simple/", version = "==0.1.3rc120536338"}
 
 [requires]
 python_version = "2.7"
