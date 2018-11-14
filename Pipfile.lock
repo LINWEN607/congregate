@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "d16fa45b7f123228087a57f873bbe2d274178326bad4ebd49fb6b7114b57344b"
+            "sha256": "a79bf9d6f39ea1f6ec8dacfc26828d21c4d69e0e91b24646973fdeddaa1fad89"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -88,10 +88,11 @@
         },
         "danger-noodle": {
             "hashes": [
-                "sha256:689a456f36f10e28cccdb59df84bd9cdb2d0a6ee6d6218c592348c50fad9c3ff",
-                "sha256:c9d55e33987fc1d672ecec0a21785ccf1950d649a6e4133618b8995a0d03c897"
+                "sha256:41d5fd6c816cde58ebe466f8a8d96e4fa722a6cc35ca5e1a9abdaa790048510d",
+                "sha256:78159e426ee82a08ba057e6429f5255a6f6e1df3195ac0404aab233ab46ea75f"
             ],
-            "version": "==0.1.3rc120536338"
+            "index": "pypi",
+            "version": "==0.1.4"
         },
         "docutils": {
             "hashes": [
