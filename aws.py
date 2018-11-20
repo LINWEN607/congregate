@@ -24,11 +24,9 @@ class aws_client:
         self.s3 = boto3.client('s3', config=Config(signature_version='s3v4'))
 
     def import_from_s3(self, name, namespace, presigned_url, filename):
-        #s3_file = urllib.urlopen(presigned_url)
         with requests.get(presigned_url, stream=True) as r:
             if r.headers["content-type"] != "application/xml":
                 url = '%s/api/v4/projects/import' % (self.config.parent_host)
-                #files = {'file': (filename, r.content)}
                 data = {
                     "path": name,
                     "namespace": namespace
