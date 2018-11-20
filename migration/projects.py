@@ -20,15 +20,13 @@ try:
     from helpers import conf, api, misc_utils
     from helpers import logger as log
     from migration import users, groups
-    from aws.presigned import generate_presigned_url
-    from aws.import_from_s3 import import_from_s3
+    from aws import aws_client
     from cli.stage_projects import stage_projects
 except ImportError:
     from congregate.helpers import conf, api, misc_utils
     from congregate.helpers import logger as log
     from congregate.migration import users, groups
-    from congregate.aws.presigned import generate_presigned_url
-    from congregate.aws.import_from_s3 import import_from_s3
+    from congregate.aws import aws_client
     from congregate.cli.stage_projects import stage_projects
 
 conf = conf.ig()
@@ -39,12 +37,13 @@ app_path = os.getenv("CONGREGATE_PATH")
 
 parent_host = conf.parent_host
 parent_token = conf.parent_token
+aws = aws_client()
 
 def export_project(project):
     if isinstance(project, str):
         project = json.loads(project)
     name = "%s_%s.tar.gz" % (project["namespace"], project["name"])
-    presigned_put_url = generate_presigned_url(name, "PUT")
+    presigned_put_url = aws.generate_presigned_url(name, "PUT")
     upload = [
         "upload[http_method]=PUT",
         "upload[url]=%s" % urllib.quote(presigned_put_url)
@@ -84,12 +83,12 @@ def import_project(project):
             namespace = "%s/%s" % (response["path"], project["namespace"])
         else:
             namespace = project["namespace"]
-    presigned_get_url = generate_presigned_url(filename, "GET")
+    presigned_get_url = aws.generate_presigned_url(filename, "GET")
     exported = False
     import_response = None
     timeout = 0
     while not exported:
-        import_response = import_from_s3(name, namespace, presigned_get_url, filename)
+        import_response = aws.import_from_s3(name, namespace, presigned_get_url, filename)
         #print import_response
         import_id = None
         if import_response is not None and len(import_response) > 0:
