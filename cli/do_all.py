@@ -1,8 +1,7 @@
 import os
 import subprocess
 from cli import config, stage_projects
-from migration import users, groups
-import migration.projects
+from migration import users, groups, projects
 
 app_path = os.getenv("CONGREGATE_PATH")
 
