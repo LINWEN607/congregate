@@ -7,6 +7,8 @@ stages:
 update readme:
   stage: update-info
   script:
+    - mkdir data
+    - echo $Dummy_config > data/config.json
     - pip install pipenv
     - pipenv install
     - pipenv run python update-readme.py
