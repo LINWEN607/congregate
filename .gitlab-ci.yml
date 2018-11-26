@@ -7,6 +7,8 @@ stages:
 update readme:
   stage: update-info
   script:
+    - pip install pipenv
+    - pipenv install
     - pipenv run python update-readme.py
   only:
     - master
