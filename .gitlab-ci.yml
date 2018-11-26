@@ -7,7 +7,8 @@ stages:
 update readme:
   stage: update-info
   script:
-    - apt-get install jq
+    - apt-get update
+    - apt-get install -y jq
     - mkdir data
     - echo $Dummy_config | jq . > data/config.json
     - pip install pipenv
