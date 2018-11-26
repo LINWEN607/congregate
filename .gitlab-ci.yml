@@ -10,6 +10,7 @@ update readme:
     - apt-get update
     - apt-get install -y jq
     - mkdir data
+    - echo $Dummy_config
     - echo $Dummy_config | jq . > data/config.json
     - pip install pipenv
     - pipenv install
