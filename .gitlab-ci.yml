@@ -1,7 +1,15 @@
 image: python:2.7.15-jessie
 
 stages:
+  - update-info
   - build
+
+update readme:
+  stage: update-info
+  script:
+    - pipenv run python update-readme.py
+  only:
+    - master
 
 archive project:
   stage: build

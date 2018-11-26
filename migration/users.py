@@ -190,7 +190,7 @@ def remove_users_from_parent_group():
             count += 1
             api.generate_delete_request(config.parent_host, config.parent_token, "/groups/%d/members/%d" % (config.parent_id, user["id"]))
         else:
-            print "Kepping this user"
+            print "Keeping this user"
             print user
     print count
 
