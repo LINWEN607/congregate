@@ -76,7 +76,7 @@ Note: Instead of exporting an environment variable within your shell session, yo
 - `do_all`: Performs configuration, project staging, and migration
 - `ui`: Deploys UI to localhost:5000
 
-**Important Note**
+#### Important Note
 
 The GitLab import/export API versions need to match between instances. [This documentation](https://docs.gitlab.com/ee/user/project/settings/import_export.html) shows which versions of the API exist in each version of GitLab
 
@@ -120,17 +120,3 @@ Refer to [this how-to](https://code.visualstudio.com/docs/python/debugging) for 
 ```
 
 To reload the app in debugging mode, you will need to click the `refresh` icon in VS code. Currently VS code doesn't support live reloading flask apps on save.
-
-## Major Goal - CLI Tool
-
-Assist with migrating contents of multiple GitLab instances into a single (monolithic?) GitLab instance.
-
-This tool covers the following processes:
-- Define instances that need to be migrated
-- Export the projects of those instances to a storage location of your choice (S3, GCP, bare metal, etc)
-- Import those projects to the parent GitLab instance
-- Provide logs to document and monitor the process
-
-## Far Away Goal - Native UI integration (Since congregate has a basic UI)
-
-The UI integration will help provide all of the features of the CLI directly within a GitLab instance and leverage Meltano for metrics.

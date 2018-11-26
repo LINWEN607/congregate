@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "a79bf9d6f39ea1f6ec8dacfc26828d21c4d69e0e91b24646973fdeddaa1fad89"
+            "sha256": "179a092e3ebbfeb5b80c0146398140d12b31a64d45a6cc6f6d099f4bb9470d91"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -23,11 +23,11 @@
     "default": {
         "awscli": {
             "hashes": [
-                "sha256:1bcd84c9af7715130bbb242da1d0d53350f3a8c8d34aa7fb6cad449282ccc8f3",
-                "sha256:dc9648d3ef2a5a50d69b07167e1a4de9b8b348a3c4b6d134f9b5036399e80a9e"
+                "sha256:82f97667f6841927a421620faffa107b81cef2b089f475e7ddf1749943214f53",
+                "sha256:e064052d6cba9e5a9191d05c0217754712ee40e4a871e4786242983bc6f543ca"
             ],
             "index": "pypi",
-            "version": "==1.16.54"
+            "version": "==1.16.61"
         },
         "beautifulsoup4": {
             "hashes": [
@@ -39,18 +39,18 @@
         },
         "boto3": {
             "hashes": [
-                "sha256:205bb45ab209f038d3014a468f9556ea5c7953225a0a57e49edcfd0486ff815a",
-                "sha256:4a1ac4afcb73a701c44fbba44ba7a385612c7ee76baf6f4f26da05928fa56e8a"
+                "sha256:40872be3cab0e1078e97aa0cfa8d836841d4e0acf40f5a4e59c6c33eacaea321",
+                "sha256:cc189072a38250d79f61660e83c0af899ff45e9de5f05b0a54f3a8a27b87d153"
             ],
             "index": "pypi",
-            "version": "==1.9.44"
+            "version": "==1.9.51"
         },
         "botocore": {
             "hashes": [
-                "sha256:0ea8386289f5830af68b0dc4cf7d697f9437ec61a462532e3941477430642cb2",
-                "sha256:44908f329d8ae02394559cb68dd09f5c2965bc5ef0b7b21e41dce017684756cd"
+                "sha256:4209c43f6913470371bda03aea01c933247dc9592421eb1abf1fb9f594f60a35",
+                "sha256:ddbd84e0c8f9bd29f9f67e10089df87089d0f10a8a45e156c7d2def7707d0113"
             ],
-            "version": "==1.12.44"
+            "version": "==1.12.51"
         },
         "bs4": {
             "hashes": [
@@ -93,6 +93,14 @@
             ],
             "index": "pypi",
             "version": "==0.1.4"
+        },
+        "docopt": {
+            "hashes": [
+                "sha256:49b3a825280bd66b3aa83585ef59c4a8c82f2c8a522dbe754a8bc8d08c85c491",
+                "sha256:b2de412b0b73a5f16110cb1becdfbabceb3fd80811441183245938ff135ef9c1"
+            ],
+            "index": "pypi",
+            "version": "==0.6.2"
         },
         "docutils": {
             "hashes": [

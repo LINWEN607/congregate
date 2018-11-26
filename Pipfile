@@ -18,6 +18,7 @@ requests = "*"
 flask = "*"
 futures = "*"
 danger-noodle = "*"
+docopt = "*"
 
 [requires]
 python_version = "2.7"
