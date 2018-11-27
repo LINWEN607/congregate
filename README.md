@@ -64,17 +64,62 @@ With congregate configured and projects, groups, and users retrieved, you should
 Note: Instead of exporting an environment variable within your shell session, you can also add `CONGREGATE_PATH` to `bash_profile` or an init.d script. This is a bit more of a permanent solution than just exporting the variable within the session. 
 
 ### Usage
+```
+Usage:
+    congregate list
+    congregate config
+    congregate stage <projects>...
+    congregate migrate
+    congregate ui
+    congregate import-projects
+    congregate do_all
+    congregate update-staged-user-info
+    congregate update-new-users
+    congregate add-users-to-parent-group
+    congregate remove-blocked-users
+    congregate lower-user-permissions
+    congregate get-total-count
+    congregate find-unimported-projects
+    congregate stage-unimported-projects
+    congregate remove-users-from-parent-group
+    congregate migrate-variables-in-stage
+    congregate add-all-mirrors
+    congregate remove-all-mirrors
+    congregate find-all-internal-projects
+    congregate make-all-internal-groups-private
+    congregate check-projects-visibility
+    congregate -h | --help
 
-`congregate <command> <added-parameters>`
+Options:
+    -h --help     Show this screen.
 
-- `config`: configure parameters like instance hosts, tokens, storage locations
-- `list`: List all available projects
-- `stage <project-id or project name>`: Stage projects to be migrated
-- `migrate`: Queue migration
-- `retrieve-groups`: Retrieve groups from child instance. This is bundled into `list`
-- `retrieve-users`: Retrieve users from child instance. This is bundled into `list`
-- `do_all`: Performs configuration, project staging, and migration
-- `ui`: Deploys UI to localhost:5000
+Commands:
+    list                                List all projects of a child instance and save it to {CONGREGATE_PATH}/data/project_json.json
+    config                              Configure congregate for migrating between two instances and save it to {CONGREGATE_PATH}/data/config.json
+    stage                               Stage projects to {CONGREGATE_PATH}/data/stage.json,
+                                        users to {CONGREGATE_PATH}/data/staged_users.json,
+                                        groups to {CONGREGATE_PATH}/data/staged_groups.json.
+                                        All projects can be staged with a '.' or 'all'.
+    migrate                             mmence migration based on configuration and staged assets
+    ui                                  Deploy UI to port 5000
+    import-projects                     Kick off import of exported projects onto parent instance
+    do_all                              Configure system, retrieve all projects, users, and groups, stage all information, and commence migration
+    update-staged-user-info             Update staged user information after migrating only users
+    update-new-users                    Update user IDs in staged groups and projects after migrating users
+    add-users-to-parent-group           If a parent group is set, all users staged will be added to the parent group
+    remove-blocked-users                Removes all blocked users from staged projects and groups
+    lower-user-permissions              Sets all reporter users to guest users
+    get-total-count                     Get total count of migrated projects. Used to compare exported projects to imported projects.
+    find-unimported-projects            Returns a list of projects that failed import
+    stage-unimported-projects           Stage unimported projects based on {CONGREGATE_PATH}/data/unimported_projects.txt
+    remove-users-from-parent-group      Remove all users with at most reporter access from the parent group
+    migrate-variables-in-stage          Migrate CI variables for staged projects
+    add-all-mirrors                     Sets up project mirroring for staged projects
+    remove-all-mirrors                  Remove all project mirrors for staged projects
+    find-all-internal-projects          Finds all internal projects
+    make-all-internal-groups-private    Makes all internal migrated groups private
+    check-projects-visibility           Returns list of all migrated projects' visibility
+```
 
 #### Important Note
 
