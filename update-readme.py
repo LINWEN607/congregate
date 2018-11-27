@@ -5,7 +5,7 @@ import os
 import requests
 from collections import OrderedDict
 
-private_token = os.getenv('PRIVATE_TOKEN')
+private_token = os.getenv('ACCESS_TOKEN')
 gitlab_user_email = os.getenv('GITLAB_USER_EMAIL')
 gitlab_user_name = os.getenv('GITLAB_USER_NAME')
 project_id = os.getenv('CI_PROJECT_ID')
