@@ -15,7 +15,8 @@ update readme:
     - pipenv install
     - pipenv run python update-readme.py
   only:
-    - master
+    refs:
+      - master
     changes:
       - congregate.py
 
