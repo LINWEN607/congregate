@@ -30,7 +30,6 @@ def traverse_file(base_obj, level, string=None):
     split_string = re.split(pattern_string, raw_string)
     keys = pattern.findall(raw_string)
     for key in keys:
-        print key
         base_obj[key] = OrderedDict({
             "raw": split_string[keys.index(key)+1]
         })

@@ -10,14 +10,14 @@ update readme:
     - apt-get update
     - apt-get install -y jq
     - mkdir data
-    - echo $Dummy_config
     - echo ${Dummy_config} | jq . > data/config.json
-    - cat data/config.json
     - pip install pipenv
     - pipenv install
     - pipenv run python update-readme.py
   only:
     - master
+    changes:
+      - congregate.py
 
 archive project:
   stage: build
