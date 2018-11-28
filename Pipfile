@@ -19,6 +19,8 @@ flask = "*"
 futures = "*"
 danger-noodle = "*"
 docopt = "*"
+gunicorn = "*"
+gevent = "*"
 
 [requires]
 python_version = "2.7"

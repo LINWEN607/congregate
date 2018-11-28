@@ -38,7 +38,7 @@ Commands:
                                         groups to {CONGREGATE_PATH}/data/staged_groups.json.
                                         All projects can be staged with a '.' or 'all'.
     migrate                             mmence migration based on configuration and staged assets
-    ui                                  Deploy UI to port 5000
+    ui                                  Deploy UI to port 8000
     import-projects                     Kick off import of exported projects onto parent instance
     do_all                              Configure system, retrieve all projects, users, and groups, stage all information, and commence migration
     update-staged-user-info             Update staged user information after migrating only users
@@ -94,7 +94,7 @@ if __name__ == '__main__':
         os.environ["FLASK_APP"] = "%s/ui" % app_path
         os.chdir(app_path)
         os.environ["PYTHONPATH"] = app_path
-        run_ui = "flask run --host=0.0.0.0"
+        run_ui = "gunicorn -k gevent -w 4 ui:app"
         subprocess.call(run_ui.split(" "))
     if arguments["update-staged-user-info"]:
         users.update_user_after_migration()
