@@ -400,6 +400,7 @@ def append_users(users):
         for u in user_file:
             if user == u["username"]:
                 staged_users.append(u)
+                l.logger.info("Staging user (%s) [%d/%d]" % (u["username"], len(staged_users), len(users)))
     with open("%s/data/staged_users.json" % app_path, "w") as f:
         json.dump(misc_utils.remove_dupes(staged_users), f, indent=4)
 

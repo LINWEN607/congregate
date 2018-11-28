@@ -115,12 +115,24 @@ function register_events() {
                     ids.push(checkboxes[i].id);
                 }
             }
+
+            var output = document.getElementById('stage_log');
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', 'log');
+            xhr.send();
+
+            var updateLog = setInterval(function() {
+                document.getElementById('stage_log').innerHTML = xhr.responseText;
+            }, 1000);
+
             $.ajax({
                 type: "POST",
                 url: "append_groups",
                 data: ids.toString(),
                 success: function(data) {
                     console.log(data);
+                    clearInterval(updateLog);
+                    output.innerHTML = data;
                 }
             });
         });
@@ -136,12 +148,24 @@ function register_events() {
                     ids.push(checkboxes[i].id);
                 }
             }
+
+            var output = document.getElementById('stage_log');
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', 'log');
+            xhr.send();
+
+            var updateLog = setInterval(function() {
+                document.getElementById('stage_log').innerHTML = xhr.responseText;
+            }, 1000);
+
             $.ajax({
                 type: "POST",
                 url: "append_users",
                 data: ids.toString(),
                 success: function(data) {
                     console.log(data);
+                    clearInterval(updateLog);
+                    output.innerHTML = data;
                 }
             });
         });

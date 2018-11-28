@@ -169,6 +169,7 @@ def append_groups(groups):
                             if g["parent_id"] not in groups:
                                 g["parent_id"] = config.parent_id
                         staged_groups.append(g)
+                        l.logger.info("Staging group (%s) [%d/%d]" % (g["name"], len(staged_groups), len(groups)))
     with open("%s/data/staged_groups.json" % app_path, "w") as f:
         json.dump(misc_utils.remove_dupes(staged_groups), f, indent=4)
     
