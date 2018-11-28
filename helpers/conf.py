@@ -73,3 +73,11 @@ class ig:
     @property
     def mirror_username(self):
         return self.config.get("mirror_username", None)
+
+    @property
+    def external_user_name(self):
+        return self.config.get("external_user_name", None)
+
+    @property
+    def external_user_password(self):
+        return self.config.get("external_user_password", None)

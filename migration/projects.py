@@ -241,6 +241,32 @@ def mirror_repo(project, import_id):
     response = api.generate_put_request(parent_host, parent_token, "projects/%d" % import_id, json.dumps(mirror_data))
     l.logger.info(response.text)
 
+def mirror_generic_repo(generic_repo, project_id):
+    """
+        Sets up mirror from generic git repo
+        
+        NOTE: Only works on GitLab EE instances
+    """
+    split_url = generic_repo["web_url_to_repo"].split("://")
+    protocol = split_url[0]
+    repo_url = split_url[1]
+    
+    mirror_user_id = conf.mirror_username
+    user_name = conf.external_user_name
+    user_password = conf.external_user_password
+
+    l.logger.info("Attempting to mirror repo")
+    import_url = "%s://%s:%s@%s" % (protocol, user_name, user_password, repo_url)
+    l.logger.debug(import_url)
+    mirror_data = {
+        "mirror": True,
+        "mirror_user_id": mirror_user_id,
+        "import_url": import_url
+    }
+
+    response = api.generate_put_request(parent_host, parent_token, "projects/%d" % project_id, json.dumps(mirror_data))
+    l.logger.info(response.text)
+
 def remove_mirror(project_id):
     """
         Removes repo mirror information after migration process is complete
