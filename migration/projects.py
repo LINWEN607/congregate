@@ -243,9 +243,9 @@ def mirror_repo(project, import_id):
 
 def mirror_generic_repo(generic_repo, project_id):
     """
-        Sets up mirror from generic git repo
+        Generates shell repo with mirroring enabled by default
         
-        NOTE: Only works on GitLab EE instances
+        NOTE: Mirroring through the API only works on GitLab EE instances
     """
     split_url = generic_repo["web_url_to_repo"].split("://")
     protocol = split_url[0]
@@ -255,16 +255,17 @@ def mirror_generic_repo(generic_repo, project_id):
     user_name = conf.external_user_name
     user_password = conf.external_user_password
 
-    l.logger.info("Attempting to mirror repo")
+    l.logger.info("Attempting to generate shell repo and create mirror")
     import_url = "%s://%s:%s@%s" % (protocol, user_name, user_password, repo_url)
     l.logger.debug(import_url)
-    mirror_data = {
+    data = {
+        "name": generic_repo["name"],
         "mirror": True,
         "mirror_user_id": mirror_user_id,
         "import_url": import_url
     }
 
-    response = api.generate_put_request(parent_host, parent_token, "projects/%d" % project_id, json.dumps(mirror_data))
+    response = api.generate_post_request(parent_host, parent_token, "projects", json.dumps(data))
     l.logger.info(response.text)
 
 def remove_mirror(project_id):
@@ -288,11 +289,11 @@ def migrate_variables(import_id, id):
         response_json = json.loads(response.read())
         if len(response_json) > 0:
             l.logger.debug(len(response_json))
-            # for i in range(len(response_json)):
-            #     appended_data = response_json[i]
-            #     appended_data["environment_scope"] = "*"
-            #     wrapped_data = json.dumps(appended_data)
-            #     api.generate_post_request(conf.parent_host, conf.parent_token, "projects/%d/variables" % import_id, wrapped_data)
+            for i in range(len(response_json)):
+                appended_data = response_json[i]
+                appended_data["environment_scope"] = "*"
+                wrapped_data = json.dumps(appended_data)
+                api.generate_post_request(conf.parent_host, conf.parent_token, "projects/%d/variables" % import_id, wrapped_data)
         else:
             l.logger.info("Project does not have CI variables. Skipping.")
 

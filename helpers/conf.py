@@ -81,3 +81,7 @@ class ig:
     @property
     def external_user_password(self):
         return self.config.get("external_user_password", None)
+
+    @property
+    def external_source(self):
+        return self.config.get("external_source", None)

@@ -13,6 +13,21 @@ def config():
 
     print "##Configuring congregate"
 
+    external = raw_input("%s. Migration source (default: GitLab)" % str(len(config) + 1))
+    if external is not None and external.lower() != "gitlab":
+        config["external_source"] = external
+        print "External migration is currently limited to mirroring through http/https. A master username and password will be required to set up mirroring in each shell project."
+        external_username = raw_input("%s. External username: " % str(len(config)))
+        config["external_user_name"] = external_username
+        external_password = raw_input("%s. External password: " % str(len(config)))
+        config["external_user_password"] = external_password
+        list_of_repos = raw_input("%s. Path to JSON file containing repo information: (default: none)")
+        if list_of_repos is not None:
+            config["repo_list_path"] = list_of_repos
+        
+        print "External repo migration configuration complete"
+        exit(0)
+    
     parent_instance_host = raw_input("%s. Host of parent instance (destination instance) " % str(len(config) + 1))
     config["parent_instance_host"] = parent_instance_host
 
