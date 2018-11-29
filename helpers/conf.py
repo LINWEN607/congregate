@@ -85,3 +85,7 @@ class ig:
     @property
     def external_source(self):
         return self.config.get("external_source", None)
+    
+    @property
+    def repo_list(self):
+        return self.config.get("repo_list_path", None)

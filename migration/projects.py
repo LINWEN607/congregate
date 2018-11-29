@@ -241,7 +241,7 @@ def mirror_repo(project, import_id):
     response = api.generate_put_request(parent_host, parent_token, "projects/%d" % import_id, json.dumps(mirror_data))
     l.logger.info(response.text)
 
-def mirror_generic_repo(generic_repo, project_id):
+def mirror_generic_repo(generic_repo):
     """
         Generates shell repo with mirroring enabled by default
         
@@ -390,43 +390,45 @@ def migrate_given_export(project_json):
         l.logger.error(e)
         
 def migrate():
-    with open("%s/data/stage.json" % app_path, "r") as f:
-        files = json.load(f)
-    with open("%s/data/staged_groups.json" % app_path, "r") as f:
-        groups_file = json.load(f)
-
-    l.logger.info("Migrating user info")
-    new_users = users.migrate_user_info()
-
-    # with open("%s/data/new_user_ids.txt" % app_path, "w") as f:
-    #     for new_user in new_users:
-    #         f.write("%s\n" % new_user)
-
-    # if len(new_users) > 0:
-    #     users.update_user_info(new_users)
-    # else:
-    #     users.update_user_info(new_users, overwrite=False)
-    
-    if len(groups_file) > 0:
-        l.logger.info("Migrating group info")
-        groups.migrate_group_info()
+    if conf.external_source != False:
+        with open("%s" % conf.repo_list, "r") as f:
+            repo_list = json.load(f)
+        for repo in repo_list:
+            mirror_generic_repo(repo)
     else:
-        l.logger.info("No groups to migrate")
+        with open("%s/data/stage.json" % app_path, "r") as f:
+            files = json.load(f)
+        with open("%s/data/staged_groups.json" % app_path, "r") as f:
+            groups_file = json.load(f)
 
-    if len(files) > 0:
-        l.logger.info("Migrating project info")
-        # add some multithreading?
-        pool = ThreadPool(2) 
-        # Open the urls in their own threads
-        # and return the results
-        results = pool.map(handle_migrating_file, files)
-        #close the pool and wait for the work to finish 
-        pool.close() 
-        pool.join() 
+        l.logger.info("Migrating user info")
+        new_users = users.migrate_user_info()
 
-        #migrate_project_info()
-    else:
-        l.logger.info("No projects to migrate")
+        # with open("%s/data/new_user_ids.txt" % app_path, "w") as f:
+        #     for new_user in new_users:
+        #         f.write("%s\n" % new_user)
+
+        # if len(new_users) > 0:
+        #     users.update_user_info(new_users)
+        # else:
+        #     users.update_user_info(new_users, overwrite=False)
+        
+        if len(groups_file) > 0:
+            l.logger.info("Migrating group info")
+            groups.migrate_group_info()
+        else:
+            l.logger.info("No groups to migrate")
+
+        if len(files) > 0:
+            l.logger.info("Migrating project info")
+            pool = ThreadPool(2) 
+            results = pool.map(handle_migrating_file, files)
+            pool.close() 
+            pool.join() 
+
+            #migrate_project_info()
+        else:
+            l.logger.info("No projects to migrate")
 
 def kick_off_import():
     with open("%s/data/stage.json" % app_path, "r") as f:

@@ -27,6 +27,8 @@ def config():
         
         print "External repo migration configuration complete"
         exit(0)
+    else:
+        config["external_source"] = False
     
     parent_instance_host = raw_input("%s. Host of parent instance (destination instance) " % str(len(config) + 1))
     config["parent_instance_host"] = parent_instance_host
