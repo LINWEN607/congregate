@@ -24,15 +24,10 @@ def generate_config():
         config["external_user_password"] = external_password
         list_of_repos = raw_input("%s. Path to JSON file containing repo information: (default: none) " % str(len(config) + 1))
         if list_of_repos is not None:
-            config["repo_list_path"] = list_of_repos
-
-        mirror_id = raw_input("%s. GitLab user ID used for conducting mirroring: ")
-        config["parent_user_id"] = mirror_id
-
-        wrapper["config"] = config
-        print "External repo migration configuration complete"
-
-        return wrapper
+            if list_of_repos[0] != "/":
+                config["repo_list_path"] = "%s/%s" % (app_path, list_of_repos)
+            else:
+                config["repo_list_path"] = list_of_repos
     else:
         config["external_source"] = False
     
@@ -46,51 +41,52 @@ def generate_config():
 
     config["parent_user_id"] = parent_user_info["id"]
 
-    child_instance_host = raw_input("%s. Host of child instance (destination instance) " % str(len(config) + 1))
-    config["child_instance_host"] = child_instance_host
+    if config["external_source"] == False:
+        child_instance_host = raw_input("%s. Host of child instance (destination instance) " % str(len(config) + 1))
+        config["child_instance_host"] = child_instance_host
 
-    child_instance_token = raw_input("%s. Access token to use for child instance " % str(len(config) + 1))
-    config["child_instance_token"] = child_instance_token
+        child_instance_token = raw_input("%s. Access token to use for child instance " % str(len(config) + 1))
+        config["child_instance_token"] = child_instance_token
 
-    parent_id = raw_input("Are you migrating the entire instance to a group? For example, migrating to our SaaS solution? (default: no)")
-    if parent_id is None or parent_id == "no":
-        pass
-    else:
-        parent_id = raw_input("%s. Please input the parent group ID (You can find this in the parent group -> settings -> general)" % str(len(config) + 1))
-        config["parent_id"] = int(parent_id)
-
-    mirror_user = raw_input("Are you planning a soft cut-over migration? (Mirroring repos to keep both instances around) (default: no)")
-    if mirror_user is None or mirror_user == "no":
-        pass
-    else:
-        mirror_user = parent_user_info["username"]
-        config["mirror_username"] = mirror_user
-
-    location = raw_input("%s. Staging location type for exported projects? (default: filesystem) " % str(len(config) + 1))
-    if location is None:
-        config["location"] = "filesystem"
-        location = "filesystem"
-    else:
-        config["location"] = location
-
-    if location == "filesystem":
-        path = raw_input("%s. Absolute path for exported projects? (default: %s) " % (str(len(config) + 1), os.getcwd()))
-        if path is None:
-            config["path"] = os.getcwd()
+        parent_id = raw_input("Are you migrating the entire instance to a group? For example, migrating to our SaaS solution? (default: no)")
+        if parent_id is None or parent_id == "no":
+            pass
         else:
-            config["path"] = path
+            parent_id = raw_input("%s. Please input the parent group ID (You can find this in the parent group -> settings -> general)" % str(len(config) + 1))
+            config["parent_id"] = int(parent_id)
 
-    elif location.lower() == "aws":
-        bucket_name = raw_input("%s. Bucket name: " % str(len(config) + 1))
-        config["bucket_name"] = bucket_name
-        access_key = raw_input("%s. Access key for S3 bucket: " % str(len(config) + 1))
-        config["access_key"] = access_key
-        command = "aws configure set aws_access_key_id %s" % access_key
-        subprocess.call(command.split(" "))
-        secret_key = raw_input("%s. Secret key for S3 bucket: " % str(len(config) + 1))
-        config["secret_key"] = secret_key
-        command = "aws configure set aws_secret_access_key %s" % secret_key
-        subprocess.call(command.split(" "))
+        mirror_user = raw_input("Are you planning a soft cut-over migration? (Mirroring repos to keep both instances around) (default: no)")
+        if mirror_user is None or mirror_user == "no":
+            pass
+        else:
+            mirror_user = parent_user_info["username"]
+            config["mirror_username"] = mirror_user
+
+        location = raw_input("%s. Staging location type for exported projects? (default: filesystem) " % str(len(config) + 1))
+        if location is None:
+            config["location"] = "filesystem"
+            location = "filesystem"
+        else:
+            config["location"] = location
+
+        if location == "filesystem":
+            path = raw_input("%s. Absolute path for exported projects? (default: %s) " % (str(len(config) + 1), os.getcwd()))
+            if path is None:
+                config["path"] = os.getcwd()
+            else:
+                config["path"] = path
+
+        elif location.lower() == "aws":
+            bucket_name = raw_input("%s. Bucket name: " % str(len(config) + 1))
+            config["bucket_name"] = bucket_name
+            access_key = raw_input("%s. Access key for S3 bucket: " % str(len(config) + 1))
+            config["access_key"] = access_key
+            command = "aws configure set aws_access_key_id %s" % access_key
+            subprocess.call(command.split(" "))
+            secret_key = raw_input("%s. Secret key for S3 bucket: " % str(len(config) + 1))
+            config["secret_key"] = secret_key
+            command = "aws configure set aws_secret_access_key %s" % secret_key
+            subprocess.call(command.split(" "))
 
     wrapper["config"] = config
     return wrapper

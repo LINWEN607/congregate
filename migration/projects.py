@@ -246,7 +246,7 @@ def mirror_generic_repo(generic_repo):
         
         NOTE: Mirroring through the API only works on GitLab EE instances
     """
-    split_url = generic_repo["web_url_to_repo"].split("://")
+    split_url = generic_repo["web_repo_url"].split("://")
     protocol = split_url[0]
     repo_url = split_url[1]
     
@@ -254,7 +254,7 @@ def mirror_generic_repo(generic_repo):
     user_name = conf.external_user_name
     user_password = conf.external_user_password
 
-    l.logger.info("Attempting to generate shell repo and create mirror")
+    l.logger.info("Attempting to generate shell repo for %s and create mirror" % generic_repo["name"])
     import_url = "%s://%s:%s@%s" % (protocol, user_name, user_password, repo_url)
     l.logger.debug(import_url)
     data = {
@@ -264,8 +264,12 @@ def mirror_generic_repo(generic_repo):
         "import_url": import_url
     }
 
+    if generic_repo.get("visibility", None) is not None:
+        data["visibility"] = generic_repo["visibility"]
+
     response = api.generate_post_request(parent_host, parent_token, "projects", json.dumps(data))
-    l.logger.info(response.text)
+    l.logger.info("Project %s has been created and mirroring has been enabled" % generic_repo["name"])
+    l.logger.debug(json.load(response))
 
 def remove_mirror(project_id):
     """

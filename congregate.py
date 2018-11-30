@@ -81,7 +81,9 @@ config = conf.ig()
 if __name__ == '__main__':
     arguments = docopt(__doc__)
     if config.external_source != False and config.external_source is not None:
-        if arguments["migrate"]:
+        if arguments["config"]:
+            configure.config()
+        elif arguments["migrate"]:
             projects.migrate()
         elif arguments["ui"]:
             os.environ["FLASK_APP"] = "%s/ui" % app_path
