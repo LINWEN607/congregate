@@ -89,7 +89,6 @@ def import_project(project):
     timeout = 0
     while not exported:
         import_response = aws.import_from_s3(name, namespace, presigned_get_url, filename)
-        #print import_response
         import_id = None
         if import_response is not None and len(import_response) > 0:
             l.logger.info(import_response)
@@ -251,7 +250,7 @@ def mirror_generic_repo(generic_repo):
     protocol = split_url[0]
     repo_url = split_url[1]
     
-    mirror_user_id = conf.mirror_username
+    mirror_user_id = conf.parent_user_id
     user_name = conf.external_user_name
     user_password = conf.external_user_password
 
@@ -435,7 +434,6 @@ def kick_off_import():
         files = json.load(f)
     if len(files) > 0:
         l.logger.info("Importing projects")
-        # add some multithreading?
         pool = ThreadPool(4) 
         # Open the urls in their own threads
         # and return the results

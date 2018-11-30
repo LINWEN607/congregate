@@ -8,25 +8,31 @@ except ImportError:
 
 app_path = os.getenv("CONGREGATE_PATH")
 
-def config():
+def generate_config():
     config = {}
+    wrapper = {}
 
     print "##Configuring congregate"
 
-    external = raw_input("%s. Migration source (default: GitLab)" % str(len(config) + 1))
+    external = raw_input("%s. Migration source (default: GitLab) " % str(len(config) + 1))
     if external is not None and external.lower() != "gitlab":
         config["external_source"] = external
         print "External migration is currently limited to mirroring through http/https. A master username and password will be required to set up mirroring in each shell project."
-        external_username = raw_input("%s. External username: " % str(len(config)))
+        external_username = raw_input("%s. External username: " % str(len(config) + 1))
         config["external_user_name"] = external_username
-        external_password = raw_input("%s. External password: " % str(len(config)))
+        external_password = raw_input("%s. External password: " % str(len(config) + 1))
         config["external_user_password"] = external_password
-        list_of_repos = raw_input("%s. Path to JSON file containing repo information: (default: none)")
+        list_of_repos = raw_input("%s. Path to JSON file containing repo information: (default: none) " % str(len(config) + 1))
         if list_of_repos is not None:
             config["repo_list_path"] = list_of_repos
-        
+
+        mirror_id = raw_input("%s. GitLab user ID used for conducting mirroring: ")
+        config["parent_user_id"] = mirror_id
+
+        wrapper["config"] = config
         print "External repo migration configuration complete"
-        exit(0)
+
+        return wrapper
     else:
         config["external_source"] = False
     
@@ -86,11 +92,14 @@ def config():
         command = "aws configure set aws_secret_access_key %s" % secret_key
         subprocess.call(command.split(" "))
 
-    wrapper = {}
     wrapper["config"] = config
+    return wrapper
 
+
+def config():
+    config = generate_config()
     with open("%s/data/config.json" % app_path, "w") as f:
-        f.write(json.dumps(wrapper, indent=4))
+        f.write(json.dumps(config, indent=4))
 
     print "Congregate has been successfully configured"
 
@@ -104,6 +113,3 @@ def update_config(config_data):
 def get_user(parent_instance_host, parent_instance_token):
     response = generate_get_request(parent_instance_host, parent_instance_token, "user")
     return json.load(response)
-
-if __name__ == "__main__":
-    config()
