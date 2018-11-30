@@ -89,7 +89,6 @@ def import_project(project):
     timeout = 0
     while not exported:
         import_response = aws.import_from_s3(name, namespace, presigned_get_url, filename)
-        #print import_response
         import_id = None
         if import_response is not None and len(import_response) > 0:
             l.logger.info(import_response)
@@ -241,6 +240,37 @@ def mirror_repo(project, import_id):
     response = api.generate_put_request(parent_host, parent_token, "projects/%d" % import_id, json.dumps(mirror_data))
     l.logger.info(response.text)
 
+def mirror_generic_repo(generic_repo):
+    """
+        Generates shell repo with mirroring enabled by default
+        
+        NOTE: Mirroring through the API only works on GitLab EE instances
+    """
+    split_url = generic_repo["web_repo_url"].split("://")
+    protocol = split_url[0]
+    repo_url = split_url[1]
+    
+    mirror_user_id = conf.parent_user_id
+    user_name = conf.external_user_name
+    user_password = conf.external_user_password
+
+    l.logger.info("Attempting to generate shell repo for %s and create mirror" % generic_repo["name"])
+    import_url = "%s://%s:%s@%s" % (protocol, user_name, user_password, repo_url)
+    l.logger.debug(import_url)
+    data = {
+        "name": generic_repo["name"],
+        "mirror": True,
+        "mirror_user_id": mirror_user_id,
+        "import_url": import_url
+    }
+
+    if generic_repo.get("visibility", None) is not None:
+        data["visibility"] = generic_repo["visibility"]
+
+    response = api.generate_post_request(parent_host, parent_token, "projects", json.dumps(data))
+    l.logger.info("Project %s has been created and mirroring has been enabled" % generic_repo["name"])
+    l.logger.debug(json.load(response))
+
 def remove_mirror(project_id):
     """
         Removes repo mirror information after migration process is complete
@@ -262,11 +292,11 @@ def migrate_variables(import_id, id):
         response_json = json.loads(response.read())
         if len(response_json) > 0:
             l.logger.debug(len(response_json))
-            # for i in range(len(response_json)):
-            #     appended_data = response_json[i]
-            #     appended_data["environment_scope"] = "*"
-            #     wrapped_data = json.dumps(appended_data)
-            #     api.generate_post_request(conf.parent_host, conf.parent_token, "projects/%d/variables" % import_id, wrapped_data)
+            for i in range(len(response_json)):
+                appended_data = response_json[i]
+                appended_data["environment_scope"] = "*"
+                wrapped_data = json.dumps(appended_data)
+                api.generate_post_request(conf.parent_host, conf.parent_token, "projects/%d/variables" % import_id, wrapped_data)
         else:
             l.logger.info("Project does not have CI variables. Skipping.")
 
@@ -363,50 +393,51 @@ def migrate_given_export(project_json):
         l.logger.error(e)
         
 def migrate():
-    with open("%s/data/stage.json" % app_path, "r") as f:
-        files = json.load(f)
-    with open("%s/data/staged_groups.json" % app_path, "r") as f:
-        groups_file = json.load(f)
-
-    l.logger.info("Migrating user info")
-    new_users = users.migrate_user_info()
-
-    # with open("%s/data/new_user_ids.txt" % app_path, "w") as f:
-    #     for new_user in new_users:
-    #         f.write("%s\n" % new_user)
-
-    # if len(new_users) > 0:
-    #     users.update_user_info(new_users)
-    # else:
-    #     users.update_user_info(new_users, overwrite=False)
-    
-    if len(groups_file) > 0:
-        l.logger.info("Migrating group info")
-        groups.migrate_group_info()
+    if conf.external_source != False:
+        with open("%s" % conf.repo_list, "r") as f:
+            repo_list = json.load(f)
+        for repo in repo_list:
+            mirror_generic_repo(repo)
     else:
-        l.logger.info("No groups to migrate")
+        with open("%s/data/stage.json" % app_path, "r") as f:
+            files = json.load(f)
+        with open("%s/data/staged_groups.json" % app_path, "r") as f:
+            groups_file = json.load(f)
 
-    if len(files) > 0:
-        l.logger.info("Migrating project info")
-        # add some multithreading?
-        pool = ThreadPool(2) 
-        # Open the urls in their own threads
-        # and return the results
-        results = pool.map(handle_migrating_file, files)
-        #close the pool and wait for the work to finish 
-        pool.close() 
-        pool.join() 
+        l.logger.info("Migrating user info")
+        new_users = users.migrate_user_info()
 
-        #migrate_project_info()
-    else:
-        l.logger.info("No projects to migrate")
+        # with open("%s/data/new_user_ids.txt" % app_path, "w") as f:
+        #     for new_user in new_users:
+        #         f.write("%s\n" % new_user)
+
+        # if len(new_users) > 0:
+        #     users.update_user_info(new_users)
+        # else:
+        #     users.update_user_info(new_users, overwrite=False)
+        
+        if len(groups_file) > 0:
+            l.logger.info("Migrating group info")
+            groups.migrate_group_info()
+        else:
+            l.logger.info("No groups to migrate")
+
+        if len(files) > 0:
+            l.logger.info("Migrating project info")
+            pool = ThreadPool(2) 
+            results = pool.map(handle_migrating_file, files)
+            pool.close() 
+            pool.join() 
+
+            #migrate_project_info()
+        else:
+            l.logger.info("No projects to migrate")
 
 def kick_off_import():
     with open("%s/data/stage.json" % app_path, "r") as f:
         files = json.load(f)
     if len(files) > 0:
         l.logger.info("Importing projects")
-        # add some multithreading?
         pool = ThreadPool(4) 
         # Open the urls in their own threads
         # and return the results
