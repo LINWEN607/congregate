@@ -6,7 +6,6 @@ Copyright (c) 2018 - GitLab
 
 
 import os
-import sys
 import json
 
 class ig:

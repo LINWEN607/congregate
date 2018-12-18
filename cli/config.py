@@ -30,7 +30,7 @@ def generate_config():
                 config["repo_list_path"] = list_of_repos
     else:
         config["external_source"] = False
-    
+
     parent_instance_host = raw_input("%s. Host of parent instance (destination instance) " % str(len(config) + 1))
     config["parent_instance_host"] = parent_instance_host
 
@@ -107,5 +107,4 @@ def update_config(config_data):
         json.dump(data, f, indent=4)
 
 def get_user(parent_instance_host, parent_instance_token):
-    response = generate_get_request(parent_instance_host, parent_instance_token, "user")
-    return json.load(response)
+    return generate_get_request(parent_instance_host, parent_instance_token, "user").json()

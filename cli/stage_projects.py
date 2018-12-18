@@ -5,12 +5,9 @@ Copyright (c) 2018 - GitLab
 """
 
 import os
-import urllib
-import urllib2
 import json
 import sys
 import subprocess
-import logging
 try:
     from helpers import conf, api, misc_utils
     from helpers import logger as log
@@ -72,8 +69,8 @@ def stage_projects(projects_to_stage):
                 obj["path_with_namespace"] = projects[i]["path_with_namespace"]
                 obj["visibilty"] = projects[i]["visibility"]
                 obj["http_url_to_repo"] = projects[i]["http_url_to_repo"]
-                response = api.generate_get_request(config.child_host, config.child_token, "projects/%d/members" % int(projects[i]["id"]))
-                members = json.loads(response.read())
+                
+                members = api.generate_get_request(config.child_host, config.child_token, "projects/%d/members" % int(projects[i]["id"])).json()
                 
                 for member in members:
                     if member["username"] != "root":
@@ -106,8 +103,9 @@ def stage_projects(projects_to_stage):
                 obj["visibilty"] = project["visibility"]
                 obj["http_url_to_repo"] = project["http_url_to_repo"]
                 obj["project_type"] = project["namespace"]["kind"]
-                response = api.generate_get_request(config.child_host, config.child_token, "projects/%d/members" % int(project["id"]))
-                members = json.loads(response.read())
+
+                members = api.generate_get_request(config.child_host, config.child_token, "projects/%d/members" % int(project["id"])).json()
+
                 for member in members:
                     if member["username"] != "root":
                         l.logger.info("Staging user (%s)" % member["username"])

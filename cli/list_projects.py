@@ -1,8 +1,5 @@
 import json
 import os
-import urllib
-import math
-import logging
 from helpers import conf
 from helpers import api
 from helpers import logger as log
