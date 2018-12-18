@@ -5,14 +5,9 @@ Copyright (c) 2018 - GitLab
 """
 
 import requests
-import urllib
-import json
-import sys
-import os
 from io import BytesIO
 import boto3
 from botocore.client import Config
-import sys
 try:
     from helpers import conf
 except ImportError:

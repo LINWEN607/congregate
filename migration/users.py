@@ -9,7 +9,7 @@ import sys
 import json
 import argparse
 import logging
-from urllib2 import HTTPError
+import requests
 try:
     from helpers import conf, api, misc_utils
     from helpers import logger as log
@@ -55,15 +55,15 @@ def update_users(obj, new_users, suffix=""):
                     shortcut[member["username"]] = {"id": new_user["id"]}
                     break
                 else:
-                    old_email = json.load(api.generate_get_request(config.child_host, config.child_token, "users/%d" % member["id"]))["email"]
-                    response = json.load(api.generate_get_request(config.parent_host, config.parent_token, "users?search=%s" % old_email))
+                    old_email = api.generate_get_request(config.child_host, config.child_token, "users/%d" % member["id"]).json()["email"]
+                    response = api.search(config.parent_host, config.parent_token, 'users', old_email)
                     print response
                     if len(response) > 0:
                         member["id"] = response[0]["id"]
                         shortcut[member["username"]] = {"id": response[0]["id"]}
                     else:
                         split_email = old_email.split("@")[0]
-                        another_search = json.load(api.generate_get_request(config.parent_host, config.parent_token, "users?search=%s" % split_email))
+                        another_search = api.search(config.parent_host, config.parent_token, 'users', split_email)
                         if len(another_search) > 0:
                             member["id"] = another_search[0]["id"]
                             shortcut[member["username"]] = {"id": another_search[0]["id"]}
@@ -75,12 +75,12 @@ def update_users(obj, new_users, suffix=""):
             if len(obj[i]["members"]) > 0:
                 if obj[i]["namespace"] == obj[i]["members"][0]["username"]:
                     new_id = obj[i]["members"][0]["id"]
-                    new_namespace = json.load(api.generate_get_request(config.parent_host, config.parent_token, "users/%d" % new_id))["username"]
+                    new_namespace = api.generate_get_request(config.parent_host, config.parent_token, "users/%d" % new_id).json()["username"]
                     obj[i]["namespace"] = new_namespace
                     print "New namespace for %s: %s" % (obj[i]["members"][0]["username"], new_namespace)
                     shortcut[obj[i]["members"][0]["username"]]["new_namespace"] = new_namespace
                 else:
-                    search_for_user_namespace = json.load(api.generate_get_request(config.parent_host, config.parent_token, "users/?search=%s" % obj[i]["namespace"]))
+                    search_for_user_namespace = api.search(config.parent_host, config.parent_token, 'users', obj[i]['namespace'])
                     if len(search_for_user_namespace) > 0:
                         print "Search for namespace: %s" % search_for_user_namespace[0]
                         obj[i]["namespace"] = search_for_user_namespace[0]["username"]
@@ -94,7 +94,7 @@ def update_users(obj, new_users, suffix=""):
                         print "Existing namespace for %s: %s" % (obj[i]["namespace"], shortcut[obj[i]["namespace"]].get("new_namespace", None))
                         obj[i]["namespace"] = shortcut[obj[i]["namespace"]].get("new_namespace", None)
                 else:
-                    search_for_user_namespace = json.load(api.generate_get_request(config.parent_host, config.parent_token, "users/?search=%s" % obj[i]["namespace"]))
+                    search_for_user_namespace = api.search(config.parent_host, config.parent_token, 'users', obj[i]['namespace'])
                     if len(search_for_user_namespace) > 0:
                         print "Existing namespace for %s: %s" % (obj[i]["namespace"], search_for_user_namespace[0]["username"])
                         if shortcut.get(obj[i]["namespace"], None) is not None:
@@ -107,7 +107,7 @@ def update_users(obj, new_users, suffix=""):
                         rewritten_namespace = obj[i]["namespace"] + suffix
                         rewritten_namespace = rewritten_namespace.replace("_", ".")
                         print "rewriting %s to %s" % (obj[i]["namespace"], rewritten_namespace)
-                        search_for_user_namespace = json.load(api.generate_get_request(config.parent_host, config.parent_token, "users/?search=%s" % rewritten_namespace))
+                        search_for_user_namespace = api.search(config.parent_host, config.parent_token, 'users', rewritten_namespace)
                         if len(search_for_user_namespace) > 0:
                             print "Existing namespace for %s: %s" % (obj[i]["namespace"], search_for_user_namespace[0]["username"])
                             if shortcut.get(obj[i]["namespace"], None) is not None:
@@ -139,7 +139,7 @@ def update_users_new(obj, new_users):
         l.logger.info("Rewriting users for %s" % obj[i]["name"])
         members = obj[i]["members"]
         for member in members:
-            old_email = json.load(api.generate_get_request(config.child_host, config.child_token, "users/%d" % member["id"]))["email"]
+            old_email = api.generate_get_request(config.child_host, config.child_token, "users/%d" % member["id"]).json()["email"]
             if rewritten_users.get(old_email, None) is not None:
                 member["id"] = rewritten_users[old_email]["id"]
     
@@ -179,7 +179,7 @@ def add_users_to_parent_group():
         try:
             print "Adding %s to group" % user["username"]
             api.generate_post_request(config.parent_host, config.parent_token, "groups/%d/members" % config.parent_id, json.dumps(data))
-        except HTTPError, e:
+        except requests.exceptions.RequestException, e:
             l.logger.error(e)
 
 def remove_users_from_parent_group():
@@ -253,7 +253,7 @@ def update_user_info(new_ids, overwrite=True):
         with open("%s/data/new_users.json" % app_path, "w") as f:
             new_users = []
             for new_id in new_ids:
-                new_user = json.load(api.generate_get_request(config.parent_host, config.parent_token, "/users/%s" % new_id))[0]
+                new_user = api.generate_get_request(config.parent_host, config.parent_token, "/users/%s" % new_id).json()[0]
                 new_users.append(new_user)
             
             root_index = None
@@ -291,20 +291,18 @@ def update_user_after_migration():
     users_not_found = []
     for user in users:
         print "searching for %s" % user["email"]
-        new_user = api.generate_get_request(config.parent_host, config.parent_token, "users?search=%s" % user["email"])
-        response = json.load(new_user)
-        print response
-        if len(response) > 0:
-            new_users.append(response[0])
+        new_user = api.search(config.parent_host, config.parent_token, 'users', user['email'])
+        print new_user
+        if len(new_user) > 0:
+            new_users.append(new_user[0])
         else:
             print "searching for %s" % user["username"]
-            new_user = api.generate_get_request(config.parent_host, config.parent_token, "users?search=%s" % user["username"])
-            response2 = json.load(new_user)
-            if len(response2) > 0:
-                new_users.append(response[0])
+            new_user2 = api.search(config.parent_host, config.parent_token, 'users', user['username'])
+            if len(new_user2) > 0:
+                new_users.append(new_user2[0])
             else: 
                 users_not_found.append(user["email"])
-                print response
+                print new_user
             
     other_ids = []
     if os.path.isfile("%s/data/ids.txt" % app_path):
@@ -314,9 +312,8 @@ def update_user_after_migration():
 
     for other_id in other_ids:
         print "searching for %s" % other_id
-        new_user = api.generate_get_request(config.parent_host, config.parent_token, "users/%s" % other_id)
-        response = json.load(new_user)
-        new_users.append(response)
+        new_user = api.generate_get_request(config.parent_host, config.parent_token, "users/%s" % other_id).json()
+        new_users.append(new_user)
 
     with open("%s/data/new_users.json" % app_path, "w") as f:
         json.dump(new_users, f, indent=4)
@@ -374,19 +371,22 @@ def migrate_user_info():
             #     user.pop("identities")
             # print json.dumps(user, indent=4)
             response = api.generate_post_request(config.parent_host, config.parent_token, "users", json.dumps(user))
-            response_json = json.load(response)
+            response_json = response.json()
             print response_json
-            new_ids.append(response_json["id"])
-        except HTTPError, e:
-            if e.code == 409:
+
+            if response.status_code == 409:
                 l.logger.info("User already exists")
+
                 try:
                     l.logger.info("Appending %s to new_users.json" % user["email"])
-                    response = api.generate_get_request(config.parent_host, config.parent_token, "users?search=%s" % user["email"])
-                    new_ids.append(json.load(response)[0]["id"])
-                except HTTPError, e:
+                    response = api.search(config.parent_host, config.parent_token, 'users', user['email'])
+                    new_ids.append(response[0]["id"])
+                except requests.exceptions.RequestException, e:
                     l.logger.info(e)
                     l.logger.info(e.read())
+            else:
+                new_ids.append(response_json["id"])
+        except requests.exceptions.RequestException, e:
             l.logger.info(e)
 
     return new_ids

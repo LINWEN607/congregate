@@ -58,7 +58,7 @@ Commands:
     check-projects-visibility           Returns list of all migrated projects' visibility
 """
 
-import os, sys, subprocess, argparse
+import os, subprocess
 from helpers import conf
 from helpers import logger as log
 try:

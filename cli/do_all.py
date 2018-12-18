@@ -1,5 +1,4 @@
 import os
-import subprocess
 from cli import config, stage_projects
 from migration import users, groups, projects
 

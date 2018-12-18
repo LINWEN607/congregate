@@ -1,20 +1,16 @@
 """
-Congregate - GitLab instance migration utility 
+Congregate - GitLab instance migration utility
 
 Copyright (c) 2018 - GitLab
 """
 
 import os
 import json
-import sys
-import subprocess
 import argparse
 import urllib
-import urllib2
 import time
-import logging
 import requests
-from multiprocessing.dummy import Pool as ThreadPool 
+from multiprocessing.dummy import Pool as ThreadPool
 
 try:
     from helpers import conf, api, misc_utils
@@ -56,7 +52,7 @@ def export_project(project):
 
     try:
         api.generate_post_request(conf.child_host, conf.child_token, "projects/%d/export" % project["id"], "&".join(upload), headers=headers)
-    except urllib2.HTTPError, e:
+    except requests.exceptions.RequestException, e:
        pass
 
 def import_project(project):
@@ -72,14 +68,14 @@ def import_project(project):
         if project["namespace"] == member["username"]:
             user_project = True
             #namespace = project["namespace"]
-            new_user = json.load(api.generate_get_request(conf.parent_host, conf.parent_token, "users/%d" % member["id"]))
+            new_user = api.generate_get_request(conf.parent_host, conf.parent_token, "users/%d" % member["id"]).json()
             namespace = new_user["username"]
             l.logger.info("%s is a user project belonging to %s. Attempting to import into their namespace" % (project["name"], new_user))
             break
     if not user_project:
         l.logger.info("%s is not a user project. Attempting to import into a group namespace" % (project["name"]))
         if conf.parent_id is not None:
-            response = json.load(api.generate_get_request(conf.parent_host, conf.parent_token, "groups/%d" % conf.parent_id))
+            response = api.generate_get_request(conf.parent_host, conf.parent_token, "groups/%d" % conf.parent_id).json()
             namespace = "%s/%s" % (response["path"], project["namespace"])
         else:
             namespace = project["namespace"]
@@ -98,7 +94,7 @@ def import_project(project):
             elif import_response.get("message") is not None:
                 if "Name has already been taken" in import_response.get("message"):
                     l.logger.debug("Searching for %s" % project["name"])
-                    search_response = json.load(api.generate_get_request(conf.parent_host, conf.parent_token, "projects?search=%s" % project["name"]))
+                    search_response = api.search(conf.parent_host, conf.parent_token, 'projects', project['name'])
                     if len(search_response) > 0:
                         for proj in search_response:
                             if proj["name"] == project["name"] and project["namespace"] in proj["namespace"]["path"]:
@@ -116,7 +112,7 @@ def import_project(project):
                     import_id = None
                     break
             if import_id is not None:
-                status = json.load(api.generate_get_request(conf.parent_host, conf.parent_token, "projects/%d/import" % import_id))
+                status = api.generate_get_request(conf.parent_host, conf.parent_token, "projects/%d/import" % import_id).json()
                 l.logger.info(status)
                 if status["import_status"] == "finished":
                     l.logger.info("%s has been exported and import is occurring" % name)
@@ -134,7 +130,7 @@ def import_project(project):
             else:
                 l.logger.info("Moving on to the next project. Time limit exceeded")
                 break
-    
+
     return import_id
 
 
@@ -144,12 +140,12 @@ def migrate_project_info():
     """
     with open("%s/data/stage.json" % app_path, "r") as f:
         projects = json.load(f)
-    
+
     for project in projects:
         members = project["members"]
         project.pop("members")
         l.logger.debug("Searching for %s" % project["name"])
-        new_project = json.load(api.generate_get_request(parent_host, parent_token, "projects?search=%s" % project["name"]))
+        new_project = api.search(parent_host, parent_token, 'projects', project['name'])
         if len(new_project) > 0:
             if new_project[0]["name"] == project["name"] and new_project[0]["namespace"]["name"] == project["namespace"]:
                 root_user_present = False
@@ -163,12 +159,12 @@ def migrate_project_info():
 
                     try:
                         api.generate_post_request(parent_host, parent_token, "projects/%d/members" % new_project[0]["id"], json.dumps(new_member))
-                    except urllib2.HTTPError, e:
+                    except requests.exceptions.RequestException, e:
                         l.logger.error(e)
                         l.logger.error("Member might already exist. Attempting to update access level")
                         try:
                             api.generate_put_request(parent_host, parent_token, "projects/%d/members/%d?access_level=%d" % (new_project[0]["id"], member["id"], member["access_level"]), data=None)
-                        except urllib2.HTTPError, e:
+                        except requests.exceptions.RequestException, e:
                             l.logger.error(e)
                             l.logger.error("Attempting to update existing member failed")
 
@@ -183,7 +179,7 @@ def migrate_single_project_info(project):
     members = project["members"]
     project.pop("members")
     l.logger.info("Searching for %s" % project["name"])
-    new_project = json.load(api.generate_get_request(parent_host, parent_token, "projects?search=%s" % project["name"]))
+    new_project = api.search(parent_host, parent_token, 'projects', project['name'])
     if len(new_project) > 0:
         if new_project[0]["name"] == project["name"] and new_project[0]["namespace"]["name"] == project["namespace"]:
             root_user_present = False
@@ -197,12 +193,12 @@ def migrate_single_project_info(project):
 
                 try:
                     api.generate_post_request(parent_host, parent_token, "projects/%d/members" % new_project[0]["id"], json.dumps(new_member))
-                except urllib2.HTTPError, e:
+                except requests.exceptions.RequestException, e:
                     l.logger.error(e)
                     l.logger.error("Member might already exist. Attempting to update access level")
                     try:
                         api.generate_put_request(parent_host, parent_token, "projects/%d/members/%d?access_level=%d" % (new_project[0]["id"], member["id"], member["access_level"]), data=None)
-                    except urllib2.HTTPError, e:
+                    except requests.exceptions.RequestException, e:
                         l.logger.error(e)
                         l.logger.error("Attempting to update existing member failed")
 
@@ -214,7 +210,7 @@ def migrate_single_project_info(project):
 def mirror_repo(project, import_id):
     """
         Sets up mirrored repo to allow a soft cut-over during the migration process.
-        
+
         NOTE: Only works on GitLab EE instances
     """
     split_url = project["http_url_to_repo"].split("://")
@@ -225,7 +221,7 @@ def mirror_repo(project, import_id):
     #         mirror_user_id = member["id"]
     #         mirror_user_name = member["username"]
     #         break
-    
+
     mirror_user_name = conf.mirror_username
     mirror_user_id = conf.parent_user_id
     l.logger.info("Attempting to mirror repo")
@@ -243,13 +239,13 @@ def mirror_repo(project, import_id):
 def mirror_generic_repo(generic_repo):
     """
         Generates shell repo with mirroring enabled by default
-        
+
         NOTE: Mirroring through the API only works on GitLab EE instances
     """
     split_url = generic_repo["web_repo_url"].split("://")
     protocol = split_url[0]
     repo_url = split_url[1]
-    
+
     mirror_user_id = conf.parent_user_id
     user_name = conf.external_user_name
     user_password = conf.external_user_password
@@ -274,7 +270,7 @@ def mirror_generic_repo(generic_repo):
 def remove_mirror(project_id):
     """
         Removes repo mirror information after migration process is complete
-        
+
         NOTE: Only works on GitLab EE instances
     """
     mirror_data = {
@@ -285,11 +281,10 @@ def remove_mirror(project_id):
 
     l.logger.info("Removing mirror from project %d" % project_id)
     api.generate_put_request(conf.parent_host, conf.parent_token, "projects/%d" % project_id, json.dumps(mirror_data))
-    
+
 def migrate_variables(import_id, id):
     try:
-        response = api.generate_get_request(conf.child_host, conf.child_token, "projects/%d/variables" % id)
-        response_json = json.loads(response.read())
+        response_json = api.generate_get_request(conf.child_host, conf.child_token, "projects/%d/variables" % id).json()
         if len(response_json) > 0:
             l.logger.debug(len(response_json))
             for i in range(len(response_json)):
@@ -299,9 +294,7 @@ def migrate_variables(import_id, id):
                 api.generate_post_request(conf.parent_host, conf.parent_token, "projects/%d/variables" % import_id, wrapped_data)
         else:
             l.logger.info("Project does not have CI variables. Skipping.")
-
-    except urllib2.HTTPError, e:
-        l.logger.error(e)
+    except requests.exceptions.RequestException, e:
         return None
 
 def migrate_projects(project_json):
@@ -309,7 +302,7 @@ def migrate_projects(project_json):
         project_json = json.loads(project_json)
     l.logger.debug("Searching for existing %s" % project_json["name"])
     project_exists = False
-    search_response = json.load(api.generate_get_request(conf.parent_host, conf.parent_token, "projects?search=%s" % project_json["name"]))
+    search_response = api.generate_get_request(conf.parent_host, conf.parent_token, 'projects', params={'search': project_json['name']}).json()
     if len(search_response) > 0:
         for proj in search_response:
             if proj["name"] == project_json["name"] and project_json["namespace"] in proj["namespace"]["path"]:
@@ -322,7 +315,7 @@ def migrate_projects(project_json):
         exported = False
         total_time = 0
         while not exported:
-            response = json.load(api.generate_get_request(conf.child_host, conf.child_token, "projects/%d/export" % project_json["id"]))
+            response = api.generate_get_request(conf.child_host, conf.child_token, "projects/%d/export" % project_json["id"]).json()
             if response["export_status"] == "finished":
                 l.logger.info("%s has finished exporting" % project_json["name"])
                 exported = True
@@ -359,7 +352,7 @@ def migrate_given_export(project_json):
     project_exists = False
     project_id = None
     try:
-        search_response = json.load(api.generate_get_request(conf.parent_host, conf.parent_token, "projects?search=%s" % project_json["name"]))
+        search_response = api.generate_get_request(conf.parent_host, conf.parent_token, 'projects', params={'search': project_json['name']}).json()
         if len(search_response) > 0:
             for proj in search_response:
                 if proj["name"] == project_json["name"] and project_json["namespace"] in proj["namespace"]["path"]:
@@ -368,7 +361,7 @@ def migrate_given_export(project_json):
                     project_id = proj["id"]
                     break
         if project_id:
-            import_check = json.load(api.generate_get_request(conf.parent_host, conf.parent_token, "projects/%d/import" % project_id))
+            import_check = api.generate_get_request(conf.parent_host, conf.parent_token, "projects/%d/import" % project_id).json()
             if import_check["import_status"] == "finished":
                 l.logger.info("%s already imported" % project_json["name"])
             elif import_check["import_status"] == "scheduled":
@@ -385,13 +378,11 @@ def migrate_given_export(project_json):
             if import_id is not None:
                 migrate_variables(import_id, project_json["id"])
                 migrate_single_project_info(project_json)
-    except urllib2.HTTPError, e:
+    except requests.exceptions.RequestException, e:
         l.logger.error(e)
     except OverflowError, e:
         l.logger.error(e)
-    except requests.ConnectionError, e:
-        l.logger.error(e)
-        
+
 def migrate():
     if conf.external_source != False:
         with open("%s" % conf.repo_list, "r") as f:
@@ -415,7 +406,7 @@ def migrate():
         #     users.update_user_info(new_users)
         # else:
         #     users.update_user_info(new_users, overwrite=False)
-        
+
         if len(groups_file) > 0:
             l.logger.info("Migrating group info")
             groups.migrate_group_info()
@@ -424,10 +415,10 @@ def migrate():
 
         if len(files) > 0:
             l.logger.info("Migrating project info")
-            pool = ThreadPool(2) 
+            pool = ThreadPool(2)
             results = pool.map(handle_migrating_file, files)
-            pool.close() 
-            pool.join() 
+            pool.close()
+            pool.join()
 
             #migrate_project_info()
         else:
@@ -438,13 +429,13 @@ def kick_off_import():
         files = json.load(f)
     if len(files) > 0:
         l.logger.info("Importing projects")
-        pool = ThreadPool(4) 
+        pool = ThreadPool(4)
         # Open the urls in their own threads
         # and return the results
         results = pool.map(migrate_given_export, files)
-        #close the pool and wait for the work to finish 
-        pool.close() 
-        pool.join() 
+        #close the pool and wait for the work to finish
+        pool.close()
+        pool.join()
 
         #migrate_project_info()
     else:
@@ -456,7 +447,7 @@ def handle_migrating_file(f):
     id = f["id"]
     try:
         if conf.parent_id is not None and f["project_type"] != "user":
-            parent_namespace = json.load(api.generate_get_request(conf.parent_host, conf.parent_token, "groups/%d" % conf.parent_id))
+            parent_namespace = api.generate_get_request(conf.parent_host, conf.parent_token, "groups/%d" % conf.parent_id).json()
             namespace = "%s/%s" % (parent_namespace["path"], f["namespace"])
         else:
             namespace = f["namespace"]
@@ -466,17 +457,17 @@ def handle_migrating_file(f):
             if working_dir != conf.filesystem_path:
                 os.chdir(conf.filesystem_path)
             download = api.generate_get_request(conf.child_host, conf.child_token, "projects/%d/export/download" % id)
-            filename = download.info().getheader("Content-Disposition").split("=")[1]
+            filename = download.headers['Content-Disposition'].split('=')[1]
             with open("%s/downloads/%s" % (conf.filesystem_path, filename), "w") as f:
-                f.write(download)
-            
+                f.write(download.content)
+
             data = {
                 "path": name,
                 "file": "%s/downloads/%s" % (conf.filesystem_path, filename),
                 "namespace": namespace
             }
 
-            api.generate_post_request(conf.parent_host, conf.parent_token, "projects/import", urllib.urlencode(data))
+            api.generate_post_request(conf.parent_host, conf.parent_token, "projects/import", data=data)
 
             #migrate_project_info()
 
@@ -495,7 +486,7 @@ def find_unimported_projects():
             try:
                 l.logger.debug("Searching for existing %s" % project_json["name"])
                 project_exists = False
-                search_response = json.load(api.generate_get_request(conf.parent_host, conf.parent_token, "projects?search=%s" % (project_json["name"])))
+                search_response = api.generate_get_request(conf.parent_host, conf.parent_token, 'projects', params={'search': project_json['name']}).json()
                 if len(search_response) > 0:
                     for proj in search_response:
                         if proj["name"] == project_json["name"]:
@@ -507,7 +498,7 @@ def find_unimported_projects():
                     unimported_projects.append("%s/%s" % (project_json["namespace"], project_json["name"]))
             except IOError, e:
                 l.logger.error(e)
-    
+
     if len(unimported_projects) > 0:
         with open("%s/data/unimported_projects.txt" % app_path, "w") as f:
             for project in unimported_projects:
@@ -524,7 +515,7 @@ def migrate_variables_in_stage():
             try:
                 l.logger.debug("Searching for existing %s" % project_json["name"])
                 project_exists = False
-                search_response = json.load(api.generate_get_request(conf.parent_host, conf.parent_token, "projects?search=%s" % (project_json["name"])))
+                search_response = api.generate_get_request(conf.parent_host, conf.parent_token, 'projects', params={'search': project_json['name']}).json()
                 if len(search_response) > 0:
                     for proj in search_response:
                         if proj["name"] == project_json["name"]:
@@ -553,7 +544,7 @@ def get_new_ids():
         for project_json in files:
             try:
                 l.logger.debug("Searching for existing %s" % project_json["name"])
-                search_response = json.load(api.generate_get_request(conf.parent_host, conf.parent_token, "projects?search=%s" % (project_json["name"])))
+                search_response = api.generate_get_request(conf.parent_host, conf.parent_token, 'projects', params={'search': project_json['name']}).json()
                 if len(search_response) > 0:
                     for proj in search_response:
                         if proj["name"] == project_json["name"]:
@@ -591,7 +582,7 @@ def check_visibility():
     else:
         ids = get_new_ids()
     for i in ids:
-        project = json.load(api.generate_get_request(conf.parent_host, conf.parent_token, "projects/%d" % i))
+        project = api.generate_get_request(conf.parent_host, conf.parent_token, "projects/%d" % i).json()
         if project["visibility"] != "private":
             print "%s, %s" % (project["path_with_namespace"], project["visibility"])
             count += 1
@@ -600,7 +591,7 @@ def check_visibility():
             }
             change = api.generate_put_request(conf.parent_host, conf.parent_token, "projects/%d?visibility=private" % int(i), data=None)
             print change
-            
+
     print count
 
 def remove_all_mirrors():
@@ -613,7 +604,7 @@ def remove_all_mirrors():
     ids = get_new_ids()
     for i in ids:
         remove_mirror(i)
-    
+
 def get_total_migrated_count():
     group_projects = api.get_count(conf.parent_host, conf.parent_token, "groups/%d/projects" % conf.parent_id)
     subgroup_count = 0
@@ -678,7 +669,7 @@ if __name__ == "__main__":
     if retrieve:
         #retrieve_project_info()
         pass
-    
+
     if migrate:
         migrate_project_info()
 

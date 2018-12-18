@@ -6,11 +6,8 @@ Copyright (c) 2018 - GitLab
 
 import os
 import json
-import sys
-import subprocess
 import argparse
-import urllib2
-import logging
+import requests
 try:
     from helpers import conf, api, misc_utils
     from helpers import logger as log
@@ -86,13 +83,13 @@ def traverse_and_migrate(groups, rewritten_groups, parent_id=None):
             new_group_id = None
             if group_id in rewritten_groups:
                 try:
-                    response = json.load(api.generate_post_request(config.parent_host, config.parent_token, "groups", json.dumps(group)))
+                    response = api.generate_post_request(config.parent_host, config.parent_token, "groups", json.dumps(group)).json()
                     new_group_id = response["id"]
-                except urllib2.HTTPError, e:
+                except requests.exceptions.RequestException, e:
                     l.logger.info(json.dumps(e.read()))
                     l.logger.info("Group already exists")
                 # if not new_group_id:
-                #     new_group = json.load(api.generate_get_request(config.parent_host, config.parent_token, "groups?search=%s" % group["path"]))
+                #     new_group = api.search(config.parent_host, config.parent_token, 'groups', group['path'])
                 #     if new_group is not None and len(new_group) > 0:
                 #         for ng in new_group:
                 #             if ng["name"] == group["name"]:
@@ -112,7 +109,7 @@ def traverse_and_migrate(groups, rewritten_groups, parent_id=None):
 
                         try:
                             api.generate_post_request(config.parent_host, config.parent_token, "groups/%d/members" % new_group_id, json.dumps(new_member))
-                        except urllib2.HTTPError, e:
+                        except requests.exceptions.RequestException, e:
                             l.logger.error(e)
 
                     if not root_user_present:
@@ -137,7 +134,7 @@ def update_members():
     with open("%s/data/staged_groups.json" % app_path, "r") as f:
         groups = json.load(f)
     for group in groups:
-        new_group_id = json.load(api.generate_get_request(config.parent_host, config.parent_token, "groups?search=%s" % group["name"]))[0]["id"]
+        new_group_id = api.generate_get_request(config.parent_host, config.parent_token, 'groups', params={'search': group['name']}).json()
         print new_group_id
         members = group["members"]
         for member in members:
@@ -150,7 +147,7 @@ def update_members():
 
             try:
                 api.generate_post_request(config.parent_host, config.parent_token, "groups/%d/members" % new_group_id, json.dumps(new_member))
-            except urllib2.HTTPError, e:
+            except requests.exceptions.RequestException, e:
                 l.logger.error(e)
 
 def append_groups(groups):
@@ -188,7 +185,7 @@ def find_all_internal_projects():
 
     transient_list = []
 
-    parent_group = [json.load(api.generate_get_request(config.parent_host, config.parent_token, "groups/%d" % config.parent_id))]
+    parent_group = [api.generate_get_request(config.parent_host, config.parent_token, "groups/%d" % config.parent_id).json()]
 
     print parent_group
 
@@ -211,7 +208,7 @@ def make_all_internal_groups_private():
     for group in groups:
         try:
             l.logger.debug("Searching for existing %s" % group["name"])
-            search_response = json.load(api.generate_get_request(config.parent_host, config.parent_token, "groups?search=%s" % (group["name"])))
+            search_response = api.generate_get_request(config.parent_host, config.parent_token, 'groups', params={'search': group['name']}).json()
             if len(search_response) > 0:
                 for proj in search_response:
                     if proj["name"] == group["name"]:

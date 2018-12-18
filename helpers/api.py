@@ -1,13 +1,11 @@
-import urllib
-import urllib2
-from requests import delete, put
-from math import ceil as math_ceil
-from json import loads as json_loads
 from helpers import logger
+from math import ceil as math_ceil
+import requests
 
 l = logger.congregate_logger(__name__)
 
-def generate_get_request(host, token, api):
+
+def generate_get_request(host, token, api, params=None):
     """
         Generates GET request to GitLab API.
         You will need to provide the GL host, access token, and specific api url.
@@ -17,9 +15,12 @@ def generate_get_request(host, token, api):
         'Private-Token': token,
         'Content-Type': 'application/json'
     } 
-    req = urllib2.Request(url, headers=headers)
-    response = urllib2.urlopen(req)
-    return response
+
+    if params is None:
+        params = {}
+
+    return requests.get(url, params=params, headers=headers)
+
 
 def generate_post_request(host, token, api, data, headers=None):
     """
@@ -33,9 +34,9 @@ def generate_post_request(host, token, api, data, headers=None):
             'Private-Token': token,
             'Content-Type': 'application/json'
         }
-    req = urllib2.Request(url, headers=headers, data=data)
-    response = urllib2.urlopen(req)
-    return response
+    
+    return  requests.post(url, data=data, headers=headers)
+
 
 def generate_put_request(host, token, api, data, headers=None):
     """
@@ -48,8 +49,9 @@ def generate_put_request(host, token, api, data, headers=None):
             'Private-Token': token,
             'Content-Type': 'application/json'
         }
-    response = put(url, headers=headers, data=data)
-    return response
+    
+    return requests.put(url, headers=headers, data=data)
+
 
 def generate_delete_request(host, token, api):
     """
@@ -60,8 +62,9 @@ def generate_delete_request(host, token, api):
     headers = {
         'Private-Token': token
     }
-    response = delete(url, headers=headers)
-    return response
+    
+    return requests.delete(url, headers=headers)
+
 
 def get_count(host, token, api):
     """
@@ -69,15 +72,28 @@ def get_count(host, token, api):
         You will need to provide the GL host, access token, and specific api url.
     """
     url = "%s/api/v4/%s" % (host, api)
-    headers = {
+
+    response = requests.head(url, headers={
         'Private-Token': token,
         'Content-Type': 'application/json'
-    }
-    req = urllib2.Request(url, headers=headers)
-    req.get_method = lambda: 'HEAD'
-    response = urllib2.urlopen(req)
+    })
 
-    return long(response.info().getheader('X-Total'))
+    return long(response.headers['X-Total'])
+
+
+def get_total_pages(host, token, api):
+    '''
+    Return total number of pages in API result.
+    '''
+    url = '%s/api/v4/%s' % (host, api)
+
+    response = requests.head(url, headers={
+        'Private-Token': token,
+        'Content-Type': 'application/json'
+    })
+
+    return long(response.headers['X-Total-Pages'])
+
 
 def list_all(host, token, api):
     """
@@ -101,16 +117,13 @@ def list_all(host, token, api):
 
     while current_page <= end_page:
         l.logger.info("Retrieving %d %s" % (PER_PAGE * current_page, api))
-        query = {
+
+        params = {
             "page": current_page,
             "per_page": PER_PAGE
         }
 
-        query_params = urllib.urlencode(query)
-
-        response = generate_get_request(host, token, "%s?%s" % (api, query_params))
-        
-        data = json_loads(response.read())
+        data = generate_get_request(host, token, api, params=params).json()
 
         for project in data:
             yield project
@@ -120,3 +133,6 @@ def list_all(host, token, api):
 
         current_page += 1
         
+
+def search(host, token, path, search_query):
+    return generate_get_request(host, token, path, params={'search': search_query}).json()
