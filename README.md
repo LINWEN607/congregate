@@ -1,8 +1,12 @@
 # Congregate
 
+Congregate is a utility for migrating one or more GitLab instances into another, single GitLab instance.
+
+```
 Come together, right now
 
 ...over me
+```
 
 ## Dependencies
 
