@@ -61,28 +61,34 @@ Commands:
 import os, subprocess
 from helpers import conf
 from helpers import logger as log
-try:
-    from migration import users, groups, projects
-except ImportError:
-    import migration.users, migration.groups, migration.projects
-from cli import list_projects, stage_projects, do_all
 from cli import config as configure
-from docopt import docopt
 
 app_path = os.getenv("CONGREGATE_PATH")
 
 l = log.congregate_logger(__name__)
 
+just_configured = False
+
 if not os.path.isfile("%s/data/config.json" % app_path):
     configure.config()
+    just_configured = True
+    config = conf.ig()
+else:
+    config = conf.ig()
 
-config = conf.ig()
+try:
+    from migration import users, groups, projects
+except ImportError:
+    import migration.users, migration.groups, migration.projects
+from cli import list_projects, stage_projects, do_all
+from docopt import docopt
 
 if __name__ == '__main__':
     arguments = docopt(__doc__)
     if config.external_source != False and config.external_source is not None:
         if arguments["config"]:
-            configure.config()
+            if just_configured == False:
+                configure.config()
         elif arguments["migrate"]:
             projects.migrate()
         elif arguments["ui"]:
@@ -97,7 +103,8 @@ if __name__ == '__main__':
         if arguments["list"]:
             list_projects.list_projects()
         if arguments["config"]:
-            configure.config()
+            if just_configured == False:
+                configure.config()
         if arguments["stage"]:
             stage_projects.stage_projects(arguments['<projects>'])
         if arguments["migrate"]:

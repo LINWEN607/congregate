@@ -1,6 +1,7 @@
 import os
 import subprocess
 import json
+import time
 try:
     from helpers.api import generate_get_request
 except ImportError:
@@ -49,7 +50,7 @@ def generate_config():
         config["child_instance_token"] = child_instance_token
 
         parent_id = raw_input("Are you migrating the entire instance to a group? For example, migrating to our SaaS solution? (default: no)")
-        if parent_id != "no":
+        if parent_id != "no" and len(parent_id) > 0:
             parent_id = raw_input("%s. Please input the parent group ID (You can find this in the parent group -> settings -> general)" % str(len(config) + 1))
             config["parent_id"] = int(parent_id)
 
@@ -59,7 +60,7 @@ def generate_config():
             config["mirror_username"] = mirror_user
 
         location = raw_input("%s. Staging location type for exported projects [filesystem, aws]? (default: filesystem) " % str(len(config) + 1))
-        if len(location) > 0 or location == "filesystem":
+        if len(location) == 0 or location == "filesystem":
             config["location"] = "filesystem"
             location = "filesystem"
         else:
@@ -92,7 +93,7 @@ def config():
     config = generate_config()
     with open("%s/data/config.json" % app_path, "w") as f:
         f.write(json.dumps(config, indent=4))
-
+    time.sleep(1)
     print "Congregate has been successfully configured"
 
 def update_config(config_data):
