@@ -68,7 +68,7 @@ def generate_config():
 
         if location == "filesystem":
             path = raw_input("%s. Absolute path for exported projects? (default: %s) " % (str(len(config) + 1), os.getcwd()))
-            if len(path) > 0 or path != os.getcwd():
+            if len(path) > 0 and path != os.getcwd():
                 config["path"] = path
             else:
                 config["path"] = os.getcwd()

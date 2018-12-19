@@ -1,8 +1,16 @@
 image: python:2.7.15-stretch
 
 stages:
+  - test
   - update-info
   - build
+
+run tests:
+  stage: test
+  script:
+    - pip install pipenv
+    - pipenv install
+    - pipenv run python -m unittest cli.config_test
 
 update readme:
   stage: update-info
