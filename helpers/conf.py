@@ -4,13 +4,15 @@ Congregate - GitLab instance migration utility
 Copyright (c) 2018 - GitLab
 """
 
-
 import os
 import json
+from cli import config as config_cli
 
 class ig:
     def __init__(self):
         app_path = os.getenv("CONGREGATE_PATH")
+        if not os.path.isfile('%s/data/config.json' % app_path):
+            config_cli.generate_config()
         with open('%s/data/config.json' % app_path) as f:
             self.config = json.load(f)["config"]
     
