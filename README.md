@@ -16,6 +16,28 @@ Come together, right now
 
 ## Setup
 
+### TL;DR Install
+
+Copy the following code snippet to a file in the congregate directory and run it
+
+```bash
+#!/bin/bash
+
+# install pipenv
+pip install pipenv
+# install python dependencies
+pipenv install
+# install UI dependencies
+pipenv run dnd install
+# create congregate path
+CONGREGATE_PATH=$(pwd)
+# copy congregate script to a bin directory
+cp congregate /usr/local/bin
+
+echo "export CONGREGATE_PATH=$CONGREGATE_PATH" >> ~/.bash_profile
+
+```
+
 ### Install & Use PipEnv (required for end-user and development setups)
 
 ```bash
