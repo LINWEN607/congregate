@@ -10,7 +10,14 @@ import argparse
 import urllib
 import time
 import requests
-from multiprocessing.dummy import Pool as ThreadPool
+import urllib2
+import uuid
+import glob
+from re import sub
+from multiprocessing.dummy import Pool as ThreadPool 
+from multiprocessing import Lock
+
+import psycopg2
 
 try:
     from helpers import conf, api, misc_utils
@@ -34,6 +41,13 @@ app_path = os.getenv("CONGREGATE_PATH")
 parent_host = conf.parent_host
 parent_token = conf.parent_token
 aws = aws_client()
+
+users_map = {}
+groups_map = {}
+
+keys_map = {}
+if conf.location == "filesystem-aws":
+    keys_map = aws.get_s3_keys()
 
 def export_project(project):
     if isinstance(project, str):
@@ -79,19 +93,23 @@ def import_project(project):
             namespace = "%s/%s" % (response["path"], project["namespace"])
         else:
             namespace = project["namespace"]
-    presigned_get_url = aws.generate_presigned_url(filename, "GET")
     exported = False
     import_response = None
     timeout = 0
-    while not exported:
+    if conf.location == "aws":
+        presigned_get_url = aws.generate_presigned_url(filename, "GET")
         import_response = aws.import_from_s3(name, namespace, presigned_get_url, filename)
-        import_id = None
-        if import_response is not None and len(import_response) > 0:
-            l.logger.info(import_response)
-            import_response = json.loads(import_response)
-            if import_response.get("id") is not None:
+    elif conf.location == "filesystem-aws":
+        downloaded_filename = keys_map.get(filename)
+        import_response = aws.copy_from_s3_and_import(name, namespace, downloaded_filename)
+    import_id = None
+    if import_response is not None and len(import_response) > 0:
+        l.logger.info(import_response)
+        import_response = json.loads(import_response)
+        while not exported:
+            if import_response.get("id", None) is not None:
                 import_id = import_response["id"]
-            elif import_response.get("message") is not None:
+            elif import_response.get("message", None) is not None:
                 if "Name has already been taken" in import_response.get("message"):
                     l.logger.debug("Searching for %s" % project["name"])
                     search_response = api.search(conf.parent_host, conf.parent_token, 'projects', project['name'])
@@ -122,15 +140,15 @@ def import_project(project):
                 elif status["import_status"] == "failed":
                     l.logger.info("%s failed to import" % name)
                     exported = True
-        else:
-            if timeout < 60:
-                l.logger.info("Waiting on %s to upload" % name)
-                timeout += 1
-                time.sleep(1)
             else:
-                l.logger.info("Moving on to the next project. Time limit exceeded")
-                break
-
+                if timeout < 60:
+                    l.logger.info("Waiting on %s to upload" % name)
+                    timeout += 1
+                    time.sleep(1)
+                else:
+                    l.logger.info("Moving on to the next project. Time limit exceeded")
+                    break
+    
     return import_id
 
 
@@ -245,27 +263,64 @@ def mirror_generic_repo(generic_repo):
     split_url = generic_repo["web_repo_url"].split("://")
     protocol = split_url[0]
     repo_url = split_url[1]
-
+    namespace_id = int(generic_repo["namespace_id"])
+    print namespace_id
     mirror_user_id = conf.parent_user_id
     user_name = conf.external_user_name
     user_password = conf.external_user_password
-
-    l.logger.info("Attempting to generate shell repo for %s and create mirror" % generic_repo["name"])
+    
     import_url = "%s://%s:%s@%s" % (protocol, user_name, user_password, repo_url)
     l.logger.debug(import_url)
     data = {
         "name": generic_repo["name"],
+        "namespace_id": namespace_id,
         "mirror": True,
         "mirror_user_id": mirror_user_id,
-        "import_url": import_url
+        "import_url": import_url,
+        "only_mirror_protected_branches": False,
+        "mirror_overwrites_diverged_branches": True,
+        "default_branch": "master"
     }
 
     if generic_repo.get("visibility", None) is not None:
         data["visibility"] = generic_repo["visibility"]
 
-    response = api.generate_post_request(parent_host, parent_token, "projects", json.dumps(data))
-    l.logger.info("Project %s has been created and mirroring has been enabled" % generic_repo["name"])
-    l.logger.debug(json.load(response))
+    try:
+        if generic_repo.get("personal_repo", None) == True:
+            data.pop("namespace_id")
+            data.pop("default_branch")
+            data["mirror_user_id"] = namespace_id
+            l.logger.info("Attempting to generate personal shell repo for %s and create mirror" % generic_repo["name"])
+            # l.logger.info(json.dumps(data, indent=4))
+            response = json.load(api.generate_post_request(parent_host, parent_token, "projects/user/%d" % namespace_id, json.dumps(data)))
+            if response.get("id", None) is not None:
+                l.logger.debug("Setting default branch to master")
+                default_branch = {
+                    "default_branch": "master"
+                }
+                api.generate_put_request(parent_host, parent_token, "projects/%d" % response["id"], json.dumps(default_branch))
+        else:
+            l.logger.info("Attempting to generate shell repo for %s and create mirror" % generic_repo["name"])
+            response = json.load(api.generate_post_request(parent_host, parent_token, "projects", json.dumps(data)))
+        #put_response = api.generate_put_request(parent_host, parent_token, "projects/%d" % response["id"], json.dumps(put_data))
+        l.logger.info("Project %s has been created and mirroring has been enabled" % generic_repo["name"])
+        db_data = {
+            "projectname": generic_repo["web_repo_url"],
+            "projectid": response["id"]
+        }
+        lock.acquire()
+        update_db(db_data)
+        lock.release()
+        with open("repomap.txt", "ab") as f:
+            f.write("%s\t%s\n" % (generic_repo["web_repo_url"], response["id"]))
+        # l.logger.debug(response)
+
+        return response["id"]
+        #l.logger.debug(put_response.json())
+    except urllib2.HTTPError, e:
+        l.logger.error(e)
+        l.logger.error(e.read())
+        return None
 
 def remove_mirror(project_id):
     """
@@ -382,13 +437,25 @@ def migrate_given_export(project_json):
         l.logger.error(e)
     except OverflowError, e:
         l.logger.error(e)
+        
+
+def init_pool(l):
+    global lock
+    lock = l
+
+def start_multi_thead(function, iterable):
+    l = Lock()
+    pool = ThreadPool(initializer=init_pool, initargs=(l,), processes=4)
+    pool.map(function, iterable)
+    pool.close()
+    pool.join()
 
 def migrate():
     if conf.external_source != False:
         with open("%s" % conf.repo_list, "r") as f:
             repo_list = json.load(f)
-        for repo in repo_list:
-            mirror_generic_repo(repo)
+        start_multi_thead(handle_bitbucket_migration, repo_list)
+            
     else:
         with open("%s/data/stage.json" % app_path, "r") as f:
             files = json.load(f)
@@ -398,15 +465,15 @@ def migrate():
         l.logger.info("Migrating user info")
         new_users = users.migrate_user_info()
 
-        # with open("%s/data/new_user_ids.txt" % app_path, "w") as f:
-        #     for new_user in new_users:
-        #         f.write("%s\n" % new_user)
+        with open("%s/data/new_user_ids.txt" % app_path, "w") as f:
+            for new_user in new_users:
+                f.write("%s\n" % new_user)
 
-        # if len(new_users) > 0:
-        #     users.update_user_info(new_users)
-        # else:
-        #     users.update_user_info(new_users, overwrite=False)
-
+        if len(new_users) > 0:
+            users.update_user_info(new_users)
+        else:
+            users.update_user_info(new_users, overwrite=False)
+        
         if len(groups_file) > 0:
             l.logger.info("Migrating group info")
             groups.migrate_group_info()
@@ -456,10 +523,8 @@ def handle_migrating_file(f):
             api.generate_post_request(conf.child_host, conf.child_token, "projects/%d/export" % id, "")
             if working_dir != conf.filesystem_path:
                 os.chdir(conf.filesystem_path)
-            download = api.generate_get_request(conf.child_host, conf.child_token, "projects/%d/export/download" % id)
-            filename = download.headers['Content-Disposition'].split('=')[1]
-            with open("%s/downloads/%s" % (conf.filesystem_path, filename), "w") as f:
-                f.write(download.content)
+            url = "%s/api/v4/projects/%d/export/download" % (conf.child_host, id)
+            filename = misc_utils.download_file(url, conf.filesystem_path, {"PRIVATE-TOKEN": conf.child_token})
 
             data = {
                 "path": name,
@@ -471,11 +536,288 @@ def handle_migrating_file(f):
 
             #migrate_project_info()
 
+        elif conf.location.lower() == "filesystem-aws":
+            l.logger.info("Exporting %s to %s" % (name, conf.filesystem_path))
+            api.generate_post_request(conf.child_host, conf.child_token, "projects/%d/export" % id, "")
+            # download = api.generate_get_request(conf.child_host, conf.child_token, "projects/%d/export/download" % id)
+            url = "%s/api/v4/projects/%d/export/download" % (conf.child_host, id)
+            # filename = download.info().getheader("Content-Disposition").split("=")[1]
+            exported = False
+            total_time = 0
+            while not exported:
+                response = json.load(api.generate_get_request(conf.child_host, conf.child_token, "projects/%d/export" % id))
+                if response["export_status"] == "finished":
+                    l.logger.info("%s has finished exporting" % name)
+                    exported = True
+                elif response["export_status"] == "failed":
+                    l.logger.error("Export failed for %s" % name)
+                    break
+                else:
+                    l.logger.info("Waiting on %s to export" % name)
+                    if total_time < 30:
+                        total_time += 1
+                        time.sleep(1)
+                    else:
+                        l.logger.info("Time limit exceeded")
+                        break
+            if exported:
+                l.logger.info("Downloading export")
+                filename = misc_utils.download_file(url, conf.filesystem_path, {"PRIVATE-TOKEN": conf.child_token})
+                l.logger.info("Copying %s to s3" % filename)
+                success = aws.copy_file_to_s3(filename)
+                if success:
+                    l.logger.info("Removing %s from downloads" % filename)
+                    filepattern = sub(r'\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{3}_', '', filename)
+                    for f in glob.glob("%s/downloads/*%s" % (conf.filesystem_path, filepattern)): 
+                        os.remove(f)
+                
+
         elif (conf.location).lower() == "aws":
             l.logger.info("Exporting %s to S3" % name)
             migrate_projects(f)
     except IOError, e:
         l.logger.error(e)
+
+def handle_bitbucket_migration(repo):
+    bitbucket_permission_map = {
+        "PROJECT_ADMIN": 50,
+        "PROJECT_WRITE": 30,
+        "PROJECT_READ": 20,
+        "REPO_ADMIN": 40,
+        "REPO_WRITE": 30,
+        "REPO_READ": 20
+    }
+    project_id = None
+    group_id = None
+    personal_repo = False
+    # searching for project
+    if len(repo["name"]) > 0:
+        l.logger.info("Searching for project %s" % repo["name"])
+        search_name = repo["web_repo_url"]
+        search_name = search_name.split(".git")[0]
+        search_name = search_name.split("~")[0]
+        if len(search_name) > 0:
+            try:
+                project_exists = json.load(api.generate_get_request(conf.parent_host, conf.parent_token, "projects?search=%s" % urllib.quote(repo["name"])))
+                for proj in project_exists:
+                    with_group = ("%s/%s" % (repo["group"].replace(" ", "_"), repo["name"].replace(" ", "-"))).lower()
+                    pwn = proj["path_with_namespace"]
+                    if proj.get("path_with_namespace", None) == search_name or pwn.lower() == with_group:
+                        l.logger.info("Found project %s" % with_group)
+                        project_id = proj["id"]
+                        break
+                if project_id is None:
+                    l.logger.info("Couldn't find %s. Creating it now." % search_name)
+                if repo.get("group", None) is not None or repo.get("project", None) is not None:
+                    if repo.get("web_repo_url", None) is None:
+                        repo["web_repo_url"] = repo["links"]["clone"][0]["href"]
+                    if "~" in repo.get("web_repo_url", ""):
+                        personal_repo = True
+                        l.logger.info("Searching for personal project")
+                        cat_users = repo["project_users"] + repo["repo_users"]
+                        if len(cat_users) > 0:
+                            user_id = None
+                            for user in cat_users:
+                                if len(user["email"]) > 0:
+                                    user_search = json.load(api.generate_get_request(conf.parent_host, conf.parent_token, "users?search=%s" % urllib.quote(user["email"])))
+                                    if len(user_search) > 0:
+                                        l.logger.info("Found %s: %s" % (user_search[0]["id"], user_search[0]["email"]))
+                                        user_id = user_search[0]["id"]
+                                        user_name = user_search[0]["email"].split("@")[0]
+                                        lock.acquire()
+                                        users_map[user_name] = user_search[0]["id"]
+                                        lock.release()
+                                        # personal_repo = True
+                                    else:
+                                        if len(user["email"]) > 0:
+                                            user_name = user["email"].split("@")[0]
+                                            if users_map.get(user_name, None) is None:
+                                                new_user_data = {
+                                                    "email": user["email"],
+                                                    "skip_confirmation": True,
+                                                    "username": user["name"],
+                                                    "name": user["displayName"],
+                                                    "password": uuid.uuid4().hex
+                                                }
+                                                l.logger.info("Creating new user %s" % user["email"])
+                                                created_user = json.load(api.generate_post_request(conf.parent_host, conf.parent_token, "users", json.dumps(new_user_data)))
+                                                # l.logger.info(json.dumps(created_user, indent=4))
+                                                user_id = created_user["id"]
+                                                # personal_repo = True
+                                            else:
+                                                lock.acquire()
+                                                group_id = users_map[user_name]
+                                                lock.release()
+                                                new_user_email_data = {
+                                                    "email": user["email"],
+                                                    "skip_confirmation": True,
+                                                }
+                                                l.logger.info("Adding new email to user %s" % user["email"])
+                                                created_user = json.load(api.generate_post_request(conf.parent_host, conf.parent_token, "users/%s/emails" % group_id, json.dumps(new_user_email_data)))
+                                                # l.logger.info(json.dumps(created_user, indent=4))
+                                                # personal_repo = True
+                                    if user["permission"] == "PROJECT_ADMIN":
+                                        group_id = user_id
+                    else:
+                        if repo.get("group", None) is not None:
+                            group_name = repo["group"]
+                        elif repo.get("project", None) is not None:
+                            project = repo["project"]
+                            group_name = project.get("key", None)
+                        group_name = group_name.replace(" ", "_")
+                        l.logger.info("Searching for existing group '%s'" % group_name)
+                        group_search = json.load(api.generate_get_request(conf.parent_host, conf.parent_token, "groups?search=%s" % urllib.quote(group_name)))
+                        for group in group_search:
+                            if group["path"] == group_name:
+                                l.logger.info("Found %s" % group_name)
+                                group_id = group["id"]
+                            
+                        if group_id is None:
+                            group_path = group_name.replace(" ", "_")
+                            group_data = {
+                                "name": group_name,
+                                "path": group_path,
+                                "visibility": "private"
+                            }
+                            l.logger.info("Creating new group %s" % group_name)
+                            new_group = json.load(api.generate_post_request(conf.parent_host, parent_token, "groups", json.dumps(group_data)))
+                            group_id = new_group["id"]
+
+                    if len(repo["project_users"]) > 0 and groups_map.get(group_id, None) is None:
+                        members_already_added = groups_map.get(group_id, False)
+                        if not members_already_added:
+                            for user in repo["project_users"]:
+                                user_id = None
+                                if user.get("email", None) is not None:
+                                    if len(user["email"]) > 0:
+                                        user_data = None
+                                        l.logger.info("Searching for existing user '%s'" % user["email"])
+                                        user_search = json.load(api.generate_get_request(conf.parent_host, conf.parent_token, "users?search=%s" % urllib.quote(user["email"])))
+                                        if len(user_search) > 0:
+                                            l.logger.info("Found %s" % user_search[0]["email"])
+                                            user_data = {
+                                                "user_id": user_search[0]["id"],
+                                                "access_level": bitbucket_permission_map[user["permission"]]
+                                            }
+                                            user_name = user_search[0]["email"].split("@")[0]
+                                            lock.acquire()
+                                            users_map[user_name] = user_search[0]["id"]
+                                            lock.release()
+                                            user_id = user_search[0]["id"]
+                                        else:
+                                            if len(user["email"]) > 0:
+                                                user_name = user["email"].split("@")[0]
+                                                if users_map.get(user_name, None) is None:
+                                                    new_user_data = {
+                                                        "email": user["email"],
+                                                        "skip_confirmation": True,
+                                                        "username": user["name"],
+                                                        "name": user["displayName"],
+                                                        "password": uuid.uuid4().hex
+                                                    }
+                                                    l.logger.info("Creating new user %s" % user["email"])
+                                                    created_user = json.load(api.generate_post_request(conf.parent_host, conf.parent_token, "users", json.dumps(new_user_data)))
+                                                    l.logger.info(json.dumps(created_user, indent=4))
+                                                    # personal_repo = True
+                                                else:
+                                                    new_user_email_data = {
+                                                        "email": user["email"],
+                                                        "skip_confirmation": True,
+                                                    }
+                                                    l.logger.info("Adding new email to user %s" % user["email"])
+                                                    created_user = json.load(api.generate_post_request(conf.parent_host, conf.parent_token, "users/%s/emails" % user_id, json.dumps(new_user_email_data)))
+                                                    l.logger.info(json.dumps(created_user, indent=4))
+                                                    # personal_repo = True
+                                                user_data = {
+                                                    "user_id": created_user["id"],
+                                                    "access_level": bitbucket_permission_map[user["permission"]]
+                                                }
+                                        l.logger.info("%d: %s" % (group_id, groups_map.get(group_id, None)))
+                                        if user_data is not None and personal_repo is False and members_already_added is False:
+                                            try:
+                                                l.logger.info("Adding %s to group" % user["email"])
+                                                api.generate_post_request(conf.parent_host, conf.parent_token, "groups/%d/members" % group_id, json.dumps(user_data))
+                                            except urllib2.HTTPError, e:
+                                                l.logger.error("Failed to add %s to group" % user["email"])
+                                                l.logger.error(e)
+                                                l.logger.error(e.read())
+                                else:
+                                    l.logger.info("Empty email. Skipping %s" % user.get("name", None))
+                            lock.acquire()
+                            groups_map[group_id] = True
+                            lock.release()
+                        else:
+                            l.logger.info("Members already exist")
+
+                    repo["namespace_id"] = group_id
+                    #Removing any trace of a tilde in the project name
+                    repo["name"] = "".join(repo["name"].split("~"))
+                    repo["personal_repo"] = personal_repo
+                    if repo.get("namespace_id", None) is not None:
+                        if project_id is None:
+                            project_id = mirror_generic_repo(repo)
+                        else:
+                            if len(repo["repo_users"]) > 0:
+                                for user in repo["repo_users"]:
+                                    if len(user["email"]) > 0:
+                                        user_data = None
+                                        l.logger.info("Searching for existing user '%s'" % user["email"])
+                                        user_search = json.load(api.generate_get_request(conf.parent_host, conf.parent_token, "users?search=%s" % urllib.quote(user["email"])))
+                                        if len(user_search) > 0:
+                                            user_data = {
+                                                "user_id": user_search[0]["id"],
+                                                "access_level": bitbucket_permission_map[user["permission"]]
+                                            }
+                                            user_name = user_search[0]["email"].split("@")[0]
+                                            lock.acquire()
+                                            users_map[user_name] = user_search[0]["id"]
+                                            lock.release()
+                                        else:
+                                            if len(user["email"]) > 0:
+                                                user_name = user["email"].split("@")[0]
+                                                if users_map.get(user_name, None) is None:
+                                                    new_user_data = {
+                                                        "email": user["email"],
+                                                        "skip_confirmation": True,
+                                                        "username": user["name"],
+                                                        "name": user["displayName"],
+                                                        "password": uuid.uuid4().hex
+                                                    }
+                                                    l.logger.info("Creating new user %s" % user["email"])
+                                                    created_user = json.load(api.generate_post_request(conf.parent_host, conf.parent_token, "users", json.dumps(new_user_data)))
+                                                    l.logger.info(json.dumps(created_user, indent=4))
+                                                    personal_repo = True
+                                                else:
+                                                    new_user_email_data = {
+                                                        "email": user["email"],
+                                                        "skip_confirmation": True,
+                                                    }
+                                                    l.logger.info("Adding new email to user %s" % user["email"])
+                                                    created_user = json.load(api.generate_post_request(conf.parent_host, conf.parent_token, "users/%s/emails" % group_id, json.dumps(new_user_email_data)))
+                                                    l.logger.info(json.dumps(created_user, indent=4))
+                                                    personal_repo = True
+                                                user_data = {
+                                                    "user_id": created_user["id"],
+                                                    "access_level": bitbucket_permission_map[user["permission"]]
+                                                }
+                                        if user_data is not None:
+                                            try:
+                                                l.logger.info("Adding %s to project" % user["email"])
+                                                api.generate_post_request(conf.parent_host, conf.parent_token, "projects/%d/members" % project_id, json.dumps(user_data))
+                                            except urllib2.HTTPError, e:
+                                                l.logger.error("Failed to add %s to project" % user["email"])
+                                                l.logger.error(e)
+                                                l.logger.error(e.read())
+                                        else:
+                                            l.logger.info("No user data found")
+                    else:
+                        l.logger.info("Namespace ID null. Ignoring %s" % repo["name"])
+
+                else:
+                    l.logger.info("Invalid JSON found. Ignoring object")
+            except urllib2.HTTPError, e:
+                l.logger.error(e)
+                l.logger.error(e.read())
 
 def find_unimported_projects():
     unimported_projects = []
@@ -647,6 +989,35 @@ def stage_unimported_projects():
     if len(ids) > 0:
         stage_projects(ids)
 
+def set_default_branch():
+    for project in api.list_all(conf.parent_host, conf.parent_token, "projects"):
+        id = project["id"]
+        name = project["name"]
+        l.logger.info("Setting default branch to master for project %s" % name)
+        api.generate_put_request(conf.parent_host, conf.parent_token, "projects/%d?default_branch=master" % id, data=None)
+
+def update_db(db_values):
+    conn = psycopg2.connect(
+        host=os.getenv('db_host_name'),
+        dbname=os.getenv('db_name'),
+        user=os.getenv('db_username'),
+        password=os.getenv('db_password'))
+    conn.autocommit = True
+    print("[DEBUG] Inserting into database table")
+    cur = conn.cursor()
+    cur.execute(
+        """INSERT INTO ondemandmigration.gitlab_project(projectid, projectname) VALUES (%s, %s);""",
+        (db_values['projectid'], db_values['projectname']))
+    cur.close()
+    conn.close()
+    return json.dumps(db_values)
+
+def generate_instance_map():
+    for project in api.list_all(conf.parent_host, conf.parent_token, "projects"):
+        if project.get("import_url", None) is not None:
+            import_url = sub('//.+:.+@', '//', project["import_url"])
+            with open("new_repomap.txt", "ab") as f:
+                f.write("%s\t%s\n" % (import_url, project["id"]))
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Handle project-related tasks')
