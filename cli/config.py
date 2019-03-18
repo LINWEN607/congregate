@@ -66,14 +66,14 @@ def generate_config():
         else:
             config["location"] = location
 
-        if location == "filesystem":
+        if "filesystem" in location.lower():
             path = raw_input("%s. Absolute path for exported projects? (default: %s) " % (str(len(config) + 1), os.getcwd()))
             if len(path) > 0 and path != os.getcwd():
                 config["path"] = path
             else:
                 config["path"] = os.getcwd()
 
-        elif location.lower() == "aws":
+        if "aws" in location.lower():
             bucket_name = raw_input("%s. Bucket name: " % str(len(config) + 1))
             config["bucket_name"] = bucket_name
             access_key = raw_input("%s. Access key for S3 bucket: " % str(len(config) + 1))
