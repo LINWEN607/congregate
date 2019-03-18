@@ -10,7 +10,7 @@ class congregate_logger:
         file_log_handler = logging.FileHandler('%s/congregate.log' % app_path)
         stderr_log_handler = logging.StreamHandler()
 
-        formatter = logging.Formatter('[%(asctime)s][%(levelname)s]|%(module)s.%(funcName)s| %(message)s', datefmt='%d %b %Y %H:%M:%S')
+        formatter = logging.Formatter('[%(asctime)s][%(levelname)s]|%(module)s.%(funcName)s:%(lineno)d| %(message)s', datefmt='%d %b %Y %H:%M:%S')
         file_log_handler.setFormatter(formatter)
         stderr_log_handler.setFormatter(formatter)
 

@@ -25,6 +25,8 @@ Usage:
     congregate find-all-internal-projects
     congregate make-all-internal-groups-private
     congregate check-projects-visibility
+    congregate set-default-branch
+    congregate enable_mirroring
     congregate -h | --help
 
 Options:
@@ -62,6 +64,7 @@ import os, subprocess
 from helpers import conf
 from helpers import logger as log
 from cli import config as configure
+from other import cli as other
 
 app_path = os.getenv("CONGREGATE_PATH")
 
@@ -97,6 +100,8 @@ if __name__ == '__main__':
             os.environ["PYTHONPATH"] = app_path
             run_ui = "gunicorn -k gevent -w 4 ui:app"
             subprocess.call(run_ui.split(" "))
+        elif arguments["enable_mirroring"]:
+            other.enable_mirroring()
         else:
             print "External migration only currently supports the migrate and ui commands to generate shell projects with mirrors."
     else:
@@ -149,3 +154,6 @@ if __name__ == '__main__':
             projects.check_visibility()
         if arguments["add-all-mirrors"]:
             projects.enable_mirror()
+        if arguments["set-default-branch"]:
+            projects.set_default_branch()
+        
