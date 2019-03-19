@@ -90,3 +90,7 @@ class ig:
     @property
     def repo_list(self):
         return self.config.get("repo_list_path", None)
+
+    @property
+    def user_map(self):
+        return self.config.get("user_map_csv", None)

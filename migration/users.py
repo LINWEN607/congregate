@@ -10,6 +10,7 @@ import json
 import argparse
 import logging
 import requests
+import csv
 try:
     from helpers import conf, api, misc_utils
     from helpers import logger as log
@@ -403,6 +404,16 @@ def append_users(users):
                 l.logger.info("Staging user (%s) [%d/%d]" % (u["username"], len(staged_users), len(users)))
     with open("%s/data/staged_users.json" % app_path, "w") as f:
         json.dump(misc_utils.remove_dupes(staged_users), f, indent=4)
+
+def map_users():
+    users_dict = {}
+    with open(config.user_map) as csv_file:
+        csv_reader = csv.reader(csv_file, delimiter=',')
+        for row in csv_reader:
+            name = row[0].strip()
+            username = row[1].strip()
+            email = row[2].strip()
+            print row
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Handle user-related tasks')
