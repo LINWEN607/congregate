@@ -26,8 +26,11 @@ def traverse_groups(base_groups, transient_list,  host, token, parent_group=None
         group.pop("web_url")
         group.pop("full_name")
         group.pop("full_path")
-        group.pop("ldap_cn")
-        group.pop("ldap_access")
+        try:
+            group.pop("ldap_cn")
+            group.pop("ldap_access")
+        except KeyError:
+            pass
         members = list(api.list_all(host, token, "groups/%s/members" % str(group["id"])))
         group["members"] = members
         transient_list.append(group)
