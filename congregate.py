@@ -79,81 +79,79 @@ if not os.path.isfile("%s/data/config.json" % app_path):
 else:
     config = conf.ig()
 
-try:
-    from migration import users, groups, projects
-except ImportError:
-    import migration.users, migration.groups, migration.projects
-from cli import list_projects, stage_projects, do_all
 from docopt import docopt
 
 if __name__ == '__main__':
     arguments = docopt(__doc__)
-    if config.external_source != False and config.external_source is not None:
-        if arguments["config"]:
-            if just_configured == False:
+    if arguments["config"]:
+        if just_configured == False:
                 configure.config()
-        elif arguments["migrate"]:
-            projects.migrate()
-        elif arguments["ui"]:
-            os.environ["FLASK_APP"] = "%s/ui" % app_path
-            os.chdir(app_path)
-            os.environ["PYTHONPATH"] = app_path
-            run_ui = "gunicorn -k gevent -w 4 ui:app"
-            subprocess.call(run_ui.split(" "))
-        elif arguments["enable_mirroring"]:
-            other.enable_mirroring()
-        else:
-            print "External migration only currently supports the migrate and ui commands to generate shell projects with mirrors."
     else:
-        if arguments["list"]:
-            list_projects.list_projects()
-        if arguments["config"]:
-            if just_configured == False:
-                configure.config()
-        if arguments["stage"]:
-            stage_projects.stage_projects(arguments['<projects>'])
-        if arguments["migrate"]:
-            projects.migrate()
-        if arguments["do_all"]:
-            do_all.do_all()
-        if arguments["ui"]:
-            os.environ["FLASK_APP"] = "%s/ui" % app_path
-            os.chdir(app_path)
-            os.environ["PYTHONPATH"] = app_path
-            run_ui = "gunicorn -k gevent -w 4 ui:app"
-            subprocess.call(run_ui.split(" "))
-        if arguments["update-staged-user-info"]:
-            users.update_user_after_migration()
-        if arguments["update-new-users"]:
-            users.update_user_info_separately()
-        if arguments["add-users-to-parent-group"]:
-            users.add_users_to_parent_group()
-        if arguments["remove-blocked-users"]:
-            users.remove_blocked_users()
-        if arguments["lower-user-permissions"]:
-            users.lower_user_permissions()
-        if arguments["import-projects"]:
-            projects.kick_off_import()
-        if arguments["get-total-count"]:
-            print projects.get_total_migrated_count()
-        if arguments["find-unimported-projects"]:
-            projects.find_unimported_projects()
-        if arguments["stage-unimported-projects"]:
-            projects.stage_unimported_projects()
-        if arguments["remove-users-from-parent-group"]:
-            users.remove_users_from_parent_group()
-        if arguments["migrate-variables-in-stage"]:
-            projects.migrate_variables_in_stage()
-        if arguments["remove-all-mirrors"]:
-            projects.remove_all_mirrors()
-        if arguments["find-all-internal-projects"]:
-            groups.find_all_internal_projects()
-        if arguments["make-all-internal-groups-private"]:
-            groups.make_all_internal_groups_private()
-        if arguments["check-projects-visibility"]:
-            projects.check_visibility()
-        if arguments["add-all-mirrors"]:
-            projects.enable_mirror()
-        if arguments["set-default-branch"]:
-            projects.set_default_branch()
+        try:
+            from migration import users, groups, projects
+        except ImportError:
+            import migration.users, migration.groups, migration.projects
+        from cli import list_projects, stage_projects, do_all
+        if config.external_source != False and config.external_source is not None:
+            if arguments["migrate"]:
+                projects.migrate()
+            elif arguments["ui"]:
+                os.environ["FLASK_APP"] = "%s/ui" % app_path
+                os.chdir(app_path)
+                os.environ["PYTHONPATH"] = app_path
+                run_ui = "gunicorn -k gevent -w 4 ui:app"
+                subprocess.call(run_ui.split(" "))
+            elif arguments["enable_mirroring"]:
+                other.enable_mirroring()
+            else:
+                print "External migration only currently supports the migrate and ui commands to generate shell projects with mirrors."
+        else:
+            if arguments["list"]:
+                list_projects.list_projects()
+            if arguments["stage"]:
+                stage_projects.stage_projects(arguments['<projects>'])
+            if arguments["migrate"]:
+                projects.migrate()
+            if arguments["do_all"]:
+                do_all.do_all()
+            if arguments["ui"]:
+                os.environ["FLASK_APP"] = "%s/ui" % app_path
+                os.chdir(app_path)
+                os.environ["PYTHONPATH"] = app_path
+                run_ui = "gunicorn -k gevent -w 4 ui:app"
+                subprocess.call(run_ui.split(" "))
+            if arguments["update-staged-user-info"]:
+                users.update_user_after_migration()
+            if arguments["update-new-users"]:
+                users.update_user_info_separately()
+            if arguments["add-users-to-parent-group"]:
+                users.add_users_to_parent_group()
+            if arguments["remove-blocked-users"]:
+                users.remove_blocked_users()
+            if arguments["lower-user-permissions"]:
+                users.lower_user_permissions()
+            if arguments["import-projects"]:
+                projects.kick_off_import()
+            if arguments["get-total-count"]:
+                print projects.get_total_migrated_count()
+            if arguments["find-unimported-projects"]:
+                projects.find_unimported_projects()
+            if arguments["stage-unimported-projects"]:
+                projects.stage_unimported_projects()
+            if arguments["remove-users-from-parent-group"]:
+                users.remove_users_from_parent_group()
+            if arguments["migrate-variables-in-stage"]:
+                projects.migrate_variables_in_stage()
+            if arguments["remove-all-mirrors"]:
+                projects.remove_all_mirrors()
+            if arguments["find-all-internal-projects"]:
+                groups.find_all_internal_projects()
+            if arguments["make-all-internal-groups-private"]:
+                groups.make_all_internal_groups_private()
+            if arguments["check-projects-visibility"]:
+                projects.check_visibility()
+            if arguments["add-all-mirrors"]:
+                projects.enable_mirror()
+            if arguments["set-default-branch"]:
+                projects.set_default_branch()
         
