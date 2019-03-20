@@ -420,7 +420,7 @@ def map_users():
     users_dict = {}
     user_json = {}
     rewritten_users = []
-    with open("%s/data/userscopy.json" % app_path, "r") as f:
+    with open("%s/data/staged_users.json" % app_path, "r") as f:
         user_json = json.load(f)
     print len(user_json)
     for user in user_json:
