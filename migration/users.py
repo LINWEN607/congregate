@@ -10,6 +10,7 @@ import json
 import argparse
 import logging
 import requests
+import csv
 try:
     from helpers import conf, api, misc_utils
     from helpers import logger as log
@@ -403,6 +404,41 @@ def append_users(users):
                 l.logger.info("Staging user (%s) [%d/%d]" % (u["username"], len(staged_users), len(users)))
     with open("%s/data/staged_users.json" % app_path, "w") as f:
         json.dump(misc_utils.remove_dupes(staged_users), f, indent=4)
+
+'''
+
+Usage:
+
+1. Add "user_map_csv" to config file containing path to user map in CSV form
+2. Open up a python shell with pipenv (pipenv run python)
+3. Import this function (from migration.users import map_users)
+4. Execute this function (map_users())
+
+'''
+def map_users():
+    total_matches = 0
+    users_dict = {}
+    user_json = {}
+    rewritten_users = []
+    with open("%s/data/userscopy.json" % app_path, "r") as f:
+        user_json = json.load(f)
+    print len(user_json)
+    for user in user_json:
+        users_dict[user["name"]] = user
+    with open(config.user_map) as csv_file:
+        csv_reader = csv.reader(csv_file, delimiter=',')
+        for row in csv_reader:
+            name = row[0].strip()
+            username = row[1].strip()
+            email = row[2].strip()
+            if users_dict.get(name, None) is not None:
+                users_dict[name]["email"] = email
+                total_matches += 1
+    for _, u in users_dict.iteritems():
+        rewritten_users.append(u)
+    with open("%s/data/staged_users.json" % app_path, "w") as f:
+        json.dump(rewritten_users, f, indent=4)
+    print "Found %d users to remap" % total_matches 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Handle user-related tasks')
