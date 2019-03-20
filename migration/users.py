@@ -432,6 +432,7 @@ def map_users():
             username = row[1].strip()
             email = row[2].strip()
             if users_dict.get(name, None) is not None:
+                l.logger.info("Mapping %s@%s to %s" % (name, users_dict[name]["email"], email))
                 users_dict[name]["email"] = email
                 total_matches += 1
     for _, u in users_dict.iteritems():
