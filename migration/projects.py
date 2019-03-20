@@ -47,7 +47,7 @@ groups_map = {}
 
 keys_map = {}
 if conf.location == "filesystem-aws":
-    keys_map = aws.get_s3_keys()
+    keys_map = aws.get_s3_keys(conf.bucket_name)
 
 def export_project(project):
     if isinstance(project, str):

@@ -405,6 +405,16 @@ def append_users(users):
     with open("%s/data/staged_users.json" % app_path, "w") as f:
         json.dump(misc_utils.remove_dupes(staged_users), f, indent=4)
 
+'''
+
+Usage:
+
+1. Add "user_map_csv" to config file containing path to user map in CSV form
+2. Open up a python shell with pipenv (pipenv run python)
+3. Import this function (from migration.users import map_users)
+4. Execute this function (map_users())
+
+'''
 def map_users():
     total_matches = 0
     users_dict = {}
