@@ -409,6 +409,7 @@ def map_users():
     total_matches = 0
     users_dict = {}
     user_json = {}
+    rewritten_users = []
     with open("%s/data/userscopy.json" % app_path, "r") as f:
         user_json = json.load(f)
     print len(user_json)
@@ -421,9 +422,13 @@ def map_users():
             username = row[1].strip()
             email = row[2].strip()
             if users_dict.get(name, None) is not None:
-                print "%s___%s___%s___%s" % (name, username, email, users_dict.get(name, None)["email"])
+                users_dict[name]["email"] = email
                 total_matches += 1
-    return total_matches
+    for _, u in users_dict.iteritems():
+        rewritten_users.append(u)
+    with open("%s/data/staged_users.json" % app_path, "w") as f:
+        json.dump(rewritten_users, f, indent=4)
+    print "Found %d users to remap" % total_matches 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Handle user-related tasks')
