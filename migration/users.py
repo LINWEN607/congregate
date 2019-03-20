@@ -406,14 +406,24 @@ def append_users(users):
         json.dump(misc_utils.remove_dupes(staged_users), f, indent=4)
 
 def map_users():
+    total_matches = 0
     users_dict = {}
+    user_json = {}
+    with open("%s/data/userscopy.json" % app_path, "r") as f:
+        user_json = json.load(f)
+    print len(user_json)
+    for user in user_json:
+        users_dict[user["name"]] = user
     with open(config.user_map) as csv_file:
         csv_reader = csv.reader(csv_file, delimiter=',')
         for row in csv_reader:
             name = row[0].strip()
             username = row[1].strip()
             email = row[2].strip()
-            print row
+            if users_dict.get(name, None) is not None:
+                print "%s___%s___%s___%s" % (name, username, email, users_dict.get(name, None)["email"])
+                total_matches += 1
+    return total_matches
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Handle user-related tasks')
