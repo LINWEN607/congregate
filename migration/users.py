@@ -422,19 +422,20 @@ def map_users():
     rewritten_users = []
     with open("%s/data/staged_users.json" % app_path, "r") as f:
         user_json = json.load(f)
-    print len(user_json)
     for user in user_json:
-        users_dict[user["name"]] = user
+        users_dict[misc_utils.strip_numbers(user["username"])] = user
+
     with open(config.user_map) as csv_file:
         csv_reader = csv.reader(csv_file, delimiter=',')
         for row in csv_reader:
             name = row[0].strip()
-            username = row[1].strip()
+            username = misc_utils.strip_numbers(row[1].strip())
             email = row[2].strip()
-            if users_dict.get(name, None) is not None:
-                l.logger.info("Mapping %s@%s to %s" % (name, users_dict[name]["email"], email))
-                users_dict[name]["email"] = email
-                total_matches += 1
+            if users_dict.get(username, None) is not None:
+                if email != users_dict[username]["email"]:
+                    l.logger.info("Mapping %s with email [%s] to %s" % (name, users_dict[username]["email"], email))
+                    users_dict[username]["email"] = email
+                    total_matches += 1
     for _, u in users_dict.iteritems():
         rewritten_users.append(u)
     with open("%s/data/staged_users.json" % app_path, "w") as f:

@@ -77,7 +77,9 @@ class aws_client:
         """Get a list of keys in an S3 bucket."""
         keys = {}
         resp = self.s3.list_objects_v2(Bucket=bucket)
-        for obj in resp['Contents']:
-            cleaned_key = sub(r'\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{3}_', '', obj['Key'])
-            keys[cleaned_key] = obj['Key']
-        return keys
+        if resp.get("Contents", None) is not None:
+            for obj in resp['Contents']:
+                cleaned_key = sub(r'\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{3}_', '', obj['Key'])
+                keys[cleaned_key] = obj['Key']
+            return keys
+        return None

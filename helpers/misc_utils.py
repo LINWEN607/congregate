@@ -1,4 +1,5 @@
 from requests import get
+from re import sub
 
 def remove_dupes(mylist):
     """
@@ -21,3 +22,6 @@ def download_file(url, path, headers=None):
             if chunk:
                 f.write(chunk)
     return filename
+
+def strip_numbers(s):
+    return sub(r"[0-9]+", '', s)
