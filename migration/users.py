@@ -428,9 +428,9 @@ def map_users():
         csv_reader = csv.reader(csv_file, delimiter=',')
         for row in csv_reader:
             name = row[0].strip()
-            username = row[1].strip()
+            username = misc_utils.strip_numbers(row[1].strip())
             email = row[2].strip()
-            if users_dict.get(misc_utils.strip_numbers(username), None) is not None:
+            if users_dict.get(username, None) is not None:
                 l.logger.info("Mapping %s@%s to %s" % (name, users_dict[username]["email"], email))
                 users_dict[username]["email"] = email
                 total_matches += 1
