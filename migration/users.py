@@ -35,11 +35,8 @@ def update_users(obj, new_users, suffix=""):
         for ind, member in enumerate(obj[i]["members"], start=0):
             for new_user in new_users:
                 key = shortcut.get(member["username"], None)
-                saved_id = None
-                try:
-                    saved_id = key.get("id", None)
-                except:
-                    saved_id = None
+                print key
+                saved_id = key.get("id", None)
                 if saved_id is not None:
                     member["id"] = saved_id
                     break
