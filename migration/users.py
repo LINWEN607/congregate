@@ -142,10 +142,13 @@ def update_users_new(obj, new_users):
         l.logger.info("Rewriting users for %s" % obj[i]["name"])
         members = obj[i]["members"]
         for member in members:
+            username = misc_utils.strip_numbers(member["username"])
             if rewritten_users.get(member["username"], None) is not None:
-                member["id"] = rewritten_users[member["username"]]["id"]
+                member["id"] = rewritten_users[username]["id"]
             elif rewritten_users.get(member["name"].replace(" ", ".").lower(), None) is not None:
-                member["id"] = rewritten_users[member["username"]]["id"]
+                member["id"] = rewritten_users[username]["id"]
+            else:
+                member["id"] = 1
             # else:
             #     old_username = api.generate_get_request(config.child_host, config.child_token, "users/%d" % member["id"]).json()["username"]
             #     old_username = misc_utils.strip_numbers(old_username)
