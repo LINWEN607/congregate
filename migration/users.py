@@ -144,11 +144,14 @@ def update_users_new(obj, new_users):
         for member in members:
             if rewritten_users.get(member["username"], None) is not None:
                 member["id"] = rewritten_users[member["username"]]["id"]
-            else:
-                old_username = api.generate_get_request(config.child_host, config.child_token, "users/%d" % member["id"]).json()["username"]
-                old_username = misc_utils.strip_numbers(old_username)
-                if rewritten_users.get(old_username, None) is not None:
-                    member["id"] = rewritten_users[old_username]["id"]
+            elif rewritten_users.get(member["name"].replace(" ", ".").lower(), None) is not None:
+                member["id"] = rewritten_users[member["username"]]["id"]
+            # else:
+            #     old_username = api.generate_get_request(config.child_host, config.child_token, "users/%d" % member["id"]).json()["username"]
+            #     old_username = misc_utils.strip_numbers(old_username)
+            #     if rewritten_users.get(old_username, None) is not None:
+
+            #         member["id"] = rewritten_users[old_username]["id"]
     
     return obj
 
