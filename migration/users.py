@@ -460,6 +460,32 @@ def map_users():
         json.dump(rewritten_users, f, indent=4)
     print "Found %d users to remap" % total_matches 
 
+def rm_non_ldap_users():
+    total_matches = 0
+    users_dict = {}
+    user_json = {}
+    rewritten_users = []
+    with open("%s/data/new_users.json" % app_path, "r") as f:
+        user_json = json.load(f)
+    for user in user_json:
+        users_dict[misc_utils.strip_numbers(user["username"])] = user
+
+    with open(config.user_map) as csv_file:
+        csv_reader = csv.reader(csv_file, delimiter=',')
+        for row in csv_reader:
+            name = row[0].strip()
+            username = misc_utils.strip_numbers(row[1].strip())
+            email = row[2].strip()
+            # if users_dict.get(username, None) is not None:
+            #     if email != users_dict[username]["email"]:
+            #         l.logger.info("Mapping %s with email [%s] to %s" % (name, users_dict[username]["email"], email))
+            #         users_dict[username]["email"] = email
+            #         total_matches += 1
+            if users_dict.get(username, None) is None:
+                print json.dumps(users_dict[username], indent=4)
+                #api.generate_delete_request(config.parent_host, config.parent_token, "users/%d" % users_dict[username]["id"])
+                
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Handle user-related tasks')
     parser.add_argument('--retrieve', type=bool, default=False, dest='retrieve',
