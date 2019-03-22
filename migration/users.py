@@ -380,10 +380,14 @@ def migrate_user_info():
                 try:
                     l.logger.info("Appending %s to new_users.json" % user["email"])
                     response = api.search(config.parent_host, config.parent_token, 'users', user['email'])
-                    new_ids.append(response[0]["id"])
+                    if len(response) > 0:
+                        if isinstance(response, list):
+                            new_ids.append(response[0]["id"])
+                        elif isinstance(response, dict):
+                            if response.get("id", None) is not None:
+                                new_ids.append(response["id"])
                 except requests.exceptions.RequestException, e:
                     l.logger.info(e)
-                    l.logger.info(e.read())
             else:
                 new_ids.append(response_json["id"])
         except requests.exceptions.RequestException, e:
