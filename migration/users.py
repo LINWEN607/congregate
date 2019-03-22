@@ -148,7 +148,7 @@ def update_users_new(obj, new_users):
             elif rewritten_users.get(member["name"].replace(" ", ".").lower(), None) is not None:
                 member["id"] = rewritten_users[member["name"].replace(" ", ".").lower()]["id"]
             else:
-                member["id"] = 1
+                member["id"] = config.parent_user_id
             # else:
             #     old_username = api.generate_get_request(config.child_host, config.child_token, "users/%d" % member["id"]).json()["username"]
             #     old_username = misc_utils.strip_numbers(old_username)
