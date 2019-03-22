@@ -146,7 +146,7 @@ def update_users_new(obj, new_users):
             if rewritten_users.get(member["username"], None) is not None:
                 member["id"] = rewritten_users[username]["id"]
             elif rewritten_users.get(member["name"].replace(" ", ".").lower(), None) is not None:
-                member["id"] = rewritten_users[username]["id"]
+                member["id"] = rewritten_users[member["name"].replace(" ", ".").lower()]["id"]
             else:
                 member["id"] = 1
             # else:
