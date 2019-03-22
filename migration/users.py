@@ -135,14 +135,14 @@ def update_users_new(obj, new_users):
     rewritten_users = {}
     for i in range(len(new_users)):
         new_obj = new_users[i]
-        username = misc_utils.strip_numbers(new_users[i]["username"])
+        username = misc_utils.strip_numbers(new_users[i]["username"]).lower()
         rewritten_users[username] = new_obj
     
     for i in range(len(obj)):
         l.logger.info("Rewriting users for %s" % obj[i]["name"])
         members = obj[i]["members"]
         for member in members:
-            username = misc_utils.strip_numbers(member["username"])
+            username = misc_utils.strip_numbers(member["username"]).lower()
             if rewritten_users.get(member["username"], None) is not None:
                 member["id"] = rewritten_users[username]["id"]
             elif rewritten_users.get(member["name"].replace(" ", ".").lower(), None) is not None:
