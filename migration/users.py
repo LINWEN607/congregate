@@ -279,8 +279,8 @@ def update_user_info(new_ids, overwrite=True):
     with open("%s/data/new_users.json" % app_path, "r") as f:
         new_users = json.load(f)
 
-    staged_projects = update_users(staged_projects, new_users, None)
-    groups = update_users(groups, new_users, None)
+    staged_projects = update_users(staged_projects, new_users)
+    groups = update_users(groups, new_users)
         
     with open("%s/data/stage.json" % app_path, "wb") as f:
         json.dump(staged_projects, f, indent=4)
