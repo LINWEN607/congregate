@@ -89,7 +89,7 @@ def traverse_and_migrate(groups, rewritten_groups, parent_id=None):
                     response = api.generate_post_request(config.parent_host, config.parent_token, "groups", json.dumps(group)).json()
                     if isinstance(response, dict):
                         if response.get("message", None) is not None:
-                            if "Failed to save group" not in response["message"]:
+                            if "Failed to save group" in response["message"]:
                                 l.logger.info("Group already exists")
                             else:
                                 l.logger.info("Failed to save group")
@@ -100,15 +100,15 @@ def traverse_and_migrate(groups, rewritten_groups, parent_id=None):
                 except requests.exceptions.RequestException, e:
                     l.logger.info(json.dumps(e.read()))
                     l.logger.info("Group already exists")
-                # if not new_group_id:
-                #     new_group = api.search(config.parent_host, config.parent_token, 'groups', group['path'])
-                #     if new_group is not None and len(new_group) > 0:
-                #         for ng in new_group:
-                #             if ng["name"] == group["name"]:
-                #                 if ng["parent_id"] == group["parent_id"] and group["parent_id"] == config.parent_id:
-                #                     new_group_id = ng["id"]
-                #                     l.logger.info("New group found")
-                #                     break
+                if new_group_id is None:
+                    new_group = api.search(config.parent_host, config.parent_token, 'groups', group['path'])
+                    if new_group is not None and len(new_group) > 0:
+                        for ng in new_group:
+                            if ng["name"] == group["name"]:
+                                if ng["parent_id"] == group["parent_id"] and group["parent_id"] == config.parent_id:
+                                    new_group_id = ng["id"]
+                                    l.logger.info("New group found")
+                                    break
                 if new_group_id:
                     root_user_present = False
                     for member in members:
