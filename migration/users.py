@@ -43,35 +43,34 @@ def update_users(obj, new_users, suffix=""):
                 if saved_id is not None:
                     member["id"] = saved_id
                     break
-                elif member["username"] == new_user["username"]:
+                if member["username"] == new_user["username"]:
                     member["id"] = new_user["id"]
                     shortcut[member["username"]] = {"id": new_user["id"]}
                     break
-                elif member["username"] + suffix == new_user["username"]:
+                if member["username"] + suffix == new_user["username"]:
                     member["id"] = new_user["id"]
                     shortcut[member["username"]] = {"id": new_user["id"]}
                     break
-                elif member["name"] == new_user["name"]:
+                if member["name"] == new_user["name"]:
                     member["id"] = new_user["id"]
                     shortcut[member["username"]] = {"id": new_user["id"]}
                     break
+                old_email = api.generate_get_request(config.child_host, config.child_token, "users/%d" % member["id"]).json()["email"]
+                response = api.search(config.parent_host, config.parent_token, 'users', old_email)
+                print response
+                if len(response) > 0:
+                    member["id"] = response[0]["id"]
+                    shortcut[member["username"]] = {"id": response[0]["id"]}
                 else:
-                    old_email = api.generate_get_request(config.child_host, config.child_token, "users/%d" % member["id"]).json()["email"]
-                    response = api.search(config.parent_host, config.parent_token, 'users', old_email)
-                    print response
-                    if len(response) > 0:
-                        member["id"] = response[0]["id"]
-                        shortcut[member["username"]] = {"id": response[0]["id"]}
+                    split_email = old_email.split("@")[0]
+                    another_search = api.search(config.parent_host, config.parent_token, 'users', split_email)
+                    if len(another_search) > 0:
+                        member["id"] = another_search[0]["id"]
+                        shortcut[member["username"]] = {"id": another_search[0]["id"]}
                     else:
-                        split_email = old_email.split("@")[0]
-                        another_search = api.search(config.parent_host, config.parent_token, 'users', split_email)
-                        if len(another_search) > 0:
-                            member["id"] = another_search[0]["id"]
-                            shortcut[member["username"]] = {"id": another_search[0]["id"]}
-                        else:
-                            print "%s not found" % member["username"]
-                            unknown_member_indeces.append(ind)
-                    break
+                        print "%s not found" % member["username"]
+                        unknown_member_indeces.append(ind)
+                break
         if obj[i].get("namespace", None) is not None:
             if len(obj[i]["members"]) > 0:
                 if obj[i]["namespace"] == obj[i]["members"][0]["username"]:
