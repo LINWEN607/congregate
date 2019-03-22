@@ -135,16 +135,19 @@ def update_users_new(obj, new_users):
     rewritten_users = {}
     for i in range(len(new_users)):
         new_obj = new_users[i]
-        id_num = new_users[i]["email"]
-        rewritten_users[id_num] = new_obj
+        username = new_users[i]["username"]
+        rewritten_users[username] = new_obj
     
     for i in range(len(obj)):
         l.logger.info("Rewriting users for %s" % obj[i]["name"])
         members = obj[i]["members"]
         for member in members:
-            old_email = api.generate_get_request(config.child_host, config.child_token, "users/%d" % member["id"]).json()["email"]
-            if rewritten_users.get(old_email, None) is not None:
-                member["id"] = rewritten_users[old_email]["id"]
+            if rewritten_users.get(member["username"], None) is not None:
+                member["id"] = rewritten_users[member["username"]]["id"]
+            # else:
+            #     old_email = api.generate_get_request(config.child_host, config.child_token, "users/%d" % member["id"]).json()["email"]
+            #     if rewritten_users.get(old_email, None) is not None:
+            #         member["id"] = rewritten_users[old_email]["id"]
     
     return obj
 
