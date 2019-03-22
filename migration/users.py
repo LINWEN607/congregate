@@ -254,8 +254,11 @@ def update_user_info(new_ids, overwrite=True):
         with open("%s/data/new_users.json" % app_path, "w") as f:
             new_users = []
             for new_id in new_ids:
-                new_user = api.generate_get_request(config.parent_host, config.parent_token, "/users/%s" % new_id).json()[0]
-                new_users.append(new_user)
+                new_user = api.generate_get_request(config.parent_host, config.parent_token, "/users/%s" % new_id).json()
+                if isinstance(new_user, list):
+                    new_users.append(new_user[0])
+                elif isinstance(new_user, dict):
+                    new_users.append(new_user)
             
             root_index = None
             for user in new_users:
