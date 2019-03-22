@@ -87,7 +87,10 @@ def traverse_and_migrate(groups, rewritten_groups, parent_id=None):
             if group_id in rewritten_groups:
                 try:
                     response = api.generate_post_request(config.parent_host, config.parent_token, "groups", json.dumps(group)).json()
-                    new_group_id = response["id"]
+                    if isinstance(response, dict):
+                        new_group_id = response["id"]
+                    elif isinstance(response, list):
+                        new_group_id = response[0]["id"]
                 except requests.exceptions.RequestException, e:
                     l.logger.info(json.dumps(e.read()))
                     l.logger.info("Group already exists")
