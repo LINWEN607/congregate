@@ -574,7 +574,7 @@ def handle_migrating_file(f):
                 path_with_namespace = "%s_%s.tar.gz" % (
                     f["namespace"], f["name"])
                 try:
-                    filename = misc_utils.download_file(url, conf.filesystem_path, path_with_namespace, headers={"PRIVATE-TOKEN": conf.child_token})
+                    filename = misc_utils.download_file(url, conf.filesystem_path, headers={"PRIVATE-TOKEN": conf.child_token})
                     l.logger.info("Copying %s to s3" % filename)
                     success = aws.copy_file_to_s3(filename)
                     if success:
