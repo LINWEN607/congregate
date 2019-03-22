@@ -116,7 +116,7 @@ def traverse_and_migrate(groups, rewritten_groups, parent_id=None):
                             root_user_present = True
                         new_member = {
                             "user_id": member["id"],
-                            "access_level": member["access_level"]
+                            "access_level": int(member["access_level"])
                         }
 
                         try:
@@ -154,7 +154,7 @@ def update_members():
                 root_user_present = True
             new_member = {
                 "user_id": member["id"],
-                "access_level": member["access_level"]
+                "access_level": int(member["access_level"])
             }
 
             try:
