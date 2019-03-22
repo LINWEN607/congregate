@@ -36,7 +36,9 @@ def update_users(obj, new_users, suffix=""):
             for new_user in new_users:
                 key = shortcut.get(member["username"], None)
                 print key
-                saved_id = key.get("id", None)
+                saved_id = None
+                if key is not None:
+                    saved_id = key.get("id", None)
                 if saved_id is not None:
                     member["id"] = saved_id
                     break
