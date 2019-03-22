@@ -46,14 +46,17 @@ def update_users(obj, new_users, suffix=""):
                 if member["username"] == new_user["username"]:
                     member["id"] = new_user["id"]
                     shortcut[member["username"]] = {"id": new_user["id"]}
+                    print "usernames match"
                     break
                 if member["username"] + suffix == new_user["username"]:
                     member["id"] = new_user["id"]
                     shortcut[member["username"]] = {"id": new_user["id"]}
+                    print "usernames with suffix match"
                     break
                 if member["name"] == new_user["name"]:
                     member["id"] = new_user["id"]
                     shortcut[member["username"]] = {"id": new_user["id"]}
+                    print "names match"
                     break
                 old_email = api.generate_get_request(config.child_host, config.child_token, "users/%d" % member["id"]).json()["email"]
                 response = api.search(config.parent_host, config.parent_token, 'users', old_email)
