@@ -18,9 +18,16 @@ except ImportError:
 
 app_path = os.getenv("CONGREGATE_PATH")
 
-def get_data(file_name):
+def get_data(file_name, sort_by=None):
+    data = None
     with open("%s/data/%s.json" % (app_path, file_name), "r") as f:
-        return json.load(f)
+        data = json.load(f)
+    
+    if sort_by is not None:
+        return sorted(data, key=lambda d: d[sort_by])
+        
+    return data
+
 
 @app.route("/data/<name>")
 def load_stage_data(name):

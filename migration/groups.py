@@ -25,7 +25,6 @@ def traverse_groups(base_groups, transient_list,  host, token, parent_group=None
     for group in base_groups:
         group.pop("web_url")
         group.pop("full_name")
-        group.pop("full_path")
         try:
             group.pop("ldap_cn")
             group.pop("ldap_access")
@@ -74,23 +73,62 @@ def migrate_group_info():
 def traverse_and_migrate(groups, rewritten_groups, parent_id=None):
     for group in groups:
         #print group
-        if group.get("id") is not None:
+        if group.get("id", None) is not None:
             if rewritten_groups is not None:
                 has_children = "child_ids" in rewritten_groups.get(group["id"], None)
             group_id = group["id"]
-            group.pop("id")
+            # group.pop("id")
             members = group["members"]
-            group.pop("members")
-            if group["visibility"] == "internal":
-                group["visibility"] = "private"
+            
+            # if group["visibility"] == "internal":
+            #     group["visibility"] = "private"
+            if group.get("parent_namespace", None) is not None:
+                found = False
+                if rewritten_groups.get(group["parent_id"], None) is not None:
+                    parent_id = rewritten_groups[group["parent_id"]]["id"]
+                else:
+                    parent_id = rewritten_groups[group["old_parent_id"]]["id"]
+                search = api.search(config.parent_host, config.parent_token, "groups", group["parent_namespace"])
+                for s in search:
+                    if s["full_path"].lower() == rewritten_groups[parent_id]["full_path"].lower():
+                        group["parent_id"] = s["id"]
+                        found = True
+                        break
+                if found is False:
+                    traverse_and_migrate([rewritten_groups[parent_id]], rewritten_groups)
+                    search = api.search(config.parent_host, config.parent_token, "groups", group["parent_namespace"])
+                    for s in search:
+                        if s["full_path"].lower() == rewritten_groups[parent_id]["full_path"].lower():
+                            group["parent_id"] = s["id"]
+                            found = True
+                            break
+                # group.pop("parent_namespace")
+            else:
+                print "Parent namespace is empty"
+
+            # group.pop("full_path")
+            
             new_group_id = None
             if group_id in rewritten_groups:
                 try:
-                    response = api.generate_post_request(config.parent_host, config.parent_token, "groups", json.dumps(group)).json()
+                    group_without_id = group.copy()
+                    group_without_id.pop("id")
+                    group_without_id.pop("full_path")
+                    group_without_id.pop("members")
+                    if group_without_id.get("parent_namespace", None) is not None:
+                        group_without_id.pop("parent_namespace")
+                    response = api.generate_post_request(config.parent_host, config.parent_token, "groups", json.dumps(group_without_id)).json()
                     if isinstance(response, dict):
                         if response.get("message", None) is not None:
                             if "Failed to save group" in response["message"]:
-                                l.logger.info("Group already exists")
+                                l.logger.info("Group already exists. Searching for group ID")
+                                new_group = api.search(config.parent_host, config.parent_token, 'groups', group['path'])
+                                if new_group is not None and len(new_group) > 0:
+                                    for ng in new_group:
+                                        if ng["name"] == group["name"]:
+                                            new_group_id = ng["id"]
+                                            l.logger.info("Group found")
+                                            break
                             else:
                                 l.logger.info("Failed to save group")
                         else:
@@ -98,7 +136,6 @@ def traverse_and_migrate(groups, rewritten_groups, parent_id=None):
                     elif isinstance(response, list):
                         new_group_id = response[0]["id"]
                 except requests.exceptions.RequestException, e:
-                    l.logger.info(json.dumps(e.read()))
                     l.logger.info("Group already exists")
                 if new_group_id is None:
                     new_group = api.search(config.parent_host, config.parent_token, 'groups', group['path'])
@@ -120,25 +157,30 @@ def traverse_and_migrate(groups, rewritten_groups, parent_id=None):
                         }
 
                         try:
-                            api.generate_post_request(config.parent_host, config.parent_token, "groups/%d/members" % new_group_id, json.dumps(new_member))
+                            response = api.generate_post_request(config.parent_host, config.parent_token, "groups/%d/members" % new_group_id, json.dumps(new_member))
                         except requests.exceptions.RequestException, e:
                             l.logger.error(e)
 
                     if not root_user_present:
                         l.logger.info("removing root user from group")
-                        api.generate_delete_request(config.parent_host, config.parent_token, "groups/%d/members/%d" % (new_group_id, int(config.parent_user_id)))
+                        response = api.generate_delete_request(config.parent_host, config.parent_token, "groups/%d/members/%d" % (new_group_id, int(config.parent_user_id)))
+                        print response
 
-                    if has_children:
-                        subgroup = []
-                        for sub in group["child_ids"]:
-                            rewritten_groups.pop(group_id, None)
-                            if rewritten_groups.get(sub) is not None:
-                                sub_group = rewritten_groups.get(sub)
-                                sub_group["parent_id"] = new_group_id
-                                subgroup.append(sub_group)
-                        l.logger.info(subgroup)
-                        traverse_and_migrate(subgroup, rewritten_groups)
-                    rewritten_groups.pop(group_id, None)
+                    # if has_children:
+                    #     subgroup = []
+                    #     l.logger.info(group["child_ids"])
+                    #     for sub in group["child_ids"]:
+                    #         # rewritten_groups.pop(group_id, None)
+                    #         l.logger.info(rewritten_groups.get(sub))
+                    #         l.logger.info(rewritten_groups.keys())
+                    #         if rewritten_groups.get(sub) is not None:
+                    #             sub_group = rewritten_groups.get(sub)
+                    #             sub_group["old_parent_id"] = sub_group["parent_id"]
+                    #             sub_group["parent_id"] = new_group_id
+                    #             subgroup.append(sub_group)
+                    #     l.logger.info(subgroup)
+                    #     traverse_and_migrate(subgroup, rewritten_groups)
+                    # rewritten_groups.pop(group_id, None)
         else:
             print "Leaving recursion"
 
@@ -165,22 +207,38 @@ def update_members():
 def append_groups(groups):
     with open("%s/data/groups.json" % app_path, "r") as f:
         group_file = json.load(f)
+    rewritten_groups = {}
+    for i in range(len(group_file)):
+        new_obj = group_file[i]
+        group_name = group_file[i]["id"]
+        rewritten_groups[group_name] = new_obj
     staged_groups = []
     if len(groups) > 0:
         if len(groups[0]) > 0:
             for group in groups:
-                for g in group_file:
-                    if int(group) == g["id"]:
-                        if g["parent_id"] is None:
-                            if config.parent_id is not None:
-                                g["parent_id"] = config.parent_id
-                        else:
-                            if g["parent_id"] not in groups:
-                                g["parent_id"] = config.parent_id
-                        staged_groups.append(g)
-                        l.logger.info("Staging group (%s) [%d/%d]" % (g["name"], len(staged_groups), len(groups)))
+                traverse_staging(int(group), rewritten_groups, staged_groups)
+                l.logger.info("Staging group [%d/%d]" % (len(staged_groups), len(groups)))
+                
     with open("%s/data/staged_groups.json" % app_path, "w") as f:
         json.dump(misc_utils.remove_dupes(staged_groups), f, indent=4)
+
+def traverse_staging(id, group_dict, staged_groups):
+    if group_dict.get(id, None) is not None:
+        g = group_dict[id]
+        if g["parent_id"] is None:
+            if config.parent_id is not None:
+                g["parent_id"] = config.parent_id
+        else:
+            parent_group = group_dict.get(g["parent_id"])
+            if parent_group is not None:
+                g["parent_namespace"] = parent_group["name"]
+                if parent_group.get("parent_id", None) is not None:
+                    traverse_staging(parent_group["id"], group_dict, staged_groups)
+                else:
+                    staged_groups.append(parent_group)
+        staged_groups.append(g)
+        
+
     
 def find_all_internal_projects():
     groups_to_change = []

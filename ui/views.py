@@ -14,7 +14,7 @@ def home_page():
 
 @app.route("/projects")
 def project_page():
-    data = get_data("project_json")
+    data = get_data("project_json", sort_by="namespace")
     return render_template("projects.html", data=data)
 
 @app.route("/users")
