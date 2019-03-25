@@ -71,8 +71,9 @@ def migrate_group_info():
     traverse_and_migrate(groups, rewritten_groups)
     
 def traverse_and_migrate(groups, rewritten_groups, parent_id=None):
+    count = 0
     for group in groups:
-        #print group
+        l.logger.info("Migrating %s %d/%d" % (group["name"], count, len(group)))
         if group.get("id", None) is not None:
             if rewritten_groups is not None:
                 has_children = "child_ids" in rewritten_groups.get(group["id"], None)
@@ -86,8 +87,9 @@ def traverse_and_migrate(groups, rewritten_groups, parent_id=None):
                 found = False
                 if rewritten_groups.get(group["parent_id"], None) is not None:
                     parent_id = rewritten_groups[group["parent_id"]]["id"]
-                else:
+                elif rewritten_groups.get(group["old_parent_id"], None) is not None:
                     parent_id = rewritten_groups[group["old_parent_id"]]["id"]
+                
                 search = api.search(config.parent_host, config.parent_token, "groups", group["parent_namespace"])
                 for s in search:
                     if s["full_path"].lower() == rewritten_groups[parent_id]["full_path"].lower():
@@ -183,6 +185,8 @@ def traverse_and_migrate(groups, rewritten_groups, parent_id=None):
                     # rewritten_groups.pop(group_id, None)
         else:
             print "Leaving recursion"
+
+        count += 1 
 
 def update_members():
     with open("%s/data/staged_groups.json" % app_path, "r") as f:
