@@ -87,8 +87,9 @@ def traverse_and_migrate(groups, rewritten_groups, parent_id=None):
                 found = False
                 if rewritten_groups.get(group["parent_id"], None) is not None:
                     parent_id = rewritten_groups[group["parent_id"]]["id"]
-                elif rewritten_groups.get(group["old_parent_id"], None) is not None:
-                    parent_id = rewritten_groups[group["old_parent_id"]]["id"]
+                elif group.get("old_parent_id", None) is not None:
+                    if rewritten_groups.get(group["old_parent_id"], None) is not None:
+                        parent_id = rewritten_groups[group["old_parent_id"]]["id"]
                 
                 search = api.search(config.parent_host, config.parent_token, "groups", group["parent_namespace"])
                 for s in search:
