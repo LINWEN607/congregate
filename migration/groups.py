@@ -92,19 +92,24 @@ def traverse_and_migrate(groups, rewritten_groups, parent_id=None):
                         parent_id = rewritten_groups[group["old_parent_id"]]["id"]
                 
                 search = api.search(config.parent_host, config.parent_token, "groups", group["parent_namespace"])
-                for s in search:
-                    if s["full_path"].lower() == rewritten_groups[parent_id]["full_path"].lower():
-                        group["parent_id"] = s["id"]
-                        found = True
-                        break
-                if found is False:
-                    traverse_and_migrate([rewritten_groups[parent_id]], rewritten_groups)
-                    search = api.search(config.parent_host, config.parent_token, "groups", group["parent_namespace"])
+                if parent_id is not None:
                     for s in search:
-                        if s["full_path"].lower() == rewritten_groups[parent_id]["full_path"].lower():
-                            group["parent_id"] = s["id"]
-                            found = True
-                            break
+                        if rewritten_groups.get(parent_id, None) is not None:
+                            if s["full_path"].lower() == rewritten_groups[parent_id]["full_path"].lower():
+                                group["parent_id"] = s["id"]
+                                found = True
+                                break
+                    if found is False:
+                        traverse_and_migrate([rewritten_groups[parent_id]], rewritten_groups)
+                        search = api.search(config.parent_host, config.parent_token, "groups", group["parent_namespace"])
+                        for s in search:
+                            if rewritten_groups.get(parent_id, None) is not None:
+                                if s["full_path"].lower() == rewritten_groups[parent_id]["full_path"].lower():
+                                    group["parent_id"] = s["id"]
+                                    found = True
+                                    break
+                else:
+                    group["parent_id"] = None
                 # group.pop("parent_namespace")
             else:
                 print "Parent namespace is empty"
