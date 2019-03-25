@@ -101,11 +101,14 @@ def import_project(project):
         import_response = aws.import_from_s3(name, namespace, presigned_get_url, filename)
     elif conf.location == "filesystem-aws":
         if conf.allow_presigned_url is not None and conf.allow_presigned_url is True:
+            l.logger.info("Importing with presigned_url")
             presigned_get_url = aws.generate_presigned_url(filename, "GET")
             import_response = aws.import_from_s3(name, namespace, presigned_get_url, filename)
         else:
+            l.logger.info("Importing with s3 cp")
             downloaded_filename = keys_map.get(filename)
             import_response = aws.copy_from_s3_and_import(name, namespace, downloaded_filename)
+    l.logger.info(import_response)
     import_id = None
     if import_response is not None and len(import_response) > 0:
         l.logger.info(import_response)
@@ -543,17 +546,16 @@ def handle_migrating_file(f):
         elif conf.location.lower() == "filesystem-aws":
             l.logger.info("Exporting %s to %s" % (name, conf.filesystem_path))
             api.generate_post_request(
-                conf.child_host, conf.child_token, "projects/%d/export" % id, "")
+                conf.child_host, conf.child_token, "projects/%d/export" % id, {})
             # download = api.generate_get_request(conf.child_host, conf.child_token, "projects/%d/export/download" % id)
             url = "%s/api/v4/projects/%d/export/download" % (
                 conf.child_host, id)
             # filename = download.info().getheader("Content-Disposition").split("=")[1]
             exported = False
-            exported = True
             total_time = 0
             while not exported:
-                response = json.load(api.generate_get_request(
-                    conf.child_host, conf.child_token, "projects/%d/export" % id))
+                response = api.generate_get_request(
+                    conf.child_host, conf.child_token, "projects/%d/export" % id).json()
                 if response["export_status"] == "finished":
                     l.logger.info("%s has finished exporting" % name)
                     exported = True
@@ -574,7 +576,7 @@ def handle_migrating_file(f):
                 path_with_namespace = "%s_%s.tar.gz" % (
                     f["namespace"], f["name"])
                 try:
-                    filename = misc_utils.download_file(url, conf.filesystem_path, headers={"PRIVATE-TOKEN": conf.child_token})
+                    filename = misc_utils.download_file(url, conf.filesystem_path, path_with_namespace, headers={"PRIVATE-TOKEN": conf.child_token})
                     l.logger.info("Copying %s to s3" % filename)
                     success = aws.copy_file_to_s3(filename)
                     if success:
