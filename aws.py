@@ -54,7 +54,7 @@ class aws_client:
     def copy_from_s3_and_import(self, name, namespace, filename):
         file_path = "%s/downloads/%s" % (self.config.filesystem_path, filename)
         if not os.path.isfile(file_path):
-            self.l.logger.info("Copying file to local machine")
+            self.l.logger.info("Copying %s to local machine" % filename)
             cmd = "aws+s3+cp+s3://%s/%s+%s" % (
                 self.config.bucket_name, filename, file_path)
             subprocess.call(cmd.split("+"))

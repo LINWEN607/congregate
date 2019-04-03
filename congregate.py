@@ -27,6 +27,8 @@ Usage:
     congregate check-projects-visibility
     congregate set-default-branch
     congregate enable_mirroring
+    congregate count-unarchived-projects
+    congregate find-empty-repos
     congregate -h | --help
 
 Options:
@@ -154,4 +156,8 @@ if __name__ == '__main__':
                 projects.enable_mirror()
             if arguments["set-default-branch"]:
                 projects.set_default_branch()
+            if arguments["count-unarchived-projects"]:
+                projects.count_unarchived_projects()
+            if arguments["find-empty-repos"]:
+                projects.find_empty_repos()
         

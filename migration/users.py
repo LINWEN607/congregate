@@ -141,20 +141,22 @@ def update_users_new(obj, new_users):
     for i in range(len(obj)):
         l.logger.info("Rewriting users for %s" % obj[i]["name"])
         members = obj[i]["members"]
-        for member in members:
-            username = misc_utils.strip_numbers(member["username"]).lower()
-            if rewritten_users.get(member["username"], None) is not None:
-                member["id"] = rewritten_users[username]["id"]
-            elif rewritten_users.get(member["name"].replace(" ", ".").lower(), None) is not None:
-                member["id"] = rewritten_users[member["name"].replace(" ", ".").lower()]["id"]
-            else:
-                member["id"] = config.parent_user_id
-            # else:
-            #     old_username = api.generate_get_request(config.child_host, config.child_token, "users/%d" % member["id"]).json()["username"]
-            #     old_username = misc_utils.strip_numbers(old_username)
-            #     if rewritten_users.get(old_username, None) is not None:
+        if isinstance(members, list):
+            for member in members:
+                l.logger.info(member)
+                username = misc_utils.strip_numbers(member["username"]).lower()
+                if rewritten_users.get(member["username"], None) is not None:
+                    member["id"] = rewritten_users[username]["id"]
+                elif rewritten_users.get(member["name"].replace(" ", ".").lower(), None) is not None:
+                    member["id"] = rewritten_users[member["name"].replace(" ", ".").lower()]["id"]
+                else:
+                    member["id"] = config.parent_user_id
+                # else:
+                #     old_username = api.generate_get_request(config.child_host, config.child_token, "users/%d" % member["id"]).json()["username"]
+                #     old_username = misc_utils.strip_numbers(old_username)
+                #     if rewritten_users.get(old_username, None) is not None:
 
-            #         member["id"] = rewritten_users[old_username]["id"]
+                #         member["id"] = rewritten_users[old_username]["id"]
     
     return obj
 

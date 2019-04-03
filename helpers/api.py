@@ -1,10 +1,11 @@
 from helpers import logger
 from math import ceil as math_ceil
+from misc_utils import stable_retry
 import requests
 
 l = logger.congregate_logger(__name__)
 
-
+@stable_retry
 def generate_get_request(host, token, api, params=None):
     """
         Generates GET request to GitLab API.
@@ -21,7 +22,7 @@ def generate_get_request(host, token, api, params=None):
 
     return requests.get(url, params=params, headers=headers)
 
-
+@stable_retry
 def generate_post_request(host, token, api, data, headers=None):
     """
         Generates POST request to GitLab API.
@@ -37,7 +38,7 @@ def generate_post_request(host, token, api, data, headers=None):
     
     return  requests.post(url, data=data, headers=headers)
 
-
+@stable_retry
 def generate_put_request(host, token, api, data, headers=None):
     """
         Generates PUT request to GitLab API.
@@ -52,7 +53,7 @@ def generate_put_request(host, token, api, data, headers=None):
     
     return requests.put(url, headers=headers, data=data)
 
-
+@stable_retry
 def generate_delete_request(host, token, api):
     """
         Generates DELETE request to GitLab API.
@@ -65,7 +66,7 @@ def generate_delete_request(host, token, api):
     
     return requests.delete(url, headers=headers)
 
-
+@stable_retry
 def get_count(host, token, api):
     """
         Retrieves total count of projects, users, and groups and returns as a long
@@ -80,7 +81,7 @@ def get_count(host, token, api):
 
     return long(response.headers['X-Total'])
 
-
+@stable_retry
 def get_total_pages(host, token, api):
     '''
     Return total number of pages in API result.
@@ -94,7 +95,7 @@ def get_total_pages(host, token, api):
 
     return long(response.headers['X-Total-Pages'])
 
-
+@stable_retry
 def list_all(host, token, api):
     """
         Returns a list of all projects, groups, users, etc. 
@@ -133,6 +134,6 @@ def list_all(host, token, api):
 
         current_page += 1
         
-
+@stable_retry
 def search(host, token, path, search_query):
     return generate_get_request(host, token, path, params={'search': search_query}).json()
