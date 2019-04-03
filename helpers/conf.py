@@ -98,3 +98,7 @@ class ig:
     @property
     def allow_presigned_url(self):
         return self.config.get("allow_presigned_url", None)
+
+    @property
+    def threads(self):
+        return self.config.get("number-of-threads", None)
