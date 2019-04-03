@@ -44,7 +44,7 @@ class ConfigTests(unittest.TestCase):
 
         with mock.patch('__builtin__.raw_input', lambda x: next(g)):
             actual = config.generate_config()
-            assert expected == actual
+            self.assertEqual(expected, actual)
 
 if __name__ == "__main__":
     unittest.main()
