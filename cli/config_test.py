@@ -33,6 +33,7 @@ class ConfigTests(unittest.TestCase):
                 "parent_instance_host": os.getenv("PARENT_INSTANCE_HOST"), 
                 "parent_instance_token": os.getenv("PARENT_INSTANCE_TOKEN"), 
                 "mirror_username": "root", 
+                "number-of-threads": 2,
                 "location": "filesystem", 
                 "child_instance_host": os.getenv("CHILD_INSTANCE_HOST"), 
                 "parent_user_id": 1, 
