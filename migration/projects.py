@@ -553,13 +553,13 @@ def migrate():
 
         if len(files) > 0:
             l.logger.info("Migrating project info")
-            pool = ThreadPool(3)
+            pool = ThreadPool(conf.threads)
             results = pool.map(handle_migrating_file, files)
             pool.close()
             pool.join()
 
             l.logger.info("Importing projects")
-            import_pool = ThreadPool(3)
+            import_pool = ThreadPool(conf.threads)
             results = import_pool.map(migrate_given_export, files)
             l.logger.info("### Results ###")
             print json.dumps(results, indent=4)
@@ -575,7 +575,7 @@ def kick_off_import():
         files = json.load(f)
     if len(files) > 0:
         l.logger.info("Importing projects")
-        pool = ThreadPool(3)
+        pool = ThreadPool(conf.threads)
         # Open the urls in their own threads
         # and return the results
         results = pool.map(migrate_given_export, files)
