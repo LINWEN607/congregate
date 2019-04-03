@@ -78,84 +78,115 @@ def import_project(project):
     name = project["name"]
     filename = "%s_%s.tar.gz" % (project["namespace"], project["name"])
     user_project = False
-    for member in project["members"]:
-        if project["namespace"] == member["username"]:
-            user_project = True
-            #namespace = project["namespace"]
-            new_user = api.generate_get_request(conf.parent_host, conf.parent_token, "users/%d" % member["id"]).json()
-            namespace = new_user["username"]
-            l.logger.info("%s is a user project belonging to %s. Attempting to import into their namespace" % (project["name"], new_user))
-            break
-    if not user_project:
-        l.logger.info("%s is not a user project. Attempting to import into a group namespace" % (project["name"]))
-        if conf.parent_id is not None:
-            response = api.generate_get_request(conf.parent_host, conf.parent_token, "groups/%d" % conf.parent_id).json()
-            namespace = "%s/%s" % (response["path"], project["namespace"])
-        else:
-            namespace = project["namespace"]
-    exported = False
-    import_response = None
-    timeout = 0
-    if conf.location == "aws":
-        presigned_get_url = aws.generate_presigned_url(filename, "GET")
-        import_response = aws.import_from_s3(name, namespace, presigned_get_url, filename)
-    elif conf.location == "filesystem-aws":
-        if conf.allow_presigned_url is not None and conf.allow_presigned_url is True:
-            l.logger.info("Importing with presigned_url")
+    if isinstance(project["members"], list):
+        for member in project["members"]:
+            if project["namespace"] == member["username"]:
+                user_project = True
+                #namespace = project["namespace"]
+                new_user = api.generate_get_request(conf.parent_host, conf.parent_token, "users/%d" % member["id"]).json()
+                namespace = new_user["username"]
+                l.logger.info("%s is a user project belonging to %s. Attempting to import into their namespace" % (project["name"], new_user))
+                break
+        if not user_project:
+            l.logger.info("%s is not a user project. Attempting to import into a group namespace" % (project["name"]))
+            if conf.parent_id is not None:
+                response = api.generate_get_request(conf.parent_host, conf.parent_token, "groups/%d" % conf.parent_id).json()
+                namespace = "%s/%s" % (response["path"], project["namespace"])
+            else:
+                namespace = project["namespace"]
+                url = project["http_url_to_repo"]
+                strip = sub(r"http(s|)://.+(\.net|\.com|\.org)/", "", url)
+                another_strip = strip.split("/")
+                for ind, val in enumerate(another_strip):
+                    if ".git" in val:
+                        another_strip.pop(ind)
+                full_path = "/".join(another_strip)
+                l.logger.info("Searching for %s" % full_path)
+                for group in api.list_all(conf.parent_host, conf.parent_token, "groups?search=%s" % project["namespace"]):
+                    if group["full_path"].lower() == full_path.lower():
+                        l.logger.info("Found %s" % group["full_path"])
+                        namespace = group["id"]
+                        break
+                
+        exported = False
+        import_response = None
+        timeout = 0
+        if conf.location == "aws":
             presigned_get_url = aws.generate_presigned_url(filename, "GET")
             import_response = aws.import_from_s3(name, namespace, presigned_get_url, filename)
-        else:
-            l.logger.info("Importing with s3 cp")
-            downloaded_filename = keys_map.get(filename)
-            import_response = aws.copy_from_s3_and_import(name, namespace, downloaded_filename)
-    l.logger.info(import_response)
-    import_id = None
-    if import_response is not None and len(import_response) > 0:
-        l.logger.info(import_response)
-        import_response = json.loads(import_response)
-        while not exported:
-            if import_response.get("id", None) is not None:
-                import_id = import_response["id"]
-            elif import_response.get("message", None) is not None:
-                if "Name has already been taken" in import_response.get("message"):
-                    l.logger.debug("Searching for %s" % project["name"])
-                    search_response = api.search(conf.parent_host, conf.parent_token, 'projects', project['name'])
-                    if len(search_response) > 0:
-                        for proj in search_response:
-                            if proj["name"] == project["name"] and project["namespace"] in proj["namespace"]["path"]:
-                                l.logger.info("Found project")
-                                import_id = proj["id"]
-                                break
-                    l.logger.info("Project may already exist but it cannot be found. Ignoring %s" % project["name"])
-                    return None
-                elif "404 Namespace Not Found" in import_response.get("message"):
-                    l.logger.info("Skipping %s. Will need to migrate later." % name)
-                    import_id = None
-                    break
-                elif "The project is still being deleted" in import_response.get("message"):
-                    l.logger.info("Previous project export has been targeted for deletion. Skipping %s" % project["name"])
-                    import_id = None
-                    break
-            if import_id is not None:
-                status = api.generate_get_request(conf.parent_host, conf.parent_token, "projects/%d/import" % import_id).json()
-                l.logger.info(status)
-                if status["import_status"] == "finished":
-                    l.logger.info("%s has been exported and import is occurring" % name)
-                    exported = True
-                    if conf.mirror_username is not None:
-                        mirror_repo(project, import_id)
-                elif status["import_status"] == "failed":
-                    l.logger.info("%s failed to import" % name)
-                    exported = True
+        elif conf.location == "filesystem-aws":
+            if conf.allow_presigned_url is not None and conf.allow_presigned_url is True:
+                l.logger.info("Importing %s presigned_url" % filename)
+                presigned_get_url = aws.generate_presigned_url(filename, "GET")
+                import_response = aws.import_from_s3(name, namespace, presigned_get_url, filename)
             else:
-                if timeout < 60:
-                    l.logger.info("Waiting on %s to upload" % name)
-                    timeout += 1
-                    time.sleep(1)
+                l.logger.info("Copying %s to local machine" % filename)
+                formatted_name = project["name"].lower()
+                download = "%s_%s.tar.gz" % (project["namespace"], formatted_name)
+                downloaded_filename = keys_map.get(download.lower(), None)
+                if downloaded_filename is None:
+                    l.logger.info("Continuing to search for filename")
+                    placeholder = len(formatted_name)
+                    for i in range(placeholder, 0, -1):
+                        split_name = "%s_%s.tar.gz" % (
+                            project["namespace"], formatted_name[:(i * (1))])
+                        downloaded_filename = keys_map.get(split_name.lower(), None)
+                        if downloaded_filename is not None:
+                            break
+                if downloaded_filename is not None:
+                    import_response = aws.copy_from_s3_and_import(
+                        name, namespace, downloaded_filename)
+
+        l.logger.info(import_response)
+        import_id = None
+        if import_response is not None and len(import_response) > 0:
+            # l.logger.info(import_response)
+            import_response = json.loads(import_response)
+            while not exported:
+                if import_response.get("id", None) is not None:
+                    import_id = import_response["id"]
+                elif import_response.get("message", None) is not None:
+                    if "Name has already been taken" in import_response.get("message"):
+                        l.logger.debug("Searching for %s" % project["name"])
+                        search_response = api.search(conf.parent_host, conf.parent_token, 'projects', project['name'])
+                        if len(search_response) > 0:
+                            for proj in search_response:
+                                if proj["name"] == project["name"] and project["namespace"] in proj["namespace"]["path"]:
+                                    l.logger.info("Found project")
+                                    import_id = proj["id"]
+                                    break
+                        l.logger.info("Project may already exist but it cannot be found. Ignoring %s" % project["name"])
+                        return None
+                    elif "404 Namespace Not Found" in import_response.get("message"):
+                        l.logger.info("Skipping %s. Will need to migrate later." % name)
+                        import_id = None
+                        break
+                    elif "The project is still being deleted" in import_response.get("message"):
+                        l.logger.info("Previous project export has been targeted for deletion. Skipping %s" % project["name"])
+                        import_id = None
+                        break
+                if import_id is not None:
+                    status = api.generate_get_request(conf.parent_host, conf.parent_token, "projects/%d/import" % import_id).json()
+                    # l.logger.info(status)
+                    if status["import_status"] == "finished":
+                        l.logger.info("%s has been exported and import is occurring" % name)
+                        exported = True
+                        if conf.mirror_username is not None:
+                            mirror_repo(project, import_id)
+                    elif status["import_status"] == "failed":
+                        l.logger.info("%s failed to import" % name)
+                        exported = True
                 else:
-                    l.logger.info("Moving on to the next project. Time limit exceeded")
-                    break
-    
+                    if timeout < 3600:
+                        l.logger.info("Waiting on %s to upload" % name)
+                        timeout += 1
+                        time.sleep(1)
+                    else:
+                        l.logger.info("Moving on to the next project. Time limit exceeded")
+                        break
+    else:
+        l.logger.error("Project doesn't exist. Skipping %s" % name)
+        return None
     return import_id
 
 
@@ -197,39 +228,47 @@ def migrate_project_info():
                     l.logger.info("removing root user from project")
                     api.generate_delete_request(parent_host, parent_token, "projects/%d/members/%d" % (new_project[0]["id"], conf.parent_user_id))
 
-def migrate_single_project_info(project):
+def migrate_single_project_info(project, id):
     """
         Subsequent function to update project info AFTER import
     """
     members = project["members"]
     project.pop("members")
     l.logger.info("Searching for %s" % project["name"])
-    new_project = api.search(parent_host, parent_token, 'projects', project['name'])
-    if len(new_project) > 0:
-        if new_project[0]["name"] == project["name"] and new_project[0]["namespace"]["name"] == project["namespace"]:
-            root_user_present = False
-            for member in members:
-                if member["id"] == conf.parent_user_id:
-                    root_user_present = True
-                new_member = {
-                    "user_id": member["id"],
-                    "access_level": member["access_level"]
-                }
+    if id is None:
+        new_project = api.search(parent_host, parent_token, 'projects', project['name'])
+        l.logger.info(new_project)
+        if isinstance(new_project, dict):
+            if len(new_project) > 0:
+                if new_project["name"] == project["name"] and new_project["namespace"]["name"] == project["namespace"]:
+                    id = new_project["id"]
+        elif isinstance(new_project, list):
+            if len(new_project) > 0:
+                if new_project[0]["name"] == project["name"] and new_project[0]["namespace"]["name"] == project["namespace"]:
+                    id = new_project[0]["id"]
+    root_user_present = False
+    for member in members:
+        if member["id"] == conf.parent_user_id:
+            root_user_present = True
+        new_member = {
+            "user_id": member["id"],
+            "access_level": member["access_level"]
+        }
 
-                try:
-                    api.generate_post_request(parent_host, parent_token, "projects/%d/members" % new_project[0]["id"], json.dumps(new_member))
-                except requests.exceptions.RequestException, e:
-                    l.logger.error(e)
-                    l.logger.error("Member might already exist. Attempting to update access level")
-                    try:
-                        api.generate_put_request(parent_host, parent_token, "projects/%d/members/%d?access_level=%d" % (new_project[0]["id"], member["id"], member["access_level"]), data=None)
-                    except requests.exceptions.RequestException, e:
-                        l.logger.error(e)
-                        l.logger.error("Attempting to update existing member failed")
+        try:
+            api.generate_post_request(parent_host, parent_token, "projects/%d/members" % id, json.dumps(new_member))
+        except requests.exceptions.RequestException, e:
+            l.logger.error(e)
+            l.logger.error("Member might already exist. Attempting to update access level")
+            try:
+                api.generate_put_request(parent_host, parent_token, "projects/%d/members/%d?access_level=%d" % (id, member["id"], member["access_level"]), data=None)
+            except requests.exceptions.RequestException, e:
+                l.logger.error(e)
+                l.logger.error("Attempting to update existing member failed")
 
-            # if not root_user_present:
-            #     l.logger.info("removing root user from project")
-            #     api.generate_delete_request(parent_host, parent_token, "projects/%d/members/%d" % (new_project[0]["id"], conf.parent_user_id))
+    if not root_user_present:
+        l.logger.info("removing root user from project")
+        api.generate_delete_request(parent_host, parent_token, "projects/%d/members/%d" % (id, conf.parent_user_id))
 
 
 def mirror_repo(project, import_id):
@@ -346,16 +385,19 @@ def remove_mirror(project_id):
 
 def migrate_variables(import_id, id):
     try:
-        response_json = api.generate_get_request(conf.child_host, conf.child_token, "projects/%d/variables" % id).json()
-        if len(response_json) > 0:
-            l.logger.debug(len(response_json))
-            for i in range(len(response_json)):
-                appended_data = response_json[i]
-                appended_data["environment_scope"] = "*"
-                wrapped_data = json.dumps(appended_data)
-                api.generate_post_request(conf.parent_host, conf.parent_token, "projects/%d/variables" % import_id, wrapped_data)
+        response = api.generate_get_request(conf.child_host, conf.child_token, "projects/%d/variables" % id)
+        if response.status_code == 200:
+            response_json = response.json()
+            if len(response_json) > 0:
+                for i in range(len(response_json)):
+                    appended_data = response_json[i]
+                    appended_data["environment_scope"] = "*"
+                    wrapped_data = json.dumps(appended_data)
+                    api.generate_post_request(conf.parent_host, conf.parent_token, "projects/%d/variables" % import_id, wrapped_data)
+            else:
+                l.logger.info("Project does not have CI variables. Skipping.")
         else:
-            l.logger.info("Project does not have CI variables. Skipping.")
+            l.logger.error("Response returned a %d with the message: %s" % (response.status_code, response.text))
     except requests.exceptions.RequestException, e:
         return None
 
@@ -377,29 +419,35 @@ def migrate_projects(project_json):
         exported = False
         total_time = 0
         while not exported:
-            response = api.generate_get_request(conf.child_host, conf.child_token, "projects/%d/export" % project_json["id"]).json()
-            if response["export_status"] == "finished":
-                l.logger.info("%s has finished exporting" % project_json["name"])
-                exported = True
-            elif response["export_status"] == "failed":
-                l.logger.error("Export failed for %s" % project_json["name"])
-                break
-            else:
-                l.logger.info("Waiting on %s to export" % project_json["name"])
-                if total_time < 15:
-                    total_time += 1
-                    time.sleep(1)
-                #elif total_time < 300:
-                #    total_time += 5
-                #    time.sleep(5)
-                #elif total_time < 3000:
-                #    total_time += 10
-                #    time.sleep(10)
-                else:
-                    l.logger.info("Time limit exceeded")
+            response = api.generate_get_request(conf.child_host, conf.child_token, "projects/%d/export" % project_json["id"])
+            if response.status_code == 200:
+                response = response.json()
+                if response["export_status"] == "finished":
+                    l.logger.info("%s has finished exporting" % project_json["name"])
+                    exported = True
+                elif response["export_status"] == "failed":
+                    l.logger.error("Export failed for %s" % project_json["name"])
                     break
-                    #total_time += 5
-                    #time.sleep(5)
+                else:
+                    l.logger.info("Waiting on %s to export" % project_json["name"])
+                    if total_time < 15:
+                        total_time += 1
+                        time.sleep(1)
+                    #elif total_time < 300:
+                    #    total_time += 5
+                    #    time.sleep(5)
+                    #elif total_time < 3000:
+                    #    total_time += 10
+                    #    time.sleep(10)
+                    else:
+                        l.logger.info("Time limit exceeded")
+                        break
+                        #total_time += 5
+                        #time.sleep(5)
+            else:
+                l.logger.info("Project cannot be found. Exiting export attempt")
+                exported = False
+                break
         if exported:
             #import_id = import_project(project_json)
             #if import_id is not None:
@@ -408,6 +456,10 @@ def migrate_projects(project_json):
             migrate_given_export(project_json)
 
 def migrate_given_export(project_json):
+    path = "%s/%s" % (project_json["namespace"], project_json["name"])
+    results = {
+        path: False
+    }
     if isinstance(project_json, str):
         project_json = json.loads(project_json)
     l.logger.debug("Searching for existing %s" % project_json["name"])
@@ -437,13 +489,25 @@ def migrate_given_export(project_json):
         if not project_exists:
             l.logger.info("Importing %s" % project_json["name"])
             import_id = import_project(project_json)
+            l.logger.info(import_id)
             if import_id is not None:
+                l.logger.info("Unarchiving project")
+                unarchive_project(conf.child_host, conf.child_token, project_json["id"])
+                l.logger.info("Migrating variables")
                 migrate_variables(import_id, project_json["id"])
-                migrate_single_project_info(project_json)
+                l.logger.info("Migrating project info")
+                migrate_single_project_info(project_json, import_id)
+                # l.logger.info("Archiving project")
+                # archive_project(conf.child_host, conf.child_token, project_json["id"])
+                # results[path] = True
     except requests.exceptions.RequestException, e:
         l.logger.error(e)
+    except KeyError, e:
+        l.logger.error(e)
+        raise KeyError("Something broke in migrate_given_export")
     except OverflowError, e:
         l.logger.error(e)
+    return results
         
 
 def init_pool(l):
@@ -489,10 +553,18 @@ def migrate():
 
         if len(files) > 0:
             l.logger.info("Migrating project info")
-            pool = ThreadPool(2)
+            pool = ThreadPool(3)
             results = pool.map(handle_migrating_file, files)
             pool.close()
             pool.join()
+
+            l.logger.info("Importing projects")
+            import_pool = ThreadPool(3)
+            results = import_pool.map(migrate_given_export, files)
+            l.logger.info("### Results ###")
+            print json.dumps(results, indent=4)
+            import_pool.close()
+            import_pool.join()
 
             #migrate_project_info()
         else:
@@ -503,11 +575,13 @@ def kick_off_import():
         files = json.load(f)
     if len(files) > 0:
         l.logger.info("Importing projects")
-        pool = ThreadPool(4)
+        pool = ThreadPool(3)
         # Open the urls in their own threads
         # and return the results
         results = pool.map(migrate_given_export, files)
         #close the pool and wait for the work to finish
+        l.logger.info("### Results ###")
+        print json.dumps(results, indent=4)
         pool.close()
         pool.join()
 
@@ -544,56 +618,66 @@ def handle_migrating_file(f):
             #migrate_project_info()
 
         elif conf.location.lower() == "filesystem-aws":
-            l.logger.info("Exporting %s to %s" % (name, conf.filesystem_path))
-            api.generate_post_request(
-                conf.child_host, conf.child_token, "projects/%d/export" % id, {})
-            # download = api.generate_get_request(conf.child_host, conf.child_token, "projects/%d/export/download" % id)
-            url = "%s/api/v4/projects/%d/export/download" % (
-                conf.child_host, id)
-            # filename = download.info().getheader("Content-Disposition").split("=")[1]
-            exported = False
-            total_time = 0
-            while not exported:
-                response = api.generate_get_request(
-                    conf.child_host, conf.child_token, "projects/%d/export" % id).json()
-                if response["export_status"] == "finished":
-                    l.logger.info("%s has finished exporting" % name)
-                    exported = True
-                elif response["export_status"] == "failed":
-                    l.logger.error("Export failed for %s" % name)
-                    break
-                else:
-                    l.logger.info("Waiting on %s to export" % name)
-                    if total_time < 60:
-                        total_time += 1
-                        time.sleep(1)
+            testkey = "%s_%s.tar.gz" % (f["namespace"], f["name"])
+            if keys_map.get(testkey.lower(), None) is None:
+                l.logger.info("Exporting %s to %s" % (name, conf.filesystem_path))
+                l.logger.info("Unarchiving %s" % name)
+                unarchive_project(conf.child_host, conf.child_token, id)
+                api.generate_post_request(
+                    conf.child_host, conf.child_token, "projects/%d/export" % id, {})
+                # download = api.generate_get_request(conf.child_host, conf.child_token, "projects/%d/export/download" % id)
+                url = "%s/api/v4/projects/%d/export/download" % (
+                    conf.child_host, id)
+                # filename = download.info().getheader("Content-Disposition").split("=")[1]
+                exported = False
+                total_time = 0
+                while not exported:
+                    response = api.generate_get_request(
+                        conf.child_host, conf.child_token, "projects/%d/export" % id)
+                    if response.status_code == 200:
+                        response = response.json()
+                        if response["export_status"] == "finished":
+                            l.logger.info("%s has finished exporting" % name)
+                            exported = True
+                        elif response["export_status"] == "failed":
+                            l.logger.error("Export failed for %s" % name)
+                            break
+                        else:
+                            l.logger.info("Waiting on %s to export" % name)
+                            if total_time < 3600:
+                                total_time += 1
+                                time.sleep(1)
+                            else:
+                                l.logger.info(
+                                    "Time limit exceeded. Going to attempt to download anyway")
+                                exported = True
                     else:
-                        l.logger.info(
-                            "Time limit exceeded. Going to attempt to download anyway")
-                        exported = True
-            if exported:
-                l.logger.info("Downloading export")
-                path_with_namespace = "%s_%s.tar.gz" % (
-                    f["namespace"], f["name"])
-                try:
-                    filename = misc_utils.download_file(url, conf.filesystem_path, path_with_namespace, headers={"PRIVATE-TOKEN": conf.child_token})
-                    l.logger.info("Copying %s to s3" % filename)
-                    success = aws.copy_file_to_s3(filename)
-                    if success:
-                        l.logger.info("Removing %s from downloads" % filename)
-                        filepattern = sub(
-                            r'\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{3}_', '', filename)
-                        for f in glob.glob("%s/downloads/*%s" %
-                                           (conf.filesystem_path, filepattern)):
-                            os.remove(f)
-                        l.logger.info("Archiving %s" % name)
-                        api.generate_post_request(
-                            conf.child_host, conf.child_token, "projects/%d/archive" % id, {})
-                except Exception as e:
-                    l.logger.error("Download or copy to S3 failed")
-                    l.logger.error(e)
-
-                
+                        l.logger.info("Project doesn't exist. Skipping %s export" % name)
+                        exported = False
+                        break
+                if exported:
+                    l.logger.info("Downloading export")
+                    path_with_namespace = "%s_%s.tar.gz" % (
+                        f["namespace"], f["name"])
+                    try:
+                        filename = misc_utils.download_file(url, conf.filesystem_path, path_with_namespace, headers={"PRIVATE-TOKEN": conf.child_token})
+                        l.logger.info("Copying %s to s3" % filename)
+                        success = aws.copy_file_to_s3(filename)
+                        if success:
+                            l.logger.info("Removing %s from downloads" % filename)
+                            filepattern = sub(
+                                r'\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{3}_', '', filename)
+                            for f in glob.glob("%s/downloads/*%s" %
+                                            (conf.filesystem_path, filepattern)):
+                                os.remove(f)
+                            # l.logger.info("Archiving %s" % name)
+                            # api.generate_post_request(
+                            #     conf.child_host, conf.child_token, "projects/%d/archive" % id, {})
+                    except Exception as e:
+                        l.logger.error("Download or copy to S3 failed")
+                        l.logger.error(e)
+            else:
+                l.logger.info("Export found. Skipping %s" % testkey)
 
         elif (conf.location).lower() == "aws":
             l.logger.info("Exporting %s to S3" % name)
@@ -844,7 +928,7 @@ def handle_bitbucket_migration(repo):
 
 def find_unimported_projects():
     unimported_projects = []
-    with open("%s/data/stage.json" % app_path, "r") as f:
+    with open("%s/data/project_json.json" % app_path, "r") as f:
         files = json.load(f)
     if len(files) > 0:
         for project_json in files:
@@ -855,7 +939,7 @@ def find_unimported_projects():
                 if len(search_response) > 0:
                     for proj in search_response:
                         if proj["name"] == project_json["name"]:
-                            if "%s" % project_json["namespace"].lower() in proj["path_with_namespace"].lower():
+                            if project_json["namespace"]["full_path"].lower() == proj["path_with_namespace"].lower():
                                 project_exists = True
                                 break
                 if not project_exists:
@@ -976,11 +1060,9 @@ def get_total_migrated_count():
     for group in api.list_all(conf.parent_host, conf.parent_token, "groups/%d/subgroups" % conf.parent_id):
         count = api.get_count(conf.parent_host, conf.parent_token, "groups/%d/projects" % group["id"])
         sub_count = 0
-        #print group
         if group.get("child_ids", None) is not None:
             for child_id in group["child_ids"]:
                 sub_count += api.get_count(conf.parent_host, conf.parent_token, "groups/%d/projects" % child_id)
-        #print "%s has %d projects" % (group["name"], count)
         subgroup_count += count
     # return subgroup_count + group_projects
     return subgroup_count
@@ -1041,6 +1123,46 @@ def generate_instance_map():
             import_url = sub('//.+:.+@', '//', project["import_url"])
             with open("new_repomap.txt", "ab") as f:
                 f.write("%s\t%s\n" % (import_url, project["id"]))
+
+def archive_project(host, token, id):
+    return api.generate_post_request(host, token, "projects/%d/archive" % id, {}).json()
+
+def unarchive_project(host, token, id):
+    return api.generate_post_request(host, token, "projects/%d/unarchive" % id, {}).json()
+
+def count_unarchived_projects():
+    unarchived_projects = []
+    for project in api.list_all(conf.child_host, conf.child_token, "projects"):
+        if project.get("archived", None) is not None:
+            if project["archived"] == False:
+                unarchived_projects.append(project["name_with_namespace"])
+
+    print unarchived_projects
+    print len(unarchived_projects)
+
+def find_empty_repos():
+    empty_repos = []
+    for project in api.list_all(conf.parent_host, conf.parent_token, "projects?statistics=true"):
+        if project.get("statistics", None) is not None:
+            if project["statistics"]["repository_size"] == 0:
+                l.logger.info("Empty repo found")
+                search_response = api.search(conf.child_host, conf.child_token, 'projects?statistics=true', project['name'])
+                if len(search_response) > 0:
+                    for proj in search_response:
+                        if proj["name"] == project["name"] and project["namespace"]["path"] in proj["namespace"]["path"]:
+                            l.logger.info("Found project")
+                            if proj.get("statistics", None) is not None:
+                                if proj["statistics"]["repository_size"] == 0:
+                                    l.logger.info("Project is empty in source instance. Ignoring")
+                                else:
+                                    empty_repos.append(project["name_with_namespace"])
+    
+    print empty_repos
+    print len(empty_repos)
+                
+
+    
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Handle project-related tasks')

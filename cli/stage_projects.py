@@ -8,6 +8,7 @@ import os
 import json
 import sys
 import subprocess
+import re
 try:
     from helpers import conf, api, misc_utils
     from helpers import logger as log
@@ -82,6 +83,49 @@ def stage_projects(projects_to_stage):
 
                 obj["members"] = members
                 staging.append(obj)
+        elif re.search(r"\d+-\d+", projects_to_stage[0]) is not None:
+            match = (re.search(r"\d+-\d+", projects_to_stage[0])).group(0)
+            start = int(match.split("-")[0])
+            if start != 0:
+                start -= 1
+            end = int(match.split("-")[1]) - 1
+            if end > len(projects):
+                end = len(projects) - 1
+            for i in range(start, end):
+                obj = {}
+                obj["id"] = projects[i]["id"]
+                obj["name"] = projects[i]["name"]
+                obj["namespace"] = projects[i]["path_with_namespace"].split("/")[0]
+                obj["path_with_namespace"] = projects[i]["path_with_namespace"]
+                obj["visibilty"] = projects[i]["visibility"]
+                obj["http_url_to_repo"] = projects[i]["http_url_to_repo"]
+                
+                members = api.generate_get_request(config.child_host, config.child_token, "projects/%d/members" % int(projects[i]["id"])).json()
+                if isinstance(members, list):
+                    for member in members:
+                        if member["username"] != "root":
+                            l.logger.info("Staging user (%s)" % member["username"])
+                            staged_users.append(rewritten_users[member["username"]])
+                
+                if projects[0]["namespace"]["kind"] == "group":
+                    group_to_stage = projects[0]["namespace"]["id"]
+                    if rewritten_groups[group_to_stage]["parent_id"] is None:
+                        if config.parent_id is not None:
+                            rewritten_groups[group_to_stage]["parent_id"] = config.parent_id
+                    else:
+                        existing_parent_ids.append(rewritten_groups[group_to_stage]["id"])
+                    staged_groups.append(rewritten_groups[group_to_stage])
+                    if "child_ids" in rewritten_groups[group_to_stage]:
+                        for sub in rewritten_groups[group_to_stage]["child_ids"]:
+                            staged_groups.append(rewritten_groups[sub])
+                    if len(rewritten_groups[group_to_stage]["members"]) > 0:
+                        for member in rewritten_groups[group_to_stage]["members"]:
+                            if rewritten_users.get(member["username"]):
+                                staged_users.append(rewritten_users[member["username"]])
+
+                obj["members"] = members
+                l.logger.info("Staging project (%s) [%d/%d]" % (obj["name"], len(staging)+1, len(range(start, end))))
+                staging.append(obj)
         else:
             for i in range(0, len(projects_to_stage)):
                 obj = {}
@@ -105,11 +149,11 @@ def stage_projects(projects_to_stage):
                 obj["project_type"] = project["namespace"]["kind"]
 
                 members = api.generate_get_request(config.child_host, config.child_token, "projects/%d/members" % int(project["id"])).json()
-
-                for member in members:
-                    if member["username"] != "root":
-                        l.logger.info("Staging user (%s)" % member["username"])
-                        staged_users.append(rewritten_users[member["username"]])
+                if isinstance(members, list):
+                    for member in members:
+                        if member["username"] != "root":
+                            l.logger.info("Staging user (%s)" % member["username"])
+                            staged_users.append(rewritten_users[member["username"]])
                 
                 if project["namespace"]["kind"] == "group":
                     group_to_stage = project["namespace"]["id"]

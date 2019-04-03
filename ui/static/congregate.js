@@ -18,14 +18,14 @@ window.onload = function() {
             for (var i = 0; i < last_activity_at.length; i++) {
                 current_date_object = last_activity_at[i];
                 var d = new Date(current_date_object.innerHTML);
-                if (d.getTime() < timestamp) {
-                    current_date_object.style.color = "red";
+                // if (d.getTime() <= timestamp) {
+                    // current_date_object.style.color = "red";
                     var row = current_date_object.parentNode.getAttribute("data-thisid");
                     namespaceType = namespace[i].innerHTML.split("(");
-                    if (namespaceType[1].includes("group")) {
+                    if (namespaceType[1].includes("user")) {
                         document.getElementById(row).checked = true;
                     }
-                }
+                // }
                 var n = d.toUTCString();
                 current_date_object.innerHTML = n;
             }
