@@ -2,13 +2,18 @@ import mock
 import unittest
 import config
 import os
+from helpers.mock_api import MockApi
 
 def input_generator(params): # generate squares as an example
     for param in params:
         yield param
 
 class ConfigTests(unittest.TestCase):
-    def test_default_configuration(self):
+    def setUp(self):
+        self.api = MockApi()
+
+    @mock.patch('cli.config.get_user')
+    def test_default_configuration(self, mock_get):
         values = [
             "",
             os.getenv("PARENT_INSTANCE_HOST"),
@@ -34,9 +39,12 @@ class ConfigTests(unittest.TestCase):
                 "path": os.getcwd()
             }
         }
+        
+        mock_get.return_value = self.api.get_current_user()
+
         with mock.patch('__builtin__.raw_input', lambda x: next(g)):
             actual = config.generate_config()
-            assert expected == actual
+            self.assertEqual(expected, actual)
 
 if __name__ == "__main__":
     unittest.main()
