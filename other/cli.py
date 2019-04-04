@@ -17,8 +17,6 @@ python cli.py update_diverging_branch
 
 '''
 
-config = conf.ig()
-
 def enable_mirroring():
     for project in api.list_all(config.parent_host, config.parent_token, "projects"):
         if isinstance(project, dict):
@@ -72,6 +70,7 @@ def archive_instance():
 
 
 if __name__ == "__main__":
+    config = conf.ig()
     cmd = sys.argv[1]
     if cmd == "enable_mirroring":
         enable_mirroring()

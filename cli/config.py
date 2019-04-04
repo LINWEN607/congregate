@@ -93,6 +93,11 @@ def generate_config():
 
 def config():
     config = generate_config()
+    if not os.path.isdir("%s/data" % app_path):
+        os.mkdir("%s/data" % app_path)
+    if config["config"].get("path", None) is not None:
+        if not os.path.isdir("%s/downloads" % config["config"]["path"]):
+            os.mkdir("%s/downloads" % config["config"]["path"])
     with open("%s/data/config.json" % app_path, "w") as f:
         f.write(json.dumps(config, indent=4))
     time.sleep(1)
