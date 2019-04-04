@@ -85,7 +85,7 @@ def generate_config():
             command = "aws configure set aws_secret_access_key %s" % secret_key
             subprocess.call(command.split(" "))
 
-    config["number-of-threads"] = 2
+    config["number_of_threads"] = 2
 
     wrapper["config"] = config
     return wrapper
