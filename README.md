@@ -105,7 +105,7 @@ Usage:
     congregate list
     congregate config
     congregate stage <projects>...
-    congregate migrate
+    congregate migrate [--threads=<n>]
     congregate ui
     congregate import-projects
     congregate do_all
@@ -124,6 +124,10 @@ Usage:
     congregate find-all-internal-projects
     congregate make-all-internal-groups-private
     congregate check-projects-visibility
+    congregate set-default-branch
+    congregate enable_mirroring
+    congregate count-unarchived-projects
+    congregate find-empty-repos
     congregate -h | --help
 
 Options:
