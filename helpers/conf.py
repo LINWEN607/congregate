@@ -101,4 +101,8 @@ class ig:
 
     @property
     def threads(self):
-        return self.config.get("number-of-threads", None)
+        return self.config.get("number_of_threads", None)
+
+    @threads.setter
+    def threads(self, value):
+        self.threads = value

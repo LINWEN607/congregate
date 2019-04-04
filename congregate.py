@@ -6,7 +6,7 @@ Usage:
     congregate list
     congregate config
     congregate stage <projects>...
-    congregate migrate
+    congregate migrate [--threads=<n>]
     congregate ui
     congregate import-projects
     congregate do_all
@@ -96,7 +96,10 @@ if __name__ == '__main__':
         from cli import list_projects, stage_projects, do_all
         if config.external_source != False and config.external_source is not None:
             if arguments["migrate"]:
-                projects.migrate()
+                if arguments["--threads"]:
+                    projects.migrate(threads=arguments["--threads"])
+                else:
+                    projects.migrate()
             elif arguments["ui"]:
                 os.environ["FLASK_APP"] = "%s/ui" % app_path
                 os.chdir(app_path)
@@ -113,7 +116,10 @@ if __name__ == '__main__':
             if arguments["stage"]:
                 stage_projects.stage_projects(arguments['<projects>'])
             if arguments["migrate"]:
-                projects.migrate()
+                if arguments["--threads"]:
+                    projects.migrate(threads=arguments["--threads"])
+                else:
+                    projects.migrate()
             if arguments["do_all"]:
                 do_all.do_all()
             if arguments["ui"]:

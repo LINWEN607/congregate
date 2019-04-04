@@ -516,12 +516,14 @@ def init_pool(l):
 
 def start_multi_thead(function, iterable):
     l = Lock()
-    pool = ThreadPool(initializer=init_pool, initargs=(l,), processes=4)
+    pool = ThreadPool(initializer=init_pool, initargs=(l,), processes=conf.threads)
     pool.map(function, iterable)
     pool.close()
     pool.join()
 
-def migrate():
+def migrate(threads=None):
+    if threads is not None:
+        conf.threads = threads
     if conf.external_source != False:
         with open("%s" % conf.repo_list, "r") as f:
             repo_list = json.load(f)
