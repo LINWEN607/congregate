@@ -71,8 +71,8 @@ def archive_instance():
                 print "Skipping %s" % encoded_name
 
 
-cmd = sys.argv[1]
 if __name__ == "__main__":
+    cmd = sys.argv[1]
     if cmd == "enable_mirroring":
         enable_mirroring()
     elif cmd == "set_default_branch":
