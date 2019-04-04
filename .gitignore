@@ -6,3 +6,4 @@ data/*
 js-packages
 *.log
 *.log.*
+.coverage

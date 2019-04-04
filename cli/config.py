@@ -55,11 +55,11 @@ def generate_config():
             config["parent_id"] = int(parent_id)
 
         mirror_user = raw_input("Are you planning a soft cut-over migration? (Mirroring repos to keep both instances around) (default: no)")
-        if mirror_user != "no":
+        if mirror_user != "no" and len(mirror_user) > 0:
             mirror_user = parent_user_info["username"]
             config["mirror_username"] = mirror_user
 
-        location = raw_input("%s. Staging location type for exported projects [filesystem, aws]? (default: filesystem) " % str(len(config) + 1))
+        location = raw_input("%s. Staging location type for exported projects [filesystem, filesystem-aws, aws]? (default: filesystem) " % str(len(config) + 1))
         if len(location) == 0 or location == "filesystem":
             config["location"] = "filesystem"
             location = "filesystem"
