@@ -104,7 +104,7 @@ if __name__ == '__main__':
                 os.environ["FLASK_APP"] = "%s/ui" % app_path
                 os.chdir(app_path)
                 os.environ["PYTHONPATH"] = app_path
-                run_ui = "gunicorn -k gevent -w 4 ui:app"
+                run_ui = "gunicorn -k gevent -w 4 ui:app --bind=0.0.0.0:8000"
                 subprocess.call(run_ui.split(" "))
             elif arguments["enable_mirroring"]:
                 other.enable_mirroring()
@@ -126,7 +126,7 @@ if __name__ == '__main__':
                 os.environ["FLASK_APP"] = "%s/ui" % app_path
                 os.chdir(app_path)
                 os.environ["PYTHONPATH"] = app_path
-                run_ui = "gunicorn -k gevent -w 4 ui:app"
+                run_ui = "gunicorn -k gevent -w 4 ui:app --bind=0.0.0.0:8000"
                 subprocess.call(run_ui.split(" "))
             if arguments["update-staged-user-info"]:
                 users.update_user_after_migration()

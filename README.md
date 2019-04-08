@@ -65,6 +65,24 @@ pipenv run dnd install
 
 ### Installing Congregate (end-user)
 
+From **docker**:
+
+1. Pull the docker image from the container registry
+2. Run the following command:
+
+```bash
+docker run --name congregate -p 8000:8000 -it congregate:latest /bin/bash
+congregate config
+congregate list
+```
+
+To resume the container:
+
+```bash
+docker start <container-id>
+docker exec -it <container-id> /bin/bash
+```
+
 From **tar.gz**:
 
 1. Navigate to the CI/CD section of this project
