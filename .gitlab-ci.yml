@@ -48,8 +48,8 @@ archive project:
 build docker image:
   stage: release
   script:
-    - apt-get update
-    - apt-get install docker-ce docker-ce-cli containerd.io
+    - wget https://download.docker.com/linux/debian/dists/stretch/pool/stable/amd64/docker-ce_18.09.4~3-0~debian-stretch_amd64.deb
+    - dpkg -i docker-ce_18.09.4~3-0~debian-stretch_amd64.deb
     - docker login ${CI_REGISTRY} -u ${GITLAB_USER_LOGIN} -p ${ACCESS_TOKEN}
     - docker build -f Dockerfile -t ${CI_REGISTRY_IMAGE}:latest -t ${CI_REGISTRY_IMAGE}:${CI_COMMIT_TAG} --build-arg VERSION=${CI_COMMIT_TAG} .
     - docker push ${CI_REGISTRY_IMAGE}:latest
