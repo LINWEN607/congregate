@@ -3,8 +3,7 @@ image: python:2.7.15-stretch
 stages:
   - test
   - update-info
-  - build
-  - release
+  - build-and-release
 
 run tests:
   stage: test
@@ -30,7 +29,7 @@ update readme:
       - congregate.py
 
 archive project:
-  stage: build
+  stage: build-and-release
   script:
     - pip install pipenv
     - pipenv install
@@ -46,9 +45,12 @@ archive project:
     - tags
 
 build docker image:
-  stage: build
+  stage: build-and-release
   script:
-    - docker build -f Dockerfile -t congregate-${CI_COMMIT_TAG} --build-arg VERSION=${CI_COMMIT_TAG}
+    - docker login ${CI_REGISTRY} -u ${USER} -p ${ACCESS_TOKEN}
+    - docker build -f Dockerfile -t ${CI_REGISTRY_IMAGE}:latest -t ${CI_REGISTRY_IMAGE}:${CI_COMMIT_TAG} --build-arg VERSION=${CI_COMMIT_TAG} .
+    - docker push ${CI_REGISTRY_IMAGE}:latest
+    - docker push ${CI_REGISTRY_IMAGE}:${CI_COMMIT_TAG}
   only:
     - tags
 
