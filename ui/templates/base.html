@@ -1,49 +1,45 @@
 <!doctype html>
 <head>
     <title>{% block title %}{% endblock %}</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="stylesheet" href="{{ url_for('base_static', filename='bootstrap/dist/css/bootstrap.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <script src="{{ url_for('base_static', filename='jquery/dist/jquery.min.js') }}"></script>
     <script src="{{ url_for('base_static', filename='bootstrap/dist/js/bootstrap.min.js') }}"></script>
     <script src = "{{ url_for('static', filename='congregate.js') }}"></script>
 </head>
 <body>
-    <div class="alert header">
-        <div class="row">
-            <div class="col-2"></div>
-            <div class="col-8">
-                <h2>Congregate by GitLab</h2>
-            </div>
-        </div>
+    <div id = "nav">
+        <h1>Congregate</h1>
+        <nav>
+            {% set navigation_bar = [
+                (url_for('home_page'), 'home', 'Home'),
+                (url_for('project_page'), 'projects', 'Projects'),
+                (url_for('group_page'), 'groups', 'Groups'),
+                (url_for('user_page'), 'users', 'Users'),
+                (url_for('config_page'), 'config', 'Config')
+            ] -%}
+            
+            {% set active_page = active_page|default('index') -%}
+            <ul>
+                {% for href, id, caption in navigation_bar %}
+                <li>
+                    <a {% if id == active_page %} class="nav-link active" {% else %} class="nav-link" {% endif %} href="{{ href|e }}">{{ caption|e }}</a>
+                </li>
+                {% endfor %}
+            </ul>
+        </nav>
     </div>
-    <nav>
-        {% set navigation_bar = [
-            (url_for('home_page'), 'home', 'Home'),
-            (url_for('project_page'), 'projects', 'Projects'),
-            (url_for('group_page'), 'groups', 'Groups'),
-            (url_for('user_page'), 'users', 'Users'),
-            (url_for('config_page'), 'config', 'Config')
-        ] -%}
-        
-        {% set active_page = active_page|default('index') -%}
-        <ul class="nav nav-pills nav-fill">
-            {% for href, id, caption in navigation_bar %}
-            <li class="nav-item">
-                <a {% if id == active_page %} class="nav-link active" {% else %} class="nav-link" {% endif %} href="{{ href|e }}">{{ caption|e }}</a>
-            </li>
-            {% endfor %}
-        </ul>
-    </nav>
-    <section class="content">
+    <div id = "content">
         {% block content %}{% endblock %}
-    </section>
+    </div>
 
     <footer class="footer">
         <div class="container">
-            <button id = {% block button_id %}{% endblock %} class="btn btn-warning btn-lg">{% block button_label %}{% endblock %}</button>
+            <div id = "stage_log"><p>Status</p></div>
+            <button id = {% block button_id %}{% endblock %} class="btn stage_button">{% block button_label %}{% endblock %}</button>
         </div>
     </footer>
-    <div id = "stage_log">Status</div>
+   
 
     <script>
         jQuery(document).ready(function($) {

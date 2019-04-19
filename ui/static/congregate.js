@@ -22,9 +22,9 @@ window.onload = function() {
                     // current_date_object.style.color = "red";
                     var row = current_date_object.parentNode.getAttribute("data-thisid");
                     namespaceType = namespace[i].innerHTML.split("(");
-                    if (namespaceType[1].includes("user")) {
-                        document.getElementById(row).checked = true;
-                    }
+                    // if (namespaceType[1].includes("user")) {
+                    //     document.getElementById(row).checked = true;
+                    // }
                 // }
                 var n = d.toUTCString();
                 current_date_object.innerHTML = n;
