@@ -76,6 +76,11 @@ def generate_config():
         if "aws" in location.lower():
             bucket_name = raw_input("%s. Bucket name: " % str(len(config) + 1))
             config["bucket_name"] = bucket_name
+            region = raw_input("%s. AWS Region (default: us-east-1): " % str(len(config) + 1))
+            if len(region) == 0 or region == "us-east-1":
+                config["s3_region"] = "us-east-1"
+            else:
+                config["s3_region"] = region
             access_key = raw_input("%s. Access key for S3 bucket: " % str(len(config) + 1))
             config["access_key"] = access_key
             command = "aws configure set aws_access_key_id %s" % access_key

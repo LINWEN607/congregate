@@ -198,6 +198,7 @@ class ConfigTests(unittest.TestCase):
             "no",
             "aws",
             "test-bucket",
+            "",
             "AKIA-Dummy",
             "asdfqwer1234"
         ]
@@ -214,6 +215,49 @@ class ConfigTests(unittest.TestCase):
                 "location": "aws", 
                 "child_instance_host": os.getenv("CHILD_INSTANCE_HOST"), 
                 "parent_user_id": 1, 
+                "s3_region": "us-east-1",
+                "secret_key": "asdfqwer1234"
+            }
+        }
+        
+        mock_get.return_value = self.api.get_current_user()
+        mock_call.return_value = ""
+
+        with mock.patch('__builtin__.raw_input', lambda x: next(g)):
+            actual = config.generate_config()
+            self.assertEqual(expected, actual)
+
+    @mock.patch('cli.config.get_user')
+    @mock.patch('subprocess.call')
+    def test_aws_configuration_specific_region(self, mock_call, mock_get):
+        values = [
+            "gitlab", # migration source
+            os.getenv("PARENT_INSTANCE_HOST"),
+            os.getenv("PARENT_INSTANCE_TOKEN"),
+            os.getenv("CHILD_INSTANCE_HOST"),
+            os.getenv("CHILD_INSTANCE_TOKEN"),
+            "no",
+            "no",
+            "aws",
+            "test-bucket",
+            "us-west-1",
+            "AKIA-Dummy",
+            "asdfqwer1234"
+        ]
+        g = input_generator(values)
+        expected = {
+            "config": {
+                "access_key": "AKIA-Dummy",
+                "external_source": False, 
+                "child_instance_token": os.getenv("CHILD_INSTANCE_TOKEN"), 
+                "parent_instance_host": os.getenv("PARENT_INSTANCE_HOST"), 
+                "parent_instance_token": os.getenv("PARENT_INSTANCE_TOKEN"), 
+                "bucket_name": "test-bucket",
+                "number_of_threads": 2,
+                "location": "aws", 
+                "child_instance_host": os.getenv("CHILD_INSTANCE_HOST"), 
+                "parent_user_id": 1, 
+                "s3_region": "us-west-1",
                 "secret_key": "asdfqwer1234"
             }
         }

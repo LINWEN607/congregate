@@ -46,6 +46,10 @@ class ig:
     @property
     def bucket_name(self):
         return self.config.get("bucket_name", None)
+    
+    @property
+    def s3_region(self):
+        return self.config.get("s3_region", None)
 
     @property
     def s3_access_key(self):

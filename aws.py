@@ -30,7 +30,7 @@ class aws_client:
             's3',
             config=Config(
                 signature_version='s3v4'),
-            region_name='us-west-2')
+            region_name=self.config.s3_region)
         self.l = log.congregate_logger(__name__)
 
     def import_from_s3(self, name, namespace, presigned_url, filename):
