@@ -1056,6 +1056,42 @@ def remove_all_mirrors():
     for i in ids:
         remove_mirror(i)
 
+def enable_mirroring():
+    for project in api.list_all(conf.parent_host, conf.parent_token, "projects"):
+        if isinstance(project, dict):
+            encoded_name = project["name"].encode('ascii','replace')
+            if project.get("import_status", None) == "failed":
+                print "Enabling mirroring for %s" % encoded_name
+                try:
+                    resp = api.generate_post_request(conf.parent_host, conf.parent_token, "projects/%d/mirror/pull" % project["id"], None)
+                    print "Status: %d" % resp.status_code
+                except Exception, e:
+                    print e
+                    print "Skipping %s" % encoded_name
+            else:
+                if project.get("name", None) is not None:
+                    print "Skipping %s" % encoded_name
+        else:
+            print "Skipping %s" % project
+
+def set_default_branch():
+    for project in api.list_all(conf.parent_host, conf.parent_token, "projects"):
+        if project.get("default_branch", None) != "master":
+            id = project["id"]
+            name = project["name"]
+            print "Setting default branch to master for project %s" % name
+            resp = api.generate_put_request(conf.parent_host, conf.parent_token, "projects/%d?default_branch=master" % id, data=None)
+            print "Status: %d" % resp.status_code
+
+def update_diverging_branch():
+    for project in api.list_all(conf.parent_host, conf.parent_token, "projects"):
+        if project.get("mirror_overwrites_diverged_branches", None) != True:
+            id = project["id"]
+            name = project["name"]
+            print "Setting mirror_overwrites_diverged_branches to true for project %s" % name
+            resp = api.generate_put_request(conf.parent_host, conf.parent_token, "projects/%d?mirror_overwrites_diverged_branches=true" % id, data=None)
+            print "Status: %d" % resp.status_code
+
 def get_total_migrated_count():
     group_projects = api.get_count(conf.parent_host, conf.parent_token, "groups/%d/projects" % conf.parent_id)
     subgroup_count = 0
