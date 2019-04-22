@@ -29,7 +29,7 @@ Congregate by GitLab
                   <td>{{ d.id }}</td>
                   <td>{{ d.path }}</td>
                   <td>{{ d.description }}</td>
-                  <td class = "namespace">{{ d.namespace.name }}({{ d.namespace.kind }})</td>
+                  <td class = "namespace">{{ d.namespace.full_path }}({{ d.namespace.kind }})</td>
                   <td class = "last_activity">{{ d.last_activity_at }}</td>
               </tr>
             {% endfor %}

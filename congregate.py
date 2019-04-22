@@ -66,7 +66,6 @@ import os, subprocess
 from helpers import conf
 from helpers import logger as log
 from cli import config as configure
-from other import cli as other
 
 app_path = os.getenv("CONGREGATE_PATH")
 
@@ -107,7 +106,7 @@ if __name__ == '__main__':
                 run_ui = "gunicorn -k gevent -w 4 ui:app --bind=0.0.0.0:8000"
                 subprocess.call(run_ui.split(" "))
             elif arguments["enable_mirroring"]:
-                other.enable_mirroring()
+                projects.enable_mirroring()
             else:
                 print "External migration only currently supports the migrate and ui commands to generate shell projects with mirrors."
         else:
