@@ -8,6 +8,11 @@ ENV CONGREGATE_PATH /opt/congregate
 # Copy supervisor configuration
 COPY congregate-${VERSION}.tar.gz /opt
 
+# Installing some basic utilities and updating apt
+RUN apt-get update && \
+    apt-get upgrade -y && \
+    apt-get install less vim -y
+
 # TODO: DB integration
 
 # Extract generated tar
