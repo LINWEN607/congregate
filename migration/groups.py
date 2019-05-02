@@ -91,11 +91,11 @@ def traverse_and_migrate(groups, rewritten_groups, parent_id=None):
                     if rewritten_groups.get(group["old_parent_id"], None) is not None:
                         parent_id = rewritten_groups[group["old_parent_id"]]["id"]
                 
-                search = api.search(config.parent_host, config.parent_token, "groups", group["parent_namespace"])
+                #search = api.search(config.parent_host, config.parent_token, "groups", group["parent_namespace"])
                 if parent_id is not None:
-                    for s in search:
+                    for s in api.list_all(config.parent_host, config.parent_token, "groups?search=%s" % group["parent_namespace"]):
                         if rewritten_groups.get(parent_id, None) is not None:
-                            if s["full_path"].lower() == rewritten_groups[parent_id]["full_path"].lower():
+                            if s["full_path"].lower() == rewritten_groups[group["id"]]["full_parent_namespace"].lower():
                                 group["parent_id"] = s["id"]
                                 found = True
                                 break
@@ -125,6 +125,10 @@ def traverse_and_migrate(groups, rewritten_groups, parent_id=None):
                     group_without_id.pop("members")
                     if group_without_id.get("parent_namespace", None) is not None:
                         group_without_id.pop("parent_namespace")
+                        l.logger.debug("Popping parent group")
+                    if group_without_id.get("full_parent_namespace", None) is not None:
+                        group_without_id.pop("full_parent_namespace")
+                        l.logger.debug("Popping parent namespace")
                     response = api.generate_post_request(config.parent_host, config.parent_token, "groups", json.dumps(group_without_id)).json()
                     if isinstance(response, dict):
                         if response.get("message", None) is not None:
@@ -241,7 +245,9 @@ def traverse_staging(id, group_dict, staged_groups):
         else:
             parent_group = group_dict.get(g["parent_id"])
             if parent_group is not None:
-                g["parent_namespace"] = parent_group["name"]
+                parent_group_name = api.generate_get_request(config.parent_host, config.parent_token, "groups/%d" % config.parent_id).json()["name"]
+                g["full_parent_namespace"] = "%s/%s" % (parent_group_name, parent_group["full_path"])
+                g["parent_namespace"] = parent_group["path"]
                 if parent_group.get("parent_id", None) is not None:
                     traverse_staging(parent_group["id"], group_dict, staged_groups)
                 else:

@@ -568,7 +568,7 @@ def migrate(threads=None):
             import_pool.close()
             import_pool.join()
 
-            #migrate_project_info()
+            migrate_project_info()
         else:
             l.logger.info("No projects to migrate")
 
