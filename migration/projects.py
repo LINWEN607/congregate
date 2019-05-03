@@ -91,7 +91,7 @@ def import_project(project):
             l.logger.info("%s is not a user project. Attempting to import into a group namespace" % (project["name"]))
             if conf.parent_id is not None:
                 response = api.generate_get_request(conf.parent_host, conf.parent_token, "groups/%d" % conf.parent_id).json()
-                namespace = "%s/%s" % (response["path"], project["namespace"])
+                namespace = "%s/%s" % (response["full_path"], project["namespace"])
             else:
                 namespace = project["namespace"]
                 url = project["http_url_to_repo"]
@@ -103,7 +103,7 @@ def import_project(project):
                 full_path = "/".join(another_strip)
                 l.logger.info("Searching for %s" % full_path)
                 for group in api.list_all(conf.parent_host, conf.parent_token, "groups?search=%s" % project["namespace"]):
-                    if group["full_path"].lower() == full_path.lower():
+                    if group["full_parent_namespace"].lower() == full_path.lower():
                         l.logger.info("Found %s" % group["full_path"])
                         namespace = group["id"]
                         break

@@ -81,6 +81,7 @@ def traverse_and_migrate(groups, rewritten_groups, parent_id=None):
             # group.pop("id")
             members = group["members"]
             
+            # TODO: Make this configurable from config.json
             # if group["visibility"] == "internal":
             #     group["visibility"] = "private"
             if group.get("parent_namespace", None) is not None:
@@ -93,26 +94,37 @@ def traverse_and_migrate(groups, rewritten_groups, parent_id=None):
                 
                 #search = api.search(config.parent_host, config.parent_token, "groups", group["parent_namespace"])
                 if parent_id is not None:
-                    for s in api.list_all(config.parent_host, config.parent_token, "groups?search=%s" % group["parent_namespace"]):
-                        if rewritten_groups.get(parent_id, None) is not None:
-                            if s["full_path"].lower() == rewritten_groups[group["id"]]["full_parent_namespace"].lower():
-                                group["parent_id"] = s["id"]
-                                found = True
-                                break
+                    if rewritten_groups[parent_id].get("new_parent_id", None) is not None:
+                        group["parent_id"] = rewritten_groups[parent_id]["new_parent_id"]
+                        found = True
+                    else:
+                        for s in api.list_all(config.parent_host, config.parent_token, "groups?search=%s" % group["parent_namespace"]):
+                            if rewritten_groups.get(parent_id, None) is not None:
+                                if s["full_path"].lower() == rewritten_groups[group["id"]]["full_parent_namespace"].lower():
+                                    rewritten_groups[parent_id]["new_parent_id"] = s["id"]
+                                    group["parent_id"] = s["id"]
+                                    found = True
+                                    break
                     if found is False:
                         traverse_and_migrate([rewritten_groups[parent_id]], rewritten_groups)
-                        search = api.search(config.parent_host, config.parent_token, "groups", group["parent_namespace"])
-                        for s in search:
+                        #search = api.search(config.parent_host, config.parent_token, "groups", group["parent_namespace"])
+                        for s in api.list_all(config.parent_host, config.parent_token, "groups?search=%s" % group["parent_namespace"]):
                             if rewritten_groups.get(parent_id, None) is not None:
                                 if s["full_path"].lower() == rewritten_groups[parent_id]["full_path"].lower():
                                     group["parent_id"] = s["id"]
                                     found = True
                                     break
                 else:
-                    group["parent_id"] = None
+                    if config.parent_id is not None:
+                        group["parent_id"] = config.parent_id
+                    else:
+                        group["parent_id"] = None
                 # group.pop("parent_namespace")
             else:
-                print "Parent namespace is empty"
+                if config.parent_id is not None:
+                    group["parent_id"] = config.parent_id
+                else:
+                l.logger.info("Parent namespace is empty")
 
             # group.pop("full_path")
             
@@ -123,24 +135,33 @@ def traverse_and_migrate(groups, rewritten_groups, parent_id=None):
                     group_without_id.pop("id")
                     group_without_id.pop("full_path")
                     group_without_id.pop("members")
+                    full_parent_namespace = ""
                     if group_without_id.get("parent_namespace", None) is not None:
                         group_without_id.pop("parent_namespace")
-                        l.logger.debug("Popping parent group")
+                        l.logger.info("Popping parent group")
                     if group_without_id.get("full_parent_namespace", None) is not None:
+                        full_parent_namespace = group_without_id["full_parent_namespace"]
                         group_without_id.pop("full_parent_namespace")
-                        l.logger.debug("Popping parent namespace")
+                        l.logger.info("Popping parent namespace")
                     response = api.generate_post_request(config.parent_host, config.parent_token, "groups", json.dumps(group_without_id)).json()
                     if isinstance(response, dict):
                         if response.get("message", None) is not None:
                             if "Failed to save group" in response["message"]:
                                 l.logger.info("Group already exists. Searching for group ID")
-                                new_group = api.search(config.parent_host, config.parent_token, 'groups', group['path'])
-                                if new_group is not None and len(new_group) > 0:
-                                    for ng in new_group:
-                                        if ng["name"] == group["name"]:
-                                            new_group_id = ng["id"]
-                                            l.logger.info("Group found")
-                                            break
+                                #new_group = api.search(config.parent_host, config.parent_token, 'groups', group['path'])
+
+                                #if new_group is not None and len(new_group) > 0:
+                                found_group = False
+                                for ng in api.list_all(config.parent_host, config.parent_token, "groups/%d/subgroups" % group["parent_id"]):
+                                    if ng["full_path"] == full_parent_namespace:
+                                        new_group_id = ng["id"]
+                                        print new_group_id
+                                        l.logger.info("Group found")
+                                        found_group = True
+                                        break
+                                    if found_group is True:
+                                        break
+
                             else:
                                 l.logger.info("Failed to save group")
                         else:
@@ -241,19 +262,21 @@ def traverse_staging(id, group_dict, staged_groups):
         g = group_dict[id]
         if g["parent_id"] is None:
             if config.parent_id is not None:
+                parent_group = api.generate_get_request(config.parent_host, config.parent_token, "groups/%d" % config.parent_id).json()
+                g["full_parent_namespace"] = parent_group["full_path"]
+                g["parent_namespace"] = parent_group["path"]
                 g["parent_id"] = config.parent_id
         else:
             parent_group = group_dict.get(g["parent_id"])
             if parent_group is not None:
-                parent_group_name = api.generate_get_request(config.parent_host, config.parent_token, "groups/%d" % config.parent_id).json()["name"]
-                g["full_parent_namespace"] = "%s/%s" % (parent_group_name, parent_group["full_path"])
+                parent_group_resp = api.generate_get_request(config.parent_host, config.parent_token, "groups/%d" % config.parent_id).json()
+                g["full_parent_namespace"] = "%s/%s" % (parent_group_resp["full_path"], parent_group["full_path"])
                 g["parent_namespace"] = parent_group["path"]
                 if parent_group.get("parent_id", None) is not None:
                     traverse_staging(parent_group["id"], group_dict, staged_groups)
                 else:
                     staged_groups.append(parent_group)
         staged_groups.append(g)
-        
 
     
 def find_all_internal_projects():

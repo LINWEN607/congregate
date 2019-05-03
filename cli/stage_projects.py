@@ -66,7 +66,7 @@ def stage_projects(projects_to_stage):
                 obj = {}
                 obj["id"] = projects[i]["id"]
                 obj["name"] = projects[i]["name"]
-                obj["namespace"] = projects[i]["path_with_namespace"].split("/")[0]
+                obj["namespace"] = projects[i]["namespace"]["full_path"]
                 obj["path_with_namespace"] = projects[i]["path_with_namespace"]
                 obj["visibilty"] = projects[i]["visibility"]
                 obj["http_url_to_repo"] = projects[i]["http_url_to_repo"]
@@ -95,7 +95,7 @@ def stage_projects(projects_to_stage):
                 obj = {}
                 obj["id"] = projects[i]["id"]
                 obj["name"] = projects[i]["name"]
-                obj["namespace"] = projects[i]["path_with_namespace"].split("/")[0]
+                obj["namespace"] = projects[i]["namespace"]["full_path"]
                 obj["path_with_namespace"] = projects[i]["path_with_namespace"]
                 obj["visibilty"] = projects[i]["visibility"]
                 obj["http_url_to_repo"] = projects[i]["http_url_to_repo"]
@@ -143,7 +143,7 @@ def stage_projects(projects_to_stage):
 
                 obj["id"] = project["id"]
                 obj["name"] = project["name"]
-                obj["namespace"] = project["path_with_namespace"].split("/")[-2]
+                obj["namespace"] = project["namespace"]["full_path"]
                 obj["visibilty"] = project["visibility"]
                 obj["http_url_to_repo"] = project["http_url_to_repo"]
                 obj["project_type"] = project["namespace"]["kind"]
