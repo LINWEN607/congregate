@@ -499,7 +499,7 @@ def migrate_given_export(project_json):
                 migrate_single_project_info(project_json, import_id)
                 # l.logger.info("Archiving project")
                 # archive_project(conf.child_host, conf.child_token, project_json["id"])
-                # results[path] = True
+                results[path] = True
     except requests.exceptions.RequestException, e:
         l.logger.error(e)
     except KeyError, e:

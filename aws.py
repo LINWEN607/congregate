@@ -38,7 +38,7 @@ class aws_client:
             if r.headers["content-type"] != "application/xml":
                 url = '%s/api/v4/projects/import' % (self.config.parent_host)
                 data = {
-                    "path": name,
+                    "path": name.replace(" ", "-"),
                     "namespace": namespace
                 }
                 headers = {

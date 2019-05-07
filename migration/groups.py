@@ -124,7 +124,7 @@ def traverse_and_migrate(groups, rewritten_groups, parent_id=None):
                 if config.parent_id is not None:
                     group["parent_id"] = config.parent_id
                 else:
-                l.logger.info("Parent namespace is empty")
+                    l.logger.info("Parent namespace is empty")
 
             # group.pop("full_path")
             
