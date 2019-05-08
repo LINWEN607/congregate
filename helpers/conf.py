@@ -107,6 +107,10 @@ class ig:
     def threads(self):
         return self.config.get("number_of_threads", None)
 
+    @property
+    def make_visibility_private(self):
+        return self.config.get("make_visibility_private", None)
+
     @threads.setter
     def threads(self, value):
         self.threads = value

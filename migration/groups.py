@@ -81,9 +81,10 @@ def traverse_and_migrate(groups, rewritten_groups, parent_id=None):
             # group.pop("id")
             members = group["members"]
             
-            # TODO: Make this configurable from config.json
-            # if group["visibility"] == "internal":
-            #     group["visibility"] = "private"
+            if config.make_visibility_private is not None:
+                if config.make_visibility_private is True:
+                    group["visibility"] = "private"
+
             if group.get("parent_namespace", None) is not None:
                 found = False
                 if rewritten_groups.get(group["parent_id"], None) is not None:
@@ -193,6 +194,8 @@ def traverse_and_migrate(groups, rewritten_groups, parent_id=None):
                             response = api.generate_post_request(config.parent_host, config.parent_token, "groups/%d/members" % new_group_id, json.dumps(new_member))
                         except requests.exceptions.RequestException, e:
                             l.logger.error(e)
+
+                    migrate_group_ci_variables(new_group_id, group_id)
 
                     if not root_user_present:
                         l.logger.info("removing root user from group")
@@ -329,6 +332,23 @@ def make_all_internal_groups_private():
         except IOError, e:
             l.logger.error(e)
     print ids
+
+def migrate_group_ci_variables(new_id, old_id):
+    try:
+        response = api.generate_get_request(config.child_host, config.child_token, "groups/%d/variables" % old_id)
+        if response.status_code == 200:
+            response_json = response.json()
+            if len(response_json) > 0:
+                for i in range(len(response_json)):
+                    appended_data = response_json[i]
+                    wrapped_data = json.dumps(appended_data)
+                    api.generate_post_request(config.parent_host, config.parent_token, "groups/%d/variables" % new_id, wrapped_data)
+            else:
+                l.logger.info("Group does not have CI variables. Skipping.")
+        else:
+            l.logger.error("Response returned a %d with the message: %s" % (response.status_code, response.text))
+    except requests.exceptions.RequestException, e:
+        return None
 
 
 if __name__ == "__main__":
