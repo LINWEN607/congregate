@@ -17,10 +17,11 @@ def remove_dupes(mylist):
         return newlist
     return mylist
 
-def download_file(url, path, filename, headers=None):
+def download_file(url, path, filename=None, headers=None):
     # NOTE the stream=True parameter
     r = get(url, stream=True, headers=headers)
-    # filename = r.headers["Content-Disposition"].split("=")[1]
+    if filename is None:
+        filename = r.headers["Content-Disposition"].split("=")[1]
     with open("%s/downloads/%s" % (path, filename), 'wb') as f:
         for chunk in r.iter_content(chunk_size=1024): 
             if chunk:

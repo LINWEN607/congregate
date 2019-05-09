@@ -1,15 +1,19 @@
 from congregate.helpers.base_class import base_class
-from congregate.helpers import api
+from congregate.helpers import api, misc_utils
 from congregate.aws import aws_client
+from congregate.migration.gitlab.projects import gl_projects_client
 from requests.exceptions import RequestException
 from re import sub
 from urllib import quote
 from time import sleep
+from os import remove, chdir, getcwd
+from glob import glob
 import json
 
 class gl_importexport_client(base_class):
     def __init__(self):
         self.aws = self.get_aws_client()
+        self.projects = gl_projects_client()
         self.keys_map = self.get_keys()
         
     def get_aws_client(self):
@@ -162,3 +166,83 @@ class gl_importexport_client(base_class):
             self.l.logger.error("Project doesn't exist. Skipping %s" % name)
             return None
         return import_id
+
+
+    def export_import_thru_filesystem(self, id, name, namespace):
+        working_dir = getcwd()
+        self.l.logger.info("Exporting %s to %s" % (name, self.config.filesystem_path))
+        api.generate_post_request(self.config.child_host, self.config.child_token, "projects/%d/export" % id, "")
+        if working_dir != self.config.filesystem_path:
+            chdir(self.config.filesystem_path)
+        url = "%s/api/v4/projects/%d/export/download" % (self.config.child_host, id)
+        filename = misc_utils.download_file(url, self.config.filesystem_path, headers={"PRIVATE-TOKEN": self.config.child_token})
+
+        data = {
+            "path": name,
+            "file": "%s/downloads/%s" % (self.config.filesystem_path, filename),
+            "namespace": namespace
+        }
+
+        return api.generate_post_request(self.config.parent_host, self.config.parent_token, "projects/import", data=data)
+
+    def export_import_thru_fs_aws(self, id, name, namespace):
+        testkey = "%s_%s.tar.gz" % (namespace, name)
+        if self.keys_map.get(testkey.lower(), None) is None:
+            self.l.logger.info("Exporting %s to %s" % (name, self.config.filesystem_path))
+            self.l.logger.info("Unarchiving %s" % name)
+            self.projects.unarchive_project(self.config.child_host, self.config.child_token, id)
+            api.generate_post_request(
+                self.config.child_host, self.config.child_token, "projects/%d/export" % id, {})
+            url = "%s/api/v4/projects/%d/export/download" % (
+                self.config.child_host, id)
+            exported = False
+            total_time = 0
+            while not exported:
+                response = api.generate_get_request(
+                    self.config.child_host, self.config.child_token, "projects/%d/export" % id)
+                if response.status_code == 200:
+                    response = response.json()
+                    if response["export_status"] == "finished":
+                        self.l.logger.info("%s has finished exporting" % name)
+                        exported = True
+                    elif response["export_status"] == "failed":
+                        self.l.logger.error("Export failed for %s" % name)
+                        break
+                    else:
+                        self.l.logger.info("Waiting on %s to export" % name)
+                        if total_time < 3600:
+                            total_time += 1
+                            sleep(1)
+                        else:
+                            self.l.logger.info(
+                                "Time limit exceeded. Going to attempt to download anyway")
+                            exported = True
+                else:
+                    self.l.logger.info("Project doesn't exist. Skipping %s export" % name)
+                    exported = False
+                    break
+            if exported:
+                self.l.logger.info("Downloading export")
+                path_with_namespace = "%s_%s.tar.gz" % (
+                    namespace, name)
+                try:
+                    filename = misc_utils.download_file(url, self.config.filesystem_path, path_with_namespace, headers={"PRIVATE-TOKEN": self.config.child_token})
+                    self.l.logger.info("Copying %s to s3" % filename)
+                    success = self.aws.copy_file_to_s3(filename)
+                    if success:
+                        self.l.logger.info("Removing %s from downloads" % filename)
+                        filepattern = sub(
+                            r'\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{3}_', '', filename)
+                        for f in glob("%s/downloads/*%s" %
+                                        (self.config.filesystem_path, filepattern)):
+                            remove(f)
+                        # self.l.logger.info("Archiving %s" % name)
+                        # api.generate_post_request(
+                        #     self.config.child_host, self.config.child_token, "projects/%d/archive" % id, {})
+                except Exception as e:
+                    self.l.logger.error("Download or copy to S3 failed")
+                    self.l.logger.error(e)
+        else:
+            self.l.logger.info("Export found. Skipping %s" % testkey)
+
+            
