@@ -1,20 +1,12 @@
 from flask import request, jsonify, Response, stream_with_context, send_from_directory
 from . import app
-#from time import sleep
 import subprocess, os
 from helpers.base_module import app_path
-# try:
 from cli import stage_projects
 from cli.config import update_config
 from migration.gitlab.groups import gl_groups_client
 from migration.gitlab.users import gl_users_client
 from migration.migrate import migrate
-# except ImportError:
-#     from cli import stage_projects
-#     from cli.config import update_config
-#     from migration.groups import append_groups
-#     from migration.users import append_users
-#     from migration.projects import migrate
 
 grp = gl_groups_client()
 usr = gl_users_client()

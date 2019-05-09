@@ -23,9 +23,11 @@ RUN cd /opt && \
 # Install congregate
 RUN cd /opt/congregate && \
     chmod +x congregate && \
-    cp congregate /usr/local/bin && \
+    cp congregate.sh /usr/local/bin/congregate && \
     pip install pipenv && \
     pipenv install
+
+RUN echo "alias ll='ls -al'" >> ~/.bashrc
 
 # Only need 8000 currently. May need to expose more for upcoming mongo integration
 EXPOSE 8000
