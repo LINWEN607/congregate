@@ -6,10 +6,7 @@ Copyright (c) 2018 - GitLab
 
 import os
 import json
-try:
-    from congregate.cli import config as config_cli
-except ImportError:
-    from cli import config as config_cli
+from cli import config as config_cli
 
 class ig:
     def __init__(self):

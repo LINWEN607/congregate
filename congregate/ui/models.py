@@ -1,22 +1,16 @@
 import os
 import json
 from . import app
-from flask import request, jsonify
+from flask import jsonify
 
-try:
-    from congregate.cli import stage_projects
-    from congregate.cli.config import update_config
-    from congregate.migration.groups import append_groups
-    from congregate.migration.users import append_users
-    from congregate.migration.projects import migrate
-except ImportError:
-    from cli import stage_projects
-    from cli.config import update_config
-    from migration.groups import append_groups
-    from migration.users import append_users
-    from migration.projects import migrate
-
-app_path = os.getenv("CONGREGATE_PATH")
+# try:
+from helpers.base_module import app_path
+# except ImportError:
+#     from cli import stage_projects
+#     from cli.config import update_config
+#     from migration.groups import append_groups
+#     from migration.users import append_users
+#     from migration.projects import migrate
 
 def get_data(file_name, sort_by=None):
     data = None
@@ -27,41 +21,6 @@ def get_data(file_name, sort_by=None):
         return sorted(data, key=lambda d: d[sort_by])
         
     return data
-
-
-@app.route("/data/<name>")
-def load_stage_data(name):
-    data = get_data(name)
-    return jsonify(data)
-
-@app.route("/stage", methods=['POST'])
-def stage():
-    projects = request.get_data().split(",")
-    stage_projects.stage_projects(projects)
-    return "staged %s projects" % len(projects)
-
-@app.route("/append_users", methods=['POST'])
-def add_users():
-    users = request.get_data().split(",")
-    append_users(users)
-    return "added %s users" % len(users)
-
-@app.route("/append_groups", methods=['POST'])
-def add_groups():
-    groups = request.get_data().split(",")
-    append_groups(groups)
-    return "added %s groups" % len(groups)
-
-@app.route("/update_config", methods=['POST'])
-def update_config_post():
-    config = request.get_data()
-    update_config(config)
-    return "Updated config"
-
-@app.route("/migrate", methods=['GET'])
-def migrate_projects_get():
-    migrate()
-    return "Migrated projects"
 
 def get_counts():
     total_projects = len(get_data("project_json"))
@@ -75,3 +34,9 @@ def get_counts():
         "Staged Groups": "%s/%s" % (staged_groups, total_groups),
         "Staged Users": "%s/%s" % (staged_users, total_users)
     }
+
+@app.route("/data/<name>")
+def load_stage_data(name):
+    data = get_data(name)
+    return jsonify(data)
+

@@ -11,13 +11,11 @@ from re import sub
 from io import BytesIO
 import boto3
 from botocore.client import Config
-try:
-    from helpers import base_class
-except ImportError:
-    from congregate.helpers.base_class import base_class
+from helpers.base_class import base_class
 
 class aws_client(base_class):
     def __init__(self):
+        super(aws_client, self).__init__()
         self.s3 = boto3.client(
             's3',
             config=Config(

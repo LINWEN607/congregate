@@ -1,6 +1,6 @@
-from congregate.helpers import logger
+from helpers import logger
 from math import ceil as math_ceil
-from misc_utils import stable_retry
+from helpers.decorators import stable_retry
 import requests
 
 l = logger.congregate_logger(__name__)

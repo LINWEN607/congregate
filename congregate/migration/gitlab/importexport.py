@@ -1,7 +1,7 @@
-from congregate.helpers.base_class import base_class
-from congregate.helpers import api, misc_utils
-from congregate.aws import aws_client
-from congregate.migration.gitlab.projects import gl_projects_client
+from helpers.base_class import base_class
+from helpers import api, misc_utils
+from aws import aws_client
+from migration.gitlab.projects import gl_projects_client
 from requests.exceptions import RequestException
 from re import sub
 from urllib import quote
@@ -12,6 +12,7 @@ import json
 
 class gl_importexport_client(base_class):
     def __init__(self):
+        super(gl_importexport_client, self).__init__()
         self.aws = self.get_aws_client()
         self.projects = gl_projects_client()
         self.keys_map = self.get_keys()

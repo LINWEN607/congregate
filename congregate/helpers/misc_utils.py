@@ -3,7 +3,7 @@ from re import sub
 from time import sleep
 from csv import reader
 import json
-from congregate.helpers import base_module as bm
+from helpers import base_module as bm
 
 def remove_dupes(mylist):
     """
@@ -31,32 +31,13 @@ def download_file(url, path, filename=None, headers=None):
 def strip_numbers(s):
     return sub(r"[0-9]+", '', s)
 
-def stable_retry(function, ExceptionType=Exception,
-                 tries=3, delay=5, backoff=1.20):
-    def f_retry(*args, **kwargs):
-        mtries, mdelay = tries, delay
-        while mtries > 1:
-            try:
-                return function(*args, **kwargs)
-            except ExceptionType as e:
-                bm.l.logger.error(
-                    "%s, Api connecion failed Retrying in %d seconds..." %
-                    (str(e), mdelay))
-                sleep(mdelay)
-                mtries -= 1
-                mdelay *= backoff
-        bm.l.logger.error(
-            "Failed to connect to API within {0} Tries".format(tries))
-        # return function(*args, **kwargs)
-    return f_retry
-
 '''
 
 Usage:
 
 1. Add "user_map_csv" to config file containing path to user map in CSV form
 2. Open up a python shell with pipenv (pipenv run python)
-3. Import this function (from congregate.helpers.misc_utils import map_users)
+3. Import this function (from helpers.misc_utils import map_users)
 4. Execute this function (map_users())
 
 '''

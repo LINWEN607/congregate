@@ -1,6 +1,6 @@
-from congregate.helpers.base_class import base_class
-from congregate.helpers import api
-from congregate.helpers.misc_utils import strip_numbers, remove_dupes
+from helpers.base_class import base_class
+from helpers import api
+from helpers.misc_utils import strip_numbers, remove_dupes
 from requests.exceptions import RequestException
 from os import path
 import json

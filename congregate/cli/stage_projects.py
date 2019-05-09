@@ -9,13 +9,8 @@ import json
 import sys
 import subprocess
 import re
-try:
-    from helpers import conf, api, misc_utils
-    from helpers import logger as log
-except ImportError:
-    from congregate.helpers import conf, api, misc_utils
-    from congregate.helpers import logger as log
-
+from helpers import conf, api, misc_utils
+from helpers import logger as log
 
 app_path = os.getenv("CONGREGATE_PATH")
 l = log.congregate_logger(__name__)

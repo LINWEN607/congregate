@@ -1,8 +1,8 @@
 import mock
 import unittest
-import config
 import os
-from congregate.helpers.mock_api import MockApi
+from cli import config
+from helpers.mock_api import MockApi
 
 def input_generator(params): # generate squares as an example
     for param in params:

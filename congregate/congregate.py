@@ -88,44 +88,55 @@ if __name__ == '__main__':
         if just_configured == False:
                 configure.config()
     else:
-        try:
-            from migration import users, groups, projects
-        except ImportError:
-            import migration.users, migration.groups, migration.projects
+        # try:
+            # from migration import users, groups, projects
+        from migration.gitlab.users import gl_users_client
+        from migration.gitlab.groups import gl_groups_client
+        from migration.gitlab.projects import gl_projects_client
+        from migration.gitlab.variables import gl_variables_client
+        from migration.mirror import mirror_client
+        from migration import migrate
+        # except ImportError:
+        #     import migration.users, migration.groups, migration.projects
         from cli import list_projects, stage_projects, do_all
         if config.external_source != False and config.external_source is not None:
             if arguments["migrate"]:
                 if arguments["--threads"]:
-                    projects.migrate(threads=arguments["--threads"])
+                    migrate.migrate(threads=arguments["--threads"])
                 else:
-                    projects.migrate()
+                    migrate.migrate()
             elif arguments["ui"]:
-                os.environ["FLASK_APP"] = "%s/ui" % app_path
+                os.environ["FLASK_APP"] = "%s/congregate/ui" % app_path
                 os.chdir(app_path)
                 os.environ["PYTHONPATH"] = app_path
-                run_ui = "gunicorn -k gevent -w 4 ui:app --bind=0.0.0.0:8000"
+                run_ui = "gunicorn -k gevent -w 4 ui:app --bind=0.0.0.0:8005"
                 subprocess.call(run_ui.split(" "))
             elif arguments["enable_mirroring"]:
-                projects.enable_mirroring()
+                mirror = mirror_client()
+                mirror.enable_mirroring()
             else:
                 print "External migration only currently supports the migrate and ui commands to generate shell projects with mirrors."
         else:
+            users = gl_users_client()
+            groups = gl_groups_client()
+            projects = gl_projects_client()
+            variables = gl_variables_client()
             if arguments["list"]:
                 list_projects.list_projects()
             if arguments["stage"]:
                 stage_projects.stage_projects(arguments['<projects>'])
             if arguments["migrate"]:
                 if arguments["--threads"]:
-                    projects.migrate(threads=arguments["--threads"])
+                    migrate.migrate(threads=arguments["--threads"])
                 else:
-                    projects.migrate()
+                    migrate.migrate()
             if arguments["do_all"]:
                 do_all.do_all()
             if arguments["ui"]:
-                os.environ["FLASK_APP"] = "%s/ui" % app_path
+                os.environ["FLASK_APP"] = "%s/congregate/ui" % app_path
                 os.chdir(app_path)
                 os.environ["PYTHONPATH"] = app_path
-                run_ui = "gunicorn -k gevent -w 4 ui:app --bind=0.0.0.0:8000"
+                run_ui = "gunicorn -k gevent -w 4 ui:app --bind=0.0.0.0:8005"
                 subprocess.call(run_ui.split(" "))
             if arguments["update-staged-user-info"]:
                 users.update_user_after_migration()
@@ -138,32 +149,32 @@ if __name__ == '__main__':
             if arguments["lower-user-permissions"]:
                 users.lower_user_permissions()
             if arguments["import-projects"]:
-                projects.kick_off_import()
+                migrate.kick_off_import()
             if arguments["get-total-count"]:
-                print projects.get_total_migrated_count()
+                print migrate.get_total_migrated_count()
             if arguments["find-unimported-projects"]:
-                projects.find_unimported_projects()
+                migrate.find_unimported_projects()
             if arguments["stage-unimported-projects"]:
-                projects.stage_unimported_projects()
+                migrate.stage_unimported_projects()
             if arguments["remove-users-from-parent-group"]:
                 users.remove_users_from_parent_group()
             if arguments["migrate-variables-in-stage"]:
-                projects.migrate_variables_in_stage()
+                variables.migrate_variables_in_stage()
             if arguments["remove-all-mirrors"]:
-                projects.remove_all_mirrors()
+                migrate.remove_all_mirrors()
             if arguments["find-all-internal-projects"]:
                 groups.find_all_internal_projects()
             if arguments["make-all-internal-groups-private"]:
                 groups.make_all_internal_groups_private()
             if arguments["check-projects-visibility"]:
-                projects.check_visibility()
+                migrate.check_visibility()
             if arguments["add-all-mirrors"]:
-                projects.enable_mirror()
+                migrate.enable_mirror()
             if arguments["set-default-branch"]:
-                projects.set_default_branch()
+                migrate.set_default_branch()
             if arguments["count-unarchived-projects"]:
-                projects.count_unarchived_projects()
+                migrate.count_unarchived_projects()
             if arguments["find-empty-repos"]:
-                projects.find_empty_repos()
+                migrate.find_empty_repos()
         
         

@@ -19,17 +19,18 @@ from multiprocessing import Lock
 
 import psycopg2
 
-from congregate.helpers import api, misc_utils
-from congregate.helpers import logger as log
-from congregate.migration import users, groups
-from congregate.aws import aws_client
-from congregate.cli.stage_projects import stage_projects
-from congregate.helpers import base_module as b
-from congregate.migration.gitlab.importexport import gl_importexport_client as ie_client
-from congregate.migration.gitlab.variables import gl_variables_client as vars_client
-from congregate.migration.gitlab.users import gl_users_client as users_client
-from congregate.migration.gitlab.groups import gl_groups_client as groups_client 
-from congregate.migration.mirror import mirror_client
+from helpers import api, misc_utils
+from helpers import logger as log
+from migration import users, groups
+from aws import aws_client
+from cli.stage_projects import stage_projects
+from helpers import base_module as b
+from migration.gitlab.importexport import gl_importexport_client as ie_client
+from migration.gitlab.variables import gl_variables_client as vars_client
+from migration.gitlab.users import gl_users_client as users_client
+from migration.gitlab.groups import gl_groups_client as groups_client 
+from migration.gitlab.projects import gl_projects_client as proj_client
+from migration.mirror import mirror_client
 
 aws = aws_client()
 ie = ie_client()
@@ -37,7 +38,7 @@ mirror = mirror_client()
 variables = vars_client()
 users = users_client()
 groups = groups_client()
-
+projects = proj_client()
 
 users_map = {}
 groups_map = {}
@@ -128,7 +129,7 @@ def migrate_projects(project_json):
         project_json = json.loads(project_json)
     b.l.logger.debug("Searching for existing %s" % project_json["name"])
     project_exists = False
-    search_response = api.generate_get_request(b.config.parent_host, b.config.b.config.parent_token, 'projects', params={'search': project_json['name']}).json()
+    search_response = api.generate_get_request(b.config.parent_host, b.config.parent_token, 'projects', params={'search': project_json['name']}).json()
     if len(search_response) > 0:
         for proj in search_response:
             if proj["name"] == project_json["name"] and project_json["namespace"] in proj["namespace"]["path"]:
@@ -188,7 +189,7 @@ def migrate_given_export(project_json):
     project_exists = False
     project_id = None
     try:
-        search_response = api.generate_get_request(b.config.parent_host, b.config.b.config.parent_token, 'projects', params={'search': project_json['name']}).json()
+        search_response = api.generate_get_request(b.config.parent_host, b.config.parent_token, 'projects', params={'search': project_json['name']}).json()
         if len(search_response) > 0:
             for proj in search_response:
                 if proj["name"] == project_json["name"] and project_json["namespace"] in proj["namespace"]["path"]:
@@ -197,7 +198,7 @@ def migrate_given_export(project_json):
                     project_id = proj["id"]
                     break
         if project_id:
-            import_check = api.generate_get_request(b.config.parent_host, b.config.b.config.parent_token, "projects/%d/import" % project_id).json()
+            import_check = api.generate_get_request(b.config.parent_host, b.config.parent_token, "projects/%d/import" % project_id).json()
             if import_check["import_status"] == "finished":
                 b.l.logger.info("%s already imported" % project_json["name"])
             elif import_check["import_status"] == "scheduled":
@@ -214,7 +215,7 @@ def migrate_given_export(project_json):
             b.l.logger.info(import_id)
             if import_id is not None:
                 b.l.logger.info("Unarchiving project")
-                unarchive_project(b.config.child_host, b.config.child_token, project_json["id"])
+                projects.unarchive_project(b.config.child_host, b.config.child_token, project_json["id"])
                 b.l.logger.info("Migrating variables")
                 variables.migrate_variables(import_id, project_json["id"], "project")
                 b.l.logger.info("Migrating project info")
@@ -319,7 +320,7 @@ def handle_migrating_file(f):
     namespace = f["namespace"]
     try:
         if b.config.parent_id is not None and f["project_type"] != "user":
-            parent_namespace = api.generate_get_request(b.config.parent_host, b.config.b.config.parent_token, "groups/%d" % b.config.parent_id).json()
+            parent_namespace = api.generate_get_request(b.config.parent_host, b.config.parent_token, "groups/%d" % b.config.parent_id).json()
             namespace = "%s/%s" % (parent_namespace["path"], f["namespace"])
         else:
             namespace = f["namespace"]
@@ -357,7 +358,7 @@ def handle_bitbucket_migration(repo):
         search_name = search_name.split("~")[0]
         if len(search_name) > 0:
             try:
-                project_exists = json.load(api.generate_get_request(b.config.parent_host, b.config.b.config.parent_token, "projects?search=%s" % urllib.quote(repo["name"])))
+                project_exists = json.load(api.generate_get_request(b.config.parent_host, b.config.parent_token, "projects?search=%s" % urllib.quote(repo["name"])))
                 for proj in project_exists:
                     with_group = ("%s/%s" % (repo["group"].replace(" ", "_"), repo["name"].replace(" ", "-"))).lower()
                     pwn = proj["path_with_namespace"]
@@ -378,7 +379,7 @@ def handle_bitbucket_migration(repo):
                             user_id = None
                             for user in cat_users:
                                 if len(user["email"]) > 0:
-                                    user_search = json.load(api.generate_get_request(b.config.parent_host, b.config.b.config.parent_token, "users?search=%s" % urllib.quote(user["email"])))
+                                    user_search = json.load(api.generate_get_request(b.config.parent_host, b.config.parent_token, "users?search=%s" % urllib.quote(user["email"])))
                                     if len(user_search) > 0:
                                         b.l.logger.info("Found %s: %s" % (user_search[0]["id"], user_search[0]["email"]))
                                         user_id = user_search[0]["id"]
@@ -399,7 +400,7 @@ def handle_bitbucket_migration(repo):
                                                     "password": uuid.uuid4().hex
                                                 }
                                                 b.l.logger.info("Creating new user %s" % user["email"])
-                                                created_user = json.load(api.generate_post_request(b.config.parent_host, b.config.b.config.parent_token, "users", json.dumps(new_user_data)))
+                                                created_user = json.load(api.generate_post_request(b.config.parent_host, b.config.parent_token, "users", json.dumps(new_user_data)))
                                                 # b.l.logger.info(json.dumps(created_user, indent=4))
                                                 user_id = created_user["id"]
                                                 # personal_repo = True
@@ -412,7 +413,7 @@ def handle_bitbucket_migration(repo):
                                                     "skip_confirmation": True,
                                                 }
                                                 b.l.logger.info("Adding new email to user %s" % user["email"])
-                                                created_user = json.load(api.generate_post_request(b.config.parent_host, b.config.b.config.parent_token, "users/%s/emails" % group_id, json.dumps(new_user_email_data)))
+                                                created_user = json.load(api.generate_post_request(b.config.parent_host, b.config.parent_token, "users/%s/emails" % group_id, json.dumps(new_user_email_data)))
                                                 # b.l.logger.info(json.dumps(created_user, indent=4))
                                                 # personal_repo = True
                                     if user["permission"] == "PROJECT_ADMIN":
@@ -425,7 +426,7 @@ def handle_bitbucket_migration(repo):
                             group_name = project.get("key", None)
                         group_name = group_name.replace(" ", "_")
                         b.l.logger.info("Searching for existing group '%s'" % group_name)
-                        group_search = json.load(api.generate_get_request(b.config.parent_host, b.config.b.config.parent_token, "groups?search=%s" % urllib.quote(group_name)))
+                        group_search = json.load(api.generate_get_request(b.config.parent_host, b.config.parent_token, "groups?search=%s" % urllib.quote(group_name)))
                         for group in group_search:
                             if group["path"] == group_name:
                                 b.l.logger.info("Found %s" % group_name)
@@ -451,7 +452,7 @@ def handle_bitbucket_migration(repo):
                                     if len(user["email"]) > 0:
                                         user_data = None
                                         b.l.logger.info("Searching for existing user '%s'" % user["email"])
-                                        user_search = json.load(api.generate_get_request(b.config.parent_host, b.config.b.config.parent_token, "users?search=%s" % urllib.quote(user["email"])))
+                                        user_search = json.load(api.generate_get_request(b.config.parent_host, b.config.parent_token, "users?search=%s" % urllib.quote(user["email"])))
                                         if len(user_search) > 0:
                                             b.l.logger.info("Found %s" % user_search[0]["email"])
                                             user_data = {
@@ -475,7 +476,7 @@ def handle_bitbucket_migration(repo):
                                                         "password": uuid.uuid4().hex
                                                     }
                                                     b.l.logger.info("Creating new user %s" % user["email"])
-                                                    created_user = json.load(api.generate_post_request(b.config.parent_host, b.config.b.config.parent_token, "users", json.dumps(new_user_data)))
+                                                    created_user = json.load(api.generate_post_request(b.config.parent_host, b.config.parent_token, "users", json.dumps(new_user_data)))
                                                     b.l.logger.info(json.dumps(created_user, indent=4))
                                                     # personal_repo = True
                                                 else:
@@ -484,7 +485,7 @@ def handle_bitbucket_migration(repo):
                                                         "skip_confirmation": True,
                                                     }
                                                     b.l.logger.info("Adding new email to user %s" % user["email"])
-                                                    created_user = json.load(api.generate_post_request(b.config.parent_host, b.config.b.config.parent_token, "users/%s/emails" % user_id, json.dumps(new_user_email_data)))
+                                                    created_user = json.load(api.generate_post_request(b.config.parent_host, b.config.parent_token, "users/%s/emails" % user_id, json.dumps(new_user_email_data)))
                                                     b.l.logger.info(json.dumps(created_user, indent=4))
                                                     # personal_repo = True
                                                 user_data = {
@@ -495,7 +496,7 @@ def handle_bitbucket_migration(repo):
                                         if user_data is not None and personal_repo is False and members_already_added is False:
                                             try:
                                                 b.l.logger.info("Adding %s to group" % user["email"])
-                                                api.generate_post_request(b.config.parent_host, b.config.b.config.parent_token, "groups/%d/members" % group_id, json.dumps(user_data))
+                                                api.generate_post_request(b.config.parent_host, b.config.parent_token, "groups/%d/members" % group_id, json.dumps(user_data))
                                             except urllib2.HTTPError, e:
                                                 b.l.logger.error("Failed to add %s to group" % user["email"])
                                                 b.l.logger.error(e)
@@ -521,7 +522,7 @@ def handle_bitbucket_migration(repo):
                                     if len(user["email"]) > 0:
                                         user_data = None
                                         b.l.logger.info("Searching for existing user '%s'" % user["email"])
-                                        user_search = json.load(api.generate_get_request(b.config.parent_host, b.config.b.config.parent_token, "users?search=%s" % urllib.quote(user["email"])))
+                                        user_search = json.load(api.generate_get_request(b.config.parent_host, b.config.parent_token, "users?search=%s" % urllib.quote(user["email"])))
                                         if len(user_search) > 0:
                                             user_data = {
                                                 "user_id": user_search[0]["id"],
@@ -543,7 +544,7 @@ def handle_bitbucket_migration(repo):
                                                         "password": uuid.uuid4().hex
                                                     }
                                                     b.l.logger.info("Creating new user %s" % user["email"])
-                                                    created_user = json.load(api.generate_post_request(b.config.parent_host, b.config.b.config.parent_token, "users", json.dumps(new_user_data)))
+                                                    created_user = json.load(api.generate_post_request(b.config.parent_host, b.config.parent_token, "users", json.dumps(new_user_data)))
                                                     b.l.logger.info(json.dumps(created_user, indent=4))
                                                     personal_repo = True
                                                 else:
@@ -552,7 +553,7 @@ def handle_bitbucket_migration(repo):
                                                         "skip_confirmation": True,
                                                     }
                                                     b.l.logger.info("Adding new email to user %s" % user["email"])
-                                                    created_user = json.load(api.generate_post_request(b.config.parent_host, b.config.b.config.parent_token, "users/%s/emails" % group_id, json.dumps(new_user_email_data)))
+                                                    created_user = json.load(api.generate_post_request(b.config.parent_host, b.config.parent_token, "users/%s/emails" % group_id, json.dumps(new_user_email_data)))
                                                     b.l.logger.info(json.dumps(created_user, indent=4))
                                                     personal_repo = True
                                                 user_data = {
@@ -562,7 +563,7 @@ def handle_bitbucket_migration(repo):
                                         if user_data is not None:
                                             try:
                                                 b.l.logger.info("Adding %s to project" % user["email"])
-                                                api.generate_post_request(b.config.parent_host, b.config.b.config.parent_token, "projects/%d/members" % project_id, json.dumps(user_data))
+                                                api.generate_post_request(b.config.parent_host, b.config.parent_token, "projects/%d/members" % project_id, json.dumps(user_data))
                                             except urllib2.HTTPError, e:
                                                 b.l.logger.error("Failed to add %s to project" % user["email"])
                                                 b.l.logger.error(e)
@@ -587,7 +588,7 @@ def find_unimported_projects():
             try:
                 b.l.logger.debug("Searching for existing %s" % project_json["name"])
                 project_exists = False
-                search_response = api.generate_get_request(b.config.parent_host, b.config.b.config.parent_token, 'projects', params={'search': project_json['name']}).json()
+                search_response = api.generate_get_request(b.config.parent_host, b.config.parent_token, 'projects', params={'search': project_json['name']}).json()
                 if len(search_response) > 0:
                     for proj in search_response:
                         if proj["name"] == project_json["name"]:
@@ -606,7 +607,16 @@ def find_unimported_projects():
                 f.writelines(project + "\n")
         print "Found %d unimported projects" % len(unimported_projects)
 
-
+def remove_all_mirrors():
+        # if os.path.isfile("%s/data/new_ids.txt" % b.app_path):
+        #     ids = []
+        #     with open("%s/data/new_ids.txt" % b.app_path, "r") as f:
+        #         for line in f:
+        #             ids.append(int(line.split("\n")[0]))
+        # else:
+        ids = get_new_ids()
+        for i in ids:
+            mirror.remove_mirror(i)
 
 def get_new_ids():
     with open("%s/data/stage.json" % b.app_path, "r") as f:
@@ -616,7 +626,7 @@ def get_new_ids():
         for project_json in files:
             try:
                 b.l.logger.debug("Searching for existing %s" % project_json["name"])
-                search_response = api.generate_get_request(b.config.parent_host, b.config.b.config.parent_token, 'projects', params={'search': project_json['name']}).json()
+                search_response = api.generate_get_request(b.config.parent_host, b.config.parent_token, 'projects', params={'search': project_json['name']}).json()
                 if len(search_response) > 0:
                     for proj in search_response:
                         if proj["name"] == project_json["name"]:
@@ -654,74 +664,45 @@ def check_visibility():
     else:
         ids = get_new_ids()
     for i in ids:
-        project = api.generate_get_request(b.config.parent_host, b.config.b.config.parent_token, "projects/%d" % i).json()
+        project = api.generate_get_request(b.config.parent_host, b.config.parent_token, "projects/%d" % i).json()
         if project["visibility"] != "private":
             print "%s, %s" % (project["path_with_namespace"], project["visibility"])
             count += 1
             data = {
                 "visibility": "private"
             }
-            change = api.generate_put_request(b.config.parent_host, b.config.b.config.parent_token, "projects/%d?visibility=private" % int(i), data=None)
+            change = api.generate_put_request(b.config.parent_host, b.config.parent_token, "projects/%d?visibility=private" % int(i), data=None)
             print change
 
     print count
 
-def remove_all_mirrors():
-    # if os.path.isfile("%s/data/new_ids.txt" % b.app_path):
-    #     ids = []
-    #     with open("%s/data/new_ids.txt" % b.app_path, "r") as f:
-    #         for line in f:
-    #             ids.append(int(line.split("\n")[0]))
-    # else:
-    ids = get_new_ids()
-    for i in ids:
-        mirror.remove_mirror(i)
-
-def enable_mirroring():
-    for project in api.list_all(b.config.parent_host, b.config.b.config.parent_token, "projects"):
-        if isinstance(project, dict):
-            encoded_name = project["name"].encode('ascii','replace')
-            if project.get("import_status", None) == "failed":
-                print "Enabling mirroring for %s" % encoded_name
-                try:
-                    resp = api.generate_post_request(b.config.parent_host, b.config.b.config.parent_token, "projects/%d/mirror/pull" % project["id"], None)
-                    print "Status: %d" % resp.status_code
-                except Exception, e:
-                    print e
-                    print "Skipping %s" % encoded_name
-            else:
-                if project.get("name", None) is not None:
-                    print "Skipping %s" % encoded_name
-        else:
-            print "Skipping %s" % project
-
 def set_default_branch():
-    for project in api.list_all(b.config.parent_host, b.config.b.config.parent_token, "projects"):
+    for project in api.list_all(b.config.parent_host, b.config.parent_token, "projects"):
         if project.get("default_branch", None) != "master":
             id = project["id"]
             name = project["name"]
             print "Setting default branch to master for project %s" % name
-            resp = api.generate_put_request(b.config.parent_host, b.config.b.config.parent_token, "projects/%d?default_branch=master" % id, data=None)
+            resp = api.generate_put_request(b.config.parent_host, b.config.parent_token, "projects/%d?default_branch=master" % id, data=None)
             print "Status: %d" % resp.status_code
 
 def update_diverging_branch():
-    for project in api.list_all(b.config.parent_host, b.config.b.config.parent_token, "projects"):
+    for project in api.list_all(b.config.parent_host, b.config.parent_token, "projects"):
         if project.get("mirror_overwrites_diverged_branches", None) != True:
             id = project["id"]
             name = project["name"]
             print "Setting mirror_overwrites_diverged_branches to true for project %s" % name
-            resp = api.generate_put_request(b.config.parent_host, b.config.b.config.parent_token, "projects/%d?mirror_overwrites_diverged_branches=true" % id, data=None)
+            resp = api.generate_put_request(b.config.parent_host, b.config.parent_token, "projects/%d?mirror_overwrites_diverged_branches=true" % id, data=None)
             print "Status: %d" % resp.status_code
 
 def get_total_migrated_count():
-    group_projects = api.get_count(b.config.parent_host, b.config.b.config.parent_token, "groups/%d/projects" % b.config.parent_id)
+    group_projects = api.get_count(b.config.parent_host, b.config.parent_token, "groups/%d/projects" % b.config.parent_id)
     subgroup_count = 0
-    for group in api.list_all(b.config.parent_host, b.config.b.config.parent_token, "groups/%d/subgroups" % b.config.parent_id):
-        count = api.get_count(b.config.parent_host, b.config.b.config.parent_token, "groups/%d/projects" % group["id"])
+    for group in api.list_all(b.config.parent_host, b.config.parent_token, "groups/%d/subgroups" % b.config.parent_id):
+        count = api.get_count(b.config.parent_host, b.config.parent_token, "groups/%d/projects" % group["id"])
         sub_count = 0
         if group.get("child_ids", None) is not None:
             for child_id in group["child_ids"]:
-                sub_count += api.get_count(b.config.parent_host, b.config.b.config.parent_token, "groups/%d/projects" % child_id)
+                sub_count += api.get_count(b.config.parent_host, b.config.parent_token, "groups/%d/projects" % child_id)
         subgroup_count += count
     # return subgroup_count + group_projects
     return subgroup_count
@@ -770,17 +751,13 @@ def update_db(db_values):
     return json.dumps(db_values)
 
 def generate_instance_map():
-    for project in api.list_all(b.config.parent_host, b.config.b.config.parent_token, "projects"):
+    for project in api.list_all(b.config.parent_host, b.config.parent_token, "projects"):
         if project.get("import_url", None) is not None:
             import_url = sub('//.+:.+@', '//', project["import_url"])
             with open("new_repomap.txt", "ab") as f:
                 f.write("%s\t%s\n" % (import_url, project["id"]))
 
-def archive_project(host, token, id):
-    return api.generate_post_request(host, token, "projects/%d/archive" % id, {}).json()
 
-def unarchive_project(host, token, id):
-    return api.generate_post_request(host, token, "projects/%d/unarchive" % id, {}).json()
 
 def count_unarchived_projects():
     unarchived_projects = []
@@ -794,7 +771,7 @@ def count_unarchived_projects():
 
 def find_empty_repos():
     empty_repos = []
-    for project in api.list_all(b.config.parent_host, b.config.b.config.parent_token, "projects?statistics=true"):
+    for project in api.list_all(b.config.parent_host, b.config.parent_token, "projects?statistics=true"):
         if project.get("statistics", None) is not None:
             if project["statistics"]["repository_size"] == 0:
                 b.l.logger.info("Empty repo found")

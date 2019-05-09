@@ -2,10 +2,7 @@ import os
 import subprocess
 import json
 import time
-try:
-    from helpers.api import generate_get_request
-except ImportError:
-    from congregate.helpers.api import generate_get_request
+from helpers.api import generate_get_request
 
 app_path = os.getenv("CONGREGATE_PATH")
 

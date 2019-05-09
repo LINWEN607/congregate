@@ -1,6 +1,6 @@
-from congregate.helpers.base_class import base_class
-from congregate.helpers import api, misc_utils
-from congregate.migration.gitlab.variables import gl_variables_client as vars_client
+from helpers.base_class import base_class
+from helpers import api, misc_utils
+from migration.gitlab.variables import gl_variables_client as vars_client
 from requests.exceptions import RequestException
 import json
 from os import path
@@ -8,6 +8,7 @@ from os import path
 class gl_groups_client(base_class):
     def __init__(self):
         self.vars = vars_client()
+        super(gl_groups_client, self).__init__()
 
     def traverse_groups(self, base_groups, transient_list,  host, token, parent_group=None):
         if parent_group is not None:

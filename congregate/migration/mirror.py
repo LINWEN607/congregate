@@ -1,5 +1,5 @@
-from congregate.helpers.base_class import base_class
-from congregate.helpers import api
+from helpers.base_class import base_class
+from helpers import api
 from requests.exceptions import RequestException
 import json
 
@@ -18,7 +18,7 @@ class mirror_client(base_class):
         }
 
         self.l.logger.info("Removing mirror from project %d" % project_id)
-        api.generate_put_request(self.config.self.config.parent_host, self.config.self.config.parent_token, "projects/%d" % project_id, json.dumps(mirror_data))
+        api.generate_put_request(self.config.parent_host, self.config.parent_token, "projects/%d" % project_id, json.dumps(mirror_data))
 
     def mirror_repo(self, project, import_id):
         """
@@ -115,3 +115,21 @@ class mirror_client(base_class):
         except RequestException, e:
             self.l.logger.error(e)
             return None
+
+    def enable_mirroring(self):
+        for project in api.list_all(self.config.parent_host, self.config.parent_token, "projects"):
+            if isinstance(project, dict):
+                encoded_name = project["name"].encode('ascii','replace')
+                if project.get("import_status", None) == "failed":
+                    print "Enabling mirroring for %s" % encoded_name
+                    try:
+                        resp = api.generate_post_request(self.config.parent_host, self.config.parent_token, "projects/%d/mirror/pull" % project["id"], None)
+                        print "Status: %d" % resp.status_code
+                    except Exception, e:
+                        print e
+                        print "Skipping %s" % encoded_name
+                else:
+                    if project.get("name", None) is not None:
+                        print "Skipping %s" % encoded_name
+            else:
+                print "Skipping %s" % project
