@@ -67,7 +67,7 @@ def export_project(project):
     try:
         api.generate_post_request(conf.child_host, conf.child_token, "projects/%d/export" % project["id"], "&".join(upload), headers=headers)
     except requests.exceptions.RequestException, e:
-       pass
+        pass
 
 def import_project(project):
     """
@@ -383,23 +383,7 @@ def remove_mirror(project_id):
     l.logger.info("Removing mirror from project %d" % project_id)
     api.generate_put_request(conf.parent_host, conf.parent_token, "projects/%d" % project_id, json.dumps(mirror_data))
 
-def migrate_variables(import_id, id):
-    try:
-        response = api.generate_get_request(conf.child_host, conf.child_token, "projects/%d/variables" % id)
-        if response.status_code == 200:
-            response_json = response.json()
-            if len(response_json) > 0:
-                for i in range(len(response_json)):
-                    appended_data = response_json[i]
-                    appended_data["environment_scope"] = "*"
-                    wrapped_data = json.dumps(appended_data)
-                    api.generate_post_request(conf.parent_host, conf.parent_token, "projects/%d/variables" % import_id, wrapped_data)
-            else:
-                l.logger.info("Project does not have CI variables. Skipping.")
-        else:
-            l.logger.error("Response returned a %d with the message: %s" % (response.status_code, response.text))
-    except requests.exceptions.RequestException, e:
-        return None
+
 
 def migrate_projects(project_json):
     if isinstance(project_json, str):
@@ -956,36 +940,7 @@ def find_unimported_projects():
                 f.writelines(project + "\n")
         print "Found %d unimported projects" % len(unimported_projects)
 
-def migrate_variables_in_stage():
-    with open("%s/data/stage.json" % app_path, "r") as f:
-        files = json.load(f)
-    ids = []
-    project_id = None
-    if len(files) > 0:
-        for project_json in files:
-            try:
-                l.logger.debug("Searching for existing %s" % project_json["name"])
-                project_exists = False
-                search_response = api.generate_get_request(conf.parent_host, conf.parent_token, 'projects', params={'search': project_json['name']}).json()
-                if len(search_response) > 0:
-                    for proj in search_response:
-                        if proj["name"] == project_json["name"]:
-                            if "%s" % project_json["namespace"].lower() in proj["path_with_namespace"].lower():
-                                project_exists = True
-                                #l.logger.info("Migrating variables for %s" % proj["name"])
-                                project_id = proj["id"]
-                                ids.append(project_id)
-                                break
-                            else:
-                                project_id = None
-                if project_id is not None:
-                    migrate_variables(project_id, project_json["id"])
-            except IOError, e:
-                l.logger.error(e)
-        with open("%s/data/ids_variable.txt" % app_path, "w") as f:
-            for i in ids:
-                f.write("%s\n" % i)
-        print len(ids)
+
 
 def get_new_ids():
     with open("%s/data/stage.json" % app_path, "r") as f:

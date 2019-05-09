@@ -5,33 +5,24 @@ Copyright (c) 2018 - GitLab
 """
 
 import requests
-import urllib
-import json
-import sys
-import os
+from os import remove, path
 import subprocess
 from re import sub
 from io import BytesIO
 import boto3
 from botocore.client import Config
-import sys
 try:
-    from helpers import conf
-    from helpers import logger as log
+    from helpers import base_class
 except ImportError:
-    from congregate.helpers import conf
-    from congregate.helpers import logger as log
+    from congregate.helpers.base_class import base_class
 
-
-class aws_client:
+class aws_client(base_class):
     def __init__(self):
-        self.config = conf.ig()
         self.s3 = boto3.client(
             's3',
             config=Config(
                 signature_version='s3v4'),
             region_name=self.config.s3_region)
-        self.l = log.congregate_logger(__name__)
 
     def import_from_s3(self, name, namespace, presigned_url, filename):
         with requests.get(presigned_url, stream=True) as r:
@@ -53,7 +44,7 @@ class aws_client:
 
     def copy_from_s3_and_import(self, name, namespace, filename):
         file_path = "%s/downloads/%s" % (self.config.filesystem_path, filename)
-        if not os.path.isfile(file_path):
+        if not path.isfile(file_path):
             self.l.logger.info("Copying %s to local machine" % filename)
             cmd = "aws+s3+cp+s3://%s/%s+%s" % (
                 self.config.bucket_name, filename, file_path)
@@ -80,7 +71,7 @@ class aws_client:
                         f)})
 
         if r is not None:
-            os.remove(file_path)
+            remove(file_path)
             return r.text
 
         return None

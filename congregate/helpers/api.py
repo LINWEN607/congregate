@@ -1,4 +1,4 @@
-from helpers import logger
+from congregate.helpers import logger
 from math import ceil as math_ceil
 from misc_utils import stable_retry
 import requests
