@@ -13,5 +13,3 @@ class gl_pushrules_client(base_class):
             pass
 
         return api.generate_post_request(host, token, "projects/%d/push_rule" % id, data)
-
-    

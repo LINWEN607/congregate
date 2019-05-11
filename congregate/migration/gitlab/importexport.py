@@ -26,11 +26,46 @@ class gl_importexport_client(base_class):
         if self.config.location == "filesystem-aws":
             return self.aws.get_s3_keys(self.config.bucket_name)
         return {}
+
+    def get_export_status(self, host, token, id):
+        return api.generate_get_request(host, token, "projects/%d/export" % id)
+
+    def get_import_status(self, host, token, id):
+        return api.generate_get_request(host, token, "projects/%d/import" % id)
+
+    def wait_for_export_to_finish(self, host, token, id):
+        exported = False
+        total_time = 0
+        while not exported:
+            response = self.get_export_status(self.config.child_host, self.config.child_token, id)
+            if response.status_code == 200:
+                response = response.json()
+                name = response["name"]
+                status = response.get("export_status", "")
+                if status == "finished":
+                    self.l.logger.info("%s has finished exporting" % name)
+                    exported = True
+                elif status == "failed":
+                    self.l.logger.error("Export failed for %s" % name)
+                    break
+                else:
+                    self.l.logger.info("Waiting on %s to export" % name)
+                    if total_time < 3600:
+                        total_time += 1
+                        sleep(1)
+                    else:
+                        self.l.logger.info(
+                            "Time limit exceeded. Going to attempt to download anyway")
+                        exported = True
+            else:
+                self.l.logger.info("Project doesn't exist. Skipping %s export" % name)
+                exported = False
+                break
+        
+        return exported
     
-    def export_project(self, project):
-        if isinstance(project, str):
-            project = json.loads(project)
-        name = "%s_%s.tar.gz" % (project["namespace"], project["name"])
+    def export_project_to_aws(self, id, name, namespace):
+        name = "%s_%s.tar.gz" % (namespace, name)
         presigned_put_url = self.aws.generate_presigned_url(name, "PUT")
         upload = [
             "upload[http_method]=PUT",
@@ -43,7 +78,7 @@ class gl_importexport_client(base_class):
         }
 
         try:
-            api.generate_post_request(self.config.child_host, self.config.child_token, "projects/%d/export" % project["id"], "&".join(upload), headers=headers)
+            api.generate_post_request(self.config.child_host, self.config.child_token, "projects/%d/export" % id, "&".join(upload), headers=headers)
         except RequestException:
             pass
 
@@ -196,32 +231,9 @@ class gl_importexport_client(base_class):
                 self.config.child_host, self.config.child_token, "projects/%d/export" % id, {})
             url = "%s/api/v4/projects/%d/export/download" % (
                 self.config.child_host, id)
-            exported = False
-            total_time = 0
-            while not exported:
-                response = api.generate_get_request(
-                    self.config.child_host, self.config.child_token, "projects/%d/export" % id)
-                if response.status_code == 200:
-                    response = response.json()
-                    if response["export_status"] == "finished":
-                        self.l.logger.info("%s has finished exporting" % name)
-                        exported = True
-                    elif response["export_status"] == "failed":
-                        self.l.logger.error("Export failed for %s" % name)
-                        break
-                    else:
-                        self.l.logger.info("Waiting on %s to export" % name)
-                        if total_time < 3600:
-                            total_time += 1
-                            sleep(1)
-                        else:
-                            self.l.logger.info(
-                                "Time limit exceeded. Going to attempt to download anyway")
-                            exported = True
-                else:
-                    self.l.logger.info("Project doesn't exist. Skipping %s export" % name)
-                    exported = False
-                    break
+            
+            exported = self.wait_for_export_to_finish(self.config.child_host, self.config.child_token, id)
+            
             if exported:
                 self.l.logger.info("Downloading export")
                 path_with_namespace = "%s_%s.tar.gz" % (
@@ -246,4 +258,24 @@ class gl_importexport_client(base_class):
         else:
             self.l.logger.info("Export found. Skipping %s" % testkey)
 
+        return success
+
             
+    def export_import_thru_aws(self, id, name, namespace):
+        # if isinstance(project_json, str):
+        #     project_json = json.loads(project_json)
+        self.l.logger.debug("Searching for existing %s" % name)
+        project_exists = False
+        search_response = api.generate_get_request(self.config.parent_host, self.config.parent_token, 'projects', params={'search': name}).json()
+        if len(search_response) > 0:
+            for proj in search_response:
+                if proj["name"] == name and namespace in proj["namespace"]["path"]:
+                    self.l.logger.info("Project already exists. Skipping %s" % name)
+                    project_exists = True
+                    break
+        if not project_exists:
+            self.l.logger.info("%s could not be found in parent instance. Exporting project on child instance." % name)
+            self.export_project_to_aws(id, name, namespace)
+            exported = self.wait_for_export_to_finish(self.config.child_host, self.config.child_token, id)
+
+        return exported
