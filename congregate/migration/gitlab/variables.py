@@ -1,9 +1,14 @@
 from helpers.base_class import base_class
 from helpers import api
+from migration.gitlab.projects import gl_projects_client
 from requests.exceptions import RequestException
 import json
 
 class gl_variables_client(base_class):
+    def __init__(self):
+        self.projects = gl_projects_client()
+        super(gl_variables_client, self).__init__()
+
     def get_variables(self, id, var_type="projects", source_type="child"):
         if var_type == "group":
             endpoint = "groups/%d/variables" % id
@@ -61,17 +66,15 @@ class gl_variables_client(base_class):
             for project_json in files:
                 try:
                     self.l.logger.debug("Searching for existing %s" % project_json["name"])
-                    search_response = api.generate_get_request(self.config.parent_host, self.config.parent_token, 'projects', params={'search': project_json['name']}).json()
-                    if len(search_response) > 0:
-                        for proj in search_response:
-                            if proj["name"] == project_json["name"]:
-                                if "%s" % project_json["namespace"].lower() in proj["path_with_namespace"].lower():
-                                    self.l.logger.debug("Migrating variables for %s" % proj["name"])
-                                    project_id = proj["id"]
-                                    ids.append(project_id)
-                                    break
-                                else:
-                                    project_id = None
+                    for proj in self.projects.search_for_project(self.config.parent_host, self.config.parent_token, project_json['name']):
+                        if proj["name"] == project_json["name"]:
+                            if "%s" % project_json["namespace"].lower() in proj["path_with_namespace"].lower():
+                                self.l.logger.debug("Migrating variables for %s" % proj["name"])
+                                project_id = proj["id"]
+                                ids.append(project_id)
+                                break
+                            else:
+                                project_id = None
                     if project_id is not None:
                         self.migrate_variables(project_id, project_json["id"], "project")
                 except IOError, e:

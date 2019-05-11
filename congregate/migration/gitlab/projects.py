@@ -1,9 +1,19 @@
 from helpers.base_class import base_class
 from helpers import api
 from requests.exceptions import RequestException
+from urllib import quote_plus
 import json
 
 class gl_projects_client(base_class):
+    def search_for_project(self, host, token, name):
+        yield api.list_all(host, token, "projects?search=%s" % quote_plus(name))
+
+    def get_project(self, id, host, token):
+        return api.generate_get_request(host, token, "projects/%d" % id)
+
+    def get_members(self, id, host, token):
+        yield api.list_all(host, token, "projects/%d/members" % id)
+
     def archive_project(self, host, token, id):
         return api.generate_post_request(host, token, "projects/%d/archive" % id, {}).json()
 

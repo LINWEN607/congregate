@@ -6,6 +6,9 @@ from os import path
 import json
 
 class gl_users_client(base_class):
+    def get_user(self, id, host, token):
+        return api.generate_get_request(host, token, "users/%d" % id)
+
     def update_users(self, obj, new_users):
         rewritten_users = {}
         for i in range(len(new_users)):
@@ -140,7 +143,7 @@ class gl_users_client(base_class):
             with open("%s/data/new_users.json" % self.app_path, "w") as f:
                 new_users = []
                 for new_id in new_ids:
-                    new_user = api.generate_get_request(self.config.parent_host, self.config.parent_token, "/users/%s" % new_id).json()
+                    new_user = self.get_user(new_id, self.config.parent_host, self.config.parent_token).json()
                     if isinstance(new_user, list):
                         new_users.append(new_user[0])
                     elif isinstance(new_user, dict):
@@ -202,7 +205,7 @@ class gl_users_client(base_class):
 
         for other_id in other_ids:
             print "searching for %s" % other_id
-            new_user = api.generate_get_request(self.config.parent_host, self.config.parent_token, "users/%s" % other_id).json()
+            new_user = self.get_user(other_id, self.config.parent_host, self.config.parent_token).json()
             new_users.append(new_user)
 
         with open("%s/data/new_users.json" % self.app_path, "w") as f:

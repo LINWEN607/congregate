@@ -2,6 +2,8 @@ from helpers.base_class import base_class
 from helpers import api, misc_utils
 from aws import aws_client
 from migration.gitlab.projects import gl_projects_client
+from migration.gitlab.users import gl_users_client
+from migration.gitlab.groups import gl_groups_client
 from requests.exceptions import RequestException
 from re import sub
 from urllib import quote
@@ -15,6 +17,8 @@ class gl_importexport_client(base_class):
         super(gl_importexport_client, self).__init__()
         self.aws = self.get_aws_client()
         self.projects = gl_projects_client()
+        self.users = gl_users_client()
+        self.groups = gl_groups_client()
         self.keys_map = self.get_keys()
         
     def get_aws_client(self):
@@ -96,14 +100,14 @@ class gl_importexport_client(base_class):
                 if project["namespace"] == member["username"]:
                     user_project = True
                     #namespace = project["namespace"]
-                    new_user = api.generate_get_request(self.config.parent_host, self.config.parent_token, "users/%d" % member["id"]).json()
+                    new_user = self.users.get_user(member["id"], self.config.parent_host, self.config.parent_token).json()
                     namespace = new_user["username"]
                     self.l.logger.info("%s is a user project belonging to %s. Attempting to import into their namespace" % (project["name"], new_user))
                     break
             if not user_project:
                 self.l.logger.info("%s is not a user project. Attempting to import into a group namespace" % (project["name"]))
                 if self.config.parent_id is not None:
-                    response = api.generate_get_request(self.config.parent_host, self.config.parent_token, "groups/%d" % self.config.parent_id).json()
+                    response = self.groups.get_group(self.config.parent_id, self.config.parent_host, self.config.parent_token).json()
                     namespace = "%s/%s" % (response["full_path"], project["namespace"])
                 else:
                     namespace = project["namespace"]
@@ -179,7 +183,7 @@ class gl_importexport_client(base_class):
                             import_id = None
                             break
                     if import_id is not None:
-                        status = api.generate_get_request(self.config.parent_host, self.config.parent_token, "projects/%d/import" % import_id).json()
+                        status = self.get_import_status(self.config.parent_host, self.config.parent_token, import_id).json()
                         # self.l.logger.info(status)
                         if status["import_status"] == "finished":
                             self.l.logger.info("%s has been exported and import is occurring" % name)
@@ -266,13 +270,11 @@ class gl_importexport_client(base_class):
         #     project_json = json.loads(project_json)
         self.l.logger.debug("Searching for existing %s" % name)
         project_exists = False
-        search_response = api.generate_get_request(self.config.parent_host, self.config.parent_token, 'projects', params={'search': name}).json()
-        if len(search_response) > 0:
-            for proj in search_response:
-                if proj["name"] == name and namespace in proj["namespace"]["path"]:
-                    self.l.logger.info("Project already exists. Skipping %s" % name)
-                    project_exists = True
-                    break
+        for proj in self.projects.search_for_project(self.config.parent_host, self.config.parent_token, name):
+            if proj["name"] == name and namespace in proj["namespace"]["path"]:
+                self.l.logger.info("Project already exists. Skipping %s" % name)
+                project_exists = True
+                break
         if not project_exists:
             self.l.logger.info("%s could not be found in parent instance. Exporting project on child instance." % name)
             self.export_project_to_aws(id, name, namespace)

@@ -117,7 +117,7 @@ def migrate_single_project_info(project, id):
     }
     projects.set_approval_configuration(id, b.config.parent_host, b.config.parent_token, approval_configuration)
 
-    
+
     
 
 def migrate_given_export(project_json):
@@ -131,14 +131,12 @@ def migrate_given_export(project_json):
     project_exists = False
     project_id = None
     try:
-        search_response = api.generate_get_request(b.config.parent_host, b.config.parent_token, 'projects', params={'search': project_json['name']}).json()
-        if len(search_response) > 0:
-            for proj in search_response:
-                if proj["name"] == project_json["name"] and project_json["namespace"] in proj["namespace"]["path"]:
-                    b.l.logger.info("Project already exists. Skipping %s" % project_json["name"])
-                    project_exists = True
-                    project_id = proj["id"]
-                    break
+        for proj in projects.search_for_project(b.config.parent_host, b.config.parent_token, project_json['name']):
+            if proj["name"] == project_json["name"] and project_json["namespace"] in proj["namespace"]["path"]:
+                b.l.logger.info("Project already exists. Skipping %s" % project_json["name"])
+                project_exists = True
+                project_id = proj["id"]
+                break
         if project_id:
             import_check = ie.get_import_status(b.config.parent_host, b.config.parent_token, project_id).json()
             if import_check["import_status"] == "finished":
@@ -259,7 +257,7 @@ def handle_migrating_file(f):
     namespace = f["namespace"]
     try:
         if b.config.parent_id is not None and f["project_type"] != "user":
-            parent_namespace = api.generate_get_request(b.config.parent_host, b.config.parent_token, "groups/%d" % b.config.parent_id).json()
+            parent_namespace = groups.get_group(b.config.parent_id, b.config.parent_host, b.config.parent_token).json()
             namespace = "%s/%s" % (parent_namespace["path"], f["namespace"])
         else:
             namespace = f["namespace"]
@@ -291,13 +289,11 @@ def find_unimported_projects():
             try:
                 b.l.logger.debug("Searching for existing %s" % project_json["name"])
                 project_exists = False
-                search_response = api.generate_get_request(b.config.parent_host, b.config.parent_token, 'projects', params={'search': project_json['name']}).json()
-                if len(search_response) > 0:
-                    for proj in search_response:
-                        if proj["name"] == project_json["name"]:
-                            if project_json["namespace"]["full_path"].lower() == proj["path_with_namespace"].lower():
-                                project_exists = True
-                                break
+                for proj in projects.search_for_project(b.config.parent_host, b.config.parent_token, project_json['name']):
+                    if proj["name"] == project_json["name"]:
+                        if project_json["namespace"]["full_path"].lower() == proj["path_with_namespace"].lower():
+                            project_exists = True
+                            break
                 if not project_exists:
                     b.l.logger.info("Recording %s" % project_json["name"])
                     unimported_projects.append("%s/%s" % (project_json["namespace"], project_json["name"]))
@@ -329,19 +325,17 @@ def get_new_ids():
         for project_json in files:
             try:
                 b.l.logger.debug("Searching for existing %s" % project_json["name"])
-                search_response = api.generate_get_request(b.config.parent_host, b.config.parent_token, 'projects', params={'search': project_json['name']}).json()
-                if len(search_response) > 0:
-                    for proj in search_response:
-                        if proj["name"] == project_json["name"]:
+                for proj in projects.search_for_project(b.config.parent_host, b.config.parent_token, project_json['name']):
+                    if proj["name"] == project_json["name"]:
 
-                            if "%s" % project_json["namespace"].lower() in proj["path_with_namespace"].lower():
-                                print project_json["namespace"]
-                                print proj["namespace"]["name"]
-                                if project_json["namespace"].lower() == proj["namespace"]["name"].lower():
-                                    print "adding %s/%s" % (project_json["namespace"], project_json["name"])
-                                    #b.l.logger.info("Migrating variables for %s" % proj["name"])
-                                    ids.append(proj["id"])
-                                    break
+                        if "%s" % project_json["namespace"].lower() in proj["path_with_namespace"].lower():
+                            print project_json["namespace"]
+                            print proj["namespace"]["name"]
+                            if project_json["namespace"].lower() == proj["namespace"]["name"].lower():
+                                print "adding %s/%s" % (project_json["namespace"], project_json["name"])
+                                #b.l.logger.info("Migrating variables for %s" % proj["name"])
+                                ids.append(proj["id"])
+                                break
             except IOError, e:
                 b.l.logger.error(e)
         return ids
@@ -367,7 +361,7 @@ def check_visibility():
     else:
         ids = get_new_ids()
     for i in ids:
-        project = api.generate_get_request(b.config.parent_host, b.config.parent_token, "projects/%d" % i).json()
+        project = projects.get_project(i, b.config.parent_host, b.config.parent_token).json()
         if project["visibility"] != "private":
             print "%s, %s" % (project["path_with_namespace"], project["visibility"])
             count += 1
@@ -478,16 +472,14 @@ def find_empty_repos():
         if project.get("statistics", None) is not None:
             if project["statistics"]["repository_size"] == 0:
                 b.l.logger.info("Empty repo found")
-                search_response = api.search(b.config.child_host, b.config.child_token, 'projects?statistics=true', project['name'])
-                if len(search_response) > 0:
-                    for proj in search_response:
-                        if proj["name"] == project["name"] and project["namespace"]["path"] in proj["namespace"]["path"]:
-                            b.l.logger.info("Found project")
-                            if proj.get("statistics", None) is not None:
-                                if proj["statistics"]["repository_size"] == 0:
-                                    b.l.logger.info("Project is empty in source instance. Ignoring")
-                                else:
-                                    empty_repos.append(project["name_with_namespace"])
+                for proj in api.list_all(b.config.child_host, b.config.child_token, "projects?statistics=true"):
+                    if proj["name"] == project["name"] and project["namespace"]["path"] in proj["namespace"]["path"]:
+                        b.l.logger.info("Found project")
+                        if proj.get("statistics", None) is not None:
+                            if proj["statistics"]["repository_size"] == 0:
+                                b.l.logger.info("Project is empty in source instance. Ignoring")
+                            else:
+                                empty_repos.append(project["name_with_namespace"])
     
     print empty_repos
     print len(empty_repos)

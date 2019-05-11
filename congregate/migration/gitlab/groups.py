@@ -10,6 +10,12 @@ class gl_groups_client(base_class):
         self.vars = vars_client()
         super(gl_groups_client, self).__init__()
 
+    def get_group(self, id, host, token):
+        return api.generate_get_request(host, token, "groups/%d" % id)
+
+    def search_for_group(self, name, host, token):
+        yield api.list_all(host, token, "groups?search=%s" % name)
+
     def traverse_groups(self, base_groups, transient_list,  host, token, parent_group=None):
         if parent_group is not None:
             parent_group["child_ids"] = []
@@ -217,6 +223,7 @@ class gl_groups_client(base_class):
         with open("%s/data/staged_groups.json" % self.app_path, "r") as f:
             groups = json.load(f)
         for group in groups:
+            # TODO: Change this to a search check. This assumes the instance doesn't contain various nested groups with the same name
             new_group_id = api.generate_get_request(self.config.parent_host, self.config.parent_token, 'groups', params={'search': group['name']}).json()
             print new_group_id
             members = group["members"]
@@ -256,14 +263,14 @@ class gl_groups_client(base_class):
             g = group_dict[id]
             if g["parent_id"] is None:
                 if self.config.parent_id is not None:
-                    parent_group = api.generate_get_request(self.config.parent_host, self.config.parent_token, "groups/%d" % self.config.parent_id).json()
+                    parent_group = self.get_group(self.config.parent_id, self.config.parent_host, self.config.parent_token).json()
                     g["full_parent_namespace"] = parent_group["full_path"]
                     g["parent_namespace"] = parent_group["path"]
                     g["parent_id"] = self.config.parent_id
             else:
                 parent_group = group_dict.get(g["parent_id"])
                 if parent_group is not None:
-                    parent_group_resp = api.generate_get_request(self.config.parent_host, self.config.parent_token, "groups/%d" % self.config.parent_id).json()
+                    parent_group_resp = self.get_group(self.config.parent_id, self.config.parent_host, self.config.parent_token).json()
                     g["full_parent_namespace"] = "%s/%s" % (parent_group_resp["full_path"], parent_group["full_path"])
                     g["parent_namespace"] = parent_group["path"]
                     if parent_group.get("parent_id", None) is not None:
@@ -288,7 +295,7 @@ class gl_groups_client(base_class):
 
         transient_list = []
 
-        parent_group = [api.generate_get_request(self.config.parent_host, self.config.parent_token, "groups/%d" % self.config.parent_id).json()]
+        parent_group = [self.get_group(self.config.parent_id, self.config.parent_host, self.config.parent_token).json()]
 
         print parent_group
 
@@ -311,15 +318,13 @@ class gl_groups_client(base_class):
         for group in groups:
             try:
                 self.l.logger.debug("Searching for existing %s" % group["name"])
-                search_response = api.generate_get_request(self.config.parent_host, self.config.parent_token, 'groups', params={'search': group['name']}).json()
-                if len(search_response) > 0:
-                    for proj in search_response:
-                        if proj["name"] == group["name"]:
-                            if "%s" % group["path"].lower() in proj["full_path"].lower():
-                                #self.l.logger.info("Migrating variables for %s" % proj["name"])
-                                ids.append(proj["id"])
-                                print "%s: %s" % (proj["full_path"], proj["visibility"])
-                                break
+                for proj in self.search_for_group(self.config.parent_host, self.config.parent_token, group['name']):
+                    if proj["name"] == group["name"]:
+                        if "%s" % group["path"].lower() in proj["full_path"].lower():
+                            #self.l.logger.info("Migrating variables for %s" % proj["name"])
+                            ids.append(proj["id"])
+                            print "%s: %s" % (proj["full_path"], proj["visibility"])
+                            break
             except IOError, e:
                 self.l.logger.error(e)
         print ids

@@ -79,7 +79,10 @@ def get_count(host, token, api):
         'Content-Type': 'application/json'
     })
 
-    return long(response.headers['X-Total'])
+    if response.headers.get('X-Total', None) is not None:
+        return long(response.headers['X-Total'])
+    
+    return None
 
 @stable_retry
 def get_total_pages(host, token, api):
@@ -93,10 +96,13 @@ def get_total_pages(host, token, api):
         'Content-Type': 'application/json'
     })
 
-    return long(response.headers['X-Total-Pages'])
+    if response.headers.get('X-Total-Pages', None) is not None:
+        return long(response.headers['X-Total-Pages'])
+    
+    return None
 
 @stable_retry
-def list_all(host, token, api):
+def list_all(host, token, api, params=None):
     """
         Returns a list of all projects, groups, users, etc. 
         You will need to provide the GL host, access token, and specific api url.
@@ -108,32 +114,51 @@ def list_all(host, token, api):
     start_at = 0
     end_at = count
 
-    total_work = end_at - start_at
-    total_pages = total_work / PER_PAGE
-    start_page = (start_at / PER_PAGE) + 1 # pages are 1-indexed
-    end_page = int(math_ceil(float(end_at) / float(PER_PAGE)))
+    if get_count is not None:
+        total_work = end_at - start_at
+        total_pages = total_work / PER_PAGE
+        start_page = (start_at / PER_PAGE) + 1 # pages are 1-indexed
+        end_page = int(math_ceil(float(end_at) / float(PER_PAGE)))
+        current_page = start_page
 
+        while current_page <= end_page:
+            l.logger.info("Retrieving %d %s" % (PER_PAGE * current_page, api))
 
-    current_page = start_page
+            if params is not None:
+                params["page"] = current_page
+                params["per_page"] = PER_PAGE
+            else:
+                params = {
+                    "page": current_page,
+                    "per_page": PER_PAGE
+                }
+            data = generate_get_request(host, token, api, params=params).json()
 
-    while current_page <= end_page:
-        l.logger.info("Retrieving %d %s" % (PER_PAGE * current_page, api))
+            for project in data:
+                yield project
 
-        params = {
-            "page": current_page,
-            "per_page": PER_PAGE
-        }
+            if len(data) < PER_PAGE:
+                break
 
-        data = generate_get_request(host, token, api, params=params).json()
+            current_page += 1
+    else:
+        while True:
+            l.logger.info("Retrieving %d %s" % (PER_PAGE * current_page, api))
 
-        for project in data:
-            yield project
+            params = {
+                "page": current_page,
+                "per_page": PER_PAGE
+            }
+            data = generate_get_request(host, token, api, params=params).json()
 
-        if len(data) < PER_PAGE:
-            break
+            for project in data:
+                yield project
 
-        current_page += 1
-        
+            if len(data) < PER_PAGE:
+                break
+
+            current_page += 1
+
 @stable_retry
 def search(host, token, path, search_query):
     return generate_get_request(host, token, path, params={'search': search_query}).json()

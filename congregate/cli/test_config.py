@@ -2,7 +2,7 @@ import mock
 import unittest
 import os
 from cli import config
-from helpers.mock_api import MockApi
+from helpers.mockapi.users import MockUsersApi
 
 def input_generator(params): # generate squares as an example
     for param in params:
@@ -10,7 +10,7 @@ def input_generator(params): # generate squares as an example
 
 class ConfigTests(unittest.TestCase):
     def setUp(self):
-        self.api = MockApi()
+        self.api = MockUsersApi()
 
     @mock.patch('cli.config.get_user')
     def test_default_configuration(self, mock_get):
