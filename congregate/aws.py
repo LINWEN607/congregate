@@ -11,11 +11,11 @@ from re import sub
 from io import BytesIO
 import boto3
 from botocore.client import Config
-from helpers.base_class import base_class
+from helpers.base_class import BaseClass
 
-class aws_client(base_class):
+class AwsClient(BaseClass):
     def __init__(self):
-        super(aws_client, self).__init__()
+        super(AwsClient, self).__init__()
         self.s3 = boto3.client(
             's3',
             config=Config(

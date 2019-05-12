@@ -1,12 +1,12 @@
-from helpers.base_class import base_class
+from helpers.base_class import BaseClass
 from helpers import api
-from migration.gitlab.projects import gl_projects_client
+from migration.gitlab.projects import ProjectsClient
 from requests.exceptions import RequestException
 import json
 
-class gl_variables_client(base_class):
+class gl_variables_client(BaseClass):
     def __init__(self):
-        self.projects = gl_projects_client()
+        self.projects = ProjectsClient()
         super(gl_variables_client, self).__init__()
 
     def get_variables(self, id, var_type="projects", source_type="child"):

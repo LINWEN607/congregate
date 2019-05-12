@@ -1,9 +1,9 @@
-from helpers.base_class import base_class
+from helpers.base_class import BaseClass
 from helpers import api, misc_utils
-from aws import aws_client
-from migration.gitlab.projects import gl_projects_client
-from migration.gitlab.users import gl_users_client
-from migration.gitlab.groups import gl_groups_client
+from aws import AwsClient
+from migration.gitlab.projects import ProjectsClient
+from migration.gitlab.users import UsersClient
+from migration.gitlab.groups import GroupsClient
 from requests.exceptions import RequestException
 from re import sub
 from urllib import quote
@@ -12,18 +12,18 @@ from os import remove, chdir, getcwd
 from glob import glob
 import json
 
-class gl_importexport_client(base_class):
+class gl_importexport_client(BaseClass):
     def __init__(self):
         super(gl_importexport_client, self).__init__()
-        self.aws = self.get_aws_client()
-        self.projects = gl_projects_client()
-        self.users = gl_users_client()
-        self.groups = gl_groups_client()
+        self.aws = self.get_AwsClient()
+        self.projects = ProjectsClient()
+        self.users = UsersClient()
+        self.groups = GroupsClient()
         self.keys_map = self.get_keys()
         
-    def get_aws_client(self):
+    def get_AwsClient(self):
         if "aws" in self.config.location:
-            return aws_client()
+            return AwsClient()
         return None
     
     def get_keys(self):
@@ -82,7 +82,7 @@ class gl_importexport_client(base_class):
         }
 
         try:
-            api.generate_post_request(self.config.child_host, self.config.child_token, "projects/%d/export" % id, "&".join(upload), headers=headers)
+            response = api.generate_post_request(self.config.child_host, self.config.child_token, "projects/%d/export" % id, "&".join(upload), headers=headers)
         except RequestException:
             pass
 

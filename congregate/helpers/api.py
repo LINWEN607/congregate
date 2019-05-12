@@ -115,8 +115,8 @@ def list_all(host, token, api, params=None):
     end_at = count
 
     if get_count is not None:
-        total_work = end_at - start_at
-        total_pages = total_work / PER_PAGE
+        # total_work = end_at - start_at
+        # total_pages = total_work / PER_PAGE
         start_page = (start_at / PER_PAGE) + 1 # pages are 1-indexed
         end_page = int(math_ceil(float(end_at) / float(PER_PAGE)))
         current_page = start_page

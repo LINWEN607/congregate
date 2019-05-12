@@ -1,13 +1,21 @@
-from helpers.base_class import base_class
+from helpers.base_class import BaseClass
 from helpers import api
 from helpers.misc_utils import strip_numbers, remove_dupes
+from migration.gitlab.groups import GroupsClient
 from requests.exceptions import RequestException
 from os import path
 import json
 
-class gl_users_client(base_class):
+class UsersClient(BaseClass):
+    def __init__(self):
+        self.groups = GroupsClient()
+        super(UsersClient, self).__init__()
+
     def get_user(self, id, host, token):
         return api.generate_get_request(host, token, "users/%d" % id)
+
+    def create_user(self, host, token, data):
+        return api.generate_post_request(host, token, "users", json.dumps(data))
 
     def update_users(self, obj, new_users):
         rewritten_users = {}
@@ -68,7 +76,7 @@ class gl_users_client(base_class):
             }
             try:
                 print "Adding %s to group" % user["username"]
-                api.generate_post_request(self.config.parent_host, self.config.parent_token, "groups/%d/members" % self.config.parent_id, json.dumps(data))
+                self.groups.add_member_to_group(self.config.parent_id, self.config.parent_host, self.config.parent_token, data)
             except RequestException, e:
                 self.l.logger.error(e)
 
@@ -263,9 +271,8 @@ class gl_users_client(base_class):
                 #     user["provider"] = user["identities"][0]["provider"]
                 #     user.pop("identities")
                 # print json.dumps(user, indent=4)
-                response = api.generate_post_request(self.config.parent_host, self.config.parent_token, "users", json.dumps(user))
-                response_json = response.json()
-                print response_json
+                response = self.create_user(self.config.parent_host, self.config.parent_token, user).json()
+                print response
 
                 if response.status_code == 409:
                     self.l.logger.info("User already exists")
@@ -282,7 +289,7 @@ class gl_users_client(base_class):
                     except RequestException, e:
                         self.l.logger.info(e)
                 else:
-                    new_ids.append(response_json["id"])
+                    new_ids.append(response["id"])
             except RequestException, e:
                 self.l.logger.info(e)
 

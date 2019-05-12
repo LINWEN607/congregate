@@ -1,20 +1,32 @@
-from helpers.base_class import base_class
+from helpers.base_class import BaseClass
 from helpers import api, misc_utils
 from migration.gitlab.variables import gl_variables_client as vars_client
 from requests.exceptions import RequestException
 import json
 from os import path
 
-class gl_groups_client(base_class):
+class GroupsClient(BaseClass):
     def __init__(self):
         self.vars = vars_client()
-        super(gl_groups_client, self).__init__()
+        super(GroupsClient, self).__init__()
 
     def get_group(self, id, host, token):
         return api.generate_get_request(host, token, "groups/%d" % id)
 
     def search_for_group(self, name, host, token):
         yield api.list_all(host, token, "groups?search=%s" % name)
+
+    def create_group(self, host, token, data):
+        return api.generate_post_request(host, token, "groups", json.dumps(data))
+
+    def add_member_to_group(self, id, host, token, member):
+        return api.generate_post_request(host, token, "groups/%d/members" % id, json.dumps(member))
+
+    def get_all_group_members(self, id, host, token):
+        yield api.list_all(host, token, "groups/%s/members" % id)
+
+    def get_all_subgroups(self, id, host, token):
+        yield api.list_all(host, token, "groups/%s/subgroups" % id)
 
     def traverse_groups(self, base_groups, transient_list,  host, token, parent_group=None):
         if parent_group is not None:
@@ -27,10 +39,10 @@ class gl_groups_client(base_class):
                 group.pop("ldap_access")
             except KeyError:
                 pass
-            members = list(api.list_all(host, token, "groups/%s/members" % str(group["id"])))
+            members = list(self.get_all_group_members(host, token, str(group["id"])))
             group["members"] = members
             transient_list.append(group)
-            subgroups = list(api.list_all(host, token, "groups/%s/subgroups" % str(group["id"])))
+            subgroups = list(self.get_all_subgroups(id, host, token))
             if parent_group is not None:
                 parent_group["child_ids"].append(group["id"])
             if len(subgroups) > 0:
@@ -141,7 +153,7 @@ class gl_groups_client(base_class):
                             full_parent_namespace = group_without_id["full_parent_namespace"]
                             group_without_id.pop("full_parent_namespace")
                             self.l.logger.info("Popping parent namespace")
-                        response = api.generate_post_request(self.config.parent_host, self.config.parent_token, "groups", json.dumps(group_without_id)).json()
+                        response = self.create_group(self.config.parent_host, self.config.parent_token, group_without_id).json()
                         if isinstance(response, dict):
                             if response.get("message", None) is not None:
                                 if "Failed to save group" in response["message"]:
@@ -270,7 +282,7 @@ class gl_groups_client(base_class):
             else:
                 parent_group = group_dict.get(g["parent_id"])
                 if parent_group is not None:
-                    parent_group_resp = self.get_group(self.config.parent_id, self.config.parent_host, self.config.parent_token).json()
+                    parent_group_resp = self.get_group(parent_group["id"], self.config.child_host, self.config.child_token).json()
                     g["full_parent_namespace"] = "%s/%s" % (parent_group_resp["full_path"], parent_group["full_path"])
                     g["parent_namespace"] = parent_group["path"]
                     if parent_group.get("parent_id", None) is not None:

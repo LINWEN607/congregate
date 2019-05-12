@@ -90,9 +90,9 @@ if __name__ == '__main__':
     else:
         # try:
             # from migration import users, groups, projects
-        from migration.gitlab.users import gl_users_client
-        from migration.gitlab.groups import gl_groups_client
-        from migration.gitlab.projects import gl_projects_client
+        from migration.gitlab.users import UsersClient
+        from migration.gitlab.groups import GroupsClient
+        from migration.gitlab.projects import ProjectsClient
         from migration.gitlab.variables import gl_variables_client
         from migration.mirror import mirror_client
         from migration import migrate
@@ -106,9 +106,9 @@ if __name__ == '__main__':
                 else:
                     migrate.migrate()
             elif arguments["ui"]:
-                os.environ["FLASK_APP"] = "%s/congregate/ui" % app_path
-                os.chdir(app_path)
-                os.environ["PYTHONPATH"] = app_path
+                # os.environ["FLASK_APP"] = "%s/congregate/ui:app" % app_path
+                os.chdir(app_path + "/congregate")
+                # os.environ["PYTHONPATH"] = app_path
                 run_ui = "gunicorn -k gevent -w 4 ui:app --bind=0.0.0.0:8005"
                 subprocess.call(run_ui.split(" "))
             elif arguments["enable_mirroring"]:
@@ -117,9 +117,9 @@ if __name__ == '__main__':
             else:
                 print "External migration only currently supports the migrate and ui commands to generate shell projects with mirrors."
         else:
-            users = gl_users_client()
-            groups = gl_groups_client()
-            projects = gl_projects_client()
+            users = UsersClient()
+            groups = GroupsClient()
+            projects = ProjectsClient()
             variables = gl_variables_client()
             if arguments["list"]:
                 list_projects.list_projects()
@@ -133,9 +133,9 @@ if __name__ == '__main__':
             if arguments["do_all"]:
                 do_all.do_all()
             if arguments["ui"]:
-                os.environ["FLASK_APP"] = "%s/congregate/ui" % app_path
-                os.chdir(app_path)
-                os.environ["PYTHONPATH"] = app_path
+                # os.environ["FLASK_APP"] = "%s/congregate/ui" % app_path
+                os.chdir(app_path + "/congregate")
+                # os.environ["PYTHONPATH"] = app_path
                 run_ui = "gunicorn -k gevent -w 4 ui:app --bind=0.0.0.0:8005"
                 subprocess.call(run_ui.split(" "))
             if arguments["update-staged-user-info"]:

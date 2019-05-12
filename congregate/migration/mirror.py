@@ -1,9 +1,9 @@
-from helpers.base_class import base_class
+from helpers.base_class import BaseClass
 from helpers import api
 from requests.exceptions import RequestException
 import json
 
-class mirror_client(base_class):
+class mirror_client(BaseClass):
 
     def remove_mirror(self, project_id):
         """

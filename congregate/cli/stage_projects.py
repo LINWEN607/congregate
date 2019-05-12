@@ -11,9 +11,9 @@ import subprocess
 import re
 from helpers import misc_utils
 from helpers import base_module as b
-from migration.gitlab.projects import gl_projects_client
+from migration.gitlab.projects import ProjectsClient
 
-proj_client = gl_projects_client()
+proj_client = ProjectsClient()
 
 def stage_projects(projects_to_stage):
     staging = []

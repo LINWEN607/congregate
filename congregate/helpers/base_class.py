@@ -10,7 +10,7 @@ from helpers import conf
 from helpers import logger as log
 
 
-class base_class(object):
+class BaseClass(object):
     def __init__(self):
         self.config = conf.ig()
         self.l = log.congregate_logger(__name__)

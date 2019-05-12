@@ -21,20 +21,20 @@ import psycopg2
 
 from helpers import api, misc_utils
 from helpers import logger as log
-from aws import aws_client
+from aws import AwsClient
 from cli.stage_projects import stage_projects
 from helpers import base_module as b
 from migration.gitlab.importexport import gl_importexport_client as ie_client
 from migration.gitlab.variables import gl_variables_client as vars_client
-from migration.gitlab.users import gl_users_client as users_client
-from migration.gitlab.groups import gl_groups_client as groups_client 
-from migration.gitlab.projects import gl_projects_client as proj_client
-from migration.gitlab.pushrules import gl_pushrules_client as pushrules_client
+from migration.gitlab.users import UsersClient as users_client
+from migration.gitlab.groups import GroupsClient as groups_client 
+from migration.gitlab.projects import ProjectsClient as proj_client
+from migration.gitlab.pushrules import PushRulesClient as pushrules_client
 from migration.mirror import mirror_client
 
 from migration.bitbucket import client as bitbucket
 
-aws = aws_client()
+aws = AwsClient()
 ie = ie_client()
 mirror = mirror_client()
 variables = vars_client()
@@ -68,6 +68,7 @@ def migrate_project_info():
 
                     try:
                         api.generate_post_request(b.config.parent_host, b.config.parent_token, "projects/%d/members" % new_project[0]["id"], json.dumps(new_member))
+
                     except requests.exceptions.RequestException, e:
                         b.l.logger.error(e)
                         b.l.logger.error("Member might already exist. Attempting to update access level")
@@ -90,22 +91,21 @@ def migrate_single_project_info(project, id):
     name = project["name"]
     b.l.logger.info("Searching for %s" % name)
     if id is None:
-        new_project = api.search(b.config.parent_host, b.config.parent_token, 'projects', project['name'])
-        b.l.logger.info(new_project)
-        if isinstance(new_project, dict):
-            if len(new_project) > 0:
-                if new_project["name"] == name and new_project["namespace"]["name"] == project["namespace"]:
-                    id = new_project["id"]
-        elif isinstance(new_project, list):
-            if len(new_project) > 0:
-                if new_project[0]["name"] == name and new_project[0]["namespace"]["name"] == project["namespace"]:
-                    id = new_project[0]["id"]
+        for new_project in projects.search_for_project(b.config.parent_host, b.config.parent_token, project['name']):
+            if isinstance(new_project, dict):
+                if len(new_project) > 0:
+                    if new_project["name"] == name and new_project["namespace"]["name"] == project["namespace"]:
+                        id = new_project["id"]
+            elif isinstance(new_project, list):
+                if len(new_project) > 0:
+                    if new_project[0]["name"] == name and new_project[0]["namespace"]["name"] == project["namespace"]:
+                        id = new_project[0]["id"]
     
     projects.add_members(members, id)
 
     b.l.logger.info("Migrating push rules for %s" % name)
-    for push_rule in pushrules.get_push_rules(project["id"], b.config.child_host, b.config.child_token):
-        pushrules.add_push_rule(id, b.config.parent_host, b.config.parent_token, push_rule)
+    push_rule = pushrules.get_push_rules(project["id"], b.config.child_host, b.config.child_token)
+    pushrules.add_push_rule(id, b.config.parent_host, b.config.parent_token, push_rule)
     
     b.l.logger.info("Migrating merge request approvers for %s" % name)
     # for approver in projects.get_approvals(project["id"], b.config.child_host, b.config.child_token):
@@ -116,9 +116,6 @@ def migrate_single_project_info(project, id):
         "disable_overriding_approvers_per_merge_request": approval_data["disable_overriding_approvers_per_merge_request"]
     }
     projects.set_approval_configuration(id, b.config.parent_host, b.config.parent_token, approval_configuration)
-
-
-    
 
 def migrate_given_export(project_json):
     path = "%s/%s" % (project_json["namespace"], project_json["name"])

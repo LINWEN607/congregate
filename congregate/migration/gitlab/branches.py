@@ -1,11 +1,11 @@
-from helpers.base_class import base_class
+from helpers.base_class import BaseClass
 from helpers import api
 from helpers.misc_utils import strip_numbers, remove_dupes
 from requests.exceptions import RequestException
 from os import path
 import json
 
-class gl_branches_client(base_class):
+class BranchesClient(BaseClass):
     def get_branches(self, id, host, token):
         yield api.list_all(host, token, "projects/%d/repository/branches" % id)
 

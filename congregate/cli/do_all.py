@@ -1,13 +1,13 @@
 import os
 from cli import config, stage_projects
-from migration.gitlab.users import gl_users_client 
-from migration.gitlab.groups import gl_groups_client
+from migration.gitlab.users import UsersClient 
+from migration.gitlab.groups import GroupsClient
 from migration import migrate
 from helpers.base_module import app_path
 
 def do_all():
-    users = gl_users_client()
-    groups = gl_groups_client()
+    users = UsersClient()
+    groups = GroupsClient()
     if not os.path.isfile("%s/data/config.json" % app_path):
         config.config()
     if not os.path.isfile("%s/data/users.json" % app_path):

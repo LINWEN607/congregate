@@ -4,12 +4,12 @@ import subprocess, os
 from helpers.base_module import app_path
 from cli import stage_projects
 from cli.config import update_config
-from migration.gitlab.groups import gl_groups_client
-from migration.gitlab.users import gl_users_client
+from migration.gitlab.groups import GroupsClient
+from migration.gitlab.users import UsersClient
 from migration.migrate import migrate
 
-grp = gl_groups_client()
-usr = gl_users_client()
+grp = GroupsClient()
+usr = UsersClient()
 
 @app.route('/log')
 def generate_stream():
