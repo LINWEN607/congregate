@@ -12,6 +12,7 @@ stages:
     - apt-get install -y jq
     - mkdir data
     - echo ${Dummy_config} | jq . > data/config.json
+    - cat $CONGREGATE_PATH/data/config.json
     - pip install pipenv
     - pipenv install
 
@@ -23,13 +24,8 @@ run tests:
 
 update readme:
   stage: update-info
+  <<: *install_test_dependencies
   script:
-    - apt-get update
-    - apt-get install -y jq
-    - mkdir data
-    - echo ${Dummy_config} | jq . > data/config.json
-    - pip install pipenv
-    - pipenv install
     - pipenv run python update-readme.py
   only:
     refs:
