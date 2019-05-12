@@ -20,6 +20,7 @@ run tests:
   stage: test
   <<: *install_test_dependencies
   script:
+    - cat $CONGREGATE_PATH/data/config.json
     - pipenv run python -m unittest discover congregate/
 
 update readme:
