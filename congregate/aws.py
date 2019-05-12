@@ -22,7 +22,7 @@ class AwsClient(BaseClass):
                 signature_version='s3v4'),
             region_name=self.config.s3_region)
 
-    def import_from_s3(self, name, namespace, presigned_url, filename):
+    def import_from_s3(self, name, namespace, presigned_url, filename, override_params=None):
         with requests.get(presigned_url, stream=True) as r:
             if r.headers["content-type"] != "application/xml":
                 url = '%s/api/v4/projects/import' % (self.config.parent_host)
@@ -30,6 +30,8 @@ class AwsClient(BaseClass):
                     "path": name.replace(" ", "-"),
                     "namespace": namespace
                 }
+                if override_params is not None:
+                    data["override_params"] = override_params
                 headers = {
                     'Private-Token': self.config.parent_token
                 }
