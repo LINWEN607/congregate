@@ -11,3 +11,48 @@ class MockUsersApi():
             "avatar_url": "http://localhost:3000/uploads/user/avatar/1/cd8.jpeg",
             "web_url": "http://localhost:3000/john_smith"
         }
+
+    def get_all_users_generator(self):
+        users = [
+            {
+                "id": 1,
+                "username": "john_smith",
+                "name": "John Smith",
+                "state": "active",
+                "avatar_url": "http://localhost:3000/uploads/user/avatar/1/cd8.jpeg",
+                "web_url": "http://localhost:3000/john_smith"
+            },
+            {
+                "id": 2,
+                "username": "jack_smith",
+                "name": "Jack Smith",
+                "state": "blocked",
+                "avatar_url": "http://gravatar.com/../e32131cd8.jpeg",
+                "web_url": "http://localhost:3000/jack_smith"
+            }
+        ]
+        yield users
+
+    def get_all_users_list(self):
+        return [
+            {
+                "id": 1,
+                "username": "raymond_smith",
+                "name": "Raymond Smith",
+                "state": "active",
+                "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon",
+                "web_url": "http://192.168.1.8:3000/root",
+                "expires_at": "2012-10-22T14:13:35Z",
+                "access_level": 30
+            },
+            {
+                "id": 2,
+                "username": "john_doe",
+                "name": "John Doe",
+                "state": "active",
+                "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon",
+                "web_url": "http://192.168.1.8:3000/root",
+                "expires_at": "2012-10-22T14:13:35Z",
+                "access_level": 30
+            }
+        ]

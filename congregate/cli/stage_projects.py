@@ -14,8 +14,13 @@ from helpers import base_module as b
 from migration.gitlab.projects import ProjectsClient
 
 proj_client = ProjectsClient()
+existing_parent_ids = []
 
 def stage_projects(projects_to_stage):
+    staged_projects, staged_users, staged_groups = build_staging_data(projects_to_stage)
+    write_staging_files(staged_projects, staged_users, staged_groups)
+
+def build_staging_data(projects_to_stage):
     staging = []
     staged_users = []
     staged_groups = []
@@ -25,14 +30,9 @@ def stage_projects(projects_to_stage):
         subprocess.call(cmd.split())
 
     # Loading projects information
-    with open('%s/data/project_json.json' % b.app_path) as f:
-        projects = json.load(f)
-
-    with open("%s/data/groups.json" % b.app_path, "r") as f:
-        groups = json.load(f)
-
-    with open("%s/data/users.json" % b.app_path, "r") as f:
-                users = json.load(f)
+    projects = open_projects_file()
+    groups = open_groups_file()
+    users = open_users_file()
 
     # Rewriting projects to retrieve objects by ID more efficiently
     rewritten_projects = {}
@@ -46,7 +46,6 @@ def stage_projects(projects_to_stage):
         new_obj = groups[i]
         group_name = groups[i]["id"]
         rewritten_groups[group_name] = new_obj
-    existing_parent_ids = []
 
     rewritten_users = {}
     for i in range(len(users)):
@@ -81,9 +80,7 @@ def stage_projects(projects_to_stage):
             start = int(match.split("-")[0])
             if start != 0:
                 start -= 1
-            end = int(match.split("-")[1]) - 1
-            if end > len(projects):
-                end = len(projects) - 1
+            end = int(match.split("-")[1])
             for i in range(start, end):
                 obj = {}
                 obj["id"] = projects[i]["id"]
@@ -170,16 +167,34 @@ def stage_projects(projects_to_stage):
     else:
         staging = []
 
+    return misc_utils.remove_dupes(staging), misc_utils.remove_dupes(staged_users), misc_utils.remove_dupes(staged_groups)
+
+def open_projects_file():
+    with open('%s/data/project_json.json' % b.app_path, "r") as f:
+        projects = json.load(f)
+    return projects
+
+def open_groups_file():
+    with open("%s/data/groups.json" % b.app_path, "r") as f:
+        groups = json.load(f)
+    return groups
+
+def open_users_file():
+    with open("%s/data/users.json" % b.app_path, "r") as f:
+        users = json.load(f)
+    return users
+
+def write_staging_files(staging, staged_users, staged_groups):
     for group in staged_groups:
         if group["parent_id"] not in existing_parent_ids:
             group["parent_id"] = b.config.parent_id
     if (len(staging) > 0):
         with open("%s/data/stage.json" % b.app_path, "wb") as f:
-            f.write(json.dumps(misc_utils.remove_dupes(staging), indent=4))
+            f.write(json.dumps(staging, indent=4))
         with open("%s/data/staged_users.json" % b.app_path, "wb") as f:
-            f.write(json.dumps(misc_utils.remove_dupes(staged_users), indent=4))
+            f.write(json.dumps(staged_users, indent=4))
         with open("%s/data/staged_groups.json" % b.app_path, "wb") as f:
-            f.write(json.dumps(misc_utils.remove_dupes(staged_groups), indent=4))
+            f.write(json.dumps(staged_groups, indent=4))
     else:
         with open("%s/data/stage.json" % b.app_path, "wb") as f:
             f.write("[]")

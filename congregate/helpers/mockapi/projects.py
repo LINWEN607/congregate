@@ -158,6 +158,89 @@ class MockProjectsApi():
                         "events": "http://example.com/api/v4/projects/1/events",
                         "members": "http://example.com/api/v4/projects/1/members"
                         }
+                    },
+                    {
+                        "id": 80,
+                        "description": None,
+                        "default_branch": "master",
+                        "visibility": "private",
+                        "ssh_url_to_repo": "git@example.com:brightbox/puppet.git",
+                        "http_url_to_repo": "http://example.com/brightbox/puppet.git",
+                        "web_url": "http://example.com/brightbox/puppet",
+                        "readme_url": "http://example.com/brightbox/puppet/blob/master/README.md",
+                        "tag_list": [
+                        "example",
+                        "puppet"
+                        ],
+                        "owner": {
+                        "id": 4,
+                        "name": "Brightbox",
+                        "created_at": "2013-09-30T13:46:02Z"
+                        },
+                        "name": "Puppet",
+                        "name_with_namespace": "Brightbox / Puppet",
+                        "path": "puppet",
+                        "path_with_namespace": "brightbox/puppet",
+                        "issues_enabled": True,
+                        "open_issues_count": 1,
+                        "merge_requests_enabled": True,
+                        "jobs_enabled": True,
+                        "wiki_enabled": True,
+                        "snippets_enabled": False,
+                        "resolve_outdated_diff_discussions": False,
+                        "container_registry_enabled": False,
+                        "created_at": "2013-09-30T13:46:02Z",
+                        "last_activity_at": "2013-09-30T13:46:02Z",
+                        "creator_id": 3,
+                        "namespace": {
+                        "id": 4,
+                        "name": "Brightbox",
+                        "path": "brightbox",
+                        "kind": "group",
+                        "full_path": "brightbox"
+                        },
+                        "import_status": "none",
+                        "import_error": None,
+                        "permissions": {
+                        "project_access": {
+                            "access_level": 10,
+                            "notification_level": 3
+                        },
+                        "group_access": {
+                            "access_level": 50,
+                            "notification_level": 3
+                        }
+                        },
+                        "archived": False,
+                        "avatar_url": None,
+                        "shared_runners_enabled": True,
+                        "forks_count": 0,
+                        "star_count": 0,
+                        "runners_token": "b8547b1dc37721d05889db52fa2f02",
+                        "public_jobs": True,
+                        "shared_with_groups": [],
+                        "only_allow_merge_if_pipeline_succeeds": False,
+                        "only_allow_merge_if_all_discussions_are_resolved": False,
+                        "request_access_enabled": False,
+                        "merge_method": "merge",
+                        "approvals_before_merge": 0,
+                        "statistics": {
+                        "commit_count": 12,
+                        "storage_size": 2066080,
+                        "repository_size": 2066080,
+                        "lfs_objects_size": 0,
+                        "job_artifacts_size": 0,
+                        "packages_size": 0
+                        },
+                        "_links": {
+                        "self": "http://example.com/api/v4/projects",
+                        "issues": "http://example.com/api/v4/projects/1/issues",
+                        "merge_requests": "http://example.com/api/v4/projects/1/merge_requests",
+                        "repo_branches": "http://example.com/api/v4/projects/1/repository_branches",
+                        "labels": "http://example.com/api/v4/projects/1/labels",
+                        "events": "http://example.com/api/v4/projects/1/events",
+                        "members": "http://example.com/api/v4/projects/1/members"
+                        }
                     }
         ]
 

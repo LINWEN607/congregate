@@ -22,6 +22,9 @@ class GroupsClient(BaseClass):
     def add_member_to_group(self, id, host, token, member):
         return api.generate_post_request(host, token, "groups/%d/members" % id, json.dumps(member))
 
+    def get_all_groups(self, host, token):
+        yield api.list_all(host, token, "groups")
+
     def get_all_group_members(self, id, host, token):
         yield api.list_all(host, token, "groups/%s/members" % id)
 
@@ -53,9 +56,8 @@ class GroupsClient(BaseClass):
                 self.l.logger.info("No subgroups found")
             parent_group = None
                 
-
     def retrieve_group_info(self, quiet=False):
-        groups = list(api.list_all(self.config.child_host, self.config.child_token, "groups"))
+        groups = list(self.get_all_groups(self.config.child_host, self.config.child_token))
         transient_list = []
 
         self.traverse_groups(groups, transient_list, self.config.child_host, self.config.child_token)
