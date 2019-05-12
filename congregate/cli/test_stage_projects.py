@@ -197,8 +197,6 @@ class ConfigTests(unittest.TestCase):
         ]
 
         self.assertEqual(expected_projects, staged_projects)
-        print expected_groups
-        print json.dumps(remove_dupes(staged_groups), indent=4)
         self.assertEqual(expected_groups, staged_groups)
         self.assertEqual(expected_users, staged_users)
 
