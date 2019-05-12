@@ -6,8 +6,8 @@ stages:
   - build
   - release
 
-.install_dependencies: &install_dependencies
-  script:
+.install_test_dependencies: &install_test_dependencies
+  before-script:
     - apt-get update
     - apt-get install -y jq
     - mkdir data
@@ -17,7 +17,7 @@ stages:
 
 run tests:
   stage: test
-  <<: *install_dependencies
+  <<: *install_test_dependencies
   script:
     - pipenv run python -m unittest discover congregate/
 
