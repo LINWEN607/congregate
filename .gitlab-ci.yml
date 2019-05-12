@@ -7,7 +7,7 @@ stages:
   - release
 
 .install_test_dependencies: &install_test_dependencies
-  before-script:
+  before_script:
     - apt-get update
     - apt-get install -y jq
     - mkdir data
