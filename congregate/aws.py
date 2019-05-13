@@ -12,6 +12,7 @@ from io import BytesIO
 import boto3
 from botocore.client import Config
 from helpers.base_class import BaseClass
+import json
 
 class AwsClient(BaseClass):
     def __init__(self):
@@ -30,22 +31,23 @@ class AwsClient(BaseClass):
                     "path": name.replace(" ", "-"),
                     "namespace": namespace
                 }
-                if override_params is not None:
-                    data["override_params"] = override_params
                 headers = {
                     'Private-Token': self.config.parent_token
                 }
-
-                r = requests.post(url, headers=headers, data=data, files={
+                if override_params is not None:
+                    r = requests.post(url, headers=headers, params="&".join(override_params), data=data, files={
+                                  'file': (filename, BytesIO(r.content))})
+                else:
+                    r = requests.post(url, headers=headers, data=data, files={
                                   'file': (filename, BytesIO(r.content))})
                 return r.text
-            self.l.logger.error(r.text)
+            self.log.error(r.text)
             return None
 
     def copy_from_s3_and_import(self, name, namespace, filename):
         file_path = "%s/downloads/%s" % (self.config.filesystem_path, filename)
         if not path.isfile(file_path):
-            self.l.logger.info("Copying %s to local machine" % filename)
+            self.log.info("Copying %s to local machine" % filename)
             cmd = "aws+s3+cp+s3://%s/%s+%s" % (
                 self.config.bucket_name, filename, file_path)
             subprocess.call(cmd.split("+"))
@@ -60,7 +62,7 @@ class AwsClient(BaseClass):
         }
         r = None
         with open(file_path, 'r') as f:
-            self.l.logger.info("Importing %s" % name)
+            self.log.info("Importing %s" % name)
             r = requests.post(
                 url,
                 headers=headers,

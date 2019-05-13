@@ -8,9 +8,9 @@ from . import controllers
 import os
 import logging
 
-from helpers import logger as log
+from helpers.logger import myLogger
 from helpers.base_module import app_path
 
-l = log.congregate_logger('werkzeug')
+log = myLogger('werkzeug')
 
-l.logger.setLevel(logging.ERROR)
+log.setLevel(logging.ERROR)

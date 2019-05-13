@@ -25,11 +25,11 @@ class UsersClient(BaseClass):
             rewritten_users[username] = new_obj
         
         for i in range(len(obj)):
-            self.l.logger.info("Rewriting users for %s" % obj[i]["name"])
+            self.log.info("Rewriting users for %s" % obj[i]["name"])
             members = obj[i]["members"]
             if isinstance(members, list):
                 for member in members:
-                    self.l.logger.info(member)
+                    self.log.info(member)
                     username = strip_numbers(member["username"]).lower()
                     if rewritten_users.get(member["username"], None) is not None:
                         member["id"] = rewritten_users[username]["id"]
@@ -78,7 +78,7 @@ class UsersClient(BaseClass):
                 print "Adding %s to group" % user["username"]
                 self.groups.add_member_to_group(self.config.parent_id, self.config.parent_host, self.config.parent_token, data)
             except RequestException, e:
-                self.l.logger.error(e)
+                self.log.error(e)
 
     def remove_users_from_parent_group(self):
         count = 0
@@ -96,11 +96,11 @@ class UsersClient(BaseClass):
         all_users = list(api.list_all(self.config.parent_host, self.config.parent_token, "groups/%d/members" % self.config.parent_id))
         for user in all_users:
             if user["access_level"] == 20:
-                self.l.logger.info("Lowering %s's access level to guest" % user["username"])
+                self.log.info("Lowering %s's access level to guest" % user["username"])
                 response = api.generate_put_request(self.config.parent_host, self.config.parent_token, "groups/%d/members/%d?access_level=10" % (self.config.parent_id, user["id"]), data=None)
                 print response
             else:
-                self.l.logger.info("Not changing %s's access level" % user["username"])
+                self.log.info("Not changing %s's access level" % user["username"])
 
     def remove_blocked_users(self):
         count = 0
@@ -256,7 +256,7 @@ class UsersClient(BaseClass):
             json.dump(users, f, indent=4)
         
         if not quiet:
-            self.l.logger.info("Retrieved %d users. Check users.json to see all retrieved groups" % len(users))
+            self.log.info("Retrieved %d users. Check users.json to see all retrieved groups" % len(users))
 
     def migrate_user_info(self):
         new_ids = []
@@ -271,14 +271,14 @@ class UsersClient(BaseClass):
                 #     user["provider"] = user["identities"][0]["provider"]
                 #     user.pop("identities")
                 # print json.dumps(user, indent=4)
-                response = self.create_user(self.config.parent_host, self.config.parent_token, user).json()
+                response = self.create_user(self.config.parent_host, self.config.parent_token, user)
                 print response
 
                 if response.status_code == 409:
-                    self.l.logger.info("User already exists")
+                    self.log.info("User already exists")
 
                     try:
-                        self.l.logger.info("Appending %s to new_users.json" % user["email"])
+                        self.log.info("Appending %s to new_users.json" % user["email"])
                         response = api.search(self.config.parent_host, self.config.parent_token, 'users', user['email'])
                         if len(response) > 0:
                             if isinstance(response, list):
@@ -287,11 +287,11 @@ class UsersClient(BaseClass):
                                 if response.get("id", None) is not None:
                                     new_ids.append(response["id"])
                     except RequestException, e:
-                        self.l.logger.info(e)
+                        self.log.info(e)
                 else:
                     new_ids.append(response["id"])
             except RequestException, e:
-                self.l.logger.info(e)
+                self.log.info(e)
 
         return new_ids
         
@@ -304,6 +304,6 @@ class UsersClient(BaseClass):
             for u in user_file:
                 if user == u["username"]:
                     staged_users.append(u)
-                    self.l.logger.info("Staging user (%s) [%d/%d]" % (u["username"], len(staged_users), len(users)))
+                    self.log.info("Staging user (%s) [%d/%d]" % (u["username"], len(staged_users), len(users)))
         with open("%s/data/staged_users.json" % self.app_path, "w") as f:
             json.dump(remove_dupes(staged_users), f, indent=4)

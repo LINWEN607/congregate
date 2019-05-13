@@ -99,7 +99,7 @@ def build_staging_data(projects_to_stage):
                 members = []
                 for member in proj_client.get_members(int(projects[i]["id"]), b.config.child_host, b.config.child_token):
                     if member["username"] != "root":
-                        b.l.logger.info("Staging user (%s)" % member["username"])
+                        b.log.info("Staging user (%s)" % member["username"])
                         staged_users.append(rewritten_users[member["username"]])
                         members.append(member)
                 
@@ -120,7 +120,7 @@ def build_staging_data(projects_to_stage):
                                 staged_users.append(rewritten_users[member["username"]])
 
                 obj["members"] = members
-                b.l.logger.info("Staging project (%s) [%d/%d]" % (obj["name"], len(staging)+1, len(range(start, end))))
+                b.log.info("Staging project (%s) [%d/%d]" % (obj["name"], len(staging)+1, len(range(start, end))))
                 staging.append(obj)
         else:
             for i in range(0, len(projects_to_stage)):
@@ -150,7 +150,7 @@ def build_staging_data(projects_to_stage):
                 members = []
                 for member in proj_client.get_members(int(project["id"]), b.config.child_host, b.config.child_token):
                     if member["username"] != "root":
-                        b.l.logger.info("Staging user (%s)" % member["username"])
+                        b.log.info("Staging user (%s)" % member["username"])
                         staged_users.append(rewritten_users[member["username"]])
                         members.append(member)
                 
@@ -171,7 +171,7 @@ def build_staging_data(projects_to_stage):
                                 staged_users.append(rewritten_users[member["username"]])
 
                 obj["members"] = members
-                b.l.logger.info("Staging project (%s) [%d/%d]" % (obj["name"], len(staging), len(projects_to_stage)))
+                b.log.info("Staging project (%s) [%d/%d]" % (obj["name"], len(staging), len(projects_to_stage)))
                 staging.append(obj)
     else:
         staging = []

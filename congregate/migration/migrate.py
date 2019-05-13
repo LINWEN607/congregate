@@ -53,7 +53,7 @@ def migrate_project_info():
     for project in projects:
         members = project["members"]
         project.pop("members")
-        b.l.logger.debug("Searching for %s" % project["name"])
+        b.log.debug("Searching for %s" % project["name"])
         new_project = api.search(b.config.parent_host, b.config.parent_token, 'projects', project['name'])
         if len(new_project) > 0:
             if new_project[0]["name"] == project["name"] and new_project[0]["namespace"]["name"] == project["namespace"]:
@@ -70,16 +70,16 @@ def migrate_project_info():
                         api.generate_post_request(b.config.parent_host, b.config.parent_token, "projects/%d/members" % new_project[0]["id"], json.dumps(new_member))
 
                     except requests.exceptions.RequestException, e:
-                        b.l.logger.error(e)
-                        b.l.logger.error("Member might already exist. Attempting to update access level")
+                        b.log.error(e)
+                        b.log.error("Member might already exist. Attempting to update access level")
                         try:
                             api.generate_put_request(b.config.parent_host, b.config.parent_token, "projects/%d/members/%d?access_level=%d" % (new_project[0]["id"], member["id"], member["access_level"]), data=None)
                         except requests.exceptions.RequestException, e:
-                            b.l.logger.error(e)
-                            b.l.logger.error("Attempting to update existing member failed")
+                            b.log.error(e)
+                            b.log.error("Attempting to update existing member failed")
 
                 if not root_user_present:
-                    b.l.logger.info("removing root user from project")
+                    b.log.info("removing root user from project")
                     api.generate_delete_request(b.config.parent_host, b.config.parent_token, "projects/%d/members/%d" % (new_project[0]["id"], b.config.parent_user_id))
 
 def migrate_single_project_info(project, id):
@@ -89,7 +89,7 @@ def migrate_single_project_info(project, id):
     members = project["members"]
     project.pop("members")
     name = project["name"]
-    b.l.logger.info("Searching for %s" % name)
+    b.log.info("Searching for %s" % name)
     if id is None:
         for new_project in projects.search_for_project(b.config.parent_host, b.config.parent_token, project['name']):
             if isinstance(new_project, dict):
@@ -105,10 +105,10 @@ def migrate_single_project_info(project, id):
 
     push_rule = pushrules.get_push_rules(project["id"], b.config.child_host, b.config.child_token).json()
     if len(push_rule) > 0:
-        b.l.logger.info("Migrating push rules for %s" % name)
+        b.log.info("Migrating push rules for %s" % name)
         pushrules.add_push_rule(id, b.config.parent_host, b.config.parent_token, push_rule)
     
-    b.l.logger.info("Migrating merge request approvers for %s" % name)
+    b.log.info("Migrating merge request approvers for %s" % name)
     # for approver in projects.get_approvals(project["id"], b.config.child_host, b.config.child_token):
     approval_data = projects.get_approvals(project["id"], b.config.child_host, b.config.child_token)
     approval_configuration = {
@@ -125,49 +125,49 @@ def migrate_given_export(project_json):
     }
     if isinstance(project_json, str):
         project_json = json.loads(project_json)
-    b.l.logger.debug("Searching for existing %s" % project_json["name"])
+    b.log.debug("Searching for existing %s" % project_json["name"])
     project_exists = False
     project_id = None
     try:
         for proj in projects.search_for_project(b.config.parent_host, b.config.parent_token, project_json['name']):
             if proj["name"] == project_json["name"] and project_json["namespace"] in proj["namespace"]["path"]:
-                b.l.logger.info("Project already exists. Skipping %s" % project_json["name"])
+                b.log.info("Project already exists. Skipping %s" % project_json["name"])
                 project_exists = True
                 project_id = proj["id"]
                 break
         if project_id:
             import_check = ie.get_import_status(b.config.parent_host, b.config.parent_token, project_id).json()
             if import_check["import_status"] == "finished":
-                b.l.logger.info("%s already imported" % project_json["name"])
+                b.log.info("%s already imported" % project_json["name"])
             elif import_check["import_status"] == "scheduled":
-                b.l.logger.info("%s import already scheduled" % project_json["name"])
+                b.log.info("%s import already scheduled" % project_json["name"])
             elif import_check["import_status"] == "started":
-                b.l.logger.info("%s import already started" % project_json["name"])
+                b.log.info("%s import already started" % project_json["name"])
             elif import_check["import_status"] == "failed":
-                b.l.logger.info("%s import failed" % project_json["name"])
+                b.log.info("%s import failed" % project_json["name"])
             elif import_check["import_status"] == "none":
-                b.l.logger.info("%s import not found" % project_json["name"])
+                b.log.info("%s import not found" % project_json["name"])
         if not project_exists:
-            b.l.logger.info("Importing %s" % project_json["name"])
+            b.log.info("Importing %s" % project_json["name"])
             import_id = ie.import_project(project_json)
-            b.l.logger.info(import_id)
+            b.log.info(import_id)
             if import_id is not None:
-                b.l.logger.info("Unarchiving project")
+                b.log.info("Unarchiving project")
                 projects.unarchive_project(b.config.child_host, b.config.child_token, project_json["id"])
-                b.l.logger.info("Migrating variables")
+                b.log.info("Migrating variables")
                 variables.migrate_variables(import_id, project_json["id"], "project")
-                b.l.logger.info("Migrating project info")
+                b.log.info("Migrating project info")
                 migrate_single_project_info(project_json, import_id)
-                # b.l.logger.info("Archiving project")
+                # b.log.info("Archiving project")
                 # projects.archive_project(b.config.child_host, b.config.child_token, project_json["id"])
                 results[path] = True
     except requests.exceptions.RequestException, e:
-        b.l.logger.error(e)
+        b.log.error(e)
     except KeyError, e:
-        b.l.logger.error(e)
+        b.log.error(e)
         raise KeyError("Something broke in migrate_given_export")
     except OverflowError, e:
-        b.l.logger.error(e)
+        b.log.error(e)
     return results
         
 
@@ -196,7 +196,7 @@ def migrate(threads=None):
         with open("%s/data/staged_groups.json" % b.app_path, "r") as f:
             groups_file = json.load(f)
 
-        b.l.logger.info("Migrating user info")
+        b.log.info("Migrating user info")
         new_users = users.migrate_user_info()
 
         with open("%s/data/new_user_ids.txt" % b.app_path, "w") as f:
@@ -209,45 +209,45 @@ def migrate(threads=None):
             users.update_user_info(new_users, overwrite=False)
         
         if len(groups_file) > 0:
-            b.l.logger.info("Migrating group info")
+            b.log.info("Migrating group info")
             groups.migrate_group_info()
         else:
-            b.l.logger.info("No groups to migrate")
+            b.log.info("No groups to migrate")
 
         if len(files) > 0:
-            b.l.logger.info("Migrating project info")
+            b.log.info("Migrating project info")
             pool = ThreadPool(b.config.threads)
             results = pool.map(handle_migrating_file, files)
             pool.close()
             pool.join()
 
-            b.l.logger.info("Importing projects")
+            b.log.info("Importing projects")
             import_pool = ThreadPool(b.config.threads)
             results = import_pool.map(migrate_given_export, files)
-            b.l.logger.info("### Results ###")
+            b.log.info("### Results ###")
             print json.dumps(results, indent=4)
             import_pool.close()
             import_pool.join()
 
             migrate_project_info()
         else:
-            b.l.logger.info("No projects to migrate")
+            b.log.info("No projects to migrate")
 
 def kick_off_import():
     with open("%s/data/stage.json" % b.app_path, "r") as f:
         files = json.load(f)
     if len(files) > 0:
-        b.l.logger.info("Importing projects")
+        b.log.info("Importing projects")
         pool = ThreadPool(b.config.threads)
         results = pool.map(migrate_given_export, files)
-        b.l.logger.info("### Results ###")
+        b.log.info("### Results ###")
         print json.dumps(results, indent=4)
         pool.close()
         pool.join()
 
         #migrate_project_info()
     else:
-        b.l.logger.info("No projects to migrate")
+        b.log.info("No projects to migrate")
 
 def handle_migrating_file(f):
     name = f["name"]
@@ -267,7 +267,7 @@ def handle_migrating_file(f):
             ie.export_import_thru_fs_aws(id, name, namespace)
 
         elif (b.config.location).lower() == "aws":
-            b.l.logger.info("Exporting %s to S3" % name)
+            b.log.info("Exporting %s to S3" % name)
             exported = ie.export_import_thru_aws(id, name, namespace)
             if exported:
                 #import_id = import_project(project_json)
@@ -276,7 +276,7 @@ def handle_migrating_file(f):
                 #    migrate_single_project_info(project_json)
                 migrate_given_export(f)
     except IOError, e:
-        b.l.logger.error(e)
+        b.log.error(e)
 
 def find_unimported_projects():
     unimported_projects = []
@@ -285,7 +285,7 @@ def find_unimported_projects():
     if len(files) > 0:
         for project_json in files:
             try:
-                b.l.logger.debug("Searching for existing %s" % project_json["name"])
+                b.log.debug("Searching for existing %s" % project_json["name"])
                 project_exists = False
                 for proj in projects.search_for_project(b.config.parent_host, b.config.parent_token, project_json['name']):
                     if proj["name"] == project_json["name"]:
@@ -293,10 +293,10 @@ def find_unimported_projects():
                             project_exists = True
                             break
                 if not project_exists:
-                    b.l.logger.info("Recording %s" % project_json["name"])
+                    b.log.info("Recording %s" % project_json["name"])
                     unimported_projects.append("%s/%s" % (project_json["namespace"], project_json["name"]))
             except IOError, e:
-                b.l.logger.error(e)
+                b.log.error(e)
 
     if len(unimported_projects) > 0:
         with open("%s/data/unimported_projects.txt" % b.app_path, "w") as f:
@@ -322,7 +322,7 @@ def get_new_ids():
     if len(files) > 0:
         for project_json in files:
             try:
-                b.l.logger.debug("Searching for existing %s" % project_json["name"])
+                b.log.debug("Searching for existing %s" % project_json["name"])
                 for proj in projects.search_for_project(b.config.parent_host, b.config.parent_token, project_json['name']):
                     if proj["name"] == project_json["name"]:
 
@@ -331,11 +331,11 @@ def get_new_ids():
                             print proj["namespace"]["name"]
                             if project_json["namespace"].lower() == proj["namespace"]["name"].lower():
                                 print "adding %s/%s" % (project_json["namespace"], project_json["name"])
-                                #b.l.logger.info("Migrating variables for %s" % proj["name"])
+                                #b.log.info("Migrating variables for %s" % proj["name"])
                                 ids.append(proj["id"])
                                 break
             except IOError, e:
-                b.l.logger.error(e)
+                b.log.error(e)
         return ids
 
 def enable_mirror():
@@ -469,13 +469,13 @@ def find_empty_repos():
     for project in api.list_all(b.config.parent_host, b.config.parent_token, "projects?statistics=true"):
         if project.get("statistics", None) is not None:
             if project["statistics"]["repository_size"] == 0:
-                b.l.logger.info("Empty repo found")
+                b.log.info("Empty repo found")
                 for proj in api.list_all(b.config.child_host, b.config.child_token, "projects?statistics=true"):
                     if proj["name"] == project["name"] and project["namespace"]["path"] in proj["namespace"]["path"]:
-                        b.l.logger.info("Found project")
+                        b.log.info("Found project")
                         if proj.get("statistics", None) is not None:
                             if proj["statistics"]["repository_size"] == 0:
-                                b.l.logger.info("Project is empty in source instance. Ignoring")
+                                b.log.info("Project is empty in source instance. Ignoring")
                             else:
                                 empty_repos.append(project["name_with_namespace"])
     

@@ -1,7 +1,7 @@
 from time import sleep
-from helpers import logger as log
+from helpers.logger import myLogger
 
-l = log.congregate_logger(__name__)
+log = myLogger(__name__)
 
 def stable_retry(function, ExceptionType=Exception,
                  tries=3, delay=5, backoff=1.20):
@@ -11,13 +11,13 @@ def stable_retry(function, ExceptionType=Exception,
             try:
                 return function(*args, **kwargs)
             except ExceptionType as e:
-                l.logger.error(
+                log.error(
                     "%s, Api connecion failed Retrying in %d seconds..." %
                     (str(e), mdelay))
                 sleep(mdelay)
                 mtries -= 1
                 mdelay *= backoff
-        l.logger.error(
+        log.error(
             "Failed to connect to API within {0} Tries".format(tries))
         # return function(*args, **kwargs)
     return f_retry

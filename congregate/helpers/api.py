@@ -1,9 +1,9 @@
-from helpers import logger
+from helpers.logger import myLogger
 from math import ceil as math_ceil
 from helpers.decorators import stable_retry
 import requests
 
-l = logger.congregate_logger(__name__)
+log = myLogger(__name__)
 
 @stable_retry
 def generate_get_request(host, token, api, params=None):
@@ -122,7 +122,7 @@ def list_all(host, token, api, params=None):
         current_page = start_page
 
         while current_page <= end_page:
-            l.logger.info("Retrieving %d %s" % (PER_PAGE * current_page, api))
+            log.info("Retrieving %d %s" % (PER_PAGE * current_page, api))
 
             if params is not None:
                 params["page"] = current_page
@@ -145,7 +145,7 @@ def list_all(host, token, api, params=None):
         start_page = (start_at / PER_PAGE) + 1 # pages are 1-indexed
         current_page = start_page
         while True:
-            l.logger.info("Retrieving %d %s" % (PER_PAGE * current_page, api))
+            log.info("Retrieving %d %s" % (PER_PAGE * current_page, api))
 
             params = {
                 "page": current_page,

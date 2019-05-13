@@ -64,12 +64,12 @@ Commands:
 
 import os, subprocess
 from helpers import conf
-from helpers import logger as log
+from helpers.logger import myLogger
 from cli import config as configure
 
 app_path = os.getenv("CONGREGATE_PATH")
 
-l = log.congregate_logger(__name__)
+log = myLogger(__name__)
 
 just_configured = False
 

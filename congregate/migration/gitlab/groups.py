@@ -51,7 +51,7 @@ class GroupsClient(BaseClass):
             for subgroup in self.get_all_subgroups(group_id, host, token):
                 if len(subgroup) > 0:
                     parent_group = transient_list[-1]
-                    self.l.logger.debug("traversing into a subgroup")
+                    self.log.debug("traversing into a subgroup")
                     self.traverse_groups([subgroup], transient_list, host, token, parent_group)
             parent_group = None
                 
@@ -65,7 +65,7 @@ class GroupsClient(BaseClass):
             json.dump(groups, f, indent=4)
         
         if not quiet:
-            self.l.logger.info("Retrieved %d groups. Check groups.json to see all retrieved groups" % len(groups))
+            self.log.info("Retrieved %d groups. Check groups.json to see all retrieved groups" % len(groups))
 
     def migrate_group_info(self):
         if not path.isfile("%s/data/groups.json" % self.app_path):
@@ -83,7 +83,7 @@ class GroupsClient(BaseClass):
     def traverse_and_migrate(self, groups, rewritten_groups, parent_id=None):
         count = 0
         for group in groups:
-            self.l.logger.info("Migrating %s %d/%d" % (group["name"], count, len(group)))
+            self.log.info("Migrating %s %d/%d" % (group["name"], count, len(group)))
             if group.get("id", None) is not None:
                 if rewritten_groups is not None:
                     has_children = "child_ids" in rewritten_groups.get(group["id"], None)
@@ -135,7 +135,7 @@ class GroupsClient(BaseClass):
                     if self.config.parent_id is not None:
                         group["parent_id"] = self.config.parent_id
                     else:
-                        self.l.logger.info("Parent namespace is empty")
+                        self.log.info("Parent namespace is empty")
 
                 # group.pop("full_path")
                 
@@ -149,16 +149,16 @@ class GroupsClient(BaseClass):
                         full_parent_namespace = ""
                         if group_without_id.get("parent_namespace", None) is not None:
                             group_without_id.pop("parent_namespace")
-                            self.l.logger.info("Popping parent group")
+                            self.log.info("Popping parent group")
                         if group_without_id.get("full_parent_namespace", None) is not None:
                             full_parent_namespace = group_without_id["full_parent_namespace"]
                             group_without_id.pop("full_parent_namespace")
-                            self.l.logger.info("Popping parent namespace")
+                            self.log.info("Popping parent namespace")
                         response = self.create_group(self.config.parent_host, self.config.parent_token, group_without_id).json()
                         if isinstance(response, dict):
                             if response.get("message", None) is not None:
                                 if "Failed to save group" in response["message"]:
-                                    self.l.logger.info("Group already exists. Searching for group ID")
+                                    self.log.info("Group already exists. Searching for group ID")
                                     #new_group = api.search(self.config.parent_host, self.config.parent_token, 'groups', group['path'])
 
                                     #if new_group is not None and len(new_group) > 0:
@@ -167,20 +167,20 @@ class GroupsClient(BaseClass):
                                         if ng["full_path"] == full_parent_namespace:
                                             new_group_id = ng["id"]
                                             print new_group_id
-                                            self.l.logger.info("Group found")
+                                            self.log.info("Group found")
                                             found_group = True
                                             break
                                         if found_group is True:
                                             break
 
                                 else:
-                                    self.l.logger.info("Failed to save group")
+                                    self.log.info("Failed to save group")
                             else:
                                 new_group_id = response["id"]
                         elif isinstance(response, list):
                             new_group_id = response[0]["id"]
                     except RequestException, e:
-                        self.l.logger.info("Group already exists")
+                        self.log.info("Group already exists")
                     if new_group_id is None:
                         new_group = api.search(self.config.parent_host, self.config.parent_token, 'groups', group['path'])
                         if new_group is not None and len(new_group) > 0:
@@ -188,7 +188,7 @@ class GroupsClient(BaseClass):
                                 if ng["name"] == group["name"]:
                                     if ng["parent_id"] == group["parent_id"] and group["parent_id"] == self.config.parent_id:
                                         new_group_id = ng["id"]
-                                        self.l.logger.info("New group found")
+                                        self.log.info("New group found")
                                         break
                     if new_group_id:
                         root_user_present = False
@@ -203,28 +203,28 @@ class GroupsClient(BaseClass):
                             try:
                                 response = api.generate_post_request(self.config.parent_host, self.config.parent_token, "groups/%d/members" % new_group_id, json.dumps(new_member))
                             except RequestException, e:
-                                self.l.logger.error(e)
+                                self.log.error(e)
 
                         self.vars.migrate_variables(new_group_id, group_id, "group")
 
                         if not root_user_present:
-                            self.l.logger.info("removing root user from group")
+                            self.log.info("removing root user from group")
                             response = api.generate_delete_request(self.config.parent_host, self.config.parent_token, "groups/%d/members/%d" % (new_group_id, int(self.config.parent_user_id)))
                             print response
 
                         # if has_children:
                         #     subgroup = []
-                        #     self.l.logger.info(group["child_ids"])
+                        #     self.log.info(group["child_ids"])
                         #     for sub in group["child_ids"]:
                         #         # rewritten_groups.pop(group_id, None)
-                        #         self.l.logger.info(rewritten_groups.get(sub))
-                        #         self.l.logger.info(rewritten_groups.keys())
+                        #         self.log.info(rewritten_groups.get(sub))
+                        #         self.log.info(rewritten_groups.keys())
                         #         if rewritten_groups.get(sub) is not None:
                         #             sub_group = rewritten_groups.get(sub)
                         #             sub_group["old_parent_id"] = sub_group["parent_id"]
                         #             sub_group["parent_id"] = new_group_id
                         #             subgroup.append(sub_group)
-                        #     self.l.logger.info(subgroup)
+                        #     self.log.info(subgroup)
                         #     traverse_and_migrate(subgroup, rewritten_groups)
                         # rewritten_groups.pop(group_id, None)
             else:
@@ -251,7 +251,7 @@ class GroupsClient(BaseClass):
                 try:
                     api.generate_post_request(self.config.parent_host, self.config.parent_token, "groups/%d/members" % new_group_id, json.dumps(new_member))
                 except RequestException, e:
-                    self.l.logger.error(e)
+                    self.log.error(e)
 
     def append_groups(self, groups):
         with open("%s/data/groups.json" % self.app_path, "r") as f:
@@ -266,7 +266,7 @@ class GroupsClient(BaseClass):
             if len(groups[0]) > 0:
                 for group in groups:
                     self.traverse_staging(int(group), rewritten_groups, staged_groups)
-                    self.l.logger.info("Staging group [%d/%d]" % (len(staged_groups), len(groups)))
+                    self.log.info("Staging group [%d/%d]" % (len(staged_groups), len(groups)))
                     
         with open("%s/data/staged_groups.json" % self.app_path, "w") as f:
             json.dump(misc_utils.remove_dupes(staged_groups), f, indent=4)
@@ -300,11 +300,11 @@ class GroupsClient(BaseClass):
         # count = 0
         # for group in groups:
         #     if group["visibility"] != "private":
-        #         self.l.logger.info("%s has %s visibility" % (group["name"], group["visibility"]))
+        #         self.log.info("%s has %s visibility" % (group["name"], group["visibility"]))
         #         count += 1
         #         groups_to_change.append(group)
 
-        # self.l.logger.info("There are %d non-private groups" % count)
+        # self.log.info("There are %d non-private groups" % count)
 
         transient_list = []
 
@@ -319,7 +319,7 @@ class GroupsClient(BaseClass):
         for group in transient_list:
             print "%s, %s" % (group["name"], group["visibility"])
             if group["visibility"] != "private":
-                self.l.logger.info("%s has %s visibility" % (group["name"], group["visibility"]))
+                self.log.info("%s has %s visibility" % (group["name"], group["visibility"]))
                 count += 1
                 groups_to_change.append(group)
 
@@ -330,14 +330,14 @@ class GroupsClient(BaseClass):
         ids = []
         for group in groups:
             try:
-                self.l.logger.debug("Searching for existing %s" % group["name"])
+                self.log.debug("Searching for existing %s" % group["name"])
                 for proj in self.search_for_group(self.config.parent_host, self.config.parent_token, group['name']):
                     if proj["name"] == group["name"]:
                         if "%s" % group["path"].lower() in proj["full_path"].lower():
-                            #self.l.logger.info("Migrating variables for %s" % proj["name"])
+                            #self.log.info("Migrating variables for %s" % proj["name"])
                             ids.append(proj["id"])
                             print "%s: %s" % (proj["full_path"], proj["visibility"])
                             break
             except IOError, e:
-                self.l.logger.error(e)
+                self.log.error(e)
         print ids
