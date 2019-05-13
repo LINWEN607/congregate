@@ -23,7 +23,7 @@ class MockMembersApi():
             }
         ]
         yield members
-    
+
     def get_members_list(self):
         return [
             {

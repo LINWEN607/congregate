@@ -65,7 +65,7 @@ class ConfigTests(unittest.TestCase):
                 "default_branch": "master",
                 "visibility": "private", 
                 "id": 4,
-                "description": None
+                "description": "Project that does stuff"
             }, 
             {
                 "name": "Puppet", 
@@ -263,7 +263,7 @@ class ConfigTests(unittest.TestCase):
                 "visibility": "private", 
                 "id": 4,
                 "default_branch": "master",
-                "description": None
+                "description": "Project that does stuff"
             }, 
             {
                 "name": "Puppet", 

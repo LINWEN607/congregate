@@ -23,6 +23,7 @@ gunicorn = "*"
 gevent = "*"
 mock = "*"
 "psycopg2" = "*"
+"autopep8" = "*"
 
 [requires]
 python_version = "2.7"
