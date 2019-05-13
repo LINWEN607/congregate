@@ -5,12 +5,12 @@ import json
 
 from helpers import base_module as b
 from helpers import api
-from migration.mirror import mirror_client
+from migration.mirror import MirrorClient
 
 users_map = {}
 groups_map = {}
 
-mirror = mirror_client()
+mirror = MirrorClient()
 
 # TODO: decouple this as much as possible 
 def handle_bitbucket_migration(repo):

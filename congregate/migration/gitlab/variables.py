@@ -4,10 +4,10 @@ from migration.gitlab.projects import ProjectsClient
 from requests.exceptions import RequestException
 import json
 
-class gl_variables_client(BaseClass):
+class VariablesClient(BaseClass):
     def __init__(self):
         self.projects = ProjectsClient()
-        super(gl_variables_client, self).__init__()
+        super(VariablesClient, self).__init__()
 
     def get_variables(self, id, var_type="projects", source_type="child"):
         if var_type == "group":

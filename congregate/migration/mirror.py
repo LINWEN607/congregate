@@ -3,7 +3,7 @@ from helpers import api
 from requests.exceptions import RequestException
 import json
 
-class mirror_client(BaseClass):
+class MirrorClient(BaseClass):
 
     def remove_mirror(self, project_id):
         """

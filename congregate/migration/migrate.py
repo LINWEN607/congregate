@@ -24,19 +24,19 @@ from helpers import logger as log
 from aws import AwsClient
 from cli.stage_projects import stage_projects
 from helpers import base_module as b
-from migration.gitlab.importexport import gl_importexport_client as ie_client
-from migration.gitlab.variables import gl_variables_client as vars_client
+from migration.gitlab.importexport import ImportExportClient as ie_client
+from migration.gitlab.variables import VariablesClient as vars_client
 from migration.gitlab.users import UsersClient as users_client
 from migration.gitlab.groups import GroupsClient as groups_client 
 from migration.gitlab.projects import ProjectsClient as proj_client
 from migration.gitlab.pushrules import PushRulesClient as pushrules_client
-from migration.mirror import mirror_client
+from migration.mirror import MirrorClient
 
 from migration.bitbucket import client as bitbucket
 
 aws = AwsClient()
 ie = ie_client()
-mirror = mirror_client()
+mirror = MirrorClient()
 variables = vars_client()
 users = users_client()
 groups = groups_client()
@@ -103,9 +103,10 @@ def migrate_single_project_info(project, id):
     
     projects.add_members(members, id)
 
-    b.l.logger.info("Migrating push rules for %s" % name)
-    push_rule = pushrules.get_push_rules(project["id"], b.config.child_host, b.config.child_token)
-    pushrules.add_push_rule(id, b.config.parent_host, b.config.parent_token, push_rule)
+    push_rule = pushrules.get_push_rules(project["id"], b.config.child_host, b.config.child_token).json()
+    if len(push_rule) > 0:
+        b.l.logger.info("Migrating push rules for %s" % name)
+        pushrules.add_push_rule(id, b.config.parent_host, b.config.parent_token, push_rule)
     
     b.l.logger.info("Migrating merge request approvers for %s" % name)
     # for approver in projects.get_approvals(project["id"], b.config.child_host, b.config.child_token):

@@ -93,8 +93,8 @@ if __name__ == '__main__':
         from migration.gitlab.users import UsersClient
         from migration.gitlab.groups import GroupsClient
         from migration.gitlab.projects import ProjectsClient
-        from migration.gitlab.variables import gl_variables_client
-        from migration.mirror import mirror_client
+        from migration.gitlab.variables import VariablesClient
+        from migration.mirror import MirrorClient
         from migration import migrate
         # except ImportError:
         #     import migration.users, migration.groups, migration.projects
@@ -112,7 +112,7 @@ if __name__ == '__main__':
                 run_ui = "gunicorn -k gevent -w 4 ui:app --bind=0.0.0.0:8005"
                 subprocess.call(run_ui.split(" "))
             elif arguments["enable_mirroring"]:
-                mirror = mirror_client()
+                mirror = MirrorClient()
                 mirror.enable_mirroring()
             else:
                 print "External migration only currently supports the migrate and ui commands to generate shell projects with mirrors."
@@ -120,7 +120,7 @@ if __name__ == '__main__':
             users = UsersClient()
             groups = GroupsClient()
             projects = ProjectsClient()
-            variables = gl_variables_client()
+            variables = VariablesClient()
             if arguments["list"]:
                 list_projects.list_projects()
             if arguments["stage"]:

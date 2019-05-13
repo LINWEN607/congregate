@@ -55,13 +55,16 @@ def build_staging_data(projects_to_stage):
     if not projects_to_stage[0] == '':
         if projects_to_stage[0] == "all" or projects_to_stage[0] == ".":
             for i in range(len(projects)):
-                obj = {}
-                obj["id"] = projects[i]["id"]
-                obj["name"] = projects[i]["name"]
-                obj["namespace"] = projects[i]["namespace"]["full_path"]
-                obj["path_with_namespace"] = projects[i]["path_with_namespace"]
-                obj["visibilty"] = projects[i]["visibility"]
-                obj["http_url_to_repo"] = projects[i]["http_url_to_repo"]
+                obj = {
+                    "id": projects[i]["id"],
+                    "name": projects[i]["name"],
+                    "namespace": projects[i]["namespace"]["full_path"],
+                    "visibility": projects[i]["visibility"],
+                    "http_url_to_repo": projects[i]["http_url_to_repo"],
+                    "project_type": projects[i]["namespace"]["kind"],
+                    "description": projects[i]["description"],
+                    "default_branch": projects[i]["default_branch"]
+                }
                 
                 members = []
                 for member in proj_client.get_members(int(projects[i]["id"]), b.config.child_host, b.config.child_token):
@@ -82,13 +85,16 @@ def build_staging_data(projects_to_stage):
                 start -= 1
             end = int(match.split("-")[1])
             for i in range(start, end):
-                obj = {}
-                obj["id"] = projects[i]["id"]
-                obj["name"] = projects[i]["name"]
-                obj["namespace"] = projects[i]["namespace"]["full_path"]
-                obj["path_with_namespace"] = projects[i]["path_with_namespace"]
-                obj["visibilty"] = projects[i]["visibility"]
-                obj["http_url_to_repo"] = projects[i]["http_url_to_repo"]
+                obj = {
+                    "id": projects[i]["id"],
+                    "name": projects[i]["name"],
+                    "namespace": projects[i]["namespace"]["full_path"],
+                    "visibility": projects[i]["visibility"],
+                    "http_url_to_repo": projects[i]["http_url_to_repo"],
+                    "project_type": projects[i]["namespace"]["kind"],
+                    "description": projects[i]["description"],
+                    "default_branch": projects[i]["default_branch"]
+                }
                 
                 members = []
                 for member in proj_client.get_members(int(projects[i]["id"]), b.config.child_host, b.config.child_token):
@@ -118,7 +124,6 @@ def build_staging_data(projects_to_stage):
                 staging.append(obj)
         else:
             for i in range(0, len(projects_to_stage)):
-                obj = {}
                 # Hacky check for id or project name by explicitly checking variable type
                 try:
                     if (isinstance(int(projects_to_stage[i]), int)):
@@ -131,12 +136,16 @@ def build_staging_data(projects_to_stage):
                         if projects[j]["name"] == projects_to_stage[i]:
                             project = projects[j]
 
-                obj["id"] = project["id"]
-                obj["name"] = project["name"]
-                obj["namespace"] = project["namespace"]["full_path"]
-                obj["visibilty"] = project["visibility"]
-                obj["http_url_to_repo"] = project["http_url_to_repo"]
-                obj["project_type"] = project["namespace"]["kind"]
+                obj = {
+                    "id": project["id"],
+                    "name": project["name"],
+                    "namespace": project["namespace"]["full_path"],
+                    "visibility": project["visibility"],
+                    "http_url_to_repo": project["http_url_to_repo"],
+                    "project_type": project["namespace"]["kind"],
+                    "description": project["description"],
+                    "default_branch": project["default_branch"]
+                }
 
                 members = []
                 for member in proj_client.get_members(int(project["id"]), b.config.child_host, b.config.child_token):

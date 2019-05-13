@@ -7,10 +7,10 @@ import json
 
 class BranchesClient(BaseClass):
     def get_branches(self, id, host, token):
-        yield api.list_all(host, token, "projects/%d/repository/branches" % id)
+        return api.list_all(host, token, "projects/%d/repository/branches" % id)
 
     def get_protected_branches(self, id, host, token):
-        yield api.list_all(host, token, "projects/%d/protected_branches" % id)
+        return api.list_all(host, token, "projects/%d/protected_branches" % id)
 
     def protect_branch(self, id, host, token, branch_name, push_access_level=None, merge_access_level=None, allowed_to_push=None, allowed_to_merge=None, allowed_to_unprotect=None):
         data = {

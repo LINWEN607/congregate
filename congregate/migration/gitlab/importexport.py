@@ -12,9 +12,9 @@ from os import remove, chdir, getcwd
 from glob import glob
 import json
 
-class gl_importexport_client(BaseClass):
+class ImportExportClient(BaseClass):
     def __init__(self):
-        super(gl_importexport_client, self).__init__()
+        super(ImportExportClient, self).__init__()
         self.aws = self.get_AwsClient()
         self.projects = ProjectsClient()
         self.users = UsersClient()
@@ -83,8 +83,9 @@ class gl_importexport_client(BaseClass):
 
         try:
             response = api.generate_post_request(self.config.child_host, self.config.child_token, "projects/%d/export" % id, "&".join(upload), headers=headers)
+            return response
         except RequestException:
-            pass
+            return None
 
     def import_project(self, project):
         """
@@ -94,6 +95,10 @@ class gl_importexport_client(BaseClass):
             project = json.loads(project)
         name = project["name"]
         filename = "%s_%s.tar.gz" % (project["namespace"], project["name"])
+        override_params = {
+            "description": project["description"],
+            "default_branch": project["default_branch"]
+        }
         user_project = False
         if isinstance(project["members"], list):
             for member in project["members"]:
@@ -130,12 +135,12 @@ class gl_importexport_client(BaseClass):
             timeout = 0
             if self.config.location == "aws":
                 presigned_get_url = self.aws.generate_presigned_url(filename, "GET")
-                import_response = self.aws.import_from_s3(name, namespace, presigned_get_url, filename)
+                import_response = self.aws.import_from_s3(name, namespace, presigned_get_url, filename, override_params=override_params)
             elif self.config.location == "filesystem-aws":
                 if self.config.allow_presigned_url is not None and self.config.allow_presigned_url is True:
                     self.l.logger.info("Importing %s presigned_url" % filename)
                     presigned_get_url = self.aws.generate_presigned_url(filename, "GET")
-                    import_response = self.aws.import_from_s3(name, namespace, presigned_get_url, filename)
+                    import_response = self.aws.import_from_s3(name, namespace, presigned_get_url, filename, override_params=override_params)
                 else:
                     self.l.logger.info("Copying %s to local machine" % filename)
                     formatted_name = project["name"].lower()

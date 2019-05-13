@@ -6,13 +6,13 @@ import json
 
 class ProjectsClient(BaseClass):
     def search_for_project(self, host, token, name):
-        yield api.list_all(host, token, "projects?search=%s" % quote_plus(name))
+        return api.list_all(host, token, "projects?search=%s" % quote_plus(name))
 
     def get_project(self, id, host, token):
         return api.generate_get_request(host, token, "projects/%d" % id)
 
     def get_members(self, id, host, token):
-        yield api.list_all(host, token, "projects/%d/members" % id)
+        return api.list_all(host, token, "projects/%d/members" % id)
 
     def add_member_to_group(self, id, host, token, member):
         return api.generate_post_request(host, token, "projects/%d/members" % id, json.dumps(member))

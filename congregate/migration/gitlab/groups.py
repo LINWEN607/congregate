@@ -1,6 +1,6 @@
 from helpers.base_class import BaseClass
 from helpers import api, misc_utils
-from migration.gitlab.variables import gl_variables_client as vars_client
+from migration.gitlab.variables import VariablesClient as vars_client
 from requests.exceptions import RequestException
 import json
 from os import path
@@ -14,7 +14,7 @@ class GroupsClient(BaseClass):
         return api.generate_get_request(host, token, "groups/%d" % id)
 
     def search_for_group(self, name, host, token):
-        yield api.list_all(host, token, "groups?search=%s" % name)
+        return api.list_all(host, token, "groups?search=%s" % name)
 
     def create_group(self, host, token, data):
         return api.generate_post_request(host, token, "groups", json.dumps(data))
@@ -23,13 +23,13 @@ class GroupsClient(BaseClass):
         return api.generate_post_request(host, token, "groups/%d/members" % id, json.dumps(member))
 
     def get_all_groups(self, host, token):
-        yield api.list_all(host, token, "groups")
+        return api.list_all(host, token, "groups")
 
     def get_all_group_members(self, id, host, token):
-        yield api.list_all(host, token, "groups/%s/members" % id)
+        return api.list_all(host, token, "groups/%s/members" % id)
 
     def get_all_subgroups(self, id, host, token):
-        yield api.list_all(host, token, "groups/%s/subgroups" % id)
+        return api.list_all(host, token, "groups/%s/subgroups" % id)
 
     def traverse_groups(self, base_groups, transient_list,  host, token, parent_group=None):
         if parent_group is not None:
