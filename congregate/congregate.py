@@ -62,7 +62,9 @@ Commands:
     check-projects-visibility           Returns list of all migrated projects' visibility
 """
 
-import os, subprocess
+from docopt import docopt
+import os
+import subprocess
 from helpers import conf
 from helpers.logger import myLogger
 from cli import config as configure
@@ -80,13 +82,12 @@ if not os.path.isfile("%s/data/config.json" % app_path):
 else:
     config = conf.ig()
 
-from docopt import docopt
 
 if __name__ == '__main__':
     arguments = docopt(__doc__)
     if arguments["config"]:
         if just_configured == False:
-                configure.config()
+            configure.config()
     else:
         # try:
             # from migration import users, groups, projects
@@ -176,5 +177,3 @@ if __name__ == '__main__':
                 migrate.count_unarchived_projects()
             if arguments["find-empty-repos"]:
                 migrate.find_empty_repos()
-        
-        

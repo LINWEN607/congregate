@@ -1,6 +1,7 @@
 from helpers.base_class import BaseClass
 from helpers import api
 
+
 class PushRulesClient(BaseClass):
     def get_push_rules(self, id, host, token):
         return api.generate_get_request(host, token, "projects/%d/push_rule" % id)
@@ -13,4 +14,3 @@ class PushRulesClient(BaseClass):
             pass
 
         return api.generate_post_request(host, token, "projects/%d/push_rule" % id, data)
-        

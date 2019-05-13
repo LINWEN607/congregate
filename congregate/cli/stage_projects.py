@@ -16,16 +16,19 @@ from migration.gitlab.projects import ProjectsClient
 proj_client = ProjectsClient()
 existing_parent_ids = []
 
+
 def stage_projects(projects_to_stage):
-    staged_projects, staged_users, staged_groups = build_staging_data(projects_to_stage)
+    staged_projects, staged_users, staged_groups = build_staging_data(
+        projects_to_stage)
     write_staging_files(staged_projects, staged_users, staged_groups)
+
 
 def build_staging_data(projects_to_stage):
     staging = []
     staged_users = []
     staged_groups = []
     if (not os.path.isfile('%s/data/project_json.json' % b.app_path)):
-        #TODO: rewrite this logic to handle subprocess more efficiently
+        # TODO: rewrite this logic to handle subprocess more efficiently
         cmd = "%s/list_projects.sh > /dev/null" % b.app_path
         subprocess.call(cmd.split())
 
@@ -65,13 +68,14 @@ def build_staging_data(projects_to_stage):
                     "description": projects[i]["description"],
                     "default_branch": projects[i]["default_branch"]
                 }
-                
+
                 members = []
                 for member in proj_client.get_members(int(projects[i]["id"]), b.config.child_host, b.config.child_token):
                     if member["username"] != "root":
-                        staged_users.append(rewritten_users[member["username"]])
+                        staged_users.append(
+                            rewritten_users[member["username"]])
                         members.append(member)
-                
+
                 if projects[i]["namespace"]["kind"] == "group":
                     group_to_stage = projects[i]["namespace"]["path"]
                     staged_groups.append(rewritten_groups[group_to_stage])
@@ -95,21 +99,23 @@ def build_staging_data(projects_to_stage):
                     "description": projects[i]["description"],
                     "default_branch": projects[i]["default_branch"]
                 }
-                
+
                 members = []
                 for member in proj_client.get_members(int(projects[i]["id"]), b.config.child_host, b.config.child_token):
                     if member["username"] != "root":
                         b.log.info("Staging user (%s)" % member["username"])
-                        staged_users.append(rewritten_users[member["username"]])
+                        staged_users.append(
+                            rewritten_users[member["username"]])
                         members.append(member)
-                
+
                 if projects[0]["namespace"]["kind"] == "group":
                     group_to_stage = projects[0]["namespace"]["id"]
                     if rewritten_groups[group_to_stage]["parent_id"] is None:
                         if b.config.parent_id is not None:
                             rewritten_groups[group_to_stage]["parent_id"] = b.config.parent_id
                     else:
-                        existing_parent_ids.append(rewritten_groups[group_to_stage]["id"])
+                        existing_parent_ids.append(
+                            rewritten_groups[group_to_stage]["id"])
                     staged_groups.append(rewritten_groups[group_to_stage])
                     if "child_ids" in rewritten_groups[group_to_stage]:
                         for sub in rewritten_groups[group_to_stage]["child_ids"]:
@@ -117,10 +123,12 @@ def build_staging_data(projects_to_stage):
                     if len(rewritten_groups[group_to_stage]["members"]) > 0:
                         for member in rewritten_groups[group_to_stage]["members"]:
                             if rewritten_users.get(member["username"]):
-                                staged_users.append(rewritten_users[member["username"]])
+                                staged_users.append(
+                                    rewritten_users[member["username"]])
 
                 obj["members"] = members
-                b.log.info("Staging project (%s) [%d/%d]" % (obj["name"], len(staging)+1, len(range(start, end))))
+                b.log.info(
+                    "Staging project (%s) [%d/%d]" % (obj["name"], len(staging)+1, len(range(start, end))))
                 staging.append(obj)
         else:
             for i in range(0, len(projects_to_stage)):
@@ -151,16 +159,18 @@ def build_staging_data(projects_to_stage):
                 for member in proj_client.get_members(int(project["id"]), b.config.child_host, b.config.child_token):
                     if member["username"] != "root":
                         b.log.info("Staging user (%s)" % member["username"])
-                        staged_users.append(rewritten_users[member["username"]])
+                        staged_users.append(
+                            rewritten_users[member["username"]])
                         members.append(member)
-                
+
                 if project["namespace"]["kind"] == "group":
                     group_to_stage = project["namespace"]["id"]
                     if rewritten_groups[group_to_stage]["parent_id"] is None:
                         if b.config.parent_id is not None:
                             rewritten_groups[group_to_stage]["parent_id"] = b.config.parent_id
                     else:
-                        existing_parent_ids.append(rewritten_groups[group_to_stage]["id"])
+                        existing_parent_ids.append(
+                            rewritten_groups[group_to_stage]["id"])
                     staged_groups.append(rewritten_groups[group_to_stage])
                     if "child_ids" in rewritten_groups[group_to_stage]:
                         for sub in rewritten_groups[group_to_stage]["child_ids"]:
@@ -168,30 +178,36 @@ def build_staging_data(projects_to_stage):
                     if len(rewritten_groups[group_to_stage]["members"]) > 0:
                         for member in rewritten_groups[group_to_stage]["members"]:
                             if rewritten_users.get(member["username"]):
-                                staged_users.append(rewritten_users[member["username"]])
+                                staged_users.append(
+                                    rewritten_users[member["username"]])
 
                 obj["members"] = members
-                b.log.info("Staging project (%s) [%d/%d]" % (obj["name"], len(staging), len(projects_to_stage)))
+                b.log.info(
+                    "Staging project (%s) [%d/%d]" % (obj["name"], len(staging), len(projects_to_stage)))
                 staging.append(obj)
     else:
         staging = []
 
     return misc_utils.remove_dupes(staging), misc_utils.remove_dupes(staged_users), misc_utils.remove_dupes(staged_groups)
 
+
 def open_projects_file():
     with open('%s/data/project_json.json' % b.app_path, "r") as f:
         projects = json.load(f)
     return projects
+
 
 def open_groups_file():
     with open("%s/data/groups.json" % b.app_path, "r") as f:
         groups = json.load(f)
     return groups
 
+
 def open_users_file():
     with open("%s/data/users.json" % b.app_path, "r") as f:
         users = json.load(f)
     return users
+
 
 def write_staging_files(staging, staged_users, staged_groups):
     for group in staged_groups:

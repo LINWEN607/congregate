@@ -4,6 +4,7 @@ from requests.exceptions import RequestException
 from urllib import quote_plus
 import json
 
+
 class ProjectsClient(BaseClass):
     def search_for_project(self, host, token, name):
         return api.list_all(host, token, "projects?search=%s" % quote_plus(name))
@@ -29,7 +30,7 @@ class ProjectsClient(BaseClass):
     def set_approval_configuration(self, id, host, token, data):
         '''
             refer to https://docs.gitlab.com/ee/api/merge_request_approvals.html#change-configuration
-            
+
             example payload:
             {
                 "approvals_before_merge": 2,
@@ -39,7 +40,6 @@ class ProjectsClient(BaseClass):
         '''
         return api.generate_post_request(host, token, "projects/%d/approvals" % id, data)
 
-    
     def set_approvers(self, project_id, host, token, approver_ids, approver_group_ids):
         if not isinstance(approver_ids, list):
             approver_ids = [approver_ids]
@@ -62,16 +62,21 @@ class ProjectsClient(BaseClass):
             }
 
             try:
-                api.generate_post_request(self.config.parent_host, self.config.parent_token, "projects/%d/members" % id, json.dumps(new_member))
+                api.generate_post_request(
+                    self.config.parent_host, self.config.parent_token, "projects/%d/members" % id, json.dumps(new_member))
             except RequestException, e:
                 self.log.error(e)
-                self.log.error("Member might already exist. Attempting to update access level")
+                self.log.error(
+                    "Member might already exist. Attempting to update access level")
                 try:
-                    api.generate_put_request(self.config.parent_host, self.config.parent_token, "projects/%d/members/%d?access_level=%d" % (id, member["id"], member["access_level"]), data=None)
+                    api.generate_put_request(self.config.parent_host, self.config.parent_token,
+                                             "projects/%d/members/%d?access_level=%d" % (id, member["id"], member["access_level"]), data=None)
                 except RequestException, e:
                     self.log.error(e)
-                    self.log.error("Attempting to update existing member failed")
+                    self.log.error(
+                        "Attempting to update existing member failed")
 
         if not root_user_present:
             self.log.info("removing root user from project")
-            api.generate_delete_request(self.config.parent_host, self.config.parent_token, "projects/%d/members/%d" % (id, self.config.parent_user_id))
+            api.generate_delete_request(self.config.parent_host, self.config.parent_token,
+                                        "projects/%d/members/%d" % (id, self.config.parent_user_id))

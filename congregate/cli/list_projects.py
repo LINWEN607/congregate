@@ -10,11 +10,13 @@ groupsclient = GroupsClient()
 usersclient = UsersClient()
 projectsclient = ProjectsClient()
 
+
 def list_projects():
 
     print "Listing projects from %s" % b.config.child_host
 
-    projects = list(api.list_all(b.config.child_host, b.config.child_token, "projects"))
+    projects = list(api.list_all(b.config.child_host,
+                                 b.config.child_token, "projects"))
 
     with open("%s/data/project_json.json" % b.app_path, "wb") as f:
         json.dump(projects, f, indent=4)
@@ -33,10 +35,12 @@ def list_projects():
     for filename in staged_files:
         write_empty_file(filename)
 
+
 def write_empty_file(filename):
     if not os.path.isfile("%s/data/%s.json" % (b.app_path, filename)):
         with open("%s/data/%s.json" % (b.app_path, filename), "w") as f:
             f.write("[]")
+
 
 if __name__ == "__main__":
     list_projects()

@@ -12,6 +12,8 @@ Usage:
 4. Execute this function (map_users())
 
 '''
+
+
 def map_users():
     total_matches = 0
     users_dict = {}
@@ -30,14 +32,16 @@ def map_users():
             email = row[2].strip()
             if users_dict.get(username, None) is not None:
                 if email != users_dict[username]["email"]:
-                    bm.log.info("Mapping %s with email [%s] to %s" % (name, users_dict[username]["email"], email))
+                    bm.log.info("Mapping %s with email [%s] to %s" % (
+                        name, users_dict[username]["email"], email))
                     users_dict[username]["email"] = email
                     total_matches += 1
     for _, u in users_dict.iteritems():
         rewritten_users.append(u)
     with open("%s/data/staged_users.json" % bm.app_path, "w") as f:
         json.dump(rewritten_users, f, indent=4)
-    print "Found %d users to remap" % total_matches 
+    print "Found %d users to remap" % total_matches
+
 
 def rm_non_ldap_users():
     total_matches = 0

@@ -5,6 +5,7 @@ from requests.exceptions import RequestException
 from os import path
 import json
 
+
 class BranchesClient(BaseClass):
     def get_branches(self, id, host, token):
         return api.list_all(host, token, "projects/%d/repository/branches" % id)
@@ -27,5 +28,3 @@ class BranchesClient(BaseClass):
         if allowed_to_unprotect is not None:
             data["allowed_to_unprotect"] = allowed_to_unprotect
         return api.generate_post_request(host, token, "projects/%d/protected_branches" % id, data)
-
-    

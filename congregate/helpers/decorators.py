@@ -3,6 +3,7 @@ from helpers.logger import myLogger
 
 log = myLogger(__name__)
 
+
 def stable_retry(function, ExceptionType=Exception,
                  tries=3, delay=5, backoff=1.20):
     def f_retry(*args, **kwargs):

@@ -12,15 +12,17 @@ from helpers.base_module import app_path
 #     from migration.users import append_users
 #     from migration.projects import migrate
 
+
 def get_data(file_name, sort_by=None):
     data = None
     with open("%s/data/%s.json" % (app_path, file_name), "r") as f:
         data = json.load(f)
-    
+
     if sort_by is not None:
         return sorted(data, key=lambda d: d[sort_by])
-        
+
     return data
+
 
 def get_counts():
     total_projects = len(get_data("project_json"))
@@ -35,8 +37,8 @@ def get_counts():
         "Staged Users": "%s/%s" % (staged_users, total_users)
     }
 
+
 @app.route("/data/<name>")
 def load_stage_data(name):
     data = get_data(name)
     return jsonify(data)
-
