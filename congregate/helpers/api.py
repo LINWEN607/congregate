@@ -110,11 +110,11 @@ def list_all(host, token, api, params=None):
 
     count = get_count(host, token, api)
 
-    PER_PAGE = 20
+    PER_PAGE = 100
     start_at = 0
     end_at = count
 
-    if get_count is not None:
+    if count is not None:
         # total_work = end_at - start_at
         # total_pages = total_work / PER_PAGE
         start_page = (start_at / PER_PAGE) + 1 # pages are 1-indexed
@@ -142,6 +142,8 @@ def list_all(host, token, api, params=None):
 
             current_page += 1
     else:
+        start_page = (start_at / PER_PAGE) + 1 # pages are 1-indexed
+        current_page = start_page
         while True:
             l.logger.info("Retrieving %d %s" % (PER_PAGE * current_page, api))
 

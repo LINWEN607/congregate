@@ -42,18 +42,17 @@ class GroupsClient(BaseClass):
                 group.pop("ldap_access")
             except KeyError:
                 pass
-            members = list(self.get_all_group_members(host, token, str(group["id"])))
+            group_id = str(group["id"])
+            members = list(self.get_all_group_members(group_id, host, token))
             group["members"] = members
             transient_list.append(group)
-            subgroups = list(self.get_all_subgroups(id, host, token))
             if parent_group is not None:
                 parent_group["child_ids"].append(group["id"])
-            if len(subgroups) > 0:
-                parent_group = transient_list[-1]
-                self.l.logger.info("traversing into a subgroup")
-                self.traverse_groups(subgroups, transient_list, host, token, parent_group)
-            else:
-                self.l.logger.info("No subgroups found")
+            for subgroup in self.get_all_subgroups(group_id, host, token):
+                if len(subgroup) > 0:
+                    parent_group = transient_list[-1]
+                    self.l.logger.debug("traversing into a subgroup")
+                    self.traverse_groups([subgroup], transient_list, host, token, parent_group)
             parent_group = None
                 
     def retrieve_group_info(self, quiet=False):
