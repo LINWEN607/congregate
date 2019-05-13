@@ -6,22 +6,25 @@ stages:
   - build
   - release
 
-run tests:
-  stage: test
-  script:
-    - pip install pipenv
-    - pipenv install
-    - pipenv run python -m unittest cli.config_test
-
-update readme:
-  stage: update-info
-  script:
+.install_test_dependencies: &install_test_dependencies
+  before_script:
     - apt-get update
     - apt-get install -y jq
     - mkdir data
     - echo ${Dummy_config} | jq . > data/config.json
     - pip install pipenv
     - pipenv install
+
+run tests:
+  stage: test
+  <<: *install_test_dependencies
+  script:
+    - pipenv run python -m unittest discover congregate/
+
+update readme:
+  stage: update-info
+  <<: *install_test_dependencies
+  script:
     - pipenv run python update-readme.py
   only:
     refs:

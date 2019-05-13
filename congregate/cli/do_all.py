@@ -1,0 +1,21 @@
+import os
+from cli import config, stage_projects
+from migration.gitlab.users import UsersClient 
+from migration.gitlab.groups import GroupsClient
+from migration import migrate
+from helpers.base_module import app_path
+
+def do_all():
+    users = UsersClient()
+    groups = GroupsClient()
+    if not os.path.isfile("%s/data/config.json" % app_path):
+        config.config()
+    if not os.path.isfile("%s/data/users.json" % app_path):
+        users.retrieve_user_info()
+    if not os.path.isfile("%s/data/groups.json" % app_path):
+        groups.retrieve_group_info()
+    stage_projects.stage_projects([None, "all"])
+    migrate.migrate()
+
+if __name__ == "__main__":
+    do_all()
