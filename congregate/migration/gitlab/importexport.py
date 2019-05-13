@@ -96,7 +96,7 @@ class ImportExportClient(BaseClass):
         name = project["name"]
         filename = "%s_%s.tar.gz" % (project["namespace"], project["name"])
         override_params = {
-            "description": project["description"],
+            "description": project.get("description", ""),
             "default_branch": project["default_branch"]
         }
         user_project = False

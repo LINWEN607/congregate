@@ -62,8 +62,10 @@ class ConfigTests(unittest.TestCase):
                 ], 
                 "http_url_to_repo": "http://example.com/diaspora/diaspora-client.git", 
                 "project_type": "group", 
-                "visibilty": "private", 
-                "id": 4
+                "default_branch": "master",
+                "visibility": "private", 
+                "id": 4,
+                "description": None
             }, 
             {
                 "name": "Puppet", 
@@ -90,10 +92,12 @@ class ConfigTests(unittest.TestCase):
                         "expires_at": "2012-10-22T14:13:35Z"
                     }
                 ], 
+                "default_branch": "master",
                 "http_url_to_repo": "http://example.com/brightbox/puppet.git", 
                 "project_type": "group", 
-                "visibilty": "private", 
-                "id": 6
+                "visibility": "private", 
+                "id": 6,
+                "description": None
             }
         ]
 
@@ -196,9 +200,19 @@ class ConfigTests(unittest.TestCase):
             }
         ]
 
-        self.assertEqual(expected_projects, staged_projects)
-        self.assertEqual(expected_groups, staged_groups)
-        self.assertEqual(expected_users, staged_users)
+        self.assertEqual(len(expected_projects), len(staged_projects))
+        self.assertEqual(len(expected_groups), len(staged_groups))
+        self.assertEqual(len(expected_users), len(staged_users))
+
+        for i in range(len(expected_projects)):
+            self.assertDictContainsSubset(expected_projects[i], staged_projects[i])
+            self.assertItemsEqual(expected_projects[i], staged_projects[i])
+        for i in range(len(expected_groups)):
+            self.assertDictContainsSubset(expected_groups[i], staged_groups[i])
+            self.assertItemsEqual(expected_groups[i], staged_groups[i])
+        for i in range(len(expected_users)):
+            self.assertDictContainsSubset(expected_users[i], staged_users[i])
+            self.assertItemsEqual(expected_users[i], staged_users[i])
 
     
     @mock.patch('__builtin__.open')
@@ -246,8 +260,10 @@ class ConfigTests(unittest.TestCase):
                 ], 
                 "http_url_to_repo": "http://example.com/diaspora/diaspora-client.git", 
                 "project_type": "group", 
-                "visibilty": "private", 
-                "id": 4
+                "visibility": "private", 
+                "id": 4,
+                "default_branch": "master",
+                "description": None
             }, 
             {
                 "name": "Puppet", 
@@ -276,92 +292,43 @@ class ConfigTests(unittest.TestCase):
                 ], 
                 "http_url_to_repo": "http://example.com/brightbox/puppet.git", 
                 "project_type": "group", 
-                "visibilty": "private", 
-                "id": 6
+                "visibility": "private", 
+                "id": 6,
+                "default_branch": "master",
+                "description": None
             },
+                {
+                "name": "Puppet", 
+                "namespace": "brightbox", 
+                "members": [
                     {
-                        "id": 80,
-                        "description": None,
-                        "default_branch": "master",
-                        "visibility": "private",
-                        "ssh_url_to_repo": "git@example.com:brightbox/puppet.git",
-                        "http_url_to_repo": "http://example.com/brightbox/puppet.git",
-                        "web_url": "http://example.com/brightbox/puppet",
-                        "readme_url": "http://example.com/brightbox/puppet/blob/master/README.md",
-                        "tag_list": [
-                        "example",
-                        "puppet"
-                        ],
-                        "owner": {
-                        "id": 4,
-                        "name": "Brightbox",
-                        "created_at": "2013-09-30T13:46:02Z"
-                        },
-                        "name": "Puppet",
-                        "name_with_namespace": "Brightbox / Puppet",
-                        "path": "puppet",
-                        "path_with_namespace": "brightbox/puppet",
-                        "issues_enabled": True,
-                        "open_issues_count": 1,
-                        "merge_requests_enabled": True,
-                        "jobs_enabled": True,
-                        "wiki_enabled": True,
-                        "snippets_enabled": False,
-                        "resolve_outdated_diff_discussions": False,
-                        "container_registry_enabled": False,
-                        "created_at": "2013-09-30T13:46:02Z",
-                        "last_activity_at": "2013-09-30T13:46:02Z",
-                        "creator_id": 3,
-                        "namespace": {
-                        "id": 4,
-                        "name": "Brightbox",
-                        "path": "brightbox",
-                        "kind": "group",
-                        "full_path": "brightbox"
-                        },
-                        "import_status": "none",
-                        "import_error": None,
-                        "permissions": {
-                        "project_access": {
-                            "access_level": 10,
-                            "notification_level": 3
-                        },
-                        "group_access": {
-                            "access_level": 50,
-                            "notification_level": 3
-                        }
-                        },
-                        "archived": False,
-                        "avatar_url": None,
-                        "shared_runners_enabled": True,
-                        "forks_count": 0,
-                        "star_count": 0,
-                        "runners_token": "b8547b1dc37721d05889db52fa2f02",
-                        "public_jobs": True,
-                        "shared_with_groups": [],
-                        "only_allow_merge_if_pipeline_succeeds": False,
-                        "only_allow_merge_if_all_discussions_are_resolved": False,
-                        "request_access_enabled": False,
-                        "merge_method": "merge",
-                        "approvals_before_merge": 0,
-                        "statistics": {
-                        "commit_count": 12,
-                        "storage_size": 2066080,
-                        "repository_size": 2066080,
-                        "lfs_objects_size": 0,
-                        "job_artifacts_size": 0,
-                        "packages_size": 0
-                        },
-                        "_links": {
-                        "self": "http://example.com/api/v4/projects",
-                        "issues": "http://example.com/api/v4/projects/1/issues",
-                        "merge_requests": "http://example.com/api/v4/projects/1/merge_requests",
-                        "repo_branches": "http://example.com/api/v4/projects/1/repository_branches",
-                        "labels": "http://example.com/api/v4/projects/1/labels",
-                        "events": "http://example.com/api/v4/projects/1/events",
-                        "members": "http://example.com/api/v4/projects/1/members"
-                        }
+                        "username": "raymond_smith", 
+                        "access_level": 30, 
+                        "state": "active", 
+                        "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon", 
+                        "web_url": "http://192.168.1.8:3000/root", 
+                        "name": "Raymond Smith", 
+                        "id": 1, 
+                        "expires_at": "2012-10-22T14:13:35Z"
+                    }, 
+                    {
+                        "username": "john_doe", 
+                        "access_level": 30, 
+                        "state": "active", 
+                        "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon", 
+                        "web_url": "http://192.168.1.8:3000/root", 
+                        "name": "John Doe", 
+                        "id": 2, 
+                        "expires_at": "2012-10-22T14:13:35Z"
                     }
+                ], 
+                "http_url_to_repo": "http://example.com/brightbox/puppet.git", 
+                "project_type": "group", 
+                "visibility": "private", 
+                "id": 80,
+                "default_branch": "master",
+                "description": None
+            }
         ]
 
         expected_users = [
@@ -430,3 +397,13 @@ class ConfigTests(unittest.TestCase):
         self.assertEqual(len(expected_projects), len(staged_projects))
         self.assertEqual(len(expected_groups), len(staged_groups))
         self.assertEqual(len(expected_users), len(staged_users))
+
+        for i in range(len(expected_projects)):
+            self.assertDictContainsSubset(expected_projects[i], staged_projects[i])
+            self.assertItemsEqual(expected_projects[i], staged_projects[i])
+        for i in range(len(expected_groups)):
+            self.assertDictContainsSubset(expected_groups[i], staged_groups[i])
+            self.assertItemsEqual(expected_groups[i], staged_groups[i])
+        for i in range(len(expected_users)):
+            self.assertDictContainsSubset(expected_users[i], staged_users[i])
+            self.assertItemsEqual(expected_users[i], staged_users[i])
