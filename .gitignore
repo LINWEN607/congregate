@@ -7,3 +7,4 @@ js-packages
 *.log
 *.log.*
 .coverage
+unused_stuff

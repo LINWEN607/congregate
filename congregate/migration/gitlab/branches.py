@@ -1,12 +1,19 @@
 from helpers.base_class import BaseClass
 from helpers import api
 from helpers.misc_utils import strip_numbers, remove_dupes
+from migration.gitlab.groups import GroupsClient
+from migration.gitlab.users import UsersClient
 from requests.exceptions import RequestException
 from os import path
 import json
 
 
 class BranchesClient(BaseClass):
+    def __init__(self):
+        self.users = UsersClient()
+        self.groups = GroupsClient()
+        super(BranchesClient, self).__init__()
+
     def get_branches(self, id, host, token):
         return api.list_all(host, token, "projects/%d/repository/branches" % id)
 
@@ -28,3 +35,24 @@ class BranchesClient(BaseClass):
         if allowed_to_unprotect is not None:
             data["allowed_to_unprotect"] = allowed_to_unprotect
         return api.generate_post_request(host, token, "projects/%d/protected_branches" % id, data)
+
+    def update_access_levels(self, access_level):
+        for a in access_level:
+            if a.get("user_id", None) is not None:
+                user = self.users.get_user(a["user_id"], self.config.child_host, self.config.child_token).json()
+                new_user = api.search(
+                    self.config.parent_host, self.config.parent_token, 'users', user['email'])
+                new_user_id = new_user[0]["id"]
+                a["user_id"] = new_user_id
+            if a.get("group_id", None) is not None:
+                group = self.groups.get_group(a["group_id"], self.config.child_host, self.config.child_token).json()
+                if self.config.parent_id is not None:
+                    parent_group = self.groups.get_group(self.config.parent_id, self.config.child_host, self.config.child_token).json()
+                    group["full_path"] = "%s/%s" % (parent_group["full_path"], group["full_path"])
+                for new_group in self.groups.search_for_group(group["name"], self.config.parent_host, self.config.parent_token):
+                    if new_group["full_path"].lower() == group["full_path"].lower():
+                        a["group_id"] = new_group["id"]
+                        break
+        
+        return access_level
+
