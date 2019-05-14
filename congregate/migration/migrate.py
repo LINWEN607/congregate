@@ -99,6 +99,8 @@ def migrate_single_project_info(project, id):
     members = project["members"]
     project.pop("members")
     name = project["name"]
+
+    # Project Members
     b.log.info("Searching for %s" % name)
     if id is None:
         for new_project in projects.search_for_project(b.config.parent_host, b.config.parent_token, project['name']):
@@ -113,6 +115,7 @@ def migrate_single_project_info(project, id):
 
     projects.add_members(members, id)
 
+    # Push Rules
     push_rule = pushrules.get_push_rules(
         project["id"], b.config.child_host, b.config.child_token).json()
     if len(push_rule) > 0:
@@ -120,10 +123,11 @@ def migrate_single_project_info(project, id):
         pushrules.add_push_rule(id, b.config.parent_host,
                                 b.config.parent_token, push_rule)
 
+    # Merge Request Approvers
     b.log.info("Migrating merge request approvers for %s" % name)
-    # for approver in projects.get_approvals(project["id"], b.config.child_host, b.config.child_token):
     approval_data = projects.get_approvals(
         project["id"], b.config.child_host, b.config.child_token)
+
     approval_configuration = {
         "approvals_before_merge": approval_data["approvals_before_merge"],
         "reset_approvals_on_push": approval_data["reset_approvals_on_push"],
@@ -131,46 +135,42 @@ def migrate_single_project_info(project, id):
     }
     projects.set_approval_configuration(
         id, b.config.parent_host, b.config.parent_token, approval_configuration)
-    approver_ids = []
-    approver_groups = []
-    for approved_user in approval_data["approvers"]:
-        user = approved_user["user"]
-        if user.get("id", None) is not None:
-            user = users.get_user(
-                user["id"], b.config.child_host, b.config.child_token).json()
-            new_user = api.search(
-                b.config.parent_host, b.config.parent_token, 'users', user['email'])
-            new_user_id = new_user[0]["id"]
-            approver_ids.append(new_user_id)
-    for approved_group in approval_data["approver_groups"]:
-        group = approved_group["group"]
-        if group.get("id", None) is not None:
-            group = groups.get_group(
-                group["id"], b.config.child_host, b.config.child_token).json()
-            if b.config.parent_id is not None:
-                parent_group = groups.get_group(
-                    b.config.parent_id, b.config.child_host, b.config.child_token).json()
-                group["full_path"] = "%s/%s" % (
-                    parent_group["full_path"], group["full_path"])
-            for new_group in groups.search_for_group(group["name"], b.config.parent_host, b.config.parent_token):
-                if new_group["full_path"].lower() == group["full_path"].lower():
-                    approver_groups.append(new_group["id"])
-                    break
 
+    approver_ids, approver_groups = update_approvers(approval_data)
     projects.set_approvers(id, b.config.parent_host,
                            b.config.parent_token, approver_ids, approver_groups)
 
-    b.log.info("Updating protected branchs")
-    for branch in branches.get_protected_branches(project["id"], b.config.child_host, b.config.child_token):
-        allowed_to_push = branches.update_access_levels(
-            branch["push_access_levels"])
-        allowed_to_merge = branches.update_access_levels(
-            branch["merge_access_levels"])
-        allowed_to_unprotect = branches.update_access_levels(
-            branch["unprotect_access_levels"])
+    # Protected Branches
+    b.log.info("Updating protected branches")
+    branches.migrate_protected_branches(id, project["id"])
 
-        branches.protect_branch(id, b.config.parent_host, b.config.parent_token,
-                                branch["name"], allowed_to_push=allowed_to_push, allowed_to_merge=allowed_to_merge, allowed_to_unprotect=allowed_to_unprotect)
+def update_approvers(approval_data):
+        approver_ids = []
+        approver_groups = []
+        for approved_user in approval_data["approvers"]:
+            user = approved_user["user"]
+            if user.get("id", None) is not None:
+                user = users.get_user(
+                    user["id"], b.config.child_host, b.config.child_token).json()
+                new_user = api.search(
+                    b.config.parent_host, b.config.parent_token, 'users', user['email'])
+                new_user_id = new_user[0]["id"]
+                approver_ids.append(new_user_id)
+        for approved_group in approval_data["approver_groups"]:
+            group = approved_group["group"]
+            if group.get("id", None) is not None:
+                group = groups.get_group(
+                    group["id"], b.config.child_host, b.config.child_token).json()
+                if b.config.parent_id is not None:
+                    parent_group = groups.get_group(
+                        b.config.parent_id, b.config.child_host, b.config.child_token).json()
+                    group["full_path"] = "%s/%s" % (
+                        parent_group["full_path"], group["full_path"])
+                for new_group in groups.search_for_group(group["name"], b.config.parent_host, b.config.parent_token):
+                    if new_group["full_path"].lower() == group["full_path"].lower():
+                        approver_groups.append(new_group["id"])
+                        break
+        return approver_ids, approver_groups
 
 
 def migrate_given_export(project_json):

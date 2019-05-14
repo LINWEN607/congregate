@@ -34,7 +34,7 @@ class BranchesClient(BaseClass):
             data["allowed_to_merge"] = allowed_to_merge
         if allowed_to_unprotect is not None:
             data["allowed_to_unprotect"] = allowed_to_unprotect
-        return api.generate_post_request(host, token, "projects/%d/protected_branches" % id, data)
+        return api.generate_post_request(host, token, "projects/%d/protected_branches" % id, json.dumps(data))
 
     def update_access_levels(self, access_level):
         for a in access_level:
@@ -59,3 +59,15 @@ class BranchesClient(BaseClass):
                         break
 
         return access_level
+
+    def migrate_protected_branches(self, id, old_id):
+        for branch in self.get_protected_branches(old_id, self.config.child_host, self.config.child_token):
+            allowed_to_push = self.update_access_levels(
+                branch["push_access_levels"])
+            allowed_to_merge = self.update_access_levels(
+                branch["merge_access_levels"])
+            allowed_to_unprotect = self.update_access_levels(
+                branch["unprotect_access_levels"])
+
+            self.protect_branch(id, self.config.parent_host, self.config.parent_token,
+                                    branch["name"], allowed_to_push=allowed_to_push, allowed_to_merge=allowed_to_merge, allowed_to_unprotect=allowed_to_unprotect)

@@ -303,6 +303,7 @@ class ImportExportClient(BaseClass):
     def export_import_thru_aws(self, id, name, namespace):
         # if isinstance(project_json, str):
         #     project_json = json.loads(project_json)
+        exported = False
         self.log.debug("Searching for existing %s" % name)
         project_exists = False
         for proj in self.projects.search_for_project(self.config.parent_host, self.config.parent_token, name):

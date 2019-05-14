@@ -1,7 +1,7 @@
 from helpers.base_class import BaseClass
 from helpers import api
 from requests.exceptions import RequestException
-from urllib import quote_plus
+from urllib import quote_plus, urlencode
 import json
 
 
@@ -38,7 +38,7 @@ class ProjectsClient(BaseClass):
                 "disable_overriding_approvers_per_merge_request": False
             }
         '''
-        return api.generate_post_request(host, token, "projects/%d/approvals" % id, data)
+        return api.generate_post_request(host, token, "projects/%d/approvals?%s" % (id, urlencode(data)) , None)
 
     def set_approvers(self, project_id, host, token, approver_ids, approver_group_ids):
         if not isinstance(approver_ids, list):
@@ -46,10 +46,10 @@ class ProjectsClient(BaseClass):
         if not isinstance(approver_group_ids, list):
             approver_group_ids = [approver_group_ids]
         data = {
-            approver_ids: approver_ids,
-            approver_group_ids: approver_group_ids
+            "approver_ids": approver_ids,
+            "approver_group_ids": approver_group_ids
         }
-        return api.generate_post_request(host, token, "projects/%d/approvers" % project_id, data)
+        return api.generate_put_request(host, token, "projects/%d/approvers%s" % (project_id, urlencode(data)), None)
 
     def add_members(self, members, id):
         root_user_present = False
