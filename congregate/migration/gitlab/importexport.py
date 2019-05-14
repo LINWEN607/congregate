@@ -134,7 +134,7 @@ class ImportExportClient(BaseClass):
                     full_path = "/".join(another_strip)
                     self.log.info("Searching for %s" % full_path)
                     for group in api.list_all(self.config.parent_host, self.config.parent_token, "groups?search=%s" % project["namespace"]):
-                        if group["full_parent_namespace"].lower() == full_path.lower():
+                        if group["full_path"].lower() == full_path.lower():
                             self.log.info("Found %s" % group["full_path"])
                             namespace = group["id"]
                             break

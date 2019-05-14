@@ -306,7 +306,7 @@ class UsersClient(BaseClass):
                     except RequestException, e:
                         self.log.info(e)
                 else:
-                    new_ids.append(response["id"])
+                    new_ids.append(response.json()["id"])
             except RequestException, e:
                 self.log.info(e)
 
