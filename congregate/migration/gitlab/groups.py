@@ -5,6 +5,7 @@ from requests.exceptions import RequestException
 import json
 from os import path
 
+
 class GroupsClient(BaseClass):
     def __init__(self):
         self.vars = vars_client()
@@ -52,20 +53,24 @@ class GroupsClient(BaseClass):
                 if len(subgroup) > 0:
                     parent_group = transient_list[-1]
                     self.log.debug("traversing into a subgroup")
-                    self.traverse_groups([subgroup], transient_list, host, token, parent_group)
+                    self.traverse_groups(
+                        [subgroup], transient_list, host, token, parent_group)
             parent_group = None
-                
+
     def retrieve_group_info(self, quiet=False):
-        groups = list(self.get_all_groups(self.config.child_host, self.config.child_token))
+        groups = list(self.get_all_groups(
+            self.config.child_host, self.config.child_token))
         transient_list = []
 
-        self.traverse_groups(groups, transient_list, self.config.child_host, self.config.child_token)
+        self.traverse_groups(groups, transient_list,
+                             self.config.child_host, self.config.child_token)
 
         with open('%s/data/groups.json' % self.app_path, "w") as f:
             json.dump(groups, f, indent=4)
-        
+
         if not quiet:
-            self.log.info("Retrieved %d groups. Check groups.json to see all retrieved groups" % len(groups))
+            self.log.info(
+                "Retrieved %d groups. Check groups.json to see all retrieved groups" % len(groups))
 
     def migrate_group_info(self):
         if not path.isfile("%s/data/groups.json" % self.app_path):
@@ -79,18 +84,20 @@ class GroupsClient(BaseClass):
             group_name = groups[i]["id"]
             rewritten_groups[group_name] = new_obj
         self.traverse_and_migrate(groups, rewritten_groups)
-        
+
     def traverse_and_migrate(self, groups, rewritten_groups, parent_id=None):
         count = 0
         for group in groups:
-            self.log.info("Migrating %s %d/%d" % (group["name"], count, len(group)))
+            self.log.info("Migrating %s %d/%d" %
+                          (group["name"], count, len(group)))
             if group.get("id", None) is not None:
                 if rewritten_groups is not None:
-                    has_children = "child_ids" in rewritten_groups.get(group["id"], None)
+                    has_children = "child_ids" in rewritten_groups.get(
+                        group["id"], None)
                 group_id = group["id"]
                 # group.pop("id")
                 members = group["members"]
-                
+
                 if self.config.make_visibility_private is not None:
                     if self.config.make_visibility_private is True:
                         group["visibility"] = "private"
@@ -102,7 +109,7 @@ class GroupsClient(BaseClass):
                     elif group.get("old_parent_id", None) is not None:
                         if rewritten_groups.get(group["old_parent_id"], None) is not None:
                             parent_id = rewritten_groups[group["old_parent_id"]]["id"]
-                    
+
                     #search = api.search(self.config.parent_host, self.config.parent_token, "groups", group["parent_namespace"])
                     if parent_id is not None:
                         if rewritten_groups[parent_id].get("new_parent_id", None) is not None:
@@ -117,7 +124,8 @@ class GroupsClient(BaseClass):
                                         found = True
                                         break
                         if found is False:
-                            self.traverse_and_migrate([rewritten_groups[parent_id]], rewritten_groups)
+                            self.traverse_and_migrate(
+                                [rewritten_groups[parent_id]], rewritten_groups)
                             #search = api.search(self.config.parent_host, self.config.parent_token, "groups", group["parent_namespace"])
                             for s in api.list_all(self.config.parent_host, self.config.parent_token, "groups?search=%s" % group["parent_namespace"]):
                                 if rewritten_groups.get(parent_id, None) is not None:
@@ -138,7 +146,7 @@ class GroupsClient(BaseClass):
                         self.log.info("Parent namespace is empty")
 
                 # group.pop("full_path")
-                
+
                 new_group_id = None
                 if group_id in rewritten_groups:
                     try:
@@ -154,14 +162,16 @@ class GroupsClient(BaseClass):
                             full_parent_namespace = group_without_id["full_parent_namespace"]
                             group_without_id.pop("full_parent_namespace")
                             self.log.info("Popping parent namespace")
-                        response = self.create_group(self.config.parent_host, self.config.parent_token, group_without_id).json()
+                        response = self.create_group(
+                            self.config.parent_host, self.config.parent_token, group_without_id).json()
                         if isinstance(response, dict):
                             if response.get("message", None) is not None:
                                 if "Failed to save group" in response["message"]:
-                                    self.log.info("Group already exists. Searching for group ID")
+                                    self.log.info(
+                                        "Group already exists. Searching for group ID")
                                     #new_group = api.search(self.config.parent_host, self.config.parent_token, 'groups', group['path'])
 
-                                    #if new_group is not None and len(new_group) > 0:
+                                    # if new_group is not None and len(new_group) > 0:
                                     found_group = False
                                     for ng in api.list_all(self.config.parent_host, self.config.parent_token, "groups/%d/subgroups" % group["parent_id"]):
                                         if ng["full_path"] == full_parent_namespace:
@@ -182,7 +192,8 @@ class GroupsClient(BaseClass):
                     except RequestException, e:
                         self.log.info("Group already exists")
                     if new_group_id is None:
-                        new_group = api.search(self.config.parent_host, self.config.parent_token, 'groups', group['path'])
+                        new_group = api.search(
+                            self.config.parent_host, self.config.parent_token, 'groups', group['path'])
                         if new_group is not None and len(new_group) > 0:
                             for ng in new_group:
                                 if ng["name"] == group["name"]:
@@ -201,15 +212,18 @@ class GroupsClient(BaseClass):
                             }
 
                             try:
-                                response = api.generate_post_request(self.config.parent_host, self.config.parent_token, "groups/%d/members" % new_group_id, json.dumps(new_member))
+                                response = api.generate_post_request(
+                                    self.config.parent_host, self.config.parent_token, "groups/%d/members" % new_group_id, json.dumps(new_member))
                             except RequestException, e:
                                 self.log.error(e)
 
-                        self.vars.migrate_variables(new_group_id, group_id, "group")
+                        self.vars.migrate_variables(
+                            new_group_id, group_id, "group")
 
                         if not root_user_present:
                             self.log.info("removing root user from group")
-                            response = api.generate_delete_request(self.config.parent_host, self.config.parent_token, "groups/%d/members/%d" % (new_group_id, int(self.config.parent_user_id)))
+                            response = api.generate_delete_request(
+                                self.config.parent_host, self.config.parent_token, "groups/%d/members/%d" % (new_group_id, int(self.config.parent_user_id)))
                             print response
 
                         # if has_children:
@@ -230,14 +244,15 @@ class GroupsClient(BaseClass):
             else:
                 print "Leaving recursion"
 
-            count += 1 
+            count += 1
 
     def update_members(self):
         with open("%s/data/staged_groups.json" % self.app_path, "r") as f:
             groups = json.load(f)
         for group in groups:
             # TODO: Change this to a search check. This assumes the instance doesn't contain various nested groups with the same name
-            new_group_id = api.generate_get_request(self.config.parent_host, self.config.parent_token, 'groups', params={'search': group['name']}).json()
+            new_group_id = api.generate_get_request(
+                self.config.parent_host, self.config.parent_token, 'groups', params={'search': group['name']}).json()
             print new_group_id
             members = group["members"]
             for member in members:
@@ -249,7 +264,8 @@ class GroupsClient(BaseClass):
                 }
 
                 try:
-                    api.generate_post_request(self.config.parent_host, self.config.parent_token, "groups/%d/members" % new_group_id, json.dumps(new_member))
+                    api.generate_post_request(self.config.parent_host, self.config.parent_token,
+                                              "groups/%d/members" % new_group_id, json.dumps(new_member))
                 except RequestException, e:
                     self.log.error(e)
 
@@ -265,9 +281,11 @@ class GroupsClient(BaseClass):
         if len(groups) > 0:
             if len(groups[0]) > 0:
                 for group in groups:
-                    self.traverse_staging(int(group), rewritten_groups, staged_groups)
-                    self.log.info("Staging group [%d/%d]" % (len(staged_groups), len(groups)))
-                    
+                    self.traverse_staging(
+                        int(group), rewritten_groups, staged_groups)
+                    self.log.info("Staging group [%d/%d]" %
+                                  (len(staged_groups), len(groups)))
+
         with open("%s/data/staged_groups.json" % self.app_path, "w") as f:
             json.dump(misc_utils.remove_dupes(staged_groups), f, indent=4)
 
@@ -276,23 +294,26 @@ class GroupsClient(BaseClass):
             g = group_dict[id]
             if g["parent_id"] is None:
                 if self.config.parent_id is not None:
-                    parent_group = self.get_group(self.config.parent_id, self.config.parent_host, self.config.parent_token).json()
+                    parent_group = self.get_group(
+                        self.config.parent_id, self.config.parent_host, self.config.parent_token).json()
                     g["full_parent_namespace"] = parent_group["full_path"]
                     g["parent_namespace"] = parent_group["path"]
                     g["parent_id"] = self.config.parent_id
             else:
                 parent_group = group_dict.get(g["parent_id"])
                 if parent_group is not None:
-                    parent_group_resp = self.get_group(parent_group["id"], self.config.child_host, self.config.child_token).json()
-                    g["full_parent_namespace"] = "%s/%s" % (parent_group_resp["full_path"], parent_group["full_path"])
+                    parent_group_resp = self.get_group(
+                        parent_group["id"], self.config.child_host, self.config.child_token).json()
+                    g["full_parent_namespace"] = "%s/%s" % (
+                        parent_group_resp["full_path"], parent_group["full_path"])
                     g["parent_namespace"] = parent_group["path"]
                     if parent_group.get("parent_id", None) is not None:
-                        self.traverse_staging(parent_group["id"], group_dict, staged_groups)
+                        self.traverse_staging(
+                            parent_group["id"], group_dict, staged_groups)
                     else:
                         staged_groups.append(parent_group)
             staged_groups.append(g)
 
-        
     def find_all_internal_projects(self):
         groups_to_change = []
         # with open("%s/data/groups.json" % self.app_path, "r") as f:
@@ -308,18 +329,21 @@ class GroupsClient(BaseClass):
 
         transient_list = []
 
-        parent_group = [self.get_group(self.config.parent_id, self.config.parent_host, self.config.parent_token).json()]
+        parent_group = [self.get_group(
+            self.config.parent_id, self.config.parent_host, self.config.parent_token).json()]
 
         print parent_group
 
-        self.traverse_groups(parent_group, transient_list, self.config.parent_host, self.config.parent_token)
+        self.traverse_groups(parent_group, transient_list,
+                             self.config.parent_host, self.config.parent_token)
 
         count = 0
 
         for group in transient_list:
             print "%s, %s" % (group["name"], group["visibility"])
             if group["visibility"] != "private":
-                self.log.info("%s has %s visibility" % (group["name"], group["visibility"]))
+                self.log.info("%s has %s visibility" %
+                              (group["name"], group["visibility"]))
                 count += 1
                 groups_to_change.append(group)
 
@@ -336,7 +360,8 @@ class GroupsClient(BaseClass):
                         if "%s" % group["path"].lower() in proj["full_path"].lower():
                             #self.log.info("Migrating variables for %s" % proj["name"])
                             ids.append(proj["id"])
-                            print "%s: %s" % (proj["full_path"], proj["visibility"])
+                            print "%s: %s" % (
+                                proj["full_path"], proj["visibility"])
                             break
             except IOError, e:
                 self.log.error(e)

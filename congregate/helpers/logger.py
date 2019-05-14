@@ -3,6 +3,7 @@ import os
 
 loggers = {}
 
+
 def myLogger(name):
     global loggers
     app_path = os.getenv("CONGREGATE_PATH")
@@ -14,7 +15,8 @@ def myLogger(name):
         file_log_handler = logging.FileHandler('%s/congregate.log' % app_path)
         stderr_log_handler = logging.StreamHandler()
 
-        formatter = logging.Formatter('[%(asctime)s][%(levelname)s]|%(module)s.%(funcName)s:%(lineno)d| %(message)s', datefmt='%d %b %Y %H:%M:%S')
+        formatter = logging.Formatter(
+            '[%(asctime)s][%(levelname)s]|%(module)s.%(funcName)s:%(lineno)d| %(message)s', datefmt='%d %b %Y %H:%M:%S')
         file_log_handler.setFormatter(formatter)
         stderr_log_handler.setFormatter(formatter)
         logger.addHandler(file_log_handler)
@@ -22,6 +24,3 @@ def myLogger(name):
         loggers[name] = logger
 
         return logger
-
-    
-

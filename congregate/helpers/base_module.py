@@ -12,4 +12,3 @@ from helpers import conf
 log = myLogger(__name__)
 app_path = getenv("CONGREGATE_PATH")
 config = conf.ig()
-

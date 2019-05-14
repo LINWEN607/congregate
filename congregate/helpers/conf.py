@@ -8,6 +8,7 @@ import os
 import json
 from cli import config as config_cli
 
+
 class ig:
     def __init__(self):
         app_path = os.getenv("CONGREGATE_PATH")
@@ -15,14 +16,14 @@ class ig:
             config_cli.generate_config()
         with open('%s/data/config.json' % app_path) as f:
             self.config = json.load(f)["config"]
-    
+
     @property
     def props(self):
         """
             Return entire config object
         """
         return self.config
-    
+
     @property
     def parent_host(self):
         return self.config.get("parent_instance_host", None)
@@ -46,7 +47,7 @@ class ig:
     @property
     def bucket_name(self):
         return self.config.get("bucket_name", None)
-    
+
     @property
     def s3_region(self):
         return self.config.get("s3_region", None)
@@ -66,7 +67,7 @@ class ig:
     @property
     def parent_id(self):
         return self.config.get("parent_id", None)
-    
+
     @property
     def child_username(self):
         return self.config.get("child_username", None)
@@ -74,7 +75,7 @@ class ig:
     @property
     def parent_user_id(self):
         return self.config.get("parent_user_id", None)
-    
+
     @property
     def mirror_username(self):
         return self.config.get("mirror_username", None)
@@ -90,7 +91,7 @@ class ig:
     @property
     def external_source(self):
         return self.config.get("external_source", None)
-    
+
     @property
     def repo_list(self):
         return self.config.get("repo_list_path", None)

@@ -1,9 +1,10 @@
 import os
 from cli import config, stage_projects
-from migration.gitlab.users import UsersClient 
+from migration.gitlab.users import UsersClient
 from migration.gitlab.groups import GroupsClient
 from migration import migrate
 from helpers.base_module import app_path
+
 
 def do_all():
     users = UsersClient()
@@ -16,6 +17,7 @@ def do_all():
         groups.retrieve_group_info()
     stage_projects.stage_projects([None, "all"])
     migrate.migrate()
+
 
 if __name__ == "__main__":
     do_all()

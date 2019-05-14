@@ -4,6 +4,7 @@ from migration.gitlab.projects import ProjectsClient
 from requests.exceptions import RequestException
 import json
 
+
 class VariablesClient(BaseClass):
     def __init__(self):
         self.projects = ProjectsClient()
@@ -51,9 +52,11 @@ class VariablesClient(BaseClass):
                         wrapped_data = json.dumps(var)
                         self.set_variables(new_id, wrapped_data, var_type)
                 else:
-                    self.log.info("Project does not have CI variables. Skipping.")
+                    self.log.info(
+                        "Project does not have CI variables. Skipping.")
             else:
-                self.log.error("Response returned a %d with the message: %s" % (response.status_code, response.text))
+                self.log.error("Response returned a %d with the message: %s" % (
+                    response.status_code, response.text))
         except RequestException:
             return None
 
@@ -65,18 +68,21 @@ class VariablesClient(BaseClass):
         if len(files) > 0:
             for project_json in files:
                 try:
-                    self.log.debug("Searching for existing %s" % project_json["name"])
+                    self.log.debug("Searching for existing %s" %
+                                   project_json["name"])
                     for proj in self.projects.search_for_project(self.config.parent_host, self.config.parent_token, project_json['name']):
                         if proj["name"] == project_json["name"]:
                             if "%s" % project_json["namespace"].lower() in proj["path_with_namespace"].lower():
-                                self.log.debug("Migrating variables for %s" % proj["name"])
+                                self.log.debug(
+                                    "Migrating variables for %s" % proj["name"])
                                 project_id = proj["id"]
                                 ids.append(project_id)
                                 break
                             else:
                                 project_id = None
                     if project_id is not None:
-                        self.migrate_variables(project_id, project_json["id"], "project")
+                        self.migrate_variables(
+                            project_id, project_json["id"], "project")
                 except IOError, e:
                     self.log.error(e)
             with open("%s/data/ids_variable.txt" % self.app_path, "w") as f:

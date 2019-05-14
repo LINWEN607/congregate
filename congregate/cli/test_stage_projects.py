@@ -9,6 +9,7 @@ from helpers.base_module import app_path
 from helpers.misc_utils import remove_dupes
 import json
 
+
 class ConfigTests(unittest.TestCase):
     def setUp(self):
         self.projects_api = MockProjectsApi()
@@ -16,7 +17,7 @@ class ConfigTests(unittest.TestCase):
         self.users_api = MockUsersApi()
         self.members_api = MockMembersApi()
         self.mock = mock.MagicMock()
-    
+
     @mock.patch('__builtin__.open')
     @mock.patch('os.path.isfile')
     @mock.patch('cli.stage_projects.open_projects_file')
@@ -32,70 +33,71 @@ class ConfigTests(unittest.TestCase):
 
         projects_to_stage = ["4", "6"]
 
-        staged_projects, staged_users, staged_groups = stage_projects.build_staging_data(projects_to_stage)
+        staged_projects, staged_users, staged_groups = stage_projects.build_staging_data(
+            projects_to_stage)
 
         expected_projects = [
             {
-                "name": "Diaspora Client", 
-                "namespace": "diaspora", 
+                "name": "Diaspora Client",
+                "namespace": "diaspora",
                 "members": [
                     {
-                        "username": "raymond_smith", 
-                        "access_level": 30, 
-                        "state": "active", 
-                        "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon", 
-                        "web_url": "http://192.168.1.8:3000/root", 
-                        "name": "Raymond Smith", 
-                        "id": 1, 
+                        "username": "raymond_smith",
+                        "access_level": 30,
+                        "state": "active",
+                        "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon",
+                        "web_url": "http://192.168.1.8:3000/root",
+                        "name": "Raymond Smith",
+                        "id": 1,
                         "expires_at": "2012-10-22T14:13:35Z"
-                    }, 
+                    },
                     {
-                        "username": "john_doe", 
-                        "access_level": 30, 
-                        "state": "active", 
-                        "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon", 
-                        "web_url": "http://192.168.1.8:3000/root", 
-                        "name": "John Doe", 
-                        "id": 2, 
+                        "username": "john_doe",
+                        "access_level": 30,
+                        "state": "active",
+                        "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon",
+                        "web_url": "http://192.168.1.8:3000/root",
+                        "name": "John Doe",
+                        "id": 2,
                         "expires_at": "2012-10-22T14:13:35Z"
                     }
-                ], 
-                "http_url_to_repo": "http://example.com/diaspora/diaspora-client.git", 
-                "project_type": "group", 
+                ],
+                "http_url_to_repo": "http://example.com/diaspora/diaspora-client.git",
+                "project_type": "group",
                 "default_branch": "master",
-                "visibility": "private", 
+                "visibility": "private",
                 "id": 4,
                 "description": "Project that does stuff"
-            }, 
+            },
             {
-                "name": "Puppet", 
-                "namespace": "brightbox", 
+                "name": "Puppet",
+                "namespace": "brightbox",
                 "members": [
                     {
-                        "username": "raymond_smith", 
-                        "access_level": 30, 
-                        "state": "active", 
-                        "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon", 
-                        "web_url": "http://192.168.1.8:3000/root", 
-                        "name": "Raymond Smith", 
-                        "id": 1, 
+                        "username": "raymond_smith",
+                        "access_level": 30,
+                        "state": "active",
+                        "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon",
+                        "web_url": "http://192.168.1.8:3000/root",
+                        "name": "Raymond Smith",
+                        "id": 1,
                         "expires_at": "2012-10-22T14:13:35Z"
-                    }, 
+                    },
                     {
-                        "username": "john_doe", 
-                        "access_level": 30, 
-                        "state": "active", 
-                        "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon", 
-                        "web_url": "http://192.168.1.8:3000/root", 
-                        "name": "John Doe", 
-                        "id": 2, 
+                        "username": "john_doe",
+                        "access_level": 30,
+                        "state": "active",
+                        "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon",
+                        "web_url": "http://192.168.1.8:3000/root",
+                        "name": "John Doe",
+                        "id": 2,
                         "expires_at": "2012-10-22T14:13:35Z"
                     }
-                ], 
+                ],
                 "default_branch": "master",
-                "http_url_to_repo": "http://example.com/brightbox/puppet.git", 
-                "project_type": "group", 
-                "visibility": "private", 
+                "http_url_to_repo": "http://example.com/brightbox/puppet.git",
+                "project_type": "group",
+                "visibility": "private",
                 "id": 6,
                 "description": None
             }
@@ -103,99 +105,99 @@ class ConfigTests(unittest.TestCase):
 
         expected_users = [
             {
-                "username": "raymond_smith", 
-                "access_level": 30, 
-                "state": "active", 
-                "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon", 
-                "web_url": "http://192.168.1.8:3000/root", 
-                "name": "Raymond Smith", 
-                "id": 1, 
+                "username": "raymond_smith",
+                "access_level": 30,
+                "state": "active",
+                "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon",
+                "web_url": "http://192.168.1.8:3000/root",
+                "name": "Raymond Smith",
+                "id": 1,
                 "expires_at": "2012-10-22T14:13:35Z"
-            }, 
+            },
             {
-                "username": "john_doe", 
-                "access_level": 30, 
-                "state": "active", 
-                "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon", 
-                "web_url": "http://192.168.1.8:3000/root", 
-                "name": "John Doe", 
-                "id": 2, 
+                "username": "john_doe",
+                "access_level": 30,
+                "state": "active",
+                "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon",
+                "web_url": "http://192.168.1.8:3000/root",
+                "name": "John Doe",
+                "id": 2,
                 "expires_at": "2012-10-22T14:13:35Z"
             }
         ]
 
         expected_groups = [
             {
-                "lfs_enabled": True, 
-                "request_access_enabled": False, 
-                "description": "An interesting group as well", 
-                "visibility": "public", 
-                "web_url": "http://localhost:3000/groups/foo-bar-2", 
-                "full_name": "Foobar Group 3", 
-                "path": "foo-bar-3", 
-                "id": 3, 
-                "name": "Foobar Group3", 
+                "lfs_enabled": True,
+                "request_access_enabled": False,
+                "description": "An interesting group as well",
+                "visibility": "public",
+                "web_url": "http://localhost:3000/groups/foo-bar-2",
+                "full_name": "Foobar Group 3",
+                "path": "foo-bar-3",
+                "id": 3,
+                "name": "Foobar Group3",
                 "members": [
                     {
-                        "username": "smart3", 
-                        "access_level": 50, 
-                        "state": "active", 
-                        "web_url": "http://demo.tanuki.cloud/smart3", 
-                        "name": "User smart3", 
-                        "avatar_url": "https://secure.gravatar.com/avatar/d549ee47080f3512a835905895c46545?s=80&d=identicon", 
-                        "id": 285, 
+                        "username": "smart3",
+                        "access_level": 50,
+                        "state": "active",
+                        "web_url": "http://demo.tanuki.cloud/smart3",
+                        "name": "User smart3",
+                        "avatar_url": "https://secure.gravatar.com/avatar/d549ee47080f3512a835905895c46545?s=80&d=identicon",
+                        "id": 285,
                         "expires_at": None
-                    }, 
+                    },
                     {
-                        "username": "smart4", 
-                        "access_level": 30, 
-                        "state": "active", 
-                        "web_url": "http://demo.tanuki.cloud/smart4", 
-                        "name": "User smart4", 
-                        "avatar_url": "https://secure.gravatar.com/avatar/77b6da6e1b9aa2527600bc7727f5bad8?s=80&d=identicon", 
-                        "id": 286, 
+                        "username": "smart4",
+                        "access_level": 30,
+                        "state": "active",
+                        "web_url": "http://demo.tanuki.cloud/smart4",
+                        "name": "User smart4",
+                        "avatar_url": "https://secure.gravatar.com/avatar/77b6da6e1b9aa2527600bc7727f5bad8?s=80&d=identicon",
+                        "id": 286,
                         "expires_at": None
                     }
-                ], 
-                "parent_id": None, 
-                "avatar_url": "http://localhost:3000/uploads/group/avatar/1/foo.jpg", 
-                "file_template_project_id": 1, 
+                ],
+                "parent_id": None,
+                "avatar_url": "http://localhost:3000/uploads/group/avatar/1/foo.jpg",
+                "file_template_project_id": 1,
                 "full_path": "foo-bar-3"
-            },{
-                "lfs_enabled": True, 
-                "request_access_enabled": False, 
-                "description": "An interesting group as well", 
-                "visibility": "public", 
-                "web_url": "http://localhost:3000/groups/foo-bar-2", 
-                "full_name": "Foobar Group 3", 
-                "path": "foo-bar-3", 
-                "id": 4, 
-                "name": "Foobar Group3", 
+            }, {
+                "lfs_enabled": True,
+                "request_access_enabled": False,
+                "description": "An interesting group as well",
+                "visibility": "public",
+                "web_url": "http://localhost:3000/groups/foo-bar-2",
+                "full_name": "Foobar Group 3",
+                "path": "foo-bar-3",
+                "id": 4,
+                "name": "Foobar Group3",
                 "members": [
                     {
-                        "username": "smart3", 
-                        "access_level": 50, 
-                        "state": "active", 
-                        "web_url": "http://demo.tanuki.cloud/smart3", 
-                        "name": "User smart3", 
-                        "avatar_url": "https://secure.gravatar.com/avatar/d549ee47080f3512a835905895c46545?s=80&d=identicon", 
-                        "id": 285, 
+                        "username": "smart3",
+                        "access_level": 50,
+                        "state": "active",
+                        "web_url": "http://demo.tanuki.cloud/smart3",
+                        "name": "User smart3",
+                        "avatar_url": "https://secure.gravatar.com/avatar/d549ee47080f3512a835905895c46545?s=80&d=identicon",
+                        "id": 285,
                         "expires_at": None
-                    }, 
+                    },
                     {
-                        "username": "smart4", 
-                        "access_level": 30, 
-                        "state": "active", 
-                        "web_url": "http://demo.tanuki.cloud/smart4", 
-                        "name": "User smart4", 
-                        "avatar_url": "https://secure.gravatar.com/avatar/77b6da6e1b9aa2527600bc7727f5bad8?s=80&d=identicon", 
-                        "id": 286, 
+                        "username": "smart4",
+                        "access_level": 30,
+                        "state": "active",
+                        "web_url": "http://demo.tanuki.cloud/smart4",
+                        "name": "User smart4",
+                        "avatar_url": "https://secure.gravatar.com/avatar/77b6da6e1b9aa2527600bc7727f5bad8?s=80&d=identicon",
+                        "id": 286,
                         "expires_at": None
                     }
-                ], 
-                "parent_id": None, 
-                "avatar_url": "http://localhost:3000/uploads/group/avatar/1/foo.jpg", 
-                "file_template_project_id": 1, 
+                ],
+                "parent_id": None,
+                "avatar_url": "http://localhost:3000/uploads/group/avatar/1/foo.jpg",
+                "file_template_project_id": 1,
                 "full_path": "foo-bar-3"
             }
         ]
@@ -205,7 +207,8 @@ class ConfigTests(unittest.TestCase):
         self.assertEqual(len(expected_users), len(staged_users))
 
         for i in range(len(expected_projects)):
-            self.assertDictContainsSubset(expected_projects[i], staged_projects[i])
+            self.assertDictContainsSubset(
+                expected_projects[i], staged_projects[i])
             self.assertItemsEqual(expected_projects[i], staged_projects[i])
         for i in range(len(expected_groups)):
             self.assertDictContainsSubset(expected_groups[i], staged_groups[i])
@@ -214,7 +217,6 @@ class ConfigTests(unittest.TestCase):
             self.assertDictContainsSubset(expected_users[i], staged_users[i])
             self.assertItemsEqual(expected_users[i], staged_users[i])
 
-    
     @mock.patch('__builtin__.open')
     @mock.patch('os.path.isfile')
     @mock.patch('cli.stage_projects.open_projects_file')
@@ -230,101 +232,102 @@ class ConfigTests(unittest.TestCase):
 
         projects_to_stage = ["1-3"]
 
-        staged_projects, staged_users, staged_groups = stage_projects.build_staging_data(projects_to_stage)
+        staged_projects, staged_users, staged_groups = stage_projects.build_staging_data(
+            projects_to_stage)
 
         expected_projects = [
             {
-                "name": "Diaspora Client", 
-                "namespace": "diaspora", 
+                "name": "Diaspora Client",
+                "namespace": "diaspora",
                 "members": [
                     {
-                        "username": "raymond_smith", 
-                        "access_level": 30, 
-                        "state": "active", 
-                        "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon", 
-                        "web_url": "http://192.168.1.8:3000/root", 
-                        "name": "Raymond Smith", 
-                        "id": 1, 
+                        "username": "raymond_smith",
+                        "access_level": 30,
+                        "state": "active",
+                        "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon",
+                        "web_url": "http://192.168.1.8:3000/root",
+                        "name": "Raymond Smith",
+                        "id": 1,
                         "expires_at": "2012-10-22T14:13:35Z"
-                    }, 
+                    },
                     {
-                        "username": "john_doe", 
-                        "access_level": 30, 
-                        "state": "active", 
-                        "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon", 
-                        "web_url": "http://192.168.1.8:3000/root", 
-                        "name": "John Doe", 
-                        "id": 2, 
+                        "username": "john_doe",
+                        "access_level": 30,
+                        "state": "active",
+                        "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon",
+                        "web_url": "http://192.168.1.8:3000/root",
+                        "name": "John Doe",
+                        "id": 2,
                         "expires_at": "2012-10-22T14:13:35Z"
                     }
-                ], 
-                "http_url_to_repo": "http://example.com/diaspora/diaspora-client.git", 
-                "project_type": "group", 
-                "visibility": "private", 
+                ],
+                "http_url_to_repo": "http://example.com/diaspora/diaspora-client.git",
+                "project_type": "group",
+                "visibility": "private",
                 "id": 4,
                 "default_branch": "master",
                 "description": "Project that does stuff"
-            }, 
+            },
             {
-                "name": "Puppet", 
-                "namespace": "brightbox", 
+                "name": "Puppet",
+                "namespace": "brightbox",
                 "members": [
                     {
-                        "username": "raymond_smith", 
-                        "access_level": 30, 
-                        "state": "active", 
-                        "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon", 
-                        "web_url": "http://192.168.1.8:3000/root", 
-                        "name": "Raymond Smith", 
-                        "id": 1, 
+                        "username": "raymond_smith",
+                        "access_level": 30,
+                        "state": "active",
+                        "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon",
+                        "web_url": "http://192.168.1.8:3000/root",
+                        "name": "Raymond Smith",
+                        "id": 1,
                         "expires_at": "2012-10-22T14:13:35Z"
-                    }, 
+                    },
                     {
-                        "username": "john_doe", 
-                        "access_level": 30, 
-                        "state": "active", 
-                        "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon", 
-                        "web_url": "http://192.168.1.8:3000/root", 
-                        "name": "John Doe", 
-                        "id": 2, 
+                        "username": "john_doe",
+                        "access_level": 30,
+                        "state": "active",
+                        "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon",
+                        "web_url": "http://192.168.1.8:3000/root",
+                        "name": "John Doe",
+                        "id": 2,
                         "expires_at": "2012-10-22T14:13:35Z"
                     }
-                ], 
-                "http_url_to_repo": "http://example.com/brightbox/puppet.git", 
-                "project_type": "group", 
-                "visibility": "private", 
+                ],
+                "http_url_to_repo": "http://example.com/brightbox/puppet.git",
+                "project_type": "group",
+                "visibility": "private",
                 "id": 6,
                 "default_branch": "master",
                 "description": None
             },
-                {
-                "name": "Puppet", 
-                "namespace": "brightbox", 
+            {
+                "name": "Puppet",
+                "namespace": "brightbox",
                 "members": [
                     {
-                        "username": "raymond_smith", 
-                        "access_level": 30, 
-                        "state": "active", 
-                        "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon", 
-                        "web_url": "http://192.168.1.8:3000/root", 
-                        "name": "Raymond Smith", 
-                        "id": 1, 
+                        "username": "raymond_smith",
+                        "access_level": 30,
+                        "state": "active",
+                        "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon",
+                        "web_url": "http://192.168.1.8:3000/root",
+                        "name": "Raymond Smith",
+                        "id": 1,
                         "expires_at": "2012-10-22T14:13:35Z"
-                    }, 
+                    },
                     {
-                        "username": "john_doe", 
-                        "access_level": 30, 
-                        "state": "active", 
-                        "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon", 
-                        "web_url": "http://192.168.1.8:3000/root", 
-                        "name": "John Doe", 
-                        "id": 2, 
+                        "username": "john_doe",
+                        "access_level": 30,
+                        "state": "active",
+                        "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon",
+                        "web_url": "http://192.168.1.8:3000/root",
+                        "name": "John Doe",
+                        "id": 2,
                         "expires_at": "2012-10-22T14:13:35Z"
                     }
-                ], 
-                "http_url_to_repo": "http://example.com/brightbox/puppet.git", 
-                "project_type": "group", 
-                "visibility": "private", 
+                ],
+                "http_url_to_repo": "http://example.com/brightbox/puppet.git",
+                "project_type": "group",
+                "visibility": "private",
                 "id": 80,
                 "default_branch": "master",
                 "description": None
@@ -333,63 +336,63 @@ class ConfigTests(unittest.TestCase):
 
         expected_users = [
             {
-                "username": "raymond_smith", 
-                "access_level": 30, 
-                "state": "active", 
-                "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon", 
-                "web_url": "http://192.168.1.8:3000/root", 
-                "name": "Raymond Smith", 
-                "id": 1, 
+                "username": "raymond_smith",
+                "access_level": 30,
+                "state": "active",
+                "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon",
+                "web_url": "http://192.168.1.8:3000/root",
+                "name": "Raymond Smith",
+                "id": 1,
                 "expires_at": "2012-10-22T14:13:35Z"
-            }, 
+            },
             {
-                "username": "john_doe", 
-                "access_level": 30, 
-                "state": "active", 
-                "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon", 
-                "web_url": "http://192.168.1.8:3000/root", 
-                "name": "John Doe", 
-                "id": 2, 
+                "username": "john_doe",
+                "access_level": 30,
+                "state": "active",
+                "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon",
+                "web_url": "http://192.168.1.8:3000/root",
+                "name": "John Doe",
+                "id": 2,
                 "expires_at": "2012-10-22T14:13:35Z"
             }
         ]
 
         expected_groups = [
             {
-                "lfs_enabled": True, 
-                "request_access_enabled": False, 
-                "description": "An interesting group as well", 
-                "visibility": "public", 
-                "web_url": "http://localhost:3000/groups/foo-bar-2", 
-                "full_name": "Foobar Group 3", 
-                "path": "foo-bar-3", 
-                "id": 3, 
-                "name": "Foobar Group3", 
+                "lfs_enabled": True,
+                "request_access_enabled": False,
+                "description": "An interesting group as well",
+                "visibility": "public",
+                "web_url": "http://localhost:3000/groups/foo-bar-2",
+                "full_name": "Foobar Group 3",
+                "path": "foo-bar-3",
+                "id": 3,
+                "name": "Foobar Group3",
                 "members": [
                     {
-                        "username": "smart3", 
-                        "access_level": 50, 
-                        "state": "active", 
-                        "web_url": "http://demo.tanuki.cloud/smart3", 
-                        "name": "User smart3", 
-                        "avatar_url": "https://secure.gravatar.com/avatar/d549ee47080f3512a835905895c46545?s=80&d=identicon", 
-                        "id": 285, 
+                        "username": "smart3",
+                        "access_level": 50,
+                        "state": "active",
+                        "web_url": "http://demo.tanuki.cloud/smart3",
+                        "name": "User smart3",
+                        "avatar_url": "https://secure.gravatar.com/avatar/d549ee47080f3512a835905895c46545?s=80&d=identicon",
+                        "id": 285,
                         "expires_at": None
-                    }, 
+                    },
                     {
-                        "username": "smart4", 
-                        "access_level": 30, 
-                        "state": "active", 
-                        "web_url": "http://demo.tanuki.cloud/smart4", 
-                        "name": "User smart4", 
-                        "avatar_url": "https://secure.gravatar.com/avatar/77b6da6e1b9aa2527600bc7727f5bad8?s=80&d=identicon", 
-                        "id": 286, 
+                        "username": "smart4",
+                        "access_level": 30,
+                        "state": "active",
+                        "web_url": "http://demo.tanuki.cloud/smart4",
+                        "name": "User smart4",
+                        "avatar_url": "https://secure.gravatar.com/avatar/77b6da6e1b9aa2527600bc7727f5bad8?s=80&d=identicon",
+                        "id": 286,
                         "expires_at": None
                     }
-                ], 
-                "parent_id": None, 
-                "avatar_url": "http://localhost:3000/uploads/group/avatar/1/foo.jpg", 
-                "file_template_project_id": 1, 
+                ],
+                "parent_id": None,
+                "avatar_url": "http://localhost:3000/uploads/group/avatar/1/foo.jpg",
+                "file_template_project_id": 1,
                 "full_path": "foo-bar-3"
             }
         ]
@@ -399,7 +402,8 @@ class ConfigTests(unittest.TestCase):
         self.assertEqual(len(expected_users), len(staged_users))
 
         for i in range(len(expected_projects)):
-            self.assertDictContainsSubset(expected_projects[i], staged_projects[i])
+            self.assertDictContainsSubset(
+                expected_projects[i], staged_projects[i])
             self.assertItemsEqual(expected_projects[i], staged_projects[i])
         for i in range(len(expected_groups)):
             self.assertDictContainsSubset(expected_groups[i], staged_groups[i])

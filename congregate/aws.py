@@ -14,6 +14,7 @@ from botocore.client import Config
 from helpers.base_class import BaseClass
 import json
 
+
 class AwsClient(BaseClass):
     def __init__(self):
         super(AwsClient, self).__init__()
@@ -36,10 +37,10 @@ class AwsClient(BaseClass):
                 }
                 if override_params is not None:
                     r = requests.post(url, headers=headers, params="&".join(override_params), data=data, files={
-                                  'file': (filename, BytesIO(r.content))})
+                        'file': (filename, BytesIO(r.content))})
                 else:
                     r = requests.post(url, headers=headers, data=data, files={
-                                  'file': (filename, BytesIO(r.content))})
+                        'file': (filename, BytesIO(r.content))})
                 return r.text
             self.log.error(r.text)
             return None

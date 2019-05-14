@@ -5,6 +5,7 @@ import requests
 
 log = myLogger(__name__)
 
+
 @stable_retry
 def generate_get_request(host, token, api, params=None):
     """
@@ -15,12 +16,13 @@ def generate_get_request(host, token, api, params=None):
     headers = {
         'Private-Token': token,
         'Content-Type': 'application/json'
-    } 
+    }
 
     if params is None:
         params = {}
 
     return requests.get(url, params=params, headers=headers)
+
 
 @stable_retry
 def generate_post_request(host, token, api, data, headers=None):
@@ -35,8 +37,9 @@ def generate_post_request(host, token, api, data, headers=None):
             'Private-Token': token,
             'Content-Type': 'application/json'
         }
-    
-    return  requests.post(url, data=data, headers=headers)
+
+    return requests.post(url, data=data, headers=headers)
+
 
 @stable_retry
 def generate_put_request(host, token, api, data, headers=None):
@@ -50,8 +53,9 @@ def generate_put_request(host, token, api, data, headers=None):
             'Private-Token': token,
             'Content-Type': 'application/json'
         }
-    
+
     return requests.put(url, headers=headers, data=data)
+
 
 @stable_retry
 def generate_delete_request(host, token, api):
@@ -63,8 +67,9 @@ def generate_delete_request(host, token, api):
     headers = {
         'Private-Token': token
     }
-    
+
     return requests.delete(url, headers=headers)
+
 
 @stable_retry
 def get_count(host, token, api):
@@ -81,8 +86,9 @@ def get_count(host, token, api):
 
     if response.headers.get('X-Total', None) is not None:
         return long(response.headers['X-Total'])
-    
+
     return None
+
 
 @stable_retry
 def get_total_pages(host, token, api):
@@ -98,8 +104,9 @@ def get_total_pages(host, token, api):
 
     if response.headers.get('X-Total-Pages', None) is not None:
         return long(response.headers['X-Total-Pages'])
-    
+
     return None
+
 
 @stable_retry
 def list_all(host, token, api, params=None):
@@ -117,7 +124,7 @@ def list_all(host, token, api, params=None):
     if count is not None:
         # total_work = end_at - start_at
         # total_pages = total_work / PER_PAGE
-        start_page = (start_at / PER_PAGE) + 1 # pages are 1-indexed
+        start_page = (start_at / PER_PAGE) + 1  # pages are 1-indexed
         end_page = int(math_ceil(float(end_at) / float(PER_PAGE)))
         current_page = start_page
 
@@ -142,7 +149,7 @@ def list_all(host, token, api, params=None):
 
             current_page += 1
     else:
-        start_page = (start_at / PER_PAGE) + 1 # pages are 1-indexed
+        start_page = (start_at / PER_PAGE) + 1  # pages are 1-indexed
         current_page = start_page
         while True:
             log.info("Retrieving %d %s" % (PER_PAGE * current_page, api))
@@ -160,6 +167,7 @@ def list_all(host, token, api, params=None):
                 break
 
             current_page += 1
+
 
 @stable_retry
 def search(host, token, path, search_query):
