@@ -173,15 +173,26 @@ class GroupsClient(BaseClass):
 
                                     # if new_group is not None and len(new_group) > 0:
                                     found_group = False
-                                    for ng in api.list_all(self.config.parent_host, self.config.parent_token, "groups/%d/subgroups" % group["parent_id"]):
-                                        if ng["full_path"] == full_parent_namespace:
-                                            new_group_id = ng["id"]
-                                            print new_group_id
-                                            self.log.info("Group found")
-                                            found_group = True
-                                            break
-                                        if found_group is True:
-                                            break
+                                    if group["parent_id"] is not None:
+                                        for ng in api.list_all(self.config.parent_host, self.config.parent_token, "groups/%d/subgroups" % group["parent_id"]):
+                                            if ng["full_path"] == full_parent_namespace:
+                                                new_group_id = ng["id"]
+                                                print new_group_id
+                                                self.log.info("Group found")
+                                                found_group = True
+                                                break
+                                            if found_group is True:
+                                                break
+                                    else:
+                                        for ng in self.search_for_group(group["name"], self.config.parent_host, self.config.parent_token):
+                                            if ng["full_path"] == full_parent_namespace:
+                                                new_group_id = ng["id"]
+                                                print new_group_id
+                                                self.log.info("Group found")
+                                                found_group = True
+                                                break
+                                            if found_group is True:
+                                                break
 
                                 else:
                                     self.log.info("Failed to save group")
