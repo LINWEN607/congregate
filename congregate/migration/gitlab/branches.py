@@ -39,20 +39,23 @@ class BranchesClient(BaseClass):
     def update_access_levels(self, access_level):
         for a in access_level:
             if a.get("user_id", None) is not None:
-                user = self.users.get_user(a["user_id"], self.config.child_host, self.config.child_token).json()
+                user = self.users.get_user(
+                    a["user_id"], self.config.child_host, self.config.child_token).json()
                 new_user = api.search(
                     self.config.parent_host, self.config.parent_token, 'users', user['email'])
                 new_user_id = new_user[0]["id"]
                 a["user_id"] = new_user_id
             if a.get("group_id", None) is not None:
-                group = self.groups.get_group(a["group_id"], self.config.child_host, self.config.child_token).json()
+                group = self.groups.get_group(
+                    a["group_id"], self.config.child_host, self.config.child_token).json()
                 if self.config.parent_id is not None:
-                    parent_group = self.groups.get_group(self.config.parent_id, self.config.child_host, self.config.child_token).json()
-                    group["full_path"] = "%s/%s" % (parent_group["full_path"], group["full_path"])
+                    parent_group = self.groups.get_group(
+                        self.config.parent_id, self.config.child_host, self.config.child_token).json()
+                    group["full_path"] = "%s/%s" % (
+                        parent_group["full_path"], group["full_path"])
                 for new_group in self.groups.search_for_group(group["name"], self.config.parent_host, self.config.parent_token):
                     if new_group["full_path"].lower() == group["full_path"].lower():
                         a["group_id"] = new_group["id"]
                         break
-        
-        return access_level
 
+        return access_level
