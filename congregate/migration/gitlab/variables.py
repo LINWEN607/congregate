@@ -49,8 +49,7 @@ class VariablesClient(BaseClass):
                     for var in variables:
                         if var_type == "project":
                             var["environment_scope"] = "*"
-                        wrapped_data = json.dumps(var)
-                        self.set_variables(new_id, wrapped_data, var_type)
+                        self.set_variables(new_id, var, var_type)
                 else:
                     self.log.info(
                         "Project does not have CI variables. Skipping.")

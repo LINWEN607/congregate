@@ -214,7 +214,7 @@ def migrate_given_export(project_json):
                 projects.unarchive_project(
                     b.config.child_host, b.config.child_token, project_json["id"])
                 b.log.info("Migrating variables")
-                variables.migrate_variables(
+                status = variables.migrate_variables(
                     import_id, project_json["id"], "project")
                 b.log.info("Migrating project info")
                 migrate_single_project_info(project_json, import_id)
