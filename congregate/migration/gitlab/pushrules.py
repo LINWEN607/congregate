@@ -1,6 +1,6 @@
 from helpers.base_class import BaseClass
 from helpers import api
-
+import json
 
 class PushRulesClient(BaseClass):
     def get_push_rules(self, id, host, token):
@@ -13,4 +13,4 @@ class PushRulesClient(BaseClass):
         except KeyError:
             pass
 
-        return api.generate_post_request(host, token, "projects/%d/push_rule" % id, data)
+        return api.generate_post_request(host, token, "projects/%d/push_rule" % id, json.dumps(data))
