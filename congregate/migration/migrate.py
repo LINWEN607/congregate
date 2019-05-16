@@ -185,12 +185,13 @@ def migrate_given_export(project_json):
     project_id = None
     try:
         for proj in projects.search_for_project(b.config.parent_host, b.config.parent_token, project_json['name']):
-            if proj["name"] == project_json["name"] and project_json["namespace"] in proj["namespace"]["path"]:
-                b.log.info("Project already exists. Skipping %s" %
-                           project_json["name"])
-                project_exists = True
-                project_id = proj["id"]
-                break
+            if isinstance(proj, dict):
+                if proj["name"] == project_json["name"] and project_json["namespace"] in proj["namespace"]["path"]:
+                    b.log.info("Project already exists. Skipping %s" %
+                               project_json["name"])
+                    project_exists = True
+                    project_id = proj["id"]
+                    break
         if project_id:
             import_check = ie.get_import_status(
                 b.config.parent_host, b.config.parent_token, project_id).json()
@@ -292,7 +293,7 @@ def migrate(threads=None):
             import_pool.close()
             import_pool.join()
 
-            migrate_project_info()
+            # migrate_project_info()
         else:
             b.log.info("No projects to migrate")
 
