@@ -7,12 +7,13 @@ log = myLogger(__name__)
 
 
 @stable_retry
-def generate_get_request(host, token, api, params=None):
+def generate_get_request(host, token, api, url=None, params=None, stream=False):
     """
         Generates GET request to GitLab API.
         You will need to provide the GL host, access token, and specific api url.
     """
-    url = "%s/api/v4/%s" % (host, api)
+    if url is None:
+        url = "%s/api/v4/%s" % (host, api)
     headers = {
         'Private-Token': token,
         'Content-Type': 'application/json'
@@ -42,7 +43,7 @@ def generate_post_request(host, token, api, data, headers=None):
 
 
 @stable_retry
-def generate_put_request(host, token, api, data, headers=None):
+def generate_put_request(host, token, api, data, headers=None, files=None):
     """
         Generates PUT request to GitLab API.
         You will need to provide the GL host, access token, specific api url, and any data.
@@ -54,7 +55,7 @@ def generate_put_request(host, token, api, data, headers=None):
             'Content-Type': 'application/json'
         }
 
-    return requests.put(url, headers=headers, data=data)
+    return requests.put(url, headers=headers, data=data, files=files)
 
 
 @stable_retry
