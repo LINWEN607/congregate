@@ -132,6 +132,8 @@ class ImportExportClient(BaseClass):
                         self.config.parent_id, self.config.parent_host, self.config.parent_token).json()
                     namespace = "%s/%s" % (response["full_path"],
                                            project["namespace"])
+                    filename = "%s/%s_%s.tar.gz" % (response["path"], project["namespace"], project["name"])
+
                 else:
                     namespace = project["namespace"]
                     url = project["http_url_to_repo"]
