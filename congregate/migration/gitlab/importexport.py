@@ -132,6 +132,8 @@ class ImportExportClient(BaseClass):
                         self.config.parent_id, self.config.parent_host, self.config.parent_token).json()
                     namespace = "%s/%s" % (response["full_path"],
                                            project["namespace"])
+                    filename = "%s/%s_%s.tar.gz" % (response["path"], project["namespace"], project["name"])
+
                 else:
                     namespace = project["namespace"]
                     url = project["http_url_to_repo"]
@@ -143,10 +145,11 @@ class ImportExportClient(BaseClass):
                     full_path = "/".join(another_strip)
                     self.log.info("Searching for %s" % full_path)
                     for group in api.list_all(self.config.parent_host, self.config.parent_token, "groups?search=%s" % project["namespace"]):
-                        if group["full_path"].lower() == full_path.lower():
-                            self.log.info("Found %s" % group["full_path"])
-                            namespace = group["id"]
-                            break
+                        if isinstance(group, dict):
+                            if group["full_path"].lower() == full_path.lower():
+                                self.log.info("Found %s" % group["full_path"])
+                                namespace = group["id"]
+                                break
 
             exported = False
             import_response = None
@@ -199,11 +202,14 @@ class ImportExportClient(BaseClass):
                             search_response = api.search(
                                 self.config.parent_host, self.config.parent_token, 'projects', project['name'])
                             if len(search_response) > 0:
-                                for proj in search_response:
-                                    if proj["name"] == project["name"] and project["namespace"] in proj["namespace"]["path"]:
-                                        self.log.info("Found project")
-                                        import_id = proj["id"]
-                                        break
+                                if isinstance(search_response, dict):
+                                    for proj in search_response:
+                                        if proj["name"] == project["name"] and project["namespace"] in proj["namespace"]["path"]:
+                                            self.log.info("Found project")
+                                            import_id = proj["id"]
+                                            break
+                                else:
+                                    break
                             self.log.info(
                                 "Project may already exist but it cannot be found. Ignoring %s" % project["name"])
                             return None
@@ -219,23 +225,27 @@ class ImportExportClient(BaseClass):
                             break
                     if import_id is not None:
                         status = self.get_import_status(
-                            self.config.parent_host, self.config.parent_token, import_id).json()
-                        # self.log.info(status)
-                        if status["import_status"] == "finished":
-                            self.log.info(
-                                "%s has been exported and import is occurring" % name)
-                            exported = True
-                            # TODO: Fix or remove soft-cutover option
-                            # if self.config.mirror_username is not None:
-                            #     mirror_repo(project, import_id)
-                        elif status["import_status"] == "failed":
-                            self.log.info("%s failed to import" % name)
-                            exported = True
+                            self.config.parent_host, self.config.parent_token, import_id)
+
+                        try:
+                            status = status.json()
+                            if status["import_status"] == "finished":
+                                self.log.info(
+                                    "%s has been exported and import is occurring" % name)
+                                exported = True
+                                # TODO: Fix or remove soft-cutover option
+                                # if self.config.mirror_username is not None:
+                                #     mirror_repo(project, import_id)
+                            elif status["import_status"] == "failed":
+                                self.log.info("%s failed to import" % name)
+                                exported = True
+                        except:
+                            self.log.error("Json decoding issue")
                     else:
                         if timeout < 3600:
                             self.log.info("Waiting on %s to upload" % name)
                             timeout += 1
-                            sleep(1)
+                            sleep(2)
                         else:
                             self.log.info(
                                 "Moving on to the next project. Time limit exceeded")
@@ -316,9 +326,12 @@ class ImportExportClient(BaseClass):
         self.log.debug("Searching for existing %s" % name)
         project_exists = False
         for proj in self.projects.search_for_project(self.config.parent_host, self.config.parent_token, name):
-            if proj["name"] == name and namespace in proj["namespace"]["path"]:
-                self.log.info("Project already exists. Skipping %s" % name)
-                project_exists = True
+            if isinstance(proj, dict):
+                if proj["name"] == name and namespace in proj["namespace"]["path"]:
+                    self.log.info("Project already exists. Skipping %s" % name)
+                    project_exists = True
+                    break
+            else:
                 break
         if not project_exists:
             self.log.info(

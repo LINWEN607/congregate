@@ -8,3 +8,4 @@ js-packages
 *.log.*
 .coverage
 unused_stuff
+docker-copy

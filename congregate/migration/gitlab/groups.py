@@ -83,6 +83,7 @@ class GroupsClient(BaseClass):
             new_obj = groups[i]
             group_name = groups[i]["id"]
             rewritten_groups[group_name] = new_obj
+
         self.traverse_and_migrate(groups, rewritten_groups)
 
     def traverse_and_migrate(self, groups, rewritten_groups, parent_id=None):
@@ -315,9 +316,16 @@ class GroupsClient(BaseClass):
                 if parent_group is not None:
                     parent_group_resp = self.get_group(
                         parent_group["id"], self.config.child_host, self.config.child_token).json()
-                    g["full_parent_namespace"] = "%s/%s" % (
-                        parent_group_resp["full_path"], parent_group["full_path"])
-                    g["parent_namespace"] = parent_group["path"]
+                    if self.config.parent_id is not None:
+                        tlg = self.get_group(
+                            self.config.parent_id, self.config.parent_host, self.config.parent_token).json()
+                        g["full_parent_namespace"] = "%s/%s" % (
+                            tlg["full_path"], parent_group["full_path"])
+                        g["parent_namespace"] = parent_group["path"]
+                    else:
+                        g["full_parent_namespace"] = "%s/%s" % (
+                            parent_group_resp["full_path"], parent_group["full_path"])
+                        g["parent_namespace"] = parent_group["path"]
                     if parent_group.get("parent_id", None) is not None:
                         self.traverse_staging(
                             parent_group["id"], group_dict, staged_groups)
