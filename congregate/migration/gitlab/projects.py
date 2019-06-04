@@ -86,11 +86,15 @@ class ProjectsClient(BaseClass):
         old_project = self.get_project(
             old_id, self.config.child_host, self.config.child_token).json()
         old_project_avatar = old_project["avatar_url"]
-        img = api.generate_get_request(
-            self.config.child_host, self.config.child_token, None, url=old_project_avatar)
-        filename = old_project_avatar.split("/")[-1]
-        headers = {
-            'Private-Token': self.config.parent_token
-        }
-        return api.generate_put_request(self.config.parent_host, self.config.parent_token, "projects/%d" % new_id, {}, headers=headers, files={
-            'avatar': (filename, BytesIO(img.content))})
+        if old_project_avatar is not None:
+            img = api.generate_get_request(
+                self.config.child_host, self.config.child_token, None, url=old_project_avatar)
+            filename = old_project_avatar.split("/")[-1]
+            headers = {
+                'Private-Token': self.config.parent_token
+            }
+            return api.generate_put_request(self.config.parent_host, self.config.parent_token, "projects/%d" % new_id, {}, headers=headers, files={
+                'avatar': (filename, BytesIO(img.content))})
+        return None
+
+    
