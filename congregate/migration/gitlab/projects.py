@@ -83,11 +83,14 @@ class ProjectsClient(BaseClass):
                                         "projects/%d/members/%d" % (id, self.config.parent_user_id))
 
     def migrate_avatar(self, new_id, old_id):
-        old_project = json.load(self.get_project(
-            old_id, self.config.child_host, self.config.child_token))
+        old_project = self.get_project(
+            old_id, self.config.child_host, self.config.child_token).json()
         old_project_avatar = old_project["avatar_url"]
-        with api.generate_get_request(self.config.child_host, self.config.child_token, None, url=old_project_avatar, stream=True) as r:
-            filename = old_project_avatar.split("/")[-1]
-            r = api.generate_put_request(self.config.parent_host, self.config.parent_token, "projects/%d" % new_id, {}, files={
-                'avatar': (filename, BytesIO(r.content))})
-            return r
+        img = api.generate_get_request(
+            self.config.child_host, self.config.child_token, None, url=old_project_avatar)
+        filename = old_project_avatar.split("/")[-1]
+        headers = {
+            'Private-Token': self.config.parent_token
+        }
+        return api.generate_put_request(self.config.parent_host, self.config.parent_token, "projects/%d" % new_id, {}, headers=headers, files={
+            'avatar': (filename, BytesIO(img.content))})
