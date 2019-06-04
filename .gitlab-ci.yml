@@ -1,5 +1,12 @@
 image: python:2.7.15-stretch
 
+include:
+  template: SAST.gitlab-ci.yml
+
+sast:
+  variables:
+    CI_DEBUG_TRACE: "true"
+
 stages:
   - test
   - update-info
@@ -60,4 +67,3 @@ build docker image:
     - docker push ${CI_REGISTRY_IMAGE}:${CI_COMMIT_TAG}
   only:
     - tags
-
