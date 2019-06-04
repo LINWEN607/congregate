@@ -87,7 +87,7 @@ class ProjectsClient(BaseClass):
             old_id, self.config.child_host, self.config.child_token))
         old_project_avatar = old_project["avatar_url"]
         with api.generate_get_request(self.config.child_host, self.config.child_token, None, url=old_project_avatar, stream=True) as r:
-            filename = "avatar.jpg"
+            filename = old_project_avatar.split("/")[-1]
             r = api.generate_put_request(self.config.parent_host, self.config.parent_token, "projects/%d" % new_id, {}, files={
                 'avatar': (filename, BytesIO(r.content))})
             return r
