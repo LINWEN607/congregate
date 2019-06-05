@@ -17,8 +17,6 @@ from re import sub
 from multiprocessing.dummy import Pool as ThreadPool
 from multiprocessing import Lock
 
-import psycopg2
-
 from helpers import api, misc_utils
 from helpers import logger as log
 from aws import AwsClient
@@ -514,23 +512,6 @@ def stage_unimported_projects():
                 ids.append(rewritten_projects.get(p.split("/")[1])["id"])
     if len(ids) > 0:
         stage_projects(ids)
-
-
-def update_db(db_values):
-    conn = psycopg2.connect(
-        host=os.getenv('db_host_name'),
-        dbname=os.getenv('db_name'),
-        user=os.getenv('db_username'),
-        password=os.getenv('db_password'))
-    conn.autocommit = True
-    print("[DEBUG] Inserting into database table")
-    cur = conn.cursor()
-    cur.execute(
-        """INSERT INTO ondemandmigration.gitlab_project(projectid, projectname) VALUES (%s, %s);""",
-        (db_values['projectid'], db_values['projectname']))
-    cur.close()
-    conn.close()
-    return json.dumps(db_values)
 
 
 def generate_instance_map():
