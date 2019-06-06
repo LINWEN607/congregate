@@ -32,12 +32,12 @@ update readme:
   stage: update-info
   <<: *install_test_dependencies
   script:
-    - pipenv run python update-readme.py
+    - pipenv run python congregate/update-readme.py
   only:
     refs:
       - master
     changes:
-      - congregate.py
+      - congregate/congregate.py
 
 archive project:
   stage: build
