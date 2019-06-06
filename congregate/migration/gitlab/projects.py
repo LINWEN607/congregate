@@ -25,33 +25,6 @@ class ProjectsClient(BaseClass):
     def unarchive_project(self, host, token, id):
         return api.generate_post_request(host, token, "projects/%d/unarchive" % id, {}).json()
 
-    def get_approvals(self, id, host, token):
-        return api.generate_get_request(host, token, "projects/%d/approvals" % id).json()
-
-    def set_approval_configuration(self, id, host, token, data):
-        '''
-            refer to https://docs.gitlab.com/ee/api/merge_request_approvals.html#change-configuration
-
-            example payload:
-            {
-                "approvals_before_merge": 2,
-                "reset_approvals_on_push": True,
-                "disable_overriding_approvers_per_merge_request": False
-            }
-        '''
-        return api.generate_post_request(host, token, "projects/%d/approvals?%s" % (id, urlencode(data)), None)
-
-    def set_approvers(self, project_id, host, token, approver_ids, approver_group_ids):
-        if not isinstance(approver_ids, list):
-            approver_ids = [approver_ids]
-        if not isinstance(approver_group_ids, list):
-            approver_group_ids = [approver_group_ids]
-        data = {
-            "approver_ids": approver_ids,
-            "approver_group_ids": approver_group_ids
-        }
-        return api.generate_put_request(host, token, "projects/%d/approvers%s" % (project_id, urlencode(data)), None)
-
     def add_members(self, members, id):
         root_user_present = False
         for member in members:
