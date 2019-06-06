@@ -2,6 +2,7 @@ from helpers.base_class import BaseClass
 from helpers import api
 from requests.exceptions import RequestException
 from urllib import quote_plus, urlencode
+from io import BytesIO
 import json
 
 
@@ -23,33 +24,6 @@ class ProjectsClient(BaseClass):
 
     def unarchive_project(self, host, token, id):
         return api.generate_post_request(host, token, "projects/%d/unarchive" % id, {}).json()
-
-    def get_approvals(self, id, host, token):
-        return api.generate_get_request(host, token, "projects/%d/approvals" % id).json()
-
-    def set_approval_configuration(self, id, host, token, data):
-        '''
-            refer to https://docs.gitlab.com/ee/api/merge_request_approvals.html#change-configuration
-
-            example payload:
-            {
-                "approvals_before_merge": 2,
-                "reset_approvals_on_push": True,
-                "disable_overriding_approvers_per_merge_request": False
-            }
-        '''
-        return api.generate_post_request(host, token, "projects/%d/approvals?%s" % (id, urlencode(data)) , None)
-
-    def set_approvers(self, project_id, host, token, approver_ids, approver_group_ids):
-        if not isinstance(approver_ids, list):
-            approver_ids = [approver_ids]
-        if not isinstance(approver_group_ids, list):
-            approver_group_ids = [approver_group_ids]
-        data = {
-            "approver_ids": approver_ids,
-            "approver_group_ids": approver_group_ids
-        }
-        return api.generate_put_request(host, token, "projects/%d/approvers%s" % (project_id, urlencode(data)), None)
 
     def add_members(self, members, id):
         root_user_present = False
@@ -80,3 +54,20 @@ class ProjectsClient(BaseClass):
             self.log.info("removing root user from project")
             api.generate_delete_request(self.config.parent_host, self.config.parent_token,
                                         "projects/%d/members/%d" % (id, self.config.parent_user_id))
+
+    def migrate_avatar(self, new_id, old_id):
+        old_project = self.get_project(
+            old_id, self.config.child_host, self.config.child_token).json()
+        old_project_avatar = old_project["avatar_url"]
+        if old_project_avatar is not None:
+            img = api.generate_get_request(
+                self.config.child_host, self.config.child_token, None, url=old_project_avatar)
+            filename = old_project_avatar.split("/")[-1]
+            headers = {
+                'Private-Token': self.config.parent_token
+            }
+            return api.generate_put_request(self.config.parent_host, self.config.parent_token, "projects/%d" % new_id, {}, headers=headers, files={
+                'avatar': (filename, BytesIO(img.content))})
+        return None
+
+    

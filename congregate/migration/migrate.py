@@ -29,6 +29,7 @@ from migration.gitlab.groups import GroupsClient as groups_client
 from migration.gitlab.projects import ProjectsClient as proj_client
 from migration.gitlab.pushrules import PushRulesClient as pushrules_client
 from migration.gitlab.branches import BranchesClient
+from migration.gitlab.merge_request_approvers import MergeRequestApproversClient
 from migration.mirror import MirrorClient
 
 from migration.bitbucket import client as bitbucket
@@ -42,6 +43,7 @@ groups = groups_client()
 projects = proj_client()
 pushrules = pushrules_client()
 branches = BranchesClient()
+mr = MergeRequestApproversClient()
 
 
 def migrate_project_info():
@@ -97,8 +99,8 @@ def migrate_single_project_info(project, id):
     members = project["members"]
     project.pop("members")
     name = project["name"]
-
-    # Project Members
+    old_id = project["id"]
+    
     b.log.info("Searching for %s" % name)
     if id is None:
         for new_project in projects.search_for_project(b.config.parent_host, b.config.parent_token, project['name']):
@@ -110,8 +112,11 @@ def migrate_single_project_info(project, id):
                 if len(new_project) > 0:
                     if new_project[0]["name"] == name and new_project[0]["namespace"]["name"] == project["namespace"]:
                         id = new_project[0]["id"]
-
+    # Project Members
     projects.add_members(members, id)
+
+    # Project Avatar
+    projects.migrate_avatar(id, old_id)
 
     # Push Rules
     push_rule = pushrules.get_push_rules(
@@ -123,53 +128,11 @@ def migrate_single_project_info(project, id):
 
     # Merge Request Approvers
     b.log.info("Migrating merge request approvers for %s" % name)
-    approval_data = projects.get_approvals(
-        project["id"], b.config.child_host, b.config.child_token)
-
-    approval_configuration = {
-        "approvals_before_merge": approval_data["approvals_before_merge"],
-        "reset_approvals_on_push": approval_data["reset_approvals_on_push"],
-        "disable_overriding_approvers_per_merge_request": approval_data["disable_overriding_approvers_per_merge_request"]
-    }
-    projects.set_approval_configuration(
-        id, b.config.parent_host, b.config.parent_token, approval_configuration)
-
-    approver_ids, approver_groups = update_approvers(approval_data)
-    projects.set_approvers(id, b.config.parent_host,
-                           b.config.parent_token, approver_ids, approver_groups)
+    mr.migrate_merge_request_approvers(id, old_id)
 
     # Protected Branches
     b.log.info("Updating protected branches")
     branches.migrate_protected_branches(id, project["id"])
-
-def update_approvers(approval_data):
-        approver_ids = []
-        approver_groups = []
-        for approved_user in approval_data["approvers"]:
-            user = approved_user["user"]
-            if user.get("id", None) is not None:
-                user = users.get_user(
-                    user["id"], b.config.child_host, b.config.child_token).json()
-                new_user = api.search(
-                    b.config.parent_host, b.config.parent_token, 'users', user['email'])
-                new_user_id = new_user[0]["id"]
-                approver_ids.append(new_user_id)
-        for approved_group in approval_data["approver_groups"]:
-            group = approved_group["group"]
-            if group.get("id", None) is not None:
-                group = groups.get_group(
-                    group["id"], b.config.child_host, b.config.child_token).json()
-                if b.config.parent_id is not None:
-                    parent_group = groups.get_group(
-                        b.config.parent_id, b.config.child_host, b.config.child_token).json()
-                    group["full_path"] = "%s/%s" % (
-                        parent_group["full_path"], group["full_path"])
-                for new_group in groups.search_for_group(group["name"], b.config.parent_host, b.config.parent_token):
-                    if new_group["full_path"].lower() == group["full_path"].lower():
-                        approver_groups.append(new_group["id"])
-                        break
-        return approver_ids, approver_groups
-
 
 def migrate_given_export(project_json):
     path = "%s/%s" % (project_json["namespace"], project_json["name"])
