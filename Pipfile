@@ -22,8 +22,8 @@ docopt = "*"
 gunicorn = "*"
 gevent = "*"
 mock = "*"
-"psycopg2" = "*"
 "autopep8" = "*"
+lazy-object-proxy = "==1.4.1"
 
 [requires]
 python_version = "2.7"
