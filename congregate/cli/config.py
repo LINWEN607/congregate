@@ -61,6 +61,8 @@ def generate_config():
             parent_id = raw_input(
                 "%s. Please input the parent group ID (You can find this in the parent group -> settings -> general)" % str(len(config) + 1))
             config["parent_id"] = int(parent_id)
+            print "Congregate is going to set all internal projects to private. You can change this setting later."
+            config["make_visibility_private"] = True
 
         mirror_user = raw_input(
             "Are you planning a soft cut-over migration? (Mirroring repos to keep both instances around) (default: no)")
