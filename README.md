@@ -129,6 +129,7 @@ Usage:
     congregate do_all
     congregate update-staged-user-info
     congregate update-new-users
+    congregate update-aws-creds
     congregate add-users-to-parent-group
     congregate remove-blocked-users
     congregate lower-user-permissions
@@ -164,6 +165,7 @@ Commands:
     do_all                              Configure system, retrieve all projects, users, and groups, stage all information, and commence migration
     update-staged-user-info             Update staged user information after migrating only users
     update-new-users                    Update user IDs in staged groups and projects after migrating users
+    update-aws-creds                    Runs awscli commands based on the keys stored in the config. Useful for docker updates
     add-users-to-parent-group           If a parent group is set, all users staged will be added to the parent group
     remove-blocked-users                Removes all blocked users from staged projects and groups
     lower-user-permissions              Sets all reporter users to guest users
