@@ -108,6 +108,7 @@ class ConfigTests(unittest.TestCase):
                 "number_of_threads": 2,
                 "parent_id": 5,
                 "location": "filesystem",
+                "make_visibility_private": True,
                 "child_instance_host": os.getenv("CHILD_INSTANCE_HOST"),
                 "parent_user_id": 1,
                 "path": os.getcwd()
