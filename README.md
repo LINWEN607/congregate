@@ -71,7 +71,7 @@ From **docker**:
 2. Run the following command:
 
 ```bash
-docker run --name congregate -p 8000:8000 -it congregate:latest /bin/bash
+docker run --name congregate -p 8000:8000 -it registry.gitlab.com/gitlab-com/customer-success/tools/congregate:latest /bin/bash
 congregate config
 congregate list
 ```

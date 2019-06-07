@@ -12,6 +12,7 @@ Usage:
     congregate do_all
     congregate update-staged-user-info
     congregate update-new-users
+    congregate update-aws-creds
     congregate add-users-to-parent-group
     congregate remove-blocked-users
     congregate lower-user-permissions
@@ -47,6 +48,7 @@ Commands:
     do_all                              Configure system, retrieve all projects, users, and groups, stage all information, and commence migration
     update-staged-user-info             Update staged user information after migrating only users
     update-new-users                    Update user IDs in staged groups and projects after migrating users
+    update-aws-creds                    Runs awscli commands based on the keys stored in the config. Useful for docker updates
     add-users-to-parent-group           If a parent group is set, all users staged will be added to the parent group
     remove-blocked-users                Removes all blocked users from staged projects and groups
     lower-user-permissions              Sets all reporter users to guest users
@@ -137,7 +139,7 @@ if __name__ == '__main__':
                 # os.environ["FLASK_APP"] = "%s/congregate/ui" % app_path
                 os.chdir(app_path + "/congregate")
                 # os.environ["PYTHONPATH"] = app_path
-                run_ui = "gunicorn -k gevent -w 4 ui:app --bind=0.0.0.0:8005"
+                run_ui = "gunicorn -k gevent -w 4 ui:app --bind=0.0.0.0:8000"
                 subprocess.call(run_ui.split(" "))
             if arguments["update-staged-user-info"]:
                 users.update_user_after_migration()
@@ -145,6 +147,11 @@ if __name__ == '__main__':
                 users.update_user_info_separately()
             if arguments["add-users-to-parent-group"]:
                 users.add_users_to_parent_group()
+            if arguments["update-aws-creds"]:
+                command = "aws configure set aws_access_key_id %s" % config.s3_access_key
+                subprocess.call(command.split(" "))
+                command = "aws configure set aws_secret_access_key %s" % config.s3_secret_key
+                subprocess.call(command.split(" "))
             if arguments["remove-blocked-users"]:
                 users.remove_blocked_users()
             if arguments["lower-user-permissions"]:
