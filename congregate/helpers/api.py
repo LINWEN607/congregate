@@ -140,7 +140,14 @@ def list_all(host, token, api, params=None):
                     "page": current_page,
                     "per_page": PER_PAGE
                 }
-            data = generate_get_request(host, token, api, params=params).json()
+            data = generate_get_request(host, token, api, params=params)
+            
+            try:
+                data = data.json()
+            except ValueError, e:
+                log.error(e)
+                log.error("API request didn't return JSON")
+                break
 
             for project in data:
                 yield project
