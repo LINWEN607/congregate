@@ -1,11 +1,14 @@
 from helpers.base_class import BaseClass
 from helpers import api
+from migration.gitlab.users import UsersClient
+from migration.gitlab.projects import ProjectsClient
 import docker
 
 
 class RegistryClient(BaseClass):
     def __init__(self):
-        self.client = docker.from_env()
+        self.users = UsersClient()
+        self.projects = ProjectsClient()
         super(RegistryClient, self).__init__()
 
     # Get a list of registry repositories in a project.
@@ -27,9 +30,18 @@ class RegistryClient(BaseClass):
 
     def migrate_container(self, old_registry, new_registry_path):
         repo = old_registry["location"]
-        for image in self.client.images.pull(repo):
+        client = self.login_to_docker_registries(old_registry["path"], new_registry_path)
+        for image in client.images.pull(repo):
             for tag in image.tags:
                 image.tag(new_registry_path, tag)
-            self.client.images.push(new_registry_path)
-            self.client.images.remove(repo)
-            self.client.images.remove(new_registry_path)
+            client.images.push(new_registry_path)
+            client.images.remove(repo)
+            client.images.remove(new_registry_path)
+
+    def login_to_docker_registries(self, old_registry, new_registry):
+        client = docker.from_env()
+        old_user = self.users.get_current_user(self.config.child_host, self.config.child_token).json()
+        new_user = self.users.get_current_user(self.config.parent_host, self.config.parent_token).json()
+        client.login(old_user["username"], self.config.child_token, old_user["email"], self.config.child_container_registry_url)
+        client.login(new_user["username"], self.config.parent_token, new_user["email"], self.config.parent_container_registry_url)
+        return client

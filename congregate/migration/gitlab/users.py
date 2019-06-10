@@ -14,6 +14,9 @@ class UsersClient(BaseClass):
 
     def get_user(self, id, host, token):
         return api.generate_get_request(host, token, "users/%d" % id)
+    
+    def get_current_user(self, host, token):
+        return api.generate_get_request(host, token, "user")
 
     def create_user(self, host, token, data):
         return api.generate_post_request(host, token, "users", json.dumps(data))
