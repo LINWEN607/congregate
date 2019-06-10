@@ -112,6 +112,14 @@ class ig:
     def make_visibility_private(self):
         return self.config.get("make_visibility_private", None)
 
+    @property
+    def parent_container_registry_url(self):
+        return self.config.get("parent_container_registry_url", None)
+
+    @property
+    def child_container_registry_url(self):
+        return self.config.get("child_container_registry_url", None)
+
     @threads.setter
     def threads(self, value):
         self.threads = value

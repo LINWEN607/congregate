@@ -138,8 +138,9 @@ def migrate_single_project_info(project, id):
 
     # Container Registries
     b.log.info("Migrating container registries")
-    registries.migrate_registries(id, project["id"])    
-
+    new_project = projects.get_project(b.config.parent_host, b.config.parent_token, id)
+    new_project_path = new_project["path_with_namespace"]
+    registries.migrate_registries(id, project["id"], new_project_path)
 
 def update_approvers(approval_data):
         approver_ids = []

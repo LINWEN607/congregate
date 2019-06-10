@@ -24,6 +24,7 @@ gevent = "*"
 mock = "*"
 "autopep8" = "*"
 lazy-object-proxy = "==1.4.1"
+docker = "*"
 
 [requires]
 python_version = "2.7"
