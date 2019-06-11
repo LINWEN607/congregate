@@ -69,5 +69,3 @@ class ProjectsClient(BaseClass):
             return api.generate_put_request(self.config.parent_host, self.config.parent_token, "projects/%d" % new_id, {}, headers=headers, files={
                 'avatar': (filename, BytesIO(img.content))})
         return None
-
-    

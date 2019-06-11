@@ -70,9 +70,9 @@ headers = {
 }
 
 data = {
-    "branch": "master", 
-    "author_email": gitlab_user_email, 
-    'author_name': gitlab_user_name, 
+    "branch": "master",
+    "author_email": gitlab_user_email,
+    'author_name': gitlab_user_name,
     'commit_message': 'Updating usage info',
     "content": updated_md
 }

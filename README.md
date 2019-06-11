@@ -57,12 +57,6 @@ There are currently *three* different methods for migrating projects (groups and
 
 ### Install & Use PipEnv (required for end-user and development setups)
 
-Requirements for `psycopg2` dependency:
-
-- **Mac:** `brew install postgresql`
-- **Ubuntu:** `apt-get install libpq-dev`
-- **RHEL:** `yum install postgresql-devel`
-
 ```bash
 pip install pipenv
 
