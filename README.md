@@ -1,8 +1,12 @@
 # Congregate
 
+[TOC]
+
+## About
+
 Congregate is a utility for migrating one or more GitLab instances into another, single GitLab instance.
 
-```
+```text
 Come together, right now
 
 ...over me
@@ -25,17 +29,20 @@ Copy the following code snippet to a file in the congregate directory and run it
 
 # install pipenv
 pip install pipenv
+
 # install python dependencies
 pipenv install
+
 # install UI dependencies
 pipenv run dnd install
+
 # create congregate path
 CONGREGATE_PATH=$(pwd)
+
 # copy congregate script to a bin directory
 cp congregate /usr/local/bin
 
 echo "export CONGREGATE_PATH=$CONGREGATE_PATH" >> ~/.bash_profile
-
 ```
 
 Once all of the dependencies are installed, run `congregate config` to set up the congregate config.
@@ -52,12 +59,15 @@ There are currently *three* different methods for migrating projects (groups and
 
 ```bash
 pip install pipenv
-# install depdencies from Pipfile
+
+# install dependencies from Pipfile
 cd /path/to/congregate
 pipenv install
-# start up python virtualenv
+
+# start-up python virtualenv
 cd /path/to/congregate
 pipenv shell
+
 # install ui dependencies
 cd /path/to/congregate
 pipenv run dnd install
@@ -115,10 +125,11 @@ congregate list
 
 With congregate configured and projects, groups, and users retrieved, you should be ready to use the tool or test your changes.
 
-Note: Instead of exporting an environment variable within your shell session, you can also add `CONGREGATE_PATH` to `bash_profile` or an init.d script. This is a bit more of a permanent solution than just exporting the variable within the session. 
+Note: Instead of exporting an environment variable within your shell session, you can also add `CONGREGATE_PATH` to `bash_profile` or an init.d script. This is a bit more of a permanent solution than just exporting the variable within the session.
 
 ### Usage
-```
+
+```text
 Usage:
     congregate list
     congregate config
@@ -189,7 +200,7 @@ The GitLab import/export API versions need to match between instances. [This doc
 
 Once congregate is installed
 
-**Live reloading for UI development and backend development without a debugger**
+#### Live reloading for UI development and backend development without a debugger
 
 You will need to turn on debugging in the flask app to see a mostly live reload of the UI. Create the following environment variable before deploying the UI
 
@@ -199,9 +210,9 @@ export FLASK_DEBUG=1
 
 For the UI, you will still need to save the file in your editor and refresh the page, but it's better than restarting flask every time. The app will live reload every time a .py file is changed and saved.
 
-**Configuring VS Code for Debugging**
+#### Configuring VS Code for Debugging
 
-Refer to [this how-to](https://code.visualstudio.com/docs/python/debugging) for setting up the base debugging settings for a python app in VS Code. Then replace the default flask configuration for this:
+Refer to [this how-to](https://code.visualstudio.com/docs/python/debugging) for setting up the base debugging settings for a python app in VS Code. Then replace the default `launch.json` flask configuration for this:
 
 ```json
 
@@ -224,4 +235,67 @@ Refer to [this how-to](https://code.visualstudio.com/docs/python/debugging) for 
 
 ```
 
-To reload the app in debugging mode, you will need to click the `refresh` icon in VS code. Currently VS code doesn't support live reloading flask apps on save.
+To reload the app in debugging mode, you will need to click the `refresh` icon in VS code (on the sidebar's Explorer tab). Currently VS code doesn't support live reloading flask apps on save.
+
+## Migration features
+
+| Main | Feature | Sub-feature | Status |
+|-|-|-|-|
+| BitBucket ||| :heavy_minus_sign: |
+| Groups |
+|| Sub-groups || :white_check_mark: |
+|| Group CI variables || :white_check_mark: |
+|| Members || :white_check_mark: |
+|| Group info || :white_check_mark: |
+| Projects |
+|| Branches || :white_check_mark: |
+|| Members || :white_check_mark: |
+|| Avatars || :white_check_mark: |
+|| Push rules || :white_check_mark: |
+|| Merge requests || :white_check_mark: |
+|| Merge request approvers || :white_check_mark: |
+|| Protected branches || :white_check_mark: |
+|| Project info || :white_check_mark: |
+|| CI variables || :white_check_mark: |
+|| Registries || :heavy_minus_sign: |
+|| Services || :x: |
+|| Deploy keys || :x: |
+| Standalone |
+|| Users |
+||| Avatars | :white_check_mark: |
+||| User info | :white_check_mark: |
+|| Version || :white_check_mark: |
+|| Services || :x: |
+|| Deploy keys || :x: |
+
+:x: = not supported
+
+:white_check_mark: = supported
+
+:heavy_minus_sign: = not yet supported / in development
+
+## Features matrix
+
+| Features  |  Import/Export API |  Congregate |
+|---|---|---|
+| Project and wiki repositories  |  :white_check_mark:   |  :white_check_mark: |
+| Project uploads  | :white_check_mark:  | :white_check_mark:  |
+| Project configuration, including services  |  :white_check_mark: |  :white_check_mark: |
+| Issues with comments, merge requests with diffs and comments, labels, milestones, snippets, and other project entities  |  :white_check_mark: |  :white_check_mark: |
+| LFS objects  |  :white_check_mark: |  :white_check_mark: |
+| Build traces and artifacts  |  :x: |  :x: |
+| Container Registry  |  :x:  |  :heavy_minus_sign:  |
+| CI variables  | :x:  |  :white_check_mark:  |
+| Webhooks  | :x:  | :heavy_minus_sign:   |
+| Any encrypted tokens  |  :x: | :heavy_minus_sign:   |
+| Merge Request Approvers  | :x:  | :white_check_mark:  |
+| Protected Branches  | :x:  | :white_check_mark:  |
+| Push Rules  |  :x: |  :white_check_mark: |
+| Users  | :x:  |  :white_check_mark: |
+| Groups  | :x:  | :white_check_mark:  |
+
+:x: = not supported
+
+:white_check_mark: = supported
+
+:heavy_minus_sign: = not yet supported / in development
