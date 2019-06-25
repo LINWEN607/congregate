@@ -18,6 +18,22 @@ class UsersClient(BaseClass):
     def create_user(self, host, token, data):
         return api.generate_post_request(host, token, "users", json.dumps(data))
 
+    def search_for_user_by_email(self, host, token, email):
+        return api.generate_get_request(host, token, "users?search=%s" % email)
+
+    def create_user_impersonation_token(self, host, token, id, data):
+        return api.generate_post_request(host, token, "users/%d/impersonation_tokens", json.dumps(data))
+
+    def delete_user_impersonation_token(self, host, token, user_id, token_id):
+        return api.generate_delete_request(host, token, "users/%d/impersonation_tokens/%d" % (user_id, token_id))
+
+    def find_user_by_email_comparison(self, old_user_id):
+        old_user = self.get_user(old_user_id, self.config.child_host, self.config.child_token)
+        for user in self.search_for_user_by_email(self.config.parent_host, self.config.parent_token, old_user["email"]):
+            if user["email"] == old_user["email"]:
+               return user
+        return None
+
     def update_users(self, obj, new_users):
         rewritten_users = {}
         for i in range(len(new_users)):
