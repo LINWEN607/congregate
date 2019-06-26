@@ -49,9 +49,9 @@ Once all of the dependencies are installed, run `congregate config` to set up th
 
 There are currently *three* different methods for migrating projects (groups and users are all through the API):
 
-*  filesystem (download all projects locally and import them locally)
-*  filesystem-aws (download all projects locally, copy the exports to an S3 bucket for storage, then delete the project locally. Copy the files back from S3, import the file, then delete the local file again)
-*  aws (export all projects directly to an S3 bucket and import directly from the S3 bucket)
+- **filesystem** - download all projects locally and import them locally.
+- **filesystem-aws** - download all projects locally, copy the exports to an S3 bucket for storage, then delete the project locally. Copy the files back from S3, import the file, then delete the local file again.
+- **aws** - export all projects directly to an S3 bucket and import directly from the S3 bucket.
 
 `filesystem-aws` is used to help work with company policies like restricting presigned URLs or in case any of the source instances involved in the migration cannot connect to an S3 bucket while the destination instance can.
 
@@ -128,8 +128,7 @@ With congregate configured and projects, groups, and users retrieved, you should
 Note: Instead of exporting an environment variable within your shell session, you can also add `CONGREGATE_PATH` to `bash_profile` or an init.d script. This is a bit more of a permanent solution than just exporting the variable within the session.
 
 ### Usage
-
-```text
+```
 Usage:
     congregate list
     congregate config
@@ -170,7 +169,7 @@ Commands:
                                         users to {CONGREGATE_PATH}/data/staged_users.json,
                                         groups to {CONGREGATE_PATH}/data/staged_groups.json.
                                         All projects can be staged with a '.' or 'all'.
-    migrate                             mmence migration based on configuration and staged assets
+    migrate                             Commence migration based on configuration and staged assets
     ui                                  Deploy UI to port 8000
     import-projects                     Kick off import of exported projects onto parent instance
     do_all                              Configure system, retrieve all projects, users, and groups, stage all information, and commence migration
@@ -199,6 +198,43 @@ The GitLab import/export API versions need to match between instances. [This doc
 ### Development Environment Setup
 
 Once congregate is installed
+
+#### Live reloading for UI development and backend development without a debugger
+
+You will need to turn on debugging in the flask app to see a mostly live reload of the UI. Create the following environment variable before deploying the UI
+
+```bash
+export FLASK_DEBUG=1
+```
+
+For the UI, you will still need to save the file in your editor and refresh the page, but it's better than restarting flask every time. The app will live reload every time a .py file is changed and saved.
+
+#### Configuring VS Code for Debugging
+
+Refer to [this how-to](https://code.visualstudio.com/docs/python/debugging) for setting up the base debugging settings for a python app in VS Code. Then replace the default `launch.json` flask configuration for this:
+
+```json
+
+{
+    "name": "Python: Flask (0.11.x or later)",
+    "type": "python",
+    "request": "launch",
+    "module": "flask",
+    "env": {
+        "PYTHONPATH": "${workspaceRoot}",
+        "CONGREGATE_PATH": "/path/to/congregate",
+        "FLASK_APP": "${CONGREGATE_PATH}/ui"
+    },
+    "args": [
+        "run",
+        "--no-debugger",
+        "--no-reload"
+    ]
+}
+
+```
+
+To reload the app in debugging mode, you will need to click the `refresh` icon in VS code (on the sidebar's Explorer tab). Currently VS code doesn't support live reloading flask apps on save.
 
 #### Live reloading for UI development and backend development without a debugger
 

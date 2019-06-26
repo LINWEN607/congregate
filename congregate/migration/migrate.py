@@ -1,7 +1,7 @@
 """
-Congregate - GitLab instance migration utility
+    Congregate - GitLab instance migration utility
 
-Copyright (c) 2018 - GitLab
+    Copyright (c) 2018 - GitLab
 """
 
 import os
@@ -31,6 +31,7 @@ from migration.gitlab.pushrules import PushRulesClient as pushrules_client
 from migration.gitlab.branches import BranchesClient
 from migration.gitlab.merge_request_approvers import MergeRequestApproversClient
 from migration.gitlab.awards import AwardsClient
+from migration.gitlab.registries import RegistryClient
 from migration.mirror import MirrorClient
 
 from migration.bitbucket import client as bitbucket
@@ -46,6 +47,7 @@ pushrules = pushrules_client()
 branches = BranchesClient()
 awards = AwardsClient()
 mr = MergeRequestApproversClient()
+registries = RegistryClient()
 
 
 def migrate_project_info():
@@ -103,7 +105,7 @@ def migrate_single_project_info(project, id):
     name = project["name"]
     old_id = project["id"]
     
-    b.log.info("Searching for %s" % name)
+    b.log.info("Searching for project %s" % name)
     if id is None:
         for new_project in projects.search_for_project(b.config.parent_host, b.config.parent_token, project['name']):
             if isinstance(new_project, dict):
@@ -114,6 +116,7 @@ def migrate_single_project_info(project, id):
                 if len(new_project) > 0:
                     if new_project[0]["name"] == name and new_project[0]["namespace"]["name"] == project["namespace"]:
                         id = new_project[0]["id"]
+
     # Project Members
     projects.add_members(members, id)
 
@@ -139,6 +142,13 @@ def migrate_single_project_info(project, id):
     awards.migrate_awards(id, project["id"], users_map)
 
     users.delete_saved_impersonation_tokens(users_map)
+    # Container Registries
+    if registries.enabled:
+        b.log.info("Migrating container registries")
+        registries.migrate_registries(id, project["id"])
+    else:
+        b.log.warn("Container registry is not enabled for both projects")
+
 
 def migrate_given_export(project_json):
     path = "%s/%s" % (project_json["namespace"], project_json["name"])

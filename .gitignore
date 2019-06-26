@@ -9,3 +9,4 @@ js-packages
 .coverage
 unused_stuff
 docker-copy
+downloads/*
