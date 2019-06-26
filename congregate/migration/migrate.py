@@ -144,34 +144,6 @@ def migrate_single_project_info(project, id):
     else:
         b.log.warn("Container registry is not enabled for both projects")
 
-def update_approvers(approval_data):
-        approver_ids = []
-        approver_groups = []
-        for approved_user in approval_data["approvers"]:
-            user = approved_user["user"]
-            if user.get("id", None) is not None:
-                user = users.get_user(
-                    user["id"], b.config.child_host, b.config.child_token).json()
-                new_user = api.search(
-                    b.config.parent_host, b.config.parent_token, 'users', user['email'])
-                new_user_id = new_user[0]["id"]
-                approver_ids.append(new_user_id)
-        for approved_group in approval_data["approver_groups"]:
-            group = approved_group["group"]
-            if group.get("id", None) is not None:
-                group = groups.get_group(
-                    group["id"], b.config.child_host, b.config.child_token).json()
-                if b.config.parent_id is not None:
-                    parent_group = groups.get_group(
-                        b.config.parent_id, b.config.child_host, b.config.child_token).json()
-                    group["full_path"] = "%s/%s" % (
-                        parent_group["full_path"], group["full_path"])
-                for new_group in groups.search_for_group(group["name"], b.config.parent_host, b.config.parent_token):
-                    if new_group["full_path"].lower() == group["full_path"].lower():
-                        approver_groups.append(new_group["id"])
-                        break
-        return approver_ids, approver_groups
-
 
 def migrate_given_export(project_json):
     path = "%s/%s" % (project_json["namespace"], project_json["name"])

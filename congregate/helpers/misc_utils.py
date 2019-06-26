@@ -18,19 +18,18 @@ def remove_dupes(mylist):
 
 def download_file(url, path, filename=None, headers=None):
     # NOTE the stream=True parameter
-    if is_downloadable(url):
+    if __is_downloadable(url):
         r = get(url, stream=True, headers=headers, allow_redirects=True)
         if filename is None:
-            filename = get_filename_from_cd(r.headers.get('content-disposition'))
-            #filename = r.headers["Content-Disposition"].split("=")[1]
+            filename = __get_filename_from_cd(r.headers.get('content-disposition'))
         with open("%s/downloads/%s" % (path, filename), 'wb') as f:
             for chunk in r.iter_content(chunk_size=1024):
                 if chunk:
                     f.write(chunk)
-    return "blablabla"
+    return filename
 
 
-def is_downloadable(url):
+def __is_downloadable(url):
     """
         Does the url contain a downloadable resource
     """
@@ -44,7 +43,7 @@ def is_downloadable(url):
     return True
 
 
-def get_filename_from_cd(cd):
+def __get_filename_from_cd(cd):
     """
         Get filename from content-disposition
     """
