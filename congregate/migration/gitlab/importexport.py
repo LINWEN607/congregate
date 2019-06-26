@@ -58,8 +58,8 @@ class ImportExportClient(BaseClass):
                 elif status == "none":
                     self.log.info("No export status could be found for %s" % name)
                     if skip is False:
-                        self.log.info("Waiting 3 seconds before skipping")
-                        sleep(3)
+                        self.log.info("Waiting 5 seconds before skipping")
+                        sleep(5)
                         skip = True
                     else:
                         break
@@ -102,7 +102,8 @@ class ImportExportClient(BaseClass):
 
     def import_project(self, project):
         """
-            Imports project to parent GitLab instance. Formats users, groups, migration info(aws, filesystem) during import process
+            Imports project to parent GitLab instance.
+            Formats users, groups, migration info (aws, filesystem) during import process.
         """
         if isinstance(project, str):
             project = json.loads(project)
@@ -114,15 +115,16 @@ class ImportExportClient(BaseClass):
         ]
         user_project = False
         if isinstance(project["members"], list):
+            # Determine if the project should be under a single user or group
             for member in project["members"]:
                 if project["namespace"] == member["username"]:
                     user_project = True
                     #namespace = project["namespace"]
                     new_user = self.users.get_user(
-                        member["id"], self.config.parent_host, self.config.parent_token).json()
+                        member["id"], self.config.child_host, self.config.child_token).json()
                     namespace = new_user["username"]
                     self.log.info("%s is a user project belonging to %s. Attempting to import into their namespace" % (
-                        project["name"], new_user))
+                        project["name"], new_user["email"]))
                     break
             if not user_project:
                 self.log.info("%s is not a user project. Attempting to import into a group namespace" % (
@@ -157,13 +159,14 @@ class ImportExportClient(BaseClass):
             if self.config.location == "aws":
                 presigned_get_url = self.aws.generate_presigned_url(
                     filename, "GET")
+                self.log.info("Importing %s from AWS presigned_url" % filename)
                 import_response = self.aws.import_from_s3(
                     name, namespace, presigned_get_url, filename, override_params=override_params)
             elif self.config.location == "filesystem-aws":
-                if self.config.allow_presigned_url is not None and self.config.allow_presigned_url is True:
-                    self.log.info("Importing %s presigned_url" % filename)
+                if bool(self.config.allow_presigned_url):
                     presigned_get_url = self.aws.generate_presigned_url(
                         filename, "GET")
+                    self.log.info("Importing %s from AWS presigned_url" % filename)
                     import_response = self.aws.import_from_s3(
                         name, namespace, presigned_get_url, filename, override_params=override_params)
                 else:
@@ -190,7 +193,6 @@ class ImportExportClient(BaseClass):
             self.log.info(import_response)
             import_id = None
             if import_response is not None and len(import_response) > 0:
-                # self.log.info(import_response)
                 import_response = json.loads(import_response)
                 while not exported:
                     if import_response.get("id", None) is not None:

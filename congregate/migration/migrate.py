@@ -1,7 +1,7 @@
 """
-Congregate - GitLab instance migration utility
+    Congregate - GitLab instance migration utility
 
-Copyright (c) 2018 - GitLab
+    Copyright (c) 2018 - GitLab
 """
 
 import os
@@ -103,7 +103,7 @@ def migrate_single_project_info(project, id):
     name = project["name"]
     old_id = project["id"]
     
-    b.log.info("Searching for %s" % name)
+    b.log.info("Searching for project %s" % name)
     if id is None:
         for new_project in projects.search_for_project(b.config.parent_host, b.config.parent_token, project['name']):
             if isinstance(new_project, dict):
@@ -114,6 +114,7 @@ def migrate_single_project_info(project, id):
                 if len(new_project) > 0:
                     if new_project[0]["name"] == name and new_project[0]["namespace"]["name"] == project["namespace"]:
                         id = new_project[0]["id"]
+
     # Project Members
     projects.add_members(members, id)
 
@@ -137,10 +138,11 @@ def migrate_single_project_info(project, id):
     branches.migrate_protected_branches(id, project["id"])
 
     # Container Registries
-    b.log.info("Migrating container registries")
-    new_project = projects.get_project(b.config.parent_host, b.config.parent_token, id)
-    new_project_path = new_project["path_with_namespace"]
-    registries.migrate_registries(id, project["id"], new_project_path)
+    if registries.enabled:
+        b.log.info("Migrating container registries")
+        registries.migrate_registries(id, project["id"])
+    else:
+        b.log.warn("Container registry is not enabled for both projects")
 
 def update_approvers(approval_data):
         approver_ids = []

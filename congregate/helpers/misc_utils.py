@@ -1,5 +1,5 @@
-from requests import get
-from re import sub
+from requests import get, head
+from re import sub, findall
 from time import sleep
 
 
@@ -18,14 +18,42 @@ def remove_dupes(mylist):
 
 def download_file(url, path, filename=None, headers=None):
     # NOTE the stream=True parameter
-    r = get(url, stream=True, headers=headers)
-    if filename is None:
-        filename = r.headers["Content-Disposition"].split("=")[1]
-    with open("%s/downloads/%s" % (path, filename), 'wb') as f:
-        for chunk in r.iter_content(chunk_size=1024):
-            if chunk:
-                f.write(chunk)
-    return filename
+    if is_downloadable(url):
+        r = get(url, stream=True, headers=headers, allow_redirects=True)
+        if filename is None:
+            filename = get_filename_from_cd(r.headers.get('content-disposition'))
+            #filename = r.headers["Content-Disposition"].split("=")[1]
+        with open("%s/downloads/%s" % (path, filename), 'wb') as f:
+            for chunk in r.iter_content(chunk_size=1024):
+                if chunk:
+                    f.write(chunk)
+    return "blablabla"
+
+
+def is_downloadable(url):
+    """
+        Does the url contain a downloadable resource
+    """
+    h = head(url, allow_redirects=True)
+    header = h.headers
+    content_type = header.get('content-type')
+    if 'text' in content_type.lower():
+        return False
+    if 'html' in content_type.lower():
+        return False
+    return True
+
+
+def get_filename_from_cd(cd):
+    """
+        Get filename from content-disposition
+    """
+    if not cd:
+        return None
+    fname = findall('filename=(.+)', cd)
+    if len(fname) == 0:
+        return None
+    return fname[0]
 
 
 def strip_numbers(s):
