@@ -49,9 +49,9 @@ Once all of the dependencies are installed, run `congregate config` to set up th
 
 There are currently *three* different methods for migrating projects (groups and users are all through the API):
 
-*  filesystem (download all projects locally and import them locally)
-*  filesystem-aws (download all projects locally, copy the exports to an S3 bucket for storage, then delete the project locally. Copy the files back from S3, import the file, then delete the local file again)
-*  aws (export all projects directly to an S3 bucket and import directly from the S3 bucket)
+- **filesystem** - download all projects locally and import them locally.
+- **filesystem-aws** - download all projects locally, copy the exports to an S3 bucket for storage, then delete the project locally. Copy the files back from S3, import the file, then delete the local file again.
+- **aws** - export all projects directly to an S3 bucket and import directly from the S3 bucket.
 
 `filesystem-aws` is used to help work with company policies like restricting presigned URLs or in case any of the source instances involved in the migration cannot connect to an S3 bucket while the destination instance can.
 
@@ -170,7 +170,7 @@ Commands:
                                         users to {CONGREGATE_PATH}/data/staged_users.json,
                                         groups to {CONGREGATE_PATH}/data/staged_groups.json.
                                         All projects can be staged with a '.' or 'all'.
-    migrate                             mmence migration based on configuration and staged assets
+    migrate                             Commence migration based on configuration and staged assets
     ui                                  Deploy UI to port 8000
     import-projects                     Kick off import of exported projects onto parent instance
     do_all                              Configure system, retrieve all projects, users, and groups, stage all information, and commence migration

@@ -13,7 +13,7 @@ pylint = "<2.0.0"
 
 [packages]
 awscli = "*"
-"boto3" = "*"
+boto3 = "*"
 requests = "*"
 flask = "*"
 futures = "*"
@@ -22,8 +22,9 @@ docopt = "*"
 gunicorn = "*"
 gevent = "*"
 mock = "*"
-"autopep8" = "*"
+autopep8 = "*"
 lazy-object-proxy = "==1.4.1"
+docker = "*"
 
 [requires]
 python_version = "2.7"

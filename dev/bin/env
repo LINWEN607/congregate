@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+
+alias penv='pipenv install'
+alias ui='pipenv run dnd install'
+alias sh='pipenv shell'
+alias upd='pipenv run python congregate/update-readme.py'
+alias ut='pipenv run python -m unittest discover congregate/'
+alias dpull='docker pull registry.gitlab.com/gitlab-com/customer-success/tools/congregate'
+alias drun='docker run --name congregate -p 8000:8000 -it registry.gitlab.com/gitlab-com/customer-success/tools/congregate:latest /bin/bash'
+
+printf '# Pipfile and Dockerfile install aliases\n'
+alias penv
+alias ui
+alias sh
+alias upd
+alias ut
+alias dpull
+alias drun
