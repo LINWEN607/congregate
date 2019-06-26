@@ -257,7 +257,7 @@ To reload the app in debugging mode, you will need to click the `refresh` icon i
 || Protected branches || :white_check_mark: |
 || Project info || :white_check_mark: |
 || CI variables || :white_check_mark: |
-|| Registries || :heavy_minus_sign: |
+|| Registries || :white_check_mark: |
 || Services || :x: |
 || Deploy keys || :x: |
 | Standalone |
