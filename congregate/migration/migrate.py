@@ -30,6 +30,7 @@ from migration.gitlab.projects import ProjectsClient as proj_client
 from migration.gitlab.pushrules import PushRulesClient as pushrules_client
 from migration.gitlab.branches import BranchesClient
 from migration.gitlab.merge_request_approvers import MergeRequestApproversClient
+from migration.gitlab.awards import AwardsClient
 from migration.mirror import MirrorClient
 
 from migration.bitbucket import client as bitbucket
@@ -43,6 +44,7 @@ groups = groups_client()
 projects = proj_client()
 pushrules = pushrules_client()
 branches = BranchesClient()
+awards = AwardsClient()
 mr = MergeRequestApproversClient()
 
 
@@ -115,9 +117,6 @@ def migrate_single_project_info(project, id):
     # Project Members
     projects.add_members(members, id)
 
-    # Project Avatar
-    projects.migrate_avatar(id, old_id)
-
     # Push Rules
     push_rule = pushrules.get_push_rules(
         project["id"], b.config.child_host, b.config.child_token).json()
@@ -133,6 +132,11 @@ def migrate_single_project_info(project, id):
     # Protected Branches
     b.log.info("Updating protected branches")
     branches.migrate_protected_branches(id, project["id"])
+
+    # Awards
+    b.log.info("Migrating awards for %s" % name)
+    users_map = {}
+    awards.migrate_awards(id, project["id"], users_map)
 
 def migrate_given_export(project_json):
     path = "%s/%s" % (project_json["namespace"], project_json["name"])

@@ -19,20 +19,37 @@ class UsersClient(BaseClass):
         return api.generate_post_request(host, token, "users", json.dumps(data))
 
     def search_for_user_by_email(self, host, token, email):
-        return api.generate_get_request(host, token, "users?search=%s" % email)
+        return api.list_all(host, token, "users?search=%s" % email)
 
     def create_user_impersonation_token(self, host, token, id, data):
-        return api.generate_post_request(host, token, "users/%d/impersonation_tokens", json.dumps(data))
+        return api.generate_post_request(host, token, "users/%d/impersonation_tokens" % id, json.dumps(data))
 
     def delete_user_impersonation_token(self, host, token, user_id, token_id):
         return api.generate_delete_request(host, token, "users/%d/impersonation_tokens/%d" % (user_id, token_id))
 
     def find_user_by_email_comparison(self, old_user_id):
-        old_user = self.get_user(old_user_id, self.config.child_host, self.config.child_token)
+        old_user = self.get_user(old_user_id, self.config.child_host, self.config.child_token).json()
         for user in self.search_for_user_by_email(self.config.parent_host, self.config.parent_token, old_user["email"]):
             if user["email"] == old_user["email"]:
                return user
         return None
+
+
+    def find_or_create_impersonation_token(self, user, users_map, expiration_date):
+        email = user["email"]
+        id = user["id"]
+        if users_map.get(email, None) is None:
+            data = {
+                "name": "temp_migration_token",
+                "expires_at": expiration_date,
+                "scopes": [
+                    "api"
+                ]
+            }
+            new_impersonation_token = self.create_user_impersonation_token(self.config.parent_host, self.config.parent_token, id, data).json()
+            users_map[email] = new_impersonation_token
+        return users_map[email]
+        
 
     def update_users(self, obj, new_users):
         rewritten_users = {}
