@@ -259,7 +259,8 @@ To reload the app in debugging mode, you will need to click the `refresh` icon i
 || CI variables || :white_check_mark: |
 || Registries || :heavy_minus_sign: |
 || Services || :x: |
-|| Deploy keys || :x: |
+|| Deploy keys || :heavy_minus_sign: |
+|| Awards || :white_check_mark: |
 | Standalone |
 || Users |
 ||| Avatars | :white_check_mark: |
