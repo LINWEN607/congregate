@@ -138,6 +138,8 @@ def migrate_single_project_info(project, id):
     users_map = {}
     awards.migrate_awards(id, project["id"], users_map)
 
+    users.delete_saved_impersonation_tokens(users_map)
+
 def migrate_given_export(project_json):
     path = "%s/%s" % (project_json["namespace"], project_json["name"])
     results = {

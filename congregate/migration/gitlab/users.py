@@ -48,7 +48,12 @@ class UsersClient(BaseClass):
             }
             new_impersonation_token = self.create_user_impersonation_token(self.config.parent_host, self.config.parent_token, id, data).json()
             users_map[email] = new_impersonation_token
+            users_map[email]["user_id"] = id
         return users_map[email]
+    
+    def delete_saved_impersonation_tokens(self, users_map):
+        for user in users_map.values():
+            self.delete_user_impersonation_token(self.config.parent_host, self.config.parent_token, user["user_id"], user["id"])
         
 
     def update_users(self, obj, new_users):
