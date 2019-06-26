@@ -8,7 +8,6 @@ from migration.gitlab.users import UsersClient
 from requests.exceptions import RequestException
 from os import path
 from datetime import timedelta, date
-import json
 
 
 class AwardsClient(BaseClass):
@@ -47,7 +46,7 @@ class AwardsClient(BaseClass):
         return api.generate_post_request(host, token, "projects/%d/snippets/%d/award_emoji?name=%s" % (project_id, snippet_id, name), None)
 
     def migrate_awards(self, new_id, old_id, users_map):
-        self.log.info("Migrating ")
+        self.log.info("Migrating awards")
         expiration_date = (date.today() + timedelta(days=2)
                            ).strftime('%Y-%m-%d')
         awardables = ["issues", "merge requests", "snippets"]

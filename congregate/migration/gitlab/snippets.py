@@ -4,7 +4,6 @@ from helpers.misc_utils import strip_numbers, remove_dupes
 from migration.gitlab.groups import GroupsClient
 from requests.exceptions import RequestException
 from os import path
-import json
 
 
 class SnippetsClient(BaseClass):

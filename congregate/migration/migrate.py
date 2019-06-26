@@ -141,7 +141,9 @@ def migrate_single_project_info(project, id):
     users_map = {}
     awards.migrate_awards(id, project["id"], users_map)
 
+    # Deleting any impersonation tokens used by the awards migration
     users.delete_saved_impersonation_tokens(users_map)
+
     # Container Registries
     if registries.enabled:
         b.log.info("Migrating container registries")
