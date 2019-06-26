@@ -56,7 +56,8 @@ class ImportExportClient(BaseClass):
                     self.log.error("Export failed for %s" % name)
                     break
                 elif status == "none":
-                    self.log.info("No export status could be found for %s" % name)
+                    self.log.info(
+                        "No export status could be found for %s" % name)
                     if skip is False:
                         self.log.info("Waiting 5 seconds before skipping")
                         sleep(5)
@@ -134,7 +135,8 @@ class ImportExportClient(BaseClass):
                         self.config.parent_id, self.config.parent_host, self.config.parent_token).json()
                     namespace = "%s/%s" % (response["full_path"],
                                            project["namespace"])
-                    filename = "%s/%s_%s.tar.gz" % (response["path"], project["namespace"], project["name"])
+                    filename = "%s/%s_%s.tar.gz" % (
+                        response["path"], project["namespace"], project["name"])
 
                 else:
                     namespace = project["namespace"]
@@ -166,7 +168,8 @@ class ImportExportClient(BaseClass):
                 if bool(self.config.allow_presigned_url):
                     presigned_get_url = self.aws.generate_presigned_url(
                         filename, "GET")
-                    self.log.info("Importing %s from AWS presigned_url" % filename)
+                    self.log.info(
+                        "Importing %s from AWS presigned_url" % filename)
                     import_response = self.aws.import_from_s3(
                         name, namespace, presigned_get_url, filename, override_params=override_params)
                 else:

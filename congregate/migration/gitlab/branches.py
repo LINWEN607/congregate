@@ -70,4 +70,4 @@ class BranchesClient(BaseClass):
                 branch["unprotect_access_levels"])
 
             self.protect_branch(id, self.config.parent_host, self.config.parent_token,
-                                    branch["name"], allowed_to_push=allowed_to_push, allowed_to_merge=allowed_to_merge, allowed_to_unprotect=allowed_to_unprotect)
+                                branch["name"], allowed_to_push=allowed_to_push, allowed_to_merge=allowed_to_merge, allowed_to_unprotect=allowed_to_unprotect)

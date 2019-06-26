@@ -69,7 +69,8 @@ class AwardsClient(BaseClass):
                 else:
                     awardable_id = awardable["id"]
                 for award in functions[x][1](self.config.child_host, self.config.child_token, old_id, awardable_id):
-                    response = functions[x][2](self.config.parent_host, self.config.parent_token, new_id, awardable_id)
+                    response = functions[x][2](
+                        self.config.parent_host, self.config.parent_token, new_id, awardable_id)
                     if response.status_code == 200:
                         new_award_giver = self.users.find_user_by_email_comparison(
                             award["user"]["id"])

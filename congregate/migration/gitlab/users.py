@@ -31,12 +31,12 @@ class UsersClient(BaseClass):
         return api.generate_delete_request(host, token, "users/%d/impersonation_tokens/%d" % (user_id, token_id))
 
     def find_user_by_email_comparison(self, old_user_id):
-        old_user = self.get_user(old_user_id, self.config.child_host, self.config.child_token).json()
+        old_user = self.get_user(
+            old_user_id, self.config.child_host, self.config.child_token).json()
         for user in self.search_for_user_by_email(self.config.parent_host, self.config.parent_token, old_user["email"]):
             if user["email"] == old_user["email"]:
-               return user
+                return user
         return None
-
 
     def find_or_create_impersonation_token(self, user, users_map, expiration_date):
         email = user["email"]
@@ -49,15 +49,16 @@ class UsersClient(BaseClass):
                     "api"
                 ]
             }
-            new_impersonation_token = self.create_user_impersonation_token(self.config.parent_host, self.config.parent_token, id, data).json()
+            new_impersonation_token = self.create_user_impersonation_token(
+                self.config.parent_host, self.config.parent_token, id, data).json()
             users_map[email] = new_impersonation_token
             users_map[email]["user_id"] = id
         return users_map[email]
-    
+
     def delete_saved_impersonation_tokens(self, users_map):
         for user in users_map.values():
-            self.delete_user_impersonation_token(self.config.parent_host, self.config.parent_token, user["user_id"], user["id"])
-        
+            self.delete_user_impersonation_token(
+                self.config.parent_host, self.config.parent_token, user["user_id"], user["id"])
 
     def update_users(self, obj, new_users):
         rewritten_users = {}
