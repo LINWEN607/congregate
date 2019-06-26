@@ -42,7 +42,7 @@ Commands:
                                         users to {CONGREGATE_PATH}/data/staged_users.json,
                                         groups to {CONGREGATE_PATH}/data/staged_groups.json.
                                         All projects can be staged with a '.' or 'all'.
-    migrate                             mmence migration based on configuration and staged assets
+    migrate                             Commence migration based on configuration and staged assets
     ui                                  Deploy UI to port 8000
     import-projects                     Kick off import of exported projects onto parent instance
     do_all                              Configure system, retrieve all projects, users, and groups, stage all information, and commence migration
