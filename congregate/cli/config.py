@@ -11,13 +11,13 @@ def generate_config():
     config = {}
     wrapper = {}
 
-    print "##Configuring congregate"
+    print "## Configuring congregate"
 
     external = raw_input(
-        "%s. Migration source (default: GitLab) " % str(len(config) + 1))
+        "%s. Migration source (default: GitLab): " % str(len(config) + 1))
     if len(external) > 0 and external.lower() != "gitlab":
         config["external_source"] = external
-        print "External migration is currently limited to mirroring through http/https. A master username and password will be required to set up mirroring in each shell project."
+        print("External migration is currently limited to mirroring through http/https. A master username and password will be required to set up mirroring in each shell project.")
         external_username = raw_input(
             "%s. External username: " % str(len(config) + 1))
         config["external_user_name"] = external_username
@@ -35,11 +35,11 @@ def generate_config():
         config["external_source"] = False
 
     parent_instance_host = raw_input(
-        "%s. Host of parent instance (destination instance) " % str(len(config) + 1))
+        "%s. Parent (destination) instance Host: " % str(len(config) + 1))
     config["parent_instance_host"] = parent_instance_host
 
     parent_instance_token = raw_input(
-        "%s. Access token to use for parent instance " % str(len(config) + 1))
+        "%s. Parent instance Access token: " % str(len(config) + 1))
     config["parent_instance_token"] = parent_instance_token
 
     parent_user_info = get_user(parent_instance_host, parent_instance_token)
@@ -48,12 +48,20 @@ def generate_config():
 
     if config["external_source"] == False:
         child_instance_host = raw_input(
-            "%s. Host of child instance (source instance) " % str(len(config) + 1))
+            "%s. Child (source) instance Host: " % str(len(config) + 1))
         config["child_instance_host"] = child_instance_host
 
         child_instance_token = raw_input(
-            "%s. Access token to use for child instance " % str(len(config) + 1))
+            "%s. Child instance Access token: " % str(len(config) + 1))
         config["child_instance_token"] = child_instance_token
+
+        child_instance_registry = raw_input(
+            "%s. Child instance Container Registry URL: " % str(len(config) + 1))
+        config["child_instance_registry"] = child_instance_registry
+
+        parent_instance_registry = raw_input(
+            "%s. Parent instance Container Registry URL: " % str(len(config) + 1))
+        config["parent_instance_registry"] = parent_instance_registry
 
         parent_id = raw_input(
             "Are you migrating the entire instance to a group? For example, migrating to our SaaS solution? (default: no)")
@@ -122,7 +130,7 @@ def config():
     with open("%s/data/config.json" % app_path, "w") as f:
         f.write(json.dumps(config, indent=4))
     time.sleep(1)
-    print "Congregate has been successfully configured"
+    print "## Congregate has been successfully configured"
 
 
 def update_config(config_data):

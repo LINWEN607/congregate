@@ -33,12 +33,20 @@ class ig:
         return self.config.get("parent_instance_token", None)
 
     @property
+    def parent_registry(self):
+        return self.config.get("parent_instance_registry", None)
+
+    @property
     def child_host(self):
         return self.config.get("child_instance_host", None)
 
     @property
     def child_token(self):
         return self.config.get("child_instance_token", None)
+
+    @property
+    def child_registry(self):
+        return self.config.get("child_instance_registry", None)
 
     @property
     def location(self):
@@ -111,14 +119,6 @@ class ig:
     @property
     def make_visibility_private(self):
         return self.config.get("make_visibility_private", None)
-
-    @property
-    def parent_container_registry_url(self):
-        return self.config.get("parent_container_registry_url", None)
-
-    @property
-    def child_container_registry_url(self):
-        return self.config.get("child_container_registry_url", None)
 
     @threads.setter
     def threads(self, value):
