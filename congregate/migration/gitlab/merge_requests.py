@@ -6,6 +6,7 @@ from requests.exceptions import RequestException
 from os import path
 import json
 
+
 class MergeRequestsClient(BaseClass):
     def get_all_project_merge_requests(self, host, token, project_id):
         return api.list_all(host, token, "projects/%d/merge_requests" % project_id)
