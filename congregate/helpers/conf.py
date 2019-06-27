@@ -10,9 +10,7 @@ from cli import config as config_cli
 
 
 class ig:
-    __shared_state = {}
     def __init__(self):
-        self.__dict__ = self.__shared_state
         app_path = os.getenv("CONGREGATE_PATH")
         if not os.path.isfile('%s/data/config.json' % app_path):
             config_cli.generate_config()

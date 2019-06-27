@@ -13,5 +13,5 @@ class IssuesClient(BaseClass):
     def get_all_group_issues(self, host, token, group_id):
         return api.list_all(host, token, "groups/%d/issues" % group_id)
 
-    def get_single_project_issue(self, host, token, project_id, issue_id):
+    def get_single_project_issues(self, host, token, project_id, issue_id):
         return api.generate_get_request(host, token, "projects/%d/issues/%d" % (project_id, issue_id))
