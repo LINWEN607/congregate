@@ -2,8 +2,6 @@ from helpers.base_class import BaseClass
 from helpers import api
 from helpers.misc_utils import strip_numbers, remove_dupes
 from migration.gitlab.groups import GroupsClient
-from requests.exceptions import RequestException
-from os import path
 
 
 class IssuesClient(BaseClass):
