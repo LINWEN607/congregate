@@ -35,7 +35,7 @@ class RegistryClient(BaseClass):
     def migrate_registries(self, id, old_id):
         try:
             # Login to source registry
-            client = self.__login_to_registry(self.config.child_host, self.config.child_token, self.config.parent_container_registry_url)
+            client = self.__login_to_registry(self.config.child_host, self.config.child_token, self.config.child_registry)
             registries = self.__list_registry_repositories(self.config.child_host, self.config.child_token, old_id)
             for registry in registries:
                 tags = self.__list_repository_tags(self.config.child_host, self.config.child_token, old_id, registry["id"])
@@ -50,8 +50,8 @@ class RegistryClient(BaseClass):
     def __import_registries(self, images, registry):
         try:
             # Login to destination registry
-            client = self.__login_to_registry(self.config.parent_host, self.config.parent_token, self.config.parent_container_registry_url)
-            new_reg = "%s/%s" % (self.config.parent_container_registry_url, registry["path"])
+            client = self.__login_to_registry(self.config.parent_host, self.config.parent_token, self.config.parent_registry)
+            new_reg = "%s/%s" % (self.config.parent_registry, registry["path"])
             for image in images:
                 for tag in image.tags:
                     # TODO: use a key value instead
@@ -65,12 +65,12 @@ class RegistryClient(BaseClass):
         except (APIError) as err:
             self.log.error("Failed to import registry, with error:\n%s" % err)
 
-    def __login_to_registry(self, host, token, registry_url):
+    def __login_to_registry(self, host, token, registry):
         try:
             client = from_env()
             client.login(username=self.users.get_current_user(host, token).json()["username"],
                          password=token,
-                         registry=registry_url)
+                         registry=registry)
             return client
         except (APIError, TLSParameterError) as err:
-            self.log.error("Failed to login to docker registry %s, with error:\n%s" % (registry_url, err))
+            self.log.error("Failed to login to docker registry %s, with error:\n%s" % (registry, err))
