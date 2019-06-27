@@ -293,7 +293,7 @@ To reload the app in debugging mode, you will need to click the `refresh` icon i
 || Protected branches || :white_check_mark: |
 || Project info || :white_check_mark: |
 || CI variables || :white_check_mark: |
-|| Registries || :heavy_minus_sign: |
+|| Container Registry || :white_check_mark: |
 || Services || :x: |
 || Deploy keys || :heavy_minus_sign: |
 || Awards || :white_check_mark: |
@@ -321,7 +321,7 @@ To reload the app in debugging mode, you will need to click the `refresh` icon i
 | Issues with comments, merge requests with diffs and comments, labels, milestones, snippets, and other project entities  |  :white_check_mark: |  :white_check_mark: |
 | LFS objects  |  :white_check_mark: |  :white_check_mark: |
 | Build traces and artifacts  |  :x: |  :x: |
-| Container Registry  |  :x:  |  :heavy_minus_sign:  |
+| Container Registry  |  :x:  |  :white_check_mark:  |
 | CI variables  | :x:  |  :white_check_mark:  |
 | Webhooks  | :x:  | :heavy_minus_sign:   |
 | Any encrypted tokens  |  :x: | :heavy_minus_sign:   |
