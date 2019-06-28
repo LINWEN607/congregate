@@ -64,8 +64,8 @@ class AwardsClient(BaseClass):
 
                 self.__create_awardable_emoji(
                     self.config.parent_host, impersonation_token["token"], awardable_name, new_project_id, awardable_id, award["name"])
-                self.__handle_migrating_note_awards(
-                    awardable, awardable_name, old_project_id, new_project_id, awardable_id, users_map)
+        self.__handle_migrating_note_awards(
+            awardable, awardable_name, old_project_id, new_project_id, awardable_id, users_map)
 
     def __handle_migrating_note_awards(self, awardable, awardable_name, old_project_id, new_project_id, awardable_id, users_map):
         for note in self.__get_all_project_awardable_notes(self.config.child_host, self.config.child_token, awardable_name, old_project_id, awardable_id):
@@ -75,7 +75,10 @@ class AwardsClient(BaseClass):
             if response.status_code == 200:
                 notes_json = response.json()
                 if len(notes_json) > 0:
+                    # The destination note note_id is needed to assign the emoji
+                    dest_note = list(self.__get_all_project_awardable_notes(self.config.parent_host, self.config.parent_token, awardable_name, new_project_id, awardable_id))
                     for n in notes_json:
+                        i = notes_json.index(n)
                         new_award_giver = self.users.find_user_by_email_comparison(
                             n["user"]["id"])
 
@@ -83,7 +86,7 @@ class AwardsClient(BaseClass):
                             new_award_giver, users_map, self.token_expiration_date)
 
                         self.__create_awardable_note_emoji(
-                            self.config.parent_host, impersonation_token["token"], awardable_name, new_project_id, awardable_id, note_id, n["name"])
+                            self.config.parent_host, impersonation_token["token"], awardable_name, new_project_id, awardable_id, dest_note[i]["id"], n["name"])
 
     def __set_client(self, awardable_name):
         self.awardable_client = getattr(self, awardable_name)
