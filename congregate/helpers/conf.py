@@ -120,6 +120,14 @@ class ig:
     def make_visibility_private(self):
         return self.config.get("make_visibility_private", None)
 
+    @property
+    def group_sso_provider(self):
+        return self.config.get("group_sso_provider", None)
+
+    @property
+    def username_suffix(self):
+        return self.config.get("username_suffix", None)
+        
     @threads.setter
     def threads(self, value):
         self.threads = value

@@ -6,7 +6,7 @@ Usage:
     congregate list
     congregate config
     congregate stage <projects>...
-    congregate migrate [--threads=<n>]
+    congregate migrate [--threads=<n>] [--dry-run]
     congregate ui
     congregate import-projects
     congregate do_all
@@ -131,6 +131,8 @@ if __name__ == '__main__':
             if arguments["migrate"]:
                 if arguments["--threads"]:
                     migrate.migrate(threads=arguments["--threads"])
+                elif arguments["--dry-run"]:
+                    users.user_migration_dry_run()
                 else:
                     migrate.migrate()
             if arguments["do_all"]:

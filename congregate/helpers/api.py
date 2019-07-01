@@ -110,7 +110,7 @@ def get_total_pages(host, token, api):
 
 
 @stable_retry
-def list_all(host, token, api, params=None):
+def list_all(host, token, api, params=None, per_page=100):
     """
         Returns a list of all projects, groups, users, etc. 
         You will need to provide the GL host, access token, and specific api url.
@@ -118,7 +118,7 @@ def list_all(host, token, api, params=None):
 
     count = get_count(host, token, api)
 
-    PER_PAGE = 100
+    PER_PAGE = per_page
     start_at = 0
     end_at = count
 
