@@ -44,7 +44,7 @@ archive project:
   script:
     - pip install pipenv
     - pipenv install
-    - pipenv run dnd install
+    # - pipenv run dnd install currently broken, will need to copy js-packages to docker-container
     - CI_COMMIT_TAG=${CI_COMMIT_TAG} ./build-tar.sh
   artifacts:
     paths:
