@@ -38,9 +38,17 @@ class UsersClient(BaseClass):
                 return user
         return None
 
-    def does_username_exist(self, username):
+    def username_exists(self, old_user):
+        username = old_user["username"]
         for user in self.search_for_user_by_email(self.config.parent_host, self.config.parent_token, username):
             if user["username"] == username:
+                return True
+        return False
+
+    def user_email_exists(self, old_user):
+        email = old_user["email"]
+        for user in self.search_for_user_by_email(self.config.parent_host, self.config.parent_token, email):
+            if user["email"] == email:
                 return True
         return False
 
@@ -66,15 +74,15 @@ class UsersClient(BaseClass):
             self.delete_user_impersonation_token(
                 self.config.parent_host, self.config.parent_token, user["user_id"], user["id"])
 
-    def generate_user_group_saml_post_data(self, user, provider):
-        user.pop("identities")
+    def generate_user_group_saml_post_data(self, user):
+        identities = user.pop("identities")
         user["external"] = True
         user["group_id_for_saml"] = self.config.parent_id
-        user["extern_uid"] = self.find_extern_uid_by_provider(user["identities"], self.config.sso_provider)
+        user["extern_uid"] = self.find_extern_uid_by_provider(identities, self.config.group_sso_provider)
         user["provider"] = "group_saml"
         user["reset_password"] = True
         user["skip_confirmation"] = True
-        user["username"] = self.create_valid_username(user["username"])
+        user["username"] = self.create_valid_username(user)
 
         return user
 
@@ -83,10 +91,15 @@ class UsersClient(BaseClass):
             if provider == identity["provider"]:
                 return identity["extern_uid"]
 
-    def create_valid_username(self, username):
-        valid_username = self.does_username_exist(username)
-        if not valid_username:
-            return "%s_%s" % (username, self.config.username_suffix)
+    def create_valid_username(self, user):
+        username = user["username"]
+        if self.username_exists(user):
+            if not self.user_email_exists(user):
+                if self.config.username_suffix is not None:
+                    return "%s_%s" % (username, self.config.username_suffix)
+                else:
+                    self.log.error("Username suffix not set. Defaulting to a single underscore following the username")
+                    return "%s_" % (username)
         return username
 
     def update_users(self, obj, new_users):
@@ -349,39 +362,40 @@ class UsersClient(BaseClass):
             users = json.load(f)
         for user in users:
             try:
-                user["username"] = user["username"]
-                user["skip_confirmation"] = True
-                # if user.get("identities", None) is not None:
-                #     user["extern_uid"] = user["identities"][0]["extern_uid"]
-                #     user["provider"] = user["identities"][0]["provider"]
-                #     user.pop("identities")
-                # print json.dumps(user, indent=4)
-                response = self.create_user(
-                    self.config.parent_host, self.config.parent_token, user)
-                print response
-
-                if response.status_code == 409:
-                    self.log.info("User already exists")
-
-                    try:
-                        self.log.info(
-                            "Appending %s to new_users.json" % user["email"])
-                        response = api.search(
-                            self.config.parent_host, self.config.parent_token, 'users', user['email'])
-                        if len(response) > 0:
-                            if isinstance(response, list):
-                                new_ids.append(response[0]["id"])
-                            elif isinstance(response, dict):
-                                if response.get("id", None) is not None:
-                                    new_ids.append(response["id"])
-                    except RequestException, e:
-                        self.log.info(e)
+                if self.config.group_sso_provider is not None:
+                    user_data = self.generate_user_group_saml_post_data(user)
+                    response = self.create_user(
+                        self.config.parent_host, self.config.parent_token, user_data)
                 else:
-                    new_ids.append(response.json()["id"])
+                    user["username"] = self.create_valid_username(user)
+                    user["skip_confirmation"] = True
+                    response = self.create_user(
+                        self.config.parent_host, self.config.parent_token, user)
+                print response
+                self.handle_user_creation_status(response, user, new_ids)
             except RequestException, e:
                 self.log.info(e)
 
         return new_ids
+
+    def handle_user_creation_status(self, response, user, new_ids):
+        if response.status_code == 409:
+            self.log.info("User already exists")
+            try:
+                self.log.info(
+                    "Appending %s to new_users.json" % user["email"])
+                response = api.search(
+                    self.config.parent_host, self.config.parent_token, 'users', user['email'])
+                if len(response) > 0:
+                    if isinstance(response, list):
+                        new_ids.append(response[0]["id"])
+                    elif isinstance(response, dict):
+                        if response.get("id", None) is not None:
+                            new_ids.append(response["id"])
+            except RequestException, e:
+                self.log.info(e)
+        else:
+            new_ids.append(response.json()["id"])
 
     def append_users(self, users):
         with open("%s/data/users.json" % self.app_path, "r") as f:

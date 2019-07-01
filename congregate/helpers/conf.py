@@ -121,8 +121,8 @@ class ig:
         return self.config.get("make_visibility_private", None)
 
     @property
-    def sso_provider(self):
-        return self.config.get("sso_provider", None)
+    def group_sso_provider(self):
+        return self.config.get("group_sso_provider", None)
 
     @property
     def username_suffix(self):

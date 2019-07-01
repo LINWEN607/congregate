@@ -75,7 +75,7 @@ def generate_config():
             if sso != "no" and len(sso) > 0:
                 sso_provider = raw_input(
                     "%s. Please input the SSO provider (auth0, adfs, etc.)" % str(len(config) + 1))
-                config["sso_provider"] = sso_provider
+                config["group_sso_provider"] = sso_provider
             username_suffix = raw_input(
                 "In the case of username collisions, what suffix would you like to append to a username? (default: <leave empty>")
             if username_suffix != "_" and len(username_suffix) > 0:
