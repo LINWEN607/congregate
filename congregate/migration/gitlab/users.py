@@ -1,5 +1,6 @@
 from helpers.base_class import BaseClass
 from helpers import api
+from helpers.threads import handle_multi_thread
 from helpers.misc_utils import strip_numbers, remove_dupes
 from migration.gitlab.groups import GroupsClient
 from requests.exceptions import RequestException
@@ -22,7 +23,7 @@ class UsersClient(BaseClass):
         return api.generate_post_request(host, token, "users", json.dumps(data))
 
     def search_for_user_by_email(self, host, token, email):
-        return api.list_all(host, token, "users?search=%s" % email)
+        return api.list_all(host, token, "users?search=%s" % email, per_page=50)
 
     def create_user_impersonation_token(self, host, token, id, data):
         return api.generate_post_request(host, token, "users/%d/impersonation_tokens" % id, json.dumps(data))
@@ -39,17 +40,25 @@ class UsersClient(BaseClass):
         return None
 
     def username_exists(self, old_user):
+        index = 0
         username = old_user["username"]
         for user in self.search_for_user_by_email(self.config.parent_host, self.config.parent_token, username):
             if user["username"] == username:
                 return True
+            elif index > 100:
+                return False
+            index += 1
         return False
 
     def user_email_exists(self, old_user):
+        index = 0
         email = old_user["email"]
         for user in self.search_for_user_by_email(self.config.parent_host, self.config.parent_token, email):
             if user["email"] == email:
                 return True
+            elif index > 100:
+                return False
+            index += 1
         return False
 
     def find_or_create_impersonation_token(self, user, users_map, expiration_date):
@@ -93,8 +102,8 @@ class UsersClient(BaseClass):
 
     def create_valid_username(self, user):
         username = user["username"]
-        if self.username_exists(user):
-            if not self.user_email_exists(user):
+        if not self.user_email_exists(user):
+            if self.username_exists(user):
                 if self.config.username_suffix is not None:
                     return "%s_%s" % (username, self.config.username_suffix)
                 else:
@@ -357,28 +366,44 @@ class UsersClient(BaseClass):
                 "Retrieved %d users. Check users.json to see all retrieved groups" % len(users))
 
     def migrate_user_info(self):
-        new_ids = []
         with open('%s/data/staged_users.json' % self.app_path, "r") as f:
             users = json.load(f)
-        for user in users:
-            try:
-                if self.config.group_sso_provider is not None:
-                    user_data = self.generate_user_group_saml_post_data(user)
-                    response = self.create_user(
-                        self.config.parent_host, self.config.parent_token, user_data)
-                else:
-                    user["username"] = self.create_valid_username(user)
-                    user["skip_confirmation"] = True
-                    response = self.create_user(
-                        self.config.parent_host, self.config.parent_token, user)
-                print response
-                self.handle_user_creation_status(response, user, new_ids)
-            except RequestException, e:
-                self.log.info(e)
-
+        
+        new_ids = handle_multi_thread(self.handle_user_creation, users)
         return new_ids
 
-    def handle_user_creation_status(self, response, user, new_ids):
+    def user_migration_dry_run(self):
+        self.log.info("Running a dry run user migration. This will output the various POST data you will send.")
+        with open('%s/data/staged_users.json' % self.app_path, "r") as f:
+            users = json.load(f)
+        post_data = handle_multi_thread(self.generate_user_data, users)
+            
+        with open('%s/data/dry_run_user_migration.json' % self.app_path, "w") as f:
+            self.log.info("Writing data to dry_run_user_migration.json")
+            json.dump(post_data, f, indent=4)
+    
+    def generate_user_data(self, user):
+        if self.config.group_sso_provider is not None:
+            return self.generate_user_group_saml_post_data(user)
+        else:
+            user["username"] = self.create_valid_username(user)
+            user["skip_confirmation"] = True
+            return user
+
+    def handle_user_creation(self, user):
+        user_data = self.generate_user_data(user)
+        try:
+            response = self.create_user(
+                self.config.parent_host, self.config.parent_token, user_data)
+        except RequestException, e:
+            self.log.info(e)
+            response = None
+
+        if response is not None:
+            return self.handle_user_creation_status(response, user)
+        return None
+
+    def handle_user_creation_status(self, response, user):
         if response.status_code == 409:
             self.log.info("User already exists")
             try:
@@ -388,14 +413,14 @@ class UsersClient(BaseClass):
                     self.config.parent_host, self.config.parent_token, 'users', user['email'])
                 if len(response) > 0:
                     if isinstance(response, list):
-                        new_ids.append(response[0]["id"])
+                        return response[0]["id"]
                     elif isinstance(response, dict):
                         if response.get("id", None) is not None:
-                            new_ids.append(response["id"])
+                            return response["id"]
             except RequestException, e:
                 self.log.info(e)
         else:
-            new_ids.append(response.json()["id"])
+            return response.json()["id"]
 
     def append_users(self, users):
         with open("%s/data/users.json" % self.app_path, "r") as f:
