@@ -104,6 +104,8 @@ class ConfigTests(unittest.TestCase):
             os.getenv("PARENT_INSTANCE_REGISTRY"),
             "yes",  # Parent id yes/no
             "5",  # Parent id
+            "",  # SSO yes/no
+            "",  # Empty username suffix
             "",  # Mirror yes/no
             "",  # Staging location (default filesystem)
             ""   # Staging location path
@@ -133,6 +135,97 @@ class ConfigTests(unittest.TestCase):
             actual = config.generate_config()
             self.assertEqual(expected, actual)
 
+    @mock.patch('cli.config.get_user')
+    def test_default_configuration_with_parent_id_and_sso(self, mock_get):
+        values = [
+            "",  # Migration source
+            os.getenv("PARENT_INSTANCE_HOST"),
+            os.getenv("PARENT_INSTANCE_TOKEN"),
+            os.getenv("CHILD_INSTANCE_HOST"),
+            os.getenv("CHILD_INSTANCE_TOKEN"),
+            os.getenv("CHILD_INSTANCE_REGISTRY"),
+            os.getenv("PARENT_INSTANCE_REGISTRY"),
+            "yes",  # Parent id yes/no
+            "5",  # Parent id
+            "yes",  # SSO yes/no
+            "auth0", # SSO provider
+            "", # empty username suffix
+            "",  # Mirror yes/no
+            "",  # Staging location (default filesystem)
+            ""   # Staging location path
+        ]
+        g = input_generator(values)
+
+        expected = {
+            "config": {
+                "external_source": False,
+                "child_instance_host": os.getenv("CHILD_INSTANCE_HOST"),
+                "child_instance_token": os.getenv("CHILD_INSTANCE_TOKEN"),
+                "child_instance_registry": os.getenv("CHILD_INSTANCE_REGISTRY"),
+                "parent_instance_host": os.getenv("PARENT_INSTANCE_HOST"),
+                "parent_instance_token": os.getenv("PARENT_INSTANCE_TOKEN"),
+                "parent_instance_registry": os.getenv("PARENT_INSTANCE_REGISTRY"),
+                "number_of_threads": 2,
+                "parent_id": 5,
+                "sso_provider": "auth0",
+                "location": "filesystem",
+                "make_visibility_private": True,
+                "parent_user_id": 1,
+                "path": os.getcwd()
+            }
+        }
+        mock_get.return_value = self.api.get_current_user()
+
+        with mock.patch('__builtin__.raw_input', lambda x: next(g)):
+            actual = config.generate_config()
+            self.assertEqual(expected, actual)
+
+    @mock.patch('cli.config.get_user')
+    def test_default_configuration_with_parent_id_and_sso_and_suffix(self, mock_get):
+        values = [
+            "",  # Migration source
+            os.getenv("PARENT_INSTANCE_HOST"),
+            os.getenv("PARENT_INSTANCE_TOKEN"),
+            os.getenv("CHILD_INSTANCE_HOST"),
+            os.getenv("CHILD_INSTANCE_TOKEN"),
+            os.getenv("CHILD_INSTANCE_REGISTRY"),
+            os.getenv("PARENT_INSTANCE_REGISTRY"),
+            "yes",  # Parent id yes/no
+            "5",  # Parent id
+            "yes",  # SSO yes/no
+            "auth0", # SSO provider
+            "_acme", # Username suffix
+            "",  # Mirror yes/no
+            "",  # Staging location (default filesystem)
+            ""   # Staging location path
+        ]
+        g = input_generator(values)
+
+        expected = {
+            "config": {
+                "external_source": False,
+                "child_instance_host": os.getenv("CHILD_INSTANCE_HOST"),
+                "child_instance_token": os.getenv("CHILD_INSTANCE_TOKEN"),
+                "child_instance_registry": os.getenv("CHILD_INSTANCE_REGISTRY"),
+                "parent_instance_host": os.getenv("PARENT_INSTANCE_HOST"),
+                "parent_instance_token": os.getenv("PARENT_INSTANCE_TOKEN"),
+                "parent_instance_registry": os.getenv("PARENT_INSTANCE_REGISTRY"),
+                "number_of_threads": 2,
+                "parent_id": 5,
+                "sso_provider": "auth0",
+                "username_suffix": "_acme",
+                "location": "filesystem",
+                "make_visibility_private": True,
+                "parent_user_id": 1,
+                "path": os.getcwd()
+            }
+        }
+        mock_get.return_value = self.api.get_current_user()
+
+        with mock.patch('__builtin__.raw_input', lambda x: next(g)):
+            actual = config.generate_config()
+            self.assertEqual(expected, actual)
+    
     @mock.patch('cli.config.get_user')
     def test_explicit_default_configuration(self, mock_get):
         values = [

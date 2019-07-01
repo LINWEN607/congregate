@@ -38,6 +38,12 @@ class UsersClient(BaseClass):
                 return user
         return None
 
+    def does_username_exist(self, username):
+        for user in self.search_for_user_by_email(self.config.parent_host, self.config.parent_token, username):
+            if user["username"] == username:
+                return True
+        return False
+
     def find_or_create_impersonation_token(self, user, users_map, expiration_date):
         email = user["email"]
         id = user["id"]
@@ -59,6 +65,29 @@ class UsersClient(BaseClass):
         for user in users_map.values():
             self.delete_user_impersonation_token(
                 self.config.parent_host, self.config.parent_token, user["user_id"], user["id"])
+
+    def generate_user_group_saml_post_data(self, user, provider):
+        user.pop("identities")
+        user["external"] = True
+        user["group_id_for_saml"] = self.config.parent_id
+        user["extern_uid"] = self.find_extern_uid_by_provider(user["identities"], self.config.sso_provider)
+        user["provider"] = "group_saml"
+        user["reset_password"] = True
+        user["skip_confirmation"] = True
+        user["username"] = self.create_valid_username(user["username"])
+
+        return user
+
+    def find_extern_uid_by_provider(self, identities, provider):
+        for identity in identities:
+            if provider == identity["provider"]:
+                return identity["extern_uid"]
+
+    def create_valid_username(self, username):
+        valid_username = self.does_username_exist(username)
+        if not valid_username:
+            return "%s_%s" % (username, self.config.username_suffix)
+        return username
 
     def update_users(self, obj, new_users):
         rewritten_users = {}
