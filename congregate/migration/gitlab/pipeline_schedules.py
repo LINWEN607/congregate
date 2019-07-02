@@ -38,20 +38,23 @@ class PipelineSchedulesClient(BaseClass):
         impersonation_token = self.users.find_or_create_impersonation_token(
             pipeline_schedule_owner, users_map, self.token_expiration_date)
 
-        self.create_new_pipeline_schedule(
+        schedule_response = self.create_new_pipeline_schedule(
             self.config.parent_host, impersonation_token["token"], new_project_id, data)
-        self.__handle_migrating_pipeline_schedule_variables(
-            pipeline_schedule_id, old_project_id, new_project_id, users_map)
+        if schedule_response.status_code == 201:
+            new_schedule_id = self.__get_pipeline_schedule_id(
+                schedule_response.json())
+            self.__handle_migrating_pipeline_schedule_variables(
+                pipeline_schedule_id, new_schedule_id, old_project_id, new_project_id, users_map)
 
-    def __handle_migrating_pipeline_schedule_variables(self, schedule_id, old_project_id, new_project_id, users_map):
+    def __handle_migrating_pipeline_schedule_variables(self, old_schedule_id, new_schedule_id, old_project_id, new_project_id, users_map):
         pipeline_schedule = self.get_single_pipeline_schedule(
-            self.config.child_host, self.config.child_token, old_project_id, schedule_id)
+            self.config.child_host, self.config.child_token, old_project_id, old_schedule_id)
         if pipeline_schedule.status_code == 200:
             schedule_json = pipeline_schedule.json()
             for var in schedule_json["variables"]:
                 data = self.__build_pipeline_schedule_variable_data(var)
                 self.create_new_pipeline_schedule_variable(
-                    self.config.parent_host, self.config.parent_token, new_project_id, schedule_id, data)
+                    self.config.parent_host, self.config.parent_token, new_project_id, new_schedule_id, data)
 
     def __get_pipeline_schedule_id(self, schedule):
         return schedule["id"]
