@@ -14,7 +14,8 @@ class RegistryClient(BaseClass):
 
     def enabled(self):
         src = self.__enabled(self.config.child_host, self.config.child_token)
-        dest = self.__enabled(self.config.parent_host, self.config.parent_token)
+        dest = self.__enabled(self.config.parent_host,
+                              self.config.parent_token)
         return src and dest
 
     def __enabled(self, host, token):
@@ -38,7 +39,8 @@ class RegistryClient(BaseClass):
             client = self.__login_to_registry(self.config.child_host, self.config.child_token, self.config.child_registry)
             registries = self.__list_registry_repositories(self.config.child_host, self.config.child_token, old_id)
             for registry in registries:
-                tags = self.__list_repository_tags(self.config.child_host, self.config.child_token, old_id, registry["id"])
+                tags = self.__list_repository_tags(
+                    self.config.child_host, self.config.child_token, old_id, registry["id"])
                 if list(tags):
                     reg = registry["location"]
                     self.log.info("Pulling images from registry %s" % reg)
@@ -57,7 +59,8 @@ class RegistryClient(BaseClass):
                     # TODO: use a key value instead
                     tag_name = tag.split(":")[1]
                     if image.tag(new_reg, tag_name):
-                        self.log.info("Migrating tag %s to registry %s" % (tag_name, new_reg))
+                        self.log.info(
+                            "Migrating tag %s to registry %s" % (tag_name, new_reg))
                         for line in client.images.push(new_reg, stream=True, decode=True):
                             print(line)
                 self.log.info("Removing stored image (ID) %s" % image.id)

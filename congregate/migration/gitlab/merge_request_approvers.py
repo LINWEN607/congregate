@@ -6,6 +6,7 @@ from migration.gitlab.groups import GroupsClient
 from urllib import quote_plus, urlencode
 import json
 
+
 class MergeRequestApproversClient(BaseClass):
     def __init__(self):
         self.version = VersionClient()

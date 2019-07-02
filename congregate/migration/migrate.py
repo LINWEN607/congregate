@@ -30,6 +30,7 @@ from migration.gitlab.projects import ProjectsClient as proj_client
 from migration.gitlab.pushrules import PushRulesClient as pushrules_client
 from migration.gitlab.branches import BranchesClient
 from migration.gitlab.merge_request_approvers import MergeRequestApproversClient
+from migration.gitlab.awards import AwardsClient
 from migration.gitlab.registries import RegistryClient
 from migration.mirror import MirrorClient
 
@@ -44,6 +45,7 @@ groups = groups_client()
 projects = proj_client()
 pushrules = pushrules_client()
 branches = BranchesClient()
+awards = AwardsClient()
 mr = MergeRequestApproversClient()
 registries = RegistryClient()
 
@@ -118,13 +120,10 @@ def migrate_single_project_info(project, id):
     # Project Members
     projects.add_members(members, id)
 
-    # Project Avatar
-    projects.migrate_avatar(id, old_id)
-
     # Push Rules
     push_rule = pushrules.get_push_rules(
         project["id"], b.config.child_host, b.config.child_token).json()
-    if len(push_rule) > 0:
+    if push_rule and len(push_rule) > 0:
         b.log.info("Migrating push rules for %s" % name)
         pushrules.add_push_rule(id, b.config.parent_host,
                                 b.config.parent_token, push_rule)
@@ -136,6 +135,14 @@ def migrate_single_project_info(project, id):
     # Protected Branches
     b.log.info("Updating protected branches")
     branches.migrate_protected_branches(id, project["id"])
+
+    # Awards
+    b.log.info("Migrating awards for %s" % name)
+    users_map = {}
+    awards.migrate_awards(id, project["id"], users_map)
+
+    # Deleting any impersonation tokens used by the awards migration
+    users.delete_saved_impersonation_tokens(users_map)
 
     # Container Registries
     if registries.enabled:
@@ -181,7 +188,6 @@ def migrate_given_export(project_json):
         if not project_exists:
             b.log.info("Importing %s" % project_json["name"])
             import_id = ie.import_project(project_json)
-            b.log.info(import_id)
             if import_id is not None:
                 b.log.info("Unarchiving project")
                 projects.unarchive_project(
@@ -299,15 +305,17 @@ def handle_migrating_file(f):
         else:
             namespace = f["namespace"]
         if b.config.location == "filesystem":
+            b.log.info("Migrating %s through filesystem" % name)
             ie.export_import_thru_filesystem(id, name, namespace)
             # migrate_project_info()
 
         elif b.config.location.lower() == "filesystem-aws":
+            b.log.info("Migrating %s through filesystem-AWS" % name)
             ie.export_import_thru_fs_aws(id, name, namespace)
 
         elif (b.config.location).lower() == "aws":
-            b.log.info("Exporting %s to S3" % name)
-            exported = ie.export_import_thru_aws(id, name, namespace)
+            b.log.info("Migrating %s through AWS" % name)
+            exported = ie.export_import_thru_aws(id, name, name)
             if exported:
                 #import_id = import_project(project_json)
                 # if import_id is not None:

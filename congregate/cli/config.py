@@ -71,6 +71,15 @@ def generate_config():
             config["parent_id"] = int(parent_id)
             print "Congregate is going to set all internal projects to private. You can change this setting later."
             config["make_visibility_private"] = True
+            sso = raw_input("Are you migrating to a group with SAML SSO enabled?")
+            if sso != "no" and len(sso) > 0:
+                sso_provider = raw_input(
+                    "%s. Please input the SSO provider (auth0, adfs, etc.)" % str(len(config) + 1))
+                config["group_sso_provider"] = sso_provider
+            username_suffix = raw_input(
+                "In the case of username collisions, what suffix would you like to append to a username? (default: <leave empty>")
+            if username_suffix != "_" and len(username_suffix) > 0:
+                config["username_suffix"] = username_suffix
 
         mirror_user = raw_input(
             "Are you planning a soft cut-over migration? (Mirroring repos to keep both instances around) (default: no)")

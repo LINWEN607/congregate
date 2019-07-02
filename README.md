@@ -133,7 +133,7 @@ Usage:
     congregate list
     congregate config
     congregate stage <projects>...
-    congregate migrate [--threads=<n>]
+    congregate migrate [--threads=<n>] [--dry-run]
     congregate ui
     congregate import-projects
     congregate do_all
@@ -273,6 +273,43 @@ Refer to [this how-to](https://code.visualstudio.com/docs/python/debugging) for 
 
 To reload the app in debugging mode, you will need to click the `refresh` icon in VS code (on the sidebar's Explorer tab). Currently VS code doesn't support live reloading flask apps on save.
 
+#### Live reloading for UI development and backend development without a debugger
+
+You will need to turn on debugging in the flask app to see a mostly live reload of the UI. Create the following environment variable before deploying the UI
+
+```bash
+export FLASK_DEBUG=1
+```
+
+For the UI, you will still need to save the file in your editor and refresh the page, but it's better than restarting flask every time. The app will live reload every time a .py file is changed and saved.
+
+#### Configuring VS Code for Debugging
+
+Refer to [this how-to](https://code.visualstudio.com/docs/python/debugging) for setting up the base debugging settings for a python app in VS Code. Then replace the default `launch.json` flask configuration for this:
+
+```json
+
+{
+    "name": "Python: Flask (0.11.x or later)",
+    "type": "python",
+    "request": "launch",
+    "module": "flask",
+    "env": {
+        "PYTHONPATH": "${workspaceRoot}",
+        "CONGREGATE_PATH": "/path/to/congregate",
+        "FLASK_APP": "${CONGREGATE_PATH}/ui"
+    },
+    "args": [
+        "run",
+        "--no-debugger",
+        "--no-reload"
+    ]
+}
+
+```
+
+To reload the app in debugging mode, you will need to click the `refresh` icon in VS code (on the sidebar's Explorer tab). Currently VS code doesn't support live reloading flask apps on save.
+
 ## Migration features
 
 | Main | Feature | Sub-feature | Status |
@@ -293,9 +330,10 @@ To reload the app in debugging mode, you will need to click the `refresh` icon i
 || Protected branches || :white_check_mark: |
 || Project info || :white_check_mark: |
 || CI variables || :white_check_mark: |
-|| Registries || :heavy_minus_sign: |
+|| Container Registry || :white_check_mark: |
 || Services || :x: |
-|| Deploy keys || :x: |
+|| Deploy keys || :heavy_minus_sign: |
+|| Awards || :white_check_mark: |
 | Standalone |
 || Users |
 ||| Avatars | :white_check_mark: |
@@ -320,7 +358,7 @@ To reload the app in debugging mode, you will need to click the `refresh` icon i
 | Issues with comments, merge requests with diffs and comments, labels, milestones, snippets, and other project entities  |  :white_check_mark: |  :white_check_mark: |
 | LFS objects  |  :white_check_mark: |  :white_check_mark: |
 | Build traces and artifacts  |  :x: |  :x: |
-| Container Registry  |  :x:  |  :heavy_minus_sign:  |
+| Container Registry  |  :x:  |  :white_check_mark:  |
 | CI variables  | :x:  |  :white_check_mark:  |
 | Webhooks  | :x:  | :heavy_minus_sign:   |
 | Any encrypted tokens  |  :x: | :heavy_minus_sign:   |
