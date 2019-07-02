@@ -45,14 +45,17 @@ class AwsClient(BaseClass):
             self.log.error(r.text)
             return None
 
-    def copy_from_s3_and_import(self, name, namespace, filename):
+    def copy_from_s3(self, name, namespace, filename):
         file_path = "%s/downloads/%s" % (self.config.filesystem_path, filename)
         if not path.isfile(file_path):
             self.log.info("Copying %s to local machine" % filename)
             cmd = "aws+s3+cp+s3://%s/%s+%s" % (
                 self.config.bucket_name, filename, file_path)
             subprocess.call(cmd.split("+"))
+        return file_path
 
+    def copy_from_s3_and_import(self, name, namespace, filename):
+        file_path = self.copy_from_s3(name, namespace, filename)
         url = '%s/api/v4/projects/import' % (self.config.parent_host)
         data = {
             "path": name.replace(" ", "-"),
