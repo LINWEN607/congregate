@@ -1,6 +1,7 @@
 from requests import get, head
 from re import sub, findall
 from time import sleep
+from datetime import timedelta, date
 
 
 def remove_dupes(mylist):
@@ -57,3 +58,6 @@ def __get_filename_from_cd(cd):
 
 def strip_numbers(s):
     return sub(r"[0-9]+", '', s)
+
+def expiration_date():
+    return (date.today() + timedelta(days=2)).strftime('%Y-%m-%d')

@@ -26,5 +26,8 @@ autopep8 = "*"
 lazy-object-proxy = "==1.4.1"
 docker = "*"
 
+[scripts]
+clean_pyc = "find ./congregate -name '*.pyc' -delete"
+
 [requires]
 python_version = "2.7"

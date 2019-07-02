@@ -32,6 +32,7 @@ from migration.gitlab.branches import BranchesClient
 from migration.gitlab.merge_request_approvers import MergeRequestApproversClient
 from migration.gitlab.awards import AwardsClient
 from migration.gitlab.registries import RegistryClient
+from migration.gitlab.pipeline_schedules import PipelineSchedulesClient
 from migration.mirror import MirrorClient
 
 from migration.bitbucket import client as bitbucket
@@ -48,6 +49,7 @@ branches = BranchesClient()
 awards = AwardsClient()
 mr = MergeRequestApproversClient()
 registries = RegistryClient()
+schedules = PipelineSchedulesClient()
 
 
 def migrate_project_info():
@@ -140,6 +142,10 @@ def migrate_single_project_info(project, id):
     b.log.info("Migrating awards for %s" % name)
     users_map = {}
     awards.migrate_awards(id, project["id"], users_map)
+
+    # Pipeline Schedules
+    b.log.info("Migrating pipeline schedules for %s" % name)
+    schedules.migrate_pipeline_schedules(id, old_id, users_map)
 
     # Deleting any impersonation tokens used by the awards migration
     users.delete_saved_impersonation_tokens(users_map)
