@@ -15,8 +15,7 @@ class ProjectExportClient(BaseClass):
         super(ProjectExportClient, self).__init__()
 
     def update_project_export_members(self, name, namespace, filename):
-        file_path = self.aws.copy_from_s3(name, namespace, filename)
-        extract_path = "%s/downloads/%s_%s" % (self.config.filesystem_path, name, namespace)
+        file_path, extract_path = self.generate_filepaths(name, namespace, filename)
         with tarfile.open(file_path, "r:gz") as tar:
             tar.extractall(path=extract_path)
         os.remove(file_path)
@@ -26,8 +25,17 @@ class ProjectExportClient(BaseClass):
         
         #self.aws.copy_file_to_s3(filename)
         os.chdir(self.app_path)
-        # os.remove(file_path)
+        
+    def remove_local_project_export(self, name, namespace, filename):
+        file_path, extract_path = self.generate_filepaths(name, namespace, filename)
+        os.remove(file_path)
         shutil.rmtree(extract_path)
+
+    def generate_filepaths(self, name, namespace, filename):
+        file_path = self.aws.copy_from_s3(name, namespace, filename)
+        extract_path = "%s/downloads/%s_%s" % (self.config.filesystem_path, name, namespace)
+
+        return file_path, extract_path
 
     def __rewrite_project_json(self, path):
         with open("%s/project.json" % path, "r") as f:
@@ -44,28 +52,33 @@ class ProjectExportClient(BaseClass):
                 self.users_map[d["user_id"]] = self.config.parent_user_id
             d["user"]['username'] = "This is invalid"
 
-        # Update Project Members
-        self.__update_project_members(data["project_members"])
-        # Update issue metadata
-        self.__update_authors_and_events(data["issues"])
-        # Update merge request metadata
-        self.__update_authors_and_events(data["merge_requests"])
+
+        # Update project_json
+
+        self.__traverse_json(data)
+        self.__remove_diff_notes_from_merge_requests(data["merge_requests"])
+        # # Update Project Members
+        # self.__update_project_members(data["project_members"])
+        # # Update issue metadata
+        # self.__update_authors_and_events(data["issues"])
+        # # Update merge request metadata
+        # self.__update_authors_and_events(data["merge_requests"])
         
         with open("%s/project.json" % path, "w") as f:
             json.dump(data, f, indent=4)
 
     def __traverse_json(self, data):
-        for k, v in data.items():
-            if k in self.KEYS:
-                if v is not None:
-                    data[k] = self.__find_or_create_id(v)
-            # else:
-            #     if k != "project_members":
-            #         if isinstance(data[k], list):
-            #             for d in data[k]:
-            #                 self.__traverse_json(d)
-            #         elif isinstance(data[k], dict):
-            #             self.__traverse_json(data[k])
+        if isinstance(data, dict):
+            for k, v in data.items():
+                if k in self.KEYS:
+                    if v is not None:
+                        data[k] = self.__find_or_create_id(v)
+                else:
+                    if isinstance(data[k], list):
+                        for d in data[k]:
+                            self.__traverse_json(d)
+                    elif isinstance(data[k], dict):
+                        self.__traverse_json(data[k])
     
     def __update_authors_and_events(self, data):
         for d in data:
@@ -107,6 +120,17 @@ class ProjectExportClient(BaseClass):
             else:
                 self.users_map[key] = self.config.parent_user_id
         return self.users_map[key]
+
+    def __remove_diff_notes_from_merge_requests(self, mrs):
+        for mr in mrs:
+            diff_notes = []
+            for x in range(0, len(mr["notes"])):
+                if mr["notes"][x]["type"] == "DiffNote":
+                    diff_notes.append(x)
+            for d in diff_notes:
+                del mr["notes"][d]
+
+
 
 
     
