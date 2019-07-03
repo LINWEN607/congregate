@@ -33,6 +33,7 @@ from migration.gitlab.merge_request_approvers import MergeRequestApproversClient
 from migration.gitlab.awards import AwardsClient
 from migration.gitlab.registries import RegistryClient
 from migration.gitlab.pipeline_schedules import PipelineSchedulesClient
+from migration.gitlab.project_export import ProjectExportClient
 from migration.mirror import MirrorClient
 
 from migration.bitbucket import client as bitbucket
@@ -50,6 +51,7 @@ awards = AwardsClient()
 mr = MergeRequestApproversClient()
 registries = RegistryClient()
 schedules = PipelineSchedulesClient()
+project_export = ProjectExportClient()
 
 
 def migrate_project_info():
@@ -321,8 +323,10 @@ def handle_migrating_file(f):
 
         elif (b.config.location).lower() == "aws":
             b.log.info("Migrating %s through AWS" % name)
-            exported = ie.export_import_thru_aws(id, name, name)
+            exported = ie.export_import_thru_aws(id, name, namespace)
             if exported:
+                filename = "%s_%s.tar.gz" % (namespace, name)
+                project_export.update_project_export_members(name, namespace, filename)
                 #import_id = import_project(project_json)
                 # if import_id is not None:
                 #    migrate_variables(import_id, project_json["id"])
