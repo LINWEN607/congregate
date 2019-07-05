@@ -7,7 +7,7 @@ import json
 import shutil
 
 class ProjectExportClient(BaseClass):
-    KEYS = ["author_id", "created_by_id", "user_id", "updated_by_id", "assignee_id", "merged_by_id", "merge_user_id"]
+    KEYS = ["author_id", "created_by_id", "user_id", "updated_by_id", "assignee_id", "merged_by_id", "merge_user_id", "last_edited_by_id", "closed_by_id"]
     def __init__(self):
         self.users = UsersClient()
         self.aws = AwsClient()
@@ -18,12 +18,12 @@ class ProjectExportClient(BaseClass):
         file_path, extract_path = self.generate_filepaths(name, namespace, filename)
         with tarfile.open(file_path, "r:gz") as tar:
             tar.extractall(path=extract_path)
-        os.remove(file_path)
         with tarfile.open(file_path, "w:gz") as tar:            
             self.__rewrite_project_json(extract_path)
             tar.add(extract_path, arcname="")
         
-        #self.aws.copy_file_to_s3(filename)
+        self.aws.copy_file_to_s3(filename)
+        self.remove_local_project_export(name, namespace, filename)
         os.chdir(self.app_path)
         
     def remove_local_project_export(self, name, namespace, filename):
@@ -54,15 +54,11 @@ class ProjectExportClient(BaseClass):
 
 
         # Update project_json
-
         self.__traverse_json(data)
         self.__remove_diff_notes_from_merge_requests(data["merge_requests"])
-        # # Update Project Members
-        # self.__update_project_members(data["project_members"])
-        # # Update issue metadata
-        # self.__update_authors_and_events(data["issues"])
-        # # Update merge request metadata
-        # self.__update_authors_and_events(data["merge_requests"])
+        self.__remove_diff_notes_from_merge_requests(data["pipelines"])
+        self.__remove_diff_notes_from_merge_requests(data["ci_pipelines"])
+        del data["services"]
         
         with open("%s/project.json" % path, "w") as f:
             json.dump(data, f, indent=4)
@@ -122,15 +118,10 @@ class ProjectExportClient(BaseClass):
         return self.users_map[key]
 
     def __remove_diff_notes_from_merge_requests(self, mrs):
-        for mr in mrs:
+        for i in range(0, len(mrs)):
             diff_notes = []
-            for x in range(0, len(mr["notes"])):
-                if mr["notes"][x]["type"] == "DiffNote":
+            for x in range(0, len(mrs[i]["notes"])):
+                if mrs[i]["notes"][x]["type"] == "DiffNote":
                     diff_notes.append(x)
-            for d in diff_notes:
-                del mr["notes"][d]
-
-
-
-
-    
+            for d in reversed(diff_notes):
+                del mrs[i]["notes"][d]
