@@ -3,6 +3,7 @@ from helpers import api
 from requests.exceptions import RequestException
 from urllib import quote_plus, urlencode
 from io import BytesIO
+from os import walk
 import json
 
 
@@ -55,10 +56,13 @@ class ProjectsClient(BaseClass):
             api.generate_delete_request(self.config.parent_host, self.config.parent_token,
                                         "projects/%d/members/%d" % (id, self.config.parent_user_id))
 
-    def migrate_avatar(self, new_id, old_id):
+    def __old_project_avatar(self, id):
         old_project = self.get_project(
-            old_id, self.config.child_host, self.config.child_token).json()
-        old_project_avatar = old_project["avatar_url"]
+            id, self.config.child_host, self.config.child_token).json()
+        return old_project["avatar_url"]
+        
+    def migrate_avatar(self, new_id, old_id):
+        old_project_avatar = self.__old_project_avatar(old_id)
         if old_project_avatar is not None:
             img = api.generate_get_request(
                 self.config.child_host, self.config.child_token, None, url=old_project_avatar)
@@ -68,4 +72,18 @@ class ProjectsClient(BaseClass):
             }
             return api.generate_put_request(self.config.parent_host, self.config.parent_token, "projects/%d" % new_id, {}, headers=headers, files={
                 'avatar': (filename, BytesIO(img.content))})
+        return None
+
+    def migrate_avatar_locally(self, new_id, old_id, file_path):
+        old_project_avatar = self.__old_project_avatar(old_id)
+        if bool(old_project_avatar):
+            for _, _, filename in walk("%s/avatar"):
+                avatar = filename[0]
+            with open("%s/avatar/%s" % (file_path, avatar), 'rb') as f:
+                img = f.read()
+            headers = {
+                'Private-Token': self.config.parent_token
+            }
+            return api.generate_put_request(self.config.parent_host, self.config.parent_token, "projects/%d" % new_id, {}, headers=headers, files={
+                'avatar': (avatar, BytesIO(img))})
         return None
