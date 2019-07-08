@@ -33,6 +33,7 @@ from migration.gitlab.merge_request_approvers import MergeRequestApproversClient
 from migration.gitlab.awards import AwardsClient
 from migration.gitlab.registries import RegistryClient
 from migration.gitlab.pipeline_schedules import PipelineSchedulesClient
+from migration.gitlab.deploy_keys import DeployKeysClient
 from migration.gitlab.project_export import ProjectExportClient
 from migration.mirror import MirrorClient
 
@@ -50,6 +51,7 @@ branches = BranchesClient()
 mr = MergeRequestApproversClient()
 registries = RegistryClient()
 schedules = PipelineSchedulesClient()
+deploy_keys = DeployKeysClient()
 project_export = ProjectExportClient()
 
 
@@ -135,8 +137,8 @@ def migrate_single_project_info(project, id):
     b.log.info("Migrating merge request approvers for %s" % name)
     mr.migrate_merge_request_approvers(id, old_id)
 
-    # Protected Branches
-    # b.log.info("Updating protected branches")
+    # # Protected Branches
+    # b.log.info("Updating protected branches for %s" % name)
     # branches.migrate_protected_branches(id, project["id"])
 
     # Awards
@@ -153,11 +155,16 @@ def migrate_single_project_info(project, id):
     users.delete_saved_impersonation_tokens(users_map)
 
     # Container Registries
-    if registries.enabled:
-        b.log.info("Migrating container registries")
+    if registries.enabled():
+        b.log.info("Migrating container registries for %s" % name)
         registries.migrate_registries(id, project["id"])
     else:
         b.log.warn("Container registry is not enabled for both projects")
+
+    # Deploy Keys (project only)
+    b.log.info("Migrating project deploy keys for %s" % name)
+    deploy_keys.migrate_deploy_keys(id, project["id"])
+
 
 def migrate_given_export(project_json):
     path = "%s/%s" % (project_json["namespace"], project_json["name"])

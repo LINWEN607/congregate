@@ -332,7 +332,7 @@ To reload the app in debugging mode, you will need to click the `refresh` icon i
 || CI variables || :white_check_mark: |
 || Container Registry || :white_check_mark: |
 || Services || :x: |
-|| Deploy keys || :heavy_minus_sign: |
+|| Deploy keys || :white_check_mark: |
 || Awards || :white_check_mark: |
 | Standalone |
 || Users |
@@ -361,6 +361,7 @@ To reload the app in debugging mode, you will need to click the `refresh` icon i
 | Container Registry  |  :x:  |  :white_check_mark:  |
 | CI variables  | :x:  |  :white_check_mark:  |
 | Webhooks  | :x:  | :heavy_minus_sign:   |
+| Deploy Keys | :x: | :heavy_minus_sign:  |
 | Any encrypted tokens  |  :x: | :heavy_minus_sign:   |
 | Merge Request Approvers  | :x:  | :white_check_mark:  |
 | Protected Branches  | :x:  | :white_check_mark:  |
