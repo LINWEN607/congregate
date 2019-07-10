@@ -47,7 +47,6 @@ groups = groups_client()
 projects = proj_client()
 pushrules = pushrules_client()
 branches = BranchesClient()
-awards = AwardsClient()
 mr = MergeRequestApproversClient()
 registries = RegistryClient()
 schedules = PipelineSchedulesClient()
@@ -122,7 +121,7 @@ def migrate_single_project_info(project, id):
                         id = new_project[0]["id"]
 
     # Project Members
-    projects.add_members(members, id)
+    # projects.add_members(members, id)
 
     # Push Rules
     push_rule = pushrules.get_push_rules(
@@ -137,11 +136,12 @@ def migrate_single_project_info(project, id):
     mr.migrate_merge_request_approvers(id, old_id)
 
     # Protected Branches
-    b.log.info("Updating protected branches")
-    branches.migrate_protected_branches(id, project["id"])
+    # b.log.info("Updating protected branches")
+    # branches.migrate_protected_branches(id, project["id"])
 
     # Awards
     b.log.info("Migrating awards for %s" % name)
+    awards = AwardsClient()
     users_map = {}
     awards.migrate_awards(id, project["id"], users_map)
 
@@ -323,14 +323,9 @@ def handle_migrating_file(f):
         elif (b.config.location).lower() == "aws":
             b.log.info("Migrating %s through AWS" % name)
             exported = ie.export_import_thru_aws(id, name, namespace)
-            if exported:
-                filename = "%s_%s.tar.gz" % (namespace, name)
-                project_export.update_project_export_members(name, namespace, filename)
-                #import_id = import_project(project_json)
-                # if import_id is not None:
-                #    migrate_variables(import_id, project_json["id"])
-                #    migrate_single_project_info(project_json)
-                migrate_given_export(f)
+            filename = "%s_%s.tar.gz" % (namespace, name)
+            project_export.update_project_export_members(name, namespace, filename)
+            return exported
     except IOError, e:
         b.log.error(e)
 

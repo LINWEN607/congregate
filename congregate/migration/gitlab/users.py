@@ -34,9 +34,10 @@ class UsersClient(BaseClass):
     def find_user_by_email_comparison(self, old_user_id):
         old_user = self.get_user(
             old_user_id, self.config.child_host, self.config.child_token).json()
-        for user in self.search_for_user_by_email(self.config.parent_host, self.config.parent_token, old_user["email"]):
-            if user["email"] == old_user["email"]:
-                return user
+        if old_user.get("message", None) is None:
+            for user in self.search_for_user_by_email(self.config.parent_host, self.config.parent_token, old_user["email"]):
+                if user["email"] == old_user["email"]:
+                    return user
         return None
 
     def username_exists(self, old_user):
