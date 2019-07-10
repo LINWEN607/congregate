@@ -62,7 +62,8 @@ class ProjectExportClient(BaseClass):
         self.__remove_suggestions_from_merge_requests(data["merge_requests"])
         self.__remove_diff_notes_from_merge_requests(data["pipelines"])
         self.__remove_diff_notes_from_merge_requests(data["ci_pipelines"])
-        del data["services"]
+        if data.get("services", None) is not None:
+            del data["services"]
         
         with open("%s/project.json" % path, "w") as f:
             json.dump(data, f, indent=4)
