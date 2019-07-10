@@ -42,6 +42,7 @@ class ProjectExportClient(BaseClass):
             data = json.load(f)
         
         #Build user map
+        self.log.info("Building user map")
         for d in data["project_members"]:
             new_user = self.users.find_user_by_email_comparison(d["user_id"])
             if new_user is not None:
@@ -54,8 +55,11 @@ class ProjectExportClient(BaseClass):
 
 
         # Update project_json
+        self.log.info("Updating project_json")
         self.__traverse_json(data)
+        self.log.info("Removing diffnotes")
         self.__remove_diff_notes_from_merge_requests(data["merge_requests"])
+        self.__remove_suggestions_from_merge_requests(data["merge_requests"])
         self.__remove_diff_notes_from_merge_requests(data["pipelines"])
         self.__remove_diff_notes_from_merge_requests(data["ci_pipelines"])
         del data["services"]
@@ -121,7 +125,12 @@ class ProjectExportClient(BaseClass):
         for i in range(0, len(mrs)):
             diff_notes = []
             for x in range(0, len(mrs[i]["notes"])):
-                if mrs[i]["notes"][x]["type"] == "DiffNote":
-                    diff_notes.append(x)
+                if mrs[i]["notes"][x].get("type", None) is not None:
+                    if mrs[i]["notes"][x]["type"] == "DiffNote":
+                        diff_notes.append(x)
             for d in reversed(diff_notes):
                 del mrs[i]["notes"][d]
+
+    def __remove_suggestions_from_merge_requests(self, mrs):
+        for mr in mrs:
+            mr["suggestions"] = []
