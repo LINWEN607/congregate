@@ -155,7 +155,7 @@ def migrate_single_project_info(project, id):
     users.delete_saved_impersonation_tokens(users_map)
 
     # Container Registries
-    if registries.enabled():
+    if registries.enabled(id, old_id):
         b.log.info("Migrating container registries for %s" % name)
         registries.migrate_registries(id, project["id"])
     else:
