@@ -55,14 +55,16 @@ class ProjectExportClient(BaseClass):
 
 
         # Update project_json
-        self.log.info("Updating project_json")
         self.__traverse_json(data)
-        self.log.info("Removing diffnotes")
-        self.__remove_diff_notes_from_merge_requests(data["merge_requests"])
+        self.__remove_notes_from_merge_requests(data["merge_requests"], "DiffNote")
+        self.__remove_notes_from_merge_requests(data["merge_requests"], "Commit")
         self.__remove_suggestions_from_merge_requests(data["merge_requests"])
-        self.__remove_diff_notes_from_merge_requests(data["pipelines"])
-        self.__remove_diff_notes_from_merge_requests(data["ci_pipelines"])
-        del data["services"]
+        self.__remove_notes_from_merge_requests(data["pipelines"], "DiffNote")
+        self.__remove_notes_from_merge_requests(data["pipelines"], "Commit")
+        self.__remove_notes_from_merge_requests(data["ci_pipelines"], "DiffNote")
+        self.__remove_notes_from_merge_requests(data["ci_pipelines"], "Commit")
+        if data.get("services", None) is not None:
+            del data["services"]
         
         with open("%s/project.json" % path, "w") as f:
             json.dump(data, f, indent=4)
@@ -121,14 +123,17 @@ class ProjectExportClient(BaseClass):
                 self.users_map[key] = self.config.parent_user_id
         return self.users_map[key]
 
-    def __remove_diff_notes_from_merge_requests(self, mrs):
+    def __remove_notes_from_merge_requests(self, mrs, comment_type):
         for i in range(0, len(mrs)):
-            diff_notes = []
+            notes = []
             for x in range(0, len(mrs[i]["notes"])):
                 if mrs[i]["notes"][x].get("type", None) is not None:
-                    if mrs[i]["notes"][x]["type"] == "DiffNote":
-                        diff_notes.append(x)
-            for d in reversed(diff_notes):
+                    if mrs[i]["notes"][x]["type"] == comment_type:
+                        notes.append(x)
+                elif mrs[i]["notes"][x].get("noteable_type", None) is not None:
+                    if mrs[i]["notes"][x]["noteable_type"] == comment_type:
+                        notes.append(x)
+            for d in reversed(notes):
                 del mrs[i]["notes"][d]
 
     def __remove_suggestions_from_merge_requests(self, mrs):
