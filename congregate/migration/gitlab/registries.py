@@ -60,7 +60,7 @@ class RegistryClient(BaseClass):
             for image in images:
                 for tag in image.tags:
                     # TODO: use a key value instead
-                    tag_name = tag.split(":")[1]
+                    tag_name = tag.replace(self.config.child_registry, "").split(":")[-1]
                     if image.tag(new_reg, tag_name):
                         self.log.info(
                             "Migrating tag %s to registry %s" % (tag_name, new_reg))
