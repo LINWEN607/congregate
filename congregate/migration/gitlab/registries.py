@@ -15,14 +15,12 @@ class RegistryClient(BaseClass):
     def enabled(self, new_id, old_id):
         src = self.__enabled(self.config.child_host, self.config.child_token, old_id)
         dest = self.__enabled(self.config.parent_host,
-                              self.config.parent_token, old_id)
+                              self.config.parent_token, new_id)
         return src and dest
 
     def __enabled(self, host, token, id):
         project = api.generate_get_request(host, token, "projects/%d" % id).json()
-        if project.get("container_registry_enabled"):
-            return project["container_registry_enabled"]
-        return False
+        return project.get("container_registry_enabled", False)
 
     # Get a list of registry repositories in a project
     def __list_registry_repositories(self, host, token, id):
