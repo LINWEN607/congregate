@@ -12,14 +12,15 @@ class RegistryClient(BaseClass):
         self.projects = ProjectsClient()
         super(RegistryClient, self).__init__()
 
-    def enabled(self):
-        src = self.__enabled(self.config.child_host, self.config.child_token)
+    def enabled(self, new_id, old_id):
+        src = self.__enabled(self.config.child_host, self.config.child_token, old_id)
         dest = self.__enabled(self.config.parent_host,
-                              self.config.parent_token)
+                              self.config.parent_token, new_id)
         return src and dest
 
-    def __enabled(self, host, token):
-        return api.generate_get_request(host, token, "projects")["container_registry_enabled"]
+    def __enabled(self, host, token, id):
+        project = api.generate_get_request(host, token, "projects/%d" % id).json()
+        return project.get("container_registry_enabled", False)
 
     # Get a list of registry repositories in a project
     def __list_registry_repositories(self, host, token, id):
@@ -45,15 +46,16 @@ class RegistryClient(BaseClass):
                     reg = registry["location"]
                     self.log.info("Pulling images from registry %s" % reg)
                     images = client.images.pull(reg)
-                    self.__import_registries(images, registry)
+                    self.__import_registries(images, id)
         except (APIError) as err:
             self.log.error("Failed to export registry, with error:\n%s" % err)
 
-    def __import_registries(self, images, registry):
+    def __import_registries(self, images, id):
         try:
             # Login to destination registry
+            project = self.projects.get_project(id, self.config.parent_host, self.config.parent_token).json()
             client = self.__login_to_registry(self.config.parent_host, self.config.parent_token, self.config.parent_registry)
-            new_reg = "%s/%s" % (self.config.parent_registry, registry["path"])
+            new_reg = "%s/%s" % (self.config.parent_registry, project["path_with_namespace"].lower())
             for image in images:
                 for tag in image.tags:
                     # TODO: use a key value instead
