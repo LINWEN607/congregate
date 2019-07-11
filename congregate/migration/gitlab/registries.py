@@ -48,15 +48,16 @@ class RegistryClient(BaseClass):
                     reg = registry["location"]
                     self.log.info("Pulling images from registry %s" % reg)
                     images = client.images.pull(reg)
-                    self.__import_registries(images, registry)
+                    self.__import_registries(images, id)
         except (APIError) as err:
             self.log.error("Failed to export registry, with error:\n%s" % err)
 
-    def __import_registries(self, images, registry):
+    def __import_registries(self, images, id):
         try:
             # Login to destination registry
+            project = self.projects.get_project(id, self.config.parent_host, self.config.parent_token).json()
             client = self.__login_to_registry(self.config.parent_host, self.config.parent_token, self.config.parent_registry)
-            new_reg = "%s/%s" % (self.config.parent_registry, registry["path"])
+            new_reg = "%s/%s" % (self.config.parent_registry, project["path_with_namespace"].lower())
             for image in images:
                 for tag in image.tags:
                     # TODO: use a key value instead
