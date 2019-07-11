@@ -25,25 +25,34 @@ class AwsClient(BaseClass):
             region_name=self.config.s3_region)
 
     def import_from_s3(self, name, namespace, presigned_url, filename, override_params=None):
-        with requests.get(presigned_url, stream=True) as r:
-            if r.headers["content-type"] != "application/xml":
-                url = '%s/api/v4/projects/import' % (self.config.parent_host)
-                data = {
-                    "path": name.replace(" ", "-"),
-                    "namespace": namespace
-                }
-                headers = {
-                    'Private-Token': self.config.parent_token
-                }
-                if override_params is not None:
-                    r = requests.post(url, headers=headers, params="&".join(override_params), data=data, files={
-                        'file': (filename, BytesIO(r.content))})
-                else:
-                    r = requests.post(url, headers=headers, data=data, files={
-                        'file': (filename, BytesIO(r.content))})
-                return r.text
-            self.log.error(r.text)
-            return None
+        try:
+            # Added timeout tuple for connection/read until the retry is implemented
+            with requests.get(presigned_url, stream=True, timeout=(10,10)) as r:
+                if r.headers["content-type"] != "application/xml":
+                    url = '%s/api/v4/projects/import' % (self.config.parent_host)
+                    data = {
+                        "path": name.replace(" ", "-"),
+                        "namespace": namespace
+                    }
+                    headers = {
+                        'Private-Token': self.config.parent_token
+                    }
+                    if override_params is not None:
+                        r = requests.post(url, headers=headers, params="&".join(override_params), data=data, files={
+                            'file': (filename, BytesIO(r.content))})
+                    else:
+                        r = requests.post(url, headers=headers, data=data, files={
+                            'file': (filename, BytesIO(r.content))})
+                    return r.text
+                self.log.error(r.text)
+                return None
+        except requests.exceptions.Timeout:
+            #TODO: implement proper retry session
+            self.log.error("The request has timed out")
+        except requests.exceptions.TooManyRedirects:
+            self.log.error("The URL (%s) was bad, please try a different one" % presigned_url)
+        except requests.exceptions.RequestException as e:
+            self.log.error("Something went terribly wrong, with error:\n%s" % e)
 
     def copy_from_s3(self, name, namespace, filename):
         file_path = "%s/downloads/%s" % (self.config.filesystem_path, filename)
