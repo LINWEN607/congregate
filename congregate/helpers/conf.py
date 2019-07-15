@@ -127,7 +127,11 @@ class ig:
     @property
     def username_suffix(self):
         return self.config.get("username_suffix", None)
-        
+
+    @property
+    def group_full_path_prefix(self):
+        return self.config.get("group_full_path_prefix", None)
+
     @threads.setter
     def threads(self, value):
         self.threads = value
