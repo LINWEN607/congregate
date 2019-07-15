@@ -54,6 +54,10 @@ schedules = PipelineSchedulesClient()
 deploy_keys = DeployKeysClient()
 project_export = ProjectExportClient()
 
+if b.config.parent_id is not None:
+    full_parent_namespace = groups.get_group(b.config.parent_id, b.config.parent_host, b.config.parent_token).json()["full_path"]
+else:
+    full_parent_namespace = ""
 
 def migrate_project_info():
     """
@@ -69,7 +73,8 @@ def migrate_project_info():
         new_project = api.search(
             b.config.parent_host, b.config.parent_token, 'projects', project['name'])
         if len(new_project) > 0:
-            if new_project[0]["name"] == project["name"] and new_project[0]["namespace"]["name"] == project["namespace"]:
+            if new_project[0]["name"] == project["name"] and new_project[0]["namespace"]["name"] == project[
+                "namespace"]:
                 root_user_present = False
                 for member in members:
                     if member["id"] == b.config.parent_user_id:
@@ -88,8 +93,10 @@ def migrate_project_info():
                         b.log.error(
                             "Member might already exist. Attempting to update access level")
                         try:
-                            api.generate_put_request(b.config.parent_host, b.config.parent_token, "projects/%d/members/%d?access_level=%d" % (
-                                new_project[0]["id"], member["id"], member["access_level"]), data=None)
+                            api.generate_put_request(b.config.parent_host, b.config.parent_token,
+                                                     "projects/%d/members/%d?access_level=%d" % (
+                                                         new_project[0]["id"], member["id"], member["access_level"]),
+                                                     data=None)
                         except requests.exceptions.RequestException, e:
                             b.log.error(e)
                             b.log.error(
@@ -98,7 +105,8 @@ def migrate_project_info():
                 if not root_user_present:
                     b.log.info("removing root user from project")
                     api.generate_delete_request(b.config.parent_host, b.config.parent_token,
-                                                "projects/%d/members/%d" % (new_project[0]["id"], b.config.parent_user_id))
+                                                "projects/%d/members/%d" % (
+                                                    new_project[0]["id"], b.config.parent_user_id))
 
 
 def migrate_single_project_info(project, id):
@@ -109,19 +117,11 @@ def migrate_single_project_info(project, id):
     project.pop("members")
     name = project["name"]
     old_id = project["id"]
-    
+
     b.log.info("Searching for project %s" % name)
     if id is None:
-        for new_project in projects.search_for_project(b.config.parent_host, b.config.parent_token, project['name']):
-            if isinstance(new_project, dict):
-                if len(new_project) > 0:
-                    if new_project["name"] == name and new_project["namespace"]["name"] == project["namespace"]:
-                        id = new_project["id"]
-            elif isinstance(new_project, list):
-                if len(new_project) > 0:
-                    if new_project[0]["name"] == name and new_project[0]["namespace"]["name"] == project["namespace"]:
-                        id = new_project[0]["id"]
-
+        _, id = projects.find_project_by_path(b.config.parent_host, b.config.parent_token, full_parent_namespace, project["namespace"], project["name"])
+        
     # Project Members
     # projects.add_members(members, id)
 
@@ -177,14 +177,7 @@ def migrate_given_export(project_json):
     project_exists = False
     project_id = None
     try:
-        for proj in projects.search_for_project(b.config.parent_host, b.config.parent_token, project_json['name']):
-            if isinstance(proj, dict):
-                if proj["name"] == project_json["name"] and project_json["namespace"] in proj["namespace"]["path"]:
-                    b.log.info("Project already exists. Skipping %s" %
-                               project_json["name"])
-                    project_exists = True
-                    project_id = proj["id"]
-                    break
+        project_exists, project_id = projects.find_project_by_path(b.config.parent_host, b.config.parent_token, full_parent_namespace, project_json["namespace"], project_json["name"])
         if project_id:
             import_check = ie.get_import_status(
                 b.config.parent_host, b.config.parent_token, project_id).json()
@@ -329,7 +322,7 @@ def handle_migrating_file(f):
 
         elif (b.config.location).lower() == "aws":
             b.log.info("Migrating %s through AWS" % name)
-            exported = ie.export_import_thru_aws(id, name, namespace)
+            exported = ie.export_import_thru_aws(id, name, namespace, full_parent_namespace)
             filename = "%s_%s.tar.gz" % (namespace, name)
             project_export.update_project_export_members(name, namespace, filename)
             return exported
@@ -346,7 +339,8 @@ def find_unimported_projects():
             try:
                 b.log.debug("Searching for existing %s" % project_json["name"])
                 project_exists = False
-                for proj in projects.search_for_project(b.config.parent_host, b.config.parent_token, project_json['name']):
+                for proj in projects.search_for_project(b.config.parent_host, b.config.parent_token,
+                                                        project_json['name']):
                     if proj["name"] == project_json["name"]:
                         if project_json["namespace"]["full_path"].lower() == proj["path_with_namespace"].lower():
                             project_exists = True
@@ -366,12 +360,12 @@ def find_unimported_projects():
 
 
 def remove_all_mirrors():
-        # if os.path.isfile("%s/data/new_ids.txt" % b.app_path):
-        #     ids = []
-        #     with open("%s/data/new_ids.txt" % b.app_path, "r") as f:
-        #         for line in f:
-        #             ids.append(int(line.split("\n")[0]))
-        # else:
+    # if os.path.isfile("%s/data/new_ids.txt" % b.app_path):
+    #     ids = []
+    #     with open("%s/data/new_ids.txt" % b.app_path, "r") as f:
+    #         for line in f:
+    #             ids.append(int(line.split("\n")[0]))
+    # else:
     ids = get_new_ids()
     for i in ids:
         mirror.remove_mirror(i)
@@ -385,7 +379,8 @@ def get_new_ids():
         for project_json in files:
             try:
                 b.log.debug("Searching for existing %s" % project_json["name"])
-                for proj in projects.search_for_project(b.config.parent_host, b.config.parent_token, project_json['name']):
+                for proj in projects.search_for_project(b.config.parent_host, b.config.parent_token,
+                                                        project_json['name']):
                     if proj["name"] == project_json["name"]:
 
                         if "%s" % project_json["namespace"].lower() in proj["path_with_namespace"].lower():
@@ -394,7 +389,7 @@ def get_new_ids():
                             if project_json["namespace"].lower() == proj["namespace"]["name"].lower():
                                 print "adding %s/%s" % (
                                     project_json["namespace"], project_json["name"])
-                                #b.log.info("Migrating variables for %s" % proj["name"])
+                                # b.log.info("Migrating variables for %s" % proj["name"])
                                 ids.append(proj["id"])
                                 break
             except IOError, e:
@@ -545,3 +540,4 @@ def find_empty_repos():
 
     print empty_repos
     print len(empty_repos)
+

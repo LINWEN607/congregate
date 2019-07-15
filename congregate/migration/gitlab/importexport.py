@@ -324,20 +324,14 @@ class ImportExportClient(BaseClass):
 
         return success
 
-    def export_import_thru_aws(self, id, name, namespace):
+    def export_import_thru_aws(self, id, name, namespace, full_parent_namespace):
         # if isinstance(project_json, str):
         #     project_json = json.loads(project_json)
         exported = False
         self.log.debug("Searching for existing %s" % name)
-        project_exists = False
-        for proj in self.projects.search_for_project(self.config.parent_host, self.config.parent_token, name):
-            if isinstance(proj, dict):
-                if proj["name"] == name and namespace in proj["namespace"]["path"]:
-                    self.log.info("Project already exists. Skipping %s" % name)
-                    project_exists = True
-                    break
-            else:
-                break
+        if full_parent_namespace.split("/")[-1] == namespace.split("/")[0]:
+            namespace = namespace.replace(namespace.split("/")[0] + "/", "")
+        project_exists, _ = self.projects.find_project_by_path(self.config.parent_host, self.config.parent_token, full_parent_namespace, namespace, name)
         if not project_exists:
             self.log.info(
                 "%s could not be found in parent instance. Exporting project on child instance." % name)
