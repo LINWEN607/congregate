@@ -361,9 +361,7 @@ class UsersClient(BaseClass):
     def migrate_user_info(self):
         with open('%s/data/staged_users.json' % self.app_path, "r") as f:
             users = json.load(f)
-        
         new_ids = handle_multi_thread(self.handle_user_creation, users)
-
         return list(filter(None, new_ids))
 
     def user_migration_dry_run(self):

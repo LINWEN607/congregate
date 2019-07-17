@@ -196,22 +196,22 @@ def migrate_given_export(project_json):
             b.log.info("Importing %s" % project_json["name"])
             import_id = ie.import_project(project_json)
             if import_id is not None:
-                b.log.info("Unarchiving project")
+                b.log.info("Unarchiving project %s" % project_json["name"])
                 projects.unarchive_project(
                     b.config.child_host, b.config.child_token, project_json["id"])
-                b.log.info("Migrating variables")
+                b.log.info("Migrating %s variables" % project_json["name"])
                 status = variables.migrate_variables(
                     import_id, project_json["id"], "project")
-                b.log.info("Migrating project info")
+                b.log.info("Migrating %s project info" % project_json["name"])
                 migrate_single_project_info(project_json, import_id)
-                # b.log.info("Archiving project")
+                # b.log.info("Archiving project %s" % project_json["name"])
                 # projects.archive_project(b.config.child_host, b.config.child_token, project_json["id"])
                 results[path] = True
     except requests.exceptions.RequestException, e:
         b.log.error(e)
     except KeyError, e:
         b.log.error(e)
-        raise KeyError("Something broke in migrate_given_export")
+        raise KeyError("Something broke in migrate_given_export (%s)" % project_json["name"])
     except OverflowError, e:
         b.log.error(e)
     return results
@@ -273,8 +273,7 @@ def migrate(threads=None):
             b.log.info("Importing projects")
             import_pool = ThreadPool(b.config.threads)
             results = import_pool.map(migrate_given_export, files)
-            b.log.info("### Results ###")
-            print json.dumps(results, indent=4)
+            b.log.info("### Results ###\n%s" % json.dumps(results, indent=4))
             import_pool.close()
             import_pool.join()
 
@@ -290,8 +289,7 @@ def kick_off_import():
         b.log.info("Importing projects")
         pool = ThreadPool(b.config.threads)
         results = pool.map(migrate_given_export, files)
-        b.log.info("### Results ###")
-        print json.dumps(results, indent=4)
+        b.log.info("### Results ###\n%s" % json.dumps(results, indent=4))
         pool.close()
         pool.join()
 
@@ -540,4 +538,3 @@ def find_empty_repos():
 
     print empty_repos
     print len(empty_repos)
-
