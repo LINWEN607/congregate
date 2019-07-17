@@ -11,25 +11,7 @@ window.onload = function() {
                 }
             }
         });
-        var last_activity_at = document.getElementsByClassName("last_activity");
-        var namespace = document.getElementsByClassName("namespace");
-        var timestamp = new Date().getTime() - (56 * 24 * 60 * 60 * 1000)
-        if (last_activity_at) {
-            for (var i = 0; i < last_activity_at.length; i++) {
-                current_date_object = last_activity_at[i];
-                var d = new Date(current_date_object.innerHTML);
-                // if (d.getTime() <= timestamp) {
-                    // current_date_object.style.color = "red";
-                    var row = current_date_object.parentNode.getAttribute("data-thisid");
-                    namespaceType = namespace[i].innerHTML.split("(");
-                    // if (namespaceType[1].includes("user")) {
-                    //     document.getElementById(row).checked = true;
-                    // }
-                // }
-                var n = d.toUTCString();
-                current_date_object.innerHTML = n;
-            }
-        }
+        
     }
     var projects_table = document.getElementById("users_table");
     if (projects_table) {
@@ -215,5 +197,51 @@ function register_events() {
                 }
             });
         });
+    }
+
+    var filter_button = document.getElementById("filter_button");
+    if (filter_button) {
+        filter_button.addEventListener("click", function() {
+            var number = document.getElementById("filter_number").value;
+            var dropdown = document.getElementById("filter_dropdown").value;
+            
+            var checkbox = document.getElementById("active_checkbox").checked;
+            var last_activity_at = document.getElementsByClassName("last_activity");
+            var namespace = document.getElementsByClassName("namespace");
+            var timestamp = new Date()
+            if (dropdown == "days") {
+                timestamp.setDate(timestamp.getDate() - parseInt(number))
+            } else if (dropdown == "months") {
+                timestamp.setMonth(timestamp.getMonth() - parseInt(number))
+            }
+            if (last_activity_at) {
+                for (var i = 0; i < last_activity_at.length; i++) {
+                    current_date_object = last_activity_at[i];
+                    var d = new Date(current_date_object.innerHTML);
+                    if (checkbox) {
+                        if (d.getTime() >= timestamp) {
+                            // current_date_object.style.color = "red";
+                            var row = current_date_object.parentNode.getAttribute("data-thisid");
+                            namespaceType = namespace[i].innerHTML.split("(");
+                            // if (namespaceType[1].includes("user")) {
+                                document.getElementById(row).checked = true;
+                            // }
+                        }
+                    } else {
+                        if (d.getTime() <= timestamp) {
+                            // current_date_object.style.color = "red";
+                            var row = current_date_object.parentNode.getAttribute("data-thisid");
+                            namespaceType = namespace[i].innerHTML.split("(");
+                            // if (namespaceType[1].includes("user")) {
+                                document.getElementById(row).checked = true;
+                            // }
+                        }
+                    }
+                    
+                    var n = d.toUTCString();
+                    current_date_object.innerHTML = n;
+                }
+            }
+        })
     }
 }
