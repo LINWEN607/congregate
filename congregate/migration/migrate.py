@@ -117,6 +117,7 @@ def migrate_single_project_info(project, id):
     project.pop("members")
     name = project["name"]
     old_id = project["id"]
+    results = {}
 
     b.log.info("Searching for project %s" % name)
     if id is None:
@@ -125,46 +126,91 @@ def migrate_single_project_info(project, id):
     # Project Members
     # projects.add_members(members, id)
 
+    # CI/CD Variables
+    try:
+        b.log.info("Migrating %s CI/CD variables" % name)
+        variables.migrate_variables(
+            id, old_id, "project")
+        results["variables"] = True
+    except Exception, e:
+        b.log.error("Failed to migrate CI/CD variables for %s" % name)
+        b.log.error(e)
+        results["variables"] = False
+
     # Push Rules
-    push_rule = pushrules.get_push_rules(
-        project["id"], b.config.child_host, b.config.child_token).json()
-    if push_rule and len(push_rule) > 0:
-        b.log.info("Migrating push rules for %s" % name)
-        pushrules.add_push_rule(id, b.config.parent_host,
-                                b.config.parent_token, push_rule)
+    try:
+        push_rule = pushrules.get_push_rules(
+            project["id"], b.config.child_host, b.config.child_token).json()
+        if push_rule and len(push_rule) > 0:
+            b.log.info("Migrating push rules for %s" % name)
+            pushrules.add_push_rule(id, b.config.parent_host,
+                                    b.config.parent_token, push_rule)
+            results["push_rules"] = True
+    except Exception, e:
+        b.log.error("Failed to migrate push rules for %s" % name)
+        b.log.error(e)
+        results["push_rules"] = False
 
     # Merge Request Approvers
-    b.log.info("Migrating merge request approvers for %s" % name)
-    mr.migrate_merge_request_approvers(id, old_id)
+    try:
+        b.log.info("Migrating merge request approvers for %s" % name)
+        mr.migrate_merge_request_approvers(id, old_id)
+        results["merge_request_approvers"] = True
+    except Exception, e:
+        b.log.error("Failed to migrate merge request approvers for %s" % name)
+        b.log.error(e)
+        results["merge_request_approvers"] = False
 
     # # Protected Branches
     # b.log.info("Updating protected branches for %s" % name)
     # branches.migrate_protected_branches(id, project["id"])
 
     # Awards
-    b.log.info("Migrating awards for %s" % name)
-    awards = AwardsClient()
     users_map = {}
-    awards.migrate_awards(id, project["id"], users_map)
+    try:
+        b.log.info("Migrating awards for %s" % name)
+        awards = AwardsClient()
+        awards.migrate_awards(id, project["id"], users_map)
+        results["awards"] = True
+    except Exception, e:
+        b.log.error("Failed to migrate awards for %s" % name)
+        b.log.error(e)
+        results["awards"] = False
 
     # # Pipeline Schedules
     # b.log.info("Migrating pipeline schedules for %s" % name)
     # schedules.migrate_pipeline_schedules(id, old_id, users_map)
 
     # Deleting any impersonation tokens used by the awards migration
-    users.delete_saved_impersonation_tokens(users_map)
-
-    # Container Registries
-    if registries.enabled(id, old_id):
-        b.log.info("Migrating container registries for %s" % name)
-        registries.migrate_registries(id, project["id"])
-    else:
-        b.log.warn("Container registry is not enabled for both projects")
+    try:
+        users.delete_saved_impersonation_tokens(users_map)
+    except Exception, e:
+        b.log.error(e)
 
     # Deploy Keys (project only)
-    b.log.info("Migrating project deploy keys for %s" % name)
-    deploy_keys.migrate_deploy_keys(id, project["id"])
+    try:
+        b.log.info("Migrating project deploy keys for %s" % name)
+        deploy_keys.migrate_deploy_keys(id, project["id"])
+        results["deploy_keys"] = True
+    except Exception, e:
+        b.log.error("Failed to migrate deploy keys for %s" % name)
+        b.log.error(e)
+        results["deploy_keys"] = False
 
+    # Container Registries
+    try:
+        if registries.enabled(id, old_id):
+            b.log.info("Migrating container registries for %s" % name)
+            registries.migrate_registries(id, project["id"])
+            results["container_registry"] = True
+        else:
+            b.log.warn("Container registry is not enabled for both projects")
+    except Exception, e:
+        b.log.error("Failed to migrate container registries for %s" % name)
+        b.log.error(e)
+        results["container_registry"] = False
+
+    return results
 
 def migrate_given_export(project_json):
     path = "%s/%s" % (project_json["namespace"], project_json["name"])
@@ -196,22 +242,20 @@ def migrate_given_export(project_json):
             b.log.info("Importing %s" % project_json["name"])
             import_id = ie.import_project(project_json)
             if import_id is not None:
-                b.log.info("Unarchiving project")
+                b.log.info("Unarchiving project %s" % project_json["name"])
                 projects.unarchive_project(
                     b.config.child_host, b.config.child_token, project_json["id"])
-                b.log.info("Migrating variables")
-                status = variables.migrate_variables(
-                    import_id, project_json["id"], "project")
-                b.log.info("Migrating project info")
-                migrate_single_project_info(project_json, import_id)
-                # b.log.info("Archiving project")
+                
+                b.log.info("Migrating %s project info" % project_json["name"])
+                post_import_results = migrate_single_project_info(project_json, import_id)
+                # b.log.info("Archiving project %s" % project_json["name"])
                 # projects.archive_project(b.config.child_host, b.config.child_token, project_json["id"])
-                results[path] = True
+                results[path] = post_import_results
     except requests.exceptions.RequestException, e:
         b.log.error(e)
     except KeyError, e:
         b.log.error(e)
-        raise KeyError("Something broke in migrate_given_export")
+        raise KeyError("Something broke in migrate_given_export (%s)" % project_json["name"])
     except OverflowError, e:
         b.log.error(e)
     return results
@@ -273,8 +317,7 @@ def migrate(threads=None):
             b.log.info("Importing projects")
             import_pool = ThreadPool(b.config.threads)
             results = import_pool.map(migrate_given_export, files)
-            b.log.info("### Results ###")
-            print json.dumps(results, indent=4)
+            b.log.info("### Results ###\n%s" % json.dumps(results, indent=4))
             import_pool.close()
             import_pool.join()
 
@@ -290,8 +333,7 @@ def kick_off_import():
         b.log.info("Importing projects")
         pool = ThreadPool(b.config.threads)
         results = pool.map(migrate_given_export, files)
-        b.log.info("### Results ###")
-        print json.dumps(results, indent=4)
+        b.log.info("### Results ###\n%s" % json.dumps(results, indent=4))
         pool.close()
         pool.join()
 
@@ -324,7 +366,11 @@ def handle_migrating_file(f):
             b.log.info("Migrating %s through AWS" % name)
             exported = ie.export_import_thru_aws(id, name, namespace, full_parent_namespace)
             filename = "%s_%s.tar.gz" % (namespace, name)
-            project_export.update_project_export_members(name, namespace, filename)
+            try:
+                project_export.update_project_export_members(name, namespace, filename)
+            except Exception, e:
+                b.log.error(e)
+                b.log.error("Unable to update project export for %s. Will proceed with existing project export." % filename)
             return exported
     except IOError, e:
         b.log.error(e)
@@ -540,4 +586,3 @@ def find_empty_repos():
 
     print empty_repos
     print len(empty_repos)
-

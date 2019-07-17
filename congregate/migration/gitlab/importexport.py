@@ -59,8 +59,8 @@ class ImportExportClient(BaseClass):
                     self.log.info(
                         "No export status could be found for %s" % name)
                     if skip is False:
-                        self.log.info("Waiting 5 seconds before skipping")
-                        sleep(5)
+                        self.log.info("Waiting 10 seconds before skipping")
+                        sleep(10)
                         skip = True
                     else:
                         break
@@ -329,8 +329,7 @@ class ImportExportClient(BaseClass):
         #     project_json = json.loads(project_json)
         exported = False
         self.log.debug("Searching for existing %s" % name)
-        if full_parent_namespace.split("/")[-1] == namespace.split("/")[0]:
-            namespace = namespace.replace(namespace.split("/")[0] + "/", "")
+        namespace = self.strip_namespace(full_parent_namespace, namespace)
         project_exists, _ = self.projects.find_project_by_path(self.config.parent_host, self.config.parent_token, full_parent_namespace, namespace, name)
         if not project_exists:
             self.log.info(
@@ -340,3 +339,9 @@ class ImportExportClient(BaseClass):
                 self.config.child_host, self.config.child_token, id)
 
         return exported
+
+    def strip_namespace(self, full_parent_namespace, namespace):
+        if len(full_parent_namespace.split("/")) > 1:
+            if full_parent_namespace.split("/")[-1] == namespace.split("/")[0]:
+                namespace = namespace.replace(namespace.split("/")[0] + "/", "")
+        return namespace

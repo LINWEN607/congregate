@@ -44,7 +44,8 @@ class ProjectExportClient(BaseClass):
         #Build user map
         self.log.info("Building user map")
         for d in data["project_members"]:
-            new_user = self.users.find_user_by_email_comparison(d["user_id"])
+            if d.get("user_id", None) is not None: 
+                new_user = self.users.find_user_by_email_comparison(d["user_id"])
             if new_user is not None:
                 d["user"]["id"] = new_user["id"]
                 self.users_map[d["user_id"]] = new_user["id"]
@@ -56,13 +57,16 @@ class ProjectExportClient(BaseClass):
 
         # Update project_json
         self.__traverse_json(data)
-        self.__remove_notes_from_merge_requests(data["merge_requests"], "DiffNote")
-        self.__remove_notes_from_merge_requests(data["merge_requests"], "Commit")
-        self.__remove_suggestions_from_merge_requests(data["merge_requests"])
-        self.__remove_notes_from_merge_requests(data["pipelines"], "DiffNote")
-        self.__remove_notes_from_merge_requests(data["pipelines"], "Commit")
-        self.__remove_notes_from_merge_requests(data["ci_pipelines"], "DiffNote")
-        self.__remove_notes_from_merge_requests(data["ci_pipelines"], "Commit")
+        if data.get("merge_requests", None) is not None:
+            self.__remove_notes_from_merge_requests(data["merge_requests"], "DiffNote")
+            self.__remove_notes_from_merge_requests(data["merge_requests"], "Commit")
+            self.__remove_suggestions_from_merge_requests(data["merge_requests"])
+        if data.get("pipelines", None) is not None:
+            self.__remove_notes_from_merge_requests(data["pipelines"], "DiffNote")
+            self.__remove_notes_from_merge_requests(data["pipelines"], "Commit")
+        if data.get("ci_pipelines", None) is not None:
+            self.__remove_notes_from_merge_requests(data["ci_pipelines"], "DiffNote")
+            self.__remove_notes_from_merge_requests(data["ci_pipelines"], "Commit")
         if data.get("services", None) is not None:
             del data["services"]
         
@@ -124,17 +128,18 @@ class ProjectExportClient(BaseClass):
         return self.users_map[key]
 
     def __remove_notes_from_merge_requests(self, mrs, comment_type):
-        for i in range(0, len(mrs)):
-            notes = []
-            for x in range(0, len(mrs[i]["notes"])):
-                if mrs[i]["notes"][x].get("type", None) is not None:
-                    if mrs[i]["notes"][x]["type"] == comment_type:
-                        notes.append(x)
-                elif mrs[i]["notes"][x].get("noteable_type", None) is not None:
-                    if mrs[i]["notes"][x]["noteable_type"] == comment_type:
-                        notes.append(x)
-            for d in reversed(notes):
-                del mrs[i]["notes"][d]
+        if mrs is not None:
+            for i in range(0, len(mrs)):
+                notes = []
+                for x in range(0, len(mrs[i]["notes"])):
+                    if mrs[i]["notes"][x].get("type", None) is not None:
+                        if mrs[i]["notes"][x]["type"] == comment_type:
+                            notes.append(x)
+                    elif mrs[i]["notes"][x].get("noteable_type", None) is not None:
+                        if mrs[i]["notes"][x]["noteable_type"] == comment_type:
+                            notes.append(x)
+                for d in reversed(notes):
+                    del mrs[i]["notes"][d]
 
     def __remove_suggestions_from_merge_requests(self, mrs):
         for mr in mrs:
