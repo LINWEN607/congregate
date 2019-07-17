@@ -59,8 +59,8 @@ class ImportExportClient(BaseClass):
                     self.log.info(
                         "No export status could be found for %s" % name)
                     if skip is False:
-                        self.log.info("Waiting 5 seconds before skipping")
-                        sleep(5)
+                        self.log.info("Waiting 10 seconds before skipping")
+                        sleep(10)
                         skip = True
                     else:
                         break
