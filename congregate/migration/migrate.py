@@ -366,7 +366,11 @@ def handle_migrating_file(f):
             b.log.info("Migrating %s through AWS" % name)
             exported = ie.export_import_thru_aws(id, name, namespace, full_parent_namespace)
             filename = "%s_%s.tar.gz" % (namespace, name)
-            project_export.update_project_export_members(name, namespace, filename)
+            try:
+                project_export.update_project_export_members(name, namespace, filename)
+            except Exception, e:
+                b.log.error(e)
+                b.log.error("Unable to update project export for %s. Will proceed with existing project export." % filename)
             return exported
     except IOError, e:
         b.log.error(e)
