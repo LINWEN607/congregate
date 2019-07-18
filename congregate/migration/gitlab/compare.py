@@ -59,7 +59,7 @@ class CompareClient(BaseClass):
             if destination_groups.get(group_path, None) is not None:
                 dest_group_data = destination_groups[group_path]
                 comparison["members"] = self.compare_members(group_data["members"], dest_group_data["members"])
-                comparison["path"] = self.compare_group_location(group_data["full_path"], dest_group_data["full_path"])
+                comparison["path"] = self.compare_group_location(group_data["full_path"], dest_group_data["path"])
                 results[group_path] = comparison
             else:
                 results[group_path] = {

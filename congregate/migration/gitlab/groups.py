@@ -31,6 +31,9 @@ class GroupsClient(BaseClass):
 
     def get_all_subgroups(self, id, host, token):
         return api.list_all(host, token, "groups/%d/subgroups" % id)
+    
+    def delete_group(self, id, host, token):
+        return api.generate_delete_request(host, token, "groups/%d" % id)
 
     def traverse_groups(self, base_groups, transient_list,  host, token, parent_group=None):
         if parent_group is not None:

@@ -124,11 +124,17 @@ class UsersClient(BaseClass):
             members = obj[i]["members"]
             if isinstance(members, list):
                 for member in members:
-                    self.log.info(member)
                     old_user = self.get_user(member["id"], self.config.child_host, self.config.child_token).json()
                     username = strip_numbers(member["username"]).lower()
                     if rewritten_users.get(old_user["email"], None) is not None:
-                        member["id"] = rewritten_users[old_user["email"]]["id"]
+                        new_user = self.get_user(rewritten_users[old_user["email"]]["id"], self.config.parent_host, self.config.parent_token).json()
+                        if new_user.get("message", None) is None:
+                            if new_user["email"] == old_user["email"]:
+                                member["id"] = rewritten_users[old_user["email"]]["id"]
+                            else:
+                                member["id"] = self.config.parent_user_id
+                        else:
+                            member["id"] = self.config.parent_user_id
                     else:
                         member["id"] = self.config.parent_user_id
 
