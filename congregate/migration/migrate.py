@@ -126,6 +126,9 @@ def migrate_single_project_info(project, id):
     # Project Members
     # projects.add_members(members, id)
 
+    # Shared with groups
+    projects.add_shared_groups(old_id, id)
+
     # CI/CD Variables
     try:
         b.log.info("Migrating %s CI/CD variables" % name)

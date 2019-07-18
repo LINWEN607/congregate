@@ -40,6 +40,12 @@ class ProjectsClient(BaseClass):
     def unarchive_project(self, host, token, id):
         return api.generate_post_request(host, token, "projects/%d/unarchive" % id, {}).json()
 
+    def __add_shared_group(self, host, token, id, group):
+        return api.generate_post_request(host, token, "projects/%d/share" % id, json.dumps(group))
+
+    def __get_shared_group(self, host, token, name):
+        return api.generate_get_request(host, token, "groups?search=%s" % name)
+
     def add_members(self, members, id):
         root_user_present = False
         for member in members:
@@ -71,6 +77,26 @@ class ProjectsClient(BaseClass):
             self.log.info("removing root user from project")
             api.generate_delete_request(self.config.parent_host, self.config.parent_token,
                                         "projects/%d/members/%d" % (id, self.config.parent_user_id))
+
+    def add_shared_groups(self, old_id, new_id):
+        old_project = self.get_project(old_id, self.config.child_host, self.config.child_token).json()
+        for group in old_project["shared_with_groups"]:
+            # caveat: if there are several groups with the same group_name
+            shared_group = self.__get_shared_group(self.config.parent_host, self.config.parent_token, group["group_name"]).json()
+            data = {
+                "group_access": group["group_access_level"],
+                "group_id": shared_group[0]["id"],
+                "expires_at": group["expires_at"]
+            }
+            try:
+                group_path = group["group_full_path"]
+                r = self.__add_shared_group(self.config.parent_host, self.config.parent_token, new_id, data)
+                if r.status_code == 201:
+                    self.log.info("Shared project %d with group %s" % (new_id, group_path))
+                else:
+                    self.log.warn("Failed to share project %d with group %s due to:\n%s" % (new_id, group_path, r.content))
+            except RequestException, e:
+                self.log.error("Get request failed with error:\n%s" % e)
 
     def __old_project_avatar(self, id):
         old_project = self.get_project(
