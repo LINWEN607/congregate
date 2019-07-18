@@ -27,10 +27,10 @@ class GroupsClient(BaseClass):
         return api.list_all(host, token, "groups")
 
     def get_all_group_members(self, id, host, token):
-        return api.list_all(host, token, "groups/%s/members" % id)
+        return api.list_all(host, token, "groups/%d/members" % id)
 
     def get_all_subgroups(self, id, host, token):
-        return api.list_all(host, token, "groups/%s/subgroups" % id)
+        return api.list_all(host, token, "groups/%d/subgroups" % id)
 
     def traverse_groups(self, base_groups, transient_list,  host, token, parent_group=None):
         if parent_group is not None:
@@ -43,7 +43,7 @@ class GroupsClient(BaseClass):
                 group.pop("ldap_access")
             except KeyError:
                 pass
-            group_id = str(group["id"])
+            group_id = group["id"]
             members = list(self.get_all_group_members(group_id, host, token))
             group["members"] = members
             transient_list.append(group)
@@ -57,24 +57,43 @@ class GroupsClient(BaseClass):
                         [subgroup], transient_list, host, token, parent_group)
             parent_group = None
 
-    def retrieve_group_info(self, quiet=False):
-        groups = list(self.get_all_groups(
-            self.config.child_host, self.config.child_token))
+    def retrieve_group_info(self, host, token, location="source", top_level_group=False, quiet=False):
+        prefix = ""
+        if location != "source":
+            prefix = location
+        
+        if not top_level_group:
+            groups = list(self.get_all_groups(
+                host, token))
+        else:
+            if self.config.parent_id is not None:
+                groups = [self.get_group(self.config.parent_id, self.config.parent_host, self.config.parent_token).json()]
+                prefix += str(self.config.parent_id)
+                print groups
+            else:
+                self.log.info("No parent ID found")
+                return None
+        
         transient_list = []
-
         self.traverse_groups(groups, transient_list,
-                             self.config.child_host, self.config.child_token)
+                            host, token)
 
-        with open('%s/data/groups.json' % self.app_path, "w") as f:
-            json.dump(groups, f, indent=4)
-
+        self.create_groups_json(transient_list, prefix=prefix)
         if not quiet:
             self.log.info(
                 "Retrieved %d groups. Check groups.json to see all retrieved groups" % len(groups))
+        
+        return transient_list
+    
+    def create_groups_json(self, groups, prefix=""):
+        file_path = '%s/data/%sgroups.json' % (self.app_path, prefix)
+        with open(file_path, "w") as f:
+            json.dump(groups, f, indent=4)
+        return file_path
 
     def migrate_group_info(self):
         if not path.isfile("%s/data/groups.json" % self.app_path):
-            self.retrieve_group_info()
+            self.retrieve_group_info(self.config.child_host, self.config.child_token)
         with open("%s/data/staged_groups.json" % self.app_path, "r") as f:
             groups = json.load(f)
 
@@ -385,3 +404,4 @@ class GroupsClient(BaseClass):
             except IOError, e:
                 self.log.error(e)
         print ids
+

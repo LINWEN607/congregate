@@ -231,7 +231,7 @@ class ImportExportClient(BaseClass):
                     if import_id is not None:
                         status = self.get_import_status(
                             self.config.parent_host, self.config.parent_token, import_id)
-
+                        
                         try:
                             status = status.json()
                             if status["import_status"] == "finished":

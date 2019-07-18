@@ -1,0 +1,136 @@
+
+from helpers.base_class import BaseClass
+from helpers import api, misc_utils
+from migration.gitlab.groups import GroupsClient
+from migration.gitlab.users import UsersClient
+from requests.exceptions import RequestException
+import json
+from os import path
+
+
+class CompareClient(BaseClass):
+    def __init__(self):
+        self.groups = GroupsClient()
+        self.users = UsersClient()
+        self.unknown_users = {}
+        super(CompareClient, self).__init__()
+
+    def correct_group_migration(self):
+        return
+
+    def create_group_migration_results(self):
+        prefix = ""
+        if path.exists('%s/data/groups.json' % self.app_path):
+            with open('%s/data/groups.json' % self.app_path, "r") as f:
+                source_groups = json.load(f)
+        else:
+            source_groups = self.groups.retrieve_group_info(self.config.child_host, self.config.child_token)
+        
+        tlg = False
+        if self.config.parent_id is not None:
+            tlg = True
+            prefix = self.groups.get_group(self.config.parent_id, self.config.parent_host, self.config.parent_token).json()["full_path"] + "/"
+        if path.exists('%s/data/destination%dgroups.json' % (self.app_path, self.config.parent_id)):
+            with open('%s/data/destination%dgroups.json' % (self.app_path, self.config.parent_id), "r") as f:
+                destination_groups = json.load(f)
+        else:
+            destination_groups = self.groups.retrieve_group_info(self.config.parent_host, self.config.parent_token, location="destination", top_level_group=tlg)
+
+        shared_key = "full_path"
+        rewritten_destination_groups = misc_utils.rewrite_list_into_dict(destination_groups, shared_key)
+        rewritten_source_groups = misc_utils.rewrite_list_into_dict(source_groups, shared_key, prefix=prefix)
+
+        results = {
+            "Total groups in source instance": len(source_groups),
+            "Total groups in destination instance": len(destination_groups)
+        }
+
+        results["results"] = self.compare_groups(rewritten_source_groups, rewritten_destination_groups)
+
+
+
+        return results, self.unknown_users
+
+    def compare_groups(self, source_groups, destination_groups):
+        results = {}
+        for group_path, group_data in source_groups.iteritems():
+            comparison = {}
+            print group_path
+            if destination_groups.get(group_path, None) is not None:
+                dest_group_data = destination_groups[group_path]
+                comparison["members"] = self.compare_members(group_data["members"], dest_group_data["members"])
+                comparison["path"] = self.compare_group_location(group_data["full_path"], dest_group_data["full_path"])
+                results[group_path] = comparison
+            else:
+                results[group_path] = {
+                    "status": "Failed to migrate"
+                }
+            
+        return results
+
+    def compare_group_location(self, source_path, destination_path):
+        if self.config.parent_id is not None:
+            tlg = self.groups.get_group(self.config.parent_id, self.config.parent_host, self.config.parent_token).json()
+            source_path = "%s/%s" % (tlg["full_path"], source_path)
+        
+        if source_path != destination_path:
+            return {
+                "expected": source_path,
+                "actual": destination_path
+            }
+        
+        return True
+
+    def compare_members(self, source_members, destination_members):
+        results = {}
+        sorted_source_members = sorted(source_members, key = lambda i: i['username']) 
+        sorted_destination_members = sorted(destination_members, key = lambda i: i['username']) 
+
+        results = {
+            "source_member_count": len(source_members),
+            "destination_member_count": len(destination_members)
+            # "expected": sorted_source_members,
+            # "actual": sorted_destination_members
+        }
+
+        if len(source_members) != len(destination_members):
+            results["member_counts_match"] = False
+        else:
+            results["member_counts_match"] = True
+        diff = {}
+        # for i in range(len(sorted_source_members)):
+        #     try:
+        #         source_member = self.users.get_user(sorted_source_members[i]["id"], self.config.child_host, self.config.child_token).json()
+        #         destination_member = self.users.get_user(sorted_destination_members[i]["id"], self.config.parent_host, self.config.parent_token).json()
+        #         d = {}
+        #         keys_to_compare = ["email", "username", "name"]
+        #         for key in keys_to_compare:
+        #             d[key] = self.generate_diff(source_member[key], destination_member[key])
+                
+        #         diff.append(d)
+                
+        #     except IndexError, e:
+        #         self.log.error(e)
+        #         self.log.error("Ran out of members to parse")
+        #         break
+
+        rewritten_source_members = misc_utils.rewrite_list_into_dict(source_members, "username")
+        rewritten_destination_members = misc_utils.rewrite_list_into_dict(destination_members, "username")
+
+        diff =  { k : rewritten_destination_members[k] for k in set(rewritten_destination_members) - set(rewritten_source_members) }
+        results["unknown added members"] = diff
+        for k in diff:
+            self.unknown_users[k] = diff[k]
+
+        diff =  { k : rewritten_source_members[k] for k in set(rewritten_source_members) - set(rewritten_destination_members) }
+        results["missing members"] = diff
+
+        return results
+    
+    def generate_diff(self, expected, actual):
+        if expected != actual:
+            return {
+                "expected": expected,
+                "actual": actual
+            }
+        return True

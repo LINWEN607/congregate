@@ -30,6 +30,7 @@ Usage:
     congregate enable_mirroring
     congregate count-unarchived-projects
     congregate find-empty-repos
+    congregate compare-groups
     congregate -h | --help
 
 Options:
@@ -62,11 +63,13 @@ Commands:
     find-all-internal-projects          Finds all internal projects
     make-all-internal-groups-private    Makes all internal migrated groups private
     check-projects-visibility           Returns list of all migrated projects' visibility
+    compare-groups                      Compares source and destination group results
 """
 
 from docopt import docopt
 import os
 import subprocess
+from json import dump
 
 if __name__ == '__main__':
     if __package__ is None:
@@ -106,21 +109,22 @@ if __name__ == '__main__':
             from migration.gitlab.groups import GroupsClient
             from migration.gitlab.projects import ProjectsClient
             from migration.gitlab.variables import VariablesClient
+            from migration.gitlab.compare import CompareClient
             from migration.mirror import MirrorClient
             from migration import migrate
             # except ImportError:
             #     import migration.users, migration.groups, migration.projects
-            from cli import list_projects, stage_projects, do_all
+            from .cli import list_projects, stage_projects, do_all
         else:
             from .migration.gitlab.users import UsersClient
             from .migration.gitlab.groups import GroupsClient
             from .migration.gitlab.projects import ProjectsClient
-            from .migration.gitlab.variables import VariablesClient
+            from .migration.gitlab.compare import CompareClient
             from .migration.mirror import MirrorClient
             from migration import migrate
             # except ImportError:
             #     import migration.users, migration.groups, migration.projects
-            from cli import list_projects, stage_projects, do_all
+            from .cli import list_projects, stage_projects, do_all
         if config.external_source != False and config.external_source is not None:
             if arguments["migrate"]:
                 if arguments["--threads"]:
@@ -146,6 +150,7 @@ if __name__ == '__main__':
             groups = GroupsClient()
             projects = ProjectsClient()
             variables = VariablesClient()
+            compare = CompareClient()
             if arguments["list"]:
                 list_projects.list_projects()
             if arguments["stage"]:
@@ -208,3 +213,9 @@ if __name__ == '__main__':
                 migrate.count_unarchived_projects()
             if arguments["find-empty-repos"]:
                 migrate.find_empty_repos()
+            if arguments["compare-groups"]:
+                results, unknown_users = compare.create_group_migration_results()
+                with open("%s/data/groups_audit.json" % app_path, "w") as f:
+                    dump(results, f, indent=4)
+                with open("%s/data/unknown_users.json" % app_path, "w") as f:
+                    dump(unknown_users, f, indent=4)

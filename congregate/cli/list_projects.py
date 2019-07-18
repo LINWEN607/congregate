@@ -27,7 +27,7 @@ def list_projects():
         description = project["description"]
         print "[id: %s] %s: %s" % (id, name, description)
 
-    groupsclient.retrieve_group_info(quiet=True)
+    groupsclient.retrieve_group_info(b.config.child_host, b.config.child_token, quiet=True)
     usersclient.retrieve_user_info(quiet=True)
 
     staged_files = ["stage", "staged_groups", "staged_users"]
