@@ -28,6 +28,7 @@ docker = "*"
 pytest = "*"
 pytest-cov = "*"
 responses = "*"
+sphinx = "*"
 
 [scripts]
 clean_pyc = "find ./congregate -name '*.pyc' -delete"
