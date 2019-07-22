@@ -1,8 +1,8 @@
 import mock
 import unittest
 import os
-from cli import config
-from helpers.mockapi.users import MockUsersApi
+from congregate.cli import config
+from congregate.helpers.mockapi.users import MockUsersApi
 
 
 def input_generator(params):  # generate squares as an example
@@ -15,7 +15,7 @@ class ConfigTests(unittest.TestCase):
         self.api = MockUsersApi()
         self.maxDiff = None
 
-    @mock.patch('cli.config.get_user')
+    @mock.patch('congregate.cli.config.get_user')
     def test_default_configuration(self, mock_get):
         values = [
             "",  # Migration source
@@ -53,7 +53,7 @@ class ConfigTests(unittest.TestCase):
             actual = config.generate_config()
             self.assertEqual(expected, actual)
 
-    @mock.patch('cli.config.get_user')
+    @mock.patch('congregate.cli.config.get_user')
     def test_default_configuration_with_mirror(self, mock_get):
         values = [
             "",  # Migration source
@@ -92,7 +92,7 @@ class ConfigTests(unittest.TestCase):
             actual = config.generate_config()
             self.assertEqual(expected, actual)
 
-    @mock.patch('cli.config.get_user')
+    @mock.patch('congregate.cli.config.get_user')
     def test_default_configuration_with_parent_id(self, mock_get):
         values = [
             "",  # Migration source
@@ -135,7 +135,7 @@ class ConfigTests(unittest.TestCase):
             actual = config.generate_config()
             self.assertEqual(expected, actual)
 
-    @mock.patch('cli.config.get_user')
+    @mock.patch('congregate.cli.config.get_user')
     def test_default_configuration_with_parent_id_and_sso(self, mock_get):
         values = [
             "",  # Migration source
@@ -180,7 +180,7 @@ class ConfigTests(unittest.TestCase):
             actual = config.generate_config()
             self.assertEqual(expected, actual)
 
-    @mock.patch('cli.config.get_user')
+    @mock.patch('congregate.cli.config.get_user')
     def test_default_configuration_with_parent_id_and_sso_and_suffix(self, mock_get):
         values = [
             "",  # Migration source
@@ -225,8 +225,8 @@ class ConfigTests(unittest.TestCase):
         with mock.patch('__builtin__.raw_input', lambda x: next(g)):
             actual = config.generate_config()
             self.assertEqual(expected, actual)
-    
-    @mock.patch('cli.config.get_user')
+
+    @mock.patch('congregate.cli.config.get_user')
     def test_explicit_default_configuration(self, mock_get):
         values = [
             "gitlab",  # migration source
@@ -264,7 +264,7 @@ class ConfigTests(unittest.TestCase):
             actual = config.generate_config()
             self.assertEqual(expected, actual)
 
-    @mock.patch('cli.config.get_user')
+    @mock.patch('congregate.cli.config.get_user')
     def test_explicit_default_configuration_with_filepath(self, mock_get):
         values = [
             "gitlab",  # Migration source
@@ -302,7 +302,7 @@ class ConfigTests(unittest.TestCase):
             actual = config.generate_config()
             self.assertEqual(expected, actual)
 
-    @mock.patch('cli.config.get_user')
+    @mock.patch('congregate.cli.config.get_user')
     @mock.patch('subprocess.call')
     def test_aws_configuration(self, mock_call, mock_get):
         values = [
@@ -348,7 +348,7 @@ class ConfigTests(unittest.TestCase):
             actual = config.generate_config()
             self.assertEqual(expected, actual)
 
-    @mock.patch('cli.config.get_user')
+    @mock.patch('congregate.cli.config.get_user')
     @mock.patch('subprocess.call')
     def test_aws_configuration_specific_region(self, mock_call, mock_get):
         values = [
@@ -394,7 +394,7 @@ class ConfigTests(unittest.TestCase):
             actual = config.generate_config()
             self.assertEqual(expected, actual)
 
-    @mock.patch('cli.config.get_user')
+    @mock.patch('congregate.cli.config.get_user')
     def test_external_bitbucket_configuration_no_repo_list(self, mock_get):
         values = [
             "bitbucket",  # Migration source
@@ -427,7 +427,7 @@ class ConfigTests(unittest.TestCase):
             actual = config.generate_config()
             self.assertEqual(expected, actual)
 
-    @mock.patch('cli.config.get_user')
+    @mock.patch('congregate.cli.config.get_user')
     def test_external_bitbucket_configuration_relative_repo_list(self, mock_get):
         values = [
             "bitbucket",  # Migration source
@@ -441,6 +441,9 @@ class ConfigTests(unittest.TestCase):
             "filesystem",
             os.getcwd()
         ]
+        congregate_path = os.getenv("CONGREGATE_PATH")
+        if congregate_path is None:
+            congregate_path = os.getcwd()
         g = input_generator(values)
         expected = {
             "config": {
@@ -450,7 +453,7 @@ class ConfigTests(unittest.TestCase):
                 "external_user_password": "password",
                 "external_user_name": "user",
                 "number_of_threads": 2,
-                "repo_list_path": "%s/repo_list.json" % os.getenv("CONGREGATE_PATH"),
+                "repo_list_path": "%s/repo_list.json" % congregate_path,
                 "parent_user_id": 1
             }
         }
@@ -461,7 +464,7 @@ class ConfigTests(unittest.TestCase):
             actual = config.generate_config()
             self.assertEqual(expected, actual)
 
-    @mock.patch('cli.config.get_user')
+    @mock.patch('congregate.cli.config.get_user')
     def test_external_bitbucket_configuration_absolute_repo_list(self, mock_get):
         values = [
             "bitbucket",  # Migration source

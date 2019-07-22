@@ -1,10 +1,10 @@
 import json
 import os
-from helpers import api
-from helpers import base_module as b
-from migration.gitlab.groups import GroupsClient
-from migration.gitlab.users import UsersClient
-from migration.gitlab.projects import ProjectsClient
+from congregate.helpers import api
+from congregate.helpers import base_module as b
+from congregate.migration.gitlab.groups import GroupsClient
+from congregate.migration.gitlab.users import UsersClient
+from congregate.migration.gitlab.projects import ProjectsClient
 
 groupsclient = GroupsClient()
 usersclient = UsersClient()

@@ -6,8 +6,8 @@ and logger as well provide the app path
 '''
 
 from os import getenv
-from helpers.logger import myLogger
-from helpers import conf
+from congregate.helpers.logger import myLogger
+from congregate.helpers import conf
 
 log = myLogger(__name__)
 app_path = getenv("CONGREGATE_PATH")

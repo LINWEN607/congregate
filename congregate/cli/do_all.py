@@ -1,9 +1,9 @@
 import os
-from cli import config, stage_projects
-from migration.gitlab.users import UsersClient
-from migration.gitlab.groups import GroupsClient
-from migration import migrate
-from helpers.base_module import app_path
+from congregate.cli import config, stage_projects
+from congregate.migration.gitlab.users import UsersClient
+from congregate.migration.gitlab.groups import GroupsClient
+from congregate.migration import migrate
+from congregate.helpers.base_module import app_path
 
 
 def do_all():

@@ -67,9 +67,18 @@ Commands:
 from docopt import docopt
 import os
 import subprocess
-from helpers import conf
-from helpers.logger import myLogger
-from cli import config as configure
+
+if __name__ == '__main__':
+    if __package__ is None:
+        import sys
+
+        sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        from congregate.helpers import conf
+        from congregate.helpers.logger import myLogger
+        from congregate.cli import config as configure
+    else:
+        from .helpers import conf
+        from .helpers.logger import myLogger
 
 app_path = os.getenv("CONGREGATE_PATH")
 
@@ -84,7 +93,6 @@ if not os.path.isfile("%s/data/config.json" % app_path):
 else:
     config = conf.ig()
 
-
 if __name__ == '__main__':
     arguments = docopt(__doc__)
     if arguments["config"]:
@@ -92,16 +100,27 @@ if __name__ == '__main__':
             configure.config()
     else:
         # try:
-            # from migration import users, groups, projects
-        from migration.gitlab.users import UsersClient
-        from migration.gitlab.groups import GroupsClient
-        from migration.gitlab.projects import ProjectsClient
-        from migration.gitlab.variables import VariablesClient
-        from migration.mirror import MirrorClient
-        from migration import migrate
-        # except ImportError:
-        #     import migration.users, migration.groups, migration.projects
-        from cli import list_projects, stage_projects, do_all
+        # from migration import users, groups, projects
+        if __package__ is None:
+            from migration.gitlab.users import UsersClient
+            from migration.gitlab.groups import GroupsClient
+            from migration.gitlab.projects import ProjectsClient
+            from migration.gitlab.variables import VariablesClient
+            from migration.mirror import MirrorClient
+            from migration import migrate
+            # except ImportError:
+            #     import migration.users, migration.groups, migration.projects
+            from cli import list_projects, stage_projects, do_all
+        else:
+            from .migration.gitlab.users import UsersClient
+            from .migration.gitlab.groups import GroupsClient
+            from .migration.gitlab.projects import ProjectsClient
+            from .migration.gitlab.variables import VariablesClient
+            from .migration.mirror import MirrorClient
+            from migration import migrate
+            # except ImportError:
+            #     import migration.users, migration.groups, migration.projects
+            from cli import list_projects, stage_projects, do_all
         if config.external_source != False and config.external_source is not None:
             if arguments["migrate"]:
                 if arguments["--threads"]:
@@ -112,13 +131,16 @@ if __name__ == '__main__':
                 # os.environ["FLASK_APP"] = "%s/congregate/ui:app" % app_path
                 os.chdir(app_path + "/congregate")
                 # os.environ["PYTHONPATH"] = app_path
-                run_ui = "gunicorn -k gevent -w 4 ui:app --bind=0.0.0.0:8005"
+                run_ui = "gunicorn -k gevent -w 4 ui:app --bind=0.0.0.0:8000"
                 subprocess.call(run_ui.split(" "))
             elif arguments["enable_mirroring"]:
                 mirror = MirrorClient()
                 mirror.enable_mirroring()
+            # elif arguments["gather_metrics"]:
+            #     other.gather_metrics()
             else:
-                print "External migration only currently supports the migrate and ui commands to generate shell projects with mirrors."
+                print "External migration only currently supports the migrate " + \
+                      "and ui commands to generate shell projects with mirrors."
         else:
             users = UsersClient()
             groups = GroupsClient()

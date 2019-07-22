@@ -1,5 +1,6 @@
 import unittest
-from migration.gitlab.importexport import ImportExportClient
+from congregate.migration.gitlab.importexport import ImportExportClient
+
 
 class ImportExportClientTests(unittest.TestCase):
     def setUp(self):
@@ -11,7 +12,7 @@ class ImportExportClientTests(unittest.TestCase):
         actual = self.ie.strip_namespace(fpn, n)
         expected = n
         self.assertEqual(expected, actual)
-    
+
     def test_strip_namespace_multi_slash(self):
         fpn = "Top-level-group/subgroup1"
         n = "subgroup1/subgroup2_project"

@@ -1,5 +1,5 @@
-from helpers import base_module as bm
-from helpers.misc_utils import strip_numbers
+from congregate.helpers import base_module as bm
+from congregate.helpers.misc_utils import strip_numbers
 from csv import reader
 import json
 '''
@@ -8,7 +8,7 @@ Usage:
 
 1. Add "user_map_csv" to config file containing path to user map in CSV form
 2. Open up a python shell with pipenv (pipenv run python)
-3. Import this function (from helpers.misc_utils import map_users)
+3. Import this function (from congregate.helpers.misc_utils import map_users)
 4. Execute this function (map_users())
 
 '''

@@ -2,9 +2,11 @@ import os
 import subprocess
 import json
 import time
-from helpers.api import generate_get_request
+from congregate.helpers.api import generate_get_request
 
 app_path = os.getenv("CONGREGATE_PATH")
+if app_path is None:
+    app_path = os.getcwd()
 
 
 def generate_config():

@@ -6,12 +6,14 @@ Copyright (c) 2018 - GitLab
 
 import os
 import json
-from cli import config as config_cli
+from congregate.cli import config as config_cli
 
 
 class ig:
     def __init__(self):
         app_path = os.getenv("CONGREGATE_PATH")
+        if app_path is None:
+            app_path = os.getcwd()
         if not os.path.isfile('%s/data/config.json' % app_path):
             config_cli.generate_config()
         with open('%s/data/config.json' % app_path) as f:
@@ -119,6 +121,10 @@ class ig:
     @property
     def make_visibility_private(self):
         return self.config.get("make_visibility_private", None)
+
+    @property
+    def external_source_url(self):
+        return self.config.get("external_source_url", None)
 
     @property
     def group_sso_provider(self):

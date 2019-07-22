@@ -1,6 +1,5 @@
-from helpers.base_class import BaseClass
-from helpers import api
-import json
+from congregate.helpers.base_class import BaseClass
+from congregate.helpers import api
 
 
 class VersionClient(BaseClass):

@@ -1,20 +1,19 @@
 from requests import get, head
 from re import sub, findall
-from time import sleep
 from datetime import timedelta, date
 
 
-def remove_dupes(mylist):
+def remove_dupes(my_list):
     """
         Basic deduping function to remove any duplicates from a list
     """
-    if len(mylist) > 0:
-        newlist = [mylist[0]]
-        for e in mylist:
-            if e not in newlist:
-                newlist.append(e)
-        return newlist
-    return mylist
+    if len(my_list) > 0:
+        new_list = [my_list[0]]
+        for e in my_list:
+            if e not in new_list:
+                new_list.append(e)
+        return new_list
+    return my_list
 
 
 def download_file(url, path, filename=None, headers=None):
@@ -59,5 +58,19 @@ def __get_filename_from_cd(cd):
 def strip_numbers(s):
     return sub(r"[0-9]+", '', s)
 
+
 def expiration_date():
     return (date.today() + timedelta(days=2)).strftime('%Y-%m-%d')
+
+
+def parse_query_params(params):
+    query_params_string = ""
+    query_params_list = []
+    for p in params:
+        if params.get(p, None) is not None:
+            query_params_list.append("%s=%s" % (p, str(params[p])))
+
+    if len(query_params_list) > 0:
+        query_params_string = "?%s" % "&".join(query_params_list)
+
+    return query_params_string

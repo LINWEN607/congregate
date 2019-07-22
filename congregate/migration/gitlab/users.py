@@ -1,8 +1,8 @@
-from helpers.base_class import BaseClass
-from helpers import api
-from helpers.threads import handle_multi_thread
-from helpers.misc_utils import strip_numbers, remove_dupes
-from migration.gitlab.groups import GroupsClient
+from congregate.helpers.base_class import BaseClass
+from congregate.helpers import api
+from congregate.helpers.threads import handle_multi_thread
+from congregate.helpers.misc_utils import strip_numbers, remove_dupes
+from congregate.migration.gitlab.groups import GroupsClient
 from requests.exceptions import RequestException
 from os import path
 import json
@@ -359,8 +359,10 @@ class UsersClient(BaseClass):
                 "Retrieved %d users. Check users.json to see all retrieved groups" % len(users))
 
     def migrate_user_info(self):
+        new_ids = []
         with open('%s/data/staged_users.json' % self.app_path, "r") as f:
             users = json.load(f)
+
         new_ids = handle_multi_thread(self.handle_user_creation, users)
         return list(filter(None, new_ids))
 
@@ -369,11 +371,11 @@ class UsersClient(BaseClass):
         with open('%s/data/staged_users.json' % self.app_path, "r") as f:
             users = json.load(f)
         post_data = handle_multi_thread(self.generate_user_data, users)
-            
+
         with open('%s/data/dry_run_user_migration.json' % self.app_path, "w") as f:
             self.log.info("Writing data to dry_run_user_migration.json")
             json.dump(post_data, f, indent=4)
-    
+
     def generate_user_data(self, user):
         if self.config.group_sso_provider is not None:
             return self.generate_user_group_saml_post_data(user)

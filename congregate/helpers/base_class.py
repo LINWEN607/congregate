@@ -5,9 +5,9 @@ and logger as well provide the app path
 
 '''
 
-from os import getenv
-from helpers import conf
-from helpers.logger import myLogger
+from os import getenv, getcwd
+from congregate.helpers import conf
+from congregate.helpers.logger import myLogger
 
 
 class BaseClass(object):
@@ -15,3 +15,5 @@ class BaseClass(object):
         self.config = conf.ig()
         self.log = myLogger(__name__)
         self.app_path = getenv("CONGREGATE_PATH")
+        if self.app_path is None:
+            self.app_path = getcwd()

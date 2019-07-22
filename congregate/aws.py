@@ -11,8 +11,7 @@ from re import sub
 from io import BytesIO
 import boto3
 from botocore.client import Config
-from helpers.base_class import BaseClass
-import json
+from congregate.helpers.base_class import BaseClass
 
 
 class AwsClient(BaseClass):

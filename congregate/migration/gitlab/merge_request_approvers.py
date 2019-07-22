@@ -1,9 +1,9 @@
-from helpers.base_class import BaseClass
-from helpers import api
-from migration.gitlab.version import VersionClient
-from migration.gitlab.users import UsersClient
-from migration.gitlab.groups import GroupsClient
-from urllib import quote_plus, urlencode
+from congregate.helpers.base_class import BaseClass
+from congregate.helpers import api
+from congregate.migration.gitlab.version import VersionClient
+from congregate.migration.gitlab.users import UsersClient
+from congregate.migration.gitlab.groups import GroupsClient
+from urllib import urlencode
 import json
 
 

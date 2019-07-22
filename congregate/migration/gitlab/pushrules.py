@@ -1,5 +1,5 @@
-from helpers.base_class import BaseClass
-from helpers import api
+from congregate.helpers.base_class import BaseClass
+from congregate.helpers import api
 import json
 
 

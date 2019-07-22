@@ -1,6 +1,6 @@
-from helpers.base_class import BaseClass
-from helpers import api, misc_utils
-from migration.gitlab.variables import VariablesClient as vars_client
+from congregate.helpers.base_class import BaseClass
+from congregate.helpers import api, misc_utils
+from congregate.migration.gitlab.variables import VariablesClient as vars_client
 from requests.exceptions import RequestException
 import json
 from os import path

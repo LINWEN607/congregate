@@ -1,10 +1,7 @@
-from helpers.base_class import BaseClass
-from helpers import api
-from helpers.misc_utils import strip_numbers, remove_dupes
-from migration.gitlab.groups import GroupsClient
-from migration.gitlab.users import UsersClient
-from requests.exceptions import RequestException
-from os import path
+from congregate.helpers.base_class import BaseClass
+from congregate.helpers import api
+from congregate.migration.gitlab.groups import GroupsClient
+from congregate.migration.gitlab.users import UsersClient
 import json
 
 

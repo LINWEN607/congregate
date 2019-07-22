@@ -1,28 +1,47 @@
-from helpers.logger import myLogger
+from congregate.helpers.logger import myLogger
 from math import ceil as math_ceil
-from helpers.decorators import stable_retry
+from congregate.helpers.decorators import stable_retry
 import requests
 
 log = myLogger(__name__)
 
 
-@stable_retry
-def generate_get_request(host, token, api, url=None, params=None, stream=False):
-    """
-        Generates GET request to GitLab API.
-        You will need to provide the GL host, access token, and specific api url.
-    """
-    if url is None:
-        url = "%s/api/v4/%s" % (host, api)
-    headers = {
+def generate_v4_request_url(host, api):
+    return "%s/api/v4/%s" % (host, api)
+
+
+def generate_v4_request_header(token):
+    return {
         'Private-Token': token,
         'Content-Type': 'application/json'
     }
 
+
+@stable_retry
+def generate_get_request(host, token, api, url=None, params=None, stream=False):
+    """
+    Generates GET request to GitLab API.
+    You will need to provide the GL host, access token, and specific api url.
+
+    :param host:
+    :param token:
+    :param api:
+    :param url:
+    :param params:
+    :param stream:
+    :return: The response object *not* the json() or text()
+    """
+
+    if url is None:
+        url = generate_v4_request_url(host, api)
+
+    headers = generate_v4_request_header(token)
+
     if params is None:
         params = {}
 
-    return requests.get(url, params=params, headers=headers)
+    response = requests.get(url, params=params, headers=headers)
+    return response
 
 
 @stable_retry
@@ -31,15 +50,14 @@ def generate_post_request(host, token, api, data, headers=None):
         Generates POST request to GitLab API.
         You will need to provide the GL host, access token, specific api url, and any data.
     """
-    url = "%s/api/v4/%s" % (host, api)
+
+    url = generate_v4_request_url(host, api)
 
     if headers is None:
-        headers = {
-            'Private-Token': token,
-            'Content-Type': 'application/json'
-        }
+        headers = generate_v4_request_header(token)
 
-    return requests.post(url, data=data, headers=headers)
+    response = requests.post(url, data=data, headers=headers)
+    return response
 
 
 @stable_retry
@@ -48,12 +66,9 @@ def generate_put_request(host, token, api, data, headers=None, files=None):
         Generates PUT request to GitLab API.
         You will need to provide the GL host, access token, specific api url, and any data.
     """
-    url = "%s/api/v4/%s" % (host, api)
+    url = generate_v4_request_url(host, api)
     if headers is None:
-        headers = {
-            'Private-Token': token,
-            'Content-Type': 'application/json'
-        }
+        headers = generate_v4_request_header(token)
 
     return requests.put(url, headers=headers, data=data, files=files)
 
@@ -64,10 +79,8 @@ def generate_delete_request(host, token, api):
         Generates DELETE request to GitLab API.
         You will need to provide the GL host, access token, and specific api url.
     """
-    url = "%s/api/v4/%s" % (host, api)
-    headers = {
-        'Private-Token': token
-    }
+    url = generate_v4_request_url(host, api)
+    headers = generate_v4_request_header(token)
 
     return requests.delete(url, headers=headers)
 
@@ -78,12 +91,11 @@ def get_count(host, token, api):
         Retrieves total count of projects, users, and groups and returns as a long
         You will need to provide the GL host, access token, and specific api url.
     """
-    url = "%s/api/v4/%s" % (host, api)
+    url = generate_v4_request_url(host, api)
 
-    response = requests.head(url, headers={
-        'Private-Token': token,
-        'Content-Type': 'application/json'
-    })
+    headers = generate_v4_request_header(token)
+
+    response = requests.head(url, headers=headers)
 
     if response.headers.get('X-Total', None) is not None:
         return long(response.headers['X-Total'])
@@ -93,15 +105,20 @@ def get_count(host, token, api):
 
 @stable_retry
 def get_total_pages(host, token, api):
-    '''
+    """
     Return total number of pages in API result.
-    '''
-    url = '%s/api/v4/%s' % (host, api)
 
-    response = requests.head(url, headers={
-        'Private-Token': token,
-        'Content-Type': 'application/json'
-    })
+    :param host:
+    :param token:
+    :param api:
+    :return:
+    """
+
+    url = generate_v4_request_url(host, api)
+
+    headers = generate_v4_request_header(token)
+
+    response = requests.head(url, headers=headers)
 
     if response.headers.get('X-Total-Pages', None) is not None:
         return long(response.headers['X-Total-Pages'])
@@ -179,4 +196,5 @@ def list_all(host, token, api, params=None, per_page=100):
 
 @stable_retry
 def search(host, token, path, search_query):
-    return generate_get_request(host, token, path, params={'search': search_query}).json()
+    resp = generate_get_request(host, token, path, params={'search': search_query})
+    return resp.json()

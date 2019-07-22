@@ -1,6 +1,6 @@
-from helpers.base_class import BaseClass
-from migration.gitlab.users import UsersClient
-from aws import AwsClient
+from congregate.helpers.base_class import BaseClass
+from congregate.migration.gitlab.users import UsersClient
+from congregate.aws import AwsClient
 import tarfile
 import os
 import json

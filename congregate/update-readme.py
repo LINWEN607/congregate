@@ -1,4 +1,4 @@
-import congregate
+import main
 import re
 import json
 import os
@@ -10,7 +10,7 @@ gitlab_user_email = os.getenv('GITLAB_USER_EMAIL')
 gitlab_user_name = os.getenv('GITLAB_USER_NAME')
 project_id = os.getenv('CI_PROJECT_ID')
 
-docs = congregate.__doc__.split("\n")
+docs = main.__doc__.split("\n")
 cleaned_docs = "\n".join(docs[4:])
 
 def traverse_file(base_obj, level, string=None):

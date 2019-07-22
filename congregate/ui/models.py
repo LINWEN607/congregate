@@ -8,9 +8,9 @@ from helpers.base_module import app_path
 # except ImportError:
 #     from cli import stage_projects
 #     from cli.config import update_config
-#     from migration.groups import append_groups
-#     from migration.users import append_users
-#     from migration.projects import migrate
+#     from congregate.migration.groups import append_groups
+#     from congregate.migration.users import append_users
+#     from congregate.migration.projects import migrate
 
 
 def get_data(file_name, sort_by=None):

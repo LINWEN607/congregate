@@ -1,9 +1,9 @@
-from helpers.base_class import BaseClass
-from helpers import api, misc_utils
-from aws import AwsClient
-from migration.gitlab.projects import ProjectsClient
-from migration.gitlab.users import UsersClient
-from migration.gitlab.groups import GroupsClient
+from congregate.helpers.base_class import BaseClass
+from congregate.helpers import api, misc_utils
+from congregate.aws import AwsClient
+from congregate.migration.gitlab.projects import ProjectsClient
+from congregate.migration.gitlab.users import UsersClient
+from congregate.migration.gitlab.groups import GroupsClient
 from requests.exceptions import RequestException
 from re import sub
 from urllib import quote

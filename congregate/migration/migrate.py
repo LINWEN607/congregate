@@ -6,38 +6,30 @@
 
 import os
 import json
-import argparse
-import urllib
-import time
 import requests
-import urllib2
-import uuid
-import glob
 from re import sub
 from multiprocessing.dummy import Pool as ThreadPool
 from multiprocessing import Lock
 
-from helpers import api, misc_utils
-from helpers import logger as log
-from aws import AwsClient
-from cli.stage_projects import stage_projects
-from helpers import base_module as b
-from migration.gitlab.importexport import ImportExportClient as ie_client
-from migration.gitlab.variables import VariablesClient as vars_client
-from migration.gitlab.users import UsersClient as users_client
-from migration.gitlab.groups import GroupsClient as groups_client
-from migration.gitlab.projects import ProjectsClient as proj_client
-from migration.gitlab.pushrules import PushRulesClient as pushrules_client
-from migration.gitlab.branches import BranchesClient
-from migration.gitlab.merge_request_approvers import MergeRequestApproversClient
-from migration.gitlab.awards import AwardsClient
-from migration.gitlab.registries import RegistryClient
-from migration.gitlab.pipeline_schedules import PipelineSchedulesClient
-from migration.gitlab.deploy_keys import DeployKeysClient
-from migration.gitlab.project_export import ProjectExportClient
-from migration.mirror import MirrorClient
-
-from migration.bitbucket import client as bitbucket
+from congregate.helpers import api
+from congregate.aws import AwsClient
+from congregate.cli.stage_projects import stage_projects
+from congregate.helpers import base_module as b
+from congregate.migration.gitlab.importexport import ImportExportClient as ie_client
+from congregate.migration.gitlab.variables import VariablesClient as vars_client
+from congregate.migration.gitlab.users import UsersClient as users_client
+from congregate.migration.gitlab.groups import GroupsClient as groups_client
+from congregate.migration.gitlab.projects import ProjectsClient as proj_client
+from congregate.migration.gitlab.pushrules import PushRulesClient as pushrules_client
+from congregate.migration.gitlab.branches import BranchesClient
+from congregate.migration.gitlab.merge_request_approvers import MergeRequestApproversClient
+from congregate.migration.gitlab.awards import AwardsClient
+from congregate.migration.gitlab.registries import RegistryClient
+from congregate.migration.gitlab.pipeline_schedules import PipelineSchedulesClient
+from congregate.migration.gitlab.project_export import ProjectExportClient
+from congregate.migration.mirror import MirrorClient
+from congregate.migration.gitlab.deploy_keys import DeployKeysClient
+from congregate.migration.bitbucket import client as bitbucket
 
 aws = AwsClient()
 ie = ie_client()
@@ -48,6 +40,7 @@ groups = groups_client()
 projects = proj_client()
 pushrules = pushrules_client()
 branches = BranchesClient()
+awards = AwardsClient()
 mr = MergeRequestApproversClient()
 registries = RegistryClient()
 schedules = PipelineSchedulesClient()
@@ -73,8 +66,8 @@ def migrate_project_info():
         new_project = api.search(
             b.config.parent_host, b.config.parent_token, 'projects', project['name'])
         if len(new_project) > 0:
-            if new_project[0]["name"] == project["name"] and new_project[0]["namespace"]["name"] == project[
-                "namespace"]:
+            if new_project[0]["name"] == project["name"] and \
+                    new_project[0]["namespace"]["name"] == project["namespace"]:
                 root_user_present = False
                 for member in members:
                     if member["id"] == b.config.parent_user_id:
@@ -122,9 +115,14 @@ def migrate_single_project_info(project, id):
     b.log.info("Searching for project %s" % name)
     if id is None:
         _, id = projects.find_project_by_path(b.config.parent_host, b.config.parent_token, full_parent_namespace, project["namespace"], project["name"])
-        
+
     # Project Members
+    # TODO: Should this be commented out? Is in Master pre merge
     # projects.add_members(members, id)
+
+    # Project Avatar
+    # TODO: DOES THIS NEED TO STILL BE HERE AFTER MERGE?
+    projects.migrate_avatar(id, old_id)
 
     # CI/CD Variables
     try:
@@ -161,8 +159,9 @@ def migrate_single_project_info(project, id):
         b.log.error(e)
         results["merge_request_approvers"] = False
 
-    # # Protected Branches
-    # b.log.info("Updating protected branches for %s" % name)
+    # Protected Branches
+    # TODO: Should this be commented out? Is in Master pre merge
+    # b.log.info("Updating protected branches")
     # branches.migrate_protected_branches(id, project["id"])
 
     # Awards
@@ -245,7 +244,7 @@ def migrate_given_export(project_json):
                 b.log.info("Unarchiving project %s" % project_json["name"])
                 projects.unarchive_project(
                     b.config.child_host, b.config.child_token, project_json["id"])
-                
+
                 b.log.info("Migrating %s project info" % project_json["name"])
                 post_import_results = migrate_single_project_info(project_json, import_id)
                 # b.log.info("Archiving project %s" % project_json["name"])
@@ -278,9 +277,32 @@ def start_multi_thead(function, iterable):
 def migrate(threads=None):
     if threads is not None:
         b.config.threads = threads
+
     if b.config.external_source != False:
         with open("%s" % b.config.repo_list, "r") as f:
             repo_list = json.load(f)
+        # bitbucket.handle_bitbucket_migration({
+        #     "name": "repo_1",
+        #     "web_repo_url": "http://gmiller@bbhost:7990/scm/tp1/repo_1.git",
+        #     "group": "test_project_1",
+        #     "project_users": [
+        #         {
+        #             "displayName": "Migrate 1",
+        #             "name": "Migrate 1",
+        #             "username": "migrate_1",
+        #             "email": "migrate1@abc.com",
+        #             "permission": "PROJECT_WRITE"
+        #         }],
+        #     "repo_users": [
+        #         {
+        #             "displayName": "Migrate 2",
+        #             "name": "Migrate 2",
+        #             "username": "migrate_2",
+        #             "email": "migrate2@abc.com",
+        #             "permission": "PROJECT_READ"
+        #         }
+        #     ]
+        # })
         start_multi_thead(bitbucket.handle_bitbucket_migration, repo_list)
 
     else:
@@ -372,6 +394,8 @@ def handle_migrating_file(f):
                 b.log.error(e)
                 b.log.error("Unable to update project export for %s. Will proceed with existing project export." % filename)
             return exported
+            # TODO: Needed?
+            # migrate_given_export(f)
     except IOError, e:
         b.log.error(e)
 

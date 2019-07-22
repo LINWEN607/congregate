@@ -1,5 +1,5 @@
 from time import sleep
-from helpers.logger import myLogger
+from congregate.helpers.logger import myLogger
 
 log = myLogger(__name__)
 

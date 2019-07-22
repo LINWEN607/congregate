@@ -1,13 +1,10 @@
 import mock
 import unittest
-from cli import stage_projects
-from helpers.mockapi.projects import MockProjectsApi
-from helpers.mockapi.groups import MockGroupsApi
-from helpers.mockapi.users import MockUsersApi
-from helpers.mockapi.members import MockMembersApi
-from helpers.base_module import app_path
-from helpers.misc_utils import remove_dupes
-import json
+from congregate.cli import stage_projects
+from congregate.helpers.mockapi.projects import MockProjectsApi
+from congregate.helpers.mockapi.groups import MockGroupsApi
+from congregate.helpers.mockapi.users import MockUsersApi
+from congregate.helpers.mockapi.members import MockMembersApi
 
 
 class ConfigTests(unittest.TestCase):
@@ -18,18 +15,19 @@ class ConfigTests(unittest.TestCase):
         self.members_api = MockMembersApi()
         self.mock = mock.MagicMock()
 
-    @mock.patch('__builtin__.open')
+    @mock.patch('__builtin__.raw_input')
     @mock.patch('os.path.isfile')
-    @mock.patch('cli.stage_projects.open_projects_file')
-    @mock.patch('cli.stage_projects.open_users_file')
-    @mock.patch('cli.stage_projects.open_groups_file')
-    @mock.patch('migration.gitlab.projects.ProjectsClient.get_members')
+    @mock.patch('congregate.cli.stage_projects.open_projects_file')
+    @mock.patch('congregate.cli.stage_projects.open_users_file')
+    @mock.patch('congregate.cli.stage_projects.open_groups_file')
+    @mock.patch('congregate.migration.gitlab.projects.ProjectsClient.get_members')
     def test_build_stage_data(self, mock_members, mock_groups, mock_users, mock_projects, mock_check, mock_open):
         mock_check.return_value = True
         mock_projects.return_value = self.projects_api.get_all_projects()
         mock_users.return_value = self.users_api.get_all_users_list()
         mock_groups.return_value = self.groups_api.get_all_groups_list()
         mock_members.return_value = self.members_api.get_members_list()
+        mock_open.return_value = {}
 
         projects_to_stage = ["4", "6"]
 
@@ -211,18 +209,24 @@ class ConfigTests(unittest.TestCase):
                 expected_projects[i], staged_projects[i])
             self.assertItemsEqual(expected_projects[i], staged_projects[i])
         for i in range(len(expected_groups)):
-            self.assertDictContainsSubset(expected_groups[i], staged_groups[i])
-            self.assertItemsEqual(expected_groups[i], staged_groups[i])
+            try:
+                self.assertDictContainsSubset(expected_groups[i], staged_groups[i])
+                self.assertItemsEqual(expected_groups[i], staged_groups[i])
+            except AssertionError:
+                print("Expected: ", expected_groups[i])
+                print("Staged: ", staged_groups[i])
+                self.assertDictContainsSubset(expected_groups[i], staged_groups[i])
+
         for i in range(len(expected_users)):
             self.assertDictContainsSubset(expected_users[i], staged_users[i])
             self.assertItemsEqual(expected_users[i], staged_users[i])
 
     @mock.patch('__builtin__.open')
     @mock.patch('os.path.isfile')
-    @mock.patch('cli.stage_projects.open_projects_file')
-    @mock.patch('cli.stage_projects.open_users_file')
-    @mock.patch('cli.stage_projects.open_groups_file')
-    @mock.patch('migration.gitlab.projects.ProjectsClient.get_members')
+    @mock.patch('congregate.cli.stage_projects.open_projects_file')
+    @mock.patch('congregate.cli.stage_projects.open_users_file')
+    @mock.patch('congregate.cli.stage_projects.open_groups_file')
+    @mock.patch('congregate.migration.gitlab.projects.ProjectsClient.get_members')
     def test_build_stage_increment(self, mock_members, mock_groups, mock_users, mock_projects, mock_check, mock_open):
         mock_check.return_value = True
         mock_projects.return_value = self.projects_api.get_all_projects()

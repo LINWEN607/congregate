@@ -1,6 +1,6 @@
-from helpers.base_class import BaseClass
-from helpers import api
-from migration.gitlab.projects import ProjectsClient
+from congregate.helpers.base_class import BaseClass
+from congregate.helpers import api
+from congregate.migration.gitlab.projects import ProjectsClient
 from requests.exceptions import RequestException
 import json
 

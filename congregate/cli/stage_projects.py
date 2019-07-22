@@ -9,9 +9,9 @@ import json
 import sys
 import subprocess
 import re
-from helpers import misc_utils
-from helpers import base_module as b
-from migration.gitlab.projects import ProjectsClient
+from congregate.helpers import misc_utils
+from congregate.helpers import base_module as b
+from congregate.migration.gitlab.projects import ProjectsClient
 
 proj_client = ProjectsClient()
 existing_parent_ids = []

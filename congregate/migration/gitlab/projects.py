@@ -1,7 +1,7 @@
-from helpers.base_class import BaseClass
-from helpers import api
+from congregate.helpers.base_class import BaseClass
+from congregate.helpers import api
 from requests.exceptions import RequestException
-from urllib import quote_plus, urlencode
+from urllib import quote_plus
 from io import BytesIO
 from os import walk
 import json
