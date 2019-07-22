@@ -15,10 +15,12 @@ class CompareClient(BaseClass):
         self.unknown_users = {}
         super(CompareClient, self).__init__()
 
-    def correct_group_migration(self):
-        return
-
     def create_group_migration_results(self, staged=False):
+        """
+            Creates group migration comparison data
+
+            Returns dict containing comparison and dict containing unknown users
+        """
         prefix = ""
         if path.exists('%s/data/groups.json' % self.app_path):
             with open('%s/data/groups.json' % self.app_path, "r") as f:
@@ -49,19 +51,24 @@ class CompareClient(BaseClass):
             "Total groups in destination instance": len(destination_groups)
         }
 
-        results["results"] = self.compare_groups(rewritten_source_groups, rewritten_destination_groups)
+        results["results"] = self.__compare_groups(rewritten_source_groups, rewritten_destination_groups)
 
         return results, self.unknown_users
 
-    def compare_groups(self, source_groups, destination_groups):
+    def __compare_groups(self, source_groups, destination_groups):
+        """
+            Compares the path and members of a group
+
+            Returns dict containing the results of the comparison
+        """
         results = {}
         for group_path, group_data in source_groups.iteritems():
             comparison = {}
             print group_path
             if destination_groups.get(group_path, None) is not None:
                 dest_group_data = destination_groups[group_path]
-                comparison["members"] = self.compare_members(group_data["members"], dest_group_data["members"])
-                comparison["path"] = self.compare_group_location(group_data["full_path"], dest_group_data["path"])
+                comparison["members"] = self.__compare_members(group_data["members"], dest_group_data["members"])
+                comparison["path"] = self.__compare_group_location(group_data["full_path"], dest_group_data["path"])
                 results[group_path] = comparison
             else:
                 results[group_path] = {
@@ -70,7 +77,14 @@ class CompareClient(BaseClass):
             
         return results
 
-    def compare_group_location(self, source_path, destination_path):
+    def __compare_group_location(self, source_path, destination_path):
+        """
+            Compares the source and destination path of a group
+
+            Returns dict containing the difference of group locations
+            OR
+            Retruns True if locations match
+        """
         if self.config.parent_id is not None:
             tlg = self.groups.get_group(self.config.parent_id, self.config.parent_host, self.config.parent_token).json()
             source_path = "%s/%s" % (tlg["full_path"], source_path)
@@ -83,23 +97,21 @@ class CompareClient(BaseClass):
         
         return True
 
-    def compare_members(self, source_members, destination_members):
-        results = {}
-        sorted_source_members = sorted(source_members, key = lambda i: i['username']) 
-        sorted_destination_members = sorted(destination_members, key = lambda i: i['username']) 
+    def __compare_members(self, source_members, destination_members):
+        """
+            Compares the source and destination path of a group
 
+            Returns dict containing the difference of group members
+        """
         results = {
             "source_member_count": len(source_members),
             "destination_member_count": len(destination_members)
-            # "expected": sorted_source_members,
-            # "actual": sorted_destination_members
         }
 
         if len(source_members) != len(destination_members):
             results["member_counts_match"] = False
         else:
             results["member_counts_match"] = True
-        diff = {}
 
         rewritten_source_members = misc_utils.rewrite_list_into_dict(source_members, "username")
         rewritten_destination_members = misc_utils.rewrite_list_into_dict(destination_members, "username")
@@ -111,7 +123,6 @@ class CompareClient(BaseClass):
 
         diff =  { k : rewritten_source_members[k] for k in set(rewritten_source_members) - set(rewritten_destination_members) }
         results["missing members"] = diff
-
 
         # diff = []
         # for k, v in rewritten_destination_members.items():
