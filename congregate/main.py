@@ -30,7 +30,7 @@ Usage:
     congregate enable_mirroring
     congregate count-unarchived-projects
     congregate find-empty-repos
-    congregate compare-groups
+    congregate compare-groups [--staged]
     congregate -h | --help
 
 Options:
@@ -214,7 +214,10 @@ if __name__ == '__main__':
             if arguments["find-empty-repos"]:
                 migrate.find_empty_repos()
             if arguments["compare-groups"]:
-                results, unknown_users = compare.create_group_migration_results()
+                if arguments["--staged"]:
+                    results, unknown_users = compare.create_group_migration_results(staged=True)
+                else:
+                    results, unknown_users = compare.create_group_migration_results()
                 with open("%s/data/groups_audit.json" % app_path, "w") as f:
                     dump(results, f, indent=4)
                 with open("%s/data/unknown_users.json" % app_path, "w") as f:

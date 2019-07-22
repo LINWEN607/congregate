@@ -7,7 +7,7 @@ from congregate.helpers.mockapi.users import MockUsersApi
 from congregate.helpers.mockapi.members import MockMembersApi
 
 
-class ConfigTests(unittest.TestCase):
+class StageProjectsTests(unittest.TestCase):
     def setUp(self):
         self.projects_api = MockProjectsApi()
         self.groups_api = MockGroupsApi()
