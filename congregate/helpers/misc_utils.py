@@ -1,3 +1,4 @@
+import os
 from requests import get, head
 from re import sub, findall
 from datetime import timedelta, date
@@ -74,3 +75,10 @@ def parse_query_params(params):
         query_params_string = "?%s" % "&".join(query_params_list)
 
     return query_params_string
+
+
+def get_congregate_path():
+    app_path = os.getenv("CONGREGATE_PATH")
+    if app_path is None:
+        app_path = os.getcwd()
+    return app_path

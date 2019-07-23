@@ -1,7 +1,6 @@
 import mock
 import congregate.helpers.misc_utils as misc
 
-
 def test_remove_dupes_no_dupes():
     de_duped = misc.remove_dupes([1, 2, 3])
     assert de_duped == [1, 2, 3]
@@ -82,3 +81,17 @@ def test_parse_query_params_on_none():
     assert qp == ""
 
 
+@mock.patch("os.getenv")
+@mock.patch("os.getcwd")
+def test_get_congregate_path_with_no_env_set(get_cwd, get_env):
+    get_env.return_value = None
+    get_cwd.return_value = "FAKEPATH"
+    app_path = misc.get_congregate_path()
+    assert app_path == "FAKEPATH"
+
+
+@mock.patch("os.getenv")
+def test_get_congregate_path_with_env_set(get_env):
+    get_env.return_value = "FAKEPATH"
+    app_path = misc.get_congregate_path()
+    assert app_path == "FAKEPATH"

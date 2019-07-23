@@ -1,14 +1,12 @@
-'''
-
+"""
 Base module to import congregate configuration
 and logger as well provide the app path
+"""
 
-'''
-
-from os import getenv
 from congregate.helpers.logger import myLogger
 from congregate.helpers import conf
+from congregate.helpers.misc_utils import get_congregate_path
 
 log = myLogger(__name__)
-app_path = getenv("CONGREGATE_PATH")
+app_path = get_congregate_path()
 config = conf.ig()
