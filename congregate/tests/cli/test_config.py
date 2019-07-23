@@ -2,6 +2,7 @@ import mock
 import unittest
 import os
 from congregate.cli import config
+from congregate.helpers.misc_utils import get_congregate_path
 from congregate.helpers.mockapi.users import MockUsersApi
 
 
@@ -441,9 +442,7 @@ class ConfigTests(unittest.TestCase):
             "filesystem",
             os.getcwd()
         ]
-        congregate_path = os.getenv("CONGREGATE_PATH")
-        if congregate_path is None:
-            congregate_path = os.getcwd()
+        congregate_path = get_congregate_path()
         g = input_generator(values)
         expected = {
             "config": {

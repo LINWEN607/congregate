@@ -79,9 +79,11 @@ if __name__ == '__main__':
         from congregate.helpers import conf
         from congregate.helpers.logger import myLogger
         from congregate.cli import config as configure
+        from congregate.helpers.misc_utils import get_congregate_path
     else:
         from .helpers import conf
         from .helpers.logger import myLogger
+        from .helpers.misc_utils import get_congregate_path
 else:
     import sys
 
@@ -90,7 +92,7 @@ else:
     from congregate.helpers import conf
     from congregate.helpers.logger import myLogger
 
-app_path = os.getenv("CONGREGATE_PATH")
+app_path = get_congregate_path()
 
 log = myLogger(__name__)
 

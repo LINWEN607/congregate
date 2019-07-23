@@ -1,5 +1,5 @@
 import logging
-import os
+from congregate.helpers.misc_utils import get_congregate_path
 
 loggers = {}
 log_file_format = \
@@ -8,9 +8,7 @@ log_file_format = \
 
 def myLogger(name):
     global loggers
-    app_path = os.getenv("CONGREGATE_PATH")
-    if app_path is None:
-        app_path = os.getcwd()
+    app_path = get_congregate_path()
     if loggers.get(name):
         return loggers.get(name)
     else:

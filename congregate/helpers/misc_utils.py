@@ -1,3 +1,4 @@
+import os
 from requests import get, head
 from re import sub, findall
 from datetime import timedelta, date
@@ -62,6 +63,7 @@ def strip_numbers(s):
 def expiration_date():
     return (date.today() + timedelta(days=2)).strftime('%Y-%m-%d')
 
+
 def parse_query_params(params):
     query_params_string = ""
     query_params_list = []
@@ -73,11 +75,20 @@ def parse_query_params(params):
         query_params_string = "?%s" % "&".join(query_params_list)
 
     return query_params_string
+
+
 def rewrite_list_into_dict(lis, comparison_key, prefix=""):
     rewritten_groups = {}
     for i in range(len(lis)):
         new_obj = lis[i]
         key = lis[i][comparison_key]
         rewritten_groups[prefix + str(key)] = new_obj
-    
+
     return rewritten_groups
+
+
+def get_congregate_path():
+    app_path = os.getenv("CONGREGATE_PATH")
+    if app_path is None:
+        app_path = os.getcwd()
+    return app_path
