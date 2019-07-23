@@ -48,7 +48,8 @@ def generate_post_request(host, token, api, data, headers=None):
         :return: request object containing response
     """
     url = generate_v4_request_url(host, api)
-    headers = generate_v4_request_header(token)
+    if headers is None:
+        headers = generate_v4_request_header(token)
 
     return requests.post(url, data=data, headers=headers)
 
@@ -66,7 +67,8 @@ def generate_put_request(host, token, api, data, headers=None, files=None):
         :return: request object containing response
     """
     url = generate_v4_request_url(host, api)
-    headers = generate_v4_request_header(token)
+    if headers is None:
+        headers = generate_v4_request_header(token)
 
     return requests.put(url, headers=headers, data=data, files=files)
 
