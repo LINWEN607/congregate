@@ -124,6 +124,9 @@ def migrate_single_project_info(project, id):
     # TODO: DOES THIS NEED TO STILL BE HERE AFTER MERGE?
     projects.migrate_avatar(id, old_id)
 
+    # Shared with groups
+    projects.add_shared_groups(old_id, id)
+
     # CI/CD Variables
     try:
         b.log.info("Migrating %s CI/CD variables" % name)
