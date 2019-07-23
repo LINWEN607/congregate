@@ -1,6 +1,5 @@
 import main
 import re
-import json
 import os
 import requests
 from collections import OrderedDict
@@ -12,6 +11,7 @@ project_id = os.getenv('CI_PROJECT_ID')
 
 docs = main.__doc__.split("\n")
 cleaned_docs = "\n".join(docs[4:])
+
 
 def traverse_file(base_obj, level, string=None):
     header_level = ""
@@ -34,6 +34,7 @@ def traverse_file(base_obj, level, string=None):
             "raw": split_string[keys.index(key)+1]
         })
         traverse_file(base_obj[key], level+1)
+
 
 def traverse_obj(obj):
     final = ""

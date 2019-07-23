@@ -30,16 +30,16 @@ run tests:
 #    - pipenv run pytest --cov-config=.coveragerc --cov-report html --cov=congregate congregate/tests/
     - pipenv run pytest --cov-config=.coveragerc --cov=congregate congregate/tests/
 
-update readme:
-  stage: update-info
-  <<: *install_test_dependencies
-  script:
-    - pipenv run python congregate/update-readme.py
-  only:
-    refs:
-      - master
-    changes:
-      - congregate/main.py
+#update readme:
+#  stage: update-info
+#  <<: *install_test_dependencies
+#  script:
+#    - pipenv run python congregate/update-readme.py
+#  only:
+#    refs:
+#      - master
+#    changes:
+#      - congregate/main.py
 
 archive project:
   stage: build

@@ -82,6 +82,13 @@ if __name__ == '__main__':
     else:
         from .helpers import conf
         from .helpers.logger import myLogger
+else:
+    import sys
+
+    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    from congregate.cli import config as configure
+    from congregate.helpers import conf
+    from congregate.helpers.logger import myLogger
 
 app_path = os.getenv("CONGREGATE_PATH")
 
