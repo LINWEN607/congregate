@@ -1,8 +1,8 @@
 
-from helpers.base_class import BaseClass
-from helpers import api, misc_utils
-from migration.gitlab.groups import GroupsClient
-from migration.gitlab.users import UsersClient
+from congregate.helpers.base_class import BaseClass
+from congregate.helpers import api, misc_utils
+from congregate.migration.gitlab.groups import GroupsClient
+from congregate.migration.gitlab.users import UsersClient
 from requests.exceptions import RequestException
 import json
 from os import path
@@ -22,26 +22,16 @@ class CompareClient(BaseClass):
             Returns dict containing comparison and dict containing unknown users
         """
         prefix = ""
-        if path.exists('%s/data/groups.json' % self.app_path):
-            with open('%s/data/groups.json' % self.app_path, "r") as f:
-                source_groups = json.load(f)
-        else:
-            source_groups = self.groups.retrieve_group_info(self.config.child_host, self.config.child_token)
+        file_path = '%s/data/destination.json' % self.app_path
+        tlg = False
+        if self.config.parent_id is not None:
+            tlg = True
+            prefix = self.groups.get_group(self.config.parent_id, self.config.parent_host, self.config.parent_token).json()["full_path"] + "/"
+            file_path = '%s/data/destination%dgroups.json' % (self.app_path, self.config.parent_id)
         
-        if staged is not True:
-            tlg = False
-            if self.config.parent_id is not None:
-                tlg = True
-                prefix = self.groups.get_group(self.config.parent_id, self.config.parent_host, self.config.parent_token).json()["full_path"] + "/"
-            if path.exists('%s/data/destination%dgroups.json' % (self.app_path, self.config.parent_id)):
-                with open('%s/data/destination%dgroups.json' % (self.app_path, self.config.parent_id), "r") as f:
-                    destination_groups = json.load(f)
-            else:
-                destination_groups = self.groups.retrieve_group_info(self.config.parent_host, self.config.parent_token, location="destination", top_level_group=tlg)
-        else:
-            with open("%s/data/staged_groups.json" % self.app_path, "r") as f:
-                destination_groups = json.load(f)
-
+        destination_groups = self.load_group_data(file_path, self.config.parent_host, self.config.parent_token, location="destination", top_level_group=tlg)
+        source_groups = self.load_group_data('%s/data/groups.json' % self.app_path, self.config.child_host, self.config.child_token)
+        
         shared_key = "full_path"
         rewritten_destination_groups = misc_utils.rewrite_list_into_dict(destination_groups, shared_key)
         rewritten_source_groups = misc_utils.rewrite_list_into_dict(source_groups, shared_key, prefix=prefix)
@@ -51,11 +41,18 @@ class CompareClient(BaseClass):
             "Total groups in destination instance": len(destination_groups)
         }
 
-        results["results"] = self.__compare_groups(rewritten_source_groups, rewritten_destination_groups)
+        results["results"] = self.compare_groups(rewritten_source_groups, rewritten_destination_groups)
 
         return results, self.unknown_users
 
-    def __compare_groups(self, source_groups, destination_groups):
+    def load_group_data(self, file_path, host, token, location=None, top_level_group=None):
+        if path.exists(file_path):
+            with open(file_path, "r") as f:
+                return json.load(f)
+        else:
+            return self.groups.retrieve_group_info(host, token)
+
+    def compare_groups(self, source_groups, destination_groups):
         """
             Compares the path and members of a group
 
@@ -64,11 +61,10 @@ class CompareClient(BaseClass):
         results = {}
         for group_path, group_data in source_groups.iteritems():
             comparison = {}
-            print group_path
             if destination_groups.get(group_path, None) is not None:
                 dest_group_data = destination_groups[group_path]
-                comparison["members"] = self.__compare_members(group_data["members"], dest_group_data["members"])
-                comparison["path"] = self.__compare_group_location(group_data["full_path"], dest_group_data["path"])
+                comparison["members"] = self.compare_members(group_data["members"], dest_group_data["members"])
+                comparison["path"] = self.compare_group_location(group_data["full_path"], dest_group_data["path"])
                 results[group_path] = comparison
             else:
                 results[group_path] = {
@@ -77,7 +73,7 @@ class CompareClient(BaseClass):
             
         return results
 
-    def __compare_group_location(self, source_path, destination_path):
+    def compare_group_location(self, source_path, destination_path):
         """
             Compares the source and destination path of a group
 
@@ -97,7 +93,7 @@ class CompareClient(BaseClass):
         
         return True
 
-    def __compare_members(self, source_members, destination_members):
+    def compare_members(self, source_members, destination_members):
         """
             Compares the source and destination path of a group
 
