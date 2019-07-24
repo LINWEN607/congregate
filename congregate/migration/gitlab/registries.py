@@ -13,12 +13,12 @@ class RegistryClient(BaseClass):
         super(RegistryClient, self).__init__()
 
     def enabled(self, new_id, old_id):
-        src = self.__enabled(self.config.child_host, self.config.child_token, old_id)
-        dest = self.__enabled(self.config.parent_host,
+        src = self.is_enabled(self.config.child_host, self.config.child_token, old_id)
+        dest = self.is_enabled(self.config.parent_host,
                               self.config.parent_token, new_id)
         return src and dest
 
-    def __enabled(self, host, token, id):
+    def is_enabled(self, host, token, id):
         project = api.generate_get_request(host, token, "projects/%d" % id).json()
         return project.get("container_registry_enabled", False)
 
@@ -61,11 +61,11 @@ class RegistryClient(BaseClass):
                     # TODO: use a key value instead
                     tag_name = tag.replace(self.config.child_registry, "").split(":")[-1]
                     if image.tag(new_reg, tag_name):
-                        self.log.info(
-                            "Migrating tag %s to registry %s" % (tag_name, new_reg))
-                        for line in client.images.push(new_reg, stream=True, decode=True):
-                            print(line)
-                self.log.info("Removing stored image (ID) %s" % image.id)
+                        self.log.info("Created tag %s" % tag_name)
+            self.log.info("Migrating images to registry %s" % new_reg)
+            client.images.push(new_reg, stream=True, decode=True)
+            self.log.info("Removing locally stored images")
+            for image in images:
                 client.images.remove(image.id, force=True)
         except (APIError) as err:
             self.log.error("Failed to import registry, with error:\n%s" % err)

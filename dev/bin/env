@@ -13,6 +13,6 @@ alias penv
 alias ui
 alias sh
 alias upd
-alias ut
+alias pt
 alias dpull
 alias drun

@@ -123,7 +123,7 @@ if __name__ == '__main__':
             from migration import migrate
             # except ImportError:
             #     import migration.users, migration.groups, migration.projects
-            from .cli import list_projects, stage_projects, do_all
+            from congregate.cli import list_projects, stage_projects, do_all
         else:
             from .migration.gitlab.users import UsersClient
             from .migration.gitlab.groups import GroupsClient
@@ -133,7 +133,7 @@ if __name__ == '__main__':
             from migration import migrate
             # except ImportError:
             #     import migration.users, migration.groups, migration.projects
-            from .cli import list_projects, stage_projects, do_all
+            from congregate.cli import list_projects, stage_projects, do_all
         if config.external_source != False and config.external_source is not None:
             if arguments["migrate"]:
                 if arguments["--threads"]:
