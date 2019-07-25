@@ -150,6 +150,34 @@ class CompareClient(BaseClass):
         return snapshot
 
     def generate_user_snapshot_map(self, data):
+        '''
+            Generates a quick snapshot of what the users look like given a list of projects or groups.
+            Expected output looks like:
+
+            {
+                27: {
+                    'email': 'jdoe@email.com', 
+                    'new_instance_id': 1234, 
+                    'new_instance_username': 'jdoe', 
+                    'old_username': 'jdoe'
+                }
+                ...
+            }
+
+            where: 
+            
+            - 27 is the current ID staged for that user in the group or project. If this doesn't match new_instance_id, 
+                then the staged data needs to be corrected
+            
+            - email is the email found across both instances
+            
+            - new_instace_id is the new ID for the user on the destination instance
+
+            - new_instance_username is the new instance username for the user. If this doesn't match the old username,
+                then the staged data needs to be corrected
+            
+            - old_username is used to reference between usernames. They should match unless a prefix or user map has been configured
+        '''
         users_map = {}
         for d in data:
             for member in d["members"]:
