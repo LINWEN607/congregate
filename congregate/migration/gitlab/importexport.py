@@ -112,7 +112,8 @@ class ImportExportClient(BaseClass):
         filename = "%s_%s.tar.gz" % (project["namespace"], project["name"])
         override_params = [
             "override_params[description]=%s" % project["description"],
-            "override_params[default_branch]=%s" % project["default_branch"]
+            "override_params[default_branch]=%s" % project["default_branch"],
+            "override_params[shared_runners_enabled]=%s" % project["shared_runners_enabled"]
         ]
         user_project = False
         if isinstance(project["members"], list):
