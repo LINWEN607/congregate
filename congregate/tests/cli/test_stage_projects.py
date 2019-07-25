@@ -65,7 +65,8 @@ class StageProjectsTests(unittest.TestCase):
                 "default_branch": "master",
                 "visibility": "private",
                 "id": 4,
-                "description": "Project that does stuff"
+                "description": "Project that does stuff",
+                "shared_runners_enabled": False
             },
             {
                 "name": "Puppet",
@@ -97,7 +98,8 @@ class StageProjectsTests(unittest.TestCase):
                 "project_type": "group",
                 "visibility": "private",
                 "id": 6,
-                "description": None
+                "description": None,
+                "shared_runners_enabled": False
             }
         ]
 
@@ -270,7 +272,8 @@ class StageProjectsTests(unittest.TestCase):
                 "visibility": "private",
                 "id": 4,
                 "default_branch": "master",
-                "description": "Project that does stuff"
+                "description": "Project that does stuff",
+                "shared_runners_enabled": False
             },
             {
                 "name": "Puppet",
@@ -302,7 +305,8 @@ class StageProjectsTests(unittest.TestCase):
                 "visibility": "private",
                 "id": 6,
                 "default_branch": "master",
-                "description": None
+                "description": None,
+                "shared_runners_enabled": False
             },
             {
                 "name": "Puppet",
@@ -334,7 +338,8 @@ class StageProjectsTests(unittest.TestCase):
                 "visibility": "private",
                 "id": 80,
                 "default_branch": "master",
-                "description": None
+                "description": None,
+                "shared_runners_enabled": False
             }
         ]
 
