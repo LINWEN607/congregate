@@ -31,6 +31,7 @@ Usage:
     congregate count-unarchived-projects
     congregate find-empty-repos
     congregate compare-groups [--staged]
+    congregate staged-user-list
     congregate -h | --help
 
 Options:
@@ -64,12 +65,13 @@ Commands:
     make-all-internal-groups-private    Makes all internal migrated groups private
     check-projects-visibility           Returns list of all migrated projects' visibility
     compare-groups                      Compares source and destination group results
+    staged-user-list         Outputs a list of all staged users and their respective user IDs. Used to confirm IDs were updated correctly
 """
 
 from docopt import docopt
 import os
 import subprocess
-from json import dump
+from json import dump, dumps
 
 if __name__ == '__main__':
     if __package__ is None:
@@ -231,3 +233,6 @@ if __name__ == '__main__':
                     dump(results, f, indent=4)
                 with open("%s/data/unknown_users.json" % app_path, "w") as f:
                     dump(unknown_users, f, indent=4)
+            if arguments["staged-user-list"]:
+                results = compare.compare_staged_users()
+                print dumps(results, indent=4)

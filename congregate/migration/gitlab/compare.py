@@ -134,7 +134,34 @@ class CompareClient(BaseClass):
         
         # results["member_differences"] = diff
         return results
-    
+
+    def compare_staged_users(self):
+        with open("%s/data/staged_groups.json" % self.app_path, "r") as f:
+            groups = json.load(f)
+
+        with open("%s/data/stage.json" % self.app_path, "r") as f:
+            projects = json.load(f)
+
+        snapshot = {}
+
+        snapshot["projects"] = self.generate_user_snapshot_map(projects)
+        snapshot["groups"] = self.generate_user_snapshot_map(groups)
+
+        return snapshot
+
+    def generate_user_snapshot_map(self, data):
+        users_map = {}
+        for d in data:
+            for member in d["members"]:
+                user = self.users.get_user(member["id"], self.config.parent_host, self.config.parent_token).json()
+                users_map[member["id"]] = {
+                    "username": member["username"],
+                    "email": user["email"]
+                }
+                if len(user["identities"]) > 0:
+                    users_map["extern_uid"] = user["identities"][0].get("extern_uid")
+        return users_map
+
     def generate_diff(self, expected, actual):
         if expected != actual:
             return {
