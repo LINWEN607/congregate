@@ -153,13 +153,20 @@ class CompareClient(BaseClass):
         users_map = {}
         for d in data:
             for member in d["members"]:
-                user = self.users.get_user(member["id"], self.config.parent_host, self.config.parent_token).json()
-                users_map[member["id"]] = {
-                    "username": member["username"],
-                    "email": user["email"]
-                }
-                if len(user["identities"]) > 0:
-                    users_map["extern_uid"] = user["identities"][0].get("extern_uid")
+                user = self.users.get_user(member["id"], self.config.parent_host, self.config.parent_token)
+                if user.get("message", None) is not None:
+                    users_map[member["id"]] = {
+                        "message": user["message"]
+                    }
+                else:
+                    users_map[member["id"]] = {
+                        "old_username": member["username"],
+                        "email": user["email"],
+                        "new_instance_id": user["id"],
+                        "new_instance_username": user["username"]
+                    }
+                    if len(user["identities"]) > 0:
+                        users_map[member["id"]]["extern_uid"] = user["identities"][0].get("extern_uid")
         return users_map
 
     def generate_diff(self, expected, actual):

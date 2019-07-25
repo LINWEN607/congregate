@@ -3,11 +3,13 @@ import mock
 import json
 from congregate.migration.gitlab.compare import CompareClient
 from congregate.helpers.mockapi.groups import MockGroupsApi
+from congregate.helpers.mockapi.users import MockUsersApi
 from congregate.migration.gitlab.groups import GroupsClient
 from congregate.helpers.misc_utils import rewrite_list_into_dict
 
 compare = CompareClient()
 groups = MockGroupsApi()
+users = MockUsersApi()
 
 @mock.patch.object(CompareClient, "load_group_data")
 def test_compare_groups(group_data):
@@ -277,6 +279,27 @@ def test_compare_members_different_usernames_same_ids():
         }
     }
     actual = compare.compare_groups(rewritten_source_groups, rewritten_destination_groups)
+    assert expected == actual
+
+@mock.patch("requests.get")
+def test_user_snapshot(user):
+    dummy_members = [{
+        "members": [
+            users.get_dummy_user()
+        ]
+    }]
+    fake_new_user = users.get_dummy_user()
+    fake_new_user["id"] = 1234
+    user.return_value = fake_new_user
+    expected = {
+        27: {
+            'email': 'jdoe@email.com', 
+            'new_instance_id': 1234, 
+            'new_instance_username': 'jdoe', 
+            'old_username': 'jdoe'
+        }
+    }
+    actual = compare.generate_user_snapshot_map(dummy_members)
     assert expected == actual
 
 def mock_destination_ids():
