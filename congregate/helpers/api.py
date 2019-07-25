@@ -9,24 +9,33 @@ log = myLogger(__name__)
 def generate_v4_request_url(host, api):
     return "%s/api/v4/%s" % (host, api)
 
+
 def generate_v4_request_header(token):
     return {
         'Private-Token': token,
         'Content-Type': 'application/json'
     }
 
+
 @stable_retry
 def generate_get_request(host, token, api, url=None, params=None, stream=False):
     """
-        Generates GET request to GitLab API.
+    Generates GET request to GitLab API.
+    You will need to provide the GL host, access token, and specific api url.
 
         :param host: (str) GitLab host URL
         :param token: (str) Access token to GitLab instance
         :param api: (str) Specific GitLab API endpoint (ex: projects)
-        
-        :return: request object containing response
+        :param url:
+        :param params:
+        :param stream:
+        :return: The response object *not* the json() or text()
+
     """
-    url = generate_v4_request_url(host, api)
+
+    if url is None:
+        url = generate_v4_request_url(host, api)
+
     headers = generate_v4_request_header(token)
 
     if params is None:
@@ -85,9 +94,7 @@ def generate_delete_request(host, token, api):
         :return: request object containing response
     """
     url = generate_v4_request_url(host, api)
-    headers = {
-        'Private-Token': token
-    }
+    headers = generate_v4_request_header(token)
 
     return requests.delete(url, headers=headers)
 
