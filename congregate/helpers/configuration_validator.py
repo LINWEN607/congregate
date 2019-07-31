@@ -1,13 +1,13 @@
 from congregate.helpers.exceptions import ConfigurationException
 from congregate.helpers.conf import ig
-from congregate.migration.gitlab.groups import GroupsClient as groups_client
+from congregate.migration.gitlab.api.groups import GroupsApi
 
 class ConfigurationValidator(ig):
     '''
         Extended config class used to validate the configuration on run
     '''
     def __init__(self):
-        self.groups = groups_client()
+        self.groups = GroupsApi()
         self.parent_id_validated_in_session = False
         super(ConfigurationValidator, self).__init__()
 
