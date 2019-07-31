@@ -2,7 +2,8 @@ from congregate.helpers.base_class import BaseClass
 from congregate.helpers import api
 from congregate.helpers.threads import handle_multi_thread
 from congregate.helpers.misc_utils import strip_numbers, remove_dupes
-from congregate.migration.gitlab.groups import GroupsClient
+from congregate.migration.gitlab.api.groups import GroupsApi
+from congregate.migration.gitlab.api.users import UsersApi
 from requests.exceptions import RequestException
 from os import path
 import json
@@ -10,32 +11,15 @@ import json
 
 class UsersClient(BaseClass):
     def __init__(self):
-        self.groups = GroupsClient()
+        self.groups = GroupsApi()
+        self.users = UsersApi()
         super(UsersClient, self).__init__()
 
-    def get_user(self, id, host, token):
-        return api.generate_get_request(host, token, "users/%d" % id)
-
-    def get_current_user(self, host, token):
-        return api.generate_get_request(host, token, "user")
-
-    def create_user(self, host, token, data):
-        return api.generate_post_request(host, token, "users", json.dumps(data))
-
-    def search_for_user_by_email(self, host, token, email):
-        return api.list_all(host, token, "users?search=%s" % email, per_page=50)
-
-    def create_user_impersonation_token(self, host, token, id, data):
-        return api.generate_post_request(host, token, "users/%d/impersonation_tokens" % id, json.dumps(data))
-
-    def delete_user_impersonation_token(self, host, token, user_id, token_id):
-        return api.generate_delete_request(host, token, "users/%d/impersonation_tokens/%d" % (user_id, token_id))
-
     def find_user_by_email_comparison(self, old_user_id):
-        old_user = self.get_user(
+        old_user = self.users.get_user(
             old_user_id, self.config.child_host, self.config.child_token).json()
         if old_user.get("message", None) is None:
-            for user in self.search_for_user_by_email(self.config.parent_host, self.config.parent_token, old_user["email"]):
+            for user in self.users.search_for_user_by_email(self.config.parent_host, self.config.parent_token, old_user["email"]):
                 if user["email"] == old_user["email"]:
                     return user
         return None
@@ -43,7 +27,7 @@ class UsersClient(BaseClass):
     def username_exists(self, old_user):
         index = 0
         username = old_user["username"]
-        for user in self.search_for_user_by_email(self.config.parent_host, self.config.parent_token, username):
+        for user in self.users.search_for_user_by_email(self.config.parent_host, self.config.parent_token, username):
             if user["username"] == username:
                 return True
             elif index > 100:
@@ -54,7 +38,7 @@ class UsersClient(BaseClass):
     def user_email_exists(self, old_user):
         index = 0
         email = old_user["email"]
-        for user in self.search_for_user_by_email(self.config.parent_host, self.config.parent_token, email):
+        for user in self.users.search_for_user_by_email(self.config.parent_host, self.config.parent_token, email):
             if user["email"] == email:
                 return True
             elif index > 100:
@@ -73,7 +57,7 @@ class UsersClient(BaseClass):
                     "api"
                 ]
             }
-            new_impersonation_token = self.create_user_impersonation_token(
+            new_impersonation_token = self.users.create_user_impersonation_token(
                 self.config.parent_host, self.config.parent_token, id, data).json()
             users_map[email] = new_impersonation_token
             users_map[email]["user_id"] = id
@@ -81,7 +65,7 @@ class UsersClient(BaseClass):
 
     def delete_saved_impersonation_tokens(self, users_map):
         for user in users_map.values():
-            self.delete_user_impersonation_token(
+            self.users.delete_user_impersonation_token(
                 self.config.parent_host, self.config.parent_token, user["user_id"], user["id"])
 
     def generate_user_group_saml_post_data(self, user):
@@ -124,10 +108,10 @@ class UsersClient(BaseClass):
             members = obj[i]["members"]
             if isinstance(members, list):
                 for member in members:
-                    old_user = self.get_user(member["id"], self.config.child_host, self.config.child_token).json()
+                    old_user = self.users.get_user(member["id"], self.config.child_host, self.config.child_token).json()
                     username = strip_numbers(member["username"]).lower()
                     if rewritten_users.get(old_user["email"], None) is not None:
-                        new_user = self.get_user(rewritten_users[old_user["email"]]["id"], self.config.parent_host, self.config.parent_token).json()
+                        new_user = self.users.get_user(rewritten_users[old_user["email"]]["id"], self.config.parent_host, self.config.parent_token).json()
                         if new_user.get("message", None) is None:
                             if new_user["email"] == old_user["email"]:
                                 member["id"] = rewritten_users[old_user["email"]]["id"]
@@ -251,7 +235,7 @@ class UsersClient(BaseClass):
             with open("%s/data/new_users.json" % self.app_path, "w") as f:
                 new_users = []
                 for new_id in new_ids:
-                    new_user = self.get_user(
+                    new_user = self.users.get_user(
                         new_id, self.config.parent_host, self.config.parent_token).json()
                     if isinstance(new_user, list):
                         new_users.append(new_user[0])
@@ -316,7 +300,7 @@ class UsersClient(BaseClass):
 
         for other_id in other_ids:
             print "searching for %s" % other_id
-            new_user = self.get_user(
+            new_user = self.users.get_user(
                 other_id, self.config.parent_host, self.config.parent_token).json()
             new_users.append(new_user)
 
@@ -393,7 +377,7 @@ class UsersClient(BaseClass):
     def handle_user_creation(self, user):
         user_data = self.generate_user_data(user)
         try:
-            response = self.create_user(
+            response = self.users.create_user(
                 self.config.parent_host, self.config.parent_token, user_data)
         except RequestException, e:
             self.log.info(e)

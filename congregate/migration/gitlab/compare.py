@@ -2,7 +2,6 @@
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers import api, misc_utils
 from congregate.migration.gitlab.groups import GroupsClient
-from congregate.migration.gitlab.users import UsersClient
 from requests.exceptions import RequestException
 import json
 from os import path
@@ -11,7 +10,6 @@ from os import path
 class CompareClient(BaseClass):
     def __init__(self):
         self.groups = GroupsClient()
-        self.users = UsersClient()
         self.unknown_users = {}
         super(CompareClient, self).__init__()
 
@@ -120,19 +118,6 @@ class CompareClient(BaseClass):
         diff =  { k : rewritten_source_members[k] for k in set(rewritten_source_members) - set(rewritten_destination_members) }
         results["missing members"] = diff
 
-        # diff = []
-        # for k, v in rewritten_destination_members.items():
-
-        #     if k in rewritten_source_members:
-        #         unknown_user = self.users.get_user(v["id"], self.config.parent_host, self.config.parent_token)
-        #         diff.append(
-        #             {
-        #                 "unknown user": unknown_user,
-        #                 "original user": rewritten_source_members[k]
-        #             }
-        #         )
-        
-        # results["member_differences"] = diff
         return results
 
     def compare_staged_users(self):

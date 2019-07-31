@@ -2,7 +2,7 @@ from congregate.helpers.base_class import BaseClass
 from congregate.helpers import api, misc_utils
 from congregate.aws import AwsClient
 from congregate.migration.gitlab.projects import ProjectsClient
-from congregate.migration.gitlab.users import UsersClient
+from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.api.groups import GroupsApi
 from requests.exceptions import RequestException
 from re import sub
@@ -18,7 +18,7 @@ class ImportExportClient(BaseClass):
         super(ImportExportClient, self).__init__()
         self.aws = self.get_AwsClient()
         self.projects = ProjectsClient()
-        self.users = UsersClient()
+        self.users = UsersApi()
         self.groups = GroupsApi()
         self.keys_map = self.get_keys()
 
