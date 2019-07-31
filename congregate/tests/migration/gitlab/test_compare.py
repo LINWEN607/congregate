@@ -5,7 +5,6 @@ import responses
 from congregate.migration.gitlab.compare import CompareClient
 from congregate.helpers.mockapi.groups import MockGroupsApi
 from congregate.helpers.mockapi.users import MockUsersApi
-from congregate.migration.gitlab.groups import GroupsClient
 from congregate.helpers.misc_utils import rewrite_list_into_dict
 
 compare = CompareClient()

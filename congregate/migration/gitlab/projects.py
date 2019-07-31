@@ -39,6 +39,9 @@ class ProjectsClient(BaseClass):
 
     def unarchive_project(self, host, token, id):
         return api.generate_post_request(host, token, "projects/%d/unarchive" % id, {}).json()
+    
+    def delete_project(self, host, token, id):
+        return api.generate_delete_request(host, token, "projects/%d" % id)
 
     def __add_shared_group(self, host, token, id, group):
         return api.generate_post_request(host, token, "projects/%d/share" % id, json.dumps(group))

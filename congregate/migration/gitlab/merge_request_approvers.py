@@ -2,7 +2,7 @@ from congregate.helpers.base_class import BaseClass
 from congregate.helpers import api
 from congregate.migration.gitlab.version import VersionClient
 from congregate.migration.gitlab.users import UsersClient
-from congregate.migration.gitlab.groups import GroupsClient
+from congregate.migration.gitlab.api.groups import GroupsApi
 from urllib import urlencode
 import json
 
@@ -11,7 +11,7 @@ class MergeRequestApproversClient(BaseClass):
     def __init__(self):
         self.version = VersionClient()
         self.users = UsersClient()
-        self.groups = GroupsClient()
+        self.groups = GroupsApi()
         self.break_change_version = "11.10.0"
         super(MergeRequestApproversClient, self).__init__()
 

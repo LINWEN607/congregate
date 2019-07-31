@@ -3,7 +3,7 @@ from congregate.helpers import api, misc_utils
 from congregate.aws import AwsClient
 from congregate.migration.gitlab.projects import ProjectsClient
 from congregate.migration.gitlab.users import UsersClient
-from congregate.migration.gitlab.groups import GroupsClient
+from congregate.migration.gitlab.api.groups import GroupsApi
 from requests.exceptions import RequestException
 from re import sub
 from urllib import quote
@@ -19,7 +19,7 @@ class ImportExportClient(BaseClass):
         self.aws = self.get_AwsClient()
         self.projects = ProjectsClient()
         self.users = UsersClient()
-        self.groups = GroupsClient()
+        self.groups = GroupsApi()
         self.keys_map = self.get_keys()
 
     def get_AwsClient(self):

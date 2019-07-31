@@ -2,12 +2,12 @@ from flask import request, jsonify, Response, stream_with_context, send_from_dir
 from . import app
 import subprocess
 import os
-from helpers.base_module import app_path
-from cli import stage_projects
-from cli.config import update_config
-from migration.gitlab.groups import GroupsClient
-from migration.gitlab.users import UsersClient
-from migration.migrate import migrate
+from congregate.helpers.base_module import app_path
+from congregate.cli import stage_projects
+from congregate.cli.config import update_config
+from congregate.migration.gitlab.groups import GroupsClient
+from congregate.migration.gitlab.users import UsersClient
+from congregate.migration.migrate import migrate
 
 grp = GroupsClient()
 usr = UsersClient()

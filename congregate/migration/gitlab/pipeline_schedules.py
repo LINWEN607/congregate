@@ -1,6 +1,6 @@
-from helpers.base_class import BaseClass
-from helpers import api, misc_utils
-from migration.gitlab.users import UsersClient
+from congregate.helpers.base_class import BaseClass
+from congregate.helpers import api, misc_utils
+from congregate.migration.gitlab.users import UsersClient
 import json
 
 

@@ -26,7 +26,7 @@ class CompareClient(BaseClass):
         tlg = False
         if self.config.parent_id is not None:
             tlg = True
-            prefix = self.groups.get_group(self.config.parent_id, self.config.parent_host, self.config.parent_token).json()["full_path"] + "/"
+            prefix = self.groups.groups_api.get_group(self.config.parent_id, self.config.parent_host, self.config.parent_token).json()["full_path"] + "/"
             file_path = '%s/data/destination%dgroups.json' % (self.app_path, self.config.parent_id)
         
         destination_groups = self.load_group_data(file_path, self.config.parent_host, self.config.parent_token, location="destination", top_level_group=tlg)
@@ -82,7 +82,7 @@ class CompareClient(BaseClass):
             Retruns True if locations match
         """
         if self.config.parent_id is not None:
-            tlg = self.groups.get_group(self.config.parent_id, self.config.parent_host, self.config.parent_token).json()
+            tlg = self.groups.groups_api.get_group(self.config.parent_id, self.config.parent_host, self.config.parent_token).json()
             source_path = "%s/%s" % (tlg["full_path"], source_path)
         
         if source_path != destination_path:

@@ -48,14 +48,7 @@ schedules = PipelineSchedulesClient()
 deploy_keys = DeployKeysClient()
 project_export = ProjectExportClient()
 
-try:
-    if b.config.parent_id is not None:
-        full_parent_namespace = groups.get_group(b.config.parent_id, b.config.parent_host, b.config.parent_token).json()["full_path"]
-    else:
-        full_parent_namespace = ""
-except ConfigurationException, e:
-    b.log.error(e)
-    exit(1)
+full_parent_namespace = groups.find_parent_group_path()
 
 def migrate_project_info():
     """
@@ -374,7 +367,7 @@ def handle_migrating_file(f):
     namespace = f["namespace"]
     try:
         if b.config.parent_id is not None and f["project_type"] != "user":
-            parent_namespace = groups.get_group(
+            parent_namespace = groups.groups_api.get_group(
                 b.config.parent_id, b.config.parent_host, b.config.parent_token).json()
             namespace = "%s/%s" % (parent_namespace["path"], f["namespace"])
         else:
