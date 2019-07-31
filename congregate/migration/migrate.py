@@ -30,6 +30,7 @@ from congregate.migration.gitlab.project_export import ProjectExportClient
 from congregate.migration.mirror import MirrorClient
 from congregate.migration.gitlab.deploy_keys import DeployKeysClient
 from congregate.migration.bitbucket import client as bitbucket
+from congregate.helpers.exceptions import ConfigurationException
 
 aws = AwsClient()
 ie = ie_client()
@@ -47,10 +48,14 @@ schedules = PipelineSchedulesClient()
 deploy_keys = DeployKeysClient()
 project_export = ProjectExportClient()
 
-if b.config.parent_id is not None:
-    full_parent_namespace = groups.get_group(b.config.parent_id, b.config.parent_host, b.config.parent_token).json()["full_path"]
-else:
-    full_parent_namespace = ""
+try:
+    if b.config.parent_id is not None:
+        full_parent_namespace = groups.get_group(b.config.parent_id, b.config.parent_host, b.config.parent_token).json()["full_path"]
+    else:
+        full_parent_namespace = ""
+except ConfigurationException, e:
+    b.log.error(e)
+    exit(1)
 
 def migrate_project_info():
     """

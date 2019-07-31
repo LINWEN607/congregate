@@ -339,3 +339,8 @@ class MockGroupsApi():
                 ]
             }
         ]
+
+    def get_group_404(self):
+        return {
+            "message": "404 Group Not Found"
+        }

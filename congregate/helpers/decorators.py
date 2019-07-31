@@ -1,5 +1,6 @@
 from time import sleep
 from congregate.helpers.logger import myLogger
+from congregate.helpers.exceptions import ConfigurationException
 
 log = myLogger(__name__)
 
@@ -10,6 +11,8 @@ def stable_retry(function, ExceptionType=Exception,
         mtries, mdelay = tries, delay
         while mtries > 1:
             try:
+                return function(*args, **kwargs)
+            except ConfigurationException:
                 return function(*args, **kwargs)
             except ExceptionType as e:
                 log.error(

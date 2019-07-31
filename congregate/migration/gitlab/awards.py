@@ -1,10 +1,10 @@
-from helpers.base_class import BaseClass
-from helpers import api
-from helpers.misc_utils import strip_numbers, remove_dupes
-from migration.gitlab.issues import IssuesClient
-from migration.gitlab.merge_requests import MergeRequestsClient
-from migration.gitlab.snippets import SnippetsClient
-from migration.gitlab.users import UsersClient
+from congregate.helpers.base_class import BaseClass
+from congregate.helpers import api
+from congregate.helpers.misc_utils import strip_numbers, remove_dupes
+from congregate.migration.gitlab.issues import IssuesClient
+from congregate.migration.gitlab.merge_requests import MergeRequestsClient
+from congregate.migration.gitlab.snippets import SnippetsClient
+from congregate.migration.gitlab.users import UsersClient
 from datetime import timedelta, date
 
 
