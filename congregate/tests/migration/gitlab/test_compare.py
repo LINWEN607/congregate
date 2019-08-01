@@ -311,6 +311,32 @@ def test_user_snapshot(url):
     actual = compare.generate_user_snapshot_map(dummy_members)
     assert expected == actual
 
+# pylint: disable=no-member
+@responses.activate
+# pylint: enable=no-member
+@mock.patch("congregate.helpers.api.generate_v4_request_url")
+def test_unknown_user_snapshot(url):
+    dummy_members = [{
+        "members": [
+            users.get_dummy_user()
+        ]
+    }]
+    fake_new_user = users.get_dummy_user()
+    fake_new_user["id"] = 1234
+    url_value = "https://gitlab.com/api/v4/users/1"
+    url.return_value = url_value
+    # pylint: disable=no-member
+    responses.add(responses.GET, url_value,
+                  json=users.get_user_404(), status=404)
+    # pylint: enable=no-member
+    expected = {
+        27: {
+            "message": "404 User Not Found"
+        }
+    }
+    actual = compare.generate_user_snapshot_map(dummy_members)
+    assert expected == actual
+
 def mock_destination_ids():
     mock_destination = groups.get_all_groups_list()
     for group in mock_destination:

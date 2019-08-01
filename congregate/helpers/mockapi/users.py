@@ -12,6 +12,11 @@ class MockUsersApi():
             "avatar_url": "http://localhost:3000/uploads/user/avatar/1/cd8.jpeg",
             "web_url": "http://localhost:3000/john_smith"
         }
+    
+    def get_user_404(self):
+        return {
+            "message": "404 User Not Found"
+        }
 
     def get_all_users_generator(self):
         users = [
