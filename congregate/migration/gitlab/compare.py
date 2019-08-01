@@ -171,12 +171,12 @@ class CompareClient(BaseClass):
             
             - email is the email found across both instances
             
-            - new_instace_id is the new ID for the user on the destination instance
+            - destination_instance_user_id is the new ID for the user on the destination instance
 
-            - new_instance_username is the new instance username for the user. If this doesn't match the old username,
+            - destination_instance_username is the new instance username for the user. If this doesn't match the old username,
                 then the staged data needs to be corrected
             
-            - old_username is used to reference between usernames. They should match unless a prefix or user map has been configured
+            - source_username is used to reference between usernames. They should match unless a prefix or user map has been configured
         '''
         users_map = {}
         for d in data:
