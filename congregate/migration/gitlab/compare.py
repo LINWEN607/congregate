@@ -181,7 +181,7 @@ class CompareClient(BaseClass):
         users_map = {}
         for d in data:
             for member in d["members"]:
-                user = self.users.get_user(member["id"], self.config.parent_host, self.config.parent_token)
+                user = self.users.get_user(member["id"], self.config.parent_host, self.config.parent_token).json()
                 if user.get("message", None) is not None:
                     users_map[member["id"]] = {
                         "message": user["message"]
