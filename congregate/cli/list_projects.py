@@ -4,19 +4,18 @@ from congregate.helpers import api
 from congregate.helpers import base_module as b
 from congregate.migration.gitlab.groups import GroupsClient
 from congregate.migration.gitlab.users import UsersClient
-from congregate.migration.gitlab.projects import ProjectsClient
+from congregate.migration.gitlab.api.projects import ProjectsApi
 
 groupsclient = GroupsClient()
 usersclient = UsersClient()
-projectsclient = ProjectsClient()
+projects_api = ProjectsApi()
 
 
 def list_projects():
 
     print "Listing projects from %s" % b.config.child_host
 
-    projects = list(api.list_all(b.config.child_host,
-                                 b.config.child_token, "projects"))
+    projects = list(projects_api.get_all_projects(b.config.child_host, b.config.child_token))
 
     with open("%s/data/project_json.json" % b.app_path, "wb") as f:
         json.dump(projects, f, indent=4)

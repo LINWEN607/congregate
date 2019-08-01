@@ -1,13 +1,13 @@
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers import api
-from congregate.migration.gitlab.projects import ProjectsClient
+from congregate.migration.gitlab.api.projects import ProjectsApi
 from requests.exceptions import RequestException
 import json
 
 
 class VariablesClient(BaseClass):
     def __init__(self):
-        self.projects = ProjectsClient()
+        self.projects = ProjectsApi()
         super(VariablesClient, self).__init__()
 
     def get_variables(self, id, var_type="projects", source_type="child"):

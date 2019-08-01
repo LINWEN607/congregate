@@ -11,11 +11,10 @@ import subprocess
 import re
 from congregate.helpers import misc_utils
 from congregate.helpers import base_module as b
-from congregate.migration.gitlab.projects import ProjectsClient
+from congregate.migration.gitlab.api.projects import ProjectsApi
 
-proj_client = ProjectsClient()
+projects_api = ProjectsApi()
 existing_parent_ids = []
-
 
 def stage_projects(projects_to_stage):
     staged_projects, staged_users, staged_groups = build_staging_data(
@@ -70,7 +69,7 @@ def build_staging_data(projects_to_stage):
                 }
 
                 members = []
-                for member in proj_client.get_members(int(projects[i]["id"]), b.config.child_host, b.config.child_token):
+                for member in projects_api.get_members(int(projects[i]["id"]), b.config.child_host, b.config.child_token):
                     if member["username"] != "root":
                         staged_users.append(
                             rewritten_users[member["username"]])
@@ -101,7 +100,7 @@ def build_staging_data(projects_to_stage):
                 }
 
                 members = []
-                for member in proj_client.get_members(int(projects[i]["id"]), b.config.child_host, b.config.child_token):
+                for member in projects_api.get_members(int(projects[i]["id"]), b.config.child_host, b.config.child_token):
                     if member["username"] != "root":
                         b.log.info("Staging user (%s)" % member["username"])
                         staged_users.append(
@@ -156,7 +155,7 @@ def build_staging_data(projects_to_stage):
                 }
 
                 members = []
-                for member in proj_client.get_members(int(project["id"]), b.config.child_host, b.config.child_token):
+                for member in projects_api.get_members(int(project["id"]), b.config.child_host, b.config.child_token):
                     if member["username"] != "root":
                         b.log.info("Staging user (%s)" % member["username"])
                         staged_users.append(

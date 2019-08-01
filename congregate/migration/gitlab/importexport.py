@@ -287,7 +287,7 @@ class ImportExportClient(BaseClass):
             self.log.info("Exporting %s to %s" %
                           (name, self.config.filesystem_path))
             self.log.info("Unarchiving %s" % name)
-            self.projects.unarchive_project(
+            self.projects.projects_api.unarchive_project(
                 self.config.child_host, self.config.child_token, id)
             api.generate_post_request(
                 self.config.child_host, self.config.child_token, "projects/%d/export" % id, {})

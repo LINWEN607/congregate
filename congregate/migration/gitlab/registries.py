@@ -3,13 +3,13 @@ from docker.errors import APIError, TLSParameterError
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers import api
 from congregate.migration.gitlab.api.users import UsersApi
-from congregate.migration.gitlab.projects import ProjectsClient
+from congregate.migration.gitlab.api.projects import ProjectsApi
 
 
 class RegistryClient(BaseClass):
     def __init__(self):
         self.users = UsersApi()
-        self.projects = ProjectsClient()
+        self.projects = ProjectsApi()
         super(RegistryClient, self).__init__()
 
     def enabled(self, new_id, old_id):

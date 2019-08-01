@@ -20,7 +20,7 @@ class StageProjectsTests(unittest.TestCase):
     @mock.patch('congregate.cli.stage_projects.open_projects_file')
     @mock.patch('congregate.cli.stage_projects.open_users_file')
     @mock.patch('congregate.cli.stage_projects.open_groups_file')
-    @mock.patch('congregate.migration.gitlab.projects.ProjectsClient.get_members')
+    @mock.patch('congregate.migration.gitlab.api.projects.ProjectsApi.get_members')
     def test_build_stage_data(self, mock_members, mock_groups, mock_users, mock_projects, mock_check, mock_open):
         mock_check.return_value = True
         mock_projects.return_value = self.projects_api.get_all_projects()
@@ -226,7 +226,7 @@ class StageProjectsTests(unittest.TestCase):
     @mock.patch('congregate.cli.stage_projects.open_projects_file')
     @mock.patch('congregate.cli.stage_projects.open_users_file')
     @mock.patch('congregate.cli.stage_projects.open_groups_file')
-    @mock.patch('congregate.migration.gitlab.projects.ProjectsClient.get_members')
+    @mock.patch('congregate.migration.gitlab.api.projects.ProjectsApi.get_members')
     def test_build_stage_increment(self, mock_members, mock_groups, mock_users, mock_projects, mock_check, mock_open):
         mock_check.return_value = True
         mock_projects.return_value = self.projects_api.get_all_projects()
