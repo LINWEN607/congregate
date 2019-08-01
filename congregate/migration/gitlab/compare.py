@@ -166,7 +166,7 @@ class CompareClient(BaseClass):
 
             where: 
             
-            - 27 is the current ID staged for that user in the group or project. If this doesn't match new_instance_id, 
+            - 27 is the current ID staged for that user in the group or project. If this doesn't match destination_instance_user_id, 
                 then the staged data needs to be corrected
             
             - email is the email found across both instances
