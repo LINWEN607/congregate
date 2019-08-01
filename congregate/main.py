@@ -29,6 +29,8 @@ Usage:
     congregate set-default-branch
     congregate enable_mirroring
     congregate count-unarchived-projects
+    congregate archive-staged-projects [--dry-run]
+    congregate unarchive-staged-projects [--dry-run]
     congregate find-empty-repos
     congregate compare-groups [--staged]
     congregate staged-user-list
@@ -65,7 +67,9 @@ Commands:
     make-all-internal-groups-private    Makes all internal migrated groups private
     check-projects-visibility           Returns list of all migrated projects' visibility
     compare-groups                      Compares source and destination group results
-    staged-user-list         Outputs a list of all staged users and their respective user IDs. Used to confirm IDs were updated correctly
+    staged-user-list                    Outputs a list of all staged users and their respective user IDs. Used to confirm IDs were updated correctly
+    archive-staged-projects             Archive projects that are staged, not necessarily migrated
+    unarchive-staged-projects           Unarchive projects that are staged, not necessarily migrated
 """
 
 from docopt import docopt
@@ -222,6 +226,10 @@ if __name__ == '__main__':
                 migrate.set_default_branch()
             if arguments["count-unarchived-projects"]:
                 migrate.count_unarchived_projects()
+            if arguments["archive-staged-projects"]:
+                migrate.archive_staged_projects(True) if arguments["--dry-run"] else migrate.archive_staged_projects()
+            if arguments["unarchive-staged-projects"]:
+                migrate.unarchive_staged_projects(True) if arguments["--dry-run"] else migrate.unarchive_staged_projects()
             if arguments["find-empty-repos"]:
                 migrate.find_empty_repos()
             if arguments["compare-groups"]:

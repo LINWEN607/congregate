@@ -56,10 +56,8 @@ def migrate_project_info():
     """
         Subsequent function to update project info AFTER import
     """
-    with open("%s/data/stage.json" % b.app_path, "r") as f:
-        projects = json.load(f)
-
-    for project in projects:
+    staged_projects = get_staged_projects()
+    for project in staged_projects:
         members = project["members"]
         project.pop("members")
         b.log.debug("Searching for %s" % project["name"])
@@ -309,8 +307,6 @@ def migrate(threads=None):
         start_multi_thead(bitbucket.handle_bitbucket_migration, repo_list)
 
     else:
-        with open("%s/data/stage.json" % b.app_path, "r") as f:
-            files = json.load(f)
         with open("%s/data/staged_groups.json" % b.app_path, "r") as f:
             groups_file = json.load(f)
 
@@ -332,16 +328,17 @@ def migrate(threads=None):
         else:
             b.log.info("No groups to migrate")
 
-        if len(files) > 0:
+        staged_projects = get_staged_projects()
+        if len(staged_projects) > 0:
             b.log.info("Migrating project info")
             pool = ThreadPool(b.config.threads)
-            results = pool.map(handle_migrating_file, files)
+            results = pool.map(handle_migrating_file, staged_projects)
             pool.close()
             pool.join()
 
             b.log.info("Importing projects")
             import_pool = ThreadPool(b.config.threads)
-            results = import_pool.map(migrate_given_export, files)
+            results = import_pool.map(migrate_given_export, staged_projects)
             b.log.info("### Results ###\n%s" % json.dumps(results, indent=4))
             import_pool.close()
             import_pool.join()
@@ -352,12 +349,11 @@ def migrate(threads=None):
 
 
 def kick_off_import():
-    with open("%s/data/stage.json" % b.app_path, "r") as f:
-        files = json.load(f)
-    if len(files) > 0:
+    staged_projects = get_staged_projects()
+    if len(staged_projects) > 0:
         b.log.info("Importing projects")
         pool = ThreadPool(b.config.threads)
-        results = pool.map(migrate_given_export, files)
+        results = pool.map(migrate_given_export, staged_projects)
         b.log.info("### Results ###\n%s" % json.dumps(results, indent=4))
         pool.close()
         pool.join()
@@ -445,11 +441,10 @@ def remove_all_mirrors():
 
 
 def get_new_ids():
-    with open("%s/data/stage.json" % b.app_path, "r") as f:
-        files = json.load(f)
     ids = []
-    if len(files) > 0:
-        for project_json in files:
+    staged_projects = get_staged_projects()
+    if len(staged_projects) > 0:
+        for project_json in staged_projects:
             try:
                 b.log.debug("Searching for existing %s" % project_json["name"])
                 for proj in projects.search_for_project(b.config.parent_host, b.config.parent_token,
@@ -471,13 +466,12 @@ def get_new_ids():
 
 
 def enable_mirror():
-    with open("%s/data/stage.json" % b.app_path, "r") as f:
-        files = json.load(f)
     ids = get_new_ids()
-    if len(files) > 0:
-        for i in range(len(files)):
+    staged_projects = get_staged_projects()
+    if len(staged_projects) > 0:
+        for i in range(len(staged_projects)):
             id = ids[i]
-            project = files[i]
+            project = staged_projects[i]
             mirror.mirror_repo(project, id)
 
 
@@ -592,6 +586,37 @@ def count_unarchived_projects():
 
     print unarchived_projects
     print len(unarchived_projects)
+
+
+def archive_staged_projects(dry_run=False):
+    staged_projects = get_staged_projects()
+    b.log.info("Project count is: %s", len(staged_projects))
+    try:
+        for project in staged_projects:
+            id = project["id"]
+            b.log.info("Archiving project %s (ID: %s)" % (project["name"], id))
+            if not dry_run:
+                projects.archive_project(b.config.child_host, b.config.child_token, id)
+    except requests.exceptions.RequestException, e:
+        b.log.error("Failed to archive staged projects, with error:\n%s" % e)
+
+
+def unarchive_staged_projects(dry_run=False):
+    staged_projects = get_staged_projects()
+    b.log.info("Project count is: %s", len(staged_projects))
+    try:
+        for project in staged_projects:
+            id = project["id"]
+            b.log.info("Unarchiving project %s (ID: %s)" % (project["name"], id))
+            if not dry_run:
+                projects.unarchive_project(b.config.child_host, b.config.child_token, id)
+    except requests.exceptions.RequestException, e:
+        b.log.error("Failed to unarchive staged projects, with error:\n%s" % e)
+
+
+def get_staged_projects():
+    with open("%s/data/stage.json" % b.app_path, "r") as f:
+        return json.load(f)
 
 
 def find_empty_repos():
