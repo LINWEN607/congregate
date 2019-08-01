@@ -2,6 +2,7 @@
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers import api, misc_utils
 from congregate.migration.gitlab.groups import GroupsClient
+from congregate.migration.gitlab.api.users import UsersApi
 from requests.exceptions import RequestException
 import json
 from os import path
@@ -10,6 +11,7 @@ from os import path
 class CompareClient(BaseClass):
     def __init__(self):
         self.groups = GroupsClient()
+        self.users = UsersApi()
         self.unknown_users = {}
         super(CompareClient, self).__init__()
 
