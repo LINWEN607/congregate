@@ -27,6 +27,7 @@ lazy-object-proxy = "==1.4.1"
 docker = "*"
 pytest = "*"
 pytest-cov = "*"
+responses = "*"
 
 [scripts]
 clean_pyc = "find ./congregate -name '*.pyc' -delete"

@@ -157,9 +157,9 @@ class CompareClient(BaseClass):
             {
                 27: {
                     'email': 'jdoe@email.com', 
-                    'new_instance_id': 1234, 
-                    'new_instance_username': 'jdoe', 
-                    'old_username': 'jdoe'
+                    'destination_instance_user_id': 1234, 
+                    'destination_instance_username': 'jdoe', 
+                    'source_username': 'jdoe'
                 }
                 ...
             }
@@ -188,10 +188,10 @@ class CompareClient(BaseClass):
                     }
                 else:
                     users_map[member["id"]] = {
-                        "old_username": member["username"],
+                        "source_instance_username": member["username"],
                         "email": user["email"],
-                        "new_instance_id": user["id"],
-                        "new_instance_username": user["username"]
+                        "destination_instance_user_id": user["id"],
+                        "destination_instance_username": user["username"]
                     }
                     if len(user["identities"]) > 0:
                         users_map[member["id"]]["extern_uid"] = user["identities"][0].get("extern_uid")

@@ -1,6 +1,7 @@
 import unittest
 import mock
 import json
+import responses
 from congregate.migration.gitlab.compare import CompareClient
 from congregate.helpers.mockapi.groups import MockGroupsApi
 from congregate.helpers.mockapi.users import MockUsersApi
@@ -281,8 +282,11 @@ def test_compare_members_different_usernames_same_ids():
     actual = compare.compare_groups(rewritten_source_groups, rewritten_destination_groups)
     assert expected == actual
 
-@mock.patch("requests.get")
-def test_user_snapshot(user):
+# pylint: disable=no-member
+@responses.activate
+# pylint: enable=no-member
+@mock.patch("congregate.helpers.api.generate_v4_request_url")
+def test_user_snapshot(url):
     dummy_members = [{
         "members": [
             users.get_dummy_user()
@@ -290,13 +294,18 @@ def test_user_snapshot(user):
     }]
     fake_new_user = users.get_dummy_user()
     fake_new_user["id"] = 1234
-    user.return_value = fake_new_user
+    url_value = "https://gitlab.com/api/v4/users/1"
+    url.return_value = url_value
+    # pylint: disable=no-member
+    responses.add(responses.GET, url_value,
+                  json=fake_new_user, status=200)
+    # pylint: enable=no-member
     expected = {
         27: {
             'email': 'jdoe@email.com', 
-            'new_instance_id': 1234, 
-            'new_instance_username': 'jdoe', 
-            'old_username': 'jdoe'
+            'destination_instance_user_id': 1234, 
+            'destination_instance_username': 'jdoe', 
+            'source_instance_username': 'jdoe'
         }
     }
     actual = compare.generate_user_snapshot_map(dummy_members)
