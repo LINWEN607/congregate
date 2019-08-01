@@ -1,12 +1,13 @@
 FROM python:2.7.15-stretch
 
-ARG VERSION
-
 # Define the ENV variable
 ENV CONGREGATE_PATH /opt/congregate
- 
+
+WORKDIR /opt/congregate
+
 # Copy supervisor configuration
-COPY congregate-${VERSION}.tar.gz /opt
+ADD congregate congregate
+COPY congregate.sh Pipfile ./
 
 # Installing some basic utilities and updating apt
 RUN apt-get update && \
@@ -14,11 +15,6 @@ RUN apt-get update && \
     apt-get install less vim -y
 
 # TODO: DB integration
-
-# Extract generated tar
-RUN cd /opt && \
-    tar -zxf congregate-${VERSION}.tar.gz  -C /opt && \
-    mv congregate-${VERSION} congregate
 
 # Install congregate
 RUN cd /opt/congregate && \

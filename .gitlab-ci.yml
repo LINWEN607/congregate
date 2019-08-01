@@ -1,4 +1,7 @@
-image: python:2.7.15-stretch
+variables:
+  DOCKER_DRIVER: overlay2
+
+  BUILD_IMAGE_NAME: "$CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHA"
 
 include:
   template: SAST.gitlab-ci.yml
@@ -8,12 +11,23 @@ sast:
     CI_DEBUG_TRACE: "true"
 
 stages:
-  - test
-  - update-info
   - build
+  - test
   - release
 
-.install_test_dependencies: &install_test_dependencies
+build:
+  image: docker:stable
+  services:
+    - docker:stable-dind
+  stage: build
+  script:
+    - docker login ${CI_REGISTRY} -u ${GITLAB_USER_LOGIN} -p ${ACCESS_TOKEN}
+    - docker build --tag "$BUILD_IMAGE_NAME" .
+    - docker push "$BUILD_IMAGE_NAME"
+
+.test-job: &test-job
+  stage: test
+  image: "$BUILD_IMAGE_NAME"
   before_script:
     - apt-get update
     - apt-get install -y jq
@@ -22,50 +36,35 @@ stages:
     - pip install pipenv
     - pipenv install
 
-run tests:
-  stage: test
-  <<: *install_test_dependencies
+test:unit:
+  <<: *test-job
   script:
-#    - pipenv run python -m unittest discover congregate/
-#    - pipenv run pytest --cov-config=.coveragerc --cov-report html --cov=congregate congregate/tests/
     - pipenv run pytest --cov-config=.coveragerc --cov=congregate congregate/tests/
 
-#update readme:
-#  stage: update-info
-#  <<: *install_test_dependencies
-#  script:
-#    - pipenv run python congregate/update-readme.py
-#  only:
-#    refs:
-#      - master
-#    changes:
-#      - congregate/main.py
-
-archive project:
-  stage: build
-  script:
-    - pip install pipenv
-    - pipenv install
-    - pipenv run dnd install
-    - CI_COMMIT_TAG=${CI_COMMIT_TAG} ./build-tar.sh
-  artifacts:
-    paths:
-      - congregate-${CI_COMMIT_TAG}.tar.gz
-  cache:
-    paths:
-      - congregate-${CI_COMMIT_TAG}.tar.gz
-  only:
-    - tags
-
-build docker image:
-  image: docker:latest
+test:end-to-end:
   services:
-    - docker:dind
-  stage: release
+    - name: gitlab/gitlab-ce:latest
+      alias: gitlab1
+    - name: gitlab/gitlab-ce:latest
+      alias: gitlab2
+  <<: *test-job
+  tags:
+    - docker
   script:
-    - docker login ${CI_REGISTRY} -u ${GITLAB_USER_LOGIN} -p ${ACCESS_TOKEN}
-    - docker build -f Dockerfile -t ${CI_REGISTRY_IMAGE}:latest -t ${CI_REGISTRY_IMAGE}:${CI_COMMIT_TAG} --build-arg VERSION=${CI_COMMIT_TAG} .
-    - docker push ${CI_REGISTRY_IMAGE}:latest
-    - docker push ${CI_REGISTRY_IMAGE}:${CI_COMMIT_TAG}
+    - GITLAB_SRC=gitlab1 GITLAB_DEST=gitlab2 pipenv run pytest -m e2e congregate/tests/
+
+release-tag:
+  stage: release
+  image: docker:stable
+  variables:
+    RELEASE_IMAGE_NAME: "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME"
+  services:
+    - docker:stable-dind
+  before_script:
+    - docker login -u "$GITLAB_USER_LOGIN" -p "$ACCESS_TOKEN" "$CI_REGISTRY"
+  script:
+    - docker pull "$BUILD_IMAGE_NAME"
+    - docker tag "$BUILD_IMAGE_NAME" "$RELEASE_IMAGE_NAME"
+    - docker push "$RELEASE_IMAGE_NAME"
   only:
     - tags
