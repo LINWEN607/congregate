@@ -241,7 +241,7 @@ def migrate_given_export(project_json):
             import_id = ie.import_project(project_json)
             if import_id is not None:
                 b.log.info("Unarchiving project %s" % project_json["name"])
-                projects.unarchive_project(
+                projects.projects_api.unarchive_project(
                     b.config.child_host, b.config.child_token, project_json["id"])
 
                 b.log.info("Migrating %s project info" % project_json["name"])
@@ -406,7 +406,7 @@ def find_unimported_projects():
             try:
                 b.log.debug("Searching for existing %s" % project_json["name"])
                 project_exists = False
-                for proj in projects.search_for_project(b.config.parent_host, b.config.parent_token,
+                for proj in projects.projects_api.search_for_project(b.config.parent_host, b.config.parent_token,
                                                         project_json['name']):
                     if proj["name"] == project_json["name"]:
                         if project_json["namespace"]["full_path"].lower() == proj["path_with_namespace"].lower():
@@ -445,7 +445,7 @@ def get_new_ids():
         for project_json in staged_projects:
             try:
                 b.log.debug("Searching for existing %s" % project_json["name"])
-                for proj in projects.search_for_project(b.config.parent_host, b.config.parent_token,
+                for proj in projects.projects_api.search_for_project(b.config.parent_host, b.config.parent_token,
                                                         project_json['name']):
                     if proj["name"] == project_json["name"]:
 
@@ -483,7 +483,7 @@ def check_visibility():
     else:
         ids = get_new_ids()
     for i in ids:
-        project = projects.get_project(
+        project = projects.projects_api.get_project(
             i, b.config.parent_host, b.config.parent_token).json()
         if project["visibility"] != "private":
             print "%s, %s" % (
@@ -594,7 +594,7 @@ def archive_staged_projects(dry_run=False):
             id = project["id"]
             b.log.info("Archiving project %s (ID: %s)" % (project["name"], id))
             if not dry_run:
-                projects.archive_project(b.config.child_host, b.config.child_token, id)
+                projects.projects_api.archive_project(b.config.child_host, b.config.child_token, id)
     except requests.exceptions.RequestException, e:
         b.log.error("Failed to archive staged projects, with error:\n%s" % e)
 
@@ -607,7 +607,7 @@ def unarchive_staged_projects(dry_run=False):
             id = project["id"]
             b.log.info("Unarchiving project %s (ID: %s)" % (project["name"], id))
             if not dry_run:
-                projects.unarchive_project(b.config.child_host, b.config.child_token, id)
+                projects.projects_api.unarchive_project(b.config.child_host, b.config.child_token, id)
     except requests.exceptions.RequestException, e:
         b.log.error("Failed to unarchive staged projects, with error:\n%s" % e)
 
