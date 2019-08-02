@@ -26,28 +26,28 @@ class ig:
         return self.config
 
     @property
-    def parent_host(self):
-        return self.config.get("parent_instance_host", None)
+    def destination_host(self):
+        return self.config.get("destination_instance_host", None)
 
     @property
-    def parent_token(self):
-        return self.config.get("parent_instance_token", None)
+    def destination_token(self):
+        return self.config.get("destination_instance_token", None)
 
     @property
-    def parent_registry(self):
-        return self.config.get("parent_instance_registry", None)
+    def destination_registry(self):
+        return self.config.get("destination_instance_registry", None)
 
     @property
-    def child_host(self):
-        return self.config.get("child_instance_host", None)
+    def source_host(self):
+        return self.config.get("source_instance_host", None)
 
     @property
-    def child_token(self):
-        return self.config.get("child_instance_token", None)
+    def source_token(self):
+        return self.config.get("source_instance_token", None)
 
     @property
-    def child_registry(self):
-        return self.config.get("child_instance_registry", None)
+    def source_registry(self):
+        return self.config.get("source_instance_registry", None)
 
     @property
     def location(self):
@@ -78,12 +78,12 @@ class ig:
         return self.config.get("parent_id", None)
 
     @property
-    def child_username(self):
-        return self.config.get("child_username", None)
+    def source_username(self):
+        return self.config.get("source_username", None)
 
     @property
-    def parent_user_id(self):
-        return self.config.get("parent_user_id", None)
+    def import_user_id(self):
+        return self.config.get("import_user_id", None)
 
     @property
     def mirror_username(self):

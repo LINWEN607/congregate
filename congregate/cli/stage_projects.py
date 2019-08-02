@@ -70,7 +70,7 @@ def build_staging_data(projects_to_stage):
                 }
 
                 members = []
-                for member in proj_client.get_members(int(projects[i]["id"]), b.config.child_host, b.config.child_token):
+                for member in proj_client.get_members(int(projects[i]["id"]), b.config.source_host, b.config.source_token):
                     if member["username"] != "root":
                         staged_users.append(
                             rewritten_users[member["username"]])
@@ -101,7 +101,7 @@ def build_staging_data(projects_to_stage):
                 }
 
                 members = []
-                for member in proj_client.get_members(int(projects[i]["id"]), b.config.child_host, b.config.child_token):
+                for member in proj_client.get_members(int(projects[i]["id"]), b.config.source_host, b.config.source_token):
                     if member["username"] != "root":
                         b.log.info("Staging user (%s)" % member["username"])
                         staged_users.append(
@@ -156,7 +156,7 @@ def build_staging_data(projects_to_stage):
                 }
 
                 members = []
-                for member in proj_client.get_members(int(project["id"]), b.config.child_host, b.config.child_token):
+                for member in proj_client.get_members(int(project["id"]), b.config.source_host, b.config.source_token):
                     if member["username"] != "root":
                         b.log.info("Staging user (%s)" % member["username"])
                         staged_users.append(

@@ -28,13 +28,13 @@ class AwsClient(BaseClass):
             # Added timeout tuple for connection/read until the retry is implemented
             with requests.get(presigned_url, stream=True, timeout=(10,10)) as r:
                 if r.headers["content-type"] != "application/xml":
-                    url = '%s/api/v4/projects/import' % (self.config.parent_host)
+                    url = '%s/api/v4/projects/import' % (self.config.destination_host)
                     data = {
                         "path": name.replace(" ", "-"),
                         "namespace": namespace
                     }
                     headers = {
-                        'Private-Token': self.config.parent_token
+                        'Private-Token': self.config.destination_token
                     }
                     if override_params is not None:
                         r = requests.post(url, headers=headers, params="&".join(override_params), data=data, files={
@@ -64,13 +64,13 @@ class AwsClient(BaseClass):
 
     def copy_from_s3_and_import(self, name, namespace, filename):
         file_path = self.copy_from_s3(name, namespace, filename)
-        url = '%s/api/v4/projects/import' % (self.config.parent_host)
+        url = '%s/api/v4/projects/import' % (self.config.destination_host)
         data = {
             "path": name.replace(" ", "-"),
             "namespace": namespace
         }
         headers = {
-            'Private-Token': self.config.parent_token
+            'Private-Token': self.config.destination_token
         }
         r = None
         with open(file_path, 'r') as f:

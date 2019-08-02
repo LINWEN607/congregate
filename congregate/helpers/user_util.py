@@ -66,4 +66,4 @@ def rm_non_ldap_users():
             #         total_matches += 1
             if users_dict.get(username, None) is None:
                 print json.dumps(users_dict[username], indent=4)
-                #api.generate_delete_request(config.parent_host, config.parent_token, "users/%d" % users_dict[username]["id"])
+                #api.generate_delete_request(config.destination_host, config.destination_token, "users/%d" % users_dict[username]["id"])

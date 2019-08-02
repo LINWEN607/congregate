@@ -119,7 +119,7 @@ export CONGREGATE_PATH=/path/to/congregate
 cp congregate /usr/local/bin
 ```
 
-Run the following commands to configure congregate and retrieve info from the child instance:
+Run the following commands to configure congregate and retrieve info from the source instance:
 
 ```bash
 congregate config
@@ -166,7 +166,7 @@ Options:
     -h --help     Show this screen.
 
 Commands:
-    list                                List all projects of a child instance and save it to {CONGREGATE_PATH}/data/project_json.json
+    list                                List all projects of a source instance and save it to {CONGREGATE_PATH}/data/project_json.json
     config                              Configure congregate for migrating between two instances and save it to {CONGREGATE_PATH}/data/config.json
     stage                               Stage projects to {CONGREGATE_PATH}/data/stage.json,
                                         users to {CONGREGATE_PATH}/data/staged_users.json,
@@ -174,7 +174,7 @@ Commands:
                                         All projects can be staged with a '.' or 'all'.
     migrate                             Commence migration based on configuration and staged assets
     ui                                  Deploy UI to port 8000
-    import-projects                     Kick off import of exported projects onto parent instance
+    import-projects                     Kick off import of exported projects onto destination instance
     do_all                              Configure system, retrieve all projects, users, and groups, stage all information, and commence migration
     update-staged-user-info             Update staged user information after migrating only users
     update-new-users                    Update user IDs in staged groups and projects after migrating users
@@ -391,7 +391,7 @@ To reload the app in debugging mode, you will need to click the `refresh` icon i
 * Missing items from the "simple" config found when running migrate
     * `location`: Expecting something like 'aws'
     * `external_source`: Code expects boolean, not string like `BitBucket`
-        * `repo_list`: If `external_source` expects `repo_list` which looks to be a file name. 
+        * `repo_list`: If `external_source` expects `repo_list` which looks to be a file name.
             * Not known what the file format should be
 * Command order is `config, list, stage`?
 * Coverage is installed. `pytest --cov=congregate/helpers`
@@ -403,28 +403,28 @@ To reload the app in debugging mode, you will need to click the `refresh` icon i
 ```json
 [
     {
-        "twitter": "", 
-        "shared_runners_minutes_limit": null, 
-        "linkedin": "", 
-        "color_scheme_id": 1, 
-        "skype": "", 
-        "is_admin": false, 
-        "identities": [], 
-        "projects_limit": 100000, 
-        "state": "active", 
-        "location": null, 
-        "email": "migrate2@abc.com", 
-        "website_url": "", 
-        "username": "migrate_2", 
-        "bio": null, 
-        "private_profile": null, 
-        "external": false, 
-        "organization": null, 
-        "public_email": "", 
-        "extra_shared_runners_minutes_limit": null, 
-        "name": "Migrate 2", 
-        "can_create_group": true, 
-        "reset_password": true, 
+        "twitter": "",
+        "shared_runners_minutes_limit": null,
+        "linkedin": "",
+        "color_scheme_id": 1,
+        "skype": "",
+        "is_admin": false,
+        "identities": [],
+        "projects_limit": 100000,
+        "state": "active",
+        "location": null,
+        "email": "migrate2@abc.com",
+        "website_url": "",
+        "username": "migrate_2",
+        "bio": null,
+        "private_profile": null,
+        "external": false,
+        "organization": null,
+        "public_email": "",
+        "extra_shared_runners_minutes_limit": null,
+        "name": "Migrate 2",
+        "can_create_group": true,
+        "reset_password": true,
         "theme_id": 1
     }
 ]
@@ -433,28 +433,28 @@ To reload the app in debugging mode, you will need to click the `refresh` icon i
 ```json
 [
     {
-        "lfs_enabled": true, 
-        "request_access_enabled": false, 
-        "description": "Drupal", 
-        "avatar_url": null, 
-        "visibility": "public", 
-        "parent_id": null, 
+        "lfs_enabled": true,
+        "request_access_enabled": false,
+        "description": "Drupal",
+        "avatar_url": null,
+        "visibility": "public",
+        "parent_id": null,
         "members": [
             {
-                "username": "root", 
-                "web_url": "https://pse.tanuki.cloud/root", 
-                "name": "Administrator", 
-                "expires_at": null, 
-                "access_level": 50, 
-                "state": "active", 
-                "avatar_url": "https://secure.gravatar.com/avatar/e64c7d89f26bd1972efa854d13d7dd61?s=80&d=identicon", 
+                "username": "root",
+                "web_url": "https://pse.tanuki.cloud/root",
+                "name": "Administrator",
+                "expires_at": null,
+                "access_level": 50,
+                "state": "active",
+                "avatar_url": "https://secure.gravatar.com/avatar/e64c7d89f26bd1972efa854d13d7dd61?s=80&d=identicon",
                 "id": 1
             }
-        ], 
-        "path": "drupal", 
-        "file_template_project_id": null, 
-        "id": 67, 
-        "full_path": "drupal", 
+        ],
+        "path": "drupal",
+        "file_template_project_id": null,
+        "id": 67,
+        "full_path": "drupal",
         "name": "Drupal"
     }
 ]
@@ -463,81 +463,81 @@ To reload the app in debugging mode, you will need to click the `refresh` icon i
 ```json
 [
     {
-        "lfs_enabled": true, 
-        "request_access_enabled": false, 
-        "mirror_overwrites_diverged_branches": null, 
-        "approvals_before_merge": 0, 
-        "forks_count": 0, 
-        "only_allow_merge_if_all_discussions_are_resolved": false, 
-        "http_url_to_repo": "https://pse.tanuki.cloud/test_project_1/repo_2.git", 
-        "web_url": "https://pse.tanuki.cloud/test_project_1/repo_2", 
-        "mirror": true, 
-        "mirror_trigger_builds": false, 
-        "wiki_enabled": true, 
-        "id": 100, 
-        "merge_requests_enabled": true, 
-        "archived": false, 
-        "snippets_enabled": true, 
-        "packages_enabled": true, 
-        "merge_method": "merge", 
+        "lfs_enabled": true,
+        "request_access_enabled": false,
+        "mirror_overwrites_diverged_branches": null,
+        "approvals_before_merge": 0,
+        "forks_count": 0,
+        "only_allow_merge_if_all_discussions_are_resolved": false,
+        "http_url_to_repo": "https://pse.tanuki.cloud/test_project_1/repo_2.git",
+        "web_url": "https://pse.tanuki.cloud/test_project_1/repo_2",
+        "mirror": true,
+        "mirror_trigger_builds": false,
+        "wiki_enabled": true,
+        "id": 100,
+        "merge_requests_enabled": true,
+        "archived": false,
+        "snippets_enabled": true,
+        "packages_enabled": true,
+        "merge_method": "merge",
         "namespace": {
-            "kind": "group", 
-            "web_url": "https://pse.tanuki.cloud/groups/test_project_1", 
-            "name": "test_project_1", 
-            "parent_id": null, 
-            "avatar_url": null, 
-            "path": "test_project_1", 
-            "id": 71, 
+            "kind": "group",
+            "web_url": "https://pse.tanuki.cloud/groups/test_project_1",
+            "name": "test_project_1",
+            "parent_id": null,
+            "avatar_url": null,
+            "path": "test_project_1",
+            "id": 71,
             "full_path": "test_project_1"
-        }, 
-        "star_count": 0, 
-        "ci_default_git_depth": 50, 
+        },
+        "star_count": 0,
+        "ci_default_git_depth": 50,
         "_links": {
-            "repo_branches": "https://pse.tanuki.cloud/api/v4/projects/100/repository/branches", 
-            "merge_requests": "https://pse.tanuki.cloud/api/v4/projects/100/merge_requests", 
-            "self": "https://pse.tanuki.cloud/api/v4/projects/100", 
-            "labels": "https://pse.tanuki.cloud/api/v4/projects/100/labels", 
-            "members": "https://pse.tanuki.cloud/api/v4/projects/100/members", 
-            "events": "https://pse.tanuki.cloud/api/v4/projects/100/events", 
+            "repo_branches": "https://pse.tanuki.cloud/api/v4/projects/100/repository/branches",
+            "merge_requests": "https://pse.tanuki.cloud/api/v4/projects/100/merge_requests",
+            "self": "https://pse.tanuki.cloud/api/v4/projects/100",
+            "labels": "https://pse.tanuki.cloud/api/v4/projects/100/labels",
+            "members": "https://pse.tanuki.cloud/api/v4/projects/100/members",
+            "events": "https://pse.tanuki.cloud/api/v4/projects/100/events",
             "issues": "https://pse.tanuki.cloud/api/v4/projects/100/issues"
-        }, 
-        "resolve_outdated_diff_discussions": false, 
-        "issues_enabled": true, 
-        "path_with_namespace": "test_project_1/repo_2", 
-        "repository_storage": "default", 
-        "ci_config_path": null, 
-        "shared_with_groups": [], 
-        "description": null, 
-        "mirror_user_id": 1, 
-        "default_branch": null, 
-        "visibility": "private", 
-        "readme_url": null, 
-        "ssh_url_to_repo": "git@pse.tanuki.cloud:test_project_1/repo_2.git", 
-        "public_jobs": true, 
-        "path": "repo_2", 
-        "import_status": "failed", 
-        "only_allow_merge_if_pipeline_succeeds": false, 
-        "empty_repo": true, 
-        "open_issues_count": 0, 
-        "last_activity_at": "2019-07-01T17:13:05.506Z", 
-        "name": "repo_2", 
-        "printing_merge_request_link_enabled": true, 
-        "name_with_namespace": "test_project_1 / repo_2", 
-        "created_at": "2019-07-01T17:13:05.506Z", 
-        "shared_runners_enabled": true, 
-        "creator_id": 1, 
-        "avatar_url": null, 
-        "container_registry_enabled": true, 
-        "only_mirror_protected_branches": null, 
-        "external_authorization_classification_label": null, 
-        "tag_list": [], 
+        },
+        "resolve_outdated_diff_discussions": false,
+        "issues_enabled": true,
+        "path_with_namespace": "test_project_1/repo_2",
+        "repository_storage": "default",
+        "ci_config_path": null,
+        "shared_with_groups": [],
+        "description": null,
+        "mirror_user_id": 1,
+        "default_branch": null,
+        "visibility": "private",
+        "readme_url": null,
+        "ssh_url_to_repo": "git@pse.tanuki.cloud:test_project_1/repo_2.git",
+        "public_jobs": true,
+        "path": "repo_2",
+        "import_status": "failed",
+        "only_allow_merge_if_pipeline_succeeds": false,
+        "empty_repo": true,
+        "open_issues_count": 0,
+        "last_activity_at": "2019-07-01T17:13:05.506Z",
+        "name": "repo_2",
+        "printing_merge_request_link_enabled": true,
+        "name_with_namespace": "test_project_1 / repo_2",
+        "created_at": "2019-07-01T17:13:05.506Z",
+        "shared_runners_enabled": true,
+        "creator_id": 1,
+        "avatar_url": null,
+        "container_registry_enabled": true,
+        "only_mirror_protected_branches": null,
+        "external_authorization_classification_label": null,
+        "tag_list": [],
         "permissions": {
             "group_access": {
-                "notification_level": 3, 
+                "notification_level": 3,
                 "access_level": 50
-            }, 
+            },
             "project_access": null
-        }, 
+        },
         "jobs_enabled": true
     }
 ]
@@ -548,14 +548,14 @@ To reload the app in debugging mode, you will need to click the `refresh` icon i
 ```json
 [
     {
-        "members": [], 
-        "http_url_to_repo": "https://pse.tanuki.cloud/test_project_1/repo_2.git", 
-        "name": "repo_2", 
-        "project_type": "group", 
-        "default_branch": null, 
-        "namespace": "test_project_1", 
-        "id": 100, 
-        "visibility": "private", 
+        "members": [],
+        "http_url_to_repo": "https://pse.tanuki.cloud/test_project_1/repo_2.git",
+        "name": "repo_2",
+        "project_type": "group",
+        "default_branch": null,
+        "namespace": "test_project_1",
+        "id": 100,
+        "visibility": "private",
         "description": null
     }
 ]
@@ -564,48 +564,48 @@ To reload the app in debugging mode, you will need to click the `refresh` icon i
 ```json
 [
     {
-        "lfs_enabled": true, 
-        "request_access_enabled": false, 
-        "description": "", 
-        "visibility": "private", 
-        "parent_id": null, 
-        "avatar_url": null, 
+        "lfs_enabled": true,
+        "request_access_enabled": false,
+        "description": "",
+        "visibility": "private",
+        "parent_id": null,
+        "avatar_url": null,
         "members": [
             {
-                "username": "root", 
-                "name": "Administrator", 
-                "avatar_url": "https://secure.gravatar.com/avatar/e64c7d89f26bd1972efa854d13d7dd61?s=80&d=identicon", 
-                "expires_at": null, 
-                "access_level": 50, 
-                "state": "active", 
-                "web_url": "https://pse.tanuki.cloud/root", 
+                "username": "root",
+                "name": "Administrator",
+                "avatar_url": "https://secure.gravatar.com/avatar/e64c7d89f26bd1972efa854d13d7dd61?s=80&d=identicon",
+                "expires_at": null,
+                "access_level": 50,
+                "state": "active",
+                "web_url": "https://pse.tanuki.cloud/root",
                 "id": 1
-            }, 
+            },
             {
-                "username": "migrate_1", 
-                "name": "Migrate 1", 
-                "avatar_url": "https://secure.gravatar.com/avatar/eb71b11762e9a1f7e8e417ffda6b4853?s=80&d=identicon", 
-                "expires_at": null, 
-                "access_level": 30, 
-                "state": "active", 
-                "web_url": "https://pse.tanuki.cloud/migrate_1", 
+                "username": "migrate_1",
+                "name": "Migrate 1",
+                "avatar_url": "https://secure.gravatar.com/avatar/eb71b11762e9a1f7e8e417ffda6b4853?s=80&d=identicon",
+                "expires_at": null,
+                "access_level": 30,
+                "state": "active",
+                "web_url": "https://pse.tanuki.cloud/migrate_1",
                 "id": 53
-            }, 
+            },
             {
-                "username": "migrate_2", 
-                "name": "Migrate 2", 
-                "avatar_url": "https://secure.gravatar.com/avatar/2c6b06bf40ad99d5f39600566e94ac6d?s=80&d=identicon", 
-                "expires_at": null, 
-                "access_level": 30, 
-                "state": "active", 
-                "web_url": "https://pse.tanuki.cloud/migrate_2", 
+                "username": "migrate_2",
+                "name": "Migrate 2",
+                "avatar_url": "https://secure.gravatar.com/avatar/2c6b06bf40ad99d5f39600566e94ac6d?s=80&d=identicon",
+                "expires_at": null,
+                "access_level": 30,
+                "state": "active",
+                "web_url": "https://pse.tanuki.cloud/migrate_2",
                 "id": 54
             }
-        ], 
-        "path": "test_project_1", 
-        "file_template_project_id": null, 
-        "id": 71, 
-        "full_path": "test_project_1", 
+        ],
+        "path": "test_project_1",
+        "file_template_project_id": null,
+        "id": 71,
+        "full_path": "test_project_1",
         "name": "test_project_1"
     }
 ]
@@ -614,73 +614,73 @@ To reload the app in debugging mode, you will need to click the `refresh` icon i
 ```json
 [
     {
-        "twitter": "", 
-        "shared_runners_minutes_limit": null, 
-        "linkedin": "", 
-        "color_scheme_id": 1, 
-        "skype": "", 
-        "identities": [], 
-        "projects_limit": 100000, 
-        "state": "active", 
-        "location": null, 
-        "email": "migrate1@abc.com", 
-        "website_url": "", 
-        "username": "migrate_1", 
-        "bio": null, 
-        "private_profile": null, 
-        "can_create_group": true, 
-        "is_admin": false, 
-        "external": false, 
-        "theme_id": 1, 
-        "public_email": "", 
-        "extra_shared_runners_minutes_limit": null, 
-        "name": "Migrate 1", 
-        "reset_password": true, 
+        "twitter": "",
+        "shared_runners_minutes_limit": null,
+        "linkedin": "",
+        "color_scheme_id": 1,
+        "skype": "",
+        "identities": [],
+        "projects_limit": 100000,
+        "state": "active",
+        "location": null,
+        "email": "migrate1@abc.com",
+        "website_url": "",
+        "username": "migrate_1",
+        "bio": null,
+        "private_profile": null,
+        "can_create_group": true,
+        "is_admin": false,
+        "external": false,
+        "theme_id": 1,
+        "public_email": "",
+        "extra_shared_runners_minutes_limit": null,
+        "name": "Migrate 1",
+        "reset_password": true,
         "organization": null
-    }, 
+    },
     {
-        "twitter": "", 
-        "shared_runners_minutes_limit": null, 
-        "linkedin": "", 
-        "color_scheme_id": 1, 
-        "skype": "", 
-        "identities": [], 
-        "projects_limit": 100000, 
-        "state": "active", 
-        "location": null, 
-        "email": "migrate2@abc.com", 
-        "website_url": "", 
-        "username": "migrate_2", 
-        "bio": null, 
-        "private_profile": null, 
-        "can_create_group": true, 
-        "is_admin": false, 
-        "external": false, 
-        "theme_id": 1, 
-        "public_email": "", 
-        "extra_shared_runners_minutes_limit": null, 
-        "name": "Migrate 2", 
-        "reset_password": true, 
+        "twitter": "",
+        "shared_runners_minutes_limit": null,
+        "linkedin": "",
+        "color_scheme_id": 1,
+        "skype": "",
+        "identities": [],
+        "projects_limit": 100000,
+        "state": "active",
+        "location": null,
+        "email": "migrate2@abc.com",
+        "website_url": "",
+        "username": "migrate_2",
+        "bio": null,
+        "private_profile": null,
+        "can_create_group": true,
+        "is_admin": false,
+        "external": false,
+        "theme_id": 1,
+        "public_email": "",
+        "extra_shared_runners_minutes_limit": null,
+        "name": "Migrate 2",
+        "reset_password": true,
         "organization": null
     }
 ]
 ```
 #### Config
 * Generated through `congregate.sh config`
-Note: Your parent and child info will be different in a true scenario. This is to show formatting.
+Note: Your destination and source info will be different in a true scenario. This is to show formatting.
 ##### config.json
 ###### Internal
 ```json
 {
     "config": {
-        "external_source": false, 
-        "child_instance_token": "HM1Sxykf2AzKmDCGh8ee", 
-        "number_of_threads": 2, 
-        "parent_instance_host": "https://pse.tanuki.cloud", 
-        "parent_instance_token": "HM1Sxykf2AzKmDCGh8ee", 
-        "location": "filesystem", 
-        "child_instance_host": "https://pse.tanuki.cloud", 
-        "parent_user_id": 1, 
+        "external_source": false,
+        "source_instance_token": "HM1Sxykf2AzKmDCGh8ee",
+        "number_of_threads": 2,
+        "destination_instance_host": "https://pse.tanuki.cloud",
+        "destination_instance_token": "HM1Sxykf2AzKmDCGh8ee",
+        "location": "filesystem",
+        "source_instance_host": "https://pse.tanuki.cloud",
+        "import_user_id": 1,
         "path": "/Users/gmiller/projects/congregate"
     }
 }
@@ -690,12 +690,12 @@ Note: Your parent and child info will be different in a true scenario. This is t
 {
     "config": {
         "external_source": true,
-        "parent_instance_host": "https://pse.tanuki.cloud", 
-        "external_user_password": "ePb-84m7ZriB3NfbP_Z!eQFM7cE7ewp8", 
-        "external_user_name": "gmiller", 
-        "number_of_threads": 2, 
-        "parent_instance_token": "HM1Sxykf2AzKmDCGh8ee", 
-        "parent_user_id": 1,
+        "destination_instance_host": "https://pse.tanuki.cloud",
+        "external_user_password": "ePb-84m7ZriB3NfbP_Z!eQFM7cE7ewp8",
+        "external_user_name": "gmiller",
+        "number_of_threads": 2,
+        "destination_instance_token": "HM1Sxykf2AzKmDCGh8ee",
+        "import_user_id": 1,
         "location": "aws",
         "external_source_url": "http://gmiller@bbhost:7990",
         "repo_list_path": "data/repos.json"

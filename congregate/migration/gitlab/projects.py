@@ -47,7 +47,7 @@ class ProjectsClient(BaseClass):
         """Adds project members."""
         root_user_present = False
         for member in members:
-            if member["id"] == self.config.parent_user_id:
+            if member["id"] == self.config.import_user_id:
                 root_user_present = True
             new_member = {
                 "user_id": member["id"],
@@ -56,14 +56,14 @@ class ProjectsClient(BaseClass):
 
             try:
                 api.generate_post_request(
-                    self.config.parent_host, self.config.parent_token, "projects/%d/members" % id,
+                    self.config.destination_host, self.config.destination_token, "projects/%d/members" % id,
                     json.dumps(new_member))
             except RequestException, e:
                 self.log.error(e)
                 self.log.error(
                     "Member might already exist. Attempting to update access level")
                 try:
-                    api.generate_put_request(self.config.parent_host, self.config.parent_token,
+                    api.generate_put_request(self.config.destination_host, self.config.destination_token,
                                              "projects/%d/members/%d?access_level=%d" % (
                                              id, member["id"], member["access_level"]), data=None)
                 except RequestException, e:
@@ -73,12 +73,12 @@ class ProjectsClient(BaseClass):
 
         if not root_user_present:
             self.log.info("removing root user from project")
-            api.generate_delete_request(self.config.parent_host, self.config.parent_token,
-                                        "projects/%d/members/%d" % (id, self.config.parent_user_id))
+            api.generate_delete_request(self.config.destination_host, self.config.destination_token,
+                                        "projects/%d/members/%d" % (id, self.config.import_user_id))
 
     def add_shared_groups(self, old_id, new_id):
         """Adds the list of groups we share the project with."""
-        old_project = self.get_project(old_id, self.config.child_host, self.config.child_token).json()
+        old_project = self.get_project(old_id, self.config.source_host, self.config.source_token).json()
         for group in old_project["shared_with_groups"]:
             path = group["group_full_path"]
             new_group_id = self.__get_new_group_id(group["group_name"], path)
@@ -89,7 +89,7 @@ class ProjectsClient(BaseClass):
                     "expires_at": group["expires_at"]
                 }
                 try:
-                    r = self.__add_shared_group(self.config.parent_host, self.config.parent_token, new_id, data)
+                    r = self.__add_shared_group(self.config.destination_host, self.config.destination_token, new_id, data)
                     if r.status_code == 201:
                         self.log.info("Shared project %d with group %s" % (new_id, path))
                     else:
@@ -100,7 +100,7 @@ class ProjectsClient(BaseClass):
     def __get_new_group_id(self, name, path):
         """Returns the group's ID on the destination instance."""
         try:
-            groups = api.generate_get_request(self.config.parent_host, self.config.parent_token, "groups?search=%s" % name).json()
+            groups = api.generate_get_request(self.config.destination_host, self.config.destination_token, "groups?search=%s" % name).json()
             if groups:
                 for group in groups:
                     if group["full_path"] == path:
@@ -113,7 +113,7 @@ class ProjectsClient(BaseClass):
     def __old_project_avatar(self, id):
         """Returns the source project avatar."""
         old_project = self.get_project(
-            id, self.config.child_host, self.config.child_token).json()
+            id, self.config.source_host, self.config.source_token).json()
         return old_project["avatar_url"]
 
     def migrate_avatar(self, new_id, old_id):
@@ -121,12 +121,12 @@ class ProjectsClient(BaseClass):
         old_project_avatar = self.__old_project_avatar(old_id)
         if old_project_avatar is not None:
             img = api.generate_get_request(
-                self.config.child_host, self.config.child_token, None, url=old_project_avatar)
+                self.config.source_host, self.config.source_token, None, url=old_project_avatar)
             filename = old_project_avatar.split("/")[-1]
             headers = {
-                'Private-Token': self.config.parent_token
+                'Private-Token': self.config.destination_token
             }
-            return api.generate_put_request(self.config.parent_host, self.config.parent_token, "projects/%d" % new_id,
+            return api.generate_put_request(self.config.destination_host, self.config.destination_token, "projects/%d" % new_id,
                                             {}, headers=headers, files={
                     'avatar': (filename, BytesIO(img.content))})
         return None
@@ -140,9 +140,9 @@ class ProjectsClient(BaseClass):
             with open("%s/avatar/%s" % (file_path, avatar), 'rb') as f:
                 img = f.read()
             headers = {
-                'Private-Token': self.config.parent_token
+                'Private-Token': self.config.destination_token
             }
-            return api.generate_put_request(self.config.parent_host, self.config.parent_token, "projects/%d" % new_id,
+            return api.generate_put_request(self.config.destination_host, self.config.destination_token, "projects/%d" % new_id,
                                             {}, headers=headers, files={
                     'avatar': (avatar, BytesIO(img))})
         return None

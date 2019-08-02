@@ -10,33 +10,33 @@ class VariablesClient(BaseClass):
         self.projects = ProjectsClient()
         super(VariablesClient, self).__init__()
 
-    def get_variables(self, id, var_type="projects", source_type="child"):
+    def get_variables(self, id, var_type="projects", instance_type="source"):
         if var_type == "group":
             endpoint = "groups/%d/variables" % id
         else:
             endpoint = "projects/%d/variables" % id
 
-        if source_type == "parent":
-            host = self.config.parent_host
-            token = self.config.parent_token
+        if instance_type == "destination":
+            host = self.config.destination_host
+            token = self.config.destination_token
         else:
-            host = self.config.child_host
-            token = self.config.child_token
+            host = self.config.source_host
+            token = self.config.source_token
 
         return api.generate_get_request(host, token, endpoint)
 
-    def set_variables(self, id, data, var_type="projects", source_type="parent"):
+    def set_variables(self, id, data, var_type="projects", instance_type="destination"):
         if var_type == "group":
             endpoint = "groups/%d/variables" % id
         else:
             endpoint = "projects/%d/variables" % id
 
-        if source_type == "child":
-            host = self.config.child_host
-            token = self.config.child_token
+        if instance_type == "source":
+            host = self.config.source_host
+            token = self.config.source_token
         else:
-            host = self.config.parent_host
-            token = self.config.parent_token
+            host = self.config.destination_host
+            token = self.config.destination_token
 
         return api.generate_post_request(host, token, endpoint, json.dumps(data))
 
@@ -69,7 +69,7 @@ class VariablesClient(BaseClass):
                 try:
                     self.log.debug("Searching for existing %s" %
                                    project_json["name"])
-                    for proj in self.projects.search_for_project(self.config.parent_host, self.config.parent_token, project_json['name']):
+                    for proj in self.projects.search_for_project(self.config.destination_host, self.config.destination_token, project_json['name']):
                         if proj["name"] == project_json["name"]:
                             if "%s" % project_json["namespace"].lower() in proj["path_with_namespace"].lower():
                                 self.log.debug(

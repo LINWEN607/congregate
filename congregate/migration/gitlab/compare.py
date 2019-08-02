@@ -26,11 +26,11 @@ class CompareClient(BaseClass):
         tlg = False
         if self.config.parent_id is not None:
             tlg = True
-            prefix = self.groups.get_group(self.config.parent_id, self.config.parent_host, self.config.parent_token).json()["full_path"] + "/"
+            prefix = self.groups.get_group(self.config.parent_id, self.config.destination_host, self.config.destination_token).json()["full_path"] + "/"
             file_path = '%s/data/destination%dgroups.json' % (self.app_path, self.config.parent_id)
         
-        destination_groups = self.load_group_data(file_path, self.config.parent_host, self.config.parent_token, location="destination", top_level_group=tlg)
-        source_groups = self.load_group_data('%s/data/groups.json' % self.app_path, self.config.child_host, self.config.child_token)
+        destination_groups = self.load_group_data(file_path, self.config.destination_host, self.config.destination_token, location="destination", top_level_group=tlg)
+        source_groups = self.load_group_data('%s/data/groups.json' % self.app_path, self.config.source_host, self.config.source_token)
         
         shared_key = "full_path"
         rewritten_destination_groups = misc_utils.rewrite_list_into_dict(destination_groups, shared_key)
@@ -82,7 +82,7 @@ class CompareClient(BaseClass):
             Retruns True if locations match
         """
         if self.config.parent_id is not None:
-            tlg = self.groups.get_group(self.config.parent_id, self.config.parent_host, self.config.parent_token).json()
+            tlg = self.groups.get_group(self.config.parent_id, self.config.destination_host, self.config.destination_token).json()
             source_path = "%s/%s" % (tlg["full_path"], source_path)
         
         if source_path != destination_path:
@@ -124,7 +124,7 @@ class CompareClient(BaseClass):
         # for k, v in rewritten_destination_members.items():
 
         #     if k in rewritten_source_members:
-        #         unknown_user = self.users.get_user(v["id"], self.config.parent_host, self.config.parent_token)
+        #         unknown_user = self.users.get_user(v["id"], self.config.destination_host, self.config.destination_token)
         #         diff.append(
         #             {
         #                 "unknown user": unknown_user,
@@ -181,7 +181,7 @@ class CompareClient(BaseClass):
         users_map = {}
         for d in data:
             for member in d["members"]:
-                user = self.users.get_user(member["id"], self.config.parent_host, self.config.parent_token).json()
+                user = self.users.get_user(member["id"], self.config.destination_host, self.config.destination_token).json()
                 if user.get("message", None) is not None:
                     users_map[member["id"]] = {
                         "message": user["message"]

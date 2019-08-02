@@ -33,9 +33,9 @@ class UsersClient(BaseClass):
 
     def find_user_by_email_comparison(self, old_user_id):
         old_user = self.get_user(
-            old_user_id, self.config.child_host, self.config.child_token).json()
+            old_user_id, self.config.source_host, self.config.source_token).json()
         if old_user.get("message", None) is None:
-            for user in self.search_for_user_by_email(self.config.parent_host, self.config.parent_token, old_user["email"]):
+            for user in self.search_for_user_by_email(self.config.destination_host, self.config.destination_token, old_user["email"]):
                 if user["email"] == old_user["email"]:
                     return user
         return None
@@ -43,7 +43,7 @@ class UsersClient(BaseClass):
     def username_exists(self, old_user):
         index = 0
         username = old_user["username"]
-        for user in self.search_for_user_by_email(self.config.parent_host, self.config.parent_token, username):
+        for user in self.search_for_user_by_email(self.config.destination_host, self.config.destination_token, username):
             if user["username"] == username:
                 return True
             elif index > 100:
@@ -54,7 +54,7 @@ class UsersClient(BaseClass):
     def user_email_exists(self, old_user):
         index = 0
         email = old_user["email"]
-        for user in self.search_for_user_by_email(self.config.parent_host, self.config.parent_token, email):
+        for user in self.search_for_user_by_email(self.config.destination_host, self.config.destination_token, email):
             if user["email"] == email:
                 return True
             elif index > 100:
@@ -74,7 +74,7 @@ class UsersClient(BaseClass):
                 ]
             }
             new_impersonation_token = self.create_user_impersonation_token(
-                self.config.parent_host, self.config.parent_token, id, data).json()
+                self.config.destination_host, self.config.destination_token, id, data).json()
             users_map[email] = new_impersonation_token
             users_map[email]["user_id"] = id
         return users_map[email]
@@ -82,7 +82,7 @@ class UsersClient(BaseClass):
     def delete_saved_impersonation_tokens(self, users_map):
         for user in users_map.values():
             self.delete_user_impersonation_token(
-                self.config.parent_host, self.config.parent_token, user["user_id"], user["id"])
+                self.config.destination_host, self.config.destination_token, user["user_id"], user["id"])
 
     def generate_user_group_saml_post_data(self, user):
         identities = user.pop("identities")
@@ -124,19 +124,19 @@ class UsersClient(BaseClass):
             members = obj[i]["members"]
             if isinstance(members, list):
                 for member in members:
-                    old_user = self.get_user(member["id"], self.config.child_host, self.config.child_token).json()
+                    old_user = self.get_user(member["id"], self.config.source_host, self.config.source_token).json()
                     username = strip_numbers(member["username"]).lower()
                     if rewritten_users.get(old_user["email"], None) is not None:
-                        new_user = self.get_user(rewritten_users[old_user["email"]]["id"], self.config.parent_host, self.config.parent_token).json()
+                        new_user = self.get_user(rewritten_users[old_user["email"]]["id"], self.config.destination_host, self.config.destination_token).json()
                         if new_user.get("message", None) is None:
                             if new_user["email"] == old_user["email"]:
                                 member["id"] = rewritten_users[old_user["email"]]["id"]
                             else:
-                                member["id"] = self.config.parent_user_id
+                                member["id"] = self.config.import_user_id
                         else:
-                            member["id"] = self.config.parent_user_id
+                            member["id"] = self.config.import_user_id
                     else:
-                        member["id"] = self.config.parent_user_id
+                        member["id"] = self.config.import_user_id
 
         return obj
 
@@ -171,18 +171,18 @@ class UsersClient(BaseClass):
             try:
                 print "Adding %s to group" % user["username"]
                 self.groups.add_member_to_group(
-                    self.config.parent_id, self.config.parent_host, self.config.parent_token, data)
+                    self.config.parent_id, self.config.destination_host, self.config.destination_token, data)
             except RequestException, e:
                 self.log.error(e)
 
     def remove_users_from_parent_group(self):
         count = 0
-        users = api.list_all(self.config.parent_host, self.config.parent_token,
+        users = api.list_all(self.config.destination_host, self.config.destination_token,
                              "groups/%d/members" % self.config.parent_id)
         for user in users:
             if user["access_level"] <= 20:
                 count += 1
-                api.generate_delete_request(self.config.parent_host, self.config.parent_token,
+                api.generate_delete_request(self.config.destination_host, self.config.destination_token,
                                             "/groups/%d/members/%d" % (self.config.parent_id, user["id"]))
             else:
                 print "Keeping this user"
@@ -190,13 +190,13 @@ class UsersClient(BaseClass):
         print count
 
     def lower_user_permissions(self):
-        all_users = list(api.list_all(self.config.parent_host,
-                                      self.config.parent_token, "groups/%d/members" % self.config.parent_id))
+        all_users = list(api.list_all(self.config.destination_host,
+                                      self.config.destination_token, "groups/%d/members" % self.config.parent_id))
         for user in all_users:
             if user["access_level"] == 20:
                 self.log.info("Lowering %s's access level to guest" %
                               user["username"])
-                response = api.generate_put_request(self.config.parent_host, self.config.parent_token,
+                response = api.generate_put_request(self.config.destination_host, self.config.destination_token,
                                                     "groups/%d/members/%d?access_level=10" % (self.config.parent_id, user["id"]), data=None)
                 print response
             else:
@@ -252,7 +252,7 @@ class UsersClient(BaseClass):
                 new_users = []
                 for new_id in new_ids:
                     new_user = self.get_user(
-                        new_id, self.config.parent_host, self.config.parent_token).json()
+                        new_id, self.config.destination_host, self.config.destination_token).json()
                     if isinstance(new_user, list):
                         new_users.append(new_user[0])
                     elif isinstance(new_user, dict):
@@ -294,14 +294,14 @@ class UsersClient(BaseClass):
         for user in users:
             print "searching for %s" % user["email"]
             new_user = api.search(
-                self.config.parent_host, self.config.parent_token, 'users', user['email'])
+                self.config.destination_host, self.config.destination_token, 'users', user['email'])
             print new_user
             if len(new_user) > 0:
                 new_users.append(new_user[0])
             else:
                 print "searching for %s" % user["username"]
                 new_user2 = api.search(
-                    self.config.parent_host, self.config.parent_token, 'users', user['username'])
+                    self.config.destination_host, self.config.destination_token, 'users', user['username'])
                 if len(new_user2) > 0:
                     new_users.append(new_user2[0])
                 else:
@@ -317,7 +317,7 @@ class UsersClient(BaseClass):
         for other_id in other_ids:
             print "searching for %s" % other_id
             new_user = self.get_user(
-                other_id, self.config.parent_host, self.config.parent_token).json()
+                other_id, self.config.destination_host, self.config.destination_token).json()
             new_users.append(new_user)
 
         with open("%s/data/new_users.json" % self.app_path, "w") as f:
@@ -328,8 +328,8 @@ class UsersClient(BaseClass):
         print len(new_users)
 
     def retrieve_user_info(self, quiet=False):
-        users = list(api.list_all(self.config.child_host,
-                                  self.config.child_token, "users"))
+        users = list(api.list_all(self.config.source_host,
+                                  self.config.source_token, "users"))
         root_index = None
         for user in users:
             # Removing root user
@@ -394,7 +394,7 @@ class UsersClient(BaseClass):
         user_data = self.generate_user_data(user)
         try:
             response = self.create_user(
-                self.config.parent_host, self.config.parent_token, user_data)
+                self.config.destination_host, self.config.destination_token, user_data)
         except RequestException, e:
             self.log.info(e)
             response = None
@@ -410,7 +410,7 @@ class UsersClient(BaseClass):
                 self.log.info(
                     "Appending %s to new_users.json" % user["email"])
                 response = api.search(
-                    self.config.parent_host, self.config.parent_token, 'users', user['email'])
+                    self.config.destination_host, self.config.destination_token, 'users', user['email'])
                 if len(response) > 0:
                     if isinstance(response, list):
                         return response[0]["id"]

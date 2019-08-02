@@ -29,7 +29,7 @@ class MirrorClient(BaseClass):
         }
 
         self.log.info("Removing mirror from project %d" % project_id)
-        api.generate_put_request(self.config.parent_host, self.config.parent_token,
+        api.generate_put_request(self.config.destination_host, self.config.destination_token,
                                  "projects/%d" % project_id, json.dumps(mirror_data))
 
     @stable_retry
@@ -51,10 +51,10 @@ class MirrorClient(BaseClass):
         #         break
 
         mirror_user_name = self.config.mirror_username
-        mirror_user_id = self.config.parent_user_id
+        mirror_user_id = self.config.import_user_id
         self.log.info("Attempting to mirror repo")
         import_url = "%s://%s:%s@%s" % (protocol, mirror_user_name,
-                                        self.config.child_token, repo_url)
+                                        self.config.source_token, repo_url)
         self.log.debug(import_url)
         mirror_data = {
             "mirror": True,
@@ -63,7 +63,7 @@ class MirrorClient(BaseClass):
         }
 
         response = api.generate_put_request(
-            self.config.parent_host, self.config.parent_token, "projects/%d" % import_id, json.dumps(mirror_data))
+            self.config.destination_host, self.config.destination_token, "projects/%d" % import_id, json.dumps(mirror_data))
         self.log.info(response.text)
 
     @stable_retry
@@ -78,7 +78,7 @@ class MirrorClient(BaseClass):
         repo_url = split_url[1]
         namespace_id = int(generic_repo["namespace_id"])
         print namespace_id
-        mirror_user_id = self.config.parent_user_id
+        mirror_user_id = self.config.import_user_id
         user_name = self.config.external_user_name
         user_password = self.config.external_user_password
 
@@ -108,26 +108,26 @@ class MirrorClient(BaseClass):
                     "Attempting to generate personal shell repo for %s and create mirror" % generic_repo["name"])
                 # self.log.info(json.dumps(data, indent=4))
                 response = api.generate_post_request(
-                    self.config.parent_host, self.config.parent_token, "projects/user/%d" % namespace_id,
+                    self.config.destination_host, self.config.destination_token, "projects/user/%d" % namespace_id,
                     json.dumps(data)).json()
                 if response.get("id", None) is not None:
                     self.log.debug("Setting default branch to master")
                     default_branch = {
                         "default_branch": "master"
                     }
-                    api.generate_put_request(self.config.parent_host, self.config.parent_token,
+                    api.generate_put_request(self.config.destination_host, self.config.destination_token,
                                              "projects/%d" % response["id"], json.dumps(default_branch))
             else:
                 self.log.info(
                     "Attempting to generate shell repo for %s and create mirror" % generic_repo["name"])
                 response = api.generate_post_request(
-                    self.config.parent_host,
-                    self.config.parent_token,
+                    self.config.destination_host,
+                    self.config.destination_token,
                     "projects",
                     json.dumps(data)).json()
                 print(response)
 
-            # put_response = api.generate_put_request(self.config.parent_host, self.config.parent_token, "projects/%d" % response["id"], json.dumps(put_data))
+            # put_response = api.generate_put_request(self.config.destination_host, self.config.destination_token, "projects/%d" % response["id"], json.dumps(put_data))
             self.log.info(
                 "Project %s has been created and mirroring has been enabled" % generic_repo["name"])
             db_data = {
@@ -150,14 +150,14 @@ class MirrorClient(BaseClass):
 
     @stable_retry
     def enable_mirroring(self):
-        for project in api.list_all(self.config.parent_host, self.config.parent_token, "projects"):
+        for project in api.list_all(self.config.destination_host, self.config.destination_token, "projects"):
             if isinstance(project, dict):
                 encoded_name = project["name"].encode('ascii', 'replace')
                 if project.get("import_status", None) == "failed":
                     print "Enabling mirroring for %s" % encoded_name
                     try:
                         resp = api.generate_post_request(
-                            self.config.parent_host, self.config.parent_token,
+                            self.config.destination_host, self.config.destination_token,
                             "projects/%d/mirror/pull" % project["id"], None)
                         print "Status: %d" % resp.status_code
                     except Exception, e:
@@ -172,7 +172,7 @@ class MirrorClient(BaseClass):
     @stable_retry
     def enable_mirror_by_id(self, id):
         resp = api.generate_post_request(
-            self.config.parent_host, self.config.parent_token, "projects/%d/mirror/pull" % id, None)
+            self.config.destination_host, self.config.destination_token, "projects/%d/mirror/pull" % id, None)
         print resp.status_code
 
     # TODO: This was disabled in the source repo
