@@ -46,16 +46,16 @@ class RegistryClient(BaseClass):
                     reg = registry["location"]
                     self.log.info("Pulling images from registry %s" % reg)
                     images = client.images.pull(reg)
-                    self.__import_registries(images, id)
+                    # 2nd argument - passing the suffix for multi path registries
+                    self.__import_registries(images, reg.split("/", 1)[1])
         except (APIError) as err:
             self.log.error("Failed to export registry, with error:\n%s" % err)
 
-    def __import_registries(self, images, id):
+    def __import_registries(self, images, sufix):
         try:
             # Login to destination registry
-            project = self.projects.get_project(id, self.config.destination_host, self.config.destination_token).json()
             client = self.__login_to_registry(self.config.destination_host, self.config.destination_token, self.config.destination_registry)
-            new_reg = "%s/%s" % (self.config.destination_registry, project["path_with_namespace"].lower())
+            new_reg = "%s/%s" % (self.config.destination_registry, sufix)
             for image in images:
                 for tag in image.tags:
                     # TODO: use a key value instead
@@ -63,7 +63,8 @@ class RegistryClient(BaseClass):
                     if image.tag(new_reg, tag_name):
                         self.log.info("Created tag %s" % tag_name)
             self.log.info("Migrating images to registry %s" % new_reg)
-            client.images.push(new_reg, stream=True, decode=True)
+            for line in client.images.push(new_reg, stream=True, decode=True):
+                print line
             self.log.info("Removing locally stored images")
             for image in images:
                 client.images.remove(image.id, force=True)
