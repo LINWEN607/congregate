@@ -34,7 +34,7 @@ class ConfigurationValidator(ig):
 
     def validate_parent_group_id(self, id):
         if id is not None:
-            group_resp = self.groups.get_group(id, self.parent_host, self.parent_token).json()
+            group_resp = self.groups.get_group(id, self.destination_host, self.destination_token).json()
             if group_resp.get("message", None) is not None:
                 raise ConfigurationException("parent_id")
             else:
@@ -46,7 +46,7 @@ class ConfigurationValidator(ig):
         if id is None:
             raise ConfigurationException("parent_user_id")
         else:
-            user_resp = self.users.get_current_user(self.parent_host, self.parent_token).json()
+            user_resp = self.users.get_current_user(self.destination_host, self.destination_token).json()
             if user_resp.get("message", None) is not None:
                 raise ConfigurationException("parent_user_id")
             elif user_resp.get("error", None) is not None:

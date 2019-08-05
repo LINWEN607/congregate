@@ -38,13 +38,14 @@ class ImportExportClient(BaseClass):
     def get_import_status(self, host, token, id):
         return api.generate_get_request(host, token, "projects/%d/import" % id)
 
-    def wait_for_export_to_finish(self, host, token, id):
+    def wait_for_export_to_finish(self, host, token, id, name):
         exported = False
         total_time = 0
         skip = False
         while not exported:
             response = self.get_export_status(
-                self.config.child_host, self.config.child_token, id)
+                self.config.source_host, self.config.source_token, id)
+            print response.text
             if response.status_code == 200:
                 response = response.json()
                 name = response["name"]
@@ -90,13 +91,13 @@ class ImportExportClient(BaseClass):
         ]
 
         headers = {
-            'Private-Token': self.config.child_token,
+            'Private-Token': self.config.source_host,
             'Content-Type': 'application/x-www-form-urlencoded'
         }
 
         try:
             response = api.generate_post_request(
-                self.config.child_host, self.config.child_token, "projects/%d/export" % id, "&".join(upload), headers=headers)
+                self.config.source_host, self.config.source_token, "projects/%d/export" % id, "&".join(upload), headers=headers)
             return response
         except RequestException:
             return None
@@ -122,7 +123,7 @@ class ImportExportClient(BaseClass):
                     user_project = True
                     #namespace = project["namespace"]
                     new_user = self.users.get_user(
-                        member["id"], self.config.child_host, self.config.child_token).json()
+                        member["id"], self.config.source_host, self.config.source_token).json()
                     namespace = new_user["username"]
                     self.log.info("%s is a user project belonging to %s. Attempting to import into their namespace" % (
                         project["name"], new_user))
@@ -132,7 +133,7 @@ class ImportExportClient(BaseClass):
                     project["name"]))
                 if self.config.parent_id is not None:
                     response = self.groups.get_group(
-                        self.config.parent_id, self.config.parent_host, self.config.parent_token).json()
+                        self.config.parent_id, self.config.destination_host, self.config.destination_token).json()
                     namespace = "%s/%s" % (response["full_path"],
                                            project["namespace"])
                     filename = "%s/%s_%s.tar.gz" % (
@@ -148,7 +149,7 @@ class ImportExportClient(BaseClass):
                             another_strip.pop(ind)
                     full_path = "/".join(another_strip)
                     self.log.info("Searching for %s" % full_path)
-                    for group in api.list_all(self.config.parent_host, self.config.parent_token, "groups?search=%s" % project["namespace"]):
+                    for group in api.list_all(self.config.destination_host, self.config.destination_token, "groups?search=%s" % project["namespace"]):
                         if isinstance(group, dict):
                             if group["full_path"].lower() == full_path.lower():
                                 self.log.info("Found %s" % group["full_path"])
@@ -205,7 +206,7 @@ class ImportExportClient(BaseClass):
                             self.log.debug("Searching for %s" %
                                            project["name"])
                             search_response = api.search(
-                                self.config.parent_host, self.config.parent_token, 'projects', project['name'])
+                                self.config.destination_host, self.config.destination_token, 'projects', project['name'])
                             if len(search_response) > 0:
                                 if isinstance(search_response, dict):
                                     for proj in search_response:
@@ -230,7 +231,7 @@ class ImportExportClient(BaseClass):
                             break
                     if import_id is not None:
                         status = self.get_import_status(
-                            self.config.parent_host, self.config.parent_token, import_id)
+                            self.config.destination_host, self.config.destination_token, import_id)
                         
                         try:
                             status = status.json()
@@ -265,13 +266,13 @@ class ImportExportClient(BaseClass):
         self.log.info("Exporting %s to %s" %
                       (name, self.config.filesystem_path))
         api.generate_post_request(
-            self.config.child_host, self.config.child_token, "projects/%d/export" % id, "")
+            self.config.source_host, self.config.source_token, "projects/%d/export" % id, "")
         if working_dir != self.config.filesystem_path:
             chdir(self.config.filesystem_path)
         url = "%s/api/v4/projects/%d/export/download" % (
-            self.config.child_host, id)
+            self.config.source_host, id)
         filename = misc_utils.download_file(url, self.config.filesystem_path, headers={
-                                            "PRIVATE-TOKEN": self.config.child_token})
+                                            "PRIVATE-TOKEN": self.config.source_token})
 
         data = {
             "path": name,
@@ -279,7 +280,7 @@ class ImportExportClient(BaseClass):
             "namespace": namespace
         }
 
-        return api.generate_post_request(self.config.parent_host, self.config.parent_token, "projects/import", data=data)
+        return api.generate_post_request(self.config.destination_host, self.config.destination_token, "projects/import", data=data)
 
     def export_import_thru_fs_aws(self, id, name, namespace):
         testkey = "%s_%s.tar.gz" % (namespace, name)
@@ -288,14 +289,14 @@ class ImportExportClient(BaseClass):
                           (name, self.config.filesystem_path))
             self.log.info("Unarchiving %s" % name)
             self.projects.projects_api.unarchive_project(
-                self.config.child_host, self.config.child_token, id)
+                self.config.source_host, self.config.source_token, id)
             api.generate_post_request(
-                self.config.child_host, self.config.child_token, "projects/%d/export" % id, {})
+                self.config.source_host, self.config.source_token, "projects/%d/export" % id, {})
             url = "%s/api/v4/projects/%d/export/download" % (
-                self.config.child_host, id)
+                self.config.source_host, id)
 
             exported = self.wait_for_export_to_finish(
-                self.config.child_host, self.config.child_token, id)
+                self.config.source_host, self.config.source_token, id, name)
 
             if exported:
                 self.log.info("Downloading export")
@@ -303,7 +304,7 @@ class ImportExportClient(BaseClass):
                     namespace, name)
                 try:
                     filename = misc_utils.download_file(url, self.config.filesystem_path, path_with_namespace, headers={
-                                                        "PRIVATE-TOKEN": self.config.child_token})
+                                                        "PRIVATE-TOKEN": self.config.source_token})
                     self.log.info("Copying %s to s3" % filename)
                     success = self.aws.copy_file_to_s3(filename)
                     if success:
@@ -315,7 +316,7 @@ class ImportExportClient(BaseClass):
                             remove(f)
                         # self.log.info("Archiving %s" % name)
                         # api.generate_post_request(
-                        #     self.config.child_host, self.config.child_token, "projects/%d/archive" % id, {})
+                        #     self.config.source_host, self.config.source_token, "projects/%d/archive" % id, {})
                 except Exception as e:
                     self.log.error("Download or copy to S3 failed")
                     self.log.error(e)
@@ -330,13 +331,13 @@ class ImportExportClient(BaseClass):
         exported = False
         self.log.debug("Searching for existing %s" % name)
         namespace = self.strip_namespace(full_parent_namespace, namespace)
-        project_exists, _ = self.projects.find_project_by_path(self.config.parent_host, self.config.parent_token, full_parent_namespace, namespace, name)
+        project_exists, _ = self.projects.find_project_by_path(self.config.destination_host, self.config.destination_token, full_parent_namespace, namespace, name)
         if not project_exists:
             self.log.info(
-                "%s could not be found in parent instance. Exporting project on child instance." % name)
+                "%s could not be found in destination instance. Exporting project on source instance." % name)
             self.export_project_to_aws(id, name, namespace)
             exported = self.wait_for_export_to_finish(
-                self.config.child_host, self.config.child_token, id)
+                self.config.source_host, self.config.source_token, id, name)
 
         return exported
 

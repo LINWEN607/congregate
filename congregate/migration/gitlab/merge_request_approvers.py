@@ -60,28 +60,28 @@ class MergeRequestApproversClient(BaseClass):
 
     def migrate_merge_request_approvers(self, new_id, old_id):
         approval_data = self.get_approvals(
-            old_id, self.config.child_host, self.config.child_token)
+            old_id, self.config.source_host, self.config.source_token)
         source_version = self.version.get_version(
-            self.config.child_host, self.config.child_token)["version"]
+            self.config.source_host, self.config.source_token)["version"]
         destination_version = self.version.get_version(
-            self.config.parent_host, self.config.parent_token)["version"]
+            self.config.destination_host, self.config.destination_token)["version"]
 
         if self.version.is_older_than(destination_version, self.break_change_version):
             if self.version.is_older_than(source_version, self.break_change_version):
                 approver_ids, approver_groups = self.update_mr_approvers_old(
                     new_id, approval_data)
-                self.set_approvers(old_id, self.config.parent_host,
-                                   self.config.parent_token, approver_ids, approver_groups)
+                self.set_approvers(old_id, self.config.destination_host,
+                                   self.config.destination_token, approver_ids, approver_groups)
         else:
             if self.version.is_older_than(source_version, self.break_change_version):
                 approver_ids, approver_groups = self.update_mr_approvers_old(
                     new_id, approval_data)
                 self.create_approval_rule(
-                    new_id, self.config.parent_host, self.config.parent_token, "Default", approval_data["approvals_before_merge"], approver_ids, approver_groups)
+                    new_id, self.config.destination_host, self.config.destination_token, "Default", approval_data["approvals_before_merge"], approver_ids, approver_groups)
             else:
                 for new_rule in self.update_mr_approvers_new(new_id, approval_data):
                     created_rule_resp = self.create_approval_rule_with_payload(
-                        new_id, self.config.parent_host, self.config.parent_token, new_rule)
+                        new_id, self.config.destination_host, self.config.destination_token, new_rule)
 
     def update_approvers(self, approval_data):
         approver_ids = []
@@ -90,22 +90,22 @@ class MergeRequestApproversClient(BaseClass):
             user = approved_user["user"]
             if user.get("id", None) is not None:
                 user = self.users.get_user(
-                    user["id"], self.config.child_host, self.config.child_token).json()
+                    user["id"], self.config.source_host, self.config.source_token).json()
                 new_user = api.search(
-                    self.config.parent_host, self.config.parent_token, 'users', user['email'])
+                    self.config.destination_host, self.config.destination_token, 'users', user['email'])
                 new_user_id = new_user[0]["id"]
                 approver_ids.append(new_user_id)
         for approved_group in approval_data["approver_groups"]:
             group = approved_group["group"]
             if group.get("id", None) is not None:
                 group = self.groups.get_group(
-                    group["id"], self.config.child_host, self.config.child_token).json()
+                    group["id"], self.config.source_host, self.config.source_token).json()
                 if self.config.parent_id is not None:
                     parent_group = self.groups.get_group(
-                        self.config.parent_id, self.config.parent_host, self.config.parent_token).json()
+                        self.config.parent_id, self.config.destination_host, self.config.destination_token).json()
                     group["full_path"] = "%s/%s" % (
                         parent_group["full_path"], group["full_path"])
-                for new_group in self.groups.search_for_group(group["name"], self.config.parent_host, self.config.parent_token):
+                for new_group in self.groups.search_for_group(group["name"], self.config.destination_host, self.config.destination_token):
                     if new_group["full_path"].lower() == group["full_path"].lower():
                         approver_groups.append(new_group["id"])
                         break
@@ -117,21 +117,21 @@ class MergeRequestApproversClient(BaseClass):
         for user in rule["users"]:
             if user.get("id", None) is not None:
                 user = self.users.get_user(
-                    user["id"], self.config.child_host, self.config.child_token).json()
+                    user["id"], self.config.source_host, self.config.source_token).json()
                 new_user = api.search(
-                    self.config.parent_host, self.config.parent_token, 'users', user['email'])
+                    self.config.destination_host, self.config.destination_token, 'users', user['email'])
                 new_user_id = new_user[0]["id"]
                 approver_ids.append(new_user_id)
         for group in rule["groups"]:
             if group.get("id", None) is not None:
                 group = self.groups.get_group(
-                    group["id"], self.config.child_host, self.config.child_token).json()
+                    group["id"], self.config.source_host, self.config.source_token).json()
                 if self.config.parent_id is not None:
                     parent_group = self.groups.get_group(
-                        self.config.parent_id, self.config.parent_host, self.config.parent_token).json()
+                        self.config.parent_id, self.config.destination_host, self.config.destination_token).json()
                     group["full_path"] = "%s/%s" % (
                         parent_group["full_path"], group["full_path"])
-                for new_group in self.groups.search_for_group(group["name"], self.config.parent_host, self.config.parent_token):
+                for new_group in self.groups.search_for_group(group["name"], self.config.destination_host, self.config.destination_token):
                     if new_group["full_path"].lower() == group["full_path"].lower():
                         approver_groups.append(new_group["id"])
                         break
@@ -144,7 +144,7 @@ class MergeRequestApproversClient(BaseClass):
             "disable_overriding_approvers_per_merge_request": approval_data["disable_overriding_approvers_per_merge_request"]
         }
         self.set_approval_configuration(
-            new_id, self.config.parent_host, self.config.parent_token, approval_configuration)
+            new_id, self.config.destination_host, self.config.destination_token, approval_configuration)
 
         return self.update_approvers(approval_data)
 

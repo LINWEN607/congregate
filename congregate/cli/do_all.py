@@ -16,7 +16,7 @@ def do_all():
     if not os.path.isfile("%s/data/users.json" % app_path):
         users.retrieve_user_info()
     if not os.path.isfile("%s/data/groups.json" % app_path):
-        groups.retrieve_group_info(config.child_host, config.child_token)
+        groups.retrieve_group_info(config.source_host, config.source_token)
     stage_projects.stage_projects([None, "all"])
     migrate.migrate()
 

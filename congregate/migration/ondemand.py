@@ -187,11 +187,11 @@ class OnDemand:
         gitlab_id = gitlab_id = gl.search_for_project(
                 repo["metadata"]["name"], repo["metadata"]["group"], repo["metadata"]["name"])
         if gitlab_id is not None:
-            clone_url = json.load(api.generate_get_request(self.config.parent_host, self.config.parent_token, "projects/%d" % gitlab_id))["http_url_to_repo"]
+            clone_url = json.load(api.generate_get_request(self.config.destination_host, self.config.destination_token, "projects/%d" % gitlab_id))["http_url_to_repo"]
             
             protocol = clone_url.split("://")[0]
             url = clone_url.split("://")[1]
-            new_clone_url = "%s://%s:%s@%s" % (protocol, self.config.external_user_name, self.config.parent_token, url)
+            new_clone_url = "%s://%s:%s@%s" % (protocol, self.config.external_user_name, self.config.destination_token, url)
             os.chdir("repos")
             subprocess.call(["git", "clone", re.sub('@onestash', ':%s@onestash' % self.config.external_user_password, repo["metadata"]["web_repo_url"]), repo["metadata"]["name"]])
             os.chdir(repo["metadata"]["name"])

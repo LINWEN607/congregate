@@ -60,13 +60,13 @@ def migrate_project_info():
         project.pop("members")
         b.log.debug("Searching for %s" % project["name"])
         new_project = api.search(
-            b.config.parent_host, b.config.parent_token, 'projects', project['name'])
+            b.config.destination_host, b.config.destination_token, 'projects', project['name'])
         if len(new_project) > 0:
             if new_project[0]["name"] == project["name"] and \
                     new_project[0]["namespace"]["name"] == project["namespace"]:
                 root_user_present = False
                 for member in members:
-                    if member["id"] == b.config.parent_user_id:
+                    if member["id"] == b.config.import_user_id:
                         root_user_present = True
                     new_member = {
                         "user_id": member["id"],
@@ -74,7 +74,7 @@ def migrate_project_info():
                     }
 
                     try:
-                        api.generate_post_request(b.config.parent_host, b.config.parent_token,
+                        api.generate_post_request(b.config.destination_host, b.config.destination_token,
                                                   "projects/%d/members" % new_project[0]["id"], json.dumps(new_member))
 
                     except requests.exceptions.RequestException, e:
@@ -82,7 +82,7 @@ def migrate_project_info():
                         b.log.error(
                             "Member might already exist. Attempting to update access level")
                         try:
-                            api.generate_put_request(b.config.parent_host, b.config.parent_token,
+                            api.generate_put_request(b.config.destination_host, b.config.destination_token,
                                                      "projects/%d/members/%d?access_level=%d" % (
                                                          new_project[0]["id"], member["id"], member["access_level"]),
                                                      data=None)
@@ -93,9 +93,9 @@ def migrate_project_info():
 
                 if not root_user_present:
                     b.log.info("removing root user from project")
-                    api.generate_delete_request(b.config.parent_host, b.config.parent_token,
+                    api.generate_delete_request(b.config.destination_host, b.config.destination_token,
                                                 "projects/%d/members/%d" % (
-                                                    new_project[0]["id"], b.config.parent_user_id))
+                                                    new_project[0]["id"], b.config.import_user_id))
 
 
 def migrate_single_project_info(project, id):
@@ -110,7 +110,7 @@ def migrate_single_project_info(project, id):
 
     b.log.info("Searching for project %s" % name)
     if id is None:
-        _, id = projects.find_project_by_path(b.config.parent_host, b.config.parent_token, full_parent_namespace, project["namespace"], project["name"])
+        _, id = projects.find_project_by_path(b.config.destination_host, b.config.destination_token, full_parent_namespace, project["namespace"], project["name"])
 
     # Project Members
     # TODO: Should this be commented out? Is in Master pre merge
@@ -137,11 +137,11 @@ def migrate_single_project_info(project, id):
     # Push Rules
     try:
         push_rule = pushrules.get_push_rules(
-            project["id"], b.config.child_host, b.config.child_token).json()
+            project["id"], b.config.source_host, b.config.source_token).json()
         if push_rule and len(push_rule) > 0:
             b.log.info("Migrating push rules for %s" % name)
-            pushrules.add_push_rule(id, b.config.parent_host,
-                                    b.config.parent_token, push_rule)
+            pushrules.add_push_rule(id, b.config.destination_host,
+                                    b.config.destination_token, push_rule)
             results["push_rules"] = True
     except Exception, e:
         b.log.error("Failed to migrate push rules for %s" % name)
@@ -221,10 +221,10 @@ def migrate_given_export(project_json):
     project_exists = False
     project_id = None
     try:
-        project_exists, project_id = projects.find_project_by_path(b.config.parent_host, b.config.parent_token, full_parent_namespace, project_json["namespace"], project_json["name"])
+        project_exists, project_id = projects.find_project_by_path(b.config.destination_host, b.config.destination_token, full_parent_namespace, project_json["namespace"], project_json["name"])
         if project_id:
             import_check = ie.get_import_status(
-                b.config.parent_host, b.config.parent_token, project_id).json()
+                b.config.destination_host, b.config.destination_token, project_id).json()
             if import_check["import_status"] == "finished":
                 b.log.info("%s already imported" % project_json["name"])
             elif import_check["import_status"] == "scheduled":
@@ -242,12 +242,12 @@ def migrate_given_export(project_json):
             if import_id is not None:
                 b.log.info("Unarchiving project %s" % project_json["name"])
                 projects.projects_api.unarchive_project(
-                    b.config.child_host, b.config.child_token, project_json["id"])
+                    b.config.source_host, b.config.source_token, project_json["id"])
 
                 b.log.info("Migrating %s project info" % project_json["name"])
                 post_import_results = migrate_single_project_info(project_json, import_id)
                 # b.log.info("Archiving project %s" % project_json["name"])
-                # projects.archive_project(b.config.child_host, b.config.child_token, project_json["id"])
+                # projects.archive_project(b.config.source_host, b.config.source_token, project_json["id"])
                 results[path] = post_import_results
     except requests.exceptions.RequestException, e:
         b.log.error(e)
@@ -368,7 +368,7 @@ def handle_migrating_file(f):
     try:
         if b.config.parent_id is not None and f["project_type"] != "user":
             parent_namespace = groups.groups_api.get_group(
-                b.config.parent_id, b.config.parent_host, b.config.parent_token).json()
+                b.config.parent_id, b.config.destination_host, b.config.destination_token).json()
             namespace = "%s/%s" % (parent_namespace["path"], f["namespace"])
         else:
             namespace = f["namespace"]
@@ -406,7 +406,7 @@ def find_unimported_projects():
             try:
                 b.log.debug("Searching for existing %s" % project_json["name"])
                 project_exists = False
-                for proj in projects.projects_api.search_for_project(b.config.parent_host, b.config.parent_token,
+                for proj in projects.projects_api.search_for_project(b.config.destination_host, b.config.destination_token,
                                                         project_json['name']):
                     if proj["name"] == project_json["name"]:
                         if project_json["namespace"]["full_path"].lower() == proj["path_with_namespace"].lower():
@@ -445,7 +445,7 @@ def get_new_ids():
         for project_json in staged_projects:
             try:
                 b.log.debug("Searching for existing %s" % project_json["name"])
-                for proj in projects.projects_api.search_for_project(b.config.parent_host, b.config.parent_token,
+                for proj in projects.projects_api.search_for_project(b.config.destination_host, b.config.destination_token,
                                                         project_json['name']):
                     if proj["name"] == project_json["name"]:
 
@@ -484,7 +484,7 @@ def check_visibility():
         ids = get_new_ids()
     for i in ids:
         project = projects.projects_api.get_project(
-            i, b.config.parent_host, b.config.parent_token).json()
+            i, b.config.destination_host, b.config.destination_token).json()
         if project["visibility"] != "private":
             print "%s, %s" % (
                 project["path_with_namespace"], project["visibility"])
@@ -493,46 +493,46 @@ def check_visibility():
                 "visibility": "private"
             }
             change = api.generate_put_request(
-                b.config.parent_host, b.config.parent_token, "projects/%d?visibility=private" % int(i), data=None)
+                b.config.destination_host, b.config.destination_token, "projects/%d?visibility=private" % int(i), data=None)
             print change
 
     print count
 
 
 def set_default_branch():
-    for project in api.list_all(b.config.parent_host, b.config.parent_token, "projects"):
+    for project in api.list_all(b.config.destination_host, b.config.destination_token, "projects"):
         if project.get("default_branch", None) != "master":
             id = project["id"]
             name = project["name"]
             print "Setting default branch to master for project %s" % name
             resp = api.generate_put_request(
-                b.config.parent_host, b.config.parent_token, "projects/%d?default_branch=master" % id, data=None)
+                b.config.destination_host, b.config.destination_token, "projects/%d?default_branch=master" % id, data=None)
             print "Status: %d" % resp.status_code
 
 
 def update_diverging_branch():
-    for project in api.list_all(b.config.parent_host, b.config.parent_token, "projects"):
+    for project in api.list_all(b.config.destination_host, b.config.destination_token, "projects"):
         if project.get("mirror_overwrites_diverged_branches", None) != True:
             id = project["id"]
             name = project["name"]
             print "Setting mirror_overwrites_diverged_branches to true for project %s" % name
-            resp = api.generate_put_request(b.config.parent_host, b.config.parent_token,
+            resp = api.generate_put_request(b.config.destination_host, b.config.destination_token,
                                             "projects/%d?mirror_overwrites_diverged_branches=true" % id, data=None)
             print "Status: %d" % resp.status_code
 
 
 def get_total_migrated_count():
     group_projects = api.get_count(
-        b.config.parent_host, b.config.parent_token, "groups/%d/projects" % b.config.parent_id)
+        b.config.destination_host, b.config.destination_token, "groups/%d/projects" % b.config.parent_id)
     subgroup_count = 0
-    for group in api.list_all(b.config.parent_host, b.config.parent_token, "groups/%d/subgroups" % b.config.parent_id):
+    for group in api.list_all(b.config.destination_host, b.config.destination_token, "groups/%d/subgroups" % b.config.parent_id):
         count = api.get_count(
-            b.config.parent_host, b.config.parent_token, "groups/%d/projects" % group["id"])
+            b.config.destination_host, b.config.destination_token, "groups/%d/projects" % group["id"])
         sub_count = 0
         if group.get("child_ids", None) is not None:
             for child_id in group["child_ids"]:
-                sub_count += api.get_count(b.config.parent_host,
-                                           b.config.parent_token, "groups/%d/projects" % child_id)
+                sub_count += api.get_count(b.config.destination_host,
+                                           b.config.destination_token, "groups/%d/projects" % child_id)
         subgroup_count += count
     # return subgroup_count + group_projects
     return subgroup_count
@@ -568,7 +568,7 @@ def stage_unimported_projects():
 
 
 def generate_instance_map():
-    for project in api.list_all(b.config.parent_host, b.config.parent_token, "projects"):
+    for project in api.list_all(b.config.destination_host, b.config.destination_token, "projects"):
         if project.get("import_url", None) is not None:
             import_url = sub('//.+:.+@', '//', project["import_url"])
             with open("new_repomap.txt", "ab") as f:
@@ -577,7 +577,7 @@ def generate_instance_map():
 
 def count_unarchived_projects():
     unarchived_projects = []
-    for project in api.list_all(b.config.child_host, b.config.child_token, "projects"):
+    for project in api.list_all(b.config.source_host, b.config.source_token, "projects"):
         if project.get("archived", None) is not None:
             if project["archived"] == False:
                 unarchived_projects.append(project["name_with_namespace"])
@@ -594,7 +594,7 @@ def archive_staged_projects(dry_run=False):
             id = project["id"]
             b.log.info("Archiving project %s (ID: %s)" % (project["name"], id))
             if not dry_run:
-                projects.projects_api.archive_project(b.config.child_host, b.config.child_token, id)
+                projects.projects_api.archive_project(b.config.source_host, b.config.source_token, id)
     except requests.exceptions.RequestException, e:
         b.log.error("Failed to archive staged projects, with error:\n%s" % e)
 
@@ -607,7 +607,7 @@ def unarchive_staged_projects(dry_run=False):
             id = project["id"]
             b.log.info("Unarchiving project %s (ID: %s)" % (project["name"], id))
             if not dry_run:
-                projects.projects_api.unarchive_project(b.config.child_host, b.config.child_token, id)
+                projects.projects_api.unarchive_project(b.config.source_host, b.config.source_token, id)
     except requests.exceptions.RequestException, e:
         b.log.error("Failed to unarchive staged projects, with error:\n%s" % e)
 
@@ -619,11 +619,11 @@ def get_staged_projects():
 
 def find_empty_repos():
     empty_repos = []
-    for project in api.list_all(b.config.parent_host, b.config.parent_token, "projects?statistics=true"):
+    for project in api.list_all(b.config.destination_host, b.config.destination_token, "projects?statistics=true"):
         if project.get("statistics", None) is not None:
             if project["statistics"]["repository_size"] == 0:
                 b.log.info("Empty repo found")
-                for proj in api.list_all(b.config.child_host, b.config.child_token, "projects?statistics=true"):
+                for proj in api.list_all(b.config.source_host, b.config.source_token, "projects?statistics=true"):
                     if proj["name"] == project["name"] and project["namespace"]["path"] in proj["namespace"]["path"]:
                         b.log.info("Found project")
                         if proj.get("statistics", None) is not None:

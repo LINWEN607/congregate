@@ -40,7 +40,7 @@ Options:
     -h --help     Show this screen.
 
 Commands:
-    list                                List all projects of a child instance and save it to {CONGREGATE_PATH}/data/project_json.json
+    list                                List all projects of a source instance and save it to {CONGREGATE_PATH}/data/project_json.json
     config                              Configure congregate for migrating between two instances and save it to {CONGREGATE_PATH}/data/config.json
     stage                               Stage projects to {CONGREGATE_PATH}/data/stage.json,
                                         users to {CONGREGATE_PATH}/data/staged_users.json,
@@ -48,7 +48,7 @@ Commands:
                                         All projects can be staged with a '.' or 'all'.
     migrate                             Commence migration based on configuration and staged assets
     ui                                  Deploy UI to port 8000
-    import-projects                     Kick off import of exported projects onto parent instance
+    import-projects                     Kick off import of exported projects onto destination instance
     do_all                              Configure system, retrieve all projects, users, and groups, stage all information, and commence migration
     update-staged-user-info             Update staged user information after migrating only users
     update-new-users                    Update user IDs in staged groups and projects after migrating users

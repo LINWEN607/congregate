@@ -18,10 +18,10 @@ class DeployKeysClient(BaseClass):
         return api.generate_post_request(host, token, "projects/%d/deploy_keys/" % id, key)
 
     def migrate_deploy_keys(self, new_id, old_id):
-        keys = self.__list_project_deploy_keys(self.config.child_host, self.config.child_token, old_id)
+        keys = self.__list_project_deploy_keys(self.config.source_host, self.config.source_token, old_id)
         if keys:
             for key in  keys:
                 # Remove unused key-value before posting key
                 key.pop("id", None)
                 key.pop("created_at", None)
-                self.__create_new_project_deploy_key(self.config.parent_host, self.config.parent_token, new_id, json.dumps(key))
+                self.__create_new_project_deploy_key(self.config.destination_host, self.config.destination_token, new_id, json.dumps(key))

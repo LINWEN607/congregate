@@ -13,9 +13,10 @@ projects_api = ProjectsApi()
 
 def list_projects():
 
-    print "Listing projects from %s" % b.config.child_host
+    print "Listing projects from %s" % b.config.source_host
 
-    projects = list(projects_api.get_all_projects(b.config.child_host, b.config.child_token))
+    projects = list(projects_api.get_all_projects(b.config.source_host,
+                                 b.config.source_token))
 
     with open("%s/data/project_json.json" % b.app_path, "wb") as f:
         json.dump(projects, f, indent=4)
@@ -26,7 +27,7 @@ def list_projects():
         description = project["description"]
         print "[id: %s] %s: %s" % (id, name, description)
 
-    groupsclient.retrieve_group_info(b.config.child_host, b.config.child_token, quiet=True)
+    groupsclient.retrieve_group_info(b.config.source_host, b.config.source_token, quiet=True)
     usersclient.retrieve_user_info(quiet=True)
 
     staged_files = ["stage", "staged_groups", "staged_users"]

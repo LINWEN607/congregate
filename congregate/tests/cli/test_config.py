@@ -20,13 +20,13 @@ class ConfigTests(unittest.TestCase):
     def test_default_configuration(self, mock_get):
         values = [
             "",  # Migration source
-            os.getenv("PARENT_INSTANCE_HOST"),
-            os.getenv("PARENT_INSTANCE_TOKEN"),
-            os.getenv("CHILD_INSTANCE_HOST"),
-            os.getenv("CHILD_INSTANCE_TOKEN"),
-            os.getenv("CHILD_INSTANCE_REGISTRY"),
-            os.getenv("PARENT_INSTANCE_REGISTRY"),
-            "",  # Parent id
+            os.getenv("destination_instance_host"),
+            os.getenv("destination_instance_token"),
+            os.getenv("source_instance_host"),
+            os.getenv("source_instance_token"),
+            os.getenv("source_instance_registry"),
+            os.getenv("destination_instance_registry"),
+            "",  # Parent group id
             "",  # Mirroring yes/no
             "",  # Staging location (default filesystem)
             ""  # Staging location path
@@ -36,15 +36,15 @@ class ConfigTests(unittest.TestCase):
         expected = {
             "config": {
                 "external_source": False,
-                "child_instance_host": os.getenv("CHILD_INSTANCE_HOST"),
-                "child_instance_token": os.getenv("CHILD_INSTANCE_TOKEN"),
-                "child_instance_registry": os.getenv("CHILD_INSTANCE_REGISTRY"),
-                "parent_instance_host": os.getenv("PARENT_INSTANCE_HOST"),
-                "parent_instance_token": os.getenv("PARENT_INSTANCE_TOKEN"),
-                "parent_instance_registry": os.getenv("PARENT_INSTANCE_REGISTRY"),
+                "source_instance_host": os.getenv("source_instance_host"),
+                "source_instance_token": os.getenv("source_instance_token"),
+                "source_instance_registry": os.getenv("source_instance_registry"),
+                "destination_instance_host": os.getenv("destination_instance_host"),
+                "destination_instance_token": os.getenv("destination_instance_token"),
+                "destination_instance_registry": os.getenv("destination_instance_registry"),
                 "number_of_threads": 2,
                 "location": "filesystem",
-                "parent_user_id": 1,
+                "import_user_id": 1,
                 "path": os.getcwd()
             }
         }
@@ -58,13 +58,13 @@ class ConfigTests(unittest.TestCase):
     def test_default_configuration_with_mirror(self, mock_get):
         values = [
             "",  # Migration source
-            os.getenv("PARENT_INSTANCE_HOST"),
-            os.getenv("PARENT_INSTANCE_TOKEN"),
-            os.getenv("CHILD_INSTANCE_HOST"),
-            os.getenv("CHILD_INSTANCE_TOKEN"),
-            os.getenv("CHILD_INSTANCE_REGISTRY"),
-            os.getenv("PARENT_INSTANCE_REGISTRY"),
-            "",  # Parent id
+            os.getenv("destination_instance_host"),
+            os.getenv("destination_instance_token"),
+            os.getenv("source_instance_host"),
+            os.getenv("source_instance_token"),
+            os.getenv("source_instance_registry"),
+            os.getenv("destination_instance_registry"),
+            "",  # Parent group id
             "yes",  # Mirroring yes/no
             "",  # Staging location (default filesystem)
             ""  # Staging location path
@@ -74,16 +74,16 @@ class ConfigTests(unittest.TestCase):
         expected = {
             "config": {
                 "external_source": False,
-                "child_instance_host": os.getenv("CHILD_INSTANCE_HOST"),
-                "child_instance_token": os.getenv("CHILD_INSTANCE_TOKEN"),
-                "child_instance_registry": os.getenv("CHILD_INSTANCE_REGISTRY"),
-                "parent_instance_host": os.getenv("PARENT_INSTANCE_HOST"),
-                "parent_instance_token": os.getenv("PARENT_INSTANCE_TOKEN"),
-                "parent_instance_registry": os.getenv("PARENT_INSTANCE_REGISTRY"),
+                "source_instance_host": os.getenv("source_instance_host"),
+                "source_instance_token": os.getenv("source_instance_token"),
+                "source_instance_registry": os.getenv("source_instance_registry"),
+                "destination_instance_host": os.getenv("destination_instance_host"),
+                "destination_instance_token": os.getenv("destination_instance_token"),
+                "destination_instance_registry": os.getenv("destination_instance_registry"),
                 "mirror_username": "root",
                 "number_of_threads": 2,
                 "location": "filesystem",
-                "parent_user_id": 1,
+                "import_user_id": 1,
                 "path": os.getcwd()
             }
         }
@@ -97,14 +97,14 @@ class ConfigTests(unittest.TestCase):
     def test_default_configuration_with_parent_id(self, mock_get):
         values = [
             "",  # Migration source
-            os.getenv("PARENT_INSTANCE_HOST"),
-            os.getenv("PARENT_INSTANCE_TOKEN"),
-            os.getenv("CHILD_INSTANCE_HOST"),
-            os.getenv("CHILD_INSTANCE_TOKEN"),
-            os.getenv("CHILD_INSTANCE_REGISTRY"),
-            os.getenv("PARENT_INSTANCE_REGISTRY"),
-            "yes",  # Parent id yes/no
-            "5",  # Parent id
+            os.getenv("destination_instance_host"),
+            os.getenv("destination_instance_token"),
+            os.getenv("source_instance_host"),
+            os.getenv("source_instance_token"),
+            os.getenv("source_instance_registry"),
+            os.getenv("destination_instance_registry"),
+            "yes",  # Parent group id yes/no
+            "5",  # Parent group id
             "",  # SSO yes/no
             "",  # Empty username suffix
             "",  # Mirror yes/no
@@ -116,17 +116,17 @@ class ConfigTests(unittest.TestCase):
         expected = {
             "config": {
                 "external_source": False,
-                "child_instance_host": os.getenv("CHILD_INSTANCE_HOST"),
-                "child_instance_token": os.getenv("CHILD_INSTANCE_TOKEN"),
-                "child_instance_registry": os.getenv("CHILD_INSTANCE_REGISTRY"),
-                "parent_instance_host": os.getenv("PARENT_INSTANCE_HOST"),
-                "parent_instance_token": os.getenv("PARENT_INSTANCE_TOKEN"),
-                "parent_instance_registry": os.getenv("PARENT_INSTANCE_REGISTRY"),
+                "source_instance_host": os.getenv("source_instance_host"),
+                "source_instance_token": os.getenv("source_instance_token"),
+                "source_instance_registry": os.getenv("source_instance_registry"),
+                "destination_instance_host": os.getenv("destination_instance_host"),
+                "destination_instance_token": os.getenv("destination_instance_token"),
+                "destination_instance_registry": os.getenv("destination_instance_registry"),
                 "number_of_threads": 2,
                 "parent_id": 5,
                 "location": "filesystem",
                 "make_visibility_private": True,
-                "parent_user_id": 1,
+                "import_user_id": 1,
                 "path": os.getcwd()
             }
         }
@@ -140,14 +140,14 @@ class ConfigTests(unittest.TestCase):
     def test_default_configuration_with_parent_id_and_sso(self, mock_get):
         values = [
             "",  # Migration source
-            os.getenv("PARENT_INSTANCE_HOST"),
-            os.getenv("PARENT_INSTANCE_TOKEN"),
-            os.getenv("CHILD_INSTANCE_HOST"),
-            os.getenv("CHILD_INSTANCE_TOKEN"),
-            os.getenv("CHILD_INSTANCE_REGISTRY"),
-            os.getenv("PARENT_INSTANCE_REGISTRY"),
-            "yes",  # Parent id yes/no
-            "5",  # Parent id
+            os.getenv("destination_instance_host"),
+            os.getenv("destination_instance_token"),
+            os.getenv("source_instance_host"),
+            os.getenv("source_instance_token"),
+            os.getenv("source_instance_registry"),
+            os.getenv("destination_instance_registry"),
+            "yes",  # Parent group id yes/no
+            "5",  # Parent group id
             "yes",  # SSO yes/no
             "auth0", # SSO provider
             "", # empty username suffix
@@ -160,18 +160,18 @@ class ConfigTests(unittest.TestCase):
         expected = {
             "config": {
                 "external_source": False,
-                "child_instance_host": os.getenv("CHILD_INSTANCE_HOST"),
-                "child_instance_token": os.getenv("CHILD_INSTANCE_TOKEN"),
-                "child_instance_registry": os.getenv("CHILD_INSTANCE_REGISTRY"),
-                "parent_instance_host": os.getenv("PARENT_INSTANCE_HOST"),
-                "parent_instance_token": os.getenv("PARENT_INSTANCE_TOKEN"),
-                "parent_instance_registry": os.getenv("PARENT_INSTANCE_REGISTRY"),
+                "source_instance_host": os.getenv("source_instance_host"),
+                "source_instance_token": os.getenv("source_instance_token"),
+                "source_instance_registry": os.getenv("source_instance_registry"),
+                "destination_instance_host": os.getenv("destination_instance_host"),
+                "destination_instance_token": os.getenv("destination_instance_token"),
+                "destination_instance_registry": os.getenv("destination_instance_registry"),
                 "number_of_threads": 2,
                 "parent_id": 5,
                 "group_sso_provider": "auth0",
                 "location": "filesystem",
                 "make_visibility_private": True,
-                "parent_user_id": 1,
+                "import_user_id": 1,
                 "path": os.getcwd()
             }
         }
@@ -185,14 +185,14 @@ class ConfigTests(unittest.TestCase):
     def test_default_configuration_with_parent_id_and_sso_and_suffix(self, mock_get):
         values = [
             "",  # Migration source
-            os.getenv("PARENT_INSTANCE_HOST"),
-            os.getenv("PARENT_INSTANCE_TOKEN"),
-            os.getenv("CHILD_INSTANCE_HOST"),
-            os.getenv("CHILD_INSTANCE_TOKEN"),
-            os.getenv("CHILD_INSTANCE_REGISTRY"),
-            os.getenv("PARENT_INSTANCE_REGISTRY"),
-            "yes",  # Parent id yes/no
-            "5",  # Parent id
+            os.getenv("destination_instance_host"),
+            os.getenv("destination_instance_token"),
+            os.getenv("source_instance_host"),
+            os.getenv("source_instance_token"),
+            os.getenv("source_instance_registry"),
+            os.getenv("destination_instance_registry"),
+            "yes",  # Parent group id yes/no
+            "5",  # Parent group id
             "yes",  # SSO yes/no
             "auth0", # SSO provider
             "_acme", # Username suffix
@@ -205,19 +205,19 @@ class ConfigTests(unittest.TestCase):
         expected = {
             "config": {
                 "external_source": False,
-                "child_instance_host": os.getenv("CHILD_INSTANCE_HOST"),
-                "child_instance_token": os.getenv("CHILD_INSTANCE_TOKEN"),
-                "child_instance_registry": os.getenv("CHILD_INSTANCE_REGISTRY"),
-                "parent_instance_host": os.getenv("PARENT_INSTANCE_HOST"),
-                "parent_instance_token": os.getenv("PARENT_INSTANCE_TOKEN"),
-                "parent_instance_registry": os.getenv("PARENT_INSTANCE_REGISTRY"),
+                "source_instance_host": os.getenv("source_instance_host"),
+                "source_instance_token": os.getenv("source_instance_token"),
+                "source_instance_registry": os.getenv("source_instance_registry"),
+                "destination_instance_host": os.getenv("destination_instance_host"),
+                "destination_instance_token": os.getenv("destination_instance_token"),
+                "destination_instance_registry": os.getenv("destination_instance_registry"),
                 "number_of_threads": 2,
                 "parent_id": 5,
                 "group_sso_provider": "auth0",
                 "username_suffix": "_acme",
                 "location": "filesystem",
                 "make_visibility_private": True,
-                "parent_user_id": 1,
+                "import_user_id": 1,
                 "path": os.getcwd()
             }
         }
@@ -231,12 +231,12 @@ class ConfigTests(unittest.TestCase):
     def test_explicit_default_configuration(self, mock_get):
         values = [
             "gitlab",  # migration source
-            os.getenv("PARENT_INSTANCE_HOST"),
-            os.getenv("PARENT_INSTANCE_TOKEN"),
-            os.getenv("CHILD_INSTANCE_HOST"),
-            os.getenv("CHILD_INSTANCE_TOKEN"),
-            os.getenv("CHILD_INSTANCE_REGISTRY"),
-            os.getenv("PARENT_INSTANCE_REGISTRY"),
+            os.getenv("destination_instance_host"),
+            os.getenv("destination_instance_token"),
+            os.getenv("source_instance_host"),
+            os.getenv("source_instance_token"),
+            os.getenv("source_instance_registry"),
+            os.getenv("destination_instance_registry"),
             "no",
             "no",
             "filesystem",
@@ -246,15 +246,15 @@ class ConfigTests(unittest.TestCase):
         expected = {
             "config": {
                 "external_source": False,
-                "child_instance_host": os.getenv("CHILD_INSTANCE_HOST"),
-                "child_instance_token": os.getenv("CHILD_INSTANCE_TOKEN"),
-                "child_instance_registry": os.getenv("CHILD_INSTANCE_REGISTRY"),
-                "parent_instance_host": os.getenv("PARENT_INSTANCE_HOST"),
-                "parent_instance_token": os.getenv("PARENT_INSTANCE_TOKEN"),
-                "parent_instance_registry": os.getenv("PARENT_INSTANCE_REGISTRY"),
+                "source_instance_host": os.getenv("source_instance_host"),
+                "source_instance_token": os.getenv("source_instance_token"),
+                "source_instance_registry": os.getenv("source_instance_registry"),
+                "destination_instance_host": os.getenv("destination_instance_host"),
+                "destination_instance_token": os.getenv("destination_instance_token"),
+                "destination_instance_registry": os.getenv("destination_instance_registry"),
                 "number_of_threads": 2,
                 "location": "filesystem",
-                "parent_user_id": 1,
+                "import_user_id": 1,
                 "path": os.getcwd()
             }
         }
@@ -269,12 +269,12 @@ class ConfigTests(unittest.TestCase):
     def test_explicit_default_configuration_with_filepath(self, mock_get):
         values = [
             "gitlab",  # Migration source
-            os.getenv("PARENT_INSTANCE_HOST"),
-            os.getenv("PARENT_INSTANCE_TOKEN"),
-            os.getenv("CHILD_INSTANCE_HOST"),
-            os.getenv("CHILD_INSTANCE_TOKEN"),
-            os.getenv("CHILD_INSTANCE_REGISTRY"),
-            os.getenv("PARENT_INSTANCE_REGISTRY"),
+            os.getenv("destination_instance_host"),
+            os.getenv("destination_instance_token"),
+            os.getenv("source_instance_host"),
+            os.getenv("source_instance_token"),
+            os.getenv("source_instance_registry"),
+            os.getenv("destination_instance_registry"),
             "no",
             "no",
             "filesystem",
@@ -284,15 +284,15 @@ class ConfigTests(unittest.TestCase):
         expected = {
             "config": {
                 "external_source": False,
-                "child_instance_host": os.getenv("CHILD_INSTANCE_HOST"),
-                "child_instance_token": os.getenv("CHILD_INSTANCE_TOKEN"),
-                "child_instance_registry": os.getenv("CHILD_INSTANCE_REGISTRY"),
-                "parent_instance_host": os.getenv("PARENT_INSTANCE_HOST"),
-                "parent_instance_token": os.getenv("PARENT_INSTANCE_TOKEN"),
-                "parent_instance_registry": os.getenv("PARENT_INSTANCE_REGISTRY"),
+                "source_instance_host": os.getenv("source_instance_host"),
+                "source_instance_token": os.getenv("source_instance_token"),
+                "source_instance_registry": os.getenv("source_instance_registry"),
+                "destination_instance_host": os.getenv("destination_instance_host"),
+                "destination_instance_token": os.getenv("destination_instance_token"),
+                "destination_instance_registry": os.getenv("destination_instance_registry"),
                 "number_of_threads": 2,
                 "location": "filesystem",
-                "parent_user_id": 1,
+                "import_user_id": 1,
                 "path": "/path/to/downloads"
             }
         }
@@ -308,12 +308,12 @@ class ConfigTests(unittest.TestCase):
     def test_aws_configuration(self, mock_call, mock_get):
         values = [
             "gitlab",  # Migration source
-            os.getenv("PARENT_INSTANCE_HOST"),
-            os.getenv("PARENT_INSTANCE_TOKEN"),
-            os.getenv("CHILD_INSTANCE_HOST"),
-            os.getenv("CHILD_INSTANCE_TOKEN"),
-            os.getenv("CHILD_INSTANCE_REGISTRY"),
-            os.getenv("PARENT_INSTANCE_REGISTRY"),
+            os.getenv("destination_instance_host"),
+            os.getenv("destination_instance_token"),
+            os.getenv("source_instance_host"),
+            os.getenv("source_instance_token"),
+            os.getenv("source_instance_registry"),
+            os.getenv("destination_instance_registry"),
             "no",
             "no",
             "aws",
@@ -327,16 +327,16 @@ class ConfigTests(unittest.TestCase):
             "config": {
                 "access_key": "AKIA-Dummy",
                 "external_source": False,
-                "child_instance_host": os.getenv("CHILD_INSTANCE_HOST"),
-                "child_instance_token": os.getenv("CHILD_INSTANCE_TOKEN"),
-                "child_instance_registry": os.getenv("CHILD_INSTANCE_REGISTRY"),
-                "parent_instance_host": os.getenv("PARENT_INSTANCE_HOST"),
-                "parent_instance_token": os.getenv("PARENT_INSTANCE_TOKEN"),
-                "parent_instance_registry": os.getenv("PARENT_INSTANCE_REGISTRY"),
+                "source_instance_host": os.getenv("source_instance_host"),
+                "source_instance_token": os.getenv("source_instance_token"),
+                "source_instance_registry": os.getenv("source_instance_registry"),
+                "destination_instance_host": os.getenv("destination_instance_host"),
+                "destination_instance_token": os.getenv("destination_instance_token"),
+                "destination_instance_registry": os.getenv("destination_instance_registry"),
                 "bucket_name": "test-bucket",
                 "number_of_threads": 2,
                 "location": "aws",
-                "parent_user_id": 1,
+                "import_user_id": 1,
                 "s3_region": "us-east-1",
                 "secret_key": "asdfqwer1234"
             }
@@ -354,12 +354,12 @@ class ConfigTests(unittest.TestCase):
     def test_aws_configuration_specific_region(self, mock_call, mock_get):
         values = [
             "gitlab",  # Migration source
-            os.getenv("PARENT_INSTANCE_HOST"),
-            os.getenv("PARENT_INSTANCE_TOKEN"),
-            os.getenv("CHILD_INSTANCE_HOST"),
-            os.getenv("CHILD_INSTANCE_TOKEN"),
-            os.getenv("CHILD_INSTANCE_REGISTRY"),
-            os.getenv("PARENT_INSTANCE_REGISTRY"),
+            os.getenv("destination_instance_host"),
+            os.getenv("destination_instance_token"),
+            os.getenv("source_instance_host"),
+            os.getenv("source_instance_token"),
+            os.getenv("source_instance_registry"),
+            os.getenv("destination_instance_registry"),
             "no",
             "no",
             "aws",
@@ -373,16 +373,16 @@ class ConfigTests(unittest.TestCase):
             "config": {
                 "access_key": "AKIA-Dummy",
                 "external_source": False,
-                "child_instance_host": os.getenv("CHILD_INSTANCE_HOST"),
-                "child_instance_token": os.getenv("CHILD_INSTANCE_TOKEN"),
-                "child_instance_registry": os.getenv("CHILD_INSTANCE_REGISTRY"),
-                "parent_instance_host": os.getenv("PARENT_INSTANCE_HOST"),
-                "parent_instance_token": os.getenv("PARENT_INSTANCE_TOKEN"),
-                "parent_instance_registry": os.getenv("PARENT_INSTANCE_REGISTRY"),
+                "source_instance_host": os.getenv("source_instance_host"),
+                "source_instance_token": os.getenv("source_instance_token"),
+                "source_instance_registry": os.getenv("source_instance_registry"),
+                "destination_instance_host": os.getenv("destination_instance_host"),
+                "destination_instance_token": os.getenv("destination_instance_token"),
+                "destination_instance_registry": os.getenv("destination_instance_registry"),
                 "bucket_name": "test-bucket",
                 "number_of_threads": 2,
                 "location": "aws",
-                "parent_user_id": 1,
+                "import_user_id": 1,
                 "s3_region": "us-west-1",
                 "secret_key": "asdfqwer1234"
             }
@@ -402,8 +402,8 @@ class ConfigTests(unittest.TestCase):
             "user",
             "password",
             "",
-            os.getenv("PARENT_INSTANCE_HOST"),
-            os.getenv("PARENT_INSTANCE_TOKEN"),
+            os.getenv("destination_instance_host"),
+            os.getenv("destination_instance_token"),
             "no",
             "no",
             "filesystem",
@@ -413,12 +413,12 @@ class ConfigTests(unittest.TestCase):
         expected = {
             "config": {
                 "external_source": "bitbucket",
-                "parent_instance_host": os.getenv("PARENT_INSTANCE_HOST"),
-                "parent_instance_token": os.getenv("PARENT_INSTANCE_TOKEN"),
+                "destination_instance_host": os.getenv("destination_instance_host"),
+                "destination_instance_token": os.getenv("destination_instance_token"),
                 "external_user_password": "password",
                 "external_user_name": "user",
                 "number_of_threads": 2,
-                "parent_user_id": 1
+                "import_user_id": 1
             }
         }
 
@@ -435,8 +435,8 @@ class ConfigTests(unittest.TestCase):
             "user",
             "password",
             "repo_list.json",
-            os.getenv("PARENT_INSTANCE_HOST"),
-            os.getenv("PARENT_INSTANCE_TOKEN"),
+            os.getenv("destination_instance_host"),
+            os.getenv("destination_instance_token"),
             "no",
             "no",
             "filesystem",
@@ -447,13 +447,13 @@ class ConfigTests(unittest.TestCase):
         expected = {
             "config": {
                 "external_source": "bitbucket",
-                "parent_instance_host": os.getenv("PARENT_INSTANCE_HOST"),
-                "parent_instance_token": os.getenv("PARENT_INSTANCE_TOKEN"),
+                "destination_instance_host": os.getenv("destination_instance_host"),
+                "destination_instance_token": os.getenv("destination_instance_token"),
                 "external_user_password": "password",
                 "external_user_name": "user",
                 "number_of_threads": 2,
                 "repo_list_path": "%s/repo_list.json" % congregate_path,
-                "parent_user_id": 1
+                "import_user_id": 1
             }
         }
 
@@ -470,8 +470,8 @@ class ConfigTests(unittest.TestCase):
             "user",
             "password",
             "/path/to/repo/list.json",
-            os.getenv("PARENT_INSTANCE_HOST"),
-            os.getenv("PARENT_INSTANCE_TOKEN"),
+            os.getenv("destination_instance_host"),
+            os.getenv("destination_instance_token"),
             "no",
             "no",
             "filesystem",
@@ -481,13 +481,13 @@ class ConfigTests(unittest.TestCase):
         expected = {
             "config": {
                 "external_source": "bitbucket",
-                "parent_instance_host": os.getenv("PARENT_INSTANCE_HOST"),
-                "parent_instance_token": os.getenv("PARENT_INSTANCE_TOKEN"),
+                "destination_instance_host": os.getenv("destination_instance_host"),
+                "destination_instance_token": os.getenv("destination_instance_token"),
                 "external_user_password": "password",
                 "external_user_name": "user",
                 "number_of_threads": 2,
                 "repo_list_path": "/path/to/repo/list.json",
-                "parent_user_id": 1
+                "import_user_id": 1
             }
         }
 

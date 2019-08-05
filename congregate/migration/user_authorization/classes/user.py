@@ -64,7 +64,7 @@ class User(object):
             'search': self.email
         }
         user_search = gitlab_instance.api_request(request_type='get', url_extension=url_extension, params=params)
-        # user_search = api.generate_get_request(conf.parent_host, conf.parent_token,
+        # user_search = api.generate_get_request(conf.destination_host, conf.destination_token,
         #                                                  "users?search=%s" % urllib.quote(user["email"]))
         try:
             return user_search[0]["email"].split("@")[0]

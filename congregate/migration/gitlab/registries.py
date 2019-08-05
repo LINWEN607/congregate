@@ -13,9 +13,9 @@ class RegistryClient(BaseClass):
         super(RegistryClient, self).__init__()
 
     def enabled(self, new_id, old_id):
-        src = self.is_enabled(self.config.child_host, self.config.child_token, old_id)
-        dest = self.is_enabled(self.config.parent_host,
-                              self.config.parent_token, new_id)
+        src = self.is_enabled(self.config.source_host, self.config.source_token, old_id)
+        dest = self.is_enabled(self.config.destination_host,
+                              self.config.destination_token, new_id)
         return src and dest
 
     def is_enabled(self, host, token, id):
@@ -37,11 +37,11 @@ class RegistryClient(BaseClass):
     def migrate_registries(self, id, old_id):
         try:
             # Login to source registry
-            client = self.__login_to_registry(self.config.child_host, self.config.child_token, self.config.child_registry)
-            registries = self.__list_registry_repositories(self.config.child_host, self.config.child_token, old_id)
+            client = self.__login_to_registry(self.config.source_host, self.config.source_token, self.config.source_registry)
+            registries = self.__list_registry_repositories(self.config.source_host, self.config.source_token, old_id)
             for registry in registries:
                 tags = self.__list_repository_tags(
-                    self.config.child_host, self.config.child_token, old_id, registry["id"])
+                    self.config.source_host, self.config.source_token, old_id, registry["id"])
                 if list(tags):
                     reg = registry["location"]
                     self.log.info("Pulling images from registry %s" % reg)
@@ -53,13 +53,13 @@ class RegistryClient(BaseClass):
     def __import_registries(self, images, id):
         try:
             # Login to destination registry
-            project = self.projects.get_project(id, self.config.parent_host, self.config.parent_token).json()
-            client = self.__login_to_registry(self.config.parent_host, self.config.parent_token, self.config.parent_registry)
-            new_reg = "%s/%s" % (self.config.parent_registry, project["path_with_namespace"].lower())
+            project = self.projects.get_project(id, self.config.destination_host, self.config.destination_token).json()
+            client = self.__login_to_registry(self.config.destination_host, self.config.destination_token, self.config.destination_registry)
+            new_reg = "%s/%s" % (self.config.destination_registry, project["path_with_namespace"].lower())
             for image in images:
                 for tag in image.tags:
                     # TODO: use a key value instead
-                    tag_name = tag.replace(self.config.child_registry, "").split(":")[-1]
+                    tag_name = tag.replace(self.config.source_registry, "").split(":")[-1]
                     if image.tag(new_reg, tag_name):
                         self.log.info("Created tag %s" % tag_name)
             self.log.info("Migrating images to registry %s" % new_reg)

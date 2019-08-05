@@ -50,8 +50,8 @@ class ProjectExportClient(BaseClass):
                 d["user"]["id"] = new_user["id"]
                 self.users_map[d["user_id"]] = new_user["id"]
             else:
-                d["user"]["id"] = self.config.parent_user_id
-                self.users_map[d["user_id"]] = self.config.parent_user_id
+                d["user"]["id"] = self.config.import_user_id
+                self.users_map[d["user_id"]] = self.config.import_user_id
             d["user"]['username'] = "This is invalid"
 
 
@@ -124,7 +124,7 @@ class ProjectExportClient(BaseClass):
                 self.users_map[key] = new_user["id"]
                 return new_user["id"]
             else:
-                self.users_map[key] = self.config.parent_user_id
+                self.users_map[key] = self.config.import_user_id
         return self.users_map[key]
 
     def __remove_notes_from_merge_requests(self, mrs, comment_type):

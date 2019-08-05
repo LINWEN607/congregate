@@ -103,7 +103,7 @@ pipeline {
           """
           script {
             MY_JOB_CONFIG = readJSON file: 'config.json'
-            env.GITLAB_SERVER = MY_JOB_CONFIG.config.parent_instance_host
+            env.GITLAB_SERVER = MY_JOB_CONFIG.config.destination_instance_host
           }
         }
       }

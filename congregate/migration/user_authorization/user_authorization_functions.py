@@ -31,7 +31,7 @@ def user_is_authorized(migration_type, **kwargs):
     assert migration_type != None
     assert migration_type.lower() == 'repository' or migration_type.lower() == 'project'
     bb_api_url_base = '%s/rest/api/1.0' % config.external_source_url
-    gitlab_api_url_base = "%s/api/v4/" % config.parent_host
+    gitlab_api_url_base = "%s/api/v4/" % config.destination_host
     bitbucket_instance = Bitbucket_Instance(bb_api_url_base, config.external_user_name, config.external_user_password)
     gitlab_instance = Gitlab_Instance(gitlab_api_url_base)
     repo = Repo(
@@ -95,7 +95,7 @@ def user_authorization_main(migration_type, **kwargs):
     :return: A boolean representing whether the user is authorized to migrate the given project or repo
     """
     logging.info('\nName: %s %s' % (kwargs['first_name'], kwargs['last_name']))
-    allow_migration = user_is_authorized(migration_type, kwargs)
+    allow_migration = user_is_authorized(migration_type, **kwargs)
     logging.info('Allow migration: %s' % allow_migration)
     if not allow_migration:
         if migration_type.lower() == 'repository':

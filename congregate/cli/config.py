@@ -35,34 +35,34 @@ def generate_config():
     else:
         config["external_source"] = False
 
-    parent_instance_host = raw_input(
-        "%s. Parent (destination) instance Host: " % str(len(config) + 1))
-    config["parent_instance_host"] = parent_instance_host
+    destination_instance_host = raw_input(
+        "%s. Destination instance Host: " % str(len(config) + 1))
+    config["destination_instance_host"] = destination_instance_host
 
-    parent_instance_token = raw_input(
-        "%s. Parent instance Access token: " % str(len(config) + 1))
-    config["parent_instance_token"] = parent_instance_token
+    destination_instance_token = raw_input(
+        "%s. Destination instance Access token: " % str(len(config) + 1))
+    config["destination_instance_token"] = destination_instance_token
 
-    parent_user_info = get_user(parent_instance_host, parent_instance_token)
+    destination_user_info = get_user(destination_instance_host, destination_instance_token)
 
-    config["parent_user_id"] = parent_user_info["id"]
+    config["import_user_id"] = destination_user_info["id"]
 
     if config["external_source"] == False:
-        child_instance_host = raw_input(
-            "%s. Child (source) instance Host: " % str(len(config) + 1))
-        config["child_instance_host"] = child_instance_host
+        source_instance_host = raw_input(
+            "%s. Source instance Host: " % str(len(config) + 1))
+        config["source_instance_host"] = source_instance_host
 
-        child_instance_token = raw_input(
-            "%s. Child instance Access token: " % str(len(config) + 1))
-        config["child_instance_token"] = child_instance_token
+        source_instance_token = raw_input(
+            "%s. Source instance Access token: " % str(len(config) + 1))
+        config["source_instance_token"] = source_instance_token
 
-        child_instance_registry = raw_input(
-            "%s. Child instance Container Registry URL: " % str(len(config) + 1))
-        config["child_instance_registry"] = child_instance_registry
+        source_instance_registry = raw_input(
+            "%s. Source instance Container Registry URL: " % str(len(config) + 1))
+        config["source_instance_registry"] = source_instance_registry
 
-        parent_instance_registry = raw_input(
-            "%s. Parent instance Container Registry URL: " % str(len(config) + 1))
-        config["parent_instance_registry"] = parent_instance_registry
+        destination_instance_registry = raw_input(
+            "%s. Destination instance Container Registry URL: " % str(len(config) + 1))
+        config["destination_instance_registry"] = destination_instance_registry
 
         parent_id = raw_input(
             "Are you migrating the entire instance to a group? For example, migrating to our SaaS solution? (default: no)")
@@ -85,7 +85,7 @@ def generate_config():
         mirror_user = raw_input(
             "Are you planning a soft cut-over migration? (Mirroring repos to keep both instances around) (default: no)")
         if mirror_user != "no" and len(mirror_user) > 0:
-            mirror_user = parent_user_info["username"]
+            mirror_user = destination_user_info["username"]
             config["mirror_username"] = mirror_user
 
         location = raw_input(
@@ -151,5 +151,5 @@ def update_config(config_data):
         json.dump(data, f, indent=4)
 
 
-def get_user(parent_instance_host, parent_instance_token):
-    return generate_get_request(parent_instance_host, parent_instance_token, "user").json()
+def get_user(destination_instance_host, destination_instance_token):
+    return generate_get_request(destination_instance_host, destination_instance_token, "user").json()

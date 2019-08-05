@@ -24,8 +24,8 @@ class gitlab_repo:
             search_query = ""
         try:
             resp = api.generate_get_request(
-                self.conf.parent_host,
-                self.conf.parent_token,
+                self.conf.destination_host,
+                self.conf.destination_token,
                 "projects/%d/repository/branches%s" %
                 (id,
                  search_query))
@@ -47,8 +47,8 @@ class gitlab_repo:
     def get_single_branch(self, id, branch):
         try:
             resp = api.generate_get_request(
-                self.conf.parent_host,
-                self.conf.parent_token,
+                self.conf.destination_host,
+                self.conf.destination_token,
                 "projects/%d/repository/branches/%s" %
                 (id,
                  urllib.quote_plus(branch)))
@@ -68,8 +68,8 @@ class gitlab_repo:
         params.pop('id', None)
         query_params = parse_query_params(params)
         resp = api.generate_get_request(
-            self.conf.parent_host,
-            self.conf.parent_token,
+            self.conf.destination_host,
+            self.conf.destination_token,
             "projects/%d/repository/commits%s" %
             (id,
              query_params))
@@ -88,8 +88,8 @@ class gitlab_repo:
     def get_single_commit(self, id, sha):
         try:
             resp = api.generate_get_request(
-                self.conf.parent_host,
-                self.conf.parent_token,
+                self.conf.destination_host,
+                self.conf.destination_token,
                 "projects/%d/repository/commits/%s" %
                 (id,
                  sha))
@@ -109,8 +109,8 @@ class gitlab_repo:
                 query_param = "?type=%s" % reftype
 
             resp = api.generate_get_request(
-                self.conf.parent_host,
-                self.conf.parent_token,
+                self.conf.destination_host,
+                self.conf.destination_token,
                 "projects/%d/repository/commits/%s/refs%s" %
                 (id,
                  sha,
@@ -122,15 +122,15 @@ class gitlab_repo:
     def get_mirror_url(self, id):
         resp = json.load(
             api.generate_get_request(
-                self.conf.parent_host,
-                self.conf.parent_token,
+                self.conf.destination_host,
+                self.conf.destination_token,
                 "projects/%d" %
                 id))
         return resp["import_url"]
 
     def search_for_project(self, name, group, search_name):
-        for project in api.list_all(self.conf.parent_host,
-                                    self.conf.parent_token,
+        for project in api.list_all(self.conf.destination_host,
+                                    self.conf.destination_token,
                                     "projects",
                                     params={
                                         "search": urllib.quote_plus(name)
