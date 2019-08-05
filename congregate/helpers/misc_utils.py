@@ -75,13 +75,12 @@ def parse_query_params(params):
         query_params_string = "?%s" % "&".join(query_params_list)
 
     return query_params_string
-
-
-def rewrite_list_into_dict(lis, comparison_key, prefix=""):
+    
+def rewrite_list_into_dict(l, comparison_key, prefix=""):
     rewritten_groups = {}
-    for i in range(len(lis)):
-        new_obj = lis[i]
-        key = lis[i][comparison_key]
+    for i in range(len(l)):
+        new_obj = l[i]
+        key = l[i][comparison_key]
         rewritten_groups[prefix + str(key)] = new_obj
 
     return rewritten_groups
