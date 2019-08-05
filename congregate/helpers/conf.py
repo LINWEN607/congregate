@@ -137,6 +137,10 @@ class ig:
     def group_full_path_prefix(self):
         return self.config.get("group_full_path_prefix", None)
 
+    @property
+    def shared_runners_enabled(self):
+        return self.config.get("shared_runners_enabled", True)
+
     @threads.setter
     def threads(self, value):
         self.threads = value
