@@ -62,7 +62,7 @@ class UsersClient(BaseClass):
             index += 1
         return False
 
-    def find_or_create_impersonation_token(self, user, users_map, expiration_date):
+    def find_or_create_impersonation_token(self, host, token, user, users_map, expiration_date):
         email = user["email"]
         id = user["id"]
         if users_map.get(email, None) is None:
@@ -74,7 +74,7 @@ class UsersClient(BaseClass):
                 ]
             }
             new_impersonation_token = self.create_user_impersonation_token(
-                self.config.destination_host, self.config.destination_token, id, data).json()
+                host, token, id, data).json()
             users_map[email] = new_impersonation_token
             users_map[email]["user_id"] = id
         return users_map[email]

@@ -60,7 +60,7 @@ class AwardsClient(BaseClass):
                     award["user"]["id"])
 
                 impersonation_token = self.users.find_or_create_impersonation_token(
-                    new_award_giver, users_map, self.token_expiration_date)
+                    self.config.destination_host, self.config.destination_token, new_award_giver, users_map, self.token_expiration_date)
 
                 self.__create_awardable_emoji(
                     self.config.destination_host, impersonation_token["token"], awardable_name, new_project_id, awardable_id, award["name"])
@@ -84,7 +84,7 @@ class AwardsClient(BaseClass):
                                 n["user"]["id"])
 
                             impersonation_token = self.users.find_or_create_impersonation_token(
-                                new_award_giver, users_map, self.token_expiration_date)
+                                self.config.destination_host, self.config.destination_token, new_award_giver, users_map, self.token_expiration_date)
 
                             self.__create_awardable_note_emoji(
                                 self.config.destination_host, impersonation_token["token"], awardable_name, new_project_id, awardable_id, dest_note[i]["id"], n["name"])

@@ -49,9 +49,9 @@ class ProjectsClient(BaseClass):
             }
         
         if headers is not None:
-            return api.generate_post_request(host, token, "projects", data, headers=headers)
+            return api.generate_post_request(host, token, "projects", json.dumps(data), headers=headers)
         else:
-            return api.generate_post_request(host, token, "projects", data)
+            return api.generate_post_request(host, token, "projects", json.dumps(data))
         
 
     def __add_shared_group(self, host, token, id, group):

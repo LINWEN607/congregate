@@ -34,6 +34,7 @@ Usage:
     congregate find-empty-repos
     congregate compare-groups [--staged]
     congregate staged-user-list
+    congregate generate-seed-data
     congregate -h | --help
 
 Options:
@@ -70,6 +71,7 @@ Commands:
     staged-user-list                    Outputs a list of all staged users and their respective user IDs. Used to confirm IDs were updated correctly
     archive-staged-projects             Archive projects that are staged, not necessarily migrated
     unarchive-staged-projects           Unarchive projects that are staged, not necessarily migrated
+    generate-seed-data                  Generates dummy data to test a migration
 """
 
 from docopt import docopt
@@ -130,6 +132,7 @@ if __name__ == '__main__':
             # except ImportError:
             #     import migration.users, migration.groups, migration.projects
             from congregate.cli import list_projects, stage_projects, do_all
+            from congregate.helpers.seed import generator
         else:
             from .migration.gitlab.users import UsersClient
             from .migration.gitlab.groups import GroupsClient
@@ -140,6 +143,7 @@ if __name__ == '__main__':
             # except ImportError:
             #     import migration.users, migration.groups, migration.projects
             from congregate.cli import list_projects, stage_projects, do_all
+            from congregate.helpers.seed import generator
         if config.external_source != False and config.external_source is not None:
             if arguments["migrate"]:
                 if arguments["--threads"]:
@@ -244,3 +248,5 @@ if __name__ == '__main__':
             if arguments["staged-user-list"]:
                 results = compare.compare_staged_users()
                 print dumps(results, indent=4)
+            if arguments["generate-seed-data"]:
+                generator.generate_seed_data()
