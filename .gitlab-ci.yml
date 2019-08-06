@@ -51,6 +51,12 @@ test:end-to-end:
   tags:
     - docker
   script:
+    - echo $gitlab_source
+    - echo $gitlab_destination
+    - echo gitlab_source
+    - echo gitlab_destination
+    - echo $(gitlab_source)
+    - echo $(gitlab_destination)
     - GITLAB_SRC=gitlab_source GITLAB_DEST=gitlab_destination pipenv run pytest -m e2e congregate/tests/
 
 release-tag:
