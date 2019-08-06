@@ -16,8 +16,8 @@ def test_gitlab_migration():
         "",  # Migration source
         os.getenv("destination_instance_host"),
         os.getenv("destination_instance_token"),
-        os.getenv("GITLAB_SRC"),
-        t.generate_token("source_token", "2020-08-27", url=os.getenv("GITLAB_SRC"), username="root", pword=uuid4().hex),
+        "http://gitlab_source",
+        t.generate_token("source_token", "2020-08-27", url="http://gitlab_source", username="root", pword=uuid4().hex),
         os.getenv("source_instance_registry"),
         os.getenv("destination_instance_registry"),
         "",  # Parent group id
