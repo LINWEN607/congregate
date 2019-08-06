@@ -29,9 +29,9 @@ from urlparse import urljoin
 from bs4 import BeautifulSoup
 
 # Variables
-endpoint = os.environ['GITLAB_URL']
-login = os.environ['GITLAB_ADMIN_USER']
-password = os.environ['GITLAB_ADMIN_PASSWD']
+endpoint = os.getenv('GITLAB_URL')
+login = os.getenv('GITLAB_ADMIN_USER')
+password = os.getenv('GITLAB_ADMIN_PASSWD')
 scopes = {'personal_access_token[scopes][]': [
     'api', 'sudo', 'read_user', 'read_repository']}
 root_route = urljoin(endpoint, "/")
