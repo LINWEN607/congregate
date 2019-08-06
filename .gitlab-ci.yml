@@ -30,16 +30,22 @@ build:
   image: "$BUILD_IMAGE_NAME"
   before_script:
     - apt-get update
-    - apt-get install -y jq curl
+    - apt-get install -y jq
     - mkdir data
     - echo ${Dummy_config} | jq . > data/config.json
     - pip install pipenv
+    - export PIPENV_VENV_IN_PROJECT=true
     - pipenv install
+  cache:
+    key: pip-dependencies
+    paths: 
+      - .venv/
+
 
 test:unit:
   <<: *test-job
   script:
-    - pipenv run pytest --cov-config=.coveragerc --cov=congregate congregate/tests/
+    - pipenv run pytest --cov-config=.coveragerc --cov=congregate congregate/tests/ --ignore=congregate/tests/migration/gitlab/test_migration.py
 
 test:end-to-end:
   services:
@@ -51,8 +57,6 @@ test:end-to-end:
   tags:
     - docker
   script:
-    - curl http://gitlab_source
-    - curl http://gitlab_destination
     - export GITLAB_SRC=http://gitlab_source 
     - export GITLAB_DEST=http://gitlab_destination 
     - pipenv run pytest -m e2e congregate/tests/
