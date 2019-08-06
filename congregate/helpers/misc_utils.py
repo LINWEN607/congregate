@@ -91,3 +91,7 @@ def get_congregate_path():
     if app_path is None:
         app_path = os.getcwd()
     return app_path
+
+def input_generator(params):
+    for param in params:
+        yield param

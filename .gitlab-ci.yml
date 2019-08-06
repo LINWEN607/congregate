@@ -44,14 +44,14 @@ test:unit:
 test:end-to-end:
   services:
     - name: gitlab/gitlab-ce:latest
-      alias: gitlab1
+      alias: gitlab_source
     - name: gitlab/gitlab-ce:latest
-      alias: gitlab2
+      alias: gitlab_destination
   <<: *test-job
   tags:
     - docker
   script:
-    - GITLAB_SRC=gitlab1 GITLAB_DEST=gitlab2 pipenv run pytest -m e2e congregate/tests/
+    - GITLAB_SRC=gitlab_source GITLAB_DEST=gitlab_destination pipenv run pytest -m e2e congregate/tests/
 
 release-tag:
   stage: release
