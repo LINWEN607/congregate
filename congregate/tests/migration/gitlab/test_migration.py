@@ -13,7 +13,7 @@ def test_gitlab_migration():
         os.getenv("destination_instance_host"),
         os.getenv("destination_instance_token"),
         "http://gitlab_source",
-        generate_token.generate_token("source_token", "2020-08-27", url="gitlab_source", username="root", pword=uuid4().hex),
+        generate_token.generate_token("source_token", "2020-08-27", url="http://gitlab_source", username="root", pword=uuid4().hex),
         os.getenv("source_instance_registry"),
         os.getenv("destination_instance_registry"),
         "",  # Parent group id
