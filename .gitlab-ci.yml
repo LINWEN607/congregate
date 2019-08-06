@@ -53,7 +53,9 @@ test:end-to-end:
   script:
     - curl http://gitlab_source
     - curl http://gitlab_destination
-    - GITLAB_SRC=http://gitlab_source GITLAB_DEST=http://gitlab_destination pipenv run pytest -m e2e congregate/tests/
+    - export GITLAB_SRC=http://gitlab_source 
+    - export GITLAB_DEST=http://gitlab_destination 
+    - pipenv run pytest -m e2e congregate/tests/
 
 release-tag:
   stage: release
