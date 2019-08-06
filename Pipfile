@@ -28,6 +28,8 @@ docker = "*"
 pytest = "*"
 pytest-cov = "*"
 responses = "*"
+"bs4" = "*"
+lxml = "*"
 
 [scripts]
 clean_pyc = "find ./congregate -name '*.pyc' -delete"
