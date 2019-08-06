@@ -31,6 +31,7 @@ def build_staging_data(projects_to_stage):
         cmd = "%s/list_projects.sh > /dev/null" % b.app_path
         subprocess.call(cmd.split())
 
+    shared_runners_enabled = b.config.shared_runners_enabled
     # Loading projects information
     projects = open_projects_file()
     groups = open_groups_file()
@@ -65,7 +66,8 @@ def build_staging_data(projects_to_stage):
                     "http_url_to_repo": projects[i]["http_url_to_repo"],
                     "project_type": projects[i]["namespace"]["kind"],
                     "description": projects[i]["description"],
-                    "default_branch": projects[i]["default_branch"]
+                    "default_branch": projects[i]["default_branch"],
+                    "shared_runners_enabled": shared_runners_enabled
                 }
 
                 members = []
@@ -96,7 +98,8 @@ def build_staging_data(projects_to_stage):
                     "http_url_to_repo": projects[i]["http_url_to_repo"],
                     "project_type": projects[i]["namespace"]["kind"],
                     "description": projects[i]["description"],
-                    "default_branch": projects[i]["default_branch"]
+                    "default_branch": projects[i]["default_branch"],
+                    "shared_runners_enabled": shared_runners_enabled
                 }
 
                 members = []
@@ -151,7 +154,8 @@ def build_staging_data(projects_to_stage):
                     "http_url_to_repo": project["http_url_to_repo"],
                     "project_type": project["namespace"]["kind"],
                     "description": project["description"],
-                    "default_branch": project["default_branch"]
+                    "default_branch": project["default_branch"],
+                    "shared_runners_enabled": shared_runners_enabled
                 }
 
                 members = []

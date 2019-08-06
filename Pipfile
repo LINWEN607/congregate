@@ -28,9 +28,11 @@ docker = "*"
 pytest = "*"
 pytest-cov = "*"
 responses = "*"
+sphinx = "*"
 
 [scripts]
 clean_pyc = "find ./congregate -name '*.pyc' -delete"
+generate-docs = "sphinx-apidoc -f -o congregate/docs/source/ ./"
 
 [requires]
 python_version = "2.7"
