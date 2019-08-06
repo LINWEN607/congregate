@@ -28,98 +28,102 @@ import argparse
 from urlparse import urljoin
 from bs4 import BeautifulSoup
 
-# Variables
-endpoint = os.getenv('GITLAB_URL')
-login = os.getenv('GITLAB_ADMIN_USER')
-password = os.getenv('GITLAB_ADMIN_PASSWD')
-scopes = {'personal_access_token[scopes][]': [
-    'api', 'sudo', 'read_user', 'read_repository']}
-root_route = urljoin(endpoint, "/")
-sign_in_route = urljoin(endpoint, "/users/sign_in")
-password_route = urljoin(endpoint, "/users/password")
-pat_route = urljoin(endpoint, "/profile/personal_access_tokens")
+class token_generator():
+    def __init__(self):
+        self.endpoint = os.getenv('GITLAB_URL')
+        self.login = os.getenv('GITLAB_ADMIN_USER')
+        self.password = os.getenv('GITLAB_ADMIN_PASSWD')
+        self.scopes = {'personal_access_token[scopes][]': [
+            'api', 'sudo', 'read_user', 'read_repository']}
+        self.root_route = urljoin(self.endpoint, "/")
+        self.sign_in_route = urljoin(self.endpoint, "/users/sign_in")
+        self.password_route = urljoin(self.endpoint, "/users/password")
+        self.pat_route = urljoin(self.endpoint, "/profile/personal_access_tokens")
 
-# Methods
-def find_csrf_token(text):
-    soup = BeautifulSoup(text, "lxml")
-    token = soup.find(attrs={"name": "csrf-token"})
-    param = soup.find(attrs={"name": "csrf-param"})
-    data = {param.get("content"): token.get("content")}
-    return data
+    # Methods
+    def find_csrf_token(self, text):
+        soup = BeautifulSoup(text, "lxml")
+        token = soup.find(attrs={"name": "csrf-token"})
+        param = soup.find(attrs={"name": "csrf-param"})
+        data = {param.get("content"): token.get("content")}
+        return data
 
-def obtain_csrf_token():
-    r = requests.get(root_route)
-    token = find_csrf_token(r.text)
-    reset_password_token = None
-    if "?reset_password_token=" in r.url:
-        reset_password_token = r.url.split("?reset_password_token=")[1]
-    return token, r.cookies, reset_password_token
+    def obtain_csrf_token(self):
+        r = requests.get(self.root_route)
+        token = self.find_csrf_token(r.text)
+        reset_password_token = None
+        if "?reset_password_token=" in r.url:
+            reset_password_token = r.url.split("?reset_password_token=")[1]
+        return token, r.cookies, reset_password_token
 
-def sign_in(csrf, cookies):
-    data = {
-        "user[login]": login,
-        "user[password]": password,
-        "user[remember_me]": 0,
-        "utf8": "✓"
-    }
-    data.update(csrf)
-    r = requests.post(sign_in_route, data=data, cookies=cookies)
-    token = find_csrf_token(r.text)
-    if len(r.history) > 0:
-        return token, r.history[0].cookies
-    return token, cookies
-
-def change_password(csrf, cookies, reset_password_token):
-    if reset_password_token is not None:
+    def sign_in(self, csrf, cookies):
         data = {
-            "utf8": "✓",
-            "_method": "put",
-            "user[password]": password,
-            "user[password_confirmation]": password,
-            "user[reset_password_token]": reset_password_token,
+            "user[login]": self.login,
+            "user[password]": self.password,
+            "user[remember_me]": 0,
+            "utf8": "✓"
         }
         data.update(csrf)
-        r = requests.post(password_route, data=data, cookies=cookies)
-        token = find_csrf_token(r.text)
-        return token, r.history[0].cookies
-    return csrf, cookies
+        r = requests.post(self.sign_in_route, data=data, cookies=cookies)
+        token = self.find_csrf_token(r.text)
+        if len(r.history) > 0:
+            return token, r.history[0].cookies
+        return token, cookies
 
-def obtain_personal_access_token(name, expires_at, csrf, cookies):
-    data = {
-        "personal_access_token[expires_at]": expires_at,
-        "personal_access_token[name]": name,
-        "utf8": "✓"
-    }
-    data.update(scopes)
-    data.update(csrf)
-    r = requests.post(pat_route, data=data, cookies=cookies)
-    soup = BeautifulSoup(r.text, "lxml")
-    token = soup.find('input', id='created-personal-access-token').get('value')
-    return token
+    def change_password(self, csrf, cookies, reset_password_token):
+        if reset_password_token is not None:
+            data = {
+                "utf8": "✓",
+                "_method": "put",
+                "user[password]": self.password,
+                "user[password_confirmation]": self.password,
+                "user[reset_password_token]": reset_password_token,
+            }
+            data.update(csrf)
+            r = requests.post(self.password_route, data=data, cookies=cookies)
+            token = self.find_csrf_token(r.text)
+            return token, r.history[0].cookies
+        return csrf, cookies
 
-def generate_token(name, expires_at, url=None, username=None, pword=None):
-    global endpoint
-    global login
-    global password
+    def obtain_personal_access_token(self, name, expires_at, csrf, cookies):
+        data = {
+            "personal_access_token[expires_at]": expires_at,
+            "personal_access_token[name]": name,
+            "utf8": "✓"
+        }
+        data.update(self.scopes)
+        data.update(csrf)
+        r = requests.post(self.pat_route, data=data, cookies=cookies)
+        soup = BeautifulSoup(r.text, "lxml")
+        token = soup.find('input', id='created-personal-access-token').get('value')
+        return token
 
-    if url is not None:
-        endpoint = url
-    if username is not None:
-        login = username
-    if pword is not None:
-        password = pword
+    def generate_token(self, name, expires_at, url=None, username=None, pword=None):
+        if url is not None:
+            self.__set_endpoint(url)
+        if username is not None:
+            self.__set_login(username)
+        if pword is not None:
+            self.__set_password(pword)
 
-    csrf1, cookies1, reset_password_token = obtain_csrf_token()
-    csrf2, cookies2 = change_password(csrf1, cookies1, reset_password_token)
-    csrf3, cookies3 = sign_in(csrf2, cookies2)
+        csrf1, cookies1, reset_password_token = self.obtain_csrf_token()
+        csrf2, cookies2 = self.change_password(csrf1, cookies1, reset_password_token)
+        csrf3, cookies3 = self.sign_in(csrf2, cookies2)
 
-    token = obtain_personal_access_token(name, expires_at, csrf3, cookies3)
-    return token
+        token = self.obtain_personal_access_token(name, expires_at, csrf3, cookies3)
+        return token
 
-def main():
-    name = sys.argv[1]
-    expires_at = sys.argv[2]
-    print(generate_token(name, expires_at))
+    def __set_endpoint(self, endpoint):
+        self.endpoint = endpoint
+
+    def __set_login(self, login):
+        self.login = login
+
+    def __set_password(self, password):
+        self.password = password
 
 if __name__ == "__main__":
-    main()
+    t = token_generator()
+    name = sys.argv[1]
+    expires_at = sys.argv[2]
+    print(t.generate_token(name, expires_at))

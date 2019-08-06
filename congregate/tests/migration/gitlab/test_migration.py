@@ -4,7 +4,9 @@ import os
 from uuid import uuid4
 from congregate.helpers.misc_utils import input_generator
 from congregate.cli import config
-from congregate.helpers.seed import generate_token
+from congregate.helpers.seed.generate_token import token_generator
+
+t = token_generator()
 
 @pytest.mark.e2e
 def test_gitlab_migration():
@@ -13,7 +15,7 @@ def test_gitlab_migration():
         os.getenv("destination_instance_host"),
         os.getenv("destination_instance_token"),
         os.getenv("GITLAB_SRC"),
-        generate_token.generate_token("source_token", "2020-08-27", url=os.getenv("GITLAB_SRC"), username="root", pword=uuid4().hex),
+        t.generate_token("source_token", "2020-08-27", url=os.getenv("GITLAB_SRC"), username="root", pword=uuid4().hex),
         os.getenv("source_instance_registry"),
         os.getenv("destination_instance_registry"),
         "",  # Parent group id

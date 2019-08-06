@@ -51,15 +51,9 @@ test:end-to-end:
   tags:
     - docker
   script:
-    - echo $gitlab_source
-    - echo $gitlab_destination
-    - echo gitlab_source
-    - echo gitlab_destination
-    - echo $(gitlab_source)
-    - echo $(gitlab_destination)
-    - curl http://localhost/gitlab_source
-    - curl http://localhost/gitlab_destination
-    - GITLAB_SRC=http://localhost/gitlab_source GITLAB_DEST=http://localhost/gitlab_destination pipenv run pytest -m e2e congregate/tests/
+    - curl http://gitlab_source
+    - curl http://gitlab_destination
+    - GITLAB_SRC=http://gitlab_source GITLAB_DEST=http://gitlab_destination pipenv run pytest -m e2e congregate/tests/
 
 release-tag:
   stage: release
