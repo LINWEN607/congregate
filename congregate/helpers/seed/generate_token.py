@@ -49,6 +49,7 @@ class token_generator():
     @configurable_stable_retry(delay=10, tries=10)
     def obtain_csrf_token(self):
         r = requests.get(self.__get_root_route())
+        print r.text
         token = self.find_csrf_token(r.text)
         reset_password_token = None
         if "?reset_password_token=" in r.url:
