@@ -37,7 +37,6 @@ build:
     - export PIPENV_VENV_IN_PROJECT=true
     - pipenv install
   cache:
-    key: pip-dependencies
     paths: 
       - .venv/
 

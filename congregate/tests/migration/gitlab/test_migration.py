@@ -29,7 +29,8 @@ def test_gitlab_migration():
 
 
     with mock.patch('__builtin__.raw_input', lambda x: next(g)):
-        config.update_config(config.generate_config())
+        # config.update_config(config.generate_config())
+        print config.generate_config()
 
     # generate_seed_data()
 
