@@ -101,10 +101,13 @@ class token_generator():
     def generate_token(self, name, expires_at, url=None, username=None, pword=None):
         if url is not None:
             self.__set_endpoint(url)
+            print self.endpoint
         if username is not None:
             self.__set_login(username)
+            print self.login
         if pword is not None:
             self.__set_password(pword)
+            print self.password
 
         csrf1, cookies1, reset_password_token = self.obtain_csrf_token()
         csrf2, cookies2 = self.change_password(csrf1, cookies1, reset_password_token)
