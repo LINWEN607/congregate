@@ -27,6 +27,7 @@ import requests
 import argparse
 from urlparse import urljoin
 from bs4 import BeautifulSoup
+from congregate.helpers.decorators import configurable_stable_retry
 
 class token_generator():
     def __init__(self):
@@ -37,6 +38,7 @@ class token_generator():
             'api', 'sudo', 'read_user', 'read_repository']}
 
     # Methods
+    @configurable_stable_retry(delay=10, tries=5)
     def find_csrf_token(self, text):
         soup = BeautifulSoup(text, "lxml")
         token = soup.find(attrs={"name": "csrf-token"})
@@ -44,6 +46,7 @@ class token_generator():
         data = {param.get("content"): token.get("content")}
         return data
 
+    @configurable_stable_retry(delay=10, tries=10)
     def obtain_csrf_token(self):
         r = requests.get(self.__get_root_route())
         token = self.find_csrf_token(r.text)
@@ -97,13 +100,10 @@ class token_generator():
     def generate_token(self, name, expires_at, url=None, username=None, pword=None):
         if url is not None:
             self.__set_endpoint(url)
-            print self.endpoint
         if username is not None:
             self.__set_login(username)
-            print self.login
         if pword is not None:
             self.__set_password(pword)
-            print self.password
 
         csrf1, cookies1, reset_password_token = self.obtain_csrf_token()
         csrf2, cookies2 = self.change_password(csrf1, cookies1, reset_password_token)
