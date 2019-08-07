@@ -38,7 +38,7 @@ class token_generator():
             'api', 'sudo', 'read_user', 'read_repository']}
 
     # Methods
-    @configurable_stable_retry(delay=10, tries=5)
+    @configurable_stable_retry(delay=10, tries=10)
     def find_csrf_token(self, text):
         soup = BeautifulSoup(text, "lxml")
         token = soup.find(attrs={"name": "csrf-token"})
