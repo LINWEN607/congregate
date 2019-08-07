@@ -49,6 +49,8 @@ class token_generator():
     @configurable_stable_retry(delay=10, tries=10)
     def obtain_csrf_token(self):
         r = requests.get(self.__get_root_route())
+        print r.text
+        print r.status_code
         if r.status_code != 200:
             raise Exception
         token = self.find_csrf_token(r.text)
