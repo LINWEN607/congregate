@@ -57,9 +57,9 @@ test:unit:
 test:end-to-end:
   services:
     - name: docker:stable-dind
-    - name: gitlab/gitlab-ce:latest
+    - name: gitlab/gitlab-ee:latest
       alias: gitlab_source
-    - name: gitlab/gitlab-ce:latest
+    - name: gitlab/gitlab-ee:latest
       alias: gitlab_destination
   <<: *test-job
   tags:
@@ -67,10 +67,9 @@ test:end-to-end:
   script:
     - export GITLAB_SRC=http://gitlab_source 
     - export GITLAB_DEST=http://gitlab_destination 
+    - sleep 60
     - curl $GITLAB_SRC
     - curl $GITLAB_DEST
-    - docker restart gitlab_source
-    - docker restart gitlab_destination
     - pipenv run pytest -m e2e congregate/tests/
 
 release-tag:
