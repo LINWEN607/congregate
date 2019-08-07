@@ -35,7 +35,7 @@ def test_gitlab_migration():
             "source_instance_token": t.generate_token("source_token", "2020-08-27", url=os.getenv("GITLAB_SRC"), username="root", pword=uuid4().hex),
             "source_instance_registry": os.getenv("source_instance_registry"),
             "destination_instance_host": os.getenv("GITLAB_DEST"),
-            "destination_instance_token": t.generate_token("source_token", "2020-08-27", url=os.getenv("GITLAB_SRC"), username="root", pword=uuid4().hex),
+            "destination_instance_token": t.generate_token("destination_token", "2020-08-27", url=os.getenv("GITLAB_DEST"), username="root", pword=uuid4().hex),
             "destination_instance_registry": os.getenv("destination_instance_registry"),
             "number_of_threads": 2,
             "location": "filesystem",
