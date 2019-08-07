@@ -48,6 +48,7 @@ pre-test:
     - echo ${Dummy_config} | jq . > data/config.json
     - pip install pipenv
     - export PIPENV_VENV_IN_PROJECT=true
+    - pipenv install
   
 test:unit:
   <<: *test-job
