@@ -45,7 +45,7 @@ class token_generator():
         return data
 
     def obtain_csrf_token(self):
-        r = requests.get(self.__get_root_route)
+        r = requests.get(self.__get_root_route())
         token = self.find_csrf_token(r.text)
         reset_password_token = None
         if "?reset_password_token=" in r.url:
@@ -60,7 +60,7 @@ class token_generator():
             "utf8": "✓"
         }
         data.update(csrf)
-        r = requests.post(self.__get_sign_in_route, data=data, cookies=cookies)
+        r = requests.post(self.__get_sign_in_route(), data=data, cookies=cookies)
         token = self.find_csrf_token(r.text)
         if len(r.history) > 0:
             return token, r.history[0].cookies
@@ -76,7 +76,7 @@ class token_generator():
                 "user[reset_password_token]": reset_password_token,
             }
             data.update(csrf)
-            r = requests.post(self.__get_password_route, data=data, cookies=cookies)
+            r = requests.post(self.__get_password_route(), data=data, cookies=cookies)
             token = self.find_csrf_token(r.text)
             return token, r.history[0].cookies
         return csrf, cookies
@@ -89,7 +89,7 @@ class token_generator():
         }
         data.update(self.scopes)
         data.update(csrf)
-        r = requests.post(self.__get_pat_route, data=data, cookies=cookies)
+        r = requests.post(self.__get_pat_route(), data=data, cookies=cookies)
         soup = BeautifulSoup(r.text, "lxml")
         token = soup.find('input', id='created-personal-access-token').get('value')
         return token
