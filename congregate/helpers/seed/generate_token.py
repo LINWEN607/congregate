@@ -35,10 +35,6 @@ class token_generator():
         self.password = os.getenv('GITLAB_ADMIN_PASSWD')
         self.scopes = {'personal_access_token[scopes][]': [
             'api', 'sudo', 'read_user', 'read_repository']}
-        self.root_route = urljoin(self.endpoint, "/")
-        self.sign_in_route = urljoin(self.endpoint, "/users/sign_in")
-        self.password_route = urljoin(self.endpoint, "/users/password")
-        self.pat_route = urljoin(self.endpoint, "/profile/personal_access_tokens")
 
     # Methods
     def find_csrf_token(self, text):
@@ -49,7 +45,7 @@ class token_generator():
         return data
 
     def obtain_csrf_token(self):
-        r = requests.get(self.root_route)
+        r = requests.get(self.__get_root_route)
         token = self.find_csrf_token(r.text)
         reset_password_token = None
         if "?reset_password_token=" in r.url:
@@ -64,7 +60,7 @@ class token_generator():
             "utf8": "✓"
         }
         data.update(csrf)
-        r = requests.post(self.sign_in_route, data=data, cookies=cookies)
+        r = requests.post(self.__get_sign_in_route, data=data, cookies=cookies)
         token = self.find_csrf_token(r.text)
         if len(r.history) > 0:
             return token, r.history[0].cookies
@@ -80,7 +76,7 @@ class token_generator():
                 "user[reset_password_token]": reset_password_token,
             }
             data.update(csrf)
-            r = requests.post(self.password_route, data=data, cookies=cookies)
+            r = requests.post(self.__get_password_route, data=data, cookies=cookies)
             token = self.find_csrf_token(r.text)
             return token, r.history[0].cookies
         return csrf, cookies
@@ -93,7 +89,7 @@ class token_generator():
         }
         data.update(self.scopes)
         data.update(csrf)
-        r = requests.post(self.pat_route, data=data, cookies=cookies)
+        r = requests.post(self.__get_pat_route, data=data, cookies=cookies)
         soup = BeautifulSoup(r.text, "lxml")
         token = soup.find('input', id='created-personal-access-token').get('value')
         return token
@@ -124,6 +120,18 @@ class token_generator():
 
     def __set_password(self, password):
         self.password = password
+
+    def __get_root_route(self):
+        return urljoin(self.endpoint, "/")
+    
+    def __get_sign_in_route(self):
+        return urljoin(self.endpoint, "/users/sign_in")
+    
+    def __get_password_route(self):
+        return urljoin(self.endpoint, "/users/password")
+
+    def __get_pat_route(self):    
+        return urljoin(self.endpoint, "/profile/personal_access_tokens")
 
 if __name__ == "__main__":
     t = token_generator()
