@@ -44,7 +44,7 @@ build:
     - apt-get update
     - apt-get install -y jq curl
     - mkdir data
-    - echo ${Dummy_config} | jq . > data/config.json
+    - echo ${Dummy_config} | jq . > $CONGREGATE_PATH/data/config.json
     - pip install pipenv
     - export PIPENV_VENV_IN_PROJECT=true
     - pipenv install
@@ -67,9 +67,6 @@ test:end-to-end:
   script:
     - export GITLAB_SRC=http://gitlab_source 
     - export GITLAB_DEST=http://gitlab_destination 
-    - sleep 60
-    - curl $GITLAB_SRC
-    - curl $GITLAB_DEST
     - pipenv run pytest -m e2e congregate/tests/
 
 release-tag:
