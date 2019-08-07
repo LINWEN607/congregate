@@ -46,10 +46,9 @@ class token_generator():
         data = {param.get("content"): token.get("content")}
         return data
 
-    @configurable_stable_retry(delay=10, tries=10)
+    @configurable_stable_retry(delay=10, tries=50)
     def obtain_csrf_token(self):
         r = requests.get(self.__get_root_route())
-        print r.text
         print r.status_code
         if r.status_code != 200:
             raise Exception
@@ -109,24 +108,9 @@ class token_generator():
         if pword is not None:
             self.__set_password(pword)
 
-        print "Resetting password"
         csrf1, cookies1, reset_password_token = self.obtain_csrf_token()
-        print "CSRF Token"
-        print csrf1
-        print "Cookies"
-        print cookies1
-        print "Reset password token"
-        print reset_password_token
         csrf2, cookies2 = self.change_password(csrf1, cookies1, reset_password_token)
-        print "CSRF 2"
-        print csrf2
-        print "Cookies"
-        print cookies2
         csrf3, cookies3 = self.sign_in(csrf2, cookies2)
-        print "CSRF3"
-        print csrf3
-        print "Cookies"
-        print cookies3
 
         token = self.obtain_personal_access_token(name, expires_at, csrf3, cookies3)
         return token
