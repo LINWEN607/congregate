@@ -13,6 +13,7 @@ t = token_generator()
 @pytest.mark.e2e
 def test_gitlab_migration():
     print os.getenv("GITLAB_SRC")
+    print os.getenv("GITLAB_DEST")
     # values = [
     #     "",  # Migration source
     #     os.getenv("destination_instance_host"),
