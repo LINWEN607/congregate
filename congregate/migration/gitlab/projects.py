@@ -1,6 +1,7 @@
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers import api
 from requests.exceptions import RequestException
+from congregate.migration.gitlab.api.projects import ProjectsApi
 from urllib import quote_plus
 from io import BytesIO
 from os import walk
@@ -8,6 +9,9 @@ import json
 
 
 class ProjectsClient(BaseClass):
+    def __init__(self):
+        self.projects_api = ProjectsApi()
+        super(ProjectsClient, self).__init__()
 
     @staticmethod
     def get_full_namespace_path(namespace_prefix, namespace, project_name):
@@ -21,41 +25,6 @@ class ProjectsClient(BaseClass):
         if resp.status_code == 200:
             return resp.json()
         return None
-
-    def search_for_project(self, host, token, name):
-        return api.list_all(host, token, "projects?search=%s" % quote_plus(name))
-
-    def get_project(self, id, host, token):
-        return api.generate_get_request(host, token, "projects/%d" % id)
-
-    def get_members(self, id, host, token):
-        return api.list_all(host, token, "projects/%d/members" % id)
-
-    def add_member_to_group(self, id, host, token, member):
-        return api.generate_post_request(host, token, "projects/%d/members" % id, json.dumps(member))
-
-    def archive_project(self, host, token, id):
-        return api.generate_post_request(host, token, "projects/%d/archive" % id, {}).json()
-
-    def unarchive_project(self, host, token, id):
-        return api.generate_post_request(host, token, "projects/%d/unarchive" % id, {}).json()
-
-    def create_project(self, host, token, name, data=None, headers=None):
-        if data is not None:
-            data["name"] = name
-        else:
-            data = {
-                "name": name
-            }
-        
-        if headers is not None:
-            return api.generate_post_request(host, token, "projects", json.dumps(data), headers=headers)
-        else:
-            return api.generate_post_request(host, token, "projects", json.dumps(data))
-        
-
-    def __add_shared_group(self, host, token, id, group):
-        return api.generate_post_request(host, token, "projects/%d/share" % id, json.dumps(group))
 
     def add_members(self, members, id):
         """Adds project members."""
@@ -92,7 +61,7 @@ class ProjectsClient(BaseClass):
 
     def add_shared_groups(self, old_id, new_id):
         """Adds the list of groups we share the project with."""
-        old_project = self.get_project(old_id, self.config.source_host, self.config.source_token).json()
+        old_project = self.projects_api.get_project(old_id, self.config.source_host, self.config.source_token).json()
         for group in old_project["shared_with_groups"]:
             path = group["group_full_path"]
             new_group_id = self.__get_new_group_id(group["group_name"], path)
@@ -103,7 +72,7 @@ class ProjectsClient(BaseClass):
                     "expires_at": group["expires_at"]
                 }
                 try:
-                    r = self.__add_shared_group(self.config.destination_host, self.config.destination_token, new_id, data)
+                    r = self.projects_api.add_shared_group(self.config.destination_host, self.config.destination_token, new_id, data)
                     if r.status_code == 201:
                         self.log.info("Shared project %d with group %s" % (new_id, path))
                     else:
@@ -126,7 +95,7 @@ class ProjectsClient(BaseClass):
 
     def __old_project_avatar(self, id):
         """Returns the source project avatar."""
-        old_project = self.get_project(
+        old_project = self.projects_api.get_project(
             id, self.config.source_host, self.config.source_token).json()
         return old_project["avatar_url"]
 

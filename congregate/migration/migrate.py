@@ -30,6 +30,7 @@ from congregate.migration.gitlab.project_export import ProjectExportClient
 from congregate.migration.mirror import MirrorClient
 from congregate.migration.gitlab.deploy_keys import DeployKeysClient
 from congregate.migration.bitbucket import client as bitbucket
+from congregate.helpers.exceptions import ConfigurationException
 
 aws = AwsClient()
 ie = ie_client()
@@ -47,10 +48,7 @@ schedules = PipelineSchedulesClient()
 deploy_keys = DeployKeysClient()
 project_export = ProjectExportClient()
 
-if b.config.parent_id is not None:
-    full_parent_namespace = groups.get_group(b.config.parent_id, b.config.destination_host, b.config.destination_token).json()["full_path"]
-else:
-    full_parent_namespace = ""
+full_parent_namespace = groups.find_parent_group_path()
 
 def migrate_project_info():
     """
@@ -243,7 +241,7 @@ def migrate_given_export(project_json):
             import_id = ie.import_project(project_json)
             if import_id is not None:
                 b.log.info("Unarchiving project %s" % project_json["name"])
-                projects.unarchive_project(
+                projects.projects_api.unarchive_project(
                     b.config.source_host, b.config.source_token, project_json["id"])
 
                 b.log.info("Migrating %s project info" % project_json["name"])
@@ -369,7 +367,7 @@ def handle_migrating_file(f):
     namespace = f["namespace"]
     try:
         if b.config.parent_id is not None and f["project_type"] != "user":
-            parent_namespace = groups.get_group(
+            parent_namespace = groups.groups_api.get_group(
                 b.config.parent_id, b.config.destination_host, b.config.destination_token).json()
             namespace = "%s/%s" % (parent_namespace["path"], f["namespace"])
         else:
@@ -408,7 +406,7 @@ def find_unimported_projects():
             try:
                 b.log.debug("Searching for existing %s" % project_json["name"])
                 project_exists = False
-                for proj in projects.search_for_project(b.config.destination_host, b.config.destination_token,
+                for proj in projects.projects_api.search_for_project(b.config.destination_host, b.config.destination_token,
                                                         project_json['name']):
                     if proj["name"] == project_json["name"]:
                         if project_json["namespace"]["full_path"].lower() == proj["path_with_namespace"].lower():
@@ -447,7 +445,7 @@ def get_new_ids():
         for project_json in staged_projects:
             try:
                 b.log.debug("Searching for existing %s" % project_json["name"])
-                for proj in projects.search_for_project(b.config.destination_host, b.config.destination_token,
+                for proj in projects.projects_api.search_for_project(b.config.destination_host, b.config.destination_token,
                                                         project_json['name']):
                     if proj["name"] == project_json["name"]:
 
@@ -485,7 +483,7 @@ def check_visibility():
     else:
         ids = get_new_ids()
     for i in ids:
-        project = projects.get_project(
+        project = projects.projects_api.get_project(
             i, b.config.destination_host, b.config.destination_token).json()
         if project["visibility"] != "private":
             print "%s, %s" % (
@@ -596,7 +594,7 @@ def archive_staged_projects(dry_run=False):
             id = project["id"]
             b.log.info("Archiving project %s (ID: %s)" % (project["name"], id))
             if not dry_run:
-                projects.archive_project(b.config.source_host, b.config.source_token, id)
+                projects.projects_api.archive_project(b.config.source_host, b.config.source_token, id)
     except requests.exceptions.RequestException, e:
         b.log.error("Failed to archive staged projects, with error:\n%s" % e)
 
@@ -609,7 +607,7 @@ def unarchive_staged_projects(dry_run=False):
             id = project["id"]
             b.log.info("Unarchiving project %s (ID: %s)" % (project["name"], id))
             if not dry_run:
-                projects.unarchive_project(b.config.source_host, b.config.source_token, id)
+                projects.projects_api.unarchive_project(b.config.source_host, b.config.source_token, id)
     except requests.exceptions.RequestException, e:
         b.log.error("Failed to unarchive staged projects, with error:\n%s" % e)
 

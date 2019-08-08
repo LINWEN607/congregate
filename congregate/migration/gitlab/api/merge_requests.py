@@ -1,13 +1,8 @@
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers import api
 from congregate.helpers.misc_utils import strip_numbers, remove_dupes
-from congregate.migration.gitlab.groups import GroupsClient
-from requests.exceptions import RequestException
-from os import path
-import json
 
-
-class MergeRequestsClient(BaseClass):
+class MergeRequestsApi(BaseClass):
     def get_all_project_merge_requests(self, host, token, project_id):
         return api.list_all(host, token, "projects/%d/merge_requests" % project_id)
 

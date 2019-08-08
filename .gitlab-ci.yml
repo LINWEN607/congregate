@@ -52,7 +52,7 @@ build:
 test:unit:
   <<: *test-job
   script:
-    - pipenv run pytest --cov-config=.coveragerc --cov=congregate congregate/tests/ --ignore=congregate/tests/migration/gitlab/test_migration.py
+    - pipenv run pytest -m 'not e2e' --cov-config=.coveragerc --cov=congregate congregate/tests/
 
 test:end-to-end:
   services:

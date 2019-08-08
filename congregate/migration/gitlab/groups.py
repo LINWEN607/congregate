@@ -2,6 +2,8 @@ from congregate.helpers.base_class import BaseClass
 from congregate.helpers import api, misc_utils
 from congregate.migration.gitlab.variables import VariablesClient as vars_client
 from requests.exceptions import RequestException
+from congregate.migration.gitlab.api.groups import GroupsApi
+from congregate.helpers.exceptions import ConfigurationException
 import json
 from os import path
 
@@ -9,31 +11,23 @@ from os import path
 class GroupsClient(BaseClass):
     def __init__(self):
         self.vars = vars_client()
+        self.groups_api = GroupsApi()
         super(GroupsClient, self).__init__()
 
-    def get_group(self, id, host, token):
-        return api.generate_get_request(host, token, "groups/%d" % id)
+    def find_parent_group_path(self):
+        '''
+            Gate used to find an existing and valid parent group path
 
-    def search_for_group(self, name, host, token):
-        return api.list_all(host, token, "groups?search=%s" % name)
-
-    def create_group(self, host, token, data):
-        return api.generate_post_request(host, token, "groups", json.dumps(data))
-
-    def add_member_to_group(self, id, host, token, member):
-        return api.generate_post_request(host, token, "groups/%d/members" % id, json.dumps(member))
-
-    def get_all_groups(self, host, token):
-        return api.list_all(host, token, "groups")
-
-    def get_all_group_members(self, id, host, token):
-        return api.list_all(host, token, "groups/%d/members" % id)
-
-    def get_all_subgroups(self, id, host, token):
-        return api.list_all(host, token, "groups/%d/subgroups" % id)
-    
-    def delete_group(self, id, host, token):
-        return api.generate_delete_request(host, token, "groups/%d" % id)
+            :raises: ConfigurationException
+        '''
+        try:
+            if self.config.parent_id is not None:
+                return self.groups_api.get_group(self.config.parent_id, self.config.destination_host, self.config.destination_token).json()["full_path"]
+            else:
+                return ""
+        except ConfigurationException, e:
+            self.log.error(e)
+            exit(1)
 
     def traverse_groups(self, base_groups, transient_list,  host, token, parent_group=None):
         if parent_group is not None:
@@ -47,12 +41,12 @@ class GroupsClient(BaseClass):
             except KeyError:
                 pass
             group_id = group["id"]
-            members = list(self.get_all_group_members(group_id, host, token))
+            members = list(self.groups_api.get_all_group_members(group_id, host, token))
             group["members"] = members
             transient_list.append(group)
             if parent_group is not None:
                 parent_group["child_ids"].append(group["id"])
-            for subgroup in self.get_all_subgroups(group_id, host, token):
+            for subgroup in self.groups_api.get_all_subgroups(group_id, host, token):
                 if len(subgroup) > 0:
                     parent_group = transient_list[-1]
                     self.log.debug("traversing into a subgroup")
@@ -66,11 +60,11 @@ class GroupsClient(BaseClass):
             prefix = location
         
         if not top_level_group:
-            groups = list(self.get_all_groups(
+            groups = list(self.groups_api.get_all_groups(
                 host, token))
         else:
             if self.config.parent_id is not None:
-                groups = [self.get_group(self.config.parent_id, self.config.destination_host, self.config.destination_token).json()]
+                groups = [self.groups_api.get_group(self.config.parent_id, self.config.destination_host, self.config.destination_token).json()]
                 prefix += str(self.config.parent_id)
                 print groups
             else:
@@ -185,7 +179,7 @@ class GroupsClient(BaseClass):
                             full_parent_namespace = group_without_id["full_parent_namespace"]
                             group_without_id.pop("full_parent_namespace")
                             self.log.info("Popping parent namespace")
-                        response = self.create_group(
+                        response = self.groups_api.create_group(
                             self.config.destination_host, self.config.destination_token, group_without_id).json()
                         if isinstance(response, dict):
                             if response.get("message", None) is not None:
@@ -207,7 +201,7 @@ class GroupsClient(BaseClass):
                                             if found_group is True:
                                                 break
                                     else:
-                                        for ng in self.search_for_group(group["name"], self.config.destination_host, self.config.destination_token):
+                                        for ng in self.groups_api.search_for_group(group["name"], self.config.destination_host, self.config.destination_token):
                                             if ng["full_path"] == full_parent_namespace:
                                                 new_group_id = ng["id"]
                                                 print new_group_id
@@ -328,7 +322,7 @@ class GroupsClient(BaseClass):
             g = group_dict[id]
             if g["parent_id"] is None:
                 if self.config.parent_id is not None:
-                    parent_group = self.get_group(
+                    parent_group = self.groups_api.get_group(
                         self.config.parent_id, self.config.destination_host, self.config.destination_token).json()
                     g["full_parent_namespace"] = parent_group["full_path"]
                     g["parent_namespace"] = parent_group["path"]
@@ -336,10 +330,10 @@ class GroupsClient(BaseClass):
             else:
                 parent_group = group_dict.get(g["parent_id"])
                 if parent_group is not None:
-                    parent_group_resp = self.get_group(
+                    parent_group_resp = self.groups_api.get_group(
                         parent_group["id"], self.config.source_host, self.config.source_token).json()
                     if self.config.parent_id is not None:
-                        tlg = self.get_group(
+                        tlg = self.groups_api.get_group(
                             self.config.parent_id, self.config.destination_host, self.config.destination_token).json()
                         g["full_parent_namespace"] = "%s/%s" % (
                             tlg["full_path"], parent_group["full_path"])
@@ -370,7 +364,7 @@ class GroupsClient(BaseClass):
 
         transient_list = []
 
-        parent_group = [self.get_group(
+        parent_group = [self.groups_api.get_group(
             self.config.parent_id, self.config.destination_host, self.config.destination_token).json()]
 
         print parent_group
@@ -396,7 +390,7 @@ class GroupsClient(BaseClass):
         for group in groups:
             try:
                 self.log.debug("Searching for existing %s" % group["name"])
-                for proj in self.search_for_group(self.config.destination_host, self.config.destination_token, group['name']):
+                for proj in self.groups_api.search_for_group(self.config.destination_host, self.config.destination_token, group['name']):
                     if proj["name"] == group["name"]:
                         if "%s" % group["path"].lower() in proj["full_path"].lower():
                             #self.log.info("Migrating variables for %s" % proj["name"])

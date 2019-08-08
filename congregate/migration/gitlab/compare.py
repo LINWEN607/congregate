@@ -2,7 +2,7 @@
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers import api, misc_utils
 from congregate.migration.gitlab.groups import GroupsClient
-from congregate.migration.gitlab.users import UsersClient
+from congregate.migration.gitlab.api.users import UsersApi
 from requests.exceptions import RequestException
 import json
 from os import path
@@ -11,7 +11,7 @@ from os import path
 class CompareClient(BaseClass):
     def __init__(self):
         self.groups = GroupsClient()
-        self.users = UsersClient()
+        self.users = UsersApi()
         self.unknown_users = {}
         super(CompareClient, self).__init__()
 
@@ -26,7 +26,7 @@ class CompareClient(BaseClass):
         tlg = False
         if self.config.parent_id is not None:
             tlg = True
-            prefix = self.groups.get_group(self.config.parent_id, self.config.destination_host, self.config.destination_token).json()["full_path"] + "/"
+            prefix = self.groups.groups_api.get_group(self.config.parent_id, self.config.destination_host, self.config.destination_token).json()["full_path"] + "/"
             file_path = '%s/data/destination%dgroups.json' % (self.app_path, self.config.parent_id)
         
         destination_groups = self.load_group_data(file_path, self.config.destination_host, self.config.destination_token, location="destination", top_level_group=tlg)
@@ -82,7 +82,7 @@ class CompareClient(BaseClass):
             Retruns True if locations match
         """
         if self.config.parent_id is not None:
-            tlg = self.groups.get_group(self.config.parent_id, self.config.destination_host, self.config.destination_token).json()
+            tlg = self.groups.groups_api.get_group(self.config.parent_id, self.config.destination_host, self.config.destination_token).json()
             source_path = "%s/%s" % (tlg["full_path"], source_path)
         
         if source_path != destination_path:
@@ -120,19 +120,6 @@ class CompareClient(BaseClass):
         diff =  { k : rewritten_source_members[k] for k in set(rewritten_source_members) - set(rewritten_destination_members) }
         results["missing members"] = diff
 
-        # diff = []
-        # for k, v in rewritten_destination_members.items():
-
-        #     if k in rewritten_source_members:
-        #         unknown_user = self.users.get_user(v["id"], self.config.destination_host, self.config.destination_token)
-        #         diff.append(
-        #             {
-        #                 "unknown user": unknown_user,
-        #                 "original user": rewritten_source_members[k]
-        #             }
-        #         )
-        
-        # results["member_differences"] = diff
         return results
 
     def compare_staged_users(self):

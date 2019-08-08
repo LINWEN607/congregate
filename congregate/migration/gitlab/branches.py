@@ -1,14 +1,14 @@
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers import api
-from congregate.migration.gitlab.groups import GroupsClient
-from congregate.migration.gitlab.users import UsersClient
+from congregate.migration.gitlab.api.groups import GroupsApi
+from congregate.migration.gitlab.api.users import UsersApi
 import json
 
 
 class BranchesClient(BaseClass):
     def __init__(self):
-        self.users = UsersClient()
-        self.groups = GroupsClient()
+        self.users = UsersApi()
+        self.groups = GroupsApi()
         super(BranchesClient, self).__init__()
 
     def get_branches(self, id, host, token):

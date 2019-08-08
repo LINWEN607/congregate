@@ -2,12 +2,9 @@ import json
 
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers import api
-from congregate.migration.gitlab.projects import ProjectsClient
-
 
 class DeployKeysClient(BaseClass):
     def __init__(self):
-        self.projects = ProjectsClient()
         super(DeployKeysClient, self).__init__()
 
     # TODO: No import API for global deploy keys (admin level)

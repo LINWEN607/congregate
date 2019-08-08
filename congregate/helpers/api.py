@@ -23,13 +23,13 @@ def generate_get_request(host, token, api, url=None, params=None, stream=False):
     Generates GET request to GitLab API.
     You will need to provide the GL host, access token, and specific api url.
 
-    :param host:
-    :param token:
-    :param api:
-    :param url:
-    :param params:
-    :param stream:
-    :return: The response object *not* the json() or text()
+        :param host: (str) GitLab host URL
+        :param token: (str) Access token to GitLab instance
+        :param api: (str) Specific GitLab API endpoint (ex: projects)
+        :param url: (str) A URL to a location not part of the GitLab API. Defaults to None
+        :param params:
+        :return: The response object *not* the json() or text()
+
     """
 
     if url is None:
@@ -40,31 +40,39 @@ def generate_get_request(host, token, api, url=None, params=None, stream=False):
     if params is None:
         params = {}
 
-    response = requests.get(url, params=params, headers=headers)
-    return response
+    return requests.get(url, params=params, headers=headers)
 
 
 @stable_retry
 def generate_post_request(host, token, api, data, headers=None):
     """
         Generates POST request to GitLab API.
-        You will need to provide the GL host, access token, specific api url, and any data.
+
+        :param host: (str) GitLab host URL
+        :param token: (str) Access token to GitLab instance
+        :param api: (str) Specific GitLab API endpoint (ex: projects)
+        :param data: (dict) Any data required for the API request
+
+        :return: request object containing response
     """
-
     url = generate_v4_request_url(host, api)
-
     if headers is None:
         headers = generate_v4_request_header(token)
 
-    response = requests.post(url, data=data, headers=headers)
-    return response
+    return requests.post(url, data=data, headers=headers)
 
 
 @stable_retry
 def generate_put_request(host, token, api, data, headers=None, files=None):
     """
         Generates PUT request to GitLab API.
-        You will need to provide the GL host, access token, specific api url, and any data.
+
+        :param host: (str) GitLab host URL
+        :param token: (str) Access token to GitLab instance
+        :param api: (str) Specific GitLab API endpoint (ex: projects)
+        :param data: (dict) Any data required for the API request
+
+        :return: request object containing response
     """
     url = generate_v4_request_url(host, api)
     if headers is None:
@@ -77,7 +85,12 @@ def generate_put_request(host, token, api, data, headers=None, files=None):
 def generate_delete_request(host, token, api):
     """
         Generates DELETE request to GitLab API.
-        You will need to provide the GL host, access token, and specific api url.
+
+        :param host: (str) GitLab host URL
+        :param token: (str) Access token to GitLab instance
+        :param api: (str) Specific GitLab API endpoint (ex: user/1234)
+
+        :return: request object containing response
     """
     url = generate_v4_request_url(host, api)
     headers = generate_v4_request_header(token)
@@ -88,14 +101,17 @@ def generate_delete_request(host, token, api):
 @stable_retry
 def get_count(host, token, api):
     """
-        Retrieves total count of projects, users, and groups and returns as a long
-        You will need to provide the GL host, access token, and specific api url.
+        Retrieves total count of projects, users, and groups
+
+        :param host: (str) GitLab host URL
+        :param token: (str) Access token to GitLab instance
+        :param api: (str) Specific GitLab API endpoint (ex: users)
+
+        :return: long containing the data from the 'X-Total' header in the response OR None if the header doesn't exist in the response
     """
     url = generate_v4_request_url(host, api)
 
-    headers = generate_v4_request_header(token)
-
-    response = requests.head(url, headers=headers)
+    response = requests.head(url, headers=generate_v4_request_header(token))
 
     if response.headers.get('X-Total', None) is not None:
         return long(response.headers['X-Total'])
@@ -106,19 +122,17 @@ def get_count(host, token, api):
 @stable_retry
 def get_total_pages(host, token, api):
     """
-    Return total number of pages in API result.
+        Get total number of pages in API result
 
-    :param host:
-    :param token:
-    :param api:
-    :return:
+        :param host: (str) GitLab host URL
+        :param token: (str) Access token to GitLab instance
+        :param api: (str) Specific GitLab API endpoint (ex: users)
+
+        :return: long containing the data from the 'X-Total-Pages' header in the response OR None if the header doesn't exist in the response
     """
-
     url = generate_v4_request_url(host, api)
 
-    headers = generate_v4_request_header(token)
-
-    response = requests.head(url, headers=headers)
+    response = requests.head(url, headers=generate_v4_request_header(token))
 
     if response.headers.get('X-Total-Pages', None) is not None:
         return long(response.headers['X-Total-Pages'])
@@ -129,8 +143,15 @@ def get_total_pages(host, token, api):
 @stable_retry
 def list_all(host, token, api, params=None, per_page=100):
     """
-        Returns a list of all projects, groups, users, etc. 
-        You will need to provide the GL host, access token, and specific api url.
+        Generates a list of all projects, groups, users, etc.
+
+        :param host: (str) GitLab host URL
+        :param token: (str) Access token to GitLab instance
+        :param api: (str) Specific GitLab API endpoint (ex: users)
+        :param api: (str) Specific GitLab API endpoint (ex: users)
+        :param per_page: (int) Total results per request. Defaults to 100
+
+        :yields: Individual objects from the presumed array of data
     """
 
     count = get_count(host, token, api)
@@ -195,6 +216,15 @@ def list_all(host, token, api, params=None, per_page=100):
 
 
 @stable_retry
-def search(host, token, path, search_query):
-    resp = generate_get_request(host, token, path, params={'search': search_query})
-    return resp.json()
+def search(host, token, api, search_query):
+    """
+        Get total number of pages in API result
+
+        :param host: (str) GitLab host URL
+        :param token: (str) Access token to GitLab instance
+        :param api: (str) Specific GitLab API endpoint (ex: users)
+        :search_query: (str) Specific query to search
+
+        :return: JSON object containing the request response
+    """
+    return generate_get_request(host, token, api, params={'search': search_query}).json()
