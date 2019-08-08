@@ -36,6 +36,11 @@ build:
     - pip install pipenv
     - pipenv install
 
+test:pylint:
+  <<: *test-job
+  script:
+    - pipenv run pylint congregate
+
 test:unit:
   <<: *test-job
   script:
