@@ -38,7 +38,6 @@ class token_generator():
             'api', 'sudo', 'read_user', 'read_repository']}
 
     # Methods
-    @configurable_stable_retry(delay=10, tries=10)
     def find_csrf_token(self, text):
         soup = BeautifulSoup(text, "lxml")
         token = soup.find(attrs={"name": "csrf-token"})
@@ -84,7 +83,9 @@ class token_generator():
             data.update(csrf)
             r = requests.post(self.__get_password_route(), data=data, cookies=cookies)
             token = self.find_csrf_token(r.text)
-            return token, r.history[0].cookies
+            if len(r.history) > 0:
+                return token, r.history[0].cookies
+            return token, cookies
         return csrf, cookies
 
     def obtain_personal_access_token(self, name, expires_at, csrf, cookies):
@@ -109,8 +110,11 @@ class token_generator():
             self.__set_password(pword)
 
         csrf1, cookies1, reset_password_token = self.obtain_csrf_token()
-        csrf2, cookies2 = self.change_password(csrf1, cookies1, reset_password_token)
-        csrf3, cookies3 = self.sign_in(csrf2, cookies2)
+        if reset_password_token is not None:
+            csrf2, cookies2 = self.change_password(csrf1, cookies1, reset_password_token)
+            csrf3, cookies3 = self.sign_in(csrf2, cookies2)
+        else:
+            csrf3, cookies3 = self.sign_in(csrf1, cookies1)
 
         token = self.obtain_personal_access_token(name, expires_at, csrf3, cookies3)
         return token
