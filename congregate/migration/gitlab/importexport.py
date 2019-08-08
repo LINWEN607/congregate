@@ -97,7 +97,8 @@ class ImportExportClient(BaseClass):
 
         try:
             response = api.generate_post_request(
-                self.config.source_host, self.config.source_token, "projects/%d/export" % id, "&".join(upload), headers=headers)
+                self.config.source_host, self.config.source_token, "projects/%d/export" % id, "&".join(upload),
+                headers=headers)
             return response
         except RequestException:
             return None
@@ -122,7 +123,7 @@ class ImportExportClient(BaseClass):
             for member in project["members"]:
                 if project["namespace"] == member["username"]:
                     user_project = True
-                    #namespace = project["namespace"]
+                    # namespace = project["namespace"]
                     new_user = self.users.get_user(
                         member["id"], self.config.source_host, self.config.source_token).json()
                     namespace = new_user["username"]
@@ -150,7 +151,8 @@ class ImportExportClient(BaseClass):
                             another_strip.pop(ind)
                     full_path = "/".join(another_strip)
                     self.log.info("Searching for %s" % full_path)
-                    for group in api.list_all(self.config.destination_host, self.config.destination_token, "groups?search=%s" % project["namespace"]):
+                    for group in api.list_all(self.config.destination_host, self.config.destination_token,
+                                              "groups?search=%s" % project["namespace"]):
                         if isinstance(group, dict):
                             if group["full_path"].lower() == full_path.lower():
                                 self.log.info("Found %s" % group["full_path"])
@@ -158,109 +160,206 @@ class ImportExportClient(BaseClass):
                                 break
 
             exported = False
-            import_response = None
+            # import_response = None
             timeout = 0
-            if self.config.location == "aws":
-                presigned_get_url = self.aws.generate_presigned_url(
-                    filename, "GET")
-                self.log.info("Importing %s from AWS presigned_url" % filename)
-                import_response = self.aws.import_from_s3(
-                    name, namespace, presigned_get_url, filename, override_params=override_params)
-            elif self.config.location == "filesystem-aws":
-                if bool(self.config.allow_presigned_url):
-                    presigned_get_url = self.aws.generate_presigned_url(
-                        filename, "GET")
-                    self.log.info(
-                        "Importing %s from AWS presigned_url" % filename)
-                    import_response = self.aws.import_from_s3(
-                        name, namespace, presigned_get_url, filename, override_params=override_params)
-                else:
-                    self.log.info("Copying %s to local machine" % filename)
-                    formatted_name = project["name"].lower()
-                    download = "%s_%s.tar.gz" % (
-                        project["namespace"], formatted_name)
-                    downloaded_filename = self.keys_map.get(
-                        download.lower(), None)
-                    if downloaded_filename is None:
-                        self.log.info("Continuing to search for filename")
-                        placeholder = len(formatted_name)
-                        for i in range(placeholder, 0, -1):
-                            split_name = "%s_%s.tar.gz" % (
-                                project["namespace"], formatted_name[:(i * (1))])
-                            downloaded_filename = self.keys_map.get(
-                                split_name.lower(), None)
-                            if downloaded_filename is not None:
-                                break
-                    if downloaded_filename is not None:
-                        import_response = self.aws.copy_from_s3_and_import(
-                            name, namespace, downloaded_filename)
 
+            import_response = self.attempt_import(filename, name, namespace, override_params, project)
             self.log.info(import_response)
-            import_id = None
-            if import_response is not None and len(import_response) > 0:
-                import_response = json.loads(import_response)
-                while not exported:
-                    if import_response.get("id", None) is not None:
-                        import_id = import_response["id"]
-                    elif import_response.get("message", None) is not None:
-                        if "Name has already been taken" in import_response.get("message"):
-                            self.log.debug("Searching for %s" %
-                                           project["name"])
-                            search_response = api.search(
-                                self.config.destination_host, self.config.destination_token, 'projects', project['name'])
-                            if len(search_response) > 0:
-                                if isinstance(search_response, dict):
-                                    for proj in search_response:
-                                        if proj["name"] == project["name"] and project["namespace"] in proj["namespace"]["path"]:
-                                            self.log.info("Found project")
-                                            import_id = proj["id"]
-                                            break
-                                else:
-                                    break
-                            self.log.info(
-                                "Project may already exist but it cannot be found. Ignoring %s" % project["name"])
-                            return None
-                        elif "404 Namespace Not Found" in import_response.get("message"):
-                            self.log.info(
-                                "Skipping %s. Will need to migrate later." % name)
-                            import_id = None
-                            break
-                        elif "The project is still being deleted" in import_response.get("message"):
-                            self.log.info(
-                                "Previous project export has been targeted for deletion. Skipping %s" % project["name"])
-                            import_id = None
-                            break
-                    if import_id is not None:
-                        status = self.get_import_status(
-                            self.config.destination_host, self.config.destination_token, import_id)
-                        
-                        try:
-                            status = status.json()
-                            if status["import_status"] == "finished":
-                                self.log.info(
-                                    "%s has been exported and import is occurring" % name)
-                                exported = True
-                                # TODO: Fix or remove soft-cutover option
-                                # if self.config.mirror_username is not None:
-                                #     mirror_repo(project, import_id)
-                            elif status["import_status"] == "failed":
-                                self.log.info("%s failed to import" % name)
-                                exported = True
-                        except:
-                            self.log.error("Json decoding issue")
-                    else:
-                        if timeout < 3600:
-                            self.log.info("Waiting on %s to upload" % name)
-                            timeout += 1
-                            sleep(2)
-                        else:
-                            self.log.info(
-                                "Moving on to the next project. Time limit exceeded")
-                            break
+
+            import_results = self.get_import_id_from_import_response(import_response, exported, project, name, timeout)
+            self.log.info(import_results)
+
+            import_id = import_results["import_id"]
+            exported = import_results["exported"]
+            duped = import_results["duped"]
+
+            import_results = self.dupe_reimport_worker(
+                duped,
+                self.config.append_project_suffix_on_existing_found,
+                exported,
+                filename,
+                import_response,
+                name,
+                namespace,
+                override_params,
+                project,
+                timeout
+            )
+            self.log.info(import_results)
+
+            # From here, should just flow through to the import_id return at the end
         else:
             self.log.error("Project doesn't exist. Skipping %s" % name)
             return None
         return import_id
+
+    def thing_to_test_mocking(self):
+        self.log.info("The real one")
+        return self.nested_thing_to_test_mocking()
+
+    def nested_thing_to_test_mocking(self):
+        self.log.info("The real nested one")
+        return "real nested"
+
+    def dupe_reimport_worker(
+            self,
+            duped,
+            append_suffix_on_dupe,
+            exported,
+            filename,
+            name,
+            namespace,
+            override_params,
+            project,
+            timeout
+    ):
+        # Issue 151
+        # The exported check *should not* be needed, as it should be impossible to be exported and duped
+        # but crazier things have happened
+        if duped and append_suffix_on_dupe and not exported:
+            # One of the few times we will retry an import
+            # Some next-level hackery. If the project already "exists", append and _1 to it and try, again
+            # Note: we only do this retry one time
+            project["name"] = self.create_override_name(project["name"])
+            self.log.info("Project name is {0}".format(project["name"]))
+
+            import_response = self.attempt_import(
+                filename,
+                name,
+                namespace,
+                override_params,
+                project
+            )
+            self.log.info(import_response)
+
+            import_results = self.get_import_id_from_import_response(
+                import_response, False, project, name, timeout)
+            self.log.info(import_results)
+
+            return import_results
+        return None
+
+    @staticmethod
+    def create_override_name(current_project_name):
+        return "".join([current_project_name, "_1"])
+
+    def get_import_id_from_import_response(self, import_response, exported, project, name, timeout):
+        import_id = None
+        duped = False
+        if import_response is not None and len(import_response) > 0:
+            import_response = json.loads(import_response)
+            while not exported:
+                if import_response.get("id", None) is not None:
+                    import_id = import_response["id"]
+                elif import_response.get("message", None) is not None:
+                    if "Name has already been taken" in import_response.get("message"):
+                        # issue 151.
+                        self.log.debug("Searching for %s" % project["name"])
+                        search_response = api.search(
+                            self.config.destination_host, self.config.destination_token, 'projects', project['name'])
+                        # Search for the project by name
+                        if len(search_response) > 0:
+                            if isinstance(search_response, list):
+                                for proj in search_response:
+                                    self.log.info(proj)
+                                    if proj["name"] == project["name"] \
+                                            and project["namespace"] in proj["namespace"]["path"]:
+                                        self.log.info("Found project")
+                                        import_id = proj["id"]
+                                        duped = True
+                                        self.log.info("Existing project found at id: {0}. "
+                                                      "Setting duped status and returning."
+                                                      .format(import_id))
+                                        # Found a match, so dump out of the for loop
+                                        # import_id (project id) and duped flag are set
+                                        break
+                        # We can get here via a search match, or by exhausting the dict
+                        # We already log the duped message info when we find the dupe
+                        # Reuse the not found message
+                        if not duped:
+                            self.log.info(
+                                "Project may already exist but it cannot be found. Ignoring %s"
+                                % project["name"])
+                            import_id = None
+                        # Break out of the while, as we don't care about exported
+                        break
+                    elif "404 Namespace Not Found" in import_response.get("message"):
+                        self.log.info(
+                            "Skipping %s. Will need to migrate later." % name)
+                        import_id = None
+                        break
+                    elif "The project is still being deleted" in import_response.get("message"):
+                        self.log.info(
+                            "Previous project export has been targeted for deletion. Skipping %s" % project["name"])
+                        import_id = None
+                        break
+                if import_id is not None:
+                    status = self.get_import_status(
+                        self.config.destination_host, self.config.destination_token, import_id)
+                    try:
+                        status = status.json()
+                        if status["import_status"] == "finished":
+                            self.log.info(
+                                "%s has been exported and import is occurring" % name)
+                            exported = True
+                            # TODO: Fix or remove soft-cutover option
+                            # if self.config.mirror_username is not None:
+                            #     mirror_repo(project, import_id)
+                        elif status["import_status"] == "failed":
+                            self.log.info("%s failed to import" % name)
+                            exported = True
+                    except:
+                        self.log.error("Json decoding issue")
+                else:
+                    if timeout < 3600:
+                        self.log.info("Waiting on %s to upload" % name)
+                        timeout += 1
+                        sleep(2)
+                    else:
+                        self.log.info(
+                            "Moving on to the next project. Time limit exceeded")
+                        break
+        return {"import_id": import_id, "exported": exported, "duped": duped}
+
+    def attempt_import(self, filename, name, namespace, override_params, project):
+        self.log.info("Hit the real attempt_import")
+
+        import_response = None
+        if self.config.location == "aws":
+            presigned_get_url = self.aws.generate_presigned_url(
+                filename, "GET")
+            self.log.info("Importing %s from AWS presigned_url" % filename)
+            import_response = self.aws.import_from_s3(
+                name, namespace, presigned_get_url, filename, override_params=override_params)
+        elif self.config.location == "filesystem-aws":
+            if bool(self.config.allow_presigned_url):
+                presigned_get_url = self.aws.generate_presigned_url(
+                    filename, "GET")
+                self.log.info(
+                    "Importing %s from AWS presigned_url" % filename)
+                import_response = self.aws.import_from_s3(
+                    name, namespace, presigned_get_url, filename, override_params=override_params)
+            else:
+                self.log.info("Copying %s to local machine" % filename)
+                formatted_name = project["name"].lower()
+                download = "%s_%s.tar.gz" % (
+                    project["namespace"], formatted_name)
+                downloaded_filename = self.keys_map.get(
+                    download.lower(), None)
+                if downloaded_filename is None:
+                    self.log.info("Continuing to search for filename")
+                    placeholder = len(formatted_name)
+                    for i in range(placeholder, 0, -1):
+                        split_name = "%s_%s.tar.gz" % (
+                            project["namespace"], formatted_name[:(i * (1))])
+                        downloaded_filename = self.keys_map.get(
+                            split_name.lower(), None)
+                        if downloaded_filename is not None:
+                            break
+                if downloaded_filename is not None:
+                    import_response = self.aws.copy_from_s3_and_import(
+                        name, namespace, downloaded_filename)
+        return import_response
 
     def export_import_thru_filesystem(self, id, name, namespace):
         working_dir = getcwd()
@@ -273,7 +372,7 @@ class ImportExportClient(BaseClass):
         url = "%s/api/v4/projects/%d/export/download" % (
             self.config.source_host, id)
         filename = misc_utils.download_file(url, self.config.filesystem_path, headers={
-                                            "PRIVATE-TOKEN": self.config.source_token})
+            "PRIVATE-TOKEN": self.config.source_token})
 
         data = {
             "path": name,
@@ -281,7 +380,8 @@ class ImportExportClient(BaseClass):
             "namespace": namespace
         }
 
-        return api.generate_post_request(self.config.destination_host, self.config.destination_token, "projects/import", data=data)
+        return api.generate_post_request(self.config.destination_host, self.config.destination_token, "projects/import",
+                                         data=data)
 
     def export_import_thru_fs_aws(self, id, name, namespace):
         testkey = "%s_%s.tar.gz" % (namespace, name)
@@ -305,7 +405,7 @@ class ImportExportClient(BaseClass):
                     namespace, name)
                 try:
                     filename = misc_utils.download_file(url, self.config.filesystem_path, path_with_namespace, headers={
-                                                        "PRIVATE-TOKEN": self.config.source_token})
+                        "PRIVATE-TOKEN": self.config.source_token})
                     self.log.info("Copying %s to s3" % filename)
                     success = self.aws.copy_file_to_s3(filename)
                     if success:
@@ -332,7 +432,9 @@ class ImportExportClient(BaseClass):
         exported = False
         self.log.debug("Searching for existing %s" % name)
         namespace = self.strip_namespace(full_parent_namespace, namespace)
-        project_exists, _ = self.projects.find_project_by_path(self.config.destination_host, self.config.destination_token, full_parent_namespace, namespace, name)
+        project_exists, _ = self.projects.find_project_by_path(self.config.destination_host,
+                                                               self.config.destination_token, full_parent_namespace,
+                                                               namespace, name)
         if not project_exists:
             self.log.info(
                 "%s could not be found in destination instance. Exporting project on source instance." % name)
