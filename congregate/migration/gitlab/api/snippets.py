@@ -1,11 +1,8 @@
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers import api
 from congregate.helpers.misc_utils import strip_numbers, remove_dupes
-from requests.exceptions import RequestException
-from os import path
 
-
-class SnippetsClient(BaseClass):
+class SnippetsApi(BaseClass):
     def get_all_project_snippets(self, host, token, project_id):
         return api.list_all(host, token, "projects/%d/snippets" % project_id)
 
