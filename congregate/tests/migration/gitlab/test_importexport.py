@@ -102,11 +102,6 @@ class ImportExportClientTests(unittest.TestCase):
 
         self.assertEqual(import_id_entity, {'import_id': None, 'exported': False, 'duped': False})
 
-    @mock.patch.object(ImportExportClient, "nested_thing_to_test_mocking")
-    def test_mocking(self, mocking):
-        mocking.return_value = "mocked"
-        self.assertEqual(self.ie.thing_to_test_mocking(), "mocked")
-
     @mock.patch.object(ImportExportClient, "get_import_id_from_import_response")
     @mock.patch.object(ImportExportClient, "attempt_import")
     def test_dupe_reimport_worker_happy(self, mock_attempt_import, mock_get_import_id_from_import_response):

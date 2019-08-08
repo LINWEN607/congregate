@@ -193,14 +193,6 @@ class ImportExportClient(BaseClass):
             return None
         return import_id
 
-    def thing_to_test_mocking(self):
-        self.log.info("The real one")
-        return self.nested_thing_to_test_mocking()
-
-    def nested_thing_to_test_mocking(self):
-        self.log.info("The real nested one")
-        return "real nested"
-
     def dupe_reimport_worker(
             self,
             duped,
