@@ -73,9 +73,13 @@ class SeedDataGenerator(BaseClass):
         created_users = []
         for user in dummy_users:
             user_search = list(self.users.search_for_user_by_email(self.config.source_host, self.config.source_token, user["email"]))
-            if user_search[0]["email"] == user["email"]:
-                self.log.info("%s already exists" % user["name"])
-                created_users.append(user_search[0])
+            if len(user_search) > 0:
+                if user_search[0]["email"] == user["email"]:
+                    self.log.info("%s already exists" % user["name"])
+                    created_users.append(user_search[0])
+                else:
+                    self.log.info("Creating %s" % user["name"])
+                    created_users.append(self.users.create_user(self.config.source_host, self.config.source_token, user).json())
             else:
                 self.log.info("Creating %s" % user["name"])
                 created_users.append(self.users.create_user(self.config.source_host, self.config.source_token, user).json())
@@ -96,9 +100,13 @@ class SeedDataGenerator(BaseClass):
         created_groups = []
         for group in dummy_groups:
             group_search = list(self.groups.search_for_group(group["path"], self.config.source_host, self.config.source_token))
-            if group_search[0]["path"] == group["path"]:
-                self.log.info("%s already exists" % group["name"])
-                created_groups.append(group_search[0])
+            if len(group_search) > 0:
+                if group_search[0]["path"] == group["path"]:
+                    self.log.info("%s already exists" % group["name"])
+                    created_groups.append(group_search[0])
+                else:
+                    self.log.info("Creating %s" % group["name"])
+                    created_groups.append(self.groups.create_group(self.config.source_host, self.config.source_token, group).json())
             else:
                 self.log.info("Creating %s" % group["name"])
                 created_groups.append(self.groups.create_group(self.config.source_host, self.config.source_token, group).json())
