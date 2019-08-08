@@ -30,6 +30,7 @@ class SeedDataGenerator(BaseClass):
         self.registries = RegistryClient()
         self.schedules = PipelineSchedulesClient()
         self.deploy_keys = DeployKeysClient()
+        super(SeedDataGenerator, self).__init__()
 
     def generate_seed_data(self):
         users = self.generate_users()
