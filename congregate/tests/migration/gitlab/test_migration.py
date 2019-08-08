@@ -36,26 +36,6 @@ class MigrationEndToEndTest(unittest.TestCase):
 
         g = input_generator(values)
 
-        # test_config = {
-        #     "config": {
-        #         "external_source": False,
-        #         "source_instance_host": os.getenv("GITLAB_SRC"),
-        #         "source_instance_token": t.generate_token("source_token", "2020-08-27", url=os.getenv("GITLAB_SRC"), username="root", pword=uuid4().hex),
-        #         "source_instance_registry": os.getenv("source_instance_registry"),
-        #         "destination_instance_host": os.getenv("GITLAB_DEST"),
-        #         "destination_instance_token": t.generate_token("destination_token", "2020-08-27", url=os.getenv("GITLAB_DEST"), username="root", pword=uuid4().hex),
-        #         "destination_instance_registry": os.getenv("destination_instance_registry"),
-        #         "number_of_threads": 2,
-        #         "location": "filesystem",
-        #         "import_user_id": 1,
-        #         "path": os.getcwd()
-        #     }
-        # }
-
-        # print json.dumps(test_config, indent=4)
-
-        # config.update_config(test_config)
-
         with mock.patch('__builtin__.raw_input', lambda x: next(g)):
             config.config()
 

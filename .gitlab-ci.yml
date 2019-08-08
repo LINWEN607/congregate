@@ -67,7 +67,7 @@ test:end-to-end:
   script:
     - export GITLAB_SRC=http://gitlab_source 
     - export GITLAB_DEST=http://gitlab_destination 
-    - pipenv run pytest -m e2e congregate/tests/
+    - pipenv run pytest -s -m e2e congregate/tests/
 
 release-tag:
   stage: release
