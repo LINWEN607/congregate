@@ -63,7 +63,7 @@ test:end-to-end:
       alias: gitlab_destination
   <<: *test-job
   tags:
-    - docker
+    - e2e
   script:
     - export GITLAB_SRC=http://gitlab_source 
     - export GITLAB_DEST=http://gitlab_destination 
