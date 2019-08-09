@@ -161,8 +161,12 @@ class SeedDataGenerator(BaseClass):
         expiration_date = (date.today() + timedelta(days=1)).strftime('%Y-%m-%d')
         for i in range(0, len(created_users)):
             user = created_users[i]
-            token = self.users.find_or_create_impersonation_token(self.config.source_host, self.config.source_token, user, users_map, expiration_date)["token"]
-            created_projects.append(self.projects.projects_api.create_project(self.config.source_host, token, dummy_project_data[i]["name"], data=dummy_project_data[i]).json())
+            token = self.users.find_or_create_impersonation_token(self.config.source_host, self.config.source_token, user, users_map, expiration_date)
+            if token.get("token") is not None:
+                created_projects.append(self.projects.projects_api.create_project(self.config.source_host, token, dummy_project_data[i]["name"], data=dummy_project_data[i]).json())
+            else:
+                dummy_project_data[i]["namespace"] = user["username"]
+                self.projects.projects_api.create_project(self.config.source_host, self.config.source_token, dummy_project_data[i]["name"], data=dummy_project_data[i]).json()
 
         return created_projects
 
