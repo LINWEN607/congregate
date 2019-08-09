@@ -2,7 +2,7 @@ from congregate.helpers.base_class import BaseClass
 from congregate.migration.gitlab.importexport import ImportExportClient
 from congregate.migration.gitlab.variables import VariablesClient
 from congregate.migration.gitlab.users import UsersClient
-from congregate.migration.gitlab.groups import GroupsClient
+from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.projects import ProjectsClient
 from congregate.migration.gitlab.pushrules import PushRulesClient
 from congregate.migration.gitlab.branches import BranchesClient
@@ -21,7 +21,7 @@ class SeedDataGenerator(BaseClass):
         self.mirror = MirrorClient()
         self.variables = VariablesClient()
         self.users = UsersClient()
-        self.groups = GroupsClient()
+        self.groups = GroupsApi()
         self.projects = ProjectsClient()
         self.pushrules = PushRulesClient()
         self.branches = BranchesClient()
@@ -72,17 +72,17 @@ class SeedDataGenerator(BaseClass):
         ]
         created_users = []
         for user in dummy_users:
-            user_search = list(self.users.search_for_user_by_email(self.config.source_host, self.config.source_token, user["email"]))
+            user_search = list(self.users.users.search_for_user_by_email(self.config.source_host, self.config.source_token, user["email"]))
             if len(user_search) > 0:
                 if user_search[0]["email"] == user["email"]:
                     self.log.info("%s already exists" % user["name"])
                     created_users.append(user_search[0])
                 else:
                     self.log.info("Creating %s" % user["name"])
-                    created_users.append(self.users.create_user(self.config.source_host, self.config.source_token, user).json())
+                    created_users.append(self.users.users.create_user(self.config.source_host, self.config.source_token, user).json())
             else:
                 self.log.info("Creating %s" % user["name"])
-                created_users.append(self.users.create_user(self.config.source_host, self.config.source_token, user).json())
+                created_users.append(self.users.users.create_user(self.config.source_host, self.config.source_token, user).json())
 
         return created_users
 
@@ -137,7 +137,7 @@ class SeedDataGenerator(BaseClass):
                 "import_url": project_url,
                 "namespace_id": created_groups[-1]["id"]
             }
-            created_projects.append(self.projects.create_project(self.config.source_host, self.config.source_token, project_name, data).json())
+            created_projects.append(self.projects.projects_api.create_project(self.config.source_host, self.config.source_token, project_name, data).json())
 
         return created_projects
 
@@ -162,7 +162,7 @@ class SeedDataGenerator(BaseClass):
         for i in range(0, len(created_users)):
             user = created_users[i]
             token = self.users.find_or_create_impersonation_token(self.config.source_host, self.config.source_token, user, users_map, expiration_date)["token"]
-            created_projects.append(self.projects.create_project(self.config.source_host, token, dummy_project_data[i]["name"], data=dummy_project_data[i]).json())
+            created_projects.append(self.projects.projects_api.create_project(self.config.source_host, token, dummy_project_data[i]["name"], data=dummy_project_data[i]).json())
 
         return created_projects
 

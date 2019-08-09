@@ -30,3 +30,16 @@ class ProjectsApi():
 
     def add_shared_group(self, host, token, id, group):
         return api.generate_post_request(host, token, "projects/%d/share" % id, json.dumps(group))
+
+    def create_project(self, host, token, name, data=None, headers=None):
+        if data is not None:
+            data["name"] = name
+        else:
+            data = {
+                "name": name
+            }
+        
+        if headers is not None:
+            return api.generate_post_request(host, token, "projects", json.dumps(data), headers=headers)
+        else:
+            return api.generate_post_request(host, token, "projects", json.dumps(data))
