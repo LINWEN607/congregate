@@ -39,7 +39,7 @@ build:
 test:pylint:
   <<: *test-job
   script:
-    - pipenv run pylint congregate | tee pylint.txt || pylint-exit $?
+    - pipenv run pylint congregate | tee pylint.txt || pipenv run pylint-exit $?
     - score=$(sed -n 's/^Your code has been rated at \([-0-9.]*\)\/.*/\1/p' pylint.txt)
     - echo "Pylint score was $score"
     - json_badge_info=$(curl -H "PRIVATE-TOKEN:$ACCESS_TOKEN" -X GET https://gitlab.com/api/v4/projects/$CI_PROJECT_ID/badges)
