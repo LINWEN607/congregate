@@ -27,6 +27,7 @@ pytest = "*"
 pytest-cov = "*"
 responses = "*"
 sphinx = "*"
+pylint-exit = "*"
 
 [scripts]
 clean_pyc = "find ./congregate -name '*.pyc' -delete"
