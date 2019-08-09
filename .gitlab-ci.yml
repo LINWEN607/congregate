@@ -34,7 +34,7 @@ build:
 #     - export PIPENV_VENV_IN_PROJECT=true
 #     - pipenv install
 #   cache:
-#     paths: 
+#     paths:
 #       - .venv/
 
 .test-job: &test-job
@@ -48,7 +48,16 @@ build:
     - pip install pipenv
     - export PIPENV_VENV_IN_PROJECT=true
     - pipenv install
-  
+
+
+test:pylint:
+  <<: *test-job
+  script:
+    - ./pylint.sh
+  artifacts:
+    paths:
+      - pylint.txt
+
 test:unit:
   <<: *test-job
   script:
@@ -65,8 +74,8 @@ test:end-to-end:
   tags:
     - e2e
   script:
-    - export GITLAB_SRC=http://gitlab_source 
-    - export GITLAB_DEST=http://gitlab_destination 
+    - export GITLAB_SRC=http://gitlab_source
+    - export GITLAB_DEST=http://gitlab_destination
     - pipenv run pytest -s -m e2e congregate/tests/
 
 release-tag:

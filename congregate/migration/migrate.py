@@ -6,10 +6,10 @@
 
 import os
 import json
-import requests
 from re import sub
 from multiprocessing.dummy import Pool as ThreadPool
 from multiprocessing import Lock
+import requests
 
 from congregate.helpers import api
 from congregate.aws import AwsClient
@@ -50,6 +50,7 @@ project_export = ProjectExportClient()
 
 full_parent_namespace = groups.find_parent_group_path()
 
+
 def migrate_project_info():
     """
         Subsequent function to update project info AFTER import
@@ -61,7 +62,7 @@ def migrate_project_info():
         b.log.debug("Searching for %s" % project["name"])
         new_project = api.search(
             b.config.destination_host, b.config.destination_token, 'projects', project['name'])
-        if len(new_project) > 0:
+        if new_project is not None and new_project:
             if new_project[0]["name"] == project["name"] and \
                     new_project[0]["namespace"]["name"] == project["namespace"]:
                 root_user_present = False
@@ -138,7 +139,7 @@ def migrate_single_project_info(project, id):
     try:
         push_rule = pushrules.get_push_rules(
             project["id"], b.config.source_host, b.config.source_token).json()
-        if push_rule and len(push_rule) > 0:
+        if push_rule is not None and push_rule:
             b.log.info("Migrating push rules for %s" % name)
             pushrules.add_push_rule(id, b.config.destination_host,
                                     b.config.destination_token, push_rule)
@@ -315,19 +316,19 @@ def migrate(threads=None):
             for new_user in new_users:
                 f.write("%s\n" % new_user)
 
-        if len(new_users) > 0:
+        if new_users is not None and new_users:
             users.update_user_info(new_users)
         else:
             users.update_user_info(new_users, overwrite=False)
 
-        if len(groups_file) > 0:
+        if groups_file is not None and groups_file:
             b.log.info("Migrating group info")
             groups.migrate_group_info()
         else:
             b.log.info("No groups to migrate")
 
         staged_projects = get_staged_projects()
-        if len(staged_projects) > 0:
+        if staged_projects is not None and staged_projects:
             b.log.info("Migrating project info")
             pool = ThreadPool(b.config.threads)
             results = pool.map(handle_migrating_file, staged_projects)
@@ -348,7 +349,7 @@ def migrate(threads=None):
 
 def kick_off_import():
     staged_projects = get_staged_projects()
-    if len(staged_projects) > 0:
+    if staged_projects is not None and staged_projects:
         b.log.info("Importing projects")
         pool = ThreadPool(b.config.threads)
         results = pool.map(migrate_given_export, staged_projects)
@@ -401,7 +402,7 @@ def find_unimported_projects():
     unimported_projects = []
     with open("%s/data/project_json.json" % b.app_path, "r") as f:
         files = json.load(f)
-    if len(files) > 0:
+    if files is not None and files:
         for project_json in files:
             try:
                 b.log.debug("Searching for existing %s" % project_json["name"])
@@ -419,7 +420,7 @@ def find_unimported_projects():
             except IOError, e:
                 b.log.error(e)
 
-    if len(unimported_projects) > 0:
+    if unimported_projects is not None and unimported_projects:
         with open("%s/data/unimported_projects.txt" % b.app_path, "w") as f:
             for project in unimported_projects:
                 f.writelines(project + "\n")
@@ -441,7 +442,7 @@ def remove_all_mirrors():
 def get_new_ids():
     ids = []
     staged_projects = get_staged_projects()
-    if len(staged_projects) > 0:
+    if staged_projects is not None and staged_projects:
         for project_json in staged_projects:
             try:
                 b.log.debug("Searching for existing %s" % project_json["name"])
@@ -466,8 +467,8 @@ def get_new_ids():
 def enable_mirror():
     ids = get_new_ids()
     staged_projects = get_staged_projects()
-    if len(staged_projects) > 0:
-        for i in range(len(staged_projects)):
+    if staged_projects is not None and staged_projects:
+        for i in enumerate(staged_projects):
             id = ids[i]
             project = staged_projects[i]
             mirror.mirror_repo(project, id)
@@ -553,17 +554,17 @@ def stage_unimported_projects():
     with open("%s/data/project_json.json" % b.app_path, "r") as f:
         available_projects = json.load(f)
     rewritten_projects = {}
-    for i in range(len(available_projects)):
+    for i in enumerate(available_projects):
         new_obj = available_projects[i]
         id_num = available_projects[i]["path"]
         rewritten_projects[id_num] = new_obj
 
     projects = projects.split("\n")
     for p in projects:
-        if len(p) > 0:
+        if p is not None and p:
             if rewritten_projects.get(p.split("/")[1], None) is not None:
                 ids.append(rewritten_projects.get(p.split("/")[1])["id"])
-    if len(ids) > 0:
+    if ids is not None and ids:
         stage_projects(ids)
 
 
@@ -579,7 +580,7 @@ def count_unarchived_projects():
     unarchived_projects = []
     for project in api.list_all(b.config.source_host, b.config.source_token, "projects"):
         if project.get("archived", None) is not None:
-            if project["archived"] == False:
+            if not project["archived"]:
                 unarchived_projects.append(project["name_with_namespace"])
 
     print unarchived_projects
