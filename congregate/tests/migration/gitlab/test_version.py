@@ -2,7 +2,7 @@ import unittest
 import mock
 import json
 import responses
-from congregate.helpers.mockapi.version import MockVersionApi
+from congregate.tests.mockapi.version import MockVersionApi
 from congregate.migration.gitlab.version import VersionClient
 
 mock_version = MockVersionApi()

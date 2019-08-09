@@ -1,10 +1,10 @@
 import mock
 import unittest
 from congregate.cli import stage_projects
-from congregate.helpers.mockapi.projects import MockProjectsApi
-from congregate.helpers.mockapi.groups import MockGroupsApi
-from congregate.helpers.mockapi.users import MockUsersApi
-from congregate.helpers.mockapi.members import MockMembersApi
+from congregate.tests.mockapi.projects import MockProjectsApi
+from congregate.tests.mockapi.groups import MockGroupsApi
+from congregate.tests.mockapi.users import MockUsersApi
+from congregate.tests.mockapi.members import MockMembersApi
 
 
 class StageProjectsTests(unittest.TestCase):

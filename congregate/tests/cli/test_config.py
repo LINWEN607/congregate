@@ -3,7 +3,7 @@ import unittest
 import os
 from congregate.cli import config
 from congregate.helpers.misc_utils import get_congregate_path, input_generator
-from congregate.helpers.mockapi.users import MockUsersApi
+from congregate.tests.mockapi.users import MockUsersApi
 
 class ConfigTests(unittest.TestCase):
     def setUp(self):

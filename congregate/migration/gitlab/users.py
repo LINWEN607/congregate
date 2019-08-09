@@ -108,7 +108,8 @@ class UsersClient(BaseClass):
             members = obj[i]["members"]
             if isinstance(members, list):
                 for member in members:
-                    old_user = self.users.get_user(member["id"], self.config.source_host, self.config.source_token).json()
+                    old_user = self.users.get_user(member["id"], self.config.source_host, self.config.source_token)
+                    old_user = old_user.json()
                     username = strip_numbers(member["username"]).lower()
                     if rewritten_users.get(old_user["email"], None) is not None:
                         new_user = self.users.get_user(rewritten_users[old_user["email"]]["id"], self.config.destination_host, self.config.destination_token).json()
