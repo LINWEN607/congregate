@@ -32,7 +32,7 @@ class PipelineSchedulesClient(BaseClass):
         pipeline_schedule_id = self.__get_pipeline_schedule_id(schedule)
         data = self.__build_pipeline_schedule_data(schedule)
 
-        pipeline_schedule_owner = self.users.find_user_by_email_comparison(
+        pipeline_schedule_owner = self.users.find_user_by_email_comparison_with_id(
             schedule["owner"]["id"])
 
         impersonation_token = self.users.find_or_create_impersonation_token(

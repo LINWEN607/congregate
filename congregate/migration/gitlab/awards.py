@@ -56,7 +56,7 @@ class AwardsClient(BaseClass):
             response = get_single_project_awardable(
                 self.config.destination_host, self.config.destination_token, new_project_id, awardable_id)
             if response.status_code == 200:
-                new_award_giver = self.users.find_user_by_email_comparison(
+                new_award_giver = self.users.find_user_by_email_comparison_with_id(
                     award["user"]["id"])
 
                 impersonation_token = self.users.find_or_create_impersonation_token(
@@ -80,7 +80,7 @@ class AwardsClient(BaseClass):
                     if isinstance(dest_note[0], dict):
                         for n in notes_json:
                             i = notes_json.index(n)
-                            new_award_giver = self.users.find_user_by_email_comparison(
+                            new_award_giver = self.users.find_user_by_email_comparison_with_id(
                                 n["user"]["id"])
 
                             impersonation_token = self.users.find_or_create_impersonation_token(

@@ -15,14 +15,17 @@ class UsersClient(BaseClass):
         self.users = UsersApi()
         super(UsersClient, self).__init__()
 
-    def find_user_by_email_comparison(self, old_user_id):
+    def find_user_by_email_comparison_with_id(self, old_user_id):
         old_user = self.users.get_user(
             old_user_id, self.config.source_host, self.config.source_token).json()
         if old_user.get("message", None) is None:
-            for user in self.users.search_for_user_by_email(self.config.destination_host, self.config.destination_token, old_user["email"]):
-                if user["email"] == old_user["email"]:
-                    return user
+            return self.find_user_by_email_comparison_without_id(old_user["email"])
         return None
+
+    def find_user_by_email_comparison_without_id(self, email):
+        for user in self.users.search_for_user_by_email(self.config.destination_host, self.config.destination_token, email):
+            if user["email"] == email:
+                return user
 
     def username_exists(self, old_user):
         index = 0
@@ -394,8 +397,7 @@ class UsersClient(BaseClass):
             try:
                 self.log.info(
                     "Appending %s to new_users.json" % user["email"])
-                response = api.search(
-                    self.config.destination_host, self.config.destination_token, 'users', user['email'])
+                response = self.find_user_by_email_comparison_without_id(user["email"])
                 if len(response) > 0:
                     if isinstance(response, list):
                         return response[0]["id"]

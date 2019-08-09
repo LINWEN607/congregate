@@ -45,7 +45,7 @@ class ProjectExportClient(BaseClass):
         self.log.info("Building user map")
         for d in data["project_members"]:
             if d.get("user_id", None) is not None: 
-                new_user = self.users.find_user_by_email_comparison(d["user_id"])
+                new_user = self.users.find_user_by_email_comparison_with_id(d["user_id"])
             if new_user is not None:
                 d["user"]["id"] = new_user["id"]
                 self.users_map[d["user_id"]] = new_user["id"]
@@ -119,7 +119,7 @@ class ProjectExportClient(BaseClass):
 
     def __find_or_create_id(self, key):
         if self.users_map.get(key) is None:
-            new_user = self.users.find_user_by_email_comparison(key)
+            new_user = self.users.find_user_by_email_comparison_with_id(key)
             if new_user is not None:
                 self.users_map[key] = new_user["id"]
                 return new_user["id"]

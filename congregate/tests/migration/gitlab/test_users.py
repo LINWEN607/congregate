@@ -23,7 +23,7 @@ class UserTests(unittest.TestCase):
         responses.add(responses.GET, url_value,
                     json=self.mock_users.get_user_404(), status=404)
         # pylint: enable=no-member
-        actual = self.users.find_user_by_email_comparison(5)
+        actual = self.users.find_user_by_email_comparison_with_id(5)
         self.assertIsNone(actual)
 
 
@@ -40,7 +40,7 @@ class UserTests(unittest.TestCase):
                     json=self.mock_users.get_dummy_user(), status=200)
         # pylint: enable=no-member
         search.return_value = [self.mock_users.get_dummy_user()]
-        actual = self.users.find_user_by_email_comparison(5)
+        actual = self.users.find_user_by_email_comparison_with_id(5)
         expected = self.mock_users.get_dummy_user()
         self.assertDictEqual(expected, actual)
 
@@ -404,3 +404,59 @@ class UserTests(unittest.TestCase):
         ]
 
         self.assertListEqual(actual, expected)
+
+    # pylint: disable=no-member
+    @responses.activate
+    # pylint: enable=no-member
+    @mock.patch('congregate.helpers.conf.ig.destination_host', new_callable=mock.PropertyMock)
+    @mock.patch('congregate.helpers.api.get_count')
+    def test_handle_user_creation(self, count, destination):
+        count.return_value = 1
+        destination.return_value = "https://gitlabdestination.com"
+        new_user = self.mock_users.get_dummy_user()
+        new_user.pop("id")
+
+        url_value = "https://gitlabdestination.com/api/v4/users"
+        # pylint: disable=no-member
+        responses.add(responses.POST, url_value,
+                    json=self.mock_users.get_dummy_new_users()[1], status=200)
+        # pylint: enable=no-member
+        url_value = "https://gitlabdestination.com/api/v4/users?search=%s&per_page=50&page=1" % (new_user["email"])
+        # pylint: disable=no-member
+        responses.add(responses.GET, url_value,
+                    json=[self.mock_users.get_dummy_user()], status=200)
+        # pylint: enable=no-member
+
+        actual = self.users.handle_user_creation(new_user)
+        expected = 27
+
+        self.assertEqual(actual, expected)
+
+    # pylint: disable=no-member
+    @responses.activate
+    # pylint: enable=no-member
+    @mock.patch('congregate.helpers.conf.ig.destination_host', new_callable=mock.PropertyMock)
+    @mock.patch('congregate.helpers.api.get_count')
+    def test_handle_user_creation_user_already_exists(self, count, destination):
+        count.return_value = 1
+        destination.return_value = "https://gitlabdestination.com"
+        new_user = self.mock_users.get_dummy_user()
+        new_user.pop("id")
+
+        url_value = "https://gitlabdestination.com/api/v4/users"
+        # pylint: disable=no-member
+        responses.add(responses.POST, url_value,
+                    json=self.mock_users.get_dummy_new_users()[1], status=409)
+        # pylint: enable=no-member
+        url_value = "https://gitlabdestination.com/api/v4/users?search=%s&per_page=50&page=%d" % (new_user["email"], count.return_value)
+        # pylint: disable=no-member
+        responses.add(responses.GET, url_value,
+                    json=[self.mock_users.get_dummy_user()], status=200)
+        # pylint: enable=no-member
+
+        actual = self.users.handle_user_creation(new_user)
+        expected = 27
+
+        self.assertEqual(actual, expected)
+
+    
