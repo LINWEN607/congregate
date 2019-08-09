@@ -132,7 +132,7 @@ if __name__ == '__main__':
             # except ImportError:
             #     import migration.users, migration.groups, migration.projects
             from congregate.cli import list_projects, stage_projects, do_all
-            from congregate.helpers.seed import generator
+            from congregate.helpers.seed.generator import SeedDataGenerator
         else:
             from .migration.gitlab.users import UsersClient
             from .migration.gitlab.groups import GroupsClient
@@ -249,4 +249,5 @@ if __name__ == '__main__':
                 results = compare.compare_staged_users()
                 print dumps(results, indent=4)
             if arguments["generate-seed-data"]:
-                generator.generate_seed_data()
+                s = SeedDataGenerator()
+                s.generate_seed_data()
