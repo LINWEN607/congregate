@@ -54,6 +54,8 @@ test:pylint:
   <<: *test-job
   script:
     - ./pylint.sh
+  only:
+    - /^master$/
   artifacts:
     paths:
       - pylint.txt
