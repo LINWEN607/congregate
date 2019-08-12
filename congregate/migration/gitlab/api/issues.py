@@ -2,8 +2,7 @@ from congregate.helpers.base_class import BaseClass
 from congregate.helpers import api
 from congregate.helpers.misc_utils import strip_numbers, remove_dupes
 
-
-class IssuesClient(BaseClass):
+class IssuesApi(BaseClass):
     def get_all_project_issues(self, host, token, project_id):
         return api.list_all(host, token, "projects/%d/issues" % project_id)
 

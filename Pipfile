@@ -8,10 +8,8 @@ url = "https://testpypi.python.org/simple"
 verify_ssl = true
 name = "testpypi"
 
-[dev-packages]
-pylint = "<2.0.0"
-
 [packages]
+pylint = "<2.0.0"
 awscli = "*"
 boto3 = "*"
 requests = "*"
@@ -28,7 +26,10 @@ docker = "*"
 pytest = "*"
 pytest-cov = "*"
 responses = "*"
+"bs4" = "*"
+lxml = "*"
 sphinx = "*"
+pylint-exit = "*"
 
 [scripts]
 clean_pyc = "find ./congregate -name '*.pyc' -delete"

@@ -2,14 +2,8 @@ import mock
 import unittest
 import os
 from congregate.cli import config
-from congregate.helpers.misc_utils import get_congregate_path
+from congregate.helpers.misc_utils import get_congregate_path, input_generator
 from congregate.helpers.mockapi.users import MockUsersApi
-
-
-def input_generator(params):  # generate squares as an example
-    for param in params:
-        yield param
-
 
 class ConfigTests(unittest.TestCase):
     def setUp(self):

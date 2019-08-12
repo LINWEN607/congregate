@@ -36,7 +36,7 @@ class PipelineSchedulesClient(BaseClass):
             schedule["owner"]["id"])
 
         impersonation_token = self.users.find_or_create_impersonation_token(
-            pipeline_schedule_owner, users_map, self.token_expiration_date)
+            self.config.destination_host, self.config.destination_token, pipeline_schedule_owner, users_map, self.token_expiration_date)
 
         schedule_response = self.create_new_pipeline_schedule(
             self.config.destination_host, impersonation_token["token"], new_project_id, data)

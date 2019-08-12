@@ -1,9 +1,9 @@
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers import api
 from congregate.helpers.misc_utils import strip_numbers, remove_dupes
-from congregate.migration.gitlab.issues import IssuesClient
-from congregate.migration.gitlab.merge_requests import MergeRequestsClient
-from congregate.migration.gitlab.snippets import SnippetsClient
+from congregate.migration.gitlab.api.issues import IssuesApi
+from congregate.migration.gitlab.api.merge_requests import MergeRequestsApi
+from congregate.migration.gitlab.api.snippets import SnippetsApi
 from congregate.migration.gitlab.users import UsersClient
 from datetime import timedelta, date
 
@@ -11,9 +11,9 @@ from datetime import timedelta, date
 class AwardsClient(BaseClass):
     AWARDABLES = ["issues", "merge_requests", "snippets"]
     def __init__(self):
-        self.issues = IssuesClient()
-        self.merge_requests = MergeRequestsClient()
-        self.snippets = SnippetsClient()
+        self.issues = IssuesApi()
+        self.merge_requests = MergeRequestsApi()
+        self.snippets = SnippetsApi()
         self.users = UsersClient()
         self.token_expiration_date = (date.today() + timedelta(days=2)
                                       ).strftime('%Y-%m-%d')
@@ -60,7 +60,7 @@ class AwardsClient(BaseClass):
                     award["user"]["id"])
 
                 impersonation_token = self.users.find_or_create_impersonation_token(
-                    new_award_giver, users_map, self.token_expiration_date)
+                    self.config.destination_host, self.config.destination_token, new_award_giver, users_map, self.token_expiration_date)
 
                 self.__create_awardable_emoji(
                     self.config.destination_host, impersonation_token["token"], awardable_name, new_project_id, awardable_id, award["name"])
@@ -84,7 +84,7 @@ class AwardsClient(BaseClass):
                                 n["user"]["id"])
 
                             impersonation_token = self.users.find_or_create_impersonation_token(
-                                new_award_giver, users_map, self.token_expiration_date)
+                                self.config.destination_host, self.config.destination_token, new_award_giver, users_map, self.token_expiration_date)
 
                             self.__create_awardable_note_emoji(
                                 self.config.destination_host, impersonation_token["token"], awardable_name, new_project_id, awardable_id, dest_note[i]["id"], n["name"])

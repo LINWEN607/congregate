@@ -25,33 +25,58 @@ build:
     - docker build --tag "$BUILD_IMAGE_NAME" .
     - docker push "$BUILD_IMAGE_NAME"
 
+# pre-test:
+#   stage: pre-test
+#   image: "$BUILD_IMAGE_NAME"
+#   script:
+#     - apt-get update
+#     - pip install pipenv
+#     - export PIPENV_VENV_IN_PROJECT=true
+#     - pipenv install
+#   cache:
+#     paths:
+#       - .venv/
+
 .test-job: &test-job
   stage: test
   image: "$BUILD_IMAGE_NAME"
   before_script:
     - apt-get update
-    - apt-get install -y jq
+    - apt-get install -y jq curl
     - mkdir data
-    - echo ${Dummy_config} | jq . > data/config.json
+    - echo ${Dummy_config} | jq . > $CONGREGATE_PATH/data/config.json
     - pip install pipenv
+    - export PIPENV_VENV_IN_PROJECT=true
     - pipenv install
+
+
+test:pylint:
+  <<: *test-job
+  script:
+    - ./pylint.sh
+  artifacts:
+    paths:
+      - pylint.txt
 
 test:unit:
   <<: *test-job
   script:
-    - pipenv run pytest --cov-config=.coveragerc --cov=congregate congregate/tests/
+    - pipenv run pytest -m 'not e2e' --cov-config=.coveragerc --cov=congregate congregate/tests/
 
 test:end-to-end:
   services:
-    - name: gitlab/gitlab-ce:latest
-      alias: gitlab1
-    - name: gitlab/gitlab-ce:latest
-      alias: gitlab2
+    - name: docker:stable-dind
+    - name: gitlab/gitlab-ee:latest
+      alias: gitlab_source
+    - name: gitlab/gitlab-ee:latest
+      alias: gitlab_destination
   <<: *test-job
   tags:
-    - docker
+    - e2e
   script:
-    - GITLAB_SRC=gitlab1 GITLAB_DEST=gitlab2 pipenv run pytest -m e2e congregate/tests/
+    - export GITLAB_SRC=http://gitlab_source
+    - export GITLAB_DEST=http://gitlab_destination
+    - pipenv run pytest -s -m e2e congregate/tests/
 
 release-tag:
   stage: release
