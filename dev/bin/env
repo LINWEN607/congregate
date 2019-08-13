@@ -5,7 +5,7 @@ alias ui='pipenv run dnd install'
 alias sh='pipenv shell'
 alias upd='pipenv run python congregate/update-readme.py'
 alias pt='pipenv run pytest -m "not e2e" --cov-config=.coveragerc --cov=congregate congregate/tests/'
-alias pt_e2e='pipenv run pytest --cov-config=.coveragerc --cov=congregate congregate/tests/'
+alias pt_e2e='pipenv run pytest -s -m e2e congregate/tests/'
 alias dpull='docker pull registry.gitlab.com/gitlab-com/customer-success/tools/congregate'
 alias drun='docker run --name congregate -p 8000:8000 -it registry.gitlab.com/gitlab-com/customer-success/tools/congregate:latest /bin/bash'
 
