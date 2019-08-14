@@ -91,7 +91,7 @@ class ImportExportClient(BaseClass):
         ]
 
         headers = {
-            'Private-Token': self.config.source_host,
+            'Private-Token': self.config.source_token,
             'Content-Type': 'application/x-www-form-urlencoded'
         }
 
@@ -178,7 +178,6 @@ class ImportExportClient(BaseClass):
                 self.config.append_project_suffix_on_existing_found,
                 exported,
                 filename,
-                import_response,
                 name,
                 namespace,
                 override_params,

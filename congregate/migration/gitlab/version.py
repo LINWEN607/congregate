@@ -9,4 +9,6 @@ class VersionClient(BaseClass):
         return api.generate_get_request(host, token, "/version").json()
 
     def is_older_than(self, old_version, new_version):
+        old_version = old_version.split("-")[0]
+        new_version = new_version.split("-")[0]
         return StrictVersion(old_version) <= StrictVersion(new_version)
