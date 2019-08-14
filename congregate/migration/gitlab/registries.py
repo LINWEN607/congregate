@@ -74,7 +74,7 @@ class RegistryClient(BaseClass):
     def __login_to_registry(self, host, token, registry):
         try:
             client = from_env()
-            client.login(username=self.users.get_current_user(host, token).json()["username"],
+            client.login(username=self.users.get_current_user(host, token)["username"],
                          password=token,
                          registry=registry)
             return client

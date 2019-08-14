@@ -125,7 +125,7 @@ class ImportExportClient(BaseClass):
                     user_project = True
                     # namespace = project["namespace"]
                     new_user = self.users.get_user(
-                        member["id"], self.config.source_host, self.config.source_token).json()
+                        member["id"], self.config.destination_host, self.config.destination_token).json()
                     namespace = new_user["username"]
                     self.log.info("%s is a user project belonging to %s. Attempting to import into their namespace" % (
                         project["name"], new_user))
