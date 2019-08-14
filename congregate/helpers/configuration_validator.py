@@ -22,6 +22,9 @@ class ConfigurationValidator(ig):
             return parent_id
         else:
             self.parent_id_validated_in_session = self.validate_parent_group_id(parent_id)
+            if self.parent_group_path_validated_in_session is True:
+                return parent_id
+            self.parent_group_path_validated_in_session = self.validate_parent_group_path(self.config.get("parent_group_path", None))
             return parent_id
 
     @property

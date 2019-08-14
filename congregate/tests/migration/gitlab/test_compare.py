@@ -1,18 +1,19 @@
-import unittest
 import mock
-import json
 import responses
 from congregate.migration.gitlab.compare import CompareClient
 from congregate.tests.mockapi.groups import MockGroupsApi
 from congregate.tests.mockapi.users import MockUsersApi
 from congregate.helpers.misc_utils import rewrite_list_into_dict
+from congregate.helpers.configuration_validator import ConfigurationValidator
 
 compare = CompareClient()
 groups = MockGroupsApi()
 users = MockUsersApi()
 
 @mock.patch.object(CompareClient, "load_group_data")
-def test_compare_groups(group_data):
+@mock.patch.object(ConfigurationValidator, 'parent_id', new_callable=mock.PropertyMock)
+def test_compare_groups(parent_id, group_data):
+    parent_id.return_value = None
     source_groups = groups.get_all_groups_list()
     destination_groups = mock_destination_ids()
     group_data.side_effect = [destination_groups, source_groups]
@@ -114,7 +115,9 @@ def test_compare_members_different_ids_same_usernames():
     actual = compare.compare_groups(rewritten_source_groups, rewritten_destination_groups)
     assert sorted(expected) == sorted(actual)
 
-def test_compare_members_different_usernames_same_ids():
+@mock.patch.object(ConfigurationValidator, 'parent_id', new_callable=mock.PropertyMock)
+def test_compare_members_different_usernames_same_ids(parent_id):
+    parent_id.return_value = None
     source_groups = groups.get_all_groups_list()
     destination_groups = mock_destination_usernames()
     shared_key = "full_path"

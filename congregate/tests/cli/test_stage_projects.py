@@ -5,6 +5,7 @@ from congregate.tests.mockapi.projects import MockProjectsApi
 from congregate.tests.mockapi.groups import MockGroupsApi
 from congregate.tests.mockapi.users import MockUsersApi
 from congregate.tests.mockapi.members import MockMembersApi
+from congregate.helpers.configuration_validator import ConfigurationValidator
 
 
 class StageProjectsTests(unittest.TestCase):
@@ -21,7 +22,9 @@ class StageProjectsTests(unittest.TestCase):
     @mock.patch('congregate.cli.stage_projects.open_users_file')
     @mock.patch('congregate.cli.stage_projects.open_groups_file')
     @mock.patch('congregate.migration.gitlab.api.projects.ProjectsApi.get_members')
-    def test_build_stage_data(self, mock_members, mock_groups, mock_users, mock_projects, mock_check, mock_open):
+    @mock.patch.object(ConfigurationValidator, 'parent_id', new_callable=mock.PropertyMock)
+    def test_build_stage_data(self, parent_id, mock_members, mock_groups, mock_users, mock_projects, mock_check, mock_open):
+        parent_id.return_value = None
         mock_check.return_value = True
         mock_projects.return_value = self.projects_api.get_all_projects()
         mock_users.return_value = self.users_api.get_all_users_list()
@@ -229,7 +232,9 @@ class StageProjectsTests(unittest.TestCase):
     @mock.patch('congregate.cli.stage_projects.open_users_file')
     @mock.patch('congregate.cli.stage_projects.open_groups_file')
     @mock.patch('congregate.migration.gitlab.api.projects.ProjectsApi.get_members')
-    def test_build_stage_increment(self, mock_members, mock_groups, mock_users, mock_projects, mock_check, mock_open):
+    @mock.patch.object(ConfigurationValidator, 'parent_id', new_callable=mock.PropertyMock)
+    def test_build_stage_increment_no_parent_id(self, parent_id, mock_members, mock_groups, mock_users, mock_projects, mock_check, mock_open):
+        parent_id.return_value = None
         mock_check.return_value = True
         mock_projects.return_value = self.projects_api.get_all_projects()
         mock_users.return_value = self.users_api.get_all_users_list()

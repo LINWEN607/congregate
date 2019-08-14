@@ -49,9 +49,27 @@ class ConfigurationValidationTests(unittest.TestCase):
         url_value = "https://gitlab.com/api/v4/groups/4"
         url.return_value = url_value
         self.config.props["parent_id"] = 1234
+        self.config.props["parent_group_path"] = "twitter"
         # pylint: disable=no-member
         responses.add(responses.GET, url_value,
                   json=self.groups.get_group(), status=200, content_type='text/json', match_querystring=True)
+        # pylint: enable=no-member
+        self.assertTrue(self.config.parent_id, 1234)
+
+    @responses.activate
+    # pylint: enable=no-member
+    # @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.parent_group_path_validated_in_session')
+    @mock.patch("congregate.helpers.api.generate_v4_request_url")
+    def test_succeed_parent_id_and_path_validation(self, url):
+        self.config.parent_group_path_validated_in_session = True
+        self.config.parent_id_validated_in_session = False
+        url_value = "https://gitlab.com/api/v4/groups/4"
+        url.return_value = url_value
+        self.config.props["parent_id"] = 1234
+        self.config.props["parent_group_path"] = "twitter"
+        # pylint: disable=no-member
+        responses.add(responses.GET, url_value,
+                    json=self.groups.get_group(), status=200, content_type='text/json', match_querystring=True)
         # pylint: enable=no-member
         self.assertTrue(self.config.parent_id, 1234)
 

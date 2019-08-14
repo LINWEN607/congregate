@@ -72,10 +72,7 @@ def build_staging_data(projects_to_stage):
 
                 members = []
                 for member in projects_api.get_members(int(projects[i]["id"]), b.config.source_host, b.config.source_token):
-                    if member["username"] != "root":
-                        staged_users.append(
-                            rewritten_users[member["username"]])
-                        members.append(member)
+                    append_member_to_members_list(rewritten_users, staged_users, members, member)
 
                 if projects[i]["namespace"]["kind"] == "group":
                     group_to_stage = projects[i]["namespace"]["path"]
@@ -104,11 +101,7 @@ def build_staging_data(projects_to_stage):
 
                 members = []
                 for member in projects_api.get_members(int(projects[i]["id"]), b.config.source_host, b.config.source_token):
-                    if member["username"] != "root":
-                        b.log.info("Staging user (%s)" % member["username"])
-                        staged_users.append(
-                            rewritten_users[member["username"]])
-                        members.append(member)
+                    append_member_to_members_list(rewritten_users, staged_users, members, member)
 
                 if projects[0]["namespace"]["kind"] == "group":
                     group_to_stage = projects[0]["namespace"]["id"]
@@ -160,12 +153,8 @@ def build_staging_data(projects_to_stage):
 
                 members = []
                 for member in projects_api.get_members(int(project["id"]), b.config.source_host, b.config.source_token):
-                    if member["username"] != "root":
-                        b.log.info("Staging user (%s)" % member["username"])
-                        staged_users.append(
-                            rewritten_users[member["username"]])
-                        members.append(member)
-
+                    append_member_to_members_list(rewritten_users, staged_users, members, member)
+                    
                 if project["namespace"]["kind"] == "group":
                     group_to_stage = project["namespace"]["id"]
                     if rewritten_groups[group_to_stage]["parent_id"] is None:
@@ -226,3 +215,16 @@ def write_staging_files(staging, staged_users, staged_groups):
     else:
         with open("%s/data/stage.json" % b.app_path, "wb") as f:
             f.write("[]")
+
+def append_member_to_members_list(rewritten_users, staged_users, members_list, member):
+    if isinstance(member, dict):
+        if member.get("username", None) is not None:
+            if member["username"] != "root":
+                b.log.info("Staging user (%s)" % member["username"])
+                staged_users.append(
+                    rewritten_users[member["username"]])
+                members_list.append(member)
+    else:
+        b.log.error(member)
+
+    
