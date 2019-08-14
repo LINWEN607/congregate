@@ -231,6 +231,11 @@ class UserTests(unittest.TestCase):
         responses.add(responses.GET, url_value,
                     json=self.mock_users.get_dummy_new_users()[1], status=200)
         # pylint: enable=no-member
+        url_value = "https://gitlabdestination.com/api/v4/user"
+        # pylint: disable=no-member
+        responses.add(responses.GET, url_value,
+                    json=self.mock_users.get_current_user(), status=200)
+        # pylint: enable=no-member
 
         actual = self.users.update_users(old_users, new_users)
 
@@ -303,6 +308,11 @@ class UserTests(unittest.TestCase):
         responses.add(responses.GET, url_value,
                     json=wrong_raymond_smith, status=200)
         # pylint: enable=no-member
+        url_value = "https://gitlabdestination.com/api/v4/user"
+        # pylint: disable=no-member
+        responses.add(responses.GET, url_value,
+                    json=self.mock_users.get_current_user(), status=200)
+        # pylint: enable=no-member
 
         actual = self.users.update_users(old_users, new_users)
 
@@ -352,6 +362,8 @@ class UserTests(unittest.TestCase):
         ]
         new_users = self.mock_users.get_dummy_new_users()
 
+        
+
         url_value = "https://gitlabsource.com/api/v4/users/1"
         # pylint: disable=no-member
         responses.add(responses.GET, url_value,
@@ -372,7 +384,12 @@ class UserTests(unittest.TestCase):
         responses.add(responses.GET, url_value,
                     json=self.mock_users.get_user_404(), status=200)
         # pylint: enable=no-member
-
+        url_value = "https://gitlabdestination.com/api/v4/user"
+        # pylint: disable=no-member
+        responses.add(responses.GET, url_value,
+                    json=self.mock_users.get_current_user(), status=200)
+        # pylint: enable=no-member
+        
         actual = self.users.update_users(old_users, new_users)
 
         expected = [

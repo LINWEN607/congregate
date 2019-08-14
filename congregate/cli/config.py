@@ -2,11 +2,13 @@ import os
 import subprocess
 import json
 import time
-from congregate.helpers.api import generate_get_request
 from congregate.helpers.misc_utils import get_congregate_path
+from congregate.migration.gitlab.api.users import UsersApi
+from congregate.migration.gitlab.api.groups import GroupsApi
 
 app_path = get_congregate_path()
-
+users = UsersApi()
+groups = GroupsApi()
 
 def generate_config():
     config = {}
@@ -43,7 +45,7 @@ def generate_config():
         "%s. Destination instance Access token: " % str(len(config) + 1))
     config["destination_instance_token"] = destination_instance_token
 
-    destination_user_info = get_user(destination_instance_host, destination_instance_token)
+    destination_user_info = users.get_current_user(destination_instance_host, destination_instance_token)
 
     config["import_user_id"] = destination_user_info["id"]
 
@@ -70,6 +72,9 @@ def generate_config():
             parent_id = raw_input(
                 "%s. Please input the parent group ID (You can find this in the parent group -> settings -> general)" % str(len(config) + 1))
             config["parent_id"] = int(parent_id)
+            
+            parent_group = groups.get_group(config["parent_id"], destination_instance_host, destination_instance_token).json()
+            config["parent_group_path"] = parent_group["full_path"]
             print "Congregate is going to set all internal projects to private. You can change this setting later."
             config["make_visibility_private"] = True
             sso = raw_input("Are you migrating to a group with SAML SSO enabled?")
@@ -150,6 +155,3 @@ def update_config(config_data):
     with open("%s/data/config.json" % app_path, "w") as f:
         json.dump(data, f, indent=4)
 
-
-def get_user(destination_instance_host, destination_instance_token):
-    return generate_get_request(destination_instance_host, destination_instance_token, "user").json()

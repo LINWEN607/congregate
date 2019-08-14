@@ -78,6 +78,10 @@ class ig(object):
         return self.config.get("parent_id", None)
 
     @property
+    def parent_group_path(self):
+        return self.config.get("parent_group_path", None)
+
+    @property
     def source_username(self):
         return self.config.get("source_username", None)
 

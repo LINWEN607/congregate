@@ -26,10 +26,10 @@ class UsersApi():
             :param: id: (int) GitLab user ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
-            :return: Response object containing the response to GET /users
+            :return: Response object containing the response to GET /user
 
         """
-        return api.generate_get_request(host, token, "user")
+        return api.generate_get_request(host, token, "user").json()
 
     def create_user(self, host, token, data):
         """

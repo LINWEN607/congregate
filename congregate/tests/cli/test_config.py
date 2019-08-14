@@ -1,16 +1,20 @@
-import mock
 import unittest
 import os
+import mock
+import responses
 from congregate.cli import config
 from congregate.helpers.misc_utils import get_congregate_path, input_generator
 from congregate.tests.mockapi.users import MockUsersApi
+from congregate.tests.mockapi.groups import MockGroupsApi
+from congregate.migration.gitlab.api.users import UsersApi
 
 class ConfigTests(unittest.TestCase):
     def setUp(self):
-        self.api = MockUsersApi()
+        self.users_api = MockUsersApi()
+        self.groups_api = MockGroupsApi()
         self.maxDiff = None
 
-    @mock.patch('congregate.cli.config.get_user')
+    @mock.patch.object(UsersApi, "get_current_user")
     def test_default_configuration(self, mock_get):
         values = [
             "",  # Migration source
@@ -42,13 +46,13 @@ class ConfigTests(unittest.TestCase):
                 "path": os.getcwd()
             }
         }
-        mock_get.return_value = self.api.get_current_user()
+        mock_get.return_value = self.users_api.get_current_user()
 
         with mock.patch('__builtin__.raw_input', lambda x: next(g)):
             actual = config.generate_config()
             self.assertEqual(expected, actual)
 
-    @mock.patch('congregate.cli.config.get_user')
+    @mock.patch.object(UsersApi, "get_current_user")
     def test_default_configuration_with_mirror(self, mock_get):
         values = [
             "",  # Migration source
@@ -81,14 +85,18 @@ class ConfigTests(unittest.TestCase):
                 "path": os.getcwd()
             }
         }
-        mock_get.return_value = self.api.get_current_user()
+        mock_get.return_value = self.users_api.get_current_user()
 
         with mock.patch('__builtin__.raw_input', lambda x: next(g)):
             actual = config.generate_config()
             self.assertEqual(expected, actual)
 
-    @mock.patch('congregate.cli.config.get_user')
-    def test_default_configuration_with_parent_id(self, mock_get):
+    # pylint: disable=no-member
+    @responses.activate
+    # pylint: enable=no-member
+    @mock.patch("congregate.helpers.api.generate_v4_request_url")
+    @mock.patch.object(UsersApi, "get_current_user")
+    def test_default_configuration_with_parent_id(self, mock_get, url):
         values = [
             "",  # Migration source
             os.getenv("destination_instance_host"),
@@ -118,20 +126,29 @@ class ConfigTests(unittest.TestCase):
                 "destination_instance_registry": os.getenv("destination_instance_registry"),
                 "number_of_threads": 2,
                 "parent_id": 5,
+                "parent_group_path": "twitter",
                 "location": "filesystem",
                 "make_visibility_private": True,
                 "import_user_id": 1,
                 "path": os.getcwd()
             }
         }
-        mock_get.return_value = self.api.get_current_user()
+        url_value = "https://gitlab.com/api/v4/groups/5"
+        url.return_value = url_value
+        mock_get.return_value = self.users_api.get_current_user()
+        responses.add(responses.GET, url_value,
+                    json=self.groups_api.get_group(), status=200, content_type='text/json', match_querystring=True)
 
         with mock.patch('__builtin__.raw_input', lambda x: next(g)):
             actual = config.generate_config()
             self.assertEqual(expected, actual)
 
-    @mock.patch('congregate.cli.config.get_user')
-    def test_default_configuration_with_parent_id_and_sso(self, mock_get):
+    # pylint: disable=no-member
+    @responses.activate
+    # pylint: enable=no-member
+    @mock.patch("congregate.helpers.api.generate_v4_request_url")
+    @mock.patch.object(UsersApi, "get_current_user")
+    def test_default_configuration_with_parent_id_and_sso(self, mock_get, url):
         values = [
             "",  # Migration source
             os.getenv("destination_instance_host"),
@@ -162,6 +179,7 @@ class ConfigTests(unittest.TestCase):
                 "destination_instance_registry": os.getenv("destination_instance_registry"),
                 "number_of_threads": 2,
                 "parent_id": 5,
+                "parent_group_path": "twitter",
                 "group_sso_provider": "auth0",
                 "location": "filesystem",
                 "make_visibility_private": True,
@@ -169,14 +187,22 @@ class ConfigTests(unittest.TestCase):
                 "path": os.getcwd()
             }
         }
-        mock_get.return_value = self.api.get_current_user()
+        url_value = "https://gitlab.com/api/v4/groups/5"
+        url.return_value = url_value
+        mock_get.return_value = self.users_api.get_current_user()
+        responses.add(responses.GET, url_value,
+                    json=self.groups_api.get_group(), status=200, content_type='text/json', match_querystring=True)
 
         with mock.patch('__builtin__.raw_input', lambda x: next(g)):
             actual = config.generate_config()
             self.assertEqual(expected, actual)
 
-    @mock.patch('congregate.cli.config.get_user')
-    def test_default_configuration_with_parent_id_and_sso_and_suffix(self, mock_get):
+    # pylint: disable=no-member
+    @responses.activate
+    # pylint: enable=no-member
+    @mock.patch("congregate.helpers.api.generate_v4_request_url")
+    @mock.patch.object(UsersApi, "get_current_user")
+    def test_default_configuration_with_parent_id_and_sso_and_suffix(self, mock_get, url):
         values = [
             "",  # Migration source
             os.getenv("destination_instance_host"),
@@ -207,6 +233,7 @@ class ConfigTests(unittest.TestCase):
                 "destination_instance_registry": os.getenv("destination_instance_registry"),
                 "number_of_threads": 2,
                 "parent_id": 5,
+                "parent_group_path": "twitter",
                 "group_sso_provider": "auth0",
                 "username_suffix": "_acme",
                 "location": "filesystem",
@@ -215,13 +242,17 @@ class ConfigTests(unittest.TestCase):
                 "path": os.getcwd()
             }
         }
-        mock_get.return_value = self.api.get_current_user()
+        url_value = "https://gitlab.com/api/v4/groups/5"
+        url.return_value = url_value
+        mock_get.return_value = self.users_api.get_current_user()
+        responses.add(responses.GET, url_value,
+                    json=self.groups_api.get_group(), status=200, content_type='text/json', match_querystring=True)
 
         with mock.patch('__builtin__.raw_input', lambda x: next(g)):
             actual = config.generate_config()
             self.assertEqual(expected, actual)
 
-    @mock.patch('congregate.cli.config.get_user')
+    @mock.patch.object(UsersApi, "get_current_user")
     def test_explicit_default_configuration(self, mock_get):
         values = [
             "gitlab",  # migration source
@@ -253,13 +284,13 @@ class ConfigTests(unittest.TestCase):
             }
         }
 
-        mock_get.return_value = self.api.get_current_user()
+        mock_get.return_value = self.users_api.get_current_user()
 
         with mock.patch('__builtin__.raw_input', lambda x: next(g)):
             actual = config.generate_config()
             self.assertEqual(expected, actual)
 
-    @mock.patch('congregate.cli.config.get_user')
+    @mock.patch.object(UsersApi, "get_current_user")
     def test_explicit_default_configuration_with_filepath(self, mock_get):
         values = [
             "gitlab",  # Migration source
@@ -291,13 +322,13 @@ class ConfigTests(unittest.TestCase):
             }
         }
 
-        mock_get.return_value = self.api.get_current_user()
+        mock_get.return_value = self.users_api.get_current_user()
 
         with mock.patch('__builtin__.raw_input', lambda x: next(g)):
             actual = config.generate_config()
             self.assertEqual(expected, actual)
 
-    @mock.patch('congregate.cli.config.get_user')
+    @mock.patch.object(UsersApi, "get_current_user")
     @mock.patch('subprocess.call')
     def test_aws_configuration(self, mock_call, mock_get):
         values = [
@@ -336,14 +367,14 @@ class ConfigTests(unittest.TestCase):
             }
         }
 
-        mock_get.return_value = self.api.get_current_user()
+        mock_get.return_value = self.users_api.get_current_user()
         mock_call.return_value = ""
 
         with mock.patch('__builtin__.raw_input', lambda x: next(g)):
             actual = config.generate_config()
             self.assertEqual(expected, actual)
 
-    @mock.patch('congregate.cli.config.get_user')
+    @mock.patch.object(UsersApi, "get_current_user")
     @mock.patch('subprocess.call')
     def test_aws_configuration_specific_region(self, mock_call, mock_get):
         values = [
@@ -382,14 +413,14 @@ class ConfigTests(unittest.TestCase):
             }
         }
 
-        mock_get.return_value = self.api.get_current_user()
+        mock_get.return_value = self.users_api.get_current_user()
         mock_call.return_value = ""
 
         with mock.patch('__builtin__.raw_input', lambda x: next(g)):
             actual = config.generate_config()
             self.assertEqual(expected, actual)
 
-    @mock.patch('congregate.cli.config.get_user')
+    @mock.patch.object(UsersApi, "get_current_user")
     def test_external_bitbucket_configuration_no_repo_list(self, mock_get):
         values = [
             "bitbucket",  # Migration source
@@ -416,13 +447,13 @@ class ConfigTests(unittest.TestCase):
             }
         }
 
-        mock_get.return_value = self.api.get_current_user()
+        mock_get.return_value = self.users_api.get_current_user()
 
         with mock.patch('__builtin__.raw_input', lambda x: next(g)):
             actual = config.generate_config()
             self.assertEqual(expected, actual)
 
-    @mock.patch('congregate.cli.config.get_user')
+    @mock.patch.object(UsersApi, "get_current_user")
     def test_external_bitbucket_configuration_relative_repo_list(self, mock_get):
         values = [
             "bitbucket",  # Migration source
@@ -451,13 +482,13 @@ class ConfigTests(unittest.TestCase):
             }
         }
 
-        mock_get.return_value = self.api.get_current_user()
+        mock_get.return_value = self.users_api.get_current_user()
 
         with mock.patch('__builtin__.raw_input', lambda x: next(g)):
             actual = config.generate_config()
             self.assertEqual(expected, actual)
 
-    @mock.patch('congregate.cli.config.get_user')
+    @mock.patch.object(UsersApi, "get_current_user")
     def test_external_bitbucket_configuration_absolute_repo_list(self, mock_get):
         values = [
             "bitbucket",  # Migration source
@@ -485,7 +516,7 @@ class ConfigTests(unittest.TestCase):
             }
         }
 
-        mock_get.return_value = self.api.get_current_user()
+        mock_get.return_value = self.users_api.get_current_user()
 
         with mock.patch('__builtin__.raw_input', lambda x: next(g)):
             actual = config.generate_config()
