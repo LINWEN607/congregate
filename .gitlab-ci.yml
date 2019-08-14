@@ -16,9 +16,9 @@ stages:
   - release
 
 build:
-  image: docker:stable
+  image: docker:19.03.1
   services:
-    - docker:stable-dind
+    - docker:19.03.1-dind
   stage: build
   script:
     - docker login ${CI_REGISTRY} -u ${GITLAB_USER_LOGIN} -p ${ACCESS_TOKEN}
