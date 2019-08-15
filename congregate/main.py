@@ -6,7 +6,7 @@ Usage:
     congregate list
     congregate config
     congregate stage <projects>...
-    congregate migrate [--threads=<n>] [--dry-run]
+    congregate migrate [--threads=<n>] [--dry-run] [--skip-users]
     congregate ui
     congregate import-projects
     congregate do_all
@@ -35,7 +35,9 @@ Usage:
     congregate compare-groups [--staged]
     congregate staged-user-list
     congregate generate-seed-data
+    congregate map-new-users-to-groups-and-projects [--dry-run]
     congregate -h | --help
+
 
 Options:
     -h --help     Show this screen.
@@ -72,6 +74,7 @@ Commands:
     archive-staged-projects             Archive projects that are staged, not necessarily migrated
     unarchive-staged-projects           Unarchive projects that are staged, not necessarily migrated
     generate-seed-data                  Generates dummy data to test a migration
+    map-new-users-to-groups-and-projects    Maps new_users.json to the staged_groups.json and stage.json (projects) files without making API calls. Requires that update-staged-user-info has been called, first, to create new_users.json
 """
 
 from docopt import docopt
@@ -175,12 +178,16 @@ if __name__ == '__main__':
             if arguments["stage"]:
                 stage_projects.stage_projects(arguments['<projects>'])
             if arguments["migrate"]:
+                threads = None
+                skip_users = False
                 if arguments["--threads"]:
-                    migrate.migrate(threads=arguments["--threads"])
-                elif arguments["--dry-run"]:
-                    users.user_migration_dry_run()
+                    threads = arguments["--threads"]
+                if arguments["--user-only"]:
+                    users_only = True
+                if not arguments["--dry-run"]:
+                    migrate.migrate(threads=threads, skip_users=skip_users)
                 else:
-                    migrate.migrate()
+                    users.user_migration_dry_run()
             if arguments["do_all"]:
                 do_all.do_all()
             if arguments["ui"]:
@@ -251,3 +258,5 @@ if __name__ == '__main__':
             if arguments["generate-seed-data"]:
                 s = SeedDataGenerator()
                 s.generate_seed_data()
+            if arguments["map-new-users-to-groups-and-projects"]:
+                users.map_new_users_to_groups_and_projects(True) if arguments["--dry-run"] else users.map_new_users_to_groups_and_projects()

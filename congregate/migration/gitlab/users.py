@@ -23,14 +23,16 @@ class UsersClient(BaseClass):
         return None
 
     def find_user_by_email_comparison_without_id(self, email):
-        for user in self.users.search_for_user_by_email(self.config.destination_host, self.config.destination_token, email):
+        for user in self.users.search_for_user_by_email(self.config.destination_host, self.config.destination_token,
+                                                        email):
             if user["email"] == email:
                 return user
 
     def username_exists(self, old_user):
         index = 0
         username = old_user["username"]
-        for user in self.users.search_for_user_by_email(self.config.destination_host, self.config.destination_token, username):
+        for user in self.users.search_for_user_by_email(self.config.destination_host, self.config.destination_token,
+                                                        username):
             if user["username"] == username:
                 return True
             elif index > 100:
@@ -41,7 +43,8 @@ class UsersClient(BaseClass):
     def user_email_exists(self, old_user):
         index = 0
         email = old_user["email"]
-        for user in self.users.search_for_user_by_email(self.config.destination_host, self.config.destination_token, email):
+        for user in self.users.search_for_user_by_email(self.config.destination_host, self.config.destination_token,
+                                                        email):
             if user["email"] == email:
                 return True
             elif index > 100:
@@ -115,7 +118,9 @@ class UsersClient(BaseClass):
                     old_user = old_user.json()
                     username = strip_numbers(member["username"]).lower()
                     if rewritten_users.get(old_user["email"], None) is not None:
-                        new_user = self.users.get_user(rewritten_users[old_user["email"]]["id"], self.config.destination_host, self.config.destination_token).json()
+                        new_user = self.users.get_user(rewritten_users[old_user["email"]]["id"],
+                                                       self.config.destination_host,
+                                                       self.config.destination_token).json()
                         if new_user.get("message", None) is None:
                             if new_user["email"] == old_user["email"]:
                                 member["id"] = rewritten_users[old_user["email"]]["id"]
@@ -127,6 +132,62 @@ class UsersClient(BaseClass):
                         member["id"] = self.config.import_user_id
 
         return obj
+
+    def map_new_users_to_groups_and_projects(self, dry_run = False):
+
+        not_found_users = []
+        user_found = False
+        with open("%s/data/stage.json" % self.app_path, "r") as f:
+            staged_projects = json.load(f)
+
+        with open("%s/data/staged_groups.json" % self.app_path, "r") as f:
+            staged_groups = json.load(f)
+
+        with open("%s/data/new_users.json" % self.app_path, "r") as f:
+            new_users = json.load(f)
+
+        for p in staged_projects:
+            # Over every project, check the members
+            if p.get("members", None) is not None and p["members"]:
+                for m in p["members"]:
+                    username = m["username"]
+                    # Find the match in new_users.json
+                    for u in new_users:
+                        if u["username"] == username or u["username"] == username + self.config.username_suffix:
+                            m["id"] = u["id"]
+                            user_found = True
+                            break
+                    if not user_found:
+                        not_found_users.append(username)
+                    user_found = False
+
+        user_found = False
+
+        for g in staged_groups:
+            # Over every project, check the members
+            if g.get("members", None) is not None and g["members"]:
+                for m in g["members"]:
+                    username = m["username"]
+                    # Find the match in new_users.json
+                    for u in new_users:
+                        if u["username"] == username or u["username"] == username + self.config.username_suffix:
+                            m["id"] = u["id"]
+                            user_found = True
+                            break
+                    if not user_found:
+                        not_found_users.append(username)
+                    user_found = False
+
+        self.log.info(staged_groups)
+
+        self.log.info("Following users were not found: {0}".format(not_found_users))
+
+        if not dry_run:
+            with open("%s/data/stage.json" % self.app_path, "wb") as f:
+                json.dump(staged_projects, f, indent=4)
+
+            with open("%s/data/staged_groups.json" % self.app_path, "wb") as f:
+                json.dump(staged_groups, f, indent=4)
 
     def update_user_info_separately(self):
         with open("%s/data/stage.json" % self.app_path, "r") as f:
@@ -185,7 +246,8 @@ class UsersClient(BaseClass):
                 self.log.info("Lowering %s's access level to guest" %
                               user["username"])
                 response = api.generate_put_request(self.config.destination_host, self.config.destination_token,
-                                                    "groups/%d/members/%d?access_level=10" % (self.config.parent_id, user["id"]), data=None)
+                                                    "groups/%d/members/%d?access_level=10" % (
+                                                    self.config.parent_id, user["id"]), data=None)
                 print response
             else:
                 self.log.info("Not changing %s's access level" %
@@ -216,7 +278,7 @@ class UsersClient(BaseClass):
             key = new_user["username"]
             if rewritten_users.get(key, None) is not None:
                 if rewritten_users[key]["state"] == "blocked":
-                    #print "Need to remove %s" % new_user["username"]
+                    # print "Need to remove %s" % new_user["username"]
                     count += 1
                 else:
                     newer_users.append(new_user)
@@ -224,7 +286,7 @@ class UsersClient(BaseClass):
                 key = new_user["name"]
                 if rewritten_users_by_name.get(key, None) is not None:
                     if rewritten_users_by_name[key]["state"] == "blocked":
-                        #print "Need to remove %s" % new_user["name"]
+                        # print "Need to remove %s" % new_user["name"]
                         count += 1
                     else:
                         newer_users.append(new_user)
@@ -285,6 +347,8 @@ class UsersClient(BaseClass):
                 self.config.destination_host, self.config.destination_token, 'users', user['email'])
             print new_user
             if len(new_user) > 0:
+                if new_user[0].get("email", None) is None:
+                    new_user[0]["email"] = user["email"]
                 new_users.append(new_user[0])
             else:
                 print "searching for %s" % user["username"]

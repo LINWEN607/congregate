@@ -299,7 +299,8 @@ class ImportExportClient(BaseClass):
                         elif status["import_status"] == "failed":
                             self.log.info("%s failed to import" % name)
                             exported = True
-                    except:
+                    except Exception as e:
+                        self.log.error(e)
                         self.log.error("Json decoding issue")
                 else:
                     if timeout < 3600:

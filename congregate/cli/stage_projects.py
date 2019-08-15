@@ -66,7 +66,7 @@ def build_staging_data(projects_to_stage):
                     "http_url_to_repo": projects[i]["http_url_to_repo"],
                     "project_type": projects[i]["namespace"]["kind"],
                     "description": projects[i]["description"],
-                    "default_branch": projects[i]["default_branch"],
+                    "default_branch": projects[i].get("default_branch", "master"),
                     "shared_runners_enabled": shared_runners_enabled
                 }
 
@@ -95,7 +95,7 @@ def build_staging_data(projects_to_stage):
                     "http_url_to_repo": projects[i]["http_url_to_repo"],
                     "project_type": projects[i]["namespace"]["kind"],
                     "description": projects[i]["description"],
-                    "default_branch": projects[i]["default_branch"],
+                    "default_branch": projects[i].get("default_branch", "master"),
                     "shared_runners_enabled": shared_runners_enabled
                 }
 
@@ -147,7 +147,7 @@ def build_staging_data(projects_to_stage):
                     "http_url_to_repo": project["http_url_to_repo"],
                     "project_type": project["namespace"]["kind"],
                     "description": project["description"],
-                    "default_branch": project["default_branch"],
+                    "default_branch": project.get("default_branch", "master"),
                     "shared_runners_enabled": shared_runners_enabled
                 }
 

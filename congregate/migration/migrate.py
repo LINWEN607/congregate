@@ -274,7 +274,7 @@ def start_multi_thead(function, iterable):
     pool.join()
 
 
-def migrate(threads=None):
+def migrate(threads=None, skip_users = False):
     if threads is not None:
         b.config.threads = threads
 
@@ -309,17 +309,18 @@ def migrate(threads=None):
         with open("%s/data/staged_groups.json" % b.app_path, "r") as f:
             groups_file = json.load(f)
 
-        b.log.info("Migrating user info")
-        new_users = users.migrate_user_info()
+        if not skip_users:
+            b.log.info("Migrating user info")
+            new_users = users.migrate_user_info()
 
-        with open("%s/data/new_user_ids.txt" % b.app_path, "w") as f:
-            for new_user in new_users:
-                f.write("%s\n" % new_user)
+            with open("%s/data/new_user_ids.txt" % b.app_path, "w") as f:
+                for new_user in new_users:
+                    f.write("%s\n" % new_user)
 
-        if new_users is not None and new_users:
-            users.update_user_info(new_users)
-        else:
-            users.update_user_info(new_users, overwrite=False)
+            if new_users is not None and new_users:
+                users.update_user_info(new_users)
+            else:
+                users.update_user_info(new_users, overwrite=False)
 
         if groups_file is not None and groups_file:
             b.log.info("Migrating group info")
