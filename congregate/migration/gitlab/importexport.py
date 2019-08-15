@@ -406,9 +406,6 @@ class ImportExportClient(BaseClass):
                         for f in glob("%s/downloads/*%s" %
                                       (self.config.filesystem_path, filepattern)):
                             remove(f)
-                        # self.log.info("Archiving %s" % name)
-                        # api.generate_post_request(
-                        #     self.config.source_host, self.config.source_token, "projects/%d/archive" % id, {})
                 except Exception as e:
                     self.log.error("Download or copy to S3 failed")
                     self.log.error(e)
@@ -418,8 +415,6 @@ class ImportExportClient(BaseClass):
         return success
 
     def export_import_thru_aws(self, id, name, namespace, full_parent_namespace):
-        # if isinstance(project_json, str):
-        #     project_json = json.loads(project_json)
         exported = False
         self.log.debug("Searching for existing %s" % name)
         namespace = self.strip_namespace(full_parent_namespace, namespace)
