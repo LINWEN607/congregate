@@ -33,6 +33,7 @@ build:
 #     - pip install pipenv
 #     - export PIPENV_VENV_IN_PROJECT=true
 #     - pipenv install
+#     - pipenv run dnd install
 #   cache:
 #     paths:
 #       - .venv/
@@ -48,7 +49,7 @@ build:
     - pip install pipenv
     - export PIPENV_VENV_IN_PROJECT=true
     - pipenv install
-
+    - pipenv run dnd install
 
 test:pylint:
   <<: *test-job
