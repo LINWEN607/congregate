@@ -36,6 +36,8 @@ Usage:
     congregate staged-user-list
     congregate generate-seed-data
     congregate map-new-users-to-groups-and-projects [--dry-run]
+    congregate validate-staged-groups-schema
+    congregate validate-staged-projects-schema
     congregate -h | --help
 
 
@@ -43,44 +45,47 @@ Options:
     -h --help     Show this screen.
 
 Commands:
-    list                                List all projects of a source instance and save it to {CONGREGATE_PATH}/data/project_json.json
-    config                              Configure congregate for migrating between two instances and save it to {CONGREGATE_PATH}/data/config.json
-    stage                               Stage projects to {CONGREGATE_PATH}/data/stage.json,
-                                        users to {CONGREGATE_PATH}/data/staged_users.json,
-                                        groups to {CONGREGATE_PATH}/data/staged_groups.json.
-                                        All projects can be staged with a '.' or 'all'.
-    migrate                             Commence migration based on configuration and staged assets
-    ui                                  Deploy UI to port 8000
-    import-projects                     Kick off import of exported projects onto destination instance
-    do_all                              Configure system, retrieve all projects, users, and groups, stage all information, and commence migration
-    update-staged-user-info             Update staged user information after migrating only users
-    update-new-users                    Update user IDs in staged groups and projects after migrating users
-    update-aws-creds                    Runs awscli commands based on the keys stored in the config. Useful for docker updates
-    add-users-to-parent-group           If a parent group is set, all users staged will be added to the parent group
-    remove-blocked-users                Removes all blocked users from staged projects and groups
-    lower-user-permissions              Sets all reporter users to guest users
-    get-total-count                     Get total count of migrated projects. Used to compare exported projects to imported projects.
-    find-unimported-projects            Returns a list of projects that failed import
-    stage-unimported-projects           Stage unimported projects based on {CONGREGATE_PATH}/data/unimported_projects.txt
-    remove-users-from-parent-group      Remove all users with at most reporter access from the parent group
-    migrate-variables-in-stage          Migrate CI variables for staged projects
-    add-all-mirrors                     Sets up project mirroring for staged projects
-    remove-all-mirrors                  Remove all project mirrors for staged projects
-    find-all-internal-projects          Finds all internal projects
-    make-all-internal-groups-private    Makes all internal migrated groups private
-    check-projects-visibility           Returns list of all migrated projects' visibility
-    compare-groups                      Compares source and destination group results
-    staged-user-list                    Outputs a list of all staged users and their respective user IDs. Used to confirm IDs were updated correctly
-    archive-staged-projects             Archive projects that are staged, not necessarily migrated
-    unarchive-staged-projects           Unarchive projects that are staged, not necessarily migrated
-    generate-seed-data                  Generates dummy data to test a migration
-    map-new-users-to-groups-and-projects    Maps new_users.json to the staged_groups.json and stage.json (projects) files without making API calls. Requires that update-staged-user-info has been called, first, to create new_users.json
+    list                                    List all projects of a source instance and save it to {CONGREGATE_PATH}/data/project_json.json
+    config                                  Configure congregate for migrating between two instances and save it to {CONGREGATE_PATH}/data/config.json
+    stage                                   Stage projects to {CONGREGATE_PATH}/data/stage.json,
+                                                users to {CONGREGATE_PATH}/data/staged_users.json,
+                                                groups to {CONGREGATE_PATH}/data/staged_groups.json.
+                                                All projects can be staged with a '.' or 'all'.
+    migrate                                 Commence migration based on configuration and staged assets
+    ui                                      Deploy UI to port 8000
+    import-projects                         Kick off import of exported projects onto destination instance
+    do_all                                  Configure system, retrieve all projects, users, and groups, stage all information, and commence migration
+    update-staged-user-info                 Update staged user information after migrating only users
+    update-new-users                        Update user IDs in staged groups and projects after migrating users
+    update-aws-creds                        Runs awscli commands based on the keys stored in the config. Useful for docker updates
+    add-users-to-parent-group               If a parent group is set, all users staged will be added to the parent group
+    remove-blocked-users                    Removes all blocked users from staged projects and groups
+    lower-user-permissions                  Sets all reporter users to guest users
+    get-total-count                         Get total count of migrated projects. Used to compare exported projects to imported projects.
+    find-unimported-projects                Returns a list of projects that failed import
+    stage-unimported-projects               Stage unimported projects based on {CONGREGATE_PATH}/data/unimported_projects.txt
+    remove-users-from-parent-group          Remove all users with at most reporter access from the parent group
+    migrate-variables-in-stage              Migrate CI variables for staged projects
+    add-all-mirrors                         Sets up project mirroring for staged projects
+    remove-all-mirrors                      Remove all project mirrors for staged projects
+    find-all-internal-projects              Finds all internal projects
+    make-all-internal-groups-private        Makes all internal migrated groups private
+    check-projects-visibility               Returns list of all migrated projects' visibility
+    compare-groups                          Compares source and destination group results
+    staged-user-list                        Outputs a list of all staged users and their respective user IDs. Used to confirm IDs were updated correctly
+    archive-staged-projects                 Archive projects that are staged, not necessarily migrated
+    unarchive-staged-projects               Unarchive projects that are staged, not necessarily migrated
+    generate-seed-data                      Generates dummy data to test a migration
+    map-new-users-to-groups-and-projects    Maps new_users.json to the staged_groups.json and stage.json (projects) files without making API calls.
+                                                Requires that update-staged-user-info has been called, first, to create new_users.json.
+    validate-staged-groups-schema           Check staged_groups.json for missing group data.
+    validate-staged-projects-schema         Check stage.json for missing project data.
 """
 
-from docopt import docopt
 import os
 import subprocess
 from json import dump, dumps
+from docopt import docopt
 
 if __name__ == '__main__':
     if __package__ is None:
@@ -125,13 +130,13 @@ if __name__ == '__main__':
         # try:
         # from migration import users, groups, projects
         if __package__ is None:
-            from migration.gitlab.users import UsersClient
-            from migration.gitlab.groups import GroupsClient
-            from migration.gitlab.projects import ProjectsClient
-            from migration.gitlab.variables import VariablesClient
-            from migration.gitlab.compare import CompareClient
-            from migration.mirror import MirrorClient
-            from migration import migrate
+            from congregate.migration.gitlab.users import UsersClient
+            from congregate.migration.gitlab.groups import GroupsClient
+            from congregate.migration.gitlab.projects import ProjectsClient
+            from congregate.migration.gitlab.variables import VariablesClient
+            from congregate.migration.gitlab.compare import CompareClient
+            from congregate.migration.mirror import MirrorClient
+            from congregate.migration import migrate
             # except ImportError:
             #     import migration.users, migration.groups, migration.projects
             from congregate.cli import list_projects, stage_projects, do_all
@@ -142,11 +147,10 @@ if __name__ == '__main__':
             from .migration.gitlab.projects import ProjectsClient
             from .migration.gitlab.compare import CompareClient
             from .migration.mirror import MirrorClient
-            from migration import migrate
+            from congregate.migration import migrate
             # except ImportError:
             #     import migration.users, migration.groups, migration.projects
             from congregate.cli import list_projects, stage_projects, do_all
-            from congregate.helpers.seed import generator
         if config.external_source != False and config.external_source is not None:
             if arguments["migrate"]:
                 if arguments["--threads"]:
@@ -182,8 +186,8 @@ if __name__ == '__main__':
                 skip_users = False
                 if arguments["--threads"]:
                     threads = arguments["--threads"]
-                if arguments["--user-only"]:
-                    users_only = True
+                if arguments["--skip-users"]:
+                    skip_users = True
                 if not arguments["--dry-run"]:
                     migrate.migrate(threads=threads, skip_users=skip_users)
                 else:
@@ -264,4 +268,3 @@ if __name__ == '__main__':
                 groups.validate_staged_groups_schema()
             if arguments["validate-staged-projects-schema"]:
                 projects.validate_staged_projects_schema()
-

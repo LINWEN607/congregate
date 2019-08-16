@@ -8,7 +8,6 @@ WORKDIR /opt/congregate
 # Copy supervisor configuration
 ADD congregate congregate
 COPY congregate.sh Pipfile ./
-# COPY js-packages/* ./js-packages/
 
 # Installing some basic utilities and updating apt
 RUN apt-get update && \
