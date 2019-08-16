@@ -41,19 +41,22 @@ class ProjectExportClient(BaseClass):
         with open("%s/project.json" % path, "r") as f:
             data = json.load(f)
         
-        #Build user map
+        # Build user map
         self.log.info("Building user map")
         for d in data["project_members"]:
             if d.get("user_id", None) is not None: 
                 new_user = self.users.find_user_by_email_comparison_with_id(d["user_id"])
-            if new_user is not None:
-                d["user"]["id"] = new_user["id"]
-                self.users_map[d["user_id"]] = new_user["id"]
+                if new_user is not None:
+                    d["user"]["id"] = new_user["id"]
+                    self.users_map[d["user_id"]] = new_user["id"]
+                else:
+                    d["user"]["id"] = self.config.import_user_id
+                    self.users_map[d["user_id"]] = self.config.import_user_id
+                    d["user"]['username'] = "This is invalid"
             else:
                 d["user"]["id"] = self.config.import_user_id
                 self.users_map[d["user_id"]] = self.config.import_user_id
-            d["user"]['username'] = "This is invalid"
-
+                d["user"]['username'] = "This is invalid"
 
         # Update project_json
         self.__traverse_json(data)

@@ -16,26 +16,28 @@ class UsersClient(BaseClass):
         super(UsersClient, self).__init__()
 
     def find_user_by_email_comparison_with_id(self, old_user_id):
-        self.log.info("Searching for old user {0}".format(old_user_id))
+        self.log.info("Searching for old user {0} by id".format(old_user_id))
         old_user = self.users.get_user(
             old_user_id,
             self.config.source_host,
             self.config.source_token).json()
-        self.log.info(old_user)
-        if old_user.get("message", None) is None:
+        self.log.info("Found old user by id {0}".format(old_user))
+        if old_user is not None and old_user and old_user.get("email", None) is not None:
             return self.find_user_by_email_comparison_without_id(old_user["email"])
         return None
 
     def find_user_by_email_comparison_without_id(self, email):
-        self.log.info("Searching for {0}".format(email))
+        self.log.info("Searching for old user {0} by email".format(email))
         users = self.users.search_for_user_by_email(
             self.config.destination_host,
             self.config.destination_token,
             email)
-        self.log.info(users)
         for user in users:
-            if user["email"] == email:
+            self.log.info(user)
+            if user is not None and user and user.get("email", None) is not None and user["email"] == email:
+                self.log.info("Found old user by email {0}".format(user))
                 return user
+        return None
 
     def username_exists(self, old_user):
         index = 0
