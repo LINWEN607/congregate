@@ -27,7 +27,7 @@ class ConfigurationValidationTests(unittest.TestCase):
         ConfigurationValidator().import_user_id_validated_in_session = False
 
     @responses.activate
-    # pylint: enable=no-member
+    # pylint: enable=no-membertest_pass_import_user_id_validation
     @mock.patch("congregate.helpers.api.generate_v4_request_url")
     def test_fail_parent_id_validation(self, url):
         self.config.parent_id_validated_in_session = False

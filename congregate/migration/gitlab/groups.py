@@ -402,3 +402,28 @@ class GroupsClient(BaseClass):
                 self.log.error(e)
         print ids
 
+    def validate_staged_groups_schema(self):
+        with open("%s/data/staged_groups.json" % self.app_path, "r") as f:
+            staged_groups = json.load(f)
+        for g in staged_groups:
+            self.log.info(g)
+            if g.get("name", None) is None:
+                self.log.error("name is missing")
+            if g.get("namespace", None) is None:
+                self.log.error("namespace is missing")
+            if g.get("project_type", None) is None:
+                self.log.error("project_type is missing")
+            if g.get("default_branch", None) is None:
+                self.log.error("default_branch is missing")
+            if g.get("visibility", None) is None:
+                self.log.error("visibility is missing")
+            if g.get("http_url_to_repo", None) is None:
+                self.log.error("http_url_to_repo is missing")
+            if g.get("shared_runners_enabled", None) is None:
+                self.log.error("shared_runners_enabled is missing")
+            if g.get("members", None) is None:
+                self.log.error("members is missing")
+            if g.get("id", None) is None:
+                self.log.error("id is missing")
+            if g.get("description", None) is None:
+                self.log.error("description is missing")

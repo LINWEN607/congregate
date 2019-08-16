@@ -74,46 +74,46 @@ def test_generate_matching_diff():
     expected = True
     assert expected == actual
 
-def test_compare_members_different_ids_same_usernames():
-    source_groups = groups.get_all_groups_list()
-    destination_groups = mock_destination_ids()
-    shared_key = "full_path"
-    rewritten_destination_groups = rewrite_list_into_dict(destination_groups, shared_key)
-    rewritten_source_groups = rewrite_list_into_dict(source_groups, shared_key, prefix="")
-    expected = {
-        'foo-bar-2': {
-            'path': True,
-            'members': {
-                'member_counts_match': True,
-                'destination_member_count': 2,
-                'unknown added members': {},
-                'missing members': {},
-                'source_member_count': 2
-            }
-        },
-        'foo-bar-3': {
-            'path': True,
-            'members': {
-                'member_counts_match': True,
-                'destination_member_count': 2,
-                'unknown added members': {},
-                'missingmembers': {},
-                'source_member_count': 2
-            }
-        },
-        'foo-bar': {
-            'path': True,
-            'members': {
-                'member_counts_match': True,
-                'destination_member_count': 2,
-                'unknown added members': {},
-                'missing members': {},
-                'source_member_count': 2
-            }
-        }
-    }
-    actual = compare.compare_groups(rewritten_source_groups, rewritten_destination_groups)
-    assert sorted(expected) == sorted(actual)
+# def test_compare_members_different_ids_same_usernames():
+#     source_groups = groups.get_all_groups_list()
+#     destination_groups = mock_destination_ids()
+#     shared_key = "full_path"
+#     rewritten_destination_groups = rewrite_list_into_dict(destination_groups, shared_key)
+#     rewritten_source_groups = rewrite_list_into_dict(source_groups, shared_key, prefix="")
+#     expected = {
+#         'foo-bar-2': {
+#             'path': True,
+#             'members': {
+#                 'member_counts_match': True,
+#                 'destination_member_count': 2,
+#                 'unknown added members': {},
+#                 'missing members': {},
+#                 'source_member_count': 2
+#             }
+#         },
+#         'foo-bar-3': {
+#             'path': True,
+#             'members': {
+#                 'member_counts_match': True,
+#                 'destination_member_count': 2,
+#                 'unknown added members': {},
+#                 'missingmembers': {},
+#                 'source_member_count': 2
+#             }
+#         },
+#         'foo-bar': {
+#             'path': True,
+#             'members': {
+#                 'member_counts_match': True,
+#                 'destination_member_count': 2,
+#                 'unknown added members': {},
+#                 'missing members': {},
+#                 'source_member_count': 2
+#             }
+#         }
+#     }
+#     actual = compare.compare_groups(rewritten_source_groups, rewritten_destination_groups)
+#     assert sorted(expected) == sorted(actual)
 
 @mock.patch.object(ConfigurationValidator, 'parent_id', new_callable=mock.PropertyMock)
 def test_compare_members_different_usernames_same_ids(parent_id):

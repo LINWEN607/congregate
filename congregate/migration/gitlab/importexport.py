@@ -303,7 +303,7 @@ class ImportExportClient(BaseClass):
                         self.log.error(e)
                         self.log.error("Json decoding issue")
                 else:
-                    if timeout < 3600:
+                    if timeout < 150:
                         self.log.info("Waiting on %s to upload" % name)
                         timeout += 1
                         sleep(2)

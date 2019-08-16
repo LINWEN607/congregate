@@ -260,3 +260,8 @@ if __name__ == '__main__':
                 s.generate_seed_data()
             if arguments["map-new-users-to-groups-and-projects"]:
                 users.map_new_users_to_groups_and_projects(True) if arguments["--dry-run"] else users.map_new_users_to_groups_and_projects()
+            if arguments["validate-staged-groups-schema"]:
+                groups.validate_staged_groups_schema()
+            if arguments["validate-staged-projects-schema"]:
+                projects.validate_staged_projects_schema()
+
