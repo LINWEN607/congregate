@@ -3,7 +3,6 @@
 data/*
 *.pyc
 .vscode
-js-packages
 *.log
 *.log.*
 .coverage
