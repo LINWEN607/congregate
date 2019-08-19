@@ -10,6 +10,10 @@ class VariablesClient(BaseClass):
         self.projects = ProjectsApi()
         super(VariablesClient, self).__init__()
 
+    def are_enabled(self, id):
+        project = api.generate_get_request(self.config.source_host, self.config.source_token, "projects/%d" % id).json()
+        return project.get("jobs_enabled", False)
+
     def get_variables(self, id, var_type="projects", instance_type="source"):
         if var_type == "group":
             endpoint = "groups/%d/variables" % id

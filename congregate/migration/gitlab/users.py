@@ -145,7 +145,6 @@ class UsersClient(BaseClass):
         return obj
 
     def map_new_users_to_groups_and_projects(self, dry_run = False):
-
         not_found_users = []
         user_found = False
         with open("%s/data/stage.json" % self.app_path, "r") as f:
@@ -154,8 +153,13 @@ class UsersClient(BaseClass):
         with open("%s/data/staged_groups.json" % self.app_path, "r") as f:
             staged_groups = json.load(f)
 
-        with open("%s/data/new_users.json" % self.app_path, "r") as f:
-            new_users = json.load(f)
+        new_users_dir = "{}/data/new_users.json".format(self.app_path)
+        if path.exists(new_users_dir):
+            with open(new_users_dir, "r") as f:
+                new_users = json.load(f)
+        else:
+            self.log.info("All users have already been migrated.")
+            return
 
         for p in staged_projects:
             # Over every project, check the members
@@ -169,7 +173,7 @@ class UsersClient(BaseClass):
                             user_found = True
                             break
                     if not user_found:
-                        not_found_users.append(username)
+                        not_found_users.append((username, "(project: " + p["namespace"] + ")"))
                     user_found = False
 
         user_found = False
@@ -186,14 +190,13 @@ class UsersClient(BaseClass):
                             user_found = True
                             break
                     if not user_found:
-                        not_found_users.append(username)
+                        not_found_users.append((username, "(group: " + g["full_path"] + ")"))
                     user_found = False
 
-        self.log.info(staged_groups)
-
-        self.log.info("Following users were not found: {0}".format(not_found_users))
+        self.log.info("Following users were not found:\n{}".format("\n".join(" ".join(u) for u in not_found_users)))
 
         if not dry_run:
+            self.log.info("Mapping users to projects and groups.")
             with open("%s/data/stage.json" % self.app_path, "wb") as f:
                 json.dump(staged_projects, f, indent=4)
 
@@ -353,23 +356,21 @@ class UsersClient(BaseClass):
         new_users = []
         users_not_found = []
         for user in users:
-            print "searching for %s" % user["email"]
+            self.log.info("Searching for user {} (email)".format(user["email"]))
             new_user = api.search(
                 self.config.destination_host, self.config.destination_token, 'users', user['email'])
-            print new_user
             if len(new_user) > 0:
                 if new_user[0].get("email", None) is None:
                     new_user[0]["email"] = user["email"]
                 new_users.append(new_user[0])
             else:
-                print "searching for %s" % user["username"]
+                self.log.info("Searching for user {} (username)".format(user["username"]))
                 new_user2 = api.search(
                     self.config.destination_host, self.config.destination_token, 'users', user['username'])
                 if len(new_user2) > 0:
                     new_users.append(new_user2[0])
                 else:
                     users_not_found.append(user["email"])
-                    print new_user
 
         other_ids = []
         if path.isfile("%s/data/ids.txt" % self.app_path):
@@ -378,7 +379,7 @@ class UsersClient(BaseClass):
                     other_ids.append(line)
 
         for other_id in other_ids:
-            print "searching for %s" % other_id
+            self.log.info("Searching for user {} (ID)".format(other_id))
             new_user = self.users.get_user(
                 other_id, self.config.destination_host, self.config.destination_token).json()
             new_users.append(new_user)
@@ -388,7 +389,7 @@ class UsersClient(BaseClass):
         with open("%s/data/users_not_found.json" % self.app_path, "w") as f:
             json.dump(users_not_found, f, indent=4)
 
-        print len(new_users)
+        self.log.info("New users ({}):\n{}".format(len(new_users), "\n".join(u["email"] for u in new_users)))
 
     def retrieve_user_info(self, quiet=False):
         users = list(api.list_all(self.config.source_host,

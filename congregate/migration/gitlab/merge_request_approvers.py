@@ -1,7 +1,7 @@
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers import api
 from congregate.migration.gitlab.version import VersionClient
-from congregate.migration.gitlab.users import UsersClient
+from congregate.migration.gitlab.users import UsersApi
 from congregate.migration.gitlab.api.groups import GroupsApi
 from urllib import urlencode
 import json
@@ -10,10 +10,14 @@ import json
 class MergeRequestApproversClient(BaseClass):
     def __init__(self):
         self.version = VersionClient()
-        self.users = UsersClient()
+        self.users = UsersApi()
         self.groups = GroupsApi()
         self.break_change_version = "11.10.0"
         super(MergeRequestApproversClient, self).__init__()
+
+    def are_enabled(self, id):
+        project = api.generate_get_request(self.config.source_host, self.config.source_token, "projects/%d" % id).json()
+        return project.get("merge_requests_enabled", False)
 
     def get_approvals(self, id, host, token):
         version = self.version.get_version(host, token)
