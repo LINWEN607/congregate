@@ -21,9 +21,11 @@ class UsersClient(BaseClass):
             old_user_id,
             self.config.source_host,
             self.config.source_token).json()
-        self.log.info("Found old user by id {0}".format(old_user))
         if old_user is not None and old_user and old_user.get("email", None) is not None:
+            self.log.info("Found old user by id {0} and email {1}".format(old_user, old_user.get("email", None)))
             return self.find_user_by_email_comparison_without_id(old_user["email"])
+        else:
+            self.log.error("Could not find old user by id {0}".format(old_user))
         return None
 
     def find_user_by_email_comparison_without_id(self, email):
