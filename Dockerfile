@@ -7,7 +7,7 @@ WORKDIR /opt/congregate
 
 # Copy supervisor configuration
 ADD congregate congregate
-COPY congregate.sh Pipfile ./
+COPY congregate.sh Pipfile README.md ./
 COPY js-packages /opt/congregate/js-packages
 
 # Installing some basic utilities and updating apt
