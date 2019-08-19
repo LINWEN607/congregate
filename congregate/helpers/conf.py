@@ -135,7 +135,7 @@ class ig(object):
 
     @property
     def username_suffix(self):
-        return self.config.get("username_suffix", None)
+        return self.config.get("username_suffix", "")
 
     @property
     def group_full_path_prefix(self):
