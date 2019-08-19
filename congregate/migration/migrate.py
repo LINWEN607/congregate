@@ -43,6 +43,7 @@ pushrules = pushrules_client()
 branches = BranchesClient()
 awards = AwardsClient()
 mr = MergeRequestApproversClient()
+awards = AwardsClient()
 registries = RegistryClient()
 schedules = PipelineSchedulesClient()
 deploy_keys = DeployKeysClient()
@@ -126,12 +127,15 @@ def migrate_single_project_info(project, id):
 
     # CI/CD Variables
     try:
-        b.log.info("Migrating %s CI/CD variables" % name)
-        variables.migrate_variables(
-            id, old_id, "project")
-        results["variables"] = True
+        if variables.are_enabled(old_id):
+            b.log.info("Migrating {} CI/CD variables".format(name))
+            variables.migrate_variables(
+                id, old_id, "project")
+            results["variables"] = True
+        else:
+            b.log.warn("CI/CD is disabled for project {}".format(name))
     except Exception, e:
-        b.log.error("Failed to migrate CI/CD variables for %s" % name)
+        b.log.error("Failed to migrate {} CI/CD variables".format(name))
         b.log.error(e)
         results["variables"] = False
 
@@ -140,22 +144,25 @@ def migrate_single_project_info(project, id):
         push_rule = pushrules.get_push_rules(
             project["id"], b.config.source_host, b.config.source_token).json()
         if push_rule is not None and push_rule:
-            b.log.info("Migrating push rules for %s" % name)
+            b.log.info("Migrating push rules for {}".format(name))
             pushrules.add_push_rule(id, b.config.destination_host,
                                     b.config.destination_token, push_rule)
             results["push_rules"] = True
     except Exception, e:
-        b.log.error("Failed to migrate push rules for %s" % name)
+        b.log.error("Failed to migrate push rules for {}".format(name))
         b.log.error(e)
         results["push_rules"] = False
 
     # Merge Request Approvers
     try:
-        b.log.info("Migrating merge request approvers for %s" % name)
-        mr.migrate_merge_request_approvers(id, old_id)
-        results["merge_request_approvers"] = True
+        if mr.are_enabled(old_id):
+            b.log.info("Migrating merge request approvers for {}".format(name))
+            mr.migrate_merge_request_approvers(id, old_id)
+            results["merge_request_approvers"] = True
+        else:
+            b.log.warn("Merge requests are disabled for project {}".format(name))
     except Exception, e:
-        b.log.error("Failed to migrate merge request approvers for %s" % name)
+        b.log.error("Failed to migrate merge request approvers for {}".format(name))
         b.log.error(e)
         results["merge_request_approvers"] = False
 
@@ -167,12 +174,20 @@ def migrate_single_project_info(project, id):
     # Awards
     users_map = {}
     try:
-        b.log.info("Migrating awards for %s" % name)
-        awards = AwardsClient()
-        awards.migrate_awards(id, project["id"], users_map)
-        results["awards"] = True
+        # Issue, MR and snippet awards
+        all_awards = awards.are_enabled(old_id)
+        if all_awards[0] or all_awards[1] or all_awards[2]:
+            b.log.info("Migrating awards for {}".format(name))
+            awards.migrate_awards(id, project["id"], users_map)
+            results["awards"] = {
+                "issues": all_awards[0],
+                "merge_requests": all_awards[1],
+                "snippets": all_awards[2]
+            }
+        else:
+            b.log.warn("Awards (job/MR/snippet) are disabled for project {}".format(name))
     except Exception, e:
-        b.log.error("Failed to migrate awards for %s" % name)
+        b.log.error("Failed to migrate awards for {}".format(name))
         b.log.error(e)
         results["awards"] = False
 
@@ -188,24 +203,26 @@ def migrate_single_project_info(project, id):
 
     # Deploy Keys (project only)
     try:
-        b.log.info("Migrating project deploy keys for %s" % name)
+        b.log.info("Migrating project deploy keys for {}".format(name))
         deploy_keys.migrate_deploy_keys(id, project["id"])
         results["deploy_keys"] = True
     except Exception, e:
-        b.log.error("Failed to migrate deploy keys for %s" % name)
+        b.log.error("Failed to migrate deploy keys for {}".format(name))
         b.log.error(e)
         results["deploy_keys"] = False
 
     # Container Registries
     try:
-        if registries.enabled(id, old_id):
-            b.log.info("Migrating container registries for %s" % name)
+        registry = registries.are_enabled(id, old_id)
+        if registry[0] and registry[1]:
+            b.log.info("Migrating container registries for {}".format(name))
             registries.migrate_registries(id, project["id"])
             results["container_registry"] = True
         else:
-            b.log.warn("Container registry is not enabled for both projects")
+            instance = "source" if not registry[0] else "destination" if not registry[1] else "source and destination"
+            b.log.warn("Container registry is disabled for {} instance".format(instance))
     except Exception, e:
-        b.log.error("Failed to migrate container registries for %s" % name)
+        b.log.error("Failed to migrate container registries for {}".format(name))
         b.log.error(e)
         results["container_registry"] = False
 

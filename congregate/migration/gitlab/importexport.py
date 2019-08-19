@@ -68,8 +68,8 @@ class ImportExportClient(BaseClass):
                 else:
                     self.log.info("Waiting on %s to export" % name)
                     if total_time < 3600:
-                        total_time += 1
-                        sleep(1)
+                        total_time += 5
+                        sleep(5)
                     else:
                         self.log.info(
                             "Time limit exceeded. Going to attempt to download anyway")
@@ -105,7 +105,7 @@ class ImportExportClient(BaseClass):
 
     def import_project(self, project):
         """
-            Imports project to parent GitLab instance.
+            Imports project to destination GitLab instance.
             Formats users, groups, migration info (aws, filesystem) during import process.
         """
         if isinstance(project, str):
@@ -303,10 +303,10 @@ class ImportExportClient(BaseClass):
                         self.log.error(e)
                         self.log.error("Json decoding issue")
                 else:
-                    if timeout < 150:
+                    if timeout < 300:
                         self.log.info("Waiting on %s to upload" % name)
-                        timeout += 1
-                        sleep(2)
+                        timeout += 5
+                        sleep(5)
                     else:
                         self.log.info(
                             "Moving on to the next project. Time limit exceeded")
