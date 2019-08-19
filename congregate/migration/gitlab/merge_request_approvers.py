@@ -3,6 +3,7 @@ from congregate.helpers import api
 from congregate.migration.gitlab.version import VersionClient
 from congregate.migration.gitlab.users import UsersClient
 from congregate.migration.gitlab.api.groups import GroupsApi
+from congregate.migration.gitlab.api.users import UsersApi
 from urllib import urlencode
 import json
 
@@ -11,6 +12,7 @@ class MergeRequestApproversClient(BaseClass):
     def __init__(self):
         self.version = VersionClient()
         self.users = UsersClient()
+        self.users_api = UsersApi()
         self.groups = GroupsApi()
         self.break_change_version = "11.10.0"
         super(MergeRequestApproversClient, self).__init__()
@@ -89,7 +91,7 @@ class MergeRequestApproversClient(BaseClass):
         for approved_user in approval_data["approvers"]:
             user = approved_user["user"]
             if user.get("id", None) is not None:
-                user = self.users.get_user(
+                user = self.users_api.get_user(
                     user["id"], self.config.source_host, self.config.source_token).json()
                 new_user = api.search(
                     self.config.destination_host, self.config.destination_token, 'users', user['email'])
@@ -116,7 +118,7 @@ class MergeRequestApproversClient(BaseClass):
         approver_groups = []
         for user in rule["users"]:
             if user.get("id", None) is not None:
-                user = self.users.get_user(
+                user = self.users_api.get_user(
                     user["id"], self.config.source_host, self.config.source_token).json()
                 new_user = api.search(
                     self.config.destination_host, self.config.destination_token, 'users', user['email'])
