@@ -20,6 +20,12 @@ class AwardsClient(BaseClass):
         self.awardable_client = None
         super(AwardsClient, self).__init__()
 
+    def are_enabled(self, id):
+        project = api.generate_get_request(self.config.source_host, self.config.source_token, "projects/%d" % id).json()
+        return (project.get("issues_enabled", False),
+                project.get("merge_requests_enabled", False),
+                project.get("snippets_enabled", False))
+
     def __get_all_project_awardable_emojis(self, host, token, awardable, project_id, awardable_id):
         return api.list_all(host, token, "projects/%d/%s/%d/award_emoji" % (project_id, awardable, awardable_id))
 

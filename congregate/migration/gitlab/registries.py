@@ -12,11 +12,11 @@ class RegistryClient(BaseClass):
         self.projects = ProjectsApi()
         super(RegistryClient, self).__init__()
 
-    def enabled(self, new_id, old_id):
+    def are_enabled(self, new_id, old_id):
         src = self.is_enabled(self.config.source_host, self.config.source_token, old_id)
         dest = self.is_enabled(self.config.destination_host,
                               self.config.destination_token, new_id)
-        return src and dest
+        return (src, dest)
 
     def is_enabled(self, host, token, id):
         project = api.generate_get_request(host, token, "projects/%d" % id).json()

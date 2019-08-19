@@ -17,6 +17,10 @@ class MergeRequestApproversClient(BaseClass):
         self.break_change_version = "11.10.0"
         super(MergeRequestApproversClient, self).__init__()
 
+    def are_enabled(self, id):
+        project = api.generate_get_request(self.config.source_host, self.config.source_token, "projects/%d" % id).json()
+        return project.get("merge_requests_enabled", False)
+
     def get_approvals(self, id, host, token):
         version = self.version.get_version(host, token)
         if self.version.is_older_than(version["version"], self.break_change_version):
