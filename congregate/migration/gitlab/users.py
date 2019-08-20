@@ -195,17 +195,17 @@ class UsersClient(BaseClass):
                         not_found_users.append((username, "(group: " + g["full_path"] + ")"))
                     user_found = False
 
-        self.log.info("Following users were not found:\n{}".format("\n".join(" ".join(u) for u in not_found_users)))
+        if not_found_users:
+            self.log.info("Users that are not mapped to staged projects and groups:\n{}".format("\n".join(" ".join(u) for u in not_found_users)))
 
         if not dry_run:
-            self.log.info("Mapping users to projects and groups.")
             with open("%s/data/stage.json" % self.app_path, "wb") as f:
                 json.dump(staged_projects, f, indent=4)
-
             with open("%s/data/staged_groups.json" % self.app_path, "wb") as f:
                 json.dump(staged_groups, f, indent=4)
+            self.log.info("Mapped missing (destination) users to staged projects and groups")
 
-    def update_user_info_separately(self):
+    def update_new_users(self):
         with open("%s/data/stage.json" % self.app_path, "r") as f:
             staged_projects = json.load(f)
 
@@ -352,7 +352,7 @@ class UsersClient(BaseClass):
         with open("%s/data/staged_groups.json" % self.app_path, "wb") as f:
             json.dump(groups, f, indent=4)
 
-    def update_user_after_migration(self):
+    def update_staged_user_info(self):
         with open("%s/data/staged_users.json" % self.app_path, "r") as f:
             users = json.load(f)
         new_users = []
@@ -391,7 +391,7 @@ class UsersClient(BaseClass):
         with open("%s/data/users_not_found.json" % self.app_path, "w") as f:
             json.dump(users_not_found, f, indent=4)
 
-        self.log.info("New users ({}):\n{}".format(len(new_users), "\n".join(u["email"] for u in new_users)))
+        self.log.info("New users ({0}):\n{1}".format(len(new_users), "\n".join(u["email"] for u in new_users)))
 
     def retrieve_user_info(self, quiet=False):
         users = list(api.list_all(self.config.source_host,

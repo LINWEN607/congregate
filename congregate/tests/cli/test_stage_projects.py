@@ -69,7 +69,12 @@ class StageProjectsTests(unittest.TestCase):
                 "visibility": "private",
                 "id": 4,
                 "description": "Project that does stuff",
-                "shared_runners_enabled": True
+                "shared_runners_enabled": True,
+                "wiki_access_level": "enabled",
+                "issues_access_level": "enabled",
+                "merge_requests_access_level": "enabled",
+                "builds_access_level": "enabled",
+                "snippets_access_level": "enabled"
             },
             {
                 "name": "Puppet",
@@ -102,7 +107,12 @@ class StageProjectsTests(unittest.TestCase):
                 "visibility": "private",
                 "id": 6,
                 "description": None,
-                "shared_runners_enabled": True
+                "shared_runners_enabled": True,
+                "wiki_access_level": "enabled",
+                "issues_access_level": "enabled",
+                "merge_requests_access_level": "enabled",
+                "builds_access_level": "enabled",
+                "snippets_access_level": "enabled"
             }
         ]
 
@@ -278,7 +288,12 @@ class StageProjectsTests(unittest.TestCase):
                 "id": 4,
                 "default_branch": "master",
                 "description": "Project that does stuff",
-                "shared_runners_enabled": True
+                "shared_runners_enabled": True,
+                "wiki_access_level": "enabled",
+                "issues_access_level": "enabled",
+                "merge_requests_access_level": "enabled",
+                "builds_access_level": "enabled",
+                "snippets_access_level": "enabled"
             },
             {
                 "name": "Puppet",
@@ -311,7 +326,12 @@ class StageProjectsTests(unittest.TestCase):
                 "id": 6,
                 "default_branch": "master",
                 "description": None,
-                "shared_runners_enabled": True
+                "shared_runners_enabled": True,
+                "wiki_access_level": "enabled",
+                "issues_access_level": "enabled",
+                "merge_requests_access_level": "enabled",
+                "builds_access_level": "enabled",
+                "snippets_access_level": "enabled"
             },
             {
                 "name": "Puppet",
@@ -344,7 +364,12 @@ class StageProjectsTests(unittest.TestCase):
                 "id": 80,
                 "default_branch": "master",
                 "description": None,
-                "shared_runners_enabled": True
+                "shared_runners_enabled": True,
+                "wiki_access_level": "enabled",
+                "issues_access_level": "enabled",
+                "merge_requests_access_level": "enabled",
+                "builds_access_level": "enabled",
+                "snippets_access_level": "enabled"
             }
         ]
 
