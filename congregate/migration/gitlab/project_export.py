@@ -49,6 +49,10 @@ class ProjectExportClient(BaseClass):
                 if new_user is not None:
                     d["user"]["id"] = new_user["id"]
                     self.users_map[d["user_id"]] = new_user["id"]
+                    # We do the following to force the import tool to match on email
+                    # Particularly useful when users have already been migrated ahead of project migration
+                    # and may have a suffix on their username
+                    d["user"]['username'] = "dont_have_this_username"
                 else:
                     d["user"]["id"] = self.config.import_user_id
                     self.users_map[d["user_id"]] = self.config.import_user_id

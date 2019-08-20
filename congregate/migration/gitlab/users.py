@@ -77,7 +77,10 @@ class UsersClient(BaseClass):
                 ]
             }
             new_impersonation_token = self.users.create_user_impersonation_token(
-                self.config.destination_host, self.config.destination_token, id, data).json()
+                self.config.destination_host,
+                self.config.destination_token,
+                id,
+                data).json()
             users_map[email] = new_impersonation_token
             users_map[email]["user_id"] = id
         return users_map[email]
@@ -146,7 +149,7 @@ class UsersClient(BaseClass):
 
         return obj
 
-    def map_new_users_to_groups_and_projects(self, dry_run = False):
+    def map_new_users_to_groups_and_projects(self, dry_run=False):
         not_found_users = []
         user_found = False
         with open("%s/data/stage.json" % self.app_path, "r") as f:
@@ -196,7 +199,8 @@ class UsersClient(BaseClass):
                     user_found = False
 
         if not_found_users:
-            self.log.info("Users that are not mapped to staged projects and groups:\n{}".format("\n".join(" ".join(u) for u in not_found_users)))
+            self.log.info("Users that are not mapped to staged projects and groups:\n{}".format(
+                "\n".join(" ".join(u) for u in not_found_users)))
 
         if not dry_run:
             with open("%s/data/stage.json" % self.app_path, "wb") as f:
@@ -263,7 +267,7 @@ class UsersClient(BaseClass):
                               user["username"])
                 response = api.generate_put_request(self.config.destination_host, self.config.destination_token,
                                                     "groups/%d/members/%d?access_level=10" % (
-                                                    self.config.parent_id, user["id"]), data=None)
+                                                        self.config.parent_id, user["id"]), data=None)
                 print response
             else:
                 self.log.info("Not changing %s's access level" %
