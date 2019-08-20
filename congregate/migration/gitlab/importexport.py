@@ -1,19 +1,23 @@
+import json
+
+from re import sub
+from urllib import quote
+from time import sleep
+from os import remove, chdir, getcwd
+from glob import glob
+from requests.exceptions import RequestException
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers import api, misc_utils
 from congregate.aws import AwsClient
 from congregate.migration.gitlab.projects import ProjectsClient
 from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.api.groups import GroupsApi
-from requests.exceptions import RequestException
-from re import sub
-from urllib import quote
-from time import sleep
-from os import remove, chdir, getcwd
-from glob import glob
-import json
 
 
 class ImportExportClient(BaseClass):
+    # in seconds
+    WAIT = 10
+
     def __init__(self):
         super(ImportExportClient, self).__init__()
         self.aws = self.get_AwsClient()
@@ -60,8 +64,8 @@ class ImportExportClient(BaseClass):
                     self.log.info(
                         "No export status could be found for %s" % name)
                     if skip is False:
-                        self.log.info("Waiting 10 seconds before skipping")
-                        sleep(10)
+                        self.log.info("Waiting {} seconds before skipping".format(self.WAIT))
+                        sleep(self.WAIT)
                         skip = True
                     else:
                         break
@@ -113,9 +117,13 @@ class ImportExportClient(BaseClass):
         name = project["name"]
         filename = "%s_%s.tar.gz" % (project["namespace"], project["name"])
         override_params = [
-            "override_params[description]=%s" % project["description"],
-            "override_params[default_branch]=%s" % project["default_branch"],
-            "override_params[shared_runners_enabled]=%s" % project["shared_runners_enabled"]
+            "override_params[description]={}".format(project["description"]),
+            "override_params[shared_runners_enabled]={}".format(project["shared_runners_enabled"]),
+            "override_params[wiki_access_level]={}".format(project["wiki_access_level"]),
+            "override_params[issues_access_level]={}".format(project["issues_access_level"]),
+            "override_params[merge_requests_access_level]={}".format(project["merge_requests_access_level"]),
+            "override_params[builds_access_level]={}".format(project["builds_access_level"]),
+            "override_params[snippets_access_level]={}".format(project["snippets_access_level"])
         ]
         user_project = False
         if isinstance(project["members"], list):
@@ -299,9 +307,8 @@ class ImportExportClient(BaseClass):
                         elif status["import_status"] == "failed":
                             self.log.info("%s failed to import" % name)
                             exported = True
-                    except Exception as e:
+                    except ValueError as e:
                         self.log.error(e)
-                        self.log.error("Json decoding issue")
                 else:
                     if timeout < 300:
                         self.log.info("Waiting on %s to upload" % name)
@@ -320,7 +327,7 @@ class ImportExportClient(BaseClass):
         if self.config.location == "aws":
             presigned_get_url = self.aws.generate_presigned_url(
                 filename, "GET")
-            self.log.info("Importing %s from AWS presigned_url" % filename)
+            self.log.info("Importing {} from AWS presigned_url (aws mode)".format(filename))
             import_response = self.aws.import_from_s3(
                 name, namespace, presigned_get_url, filename, override_params=override_params)
         elif self.config.location == "filesystem-aws":
@@ -328,11 +335,11 @@ class ImportExportClient(BaseClass):
                 presigned_get_url = self.aws.generate_presigned_url(
                     filename, "GET")
                 self.log.info(
-                    "Importing %s from AWS presigned_url" % filename)
+                    "Importing {} from AWS presigned_url (filesystem-aws mode)".format(filename))
                 import_response = self.aws.import_from_s3(
                     name, namespace, presigned_get_url, filename, override_params=override_params)
             else:
-                self.log.info("Copying %s to local machine" % filename)
+                self.log.info("Copying {} to local machine".format(filename))
                 formatted_name = project["name"].lower()
                 download = "%s_%s.tar.gz" % (
                     project["namespace"], formatted_name)

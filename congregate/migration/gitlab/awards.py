@@ -10,6 +10,7 @@ from datetime import timedelta, date
 
 class AwardsClient(BaseClass):
     AWARDABLES = ["issues", "merge_requests", "snippets"]
+
     def __init__(self):
         self.issues = IssuesApi()
         self.merge_requests = MergeRequestsApi()
@@ -42,7 +43,6 @@ class AwardsClient(BaseClass):
         return api.generate_post_request(host, token, "projects/%d/%s/%d/notes/%d/award_emoji?name=%s" % (project_id, awardable, awardable_id, note_id, name), None)
 
     def migrate_awards(self, new_id, old_id, users_map):
-        self.log.info("Migrating awards")
         for awardable_name in self.AWARDABLES:
             self.__set_client(awardable_name)
             self.log.info("Migrating %s emojis for %d" %
@@ -56,8 +56,14 @@ class AwardsClient(BaseClass):
     def __handle_migrating_award(self, awardable, awardable_name, old_project_id, new_project_id, users_map):
         awardable_id = self.__get_awardable_id(awardable)
 
-        get_single_project_awardable = getattr(
-            self.awardable_client, "get_single_project_%s" % awardable_name)
+        if awardable_name == self.AWARDABLES[0]:
+            get_single_project_awardable = self.issues.get_single_project_issues
+        elif awardable_name == self.AWARDABLES[1]:
+            get_single_project_awardable = self.merge_requests.get_single_project_merge_requests
+        elif awardable_name == self.AWARDABLES[2]:
+            get_single_project_awardable = self.snippets.get_single_project_snippets
+        else:
+            self.log.warn("Award type is not in the list")
         for award in self.__get_all_project_awardable_emojis(self.config.source_host, self.config.source_token, awardable_name, old_project_id, awardable_id):
             response = get_single_project_awardable(
                 self.config.destination_host, self.config.destination_token, new_project_id, awardable_id)

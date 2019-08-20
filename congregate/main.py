@@ -45,38 +45,38 @@ Options:
     -h --help     Show this screen.
 
 Commands:
-    list                                    List all projects of a source instance and save it to {CONGREGATE_PATH}/data/project_json.json
-    config                                  Configure congregate for migrating between two instances and save it to {CONGREGATE_PATH}/data/config.json
+    list                                    List all projects of a source instance and save it to {CONGREGATE_PATH}/data/project_json.json.
+    config                                  Configure congregate for migrating between two instances and save it to {CONGREGATE_PATH}/data/config.json.
     stage                                   Stage projects to {CONGREGATE_PATH}/data/stage.json,
                                                 users to {CONGREGATE_PATH}/data/staged_users.json,
                                                 groups to {CONGREGATE_PATH}/data/staged_groups.json.
                                                 All projects can be staged with a '.' or 'all'.
-    migrate                                 Commence migration based on configuration and staged assets
-    ui                                      Deploy UI to port 8000
-    import-projects                         Kick off import of exported projects onto destination instance
-    do_all                                  Configure system, retrieve all projects, users, and groups, stage all information, and commence migration
-    update-staged-user-info                 Update staged user information after migrating only users
-    update-new-users                        Update user IDs in staged groups and projects after migrating users
-    update-aws-creds                        Runs awscli commands based on the keys stored in the config. Useful for docker updates
-    add-users-to-parent-group               If a parent group is set, all users staged will be added to the parent group
-    remove-blocked-users                    Removes all blocked users from staged projects and groups
-    lower-user-permissions                  Sets all reporter users to guest users
+    migrate                                 Commence migration based on configuration and staged assets.
+    ui                                      Deploy UI to port 8000.
+    import-projects                         Kick off import of exported projects onto destination instance.
+    do_all                                  Configure system, retrieve all projects, users, and groups, stage all information, and commence migration.
+    update-staged-user-info                 Update staged user information after migrating only users.
+    update-new-users                        Update user IDs in staged groups and projects after migrating only users.
+    update-aws-creds                        Run awscli commands based on the keys stored in the config. Useful for docker updates.
+    add-users-to-parent-group               If a parent group is set, all users staged will be added to the parent group.
+    remove-blocked-users                    Remove all blocked users from staged projects and groups.
+    lower-user-permissions                  Set all reporter users to guest users
     get-total-count                         Get total count of migrated projects. Used to compare exported projects to imported projects.
-    find-unimported-projects                Returns a list of projects that failed import
-    stage-unimported-projects               Stage unimported projects based on {CONGREGATE_PATH}/data/unimported_projects.txt
-    remove-users-from-parent-group          Remove all users with at most reporter access from the parent group
-    migrate-variables-in-stage              Migrate CI variables for staged projects
-    add-all-mirrors                         Sets up project mirroring for staged projects
-    remove-all-mirrors                      Remove all project mirrors for staged projects
-    find-all-internal-projects              Finds all internal projects
-    make-all-internal-groups-private        Makes all internal migrated groups private
-    check-projects-visibility               Returns list of all migrated projects' visibility
-    compare-groups                          Compares source and destination group results
-    staged-user-list                        Outputs a list of all staged users and their respective user IDs. Used to confirm IDs were updated correctly
-    archive-staged-projects                 Archive projects that are staged, not necessarily migrated
-    unarchive-staged-projects               Unarchive projects that are staged, not necessarily migrated
-    generate-seed-data                      Generates dummy data to test a migration
-    map-new-users-to-groups-and-projects    Maps new_users.json to the staged_groups.json and stage.json (projects) files without making API calls.
+    find-unimported-projects                Return a list of projects that failed import.
+    stage-unimported-projects               Stage unimported projects based on {CONGREGATE_PATH}/data/unimported_projects.txt.
+    remove-users-from-parent-group          Remove all users with at most reporter access from the parent group.
+    migrate-variables-in-stage              Migrate CI variables for staged projects.
+    add-all-mirrors                         Set up project mirroring for staged projects.
+    remove-all-mirrors                      Remove all project mirrors for staged projects.
+    find-all-internal-projects              Find all internal projects.
+    make-all-internal-groups-private        Make all internal migrated groups private.
+    check-projects-visibility               Return list of all migrated projects' visibility.
+    compare-groups                          Compare source and destination group results.
+    staged-user-list                        Output a list of all staged users and their respective user IDs. Used to confirm IDs were updated correctly.
+    archive-staged-projects                 Archive projects that are staged, not necessarily migrated.
+    unarchive-staged-projects               Unarchive projects that are staged, not necessarily migrate.
+    generate-seed-data                      Generate dummy data to test a migration.
+    map-new-users-to-groups-and-projects    Map new_users.json to the staged_groups.json and stage.json (projects) files without making API calls.
                                                 Requires that update-staged-user-info has been called, first, to create new_users.json.
     validate-staged-groups-schema           Check staged_groups.json for missing group data.
     validate-staged-projects-schema         Check stage.json for missing project data.
@@ -124,7 +124,7 @@ else:
 if __name__ == '__main__':
     arguments = docopt(__doc__)
     if arguments["config"]:
-        if just_configured == False:
+        if not just_configured:
             configure.config()
     else:
         # try:
@@ -201,16 +201,18 @@ if __name__ == '__main__':
                 run_ui = "gunicorn -k gevent -w 4 ui:app --bind=0.0.0.0:8000"
                 subprocess.call(run_ui.split(" "))
             if arguments["update-staged-user-info"]:
-                users.update_user_after_migration()
+                users.update_staged_user_info()
             if arguments["update-new-users"]:
-                users.update_user_info_separately()
+                users.update_new_users()
             if arguments["add-users-to-parent-group"]:
                 users.add_users_to_parent_group()
             if arguments["update-aws-creds"]:
-                command = "aws configure set aws_access_key_id %s" % config.s3_access_key
+                command = "aws configure set aws_access_key_id {}".format(config.s3_access_key)
                 subprocess.call(command.split(" "))
-                command = "aws configure set aws_secret_access_key %s" % config.s3_secret_key
+                log.info("Configured AWS access key")
+                command = "aws configure set aws_secret_access_key {}".format(config.s3_secret_key)
                 subprocess.call(command.split(" "))
+                log.info("Configured AWS secret key")
             if arguments["remove-blocked-users"]:
                 users.remove_blocked_users()
             if arguments["lower-user-permissions"]:
