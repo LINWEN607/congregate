@@ -408,22 +408,22 @@ class GroupsClient(BaseClass):
         for g in staged_groups:
             self.log.info(g)
             if g.get("name", None) is None:
-                self.log.error("name is missing")
+                self.log.warn("name is missing")
             if g.get("namespace", None) is None:
-                self.log.error("namespace is missing")
+                self.log.warn("namespace is missing")
             if g.get("project_type", None) is None:
-                self.log.error("project_type is missing")
+                self.log.warn("project_type is missing")
             if g.get("default_branch", None) is None:
-                self.log.error("default_branch is missing")
+                self.log.warn("default_branch is missing")
             if g.get("visibility", None) is None:
-                self.log.error("visibility is missing")
+                self.log.warn("visibility is missing")
             if g.get("http_url_to_repo", None) is None:
-                self.log.error("http_url_to_repo is missing")
+                self.log.warn("http_url_to_repo is missing")
             if g.get("shared_runners_enabled", None) is None:
-                self.log.error("shared_runners_enabled is missing")
+                self.log.warn("shared_runners_enabled is missing")
             if g.get("members", None) is None:
-                self.log.error("members is missing")
+                self.log.warn("members is missing")
             if g.get("id", None) is None:
-                self.log.error("id is missing")
+                self.log.warn("id is missing")
             if g.get("description", None) is None:
-                self.log.error("description is missing")
+                self.log.warn("description is missing")

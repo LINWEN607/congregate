@@ -6,7 +6,6 @@ Copyright (c) 2018 - GitLab
 
 import os
 import json
-import sys
 import subprocess
 import re
 from congregate.helpers import misc_utils
@@ -31,7 +30,6 @@ def build_staging_data(projects_to_stage):
         cmd = "%s/list_projects.sh > /dev/null" % b.app_path
         subprocess.call(cmd.split())
 
-    shared_runners_enabled = b.config.shared_runners_enabled
     # Loading projects information
     projects = open_projects_file()
     groups = open_groups_file()
@@ -58,17 +56,7 @@ def build_staging_data(projects_to_stage):
     if not projects_to_stage[0] == '':
         if projects_to_stage[0] == "all" or projects_to_stage[0] == ".":
             for i in range(len(projects)):
-                obj = {
-                    "id": projects[i]["id"],
-                    "name": projects[i]["name"],
-                    "namespace": projects[i]["namespace"]["full_path"],
-                    "visibility": projects[i]["visibility"],
-                    "http_url_to_repo": projects[i]["http_url_to_repo"],
-                    "project_type": projects[i]["namespace"]["kind"],
-                    "description": projects[i]["description"],
-                    "default_branch": projects[i].get("default_branch", "master"),
-                    "shared_runners_enabled": shared_runners_enabled
-                }
+                obj = get_project_metadata(projects[i])
 
                 members = []
                 for member in projects_api.get_members(int(projects[i]["id"]), b.config.source_host, b.config.source_token):
@@ -87,17 +75,7 @@ def build_staging_data(projects_to_stage):
                 start -= 1
             end = int(match.split("-")[1])
             for i in range(start, end):
-                obj = {
-                    "id": projects[i]["id"],
-                    "name": projects[i]["name"],
-                    "namespace": projects[i]["namespace"]["full_path"],
-                    "visibility": projects[i]["visibility"],
-                    "http_url_to_repo": projects[i]["http_url_to_repo"],
-                    "project_type": projects[i]["namespace"]["kind"],
-                    "description": projects[i]["description"],
-                    "default_branch": projects[i].get("default_branch", "master"),
-                    "shared_runners_enabled": shared_runners_enabled
-                }
+                obj = get_project_metadata(projects[i])
 
                 members = []
                 for member in projects_api.get_members(int(projects[i]["id"]), b.config.source_host, b.config.source_token):
@@ -139,17 +117,7 @@ def build_staging_data(projects_to_stage):
                         if projects[j]["name"] == projects_to_stage[i]:
                             project = projects[j]
 
-                obj = {
-                    "id": project["id"],
-                    "name": project["name"],
-                    "namespace": project["namespace"]["full_path"],
-                    "visibility": project["visibility"],
-                    "http_url_to_repo": project["http_url_to_repo"],
-                    "project_type": project["namespace"]["kind"],
-                    "description": project["description"],
-                    "default_branch": project.get("default_branch", "master"),
-                    "shared_runners_enabled": shared_runners_enabled
-                }
+                obj = get_project_metadata(project)
 
                 members = []
                 for member in projects_api.get_members(int(project["id"]), b.config.source_host, b.config.source_token):
@@ -227,4 +195,27 @@ def append_member_to_members_list(rewritten_users, staged_users, members_list, m
     else:
         b.log.error(member)
 
+def get_project_metadata(project):
+    obj = {
+        "id": project["id"],
+        "name": project["name"],
+        "namespace": project["namespace"]["full_path"],
+        "visibility": project["visibility"],
+        "http_url_to_repo": project["http_url_to_repo"],
+        "project_type": project["namespace"]["kind"],
+        "description": project["description"],
+        "shared_runners_enabled": b.config.shared_runners_enabled
+    }
+
+    # In case of projects without repos (e.g. Wiki)
+    if "default_branch" in project:
+        obj["default_branch"] = project["default_branch"]
+    # *_access_level in favor of the deprecated *_enabled keys
+    obj["wiki_access_level"] = "enabled" if project["wiki_enabled"] else "disabled"
+    obj["issues_access_level"] = "enabled" if project["issues_enabled"] else "disabled"
+    obj["merge_requests_access_level"] = "enabled" if project["merge_requests_enabled"] else "disabled"
+    obj["builds_access_level"] = "enabled" if project["jobs_enabled"] else "disabled"
+    obj["snippets_access_level"] = "enabled" if project["snippets_enabled"] else "disabled"
+
+    return obj
     
