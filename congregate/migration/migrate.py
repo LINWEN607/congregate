@@ -119,8 +119,10 @@ def migrate_single_project_info(project, id):
     # projects.add_members(members, id)
 
     # Project Avatar
-    # TODO: DOES THIS NEED TO STILL BE HERE AFTER MERGE?
-    projects.migrate_avatar(id, old_id)
+    # DOES THIS NEED TO STILL BE HERE AFTER MERGE?
+    # No, as this assumes you have access to the host systems uploads as a URL instead of letting the
+    # import of the TAR file handle it
+    # projects.migrate_avatar(id, old_id)
 
     # Shared with groups
     projects.add_shared_groups(old_id, id)
