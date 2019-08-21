@@ -116,15 +116,17 @@ class ImportExportClient(BaseClass):
             project = json.loads(project)
         name = project["name"]
         filename = "%s_%s.tar.gz" % (project["namespace"], project["name"])
-        override_params = [
-            "override_params[description]={}".format(project["description"]),
-            "override_params[shared_runners_enabled]={}".format(project["shared_runners_enabled"]),
-            "override_params[wiki_access_level]={}".format(project["wiki_access_level"]),
-            "override_params[issues_access_level]={}".format(project["issues_access_level"]),
-            "override_params[merge_requests_access_level]={}".format(project["merge_requests_access_level"]),
-            "override_params[builds_access_level]={}".format(project["builds_access_level"]),
-            "override_params[snippets_access_level]={}".format(project["snippets_access_level"])
-        ]
+        override_params = {
+            "description": project["description"],
+            "shared_runners_enabled": project["shared_runners_enabled"],
+            "wiki_access_level": project["wiki_access_level"],
+            "issues_access_level": project["issues_access_level"],
+            "merge_requests_access_level": project["merge_requests_access_level"],
+            "builds_access_level": project["builds_access_level"],
+            "snippets_access_level": project["snippets_access_level"],
+            "repository_access_level": project["repository_access_level"],
+            "archived": project["archived"]
+        }
         user_project = False
         if isinstance(project["members"], list):
             # Determine if the project should be under a single user or group
@@ -321,8 +323,6 @@ class ImportExportClient(BaseClass):
         return {"import_id": import_id, "exported": exported, "duped": duped}
 
     def attempt_import(self, filename, name, namespace, override_params, project):
-        self.log.info("Hit the real attempt_import")
-
         import_response = None
         if self.config.location == "aws":
             presigned_get_url = self.aws.generate_presigned_url(
