@@ -144,7 +144,7 @@ def migrate_single_project_info(project, id):
     # Push Rules
     try:
         push_rule = pushrules.get_push_rules(
-            project["id"], b.config.source_host, b.config.source_token).json()
+            old_id, b.config.source_host, b.config.source_token).json()
         if push_rule is not None and push_rule:
             b.log.info("Migrating push rules for {}".format(name))
             pushrules.add_push_rule(id, b.config.destination_host,
@@ -180,7 +180,7 @@ def migrate_single_project_info(project, id):
         all_awards = awards.are_enabled(old_id)
         if all_awards[0] or all_awards[1] or all_awards[2]:
             b.log.info("Migrating awards for {}".format(name))
-            awards.migrate_awards(id, project["id"], users_map)
+            awards.migrate_awards(id, old_id, users_map)
             results["awards"] = {
                 "issues": all_awards[0],
                 "merge_requests": all_awards[1],
@@ -205,12 +205,13 @@ def migrate_single_project_info(project, id):
 
     # Deploy Keys (project only)
     try:
-        b.log.info("Migrating project deploy keys for {}".format(name))
-        deploy_keys.migrate_deploy_keys(id, project["id"])
-        results["deploy_keys"] = True
+        keys = deploy_keys.list_project_deploy_keys(old_id)
+        if keys:
+            b.log.info("Migrating project deploy keys for {}".format(name))
+            deploy_keys.migrate_deploy_keys(id, old_id, keys)
+            results["deploy_keys"] = True
     except Exception, e:
-        b.log.error("Failed to migrate deploy keys for {}".format(name))
-        b.log.error(e)
+        b.log.error("Failed to migrate project {0} deploy keys, with error:\n{}".format(name, e))
         results["deploy_keys"] = False
 
     # Container Registries
@@ -231,51 +232,50 @@ def migrate_single_project_info(project, id):
     return results
 
 def migrate_given_export(project_json):
-    path = "%s/%s" % (project_json["namespace"], project_json["name"])
+    name = project_json["name"]
+    namespace = project_json["namespace"]
+    source_id = project_json["id"]
+    archived = project_json["archived"]
+    path = "{0}/{1}".format(namespace, name)
+    project_exists = False
+    project_id = None
     results = {
         path: False
     }
     if isinstance(project_json, str):
         project_json = json.loads(project_json)
-    b.log.debug("Searching for existing %s" % project_json["name"])
-    project_exists = False
-    project_id = None
+    b.log.debug("Searching for existing project {}".format(name))
     try:
-        project_exists, project_id = projects.find_project_by_path(b.config.destination_host, b.config.destination_token, full_parent_namespace, project_json["namespace"], project_json["name"])
+        project_exists, project_id = projects.find_project_by_path(
+            b.config.destination_host, b.config.destination_token, full_parent_namespace, namespace, name)
         if project_id:
             import_check = ie.get_import_status(
                 b.config.destination_host, b.config.destination_token, project_id).json()
-            if import_check["import_status"] == "finished":
-                b.log.info("%s already imported" % project_json["name"])
-            elif import_check["import_status"] == "scheduled":
-                b.log.info("%s import already scheduled" %
-                           project_json["name"])
-            elif import_check["import_status"] == "started":
-                b.log.info("%s import already started" % project_json["name"])
-            elif import_check["import_status"] == "failed":
-                b.log.info("%s import failed" % project_json["name"])
-            elif import_check["import_status"] == "none":
-                b.log.info("%s import not found" % project_json["name"])
+            b.log.info("Project {0} import status: {1}".format(name, import_check["import_status"]))
         if not project_exists:
-            b.log.info("Importing %s" % project_json["name"])
+            b.log.info("Importing project {}".format(name))
             import_id = ie.import_project(project_json)
             if import_id is not None:
-                b.log.info("Unarchiving project %s" % project_json["name"])
-                projects.projects_api.unarchive_project(
-                    b.config.source_host, b.config.source_token, project_json["id"])
-
-                b.log.info("Migrating %s project info" % project_json["name"])
+                # Archived projects cannot be exported
+                if archived:
+                    b.log.info("Unarchiving source project {}".format(name))
+                    projects.projects_api.unarchive_project(
+                        b.config.source_host, b.config.source_token, source_id)
+                b.log.info("Migrating {} project info".format(name))
                 post_import_results = migrate_single_project_info(project_json, import_id)
-                # b.log.info("Archiving project %s" % project_json["name"])
-                # projects.archive_project(b.config.source_host, b.config.source_token, project_json["id"])
                 results[path] = post_import_results
     except requests.exceptions.RequestException, e:
         b.log.error(e)
     except KeyError, e:
         b.log.error(e)
-        raise KeyError("Something broke in migrate_given_export (%s)" % project_json["name"])
+        raise KeyError("Something broke in migrate_given_export ({})".format(name))
     except OverflowError, e:
         b.log.error(e)
+    finally:
+        if archived:
+            b.log.info("Archiving back source project {}".format(name))
+            projects.projects_api.archive_project(
+                b.config.source_host, b.config.source_token, source_id)
     return results
 
 
@@ -394,23 +394,23 @@ def handle_migrating_file(f):
         else:
             namespace = f["namespace"]
         if b.config.location == "filesystem":
-            b.log.info("Migrating %s through filesystem" % name)
+            b.log.info("Migrating project {} through filesystem".format(name))
             ie.export_import_thru_filesystem(id, name, namespace)
             # migrate_project_info()
 
         elif b.config.location.lower() == "filesystem-aws":
-            b.log.info("Migrating %s through filesystem-AWS" % name)
+            b.log.info("Migrating project {} through filesystem-AWS".format(name))
             ie.export_import_thru_fs_aws(id, name, namespace)
 
         elif (b.config.location).lower() == "aws":
-            b.log.info("Migrating %s through AWS" % name)
+            b.log.info("Migrating project {} through AWS".format(name))
             exported = ie.export_import_thru_aws(id, name, namespace, full_parent_namespace)
+            print("\n" + name + "\n" + namespace + "\n" + full_parent_namespace)
             filename = "%s_%s.tar.gz" % (namespace, name)
             try:
                 project_export.update_project_export_members(name, namespace, filename)
             except Exception, e:
-                b.log.error(e)
-                b.log.error("Unable to update project export for %s. Will proceed with existing project export." % filename)
+                b.log.error("Failed to update {0} project export, with error:\n{1}".format(filename, e))
             return exported
             # TODO: Needed?
             # migrate_given_export(f)
@@ -603,8 +603,7 @@ def count_unarchived_projects():
             if not project["archived"]:
                 unarchived_projects.append(project["name_with_namespace"])
 
-    print unarchived_projects
-    print len(unarchived_projects)
+    b.log.info("Unarchived projects ({0}):\n{1}".format(unarchived_projects, len(unarchived_projects)))
 
 
 def archive_staged_projects(dry_run=False):
