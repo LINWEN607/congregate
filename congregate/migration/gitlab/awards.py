@@ -95,10 +95,9 @@ class AwardsClient(BaseClass):
                         new_project_id,
                         awardable_id
                     ):
-                        print(x)
                         dest_note.append(x)
                     # The destination note note_id is needed to assign the emoji
-                    self.log.info("Dest note return was {0}".format(dest_note))
+                    self.log.info("Destination note return was {0}".format(dest_note))
 
                     for dn in dest_note:
                         if isinstance(dn, dict):
