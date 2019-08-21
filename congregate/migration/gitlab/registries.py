@@ -37,7 +37,7 @@ class RegistryClient(BaseClass):
     def migrate_registries(self, id, old_id):
         try:
             # Login to source registry
-            client = self.__login_to_registry(self.config.source_host, self.config.source_token, self.config.source_registry)
+            src_client = self.__login_to_registry(self.config.source_host, self.config.source_token, self.config.source_registry)
             registries = self.__list_registry_repositories(self.config.source_host, self.config.source_token, old_id)
             for registry in registries:
                 tags = self.__list_repository_tags(
@@ -45,7 +45,7 @@ class RegistryClient(BaseClass):
                 if list(tags):
                     reg = registry["location"]
                     self.log.info("Pulling images from registry %s" % reg)
-                    images = client.images.pull(reg)
+                    images = src_client.images.pull(reg)
                     # 2nd argument - passing the suffix for multi path registries
                     self.__import_registries(images, reg.split("/", 1)[1])
         except (APIError) as err:
@@ -54,20 +54,20 @@ class RegistryClient(BaseClass):
     def __import_registries(self, images, sufix):
         try:
             # Login to destination registry
-            client = self.__login_to_registry(self.config.destination_host, self.config.destination_token, self.config.destination_registry)
+            dest_client = self.__login_to_registry(self.config.destination_host, self.config.destination_token, self.config.destination_registry)
             new_reg = "%s/%s" % (self.config.destination_registry, sufix)
             for image in images:
                 for tag in image.tags:
                     # TODO: use a key value instead
                     tag_name = tag.replace(self.config.source_registry, "").split(":")[-1]
                     if image.tag(new_reg, tag_name):
-                        self.log.info("Created tag %s" % tag_name)
+                        self.log.debug("Created tag %s" % tag_name)
             self.log.info("Migrating images to registry %s" % new_reg)
-            for line in client.images.push(new_reg, stream=True, decode=True):
+            for line in dest_client.images.push(new_reg, stream=True, decode=True):
                 print line
-            self.log.info("Removing locally stored images")
+            self.log.info("Removing locally stored source images")
             for image in images:
-                client.images.remove(image.id, force=True)
+                dest_client.images.remove(image.id, force=True)
         except (APIError) as err:
             self.log.error("Failed to import registry, with error:\n%s" % err)
 

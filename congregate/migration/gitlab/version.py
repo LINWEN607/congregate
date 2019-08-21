@@ -6,7 +6,7 @@ from distutils.version import StrictVersion
 
 class VersionClient(BaseClass):
     def get_version(self, host, token):
-        return api.generate_get_request(host, token, "/version").json()
+        return api.generate_get_request(host, token, "version").json()
 
     def is_older_than(self, old_version, new_version):
         old_version = old_version.split("-")[0]
