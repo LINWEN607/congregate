@@ -74,7 +74,9 @@ class StageProjectsTests(unittest.TestCase):
                 "issues_access_level": "enabled",
                 "merge_requests_access_level": "enabled",
                 "builds_access_level": "enabled",
-                "snippets_access_level": "disabled"
+                "snippets_access_level": "disabled",
+                "repository_access_level": "enabled",
+                "archived": False
             },
             {
                 "name": "Puppet",
@@ -112,7 +114,9 @@ class StageProjectsTests(unittest.TestCase):
                 "issues_access_level": "enabled",
                 "merge_requests_access_level": "enabled",
                 "builds_access_level": "enabled",
-                "snippets_access_level": "disabled"
+                "snippets_access_level": "disabled",
+                "repository_access_level": "enabled",
+                "archived": False
             }
         ]
 
@@ -293,7 +297,9 @@ class StageProjectsTests(unittest.TestCase):
                 "issues_access_level": "enabled",
                 "merge_requests_access_level": "enabled",
                 "builds_access_level": "enabled",
-                "snippets_access_level": "disabled"
+                "snippets_access_level": "disabled",
+                "repository_access_level": "enabled",
+                "archived": False
             },
             {
                 "name": "Puppet",
@@ -331,7 +337,9 @@ class StageProjectsTests(unittest.TestCase):
                 "issues_access_level": "enabled",
                 "merge_requests_access_level": "enabled",
                 "builds_access_level": "enabled",
-                "snippets_access_level": "disabled"
+                "snippets_access_level": "disabled",
+                "repository_access_level": "enabled",
+                "archived": False
             },
             {
                 "name": "Puppet",
@@ -369,7 +377,9 @@ class StageProjectsTests(unittest.TestCase):
                 "issues_access_level": "enabled",
                 "merge_requests_access_level": "enabled",
                 "builds_access_level": "enabled",
-                "snippets_access_level": "disabled"
+                "snippets_access_level": "disabled",
+                "repository_access_level": "enabled",
+                "archived": False
             }
         ]
 

@@ -204,18 +204,20 @@ def get_project_metadata(project):
         "http_url_to_repo": project["http_url_to_repo"],
         "project_type": project["namespace"]["kind"],
         "description": project["description"],
-        "shared_runners_enabled": b.config.shared_runners_enabled
+        "shared_runners_enabled": b.config.shared_runners_enabled,
+        "archived": project["archived"]
     }
 
     # In case of projects without repos (e.g. Wiki)
     if "default_branch" in project:
         obj["default_branch"] = project["default_branch"]
-    # *_access_level in favor of the deprecated *_enabled keys
+    # *_access_level in favor of the deprecated *_enabled keys. Only for version >= 12
     obj["wiki_access_level"] = "enabled" if project["wiki_enabled"] else "disabled"
     obj["issues_access_level"] = "enabled" if project["issues_enabled"] else "disabled"
     obj["merge_requests_access_level"] = "enabled" if project["merge_requests_enabled"] else "disabled"
     obj["builds_access_level"] = "enabled" if project["jobs_enabled"] else "disabled"
     obj["snippets_access_level"] = "enabled" if project["snippets_enabled"] else "disabled"
+    obj["repository_access_level"] = "enabled" if project["issues_enabled"] and project["merge_requests_enabled"] else "disabled"
 
     return obj
     
