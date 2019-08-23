@@ -48,7 +48,6 @@ class ConfigurationValidator(ig):
     def validate_parent_group_id(self, id):
         if id is not None:
             group_resp = self.groups.get_group(id, self.destination_host, self.destination_token).json()
-            print(id, group_resp)
             if group_resp.get("message", None) is not None:
                 raise ConfigurationException("parent_id")
             else:

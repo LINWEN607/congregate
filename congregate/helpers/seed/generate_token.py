@@ -130,14 +130,14 @@ class token_generator():
 
     def __get_root_route(self):
         return urljoin(self.endpoint, "/")
-    
+
     def __get_sign_in_route(self):
         return urljoin(self.endpoint, "/users/sign_in")
-    
+
     def __get_password_route(self):
         return urljoin(self.endpoint, "/users/password")
 
-    def __get_pat_route(self):    
+    def __get_pat_route(self):
         return urljoin(self.endpoint, "/profile/personal_access_tokens")
 
 if __name__ == "__main__":
