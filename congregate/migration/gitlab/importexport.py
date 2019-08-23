@@ -425,13 +425,15 @@ class ImportExportClient(BaseClass):
     def export_import_thru_aws(self, id, name, namespace, full_parent_namespace):
         exported = False
         self.log.debug("Searching for existing %s" % name)
-        namespace = self.strip_namespace(full_parent_namespace, namespace)
+        if self.config.strip_namespace_prefix:
+            namespace = self.strip_namespace(full_parent_namespace, namespace)
         project_exists, _ = self.projects.find_project_by_path(self.config.destination_host,
                                                                self.config.destination_token, full_parent_namespace,
                                                                namespace, name)
         if not project_exists:
             self.log.info(
                 "%s could not be found in destination instance. Exporting project on source instance." % name)
+
             self.export_project_to_aws(id, name, namespace)
             exported = self.wait_for_export_to_finish(
                 self.config.source_host, self.config.source_token, id, name)

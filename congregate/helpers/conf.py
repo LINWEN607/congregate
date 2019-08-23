@@ -157,6 +157,15 @@ class ig(object):
         """
         return self.config.get("append_project_suffix_on_existing_found", False)
 
+    @property
+    def strip_namespace_prefix(self):
+        """
+        If we should strip the namespace when doing the import/export routines. Should default to True, as stripping
+        handles so nesting issues when the depth is consistent.
+        :return: The set value or True is no setting
+        """
+        return self.config.get("strip_namespace_prefix", True)
+
     @threads.setter
     def threads(self, value):
         self.threads = value
