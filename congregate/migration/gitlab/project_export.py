@@ -1,10 +1,11 @@
-from congregate.helpers.base_class import BaseClass
-from congregate.migration.gitlab.users import UsersClient
-from congregate.aws import AwsClient
 import tarfile
 import os
 import json
 import shutil
+
+from congregate.helpers.base_class import BaseClass
+from congregate.migration.gitlab.users import UsersClient
+from congregate.aws import AwsClient
 
 class ProjectExportClient(BaseClass):
     KEYS = ["author_id", "created_by_id", "user_id", "updated_by_id", "assignee_id", "merged_by_id", "merge_user_id", "last_edited_by_id", "closed_by_id"]
