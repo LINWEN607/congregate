@@ -174,7 +174,7 @@ class ImportExportClient(BaseClass):
             timeout = 0
 
             import_response = self.attempt_import(filename, name, namespace, override_params, project)
-            self.log.info(import_response)
+            self.log.info("Import response: {}".format(import_response))
 
             import_results = self.get_import_id_from_import_response(import_response, exported, project, name, timeout)
             self.log.info(import_results)
@@ -194,7 +194,7 @@ class ImportExportClient(BaseClass):
                 project,
                 timeout
             )
-            self.log.info(import_results)
+            self.log.info("Import response (duped): {}".format(import_response))
 
             # From here, should just flow through to the import_id return at the end
         else:
@@ -307,7 +307,7 @@ class ImportExportClient(BaseClass):
                             # if self.config.mirror_username is not None:
                             #     mirror_repo(project, import_id)
                         elif status["import_status"] == "failed":
-                            self.log.info("%s failed to import" % name)
+                            self.log.info("Project {} failed to import".format(name))
                             exported = True
                     except ValueError as e:
                         self.log.error(e)

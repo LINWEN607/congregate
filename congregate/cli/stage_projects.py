@@ -220,4 +220,3 @@ def get_project_metadata(project):
     obj["repository_access_level"] = "enabled" if project["issues_enabled"] and project["merge_requests_enabled"] else "disabled"
 
     return obj
-    
