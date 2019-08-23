@@ -110,7 +110,7 @@ class SeedDataGenerator(BaseClass):
             else:
                 self.log.info("Creating %s" % group["name"])
                 created_groups.append(self.groups.create_group(self.config.source_host, self.config.source_token, group).json())
-        
+
         return created_groups
 
     def add_group_members(self, created_users, created_groups):
@@ -122,7 +122,7 @@ class SeedDataGenerator(BaseClass):
             }
             print created_groups[-1]
             self.groups.add_member_to_group(created_groups[-1]["id"], self.config.source_host, self.config.source_token, data)
-            
+
     def generate_group_projects(self, created_groups):
         dummy_projects = {
             "spring": "https://gitlab.com/gitlab-org/project-templates/spring.git",
@@ -131,7 +131,7 @@ class SeedDataGenerator(BaseClass):
         }
 
         created_projects = []
-        
+
         for project_name, project_url in dummy_projects.items():
             data = {
                 "import_url": project_url,
