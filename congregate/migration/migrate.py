@@ -137,8 +137,7 @@ def migrate_single_project_info(project, id):
         else:
             b.log.warn("CI/CD is disabled for project {}".format(name))
     except Exception, e:
-        b.log.error("Failed to migrate {} CI/CD variables".format(name))
-        b.log.error(e)
+        b.log.error("Failed to migrate {0} CI/CD variables, with error:\n{1}".format(name, e))
         results["variables"] = False
 
     # Push Rules
@@ -151,8 +150,7 @@ def migrate_single_project_info(project, id):
                                     b.config.destination_token, push_rule)
             results["push_rules"] = True
     except Exception, e:
-        b.log.error("Failed to migrate push rules for {}".format(name))
-        b.log.error(e)
+        b.log.error("Failed to migrate {0} push rules, with error:\n{1}".format(name, e))
         results["push_rules"] = False
 
     # Merge Request Approvers
@@ -164,8 +162,7 @@ def migrate_single_project_info(project, id):
         else:
             b.log.warn("Merge requests are disabled for project {}".format(name))
     except Exception, e:
-        b.log.error("Failed to migrate merge request approvers for {}".format(name))
-        b.log.error(e)
+        b.log.error("Failed to migrate {0} merge request approvers, with error:\n{1}".format(name, e))
         results["merge_request_approvers"] = False
 
     # Protected Branches
@@ -179,7 +176,7 @@ def migrate_single_project_info(project, id):
         # Issue, MR and snippet awards
         all_awards = awards.are_enabled(old_id)
         if all_awards[0] or all_awards[1] or all_awards[2]:
-            b.log.info("Migrating awards for {}".format(name))
+            b.log.info("Migrating {} awards".format(name))
             awards.migrate_awards(id, old_id, users_map)
             results["awards"] = {
                 "issues": all_awards[0],
@@ -189,8 +186,7 @@ def migrate_single_project_info(project, id):
         else:
             b.log.warn("Awards (job/MR/snippet) are disabled for project {}".format(name))
     except Exception, e:
-        b.log.error("Failed to migrate awards for {}".format(name))
-        b.log.error(e)
+        b.log.error("Failed to migrate {0} awards, with error:\n{1}".format(name, e))
         results["awards"] = False
 
     # # Pipeline Schedules
@@ -225,8 +221,7 @@ def migrate_single_project_info(project, id):
             instance = "source" if not registry[0] else "destination" if not registry[1] else "source and destination"
             b.log.warn("Container registry is disabled for {} instance".format(instance))
     except Exception, e:
-        b.log.error("Failed to migrate container registries for {}".format(name))
-        b.log.error(e)
+        b.log.error("Failed to migrate {0} container registries, with error:\n{1}".format(name, e))
         results["container_registry"] = False
 
     return results
