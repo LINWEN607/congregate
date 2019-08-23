@@ -64,7 +64,7 @@ class ProjectsClient(BaseClass):
         old_project = self.projects_api.get_project(old_id, self.config.source_host, self.config.source_token).json()
         for group in old_project["shared_with_groups"]:
             path = group["group_full_path"]
-            new_group_id = self.__get_new_group_id(group["group_name"], path)
+            new_group_id = self.get_new_group_id(group["group_name"], path)
             if new_group_id is not None:
                 data = {
                     "group_access": group["group_access_level"],
@@ -80,7 +80,7 @@ class ProjectsClient(BaseClass):
                 except RequestException, e:
                     self.log.error("Projects POST request failed with error:\n%s" % e)
 
-    def __get_new_group_id(self, name, path):
+    def get_new_group_id(self, name, path):
         """Returns the group's ID on the destination instance."""
         try:
             groups = api.generate_get_request(self.config.destination_host, self.config.destination_token, "groups?search=%s" % name).json()
@@ -89,9 +89,9 @@ class ProjectsClient(BaseClass):
                     if group["full_path"] == path:
                         return group["id"]
             else:
-                self.log.warn("Group %s does not exist or failed to import" % path)
+                self.log.warn("Shared group %s does not exist or is not yet imported" % path)
         except RequestException, e:
-            self.log.error("Groups GET request failed with error:\n%s" % e)
+            self.log.error("Shared groups GET request failed with error:\n%s" % e)
 
     def __old_project_avatar(self, id):
         """Returns the source project avatar."""

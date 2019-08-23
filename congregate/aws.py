@@ -28,20 +28,21 @@ class AwsClient(BaseClass):
             # Added timeout tuple for connection/read until the retry is implemented
             with requests.get(presigned_url, stream=True, timeout=(10,10)) as r:
                 if r.headers["content-type"] != "application/xml":
-                    url = '%s/api/v4/projects/import' % (self.config.destination_host)
+                    url = "%s/api/v4/projects/import" % (self.config.destination_host)
+                    files = {
+                        "file": (filename, BytesIO(r.content))
+                    }
                     data = {
                         "path": name.replace(" ", "-"),
                         "namespace": namespace
                     }
                     headers = {
-                        'Private-Token': self.config.destination_token
+                        "Private-Token": self.config.destination_token
                     }
-                    if override_params is not None:
-                        r = requests.post(url, headers=headers, params="&".join(override_params), data=data, files={
-                            'file': (filename, BytesIO(r.content))})
-                    else:
-                        r = requests.post(url, headers=headers, data=data, files={
-                            'file': (filename, BytesIO(r.content))})
+                    if override_params:
+                        for k,v in override_params.items():
+                            data["override_params[{}]".format(k)] = v
+                    r = requests.post(url, headers=headers, data=data, files=files)
                     return r.text
                 self.log.error(r.text)
                 return None

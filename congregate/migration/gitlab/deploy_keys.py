@@ -7,21 +7,16 @@ class DeployKeysClient(BaseClass):
     def __init__(self):
         super(DeployKeysClient, self).__init__()
 
-    # TODO: No import API for global deploy keys (admin level)
-    def __list_all_deploy_keys(self, host, token):
-        return api.list_all(host, token, "deploy_keys")
+    # NOTICE: No import API for global deploy keys (admin level)
+    def list_project_deploy_keys(self, id):
+        return api.list_all(self.config.source_host, self.config.source_token, "projects/%d/deploy_keys" % id)
 
-    def __list_project_deploy_keys(self, host, token, id):
-        return api.list_all(host, token, "projects/%d/deploy_keys" % id)
+    def __create_new_project_deploy_key(self, id, key):
+        return api.generate_post_request(self.config.destination_host, self.config.destination_token, "projects/%d/deploy_keys/" % id, key)
 
-    def __create_new_project_deploy_key(self, host, token, id, key):
-        return api.generate_post_request(host, token, "projects/%d/deploy_keys/" % id, key)
-
-    def migrate_deploy_keys(self, new_id, old_id):
-        keys = self.__list_project_deploy_keys(self.config.source_host, self.config.source_token, old_id)
-        if keys:
-            for key in  keys:
-                # Remove unused key-value before posting key
-                key.pop("id", None)
-                key.pop("created_at", None)
-                self.__create_new_project_deploy_key(self.config.destination_host, self.config.destination_token, new_id, json.dumps(key))
+    def migrate_deploy_keys(self, new_id, old_id, keys):
+        for key in  keys:
+            # Remove unused key-value before posting key
+            key.pop("id", None)
+            key.pop("created_at", None)
+            self.__create_new_project_deploy_key(new_id, json.dumps(key))
