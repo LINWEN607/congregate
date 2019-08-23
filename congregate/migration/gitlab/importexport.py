@@ -55,22 +55,22 @@ class ImportExportClient(BaseClass):
                 name = response["name"]
                 status = response.get("export_status", "")
                 if status == "finished":
-                    self.log.info("%s has finished exporting" % name)
+                    self.log.info("Project {} has finished exporting".format(name))
                     exported = True
                 elif status == "failed":
-                    self.log.error("Export failed for %s" % name)
+                    self.log.error("Project {} export failed".forma(name))
                     break
                 elif status == "none":
                     self.log.info(
-                        "No export status could be found for %s" % name)
+                        "No export status could be found for project {}".format(name))
                     if skip is False:
-                        self.log.info("Waiting {} seconds before skipping".format(self.WAIT))
+                        self.log.info("Waiting {0}s before skipping project {1} export".format(self.WAIT, name))
                         sleep(self.WAIT)
                         skip = True
                     else:
                         break
                 else:
-                    self.log.info("Waiting on %s to export" % name)
+                    self.log.info("Waiting for project {} to export".format(name))
                     if total_time < 3600:
                         total_time += 5
                         sleep(5)
@@ -80,7 +80,7 @@ class ImportExportClient(BaseClass):
                         exported = True
             else:
                 self.log.info(
-                    "Project doesn't exist. Skipping %s export" % name)
+                    "Source project {} doesn't exist. Skipping export".format(name))
                 exported = False
                 break
 
@@ -301,7 +301,7 @@ class ImportExportClient(BaseClass):
                         status = status.json()
                         if status["import_status"] == "finished":
                             self.log.info(
-                                "%s has been exported and import is occurring" % name)
+                                "Project {} has been successfully imported".format(name))
                             exported = True
                             # TODO: Fix or remove soft-cutover option
                             # if self.config.mirror_username is not None:
@@ -312,8 +312,8 @@ class ImportExportClient(BaseClass):
                     except ValueError as e:
                         self.log.error(e)
                 else:
-                    if timeout < 300:
-                        self.log.info("Waiting on %s to upload" % name)
+                    if timeout < 3600:
+                        self.log.info("Waiting on project {} to import".format(name))
                         timeout += 5
                         sleep(5)
                     else:
@@ -432,8 +432,7 @@ class ImportExportClient(BaseClass):
                                                                namespace, name)
         if not project_exists:
             self.log.info(
-                "%s could not be found in destination instance. Exporting project on source instance." % name)
-
+                "Project {} not found on destination instance. Exporting from source instance.".format(name))
             self.export_project_to_aws(id, name, namespace)
             exported = self.wait_for_export_to_finish(
                 self.config.source_host, self.config.source_token, id, name)

@@ -40,9 +40,14 @@ Usage:
     congregate validate-staged-projects-schema
     congregate -h | --help
 
-
 Options:
-    -h --help     Show this screen.
+    -h, --help                              Show Usage.
+
+Arguments:
+    threads                                 Set number of threads to run in parallel.
+    dry-run                                 Perform local listing of metadata that would be handled during the migration.
+    skip-users                              Migrate all but users (staged_users.json).
+    staged                                  ?
 
 Commands:
     list                                    List all projects of a source instance and save it to {CONGREGATE_PATH}/data/project_json.json.
