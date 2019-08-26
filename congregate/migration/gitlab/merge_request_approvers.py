@@ -98,8 +98,13 @@ class MergeRequestApproversClient(BaseClass):
                     user["id"], self.config.source_host, self.config.source_token).json()
                 new_user = api.search(
                     self.config.destination_host, self.config.destination_token, 'users', user['email'])
-                new_user_id = new_user[0]["id"]
-                approver_ids.append(new_user_id)
+                if new_user:
+                    new_user_id = new_user[0]["id"]
+                    approver_ids.append(new_user_id)
+                else:
+                    self.log.warn(
+                        "User not added to approver list. Could not find user {0} on destination.".format(user["email"])
+                    )
         for approved_group in approval_data["approver_groups"]:
             group = approved_group["group"]
             if group.get("id", None) is not None:
