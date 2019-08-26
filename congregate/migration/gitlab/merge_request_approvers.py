@@ -102,7 +102,7 @@ class MergeRequestApproversClient(BaseClass):
                     new_user_id = new_user[0]["id"]
                     approver_ids.append(new_user_id)
                 else:
-                    self.log.warn(
+                    self.log.error(
                         "User not added to approver list. Could not find user {0} on destination.".format(user["email"])
                     )
         for approved_group in approval_data["approver_groups"]:
