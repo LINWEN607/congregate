@@ -16,7 +16,7 @@ from congregate.migration.gitlab.api.groups import GroupsApi
 
 class ImportExportClient(BaseClass):
     # in seconds
-    WAIT = 10
+    WAIT = 30
 
     def __init__(self):
         super(ImportExportClient, self).__init__()
@@ -70,10 +70,10 @@ class ImportExportClient(BaseClass):
                     else:
                         break
                 else:
-                    self.log.info("Waiting for project {} to export".format(name))
+                    self.log.info("Waiting {0}s for project {1} to export".format(self.WAIT, name))
                     if total_time < 3600:
-                        total_time += 5
-                        sleep(5)
+                        total_time += self.WAIT
+                        sleep(self.WAIT)
                     else:
                         self.log.info(
                             "Time limit exceeded. Going to attempt to download anyway")
@@ -313,9 +313,9 @@ class ImportExportClient(BaseClass):
                         self.log.error(e)
                 else:
                     if timeout < 3600:
-                        self.log.info("Waiting on project {} to import".format(name))
-                        timeout += 5
-                        sleep(5)
+                        self.log.info("Waiting {0}s for project {1} to import".format(self.WAIT, name))
+                        timeout += self.WAIT
+                        sleep(self.WAIT)
                     else:
                         self.log.info(
                             "Moving on to the next project. Time limit exceeded")
