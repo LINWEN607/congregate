@@ -46,14 +46,14 @@ class AwardsClient(BaseClass):
             "merge_requests": self.merge_requests.get_single_project_merge_requests,
             "snippets": self.snippets.get_single_project_snippets
         }
-        for k,v in AWARDABLES:
+        for k,v in AWARDABLES.items():
             self.__set_client(k)
             self.log.info("Migrating project {0} {1} emojis".format(old_id, k))
             get_all_project_awardables = getattr(
                 self.awardable_client, "get_all_project_%s" % k)
             for awardable in get_all_project_awardables(self.config.source_host, self.config.source_token, old_id):
                 awardable_id = self.__get_awardable_id(awardable)
-                get_single_project_awardable = getattr(self.awardable_client, v)
+                get_single_project_awardable = v
                 for award in self.__get_all_project_awardable_emojis(self.config.source_host, self.config.source_token, k, old_id, awardable_id):
                     response = get_single_project_awardable(
                         self.config.destination_host, self.config.destination_token, new_id, awardable_id)
