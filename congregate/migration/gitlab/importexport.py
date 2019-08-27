@@ -299,7 +299,6 @@ class ImportExportClient(BaseClass):
                     try:
                         if status.status_code == 200:
                             status_json = status.json()
-
                             if status_json["import_status"] == "finished":
                                 self.log.info(
                                     "Project {} has been successfully imported".format(name))
@@ -315,6 +314,8 @@ class ImportExportClient(BaseClass):
                                 self.log.warn("Could not get import status: {0}".format(status_json))
                         else:
                             self.log.error("Import status code was {0}".format(status.status_code))
+                        timeout += wait_time
+                        sleep(wait_time)
                     except ValueError as e:
                         self.log.error(e)
                         self.log.error("Status content was {0}".format(status.content))
