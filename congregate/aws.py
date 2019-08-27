@@ -13,7 +13,7 @@ import boto3
 from botocore.client import Config
 from congregate.helpers.base_class import BaseClass
 from time import sleep
-
+from http import HTTPS
 
 class AwsClient(BaseClass):
     def __init__(self):
@@ -34,7 +34,7 @@ class AwsClient(BaseClass):
         while True and current_retries < max_retries:
             try:
                 # Added timeout tuple for connection/read until the retry is implemented
-                with requests.get(presigned_url, stream=True, timeout=(10,10)) as r:
+                with requests.get(presigned_url, stream=True, timeout=(10, 10)) as r:
                     if r.headers["content-type"] != "application/xml":
                         url = "%s/api/v4/projects/import" % (self.config.destination_host)
                         files = {
@@ -53,8 +53,11 @@ class AwsClient(BaseClass):
 
                             r = requests.post(url, headers=headers, data=data, files=files)
                             if r is not None:
-                                if r.status_code == 200:
+                                if r.status_code == 200 or r.status_code == 201:
                                     return r.text
+                                elif r.status_code == 400 and str("Name has already been taken") in r.content:
+                                    self.log.warn("Project name already exists for {0}".format(filename))
+                                    return None
                                 else:
                                     self.log.warn("Import post status code was {0} with content {1} for {2}".format(
                                         r.status_code,
@@ -65,10 +68,6 @@ class AwsClient(BaseClass):
                                 self.log.warn("Import post status code was None {0}".format(
                                     filename)
                                 )
-
-                            sleep(15)
-                            current_retries += 1
-
             except requests.exceptions.Timeout:
                 # TODO: implement proper retry session
                 self.log.error("The request has timed out")
@@ -76,6 +75,10 @@ class AwsClient(BaseClass):
                 self.log.error("The URL (%s) was bad, please try a different one" % presigned_url)
             except requests.exceptions.RequestException as e:
                 self.log.error("Something went terribly wrong, with error:\n%s" % e)
+
+            # All paths should fall-thru to here
+            sleep(15)
+            current_retries += 1
 
         # If we hit here, didn't return out with a success
         self.log.error("No import status verified for {0} {1} {2} {3}".format(
