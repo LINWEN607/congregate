@@ -166,6 +166,15 @@ class ig(object):
         """
         return self.config.get("strip_namespace_prefix", True)
 
+    @property
+    def importexport_wait(self):
+        """
+        This key-value (in seconds) concerns the import/export status wait time.
+        Depending whether we are migrating during peak hours or not we should be able to adjust it.
+        In general it should be increased when using multiple threads i.e. when the API cannot handle all the requests.
+        """
+        return self.config.get("importexport_wait", 30)
+
     @threads.setter
     def threads(self, value):
         self.threads = value
