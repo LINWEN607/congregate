@@ -13,7 +13,6 @@ import boto3
 from botocore.client import Config
 from congregate.helpers.base_class import BaseClass
 from time import sleep
-from http import HTTPS
 
 class AwsClient(BaseClass):
     def __init__(self):

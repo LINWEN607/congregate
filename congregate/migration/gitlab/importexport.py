@@ -320,7 +320,7 @@ class ImportExportClient(BaseClass):
                         self.log.error("Status content was {0}".format(status.content))
                 else:
                     if timeout < 3600:
-                        self.log.info("Waiting on project {} to import".format(name))
+                        self.log.info("Waiting {0}s for project {1} to import".format(wait_time, name))
                         timeout += wait_time
                         sleep(wait_time)
                     else:
@@ -392,11 +392,11 @@ class ImportExportClient(BaseClass):
     def export_import_thru_fs_aws(self, id, name, namespace):
         testkey = "%s_%s.tar.gz" % (namespace, name)
         if self.keys_map.get(testkey.lower(), None) is None:
-            self.log.info("Exporting %s to %s" %
-                          (name, self.config.filesystem_path))
             self.log.info("Unarchiving %s" % name)
             self.projects.projects_api.unarchive_project(
                 self.config.source_host, self.config.source_token, id)
+            self.log.info("Exporting %s to %s" %
+                          (name, self.config.filesystem_path))
             api.generate_post_request(
                 self.config.source_host, self.config.source_token, "projects/%d/export" % id, {})
             url = "%s/api/v4/projects/%d/export/download" % (
