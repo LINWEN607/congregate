@@ -15,9 +15,6 @@ from congregate.migration.gitlab.api.groups import GroupsApi
 
 
 class ImportExportClient(BaseClass):
-    # in seconds
-    WAIT = 30
-
     def __init__(self):
         super(ImportExportClient, self).__init__()
         self.aws = self.get_AwsClient()
@@ -46,6 +43,7 @@ class ImportExportClient(BaseClass):
         exported = False
         total_time = 0
         skip = False
+        wait_time = self.config.importexport_wait
         while not exported:
             response = self.get_export_status(
                 self.config.source_host, self.config.source_token, id)
@@ -58,22 +56,22 @@ class ImportExportClient(BaseClass):
                     self.log.info("Project {} has finished exporting".format(name))
                     exported = True
                 elif status == "failed":
-                    self.log.error("Project {} export failed".forma(name))
+                    self.log.error("Project {} export failed".format(name))
                     break
                 elif status == "none":
                     self.log.info(
                         "No export status could be found for project {}".format(name))
                     if skip is False:
-                        self.log.info("Waiting {0}s before skipping project {1} export".format(self.WAIT, name))
-                        sleep(self.WAIT)
+                        self.log.info("Waiting {0}s before skipping project {1} export".format(wait_time, name))
+                        sleep(wait_time)
                         skip = True
                     else:
                         break
                 else:
-                    self.log.info("Waiting {0}s for project {1} to export".format(self.WAIT, name))
+                    self.log.info("Waiting {0}s for project {1} to export".format(wait_time, name))
                     if total_time < 3600:
-                        total_time += self.WAIT
-                        sleep(self.WAIT)
+                        total_time += wait_time
+                        sleep(wait_time)
                     else:
                         self.log.info(
                             "Time limit exceeded. Going to attempt to download anyway")
@@ -247,6 +245,7 @@ class ImportExportClient(BaseClass):
     def get_import_id_from_import_response(self, import_response, exported, project, name, timeout):
         import_id = None
         duped = False
+        wait_time = self.config.importexport_wait
         if import_response is not None and len(import_response) > 0:
             import_response = json.loads(import_response)
             while not exported:
@@ -313,9 +312,9 @@ class ImportExportClient(BaseClass):
                         self.log.error(e)
                 else:
                     if timeout < 3600:
-                        self.log.info("Waiting {0}s for project {1} to import".format(self.WAIT, name))
-                        timeout += self.WAIT
-                        sleep(self.WAIT)
+                        self.log.info("Waiting {0}s for project {1} to import".format(wait_time, name))
+                        timeout += wait_time
+                        sleep(wait_time)
                     else:
                         self.log.info(
                             "Moving on to the next project. Time limit exceeded")
