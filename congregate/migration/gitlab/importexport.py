@@ -298,19 +298,25 @@ class ImportExportClient(BaseClass):
                     status = self.get_import_status(
                         self.config.destination_host, self.config.destination_token, import_id)
                     try:
-                        status = status.json()
-                        if status["import_status"] == "finished":
-                            self.log.info(
-                                "Project {} has been successfully imported".format(name))
-                            exported = True
-                            # TODO: Fix or remove soft-cutover option
-                            # if self.config.mirror_username is not None:
-                            #     mirror_repo(project, import_id)
-                        elif status["import_status"] == "failed":
-                            self.log.info("Project {} failed to import".format(name))
-                            exported = True
+                        if status.status_code == 200:
+                            status_json = status.json()
+                            if status_json["import_status"] == "finished":
+                                self.log.info(
+                                    "Project {} has been successfully imported".format(name))
+                                exported = True
+                                # TODO: Fix or remove soft-cutover option
+                                # if self.config.mirror_username is not None:
+                                #     mirror_repo(project, import_id)
+                            elif status_json["import_status"] == "failed":
+                                self.log.info("Project {} failed to import".format(name))
+                                exported = True
+                            else:
+                                self.log.warn("Could not get import status: {0}".format(status_json))
+                        else:
+                            self.log.error("Import status code was {0}".format(status.status_code))
                     except ValueError as e:
                         self.log.error(e)
+                        self.log.error("Status content was {0}".format(status.content))
                 else:
                     if timeout < 3600:
                         self.log.info("Waiting on project {} to import".format(name))

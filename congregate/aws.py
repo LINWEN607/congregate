@@ -12,6 +12,7 @@ from io import BytesIO
 import boto3
 from botocore.client import Config
 from congregate.helpers.base_class import BaseClass
+from time import sleep
 
 
 class AwsClient(BaseClass):
@@ -24,35 +25,66 @@ class AwsClient(BaseClass):
             region_name=self.config.s3_region)
 
     def import_from_s3(self, name, namespace, presigned_url, filename, override_params=None):
-        try:
-            # Added timeout tuple for connection/read until the retry is implemented
-            with requests.get(presigned_url, stream=True, timeout=(10,10)) as r:
-                if r.headers["content-type"] != "application/xml":
-                    url = "%s/api/v4/projects/import" % (self.config.destination_host)
-                    files = {
-                        "file": (filename, BytesIO(r.content))
-                    }
-                    data = {
-                        "path": name.replace(" ", "-"),
-                        "namespace": namespace
-                    }
-                    headers = {
-                        "Private-Token": self.config.destination_token
-                    }
-                    if override_params:
-                        for k,v in override_params.items():
-                            data["override_params[{}]".format(k)] = v
-                    r = requests.post(url, headers=headers, data=data, files=files)
-                    return r.text
-                self.log.error(r.text)
-                return None
-        except requests.exceptions.Timeout:
-            #TODO: implement proper retry session
-            self.log.error("The request has timed out")
-        except requests.exceptions.TooManyRedirects:
-            self.log.error("The URL (%s) was bad, please try a different one" % presigned_url)
-        except requests.exceptions.RequestException as e:
-            self.log.error("Something went terribly wrong, with error:\n%s" % e)
+
+        # TODO: Config these?
+        max_retries = 3
+        current_retries = -1
+
+        # Returns out on success, so no need for success tracker
+        while True and current_retries < max_retries:
+            try:
+                # Added timeout tuple for connection/read until the retry is implemented
+                with requests.get(presigned_url, stream=True, timeout=(10,10)) as r:
+                    if r.headers["content-type"] != "application/xml":
+                        url = "%s/api/v4/projects/import" % (self.config.destination_host)
+                        files = {
+                            "file": (filename, BytesIO(r.content))
+                        }
+                        data = {
+                            "path": name.replace(" ", "-"),
+                            "namespace": namespace
+                        }
+                        headers = {
+                            "Private-Token": self.config.destination_token
+                        }
+                        if override_params:
+                            for k, v in override_params.items():
+                                data["override_params[{}]".format(k)] = v
+
+                            r = requests.post(url, headers=headers, data=data, files=files)
+                            if r is not None:
+                                if r.status_code == 200:
+                                    return r.text
+                                else:
+                                    self.log.warn("Import post status code was {0} with content {1} for {2}".format(
+                                        r.status_code,
+                                        r.content,
+                                        filename)
+                                    )
+                            else:
+                                self.log.warn("Import post status code was None {0}".format(
+                                    filename)
+                                )
+
+                            sleep(15)
+                            current_retries += 1
+
+            except requests.exceptions.Timeout:
+                # TODO: implement proper retry session
+                self.log.error("The request has timed out")
+            except requests.exceptions.TooManyRedirects:
+                self.log.error("The URL (%s) was bad, please try a different one" % presigned_url)
+            except requests.exceptions.RequestException as e:
+                self.log.error("Something went terribly wrong, with error:\n%s" % e)
+
+        # If we hit here, didn't return out with a success
+        self.log.error("No import status verified for {0} {1} {2} {3}".format(
+            name,
+            namespace,
+            filename,
+            url)
+        )
+        return None
 
     def copy_from_s3(self, name, namespace, filename):
         file_path = "%s/downloads/%s" % (self.config.filesystem_path, filename)
@@ -74,20 +106,49 @@ class AwsClient(BaseClass):
             'Private-Token': self.config.destination_token
         }
         r = None
-        with open(file_path, 'r') as f:
-            self.log.info("Importing %s" % name)
-            r = requests.post(
-                url,
-                headers=headers,
-                data=data,
-                files={
-                    'file': (
-                        filename,
-                        f)})
 
-        if r is not None:
-            remove(file_path)
-            return r.text
+        # TODO: Config these?
+        max_retries = 3
+        current_retries = -1
+
+        # Returns out on success, so no need for success tracker
+        while True and current_retries < max_retries:
+            with open(file_path, 'r') as f:
+                self.log.info("Importing %s" % name)
+                r = requests.post(
+                    url,
+                    headers=headers,
+                    data=data,
+                    files={
+                        'file': (
+                            filename,
+                            f)})
+
+            if r is not None:
+                if r.status_code == 200:
+                    remove(file_path)
+                    return r.text
+                else:
+                    self.log.warn("Import post status code was {0} with content {1} for {2}".format(
+                        r.status_code,
+                        r.content,
+                        file_path)
+                    )
+            else:
+                self.log.warn("Import post status code was None {0}".format(
+                    file_path)
+                )
+
+            sleep(15)
+            current_retries += 1
+
+        self.log.error("No import status verified for {0} {1} {2} {3} {4}".format(
+            name,
+            namespace,
+            filename,
+            file_path,
+            url)
+        )
 
         return None
 
