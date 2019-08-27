@@ -13,7 +13,9 @@ sast:
 stages:
   - build
   - test
+  - cleanup
   - release
+
 
 build:
   image: docker:19.03.1
@@ -66,7 +68,7 @@ test:unit:
 
 test:end-to-end:
   services:
-    - name: docker:stable-dind
+    - name: docker:19.03.1-dind
     - name: gitlab/gitlab-ee:latest
       alias: gitlab_source
     - name: gitlab/gitlab-ee:latest
@@ -79,13 +81,20 @@ test:end-to-end:
     - export GITLAB_DEST=http://gitlab_destination
     - pipenv run pytest -s -m e2e congregate/tests/
 
+remove test images:
+  stage: cleanup
+  script:
+    - docker images -a | grep "$CI_REGISTRY_IMAGE" | awk '{print $3}' | xargs --no-run-if-empty docker rmi
+  tags:
+    - e2e-cleanup
+
 release-tag:
   stage: release
   image: docker:stable
   variables:
     RELEASE_IMAGE_NAME: "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME"
   services:
-    - docker:stable-dind
+    - docker:19.03.1-dind
   before_script:
     - docker login -u "$GITLAB_USER_LOGIN" -p "$ACCESS_TOKEN" "$CI_REGISTRY"
   script:

@@ -378,11 +378,11 @@ class ImportExportClient(BaseClass):
     def export_import_thru_fs_aws(self, id, name, namespace):
         testkey = "%s_%s.tar.gz" % (namespace, name)
         if self.keys_map.get(testkey.lower(), None) is None:
-            self.log.info("Exporting %s to %s" %
-                          (name, self.config.filesystem_path))
             self.log.info("Unarchiving %s" % name)
             self.projects.projects_api.unarchive_project(
                 self.config.source_host, self.config.source_token, id)
+            self.log.info("Exporting %s to %s" %
+                          (name, self.config.filesystem_path))
             api.generate_post_request(
                 self.config.source_host, self.config.source_token, "projects/%d/export" % id, {})
             url = "%s/api/v4/projects/%d/export/download" % (
