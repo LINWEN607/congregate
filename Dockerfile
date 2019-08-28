@@ -7,8 +7,7 @@ WORKDIR /opt/congregate
 
 # Copy supervisor configuration
 ADD congregate congregate
-COPY congregate.sh Pipfile README.md ./
-COPY js-packages /opt/congregate/js-packages
+COPY congregate.sh Pipfile README.md snakeskin.txt ./
 
 # Installing some basic utilities and updating apt
 RUN apt-get update && \
@@ -22,7 +21,9 @@ RUN cd /opt/congregate && \
     chmod +x congregate && \
     cp congregate.sh /usr/local/bin/congregate && \
     pip install pipenv && \
-    pipenv install && \
+    pipenv install
+
+RUN cd /opt/congregate && \
     pipenv run dnd install
 
 RUN echo "alias ll='ls -al'" >> ~/.bashrc
