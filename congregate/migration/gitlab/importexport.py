@@ -47,7 +47,6 @@ class ImportExportClient(BaseClass):
         while not exported:
             response = self.get_export_status(
                 self.config.source_host, self.config.source_token, id)
-            print response.text
             if response.status_code == 200:
                 response = response.json()
                 name = response["name"]
@@ -432,7 +431,7 @@ class ImportExportClient(BaseClass):
 
     def export_import_thru_aws(self, id, name, namespace, full_parent_namespace):
         exported = False
-        self.log.debug("Searching for existing %s" % name)
+        self.log.debug("Searching for existing project {}".format(name))
         if self.config.strip_namespace_prefix:
             namespace = self.strip_namespace(full_parent_namespace, namespace)
         project_exists, _ = self.projects.find_project_by_path(self.config.destination_host,

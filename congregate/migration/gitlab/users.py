@@ -16,20 +16,20 @@ class UsersClient(BaseClass):
         super(UsersClient, self).__init__()
 
     def find_user_by_email_comparison_with_id(self, old_user_id):
-        self.log.info("Searching for old user {0} by id".format(old_user_id))
+        self.log.info("Searching for user email by ID {}".format(old_user_id))
         old_user = self.users.get_user(
             old_user_id,
             self.config.source_host,
             self.config.source_token).json()
         if old_user is not None and old_user and old_user.get("email", None) is not None:
-            self.log.info("Found old user by id {0} and email {1}".format(old_user, old_user.get("email", None)))
+            self.log.info("Found user {0} and email {1}".format(old_user, old_user.get("email", None)))
             return self.find_user_by_email_comparison_without_id(old_user["email"])
         else:
-            self.log.error("Could not find old user by id {0}".format(old_user))
+            self.log.error("Could not find user {0} email based on old user ID {1}".format(old_user, old_user_id))
         return None
 
     def find_user_by_email_comparison_without_id(self, email):
-        self.log.info("Searching for old user {0} by email".format(email))
+        self.log.info("Searching for user email {}".format(email))
         users = self.users.search_for_user_by_email(
             self.config.destination_host,
             self.config.destination_token,
@@ -37,7 +37,7 @@ class UsersClient(BaseClass):
         for user in users:
             self.log.info(user)
             if user is not None and user and user.get("email", None) is not None and user["email"] == email:
-                self.log.info("Found old user by email {0}".format(user))
+                self.log.info("Found user {0} by email {1}".format(user, email))
                 return user
         return None
 
@@ -238,11 +238,11 @@ class UsersClient(BaseClass):
                 "access_level": 10
             }
             try:
-                print "Adding %s to group" % user["username"]
+                self.log.debug("Adding user {} to parent group".format(user["username"]))
                 self.groups.add_member_to_group(
                     self.config.parent_id, self.config.destination_host, self.config.destination_token, data)
             except RequestException, e:
-                self.log.error(e)
+                self.log.error("Failed adding user {0} to parent group, with error:\n{1}".format(user, e))
 
     def remove_users_from_parent_group(self):
         count = 0
@@ -254,8 +254,7 @@ class UsersClient(BaseClass):
                 api.generate_delete_request(self.config.destination_host, self.config.destination_token,
                                             "/groups/%d/members/%d" % (self.config.parent_id, user["id"]))
             else:
-                print "Keeping this user"
-                print user
+                self.log.debug("Keeping user {} in parent group".format(user))
         print count
 
     def lower_user_permissions(self):
@@ -298,7 +297,6 @@ class UsersClient(BaseClass):
             key = new_user["username"]
             if rewritten_users.get(key, None) is not None:
                 if rewritten_users[key]["state"] == "blocked":
-                    # print "Need to remove %s" % new_user["username"]
                     count += 1
                 else:
                     newer_users.append(new_user)
@@ -306,12 +304,11 @@ class UsersClient(BaseClass):
                 key = new_user["name"]
                 if rewritten_users_by_name.get(key, None) is not None:
                     if rewritten_users_by_name[key]["state"] == "blocked":
-                        # print "Need to remove %s" % new_user["name"]
                         count += 1
                     else:
                         newer_users.append(new_user)
-        print "newer user count: %d" % len(newer_users)
-        print "Need to remove %d users" % count
+        self.log.debug("Newer user count after blocking: {}".format(len(newer_users)))
+        self.log.debug("Need to remove {} users".format(count))
 
         with open("%s/data/newer_users.json" % self.app_path, "wb") as f:
             json.dump(newer_users, f, indent=4)
@@ -362,7 +359,7 @@ class UsersClient(BaseClass):
         new_users = []
         users_not_found = []
         for user in users:
-            self.log.info("Searching for user {} (email)".format(user["email"]))
+            self.log.info("Searching for user email {}".format(user["email"]))
             new_user = api.search(
                 self.config.destination_host, self.config.destination_token, 'users', user['email'])
             if len(new_user) > 0:
@@ -370,7 +367,7 @@ class UsersClient(BaseClass):
                     new_user[0]["email"] = user["email"]
                 new_users.append(new_user[0])
             else:
-                self.log.info("Searching for user {} (username)".format(user["username"]))
+                self.log.info("Searching for username {}".format(user["username"]))
                 new_user2 = api.search(
                     self.config.destination_host, self.config.destination_token, 'users', user['username'])
                 if len(new_user2) > 0:

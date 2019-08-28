@@ -30,7 +30,6 @@ from congregate.migration.gitlab.project_export import ProjectExportClient
 from congregate.migration.mirror import MirrorClient
 from congregate.migration.gitlab.deploy_keys import DeployKeysClient
 from congregate.migration.bitbucket import client as bitbucket
-from congregate.helpers.exceptions import ConfigurationException
 
 aws = AwsClient()
 ie = ie_client()
@@ -178,11 +177,7 @@ def migrate_single_project_info(project, id):
         if all_awards[0] or all_awards[1] or all_awards[2]:
             b.log.info("Migrating {} awards".format(name))
             awards.migrate_awards(id, old_id, users_map)
-            results["awards"] = {
-                "issues": all_awards[0],
-                "merge_requests": all_awards[1],
-                "snippets": all_awards[2]
-            }
+            results["awards"] = True
         else:
             b.log.warn("Awards (job/MR/snippet) are disabled for project {}".format(name))
     except Exception, e:
@@ -203,11 +198,13 @@ def migrate_single_project_info(project, id):
     try:
         keys = deploy_keys.list_project_deploy_keys(old_id)
         if keys:
-            b.log.info("Migrating project deploy keys for {}".format(name))
-            deploy_keys.migrate_deploy_keys(id, old_id, keys)
+            b.log.info("Migrating project {} deploy keys".format(name))
+            deploy_keys.migrate_deploy_keys(id, keys)
             results["deploy_keys"] = True
+        else:
+            b.log.info("Project {} has no deploy keys".format(name))
     except Exception, e:
-        b.log.error("Failed to migrate project {0} deploy keys, with error:\n{}".format(name, e))
+        b.log.error("Failed to migrate project {0} deploy keys, with error:\n{1}".format(name, e))
         results["deploy_keys"] = False
 
     # Container Registries
@@ -438,7 +435,7 @@ def find_unimported_projects():
         with open("%s/data/unimported_projects.txt" % b.app_path, "w") as f:
             for project in unimported_projects:
                 f.writelines(project + "\n")
-        print "Found %d unimported projects" % len(unimported_projects)
+        b.log.info("Found {} unimported projects".format(len(unimported_projects)))
 
 
 def remove_all_mirrors():
@@ -465,11 +462,9 @@ def get_new_ids():
                     if proj["name"] == project_json["name"]:
 
                         if "%s" % project_json["namespace"].lower() in proj["path_with_namespace"].lower():
-                            print project_json["namespace"]
-                            print proj["namespace"]["name"]
                             if project_json["namespace"].lower() == proj["namespace"]["name"].lower():
-                                print "adding %s/%s" % (
-                                    project_json["namespace"], project_json["name"])
+                                b.log.debug("Adding {0}/{1}".format(
+                                    project_json["namespace"], project_json["name"]))
                                 # b.log.info("Migrating variables for %s" % proj["name"])
                                 ids.append(proj["id"])
                                 break
@@ -501,8 +496,8 @@ def check_visibility():
         project = projects.projects_api.get_project(
             i, b.config.destination_host, b.config.destination_token).json()
         if project["visibility"] != "private":
-            print "%s, %s" % (
-                project["path_with_namespace"], project["visibility"])
+            b.log.debug("Current destination path {0} visibility: {1}".format(
+                project["path_with_namespace"], project["visibility"]))
             count += 1
             data = {
                 "visibility": "private"
@@ -519,10 +514,10 @@ def set_default_branch():
         if project.get("default_branch", None) != "master":
             id = project["id"]
             name = project["name"]
-            print "Setting default branch to master for project %s" % name
+            b.log.debug("Setting default branch to master for project {}".format(name))
             resp = api.generate_put_request(
                 b.config.destination_host, b.config.destination_token, "projects/%d?default_branch=master" % id, data=None)
-            print "Status: %d" % resp.status_code
+            b.log.debug("Project {0} default branch status: {1}".format(name, resp.status_code))
 
 
 def update_diverging_branch():
@@ -530,10 +525,10 @@ def update_diverging_branch():
         if project.get("mirror_overwrites_diverged_branches", None) != True:
             id = project["id"]
             name = project["name"]
-            print "Setting mirror_overwrites_diverged_branches to true for project %s" % name
+            b.log.debug("Setting mirror_overwrites_diverged_branches to true for project {}".format(name))
             resp = api.generate_put_request(b.config.destination_host, b.config.destination_token,
                                             "projects/%d?mirror_overwrites_diverged_branches=true" % id, data=None)
-            print "Status: %d" % resp.status_code
+            b.log.debug("Project {0} mirror_overwrites_diverged_branches status: {1}".format(name, resp.status_code))
 
 
 def get_total_migrated_count():

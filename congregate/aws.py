@@ -4,12 +4,13 @@ Congregate - GitLab instance migration utility
 Copyright (c) 2018 - GitLab
 """
 
-import requests
-from os import remove, path
 import subprocess
+import boto3
+import requests
+
+from os import remove, path
 from re import sub
 from io import BytesIO
-import boto3
 from botocore.client import Config
 from congregate.helpers.base_class import BaseClass
 from time import sleep
@@ -55,32 +56,29 @@ class AwsClient(BaseClass):
                                 if r.status_code == 200 or r.status_code == 201:
                                     return r.text
                                 elif r.status_code == 400 and str("Name has already been taken") in r.content:
-                                    self.log.warn("Project name already exists for {0}".format(filename))
+                                    self.log.warn("Project {} already exists".format(name))
                                     return None
                                 else:
-                                    self.log.warn("Import post status code was {0} with content {1} for {2}".format(
+                                    self.log.warn("Project file {0} import post status code was {1} with content {2}".format(
+                                        filename,
                                         r.status_code,
-                                        r.content,
-                                        filename)
+                                        r.content)
                                     )
                             else:
-                                self.log.warn("Import post status code was None {0}".format(
-                                    filename)
-                                )
+                                self.log.warn("Project file {} import post status code was None".format(filename))
             except requests.exceptions.Timeout:
-                # TODO: implement proper retry session
-                self.log.error("The request has timed out")
+                self.log.error("Project {} import timed out".format(name))
             except requests.exceptions.TooManyRedirects:
-                self.log.error("The URL (%s) was bad, please try a different one" % presigned_url)
+                self.log.error("The presigned URL ({}) was bad, please try a different one".format(presigned_url))
             except requests.exceptions.RequestException as e:
-                self.log.error("Something went terribly wrong, with error:\n%s" % e)
+                self.log.error("Something went terribly wrong, with error:\n{}".format(e))
 
             # All paths should fall-thru to here
             sleep(15)
             current_retries += 1
 
         # If we hit here, didn't return out with a success
-        self.log.error("No import status verified for {0} {1} {2} {3}".format(
+        self.log.error("No import status verified for:\nProject: {0}\nNamespace: {1}\nFile: {2}\nURL: {3}".format(
             name,
             namespace,
             filename,
@@ -91,7 +89,7 @@ class AwsClient(BaseClass):
     def copy_from_s3(self, name, namespace, filename):
         file_path = "%s/downloads/%s" % (self.config.filesystem_path, filename)
         if not path.isfile(file_path):
-            self.log.info("Copying %s to local machine" % filename)
+            self.log.info("Copying project file {} from S3 to local machine".format(filename))
             cmd = "aws+s3+cp+s3://%s/%s+%s" % (
                 self.config.bucket_name, filename, file_path)
             subprocess.call(cmd.split("+"))
@@ -100,6 +98,9 @@ class AwsClient(BaseClass):
     def copy_from_s3_and_import(self, name, namespace, filename):
         file_path = self.copy_from_s3(name, namespace, filename)
         url = '%s/api/v4/projects/import' % (self.config.destination_host)
+        files= {
+            'file': (filename, f)
+        }
         data = {
             "path": name.replace(" ", "-"),
             "namespace": namespace
@@ -116,35 +117,26 @@ class AwsClient(BaseClass):
         # Returns out on success, so no need for success tracker
         while True and current_retries < max_retries:
             with open(file_path, 'r') as f:
-                self.log.info("Importing %s" % name)
-                r = requests.post(
-                    url,
-                    headers=headers,
-                    data=data,
-                    files={
-                        'file': (
-                            filename,
-                            f)})
+                self.log.info("Importing project {} from S3".format(name))
+                r = requests.post(url, headers=headers, data=data, files=files)
 
             if r is not None:
                 if r.status_code == 200:
                     remove(file_path)
                     return r.text
                 else:
-                    self.log.warn("Import post status code was {0} with content {1} for {2}".format(
+                    self.log.warn("Project file {0} import post status code was {1} with content {2}".format(
+                        filename,
                         r.status_code,
-                        r.content,
-                        file_path)
+                        r.content)
                     )
             else:
-                self.log.warn("Import post status code was None {0}".format(
-                    file_path)
-                )
+                self.log.warn("Import post status code was None {0}".format(file_path))
 
             sleep(15)
             current_retries += 1
 
-        self.log.error("No import status verified for {0} {1} {2} {3} {4}".format(
+        self.log.error("No import status verified for:\nProject: {0}\nNamespace: {1}\nFile: {2}\nFile path: {3}\nURL: {4}".format(
             name,
             namespace,
             filename,

@@ -162,7 +162,8 @@ class ig(object):
         """
         If we should strip the namespace when doing the import/export routines. Should default to True, as stripping
         handles so nesting issues when the depth is consistent.
-        :return: The set value or True is no setting
+
+        :return: The set value or True as default in case of no setting.
         """
         return self.config.get("strip_namespace_prefix", True)
 
@@ -172,6 +173,8 @@ class ig(object):
         This key-value (in seconds) concerns the import/export status wait time.
         Depending whether we are migrating during peak hours or not we should be able to adjust it.
         In general it should be increased when using multiple threads i.e. when the API cannot handle all the requests.
+
+        :return: The set value or 30s as default in case of no setting.
         """
         return self.config.get("importexport_wait", 30)
 
