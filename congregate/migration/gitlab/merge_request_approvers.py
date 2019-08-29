@@ -88,6 +88,35 @@ class MergeRequestApproversClient(BaseClass):
                     created_rule_resp = self.create_approval_rule_with_payload(
                         new_id, self.config.destination_host, self.config.destination_token, new_rule)
 
+    def user_search_check_and_log(self, new_user, user, approver_ids):
+        if not approver_ids:
+            approver_ids = []
+        if not user:
+            return approver_ids
+        if new_user and isinstance(new_user, list):
+            new_user_dict = new_user[0]
+            if new_user_dict and isinstance(new_user_dict, dict):
+                new_user_id = new_user_dict.get("id", None)
+                if new_user_id:
+                    approver_ids.append(new_user_id)
+                else:
+                    self.log.warn(
+                        "Could not retrieve user id from {0}"
+                            .format(new_user_dict)
+                    )
+            else:
+                self.log.warn(
+                    "Could not retrieve user dictionary from {0}"
+                        .format(new_user[0])
+                )
+        else:
+            self.log.warn(
+                "Could not find merge request approver email {0} in destination system. {1}"
+                    .format(user['email'], new_user)
+            )
+
+        return approver_ids
+
     def update_approvers(self, approval_data):
         approver_ids = []
         approver_groups = []
@@ -98,13 +127,7 @@ class MergeRequestApproversClient(BaseClass):
                     user["id"], self.config.source_host, self.config.source_token).json()
                 new_user = api.search(
                     self.config.destination_host, self.config.destination_token, 'users', user['email'])
-                if new_user:
-                    new_user_id = new_user[0]["id"]
-                    approver_ids.append(new_user_id)
-                else:
-                    self.log.error(
-                        "User not added to approver list. Could not find user {0} on destination.".format(user["email"])
-                    )
+                approver_ids = self.user_search_check_and_log(new_user, user, approver_ids)
         for approved_group in approval_data["approver_groups"]:
             group = approved_group["group"]
             if group.get("id", None) is not None:
@@ -130,8 +153,7 @@ class MergeRequestApproversClient(BaseClass):
                     user["id"], self.config.source_host, self.config.source_token).json()
                 new_user = api.search(
                     self.config.destination_host, self.config.destination_token, 'users', user['email'])
-                new_user_id = new_user[0]["id"]
-                approver_ids.append(new_user_id)
+                approver_ids = self.user_search_check_and_log(new_user, user, approver_ids)
         for group in rule["groups"]:
             if group.get("id", None) is not None:
                 group = self.groups.get_group(
