@@ -128,6 +128,9 @@ def migrate_single_project_info(project, id):
     # Shared with groups
     projects.add_shared_groups(old_id, id)
 
+    # Update project badges
+    projects.update_badges(id, full_parent_namespace)
+
     # CI/CD Variables
     try:
         if variables.are_enabled(old_id):

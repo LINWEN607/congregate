@@ -143,6 +143,29 @@ class ProjectsClient(BaseClass):
                     return True, project["id"]
         return False, None
 
+    def update_badges(self, new_id, namespace):
+        try:
+            self.log.info("Migrating project {0} badges".format(namespace))
+            badges = self.projects_api.get_all_project_badges(self.config.destination_host, self.config.destination_token, new_id)
+            for badge in badges:
+                link_url_suffix = badge["link_url"].split("/", 1)[1].split("/", 2)[2]
+                image_url_suffix = badge["image_url"].split("/", 1)[1].split("/", 2)[2]
+                data = {
+                    "link_url": "{0}/{1}/{2}".format(self.config.destination_host, namespace, link_url_suffix),
+                    "image_url": "{0}/{1}/{2}".format(self.config.destination_host, namespace, image_url_suffix)
+                }
+                headers = {
+                    "PRIVATE-TOKEN": self.config.destination_token
+                }
+                self.projects_api.edit_project_badge(self.config.destination_host,
+                                                    self.config.destination_token,
+                                                    new_id,
+                                                    badge["id"],
+                                                    data=data,
+                                                    headers=headers)
+        except RequestException, e:
+            self.log.error("Failed to update project {0} badge, with error:\n{1}".format(namespace, e))
+
     def validate_staged_projects_schema(self):
         with open("%s/data/staged_groups.json" % self.app_path, "r") as f:
             staged_groups = json.load(f)

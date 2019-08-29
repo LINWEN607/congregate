@@ -131,6 +131,31 @@ class ProjectsApi():
         """
         return api.generate_post_request(host, token, "projects/%d/share" % id, json.dumps(group))
 
+    def get_all_project_badges(self, host, token, id):
+        """
+        List all badges of a project
+
+        GitLab API doc: https://docs.gitlab.com/ee/api/project_badges.html#list-all-badges-of-a-project
+
+            :param: id: (int) GitLab project ID
+            :yield: Generator containing JSON from GET /projects/:id/badges
+        """
+        return api.list_all(host, token, "projects/%d/badges" % id)
+
+    def edit_project_badge(self, host, token, id, badge_id, data=None, headers=None):
+        """
+        Edit a badge of a project
+
+        GitLab API doc: https://docs.gitlab.com/ee/api/project_badges.html#edit-a-badge-of-a-project
+
+            :param: id: (int) GitLab project ID
+            :param: badge_id: (int) The badge ID
+            :param: link_url: (str) URL of the badge link
+            :param: image_url: (str) URL of the badge image
+            :return: Response object containing the response to PUT /projects/:id/badges/:badge_id
+        """
+        return api.generate_put_request(host, token, "projects/%d/badges/%d" % (id, badge_id), json.dumps(data), headers=headers)
+
     def create_project(self, host, token, name, data=None, headers=None):
         if data is not None:
             data["name"] = name
