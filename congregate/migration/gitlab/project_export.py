@@ -72,12 +72,16 @@ class ProjectExportClient(BaseClass):
         if data.get("pipelines", None) is not None:
             self.__remove_notes_from_merge_requests(data["pipelines"], "DiffNote")
             self.__remove_notes_from_merge_requests(data["pipelines"], "Commit")
+            # This line needs to be removed once https://gitlab.com/gitlab-org/gitlab-ce/issues/60121 is resolved
+            data['pipelines'].reverse()
         if data.get("ci_pipelines", None) is not None:
             self.__remove_notes_from_merge_requests(data["ci_pipelines"], "DiffNote")
             self.__remove_notes_from_merge_requests(data["ci_pipelines"], "Commit")
+            # This line needs to be removed once https://gitlab.com/gitlab-org/gitlab-ce/issues/60121 is resolved
+            data['ci_pipelines'].reverse()
         if data.get("services", None) is not None:
             del data["services"]
-        
+
         with open("%s/project.json" % path, "w") as f:
             json.dump(data, f, indent=4)
 
