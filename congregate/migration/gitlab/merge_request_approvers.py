@@ -89,6 +89,12 @@ class MergeRequestApproversClient(BaseClass):
                         new_id, self.config.destination_host, self.config.destination_token, new_rule)
 
     def user_search_check_and_log(self, new_user, user, approver_ids):
+        """
+        :param new_user: A user entity from API search
+        :param user: The user entity pulled from the list of approvers
+        :param approver_ids: Current list of approver ids. Will be defaulted to an empty on None
+        :return: The current approver_id list compose of approver_ids append the user id from the new_user, if found
+        """
         if not approver_ids:
             approver_ids = []
         if not user:
