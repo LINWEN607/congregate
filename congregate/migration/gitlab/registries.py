@@ -55,7 +55,7 @@ class RegistryClient(BaseClass):
         try:
             # Login to destination registry
             dest_client = self.__login_to_registry(self.config.destination_host, self.config.destination_token, self.config.destination_registry)
-            new_reg = "%s/%s" % (self.config.destination_registry, sufix)
+            new_reg = self.generate_destination_registry_url(sufix).lower()
             for image in images:
                 for tag in image.tags:
                     # TODO: use a key value instead
@@ -80,3 +80,8 @@ class RegistryClient(BaseClass):
             return client
         except (APIError, TLSParameterError) as err:
             self.log.error("Failed to login to docker registry %s, with error:\n%s" % (registry, err))
+
+    def generate_destination_registry_url(self, suffix):
+        if self.config.parent_group_path is not None:
+            return "%s/%s/%s" % (self.config.destination_registry, self.config.parent_group_path, suffix)
+        return "%s/%s" % (self.config.destination_registry, suffix)
