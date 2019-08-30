@@ -152,9 +152,11 @@ def migrate_single_project_info(project, id):
         b.log.error("Failed to migrate {0} push rules, with error:\n{1}".format(name, e))
         results["push_rules"] = False
 
+    mr_enabled = False
     # Merge Request Approvers
     try:
         if mr.are_enabled(old_id):
+            mr_enabled = True
             b.log.info("Migrating merge request approvers for {}".format(name))
             mr.migrate_merge_request_approvers(id, old_id)
             results["merge_request_approvers"] = True
@@ -176,7 +178,7 @@ def migrate_single_project_info(project, id):
         all_awards = awards.are_enabled(old_id)
         if all_awards[0] or all_awards[1] or all_awards[2]:
             b.log.info("Migrating {} awards".format(name))
-            awards.migrate_awards(id, old_id, users_map)
+            awards.migrate_awards(id, old_id, users_map, mr_enabled)
             results["awards"] = True
         else:
             b.log.warn("Awards (job/MR/snippet) are disabled for project {}".format(name))
