@@ -129,7 +129,10 @@ def migrate_single_project_info(project, id):
     projects.add_shared_groups(old_id, id)
 
     # Update project badges
-    projects.update_badges(id, full_parent_namespace)
+    badges = projects_api.get_all_project_badges(b.config.destination_host, b.config.destination_token, id)
+    if badges:
+        b.log.info("Updating project {0} badges".format(name))
+        projects.update_badges(id, full_parent_namespace, badges)
 
     # CI/CD Variables
     try:

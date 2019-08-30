@@ -82,6 +82,31 @@ class GroupsApi():
         """
         return api.list_all(host, token, "groups/%d/members" % id)
 
+    def get_all_group_badges(self, host, token, id):
+        """
+        List all badges of a group
+
+        GitLab API doc: https://docs.gitlab.com/ee/api/group_badges.html#list-all-badges-of-a-group
+
+            :param: id: (int) GitLab group ID
+            :yield: Generator containing JSON from GET /groups/:id/badges
+        """
+        return api.list_all(host, token, "groups/%d/badges" % id)
+
+    def add_group_badge(self, host, token, id, data):
+        """
+        Add a badge to a group
+
+        GitLab API doc: https://docs.gitlab.com/ee/api/group_badges.html#add-a-badge-to-a-group
+
+            :param: id: (int) GitLab group ID
+            :param: link_url: (str) URL of the badge link
+            :param: image_url: (str) URL of the badge image
+            :return: Response object containing the response to POST /groups/:id/badges
+        """
+        r = api.generate_post_request(host, token, "groups/%d/badges" % id, json.dumps(data))
+        print r.content
+
     def get_all_subgroups(self, id, host, token):
         """
         Get a list of visible direct subgroups in this group

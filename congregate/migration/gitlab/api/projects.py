@@ -142,7 +142,7 @@ class ProjectsApi():
         """
         return api.list_all(host, token, "projects/%d/badges" % id)
 
-    def edit_project_badge(self, host, token, id, badge_id, data=None, headers=None):
+    def edit_project_badge(self, host, token, id, badge_id, data):
         """
         Edit a badge of a project
 
@@ -154,7 +154,7 @@ class ProjectsApi():
             :param: image_url: (str) URL of the badge image
             :return: Response object containing the response to PUT /projects/:id/badges/:badge_id
         """
-        return api.generate_put_request(host, token, "projects/%d/badges/%d" % (id, badge_id), json.dumps(data), headers=headers)
+        return api.generate_put_request(host, token, "projects/%d/badges/%d" % (id, badge_id), json.dumps(data))
 
     def create_project(self, host, token, name, data=None, headers=None):
         if data is not None:
