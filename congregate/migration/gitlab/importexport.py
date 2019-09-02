@@ -114,6 +114,8 @@ class ImportExportClient(BaseClass):
         name = project["name"]
         filename = "%s_%s.tar.gz" % (project["namespace"], project["name"])
         override_params = {
+            # to override the dash ("-") in import/export file path
+            "name": project["name"],
             "description": project["description"],
             "shared_runners_enabled": project["shared_runners_enabled"],
             "wiki_access_level": project["wiki_access_level"],
