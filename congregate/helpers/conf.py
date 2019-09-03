@@ -181,10 +181,6 @@ class ig(object):
         """
         return self.config.get("append_project_suffix_on_existing_found", False)
 
-    @property
-    def parent_access_level(self):
-        return self.config.get("parent_access_level", None)
-
     @threads.setter
     def threads(self, value):
         self.threads = value

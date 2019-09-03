@@ -1,21 +1,22 @@
+from os import path
+import json
+from requests.exceptions import RequestException
+
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers import api
 from congregate.helpers.threads import handle_multi_thread
 from congregate.helpers.misc_utils import strip_numbers, remove_dupes
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.users import UsersApi
-from requests.exceptions import RequestException
-from os import path
-import json
 
 
 class UsersClient(BaseClass):
     PERMISSIONS = {
-        10: "Guest",
-        20: "Reporter",
-        30: "Developer",
-        40: "Maintainer",
-        50: "Owner"
+        "guest": 10,
+        "reporter": 20,
+        "developer": 30,
+        "maintainer": 40,
+        "owner": 50
     }
 
     def __init__(self):
@@ -240,19 +241,17 @@ class UsersClient(BaseClass):
         with open("%s/data/newer_users.json" % self.app_path, "r") as f:
             new_users = json.load(f)
 
-        access_level = self.config.parent_access_level
-        if access_level is not None:
-            for user in new_users:
-                data = {
-                    "user_id": user["id"],
-                    "access_level": access_level
-                }
-                try:
-                    self.log.debug("Adding user {} to parent group".format(user["username"]))
-                    self.groups.add_member_to_group(
-                        self.config.parent_id, self.config.destination_host, self.config.destination_token, data)
-                except RequestException, e:
-                    self.log.error("Failed adding user {0} to parent group, with error:\n{1}".format(user, e))
+        for user in new_users:
+            data = {
+                "user_id": user["id"],
+                "access_level": 10
+            }
+            try:
+                self.log.debug("Adding user {} to parent group".format(user["username"]))
+                self.groups.add_member_to_group(
+                    self.config.parent_id, self.config.destination_host, self.config.destination_token, data)
+            except RequestException, e:
+                self.log.error("Failed to add user {0} to parent group, with error:\n{1}".format(user, e))
 
     def remove_users_from_parent_group(self):
         count = 0
@@ -267,26 +266,26 @@ class UsersClient(BaseClass):
                 self.log.debug("Keeping user {} in parent group".format(user))
         print count
 
-    def lower_user_permissions(self):
-        access_level = self.config.parent_access_level
+    def update_user_permissions(self, access_level):
+        access_level = self.PERMISSIONS[access_level.lower()]
         try:
-            if access_level is not None:
-                all_users = list(api.list_all(
+            all_users = list(api.list_all(
+                self.config.destination_host,
+                self.config.destination_token,
+                "groups/%d/members" % self.config.parent_id))
+            for user in all_users:
+                response = api.generate_put_request(
                     self.config.destination_host,
                     self.config.destination_token,
-                    "groups/%d/members" % self.config.parent_id))
-                for user in all_users:
-                    self.log.info("Lowering {0}'s parent access level to {1}"
-                        .format(user["username"], self.PERMISSIONS[access_level]))
-                    response = api.generate_put_request(
-                        self.config.destination_host,
-                        self.config.destination_token,
-                        "groups/{0}/members/{1}?access_level={2}"
-                        .format(self.config.parent_id, user["id"], access_level), data=None)
-                    if response.status_code != 200:
-                        self.log.warn("Failed to alter {0}'s access level ({1})".format(user["username"], response.content))
+                    "groups/{0}/members/{1}?access_level={2}"
+                    .format(self.config.parent_id, user["id"], access_level), data=None)
+                if response.status_code != 200:
+                    self.log.warn("Failed to update {0}'s access level ({1})".format(user["username"], response.content))
+                else:
+                    self.log.info("Updated {0}'s parent access level to {1}"
+                        .format(user["username"], access_level))
         except RequestException, e:
-            self.log.error("Failed to lower user's parent access level, with error:\n{}".format(e))
+            self.log.error("Failed to update user's parent access level, with error:\n{}".format(e))
 
     def remove_blocked_users(self):
         count = 0

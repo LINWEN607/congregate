@@ -15,7 +15,7 @@ Usage:
     congregate update-aws-creds
     congregate add-users-to-parent-group
     congregate remove-blocked-users
-    congregate lower-user-permissions
+    congregate update-user-permissions [--access-level=<level>]
     congregate get-total-count
     congregate find-unimported-projects
     congregate stage-unimported-projects
@@ -48,6 +48,7 @@ Arguments:
     dry-run                                 Perform local listing of metadata that would be handled during the migration.
     skip-users                              Migrate all but users (staged_users.json).
     staged                                  ?
+    access-level                            Update parent group level user permissions (Guest/Reporter/Developer/Maintainer/Owner).
 
 Commands:
     list                                    List all projects of a source instance and save it to {CONGREGATE_PATH}/data/project_json.json.
@@ -65,7 +66,7 @@ Commands:
     update-aws-creds                        Run awscli commands based on the keys stored in the config. Useful for docker updates.
     add-users-to-parent-group               If a parent group is set, all users staged will be added to the parent group.
     remove-blocked-users                    Remove all blocked users from staged projects and groups.
-    lower-user-permissions                  Set parent group member access level. Mainly for lowering to Guest/Reporter.
+    update-user-permissions                 Update parent group member access level. Mainly for lowering to Guest/Reporter.
     get-total-count                         Get total count of migrated projects. Used to compare exported projects to imported projects.
     find-unimported-projects                Return a list of projects that failed import.
     stage-unimported-projects               Stage unimported projects based on {CONGREGATE_PATH}/data/unimported_projects.txt.
@@ -220,8 +221,12 @@ if __name__ == '__main__':
                 log.info("Configured AWS secret key")
             if arguments["remove-blocked-users"]:
                 users.remove_blocked_users()
-            if arguments["lower-user-permissions"]:
-                users.lower_user_permissions()
+            if arguments["update-user-permissions"]:
+                if arguments["--access-level"]:
+                    access_level = arguments["--access-level"]
+                    users.update_user_permissions(access_level=access_level)
+                else:
+                    log.warn("Missing access-level argument")
             if arguments["import-projects"]:
                 migrate.kick_off_import()
             if arguments["get-total-count"]:
