@@ -96,7 +96,8 @@ class UsersClient(BaseClass):
         user["group_id_for_saml"] = self.config.parent_id
         user["extern_uid"] = self.find_extern_uid_by_provider(identities, self.config.group_sso_provider)
         user["provider"] = "group_saml"
-        user["reset_password"] = True
+        user["reset_password"] = self.config.reset_password
+        user["force_random_password"] = self.config.force_random_password
         user["skip_confirmation"] = True
         user["username"] = self.create_valid_username(user)
 
@@ -419,7 +420,8 @@ class UsersClient(BaseClass):
                 for key in keys_to_delete:
                     if key in user:
                         user.pop(key)
-                user["reset_password"] = True
+                user["reset_password"] = self.config.reset_password
+                user["force_random_password"] = self.config.force_random_password
 
         if root_index:
             users.pop(root_index)

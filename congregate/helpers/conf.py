@@ -178,6 +178,23 @@ class ig(object):
         """
         return self.config.get("importexport_wait", 30)
 
+    @property
+    def reset_password(self):
+        """
+        Whether or not we should send the reset password link on user creation. Note: The API defaults to false
+        :return: The setting from the config file or True
+        """
+        return self.config.get("reset_password", True)
+
+    @property
+    def force_random_password(self):
+        """
+        This API flag for user creation is not well-documented, but can be used in combination with password and
+        reset_password to generate a random password at create
+        :return: The setting from the config file or False
+        """
+        return self.config.get("force_random_password", False)
+
     @threads.setter
     def threads(self, value):
         self.threads = value

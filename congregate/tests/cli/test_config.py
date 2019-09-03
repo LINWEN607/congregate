@@ -8,6 +8,7 @@ from congregate.tests.mockapi.users import MockUsersApi
 from congregate.tests.mockapi.groups import MockGroupsApi
 from congregate.migration.gitlab.api.users import UsersApi
 
+
 class ConfigTests(unittest.TestCase):
     def setUp(self):
         self.users_api = MockUsersApi()
@@ -27,7 +28,9 @@ class ConfigTests(unittest.TestCase):
             "",  # Parent group id
             "",  # Mirroring yes/no
             "",  # Staging location (default filesystem)
-            ""  # Staging location path
+            "",  # Staging location path
+            "",     # Reset password
+            ""     # Force random password
         ]
         g = input_generator(values)
 
@@ -43,7 +46,9 @@ class ConfigTests(unittest.TestCase):
                 "number_of_threads": 2,
                 "location": "filesystem",
                 "import_user_id": 1,
-                "path": os.getcwd()
+                "path": os.getcwd(),
+                "reset_password": True,
+                "force_random_password": False
             }
         }
         mock_get.return_value = self.users_api.get_current_user()
@@ -65,7 +70,9 @@ class ConfigTests(unittest.TestCase):
             "",  # Parent group id
             "yes",  # Mirroring yes/no
             "",  # Staging location (default filesystem)
-            ""  # Staging location path
+            "",  # Staging location path
+            "",     # Reset password
+            ""     # Force random password
         ]
         g = input_generator(values)
 
@@ -82,7 +89,9 @@ class ConfigTests(unittest.TestCase):
                 "number_of_threads": 2,
                 "location": "filesystem",
                 "import_user_id": 1,
-                "path": os.getcwd()
+                "path": os.getcwd(),
+                "reset_password": True,
+                "force_random_password": False
             }
         }
         mock_get.return_value = self.users_api.get_current_user()
@@ -111,7 +120,9 @@ class ConfigTests(unittest.TestCase):
             "",  # Empty username suffix
             "",  # Mirror yes/no
             "",  # Staging location (default filesystem)
-            ""   # Staging location path
+            "",   # Staging location path
+            "",     # Reset password
+            ""      # Force random password
         ]
         g = input_generator(values)
 
@@ -130,7 +141,9 @@ class ConfigTests(unittest.TestCase):
                 "location": "filesystem",
                 "make_visibility_private": True,
                 "import_user_id": 1,
-                "path": os.getcwd()
+                "path": os.getcwd(),
+                "reset_password": True,
+                "force_random_password": False
             }
         }
         url_value = "https://gitlab.com/api/v4/groups/5"
@@ -158,13 +171,15 @@ class ConfigTests(unittest.TestCase):
             os.getenv("source_instance_registry"),
             os.getenv("destination_instance_registry"),
             "yes",  # Parent group id yes/no
-            "5",  # Parent group id
-            "yes",  # SSO yes/no
-            "auth0", # SSO provider
-            "", # empty username suffix
-            "",  # Mirror yes/no
-            "",  # Staging location (default filesystem)
-            ""   # Staging location path
+            "5",    # Parent group id
+            "yes",      # SSO yes/no
+            "auth0",    # SSO provider
+            "",     # empty username suffix
+            "",     # Mirror yes/no
+            "",     # Staging location (default filesystem)
+            "",      # Staging location path
+            "",     # Reset password
+            ""      # Force random password
         ]
         g = input_generator(values)
 
@@ -184,7 +199,9 @@ class ConfigTests(unittest.TestCase):
                 "location": "filesystem",
                 "make_visibility_private": True,
                 "import_user_id": 1,
-                "path": os.getcwd()
+                "path": os.getcwd(),
+                "reset_password": True,
+                "force_random_password": False
             }
         }
         url_value = "https://gitlab.com/api/v4/groups/5"
@@ -212,13 +229,15 @@ class ConfigTests(unittest.TestCase):
             os.getenv("source_instance_registry"),
             os.getenv("destination_instance_registry"),
             "yes",  # Parent group id yes/no
-            "5",  # Parent group id
+            "5",    # Parent group id
             "yes",  # SSO yes/no
-            "auth0", # SSO provider
-            "_acme", # Username suffix
-            "",  # Mirror yes/no
-            "",  # Staging location (default filesystem)
-            ""   # Staging location path
+            "auth0",    # SSO provider
+            "_acme",    # Username suffix
+            "",     # Mirror yes/no
+            "",     # Staging location (default filesystem)
+            "",     # Staging location path
+            "",     # Reset password
+            ""      # Force random password
         ]
         g = input_generator(values)
 
@@ -239,7 +258,9 @@ class ConfigTests(unittest.TestCase):
                 "location": "filesystem",
                 "make_visibility_private": True,
                 "import_user_id": 1,
-                "path": os.getcwd()
+                "path": os.getcwd(),
+                "reset_password": True,
+                "force_random_password": False
             }
         }
         url_value = "https://gitlab.com/api/v4/groups/5"
@@ -265,7 +286,9 @@ class ConfigTests(unittest.TestCase):
             "no",
             "no",
             "filesystem",
-            os.getcwd()
+            os.getcwd(),
+            "FALSE",     # Reset password
+            "TRUE"      # Force random password
         ]
         g = input_generator(values)
         expected = {
@@ -280,7 +303,9 @@ class ConfigTests(unittest.TestCase):
                 "number_of_threads": 2,
                 "location": "filesystem",
                 "import_user_id": 1,
-                "path": os.getcwd()
+                "path": os.getcwd(),
+                "reset_password": False,
+                "force_random_password": True
             }
         }
 
@@ -303,7 +328,9 @@ class ConfigTests(unittest.TestCase):
             "no",
             "no",
             "filesystem",
-            "/path/to/downloads"
+            "/path/to/downloads",
+            "FALSE",
+            "TRUE"
         ]
         g = input_generator(values)
         expected = {
@@ -318,7 +345,9 @@ class ConfigTests(unittest.TestCase):
                 "number_of_threads": 2,
                 "location": "filesystem",
                 "import_user_id": 1,
-                "path": "/path/to/downloads"
+                "path": "/path/to/downloads",
+                "reset_password": False,
+                "force_random_password": True
             }
         }
 
@@ -345,7 +374,9 @@ class ConfigTests(unittest.TestCase):
             "test-bucket",
             "",
             "AKIA-Dummy",
-            "asdfqwer1234"
+            "asdfqwer1234",
+            "",
+            ""
         ]
         g = input_generator(values)
         expected = {
@@ -363,7 +394,9 @@ class ConfigTests(unittest.TestCase):
                 "location": "aws",
                 "import_user_id": 1,
                 "s3_region": "us-east-1",
-                "secret_key": "asdfqwer1234"
+                "secret_key": "asdfqwer1234",
+                "reset_password": True,
+                "force_random_password": False
             }
         }
 
@@ -391,7 +424,9 @@ class ConfigTests(unittest.TestCase):
             "test-bucket",
             "us-west-1",
             "AKIA-Dummy",
-            "asdfqwer1234"
+            "asdfqwer1234",
+            "",
+            ""
         ]
         g = input_generator(values)
         expected = {
@@ -409,7 +444,9 @@ class ConfigTests(unittest.TestCase):
                 "location": "aws",
                 "import_user_id": 1,
                 "s3_region": "us-west-1",
-                "secret_key": "asdfqwer1234"
+                "secret_key": "asdfqwer1234",
+                "reset_password": True,
+                "force_random_password": False
             }
         }
 
@@ -432,7 +469,9 @@ class ConfigTests(unittest.TestCase):
             "no",
             "no",
             "filesystem",
-            os.getcwd()
+            os.getcwd(),
+            "",
+            ""
         ]
         g = input_generator(values)
         expected = {
@@ -443,7 +482,9 @@ class ConfigTests(unittest.TestCase):
                 "external_user_password": "password",
                 "external_user_name": "user",
                 "number_of_threads": 2,
-                "import_user_id": 1
+                "import_user_id": 1,
+                "reset_password": True,
+                "force_random_password": False
             }
         }
 
@@ -465,7 +506,9 @@ class ConfigTests(unittest.TestCase):
             "no",
             "no",
             "filesystem",
-            os.getcwd()
+            os.getcwd(),
+            "",
+            ""
         ]
         congregate_path = get_congregate_path()
         g = input_generator(values)
@@ -478,7 +521,9 @@ class ConfigTests(unittest.TestCase):
                 "external_user_name": "user",
                 "number_of_threads": 2,
                 "repo_list_path": "%s/repo_list.json" % congregate_path,
-                "import_user_id": 1
+                "import_user_id": 1,
+                "reset_password": True,
+                "force_random_password": False
             }
         }
 
@@ -500,7 +545,9 @@ class ConfigTests(unittest.TestCase):
             "no",
             "no",
             "filesystem",
-            os.getcwd()
+            os.getcwd(),
+            "",
+            ""
         ]
         g = input_generator(values)
         expected = {
@@ -512,7 +559,9 @@ class ConfigTests(unittest.TestCase):
                 "external_user_name": "user",
                 "number_of_threads": 2,
                 "repo_list_path": "/path/to/repo/list.json",
-                "import_user_id": 1
+                "import_user_id": 1,
+                "reset_password": True,
+                "force_random_password": False
             }
         }
 
