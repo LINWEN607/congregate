@@ -10,6 +10,14 @@ import json
 
 
 class UsersClient(BaseClass):
+    PERMISSIONS = {
+        10: "Guest",
+        20: "Reporter",
+        30: "Developer",
+        40: "Maintainer",
+        50: "Owner"
+    }
+
     def __init__(self):
         self.groups = GroupsApi()
         self.users = UsersApi()
@@ -232,17 +240,19 @@ class UsersClient(BaseClass):
         with open("%s/data/newer_users.json" % self.app_path, "r") as f:
             new_users = json.load(f)
 
-        for user in new_users:
-            data = {
-                "user_id": user["id"],
-                "access_level": 10
-            }
-            try:
-                self.log.debug("Adding user {} to parent group".format(user["username"]))
-                self.groups.add_member_to_group(
-                    self.config.parent_id, self.config.destination_host, self.config.destination_token, data)
-            except RequestException, e:
-                self.log.error("Failed adding user {0} to parent group, with error:\n{1}".format(user, e))
+        access_level = self.config.parent_access_level
+        if access_level is not None:
+            for user in new_users:
+                data = {
+                    "user_id": user["id"],
+                    "access_level": access_level
+                }
+                try:
+                    self.log.debug("Adding user {} to parent group".format(user["username"]))
+                    self.groups.add_member_to_group(
+                        self.config.parent_id, self.config.destination_host, self.config.destination_token, data)
+                except RequestException, e:
+                    self.log.error("Failed adding user {0} to parent group, with error:\n{1}".format(user, e))
 
     def remove_users_from_parent_group(self):
         count = 0
@@ -258,19 +268,25 @@ class UsersClient(BaseClass):
         print count
 
     def lower_user_permissions(self):
-        all_users = list(api.list_all(self.config.destination_host,
-                                      self.config.destination_token, "groups/%d/members" % self.config.parent_id))
-        for user in all_users:
-            if user["access_level"] == 20:
-                self.log.info("Lowering %s's access level to guest" %
-                              user["username"])
-                response = api.generate_put_request(self.config.destination_host, self.config.destination_token,
-                                                    "groups/%d/members/%d?access_level=10" % (
-                                                        self.config.parent_id, user["id"]), data=None)
-                print response
-            else:
-                self.log.info("Not changing %s's access level" %
-                              user["username"])
+        access_level = self.config.parent_access_level
+        try:
+            if access_level is not None:
+                all_users = list(api.list_all(
+                    self.config.destination_host,
+                    self.config.destination_token,
+                    "groups/%d/members" % self.config.parent_id))
+                for user in all_users:
+                    self.log.info("Lowering {0}'s parent access level to {1}"
+                        .format(user["username"], self.PERMISSIONS[access_level]))
+                    response = api.generate_put_request(
+                        self.config.destination_host,
+                        self.config.destination_token,
+                        "groups/{0}/members/{1}?access_level={2}"
+                        .format(self.config.parent_id, user["id"], access_level), data=None)
+                    if response.status_code != 200:
+                        self.log.warn("Failed to alter {0}'s access level ({1})".format(user["username"], response.content))
+        except RequestException, e:
+            self.log.error("Failed to lower user's parent access level, with error:\n{}".format(e))
 
     def remove_blocked_users(self):
         count = 0

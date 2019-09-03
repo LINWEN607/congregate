@@ -1,11 +1,9 @@
 import unittest
 import mock
-import json
 import responses
 from congregate.tests.mockapi.users import MockUsersApi
 from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.users import UsersClient
-from congregate.helpers.conf import ig
 
 class UserTests(unittest.TestCase):
     def setUp(self):

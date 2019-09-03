@@ -281,11 +281,8 @@ class GroupsClient(BaseClass):
             # TODO: Change this to a search check. This assumes the instance doesn't contain various nested groups with the same name
             new_group_id = api.generate_get_request(
                 self.config.destination_host, self.config.destination_token, 'groups', params={'search': group['name']}).json()
-            print new_group_id
             members = group["members"]
             for member in members:
-                if member["id"] == self.config.import_user_id:
-                    root_user_present = True
                 new_member = {
                     "user_id": member["id"],
                     "access_level": int(member["access_level"])
