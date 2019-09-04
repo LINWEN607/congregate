@@ -9,6 +9,7 @@ from congregate.cli import config
 from congregate.helpers.seed.generate_token import token_generator
 from congregate.helpers.seed.generator import SeedDataGenerator
 
+
 @pytest.mark.e2e
 class MigrationEndToEndTest(unittest.TestCase):
     def setUp(self):
@@ -31,7 +32,9 @@ class MigrationEndToEndTest(unittest.TestCase):
             "",  # Parent group id
             "",  # Mirroring yes/no
             "",  # Staging location (default filesystem)
-            ""  # Staging location path
+            "",  # Staging location path
+            "",     # reset_password
+            ""      # force_random_password
         ]
 
         g = input_generator(values)

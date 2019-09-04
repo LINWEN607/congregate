@@ -137,8 +137,25 @@ class ig(object):
     def username_suffix(self):
         return self.config.get("username_suffix", None)
 
+    @property
+    def group_full_path_prefix(self):
+        return self.config.get("group_full_path_prefix", None)
 
-    # TODO - refactor - Hidden properties - not part of the initial configuration
+    @property
+    def shared_runners_enabled(self):
+        return self.config.get("shared_runners_enabled", True)
+
+    @property
+    def append_project_suffix_on_existing_found(self):
+        """
+        This setting determines if, in the instance of an existing project being found at the destination with the
+        same name as the source project, if we should append a value and create the project, or just fail the import.
+
+        :return:    The value from the append_project_suffix configuration value, or `False` by default. Note:
+                    The `False` return will execute the default behavior and cause the import to fail if an existing
+                    project is found
+        """
+        return self.config.get("append_project_suffix_on_existing_found", False)
 
     @property
     def strip_namespace_prefix(self):
@@ -162,24 +179,21 @@ class ig(object):
         return self.config.get("importexport_wait", 30)
 
     @property
-    def group_full_path_prefix(self):
-        return self.config.get("group_full_path_prefix", None)
+    def reset_password(self):
+        """
+        Whether or not we should send the reset password link on user creation. Note: The API defaults to false
+        :return: The setting from the config file or True
+        """
+        return self.config.get("reset_password", True)
 
     @property
-    def shared_runners_enabled(self):
-        return self.config.get("shared_runners_enabled", True)
-
-    @property
-    def append_project_suffix_on_existing_found(self):
+    def force_random_password(self):
         """
-        This setting determines if, in the instance of an existing project being found at the destination with the
-        same name as the source project, if we should append a value and create the project, or just fail the import.
-
-        :return:    The value from the append_project_suffix configuration value, or `False` by default. Note:
-                    The `False` return will execute the default behavior and cause the import to fail if an existing
-                    project is found
+        This API flag for user creation is not well-documented, but can be used in combination with password and
+        reset_password to generate a random password at create
+        :return: The setting from the config file or False
         """
-        return self.config.get("append_project_suffix_on_existing_found", False)
+        return self.config.get("force_random_password", False)
 
     @threads.setter
     def threads(self, value):

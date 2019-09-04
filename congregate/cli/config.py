@@ -129,6 +129,18 @@ def generate_config():
             command = "aws configure set aws_secret_access_key %s" % secret_key
             subprocess.call(command.split(" "))
 
+    reset_password = raw_input("Users receive password reset emails (default: true)")
+    if len(reset_password) != 0 and "false" in str(reset_password).lower().strip():
+        config["reset_password"] = False
+    else:
+        config["reset_password"] = True
+
+    force_random_password = raw_input("Should the users be created with a randomized password (default: false)")
+    if len(force_random_password) != 0 and "true" in str(force_random_password).lower().strip():
+        config["force_random_password"] = True
+    else:
+        config["force_random_password"] = False
+
     config["number_of_threads"] = 2
 
     wrapper["config"] = config
