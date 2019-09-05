@@ -142,7 +142,7 @@ class UserTests(unittest.TestCase):
         responses.add(responses.GET, url_value,
                     json=self.mock_users.get_dummy_old_users()[0], status=200)
         # pylint: enable=no-member
-        
+
         url_value = "https://gitlabdestination.com/api/v4/users/27"
         # pylint: disable=no-member
         responses.add(responses.GET, url_value,
@@ -153,7 +153,7 @@ class UserTests(unittest.TestCase):
         # pylint: disable=no-member
         responses.add(responses.GET, url_value,
                     json=self.mock_users.get_dummy_old_users()[1], status=200)
-        
+
         # pylint: enable=no-member
         url_value = "https://gitlabdestination.com/api/v4/users/28"
         # pylint: disable=no-member
@@ -192,286 +192,282 @@ class UserTests(unittest.TestCase):
         ]
 
         self.assertListEqual(actual, expected)
-    #
-    # # pylint: disable=no-member
-    # @responses.activate
-    # # pylint: enable=no-member
-    # @mock.patch('congregate.helpers.conf.ig.source_host', new_callable=mock.PropertyMock)
-    # @mock.patch('congregate.helpers.conf.ig.destination_host', new_callable=mock.PropertyMock)
-    # def test_update_users_no_new_users(self, destination, source):
-    #     source.return_value = "https://gitlabsource.com"
-    #     destination.return_value = "https://gitlabdestination.com"
-    #     old_users = [
-    #         {
-    #             "name": "test-app",
-    #             "members": self.mock_users.get_all_users_list()
-    #         }
-    #     ]
-    #     new_users = []
-    #
-    #     url_value = "https://gitlabsource.com/api/v4/users/1"
-    #     # pylint: disable=no-member
-    #     responses.add(responses.GET, url_value,
-    #                 json=self.mock_users.get_dummy_old_users()[0], status=200)
-    #     # pylint: enable=no-member
-    #     url_value = "https://gitlabsource.com/api/v4/users/2"
-    #     # pylint: disable=no-member
-    #     responses.add(responses.GET, url_value,
-    #                 json=self.mock_users.get_dummy_old_users()[1], status=200)
-    #     # pylint: enable=no-member
-    #     url_value = "https://gitlabdestination.com/api/v4/users/27"
-    #     # pylint: disable=no-member
-    #     responses.add(responses.GET, url_value,
-    #                 json=self.mock_users.get_dummy_new_users()[0], status=200)
-    #     # pylint: enable=no-member
-    #     url_value = "https://gitlabdestination.com/api/v4/users/28"
-    #     # pylint: disable=no-member
-    #     responses.add(responses.GET, url_value,
-    #                 json=self.mock_users.get_dummy_new_users()[1], status=200)
-    #     # pylint: enable=no-member
-    #     url_value = "https://gitlabdestination.com/api/v4/user"
-    #     # pylint: disable=no-member
-    #     responses.add(responses.GET, url_value,
-    #                 json=self.mock_users.get_current_user(), status=200)
-    #     # pylint: enable=no-member
-    #
-    #     actual = self.users.update_users(old_users, new_users)
-    #
-    #     expected = [
-    #         {
-    #             'name': 'test-app',
-    #             'members': [
-    #                 {
-    #                     'username': 'raymond_smith',
-    #                     'access_level': 30,
-    #                     'state': 'active',
-    #                     'avatar_url': 'https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon',
-    #                     'web_url': 'http://192.168.1.8:3000/root',
-    #                     'name': 'Raymond Smith',
-    #                     'id': 1,
-    #                     'expires_at': '2012-10-22T14:13:35Z'
-    #                 },
-    #                 {
-    #                     'username': 'john_doe',
-    #                     'access_level': 30,
-    #                     'state': 'active',
-    #                     'avatar_url': 'https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon',
-    #                     'web_url': 'http://192.168.1.8:3000/root',
-    #                     'name': 'John Doe',
-    #                     'id': 1,
-    #                     'expires_at': '2012-10-22T14:13:35Z'
-    #                 }
-    #             ]
-    #         }
-    #     ]
-    #
-    #     self.assertListEqual(actual, expected)
 
-    # # pylint: disable=no-member
-    # @responses.activate
-    # # pylint: enable=no-member
-    # @mock.patch('congregate.helpers.conf.ig.source_host', new_callable=mock.PropertyMock)
-    # @mock.patch('congregate.helpers.conf.ig.destination_host', new_callable=mock.PropertyMock)
-    # def test_update_users_wrong_email(self, destination, source):
-    #     source.return_value = "https://gitlabsource.com"
-    #     destination.return_value = "https://gitlabdestination.com"
-    #     old_users = [
-    #         {
-    #             "name": "test-app",
-    #             "members": self.mock_users.get_all_users_list()
-    #         }
-    #     ]
-    #     new_users = self.mock_users.get_dummy_new_users()
-    #
-    #     wrong_raymond_smith = self.mock_users.get_dummy_new_users()[0]
-    #     wrong_raymond_smith["email"] = "not_raymond_smith@email.com"
-    #
-    #     url_value = "https://gitlabsource.com/api/v4/users/1"
-    #     # pylint: disable=no-member
-    #     responses.add(responses.GET, url_value,
-    #                 json=self.mock_users.get_dummy_old_users()[0], status=200)
-    #     # pylint: enable=no-member
-    #     url_value = "https://gitlabsource.com/api/v4/users/2"
-    #     # pylint: disable=no-member
-    #     responses.add(responses.GET, url_value,
-    #                 json=self.mock_users.get_dummy_old_users()[1], status=200)
-    #     # pylint: enable=no-member
-    #     url_value = "https://gitlabdestination.com/api/v4/users/27"
-    #     # pylint: disable=no-member
-    #     responses.add(responses.GET, url_value,
-    #                 json=self.mock_users.get_dummy_new_users()[1], status=200)
-    #     # pylint: enable=no-member
-    #     url_value = "https://gitlabdestination.com/api/v4/users/28"
-    #     # pylint: disable=no-member
-    #     responses.add(responses.GET, url_value,
-    #                 json=wrong_raymond_smith, status=200)
-    #     # pylint: enable=no-member
-    #     url_value = "https://gitlabdestination.com/api/v4/user"
-    #     # pylint: disable=no-member
-    #     responses.add(responses.GET, url_value,
-    #                 json=self.mock_users.get_current_user(), status=200)
-    #     # pylint: enable=no-member
-    #
-    #     actual = self.users.update_users(old_users, new_users)
-    #
-    #     expected = [
-    #         {
-    #             'name': 'test-app',
-    #             'members': [
-    #                 {
-    #                     'username': 'raymond_smith',
-    #                     'access_level': 30,
-    #                     'state': 'active',
-    #                     'avatar_url': 'https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon',
-    #                     'web_url': 'http://192.168.1.8:3000/root',
-    #                     'name': 'Raymond Smith',
-    #                     'id': 1,
-    #                     'expires_at': '2012-10-22T14:13:35Z'
-    #                 },
-    #                 {
-    #                     'username': 'john_doe',
-    #                     'access_level': 30,
-    #                     'state': 'active',
-    #                     'avatar_url': 'https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon',
-    #                     'web_url': 'http://192.168.1.8:3000/root',
-    #                     'name': 'John Doe',
-    #                     'id': 27,
-    #                     'expires_at': '2012-10-22T14:13:35Z'
-    #                 }
-    #             ]
-    #         }
-    #     ]
-    #
-    #     self.assertListEqual(actual, expected)
+    # pylint: disable=no-member
+    @responses.activate
+    # pylint: enable=no-member
+    @mock.patch('congregate.helpers.conf.ig.source_host', new_callable=mock.PropertyMock)
+    @mock.patch('congregate.helpers.conf.ig.destination_host', new_callable=mock.PropertyMock)
+    def test_update_users_no_new_users(self, destination, source):
+        source.return_value = "https://gitlabsource.com"
+        destination.return_value = "https://gitlabdestination.com"
+        old_users = [
+            {
+                "name": "test-app",
+                "members": self.mock_users.get_all_users_list()
+            }
+        ]
+        new_users = []
 
-    # # pylint: disable=no-member
-    # @responses.activate
-    # # pylint: enable=no-member
-    # @mock.patch('congregate.helpers.conf.ig.source_host', new_callable=mock.PropertyMock)
-    # @mock.patch('congregate.helpers.conf.ig.destination_host', new_callable=mock.PropertyMock)
-    # def test_update_users_invalid_id(self, destination, source):
-    #     source.return_value = "https://gitlabsource.com"
-    #     destination.return_value = "https://gitlabdestination.com"
-    #     old_users = [
-    #         {
-    #             "name": "test-app",
-    #             "members": self.mock_users.get_all_users_list()
-    #         }
-    #     ]
-    #     new_users = self.mock_users.get_dummy_new_users()
-    #
-    #
-    #
-    #     url_value = "https://gitlabsource.com/api/v4/users/1"
-    #     # pylint: disable=no-member
-    #     responses.add(responses.GET, url_value,
-    #                 json=self.mock_users.get_dummy_old_users()[0], status=200)
-    #     # pylint: enable=no-member
-    #     url_value = "https://gitlabsource.com/api/v4/users/2"
-    #     # pylint: disable=no-member
-    #     responses.add(responses.GET, url_value,
-    #                 json=self.mock_users.get_dummy_old_users()[1], status=200)
-    #     # pylint: enable=no-member
-    #     url_value = "https://gitlabdestination.com/api/v4/users/27"
-    #     # pylint: disable=no-member
-    #     responses.add(responses.GET, url_value,
-    #                 json=self.mock_users.get_dummy_new_users()[1], status=200)
-    #     # pylint: enable=no-member
-    #     url_value = "https://gitlabdestination.com/api/v4/users/28"
-    #     # pylint: disable=no-member
-    #     responses.add(responses.GET, url_value,
-    #                 json=self.mock_users.get_user_404(), status=200)
-    #     # pylint: enable=no-member
-    #     url_value = "https://gitlabdestination.com/api/v4/user"
-    #     # pylint: disable=no-member
-    #     responses.add(responses.GET, url_value,
-    #                 json=self.mock_users.get_current_user(), status=200)
-    #     # pylint: enable=no-member
-    #
-    #     actual = self.users.update_users(old_users, new_users)
-    #
-    #     expected = [
-    #         {
-    #             'name': 'test-app',
-    #             'members': [
-    #                 {
-    #                     'username': 'raymond_smith',
-    #                     'access_level': 30,
-    #                     'state': 'active',
-    #                     'avatar_url': 'https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon',
-    #                     'web_url': 'http://192.168.1.8:3000/root',
-    #                     'name': 'Raymond Smith',
-    #                     'id': 1,
-    #                     'expires_at': '2012-10-22T14:13:35Z'
-    #                 },
-    #                 {
-    #                     'username': 'john_doe',
-    #                     'access_level': 30,
-    #                     'state': 'active',
-    #                     'avatar_url': 'https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon',
-    #                     'web_url': 'http://192.168.1.8:3000/root',
-    #                     'name': 'John Doe',
-    #                     'id': 27,
-    #                     'expires_at': '2012-10-22T14:13:35Z'
-    #                 }
-    #             ]
-    #         }
-    #     ]
-    #
-    #     self.assertListEqual(actual, expected)
+        url_value = "https://gitlabsource.com/api/v4/users/1"
+        # pylint: disable=no-member
+        responses.add(responses.GET, url_value,
+                    json=self.mock_users.get_dummy_old_users()[0], status=200)
+        # pylint: enable=no-member
+        url_value = "https://gitlabsource.com/api/v4/users/2"
+        # pylint: disable=no-member
+        responses.add(responses.GET, url_value,
+                    json=self.mock_users.get_dummy_old_users()[1], status=200)
+        # pylint: enable=no-member
+        url_value = "https://gitlabdestination.com/api/v4/users/27"
+        # pylint: disable=no-member
+        responses.add(responses.GET, url_value,
+                    json=self.mock_users.get_dummy_new_users()[0], status=200)
+        # pylint: enable=no-member
+        url_value = "https://gitlabdestination.com/api/v4/users/28"
+        # pylint: disable=no-member
+        responses.add(responses.GET, url_value,
+                    json=self.mock_users.get_dummy_new_users()[1], status=200)
+        # pylint: enable=no-member
+        url_value = "https://gitlabdestination.com/api/v4/user"
+        # pylint: disable=no-member
+        responses.add(responses.GET, url_value,
+                    json=self.mock_users.get_current_user(), status=200)
+        # pylint: enable=no-member
 
-    # # pylint: disable=no-member
-    # @responses.activate
-    # # pylint: enable=no-member
-    # @mock.patch('congregate.helpers.conf.ig.destination_host', new_callable=mock.PropertyMock)
-    # @mock.patch('congregate.helpers.api.get_count')
-    # def test_handle_user_creation(self, count, destination):
-    #     count.return_value = 1
-    #     destination.return_value = "https://gitlabdestination.com"
-    #     new_user = self.mock_users.get_dummy_user()
-    #     new_user.pop("id")
-    #
-    #     url_value = "https://gitlabdestination.com/api/v4/users"
-    #     # pylint: disable=no-member
-    #     responses.add(responses.POST, url_value,
-    #                 json=self.mock_users.get_dummy_new_users()[1], status=200)
-    #     # pylint: enable=no-member
-    #     url_value = "https://gitlabdestination.com/api/v4/users?search=%s&per_page=50&page=1" % (new_user["email"])
-    #     # pylint: disable=no-member
-    #     responses.add(responses.GET, url_value,
-    #                 json=[self.mock_users.get_dummy_user()], status=200)
-    #     # pylint: enable=no-member
-    #
-    #     actual = self.users.handle_user_creation(new_user)
-    #     expected = 27
-    #
-    #     self.assertEqual(actual, expected)
-    #
-    # # pylint: disable=no-member
-    # @responses.activate
-    # # pylint: enable=no-member
-    # @mock.patch('congregate.helpers.conf.ig.destination_host', new_callable=mock.PropertyMock)
-    # @mock.patch('congregate.helpers.api.get_count')
-    # def test_handle_user_creation_user_already_exists(self, count, destination):
-    #     count.return_value = 1
-    #     destination.return_value = "https://gitlabdestination.com"
-    #     new_user = self.mock_users.get_dummy_user()
-    #     new_user.pop("id")
-    #
-    #     url_value = "https://gitlabdestination.com/api/v4/users"
-    #     # pylint: disable=no-member
-    #     responses.add(responses.POST, url_value,
-    #                 json=self.mock_users.get_dummy_new_users()[1], status=409)
-    #     # pylint: enable=no-member
-    #     url_value = "https://gitlabdestination.com/api/v4/users?search=%s&per_page=50&page=%d" % (new_user["email"], count.return_value)
-    #     # pylint: disable=no-member
-    #     responses.add(responses.GET, url_value,
-    #                 json=[self.mock_users.get_dummy_user()], status=200)
-    #     # pylint: enable=no-member
-    #
-    #     actual = self.users.handle_user_creation(new_user)
-    #     expected = 27
-    #
-    #     self.assertEqual(actual, expected)
-    #
-    #
+        actual = self.users.update_users(old_users, new_users)
+
+        expected = [
+            {
+                'name': 'test-app',
+                'members': [
+                    {
+                        'username': 'raymond_smith',
+                        'access_level': 30,
+                        'state': 'active',
+                        'avatar_url': 'https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon',
+                        'web_url': 'http://192.168.1.8:3000/root',
+                        'name': 'Raymond Smith',
+                        'id': 1,
+                        'expires_at': '2012-10-22T14:13:35Z'
+                    },
+                    {
+                        'username': 'john_doe',
+                        'access_level': 30,
+                        'state': 'active',
+                        'avatar_url': 'https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon',
+                        'web_url': 'http://192.168.1.8:3000/root',
+                        'name': 'John Doe',
+                        'id': 1,
+                        'expires_at': '2012-10-22T14:13:35Z'
+                    }
+                ]
+            }
+        ]
+
+        self.assertListEqual(actual, expected)
+
+    # pylint: disable=no-member
+    @responses.activate
+    # pylint: enable=no-member
+    @mock.patch('congregate.helpers.conf.ig.source_host', new_callable=mock.PropertyMock)
+    @mock.patch('congregate.helpers.conf.ig.destination_host', new_callable=mock.PropertyMock)
+    def test_update_users_wrong_email(self, destination, source):
+        source.return_value = "https://gitlabsource.com"
+        destination.return_value = "https://gitlabdestination.com"
+        old_users = [
+            {
+                "name": "test-app",
+                "members": self.mock_users.get_all_users_list()
+            }
+        ]
+        new_users = self.mock_users.get_dummy_new_users()
+
+        wrong_raymond_smith = self.mock_users.get_dummy_new_users()[0]
+        wrong_raymond_smith["email"] = "not_raymond_smith@email.com"
+
+        url_value = "https://gitlabsource.com/api/v4/users/1"
+        # pylint: disable=no-member
+        responses.add(responses.GET, url_value,
+                    json=self.mock_users.get_dummy_old_users()[0], status=200)
+        # pylint: enable=no-member
+        url_value = "https://gitlabsource.com/api/v4/users/2"
+        # pylint: disable=no-member
+        responses.add(responses.GET, url_value,
+                    json=self.mock_users.get_dummy_old_users()[1], status=200)
+        # pylint: enable=no-member
+        url_value = "https://gitlabdestination.com/api/v4/users/27"
+        # pylint: disable=no-member
+        responses.add(responses.GET, url_value,
+                    json=self.mock_users.get_dummy_new_users()[1], status=200)
+        # pylint: enable=no-member
+        url_value = "https://gitlabdestination.com/api/v4/users/28"
+        # pylint: disable=no-member
+        responses.add(responses.GET, url_value,
+                    json=wrong_raymond_smith, status=200)
+        # pylint: enable=no-member
+        url_value = "https://gitlabdestination.com/api/v4/user"
+        # pylint: disable=no-member
+        responses.add(responses.GET, url_value,
+                    json=self.mock_users.get_current_user(), status=200)
+        # pylint: enable=no-member
+
+        actual = self.users.update_users(old_users, new_users)
+
+        expected = [
+            {
+                'name': 'test-app',
+                'members': [
+                    {
+                        'username': 'raymond_smith',
+                        'access_level': 30,
+                        'state': 'active',
+                        'avatar_url': 'https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon',
+                        'web_url': 'http://192.168.1.8:3000/root',
+                        'name': 'Raymond Smith',
+                        'id': 1,
+                        'expires_at': '2012-10-22T14:13:35Z'
+                    },
+                    {
+                        'username': 'john_doe',
+                        'access_level': 30,
+                        'state': 'active',
+                        'avatar_url': 'https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon',
+                        'web_url': 'http://192.168.1.8:3000/root',
+                        'name': 'John Doe',
+                        'id': 27,
+                        'expires_at': '2012-10-22T14:13:35Z'
+                    }
+                ]
+            }
+        ]
+
+        self.assertListEqual(actual, expected)
+
+    # pylint: disable=no-member
+    @responses.activate
+    # pylint: enable=no-member
+    @mock.patch('congregate.helpers.conf.ig.source_host', new_callable=mock.PropertyMock)
+    @mock.patch('congregate.helpers.conf.ig.destination_host', new_callable=mock.PropertyMock)
+    def test_update_users_invalid_id(self, destination, source):
+        source.return_value = "https://gitlabsource.com"
+        destination.return_value = "https://gitlabdestination.com"
+        old_users = [
+            {
+                "name": "test-app",
+                "members": self.mock_users.get_all_users_list()
+            }
+        ]
+        new_users = self.mock_users.get_dummy_new_users()
+
+        url_value = "https://gitlabsource.com/api/v4/users/1"
+        # pylint: disable=no-member
+        responses.add(responses.GET, url_value,
+                    json=self.mock_users.get_dummy_old_users()[0], status=200)
+        # pylint: enable=no-member
+        url_value = "https://gitlabsource.com/api/v4/users/2"
+        # pylint: disable=no-member
+        responses.add(responses.GET, url_value,
+                    json=self.mock_users.get_dummy_old_users()[1], status=200)
+        # pylint: enable=no-member
+        url_value = "https://gitlabdestination.com/api/v4/users/27"
+        # pylint: disable=no-member
+        responses.add(responses.GET, url_value,
+                    json=self.mock_users.get_dummy_new_users()[1], status=200)
+        # pylint: enable=no-member
+        url_value = "https://gitlabdestination.com/api/v4/users/28"
+        # pylint: disable=no-member
+        responses.add(responses.GET, url_value,
+                    json=self.mock_users.get_user_404(), status=200)
+        # pylint: enable=no-member
+        url_value = "https://gitlabdestination.com/api/v4/user"
+        # pylint: disable=no-member
+        responses.add(responses.GET, url_value,
+                    json=self.mock_users.get_current_user(), status=200)
+        # pylint: enable=no-member
+
+        actual = self.users.update_users(old_users, new_users)
+
+        expected = [
+            {
+                'name': 'test-app',
+                'members': [
+                    {
+                        'username': 'raymond_smith',
+                        'access_level': 30,
+                        'state': 'active',
+                        'avatar_url': 'https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon',
+                        'web_url': 'http://192.168.1.8:3000/root',
+                        'name': 'Raymond Smith',
+                        'id': 1,
+                        'expires_at': '2012-10-22T14:13:35Z'
+                    },
+                    {
+                        'username': 'john_doe',
+                        'access_level': 30,
+                        'state': 'active',
+                        'avatar_url': 'https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon',
+                        'web_url': 'http://192.168.1.8:3000/root',
+                        'name': 'John Doe',
+                        'id': 27,
+                        'expires_at': '2012-10-22T14:13:35Z'
+                    }
+                ]
+            }
+        ]
+
+        self.assertListEqual(actual, expected)
+
+    # pylint: disable=no-member
+    @responses.activate
+    # pylint: enable=no-member
+    @mock.patch('congregate.helpers.conf.ig.destination_host', new_callable=mock.PropertyMock)
+    @mock.patch('congregate.helpers.api.get_count')
+    def test_handle_user_creation(self, count, destination):
+        count.return_value = 1
+        destination.return_value = "https://gitlabdestination.com"
+        new_user = self.mock_users.get_dummy_user()
+        new_user.pop("id")
+
+        url_value = "https://gitlabdestination.com/api/v4/users"
+        # pylint: disable=no-member
+        responses.add(responses.POST, url_value,
+                    json=self.mock_users.get_dummy_new_users()[1], status=200)
+        # pylint: enable=no-member
+        url_value = "https://gitlabdestination.com/api/v4/users?search=%s&per_page=50&page=1" % (new_user["email"])
+        # pylint: disable=no-member
+        responses.add(responses.GET, url_value,
+                    json=[self.mock_users.get_dummy_user()], status=200)
+        # pylint: enable=no-member
+
+        actual = self.users.handle_user_creation(new_user)
+        expected = 27
+
+        self.assertEqual(actual, expected)
+
+    # pylint: disable=no-member
+    @responses.activate
+    # pylint: enable=no-member
+    @mock.patch('congregate.helpers.conf.ig.destination_host', new_callable=mock.PropertyMock)
+    @mock.patch('congregate.helpers.api.get_count')
+    def test_handle_user_creation_user_already_exists(self, count, destination):
+        count.return_value = 1
+        destination.return_value = "https://gitlabdestination.com"
+        new_user = self.mock_users.get_dummy_user()
+        new_user.pop("id")
+
+        url_value = "https://gitlabdestination.com/api/v4/users"
+        # pylint: disable=no-member
+        responses.add(responses.POST, url_value,
+                    json=self.mock_users.get_dummy_new_users()[1], status=409)
+        # pylint: enable=no-member
+        url_value = "https://gitlabdestination.com/api/v4/users?search=%s&per_page=50&page=%d" % (new_user["email"], count.return_value)
+        # pylint: disable=no-member
+        responses.add(responses.GET, url_value,
+                    json=[self.mock_users.get_dummy_user()], status=200)
+        # pylint: enable=no-member
+
+        actual = self.users.handle_user_creation(new_user)
+        expected = 27
+
+        self.assertEqual(actual, expected)

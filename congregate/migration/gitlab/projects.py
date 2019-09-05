@@ -146,7 +146,7 @@ class ProjectsClient(BaseClass):
     def update_badges(self, new_id, namespace, badges):
         try:
             for badge in badges:
-                # split after hostname and retrieve only reamining path
+                # split after hostname and retrieve only remaining path
                 link_url_suffix = badge["link_url"].split("/", 3)[3]
                 image_url_suffix = badge["image_url"].split("/", 3)[3]
                 data = {
@@ -159,7 +159,7 @@ class ProjectsClient(BaseClass):
                                                      badge["id"],
                                                      data=data)
         except RequestException, e:
-            self.log.error("Failed to update destination project ID {0} badge {1}, with error:\n{1}".format(new_id, badge, e))
+            self.log.error("Failed to update destination project ID {0} badge {1}, with error:\n{2}".format(new_id, badge, e))
 
     def validate_staged_projects_schema(self):
         with open("%s/data/staged_groups.json" % self.app_path, "r") as f:

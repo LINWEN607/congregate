@@ -128,7 +128,7 @@ def migrate_single_project_info(project, id):
     # Shared with groups
     projects.add_shared_groups(old_id, id)
 
-    # Update project badges
+    # Update project badges to use destination path hostname
     badges = projects_api.get_all_project_badges(b.config.destination_host, b.config.destination_token, id)
     if badges:
         b.log.info("Updating project {0} badges".format(name))

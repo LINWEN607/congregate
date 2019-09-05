@@ -569,7 +569,7 @@ class GroupsClient(BaseClass):
                                                 new_id,
                                                 data=data)
         except RequestException, e:
-            self.log.error("Failed to add destination group ID {0} badge {1}, with error:\n{2}".format(new_id, badge, e))
+            self.log.error("Failed to add group ID {0} badge {1}, with error:\n{2}".format(new_id, badge, e))
 
     def validate_staged_groups_schema(self):
         with open("%s/data/staged_groups.json" % self.app_path, "r") as f:

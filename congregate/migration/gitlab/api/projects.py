@@ -1,6 +1,6 @@
-from congregate.helpers import api
-from urllib import quote_plus
 import json
+from urllib import quote_plus
+from congregate.helpers import api
 
 class ProjectsApi():
 

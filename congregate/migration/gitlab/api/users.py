@@ -1,5 +1,5 @@
-from congregate.helpers import api
 import json
+from congregate.helpers import api
 
 class UsersApi():
 
