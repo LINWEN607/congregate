@@ -22,14 +22,15 @@ class GroupsClient(BaseClass):
         '''
         try:
             if self.config.parent_id is not None:
-                return self.groups_api.get_group(self.config.parent_id, self.config.destination_host, self.config.destination_token).json()["full_path"]
+                return self.groups_api.get_group(self.config.parent_id, self.config.destination_host,
+                                                 self.config.destination_token).json()["full_path"]
             else:
                 return ""
         except ConfigurationException, e:
             self.log.error(e)
             exit(1)
 
-    def traverse_groups(self, base_groups, transient_list,  host, token, parent_group=None):
+    def traverse_groups(self, base_groups, transient_list, host, token, parent_group=None):
         if parent_group is not None:
             parent_group["child_ids"] = []
         for group in base_groups:
@@ -58,30 +59,31 @@ class GroupsClient(BaseClass):
         prefix = ""
         if location != "source":
             prefix = location
-        
+
         if not top_level_group:
             groups = list(self.groups_api.get_all_groups(
                 host, token))
         else:
             if self.config.parent_id is not None:
-                groups = [self.groups_api.get_group(self.config.parent_id, self.config.destination_host, self.config.destination_token).json()]
+                groups = [self.groups_api.get_group(self.config.parent_id, self.config.destination_host,
+                                                    self.config.destination_token).json()]
                 prefix += str(self.config.parent_id)
                 print groups
             else:
                 self.log.info("No parent ID found")
                 return None
-        
+
         transient_list = []
         self.traverse_groups(groups, transient_list,
-                            host, token)
+                             host, token)
 
         self.create_groups_json(transient_list, prefix=prefix)
         if not quiet:
             self.log.info(
                 "Retrieved %d groups. Check groups.json to see all retrieved groups" % len(groups))
-        
+
         return transient_list
-    
+
     def create_groups_json(self, groups, prefix=""):
         file_path = '%s/data/%sgroups.json' % (self.app_path, prefix)
         with open(file_path, "w") as f:
@@ -129,19 +131,17 @@ class GroupsClient(BaseClass):
                         if rewritten_groups.get(group["old_parent_id"], None) is not None:
                             parent_id = rewritten_groups[group["old_parent_id"]]["id"]
 
-                    # search = api.search(self.config.destination_host,
-                    # self.config.destination_token, "groups", group["parent_namespace"])
-
-                    self.log.info("have parent id of {0}".format(parent_id))
-
+                    # search = api.search(self.config.destination_host, self.config.destination_token, "groups", group["parent_namespace"])
                     if parent_id is not None:
                         if rewritten_groups[parent_id].get("new_parent_id", None) is not None:
                             group["parent_id"] = rewritten_groups[parent_id]["new_parent_id"]
                             found = True
                         else:
-                            for s in api.list_all(self.config.destination_host, self.config.destination_token, "groups?search=%s" % group["parent_namespace"]):
+                            for s in api.list_all(self.config.destination_host, self.config.destination_token,
+                                                  "groups?search=%s" % group["parent_namespace"]):
                                 if rewritten_groups.get(parent_id, None) is not None:
-                                    if s["full_path"].lower() == rewritten_groups[group["id"]]["full_parent_namespace"].lower():
+                                    if s["full_path"].lower() == rewritten_groups[group["id"]][
+                                        "full_parent_namespace"].lower():
                                         rewritten_groups[parent_id]["new_parent_id"] = s["id"]
                                         group["parent_id"] = s["id"]
                                         found = True
@@ -149,8 +149,9 @@ class GroupsClient(BaseClass):
                         if found is False:
                             self.traverse_and_migrate(
                                 [rewritten_groups[parent_id]], rewritten_groups)
-                            #search = api.search(self.config.destination_host, self.config.destination_token, "groups", group["parent_namespace"])
-                            for s in api.list_all(self.config.destination_host, self.config.destination_token, "groups?search=%s" % group["parent_namespace"]):
+                            # search = api.search(self.config.destination_host, self.config.destination_token, "groups", group["parent_namespace"])
+                            for s in api.list_all(self.config.destination_host, self.config.destination_token,
+                                                  "groups?search=%s" % group["parent_namespace"]):
                                 if rewritten_groups.get(parent_id, None) is not None:
                                     if s["full_path"].lower() == rewritten_groups[parent_id]["full_path"].lower():
                                         group["parent_id"] = s["id"]
@@ -199,9 +200,7 @@ class GroupsClient(BaseClass):
                                 if "Failed to save group" in response["message"]:
                                     self.log.info(
                                         "Group already exists. Searching for group ID")
-                                    # new_group = api.search(
-                                    # self.config.destination_host,
-                                    # self.config.destination_token, 'groups', group['path'])
+                                    # new_group = api.search(self.config.destination_host, self.config.destination_token, 'groups', group['path'])
 
                                     # if new_group is not None and len(new_group) > 0:
                                     found_group = False
@@ -248,11 +247,30 @@ class GroupsClient(BaseClass):
                         if new_group is not None and len(new_group) > 0:
                             for ng in new_group:
                                 if ng["name"] == group["name"]:
-                                    if ng["parent_id"] == group["parent_id"] and group["parent_id"] == self.config.parent_id:
+                                    if ng["parent_id"] == group["parent_id"] and \
+                                            group["parent_id"] == self.config.parent_id:
                                         new_group_id = ng["id"]
                                         self.log.info("New group found")
                                         break
+
                     if new_group_id:
+                        #   177
+                        current_level = self.get_current_group_notifications(new_group_id)
+                        if not current_level:
+                            self.log.error(
+                                "Skipping adding users for new group id {0} as current notification level could not be determined".format(
+                                    new_group_id))
+                            continue
+
+                        put_response = self.disable_group_notifications(new_group_id)
+                        if put_response:
+                            self.log.error(
+                                "Skipping adding users for new group id {0} as notification could not be disabled ({1})".format(
+                                    new_group_id,
+                                    put_response.status_code)
+                            )
+                            continue
+
                         root_user_present = False
                         for member in members:
                             if member["id"] == self.config.import_user_id:
@@ -264,7 +282,8 @@ class GroupsClient(BaseClass):
 
                             try:
                                 response = api.generate_post_request(
-                                    self.config.destination_host, self.config.destination_token, "groups/%d/members" % new_group_id, json.dumps(new_member))
+                                    self.config.destination_host, self.config.destination_token,
+                                    "groups/%d/members" % new_group_id, json.dumps(new_member))
                             except RequestException, e:
                                 self.log.error(e)
 
@@ -274,8 +293,19 @@ class GroupsClient(BaseClass):
                         if not root_user_present:
                             self.log.info("removing root user from group")
                             response = api.generate_delete_request(
-                                self.config.destination_host, self.config.destination_token, "groups/%d/members/%d" % (new_group_id, int(self.config.import_user_id)))
+                                self.config.destination_host, self.config.destination_token,
+                                "groups/%d/members/%d" % (new_group_id, int(self.config.import_user_id)))
                             print response
+
+                        put_response = self.enable_group_notifications(new_group_id, current_level)
+                        if put_response and put_response.status_code != 200:
+                            self.log.error(
+                                "Could not reset notifications to {0} for new group id {1} ({2})".format(
+                                    current_level,
+                                    new_group_id,
+                                    put_response.status_code
+                                )
+                            )
 
                         # if has_children:
                         #     subgroup = []
@@ -297,13 +327,103 @@ class GroupsClient(BaseClass):
 
             count += 1
 
+    def get_current_group_notifications(self, new_group_id):
+        """
+        Retrieve the current notification level for a group
+        :param new_group_id: The group id to get the notification for
+        :return: The string representation of the notification level, or None
+        """
+        #  177
+        self.log.info(
+            "Retrieving notification settings for /groups/{0}/notification_settings?level=disabled".format(
+                new_group_id))
+
+        try:
+            get_response = api.generate_get_request(
+                self.config.destination_host,
+                self.config.destination_token,
+                "/groups/{0}/notification_settings?level=disabled".format(new_group_id),
+            )
+
+            if get_response and get_response.status_code == 200 and get_response.json().get("level", None) is not None:
+                return get_response.json()["level"]
+            else:
+                self.log.error("Could not get current group notification level for {0}".format(new_group_id))
+        except Exception as e:
+            self.log.error("Exception in get_current_group_notifications of {0} ".format(e))
+
+        return None
+
+    def disable_group_notifications(self, new_group_id):
+        """
+        Disable notifications for a group
+        :param new_group_id: The group id to disable notifications for
+        :return: The put_response object or None on error
+        """
+        # 177 - Update group to turn off notifications while we add users
+
+        self.log.info(
+            "Turning off notification for /groups/{0}/notification_settings?level=disabled".format(
+                new_group_id))
+
+        try:
+            put_response = api.generate_put_request(
+                self.config.destination_host,
+                self.config.destination_token,
+                "/groups/{0}/notification_settings?level=disabled".format(new_group_id),
+                None,
+                None,
+                None
+            )
+            if put_response and put_response.status_code == 200:
+                return put_response
+            else:
+                self.log.error("Could not disable group notification level for {0}".format(new_group_id))
+        except Exception as e:
+            self.log.error("Exception in disable_group_notifications of {0} ".format(e))
+
+        return None
+
+    def enable_group_notifications(self, new_group_id, level):
+        """
+        Disable notifications for a group
+        :param new_group_id: The group id to disable notifications for
+        :param level The level to set the notifications for the group to. Generally the level retrieved with a call to
+                get_current_group_notifications
+        :return: The put_response object or None on error
+        """
+        # 177 - Update group to turn off notifications while we add users
+
+        self.log.info(
+            "Turning off notification for /groups/{0}/notification_settings?level=disabled".format(
+                new_group_id))
+        try:
+            put_response = api.generate_put_request(
+                self.config.destination_host,
+                self.config.destination_token,
+                "/groups/{0}/notification_settings?level={1}".format(new_group_id, level),
+                None,
+                None,
+                None
+            )
+            if put_response and put_response.status_code == 200:
+                return put_response
+            else:
+                self.log.error("Could not enable group notification level for {0}".format(new_group_id))
+        except Exception as e:
+            self.log.error("Exception in enable_group_notifications of {0} ".format(e))
+
+        return None
+
     def update_members(self):
         with open("%s/data/staged_groups.json" % self.app_path, "r") as f:
             groups = json.load(f)
         for group in groups:
             # TODO: Change this to a search check. This assumes the instance doesn't contain various nested groups with the same name
             new_group_id = api.generate_get_request(
-                self.config.destination_host, self.config.destination_token, 'groups', params={'search': group['name']}).json()
+                self.config.destination_host, self.config.destination_token, 'groups',
+                params={'search': group['name']}).json()
+
             members = group["members"]
             for member in members:
                 new_member = {
@@ -410,10 +530,11 @@ class GroupsClient(BaseClass):
         for group in groups:
             try:
                 self.log.debug("Searching for existing %s" % group["name"])
-                for proj in self.groups_api.search_for_group(self.config.destination_host, self.config.destination_token, group['name']):
+                for proj in self.groups_api.search_for_group(self.config.destination_host,
+                                                             self.config.destination_token, group['name']):
                     if proj["name"] == group["name"]:
                         if "%s" % group["path"].lower() in proj["full_path"].lower():
-                            #self.log.info("Migrating variables for %s" % proj["name"])
+                            # self.log.info("Migrating variables for %s" % proj["name"])
                             ids.append(proj["id"])
                             print "%s: %s" % (
                                 proj["full_path"], proj["visibility"])
