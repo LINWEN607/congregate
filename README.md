@@ -674,10 +674,10 @@ Note: Your destination and source info will be different in a true scenario. Thi
 {
     "config": {
         "external_source": false,
-        "source_instance_token": "HM1Sxykf2AzKmDCGh8ee",
+        "source_instance_token": "junktoken",
         "number_of_threads": 2,
         "destination_instance_host": "https://pse.tanuki.cloud",
-        "destination_instance_token": "HM1Sxykf2AzKmDCGh8ee",
+        "destination_instance_token": "junktoken",
         "location": "filesystem",
         "source_instance_host": "https://pse.tanuki.cloud",
         "import_user_id": 1,
@@ -694,7 +694,7 @@ Note: Your destination and source info will be different in a true scenario. Thi
         "external_user_password": "ePb-84m7ZriB3NfbP_Z!eQFM7cE7ewp8",
         "external_user_name": "gmiller",
         "number_of_threads": 2,
-        "destination_instance_token": "HM1Sxykf2AzKmDCGh8ee",
+        "destination_instance_token": "junktoken",
         "import_user_id": 1,
         "location": "aws",
         "external_source_url": "http://gmiller@bbhost:7990",
