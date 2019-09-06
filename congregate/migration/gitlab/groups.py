@@ -102,9 +102,10 @@ class GroupsClient(BaseClass):
 
         self.traverse_and_migrate(groups, rewritten_groups)
 
-    def traverse_and_migrate(self, groups, rewritten_groups, parent_id=None):
+    def traverse_and_migrate(self, groups, rewritten_groups):
         count = 0
         for group in groups:
+            parent_id = None
             self.log.info("Migrating %s %d/%d" %
                           (group["name"], count, len(group)))
             if group.get("id", None) is not None:
@@ -120,6 +121,7 @@ class GroupsClient(BaseClass):
                         group["visibility"] = "private"
 
                 if group.get("parent_namespace", None) is not None:
+                    self.log.info("Retrieved parent namespace of {0}".format(group["parent_namespace"]))
                     found = False
                     if rewritten_groups.get(group["parent_id"], None) is not None:
                         parent_id = rewritten_groups[group["parent_id"]]["id"]
@@ -127,7 +129,11 @@ class GroupsClient(BaseClass):
                         if rewritten_groups.get(group["old_parent_id"], None) is not None:
                             parent_id = rewritten_groups[group["old_parent_id"]]["id"]
 
-                    #search = api.search(self.config.destination_host, self.config.destination_token, "groups", group["parent_namespace"])
+                    # search = api.search(self.config.destination_host,
+                    # self.config.destination_token, "groups", group["parent_namespace"])
+
+                    self.log.info("have parent id of {0}".format(parent_id))
+
                     if parent_id is not None:
                         if rewritten_groups[parent_id].get("new_parent_id", None) is not None:
                             group["parent_id"] = rewritten_groups[parent_id]["new_parent_id"]
@@ -173,25 +179,38 @@ class GroupsClient(BaseClass):
                         group_without_id.pop("members")
                         full_parent_namespace = ""
                         if group_without_id.get("parent_namespace", None) is not None:
+                            self.log.info("Popping parent namespace of {0}".format(group_without_id["parent_namespace"]))
                             group_without_id.pop("parent_namespace")
-                            self.log.info("Popping parent group")
                         if group_without_id.get("full_parent_namespace", None) is not None:
                             full_parent_namespace = group_without_id["full_parent_namespace"]
+                            self.log.info("Popping full parent namespace of {0}".format(full_parent_namespace))
                             group_without_id.pop("full_parent_namespace")
-                            self.log.info("Popping parent namespace")
+
+                        self.log.info("Creating group with JSON {0}".format(group_without_id))
+
                         response = self.groups_api.create_group(
-                            self.config.destination_host, self.config.destination_token, group_without_id).json()
+                            self.config.destination_host,
+                            self.config.destination_token,
+                            group_without_id
+                        ).json()
+
                         if isinstance(response, dict):
                             if response.get("message", None) is not None:
                                 if "Failed to save group" in response["message"]:
                                     self.log.info(
                                         "Group already exists. Searching for group ID")
-                                    #new_group = api.search(self.config.destination_host, self.config.destination_token, 'groups', group['path'])
+                                    # new_group = api.search(
+                                    # self.config.destination_host,
+                                    # self.config.destination_token, 'groups', group['path'])
 
                                     # if new_group is not None and len(new_group) > 0:
                                     found_group = False
                                     if group["parent_id"] is not None:
-                                        for ng in api.list_all(self.config.destination_host, self.config.destination_token, "groups/%d/subgroups" % group["parent_id"]):
+                                        for ng in api.list_all(
+                                                self.config.destination_host,
+                                                self.config.destination_token,
+                                                "groups/%d/subgroups" % group["parent_id"]
+                                        ):
                                             if ng["full_path"] == full_parent_namespace:
                                                 new_group_id = ng["id"]
                                                 print new_group_id
@@ -201,7 +220,11 @@ class GroupsClient(BaseClass):
                                             if found_group is True:
                                                 break
                                     else:
-                                        for ng in self.groups_api.search_for_group(group["name"], self.config.destination_host, self.config.destination_token):
+                                        for ng in self.groups_api.search_for_group(
+                                                group["name"],
+                                                self.config.destination_host,
+                                                self.config.destination_token
+                                        ):
                                             if ng["full_path"] == full_parent_namespace:
                                                 new_group_id = ng["id"]
                                                 print new_group_id
