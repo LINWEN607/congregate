@@ -25,7 +25,6 @@ class AwsClient(BaseClass):
             region_name=self.config.s3_region)
 
     def import_from_s3(self, name, namespace, presigned_url, filename, override_params=None):
-
         # TODO: Config these?
         max_retries = 3
         current_retries = -1

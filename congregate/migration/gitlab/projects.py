@@ -1,11 +1,12 @@
-from congregate.helpers.base_class import BaseClass
-from congregate.helpers import api
-from requests.exceptions import RequestException
-from congregate.migration.gitlab.api.projects import ProjectsApi
+import json
 from urllib import quote_plus
 from io import BytesIO
 from os import walk
-import json
+from requests.exceptions import RequestException
+
+from congregate.helpers.base_class import BaseClass
+from congregate.helpers import api
+from congregate.migration.gitlab.api.projects import ProjectsApi
 
 
 class ProjectsClient(BaseClass):
@@ -62,9 +63,11 @@ class ProjectsClient(BaseClass):
     def add_shared_groups(self, old_id, new_id):
         """Adds the list of groups we share the project with."""
         old_project = self.projects_api.get_project(old_id, self.config.source_host, self.config.source_token).json()
+        project_name = old_project["name"]
         for group in old_project["shared_with_groups"]:
             path = group["group_full_path"]
-            new_group_id = self.get_new_group_id(group["group_name"], path)
+            name = group["group_name"]
+            new_group_id = self.get_new_group_id(name, path)
             if new_group_id is not None:
                 data = {
                     "group_access": group["group_access_level"],
@@ -74,11 +77,11 @@ class ProjectsClient(BaseClass):
                 try:
                     r = self.projects_api.add_shared_group(self.config.destination_host, self.config.destination_token, new_id, data)
                     if r.status_code == 201:
-                        self.log.info("Shared project %d with group %s" % (new_id, path))
+                        self.log.info("Shared project {0} with group {1}".format(project_name, name))
                     else:
-                        self.log.warn("Failed to share project %d with group %s due to:\n%s" % (new_id, path, r.content))
+                        self.log.warn("Failed to share project {0} with group {1} due to:\n{2}".format(project_name, name, r.content))
                 except RequestException, e:
-                    self.log.error("Projects POST request failed with error:\n%s" % e)
+                    self.log.error("Failed to POST shared group {0} to project {1}, with error:\n{2}".format(name, project_name, e))
 
     def get_new_group_id(self, name, path):
         """Returns the group's ID on the destination instance."""
@@ -91,7 +94,7 @@ class ProjectsClient(BaseClass):
             else:
                 self.log.warn("Shared group %s does not exist or is not yet imported" % path)
         except RequestException, e:
-            self.log.error("Shared groups GET request failed with error:\n%s" % e)
+            self.log.error("Failed to GET group {0} ID, with error:\n{1}".format(name, e))
 
     def __old_project_avatar(self, id):
         """Returns the source project avatar."""

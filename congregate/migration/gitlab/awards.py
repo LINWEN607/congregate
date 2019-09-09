@@ -1,5 +1,5 @@
 from datetime import timedelta, date
-import requests
+from requests.exceptions import RequestException
 
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers import api
@@ -101,10 +101,10 @@ class AwardsClient(BaseClass):
                                 award["name"]
                             )
                         else:
-                            raise requests.exceptions.RequestException(
+                            raise RequestException(
                                 "Response status code {0} and response content {1}".format(response.status_code,
                                                                                            response.content))
-                    except requests.exceptions.RequestException as e:
+                    except RequestException as e:
                         self.log.error("Failed to migrate awardable {0} ID {1} emoji {2}, with error:\n{3}"
                                        .format(k, awardable_id, award["name"], e))
                 self.__handle_migrating_note_awards(
@@ -161,7 +161,7 @@ class AwardsClient(BaseClass):
                                 self.log.error(
                                     "%s/api/v4/projects/%d/%s/%d didn't successfully migrate. Unable to migrate note award" %
                                     (self.config.source_host, old_project_id, awardable_name, awardable_id))
-            except requests.exceptions.RequestException as e:
+            except RequestException as e:
                 self.log.error("Failed to migrate awardable {0} ID {1} note emoji {2}, with error:\n{4}"
                                .format(awardable_name, awardable_id, n["name"], e))
 

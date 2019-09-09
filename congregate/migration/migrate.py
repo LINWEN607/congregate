@@ -9,7 +9,7 @@ import json
 from re import sub
 from multiprocessing.dummy import Pool as ThreadPool
 from multiprocessing import Lock
-import requests
+from requests.exceptions import RequestException
 
 from congregate.helpers import api
 from congregate.aws import AwsClient
@@ -20,6 +20,7 @@ from congregate.migration.gitlab.variables import VariablesClient as vars_client
 from congregate.migration.gitlab.users import UsersClient as users_client
 from congregate.migration.gitlab.groups import GroupsClient as groups_client
 from congregate.migration.gitlab.projects import ProjectsClient as proj_client
+from congregate.migration.gitlab.api.projects import ProjectsApi as proj_api
 from congregate.migration.gitlab.pushrules import PushRulesClient as pushrules_client
 from congregate.migration.gitlab.branches import BranchesClient
 from congregate.migration.gitlab.merge_request_approvers import MergeRequestApproversClient
@@ -38,6 +39,7 @@ variables = vars_client()
 users = users_client()
 groups = groups_client()
 projects = proj_client()
+projects_api = proj_api()
 pushrules = pushrules_client()
 branches = BranchesClient()
 awards = AwardsClient()
@@ -78,7 +80,7 @@ def migrate_project_info():
                         api.generate_post_request(b.config.destination_host, b.config.destination_token,
                                                   "projects/%d/members" % new_project[0]["id"], json.dumps(new_member))
 
-                    except requests.exceptions.RequestException, e:
+                    except RequestException, e:
                         b.log.error(e)
                         b.log.error(
                             "Member might already exist. Attempting to update access level")
@@ -87,7 +89,7 @@ def migrate_project_info():
                                                      "projects/%d/members/%d?access_level=%d" % (
                                                          new_project[0]["id"], member["id"], member["access_level"]),
                                                      data=None)
-                        except requests.exceptions.RequestException, e:
+                        except RequestException, e:
                             b.log.error(e)
                             b.log.error(
                                 "Attempting to update existing member failed")
@@ -152,8 +154,8 @@ def migrate_single_project_info(project, id):
         b.log.error("Failed to migrate {0} push rules, with error:\n{1}".format(name, e))
         results["push_rules"] = False
 
-    mr_enabled = False
     # Merge Request Approvers
+    mr_enabled = False
     try:
         if mr.are_enabled(old_id):
             mr_enabled = True
@@ -167,9 +169,15 @@ def migrate_single_project_info(project, id):
         results["merge_request_approvers"] = False
 
     # Protected Branches
-    # TODO: Should this be commented out? Is in Master pre merge
-    # b.log.info("Updating protected branches")
-    # branches.migrate_protected_branches(id, project["id"])
+    try:
+        p_branches = branches.get_protected_branches(old_id, b.config.source_host, b.config.source_token)
+        if list(p_branches):
+            b.log.info("Migrating project {} protected branches".format(name))
+            branches.migrate_protected_branches(id, p_branches)
+            results["protected_branches"] = True
+    except Exception, e:
+        b.log.info("Failed to migrate project {0} protected branches, with error:\n{1}".format(name, e))
+        results["protected_branches"] = False
 
     # Awards
     users_map = {}
@@ -186,9 +194,16 @@ def migrate_single_project_info(project, id):
         b.log.error("Failed to migrate {0} awards, with error:\n{1}".format(name, e))
         results["awards"] = False
 
-    # # Pipeline Schedules
-    # b.log.info("Migrating pipeline schedules for %s" % name)
-    # schedules.migrate_pipeline_schedules(id, old_id, users_map)
+    # Pipeline Schedules
+    try:
+        p_schedules = schedules.get_all_pipeline_schedules(b.config.source_host, b.config.source_token, old_id)
+        if list(p_schedules):
+            b.log.info("Migrating project {} pipeline schedules".format(name))
+            schedules.migrate_pipeline_schedules(id, old_id, users_map, p_schedules)
+            results["pipeline_schedules"] = True
+    except Exception, e:
+        b.log.error("Failed to migrate project {0} pipeline schedules, with error:\n{1}".format(name, e))
+        results["pipeline_schedules"] = False
 
     # Deleting any impersonation tokens used by the awards migration
     try:
@@ -199,7 +214,7 @@ def migrate_single_project_info(project, id):
     # Deploy Keys (project only)
     try:
         keys = deploy_keys.list_project_deploy_keys(old_id)
-        if keys:
+        if list(keys):
             b.log.info("Migrating project {} deploy keys".format(name))
             deploy_keys.migrate_deploy_keys(id, keys)
             results["deploy_keys"] = True
@@ -258,7 +273,7 @@ def migrate_given_export(project_json):
                 b.log.info("Migrating {} project info".format(name))
                 post_import_results = migrate_single_project_info(project_json, import_id)
                 results[path] = post_import_results
-    except requests.exceptions.RequestException, e:
+    except RequestException, e:
         b.log.error(e)
     except KeyError, e:
         b.log.error(e)
@@ -606,7 +621,7 @@ def archive_staged_projects(dry_run=False):
             b.log.info("Archiving project %s (ID: %s)" % (project["name"], id))
             if not dry_run:
                 projects.projects_api.archive_project(b.config.source_host, b.config.source_token, id)
-    except requests.exceptions.RequestException, e:
+    except RequestException, e:
         b.log.error("Failed to archive staged projects, with error:\n%s" % e)
 
 
@@ -619,7 +634,7 @@ def unarchive_staged_projects(dry_run=False):
             b.log.info("Unarchiving project %s (ID: %s)" % (project["name"], id))
             if not dry_run:
                 projects.projects_api.unarchive_project(b.config.source_host, b.config.source_token, id)
-    except requests.exceptions.RequestException, e:
+    except RequestException, e:
         b.log.error("Failed to unarchive staged projects, with error:\n%s" % e)
 
 
@@ -630,20 +645,17 @@ def get_staged_projects():
 
 def find_empty_repos():
     empty_repos = []
-    for project in api.list_all(b.config.destination_host, b.config.destination_token, "projects?statistics=true"):
-        if project.get("statistics", None) is not None:
-            if project["statistics"]["repository_size"] == 0:
-                b.log.info("Empty repo found")
-                for proj in api.list_all(b.config.source_host, b.config.source_token, "projects?statistics=true"):
-                    if proj["name"] == project["name"] and project["namespace"]["path"] in proj["namespace"]["path"]:
-                        b.log.info("Found project")
-                        if proj.get("statistics", None) is not None:
-                            if proj["statistics"]["repository_size"] == 0:
-                                b.log.info(
-                                    "Project is empty in source instance. Ignoring")
-                            else:
-                                empty_repos.append(
-                                    project["name_with_namespace"])
+    dest_projects = api.list_all(b.config.destination_host, b.config.destination_token, "projects?statistics=true")
+    src_projects = api.list_all(b.config.source_host, b.config.source_token, "projects?statistics=true")
+    for project in dest_projects:
+        if project.get("statistics", None) is not None and project["statistics"]["repository_size"] == 0:
+            b.log.info("Found empty repo in destination instance")
+            for proj in src_projects:
+                if proj["name"] == project["name"] and project["namespace"]["path"] in proj["namespace"]["path"]:
+                    b.log.info("Found source project")
+                    if proj.get("statistics", None) is not None and proj["statistics"]["repository_size"] == 0:
+                        b.log.info("Project is empty in source instance. Ignoring")
+                    else:
+                        empty_repos.append(project["name_with_namespace"])
 
-    print empty_repos
-    print len(empty_repos)
+    b.log.info("Empty repositories ({0}):\n{1}".format(len(empty_repos), empty_repos))

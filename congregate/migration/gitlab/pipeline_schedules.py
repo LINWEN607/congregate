@@ -22,9 +22,8 @@ class PipelineSchedulesClient(BaseClass):
     def create_new_pipeline_schedule_variable(self, host, token, project_id, pipeline_id, data):
         return api.generate_post_request(host, token, "projects/%d/pipeline_schedules/%d/variables" % (project_id, pipeline_id), json.dumps(data))
 
-    def migrate_pipeline_schedules(self, new_id, old_id, users_map):
-        self.log.info("Migrating pipeline schedules")
-        for schedule in self.get_all_pipeline_schedules(self.config.source_host, self.config.source_token, old_id):
+    def migrate_pipeline_schedules(self, new_id, old_id, users_map, schedules):
+        for schedule in schedules:
             self.__handle_migrating_pipeline_schedule(
                 schedule, old_id, new_id, users_map)
 

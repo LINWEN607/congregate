@@ -1,4 +1,4 @@
-from docker import from_env, client
+from docker import from_env
 from docker.errors import APIError, TLSParameterError
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers import api

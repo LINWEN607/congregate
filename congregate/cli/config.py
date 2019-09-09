@@ -67,28 +67,28 @@ def generate_config():
         config["destination_instance_registry"] = destination_instance_registry
 
         parent_id = raw_input(
-            "Are you migrating the entire instance to a group? For example, migrating to our SaaS solution? (default: no)")
+            "Are you migrating the entire instance to a group? For example, migrating to our SaaS solution? (default: no) ")
         if parent_id != "no" and len(parent_id) > 0:
             parent_id = raw_input(
-                "%s. Please input the parent group ID (You can find this in the parent group -> settings -> general)" % str(len(config) + 1))
+                "%s. Please input the parent group ID (You can find this in the parent group -> settings -> general) " % str(len(config) + 1))
             config["parent_id"] = int(parent_id)
             
             parent_group = groups.get_group(config["parent_id"], destination_instance_host, destination_instance_token).json()
             config["parent_group_path"] = parent_group["full_path"]
             print "Congregate is going to set all internal projects to private. You can change this setting later."
             config["make_visibility_private"] = True
-            sso = raw_input("Are you migrating to a group with SAML SSO enabled?")
+            sso = raw_input("Are you migrating to a group with SAML SSO enabled? (default: no) ")
             if sso != "no" and len(sso) > 0:
                 sso_provider = raw_input(
-                    "%s. Please input the SSO provider (auth0, adfs, etc.)" % str(len(config) + 1))
+                    "%s. Please input the SSO provider (auth0, adfs, etc.) " % str(len(config) + 1))
                 config["group_sso_provider"] = sso_provider
             username_suffix = raw_input(
-                "In the case of username collisions, what suffix would you like to append to a username? (default: <leave empty>")
+                "In the case of username collisions, what suffix would you like to append to a username? (default: <leave empty>) ")
             if username_suffix != "_" and len(username_suffix) > 0:
                 config["username_suffix"] = username_suffix
 
         mirror_user = raw_input(
-            "Are you planning a soft cut-over migration? (Mirroring repos to keep both instances around) (default: no)")
+            "Are you planning a soft cut-over migration? (Mirroring repos to keep both instances around) (default: no) ")
         if mirror_user != "no" and len(mirror_user) > 0:
             mirror_user = destination_user_info["username"]
             config["mirror_username"] = mirror_user

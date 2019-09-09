@@ -47,8 +47,8 @@ Arguments:
     threads                                 Set number of threads to run in parallel.
     dry-run                                 Perform local listing of metadata that would be handled during the migration.
     skip-users                              Migrate all but users (staged_users.json).
-    staged                                  ?
     access-level                            Update parent group level user permissions (Guest/Reporter/Developer/Maintainer/Owner).
+    staged                                  Compare two groups that are staged for migration.
 
 Commands:
     list                                    List all projects of a source instance and save it to {CONGREGATE_PATH}/data/project_json.json.
@@ -77,6 +77,8 @@ Commands:
     find-all-internal-projects              Find all internal projects.
     make-all-internal-groups-private        Make all internal migrated groups private.
     check-projects-visibility               Return list of all migrated projects' visibility.
+    find-empty-repos                        Inspect project repo sizes between source and destination instance in search for empty repos.
+                                                This could be misleading as it sometimes shows 0 (zero) commits/tags/bytes for fully migrated projects.
     compare-groups                          Compare source and destination group results.
     staged-user-list                        Output a list of all staged users and their respective user IDs. Used to confirm IDs were updated correctly.
     archive-staged-projects                 Archive projects that are staged, not necessarily migrated.

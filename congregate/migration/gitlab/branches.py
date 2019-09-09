@@ -57,8 +57,8 @@ class BranchesClient(BaseClass):
 
         return access_level
 
-    def migrate_protected_branches(self, id, old_id):
-        for branch in self.get_protected_branches(old_id, self.config.source_host, self.config.source_token):
+    def migrate_protected_branches(self, id, branches):
+        for branch in branches:
             allowed_to_push = self.update_access_levels(
                 branch["push_access_levels"])
             allowed_to_merge = self.update_access_levels(

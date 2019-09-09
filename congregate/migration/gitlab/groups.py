@@ -1,11 +1,12 @@
+import json
+from os import path
+from requests.exceptions import RequestException
+
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers import api, misc_utils
 from congregate.migration.gitlab.variables import VariablesClient as vars_client
-from requests.exceptions import RequestException
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.helpers.exceptions import ConfigurationException
-import json
-from os import path
 
 
 class GroupsClient(BaseClass):
@@ -99,8 +100,8 @@ class GroupsClient(BaseClass):
         rewritten_groups = {}
         for i in range(len(groups)):
             new_obj = groups[i]
-            group_name = groups[i]["id"]
-            rewritten_groups[group_name] = new_obj
+            group_id = groups[i]["id"]
+            rewritten_groups[group_id] = new_obj
 
         # Update parent group notification level
         if self.config.parent_id is not None:
