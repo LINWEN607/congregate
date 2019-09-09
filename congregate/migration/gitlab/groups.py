@@ -102,7 +102,14 @@ class GroupsClient(BaseClass):
             group_name = groups[i]["id"]
             rewritten_groups[group_name] = new_obj
 
-        self.traverse_and_migrate(groups, rewritten_groups)
+        # Update parent group notification level
+        if self.config.parent_id is not None:
+            current_level = self.get_current_group_notifications(self.config.parent_id)
+            self.update_group_notifications(self.config.parent_id)
+            self.traverse_and_migrate(groups, rewritten_groups)
+            self.reset_group_notifications(self.config.parent_id, current_level)
+        else:
+            self.traverse_and_migrate(groups, rewritten_groups)
 
     def traverse_and_migrate(self, groups, rewritten_groups):
         count = 0
@@ -292,21 +299,13 @@ class GroupsClient(BaseClass):
                             new_group_id, group_id, "group")
 
                         if not root_user_present:
-                            self.log.info("removing root user from group")
+                            self.log.info("Removing root user from group")
                             response = api.generate_delete_request(
                                 self.config.destination_host, self.config.destination_token,
                                 "groups/%d/members/%d" % (new_group_id, int(self.config.import_user_id)))
-                            print response
 
-                        put_response = self.reset_group_notifications(new_group_id, current_level)
-                        if put_response and put_response.status_code != 200:
-                            self.log.error(
-                                "Could not reset notification level to {0} for new group id {1} ({2})".format(
-                                    current_level,
-                                    new_group_id,
-                                    put_response.status_code
-                                )
-                            )
+                        # Reset back group notification level
+                        self.reset_group_notifications(new_group_id, current_level)
 
                         # if has_children:
                         #     subgroup = []
@@ -335,8 +334,6 @@ class GroupsClient(BaseClass):
         :return: The string representation of the notification level, or None
         """
         #  177
-        self.log.info(
-            "Retrieving notification settings for group {}".format(new_group_id))
         try:
             get_response = self.groups_api.get_notification_level(
                 self.config.destination_host,
@@ -345,6 +342,7 @@ class GroupsClient(BaseClass):
             )
 
             if get_response and get_response.status_code == 200 and get_response.json().get("level", None) is not None:
+                self.log.info("Retrieved notification settings for group {}".format(new_group_id))
                 return get_response.json()["level"]
             else:
                 self.log.error("Could not get group {} notification settings".format(new_group_id))
@@ -368,7 +366,6 @@ class GroupsClient(BaseClass):
                     self.log.warn("{} is not a group notification level, Please update the config.".format(level))
             else:
                 level = "disabled"
-            self.log.info("Updating group {0} notification level to {1}".format(new_group_id, level))
             put_response = self.groups_api.update_notification_level(
                 self.config.destination_host,
                 self.config.destination_token,
@@ -376,6 +373,7 @@ class GroupsClient(BaseClass):
                 level
             )
             if put_response and put_response.status_code == 200:
+                self.log.info("Updated group {0} notification level to {1}".format(new_group_id, level))
                 return put_response
             else:
                 self.log.error("Failed to update group {0} notification level to {1}, due to:\n{2}"
@@ -394,8 +392,6 @@ class GroupsClient(BaseClass):
         :return: The put_response object or None on error
         """
         # 177 - Update group to turn off notifications while we add users
-
-        self.log.info("Resetting group {0} notification level to {1}".format(new_group_id, level))
         try:
             put_response = self.groups_api.update_notification_level(
                 self.config.destination_host,
@@ -404,6 +400,7 @@ class GroupsClient(BaseClass):
                 level
             )
             if put_response and put_response.status_code == 200:
+                self.log.info("Reset group {0} notification level to {1}".format(new_group_id, level))
                 return put_response
             else:
                 self.log.error("Failed to reset group {0} notification level to {1}, due to:\n{2}"
