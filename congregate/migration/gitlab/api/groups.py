@@ -14,7 +14,6 @@ class GroupsApi():
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
             :return: Response object containing the response to GET /groups/:id
-
         """
         return api.generate_get_request(host, token, "groups/%d" % id)
 
@@ -28,7 +27,6 @@ class GroupsApi():
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /groups?search=:name
-
         """
         return api.list_all(host, token, "groups?search=%s" % name)
 
@@ -42,7 +40,6 @@ class GroupsApi():
             :param: token: (str) Access token to GitLab instance
             :param: data: (dict) Object containing the various data requried for creating a group. Refer to the link above for specific examples
             :return: Response object containing the response to POST /groups
-
         """
         return api.generate_post_request(host, token, "groups", json.dumps(data))
 
@@ -57,7 +54,6 @@ class GroupsApi():
             :param: token: (str) Access token to GitLab instance
             :param: member: (dict) Object containing the member data. Refer to the link above for specific examples
             :return: Response object containing the response to POST /groups/:id/members
-
         """
         return api.generate_post_request(host, token, "groups/%d/members" % id, json.dumps(member))
 
@@ -70,7 +66,6 @@ class GroupsApi():
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /groups
-
         """
         return api.list_all(host, token, "groups")
 
@@ -84,7 +79,6 @@ class GroupsApi():
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
             :yield: Response object containing the response to GET /groups/:id/members
-
         """
         return api.list_all(host, token, "groups/%d/members" % id)
 
@@ -112,6 +106,32 @@ class GroupsApi():
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
             :return: Response object containing a 202 (accepted) or 404 (Group not found) from DELETE /groups/:id
-
         """
         return api.generate_delete_request(host, token, "groups/%d" % id)
+
+    def get_notification_level(self, host, token, id):
+        """
+        Get current group notification settings.
+
+        GitLab API Doc: hhttps://docs.gitlab.com/ee/api/notification_settings.html#group--project-level-notification-settings
+
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :param: id: (int) GitLab group ID
+            :return: Response object containing the response to GET /groups/:id/notification_settings
+        """
+        return api.generate_get_request(host, token, "groups/%d/notification_settings" % id)
+
+    def update_notification_level(self, host, token, id, level):
+        """
+        Update current group notification settings.
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/notification_settings.html#update-groupproject-level-notification-settings
+
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :param: id: (int) GitLab group ID
+            :param: level: (str) Current group notification level
+            :return: Response object containing the response to PUT /groups/:id/notification_settings
+        """
+        return api.generate_put_request(host, token, "groups/%d/notification_settings?level=%s" % (id, level), data=None)

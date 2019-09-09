@@ -44,46 +44,46 @@ class GroupsUnitTest(unittest.TestCase):
         return_value = gc.get_current_group_notifications(1111)
         assert return_value == "disabled"
 
-    #   Disable
+    #   Update
     @mock.patch("congregate.migration.gitlab.groups.api.generate_put_request")
     def test_disable_group_notifications_returns_none_on_api_none(self, mock_put_api):
         mock_put_api.return_value = None
         gc = GroupsClient()
-        return_value = gc.disable_group_notifications(1111)
+        return_value = gc.update_group_notifications(1111)
         assert return_value is None
 
     @mock.patch("congregate.migration.gitlab.groups.api.generate_put_request")
     def test_disable_group_notifications_returns_none_on_api_not_200(self, mock_put_api):
         mock_put_api.return_value = {"status_code": 999}
         gc = GroupsClient()
-        return_value = gc.disable_group_notifications(1111)
+        return_value = gc.update_group_notifications(1111)
         assert return_value is None
 
     @mock.patch("congregate.migration.gitlab.groups.api.generate_put_request")
     def test_disable_group_notifications_happy(self, mock_put_api):
         mock_put_api.return_value = self.MockReturn({"some": "json"}, 200)
         gc = GroupsClient()
-        return_value = gc.disable_group_notifications(1111)
+        return_value = gc.update_group_notifications(1111)
         assert return_value.json() == {"some": "json"}
 
-    #   Enable
+    #   Reset
     @mock.patch("congregate.migration.gitlab.groups.api.generate_put_request")
     def test_enable_group_notifications_returns_none_on_api_none(self, mock_put_api):
         mock_put_api.return_value = None
         gc = GroupsClient()
-        return_value = gc.enable_group_notifications(1111, "level")
+        return_value = gc.reset_group_notifications(1111, "level")
         assert return_value is None
 
     @mock.patch("congregate.migration.gitlab.groups.api.generate_put_request")
     def test_enable_group_notifications_returns_none_on_api_not_200(self, mock_put_api):
         mock_put_api.return_value = {"status_code": 999}
         gc = GroupsClient()
-        return_value = gc.enable_group_notifications(1111, "level")
+        return_value = gc.reset_group_notifications(1111, "level")
         assert return_value is None
 
     @mock.patch("congregate.migration.gitlab.groups.api.generate_put_request")
     def test_enable_group_notifications_happy(self, mock_put_api):
         mock_put_api.return_value = self.MockReturn({"some": "json"}, 200)
         gc = GroupsClient()
-        return_value = gc.enable_group_notifications(1111, "level")
+        return_value = gc.reset_group_notifications(1111, "level")
         assert return_value.json() == {"some": "json"}

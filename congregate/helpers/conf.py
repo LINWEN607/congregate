@@ -163,7 +163,7 @@ class ig(object):
         If we should strip the namespace when doing the import/export routines. Should default to True, as stripping
         handles so nesting issues when the depth is consistent.
 
-        :return: The set value or True as default in case of no setting.
+        :return: The set boolean value or True as default in case of no setting.
         """
         return self.config.get("strip_namespace_prefix", True)
 
@@ -174,7 +174,7 @@ class ig(object):
         Depending whether we are migrating during peak hours or not we should be able to adjust it.
         In general it should be increased when using multiple threads i.e. when the API cannot handle all the requests.
 
-        :return: The set value or 30s as default in case of no setting.
+        :return: The set value or 30 (seconds) as default in case of no setting.
         """
         return self.config.get("importexport_wait", 30)
 
@@ -194,6 +194,17 @@ class ig(object):
         :return: The setting from the config file or False
         """
         return self.config.get("force_random_password", False)
+
+    @property
+    def notification_level(self):
+        """
+        Project/group notification level that is set before adding members to the groups/projects.
+        Assign it in order to control how users get notified during migrations.
+
+        :return: The set value or None as default in case of no setting.
+        """
+        return self.config.get("notification_level", None)
+
 
     @threads.setter
     def threads(self, value):

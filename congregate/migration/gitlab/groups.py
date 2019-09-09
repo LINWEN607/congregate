@@ -258,14 +258,15 @@ class GroupsClient(BaseClass):
                         current_level = self.get_current_group_notifications(new_group_id)
                         if not current_level:
                             self.log.error(
-                                "Skipping adding users for new group id {0} as current notification level could not be determined".format(
+                                "Skipping adding users for new group id {0}, notification level could not be determined".format(
                                     new_group_id))
                             continue
 
-                        put_response = self.disable_group_notifications(new_group_id)
-                        if put_response:
+                        # Update group notifications based
+                        put_response = self.update_group_notifications(new_group_id)
+                        if not put_response:
                             self.log.error(
-                                "Skipping adding users for new group id {0} as notification could not be disabled ({1})".format(
+                                "Skipping adding users for new group id {0}, notification level could not be updated ({1})".format(
                                     new_group_id,
                                     put_response.status_code)
                             )
@@ -297,10 +298,10 @@ class GroupsClient(BaseClass):
                                 "groups/%d/members/%d" % (new_group_id, int(self.config.import_user_id)))
                             print response
 
-                        put_response = self.enable_group_notifications(new_group_id, current_level)
+                        put_response = self.reset_group_notifications(new_group_id, current_level)
                         if put_response and put_response.status_code != 200:
                             self.log.error(
-                                "Could not reset notifications to {0} for new group id {1} ({2})".format(
+                                "Could not reset notification level to {0} for new group id {1} ({2})".format(
                                     current_level,
                                     new_group_id,
                                     put_response.status_code
@@ -335,58 +336,58 @@ class GroupsClient(BaseClass):
         """
         #  177
         self.log.info(
-            "Retrieving notification settings for /groups/{0}/notification_settings?level=disabled".format(
-                new_group_id))
-
+            "Retrieving notification settings for group {}".format(new_group_id))
         try:
-            get_response = api.generate_get_request(
+            get_response = self.groups_api.get_notification_level(
                 self.config.destination_host,
                 self.config.destination_token,
-                "/groups/{0}/notification_settings?level=disabled".format(new_group_id),
+                new_group_id
             )
 
             if get_response and get_response.status_code == 200 and get_response.json().get("level", None) is not None:
                 return get_response.json()["level"]
             else:
-                self.log.error("Could not get current group notification level for {0}".format(new_group_id))
+                self.log.error("Could not get group {} notification settings".format(new_group_id))
         except Exception as e:
-            self.log.error("Exception in get_current_group_notifications of {0} ".format(e))
+            self.log.error("Exception in get_current_group_notifications of {} ".format(e))
 
         return None
 
-    def disable_group_notifications(self, new_group_id):
+    def update_group_notifications(self, new_group_id):
         """
-        Disable notifications for a group
-        :param new_group_id: The group id to disable notifications for
+        Update notification level for a group
+        :param new_group_id: The group id to update notifications for
         :return: The put_response object or None on error
         """
         # 177 - Update group to turn off notifications while we add users
-
-        self.log.info(
-            "Turning off notification for /groups/{0}/notification_settings?level=disabled".format(
-                new_group_id))
-
         try:
-            put_response = api.generate_put_request(
+            if self.config.notification_level is not None:
+                LEVELS = ["disabled", "participating", "watch", "global", "mention", "custom"]
+                level = self.config.notification_level.lower()
+                if not level in LEVELS:
+                    self.log.warn("{} is not a group notification level, Please update the config.".format(level))
+            else:
+                level = "disabled"
+            self.log.info("Updating group {0} notification level to {1}".format(new_group_id, level))
+            put_response = self.groups_api.update_notification_level(
                 self.config.destination_host,
                 self.config.destination_token,
-                "/groups/{0}/notification_settings?level=disabled".format(new_group_id),
-                None,
-                None,
-                None
+                new_group_id,
+                level
             )
             if put_response and put_response.status_code == 200:
                 return put_response
             else:
-                self.log.error("Could not disable group notification level for {0}".format(new_group_id))
+                self.log.error("Failed to update group {0} notification level to {1}, due to:\n{2}"
+                    .format(new_group_id, level, put_response.content))
         except Exception as e:
-            self.log.error("Exception in disable_group_notifications of {0} ".format(e))
+            self.log.error("Exception in update_group_notifications of {0} ".format(e))
 
         return None
 
-    def enable_group_notifications(self, new_group_id, level):
+    def reset_group_notifications(self, new_group_id, level):
         """
-        Disable notifications for a group
+        Reset notifications for a group
         :param new_group_id: The group id to disable notifications for
         :param level The level to set the notifications for the group to. Generally the level retrieved with a call to
                 get_current_group_notifications
@@ -394,24 +395,21 @@ class GroupsClient(BaseClass):
         """
         # 177 - Update group to turn off notifications while we add users
 
-        self.log.info(
-            "Turning off notification for /groups/{0}/notification_settings?level=disabled".format(
-                new_group_id))
+        self.log.info("Resetting group {0} notification level to {1}".format(new_group_id, level))
         try:
-            put_response = api.generate_put_request(
+            put_response = self.groups_api.update_notification_level(
                 self.config.destination_host,
                 self.config.destination_token,
-                "/groups/{0}/notification_settings?level={1}".format(new_group_id, level),
-                None,
-                None,
-                None
+                new_group_id,
+                level
             )
             if put_response and put_response.status_code == 200:
                 return put_response
             else:
-                self.log.error("Could not enable group notification level for {0}".format(new_group_id))
+                self.log.error("Failed to reset group {0} notification level to {1}, due to:\n{2}"
+                    .format(new_group_id, level, put_response.content))
         except Exception as e:
-            self.log.error("Exception in enable_group_notifications of {0} ".format(e))
+            self.log.error("Exception in reset_group_notifications of {0} ".format(e))
 
         return None
 
