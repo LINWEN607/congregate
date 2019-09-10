@@ -13,6 +13,7 @@ class GroupsClient(BaseClass):
     def __init__(self):
         self.vars = vars_client()
         self.groups_api = GroupsApi()
+        self.group_id_mapping = {}
         super(GroupsClient, self).__init__()
 
     def find_parent_group_path(self):
@@ -103,19 +104,19 @@ class GroupsClient(BaseClass):
             group_id = groups[i]["id"]
             rewritten_groups[group_id] = new_obj
 
-        group_id_mapping = {}
+        self.group_id_mapping = {}
 
         # Update parent group notification level
         if self.config.parent_id is not None:
             current_level = self.get_current_group_notifications(self.config.parent_id)
             self.update_group_notifications(self.config.parent_id)
-            group_id_mapping = self.traverse_and_migrate(groups, rewritten_groups)
+            self.traverse_and_migrate(groups, rewritten_groups)
             self.reset_group_notifications(self.config.parent_id, current_level)
         else:
-            group_id_mapping = self.traverse_and_migrate(groups, rewritten_groups)
+            self.traverse_and_migrate(groups, rewritten_groups)
 
         # Migrate group badges
-        for old_id, new_id in group_id_mapping.items():
+        for old_id, new_id in self.group_id_mapping.items():
             badges = self.groups_api.get_all_group_badges(self.config.source_host, self.config.source_token, old_id)
             if badges:
                 self.log.info("Migrating source group ID {0} badges".format(old_id))
@@ -123,7 +124,6 @@ class GroupsClient(BaseClass):
 
     def traverse_and_migrate(self, groups, rewritten_groups):
         count = 0
-        group_id_mapping = {}
         for group in groups:
             parent_id = None
             self.log.info("Migrating %s %d/%d" %
@@ -290,7 +290,7 @@ class GroupsClient(BaseClass):
                             )
                             continue
 
-                        group_id_mapping[group_id] = new_group_id
+                        self.group_id_mapping[group_id] = new_group_id
                         root_user_present = False
                         for member in members:
                             if member["id"] == self.config.import_user_id:
@@ -338,7 +338,6 @@ class GroupsClient(BaseClass):
                 print "Leaving recursion"
 
             count += 1
-            return group_id_mapping
 
     def get_current_group_notifications(self, new_group_id):
         """
@@ -554,7 +553,6 @@ class GroupsClient(BaseClass):
     def add_badges(self, new_id, namespace, badges):
         try:
             for badge in badges:
-                print badge
                 # split after hostname and retrieve only reamining path
                 link_url_suffix = badge["link_url"].split("/", 3)[3]
                 image_url_suffix = badge["image_url"].split("/", 3)[3]
@@ -562,8 +560,6 @@ class GroupsClient(BaseClass):
                     "link_url": "{0}/{1}/{2}".format(self.config.destination_host, namespace, link_url_suffix),
                     "image_url": "{0}/{1}/{2}".format(self.config.destination_host, namespace, image_url_suffix)
                 }
-                print namespace
-                print data
                 self.groups_api.add_group_badge(self.config.destination_host,
                                                 self.config.destination_token,
                                                 new_id,
