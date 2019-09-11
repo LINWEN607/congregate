@@ -439,8 +439,6 @@ class UsersClient(BaseClass):
                 for key in keys_to_delete:
                     if key in user:
                         user.pop(key)
-                user["reset_password"] = self.config.reset_password
-                user["force_random_password"] = self.config.force_random_password
 
         if root_index:
             users.pop(root_index)
@@ -476,6 +474,8 @@ class UsersClient(BaseClass):
         else:
             user["username"] = self.create_valid_username(user)
             user["skip_confirmation"] = True
+            user["reset_password"] = self.config.reset_password
+            user["force_random_password"] = self.config.force_random_password
             return user
 
     def handle_user_creation(self, user):
