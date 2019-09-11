@@ -500,12 +500,13 @@ class UsersClient(BaseClass):
                 self.log.info(
                     "Appending %s to new_users.json" % user["email"])
                 response = self.find_user_by_email_comparison_without_id(user["email"])
-                if len(response) > 0:
-                    if isinstance(response, list):
-                        return response[0]["id"]
-                    elif isinstance(response, dict):
-                        if response.get("id", None) is not None:
-                            return response["id"]
+                if response is not None:
+                    if len(response) > 0:
+                        if isinstance(response, list):
+                            return response[0]["id"]
+                        elif isinstance(response, dict):
+                            if response.get("id", None) is not None:
+                                return response["id"]
             except RequestException, e:
                 self.log.info(e)
         else:
