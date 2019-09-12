@@ -11,14 +11,6 @@ from congregate.migration.gitlab.api.users import UsersApi
 
 
 class UsersClient(BaseClass):
-    PERMISSIONS = {
-        "guest": 10,
-        "reporter": 20,
-        "developer": 30,
-        "maintainer": 40,
-        "owner": 50
-    }
-
     def __init__(self):
         self.groups = GroupsApi()
         self.users = UsersApi()
@@ -107,7 +99,11 @@ class UsersClient(BaseClass):
         user["extern_uid"] = self.find_extern_uid_by_provider(identities, self.config.group_sso_provider)
         user["provider"] = "group_saml"
         user["reset_password"] = self.config.reset_password
-        user["force_random_password"] = self.config.force_random_password
+        # make sure the blocked user cannot do anything
+        user["force_random_password"] = "true" if user["state"] == "blocked" else self.config.force_random_password
+        if not self.config.reset_password and not self.config.force_random_password:
+            #TODO: add config for 'password' field
+            self.log.warn("If both 'reset_password' and 'force_random_password' are False, the 'password' field has to be set")
         user["skip_confirmation"] = True
         user["username"] = self.create_valid_username(user)
 
@@ -260,19 +256,28 @@ class UsersClient(BaseClass):
 
     def remove_users_from_parent_group(self):
         count = 0
-        users = api.list_all(self.config.destination_host, self.config.destination_token,
-                             "groups/%d/members" % self.config.parent_id)
+        users = api.list_all(self.config.destination_host,
+            self.config.destination_token,
+            "groups/%d/members" % self.config.parent_id)
         for user in users:
             if user["access_level"] <= 20:
                 count += 1
-                api.generate_delete_request(self.config.destination_host, self.config.destination_token,
-                                            "/groups/%d/members/%d" % (self.config.parent_id, user["id"]))
+                api.generate_delete_request(self.config.destination_host,
+                    self.config.destination_token,
+                    "/groups/%d/members/%d" % (self.config.parent_id, user["id"]))
             else:
                 self.log.debug("Keeping user {} in parent group".format(user))
         print count
 
     def update_user_permissions(self, access_level):
-        access_level = self.PERMISSIONS[access_level.lower()]
+        PERMISSIONS = {
+            "guest": 10,
+            "reporter": 20,
+            "developer": 30,
+            "maintainer": 40,
+            "owner": 50
+        }
+        access_level = PERMISSIONS[access_level.lower()]
         try:
             all_users = list(api.list_all(
                 self.config.destination_host,
@@ -327,8 +332,7 @@ class UsersClient(BaseClass):
                         count += 1
                     else:
                         newer_users.append(new_user)
-        self.log.debug("Newer user count after blocking: {}".format(len(newer_users)))
-        self.log.debug("Need to remove {} users".format(count))
+        self.log.info("Newer user count after blocking ({0}). {1} to remove".format(len(newer_users), count))
 
         with open("%s/data/newer_users.json" % self.app_path, "wb") as f:
             json.dump(newer_users, f, indent=4)
@@ -475,23 +479,46 @@ class UsersClient(BaseClass):
             user["username"] = self.create_valid_username(user)
             user["skip_confirmation"] = True
             user["reset_password"] = self.config.reset_password
-            user["force_random_password"] = self.config.force_random_password
+            # make sure the blocked user cannot do anything
+            user["force_random_password"] = "true" if user["state"] == "blocked" else self.config.force_random_password
+            if not self.config.reset_password and not self.config.force_random_password:
+                #TODO: add config for 'password' field
+                self.log.warn("If both 'reset_password' and 'force_random_password' are False, the 'password' field has to be set")
             if self.config.parent_id is not None:
                 user["is_admin"] = False
             return user
 
     def handle_user_creation(self, user):
-        user_data = self.generate_user_data(user)
         try:
+            user_data = self.generate_user_data(user)
             response = self.users.create_user(
-                self.config.destination_host, self.config.destination_token, user_data)
+                self.config.destination_host,
+                self.config.destination_token,
+                user_data)
         except RequestException, e:
-            self.log.info(e)
+            self.log.error(e)
             response = None
 
         if response is not None:
+            if user_data["state"] == "blocked":
+                self.update_user_state(user_data)
             return self.handle_user_creation_status(response, user)
         return None
+
+    def update_user_state(self, user_data):
+        """Update user state since it is not propagated during user creation."""
+        try:
+            user = list(self.users.search_for_user_by_email(self.config.destination_host,
+                self.config.destination_token,
+                user_data["email"]))
+            # assuming a single hit on user search by email
+            block_response = self.users.block_user(self.config.destination_host,
+                self.config.destination_token,
+                user[0]["id"])
+            self.log.info("User {0} (email: {1}) blocked (status: {2})"
+                .format(user_data["username"], user_data["email"], block_response))
+        except RequestException, e:
+            self.log.error("Failed to block user {0}, due to:\n{1}".format(user_data, e))
 
     def handle_user_creation_status(self, response, user):
         if response.status_code == 409:
@@ -500,15 +527,14 @@ class UsersClient(BaseClass):
                 self.log.info(
                     "Appending %s to new_users.json" % user["email"])
                 response = self.find_user_by_email_comparison_without_id(user["email"])
-                if response is not None:
-                    if len(response) > 0:
-                        if isinstance(response, list):
-                            return response[0]["id"]
-                        elif isinstance(response, dict):
-                            if response.get("id", None) is not None:
-                                return response["id"]
+                if response is not None and len(response) > 0:
+                    if isinstance(response, list):
+                        return response[0]["id"]
+                    elif isinstance(response, dict):
+                        if response.get("id", None) is not None:
+                            return response["id"]
             except RequestException, e:
-                self.log.info(e)
+                self.log.error("Failed to retrieve user {0} status, due to:\n{1}".format(user, e))
         else:
             return response.json()["id"]
 

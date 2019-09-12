@@ -276,7 +276,7 @@ class ImportExportClient(BaseClass):
                         # We already log the duped message info when we find the dupe
                         # Reuse the not found message
                         if not duped:
-                            self.log.info(
+                            self.log.warn(
                                 "Project may already exist but it cannot be found. Ignoring %s"
                                 % project["name"])
                             import_id = None
@@ -306,7 +306,7 @@ class ImportExportClient(BaseClass):
                                 # if self.config.mirror_username is not None:
                                 #     mirror_repo(project, import_id)
                             elif status_json["import_status"] == "failed":
-                                self.log.info("Project {} failed to import".format(name))
+                                self.log.warn("Project {} failed to import".format(name))
                                 exported = True
                             elif status_json["import_status"] != "started":
                                 # If it is started, we just ignore the status
@@ -324,7 +324,7 @@ class ImportExportClient(BaseClass):
                         timeout += wait_time
                         sleep(wait_time)
                     else:
-                        self.log.info(
+                        self.log.warn(
                             "Moving on to the next project. Time limit exceeded")
                         break
         return {"import_id": import_id, "exported": exported, "duped": duped}

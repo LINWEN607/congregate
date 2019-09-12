@@ -88,3 +88,16 @@ class UsersApi():
 
         """
         return api.generate_delete_request(host, token, "users/%d/impersonation_tokens/%d" % (user_id, token_id))
+
+    def block_user(self, host, token, user_id):
+        """
+        Blocks the specified user. Available only for admin.
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/users.html#block-user
+
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :param: user_id: (int) GitLab user ID
+            :return: 201 OK / 404 User Not Found / 403 Forbidden
+        """
+        return api.generate_post_request(host, token, "users/%d/block" % user_id, data=None)

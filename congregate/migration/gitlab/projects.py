@@ -92,7 +92,7 @@ class ProjectsClient(BaseClass):
                     if group["full_path"] == path:
                         return group["id"]
             else:
-                self.log.warn("Shared group %s does not exist or is not yet imported" % path)
+                self.log.warn("Shared group {} does not exist or is not yet imported".format(path))
         except RequestException, e:
             self.log.error("Failed to GET group {0} ID, with error:\n{1}".format(name, e))
 
@@ -154,12 +154,13 @@ class ProjectsClient(BaseClass):
                     "image_url": "{0}/{1}/{2}".format(self.config.destination_host, namespace, image_url_suffix)
                 }
                 self.projects_api.edit_project_badge(self.config.destination_host,
-                                                     self.config.destination_token,
-                                                     new_id,
-                                                     badge["id"],
-                                                     data=data)
+                    self.config.destination_token,
+                    new_id,
+                    badge["id"],
+                    data=data)
+                self.log.info("Updated project {0} (ID) badge {1}".format(new_id, data))
         except RequestException, e:
-            self.log.error("Failed to update destination project ID {0} badge {1}, with error:\n{2}".format(new_id, badge, e))
+            self.log.error("Failed to update project {0} (ID) badge {1}, with error:\n{2}".format(new_id, badge, e))
 
     def validate_staged_projects_schema(self):
         with open("%s/data/staged_groups.json" % self.app_path, "r") as f:
