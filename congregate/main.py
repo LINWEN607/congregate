@@ -38,6 +38,7 @@ Usage:
     congregate map-new-users-to-groups-and-projects [--dry-run]
     congregate validate-staged-groups-schema
     congregate validate-staged-projects-schema
+    congregate map-users
     congregate -h | --help
 
 Options:
@@ -88,6 +89,7 @@ Commands:
                                                 Requires that update-staged-user-info has been called, first, to create new_users.json.
     validate-staged-groups-schema           Check staged_groups.json for missing group data.
     validate-staged-projects-schema         Check stage.json for missing project data.
+    map-users                               Maps staged user emails to emails defined in the user-provided user_map.csv
 """
 
 import os
@@ -104,10 +106,12 @@ if __name__ == '__main__':
         from congregate.helpers.logger import myLogger
         from congregate.cli import config as configure
         from congregate.helpers.misc_utils import get_congregate_path
+        from congregate.helpers.user_util import map_users
     else:
         from .helpers import conf
         from .helpers.logger import myLogger
         from .helpers.misc_utils import get_congregate_path
+        from .helpers.user_util import map_users
 else:
     import sys
 
@@ -282,3 +286,5 @@ if __name__ == '__main__':
                 groups.validate_staged_groups_schema()
             if arguments["validate-staged-projects-schema"]:
                 projects.validate_staged_projects_schema()
+            if arguments["map-users"]:
+                map_users()

@@ -28,7 +28,7 @@ def map_users():
         csv_reader = reader(csv_file, delimiter=',')
         for row in csv_reader:
             name = row[0].strip()
-            username = strip_numbers(row[1].strip())
+            username = row[1].strip()
             email = row[2].strip()
             if users_dict.get(username, None) is not None:
                 if email != users_dict[username]["email"]:
