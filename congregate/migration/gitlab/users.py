@@ -64,14 +64,15 @@ class UsersClient(BaseClass):
 
     def user_email_exists(self, old_user):
         index = 0
-        email = old_user["email"]
-        for user in self.users.search_for_user_by_email(self.config.destination_host, self.config.destination_token,
-                                                        email):
-            if user["email"] == email:
-                return True
-            elif index > 100:
-                return False
-            index += 1
+        if old_user.get("email"):
+            email = old_user["email"]
+            for user in self.users.search_for_user_by_email(self.config.destination_host, self.config.destination_token,
+                                                            email):
+                if user["email"] == email:
+                    return True
+                elif index > 100:
+                    return False
+                index += 1
         return False
 
     def find_or_create_impersonation_token(self, host, token, user, users_map, expiration_date):
@@ -143,13 +144,16 @@ class UsersClient(BaseClass):
                     old_user = self.users.get_user(member["id"], self.config.source_host, self.config.source_token)
                     old_user = old_user.json()
                     username = strip_numbers(member["username"]).lower()
-                    if rewritten_users.get(old_user["email"], None) is not None:
-                        new_user = self.users.get_user(rewritten_users[old_user["email"]]["id"],
-                                                       self.config.destination_host,
-                                                       self.config.destination_token).json()
-                        if new_user.get("message", None) is None:
-                            if new_user["email"] == old_user["email"]:
-                                member["id"] = rewritten_users[old_user["email"]]["id"]
+                    if old_user.get("email"):
+                        if rewritten_users.get(old_user["email"], None) is not None:
+                            new_user = self.users.get_user(rewritten_users[old_user["email"]]["id"],
+                                                        self.config.destination_host,
+                                                        self.config.destination_token).json()
+                            if new_user.get("message", None) is None:
+                                if new_user["email"] == old_user["email"]:
+                                    member["id"] = rewritten_users[old_user["email"]]["id"]
+                                else:
+                                    member["id"] = self.config.import_user_id
                             else:
                                 member["id"] = self.config.import_user_id
                         else:
