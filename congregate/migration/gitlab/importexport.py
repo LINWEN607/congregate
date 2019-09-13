@@ -306,7 +306,7 @@ class ImportExportClient(BaseClass):
                                 # if self.config.mirror_username is not None:
                                 #     mirror_repo(project, import_id)
                             elif status_json["import_status"] == "failed":
-                                self.log.warn("Project {} failed to import".format(name))
+                                self.log.error("Project {0} failed to import ({1})".format(name, status_json["import_error"]))
                                 exported = True
                             elif status_json["import_status"] != "started":
                                 # If it is started, we just ignore the status
