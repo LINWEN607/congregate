@@ -6,7 +6,7 @@ Usage:
     congregate list
     congregate config
     congregate stage <projects>...
-    congregate migrate [--threads=<n>] [--dry-run] [--skip-users]
+    congregate migrate [--threads=<n>] [--dry-run] [--skip-users] [--keep-blocked-users]
     congregate ui
     congregate import-projects
     congregate do_all
@@ -14,7 +14,7 @@ Usage:
     congregate update-new-users
     congregate update-aws-creds
     congregate add-users-to-parent-group
-    congregate remove-blocked-users
+    congregate remove-blocked-users [--dry-run]
     congregate update-user-permissions [--access-level=<level>]
     congregate get-total-count
     congregate find-unimported-projects
@@ -48,6 +48,7 @@ Arguments:
     threads                                 Set number of threads to run in parallel.
     dry-run                                 Perform local listing of metadata that would be handled during the migration.
     skip-users                              Migrate all but users (staged_users.json).
+    keep-blocked-users                      Will skip removing blocked users from staged users/groups/projects.
     access-level                            Update parent group level user permissions (Guest/Reporter/Developer/Maintainer/Owner).
     staged                                  Compare two groups that are staged for migration.
 
@@ -196,12 +197,17 @@ if __name__ == '__main__':
             if arguments["migrate"]:
                 threads = None
                 skip_users = False
+                keep_blocked_users = False
                 if arguments["--threads"]:
                     threads = arguments["--threads"]
                 if arguments["--skip-users"]:
                     skip_users = True
+                if arguments["--keep-blocked-users"]:
+                    keep_blocked_users = True
                 if not arguments["--dry-run"]:
-                    migrate.migrate(threads=threads, skip_users=skip_users)
+                    migrate.migrate(threads=threads,
+                        skip_users=skip_users,
+                        keep_blocked_users=keep_blocked_users)
                 else:
                     users.user_migration_dry_run()
             if arguments["do_all"]:
@@ -226,7 +232,7 @@ if __name__ == '__main__':
                 subprocess.call(command.split(" "))
                 log.info("Configured AWS secret key")
             if arguments["remove-blocked-users"]:
-                users.remove_blocked_users()
+                users.remove_blocked_users_dry_run() if arguments["--dry-run"] else users.remove_blocked_users()
             if arguments["update-user-permissions"]:
                 if arguments["--access-level"]:
                     access_level = arguments["--access-level"]

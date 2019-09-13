@@ -308,7 +308,7 @@ def start_multi_thead(function, iterable):
     pool.join()
 
 
-def migrate(threads=None, skip_users = False):
+def migrate(threads=None, skip_users=False, keep_blocked_users=False):
     if threads is not None:
         b.config.threads = threads
 
@@ -340,6 +340,8 @@ def migrate(threads=None, skip_users = False):
         start_multi_thead(bitbucket.handle_bitbucket_migration, repo_list)
 
     else:
+        if not keep_blocked_users:
+            users.remove_blocked_users()
         with open("%s/data/staged_groups.json" % b.app_path, "r") as f:
             groups_file = json.load(f)
 
