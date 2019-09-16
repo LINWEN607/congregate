@@ -136,7 +136,7 @@ Usage:
     congregate list
     congregate config
     congregate stage <projects>...
-    congregate migrate [--threads=<n>] [--dry-run]
+    congregate migrate [--threads=<n>] [--dry-run] [--skip-users] [--keep-blocked-users]
     congregate ui
     congregate import-projects
     congregate do_all
@@ -144,8 +144,8 @@ Usage:
     congregate update-new-users
     congregate update-aws-creds
     congregate add-users-to-parent-group
-    congregate remove-blocked-users
-    congregate lower-user-permissions
+    congregate remove-blocked-users [--dry-run]
+    congregate update-user-permissions [--access-level=<level>]
     congregate get-total-count
     congregate find-unimported-projects
     congregate stage-unimported-projects
@@ -159,39 +159,68 @@ Usage:
     congregate set-default-branch
     congregate enable_mirroring
     congregate count-unarchived-projects
+    congregate archive-staged-projects [--dry-run]
+    congregate unarchive-staged-projects [--dry-run]
     congregate find-empty-repos
+    congregate compare-groups [--staged]
+    congregate staged-user-list
+    congregate generate-seed-data
+    congregate map-new-users-to-groups-and-projects [--dry-run]
+    congregate validate-staged-groups-schema
+    congregate validate-staged-projects-schema
+    congregate map-users
     congregate -h | --help
 
 Options:
     -h --help     Show this screen.
 
+Arguments:
+    threads                                 Set number of threads to run in parallel.
+    dry-run                                 Perform local listing of metadata that would be handled during the migration.
+    skip-users                              Migrate all but users (staged_users.json).
+    keep-blocked-users                      Will skip removing blocked users from staged users/groups/projects.
+    access-level                            Update parent group level user permissions (Guest/Reporter/Developer/Maintainer/Owner).
+    staged                                  Compare two groups that are staged for migration.
+
 Commands:
-    list                                List all projects of a source instance and save it to {CONGREGATE_PATH}/data/project_json.json
-    config                              Configure congregate for migrating between two instances and save it to {CONGREGATE_PATH}/data/config.json
-    stage                               Stage projects to {CONGREGATE_PATH}/data/stage.json,
-                                        users to {CONGREGATE_PATH}/data/staged_users.json,
-                                        groups to {CONGREGATE_PATH}/data/staged_groups.json.
-                                        All projects can be staged with a '.' or 'all'.
-    migrate                             Commence migration based on configuration and staged assets
-    ui                                  Deploy UI to port 8000
-    import-projects                     Kick off import of exported projects onto destination instance
-    do_all                              Configure system, retrieve all projects, users, and groups, stage all information, and commence migration
-    update-staged-user-info             Update staged user information after migrating only users
-    update-new-users                    Update user IDs in staged groups and projects after migrating users
-    update-aws-creds                    Runs awscli commands based on the keys stored in the config. Useful for docker updates
-    add-users-to-parent-group           If a parent group is set, all users staged will be added to the parent group
-    remove-blocked-users                Removes all blocked users from staged projects and groups
-    lower-user-permissions              Sets all reporter users to guest users
-    get-total-count                     Get total count of migrated projects. Used to compare exported projects to imported projects.
-    find-unimported-projects            Returns a list of projects that failed import
-    stage-unimported-projects           Stage unimported projects based on {CONGREGATE_PATH}/data/unimported_projects.txt
-    remove-users-from-parent-group      Remove all users with at most reporter access from the parent group
-    migrate-variables-in-stage          Migrate CI variables for staged projects
-    add-all-mirrors                     Sets up project mirroring for staged projects
-    remove-all-mirrors                  Remove all project mirrors for staged projects
-    find-all-internal-projects          Finds all internal projects
-    make-all-internal-groups-private    Makes all internal migrated groups private
-    check-projects-visibility           Returns list of all migrated projects' visibility
+    list                                    List all projects of a source instance and save it to {CONGREGATE_PATH}/data/project_json.json.
+    config                                  Configure congregate for migrating between two instances and save it to {CONGREGATE_PATH}/data/config.json.
+    stage                                   Stage projects to {CONGREGATE_PATH}/data/stage.json,
+                                                users to {CONGREGATE_PATH}/data/staged_users.json,
+                                                groups to {CONGREGATE_PATH}/data/staged_groups.json.
+                                                All projects can be staged with a '.' or 'all'.
+    migrate                                 Commence migration based on configuration and staged assets.
+    ui                                      Deploy UI to port 8000.
+    import-projects                         Kick off import of exported projects onto destination instance.
+    do_all                                  Configure system, retrieve all projects, users, and groups, stage all information, and commence migration.
+    update-staged-user-info                 Update staged user information after migrating only users.
+    update-new-users                        Update user IDs in staged groups and projects after migrating only users.
+    update-aws-creds                        Run awscli commands based on the keys stored in the config. Useful for docker updates.
+    add-users-to-parent-group               If a parent group is set, all users staged will be added to the parent group.
+    remove-blocked-users                    Remove all blocked users from staged projects and groups.
+    update-user-permissions                 Update parent group member access level. Mainly for lowering to Guest/Reporter.
+    get-total-count                         Get total count of migrated projects. Used to compare exported projects to imported projects.
+    find-unimported-projects                Return a list of projects that failed import.
+    stage-unimported-projects               Stage unimported projects based on {CONGREGATE_PATH}/data/unimported_projects.txt.
+    remove-users-from-parent-group          Remove all users with at most reporter access from the parent group.
+    migrate-variables-in-stage              Migrate CI variables for staged projects.
+    add-all-mirrors                         Set up project mirroring for staged projects.
+    remove-all-mirrors                      Remove all project mirrors for staged projects.
+    find-all-internal-projects              Find all internal projects.
+    make-all-internal-groups-private        Make all internal migrated groups private.
+    check-projects-visibility               Return list of all migrated projects' visibility.
+    find-empty-repos                        Inspect project repo sizes between source and destination instance in search for empty repos.
+                                                This could be misleading as it sometimes shows 0 (zero) commits/tags/bytes for fully migrated projects.
+    compare-groups                          Compare source and destination group results.
+    staged-user-list                        Output a list of all staged users and their respective user IDs. Used to confirm IDs were updated correctly.
+    archive-staged-projects                 Archive projects that are staged, not necessarily migrated.
+    unarchive-staged-projects               Unarchive projects that are staged, not necessarily migrate.
+    generate-seed-data                      Generate dummy data to test a migration.
+    map-new-users-to-groups-and-projects    Map new_users.json to the staged_groups.json and stage.json (projects) files without making API calls.
+                                                Requires that update-staged-user-info has been called, first, to create new_users.json.
+    validate-staged-groups-schema           Check staged_groups.json for missing group data.
+    validate-staged-projects-schema         Check stage.json for missing project data.
+    map-users                               Maps staged user emails to emails defined in the user-provided user_map.csv
 ```
 
 #### Important Note
@@ -323,6 +352,7 @@ To reload the app in debugging mode, you will need to click the `refresh` icon i
 || Group CI variables || :white_check_mark: |
 || Members || :white_check_mark: |
 || Group info || :white_check_mark: |
+|| Badges || :white_check_mark: |
 | Projects |
 || Branches || :white_check_mark: |
 || Members || :white_check_mark: |
@@ -337,6 +367,8 @@ To reload the app in debugging mode, you will need to click the `refresh` icon i
 || Services || :x: |
 || Deploy keys || :white_check_mark: |
 || Awards || :white_check_mark: |
+|| Pipeline schedules || :white_check_mark: |
+|| Badges || :white_check_mark: |
 | Standalone |
 || Users |
 ||| Avatars | :white_check_mark: |
@@ -360,6 +392,9 @@ To reload the app in debugging mode, you will need to click the `refresh` icon i
 | Project configuration, including services  |  :white_check_mark: |  :white_check_mark: |
 | Issues with comments, merge requests with diffs and comments, labels, milestones, snippets, and other project entities  |  :white_check_mark: |  :white_check_mark: |
 | LFS objects  |  :white_check_mark: |  :white_check_mark: |
+| Project badges  | :white_check_mark: (URL data not propagated)  | :white_check_mark: (update only) |
+| Protected branches  |  :white_check_mark: (unstable) |  :white_check_mark: |
+| Pipelines schedules  |  :white_check_mark: (unstable) |  :white_check_mark: |
 | Build traces and artifacts  |  :x: |  :x: |
 | Container Registry  |  :x:  |  :white_check_mark:  |
 | CI variables  | :x:  |  :white_check_mark:  |
@@ -367,7 +402,7 @@ To reload the app in debugging mode, you will need to click the `refresh` icon i
 | Deploy Keys | :x: | :white_check_mark: (project only) |
 | Any encrypted tokens  |  :x: | :heavy_minus_sign:   |
 | Merge Request Approvers  | :x:  | :white_check_mark:  |
-| Protected Branches  | :x:  | :white_check_mark:  |
+| Group badges  | :x:  | :white_check_mark:  |
 | Push Rules  |  :x: |  :white_check_mark: |
 | Users  | :x:  |  :white_check_mark: |
 | Groups  | :x:  | :white_check_mark:  |
