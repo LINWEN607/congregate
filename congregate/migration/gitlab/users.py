@@ -36,10 +36,11 @@ class UsersClient(BaseClass):
             self.config.destination_token,
             email)
         for user in users:
-            self.log.info(user)
             if user is not None and user and user.get("email", None) is not None and user["email"].lower() == email.lower():
                 self.log.info("Found user {0} by email {1}".format(user, email))
                 return user
+            else:
+                self.log.error("Could not find user based on email {}".format(email))
         return None
 
     def username_exists(self, old_user):
@@ -542,15 +543,13 @@ class UsersClient(BaseClass):
     def update_user_state(self, user_data):
         """Update user state since it is not propagated during user creation."""
         try:
-            user = list(self.users.search_for_user_by_email(self.config.destination_host,
-                self.config.destination_token,
-                user_data["email"]))
-            # assuming a single hit on user search by email
+            user = self.find_user_by_email_comparison_without_id(user_data["email"])
             block_response = self.users.block_user(self.config.destination_host,
                 self.config.destination_token,
-                user[0]["id"])
-            self.log.info("User {0} (email: {1}) blocked (status: {2})"
+                user["id"])
+            self.log.info("Blocked user {0} email {1} (status: {2})"
                 .format(user_data["username"], user_data["email"], block_response))
+            return block_response
         except RequestException, e:
             self.log.error("Failed to block user {0}, due to:\n{1}".format(user_data, e))
 

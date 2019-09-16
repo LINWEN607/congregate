@@ -437,16 +437,13 @@ class UserTests(unittest.TestCase):
         responses.add(responses.POST, url_value,
                     json=self.mock_users.get_dummy_new_users()[1], status=200)
         # pylint: enable=no-member
-        url_value = "https://gitlabdestination.com/api/v4/users?search=%s&per_page=50&page=1" % (new_user["email"])
+        url_value = "https://gitlabdestination.com/api/v4/users?search=%s&per_page=50&page=%d" % (new_user["email"], count.return_value)
         # pylint: disable=no-member
         responses.add(responses.GET, url_value,
                     json=[self.mock_users.get_dummy_user()], status=200)
         # pylint: enable=no-member
 
-        actual = self.users.handle_user_creation(new_user)
-        expected = 27
-
-        self.assertEqual(actual, expected)
+        self.assertEqual(self.users.handle_user_creation(new_user), 27)
 
     # pylint: disable=no-member
     @responses.activate
@@ -472,10 +469,7 @@ class UserTests(unittest.TestCase):
                     json=[self.mock_users.get_dummy_user()], status=200)
         # pylint: enable=no-member
 
-        actual = self.users.handle_user_creation(new_user)
-        expected = 27
-
-        self.assertEqual(actual, expected)
+        self.assertEqual(self.users.handle_user_creation(new_user), 27)
 
     # pylint: disable=no-member
     @responses.activate
@@ -501,31 +495,46 @@ class UserTests(unittest.TestCase):
                     json=[self.mock_users.get_dummy_user()], status=200)
         # pylint: enable=no-member
 
-        actual = self.users.handle_user_creation(new_user)
-        expected = 27
+        self.assertEqual(self.users.handle_user_creation(new_user), 27)
 
-        self.assertEqual(actual, expected)
+    # pylint: disable=no-member
+    @responses.activate
+    # pylint: enable=no-member
+    @mock.patch('congregate.helpers.conf.ig.destination_host', new_callable=mock.PropertyMock)
+    @mock.patch('congregate.helpers.api.get_count')
+    def test_update_user_status(self, count,destination):
+        destination.return_value = "https://gitlabdestination.com"
+        new_user = self.mock_users.get_dummy_user()
+
+        url_value = "https://gitlabdestination.com/api/v4/users?search=%s&per_page=50&page=%d" % (new_user["email"], count.return_value)
+        # pylint: disable=no-member
+        responses.add(responses.GET, url_value,
+                    json=[self.mock_users.get_dummy_user()], status=200)
+        # pylint: enable=no-member
+        url_value = "https://gitlabdestination.com/api/v4/users/27/block"
+        # pylint: disable=no-member
+        responses.add(responses.POST, url_value,
+                    json=self.mock_users.get_dummy_user_blocked(), status=201)
+
+        self.assertEqual(self.users.update_user_state(new_user).status_code, 201)
 
     def test_remove_blocked_users(self):
         read_data = json.dumps(self.mock_users.get_dummy_new_users())
         mock_open = mock.mock_open(read_data=read_data)
         with mock.patch('__builtin__.open', mock_open):
             result = self.users.remove("staged_users")
-        expected = self.mock_users.get_dummy_new_users_active()
-        self.assertEqual(expected, result)
+        self.assertEqual(result, self.mock_users.get_dummy_new_users_active())
 
     def test_remove_blocked_project_members(self):
         read_data = json.dumps(self.mock_users.get_dummy_project())
         mock_open = mock.mock_open(read_data=read_data)
         with mock.patch('__builtin__.open', mock_open):
             result = self.users.remove("stage")
-        expected = self.mock_users.get_dummy_project_active_members()
-        self.assertEqual(expected, result)
+        self.assertEqual(result, self.mock_users.get_dummy_project_active_members())
 
     def test_remove_blocked_group_members(self):
         read_data = json.dumps(self.mock_users.get_dummy_group())
         mock_open = mock.mock_open(read_data=read_data)
         with mock.patch('__builtin__.open', mock_open):
             result = self.users.remove("staged_groups")
-        expected = self.mock_users.get_dummy_group_active_members()
-        self.assertEqual(expected, result)
+        self.assertEqual(result, self.mock_users.get_dummy_group_active_members())
