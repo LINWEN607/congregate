@@ -45,7 +45,7 @@ class UsersClient(BaseClass):
             email)
         for user in users:
             self.log.info(user)
-            if user is not None and user and user.get("email", None) is not None and user["email"] == email:
+            if user is not None and user and user.get("email", None) is not None and user["email"].lower() == email.lower():
                 self.log.info("Found user {0} by email {1}".format(user, email))
                 return user
         return None
@@ -55,7 +55,7 @@ class UsersClient(BaseClass):
         username = old_user["username"]
         for user in self.users.search_for_user_by_email(self.config.destination_host, self.config.destination_token,
                                                         username):
-            if user["username"] == username:
+            if user["username"].lower() == username.lower():
                 return True
             elif index > 100:
                 return False
