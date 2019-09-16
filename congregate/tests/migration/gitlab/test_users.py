@@ -502,7 +502,7 @@ class UserTests(unittest.TestCase):
     # pylint: enable=no-member
     @mock.patch('congregate.helpers.conf.ig.destination_host', new_callable=mock.PropertyMock)
     @mock.patch('congregate.helpers.api.get_count')
-    def test_update_user_status(self, count,destination):
+    def test_block_user(self, count,destination):
         destination.return_value = "https://gitlabdestination.com"
         new_user = self.mock_users.get_dummy_user()
 
@@ -516,7 +516,7 @@ class UserTests(unittest.TestCase):
         responses.add(responses.POST, url_value,
                     json=self.mock_users.get_dummy_user_blocked(), status=201)
 
-        self.assertEqual(self.users.update_user_state(new_user).status_code, 201)
+        self.assertEqual(self.users.block_user(new_user).status_code, 201)
 
     def test_remove_blocked_users(self):
         read_data = json.dumps(self.mock_users.get_dummy_new_users())

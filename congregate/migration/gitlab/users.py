@@ -536,12 +536,11 @@ class UsersClient(BaseClass):
 
         if response is not None:
             if user_data["state"] == "blocked":
-                self.update_user_state(user_data)
+                self.block_user(user_data)
             return self.handle_user_creation_status(response, user)
         return None
 
-    def update_user_state(self, user_data):
-        """Update user state since it is not propagated during user creation."""
+    def block_user(self, user_data):
         try:
             user = self.find_user_by_email_comparison_without_id(user_data["email"])
             block_response = self.users.block_user(self.config.destination_host,
