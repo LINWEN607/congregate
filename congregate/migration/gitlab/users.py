@@ -298,49 +298,37 @@ class UsersClient(BaseClass):
             self.log.error("Failed to update user's parent access level, with error:\n{}".format(e))
 
     def remove_blocked_users(self):
-        # from staged users
-        with open("{}/data/staged_users.json".format(self.app_path), "r") as f:
-            staged_users = json.load(f)
-
-        to_pop = []
-        for user in staged_users:
-            if user.get("state", None) == "blocked":
-                to_pop.append(staged_users.index(user))
-                self.log.info("Removing blocked user {0} from staged users".format(user["username"]))
-        staged_users = [i for j, i in enumerate(staged_users) if j not in to_pop]
-
-        with open("{}/data/staged_users.json".format(self.app_path), "w") as f:
-            f.write(json.dumps(staged_users, indent=4, sort_keys=True))
-
+        #from staged users
+        self.remove("staged_users")
         # from staged groups
-        with open("{}/data/staged_groups.json".format(self.app_path), "r") as f:
-            staged_groups = json.load(f)
-
-        for group in staged_groups:
-            to_pop = []
-            for member in group["members"]:
-                if member.get("state", None) == "blocked":
-                    to_pop.append(group["members"].index(member))
-                    self.log.info("Removing blocked user {0} from staged group {1}".format(member["username"], group["name"]))
-            group["members"] = [i for j, i in enumerate(group["members"]) if j not in to_pop]
-
-        with open("{}/data/staged_groups.json".format(self.app_path), "w") as f:
-            f.write(json.dumps(staged_groups, indent=4, sort_keys=True))
-
+        self.remove("staged_groups")
         # from staged projects
-        with open("{}/data/stage.json".format(self.app_path), "r") as f:
-            staged_projects = json.load(f)
+        self.remove("stage")
 
-        for project in staged_projects:
+    def remove(self, data):
+        with open("{0}/data/{1}.json".format(self.app_path, data), "r") as f:
+            staged = json.load(f)
+
+        if data == "staged_users":
             to_pop = []
-            for member in project["members"]:
-                if member.get("state", None) == "blocked":
-                    to_pop.append(project["members"].index(member))
-                    self.log.info("Removing blocked user {0} from staged project {1}".format(member["username"], project["name"]))
-            project["members"] = [i for j, i in enumerate(project["members"]) if j not in to_pop]
+            for user in staged:
+                if user.get("state", None) == "blocked":
+                    to_pop.append(staged.index(user))
+                    self.log.info("Removing blocked user {0} from {1}".format(user["username"], data))
+            staged = [i for j, i in enumerate(staged) if j not in to_pop]
+        else:
+            for s in staged:
+                to_pop = []
+                for member in s["members"]:
+                    if member.get("state", None) == "blocked":
+                        to_pop.append(s["members"].index(member))
+                        self.log.info("Removing blocked user {0} from {1} ({2})".format(member["username"], data, s["name"]))
+                s["members"] = [i for j, i in enumerate(s["members"]) if j not in to_pop]
 
-        with open("{}/data/stage.json".format(self.app_path), "w") as f:
-            f.write(json.dumps(staged_projects, indent=4, sort_keys=True))
+        with open("{0}/data/{1}.json".format(self.app_path, data), "w") as f:
+            f.write(json.dumps(staged, indent=4, sort_keys=True))
+
+        return staged
 
     def remove_blocked_users_dry_run(self):
         # create a 'newer_users.json' file with only non-blocked users

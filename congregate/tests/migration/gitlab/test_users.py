@@ -1,6 +1,7 @@
 import unittest
 import mock
 import responses
+import json
 from congregate.tests.mockapi.users import MockUsersApi
 from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.users import UsersClient
@@ -504,3 +505,27 @@ class UserTests(unittest.TestCase):
         expected = 27
 
         self.assertEqual(actual, expected)
+
+    def test_remove_blocked_users(self):
+        read_data = json.dumps(self.mock_users.get_dummy_new_users())
+        mock_open = mock.mock_open(read_data=read_data)
+        with mock.patch('__builtin__.open', mock_open):
+            result = self.users.remove("staged_users")
+        expected = self.mock_users.get_dummy_new_users_active()
+        self.assertEqual(expected, result)
+
+    def test_remove_blocked_project_members(self):
+        read_data = json.dumps(self.mock_users.get_dummy_project())
+        mock_open = mock.mock_open(read_data=read_data)
+        with mock.patch('__builtin__.open', mock_open):
+            result = self.users.remove("stage")
+        expected = self.mock_users.get_dummy_project_active_members()
+        self.assertEqual(expected, result)
+
+    def test_remove_blocked_group_members(self):
+        read_data = json.dumps(self.mock_users.get_dummy_group())
+        mock_open = mock.mock_open(read_data=read_data)
+        with mock.patch('__builtin__.open', mock_open):
+            result = self.users.remove("staged_groups")
+        expected = self.mock_users.get_dummy_group_active_members()
+        self.assertEqual(expected, result)

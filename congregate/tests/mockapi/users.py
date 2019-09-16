@@ -213,7 +213,7 @@ class MockUsersApi():
                 "id": 27,
                 "name": "John Doe",
                 "username": "jdoe",
-                "state": "active",
+                "state": "blocked",
                 "avatar_url": "",
                 "web_url": "https://dummy.gitlab.io/jdoe",
                 "created_at": "2017-06-07T20:29:25.345Z",
@@ -243,5 +243,214 @@ class MockUsersApi():
                 "highest_role": 50,
                 "shared_runners_minutes_limit": None,
                 "extra_shared_runners_minutes_limit": None
+            }
+        ]
+
+    def get_dummy_new_users_active(self):
+        return [
+            {
+                "id": 28,
+                "username": "raymond_smith",
+                "name": "Raymond Smith",
+                "state": "active",
+                "avatar_url": "",
+                "web_url": "https://dummy.gitlab.io/jdoe",
+                "created_at": "2017-06-07T20:29:25.345Z",
+                "bio": None,
+                "location": None,
+                "public_email": "",
+                "skype": "",
+                "linkedin": "",
+                "twitter": "",
+                "website_url": "",
+                "organization": None,
+                "last_sign_in_at": "2019-06-24T19:56:28.486Z",
+                "confirmed_at": "2017-06-07T20:29:24.795Z",
+                "last_activity_on": "2019-07-17",
+                "email": "rsmith@email.com",
+                "theme_id": None,
+                "color_scheme_id": 5,
+                "projects_limit": 10,
+                "current_sign_in_at": "2019-07-17T16:49:12.936Z",
+                "identities": [],
+                "can_create_group": True,
+                "can_create_project": True,
+                "two_factor_enabled": False,
+                "external": False,
+                "private_profile": None,
+                "is_admin": False,
+                "highest_role": 50,
+                "shared_runners_minutes_limit": None,
+                "extra_shared_runners_minutes_limit": None
+            }
+        ]
+
+    def get_dummy_project(self):
+        return [
+            {
+                "archived": False,
+                "builds_access_level": "enabled",
+                "default_branch": "master",
+                "description": "",
+                "http_url_to_repo": "https://gitlab.demo.i2p.online/jdoe-testing/hello-world-spring-boot.git",
+                "id": 348,
+                "issues_access_level": "enabled",
+                "members": [
+                    {
+                        "access_level": 40,
+                        "avatar_url": "https://secure.gravatar.com/avatar/9fad1e062ce5cc63b1fbb5f9cc43e94c?s=80&d=identicon",
+                        "expires_at": None,
+                        "id": 86,
+                        "name": "John Doe",
+                        "state": "active",
+                        "username": "jdoe",
+                        "web_url": "https://gitlab.demo.i2p.online/jdoe"
+                    },
+                    {
+                        "access_level": 40,
+                        "avatar_url": "https://secure.gravatar.com/avatar/9fad1e062ce5cc63b1fbb5f9cc43e94c?s=80&d=identicon",
+                        "expires_at": None,
+                        "id": 87,
+                        "name": "John Doe 2",
+                        "state": "blocked",
+                        "username": "jdoe2",
+                        "web_url": "https://gitlab.demo.i2p.online/jdoe2"
+                    },
+                    {
+                        "access_level": 40,
+                        "avatar_url": "https://secure.gravatar.com/avatar/9fad1e062ce5cc63b1fbb5f9cc43e94c?s=80&d=identicon",
+                        "expires_at": None,
+                        "id": 88,
+                        "name": "John Doe 3",
+                        "state": "blocked",
+                        "username": "jdoe3",
+                        "web_url": "https://gitlab.demo.i2p.online/jdoe3"
+                    }
+                ],
+                "merge_requests_access_level": "enabled",
+                "name": "hello-world-spring-boot",
+                "namespace": "jdoe-testing",
+                "project_type": "group",
+                "repository_access_level": "enabled",
+                "shared_runners_enabled": True,
+                "snippets_access_level": "enabled",
+                "visibility": "private",
+                "wiki_access_level": "enabled"
+            }
+        ]
+
+    def get_dummy_project_active_members(self):
+        return [
+            {
+                "archived": False,
+                "builds_access_level": "enabled",
+                "default_branch": "master",
+                "description": "",
+                "http_url_to_repo": "https://gitlab.demo.i2p.online/jdoe-testing/hello-world-spring-boot.git",
+                "id": 348,
+                "issues_access_level": "enabled",
+                "members": [
+                    {
+                        "access_level": 40,
+                        "avatar_url": "https://secure.gravatar.com/avatar/9fad1e062ce5cc63b1fbb5f9cc43e94c?s=80&d=identicon",
+                        "expires_at": None,
+                        "id": 86,
+                        "name": "John Doe",
+                        "state": "active",
+                        "username": "jdoe",
+                        "web_url": "https://gitlab.demo.i2p.online/jdoe"
+                    }
+                ],
+                "merge_requests_access_level": "enabled",
+                "name": "hello-world-spring-boot",
+                "namespace": "jdoe-testing",
+                "project_type": "group",
+                "repository_access_level": "enabled",
+                "shared_runners_enabled": True,
+                "snippets_access_level": "enabled",
+                "visibility": "private",
+                "wiki_access_level": "enabled"
+            }
+        ]
+
+    def get_dummy_group(self):
+        return [
+            {
+                "avatar_url": None,
+                "description": "",
+                "file_template_project_id": None,
+                "full_parent_namespace": "parent-migration-test-group",
+                "full_path": "jdoe-testing",
+                "id": 279,
+                "lfs_enabled": True,
+                "members": [
+                    {
+                        "access_level": 50,
+                        "avatar_url": "https://secure.gravatar.com/avatar/9fad1e062ce5cc63b1fbb5f9cc43e94c?s=80&d=identicon",
+                        "expires_at": None,
+                        "id": 86,
+                        "name": "John Doe",
+                        "state": "active",
+                        "username": "jdoe",
+                        "web_url": "https://gitlab.demo.i2p.online/jdoe"
+                    },
+                    {
+                        "access_level": 50,
+                        "avatar_url": "https://secure.gravatar.com/avatar/9fad1e062ce5cc63b1fbb5f9cc43e94c?s=80&d=identicon",
+                        "expires_at": None,
+                        "id": 87,
+                        "name": "John Doe 2",
+                        "state": "blocked",
+                        "username": "jdoe2",
+                        "web_url": "https://gitlab.demo.i2p.online/jdoe2"
+                    },
+                    {
+                        "access_level": 50,
+                        "avatar_url": "https://secure.gravatar.com/avatar/9fad1e062ce5cc63b1fbb5f9cc43e94c?s=80&d=identicon",
+                        "expires_at": None,
+                        "id": 88,
+                        "name": "John Doe 3",
+                        "state": "blocked",
+                        "username": "jdoe3",
+                        "web_url": "https://gitlab.demo.i2p.online/jdoe3"
+                    }
+                ],
+                "name": "jdoe-testing",
+                "parent_id": 244,
+                "parent_namespace": "parent-migration-test-group",
+                "path": "jdoe-testing",
+                "request_access_enabled": False,
+                "visibility": "private"
+            }
+        ]
+
+    def get_dummy_group_active_members(self):
+        return [
+            {
+                "avatar_url": None,
+                "description": "",
+                "file_template_project_id": None,
+                "full_parent_namespace": "parent-migration-test-group",
+                "full_path": "jdoe-testing",
+                "id": 279,
+                "lfs_enabled": True,
+                "members": [
+                    {
+                        "access_level": 50,
+                        "avatar_url": "https://secure.gravatar.com/avatar/9fad1e062ce5cc63b1fbb5f9cc43e94c?s=80&d=identicon",
+                        "expires_at": None,
+                        "id": 86,
+                        "name": "John Doe",
+                        "state": "active",
+                        "username": "jdoe",
+                        "web_url": "https://gitlab.demo.i2p.online/jdoe"
+                    }
+                ],
+                "name": "jdoe-testing",
+                "parent_id": 244,
+                "parent_namespace": "parent-migration-test-group",
+                "path": "jdoe-testing",
+                "request_access_enabled": False,
+                "visibility": "private"
             }
         ]
