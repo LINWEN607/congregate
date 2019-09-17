@@ -170,7 +170,6 @@ class UsersClient(BaseClass):
                     self.log.info("Searching for user ID {0} on source system".format(member["id"]))
                     old_user = self.users.get_user(member["id"], self.config.source_host, self.config.source_token)
                     old_user = old_user.json()
-
                     if old_user.get("email"):
                         # Of course, this will only work if the original email didn't have a number in it
                         # due to that odd strip_numbers
@@ -616,7 +615,6 @@ class UsersClient(BaseClass):
         :param user: Each iterable called is a user from the staged_users.json file
         :return:
         """
-        user_data = self.generate_user_data(user)
         try:
             user_data = self.generate_user_data(user)
             response = self.users.create_user(
