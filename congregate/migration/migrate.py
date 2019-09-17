@@ -350,10 +350,13 @@ def migrate(threads=None, skip_users=False, keep_blocked_users=False):
             b.log.info("Migrating user info")
             new_users = users.migrate_user_info()
 
+            # This list is of user ids from found users via email or newly created users
+            # So, new_user_ids is a bit of a misnomer
             with open("%s/data/new_user_ids.txt" % b.app_path, "w") as f:
                 for new_user in new_users:
                     f.write("%s\n" % new_user)
 
+            # If we created or found users, do not force overwrite
             if new_users is not None and new_users:
                 users.update_user_info(new_users)
             else:
