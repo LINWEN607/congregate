@@ -43,7 +43,7 @@ class UsersClient(BaseClass):
         :param email: the email address to check for
         :return: The user entity found or None
         """
-        self.log.info("Searching for user email {}".format(email))
+        self.log.info("Searching for user email {} in destination system".format(email))
         users = self.users.search_for_user_by_email(
             self.config.destination_host,
             self.config.destination_token,
@@ -158,9 +158,8 @@ class UsersClient(BaseClass):
         rewritten_users = {}
         for i in range(len(new_users)):
             new_obj = new_users[i]
-            # Not sure why we strip the numbers. We don't do that from the source system compare, below
-            # TODO: Verify we need this (strip_numbers), as we are no longer even using username in this comparison.
-            username = strip_numbers(new_users[i]["email"]).lower()
+            username = str(new_users[i]["email"]).lower()
+
             # Create a username based dictionary of the new_users.json objects
             rewritten_users[username] = new_obj
 
@@ -173,8 +172,7 @@ class UsersClient(BaseClass):
                     self.log.info("Searching for user ID {0} on source system".format(member["id"]))
                     old_user = self.users.get_user(member["id"], self.config.source_host, self.config.source_token)
                     old_user = old_user.json()
-                    # TODO: Think this was relevant when username from above was actually username and not email...?
-                    username = strip_numbers(member["username"]).lower()
+
                     if old_user.get("email"):
                         # Of course, this will only work if the original email didn't have a number in it
                         # due to that odd strip_numbers
@@ -595,10 +593,8 @@ class UsersClient(BaseClass):
         :return: The ID of either the created user or the user found by email
         """
         if response.status_code == 409:
-            self.log.info("User already exists")
+            self.log.info("User already exists {0}".format(user["email"]))
             try:
-                # TODO: Erm, we don't actually do the append...? So, is the log wrong, or are we missing a step?
-                self.log.info("Appending {0} to new_users.json".format(user["email"]))
                 # Try to find the user by email. We either just created this, or it already existed
                 response = self.find_user_by_email_comparison_without_id(user["email"])
                 if len(response) > 0:
