@@ -141,6 +141,11 @@ class UsersClient(BaseClass):
         #       Depends on how it is used, but doesn't it assume that just because the emails match from system to
         #       system, that the usernames do?
         # If you don't find the email, you've created a suffix-unique username
+        else:
+            # We found the email. We should set the username to the email username
+            found_by_email_user = self.find_user_by_email_comparison_without_id(user["email"])
+            if found_by_email_user and found_by_email_user.get("username"):
+                return found_by_email_user["username"]
         return username
 
     def update_users(self, obj, new_users):

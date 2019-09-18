@@ -538,3 +538,66 @@ class UserTests(unittest.TestCase):
         with mock.patch('__builtin__.open', mock_open):
             result = self.users.remove("staged_groups")
         self.assertEqual(result, self.mock_users.get_dummy_group_active_members())
+
+    @mock.patch('congregate.migration.gitlab.users.UsersClient.find_user_by_email_comparison_without_id')
+    @mock.patch('congregate.migration.gitlab.users.UsersClient.user_email_exists')
+    def test_create_valid_username_found_email_returns_username(self, mock_email_check, mock_email_find):
+        dummy_user = self.mock_users.get_dummy_user()
+        mock_email_check.return_value = True
+        mock_email_find.return_value = dummy_user
+        created_user_name = self.users.create_valid_username(dummy_user)
+        self.assertEqual(created_user_name, dummy_user["username"])
+
+    @mock.patch('congregate.migration.gitlab.users.UsersClient.username_exists')
+    @mock.patch('congregate.migration.gitlab.users.UsersClient.find_user_by_email_comparison_without_id')
+    @mock.patch('congregate.migration.gitlab.users.UsersClient.user_email_exists')
+    def test_create_valid_username_not_found_email_not_found_username_returns_passed_username(
+            self,
+            mock_email_check,
+            mock_email_find,
+            mock_username_exists):
+        dummy_user = self.mock_users.get_dummy_user()
+        mock_email_check.return_value = True
+        mock_email_find.return_value = dummy_user
+        mock_username_exists.return_value = False
+        dummy_user["username"] = "JUST NOW CREATED"
+        created_user_name = self.users.create_valid_username(dummy_user)
+        self.assertEqual(created_user_name, dummy_user["username"])
+
+    @mock.patch('congregate.helpers.conf.ig.username_suffix', new_callable=mock.PropertyMock)
+    @mock.patch('congregate.migration.gitlab.users.UsersClient.username_exists')
+    @mock.patch('congregate.migration.gitlab.users.UsersClient.find_user_by_email_comparison_without_id')
+    @mock.patch('congregate.migration.gitlab.users.UsersClient.user_email_exists')
+    def test_create_valid_username_not_found_email_found_username_returns_suffix_username_if_suffix_set(
+            self,
+            mock_email_check,
+            mock_email_find,
+            mock_username_exists,
+            mock_username_suffix):
+        dummy_user = self.mock_users.get_dummy_user()
+        mock_email_check.return_value = False
+        mock_email_find.return_value = dummy_user
+        mock_username_exists.return_value = True
+        mock_username_suffix.return_value = "BLEPBLEP"
+        dummy_user["username"] = "JUST NOW CREATED"
+        created_user_name = self.users.create_valid_username(dummy_user)
+        self.assertEqual(created_user_name, dummy_user["username"] + "_BLEPBLEP")
+
+    @mock.patch('congregate.helpers.conf.ig.username_suffix', new_callable=mock.PropertyMock)
+    @mock.patch('congregate.migration.gitlab.users.UsersClient.username_exists')
+    @mock.patch('congregate.migration.gitlab.users.UsersClient.find_user_by_email_comparison_without_id')
+    @mock.patch('congregate.migration.gitlab.users.UsersClient.user_email_exists')
+    def test_create_valid_username_not_found_email_found_username_returns_unserscore_username_if_suffix_not_set(
+            self,
+            mock_email_check,
+            mock_email_find,
+            mock_username_exists,
+            mock_username_suffix):
+        dummy_user = self.mock_users.get_dummy_user()
+        mock_email_check.return_value = False
+        mock_email_find.return_value = dummy_user
+        mock_username_exists.return_value = True
+        mock_username_suffix.return_value = None
+        dummy_user["username"] = "JUST NOW CREATED"
+        created_user_name = self.users.create_valid_username(dummy_user)
+        self.assertEqual(created_user_name, dummy_user["username"] + "_")
