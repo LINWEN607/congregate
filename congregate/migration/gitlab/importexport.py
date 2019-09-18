@@ -1,7 +1,7 @@
 import json
 
 from re import sub
-from urllib import quote, urlencode
+from urllib import quote
 from time import sleep
 from os import remove, chdir, getcwd
 from glob import glob
@@ -12,6 +12,7 @@ from congregate.aws import AwsClient
 from congregate.migration.gitlab.projects import ProjectsClient
 from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.api.groups import GroupsApi
+
 
 class ImportExportClient(BaseClass):
     def __init__(self):
