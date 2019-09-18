@@ -1,7 +1,7 @@
 import json
 
 from re import sub
-from urllib import quote
+from urllib import quote, urlencode
 from time import sleep
 from os import remove, chdir, getcwd
 from glob import glob
@@ -12,7 +12,6 @@ from congregate.aws import AwsClient
 from congregate.migration.gitlab.projects import ProjectsClient
 from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.api.groups import GroupsApi
-
 
 class ImportExportClient(BaseClass):
     def __init__(self):
@@ -371,6 +370,7 @@ class ImportExportClient(BaseClass):
 
     def export_import_thru_filesystem(self, id, name, namespace):
         working_dir = getcwd()
+        filename = "{0}_{1}.tar.gz".format(namespace, name)
         self.log.info("Exporting %s to %s" %
                       (name, self.config.filesystem_path))
         api.generate_post_request(
@@ -379,21 +379,28 @@ class ImportExportClient(BaseClass):
             chdir(self.config.filesystem_path)
         url = "%s/api/v4/projects/%d/export/download" % (
             self.config.source_host, id)
-        filename = misc_utils.download_file(url, self.config.filesystem_path, headers={
-            "PRIVATE-TOKEN": self.config.source_token})
+        misc_utils.download_file(url, self.config.filesystem_path, headers={
+            "PRIVATE-TOKEN": self.config.source_token}, filename=filename)
 
-        data = {
-            "path": name,
-            "file": "%s/downloads/%s" % (self.config.filesystem_path, filename),
-            "namespace": namespace
-        }
+        with open("%s/downloads/%s" % (self.config.filesystem_path, filename), "rb") as f:
+            data = {
+                "path": name.replace(" ", "_"),
+                "namespace": namespace
+            }
 
-        return api.generate_post_request(self.config.destination_host, self.config.destination_token, "projects/import",
-                                         data=data)
+            files = {
+                "file": (filename, f)
+            }
+
+            headers = {
+                "Private-Token": self.config.destination_token
+            }
+
+            return api.generate_post_request(self.config.destination_host, self.config.destination_token, "projects/import", data, files=files, headers=headers)
 
     def export_import_thru_fs_aws(self, id, name, namespace):
-        testkey = "%s_%s.tar.gz" % (namespace, name)
-        if self.keys_map.get(testkey.lower(), None) is None:
+        path_with_namespace = "%s_%s.tar.gz" % (namespace, name)
+        if self.keys_map.get(path_with_namespace.lower(), None) is None:
             self.log.info("Unarchiving %s" % name)
             self.projects.projects_api.unarchive_project(
                 self.config.source_host, self.config.source_token, id)
@@ -409,8 +416,6 @@ class ImportExportClient(BaseClass):
 
             if exported:
                 self.log.info("Downloading export")
-                path_with_namespace = "%s_%s.tar.gz" % (
-                    namespace, name)
                 try:
                     filename = misc_utils.download_file(url, self.config.filesystem_path, path_with_namespace, headers={
                         "PRIVATE-TOKEN": self.config.source_token})
@@ -427,7 +432,7 @@ class ImportExportClient(BaseClass):
                     self.log.error("Download or copy to S3 failed")
                     self.log.error(e)
         else:
-            self.log.info("Export found. Skipping %s" % testkey)
+            self.log.info("Export found. Skipping %s" % path_with_namespace)
 
         return success
 
