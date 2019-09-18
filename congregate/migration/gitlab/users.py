@@ -132,21 +132,27 @@ class UsersClient(BaseClass):
             # But the username does exist
             if self.username_exists(user):
                 # Concat the suffix
-                if self.config.username_suffix is not None:
-                    return "{0}_{1}".format(username, self.config.username_suffix)
-                else:
-                    self.log.error("Username suffix not set. Defaulting to a single underscore following the username")
-                    return "{0}_".format(username)
-        # TODO: If you find the user by email, keep the username? Does this actually make sense?
-        #       Depends on how it is used, but doesn't it assume that just because the emails match from system to
-        #       system, that the usernames do?
-        # If you don't find the email, you've created a suffix-unique username
+                return self.build_suffix_username(username)
+        # If you don't find the email, you've attempted to create a suffix-unique username
+        # We really should loop over this until we find a non-dupe, but if the company name is used, there really
+        # shouldn't be one
         else:
             # We found the email. We should set the username to the email username
+            # This means we're going to attempt to create the same user at some point, which is fine
+            # However, this also messes up some of our remapping efforts, as those match on source username
+            # and not email
             found_by_email_user = self.find_user_by_email_comparison_without_id(user["email"])
             if found_by_email_user and found_by_email_user.get("username"):
                 return found_by_email_user["username"]
         return username
+
+    def build_suffix_username(self, username):
+        # Concat the suffix
+        if self.config.username_suffix is not None:
+            return "{0}_{1}".format(username, self.config.username_suffix)
+        else:
+            self.log.error("Username suffix not set. Defaulting to a single underscore following the username")
+            return "{0}_".format(username)
 
     def update_users(self, obj, new_users):
         """
