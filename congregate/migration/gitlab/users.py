@@ -142,7 +142,7 @@ class UsersClient(BaseClass):
             # However, this also messes up some of our remapping efforts, as those match on source username
             # and not email
             found_by_email_user = self.find_user_by_email_comparison_without_id(user["email"])
-            if found_by_email_user and found_by_email_user.get("username"):
+            if found_by_email_user and found_by_email_user.get("username", None):
                 return found_by_email_user["username"]
         return username
 
