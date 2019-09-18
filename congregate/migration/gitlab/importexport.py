@@ -114,6 +114,8 @@ class ImportExportClient(BaseClass):
         name = project["name"]
         filename = "%s_%s.tar.gz" % (project["namespace"], project["name"])
         override_params = {
+            # to override the dash ("-") in import/export file path
+            "name": project["name"],
             "description": project["description"],
             "shared_runners_enabled": project["shared_runners_enabled"],
             "wiki_access_level": project["wiki_access_level"],
@@ -276,7 +278,7 @@ class ImportExportClient(BaseClass):
                         # We already log the duped message info when we find the dupe
                         # Reuse the not found message
                         if not duped:
-                            self.log.info(
+                            self.log.warn(
                                 "Project may already exist but it cannot be found. Ignoring %s"
                                 % project["name"])
                             import_id = None
@@ -306,7 +308,7 @@ class ImportExportClient(BaseClass):
                                 # if self.config.mirror_username is not None:
                                 #     mirror_repo(project, import_id)
                             elif status_json["import_status"] == "failed":
-                                self.log.info("Project {} failed to import".format(name))
+                                self.log.error("Project {0} failed to import ({1})".format(name, status_json["import_error"]))
                                 exported = True
                             elif status_json["import_status"] != "started":
                                 # If it is started, we just ignore the status
@@ -324,7 +326,7 @@ class ImportExportClient(BaseClass):
                         timeout += wait_time
                         sleep(wait_time)
                     else:
-                        self.log.info(
+                        self.log.warn(
                             "Moving on to the next project. Time limit exceeded")
                         break
         return {"import_id": import_id, "exported": exported, "duped": duped}
