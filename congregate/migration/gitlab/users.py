@@ -167,10 +167,10 @@ class UsersClient(BaseClass):
         rewritten_users = {}
         for i in range(len(new_users)):
             new_obj = new_users[i]
-            username = str(new_users[i]["email"]).lower()
+            user_email = str(new_users[i]["email"]).lower()
 
             # Create a username based dictionary of the new_users.json objects
-            rewritten_users[username] = new_obj
+            rewritten_users[user_email] = new_obj
 
         for i in range(len(obj)):
             self.log.info("Rewriting users for %s" % obj[i]["name"])
@@ -516,12 +516,6 @@ class UsersClient(BaseClass):
                 # Add to new_users
                 new_users.append(new_user[0])
             else:
-                # self.log.info("Searching for username {}".format(user["username"]))
-                # new_user2 = api.search(
-                #     self.config.destination_host, self.config.destination_token, 'users', user['username'])
-                # if len(new_user2) > 0:
-                #     new_users.append(new_user2[0])
-                # else:
                 self.log.warn(
                     "Could not find user by email {0}. User should have been already migrated"
                     .format(user["email"])
