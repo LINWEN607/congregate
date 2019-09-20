@@ -59,6 +59,20 @@ class UsersApi():
         """
         return api.list_all(host, token, "users?search=%s" % email, per_page=50)
 
+    def search_for_user_by_username(self, host, token, username):
+        """
+        Searches for a user by username
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/users.html#for-admins
+
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :param: email: (str) Email of the specific user being searched
+            :yield: Generator containing JSON results from GET /users?search=:email
+
+        """
+        return api.list_all(host, token, "users?username=%s" % username, per_page=50)
+
     def create_user_impersonation_token(self, host, token, id, data):
         """
         It creates a new impersonation token. Note that only administrators can do this.

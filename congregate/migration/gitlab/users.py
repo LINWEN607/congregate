@@ -56,8 +56,10 @@ class UsersClient(BaseClass):
     def username_exists(self, old_user):
         index = 0
         username = old_user["username"]
-        for user in self.users.search_for_user_by_email(self.config.destination_host, self.config.destination_token,
-                                                        username):
+        for user in self.users.search_for_user_by_username(
+                self.config.destination_host,
+                self.config.destination_token,
+                username):
             if user["username"].lower() == username.lower():
                 return True
             elif index > 100:
@@ -623,16 +625,27 @@ class UsersClient(BaseClass):
         """
         try:
             user_data = self.generate_user_data(user)
+            self.log.info("Attempting to create user {0}".format(user))
             response = self.users.create_user(
                 self.config.destination_host,
                 self.config.destination_token,
                 user_data
             )
+
         except RequestException, e:
             self.log.error(e)
             response = None
 
         if response is not None:
+            try:
+                self.log.info("User creation response text was {0}".format(response.text))
+            except Exception as e:
+                self.log.error("Could not get response text. Error was {0}".format(e))
+            try:
+                self.log.info("User creation response JSON was {0}".format(response.json()))
+            except Exception as e:
+                self.log.error("Could not get response JSON. Error was {0}".format(e))
+
             if user_data["state"] == "blocked":
                 self.block_user(user_data)
             return self.handle_user_creation_status(response, user)
