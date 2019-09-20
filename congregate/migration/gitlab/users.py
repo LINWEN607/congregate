@@ -5,7 +5,7 @@ from requests.exceptions import RequestException
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers import api
 from congregate.helpers.threads import handle_multi_thread
-from congregate.helpers.misc_utils import strip_numbers, remove_dupes
+from congregate.helpers.misc_utils import remove_dupes
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.users import UsersApi
 
@@ -631,7 +631,6 @@ class UsersClient(BaseClass):
                 self.config.destination_token,
                 user_data
             )
-
         except RequestException, e:
             self.log.error(e)
             response = None

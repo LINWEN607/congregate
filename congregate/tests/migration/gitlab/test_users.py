@@ -44,7 +44,7 @@ class UserTests(unittest.TestCase):
         self.assertDictEqual(expected, actual)
 
 
-    @mock.patch.object(UsersApi, "search_for_user_by_email")
+    @mock.patch.object(UsersApi, "search_for_user_by_username")
     def test_user_exists_true(self, search):
         search.return_value = [self.mock_users.get_dummy_user()]
         old_user = {
@@ -53,7 +53,7 @@ class UserTests(unittest.TestCase):
         actual = self.users.username_exists(old_user)
         self.assertTrue(actual)
 
-    @mock.patch.object(UsersApi, "search_for_user_by_email")
+    @mock.patch.object(UsersApi, "search_for_user_by_username")
     def test_user_exists_false(self, search):
         search.return_value = [self.mock_users.get_dummy_user()]
         old_user = {
@@ -62,7 +62,7 @@ class UserTests(unittest.TestCase):
         actual = self.users.username_exists(old_user)
         self.assertFalse(actual)
 
-    @mock.patch.object(UsersApi, "search_for_user_by_email")
+    @mock.patch.object(UsersApi, "search_for_user_by_username")
     def test_user_exists_over_100(self, search):
         dummy_large_list = []
         for _ in range(0, 105):
@@ -74,7 +74,7 @@ class UserTests(unittest.TestCase):
         actual = self.users.username_exists(old_user)
         self.assertFalse(actual)
 
-    @mock.patch.object(UsersApi, "search_for_user_by_email")
+    @mock.patch.object(UsersApi, "search_for_user_by_username")
     def test_user_exists_no_results(self, search):
         old_user = {
             "username": "notjdoe"

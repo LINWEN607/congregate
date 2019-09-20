@@ -44,7 +44,7 @@ def generate_get_request(host, token, api, url=None, params=None, stream=False):
 
 
 @stable_retry
-def generate_post_request(host, token, api, data, headers=None):
+def generate_post_request(host, token, api, data, headers=None, files=None):
     """
         Generates POST request to GitLab API.
 
@@ -59,7 +59,7 @@ def generate_post_request(host, token, api, data, headers=None):
     if headers is None:
         headers = generate_v4_request_header(token)
 
-    return requests.post(url, data=data, headers=headers)
+    return requests.post(url, data=data, headers=headers, files=files)
 
 
 @stable_retry
