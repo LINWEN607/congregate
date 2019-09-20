@@ -165,6 +165,7 @@ class UsersClient(BaseClass):
         :return:
         """
 
+        not_found_members = []
         # An email-index dictionary of the new user objects
         rewritten_users = {}
         for i in range(len(new_users)):
@@ -185,8 +186,6 @@ class UsersClient(BaseClass):
                     old_user = old_user.json()
 
                     if old_user.get("email"):
-                        # Of course, this will only work if the original email didn't have a number in it
-                        # due to that odd strip_numbers
                         old_user_email = str(old_user.get("email")).lower()
                         if rewritten_users.get(old_user_email, None) is not None:
                             rewritten_user = rewritten_users[old_user_email]
@@ -197,35 +196,33 @@ class UsersClient(BaseClass):
                             new_user = self.users.get_user(rewritten_user["id"],
                                                            self.config.destination_host,
                                                            self.config.destination_token).json()
-                            if new_user.get("message", None) is None:
-                                if new_user.get("email", None) is not None:
-                                    # If we find the user by new ID, and the emails match (as they should by this point
-                                    # as these users are either newly created or found by email, earlier)
-                                    # reassign the user ids in the object (staged project or staged group)
-                                    if str(new_user["email"]).lower() == old_user_email:
-                                        # Assign the member id to the *new* member id. We've checked this
-                                        # many times by this point, so some of the searches may be redundant, but sane
-                                        member["id"] = rewritten_user["id"]
-                                        # Considered putting a continue, here, and using a single
-                                        # assign to import_user_id, but this is simply too
-                                        # beautiful to touch at this point.
-                                        # In all other cases, default the action to the import_user_id
-                                    else:
-                                        member["id"] = self.config.import_user_id
-                                else:
-                                    member["id"] = self.config.import_user_id
-                            else:
-                                member["id"] = self.config.import_user_id
-                        else:
-                            member["id"] = self.config.import_user_id
-                    else:
-                        member["id"] = self.config.import_user_id
+                            if new_user.get("message", None) is None and \
+                                    new_user.get("email", None) is not None and \
+                                    str(new_user["email"]).lower() == old_user_email:
+                                # If we find the user by new ID, and the emails match (as they should by this point
+                                # as these users are either newly created or found by email, earlier)
+                                # reassign the user ids in the object (staged project or staged group)
+                                # Assign the member id to the *new* member id. We've checked this
+                                # many times by this point, so some of the searches may be redundant, but sane
+                                member["id"] = rewritten_user["id"]
+                                continue
 
+                    # In all other cases, default the action to the import_user_id
+                    not_found_members.append(member)
+                    member["id"] = self.config.import_user_id
+
+            self.log.info("For {0} did not find members {1}".format(obj[i]["name"], not_found_members))
+            not_found_members = []
         return obj
 
     def map_new_users_to_groups_and_projects(self, dry_run=False):
-        not_found_users = []
-        user_found = False
+        """
+        Kind of a dupe of update_new_users. Has the benefit of the dry_run flag
+        :param dry_run: If true, don't actually write the updates to stage or staged_groups
+        :return: Nothing
+        """
+        # not_found_users = []
+        # user_found = False
         with open("%s/data/stage.json" % self.app_path, "r") as f:
             staged_projects = json.load(f)
 
@@ -240,41 +237,43 @@ class UsersClient(BaseClass):
             self.log.info("All users have already been migrated.")
             return
 
-        for p in staged_projects:
-            # Over every project, check the members
-            if p.get("members", None) is not None and p["members"]:
-                for m in p["members"]:
-                    username = m["username"]
-                    # Find the match in new_users.json
-                    for u in new_users:
-                        if u["username"] == username or u["username"] == username + self.config.username_suffix:
-                            m["id"] = u["id"]
-                            user_found = True
-                            break
-                    if not user_found:
-                        not_found_users.append((username, "(project: " + p["namespace"] + ")"))
-                    user_found = False
+        staged_projects = self.update_users(staged_projects, new_users)
+        # for p in staged_projects:
+        #     # Over every project, check the members
+        #     if p.get("members", None) is not None and p["members"]:
+        #         for m in p["members"]:
+        #             username = m["username"]
+        #             # Find the match in new_users.json
+        #             for u in new_users:
+        #                 if u["username"] == username or u["username"] == username + self.config.username_suffix:
+        #                     m["id"] = u["id"]
+        #                     user_found = True
+        #                     break
+        #             if not user_found:
+        #                 not_found_users.append((username, "(project: " + p["namespace"] + ")"))
+        #             user_found = False
+        #
+        # user_found = False
 
-        user_found = False
-
-        for g in staged_groups:
-            # Over every project, check the members
-            if g.get("members", None) is not None and g["members"]:
-                for m in g["members"]:
-                    username = m["username"]
-                    # Find the match in new_users.json
-                    for u in new_users:
-                        if u["username"] == username or u["username"] == username + self.config.username_suffix:
-                            m["id"] = u["id"]
-                            user_found = True
-                            break
-                    if not user_found:
-                        not_found_users.append((username, "(group: " + g["full_path"] + ")"))
-                    user_found = False
-
-        if not_found_users:
-            self.log.info("Users that are not mapped to staged projects and groups:\n{}".format(
-                "\n".join(" ".join(u) for u in not_found_users)))
+        staged_groups = self.update_users(staged_groups, new_users)
+        # for g in staged_groups:
+        #     # Over every project, check the members
+        #     if g.get("members", None) is not None and g["members"]:
+        #         for m in g["members"]:
+        #             username = m["username"]
+        #             # Find the match in new_users.json
+        #             for u in new_users:
+        #                 if u["username"] == username or u["username"] == username + self.config.username_suffix:
+        #                     m["id"] = u["id"]
+        #                     user_found = True
+        #                     break
+        #             if not user_found:
+        #                 not_found_users.append((username, "(group: " + g["full_path"] + ")"))
+        #             user_found = False
+        #
+        # if not_found_users:
+        #     self.log.info("Users that are not mapped to staged projects and groups:\n{}".format(
+        #         "\n".join(" ".join(u) for u in not_found_users)))
 
         if not dry_run:
             with open("%s/data/stage.json" % self.app_path, "wb") as f:
@@ -284,6 +283,10 @@ class UsersClient(BaseClass):
             self.log.info("Mapped missing (destination) users to staged projects and groups")
 
     def update_new_users(self):
+        """
+        Kind of a dupe of map_new_users_to_groups_and_projects
+        :return:
+        """
         with open("%s/data/stage.json" % self.app_path, "r") as f:
             staged_projects = json.load(f)
 
@@ -529,7 +532,7 @@ class UsersClient(BaseClass):
         if path.isfile("%s/data/ids.txt" % self.app_path):
             with open("%s/data/ids.txt" % self.app_path, "r") as f:
                 for line in f.readlines():
-                    other_ids.append(line)
+                    other_ids.append(int(line))
 
         # Search for users by ID. If you find those, also add them to new_users
         for other_id in other_ids:
