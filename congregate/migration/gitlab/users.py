@@ -1,4 +1,5 @@
 from os import path
+import copy
 import json
 from requests.exceptions import RequestException
 
@@ -165,6 +166,7 @@ class UsersClient(BaseClass):
         :return:
         """
 
+        not_found_all = []
         not_found_members = []
         # An email-index dictionary of the new user objects
         rewritten_users = {}
@@ -187,6 +189,7 @@ class UsersClient(BaseClass):
 
                     if old_user.get("email"):
                         old_user_email = str(old_user.get("email")).lower()
+
                         if rewritten_users.get(old_user_email, None) is not None:
                             rewritten_user = rewritten_users[old_user_email]
                             self.log.info("Searching for user email {0} with ID {1} on destination system".format(
@@ -208,11 +211,13 @@ class UsersClient(BaseClass):
                                 continue
 
                     # In all other cases, default the action to the import_user_id
-                    not_found_members.append(member)
+                    not_found_members.append(copy.deepcopy(member))
                     member["id"] = self.config.import_user_id
 
-            self.log.info("For {0} did not find members {1}".format(obj[i]["name"], not_found_members))
+            not_found_all.append({obj[i]["name"]: not_found_members})
             not_found_members = []
+
+        self.log.warn("The not found items: {0}".format(not_found_all))
         return obj
 
     def map_new_users_to_groups_and_projects(self, dry_run=False):
