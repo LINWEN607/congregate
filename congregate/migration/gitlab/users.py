@@ -1,11 +1,12 @@
 from os import path
+import copy
 import json
 from requests.exceptions import RequestException
 
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers import api
 from congregate.helpers.threads import handle_multi_thread
-from congregate.helpers.misc_utils import strip_numbers, remove_dupes
+from congregate.helpers.misc_utils import remove_dupes
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.users import UsersApi
 
@@ -30,13 +31,23 @@ class UsersClient(BaseClass):
         return None
 
     def find_user_by_email_comparison_without_id(self, email):
-        self.log.info("Searching for user email {}".format(email))
+        """
+        Find a user by email address in the destination system
+        :param email: the email address to check for
+        :return: The user entity found or None
+        """
+        self.log.info("Searching for user email {} in destination system".format(email))
         users = self.users.search_for_user_by_email(
             self.config.destination_host,
             self.config.destination_token,
             email)
+        # Will searching for an explicit email actually return more than one? Probably is just an array of 1
         for user in users:
-            if user is not None and user and user.get("email", None) is not None and user["email"].lower() == email.lower():
+            self.log.info(user)
+            if user is not None and \
+                    user and \
+                    user.get("email", None) is not None and \
+                    user["email"].lower() == email.lower():
                 self.log.info("Found user {0} by email {1}".format(user, email))
                 return user
             else:
@@ -46,8 +57,10 @@ class UsersClient(BaseClass):
     def username_exists(self, old_user):
         index = 0
         username = old_user["username"]
-        for user in self.users.search_for_user_by_email(self.config.destination_host, self.config.destination_token,
-                                                        username):
+        for user in self.users.search_for_user_by_username(
+                self.config.destination_host,
+                self.config.destination_token,
+                username):
             if user["username"].lower() == username.lower():
                 return True
             elif index > 100:
@@ -117,52 +130,104 @@ class UsersClient(BaseClass):
 
     def create_valid_username(self, user):
         username = user["username"]
+        # If the user email does not exist in the destination system
         if not self.user_email_exists(user):
+            # But the username does exist
             if self.username_exists(user):
-                if self.config.username_suffix is not None:
-                    return "%s_%s" % (username, self.config.username_suffix)
-                else:
-                    self.log.error("Username suffix not set. Defaulting to a single underscore following the username")
-                    return "%s_" % (username)
+                # Concat the suffix
+                return self.build_suffix_username(username)
+        # If you don't find the email, you've attempted to create a suffix-unique username
+        # We really should loop over this until we find a non-dupe, but if the company name is used, there really
+        # shouldn't be one
+        else:
+            # We found the email. We should set the username to the email username
+            # This means we're going to attempt to create the same user at some point, which is fine
+            # However, this also messes up some of our remapping efforts, as those match on source username
+            # and not email
+            found_by_email_user = self.find_user_by_email_comparison_without_id(user["email"])
+            if found_by_email_user and found_by_email_user.get("username", None):
+                return found_by_email_user["username"]
         return username
 
+    def build_suffix_username(self, username):
+        # Concat the suffix
+        if self.config.username_suffix is not None:
+            return "{0}_{1}".format(username, self.config.username_suffix)
+        else:
+            self.log.error("Username suffix not set. Defaulting to a single underscore following the username")
+            return "{0}_".format(username)
+
     def update_users(self, obj, new_users):
+        """
+        Scan the obj JSON (usually staged projects or staged groups) and replace old user ids
+        with the info from new_users. Calls to the source system to match those IDs based on email
+        :param obj: Usually the data from stage.json (projects) or staged_groups.json
+        :param new_users: The content of new_users.json (or similar) that will be used to find the destination ID
+        :return:
+        """
+
+        not_found_all = []
+        not_found_members = []
+        # An email-index dictionary of the new user objects
         rewritten_users = {}
         for i in range(len(new_users)):
             new_obj = new_users[i]
-            username = strip_numbers(new_users[i]["email"]).lower()
-            rewritten_users[username] = new_obj
+            user_email = str(new_users[i]["email"]).lower()
+
+            # Create a username based dictionary of the new_users.json objects
+            rewritten_users[user_email] = new_obj
 
         for i in range(len(obj)):
             self.log.info("Rewriting users for %s" % obj[i]["name"])
             members = obj[i]["members"]
             if isinstance(members, list):
                 for member in members:
+                    # Get the old user from the source system by ID
+                    self.log.info("Searching for user ID {0} on source system".format(member["id"]))
                     old_user = self.users.get_user(member["id"], self.config.source_host, self.config.source_token)
                     old_user = old_user.json()
-                    username = strip_numbers(member["username"]).lower()
-                    if old_user.get("email"):
-                        if rewritten_users.get(old_user["email"], None) is not None:
-                            new_user = self.users.get_user(rewritten_users[old_user["email"]]["id"],
-                                                        self.config.destination_host,
-                                                        self.config.destination_token).json()
-                            if new_user.get("message", None) is None:
-                                if new_user["email"] == old_user["email"]:
-                                    member["id"] = rewritten_users[old_user["email"]]["id"]
-                                else:
-                                    member["id"] = self.config.import_user_id
-                            else:
-                                member["id"] = self.config.import_user_id
-                        else:
-                            member["id"] = self.config.import_user_id
-                    else:
-                        member["id"] = self.config.import_user_id
 
+                    if old_user.get("email"):
+                        old_user_email = str(old_user.get("email")).lower()
+
+                        if rewritten_users.get(old_user_email, None) is not None:
+                            rewritten_user = rewritten_users[old_user_email]
+                            self.log.info("Searching for user email {0} with ID {1} on destination system".format(
+                                rewritten_user,
+                                rewritten_user["id"])
+                            )
+                            new_user = self.users.get_user(rewritten_user["id"],
+                                                           self.config.destination_host,
+                                                           self.config.destination_token).json()
+                            if new_user.get("message", None) is None and \
+                                    new_user.get("email", None) is not None and \
+                                    str(new_user["email"]).lower() == old_user_email:
+                                # If we find the user by new ID, and the emails match (as they should by this point
+                                # as these users are either newly created or found by email, earlier)
+                                # reassign the user ids in the object (staged project or staged group)
+                                # Assign the member id to the *new* member id. We've checked this
+                                # many times by this point, so some of the searches may be redundant, but sane
+                                member["id"] = rewritten_user["id"]
+                                continue
+
+                    # In all other cases, default the action to the import_user_id
+                    not_found_members.append(copy.deepcopy(member))
+                    member["id"] = self.config.import_user_id
+
+            not_found_all.append({obj[i]["name"]: not_found_members})
+            not_found_members = []
+
+        self.log.warn("The not found items: {0}".format(not_found_all))
         return obj
 
     def map_new_users_to_groups_and_projects(self, dry_run=False):
-        not_found_users = []
-        user_found = False
+        """
+        Kind of a dupe of update_new_users. Has the benefit of the dry_run flag
+        :param dry_run: If true, don't actually write the updates to stage or staged_groups
+        :return: Nothing
+        """
+        # not_found_users = []
+        # user_found = False
         with open("%s/data/stage.json" % self.app_path, "r") as f:
             staged_projects = json.load(f)
 
@@ -177,41 +242,43 @@ class UsersClient(BaseClass):
             self.log.info("All users have already been migrated.")
             return
 
-        for p in staged_projects:
-            # Over every project, check the members
-            if p.get("members", None) is not None and p["members"]:
-                for m in p["members"]:
-                    username = m["username"]
-                    # Find the match in new_users.json
-                    for u in new_users:
-                        if u["username"] == username or u["username"] == username + self.config.username_suffix:
-                            m["id"] = u["id"]
-                            user_found = True
-                            break
-                    if not user_found:
-                        not_found_users.append((username, "(project: " + p["namespace"] + ")"))
-                    user_found = False
+        staged_projects = self.update_users(staged_projects, new_users)
+        # for p in staged_projects:
+        #     # Over every project, check the members
+        #     if p.get("members", None) is not None and p["members"]:
+        #         for m in p["members"]:
+        #             username = m["username"]
+        #             # Find the match in new_users.json
+        #             for u in new_users:
+        #                 if u["username"] == username or u["username"] == username + self.config.username_suffix:
+        #                     m["id"] = u["id"]
+        #                     user_found = True
+        #                     break
+        #             if not user_found:
+        #                 not_found_users.append((username, "(project: " + p["namespace"] + ")"))
+        #             user_found = False
+        #
+        # user_found = False
 
-        user_found = False
-
-        for g in staged_groups:
-            # Over every project, check the members
-            if g.get("members", None) is not None and g["members"]:
-                for m in g["members"]:
-                    username = m["username"]
-                    # Find the match in new_users.json
-                    for u in new_users:
-                        if u["username"] == username or u["username"] == username + self.config.username_suffix:
-                            m["id"] = u["id"]
-                            user_found = True
-                            break
-                    if not user_found:
-                        not_found_users.append((username, "(group: " + g["full_path"] + ")"))
-                    user_found = False
-
-        if not_found_users:
-            self.log.info("Users that are not mapped to staged projects and groups:\n{}".format(
-                "\n".join(" ".join(u) for u in not_found_users)))
+        staged_groups = self.update_users(staged_groups, new_users)
+        # for g in staged_groups:
+        #     # Over every project, check the members
+        #     if g.get("members", None) is not None and g["members"]:
+        #         for m in g["members"]:
+        #             username = m["username"]
+        #             # Find the match in new_users.json
+        #             for u in new_users:
+        #                 if u["username"] == username or u["username"] == username + self.config.username_suffix:
+        #                     m["id"] = u["id"]
+        #                     user_found = True
+        #                     break
+        #             if not user_found:
+        #                 not_found_users.append((username, "(group: " + g["full_path"] + ")"))
+        #             user_found = False
+        #
+        # if not_found_users:
+        #     self.log.info("Users that are not mapped to staged projects and groups:\n{}".format(
+        #         "\n".join(" ".join(u) for u in not_found_users)))
 
         if not dry_run:
             with open("%s/data/stage.json" % self.app_path, "wb") as f:
@@ -221,6 +288,10 @@ class UsersClient(BaseClass):
             self.log.info("Mapped missing (destination) users to staged projects and groups")
 
     def update_new_users(self):
+        """
+        Kind of a dupe of map_new_users_to_groups_and_projects
+        :return:
+        """
         with open("%s/data/stage.json" % self.app_path, "r") as f:
             staged_projects = json.load(f)
 
@@ -289,12 +360,13 @@ class UsersClient(BaseClass):
                     self.config.destination_host,
                     self.config.destination_token,
                     "groups/{0}/members/{1}?access_level={2}"
-                    .format(self.config.parent_id, user["id"], access_level), data=None)
+                        .format(self.config.parent_id, user["id"], access_level), data=None)
                 if response.status_code != 200:
-                    self.log.warn("Failed to update {0}'s access level ({1})".format(user["username"], response.content))
+                    self.log.warn(
+                        "Failed to update {0}'s access level ({1})".format(user["username"], response.content))
                 else:
                     self.log.info("Updated {0}'s parent access level to {1}"
-                        .format(user["username"], access_level))
+                                  .format(user["username"], access_level))
         except RequestException, e:
             self.log.error("Failed to update user's parent access level, with error:\n{}".format(e))
 
@@ -373,6 +445,17 @@ class UsersClient(BaseClass):
             json.dump(newer_users, f, indent=4)
 
     def update_user_info(self, new_ids, overwrite=True):
+        """
+        Update the user ids in stage.json (projects) and staged_groups.json with the proper user ids via a call
+        to update_users as pulled from new_users.json.
+        By default, rewrite (overwrite) the new_users.json file before doing this with freshly found info based on the
+        ids
+        :param new_ids: The list of user ids from found (email) or created users
+        :param overwrite: Rewrite the new_users.json file with the user information returned from a find on
+                            new_ids. Default as True.
+        :return: No return
+        """
+
         if overwrite:
             with open("%s/data/new_users.json" % self.app_path, "w") as f:
                 new_users = []
@@ -413,41 +496,60 @@ class UsersClient(BaseClass):
             json.dump(groups, f, indent=4)
 
     def update_staged_user_info(self):
+        """
+        Read the information in staged_users.json and dump to new_users.json and users_not_found.json. Does the
+        search based on the email address and *not* username
+        :return:
+        """
         with open("%s/data/staged_users.json" % self.app_path, "r") as f:
             users = json.load(f)
         new_users = []
         users_not_found = []
         for user in users:
             self.log.info("Searching for user email {}".format(user["email"]))
+            # Try to find a user in the destination system by email
             new_user = api.search(
-                self.config.destination_host, self.config.destination_token, 'users', user['email'])
-            if len(new_user) > 0:
+                self.config.destination_host,
+                self.config.destination_token,
+                'users',
+                user['email']
+            )
+
+            # If we find the user by email, but didn't get the email field back (will happen if you are not using
+            # an admin token for search) set the email field
+            if len(new_user) > 1:
+                self.log.error("Too many users found for email search using email {0}".format(user["email"]))
+                users_not_found.append(user["email"])
+            elif len(new_user) > 0:
                 if new_user[0].get("email", None) is None:
                     new_user[0]["email"] = user["email"]
+                # Add to new_users
                 new_users.append(new_user[0])
             else:
-                self.log.info("Searching for username {}".format(user["username"]))
-                new_user2 = api.search(
-                    self.config.destination_host, self.config.destination_token, 'users', user['username'])
-                if len(new_user2) > 0:
-                    new_users.append(new_user2[0])
-                else:
-                    users_not_found.append(user["email"])
+                self.log.warn(
+                    "Could not find user by email {0}. User should have been already migrated"
+                    .format(user["email"])
+                )
+                users_not_found.append(user["email"])
 
+        # Not sure where ids.txt comes from.
         other_ids = []
         if path.isfile("%s/data/ids.txt" % self.app_path):
             with open("%s/data/ids.txt" % self.app_path, "r") as f:
                 for line in f.readlines():
-                    other_ids.append(line)
+                    other_ids.append(int(line))
 
+        # Search for users by ID. If you find those, also add them to new_users
         for other_id in other_ids:
             self.log.info("Searching for user {} (ID)".format(other_id))
             new_user = self.users.get_user(
                 other_id, self.config.destination_host, self.config.destination_token).json()
             new_users.append(new_user)
 
+        # Dump everything found in new_users (email from staged or ids.txt)
         with open("%s/data/new_users.json" % self.app_path, "w") as f:
             json.dump(new_users, f, indent=4)
+        # Users not found will only include those not found by the email search
         with open("%s/data/users_not_found.json" % self.app_path, "w") as f:
             json.dump(users_not_found, f, indent=4)
 
@@ -524,17 +626,33 @@ class UsersClient(BaseClass):
             return user
 
     def handle_user_creation(self, user):
+        """
+        This is called when importing staged_users.json
+        :param user: Each iterable called is a user from the staged_users.json file
+        :return:
+        """
         try:
             user_data = self.generate_user_data(user)
+            self.log.info("Attempting to create user {0}".format(user))
             response = self.users.create_user(
                 self.config.destination_host,
                 self.config.destination_token,
-                user_data)
+                user_data
+            )
         except RequestException, e:
             self.log.error(e)
             response = None
 
         if response is not None:
+            try:
+                self.log.info("User creation response text was {0}".format(response.text))
+            except Exception as e:
+                self.log.error("Could not get response text. Error was {0}".format(e))
+            try:
+                self.log.info("User creation response JSON was {0}".format(response.json()))
+            except Exception as e:
+                self.log.error("Could not get response JSON. Error was {0}".format(e))
+
             if user_data["state"] == "blocked":
                 self.block_user(user_data)
             return self.handle_user_creation_status(response, user)
@@ -553,11 +671,16 @@ class UsersClient(BaseClass):
             self.log.error("Failed to block user {0}, due to:\n{1}".format(user_data, e))
 
     def handle_user_creation_status(self, response, user):
+        """
+
+        :param response: The response from the create_user attempt
+        :param user: The user entity (from staged_users.json) not the user_data that we generate
+        :return: The ID of either the created user or the user found by email
+        """
         if response.status_code == 409:
-            self.log.info("User already exists")
+            self.log.info("User already exists {0}".format(user["email"]))
             try:
-                self.log.info(
-                    "Appending %s to new_users.json" % user["email"])
+                # Try to find the user by email. We either just created this, or it already existed
                 response = self.find_user_by_email_comparison_without_id(user["email"])
                 if response is not None and len(response) > 0:
                     if isinstance(response, list):
