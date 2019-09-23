@@ -2,6 +2,7 @@ from congregate.helpers.logger import myLogger
 from math import ceil as math_ceil
 from congregate.helpers.decorators import stable_retry
 import requests
+from time import sleep
 
 log = myLogger(__name__)
 
@@ -166,7 +167,7 @@ def list_all(host, token, api, params=None, per_page=100):
         start_page = (start_at / PER_PAGE) + 1  # pages are 1-indexed
         end_page = int(math_ceil(float(end_at) / float(PER_PAGE)))
         current_page = start_page
-
+        retried = False
         while current_page <= end_page:
             log.info("Retrieving %d %s" % (PER_PAGE * current_page, api))
 
@@ -179,21 +180,23 @@ def list_all(host, token, api, params=None, per_page=100):
                     "per_page": PER_PAGE
                 }
             data = generate_get_request(host, token, api, params=params)
-            
             try:
                 data = data.json()
+                for project in data:
+                    yield project
+                if len(data) < PER_PAGE:
+                    break
+                current_page += 1
+                retried = False
             except ValueError, e:
                 log.error(e)
                 log.error("API request didn't return JSON")
+                log.info("Attempting to retry after 10 seconds")
+                sleep(10)
+                # Failure will only be retried once
+                retried = True
+            if retried:
                 break
-
-            for project in data:
-                yield project
-
-            if len(data) < PER_PAGE:
-                break
-
-            current_page += 1
     else:
         start_page = (start_at / PER_PAGE) + 1  # pages are 1-indexed
         current_page = start_page
@@ -204,15 +207,21 @@ def list_all(host, token, api, params=None, per_page=100):
                 "page": current_page,
                 "per_page": PER_PAGE
             }
-            data = generate_get_request(host, token, api, params=params).json()
+            try:
+                data = generate_get_request(host, token, api, params=params).json()
 
-            for project in data:
-                yield project
+                for project in data:
+                    yield project
 
-            if len(data) < PER_PAGE:
-                break
-
-            current_page += 1
+                if len(data) < PER_PAGE:
+                    break
+                current_page += 1
+            except ValueError, e:
+                log.error(e)
+                log.error("API Request didn't return JSON")
+                # Retry interval is smaller here because it will just retry until it succeeds
+                log.info("Attempting to retry after 3 seconds")
+                sleep(3)
 
 
 @stable_retry
