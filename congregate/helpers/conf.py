@@ -6,7 +6,6 @@ Copyright (c) 2018 - GitLab
 
 import os
 import json
-from congregate.cli import config as config_cli
 from congregate.helpers.misc_utils import get_congregate_path
 
 
@@ -14,7 +13,9 @@ class ig(object):
     def __init__(self):
         app_path = get_congregate_path()
         if not os.path.isfile('%s/data/config.json' % app_path):
-            config_cli.generate_config()
+            empty_config = {"config": {}}
+            with open('%s/data/config.json' % app_path, "w") as f:
+                f.write(json.dumps(empty_config, indent=4))
         with open('%s/data/config.json' % app_path) as f:
             self.config = json.load(f)["config"]
 

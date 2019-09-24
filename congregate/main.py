@@ -115,7 +115,6 @@ if __name__ == '__main__':
         from .helpers.user_util import map_users
 else:
     import sys
-
     sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     from congregate.cli import config as configure
     from congregate.helpers import conf
@@ -125,20 +124,12 @@ app_path = get_congregate_path()
 
 log = myLogger(__name__)
 
-just_configured = False
-
-if not os.path.isfile("%s/data/config.json" % app_path):
-    configure.config()
-    just_configured = True
-    config = conf.ig()
-else:
-    config = conf.ig()
+config = conf.ig()
 
 if __name__ == '__main__':
     arguments = docopt(__doc__)
     if arguments["config"]:
-        if not just_configured:
-            configure.config()
+        configure.config()
     else:
         # try:
         # from migration import users, groups, projects
