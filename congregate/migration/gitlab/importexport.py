@@ -247,6 +247,7 @@ class ImportExportClient(BaseClass):
         import_id = None
         duped = False
         wait_time = self.config.importexport_wait
+        value_error_count = 0
         if import_response is not None and len(import_response) > 0:
             import_response = json.loads(import_response)
             while not exported:
@@ -320,6 +321,10 @@ class ImportExportClient(BaseClass):
                     except ValueError as e:
                         self.log.error(e)
                         self.log.error("Status content was {0}".format(status.content))
+                        if value_error_count > 2:
+                            self.log.error("ValueError failed twice. Moving on for {0}".format(import_id))
+                            break
+                        value_error_count += 1
                 else:
                     if timeout < 3600:
                         self.log.info("Waiting {0}s for project {1} to import".format(wait_time, name))

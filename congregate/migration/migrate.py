@@ -105,7 +105,7 @@ def migrate_single_project_info(project, id):
     """
         Subsequent function to update project info AFTER import
     """
-    # members = project["members"]
+    members = project["members"]
     project.pop("members")
     name = project["name"]
     old_id = project["id"]
