@@ -56,8 +56,17 @@ class ProjectsClient(BaseClass):
                         "Attempting to update existing member failed")
 
         if not root_user_present:
-            self.log.info("removing root user from project")
-            api.generate_delete_request(self.config.destination_host, self.config.destination_token,
+            self.remove_import_user_from_project(id)
+
+    def root_user_present(self, members):
+        for member in members:
+            if member["id"] == self.config.import_user_id:
+                return True
+        return False
+            
+    def remove_import_user_from_project(self, id):
+        self.log.info("removing import user from project")
+        api.generate_delete_request(self.config.destination_host, self.config.destination_token,
                                         "projects/%d/members/%d" % (id, self.config.import_user_id))
 
     def add_shared_groups(self, old_id, new_id):

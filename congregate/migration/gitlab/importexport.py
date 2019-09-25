@@ -367,9 +367,26 @@ class ImportExportClient(BaseClass):
                 if downloaded_filename is not None:
                     import_response = self.aws.copy_from_s3_and_import(
                         name, namespace, downloaded_filename)
+        elif self.config.location == "filesystem":
+            with open("%s/downloads/%s" % (self.config.filesystem_path, filename), "rb") as f:
+                data = {
+                    "path": name.replace(" ", "_"),
+                    "namespace": namespace
+                }
+
+                files = {
+                    "file": (filename, f)
+                }
+
+                headers = {
+                    "Private-Token": self.config.destination_token
+                }
+
+                resp = api.generate_post_request(self.config.destination_host, self.config.destination_token, "projects/import", data, files=files, headers=headers)
+                import_response = resp.text
         return import_response
 
-    def export_import_thru_filesystem(self, id, name, namespace):
+    def export_thru_filesystem(self, id, name, namespace):
         working_dir = getcwd()
         filename = "{0}_{1}.tar.gz".format(namespace, name)
         self.log.info("Exporting %s to %s" %
@@ -383,23 +400,9 @@ class ImportExportClient(BaseClass):
         misc_utils.download_file(url, self.config.filesystem_path, headers={
             "PRIVATE-TOKEN": self.config.source_token}, filename=filename)
 
-        with open("%s/downloads/%s" % (self.config.filesystem_path, filename), "rb") as f:
-            data = {
-                "path": name.replace(" ", "_"),
-                "namespace": namespace
-            }
+        return filename
 
-            files = {
-                "file": (filename, f)
-            }
-
-            headers = {
-                "Private-Token": self.config.destination_token
-            }
-
-            return api.generate_post_request(self.config.destination_host, self.config.destination_token, "projects/import", data, files=files, headers=headers)
-
-    def export_import_thru_fs_aws(self, id, name, namespace):
+    def export_thru_fs_aws(self, id, name, namespace):
         path_with_namespace = "%s_%s.tar.gz" % (namespace, name)
         if self.keys_map.get(path_with_namespace.lower(), None) is None:
             self.log.info("Unarchiving %s" % name)
@@ -437,7 +440,7 @@ class ImportExportClient(BaseClass):
 
         return success
 
-    def export_import_thru_aws(self, id, name, namespace, full_parent_namespace):
+    def export_thru_aws(self, id, name, namespace, full_parent_namespace):
         exported = False
         self.log.debug("Searching for existing project {}".format(name))
         if self.config.strip_namespace_prefix:

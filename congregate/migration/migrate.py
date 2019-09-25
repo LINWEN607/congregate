@@ -105,7 +105,7 @@ def migrate_single_project_info(project, id):
     """
         Subsequent function to update project info AFTER import
     """
-    members = project["members"]
+    # members = project["members"]
     project.pop("members")
     name = project["name"]
     old_id = project["id"]
@@ -116,8 +116,11 @@ def migrate_single_project_info(project, id):
         _, id = projects.find_project_by_path(b.config.destination_host, b.config.destination_token, full_parent_namespace, project["namespace"], project["name"])
 
     # Project Members
-    # TODO: Should this be commented out? Is in Master pre merge
+    # NOTE: Members should be handled on import. If that is not the case, the line below and variable members should be uncommented.
+    # TODO: Remove the `add_members` function once the import API can consistently add project members
     # projects.add_members(members, id)
+    if not projects.root_user_present(members):
+        projects.remove_import_user_from_project(id)
 
     # Project Avatar
     # DOES THIS NEED TO STILL BE HERE AFTER MERGE?
@@ -372,7 +375,7 @@ def migrate(threads=None, skip_users=False, keep_blocked_users=False):
         if staged_projects is not None and staged_projects:
             b.log.info("Migrating project info")
             pool = ThreadPool(b.config.threads)
-            results = pool.map(handle_migrating_file, staged_projects)
+            results = pool.map(handle_exporting_projects, staged_projects)
             pool.close()
             pool.join()
 
@@ -403,37 +406,34 @@ def kick_off_import():
         b.log.info("No projects to migrate")
 
 
-def handle_migrating_file(f):
-    name = f["name"]
-    id = f["id"]
-    namespace = f["namespace"]
+def handle_exporting_projects(project):
+    name = project["name"]
+    id = project["id"]
+    namespace = project["namespace"]
     try:
-        if b.config.parent_id is not None and f["project_type"] != "user":
+        if b.config.parent_id is not None and project["project_type"] != "user":
             parent_namespace = groups.groups_api.get_group(
                 b.config.parent_id, b.config.destination_host, b.config.destination_token).json()
-            namespace = "%s/%s" % (parent_namespace["path"], f["namespace"])
+            namespace = "%s/%s" % (parent_namespace["path"], project["namespace"])
         else:
-            namespace = f["namespace"]
+            namespace = project["namespace"]
         if b.config.location == "filesystem":
             b.log.info("Migrating project {} through filesystem".format(name))
-            ie.export_import_thru_filesystem(id, name, namespace)
-            # migrate_project_info()
+            ie.export_thru_filesystem(id, name, namespace)
 
         elif b.config.location.lower() == "filesystem-aws":
             b.log.info("Migrating project {} through filesystem-AWS".format(name))
-            ie.export_import_thru_fs_aws(id, name, namespace)
+            ie.export_thru_fs_aws(id, name, namespace)
 
         elif (b.config.location).lower() == "aws":
             b.log.info("Migrating project {} through AWS".format(name))
-            exported = ie.export_import_thru_aws(id, name, namespace, full_parent_namespace)
+            exported = ie.export_thru_aws(id, name, namespace, full_parent_namespace)
             filename = "%s_%s.tar.gz" % (namespace, name)
             try:
                 project_export.update_project_export_members(name, namespace, filename)
             except Exception, e:
                 b.log.error("Failed to update {0} project export, with error:\n{1}".format(filename, e))
             return exported
-            # TODO: Needed?
-            # migrate_given_export(f)
     except IOError, e:
         b.log.error(e)
 
