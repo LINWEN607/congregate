@@ -33,7 +33,7 @@ class ProjectExportClient(BaseClass):
         shutil.rmtree(extract_path)
 
     def generate_filepaths(self, name, namespace, filename):
-        file_path = self.aws.copy_from_s3(filename)
+        file_path = self.aws.get_local_file_path(filename)
         extract_path = "%s/downloads/%s_%s" % (self.config.filesystem_path, name, namespace)
 
         return file_path, extract_path

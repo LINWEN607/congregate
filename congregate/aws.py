@@ -90,8 +90,9 @@ class AwsClient(BaseClass):
         )
         return None
 
-    def copy_from_s3(self, filename):
+    def get_local_file_path(self, filename):
         file_path = "%s/downloads/%s" % (self.config.filesystem_path, filename)
+        # copy from S3 to local machine if it doesn't exist
         if not path.isfile(file_path):
             self.log.info("Copying project file {} from S3 to local machine".format(filename))
             cmd = "aws+s3+cp+s3://%s/%s+%s" % (
@@ -100,7 +101,7 @@ class AwsClient(BaseClass):
         return file_path
 
     def copy_from_s3_and_import(self, name, namespace, filename):
-        file_path = self.copy_from_s3(filename)
+        file_path = self.get_local_file_path(filename)
         url = '%s/api/v4/projects/import' % (self.config.destination_host)
         data = {
             "path": name.replace(" ", "-"),
