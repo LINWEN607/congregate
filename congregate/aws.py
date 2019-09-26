@@ -28,9 +28,10 @@ class AwsClient(BaseClass):
         # TODO: Config these?
         max_retries = 3
         current_retries = -1
-
+        sleep_time = self.config.importexport_wait
         # Returns out on success, so no need for success tracker
         while True and current_retries < max_retries:
+            sleep_time = self.config.importexport_wait
             try:
                 # Added timeout tuple for connection/read until the retry is implemented
                 with requests.get(presigned_url, stream=True, timeout=(10, 10)) as r:
@@ -57,6 +58,13 @@ class AwsClient(BaseClass):
                                 elif r.status_code == 400 and str("Name has already been taken") in r.content:
                                     self.log.warn("Project {} already exists".format(name))
                                     return None
+                                elif r.status_code == 429:
+                                    self.log.warn(
+                                        "Too many requests. Getting 429s. Sleeping 30 seconds longer for project: {0}"
+                                            .format(name)
+                                    )
+                                    # Add an additional 30 seconds to the sleep on 429
+                                    sleep_time = sleep_time + 30
                                 else:
                                     self.log.warn("Project file {0} import post status code was {1} with content {2}".format(
                                         filename,
@@ -73,7 +81,7 @@ class AwsClient(BaseClass):
                 self.log.error("Something went terribly wrong, with error:\n{}".format(e))
 
             # All paths should fall-thru to here
-            sleep(15)
+            sleep(sleep_time)
             current_retries += 1
 
         # If we hit here, didn't return out with a success
