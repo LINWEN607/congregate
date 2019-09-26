@@ -25,12 +25,9 @@ class AwsClient(BaseClass):
             region_name=self.config.s3_region)
 
     def import_from_s3(self, name, namespace, presigned_url, filename, override_params=None):
-        # TODO: Config these?
-        max_retries = 3
-        current_retries = -1
-        sleep_time = self.config.importexport_wait
+        retry_count = 0
         # Returns out on success, so no need for success tracker
-        while True and current_retries < max_retries:
+        while True and retry_count <= self.config.max_import_retries:
             sleep_time = self.config.importexport_wait
             try:
                 # Added timeout tuple for connection/read until the retry is implemented
@@ -82,7 +79,7 @@ class AwsClient(BaseClass):
 
             # All paths should fall-thru to here
             sleep(sleep_time)
-            current_retries += 1
+            retry_count += 1
 
         # If we hit here, didn't return out with a success
         self.log.error("No import status verified for:\nProject: {0}\nNamespace: {1}\nFile: {2}\nURL: {3}".format(
@@ -93,7 +90,7 @@ class AwsClient(BaseClass):
         )
         return None
 
-    def copy_from_s3(self, name, namespace, filename):
+    def copy_from_s3(self, filename):
         file_path = "%s/downloads/%s" % (self.config.filesystem_path, filename)
         if not path.isfile(file_path):
             self.log.info("Copying project file {} from S3 to local machine".format(filename))
@@ -103,29 +100,24 @@ class AwsClient(BaseClass):
         return file_path
 
     def copy_from_s3_and_import(self, name, namespace, filename):
-        file_path = self.copy_from_s3(name, namespace, filename)
+        file_path = self.copy_from_s3(filename)
         url = '%s/api/v4/projects/import' % (self.config.destination_host)
-        files= {
-            'file': (filename, f)
-        }
         data = {
             "path": name.replace(" ", "-"),
             "namespace": namespace
         }
         headers = {
-            'Private-Token': self.config.destination_token
+            "Private-Token": self.config.destination_token
         }
         r = None
 
-        # TODO: Config these?
-        max_retries = 3
-        current_retries = -1
+        retry_count = 0
 
         # Returns out on success, so no need for success tracker
-        while True and current_retries < max_retries:
+        while True and retry_count <= self.config.max_import_retries:
             with open(file_path, 'r') as f:
                 self.log.info("Importing project {} from S3".format(name))
-                r = requests.post(url, headers=headers, data=data, files=files)
+                r = requests.post(url, headers=headers, data=data, files={ "file": (filename, f) })
 
             if r is not None:
                 if r.status_code == 200:
@@ -141,7 +133,7 @@ class AwsClient(BaseClass):
                 self.log.warn("Import post status code was None {0}".format(file_path))
 
             sleep(15)
-            current_retries += 1
+            retry_count += 1
 
         self.log.error("No import status verified for:\nProject: {0}\nNamespace: {1}\nFile: {2}\nFile path: {3}\nURL: {4}".format(
             name,

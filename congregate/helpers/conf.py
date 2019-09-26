@@ -151,7 +151,6 @@ class ig(object):
         """
         This setting determines if, in the instance of an existing project being found at the destination with the
         same name as the source project, if we should append a value and create the project, or just fail the import.
-
         :return:    The value from the append_project_suffix configuration value, or `False` by default. Note:
                     The `False` return will execute the default behavior and cause the import to fail if an existing
                     project is found
@@ -163,8 +162,7 @@ class ig(object):
         """
         If we should strip the namespace when doing the import/export routines. Should default to True, as stripping
         handles so nesting issues when the depth is consistent.
-
-        :return: The set boolean value or True as default in case of no setting.
+        :return: The set config value or True as default.
         """
         return self.config.get("strip_namespace_prefix", True)
 
@@ -174,8 +172,7 @@ class ig(object):
         This key-value (in seconds) concerns the import/export status wait time.
         Depending whether we are migrating during peak hours or not we should be able to adjust it.
         In general it should be increased when using multiple threads i.e. when the API cannot handle all the requests.
-
-        :return: The set value or 30 (seconds) as default in case of no setting.
+        :return: The set config value or 30 (seconds) as default.
         """
         return self.config.get("importexport_wait", 30)
 
@@ -183,7 +180,7 @@ class ig(object):
     def reset_password(self):
         """
         Whether or not we should send the reset password link on user creation. Note: The API defaults to false
-        :return: The setting from the config file or True
+        :return: The set config value or True as default.
         """
         return self.config.get("reset_password", True)
 
@@ -192,7 +189,7 @@ class ig(object):
         """
         This API flag for user creation is not well-documented, but can be used in combination with password and
         reset_password to generate a random password at create
-        :return: The setting from the config file or False
+        :return: The set config value or False as default.
         """
         return self.config.get("force_random_password", False)
 
@@ -201,11 +198,17 @@ class ig(object):
         """
         Project/group notification level that is set before adding members to the groups/projects.
         Assign it in order to control how users get notified during migrations.
-
-        :return: The set value or None as default in case of no setting.
+        :return: The set config value or None as default.
         """
         return self.config.get("notification_level", None)
 
+    @property
+    def max_import_retries(self):
+        """
+        Project import retry count.
+        :return: The set config value or 3 as default.
+        """
+        return self.config.get("max_import_retries", 3)
 
     @threads.setter
     def threads(self, value):
