@@ -119,8 +119,10 @@ class GroupsClient(BaseClass):
         for old_id, new_id in self.group_id_mapping.items():
             badges = self.groups_api.get_all_group_badges(self.config.source_host, self.config.source_token, old_id)
             if badges:
-                self.log.info("Migrating source group ID {0} badges".format(old_id))
-                self.add_badges(new_id, self.find_parent_group_path(), badges)
+                badges = list(badges)
+                if badges:
+                    self.log.info("Migrating source group ID {0} badges".format(old_id))
+                    self.add_badges(new_id, self.find_parent_group_path(), badges)
 
     def traverse_and_migrate(self, groups, rewritten_groups):
         count = 0

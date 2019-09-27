@@ -134,8 +134,10 @@ def migrate_single_project_info(project, id):
     # Update project badges to use destination path hostname
     badges = projects_api.get_all_project_badges(b.config.destination_host, b.config.destination_token, id)
     if badges:
-        b.log.info("Updating project {0} badges".format(name))
-        projects.update_badges(id, full_parent_namespace, badges)
+        badges = list(badges)
+        if badges:
+            b.log.info("Updating project {0} badges".format(name))
+            projects.update_badges(id, full_parent_namespace, badges)
 
     # CI/CD Variables
     try:
@@ -180,10 +182,12 @@ def migrate_single_project_info(project, id):
     # Protected Branches
     try:
         p_branches = branches.get_protected_branches(old_id, b.config.source_host, b.config.source_token)
-        if list(p_branches):
-            b.log.info("Migrating project {} protected branches".format(name))
-            branches.migrate_protected_branches(id, p_branches)
-            results["protected_branches"] = True
+        if p_branches:
+            p_branches = list(p_branches)
+            if p_branches:
+                b.log.info("Migrating project {} protected branches".format(name))
+                branches.migrate_protected_branches(id, p_branches)
+                results["protected_branches"] = True
     except Exception, e:
         b.log.info("Failed to migrate project {0} protected branches, with error:\n{1}".format(name, e))
         results["protected_branches"] = False
@@ -206,10 +210,12 @@ def migrate_single_project_info(project, id):
     # Pipeline Schedules
     try:
         p_schedules = schedules.get_all_pipeline_schedules(b.config.source_host, b.config.source_token, old_id)
-        if list(p_schedules):
-            b.log.info("Migrating project {} pipeline schedules".format(name))
-            schedules.migrate_pipeline_schedules(id, old_id, users_map, p_schedules)
-            results["pipeline_schedules"] = True
+        if p_schedules:
+            p_schedules = list(p_schedules)
+            if p_schedules:
+                b.log.info("Migrating project {} pipeline schedules".format(name))
+                schedules.migrate_pipeline_schedules(id, old_id, users_map, p_schedules)
+                results["pipeline_schedules"] = True
     except Exception, e:
         b.log.error("Failed to migrate project {0} pipeline schedules, with error:\n{1}".format(name, e))
         results["pipeline_schedules"] = False
@@ -223,10 +229,12 @@ def migrate_single_project_info(project, id):
     # Deploy Keys (project only)
     try:
         keys = deploy_keys.list_project_deploy_keys(old_id)
-        if list(keys):
-            b.log.info("Migrating project {} deploy keys".format(name))
-            deploy_keys.migrate_deploy_keys(id, keys)
-            results["deploy_keys"] = True
+        if keys:
+            keys = list(keys)
+            if keys:
+                b.log.info("Migrating project {} deploy keys".format(name))
+                deploy_keys.migrate_deploy_keys(id, keys)
+                results["deploy_keys"] = True
         else:
             b.log.info("Project {} has no deploy keys".format(name))
     except Exception, e:
