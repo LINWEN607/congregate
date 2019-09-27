@@ -79,22 +79,11 @@ class AwardsClient(BaseClass):
                         )
                         if response.status_code == 200:
                             self.log.info("Getting new award giver with {0}".format(award["user"]["id"]))
-                            new_award_giver = self.users.find_user_by_email_comparison_with_id(
-                                award["user"]["id"]
-                            )
-
-                            self.log.info("New award giver is {0}".format(new_award_giver))
-                            impersonation_token = self.users.find_or_create_impersonation_token(
-                                self.config.destination_host,
-                                self.config.destination_token,
-                                new_award_giver,
-                                users_map,
-                                self.token_expiration_date
-                            )
+                            token = self.__generate_token(award["user"], users_map)
 
                             self.__create_awardable_emoji(
                                 self.config.destination_host,
-                                impersonation_token["token"],
+                                token,
                                 k,
                                 new_id,
                                 awardable_id,
@@ -137,20 +126,12 @@ class AwardsClient(BaseClass):
                             if isinstance(dn, dict):
                                 for n in notes_json:
                                     i = notes_json.index(n)
-                                    new_award_giver = self.users.find_user_by_email_comparison_with_id(
-                                        n["user"]["id"])
-
-                                    impersonation_token = self.users.find_or_create_impersonation_token(
-                                        self.config.destination_host,
-                                        self.config.destination_token,
-                                        new_award_giver,
-                                        users_map,
-                                        self.token_expiration_date
-                                    )
+                                    
+                                    token = self.__generate_token(n["user"], users_map)
 
                                     self.__create_awardable_note_emoji(
                                         self.config.destination_host,
-                                        impersonation_token["token"],
+                                        token,
                                         awardable_name,
                                         new_project_id,
                                         awardable_id,
@@ -164,6 +145,21 @@ class AwardsClient(BaseClass):
             except RequestException as e:
                 self.log.error("Failed to migrate awardable {0} ID {1} note emoji {2}, with error:\n{4}"
                                .format(awardable_name, awardable_id, n["name"], e))
+
+    def __generate_token(self, user, users_map):
+        new_award_giver = self.users.find_user_primarily_by_email(user)
+        if new_award_giver is not None:
+            impersonation_token = self.users.find_or_create_impersonation_token(
+                self.config.destination_host,
+                self.config.destination_token,
+                new_award_giver,
+                users_map,
+                self.token_expiration_date
+            )
+            return impersonation_token["token"]
+        else:
+            self.log.warn("Award giver not found. Defaulting to import user")
+            return self.config.destination_token
 
     def __set_client(self, awardable_name):
         self.awardable_client = getattr(self, awardable_name)

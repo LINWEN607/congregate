@@ -81,6 +81,15 @@ class UsersClient(BaseClass):
                 index += 1
         return False
 
+    def find_user_primarily_by_email(self, user):
+        new_user = None
+        if user:
+            if user.get("email", None) is not None: 
+                new_user = self.find_user_by_email_comparison_without_id(user["email"])
+            elif user.get("id", None) is not None:
+                new_user = self.find_user_by_email_comparison_with_id(user["id"])
+        return new_user
+
     def find_or_create_impersonation_token(self, host, token, user, users_map, expiration_date):
         email = user["email"]
         id = user["id"]

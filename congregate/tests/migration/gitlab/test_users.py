@@ -601,3 +601,83 @@ class UserTests(unittest.TestCase):
         dummy_user["username"] = "JUST NOW CREATED"
         created_user_name = self.users.create_valid_username(dummy_user)
         self.assertEqual(created_user_name, dummy_user["username"] + "_")
+
+
+    # pylint: disable=no-member
+    @responses.activate
+    # pylint: enable=no-member
+    @mock.patch("congregate.helpers.api.generate_v4_request_url")
+    @mock.patch.object(UsersApi, "search_for_user_by_email")
+    @mock.patch('congregate.migration.gitlab.users.UsersClient.user_email_exists')
+    def test_find_user_primarily_by_email_with_email(self, check, search, url):
+        user = {
+            "email": "jdoe@email.com",
+            "id": 5
+        }
+        url_value = "https://gitlabsource.com/api/v4/users/5"
+        url.return_value = url_value
+        check.return_value = True
+        # pylint: disable=no-member
+        responses.add(responses.GET, url_value,
+                    json=self.mock_users.get_dummy_user(), status=200)
+        # pylint: enable=no-member
+        search.return_value = [self.mock_users.get_dummy_user()]
+        actual = self.users.find_user_primarily_by_email(user)
+        expected = self.mock_users.get_dummy_user()
+        self.assertDictEqual(expected, actual)
+
+    # pylint: disable=no-member
+    @responses.activate
+    # pylint: enable=no-member
+    @mock.patch("congregate.helpers.api.generate_v4_request_url")
+    @mock.patch.object(UsersApi, "search_for_user_by_email")
+    @mock.patch('congregate.migration.gitlab.users.UsersClient.user_email_exists')
+    def test_find_user_primarily_by_email_with_id(self, check, search, url):
+        user = {
+            "id": 5
+        }
+        url_value = "https://gitlabsource.com/api/v4/users/5"
+        url.return_value = url_value
+        check.return_value = True
+        # pylint: disable=no-member
+        responses.add(responses.GET, url_value,
+                    json=self.mock_users.get_dummy_user(), status=200)
+        # pylint: enable=no-member
+        search.return_value = [self.mock_users.get_dummy_user()]
+        actual = self.users.find_user_primarily_by_email(user)
+        expected = self.mock_users.get_dummy_user()
+        self.assertDictEqual(expected, actual)
+
+    # pylint: disable=no-member
+    @responses.activate
+    # pylint: enable=no-member
+    @mock.patch("congregate.helpers.api.generate_v4_request_url")
+    @mock.patch.object(UsersApi, "search_for_user_by_email")
+    def test_find_user_primarily_by_email_with_invalid_object(self, search, url):
+        user = {}
+        url_value = "https://gitlabsource.com/api/v4/users/5"
+        url.return_value = url_value
+        # pylint: disable=no-member
+        responses.add(responses.GET, url_value,
+                    json=self.mock_users.get_dummy_user(), status=200)
+        # pylint: enable=no-member
+        search.return_value = [self.mock_users.get_dummy_user()]
+        actual = self.users.find_user_primarily_by_email(user)
+        self.assertIsNone(actual)
+
+    # pylint: disable=no-member
+    @responses.activate
+    # pylint: enable=no-member
+    @mock.patch("congregate.helpers.api.generate_v4_request_url")
+    @mock.patch.object(UsersApi, "search_for_user_by_email")
+    def test_find_user_primarily_by_email_with_none(self, search, url):
+        user = None
+        url_value = "https://gitlabsource.com/api/v4/users/5"
+        url.return_value = url_value
+        # pylint: disable=no-member
+        responses.add(responses.GET, url_value,
+                    json=self.mock_users.get_dummy_user(), status=200)
+        # pylint: enable=no-member
+        search.return_value = [self.mock_users.get_dummy_user()]
+        actual = self.users.find_user_primarily_by_email(user)
+        self.assertIsNone(actual)
