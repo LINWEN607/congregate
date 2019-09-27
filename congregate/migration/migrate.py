@@ -179,6 +179,14 @@ def migrate_single_project_info(project, id):
         b.log.error("Failed to migrate {0} merge request approvers, with error:\n{1}".format(name, e))
         results["merge_request_approvers"] = False
 
+    # Default Branch
+    try:
+        branches.update_default_branch(old_id, id, project)
+        results["default_branch"] = True
+    except Exception, e:
+        b.log.info("Failed to migrate project {0} default branch, with error:\n{1}".format(name, e))
+        results["default_branch"] = False
+
     # Protected Branches
     try:
         p_branches = branches.get_protected_branches(old_id, b.config.source_host, b.config.source_token)
@@ -546,15 +554,6 @@ def check_visibility():
     print count
 
 
-def set_default_branch():
-    for project in api.list_all(b.config.destination_host, b.config.destination_token, "projects"):
-        if project.get("default_branch", None) != "master":
-            id = project["id"]
-            name = project["name"]
-            b.log.debug("Setting default branch to master for project {}".format(name))
-            resp = api.generate_put_request(
-                b.config.destination_host, b.config.destination_token, "projects/%d?default_branch=master" % id, data=None)
-            b.log.debug("Project {0} default branch status: {1}".format(name, resp.status_code))
 
 
 def update_diverging_branch():

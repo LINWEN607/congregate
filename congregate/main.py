@@ -141,6 +141,7 @@ if __name__ == '__main__':
             from congregate.migration.gitlab.compare import CompareClient
             from congregate.migration.mirror import MirrorClient
             from congregate.migration import migrate
+            from congregate.migration.gitlab.branches import BranchesClient
             # except ImportError:
             #     import migration.users, migration.groups, migration.projects
             from congregate.cli import list_projects, stage_projects, do_all
@@ -152,6 +153,7 @@ if __name__ == '__main__':
             from .migration.gitlab.compare import CompareClient
             from .migration.mirror import MirrorClient
             from congregate.migration import migrate
+            from .migration.gitlab.branches import BranchesClient
             # except ImportError:
             #     import migration.users, migration.groups, migration.projects
             from congregate.cli import list_projects, stage_projects, do_all
@@ -181,6 +183,7 @@ if __name__ == '__main__':
             projects = ProjectsClient()
             variables = VariablesClient()
             compare = CompareClient()
+            branches = BranchesClient()
             if arguments["list"]:
                 list_projects.list_projects()
             if arguments["stage"]:
@@ -253,7 +256,7 @@ if __name__ == '__main__':
             if arguments["add-all-mirrors"]:
                 migrate.enable_mirror()
             if arguments["set-default-branch"]:
-                migrate.set_default_branch()
+                branches.set_default_branches_to_master()
             if arguments["count-unarchived-projects"]:
                 migrate.count_unarchived_projects()
             if arguments["archive-staged-projects"]:
