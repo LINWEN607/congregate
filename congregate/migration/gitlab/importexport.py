@@ -117,7 +117,7 @@ class ImportExportClient(BaseClass):
             # to override the dash ("-") in import/export file path
             "name": project["name"],
             "description": project["description"],
-            "shared_runners_enabled": project["shared_runners_enabled"],
+            "shared_runners_enabled": self.config.shared_runners_enabled,
             "wiki_access_level": project["wiki_access_level"],
             "issues_access_level": project["issues_access_level"],
             "merge_requests_access_level": project["merge_requests_access_level"],
