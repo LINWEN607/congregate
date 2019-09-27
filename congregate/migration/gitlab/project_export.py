@@ -45,19 +45,14 @@ class ProjectExportClient(BaseClass):
         # Build user map
         self.log.info("Building user map")
         for d in data["project_members"]:
-            if d.get("user_id", None) is not None: 
-                new_user = self.users.find_user_by_email_comparison_with_id(d["user_id"])
-                if new_user is not None:
-                    d["user"]["id"] = new_user["id"]
-                    self.users_map[d["user_id"]] = new_user["id"]
-                    # We do the following to force the import tool to match on email
-                    # Particularly useful when users have already been migrated ahead of project migration
-                    # and may have a suffix on their username
-                    d["user"]["username"] = "dont_have_this_username"
-                else:
-                    d["user"]["id"] = self.config.import_user_id
-                    self.users_map[d["user_id"]] = self.config.import_user_id
-                    d["user"]['username'] = "This is invalid"
+            new_user = self.__get_new_user_from_project_json(d.get("user", None))
+            if new_user is not None:
+                d["user"]["id"] = new_user["id"]
+                self.users_map[d["user_id"]] = new_user["id"]
+                # We do the following to force the import tool to match on email
+                # Particularly useful when users have already been migrated ahead of project migration
+                # and may have a suffix on their username
+                d["user"]["username"] = "dont_have_this_username"
             else:
                 d["user"]["id"] = self.config.import_user_id
                 self.users_map[d["user_id"]] = self.config.import_user_id
@@ -84,6 +79,15 @@ class ProjectExportClient(BaseClass):
 
         with open("%s/project.json" % path, "w") as f:
             json.dump(data, f, indent=4)
+
+    def __get_new_user_from_project_json(self, user):
+        new_user = None
+        if user:
+            if user.get("email", None) is not None: 
+                new_user = self.users.find_user_by_email_comparison_without_id(user["email"])
+            elif user.get("id", None) is not None:
+                new_user = self.users.find_user_by_email_comparison_with_id(user["id"])
+        return new_user
 
     def __traverse_json(self, data):
         if isinstance(data, dict):
