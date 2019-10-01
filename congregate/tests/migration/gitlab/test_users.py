@@ -5,6 +5,8 @@ import json
 from congregate.tests.mockapi.users import MockUsersApi
 from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.users import UsersClient
+from congregate.migration.gitlab.groups import GroupsApi
+
 
 class UserTests(unittest.TestCase):
     def setUp(self):
@@ -43,9 +45,10 @@ class UserTests(unittest.TestCase):
         expected = self.mock_users.get_dummy_user()
         self.assertDictEqual(expected, actual)
 
-
+    @mock.patch.object(UsersClient, "is_username_group_name")
     @mock.patch.object(UsersApi, "search_for_user_by_username")
-    def test_user_exists_true(self, search):
+    def test_user_exists_true(self, search, users_client):
+        users_client.return_value = False
         search.return_value = [self.mock_users.get_dummy_user()]
         old_user = {
             "username": "jdoe"
@@ -53,8 +56,10 @@ class UserTests(unittest.TestCase):
         actual = self.users.username_exists(old_user)
         self.assertTrue(actual)
 
+    @mock.patch.object(UsersClient, "is_username_group_name")
     @mock.patch.object(UsersApi, "search_for_user_by_username")
-    def test_user_exists_false(self, search):
+    def test_user_exists_false(self, search, users_client):
+        users_client.return_value = False
         search.return_value = [self.mock_users.get_dummy_user()]
         old_user = {
             "username": "notjdoe"
@@ -62,8 +67,10 @@ class UserTests(unittest.TestCase):
         actual = self.users.username_exists(old_user)
         self.assertFalse(actual)
 
+    @mock.patch.object(UsersClient, "is_username_group_name")
     @mock.patch.object(UsersApi, "search_for_user_by_username")
-    def test_user_exists_over_100(self, search):
+    def test_user_exists_over_100(self, search, users_client):
+        users_client.return_value = False
         dummy_large_list = []
         for _ in range(0, 105):
             dummy_large_list.append(self.mock_users.get_dummy_user())
@@ -74,8 +81,10 @@ class UserTests(unittest.TestCase):
         actual = self.users.username_exists(old_user)
         self.assertFalse(actual)
 
+    @mock.patch.object(UsersClient, "is_username_group_name")
     @mock.patch.object(UsersApi, "search_for_user_by_username")
-    def test_user_exists_no_results(self, search):
+    def test_user_exists_no_results(self, search, users_client):
+        users_client.return_value = False
         old_user = {
             "username": "notjdoe"
         }
@@ -681,3 +690,27 @@ class UserTests(unittest.TestCase):
         search.return_value = [self.mock_users.get_dummy_user()]
         actual = self.users.find_user_primarily_by_email(user)
         self.assertIsNone(actual)
+
+    @mock.patch.object(GroupsApi, "search_for_group")
+    def test_is_username_group_name_not_found(self, group_api):
+        group_api.return_value = {"name": "xyz"}
+        response = self.users.is_username_group_name({"username": "abc"})
+        self.assertFalse(response)
+
+    @mock.patch.object(GroupsApi, "search_for_group")
+    def test_is_username_group_name_found(self, group_api):
+        group_api.return_value = {"name": "abc"}
+        response = self.users.is_username_group_name({"username": "abc"})
+        self.assertTrue(response)
+
+    @mock.patch.object(GroupsApi, "search_for_group")
+    def test_is_username_group_name_found_ignore_case(self, group_api):
+        group_api.return_value = {"name": "ABC"}
+        response = self.users.is_username_group_name({"username": "abc"})
+        self.assertTrue(response)
+
+    @mock.patch.object(GroupsApi, "search_for_group")
+    def test_is_username_group_name_error_assumes_true(self, group_api):
+        group_api.side_effect = Exception("THIS HAPPENED")
+        response = self.users.is_username_group_name({"username": "abc"})
+        self.assertTrue(response)

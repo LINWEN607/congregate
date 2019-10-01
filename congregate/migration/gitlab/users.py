@@ -57,16 +57,51 @@ class UsersClient(BaseClass):
     def username_exists(self, old_user):
         index = 0
         username = old_user["username"]
-        for user in self.users.search_for_user_by_username(
-                self.config.destination_host,
-                self.config.destination_token,
-                username):
-            if user["username"].lower() == username.lower():
-                return True
-            elif index > 100:
-                return False
-            index += 1
-        return False
+        if not self.is_username_group_name(old_user):
+            for user in self.users.search_for_user_by_username(
+                    self.config.destination_host,
+                    self.config.destination_token,
+                    username):
+                if user["username"].lower() == username.lower():
+                    return True
+                elif index > 100:
+                    return False
+                index += 1
+            return False
+        else:
+            self.log.info("Username {0} for user {1} exists as a group name".format(username, old_user))
+            return True
+
+    def is_username_group_name(self, old_user):
+        """
+        Check if a username exists as a group name
+        :param old_user: The source user we are trying to create a new user for
+        :return: True if the username from old_user exists as a group name
+                True if there is an error checking for the name (assume no create)
+                Else False
+        """
+        try:
+            namespace_check_response = []
+            for i in [self.groups.search_for_group(
+                old_user["username"],
+                host=self.config.destination_host,
+                token=self.config.destination_token
+            )]:
+                self.log.info(i)
+                namespace_check_response.append(i)
+            if namespace_check_response:
+                self.log.info(namespace_check_response)
+                for z in namespace_check_response:
+                    if z.get("name") and str(z["name"]).lower() == str(old_user["username"]).lower():
+                        # We found a match, so username is group name. Return True
+                        return True
+            return False
+        except Exception as e:
+            self.log.error(
+                "Error checking username is not group name for user {0} with error {1}. User will not be created."
+                    .format(old_user, e)
+            )
+            return True
 
     def user_email_exists(self, old_user):
         index = 0
