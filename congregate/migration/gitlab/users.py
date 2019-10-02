@@ -293,42 +293,8 @@ class UsersClient(BaseClass):
             return
 
         staged_projects = self.update_users(staged_projects, new_users)
-        # for p in staged_projects:
-        #     # Over every project, check the members
-        #     if p.get("members", None) is not None and p["members"]:
-        #         for m in p["members"]:
-        #             username = m["username"]
-        #             # Find the match in new_users.json
-        #             for u in new_users:
-        #                 if u["username"] == username or u["username"] == username + self.config.username_suffix:
-        #                     m["id"] = u["id"]
-        #                     user_found = True
-        #                     break
-        #             if not user_found:
-        #                 not_found_users.append((username, "(project: " + p["namespace"] + ")"))
-        #             user_found = False
-        #
-        # user_found = False
 
         staged_groups = self.update_users(staged_groups, new_users)
-        # for g in staged_groups:
-        #     # Over every project, check the members
-        #     if g.get("members", None) is not None and g["members"]:
-        #         for m in g["members"]:
-        #             username = m["username"]
-        #             # Find the match in new_users.json
-        #             for u in new_users:
-        #                 if u["username"] == username or u["username"] == username + self.config.username_suffix:
-        #                     m["id"] = u["id"]
-        #                     user_found = True
-        #                     break
-        #             if not user_found:
-        #                 not_found_users.append((username, "(group: " + g["full_path"] + ")"))
-        #             user_found = False
-        #
-        # if not_found_users:
-        #     self.log.info("Users that are not mapped to staged projects and groups:\n{}".format(
-        #         "\n".join(" ".join(u) for u in not_found_users)))
 
         if not dry_run:
             with open("%s/data/stage.json" % self.app_path, "wb") as f:
@@ -336,29 +302,6 @@ class UsersClient(BaseClass):
             with open("%s/data/staged_groups.json" % self.app_path, "wb") as f:
                 json.dump(staged_groups, f, indent=4)
             self.log.info("Mapped missing (destination) users to staged projects and groups")
-
-    def update_new_users(self):
-        """
-        Kind of a dupe of map_new_users_to_groups_and_projects
-        :return:
-        """
-        with open("%s/data/stage.json" % self.app_path, "r") as f:
-            staged_projects = json.load(f)
-
-        with open("%s/data/staged_groups.json" % self.app_path, "r") as f:
-            groups = json.load(f)
-
-        with open("%s/data/new_users.json" % self.app_path, "r") as f:
-            new_users = json.load(f)
-
-        staged_projects = self.update_users(staged_projects, new_users)
-        groups = self.update_users(groups, new_users)
-
-        with open("%s/data/stage.json" % self.app_path, "wb") as f:
-            json.dump(staged_projects, f, indent=4)
-
-        with open("%s/data/staged_groups.json" % self.app_path, "wb") as f:
-            json.dump(groups, f, indent=4)
 
     def add_users_to_parent_group(self):
         with open("%s/data/newer_users.json" % self.app_path, "r") as f:

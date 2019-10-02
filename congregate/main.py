@@ -11,7 +11,6 @@ Usage:
     congregate import-projects
     congregate do_all
     congregate update-staged-user-info
-    congregate update-new-users
     congregate update-aws-creds
     congregate add-users-to-parent-group
     congregate remove-blocked-users [--dry-run]
@@ -64,7 +63,6 @@ Commands:
     import-projects                         Kick off import of exported projects onto destination instance.
     do_all                                  Configure system, retrieve all projects, users, and groups, stage all information, and commence migration.
     update-staged-user-info                 Update staged user information after migrating only users.
-    update-new-users                        Update user IDs in staged groups and projects after migrating only users.
     update-aws-creds                        Run awscli commands based on the keys stored in the config. Useful for docker updates.
     add-users-to-parent-group               If a parent group is set, all users staged will be added to the parent group.
     remove-blocked-users                    Remove all blocked users from staged projects and groups.
@@ -214,8 +212,6 @@ if __name__ == '__main__':
                 subprocess.call(run_ui.split(" "))
             if arguments["update-staged-user-info"]:
                 users.update_staged_user_info()
-            if arguments["update-new-users"]:
-                users.update_new_users()
             if arguments["add-users-to-parent-group"]:
                 users.add_users_to_parent_group()
             if arguments["update-aws-creds"]:
