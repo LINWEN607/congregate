@@ -87,10 +87,8 @@ class UsersClient(BaseClass):
                 host=self.config.destination_host,
                 token=self.config.destination_token
             )]:
-                self.log.info(i)
                 namespace_check_response.append(i)
             if namespace_check_response:
-                self.log.info(namespace_check_response)
                 for z in namespace_check_response:
                     if z.get("name") and str(z["name"]).lower() == str(old_user["username"]).lower():
                         # We found a match, so username is group name. Return True

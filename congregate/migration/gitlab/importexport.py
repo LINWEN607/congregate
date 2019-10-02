@@ -344,7 +344,6 @@ class ImportExportClient(BaseClass):
             self.log.info("Importing {} from AWS presigned_url (aws mode)".format(filename))
             import_response = self.aws.import_from_s3(
                 name, namespace, presigned_get_url, filename, override_params=override_params)
-            print import_response.status_code
         elif self.config.location == "filesystem-aws":
             if bool(self.config.allow_presigned_url):
                 presigned_get_url = self.aws.generate_presigned_url(
