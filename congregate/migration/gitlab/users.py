@@ -57,7 +57,13 @@ class UsersClient(BaseClass):
     def username_exists(self, old_user):
         index = 0
         username = old_user["username"]
-        if not self.is_username_group_name(old_user):
+        is_group = self.is_username_group_name(old_user)
+        if is_group is None:
+            # None will only come back in error conditions.
+            # As such, assume it does exist and try the upstream uniqueness techniques
+            return True
+        if not is_group:
+            # Wasn't found as a group, and wasn't None (error) so check user as actual username
             for user in self.users.search_for_user_by_username(
                     self.config.destination_host,
                     self.config.destination_token,
@@ -65,6 +71,7 @@ class UsersClient(BaseClass):
                 if user["username"].lower() == username.lower():
                     return True
                 elif index > 100:
+                    # Now that `search_for_user_by_username` uses username= explicitly, is this even necessary?
                     return False
                 index += 1
             return False
@@ -77,29 +84,30 @@ class UsersClient(BaseClass):
         Check if a username exists as a group name
         :param old_user: The source user we are trying to create a new user for
         :return: True if the username from old_user exists as a group name
-                True if there is an error checking for the name (assume no create)
+                None this will signifies "we don't know. do what you will."
                 Else False
         """
         try:
+            username = str(old_user["username"])
             namespace_check_response = []
             for i in [self.groups.search_for_group(
-                old_user["username"],
+                username,
                 host=self.config.destination_host,
                 token=self.config.destination_token
             )]:
                 namespace_check_response.append(i)
             if namespace_check_response:
                 for z in namespace_check_response:
-                    if z.get("name") and str(z["name"]).lower() == str(old_user["username"]).lower():
+                    if z.get("name") and str(z["name"]).lower() == username.lower():
                         # We found a match, so username is group name. Return True
                         return True
             return False
         except Exception as e:
             self.log.error(
-                "Error checking username is not group name for user {0} with error {1}. User will not be created."
+                "Error checking username is not group name for user {0} with error {1}."
                     .format(old_user, e)
             )
-            return True
+            return None
 
     def user_email_exists(self, old_user):
         index = 0

@@ -710,7 +710,7 @@ class UserTests(unittest.TestCase):
         self.assertTrue(response)
 
     @mock.patch.object(GroupsApi, "search_for_group")
-    def test_is_username_group_name_error_assumes_true(self, group_api):
+    def test_is_username_group_name_error_assumes_none(self, group_api):
         group_api.side_effect = Exception("THIS HAPPENED")
         response = self.users.is_username_group_name({"username": "abc"})
-        self.assertTrue(response)
+        self.assertIsNone(response)
