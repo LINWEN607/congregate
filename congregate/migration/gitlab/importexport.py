@@ -60,7 +60,7 @@ class ImportExportClient(BaseClass):
                 elif status == "none":
                     self.log.info(
                         "No export status could be found for project {}".format(name))
-                    if skip is False:
+                    if not skip:
                         self.log.info("Waiting {0}s before skipping project {1} export".format(wait_time, name))
                         sleep(wait_time)
                         skip = True
@@ -456,10 +456,13 @@ class ImportExportClient(BaseClass):
         if not project_exists:
             self.log.info(
                 "Project {} not found on destination instance. Exporting from source instance.".format(name))
-            self.export_project_to_aws(id, name, namespace)
-            exported = self.wait_for_export_to_finish(
-                self.config.source_host, self.config.source_token, id, name)
-
+            response = self.export_project_to_aws(id, name, namespace)
+            if response is not None and response.status_code == 202:
+                # Not consistent with "export_project_to_aws". A False may well be a valid export.
+                exported = self.wait_for_export_to_finish(
+                    self.config.source_host, self.config.source_token, id, name)
+            else:
+                self.log.warn("Failed to trigger project {0} export to AWS, with response {1}".format(name, response))
         return exported
 
     def strip_namespace(self, full_parent_namespace, namespace):

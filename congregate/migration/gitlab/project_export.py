@@ -7,8 +7,10 @@ from congregate.helpers.base_class import BaseClass
 from congregate.migration.gitlab.users import UsersClient
 from congregate.aws import AwsClient
 
+
 class ProjectExportClient(BaseClass):
     KEYS = ["author_id", "created_by_id", "user_id", "updated_by_id", "assignee_id", "merged_by_id", "merge_user_id", "last_edited_by_id", "closed_by_id"]
+
     def __init__(self):
         self.users = UsersClient()
         self.aws = AwsClient()
@@ -17,16 +19,40 @@ class ProjectExportClient(BaseClass):
 
     def update_project_export_members(self, name, namespace, filename):
         file_path, extract_path = self.generate_filepaths(name, namespace, filename)
-        with tarfile.open(file_path, "r:gz") as tar:
-            tar.extractall(path=extract_path)
-        with tarfile.open(file_path, "w:gz") as tar:            
-            self.__rewrite_project_json(extract_path)
-            tar.add(extract_path, arcname="")
-        
+        updated = self.__do_tar_and_rewrite(file_path, extract_path)
         self.aws.copy_file_to_s3(filename)
         self.remove_local_project_export(name, namespace, filename)
         os.chdir(self.app_path)
-        
+        return updated
+
+    def update_project_export_members_for_local(self, name, namespace, filename):
+        file_path, extract_path = self.generate_filepaths(name, namespace, filename)
+        self.log.info("name: {0} namespace: {1} filename: {2} file_path: {3} extract_path: {4}"
+                      .format(
+                                name,
+                                namespace,
+                                filename,
+                                file_path,
+                                extract_path
+                            )
+        )
+        updated = self.__do_tar_and_rewrite(file_path, extract_path)
+        shutil.rmtree(extract_path)
+        os.chdir(self.app_path)
+        return updated
+
+    def __do_tar_and_rewrite(self, file_path, extract_path):
+        with tarfile.open(file_path, "r:gz") as tar:
+            tar.extractall(path=extract_path)
+        with tarfile.open(file_path, "w:gz") as tar:
+            try:
+                self.__rewrite_project_json(extract_path)
+                tar.add(extract_path, arcname="")
+                return True
+            except ValueError, e:
+                self.log.error("Failed to rewrite project JSON file {0}, with error:\n{1}".format(file_path, e))
+                return False
+
     def remove_local_project_export(self, name, namespace, filename):
         file_path, extract_path = self.generate_filepaths(name, namespace, filename)
         os.remove(file_path)
@@ -43,20 +69,42 @@ class ProjectExportClient(BaseClass):
             data = json.load(f)
         
         # Build user map
+        to_pop = []
         self.log.info("Building user map")
         for d in data["project_members"]:
-            new_user = self.users.find_user_primarily_by_email(d.get("user", None))
-            if new_user is not None:
-                d["user"]["id"] = new_user["id"]
-                self.users_map[d["user_id"]] = new_user["id"]
-                # We do the following to force the import tool to match on email
-                # Particularly useful when users have already been migrated ahead of project migration
-                # and may have a suffix on their username
-                d["user"]["username"] = "dont_have_this_username"
+            if d.get("user", None) is not None:
+                if d["user"].get("email", None) is not None:
+                    new_user = self.users.find_user_by_email_comparison_without_id(d["user"]["email"])
+                    if new_user is not None:
+                        d["user"]["id"] = new_user["id"]
+                        self.users_map[d["user_id"]] = new_user["id"]
+                        # We do the following to force the import tool to match on email
+                        # Particularly useful when users have already been migrated ahead of project migration
+                        # and may have a suffix on their username
+                        d["user"]["username"] = "dont_have_this_username"
+                    else:
+                        self.log.warning("New user on destination was not found by email {0}".format(d))
+                        d["user"]["id"] = self.config.import_user_id
+                        self.users_map[d["user_id"]] = self.config.import_user_id
+                        d["user"]['username'] = "This is invalid"
+                else:
+                    # No clue who this is, so set to import user
+                    self.log.warning("Project member user entity had no email {0}".format(d))
+                    d["user"]["id"] = self.config.import_user_id
+                    self.users_map[d["user_id"]] = self.config.import_user_id
+                    d["user"]['username'] = "This is invalid"
+            # Members invited to group/project by other group/project members.
+            # Not necessarily existing users on src nor dest instance.
+            # Removing them rather than creating new user objects.
+            elif d.get("invite_email", None) is not None:
+                inviter = self.users.find_user_by_email_comparison_with_id(d.get("created_by_id"))
+                self.log.warn("Skipping user {0}, invited by {1}".format(d.get("invite_email"), inviter))
+                to_pop.append(data["project_members"].index(d))
             else:
-                d["user"]["id"] = self.config.import_user_id
-                self.users_map[d["user_id"]] = self.config.import_user_id
-                d["user"]['username'] = "This is invalid"
+                self.log.error("Project member has no user entity or invite email {0}. Skipping.".format(d))
+                to_pop.append(data["project_members"].index(d))
+
+        data["project_members"] = [i for j, i in enumerate(data["project_members"]) if j not in to_pop]
 
         # Update project_json
         self.__traverse_json(data)

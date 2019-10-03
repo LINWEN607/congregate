@@ -327,7 +327,7 @@ def start_multi_thead(function, iterable):
     pool.join()
 
 
-def migrate(threads=None, skip_users=False, keep_blocked_users=False):
+def migrate(threads=None, skip_users=False, keep_blocked_users=False, skip_project_import=False):
     if threads is not None:
         b.config.threads = threads
 
@@ -394,13 +394,15 @@ def migrate(threads=None, skip_users=False, keep_blocked_users=False):
             results = pool.map(handle_exporting_projects, staged_projects)
             pool.close()
             pool.join()
+            b.log.info("### Project export results ###\n{0}".format(json.dumps(results, indent=4)))
 
-            b.log.info("Importing projects")
-            import_pool = ThreadPool(b.config.threads)
-            results = import_pool.map(migrate_given_export, staged_projects)
-            b.log.info("### Results ###\n%s" % json.dumps(results, indent=4))
-            import_pool.close()
-            import_pool.join()
+            if not skip_project_import:
+                b.log.info("Importing projects")
+                import_pool = ThreadPool(b.config.threads)
+                results = import_pool.map(migrate_given_export, staged_projects)
+                b.log.info("### Project import results ###\n{0}".format(json.dumps(results, indent=4)))
+                import_pool.close()
+                import_pool.join()
 
             # migrate_project_info()
         else:
@@ -435,8 +437,14 @@ def handle_exporting_projects(project):
             namespace = project["namespace"]
         if b.config.location == "filesystem":
             b.log.info("Migrating project {} through filesystem".format(name))
-            ie.export_thru_filesystem(id, name, namespace)
-
+            filename = ie.export_thru_filesystem(id, name, namespace)
+            updated = False
+            exported = filename is not None and filename != ""
+            try:
+                updated = project_export.update_project_export_members_for_local(name, namespace, filename)
+            except Exception as e:
+                b.log.error("Failed to update {0} project export, with error:\n{1}".format(filename, e))
+            return {"name": name, "exported": exported, "updated": updated}
         elif b.config.location.lower() == "filesystem-aws":
             b.log.info("Migrating project {} through filesystem-AWS".format(name))
             ie.export_thru_fs_aws(id, name, namespace)
@@ -444,12 +452,13 @@ def handle_exporting_projects(project):
         elif (b.config.location).lower() == "aws":
             b.log.info("Migrating project {} through AWS".format(name))
             exported = ie.export_thru_aws(id, name, namespace, full_parent_namespace)
+            updated = False
             filename = "%s_%s.tar.gz" % (namespace, name)
             try:
-                project_export.update_project_export_members(name, namespace, filename)
+                updated = project_export.update_project_export_members(name, namespace, filename)
             except Exception, e:
                 b.log.error("Failed to update {0} project export, with error:\n{1}".format(filename, e))
-            return exported
+            return {"name": name, "exported": exported, "updated": updated}
     except IOError, e:
         b.log.error(e)
 
