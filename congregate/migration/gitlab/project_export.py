@@ -29,8 +29,8 @@ class ProjectExportClient(BaseClass):
     def update_project_export_members_for_local(self, name, namespace, filename):
         # generate_filepaths has an explicit call out for AWS work that we don't need
         # so don't use that
-        file_path = "%s/downloads/%s" % (self.config.filesystem_path, filename)
-        extract_path = "%s/downloads/%s_%s" % (self.config.filesystem_path, name, namespace)
+        file_path = self.get_file_path(filename)
+        extract_path = self.get_extract_path(name, namespace)
         self.log.info(
             "name: {0} namespace: {1} filename: {2} file_path: {3} extract_path: {4}"
                 .format(
@@ -45,6 +45,12 @@ class ProjectExportClient(BaseClass):
         shutil.rmtree(extract_path)
         os.chdir(self.app_path)
         return updated
+
+    def get_file_path(self, filename):
+        return "{0}/downloads/{1}".format(self.config.filesystem_path, filename)
+
+    def get_extract_path(self, name, namespace):
+        return "{0}/downloads/{1}_{2}".format(self.config.filesystem_path, name, namespace)
 
     def __do_tar_and_rewrite(self, file_path, extract_path):
         with tarfile.open(file_path, "r:gz") as tar:
