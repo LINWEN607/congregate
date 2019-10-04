@@ -9,7 +9,8 @@ from congregate.aws import AwsClient
 
 
 class ProjectExportClient(BaseClass):
-    KEYS = ["author_id", "created_by_id", "user_id", "updated_by_id", "assignee_id", "merged_by_id", "merge_user_id", "last_edited_by_id", "closed_by_id"]
+    KEYS = ["author_id", "created_by_id", "user_id", "updated_by_id", "assignee_id", "merged_by_id", "merge_user_id",
+            "last_edited_by_id", "closed_by_id"]
 
     def __init__(self):
         self.users = UsersClient()
@@ -26,16 +27,20 @@ class ProjectExportClient(BaseClass):
         return updated
 
     def update_project_export_members_for_local(self, name, namespace, filename):
-        file_path, extract_path = self.generate_filepaths(name, namespace, filename)
-        self.log.info("name: {0} namespace: {1} filename: {2} file_path: {3} extract_path: {4}"
-                      .format(
-                                name,
-                                namespace,
-                                filename,
-                                file_path,
-                                extract_path
-                            )
-        )
+        # generate_filepaths has an explicit call out for AWS work that we don't need
+        # so don't use that
+        file_path = "%s/downloads/%s" % (self.config.filesystem_path, filename)
+        extract_path = "%s/downloads/%s_%s" % (self.config.filesystem_path, name, namespace)
+        self.log.info(
+            "name: {0} namespace: {1} filename: {2} file_path: {3} extract_path: {4}"
+                .format(
+                    name,
+                    namespace,
+                    filename,
+                    file_path,
+                    extract_path
+                )
+            )
         updated = self.__do_tar_and_rewrite(file_path, extract_path)
         shutil.rmtree(extract_path)
         os.chdir(self.app_path)
@@ -67,7 +72,7 @@ class ProjectExportClient(BaseClass):
     def __rewrite_project_json(self, path):
         with open("%s/project.json" % path, "r") as f:
             data = json.load(f)
-        
+
         # Build user map
         to_pop = []
         self.log.info("Building user map")
@@ -140,7 +145,7 @@ class ProjectExportClient(BaseClass):
                             self.__traverse_json(d)
                     elif isinstance(data[k], dict):
                         self.__traverse_json(data[k])
-    
+
     def __update_authors_and_events(self, data):
         for d in data:
             d["author_id"] = self.__find_or_create_id(d["author_id"])
@@ -160,7 +165,7 @@ class ProjectExportClient(BaseClass):
                     self.__traverse_json(r)
             if d.get("metrics", None) is not None:
                 self.__traverse_json(d["metrics"])
-            
+
     def __update_project_members(self, data):
         for d in data:
             old_created_by_id = d["created_by_id"]
