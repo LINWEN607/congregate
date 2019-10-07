@@ -396,16 +396,26 @@ class ImportExportClient(BaseClass):
         filename = "{0}_{1}.tar.gz".format(namespace, name)
         self.log.info("Exporting %s to %s" %
                       (name, self.config.filesystem_path))
-        api.generate_post_request(
+        response = api.generate_post_request(
             self.config.source_host, self.config.source_token, "projects/%d/export" % id, "")
-        if working_dir != self.config.filesystem_path:
-            chdir(self.config.filesystem_path)
-        url = "%s/api/v4/projects/%d/export/download" % (
-            self.config.source_host, id)
-        misc_utils.download_file(url, self.config.filesystem_path, headers={
-            "PRIVATE-TOKEN": self.config.source_token}, filename=filename)
 
-        return filename
+        exported = self.wait_for_export_to_finish(
+            self.config.source_host, self.config.source_token, id, name)
+
+        if exported:
+            if working_dir != self.config.filesystem_path:
+                chdir(self.config.filesystem_path)
+            url = "%s/api/v4/projects/%d/export/download" % (
+                self.config.source_host, id)
+            misc_utils.download_file(url, self.config.filesystem_path, headers={
+                "PRIVATE-TOKEN": self.config.source_token}, filename=filename)
+        else:
+            self.log.warn("Failed to trigger project {0} export to filesystem, with response {1}".format(
+                name,
+                response)
+            )
+
+        return {"filename": filename, "exported": exported}
 
     def export_thru_fs_aws(self, id, name, namespace):
         path_with_namespace = "%s_%s.tar.gz" % (namespace, name)

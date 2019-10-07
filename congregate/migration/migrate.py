@@ -445,11 +445,13 @@ def handle_exporting_projects(project, skip_project_export=False):
             b.log.info("Migrating project {} through filesystem".format(name))
 
             if not skip_project_export:
-                filename = ie.export_thru_filesystem(id, name, namespace)
+                r = ie.export_thru_filesystem(id, name, namespace)
+                filename = r["filename"]
+                exported = r["exported"]
             else:
                 filename = "{0}_{1}.tar.gz".format(namespace, name)
+                exported = True
             updated = False
-            exported = filename is not None and filename != ""
             try:
                 updated = project_export.update_project_export_members_for_local(name, namespace, filename)
             except Exception as e:
