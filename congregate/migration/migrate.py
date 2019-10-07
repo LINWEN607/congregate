@@ -9,6 +9,7 @@ import json
 from re import sub
 from multiprocessing.dummy import Pool as ThreadPool
 from multiprocessing import Lock
+from collections import Counter
 from requests.exceptions import RequestException
 
 from congregate.helpers import api, migrate_utils
@@ -394,12 +395,14 @@ def migrate(
 
         staged_projects = get_staged_projects()
         if staged_projects is not None and staged_projects:
-            b.log.info("Migrating project info")
-            pool = ThreadPool(b.config.threads)
-            results = pool.map(handle_exporting_projects, staged_projects, skip_project_export)
-            pool.close()
-            pool.join()
-            b.log.info("### Project export results ###\n{0}".format(json.dumps(results, indent=4)))
+            b.log.info("Exporting projects")
+            export_pool = ThreadPool(b.config.threads)
+            results = export_pool.map(handle_exporting_projects, staged_projects, skip_project_export)
+            export_pool.close()
+            export_pool.join()
+            results.append(Counter(k for d in results for k,v in d.items() if v))
+            b.log.info("### Project export results ###\n{0}"
+                .format(json.dumps(results, indent=4, sort_keys=True)))
 
             # Create list of projects that failed update
             if results is not None and len(results) == 0:
@@ -416,11 +419,11 @@ def migrate(
                 b.log.info("Importing projects")
                 import_pool = ThreadPool(b.config.threads)
                 results = import_pool.map(migrate_given_export, staged_projects)
-                b.log.info("### Project import results ###\n{0}".format(json.dumps(results, indent=4)))
                 import_pool.close()
                 import_pool.join()
-
-            # migrate_project_info()
+                results.append(Counter(k for d in results for k,v in d.items() if v))
+                b.log.info("### Project import results ###\n{0}"
+                    .format(json.dumps(results, indent=4, sort_keys=True)))
         else:
             b.log.info("No projects to migrate")
 
@@ -431,11 +434,11 @@ def kick_off_import():
         b.log.info("Importing projects")
         pool = ThreadPool(b.config.threads)
         results = pool.map(migrate_given_export, staged_projects)
-        b.log.info("### Results ###\n%s" % json.dumps(results, indent=4))
         pool.close()
         pool.join()
-
-        # migrate_project_info()
+        results.append(Counter(k for d in results for k,v in d.items() if v))
+        b.log.info("### Project import only results ###\n{0}"
+            .format(json.dumps(results, indent=4, sort_keys=True)))
     else:
         b.log.info("No projects to migrate")
 
@@ -581,8 +584,6 @@ def check_visibility():
             print change
 
     print count
-
-
 
 
 def update_diverging_branch():

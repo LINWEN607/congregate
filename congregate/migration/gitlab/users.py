@@ -267,7 +267,8 @@ class UsersClient(BaseClass):
             not_found_all.append({obj[i]["name"]: not_found_members})
             not_found_members = []
 
-        self.log.warn("The not found items: {0}".format(not_found_all))
+        self.log.warn("The not found items: {0}"
+            .format(json.dumps(not_found_all, indent=4, sort_keys=True)))
         return obj
 
     def map_new_users_to_groups_and_projects(self, dry_run=False):

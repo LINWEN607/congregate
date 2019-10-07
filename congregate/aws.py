@@ -15,6 +15,7 @@ from botocore.client import Config
 from congregate.helpers.base_class import BaseClass
 from time import sleep
 
+
 class AwsClient(BaseClass):
     def __init__(self):
         super(AwsClient, self).__init__()
@@ -26,6 +27,7 @@ class AwsClient(BaseClass):
 
     def import_from_s3(self, name, namespace, presigned_url, filename, override_params=None):
         retry_count = 0
+        url = "{}/api/v4/projects/import".format(self.config.destination_host)
         # Returns out on success, so no need for success tracker
         while True and retry_count <= self.config.max_import_retries:
             sleep_time = self.config.importexport_wait
@@ -33,7 +35,6 @@ class AwsClient(BaseClass):
                 # Added timeout tuple for connection/read until the retry is implemented
                 with requests.get(presigned_url, stream=True, timeout=(10, 10)) as r:
                     if r.headers["content-type"] != "application/xml":
-                        url = "%s/api/v4/projects/import" % (self.config.destination_host)
                         files = {
                             "file": (filename, BytesIO(r.content))
                         }
@@ -95,14 +96,17 @@ class AwsClient(BaseClass):
         # copy from S3 to local machine if it doesn't exist
         if not path.isfile(file_path):
             self.log.info("Copying project file {} from S3 to local machine".format(filename))
-            cmd = "aws+s3+cp+s3://%s/%s+%s" % (
-                self.config.bucket_name, filename, file_path)
+            cmd = "aws+--region+{0}+s3+cp+s3://{1}/{2}+{3}".format(
+                self.config.s3_region,
+                self.config.bucket_name,
+                filename,
+                file_path)
             subprocess.call(cmd.split("+"))
         return file_path
 
     def copy_from_s3_and_import(self, name, namespace, filename):
         file_path = self.get_local_file_path(filename)
-        url = '%s/api/v4/projects/import' % (self.config.destination_host)
+        url = "{}/api/v4/projects/import".format(self.config.destination_host)
         data = {
             "path": name.replace(" ", "-"),
             "namespace": namespace
