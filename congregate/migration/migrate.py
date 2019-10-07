@@ -327,7 +327,13 @@ def start_multi_thead(function, iterable):
     pool.join()
 
 
-def migrate(threads=None, skip_users=False, keep_blocked_users=False, skip_project_import=False):
+def migrate(
+        threads=None,
+        skip_users=False,
+        keep_blocked_users=False,
+        skip_project_import=False,
+        skip_project_export=False
+):
     if threads is not None:
         b.config.threads = threads
 
@@ -391,7 +397,7 @@ def migrate(threads=None, skip_users=False, keep_blocked_users=False, skip_proje
         if staged_projects is not None and staged_projects:
             b.log.info("Migrating project info")
             pool = ThreadPool(b.config.threads)
-            results = pool.map(handle_exporting_projects, staged_projects)
+            results = pool.map(handle_exporting_projects, staged_projects, skip_project_export)
             pool.close()
             pool.join()
             b.log.info("### Project export results ###\n{0}".format(json.dumps(results, indent=4)))
@@ -424,7 +430,7 @@ def kick_off_import():
         b.log.info("No projects to migrate")
 
 
-def handle_exporting_projects(project):
+def handle_exporting_projects(project, skip_project_export=False):
     name = project["name"]
     id = project["id"]
     namespace = project["namespace"]
@@ -437,7 +443,11 @@ def handle_exporting_projects(project):
             namespace = project["namespace"]
         if b.config.location == "filesystem":
             b.log.info("Migrating project {} through filesystem".format(name))
-            filename = ie.export_thru_filesystem(id, name, namespace)
+
+            if not skip_project_export:
+                filename = ie.export_thru_filesystem(id, name, namespace)
+            else:
+                filename = "{0}_{1}.tar.gz".format(namespace, name)
             updated = False
             exported = filename is not None and filename != ""
             try:

@@ -6,7 +6,7 @@ Usage:
     congregate list
     congregate config
     congregate stage <projects>...
-    congregate migrate [--threads=<n>] [--dry-run] [--skip-users] [--keep-blocked-users] [--skip-project-import]
+    congregate migrate [--threads=<n>] [--dry-run] [--skip-users] [--keep-blocked-users] [--skip-project-import] [--skip-project-export]
     congregate ui
     congregate import-projects
     congregate do_all
@@ -50,6 +50,8 @@ Arguments:
     keep-blocked-users                      Will skip removing blocked users from staged users/groups/projects.
     skip-project-import                     Will do all steps up to import (export, re-write exported project json,
                                                 etc). Useful for testing export contents.
+    skip-project-export                     Skips the project export and assumes that the project file is already ready
+                                            for rewrite. Currently only works for export through filesystem
     access-level                            Update parent group level user permissions (Guest/Reporter/Developer/Maintainer/Owner).
     staged                                  Compare two groups that are staged for migration.
 
@@ -193,6 +195,7 @@ if __name__ == '__main__':
                 skip_users = False
                 keep_blocked_users = False
                 skip_project_import = False
+                skip_project_export = False
                 if arguments["--threads"]:
                     threads = arguments["--threads"]
                 if arguments["--skip-users"]:
@@ -201,12 +204,15 @@ if __name__ == '__main__':
                     keep_blocked_users = True
                 if arguments["--skip-project-import"]:
                     skip_project_import = True
+                if arguments["--skip-project-export"]:
+                    skip_project_export = True
                 if not arguments["--dry-run"]:
                     migrate.migrate(
                         threads=threads,
                         skip_users=skip_users,
                         keep_blocked_users=keep_blocked_users,
-                        skip_project_import=skip_project_import
+                        skip_project_import=skip_project_import,
+                        skip_project_export=skip_project_export
                     )
                 else:
                     users.user_migration_dry_run()
