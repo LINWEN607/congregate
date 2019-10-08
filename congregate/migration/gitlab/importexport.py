@@ -58,7 +58,7 @@ class ImportExportClient(BaseClass):
                     self.log.error("Project {} export failed".format(name))
                     break
                 elif status == "none":
-                    self.log.info(
+                    self.log.warn(
                         "No export status could be found for project {}".format(name))
                     if not skip:
                         self.log.info("Waiting {0}s before skipping project {1} export".format(wait_time, name))
@@ -72,7 +72,7 @@ class ImportExportClient(BaseClass):
                         total_time += wait_time
                         sleep(wait_time)
                     else:
-                        self.log.info(
+                        self.log.warn(
                             "Time limit exceeded. Going to attempt to download anyway")
                         exported = True
             else:

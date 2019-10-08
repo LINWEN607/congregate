@@ -156,7 +156,8 @@ class ProjectExportClient(BaseClass):
                             self.__traverse_json(d)
                     elif isinstance(data[k], dict):
                         self.__traverse_json(data[k])
-
+    
+    # Method not used. Do we still need it?
     def __update_authors_and_events(self, data):
         for d in data:
             d["author_id"] = self.__find_or_create_id(d["author_id"])
@@ -176,7 +177,8 @@ class ProjectExportClient(BaseClass):
                     self.__traverse_json(r)
             if d.get("metrics", None) is not None:
                 self.__traverse_json(d["metrics"])
-
+            
+    # Method not used. Do we still need it?
     def __update_project_members(self, data):
         for d in data:
             old_created_by_id = d["created_by_id"]
