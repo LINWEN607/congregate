@@ -393,27 +393,42 @@ class ImportExportClient(BaseClass):
 
     def export_thru_filesystem(self, id, name, namespace):
         working_dir = getcwd()
+        exported = False
         filename = "{0}_{1}.tar.gz".format(namespace, name)
         self.log.info("Exporting %s to %s" %
                       (name, self.config.filesystem_path))
-        response = api.generate_post_request(
-            self.config.source_host, self.config.source_token, "projects/%d/export" % id, "")
 
-        exported = self.wait_for_export_to_finish(
-            self.config.source_host, self.config.source_token, id, name)
-
-        if exported:
-            if working_dir != self.config.filesystem_path:
-                chdir(self.config.filesystem_path)
-            url = "%s/api/v4/projects/%d/export/download" % (
-                self.config.source_host, id)
-            misc_utils.download_file(url, self.config.filesystem_path, headers={
-                "PRIVATE-TOKEN": self.config.source_token}, filename=filename)
-        else:
-            self.log.warn("Failed to trigger project {0} export to filesystem, with response {1}".format(
-                name,
-                response)
+        try:
+            response = api.generate_post_request(
+                self.config.source_host,
+                self.config.source_token,
+                "projects/{0}/export".format(id),
+                ""
             )
+            if response.status_code not in (200, 202):
+                self.log.error("Failed to trigger project {0} export to filesystem with response {1}".format(
+                    name,
+                    response)
+                )
+            else:
+                exported = self.wait_for_export_to_finish(
+                    self.config.source_host, self.config.source_token, id, name)
+
+                if exported:
+                    if working_dir != self.config.filesystem_path:
+                        chdir(self.config.filesystem_path)
+                    url = "%s/api/v4/projects/%d/export/download" % (
+                        self.config.source_host, id)
+                    misc_utils.download_file(url, self.config.filesystem_path, headers={
+                        "PRIVATE-TOKEN": self.config.source_token}, filename=filename)
+                else:
+                    self.log.error("Failed to export project {0} export to filesystem".format(
+                        name)
+                    )
+        except Exception as e:
+            self.log.error("Failed to trigger project {0} export to filesystem with error {1}".format(
+                name,
+                e))
 
         return {"filename": filename, "exported": exported}
 
