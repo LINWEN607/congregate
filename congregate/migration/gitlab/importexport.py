@@ -405,7 +405,7 @@ class ImportExportClient(BaseClass):
                 "projects/{0}/export".format(id),
                 ""
             )
-            if response.status_code not in (200, 202):
+            if response is None or response.status_code not in (200, 202):
                 self.log.error("Failed to trigger project {0} export to filesystem with response {1}".format(
                     name,
                     response)
