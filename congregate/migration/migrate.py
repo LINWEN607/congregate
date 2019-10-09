@@ -397,18 +397,19 @@ def migrate(
         if staged_projects is not None and staged_projects:
             b.log.info("Exporting projects")
             export_pool = ThreadPool(b.config.threads)
-            results = export_pool.map(handle_exporting_projects, staged_projects, skip_project_export)
+            export_results = export_pool.map(handle_exporting_projects, staged_projects, skip_project_export)
             export_pool.close()
             export_pool.join()
-            results.append(Counter(k for d in results for k,v in d.items() if v))
+            # append total count of projects/exported/updated
+            export_results.append(Counter(k for d in export_results for k,v in d.items() if v))
             b.log.info("### Project export results ###\n{0}"
-                .format(json.dumps(results, indent=4, sort_keys=True)))
+                .format(json.dumps(export_results, indent=4, sort_keys=True)))
 
             # Create list of projects that failed update
-            if results is not None and len(results) == 0:
+            if export_results is not None and len(export_results) == 0:
                 raise Exception("Results from exporting projects returned as empty. Aborting.")
 
-            failed_update = migrate_utils.get_failed_update_from_results(results)
+            failed_update = migrate_utils.get_failed_update_from_results(export_results)
             b.log.warning("The following projects (project.json) failed to update:\n{0}"
                 .format(json.dumps(failed_update, indent=4, sort_keys=True)))
 
@@ -418,12 +419,14 @@ def migrate(
             if not skip_project_import:
                 b.log.info("Importing projects")
                 import_pool = ThreadPool(b.config.threads)
-                results = import_pool.map(migrate_given_export, staged_projects)
+                import_results = import_pool.map(migrate_given_export, staged_projects)
                 import_pool.close()
                 import_pool.join()
-                results.append(Counter(k for d in results for k,v in d.items() if v))
+                # append Total : Successful count of project imports
+                import_results.append(Counter("Total : Successful: {}"
+                    .format(len(import_results)) for d in import_results for k,v in d.items() if v))
                 b.log.info("### Project import results ###\n{0}"
-                    .format(json.dumps(results, indent=4, sort_keys=True)))
+                    .format(json.dumps(import_results, indent=4, sort_keys=True)))
         else:
             b.log.info("No projects to migrate")
 
@@ -436,7 +439,9 @@ def kick_off_import():
         results = pool.map(migrate_given_export, staged_projects)
         pool.close()
         pool.join()
-        results.append(Counter(k for d in results for k,v in d.items() if v))
+        # append Total : Successful count of project imports
+        results.append(Counter("Total : Successful: {}"
+            .format(len(results)) for d in results for k,v in d.items() if v))
         b.log.info("### Project import only results ###\n{0}"
             .format(json.dumps(results, indent=4, sort_keys=True)))
     else:
