@@ -1,0 +1,147 @@
+import unittest
+
+from congregate.helpers.migrate_utils import get_failed_update_from_results, get_staged_projects_without_failed_update
+
+
+class MigrateTests(unittest.TestCase):
+    def setUp(self):
+        self.staged_projects = [
+            {
+                "archived": False,
+                "builds_access_level": "enabled",
+                "default_branch": "master",
+                "description": "",
+                "http_url_to_repo": "https://dictionary.githost.io/dictionary-web/darci.git",
+                "id": 132,
+                "issues_access_level": "enabled",
+                "members": [],
+                "merge_requests_access_level": "enabled",
+                "name": "darci1",
+                "namespace": "dictionary-web",
+                "project_type": "group",
+                "repository_access_level": "enabled",
+                "shared_runners_enabled": False,
+                "snippets_access_level": "disabled",
+                "visibility": "private",
+                "wiki_access_level": "enabled"
+            },
+            {
+                "archived": False,
+                "builds_access_level": "enabled",
+                "default_branch": "master",
+                "description": "",
+                "http_url_to_repo": "https://dictionary.githost.io/dictionary-web/darci.git",
+                "id": 133,
+                "issues_access_level": "enabled",
+                "members": [],
+                "merge_requests_access_level": "enabled",
+                "name": "darci2",
+                "namespace": "dictionary-web",
+                "project_type": "group",
+                "repository_access_level": "enabled",
+                "shared_runners_enabled": False,
+                "snippets_access_level": "disabled",
+                "visibility": "private",
+                "wiki_access_level": "enabled"
+            },
+            {
+                "archived": True,
+                "builds_access_level": "enabled",
+                "default_branch": "master",
+                "description": "",
+                "http_url_to_repo": "https://dictionary.githost.io/dictionary-web/darci.git",
+                "id": 134,
+                "issues_access_level": "enabled",
+                "members": [],
+                "merge_requests_access_level": "enabled",
+                "name": "darci3",
+                "namespace": "dictionary-web",
+                "project_type": "group",
+                "repository_access_level": "enabled",
+                "shared_runners_enabled": False,
+                "snippets_access_level": "disabled",
+                "visibility": "private",
+                "wiki_access_level": "enabled"
+            }
+        ]
+
+    def test_get_failed_update_from_results_updated_false(self):
+        results = [{"exported": True, "updated": False, "name": "DaRcI1"}]
+        failed_results = get_failed_update_from_results(results)
+        expected = ["darci1"]
+        self.assertListEqual(failed_results, expected)
+
+    def test_get_failed_update_from_results_updated_all_false(self):
+        results = [{"exported": True, "updated": False, "name": "DaRcI1"},
+                   {"exported": True, "updated": False, "name": "DaRcI2"},
+                   {"exported": True, "updated": False, "name": "DaRcI3"}]
+        failed_results = get_failed_update_from_results(results)
+        expected = ["darci1", "darci2", "darci3"]
+        self.assertListEqual(failed_results, expected)
+
+    def test_get_failed_update_from_results_updated_true(self):
+        results = [{"exported": True, "updated": True, "name": "DaRcI1"}]
+        failed_results = get_failed_update_from_results(results)
+        expected = []
+        self.assertListEqual(failed_results, expected)
+
+    def test_get_staged_projects_without_failed_update_with_failure(self):
+        results = [{"exported": True, "updated": False, "name": "DaRcI1"}]
+        expected = [
+            {
+                "archived": False,
+                "builds_access_level": "enabled",
+                "default_branch": "master",
+                "description": "",
+                "http_url_to_repo": "https://dictionary.githost.io/dictionary-web/darci.git",
+                "id": 133,
+                "issues_access_level": "enabled",
+                "members": [],
+                "merge_requests_access_level": "enabled",
+                "name": "darci2",
+                "namespace": "dictionary-web",
+                "project_type": "group",
+                "repository_access_level": "enabled",
+                "shared_runners_enabled": False,
+                "snippets_access_level": "disabled",
+                "visibility": "private",
+                "wiki_access_level": "enabled"
+            },
+            {
+                "archived": True,
+                "builds_access_level": "enabled",
+                "default_branch": "master",
+                "description": "",
+                "http_url_to_repo": "https://dictionary.githost.io/dictionary-web/darci.git",
+                "id": 134,
+                "issues_access_level": "enabled",
+                "members": [],
+                "merge_requests_access_level": "enabled",
+                "name": "darci3",
+                "namespace": "dictionary-web",
+                "project_type": "group",
+                "repository_access_level": "enabled",
+                "shared_runners_enabled": False,
+                "snippets_access_level": "disabled",
+                "visibility": "private",
+                "wiki_access_level": "enabled"
+            }
+        ]
+        failed_results = get_failed_update_from_results(results)
+        filtered_staged = get_staged_projects_without_failed_update(self.staged_projects, failed_results)
+        self.assertListEqual(filtered_staged, expected)
+        print(filtered_staged)
+
+    def test_get_staged_projects_without_failed_update_with_no_failure_leaves_unchanged(self):
+        results = [{"exported": True, "updated": True, "name": "DaRcI1"}]
+        failed_results = get_failed_update_from_results(results)
+        filtered_staged = get_staged_projects_without_failed_update(self.staged_projects, failed_results)
+        self.assertListEqual(filtered_staged, self.staged_projects)
+
+    def test_get_staged_projects_without_failed_update_with_no_all_fail_returns_empty(self):
+        results = [{"exported": True, "updated": False, "name": "DaRcI1"},
+                   {"exported": True, "updated": False, "name": "DaRcI2"},
+                   {"exported": True, "updated": False, "name": "DaRcI3"}]
+        failed_results = get_failed_update_from_results(results)
+        filtered_staged = get_staged_projects_without_failed_update(self.staged_projects, failed_results)
+        self.assertListEqual(filtered_staged, [])

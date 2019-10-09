@@ -11,7 +11,7 @@ from multiprocessing.dummy import Pool as ThreadPool
 from multiprocessing import Lock
 from requests.exceptions import RequestException
 
-from congregate.helpers import api
+from congregate.helpers import api, migrate_utils
 from congregate.aws import AwsClient
 from congregate.cli.stage_projects import stage_projects
 from congregate.helpers import base_module as b
@@ -401,6 +401,17 @@ def migrate(
             pool.close()
             pool.join()
             b.log.info("### Project export results ###\n{0}".format(json.dumps(results, indent=4)))
+
+            # Create list of projects that failed update
+            # TODO: What if results is [] or None? Can that even happen?
+            if results is not None and len(results) == 0:
+                raise Exception("Results from exporting objects returned as empty. Aborting.")
+
+            failed_update = migrate_utils.get_failed_update_from_results(results)
+            b.log.warning("The following projects failed to update the project json\n{0}".format(failed_update))
+
+            # filter out the bad ones
+            staged_projects = migrate_utils.get_staged_projects_without_failed_update(staged_projects, failed_update)
 
             if not skip_project_import:
                 b.log.info("Importing projects")
