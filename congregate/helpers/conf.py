@@ -218,6 +218,15 @@ class ig(object):
         """
         return self.config.get("keep_blocked_users", False)
 
+    @property
+    def max_export_wait_time(self):
+        """
+        The maximum amount of time to wait for exports. Accumulated in congregate.helpers.conf.ig#importexport_wait
+        increments
+        :return: The set config value of 3600 seconds (one hour) as default
+        """
+        return self.config.get("max_export_wait_time", 3600)
+
     @threads.setter
     def threads(self, value):
         self.threads = value

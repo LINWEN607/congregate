@@ -68,7 +68,7 @@ class ImportExportClient(BaseClass):
                         break
                 else:
                     self.log.info("Waiting {0}s for project {1} to export".format(wait_time, name))
-                    if total_time < 3600:
+                    if total_time < self.config.max_export_wait_time:
                         total_time += wait_time
                         sleep(wait_time)
                     else:
