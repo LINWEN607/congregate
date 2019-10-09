@@ -147,7 +147,7 @@ def migrate_single_project_info(project, id):
                 id, old_id, "project")
             results["variables"] = True
         else:
-            b.log.warn("CI/CD is disabled for project {}".format(name))
+            b.log.warning("CI/CD is disabled for project {}".format(name))
     except Exception, e:
         b.log.error("Failed to migrate {0} CI/CD variables, with error:\n{1}".format(name, e))
         results["variables"] = False
@@ -174,7 +174,7 @@ def migrate_single_project_info(project, id):
             mr.migrate_merge_request_approvers(id, old_id)
             results["merge_request_approvers"] = True
         else:
-            b.log.warn("Merge requests are disabled for project {}".format(name))
+            b.log.warning("Merge requests are disabled for project {}".format(name))
     except Exception, e:
         b.log.error("Failed to migrate {0} merge request approvers, with error:\n{1}".format(name, e))
         results["merge_request_approvers"] = False
@@ -210,7 +210,7 @@ def migrate_single_project_info(project, id):
             awards.migrate_awards(id, old_id, users_map, mr_enabled)
             results["awards"] = True
         else:
-            b.log.warn("Awards (job/MR/snippet) are disabled for project {}".format(name))
+            b.log.warning("Awards (job/MR/snippet) are disabled for project {}".format(name))
     except Exception, e:
         b.log.error("Failed to migrate {0} awards, with error:\n{1}".format(name, e))
         results["awards"] = False
@@ -258,7 +258,7 @@ def migrate_single_project_info(project, id):
             results["container_registry"] = True
         else:
             instance = "source" if not registry[0] else "destination" if not registry[1] else "source and destination"
-            b.log.warn("Container registry is disabled for {} instance".format(instance))
+            b.log.warning("Container registry is disabled for {} instance".format(instance))
     except Exception, e:
         b.log.error("Failed to migrate {0} container registries, with error:\n{1}".format(name, e))
         results["container_registry"] = False
@@ -403,12 +403,12 @@ def migrate(
             b.log.info("### Project export results ###\n{0}".format(json.dumps(results, indent=4)))
 
             # Create list of projects that failed update
-            # TODO: What if results is [] or None? Can that even happen?
             if results is not None and len(results) == 0:
-                raise Exception("Results from exporting objects returned as empty. Aborting.")
+                raise Exception("Results from exporting projects returned as empty. Aborting.")
 
             failed_update = migrate_utils.get_failed_update_from_results(results)
-            b.log.warning("The following projects failed to update the project json\n{0}".format(failed_update))
+            b.log.warning("The following projects (project.json) failed to update:\n{0}"
+                .format(json.dumps(failed_update, indent=4, sort_keys=True)))
 
             # filter out the bad ones
             staged_projects = migrate_utils.get_staged_projects_without_failed_update(staged_projects, failed_update)
