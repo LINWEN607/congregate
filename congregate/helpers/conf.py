@@ -210,6 +210,14 @@ class ig(object):
         """
         return self.config.get("max_import_retries", 3)
 
+    @property
+    def keep_blocked_users(self):
+        """
+        Determines if we should keep blocked users. Currently, only used during the project json rewrite phase
+        :return: The config value or default of False
+        """
+        return self.config.get("keep_blocked_users", False)
+
     @threads.setter
     def threads(self, value):
         self.threads = value

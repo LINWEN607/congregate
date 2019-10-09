@@ -18,15 +18,15 @@ class ProjectExportClient(BaseClass):
         self.users_map = {}
         super(ProjectExportClient, self).__init__()
 
-    def update_project_export_members(self, name, namespace, filename, keep_blocked_users):
+    def update_project_export_members(self, name, namespace, filename):
         file_path, extract_path = self.generate_filepaths(name, namespace, filename)
-        updated = self.__do_tar_and_rewrite(file_path, extract_path, keep_blocked_users)
+        updated = self.__do_tar_and_rewrite(file_path, extract_path)
         self.aws.copy_file_to_s3(filename)
         self.remove_local_project_export(name, namespace, filename)
         os.chdir(self.app_path)
         return updated
 
-    def update_project_export_members_for_local(self, name, namespace, filename, keep_blocked_users):
+    def update_project_export_members_for_local(self, name, namespace, filename):
         # generate_filepaths has an explicit call out for AWS work that we don't need
         # so don't use that
         file_path = self.get_file_path(filename)
@@ -41,7 +41,7 @@ class ProjectExportClient(BaseClass):
                     extract_path
                 )
             )
-        updated = self.__do_tar_and_rewrite(file_path, extract_path, keep_blocked_users)
+        updated = self.__do_tar_and_rewrite(file_path, extract_path)
         shutil.rmtree(extract_path)
         os.chdir(self.app_path)
         return updated
@@ -52,12 +52,12 @@ class ProjectExportClient(BaseClass):
     def get_extract_path(self, name, namespace):
         return "{0}/downloads/{1}_{2}".format(self.config.filesystem_path, name, namespace)
 
-    def __do_tar_and_rewrite(self, file_path, extract_path, keep_blocked_users):
+    def __do_tar_and_rewrite(self, file_path, extract_path):
         with tarfile.open(file_path, "r:gz") as tar:
             tar.extractall(path=extract_path)
         with tarfile.open(file_path, "w:gz") as tar:
             try:
-                self.__rewrite_project_json(extract_path, keep_blocked_users)
+                self.__rewrite_project_json(extract_path)
                 tar.add(extract_path, arcname="")
                 return True
             except ValueError, e:
@@ -75,7 +75,7 @@ class ProjectExportClient(BaseClass):
 
         return file_path, extract_path
 
-    def __rewrite_project_json(self, path, keep_blocked_users=False):
+    def __rewrite_project_json(self, path):
         with open("%s/project.json" % path, "r") as f:
             data = json.load(f)
 
@@ -84,30 +84,31 @@ class ProjectExportClient(BaseClass):
         self.log.info("Building user map")
         for d in data["project_members"]:
             if d.get("user", None) is not None:
-                if d["user"].get("state", None) is not None:
-                    if str(d["user"]["state"]).lower() == "blocked" and not keep_blocked_users:
-                        self.log.info("Removing blocked user {0}".format(d["user"]))
-                        to_pop.append(data["project_members"].index(d))
-                    elif d["user"].get("email", None) is not None:
-                        new_user = self.users.find_user_by_email_comparison_without_id(d["user"]["email"])
-                        if new_user is not None:
-                            d["user"]["id"] = new_user["id"]
-                            self.users_map[d["user_id"]] = new_user["id"]
-                            # We do the following to force the import tool to match on email
-                            # Particularly useful when users have already been migrated ahead of project migration
-                            # and may have a suffix on their username
-                            d["user"]["username"] = "dont_have_this_username"
-                        else:
-                            self.log.warning("New user on destination was not found by email {0}".format(d))
-                            d["user"]["id"] = self.config.import_user_id
-                            self.users_map[d["user_id"]] = self.config.import_user_id
-                            d["user"]['username'] = "This is invalid"
+                if d["user"].get("state", None) is not None \
+                        and str(d["user"]["state"]).lower() == "blocked" \
+                        and not self.config.keep_blocked_users:
+                    self.log.info("Removing blocked user from project json {0}".format(d["user"]))
+                    to_pop.append(data["project_members"].index(d))
+                elif d["user"].get("email", None) is not None:
+                    new_user = self.users.find_user_by_email_comparison_without_id(d["user"]["email"])
+                    if new_user is not None:
+                        d["user"]["id"] = new_user["id"]
+                        self.users_map[d["user_id"]] = new_user["id"]
+                        # We do the following to force the import tool to match on email
+                        # Particularly useful when users have already been migrated ahead of project migration
+                        # and may have a suffix on their username
+                        d["user"]["username"] = "dont_have_this_username"
                     else:
-                        # No clue who this is, so set to import user
-                        self.log.warning("Project member user entity had no email {0}".format(d))
+                        self.log.warning("New user on destination was not found by email {0}".format(d))
                         d["user"]["id"] = self.config.import_user_id
                         self.users_map[d["user_id"]] = self.config.import_user_id
                         d["user"]['username'] = "This is invalid"
+                else:
+                    # No clue who this is, so set to import user
+                    self.log.warning("Project member user entity had no email {0}".format(d))
+                    d["user"]["id"] = self.config.import_user_id
+                    self.users_map[d["user_id"]] = self.config.import_user_id
+                    d["user"]['username'] = "This is invalid"
             # Members invited to group/project by other group/project members.
             # Not necessarily existing users on src nor dest instance.
             # Removing them rather than creating new user objects.
