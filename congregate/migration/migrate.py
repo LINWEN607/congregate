@@ -397,7 +397,7 @@ def migrate(
         if staged_projects is not None and staged_projects:
             b.log.info("Migrating project info")
             pool = ThreadPool(b.config.threads)
-            results = pool.map(handle_exporting_projects, staged_projects, skip_project_export)
+            results = pool.map(handle_exporting_projects, staged_projects, skip_project_export, keep_blocked_users)
             pool.close()
             pool.join()
             b.log.info("### Project export results ###\n{0}".format(json.dumps(results, indent=4)))
@@ -441,7 +441,7 @@ def kick_off_import():
         b.log.info("No projects to migrate")
 
 
-def handle_exporting_projects(project, skip_project_export=False):
+def handle_exporting_projects(project, skip_project_export=False, keep_blocked_users=False):
     name = project["name"]
     id = project["id"]
     namespace = project["namespace"]
@@ -464,21 +464,25 @@ def handle_exporting_projects(project, skip_project_export=False):
                 exported = True
             updated = False
             try:
-                updated = project_export.update_project_export_members_for_local(name, namespace, filename)
+                updated = project_export.update_project_export_members_for_local(
+                    name,
+                    namespace,
+                    filename,
+                    keep_blocked_users
+                )
             except Exception as e:
                 b.log.error("Failed to update {0} project export, with error:\n{1}".format(filename, e))
             return {"name": name, "exported": exported, "updated": updated}
         elif b.config.location.lower() == "filesystem-aws":
             b.log.info("Migrating project {} through filesystem-AWS".format(name))
             ie.export_thru_fs_aws(id, name, namespace)
-
         elif (b.config.location).lower() == "aws":
             b.log.info("Migrating project {} through AWS".format(name))
             exported = ie.export_thru_aws(id, name, namespace, full_parent_namespace)
             updated = False
             filename = "%s_%s.tar.gz" % (namespace, name)
             try:
-                updated = project_export.update_project_export_members(name, namespace, filename)
+                updated = project_export.update_project_export_members(name, namespace, filename, keep_blocked_users)
             except Exception, e:
                 b.log.error("Failed to update {0} project export, with error:\n{1}".format(filename, e))
             return {"name": name, "exported": exported, "updated": updated}
