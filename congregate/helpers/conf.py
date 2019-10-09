@@ -213,8 +213,8 @@ class ig(object):
     @property
     def keep_blocked_users(self):
         """
-        Determines if we should keep blocked users. Currently, only used during the project json rewrite phase
-        :return: The config value or default of False
+        Determines if we should keep blocked users.
+        :return: The set config value or False as default.
         """
         return self.config.get("keep_blocked_users", False)
 
