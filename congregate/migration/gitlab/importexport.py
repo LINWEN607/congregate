@@ -58,7 +58,7 @@ class ImportExportClient(BaseClass):
                     self.log.error("Project {} export failed".format(name))
                     break
                 elif status == "none":
-                    self.log.warn(
+                    self.log.info(
                         "No export status could be found for project {}".format(name))
                     if not skip:
                         self.log.info("Waiting {0}s before skipping project {1} export".format(wait_time, name))
@@ -72,7 +72,7 @@ class ImportExportClient(BaseClass):
                         total_time += wait_time
                         sleep(wait_time)
                     else:
-                        self.log.warn(
+                        self.log.warning(
                             "Time limit exceeded. Going to attempt to download anyway")
                         exported = True
             else:
@@ -279,7 +279,7 @@ class ImportExportClient(BaseClass):
                         # We already log the duped message info when we find the dupe
                         # Reuse the not found message
                         if not duped:
-                            self.log.warn(
+                            self.log.warning(
                                 "Project may already exist but it cannot be found. Ignoring %s"
                                 % project["name"])
                             import_id = None
@@ -313,7 +313,7 @@ class ImportExportClient(BaseClass):
                                 exported = True
                             elif status_json["import_status"] != "started":
                                 # If it is started, we just ignore the status
-                                self.log.warn("Could not get import status: {0}".format(status_json))
+                                self.log.warning("Could not get import status: {0}".format(status_json))
                         else:
                             self.log.error("Import status code was {0}".format(status.status_code))
                         timeout += wait_time
@@ -331,7 +331,7 @@ class ImportExportClient(BaseClass):
                         timeout += wait_time
                         sleep(wait_time)
                     else:
-                        self.log.warn(
+                        self.log.warning(
                             "Moving on to the next project. Time limit exceeded")
                         break
         return {"import_id": import_id, "exported": exported, "duped": duped}
@@ -471,6 +471,7 @@ class ImportExportClient(BaseClass):
         return success
 
     def export_thru_aws(self, id, name, namespace, full_parent_namespace):
+        filename = "{0}_{1}.tar.gz".format(namespace, name)
         exported = False
         self.log.debug("Searching for existing project {}".format(name))
         if self.config.strip_namespace_prefix:
@@ -483,12 +484,13 @@ class ImportExportClient(BaseClass):
                 "Project {} not found on destination instance. Exporting from source instance.".format(name))
             response = self.export_project_to_aws(id, name, namespace)
             if response is not None and response.status_code == 202:
-                # Not consistent with "export_project_to_aws". A False may well be a valid export.
-                exported = self.wait_for_export_to_finish(
+                export_status = self.wait_for_export_to_finish(
                     self.config.source_host, self.config.source_token, id, name)
+                # If export status is uknown lookup the file on AWS
+                exported = export_status | self.aws.is_export_on_aws(filename)
             else:
-                self.log.warn("Failed to trigger project {0} export to AWS, with response {1}".format(name, response))
-        return exported
+                self.log.error("Failed to trigger project {0} export to AWS, with response {1}".format(name, response))
+        return { "filename": filename, "exported": exported }
 
     def strip_namespace(self, full_parent_namespace, namespace):
         if len(full_parent_namespace.split("/")) > 1:

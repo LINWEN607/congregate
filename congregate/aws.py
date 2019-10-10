@@ -4,16 +4,18 @@ Congregate - GitLab instance migration utility
 Copyright (c) 2018 - GitLab
 """
 
-import subprocess
-import boto3
-import requests
-
+from time import sleep
+from subprocess import Popen, PIPE, call
 from os import remove, path
 from re import sub
 from io import BytesIO
+
+import boto3
+import requests
+
 from botocore.client import Config
 from congregate.helpers.base_class import BaseClass
-from time import sleep
+
 
 
 class AwsClient(BaseClass):
@@ -101,7 +103,7 @@ class AwsClient(BaseClass):
                 self.config.bucket_name,
                 filename,
                 file_path)
-            subprocess.call(cmd.split("+"))
+            call(cmd.split("+"))
         return file_path
 
     def copy_from_s3_and_import(self, name, namespace, filename):
@@ -189,3 +191,13 @@ class AwsClient(BaseClass):
                 keys[cleaned_key] = obj['Key']
             page_count += 1
         return keys
+
+    def is_export_on_aws(self, filename):
+        self.log.info("Project export status unknown, looking for file {} on AWS".format(filename))
+        cmd = "aws+--region+{0}+s3+ls+s3://{1}/{2}+--recursive".format(
+            self.config.s3_region,
+            self.config.bucket_name,
+            filename)
+        r = Popen(cmd.split("+"), stdout=PIPE)
+        # Could be misleading, since it assumes the file is complete
+        return filename in r.stdout.read()
