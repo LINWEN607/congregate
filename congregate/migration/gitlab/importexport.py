@@ -486,8 +486,8 @@ class ImportExportClient(BaseClass):
             if response is not None and response.status_code == 202:
                 export_status = self.wait_for_export_to_finish(
                     self.config.source_host, self.config.source_token, id, name)
-                # If export status is uknown lookup the file on AWS
-                exported = export_status | self.aws.is_export_on_aws(filename)
+                # If export status is unknown lookup the file on AWS
+                exported = export_status or self.aws.is_export_on_aws(filename)
             else:
                 self.log.error("Failed to trigger project {0} export to AWS, with response {1}".format(name, response))
         return { "filename": filename, "exported": exported }
