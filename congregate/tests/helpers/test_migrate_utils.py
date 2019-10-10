@@ -87,9 +87,11 @@ class MigrateTests(unittest.TestCase):
         expected = []
         self.assertListEqual(failed_results, expected)
 
+    @mock.patch("congregate.helpers.base_module.ConfigurationValidator.parent_id", new_callable=mock.PropertyMock)
     @mock.patch.object(GroupsApi, "get_group")
     @mock.patch.object(ConfigurationValidator, "validate_parent_group_id")
-    def test_get_staged_projects_without_failed_update_with_failure(self, cv, ga):
+    def test_get_staged_projects_without_failed_update_with_failure(self, cv, ga, pi):
+        pi.return_value = 1
         ga.return_value = self.ThingWithJson({"path": "SOME_RANDOM_PATH"})
         cv.return_value = True
         expected = [
@@ -153,9 +155,11 @@ class MigrateTests(unittest.TestCase):
         def json(self):
             return self._json
 
+    @mock.patch("congregate.helpers.base_module.ConfigurationValidator.parent_id", new_callable=mock.PropertyMock)
     @mock.patch.object(GroupsApi, "get_group")
     @mock.patch.object(ConfigurationValidator, "validate_parent_group_id")
-    def test_get_staged_projects_without_failed_update_with_no_all_fail_returns_empty_group_project(self, cv, ga):
+    def test_get_staged_projects_without_failed_update_with_no_all_fail_returns_empty_group_project(self, cv, ga, pi):
+        pi.return_value = 1
         ga.return_value = self.ThingWithJson({"path": "SOME_RANDOM_PATH"})
         cv.return_value = True
         failed_results = ['some_random_path/dictionary-web_darci1.tar.gz',
