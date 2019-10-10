@@ -54,54 +54,6 @@ project_export = ProjectExportClient()
 full_parent_namespace = groups.find_parent_group_path()
 
 
-def migrate_project_info():
-    """
-        Subsequent function to update project info AFTER import
-    """
-    staged_projects = get_staged_projects()
-    for project in staged_projects:
-        members = project["members"]
-        project.pop("members")
-        b.log.debug("Searching for %s" % project["name"])
-        new_project = api.search(
-            b.config.destination_host, b.config.destination_token, 'projects', project['name'])
-        if new_project is not None and new_project:
-            if new_project[0]["name"] == project["name"] and \
-                    new_project[0]["namespace"]["name"] == project["namespace"]:
-                root_user_present = False
-                for member in members:
-                    if member["id"] == b.config.import_user_id:
-                        root_user_present = True
-                    new_member = {
-                        "user_id": member["id"],
-                        "access_level": member["access_level"]
-                    }
-
-                    try:
-                        api.generate_post_request(b.config.destination_host, b.config.destination_token,
-                                                  "projects/%d/members" % new_project[0]["id"], json.dumps(new_member))
-
-                    except RequestException, e:
-                        b.log.error(e)
-                        b.log.error(
-                            "Member might already exist. Attempting to update access level")
-                        try:
-                            api.generate_put_request(b.config.destination_host, b.config.destination_token,
-                                                     "projects/%d/members/%d?access_level=%d" % (
-                                                         new_project[0]["id"], member["id"], member["access_level"]),
-                                                     data=None)
-                        except RequestException, e:
-                            b.log.error(e)
-                            b.log.error(
-                                "Attempting to update existing member failed")
-
-                if not root_user_present:
-                    b.log.info("removing root user from project")
-                    api.generate_delete_request(b.config.destination_host, b.config.destination_token,
-                                                "projects/%d/members/%d" % (
-                                                    new_project[0]["id"], b.config.import_user_id))
-
-
 def migrate_single_project_info(project, id):
     """
         Subsequent function to update project info AFTER import
@@ -114,7 +66,13 @@ def migrate_single_project_info(project, id):
 
     b.log.info("Searching for project %s" % name)
     if id is None:
-        _, id = projects.find_project_by_path(b.config.destination_host, b.config.destination_token, full_parent_namespace, project["namespace"], project["name"])
+        _, id = projects.find_project_by_path(
+            b.config.destination_host,
+            b.config.destination_token,
+            full_parent_namespace,
+            project["namespace"],
+            project["name"]
+        )
 
     # Project Members
     # NOTE: Members should be handled on import. If that is not the case, the line below and variable members should be uncommented.
@@ -124,9 +82,8 @@ def migrate_single_project_info(project, id):
         projects.remove_import_user_from_project(id)
 
     # Project Avatar
-    # DOES THIS NEED TO STILL BE HERE AFTER MERGE?
-    # No, as this assumes you have access to the host systems uploads as a URL instead of letting the
-    # import of the TAR file handle it
+    # This assumes you have access to the host systems uploads as a URL instead of letting the
+    # TODO: Remove the `migrate_avatar` function once the import API can consistently add project avatars
     # projects.migrate_avatar(id, old_id)
 
     # Shared with groups
@@ -217,17 +174,19 @@ def migrate_single_project_info(project, id):
         results["awards"] = False
 
     # Pipeline Schedules
-    try:
-        p_schedules = schedules.get_all_pipeline_schedules(b.config.source_host, b.config.source_token, old_id)
-        if p_schedules:
-            p_schedules = list(p_schedules)
-            if p_schedules:
-                b.log.info("Migrating project {} pipeline schedules".format(name))
-                schedules.migrate_pipeline_schedules(id, old_id, users_map, p_schedules)
-                results["pipeline_schedules"] = True
-    except Exception, e:
-        b.log.error("Failed to migrate project {0} pipeline schedules, with error:\n{1}".format(name, e))
-        results["pipeline_schedules"] = False
+    # TODO: Remove `pipelines_schedules.py` once the import API can consistently add project pipelines schedules OR
+    # Address pending issues mentioned in congregate #205
+    # try:
+    #     p_schedules = schedules.get_all_pipeline_schedules(b.config.source_host, b.config.source_token, old_id)
+    #     if p_schedules:
+    #         p_schedules = list(p_schedules)
+    #         if p_schedules:
+    #             b.log.info("Migrating project {} pipeline schedules".format(name))
+    #             schedules.migrate_pipeline_schedules(id, old_id, users_map, p_schedules)
+    #             results["pipeline_schedules"] = True
+    # except Exception, e:
+    #     b.log.error("Failed to migrate project {0} pipeline schedules, with error:\n{1}".format(name, e))
+    #     results["pipeline_schedules"] = False
 
     # Deleting any impersonation tokens used by the awards migration
     try:
@@ -366,7 +325,6 @@ def migrate(
         #     ]
         # })
         start_multi_thead(bitbucket.handle_bitbucket_migration, repo_list)
-
     else:
         with open("%s/data/staged_groups.json" % b.app_path, "r") as f:
             groups_file = json.load(f)
@@ -393,57 +351,49 @@ def migrate(
         else:
             b.log.info("No groups to migrate")
 
-        staged_projects = get_staged_projects()
-        if staged_projects is not None and staged_projects:
+        migrate_project_info(skip_project_export, skip_project_import)
+
+
+def migrate_project_info(skip_project_export=False, skip_project_import=False):
+    staged_projects = get_staged_projects()
+    if staged_projects is not None and staged_projects:
+        if not skip_project_export:
             b.log.info("Exporting projects")
             export_pool = ThreadPool(b.config.threads)
-            export_results = export_pool.map(handle_exporting_projects, staged_projects, skip_project_export)
+            export_results = export_pool.map(
+                lambda project: handle_exporting_projects(project, skip_project_export),
+                staged_projects
+            )
             export_pool.close()
             export_pool.join()
-            # append total count of projects/exported/updated
-            export_results.append(Counter(k for d in export_results for k,v in d.items() if v))
-            b.log.info("### Project export results ###\n{0}"
-                .format(json.dumps(export_results, indent=4, sort_keys=True)))
 
             # Create list of projects that failed update
             if export_results is not None and len(export_results) == 0:
                 raise Exception("Results from exporting projects returned as empty. Aborting.")
 
+            # Append total count of projects/exported/updated
+            export_results.append(Counter(k for d in export_results for k,v in d.items() if v))
+            b.log.info("### Project export results ###\n{0}"
+                .format(json.dumps(export_results, indent=4, sort_keys=True)))
+
             failed_update = migrate_utils.get_failed_update_from_results(export_results)
             b.log.warning("The following projects (project.json) failed to update:\n{0}"
                 .format(json.dumps(failed_update, indent=4, sort_keys=True)))
 
-            # filter out the bad ones
+            # Filter out the failed ones
             staged_projects = migrate_utils.get_staged_projects_without_failed_update(staged_projects, failed_update)
 
-            if not skip_project_import:
-                b.log.info("Importing projects")
-                import_pool = ThreadPool(b.config.threads)
-                import_results = import_pool.map(migrate_given_export, staged_projects)
-                import_pool.close()
-                import_pool.join()
-                # append Total : Successful count of project imports
-                import_results.append(Counter("Total : Successful: {}"
-                    .format(len(import_results)) for d in import_results for k,v in d.items() if v))
-                b.log.info("### Project import results ###\n{0}"
-                    .format(json.dumps(import_results, indent=4, sort_keys=True)))
-        else:
-            b.log.info("No projects to migrate")
-
-
-def kick_off_import():
-    staged_projects = get_staged_projects()
-    if staged_projects is not None and staged_projects:
-        b.log.info("Importing projects")
-        pool = ThreadPool(b.config.threads)
-        results = pool.map(migrate_given_export, staged_projects)
-        pool.close()
-        pool.join()
-        # append Total : Successful count of project imports
-        results.append(Counter("Total : Successful: {}"
-            .format(len(results)) for d in results for k,v in d.items() if v))
-        b.log.info("### Project import only results ###\n{0}"
-            .format(json.dumps(results, indent=4, sort_keys=True)))
+        if not skip_project_import:
+            b.log.info("Importing projects")
+            import_pool = ThreadPool(b.config.threads)
+            import_results = import_pool.map(migrate_given_export, staged_projects)
+            import_pool.close()
+            import_pool.join()
+            # append Total : Successful count of project imports
+            import_results.append(Counter("Total : Successful: {}"
+                .format(len(import_results)) for d in import_results for k,v in d.items() if v))
+            b.log.info("### Project import results ###\n{0}"
+                .format(json.dumps(import_results, indent=4, sort_keys=True)))
     else:
         b.log.info("No projects to migrate")
 
@@ -479,9 +429,14 @@ def handle_exporting_projects(project, skip_project_export=False):
             ie.export_thru_fs_aws(id, name, namespace)
         elif b.config.location.lower() == "aws":
             b.log.info("Migrating project {} through AWS".format(name))
-            exported = ie.export_thru_aws(id, name, namespace, full_parent_namespace)
+            if not skip_project_export:
+                r = ie.export_thru_aws(id, name, namespace, full_parent_namespace)
+                filename = r["filename"]
+                exported = r["exported"]
+            else:
+                filename = "{0}_{1}.tar.gz".format(namespace, name)
+                exported = True
             updated = False
-            filename = "%s_%s.tar.gz" % (namespace, name)
             try:
                 updated = project_export.update_project_export_members(name, namespace, filename)
             except Exception, e:

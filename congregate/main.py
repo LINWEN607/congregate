@@ -8,6 +8,7 @@ Usage:
     congregate stage <projects>...
     congregate migrate [--threads=<n>] [--dry-run] [--skip-users] [--skip-project-import] [--skip-project-export]
     congregate ui
+    congregate export-projects
     congregate import-projects
     congregate do_all
     congregate update-staged-user-info
@@ -50,7 +51,7 @@ Arguments:
     skip-project-import                     Will do all steps up to import (export, re-write exported project json,
                                                 etc). Useful for testing export contents.
     skip-project-export                     Skips the project export and assumes that the project file is already ready
-                                            for rewrite. Currently only works for export through filesystem
+                                                for rewrite. Currently does NOT work for exports through filesystem-aws.
     access-level                            Update parent group level user permissions (Guest/Reporter/Developer/Maintainer/Owner).
     staged                                  Compare two groups that are staged for migration.
 
@@ -63,7 +64,8 @@ Commands:
                                                 All projects can be staged with a '.' or 'all'.
     migrate                                 Commence migration based on configuration and staged assets.
     ui                                      Deploy UI to port 8000.
-    import-projects                         Kick off import of exported projects onto destination instance.
+    export-projects                         Export and update source instance projects. Bulk project export without user/group info.
+    import-projects                         Import exported and updated projects onto destination instance. Destination user/group info required.
     do_all                                  Configure system, retrieve all projects, users, and groups, stage all information, and commence migration.
     update-staged-user-info                 Update staged user information after migrating only users.
     update-aws-creds                        Run awscli commands based on the keys stored in the config. Useful for docker updates.
@@ -238,8 +240,10 @@ if __name__ == '__main__':
                     users.update_user_permissions(access_level=access_level)
                 else:
                     log.warn("Missing access-level argument")
+            if arguments["export-projects"]:
+                migrate.migrate_project_info(skip_project_export=False, skip_project_import=True)
             if arguments["import-projects"]:
-                migrate.kick_off_import()
+                migrate.migrate_project_info(skip_project_export=True, skip_project_import=False)
             if arguments["get-total-count"]:
                 print migrate.get_total_migrated_count()
             if arguments["find-unimported-projects"]:
