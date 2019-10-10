@@ -693,19 +693,19 @@ class UserTests(unittest.TestCase):
 
     @mock.patch.object(GroupsApi, "search_for_group")
     def test_is_username_group_name_not_found(self, group_api):
-        group_api.return_value = {"name": "xyz"}
+        group_api.return_value = [{"name": "xyz"}]
         response = self.users.is_username_group_name({"username": "abc"})
         self.assertFalse(response)
 
     @mock.patch.object(GroupsApi, "search_for_group")
     def test_is_username_group_name_found(self, group_api):
-        group_api.return_value = {"name": "abc"}
+        group_api.return_value = [{"name": "abc"}]
         response = self.users.is_username_group_name({"username": "abc"})
         self.assertTrue(response)
 
     @mock.patch.object(GroupsApi, "search_for_group")
     def test_is_username_group_name_found_ignore_case(self, group_api):
-        group_api.return_value = {"name": "ABC"}
+        group_api.return_value = [{"name": "ABC"}]
         response = self.users.is_username_group_name({"username": "abc"})
         self.assertTrue(response)
 

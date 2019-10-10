@@ -90,15 +90,15 @@ class UsersClient(BaseClass):
         try:
             username = str(old_user["username"])
             namespace_check_response = []
-            for i in [self.groups.search_for_group(
+            for group in self.groups.search_for_group(
                 username,
                 host=self.config.destination_host,
                 token=self.config.destination_token
-            )]:
-                namespace_check_response.append(i)
+            ):
+                namespace_check_response.append(group)
             if namespace_check_response:
                 for z in namespace_check_response:
-                    if z.get("name") and str(z["name"]).lower() == username.lower():
+                    if z.get("name", None) is not None and str(z["name"]).lower() == username.lower():
                         # We found a match, so username is group name. Return True
                         return True
             return False
@@ -167,7 +167,7 @@ class UsersClient(BaseClass):
         user["force_random_password"] = "true" if user["state"] == "blocked" else self.config.force_random_password
         if not self.config.reset_password and not self.config.force_random_password:
             #TODO: add config for 'password' field
-            self.log.warn("If both 'reset_password' and 'force_random_password' are False, the 'password' field has to be set")
+            self.log.warning("If both 'reset_password' and 'force_random_password' are False, the 'password' field has to be set")
         user["skip_confirmation"] = True
         user["username"] = self.create_valid_username(user)
 
@@ -267,7 +267,7 @@ class UsersClient(BaseClass):
             not_found_all.append({obj[i]["name"]: not_found_members})
             not_found_members = []
 
-        self.log.warn("The not found items: {0}"
+        self.log.warning("Items NOT found: {0}"
             .format(json.dumps(not_found_all, indent=4, sort_keys=True)))
         return obj
 
@@ -356,7 +356,7 @@ class UsersClient(BaseClass):
                     "groups/{0}/members/{1}?access_level={2}"
                         .format(self.config.parent_id, user["id"], access_level), data=None)
                 if response.status_code != 200:
-                    self.log.warn(
+                    self.log.warning(
                         "Failed to update {0}'s access level ({1})".format(user["username"], response.content))
                 else:
                     self.log.info("Updated {0}'s parent access level to {1}"
@@ -397,6 +397,7 @@ class UsersClient(BaseClass):
 
         return staged
 
+    # TODO: Fix, does not show users to be removed
     def remove_blocked_users_dry_run(self):
         # create a 'newer_users.json' file with only non-blocked users
         count = 0
@@ -520,7 +521,7 @@ class UsersClient(BaseClass):
                 # Add to new_users
                 new_users.append(new_user[0])
             else:
-                self.log.warn(
+                self.log.warning(
                     "Could not find user by email {0}. User should have been already migrated"
                     .format(user["email"])
                 )
@@ -547,7 +548,10 @@ class UsersClient(BaseClass):
         with open("%s/data/users_not_found.json" % self.app_path, "w") as f:
             json.dump(users_not_found, f, indent=4)
 
-        self.log.info("New users ({0}):\n{1}".format(len(new_users), "\n".join(u["email"] for u in new_users)))
+        self.log.info("Users found ({0}):\n{1}"
+            .format(len(new_users), "\n".join(u["email"] for u in new_users)))
+        self.log.info("Users NOT found ({0}):\n{1}"
+            .format(len(users_not_found), "\n".join(u for u in users_not_found)))
 
     def retrieve_user_info(self, quiet=False):
         users = list(api.list_all(self.config.source_host,
@@ -614,7 +618,7 @@ class UsersClient(BaseClass):
             user["force_random_password"] = "true" if user["state"] == "blocked" else self.config.force_random_password
             if not self.config.reset_password and not self.config.force_random_password:
                 #TODO: add config for 'password' field
-                self.log.warn("If both 'reset_password' and 'force_random_password' are False, the 'password' field has to be set")
+                self.log.warning("If both 'reset_password' and 'force_random_password' are False, the 'password' field has to be set")
             if self.config.parent_id is not None:
                 user["is_admin"] = False
             return user
