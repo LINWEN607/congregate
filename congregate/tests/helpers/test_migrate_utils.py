@@ -1,6 +1,6 @@
 import unittest
 import mock
-from congregate.helpers.migrate_utils import get_failed_update_from_results, get_staged_projects_without_failed_update, get_project_filename
+from congregate.helpers.migrate_utils import get_failed_update_from_results, get_staged_projects_without_failed_update
 from congregate.helpers.configuration_validator import ConfigurationValidator
 from congregate.migration.gitlab.api.groups import GroupsApi
 
@@ -155,11 +155,24 @@ class MigrateTests(unittest.TestCase):
 
     @mock.patch.object(GroupsApi, "get_group")
     @mock.patch.object(ConfigurationValidator, "validate_parent_group_id")
-    def test_get_staged_projects_without_failed_update_with_no_all_fail_returns_empty(self, cv, ga):
+    def test_get_staged_projects_without_failed_update_with_no_all_fail_returns_empty_group_project(self, cv, ga):
         ga.return_value = self.ThingWithJson({"path": "SOME_RANDOM_PATH"})
         cv.return_value = True
         failed_results = ['some_random_path/dictionary-web_darci1.tar.gz',
                           'some_random_path/dictionary-web_darci2.tar.gz',
                           'some_random_path/dictionary-web_darci3.tar.gz']
+        filtered_staged = get_staged_projects_without_failed_update(self.staged_projects, failed_results)
+        self.assertListEqual(filtered_staged, [])
+
+    @mock.patch("congregate.helpers.base_module.ConfigurationValidator.parent_id", new_callable=mock.PropertyMock)
+    @mock.patch.object(GroupsApi, "get_group")
+    @mock.patch.object(ConfigurationValidator, "validate_parent_group_id")
+    def test_get_staged_projects_without_failed_update_with_no_all_fail_returns_empty_user_project(self, cv, ga, pi):
+        pi.return_value = None
+        ga.return_value = self.ThingWithJson({"path": "SOME_RANDOM_PATH"})
+        cv.return_value = True
+        failed_results = ['dictionary-web_darci1.tar.gz',
+                          'dictionary-web_darci2.tar.gz',
+                          'dictionary-web_darci3.tar.gz']
         filtered_staged = get_staged_projects_without_failed_update(self.staged_projects, failed_results)
         self.assertListEqual(filtered_staged, [])
