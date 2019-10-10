@@ -1,6 +1,8 @@
 import unittest
-
-from congregate.helpers.migrate_utils import get_failed_update_from_results, get_staged_projects_without_failed_update
+import mock
+from congregate.helpers.migrate_utils import get_failed_update_from_results, get_staged_projects_without_failed_update, get_project_filename
+from congregate.helpers.configuration_validator import ConfigurationValidator
+from congregate.migration.gitlab.api.groups import GroupsApi
 
 
 class MigrateTests(unittest.TestCase):
@@ -85,8 +87,11 @@ class MigrateTests(unittest.TestCase):
         expected = []
         self.assertListEqual(failed_results, expected)
 
-    def test_get_staged_projects_without_failed_update_with_failure(self):
-        results = [{"exported": True, "updated": False, "name": "DaRcI1"}]
+    @mock.patch.object(GroupsApi, "get_group")
+    @mock.patch.object(ConfigurationValidator, "validate_parent_group_id")
+    def test_get_staged_projects_without_failed_update_with_failure(self, cv, ga):
+        ga.return_value = self.ThingWithJson({"path": "SOME_RANDOM_PATH"})
+        cv.return_value = True
         expected = [
             {
                 "archived": False,
@@ -127,21 +132,34 @@ class MigrateTests(unittest.TestCase):
                 "wiki_access_level": "enabled"
             }
         ]
-        failed_results = get_failed_update_from_results(results)
+        failed_results = ['some_random_path/dictionary-web_darci1.tar.gz']
         filtered_staged = get_staged_projects_without_failed_update(self.staged_projects, failed_results)
         self.assertListEqual(filtered_staged, expected)
         print(filtered_staged)
 
-    def test_get_staged_projects_without_failed_update_with_no_failure_leaves_unchanged(self):
-        results = [{"exported": True, "updated": True, "name": "DaRcI1"}]
-        failed_results = get_failed_update_from_results(results)
+    @mock.patch.object(GroupsApi, "get_group")
+    @mock.patch.object(ConfigurationValidator, "validate_parent_group_id")
+    def test_get_staged_projects_without_failed_update_with_no_failure_leaves_unchanged(self, cv, ga):
+        ga.return_value = self.ThingWithJson({"path": "SOME_RANDOM_PATH"})
+        cv.return_value = True
+        failed_results = []
         filtered_staged = get_staged_projects_without_failed_update(self.staged_projects, failed_results)
         self.assertListEqual(filtered_staged, self.staged_projects)
 
-    def test_get_staged_projects_without_failed_update_with_no_all_fail_returns_empty(self):
-        results = [{"exported": True, "updated": False, "name": "DaRcI1"},
-                   {"exported": True, "updated": False, "name": "DaRcI2"},
-                   {"exported": True, "updated": False, "name": "DaRcI3"}]
-        failed_results = get_failed_update_from_results(results)
+    class ThingWithJson:
+        def __init__(self, jsons):
+            self._json = jsons
+
+        def json(self):
+            return self._json
+
+    @mock.patch.object(GroupsApi, "get_group")
+    @mock.patch.object(ConfigurationValidator, "validate_parent_group_id")
+    def test_get_staged_projects_without_failed_update_with_no_all_fail_returns_empty(self, cv, ga):
+        ga.return_value = self.ThingWithJson({"path": "SOME_RANDOM_PATH"})
+        cv.return_value = True
+        failed_results = ['some_random_path/dictionary-web_darci1.tar.gz',
+                          'some_random_path/dictionary-web_darci2.tar.gz',
+                          'some_random_path/dictionary-web_darci3.tar.gz']
         filtered_staged = get_staged_projects_without_failed_update(self.staged_projects, failed_results)
         self.assertListEqual(filtered_staged, [])

@@ -445,12 +445,8 @@ def handle_exporting_projects(project, skip_project_export=False):
     id = project["id"]
     namespace = project["namespace"]
     try:
-        if b.config.parent_id is not None and project["project_type"] != "user":
-            parent_namespace = groups.groups_api.get_group(
-                b.config.parent_id, b.config.destination_host, b.config.destination_token).json()
-            namespace = "%s/%s" % (parent_namespace["path"], project["namespace"])
-        else:
-            namespace = project["namespace"]
+        namespace = migrate_utils.get_project_namespace(project)
+
         if b.config.location == "filesystem":
             b.log.info("Migrating project {} through filesystem".format(name))
 
@@ -470,11 +466,11 @@ def handle_exporting_projects(project, skip_project_export=False):
                 )
             except Exception as e:
                 b.log.error("Failed to update {0} project export, with error:\n{1}".format(filename, e))
-            return {"name": name, "exported": exported, "updated": updated}
+            return {"name": filename, "exported": exported, "updated": updated}
         elif b.config.location.lower() == "filesystem-aws":
             b.log.info("Migrating project {} through filesystem-AWS".format(name))
             ie.export_thru_fs_aws(id, name, namespace)
-        elif (b.config.location).lower() == "aws":
+        elif b.config.location.lower() == "aws":
             b.log.info("Migrating project {} through AWS".format(name))
             exported = ie.export_thru_aws(id, name, namespace, full_parent_namespace)
             updated = False
@@ -483,7 +479,7 @@ def handle_exporting_projects(project, skip_project_export=False):
                 updated = project_export.update_project_export_members(name, namespace, filename)
             except Exception, e:
                 b.log.error("Failed to update {0} project export, with error:\n{1}".format(filename, e))
-            return {"name": name, "exported": exported, "updated": updated}
+            return {"name": filename, "exported": exported, "updated": updated}
     except IOError, e:
         b.log.error(e)
 
