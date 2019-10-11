@@ -443,7 +443,6 @@ def kick_off_import():
 def handle_exporting_projects(project, skip_project_export=False):
     name = project["name"]
     id = project["id"]
-    namespace = project["namespace"]
     try:
         namespace = migrate_utils.get_project_namespace(project)
 
@@ -466,7 +465,7 @@ def handle_exporting_projects(project, skip_project_export=False):
                 )
             except Exception as e:
                 b.log.error("Failed to update {0} project export, with error:\n{1}".format(filename, e))
-            return {"name": filename, "exported": exported, "updated": updated}
+            return {"filename": filename, "exported": exported, "updated": updated}
         elif b.config.location.lower() == "filesystem-aws":
             b.log.info("Migrating project {} through filesystem-AWS".format(name))
             ie.export_thru_fs_aws(id, name, namespace)
@@ -479,7 +478,7 @@ def handle_exporting_projects(project, skip_project_export=False):
                 updated = project_export.update_project_export_members(name, namespace, filename)
             except Exception, e:
                 b.log.error("Failed to update {0} project export, with error:\n{1}".format(filename, e))
-            return {"name": filename, "exported": exported, "updated": updated}
+            return {"filename": filename, "exported": exported, "updated": updated}
     except IOError, e:
         b.log.error(e)
 

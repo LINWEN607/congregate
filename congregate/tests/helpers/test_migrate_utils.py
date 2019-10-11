@@ -68,21 +68,21 @@ class MigrateTests(unittest.TestCase):
         ]
 
     def test_get_failed_update_from_results_updated_false(self):
-        results = [{"exported": True, "updated": False, "name": "DaRcI1"}]
+        results = [{"exported": True, "updated": False, "filename": "DaRcI1"}]
         failed_results = get_failed_update_from_results(results)
         expected = ["darci1"]
         self.assertListEqual(failed_results, expected)
 
     def test_get_failed_update_from_results_updated_all_false(self):
-        results = [{"exported": True, "updated": False, "name": "DaRcI1"},
-                   {"exported": True, "updated": False, "name": "DaRcI2"},
-                   {"exported": True, "updated": False, "name": "DaRcI3"}]
+        results = [{"exported": True, "updated": False, "filename": "DaRcI1"},
+                   {"exported": True, "updated": False, "filename": "DaRcI2"},
+                   {"exported": True, "updated": False, "filename": "DaRcI3"}]
         failed_results = get_failed_update_from_results(results)
         expected = ["darci1", "darci2", "darci3"]
         self.assertListEqual(failed_results, expected)
 
     def test_get_failed_update_from_results_updated_true(self):
-        results = [{"exported": True, "updated": True, "name": "DaRcI1"}]
+        results = [{"exported": True, "updated": True, "filename": "DaRcI1"}]
         failed_results = get_failed_update_from_results(results)
         expected = []
         self.assertListEqual(failed_results, expected)
