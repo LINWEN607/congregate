@@ -113,8 +113,7 @@ class ProjectExportClient(BaseClass):
             # Not necessarily existing users on src nor dest instance.
             # Removing them rather than creating new user objects.
             elif d.get("invite_email", None) is not None:
-                inviter = self.users.find_user_by_email_comparison_with_id(d.get("created_by_id"))
-                self.log.warn("Skipping user {0}, invited by {1}".format(d.get("invite_email"), inviter))
+                self.log.warning("Skipping user {0}, invited by ID {1}".format(d.get("invite_email"), d.get("created_by_id")))
                 to_pop.append(data["project_members"].index(d))
             else:
                 self.log.error("Project member has no user entity or invite email {0}. Skipping.".format(d))

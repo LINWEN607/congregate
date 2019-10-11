@@ -362,8 +362,7 @@ def migrate_project_info(skip_project_export=False, skip_project_import=False):
             export_pool = ThreadPool(b.config.threads)
             export_results = export_pool.map(
                 lambda project: handle_exporting_projects(project, skip_project_export),
-                staged_projects
-            )
+                staged_projects)
             export_pool.close()
             export_pool.join()
 
@@ -374,11 +373,11 @@ def migrate_project_info(skip_project_export=False, skip_project_import=False):
             # Append total count of projects/exported/updated
             export_results.append(Counter(k for d in export_results for k,v in d.items() if v))
             b.log.info("### Project export results ###\n{0}"
-                .format(json.dumps(export_results, indent=4, sort_keys=True)))
+                .format(json.dumps(export_results, indent=4)))
 
             failed_update = migrate_utils.get_failed_update_from_results(export_results)
-            b.log.warning("The following projects (project.json) failed to update:\n{0}"
-                .format(json.dumps(failed_update, indent=4, sort_keys=True)))
+            b.log.warning("The following projects (project.json) failed to update and will not be imported:\n{0}"
+                .format(json.dumps(failed_update, indent=4)))
 
             # Filter out the failed ones
             staged_projects = migrate_utils.get_staged_projects_without_failed_update(staged_projects, failed_update)
@@ -419,8 +418,7 @@ def handle_exporting_projects(project, skip_project_export=False):
                 updated = project_export.update_project_export_members_for_local(
                     name,
                     namespace,
-                    filename
-                )
+                    filename)
             except Exception as e:
                 b.log.error("Failed to update {0} project export, with error:\n{1}".format(filename, e))
             return {"filename": filename, "exported": exported, "updated": updated}
@@ -443,7 +441,7 @@ def handle_exporting_projects(project, skip_project_export=False):
                 b.log.error("Failed to update {0} project export, with error:\n{1}".format(filename, e))
             return {"filename": filename, "exported": exported, "updated": updated}
     except IOError, e:
-        b.log.error(e)
+        b.log.error("Handle exporting projects failed with error:\n{}".format(e))
 
 
 def find_unimported_projects():

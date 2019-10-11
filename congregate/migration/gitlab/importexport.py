@@ -476,9 +476,12 @@ class ImportExportClient(BaseClass):
         self.log.debug("Searching for existing project {}".format(name))
         if self.config.strip_namespace_prefix:
             namespace = self.strip_namespace(full_parent_namespace, namespace)
-        project_exists, _ = self.projects.find_project_by_path(self.config.destination_host,
-                                                               self.config.destination_token, full_parent_namespace,
-                                                               namespace, name)
+        project_exists, _ = self.projects.find_project_by_path(
+            self.config.destination_host,
+            self.config.destination_token,
+            full_parent_namespace,
+            namespace,
+            name)
         if not project_exists:
             self.log.info(
                 "Project {} not found on destination instance. Exporting from source instance.".format(name))
