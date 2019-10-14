@@ -44,7 +44,21 @@ class AwardsClient(BaseClass):
         return api.generate_post_request(host, token, "projects/%d/%s/%d/notes/%d/award_emoji?name=%s" % (
             project_id, awardable, awardable_id, note_id, name), None)
 
-    def migrate_awards(self, new_id, old_id, users_map, mr_enabled=False):
+    def migrate_awards(self, old_id, new_id, name, users_map, mr_enabled):
+        try:
+            # Issue, MR and snippet awards
+            all_awards = self.are_enabled(old_id)
+            if all_awards[0] or all_awards[1] or all_awards[2]:
+                self.log.info("Migrating {} awards".format(name))
+                self.migrate(new_id, old_id, users_map, mr_enabled)
+                return True
+            else:
+                self.log.warning("Awards (job/MR/snippet) are disabled for project {}".format(name))
+        except Exception, e:
+            self.log.error("Failed to migrate {0} awards, with error:\n{1}".format(name, e))
+            return False
+
+    def migrate(self, new_id, old_id, users_map, mr_enabled=False):
         AWARDABLES = {
             "issues": self.issues.get_single_project_issues,
             "merge_requests": self.merge_requests.get_single_project_merge_requests,

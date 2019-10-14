@@ -34,7 +34,21 @@ class RegistryClient(BaseClass):
     def __get_repository_tag_details(self, host, token, id, repo_id, tag_name):
         return api.generate_get_request(host, token, "projects/%d/registry/repositories/%d/tags/%s" % (id, repo_id, tag_name))
 
-    def migrate_registries(self, id, old_id):
+    def migrate_registries(self, old_id, new_id, name):
+        try:
+            registry = self.are_enabled(new_id, old_id)
+            if registry[0] and registry[1]:
+                self.log.info("Migrating container registries for {}".format(name))
+                self.migrate(old_id)
+                return True
+            else:
+                instance = "source" if not registry[0] else "destination" if not registry[1] else "source and destination"
+                self.log.warning("Container registry is disabled for {} instance".format(instance))
+        except Exception, e:
+            self.log.error("Failed to migrate {0} container registries, with error:\n{1}".format(name, e))
+            return False
+
+    def migrate(self, old_id):
         try:
             # Login to source registry
             src_client = self.__login_to_registry(self.config.source_host, self.config.source_token, self.config.source_registry)
@@ -54,7 +68,10 @@ class RegistryClient(BaseClass):
     def __import_registries(self, images, sufix):
         try:
             # Login to destination registry
-            dest_client = self.__login_to_registry(self.config.destination_host, self.config.destination_token, self.config.destination_registry)
+            dest_client = self.__login_to_registry(
+                self.config.destination_host,
+                self.config.destination_token,
+                self.config.destination_registry)
             new_reg = self.generate_destination_registry_url(sufix).lower()
             for image in images:
                 for tag in image.tags:

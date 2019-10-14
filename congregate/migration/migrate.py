@@ -44,17 +44,17 @@ projects_api = proj_api()
 pushrules = pushrules_client()
 branches = BranchesClient()
 awards = AwardsClient()
-mr = MergeRequestApproversClient()
+mr_approvers = MergeRequestApproversClient()
 awards = AwardsClient()
 registries = RegistryClient()
-schedules = PipelineSchedulesClient()
+p_schedules = PipelineSchedulesClient()
 deploy_keys = DeployKeysClient()
 project_export = ProjectExportClient()
 
 full_parent_namespace = groups.find_parent_group_path()
 
 
-def migrate_single_project_info(project, id):
+def migrate_single_project_info(project, new_id):
     """
         Subsequent function to update project info AFTER import
     """
@@ -65,21 +65,20 @@ def migrate_single_project_info(project, id):
     results = {}
 
     b.log.info("Searching for project %s" % name)
-    if id is None:
-        _, id = projects.find_project_by_path(
+    if new_id is None:
+        _, new_id = projects.find_project_by_path(
             b.config.destination_host,
             b.config.destination_token,
             full_parent_namespace,
             project["namespace"],
-            project["name"]
-        )
+            project["name"])
 
     # Project Members
     # NOTE: Members should be handled on import. If that is not the case, the line below and variable members should be uncommented.
     # TODO: Remove the `add_members` function once the import API can consistently add project members
     # projects.add_members(members, id)
     if not projects.root_user_present(members):
-        projects.remove_import_user_from_project(id)
+        projects.remove_import_user_from_project(new_id)
 
     # Project Avatar
     # This assumes you have access to the host systems uploads as a URL instead of letting the
@@ -87,141 +86,47 @@ def migrate_single_project_info(project, id):
     # projects.migrate_avatar(id, old_id)
 
     # Shared with groups
-    projects.add_shared_groups(old_id, id)
+    projects.add_shared_groups(old_id, new_id)
 
     # Update project badges to use destination path hostname
-    badges = projects_api.get_all_project_badges(b.config.destination_host, b.config.destination_token, id)
-    if badges:
-        badges = list(badges)
-        if badges:
-            b.log.info("Updating project {0} badges".format(name))
-            projects.update_badges(id, full_parent_namespace, badges)
+    projects.update_project_badges(new_id, name, full_parent_namespace)
 
     # CI/CD Variables
-    try:
-        if variables.are_enabled(old_id):
-            b.log.info("Migrating {} CI/CD variables".format(name))
-            variables.migrate_variables(
-                id, old_id, "project")
-            results["variables"] = True
-        else:
-            b.log.warning("CI/CD is disabled for project {}".format(name))
-    except Exception, e:
-        b.log.error("Failed to migrate {0} CI/CD variables, with error:\n{1}".format(name, e))
-        results["variables"] = False
+    results["variables"] = variables.migrate_cicd_variables(old_id, new_id, name)
 
     # Push Rules
-    try:
-        push_rule = pushrules.get_push_rules(
-            old_id, b.config.source_host, b.config.source_token).json()
-        if push_rule is not None and push_rule:
-            b.log.info("Migrating push rules for {}".format(name))
-            pushrules.add_push_rule(id, b.config.destination_host,
-                                    b.config.destination_token, push_rule)
-            results["push_rules"] = True
-    except Exception, e:
-        b.log.error("Failed to migrate {0} push rules, with error:\n{1}".format(name, e))
-        results["push_rules"] = False
+    results["push_rules"] = pushrules.migrate_push_rules(old_id, new_id, name)
 
     # Merge Request Approvers
-    mr_enabled = False
-    try:
-        if mr.are_enabled(old_id):
-            mr_enabled = True
-            b.log.info("Migrating merge request approvers for {}".format(name))
-            mr.migrate_merge_request_approvers(id, old_id)
-            results["merge_request_approvers"] = True
-        else:
-            b.log.warning("Merge requests are disabled for project {}".format(name))
-    except Exception, e:
-        b.log.error("Failed to migrate {0} merge request approvers, with error:\n{1}".format(name, e))
-        results["merge_request_approvers"] = False
+    results["merge_request_approvers"] = mr_approvers.migrate_mr_approvers(old_id, new_id, name)
+    mr_enabled = bool(results["merge_request_approvers"])
 
     # Default Branch
-    try:
-        branches.update_default_branch(old_id, id, project)
-        results["default_branch"] = True
-    except Exception, e:
-        b.log.info("Failed to migrate project {0} default branch, with error:\n{1}".format(name, e))
-        results["default_branch"] = False
+    results["default_branch"] = branches.update_default_branch(old_id, new_id, project)
 
     # Protected Branches
-    try:
-        p_branches = branches.get_protected_branches(old_id, b.config.source_host, b.config.source_token)
-        if p_branches:
-            p_branches = list(p_branches)
-            if p_branches:
-                b.log.info("Migrating project {} protected branches".format(name))
-                branches.migrate_protected_branches(id, p_branches)
-                results["protected_branches"] = True
-    except Exception, e:
-        b.log.info("Failed to migrate project {0} protected branches, with error:\n{1}".format(name, e))
-        results["protected_branches"] = False
+    results["protected_branches"] = branches.migrate_protected_branches(old_id, new_id, name)
 
     # Awards
     users_map = {}
-    try:
-        # Issue, MR and snippet awards
-        all_awards = awards.are_enabled(old_id)
-        if all_awards[0] or all_awards[1] or all_awards[2]:
-            b.log.info("Migrating {} awards".format(name))
-            awards.migrate_awards(id, old_id, users_map, mr_enabled)
-            results["awards"] = True
-        else:
-            b.log.warning("Awards (job/MR/snippet) are disabled for project {}".format(name))
-    except Exception, e:
-        b.log.error("Failed to migrate {0} awards, with error:\n{1}".format(name, e))
-        results["awards"] = False
+    results["awards"] = awards.migrate_awards(old_id, new_id, name, users_map, mr_enabled)
 
     # Pipeline Schedules
     # TODO: Remove `pipelines_schedules.py` once the import API can consistently add project pipelines schedules OR
     # Address pending issues mentioned in congregate #205
-    # try:
-    #     p_schedules = schedules.get_all_pipeline_schedules(b.config.source_host, b.config.source_token, old_id)
-    #     if p_schedules:
-    #         p_schedules = list(p_schedules)
-    #         if p_schedules:
-    #             b.log.info("Migrating project {} pipeline schedules".format(name))
-    #             schedules.migrate_pipeline_schedules(id, old_id, users_map, p_schedules)
-    #             results["pipeline_schedules"] = True
-    # except Exception, e:
-    #     b.log.error("Failed to migrate project {0} pipeline schedules, with error:\n{1}".format(name, e))
-    #     results["pipeline_schedules"] = False
+    # results["pipeline_schedules"] = p_schedules.migrate_pipeline_schedules(old_id, new_id, users_map, name)
 
     # Deleting any impersonation tokens used by the awards migration
     try:
         users.delete_saved_impersonation_tokens(users_map)
     except Exception, e:
-        b.log.error(e)
+        b.log.error("Failed to delete saved impersonation tokens:\n{0}\nwith error\n:{1}".format(users_map, e))
 
     # Deploy Keys (project only)
-    try:
-        keys = deploy_keys.list_project_deploy_keys(old_id)
-        if keys:
-            keys = list(keys)
-            if keys:
-                b.log.info("Migrating project {} deploy keys".format(name))
-                deploy_keys.migrate_deploy_keys(id, keys)
-                results["deploy_keys"] = True
-        else:
-            b.log.info("Project {} has no deploy keys".format(name))
-    except Exception, e:
-        b.log.error("Failed to migrate project {0} deploy keys, with error:\n{1}".format(name, e))
-        results["deploy_keys"] = False
+    results["deploy_keys"] = deploy_keys.migrate_deploy_keys(old_id, new_id, name)
 
     # Container Registries
-    try:
-        registry = registries.are_enabled(id, old_id)
-        if registry[0] and registry[1]:
-            b.log.info("Migrating container registries for {}".format(name))
-            registries.migrate_registries(id, project["id"])
-            results["container_registry"] = True
-        else:
-            instance = "source" if not registry[0] else "destination" if not registry[1] else "source and destination"
-            b.log.warning("Container registry is disabled for {} instance".format(instance))
-    except Exception, e:
-        b.log.error("Failed to migrate {0} container registries, with error:\n{1}".format(name, e))
-        results["container_registry"] = False
+    results["container_registry"] = registries.migrate_registries(old_id, new_id, name)
 
     return results
 

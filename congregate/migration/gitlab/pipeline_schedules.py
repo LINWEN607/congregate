@@ -1,7 +1,8 @@
+import json
+
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers import api, misc_utils
 from congregate.migration.gitlab.users import UsersClient
-import json
 
 
 class PipelineSchedulesClient(BaseClass):
@@ -22,10 +23,26 @@ class PipelineSchedulesClient(BaseClass):
     def create_new_pipeline_schedule_variable(self, host, token, project_id, pipeline_id, data):
         return api.generate_post_request(host, token, "projects/%d/pipeline_schedules/%d/variables" % (project_id, pipeline_id), json.dumps(data))
 
-    def migrate_pipeline_schedules(self, new_id, old_id, users_map, schedules):
-        for schedule in schedules:
-            self.__handle_migrating_pipeline_schedule(
-                schedule, old_id, new_id, users_map)
+    def migrate_pipeline_schedules(self, old_id, new_id, users_map, name):
+        try:
+            p_schedules = self.get_all_pipeline_schedules(
+                self.config.source_host,
+                self.config.source_token,
+                old_id)
+            if p_schedules:
+                p_schedules = list(p_schedules)
+                if p_schedules:
+                    self.log.info("Migrating project {} pipeline schedules".format(name))
+                    for schedule in p_schedules:
+                        self.__handle_migrating_pipeline_schedule(
+                            schedule,
+                            old_id,
+                            new_id,
+                            users_map)
+                    return True
+        except Exception, e:
+            self.log.error("Failed to migrate project {0} pipeline schedules, with error:\n{1}".format(name, e))
+            return False
 
     def __handle_migrating_pipeline_schedule(self, schedule, old_project_id, new_project_id, users_map):
         pipeline_schedule_id = self.__get_pipeline_schedule_id(schedule)

@@ -1,9 +1,10 @@
+import json
+
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers import api
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
-import json
 
 
 class BranchesClient(BaseClass):
@@ -22,14 +23,19 @@ class BranchesClient(BaseClass):
     def set_default_branch(self, id, host, token, branch):
         return api.generate_put_request(host, token, "projects/%d?default_branch=%s" % (id, branch), data=None)
 
-    def update_default_branch(self, source_id, dest_id, old_project=None):
-        if not old_project:
-            old_project = self.projects.get_project(source_id, self.config.source_host, self.config.source_token).json()
-        if old_project.get("default_branch", None) is not None:
-            name = old_project["name"]
-            self.log.debug("Setting default branch to master for project {}".format(name))
-            resp = self.set_default_branch(dest_id, self.config.destination_host, self.config.destination_token, old_project["default_branch"])
-            self.log.debug("Project {0} default branch response: {1}".format(name, resp))
+    def update_default_branch(self, old_id, new_id, old_project=None):
+        try:
+            if not old_project:
+                old_project = self.projects.get_project(old_id, self.config.source_host, self.config.source_token).json()
+            if old_project.get("default_branch", None) is not None:
+                name = old_project["name"]
+                self.log.debug("Setting default branch to master for project {}".format(name))
+                resp = self.set_default_branch(new_id, self.config.destination_host, self.config.destination_token, old_project["default_branch"])
+                self.log.debug("Project {0} default branch response: {1}".format(name, resp))
+            return True
+        except Exception, e:
+            self.log.info("Failed to migrate project {0} default branch, with error:\n{1}".format(name, e))
+            return False
 
     def protect_branch(self, id, host, token, branch_name, push_access_level=None, merge_access_level=None, allowed_to_push=None, allowed_to_merge=None, allowed_to_unprotect=None):
         data = {
@@ -71,17 +77,36 @@ class BranchesClient(BaseClass):
 
         return access_level
 
-    def migrate_protected_branches(self, id, branches):
-        for branch in branches:
-            allowed_to_push = self.update_access_levels(
-                branch["push_access_levels"])
-            allowed_to_merge = self.update_access_levels(
-                branch["merge_access_levels"])
-            allowed_to_unprotect = self.update_access_levels(
-                branch["unprotect_access_levels"])
+    def migrate_protected_branches(self, old_id, new_id, name):
+        try:
+            p_branches = self.get_protected_branches(
+                old_id,
+                self.config.source_host,
+                self.config.source_token)
+            if p_branches:
+                p_branches = list(p_branches)
+                if p_branches:
+                    self.log.info("Migrating project {} protected branches".format(name))
+                    for branch in p_branches:
+                        allowed_to_push = self.update_access_levels(
+                            branch["push_access_levels"])
+                        allowed_to_merge = self.update_access_levels(
+                            branch["merge_access_levels"])
+                        allowed_to_unprotect = self.update_access_levels(
+                            branch["unprotect_access_levels"])
 
-            self.protect_branch(id, self.config.destination_host, self.config.destination_token,
-                                branch["name"], allowed_to_push=allowed_to_push, allowed_to_merge=allowed_to_merge, allowed_to_unprotect=allowed_to_unprotect)
+                        self.protect_branch(
+                            new_id,
+                            self.config.destination_host,
+                            self.config.destination_token,
+                            branch["name"],
+                            allowed_to_push=allowed_to_push,
+                            allowed_to_merge=allowed_to_merge,
+                            allowed_to_unprotect=allowed_to_unprotect)
+                    return True
+        except Exception, e:
+            self.log.info("Failed to migrate project {0} protected branches, with error:\n{1}".format(name, e))
+            return False
 
     def set_default_branches_to_master(self):
         for project in api.list_all(self.config.destination_host, self.config.destination_token, "projects"):

@@ -65,9 +65,11 @@ class ProjectsClient(BaseClass):
         return False
             
     def remove_import_user_from_project(self, id):
-        self.log.info("removing import user from project")
-        api.generate_delete_request(self.config.destination_host, self.config.destination_token,
-                                        "projects/%d/members/%d" % (id, self.config.import_user_id))
+        self.log.info("Removing import user from project")
+        api.generate_delete_request(
+            self.config.destination_host,
+            self.config.destination_token,
+            "projects/%d/members/%d" % (id, self.config.import_user_id))
 
     def add_shared_groups(self, old_id, new_id):
         """Adds the list of groups we share the project with."""
@@ -151,6 +153,17 @@ class ProjectsClient(BaseClass):
                     self.log.info("Project already exists. Skipping %s" % name)
                     return True, project["id"]
         return False, None
+
+    def update_project_badges(self, new_id, name, full_parent_namespace):
+        badges = self.projects_api.get_all_project_badges(
+            self.config.destination_host,
+            self.config.destination_token,
+            new_id)
+        if badges:
+            badges = list(badges)
+            if badges:
+                self.log.info("Updating project {0} badges".format(name))
+                self.update_badges(new_id, full_parent_namespace, badges)
 
     def update_badges(self, new_id, namespace, badges):
         try:

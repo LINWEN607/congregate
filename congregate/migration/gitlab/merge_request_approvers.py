@@ -63,6 +63,18 @@ class MergeRequestApproversClient(BaseClass):
     def create_approval_rule_with_payload(self, project_id, host, token, data):
         return api.generate_post_request(host, token, "projects/%d/approval_settings/rules" % project_id, json.dumps(data))
 
+    def migrate_mr_approvers(self, old_id, new_id, name):
+        try:
+            if self.are_enabled(old_id):
+                self.log.info("Migrating merge request approvers for {}".format(name))
+                self.migrate_merge_request_approvers(new_id, old_id)
+                return True
+            else:
+                self.log.warning("Merge requests are disabled for project {}".format(name))
+        except Exception, e:
+            self.log.error("Failed to migrate {0} merge request approvers, with error:\n{1}".format(name, e))
+            return False
+
     def migrate_merge_request_approvers(self, new_id, old_id):
         approval_data = self.get_approvals(
             old_id, self.config.source_host, self.config.source_token)

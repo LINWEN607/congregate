@@ -1,8 +1,9 @@
+import json
+
+from requests.exceptions import RequestException
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers import api
 from congregate.migration.gitlab.api.projects import ProjectsApi
-from requests.exceptions import RequestException
-import json
 
 
 class VariablesClient(BaseClass):
@@ -43,6 +44,21 @@ class VariablesClient(BaseClass):
             token = self.config.destination_token
 
         return api.generate_post_request(host, token, endpoint, json.dumps(data))
+
+    def migrate_cicd_variables(self, old_id, new_id, name):
+        try:
+            if self.are_enabled(old_id):
+                self.log.info("Migrating {} CI/CD variables".format(name))
+                self.migrate_variables(
+                    new_id,
+                    old_id,
+                    "project")
+                return True
+            else:
+                self.log.warning("CI/CD is disabled for project {}".format(name))
+        except Exception, e:
+            self.log.error("Failed to migrate {0} CI/CD variables, with error:\n{1}".format(name, e))
+            return False
 
     def migrate_variables(self, new_id, old_id, var_type):
         try:

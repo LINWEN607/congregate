@@ -160,7 +160,7 @@ if __name__ == '__main__':
             # except ImportError:
             #     import migration.users, migration.groups, migration.projects
             from congregate.cli import list_projects, stage_projects, do_all
-        if config.external_source is not False and config.external_source is not None:
+        if config.external_source is not None and config.external_source:
             if arguments["migrate"]:
                 if arguments["--threads"]:
                     migrate.migrate(threads=arguments["--threads"])

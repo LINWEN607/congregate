@@ -610,18 +610,17 @@ class UsersClient(BaseClass):
     def generate_user_data(self, user):
         if self.config.group_sso_provider is not None:
             return self.generate_user_group_saml_post_data(user)
-        else:
-            user["username"] = self.create_valid_username(user)
-            user["skip_confirmation"] = True
-            user["reset_password"] = self.config.reset_password
-            # make sure the blocked user cannot do anything
-            user["force_random_password"] = "true" if user["state"] == "blocked" else self.config.force_random_password
-            if not self.config.reset_password and not self.config.force_random_password:
-                #TODO: add config for 'password' field
-                self.log.warning("If both 'reset_password' and 'force_random_password' are False, the 'password' field has to be set")
-            if self.config.parent_id is not None:
-                user["is_admin"] = False
-            return user
+        user["username"] = self.create_valid_username(user)
+        user["skip_confirmation"] = True
+        user["reset_password"] = self.config.reset_password
+        # make sure the blocked user cannot do anything
+        user["force_random_password"] = "true" if user["state"] == "blocked" else self.config.force_random_password
+        if not self.config.reset_password and not self.config.force_random_password:
+            #TODO: add config for 'password' field
+            self.log.warning("If both 'reset_password' and 'force_random_password' are False, the 'password' field has to be set")
+        if self.config.parent_id is not None:
+            user["is_admin"] = False
+        return user
 
     def handle_user_creation(self, user):
         """
