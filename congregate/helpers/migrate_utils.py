@@ -1,13 +1,17 @@
 from congregate.helpers import base_module as b
+from congregate.models.user_logging_model import UserLoggingModel
 from congregate.migration.gitlab.groups import GroupsClient as groupsClient
+from congregate.migration.gitlab.users import UsersApi as usersApi
+
 groups = groupsClient()
+users_api = usersApi()
 
 
 def get_failed_update_from_results(results):
     return [str(x["filename"]).lower() for x in results
-        if x.get("updated", None) is not None
-        and x.get("filename", None) is not None
-        and not x["updated"]]
+            if x.get("updated", None) is not None
+            and x.get("filename", None) is not None
+            and not x["updated"]]
 
 
 def get_staged_projects_without_failed_update(staged_projects, failed_update):
@@ -37,3 +41,46 @@ def get_project_namespace(project):
             b.config.parent_id, b.config.destination_host, b.config.destination_token).json()
         return "{0}/{1}".format(parent_namespace["path"], project["namespace"])
     return project["namespace"]
+
+
+def get_is_user_project(project):
+    """
+    Determine if a passed staged_project object (json) is a user project or not
+    :param self:
+    :param project: The JSON object representing a GitLab project
+    :return: True if a user project, else False
+    """
+    is_user_project = False
+    if project.get("members", None) is None or not isinstance(project["members"], list):
+        return is_user_project
+
+    try:
+        # Determine if the project should be under a single user or group
+        for member in project["members"]:
+            if project["namespace"] == member["username"]:
+                is_user_project = True
+                # Note: This assumes that the user already exists in the destination system and that userid
+                # rewrites have occurred
+                new_user = users_api.get_user(
+                    member["id"],
+                    b.config.destination_host,
+                    b.config.destination_token
+                ).json()
+                b.log.info(
+                    "{0} is a user project belonging to {1}. Attempting to import into their namespace"
+                    .format(
+                        project["name"],
+                        UserLoggingModel.get_logging_user(new_user)
+                    )
+                )
+                return is_user_project
+    except Exception as e:
+        b.log.error(
+            "Failure checking if a user project for project {0} with error {1}"
+            .format(project, e)
+        )
+        # We don't do a lot of raise, but it's honestly getting to the point where I want to just fail rather
+        # than try and figure out if we should continue or not
+        raise e
+
+    return is_user_project

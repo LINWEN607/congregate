@@ -141,16 +141,28 @@ def migrate_given_export(project_json):
     }
     if isinstance(project_json, str):
         project_json = json.loads(project_json)
-    b.log.debug("Searching for existing project {}".format(name))
+    b.log.info("Searching for existing project {}".format(name))
     try:
         project_exists, project_id = projects.find_project_by_path(
-            b.config.destination_host, b.config.destination_token, full_parent_namespace, namespace, name)
+            b.config.destination_host,
+            b.config.destination_token,
+            full_parent_namespace,
+            namespace,
+            name
+        )
         if project_id:
             import_check = ie.get_import_status(
-                b.config.destination_host, b.config.destination_token, project_id).json()
-            b.log.info("Project {0} import status: {1}".format(name, import_check["import_status"]))
+                b.config.destination_host,
+                b.config.destination_token,
+                project_id).json()
+            b.log.info("Project {0} import status: {1}".format(
+                name,
+                import_check["import_status"] if import_check is not None
+                and import_check.get("import_status", None) is not None
+                else import_check)
+            )
         if not project_exists:
-            b.log.info("Importing project {}".format(name))
+            b.log.info("Project not found. Importing project {}".format(name))
             import_id = ie.import_project(project_json)
             if import_id is not None:
                 # Archived projects cannot be exported
@@ -289,7 +301,8 @@ def migrate_project_info(skip_project_export=False, skip_project_import=False):
                 .format(json.dumps(export_results, indent=4)))
 
             failed_update = migrate_utils.get_failed_update_from_results(export_results)
-            b.log.warning("The following projects (project.json) failed to update and will not be imported:\n{0}"
+            b.log.warning(
+                "The following projects (project.json) failed to update and will not be imported:\n{0}"
                 .format(json.dumps(failed_update, indent=4)))
 
             # Filter out the failed ones
@@ -302,9 +315,11 @@ def migrate_project_info(skip_project_export=False, skip_project_import=False):
             import_pool.close()
             import_pool.join()
             # append Total : Successful count of project imports
-            import_results.append(Counter("Total : Successful: {}"
-                .format(len(import_results)) for d in import_results for k,v in d.items() if v))
-            b.log.info("### Project import results ###\n{0}"
+            import_results.append(Counter(
+                "Total : Successful: {}"
+                .format(len(import_results)) for d in import_results for k, v in d.items() if v))
+            b.log.info(
+                "### Project import results ###\n{0}"
                 .format(json.dumps(import_results, indent=4, sort_keys=True)))
     else:
         b.log.info("No projects to migrate")

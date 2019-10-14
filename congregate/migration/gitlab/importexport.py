@@ -12,6 +12,8 @@ from congregate.aws import AwsClient
 from congregate.migration.gitlab.projects import ProjectsClient
 from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.api.groups import GroupsApi
+from congregate.helpers.migrate_utils import get_project_filename, get_project_namespace, get_is_user_project
+from congregate.models.user_logging_model import UserLoggingModel
 
 
 class ImportExportClient(BaseClass):
@@ -111,8 +113,9 @@ class ImportExportClient(BaseClass):
         """
         if isinstance(project, str):
             project = json.loads(project)
+
         name = project["name"]
-        filename = "%s_%s.tar.gz" % (project["namespace"], project["name"])
+
         override_params = {
             # to override the dash ("-") in import/export file path
             "name": project["name"],
@@ -126,79 +129,72 @@ class ImportExportClient(BaseClass):
             "repository_access_level": project["repository_access_level"],
             "archived": project["archived"]
         }
-        user_project = False
-        if isinstance(project["members"], list):
-            # Determine if the project should be under a single user or group
-            for member in project["members"]:
-                if project["namespace"] == member["username"]:
-                    user_project = True
-                    # namespace = project["namespace"]
-                    new_user = self.users.get_user(
-                        member["id"], self.config.destination_host, self.config.destination_token).json()
-                    namespace = new_user["username"]
-                    self.log.info("%s is a user project belonging to %s. Attempting to import into their namespace" % (
-                        project["name"], new_user))
-                    break
-            if not user_project:
-                self.log.info("%s is not a user project. Attempting to import into a group namespace" % (
-                    project["name"]))
-                if self.config.parent_id is not None:
-                    response = self.groups.get_group(
-                        self.config.parent_id, self.config.destination_host, self.config.destination_token).json()
-                    namespace = "%s/%s" % (response["full_path"],
-                                           project["namespace"])
-                    filename = "%s/%s_%s.tar.gz" % (
-                        response["path"], project["namespace"], project["name"])
 
-                else:
-                    namespace = project["namespace"]
-                    url = project["http_url_to_repo"]
-                    strip = sub(r"http(s|)://.+(\.net|\.com|\.org)/", "", url)
-                    another_strip = strip.split("/")
-                    for ind, val in enumerate(another_strip):
-                        if ".git" in val:
-                            another_strip.pop(ind)
-                    full_path = "/".join(another_strip)
-                    self.log.info("Searching for %s" % full_path)
-                    for group in api.list_all(self.config.destination_host, self.config.destination_token,
-                                              "groups?search=%s" % project["namespace"]):
-                        if isinstance(group, dict):
-                            if group["full_path"].lower() == full_path.lower():
-                                self.log.info("Found %s" % group["full_path"])
-                                namespace = group["id"]
-                                break
-
-            exported = False
-            # import_response = None
-            timeout = 0
-
-            import_response = self.attempt_import(filename, name, namespace, override_params, project)
-            self.log.info("Import response: {}".format(import_response))
-
-            import_results = self.get_import_id_from_import_response(import_response, exported, project, name, timeout)
-            self.log.info(import_results)
-
-            import_id = import_results["import_id"]
-            exported = import_results["exported"]
-            duped = import_results["duped"]
-
-            import_results = self.dupe_reimport_worker(
-                duped,
-                self.config.append_project_suffix_on_existing_found,
-                exported,
-                filename,
-                name,
-                namespace,
-                override_params,
-                project,
-                timeout
-            )
-            self.log.info("Import response (duped): {}".format(import_response))
-
-            # From here, should just flow through to the import_id return at the end
-        else:
+        if project is None:
             self.log.error("Project doesn't exist. Skipping %s" % name)
             return None
+
+        is_user_project = get_is_user_project(project)
+        filename = get_project_filename(project)
+        namespace = get_project_namespace(project)
+
+        if not is_user_project:
+            self.log.info(
+                "{0} is not a user project. Attempting to import into a group namespace"
+                .format(
+                    project["name"]
+                )
+            )
+            if self.config.parent_id is None:
+                # TODO: This section is for importing to top-level, non-user projects.
+                #   Needs a going over. We know the parent_id case is solid
+                #   but recent experience would suggest this part isn't as tight
+                #   Certainly not the GitHost scenario
+                url = project["http_url_to_repo"]
+                strip = sub(r"http(s|)://.+(\.net|\.com|\.org)/", "", url)
+                another_strip = strip.split("/")
+                for ind, val in enumerate(another_strip):
+                    if ".git" in val:
+                        another_strip.pop(ind)
+                full_path = "/".join(another_strip)
+                self.log.info("Searching for %s" % full_path)
+                for group in api.list_all(self.config.destination_host, self.config.destination_token,
+                                          "groups?search=%s" % project["namespace"]):
+                    if isinstance(group, dict):
+                        if group["full_path"].lower() == full_path.lower():
+                            self.log.info("Found %s" % group["full_path"])
+                            namespace = group["id"]
+                            break
+
+        exported = False
+        # import_response = None
+        timeout = 0
+
+        import_response = self.attempt_import(filename, name, namespace, override_params, project)
+        self.log.info("Import response: {}".format(import_response))
+
+        import_results = self.get_import_id_from_import_response(import_response, exported, project, name, timeout)
+        self.log.info(import_results)
+
+        import_id = import_results["import_id"]
+        exported = import_results["exported"]
+        duped = import_results["duped"]
+
+        import_results = self.dupe_reimport_worker(
+            duped,
+            self.config.append_project_suffix_on_existing_found,
+            exported,
+            filename,
+            name,
+            namespace,
+            override_params,
+            project,
+            timeout
+        )
+        self.log.info("Import response (duped): {}".format(import_response))
+
+        # From here, should just flow through to the import_id return at the end
+
         return import_id
 
     def dupe_reimport_worker(
@@ -309,7 +305,8 @@ class ImportExportClient(BaseClass):
                                 # if self.config.mirror_username is not None:
                                 #     mirror_repo(project, import_id)
                             elif status_json["import_status"] == "failed":
-                                self.log.error("Project {0} failed to import ({1})".format(name, status_json["import_error"]))
+                                self.log.error(
+                                    "Project {0} failed to import ({1})".format(name, status_json["import_error"]))
                                 exported = True
                             elif status_json["import_status"] != "started":
                                 # If it is started, we just ignore the status
@@ -387,7 +384,8 @@ class ImportExportClient(BaseClass):
                     "Private-Token": self.config.destination_token
                 }
 
-                resp = api.generate_post_request(self.config.destination_host, self.config.destination_token, "projects/import", data, files=files, headers=headers)
+                resp = api.generate_post_request(self.config.destination_host, self.config.destination_token,
+                                                 "projects/import", data, files=files, headers=headers)
                 import_response = resp.text
         return import_response
 
@@ -493,10 +491,12 @@ class ImportExportClient(BaseClass):
                 exported = export_status or self.aws.is_export_on_aws(filename)
             else:
                 self.log.error("Failed to trigger project {0} export to AWS, with response {1}".format(name, response))
-        return { "filename": filename, "exported": exported }
+        return {"filename": filename, "exported": exported}
 
     def strip_namespace(self, full_parent_namespace, namespace):
         if len(full_parent_namespace.split("/")) > 1:
             if full_parent_namespace.split("/")[-1] == namespace.split("/")[0]:
                 namespace = namespace.replace(namespace.split("/")[0] + "/", "")
         return namespace
+
+
