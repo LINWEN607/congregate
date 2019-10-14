@@ -152,9 +152,15 @@ class UsersClient(BaseClass):
         return users_map[email]
 
     def delete_saved_impersonation_tokens(self, users_map):
-        for user in users_map.values():
-            self.users.delete_user_impersonation_token(
-                self.config.destination_host, self.config.destination_token, user["user_id"], user["id"])
+        try:
+            for user in users_map.values():
+                self.users.delete_user_impersonation_token(
+                    self.config.destination_host,
+                    self.config.destination_token,
+                    user["user_id"],
+                    user["id"])
+        except Exception, e:
+            self.log.error("Failed to delete saved impersonation tokens:\n{0}\nwith error\n:{1}".format(users_map, e))
 
     def generate_user_group_saml_post_data(self, user):
         identities = user.pop("identities")

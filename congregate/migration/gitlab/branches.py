@@ -104,8 +104,12 @@ class BranchesClient(BaseClass):
                             allowed_to_merge=allowed_to_merge,
                             allowed_to_unprotect=allowed_to_unprotect)
                     return True
+                else:
+                    self.log.info("Project {} has no protected branches".format(name))
+            else:
+                self.log.warn("Failed to retrieve protected branches for {0}, with response:\n{1}".format(name, p_branches))
         except Exception, e:
-            self.log.info("Failed to migrate project {0} protected branches, with error:\n{1}".format(name, e))
+            self.log.info("Failed to migrate protected branches for {0}, with error:\n{1}".format(name, e))
             return False
 
     def set_default_branches_to_master(self):

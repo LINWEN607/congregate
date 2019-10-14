@@ -116,6 +116,9 @@ class GroupsClient(BaseClass):
             self.traverse_and_migrate(groups, rewritten_groups)
 
         # Migrate group badges
+        self.migrate_group_badges()
+
+    def migrate_group_badges(self):
         for old_id, new_id in self.group_id_mapping.items():
             badges = self.groups_api.get_all_group_badges(self.config.source_host, self.config.source_token, old_id)
             if badges:
@@ -123,6 +126,10 @@ class GroupsClient(BaseClass):
                 if badges:
                     self.log.info("Migrating source group ID {0} badges".format(old_id))
                     self.add_badges(new_id, self.find_parent_group_path(), badges)
+                else:
+                    self.log.info("Group {} has no group badges".format(old_id))
+            else:
+                self.log.warn("Failed to retrieve group badges for {0}, with response:\n{1}".format(old_id, badges))
 
     def traverse_and_migrate(self, groups, rewritten_groups):
         count = 0
@@ -355,7 +362,7 @@ class GroupsClient(BaseClass):
                 new_group_id
             )
 
-            if get_response and get_response.status_code == 200 and get_response.json().get("level", None) is not None:
+            if get_response is not None and get_response.status_code == 200 and get_response.json().get("level", None) is not None:
                 self.log.info("Retrieved notification settings for group {}".format(new_group_id))
                 return get_response.json()["level"]
             else:
@@ -373,7 +380,7 @@ class GroupsClient(BaseClass):
         """
         # 177 - Update group to turn off notifications while we add users
         try:
-            if self.config.notification_level is not None:
+            if self.config.notification_level:
                 LEVELS = ["disabled", "participating", "watch", "global", "mention", "custom"]
                 level = self.config.notification_level.lower()
                 if not level in LEVELS:
@@ -386,12 +393,12 @@ class GroupsClient(BaseClass):
                 new_group_id,
                 level
             )
-            if put_response and put_response.status_code == 200:
+            if put_response is not None and put_response.status_code == 200:
                 self.log.info("Updated group {0} notification level to {1}".format(new_group_id, level))
                 return put_response
             else:
                 self.log.error("Failed to update group {0} notification level to {1}, due to:\n{2}"
-                    .format(new_group_id, level, put_response.content))
+                    .format(new_group_id, level, put_response))
         except Exception as e:
             self.log.error("Exception in update_group_notifications of {0} ".format(e))
 
@@ -413,12 +420,12 @@ class GroupsClient(BaseClass):
                 new_group_id,
                 level
             )
-            if put_response and put_response.status_code == 200:
+            if put_response is not None and put_response.status_code == 200:
                 self.log.info("Reset group {0} notification level to {1}".format(new_group_id, level))
                 return put_response
             else:
                 self.log.error("Failed to reset group {0} notification level to {1}, due to:\n{2}"
-                    .format(new_group_id, level, put_response.content))
+                    .format(new_group_id, level, put_response))
         except Exception as e:
             self.log.error("Exception in reset_group_notifications of {0} ".format(e))
 

@@ -164,6 +164,10 @@ class ProjectsClient(BaseClass):
             if badges:
                 self.log.info("Updating project {0} badges".format(name))
                 self.update_badges(new_id, full_parent_namespace, badges)
+            else:
+                self.log.info("Project {} has no badges".format(name))
+        else:
+            self.log.warn("Failed to retrieve badges for {0}, with response:\n{1}".format(name, badges))
 
     def update_badges(self, new_id, namespace, badges):
         try:

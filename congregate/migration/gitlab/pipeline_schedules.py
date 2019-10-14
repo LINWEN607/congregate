@@ -40,8 +40,12 @@ class PipelineSchedulesClient(BaseClass):
                             new_id,
                             users_map)
                     return True
+                else:
+                    self.log.info("Project {} has no scheduled pipelines".format(name))
+            else:
+                self.log.warn("Failed to retrieve scheduled pipelines for {0}, with response:\n{1}".format(name, p_schedules))
         except Exception, e:
-            self.log.error("Failed to migrate project {0} pipeline schedules, with error:\n{1}".format(name, e))
+            self.log.error("Failed to migrate scheduled pipelines for {0}, with error:\n{1}".format(name, e))
             return False
 
     def __handle_migrating_pipeline_schedule(self, schedule, old_project_id, new_project_id, users_map):

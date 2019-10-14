@@ -76,14 +76,14 @@ def migrate_single_project_info(project, new_id):
     # Project Members
     # NOTE: Members should be handled on import. If that is not the case, the line below and variable members should be uncommented.
     # TODO: Remove the `add_members` function once the import API can consistently add project members
-    # projects.add_members(members, id)
+    # projects.add_members(members, new_id)
     if not projects.root_user_present(members):
         projects.remove_import_user_from_project(new_id)
 
     # Project Avatar
     # This assumes you have access to the host systems uploads as a URL instead of letting the
     # TODO: Remove the `migrate_avatar` function once the import API can consistently add project avatars
-    # projects.migrate_avatar(id, old_id)
+    # projects.migrate_avatar(new_id, old_id)
 
     # Shared with groups
     projects.add_shared_groups(old_id, new_id)
@@ -117,10 +117,7 @@ def migrate_single_project_info(project, new_id):
     # results["pipeline_schedules"] = p_schedules.migrate_pipeline_schedules(old_id, new_id, users_map, name)
 
     # Deleting any impersonation tokens used by the awards migration
-    try:
-        users.delete_saved_impersonation_tokens(users_map)
-    except Exception, e:
-        b.log.error("Failed to delete saved impersonation tokens:\n{0}\nwith error\n:{1}".format(users_map, e))
+    users.delete_saved_impersonation_tokens(users_map)
 
     # Deploy Keys (project only)
     results["deploy_keys"] = deploy_keys.migrate_deploy_keys(old_id, new_id, name)
@@ -129,6 +126,7 @@ def migrate_single_project_info(project, new_id):
     results["container_registry"] = registries.migrate_registries(old_id, new_id, name)
 
     return results
+
 
 def migrate_given_export(project_json):
     name = project_json["name"]
@@ -445,7 +443,6 @@ def check_visibility():
             change = api.generate_put_request(
                 b.config.destination_host, b.config.destination_token, "projects/%d?visibility=private" % int(i), data=None)
             print change
-
     print count
 
 
@@ -520,7 +517,6 @@ def count_unarchived_projects():
         if project.get("archived", None) is not None:
             if not project["archived"]:
                 unarchived_projects.append(project["name_with_namespace"])
-
     b.log.info("Unarchived projects ({0}):\n{1}".format(unarchived_projects, len(unarchived_projects)))
 
 
@@ -569,5 +565,4 @@ def find_empty_repos():
                         b.log.info("Project is empty in source instance. Ignoring")
                     else:
                         empty_repos.append(project["name_with_namespace"])
-
     b.log.info("Empty repositories ({0}):\n{1}".format(len(empty_repos), empty_repos))
