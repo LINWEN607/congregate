@@ -43,7 +43,6 @@ class UsersClient(BaseClass):
             email)
         # Will searching for an explicit email actually return more than one? Probably is just an array of 1
         for user in users:
-            self.log.info(user)
             if user is not None and \
                     user and \
                     user.get("email", None) is not None and \
@@ -371,11 +370,11 @@ class UsersClient(BaseClass):
             self.log.error("Failed to update user's parent access level, with error:\n{}".format(e))
 
     def remove_blocked_users(self):
-        #from staged users
+        # From staged users
         self.remove("staged_users")
-        # from staged groups
+        # From staged groups
         self.remove("staged_groups")
-        # from staged projects
+        # From staged projects
         self.remove("stage")
 
     def remove(self, data):
@@ -640,10 +639,9 @@ class UsersClient(BaseClass):
             response = self.users.create_user(
                 self.config.destination_host,
                 self.config.destination_token,
-                user_data
-            )
+                user_data)
         except RequestException, e:
-            self.log.error(e)
+            self.log.error("Failed to create user {0}, with error:\n{1}".format(user_data, e))
             response = None
 
         if response is not None:
@@ -656,45 +654,51 @@ class UsersClient(BaseClass):
             except Exception as e:
                 self.log.error("Could not get response JSON. Error was {0}".format(e))
 
-            if user_data["state"] == "blocked":
+            # If we keep_blocked_users make sure they are blocked after creation
+            if user_data.get("state", None) is not None and str(user_data["state"]).lower() == "blocked":
                 self.block_user(user_data)
             return self.handle_user_creation_status(response, user)
         return None
 
     def block_user(self, user_data):
         try:
-            user = self.find_user_by_email_comparison_without_id(user_data["email"])
-            block_response = self.users.block_user(self.config.destination_host,
-                self.config.destination_token,
-                user["id"])
-            self.log.info("Blocked user {0} email {1} (status: {2})"
-                .format(user_data["username"], user_data["email"], block_response))
-            return block_response
+            response = self.find_user_by_email_comparison_without_id(user_data["email"])
+            user_creation_id = self.get_user_creation_id(response)
+            if user_creation_id:
+                block_response = self.users.block_user(
+                    self.config.destination_host,
+                    self.config.destination_token,
+                    user_creation_id)
+                self.log.info("Blocking user {0} email {1} (status: {2})"
+                    .format(user_data["username"], user_data["email"], block_response))
+                return block_response
         except RequestException, e:
-            self.log.error("Failed to block user {0}, due to:\n{1}".format(user_data, e))
+            self.log.error("Failed to block user {0}, with error:\n{1}".format(user_data, e))
 
     def handle_user_creation_status(self, response, user):
         """
-
+        Used to handle the user creation response.
         :param response: The response from the create_user attempt
         :param user: The user entity (from staged_users.json) not the user_data that we generate
         :return: The ID of either the created user or the user found by email
         """
         if response.status_code == 409:
-            self.log.info("User already exists {0}".format(user["email"]))
+            self.log.info("User {0} already exists".format(user["email"]))
             try:
                 # Try to find the user by email. We either just created this, or it already existed
                 response = self.find_user_by_email_comparison_without_id(user["email"])
-                if response is not None and len(response) > 0:
-                    if isinstance(response, list):
-                        return response[0]["id"]
-                    elif isinstance(response, dict):
-                        if response.get("id", None) is not None:
-                            return response["id"]
+                return self.get_user_creation_id(response)
             except RequestException, e:
                 self.log.error("Failed to retrieve user {0} status, due to:\n{1}".format(user, e))
         else:
             return response.json()["id"]
+
+    def get_user_creation_id(self, response):
+        if response is not None and response:
+            if isinstance(response, list):
+                return response[0]["id"]
+            elif isinstance(response, dict) and response.get("id", None) is not None:
+                return response["id"]
 
     def append_users(self, users):
         with open("%s/data/users.json" % self.app_path, "r") as f:

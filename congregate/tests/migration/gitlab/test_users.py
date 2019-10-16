@@ -714,3 +714,19 @@ class UserTests(unittest.TestCase):
         group_api.side_effect = Exception("THIS HAPPENED")
         response = self.users.is_username_group_name({"username": "abc"})
         self.assertIsNone(response)
+
+    def test_get_user_creation_id_from_list(self):
+        response = [{"id": 42},{"id": 43}]
+        self.assertEqual(self.users.get_user_creation_id(response), 42)
+
+    def test_get_user_creation_id_from_dict(self):
+        response = {"id": 42}
+        self.assertEqual(self.users.get_user_creation_id(response), 42)
+
+    def test_get_user_creation_id_invalid(self):
+        response = []
+        self.assertEqual(self.users.get_user_creation_id(response), None)
+        response = None
+        self.assertEqual(self.users.get_user_creation_id(response), None)
+        response = {"name": "foo"}
+        self.assertEqual(self.users.get_user_creation_id(response), None)
