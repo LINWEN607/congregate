@@ -274,10 +274,9 @@ class GroupsClient(BaseClass):
                         if new_group is not None and len(new_group) > 0:
                             for ng in new_group:
                                 if ng["name"] == group["name"]:
-                                    if ng["parent_id"] == group["parent_id"] and \
-                                            group["parent_id"] == self.config.parent_id:
+                                    if ng["parent_id"] == group["parent_id"] == self.config.parent_id:
                                         new_group_id = ng["id"]
-                                        self.log.info("New group found")
+                                        self.log.info("New group {0} found".format(new_group_id))
                                         break
 
                     if new_group_id:
@@ -308,13 +307,14 @@ class GroupsClient(BaseClass):
                                 "user_id": member["id"],
                                 "access_level": int(member["access_level"])
                             }
-
                             try:
                                 response = api.generate_post_request(
-                                    self.config.destination_host, self.config.destination_token,
+                                    self.config.destination_host,
+                                    self.config.destination_token,
                                     "groups/%d/members" % new_group_id, json.dumps(new_member))
                             except RequestException, e:
-                                self.log.error(e)
+                                self.log.error("Failed to add member {0} to new group {1}, with error:\n{2}"
+                                    .format(member, new_group_id, e))
 
                         self.vars.migrate_variables(
                             new_group_id, group_id, "group")
@@ -322,7 +322,8 @@ class GroupsClient(BaseClass):
                         if not root_user_present:
                             self.log.info("Removing root user from group")
                             response = api.generate_delete_request(
-                                self.config.destination_host, self.config.destination_token,
+                                self.config.destination_host,
+                                self.config.destination_token,
                                 "groups/%d/members/%d" % (new_group_id, int(self.config.import_user_id)))
 
                         # Reset back group notification level

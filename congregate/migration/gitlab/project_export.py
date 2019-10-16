@@ -122,23 +122,8 @@ class ProjectExportClient(BaseClass):
         data["project_members"] = [i for j, i in enumerate(data["project_members"]) if j not in to_pop]
 
         # Update project_json
-        self.__traverse_json(data)
-        if data.get("merge_requests", None) is not None:
-            self.__remove_notes_from_merge_requests(data["merge_requests"], "DiffNote")
-            self.__remove_notes_from_merge_requests(data["merge_requests"], "Commit")
-            self.__remove_suggestions_from_merge_requests(data["merge_requests"])
-        if data.get("pipelines", None) is not None:
-            self.__remove_notes_from_merge_requests(data["pipelines"], "DiffNote")
-            self.__remove_notes_from_merge_requests(data["pipelines"], "Commit")
-            # This line needs to be removed once https://gitlab.com/gitlab-org/gitlab-ce/issues/60121 is resolved
-            data['pipelines'].reverse()
-        if data.get("ci_pipelines", None) is not None:
-            self.__remove_notes_from_merge_requests(data["ci_pipelines"], "DiffNote")
-            self.__remove_notes_from_merge_requests(data["ci_pipelines"], "Commit")
-            # This line needs to be removed once https://gitlab.com/gitlab-org/gitlab-ce/issues/60121 is resolved
-            data['ci_pipelines'].reverse()
-        if data.get("services", None) is not None:
-            del data["services"]
+        data = self.__traverse_json(data)
+        data = self.__remove_items(data)
 
         with open("%s/project.json" % path, "w") as f:
             json.dump(data, f, indent=4)
@@ -155,39 +140,26 @@ class ProjectExportClient(BaseClass):
                             self.__traverse_json(d)
                     elif isinstance(data[k], dict):
                         self.__traverse_json(data[k])
+        return data
     
-    # Method not used. Do we still need it?
-    def __update_authors_and_events(self, data):
-        for d in data:
-            d["author_id"] = self.__find_or_create_id(d["author_id"])
-            if d.get("closed_by_id", None) is not None:
-                d["closed_by_id"] = self.__find_or_create_id(d["closed_by_id"])
-            if d.get("issue_assignees", None) is not None:
-                for a in d["issue_assignees"]:
-                    self.__traverse_json(a)
-            if d.get("events", None) is not None:
-                for e in d["events"]:
-                    self.__traverse_json(e)
-            if d.get("notes", None) is not None:
-                for n in d["notes"]:
-                    self.__traverse_json(n)
-            if d.get("resource_label_events", None) is not None:
-                for r in d["resource_label_events"]:
-                    self.__traverse_json(r)
-            if d.get("metrics", None) is not None:
-                self.__traverse_json(d["metrics"])
-            
-    # Method not used. Do we still need it?
-    def __update_project_members(self, data):
-        for d in data:
-            old_created_by_id = d["created_by_id"]
-            if old_created_by_id is not None:
-                new_created_by_id = self.__find_or_create_id(old_created_by_id)
-                d["created_by_id"] = new_created_by_id
-            old_user_id = d["user_id"]
-            if old_user_id is not None:
-                new_user_id = self.__find_or_create_id(old_user_id)
-                d["user_id"] = new_user_id
+    def __remove_items(self, data):
+        if data.get("merge_requests", None) is not None:
+            self.__remove_notes_from_merge_requests(data["merge_requests"], "DiffNote")
+            self.__remove_notes_from_merge_requests(data["merge_requests"], "Commit")
+            self.__remove_suggestions_from_merge_requests(data["merge_requests"])
+        if data.get("pipelines", None) is not None:
+            self.__remove_notes_from_merge_requests(data["pipelines"], "DiffNote")
+            self.__remove_notes_from_merge_requests(data["pipelines"], "Commit")
+            # This line needs to be removed once https://gitlab.com/gitlab-org/gitlab/issues/27883 is resolved
+            data['pipelines'].reverse()
+        if data.get("ci_pipelines", None) is not None:
+            self.__remove_notes_from_merge_requests(data["ci_pipelines"], "DiffNote")
+            self.__remove_notes_from_merge_requests(data["ci_pipelines"], "Commit")
+            # This line needs to be removed once https://gitlab.com/gitlab-org/gitlab/issues/27883 is resolved
+            data['ci_pipelines'].reverse()
+        if data.get("services", None) is not None:
+            del data["services"]
+        return data
 
     def __find_or_create_id(self, key):
         if self.users_map.get(key) is None:

@@ -194,8 +194,8 @@ def migrate(
         threads=None,
         skip_users=False,
         skip_project_import=False,
-        skip_project_export=False
-):
+        skip_project_export=False):
+
     if threads is not None:
         b.config.threads = threads
 
@@ -229,32 +229,42 @@ def migrate(
         # })
         start_multi_thead(bitbucket.handle_bitbucket_migration, repo_list)
     else:
-        with open("%s/data/staged_groups.json" % b.app_path, "r") as f:
-            groups_file = json.load(f)
+        # Migrate users
+        migrate_user_info(skip_users)
 
-        if not skip_users:
-            b.log.info("Migrating user info")
-            new_users = users.migrate_user_info()
+        # Migrate groups
+        migrate_group_info()
 
-            # This list is of user ids from found users via email or newly created users
-            # So, new_user_ids is a bit of a misnomer
-            with open("%s/data/new_user_ids.txt" % b.app_path, "w") as f:
-                for new_user in new_users:
-                    f.write("%s\n" % new_user)
+        # Migrate projects
+        migrate_project_info(skip_project_export, skip_project_import)
 
-            # If we created or found users, do not force overwrite
-            if new_users is not None and new_users:
-                users.update_user_info(new_users)
-            else:
-                users.update_user_info(new_users, overwrite=False)
 
+def migrate_user_info(skip_users):
+    if not skip_users:
+        b.log.info("Migrating user info")
+        new_users = users.migrate_user_info()
+
+        # This list is of user ids from found users via email or newly created users
+        # So, new_user_ids is a bit of a misnomer
+        with open("%s/data/new_user_ids.txt" % b.app_path, "w") as f:
+            for new_user in new_users:
+                f.write("%s\n" % new_user)
+
+        # If we created or found users, do not force overwrite
+        if new_users is not None and new_users:
+            users.update_user_info(new_users)
+        else:
+            users.update_user_info(new_users, overwrite=False)
+
+
+def migrate_group_info():
+    with open("%s/data/staged_groups.json" % b.app_path, "r") as f:
+        groups_file = json.load(f)
         if groups_file is not None and groups_file:
             b.log.info("Migrating group info")
             groups.migrate_group_info()
         else:
             b.log.info("No groups to migrate")
-
-        migrate_project_info(skip_project_export, skip_project_import)
 
 
 def migrate_project_info(skip_project_export=False, skip_project_import=False):
