@@ -106,11 +106,15 @@ class ImportExportClient(BaseClass):
         except RequestException:
             return None
 
-    def import_project(self, project):
+    def import_project(self, project, dry_run=False):
         """
             Imports project to destination GitLab instance.
             Formats users, groups, migration info (aws, filesystem) during import process.
         """
+        if project is None:
+            self.log.error("Project is None. Skipping.")
+            return None
+
         if isinstance(project, str):
             project = json.loads(project)
 
@@ -130,11 +134,7 @@ class ImportExportClient(BaseClass):
             "archived": project["archived"]
         }
 
-        if project is None:
-            self.log.error("Project doesn't exist. Skipping %s" % name)
-            return None
-
-        is_user_project = get_is_user_project(project)
+        is_user_project, member_id = get_is_user_project(project)
         filename = get_project_filename(project)
         namespace = get_project_namespace(project)
 
@@ -165,37 +165,59 @@ class ImportExportClient(BaseClass):
                             self.log.info("Found %s" % group["full_path"])
                             namespace = group["id"]
                             break
+        else:
+            if member_id is not None:
+                new_user = self.users.get_user(
+                    member_id,
+                    self.config.destination_host,
+                    self.config.destination_token
+                ).json()
+                self.log.info(
+                    "{0} is a user project belonging to {1}. Attempting to import into their namespace"
+                        .format(
+                            project["name"],
+                            UserLoggingModel().get_logging_model(new_user)
+                        )
+                    )
+            else:
+                self.log.error("User project was found but not member id was returned for project {0}".format(name))
+                return None
 
         exported = False
         # import_response = None
         timeout = 0
 
-        import_response = self.attempt_import(filename, name, namespace, override_params, project)
-        self.log.info("Import response: {}".format(import_response))
+        if not dry_run:
+            import_response = self.attempt_import(filename, name, namespace, override_params, project)
+            self.log.info("Import response: {}".format(import_response))
 
-        import_results = self.get_import_id_from_import_response(import_response, exported, project, name, timeout)
-        self.log.info(import_results)
+            import_results = self.get_import_id_from_import_response(import_response, exported, project, name, timeout)
+            self.log.info(import_results)
 
-        import_id = import_results["import_id"]
-        exported = import_results["exported"]
-        duped = import_results["duped"]
+            import_id = import_results["import_id"]
+            exported = import_results["exported"]
+            duped = import_results["duped"]
 
-        import_results = self.dupe_reimport_worker(
-            duped,
-            self.config.append_project_suffix_on_existing_found,
-            exported,
-            filename,
-            name,
-            namespace,
-            override_params,
-            project,
-            timeout
-        )
-        self.log.info("Import response (duped): {}".format(import_response))
+            import_results = self.dupe_reimport_worker(
+                duped,
+                self.config.append_project_suffix_on_existing_found,
+                exported,
+                filename,
+                name,
+                namespace,
+                override_params,
+                project,
+                timeout
+            )
+            self.log.info("Import response (duped): {}".format(import_response))
+            return import_id
+        else:
+            self.log.info(
+                "Dry-run info: attempt_import would be called with"
+                "\nfilename: {0}\nname: {1}\nnamespace: {2}\noverrides: {3}\nproject: {4}\n"
+                    .format(filename, name, namespace, override_params, project))
+            return None
 
-        # From here, should just flow through to the import_id return at the end
-
-        return import_id
 
     def dupe_reimport_worker(
             self,
@@ -259,7 +281,6 @@ class ImportExportClient(BaseClass):
                         if len(search_response) > 0:
                             if isinstance(search_response, list):
                                 for proj in search_response:
-                                    self.log.info(proj)
                                     if proj["name"] == project["name"] \
                                             and project["namespace"] in proj["namespace"]["path"]:
                                         self.log.info("Found project")

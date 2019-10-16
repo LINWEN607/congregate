@@ -1,5 +1,4 @@
 from congregate.helpers import base_module as b
-from congregate.models.user_logging_model import UserLoggingModel
 from congregate.migration.gitlab.groups import GroupsClient as groupsClient
 from congregate.migration.gitlab.users import UsersApi as usersApi
 
@@ -61,19 +60,7 @@ def get_is_user_project(project):
                 is_user_project = True
                 # Note: This assumes that the user already exists in the destination system and that userid
                 # rewrites have occurred
-                new_user = users_api.get_user(
-                    member["id"],
-                    b.config.destination_host,
-                    b.config.destination_token
-                ).json()
-                b.log.info(
-                    "{0} is a user project belonging to {1}. Attempting to import into their namespace"
-                    .format(
-                        project["name"],
-                        UserLoggingModel.get_logging_user(new_user)
-                    )
-                )
-                return is_user_project
+                return is_user_project, member["id"]
     except Exception as e:
         b.log.error(
             "Failure checking if a user project for project {0} with error {1}"
@@ -83,4 +70,4 @@ def get_is_user_project(project):
         # than try and figure out if we should continue or not
         raise e
 
-    return is_user_project
+    return is_user_project, None

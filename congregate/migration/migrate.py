@@ -128,7 +128,7 @@ def migrate_single_project_info(project, new_id):
     return results
 
 
-def migrate_given_export(project_json):
+def migrate_given_export(project_json, dry_run=False):
     name = project_json["name"]
     namespace = project_json["namespace"]
     source_id = project_json["id"]
@@ -158,12 +158,12 @@ def migrate_given_export(project_json):
             b.log.info("Project {0} import status: {1}".format(
                 name,
                 import_check["import_status"] if import_check is not None
-                and import_check.get("import_status", None) is not None
+                                                 and import_check.get("import_status", None) is not None
                 else import_check)
             )
         if not project_exists:
             b.log.info("Project not found. Importing project {}".format(name))
-            import_id = ie.import_project(project_json)
+            import_id = ie.import_project(project_json, dry_run=dry_run)
             if import_id is not None:
                 # Archived projects cannot be exported
                 if archived:
@@ -279,7 +279,7 @@ def migrate_group_info():
             b.log.info("No groups to migrate")
 
 
-def migrate_project_info(skip_project_export=False, skip_project_import=False):
+def migrate_project_info(skip_project_export=False, skip_project_import=False, dry_run=False):
     staged_projects = get_staged_projects()
     if staged_projects is not None and staged_projects:
         if not skip_project_export:
@@ -292,18 +292,18 @@ def migrate_project_info(skip_project_export=False, skip_project_import=False):
             export_pool.join()
 
             # Create list of projects that failed update
-            if export_results is not None and len(export_results) == 0:
+            if export_results is None or len(export_results) == 0:
                 raise Exception("Results from exporting projects returned as empty. Aborting.")
 
             # Append total count of projects/exported/updated
-            export_results.append(Counter(k for d in export_results for k,v in d.items() if v))
+            export_results.append(Counter(k for d in export_results for k, v in d.items() if v))
             b.log.info("### Project export results ###\n{0}"
-                .format(json.dumps(export_results, indent=4)))
+                       .format(json.dumps(export_results, indent=4)))
 
             failed_update = migrate_utils.get_failed_update_from_results(export_results)
             b.log.warning(
                 "The following projects (project.json) failed to update and will not be imported:\n{0}"
-                .format(json.dumps(failed_update, indent=4)))
+                    .format(json.dumps(failed_update, indent=4)))
 
             # Filter out the failed ones
             staged_projects = migrate_utils.get_staged_projects_without_failed_update(staged_projects, failed_update)
@@ -311,16 +311,21 @@ def migrate_project_info(skip_project_export=False, skip_project_import=False):
         if not skip_project_import:
             b.log.info("Importing projects")
             import_pool = ThreadPool(b.config.threads)
-            import_results = import_pool.map(migrate_given_export, staged_projects)
+            import_results = import_pool.map(
+                lambda project: migrate_given_export(
+                    staged_projects,
+                    dry_run),
+                staged_projects
+            )
             import_pool.close()
             import_pool.join()
             # append Total : Successful count of project imports
             import_results.append(Counter(
                 "Total : Successful: {}"
-                .format(len(import_results)) for d in import_results for k, v in d.items() if v))
+                    .format(len(import_results)) for d in import_results for k, v in d.items() if v))
             b.log.info(
                 "### Project import results ###\n{0}"
-                .format(json.dumps(import_results, indent=4, sort_keys=True)))
+                    .format(json.dumps(import_results, indent=4, sort_keys=True)))
     else:
         b.log.info("No projects to migrate")
 
@@ -381,8 +386,9 @@ def find_unimported_projects():
             try:
                 b.log.debug("Searching for existing %s" % project_json["name"])
                 project_exists = False
-                for proj in projects.projects_api.search_for_project(b.config.destination_host, b.config.destination_token,
-                                                        project_json['name']):
+                for proj in projects.projects_api.search_for_project(b.config.destination_host,
+                                                                     b.config.destination_token,
+                                                                     project_json['name']):
                     if proj["name"] == project_json["name"]:
                         if project_json["namespace"]["full_path"].lower() == proj["path_with_namespace"].lower():
                             project_exists = True
@@ -420,8 +426,9 @@ def get_new_ids():
         for project_json in staged_projects:
             try:
                 b.log.debug("Searching for existing %s" % project_json["name"])
-                for proj in projects.projects_api.search_for_project(b.config.destination_host, b.config.destination_token,
-                                                        project_json['name']):
+                for proj in projects.projects_api.search_for_project(b.config.destination_host,
+                                                                     b.config.destination_token,
+                                                                     project_json['name']):
                     if proj["name"] == project_json["name"]:
 
                         if "%s" % project_json["namespace"].lower() in proj["path_with_namespace"].lower():
@@ -466,7 +473,8 @@ def check_visibility():
                 "visibility": "private"
             }
             change = api.generate_put_request(
-                b.config.destination_host, b.config.destination_token, "projects/%d?visibility=private" % int(i), data=None)
+                b.config.destination_host, b.config.destination_token, "projects/%d?visibility=private" % int(i),
+                data=None)
             print change
     print count
 
@@ -486,7 +494,8 @@ def get_total_migrated_count():
     group_projects = api.get_count(
         b.config.destination_host, b.config.destination_token, "groups/%d/projects" % b.config.parent_id)
     subgroup_count = 0
-    for group in api.list_all(b.config.destination_host, b.config.destination_token, "groups/%d/subgroups" % b.config.parent_id):
+    for group in api.list_all(b.config.destination_host, b.config.destination_token,
+                              "groups/%d/subgroups" % b.config.parent_id):
         count = api.get_count(
             b.config.destination_host, b.config.destination_token, "groups/%d/projects" % group["id"])
         sub_count = 0
