@@ -107,7 +107,7 @@ class ImportExportClient(BaseClass):
         except RequestException:
             return None
 
-    def import_project(self, project, dry_run=False):
+    def import_project(self, project, dry_run):
         """
             Imports project to destination GitLab instance.
             Formats users, groups, migration info (aws, filesystem) during import process.
@@ -120,28 +120,15 @@ class ImportExportClient(BaseClass):
             project = json.loads(project)
 
         name = project["name"]
-
-        override_params = {
-            # to override the dash ("-") in import/export file path
-            "name": project["name"],
-            "description": project["description"],
-            "shared_runners_enabled": self.config.shared_runners_enabled,
-            "wiki_access_level": project["wiki_access_level"],
-            "issues_access_level": project["issues_access_level"],
-            "merge_requests_access_level": project["merge_requests_access_level"],
-            "builds_access_level": project["builds_access_level"],
-            "snippets_access_level": project["snippets_access_level"],
-            "repository_access_level": project["repository_access_level"],
-            "archived": project["archived"]
-        }
-
+        override_params = self.get_override_params(project)
         is_user_project = get_is_user_project(project)
         filename = get_project_filename(project)
+
         if is_user_project:
             member_id = get_member_id_for_user_project(project)
             # TODO: Needs to be some user remapping in this, as well
             #   as the username/namespace may exist on the source
-            if member_id is not None:
+            if member_id:
                 new_user = self.users.get_user(
                     member_id,
                     self.config.destination_host,
@@ -156,34 +143,26 @@ class ImportExportClient(BaseClass):
                     )
                 )
             else:
-                self.log.error("User project was found but not member id was returned for project {0}".format(name))
+                self.log.error("User project was found, but NO member ID returned for project {0}".format(name))
                 return None
         else:
             namespace = get_project_namespace(project)
-            self.log.info(
-                "{0} is not a user project. Attempting to import into a group namespace"
-                .format(
-                    project["name"]
-                )
-            )
+            self.log.info("{0} is not a user project. Attempting to import into a group namespace"
+                .format(project["name"]))
             if self.config.parent_id is None:
                 # TODO: This section is for importing to top-level, non-user projects.
                 #   Needs a going over. We know the parent_id case is solid
                 #   but recent experience would suggest this part isn't as tight
                 #   Certainly not the GitHost scenario
-                url = project["http_url_to_repo"]
-                strip = sub(r"http(s|)://.+(\.net|\.com|\.org)/", "", url)
-                another_strip = strip.split("/")
-                for ind, val in enumerate(another_strip):
-                    if ".git" in val:
-                        another_strip.pop(ind)
-                full_path = "/".join(another_strip)
-                self.log.info("Searching for %s" % full_path)
-                for group in api.list_all(self.config.destination_host, self.config.destination_token,
-                                          "groups?search=%s" % project["namespace"]):
+                full_path = self.get_full_path(project["http_url_to_repo"])
+                self.log.info("Searching for namespace {}".format(full_path))
+                for group in self.groups.search_for_group(
+                        project["namespace"],
+                        self.config.destination_host,
+                        self.config.destination_token):
                     if isinstance(group, dict):
                         if group["full_path"].lower() == full_path.lower():
-                            self.log.info("Found %s" % group["full_path"])
+                            self.log.info("Found group {}".format(group["full_path"]))
                             namespace = group["id"]
                             break
 
@@ -217,9 +196,13 @@ class ImportExportClient(BaseClass):
             return import_id
         else:
             self.log.info(
-                "Dry-run info: attempt_import would be called with"
-                "\nfilename: {0}\nname: {1}\nnamespace: {2}\noverrides: {3}\nproject: {4}\n"
-                    .format(filename, name, namespace, override_params, project))
+                "Project dry-run info: attempt_import would be called with"
+                "\nfilename: {0}\nname: {1}\nnamespace: {2}\noverrides: {3}\nproject: {4}\n".format(
+                    filename,
+                    name,
+                    namespace,
+                    json.dumps(override_params, indent=4),
+                    json.dumps(project, indent=4)))
             return None
 
     def dupe_reimport_worker(
@@ -263,6 +246,29 @@ class ImportExportClient(BaseClass):
     @staticmethod
     def create_override_name(current_project_name):
         return "".join([current_project_name, "_1"])
+
+    def get_override_params(self, project):
+        return {
+            # to override the dash ("-") in import/export file path
+            "name": project["name"],
+            "description": project["description"],
+            "shared_runners_enabled": self.config.shared_runners_enabled,
+            "wiki_access_level": project["wiki_access_level"],
+            "issues_access_level": project["issues_access_level"],
+            "merge_requests_access_level": project["merge_requests_access_level"],
+            "builds_access_level": project["builds_access_level"],
+            "snippets_access_level": project["snippets_access_level"],
+            "repository_access_level": project["repository_access_level"],
+            "archived": project["archived"]
+        }
+
+    def get_full_path(self, url):
+        strip = sub(r"http(s|)://.+(\.net|\.com|\.org)/", "", url)
+        another_strip = strip.split("/")
+        for ind, val in enumerate(another_strip):
+            if ".git" in val:
+                another_strip.pop(ind)
+        return "/".join(another_strip)
 
     def get_import_id_from_import_response(self, import_response, exported, project, name, timeout):
         import_id = None
@@ -522,5 +528,3 @@ class ImportExportClient(BaseClass):
             if full_parent_namespace.split("/")[-1] == namespace.split("/")[0]:
                 namespace = namespace.replace(namespace.split("/")[0] + "/", "")
         return namespace
-
-

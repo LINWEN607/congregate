@@ -128,7 +128,7 @@ def migrate_single_project_info(project, new_id):
     return results
 
 
-def migrate_given_export(project_json, dry_run=False):
+def migrate_given_export(project_json, dry_run):
     name = project_json["name"]
     namespace = project_json["namespace"]
     source_id = project_json["id"]
@@ -163,8 +163,8 @@ def migrate_given_export(project_json, dry_run=False):
             )
         if not project_exists:
             b.log.info("Project not found. Importing project {}".format(name))
-            import_id = ie.import_project(project_json, dry_run=dry_run)
-            if import_id is not None:
+            import_id = ie.import_project(project_json, dry_run)
+            if import_id:
                 # Archived projects cannot be exported
                 if archived:
                     b.log.info("Unarchiving source project {}".format(name))
@@ -204,6 +204,7 @@ def start_multi_thead(function, iterable):
 
 def migrate(
         threads=None,
+        dry_run=False,
         skip_users=False,
         skip_project_import=False,
         skip_project_export=False):
@@ -245,10 +246,10 @@ def migrate(
         migrate_user_info(skip_users)
 
         # Migrate groups
-        migrate_group_info()
+        migrate_group_info(dry_run)
 
         # Migrate projects
-        migrate_project_info(skip_project_export, skip_project_import)
+        migrate_project_info(dry_run, skip_project_export, skip_project_import)
 
 
 def migrate_user_info(skip_users):
@@ -269,30 +270,32 @@ def migrate_user_info(skip_users):
             users.update_user_info(new_users, overwrite=False)
 
 
-def migrate_group_info():
+def migrate_group_info(dry_run):
     with open("%s/data/staged_groups.json" % b.app_path, "r") as f:
         groups_file = json.load(f)
         if groups_file is not None and groups_file:
             b.log.info("Migrating group info")
-            groups.migrate_group_info()
+            groups.migrate_group_info(dry_run)
         else:
             b.log.info("No groups to migrate")
 
 
-def migrate_project_info(skip_project_export=False, skip_project_import=False, dry_run=False):
+def migrate_project_info(dry_run=False, skip_project_export=False, skip_project_import=False):
     staged_projects = get_staged_projects()
-    if staged_projects is not None and staged_projects:
+    if staged_projects:
         if not skip_project_export:
             b.log.info("Exporting projects")
             export_pool = ThreadPool(b.config.threads)
             export_results = export_pool.map(
-                lambda project: handle_exporting_projects(project, skip_project_export),
-                staged_projects)
+                lambda project: handle_exporting_projects(
+                    project,
+                    skip_project_export),
+                        staged_projects)
             export_pool.close()
             export_pool.join()
 
             # Create list of projects that failed update
-            if export_results is None or len(export_results) == 0:
+            if not export_results or len(export_results) == 0:
                 raise Exception("Results from exporting projects returned as empty. Aborting.")
 
             # Append total count of projects/exported/updated
@@ -313,10 +316,9 @@ def migrate_project_info(skip_project_export=False, skip_project_import=False, d
             import_pool = ThreadPool(b.config.threads)
             import_results = import_pool.map(
                 lambda project: migrate_given_export(
-                    staged_projects,
+                    project,
                     dry_run),
-                staged_projects
-            )
+                        staged_projects)
             import_pool.close()
             import_pool.join()
             # append Total : Successful count of project imports
@@ -422,7 +424,7 @@ def remove_all_mirrors():
 def get_new_ids():
     ids = []
     staged_projects = get_staged_projects()
-    if staged_projects is not None and staged_projects:
+    if staged_projects:
         for project_json in staged_projects:
             try:
                 b.log.debug("Searching for existing %s" % project_json["name"])
@@ -446,7 +448,7 @@ def get_new_ids():
 def enable_mirror():
     ids = get_new_ids()
     staged_projects = get_staged_projects()
-    if staged_projects is not None and staged_projects:
+    if staged_projects:
         for i in enumerate(staged_projects):
             id = ids[i]
             project = staged_projects[i]

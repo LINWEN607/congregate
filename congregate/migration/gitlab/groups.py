@@ -92,7 +92,7 @@ class GroupsClient(BaseClass):
             json.dump(groups, f, indent=4)
         return file_path
 
-    def migrate_group_info(self):
+    def migrate_group_info(self, dry_run):
         if not path.isfile("%s/data/groups.json" % self.app_path):
             self.retrieve_group_info(self.config.source_host, self.config.source_token)
         with open("%s/data/staged_groups.json" % self.app_path, "r") as f:
@@ -105,18 +105,27 @@ class GroupsClient(BaseClass):
             rewritten_groups[group_id] = new_obj
 
         self.group_id_mapping = {}
+        parent_id = self.config.parent_id
 
-        # Update parent group notification level
-        if self.config.parent_id is not None:
-            current_level = self.get_current_group_notifications(self.config.parent_id)
-            self.update_group_notifications(self.config.parent_id)
-            self.traverse_and_migrate(groups, rewritten_groups)
-            self.reset_group_notifications(self.config.parent_id, current_level)
+        if not dry_run:
+            # Update parent group notification level
+            if parent_id:
+                current_level = self.get_current_group_notifications(parent_id)
+                self.update_group_notifications(parent_id)
+                self.traverse_and_migrate(groups, rewritten_groups)
+                self.reset_group_notifications(parent_id, current_level)
+            else:
+                self.traverse_and_migrate(groups, rewritten_groups)
+
+            # Migrate group badges
+            self.migrate_group_badges()
         else:
-            self.traverse_and_migrate(groups, rewritten_groups)
-
-        # Migrate group badges
-        self.migrate_group_badges()
+            self.log.info(
+                "Group dry-run info: traverse_and_migrate would be called with"
+                "\nparent ID: {0}\ngroups: {1}\nrewritten groups: {2}".format(
+                    parent_id,
+                    json.dumps(groups, indent=4),
+                    json.dumps(rewritten_groups, indent=4)))
 
     def migrate_group_badges(self):
         for old_id, new_id in self.group_id_mapping.items():

@@ -10,6 +10,7 @@ Usage:
     congregate ui
     congregate export-projects
     congregate import-projects
+    congregate user-migration-dry-run
     congregate do_all
     congregate update-staged-user-info
     congregate update-aws-creds
@@ -67,6 +68,7 @@ Commands:
     export-projects                         Export and update source instance projects. Bulk project export without user/group info.
     import-projects                         Import exported and updated projects onto destination instance. Destination user/group info required.
     do_all                                  Configure system, retrieve all projects, users, and groups, stage all information, and commence migration.
+    user-migration-dry-run                  Idividual dry-run call for user migration, outputing prepared POST data.
     update-staged-user-info                 Update staged user information after migrating only users.
     update-aws-creds                        Run awscli commands based on the keys stored in the config. Useful for docker updates.
     add-users-to-parent-group               If a parent group is set, all users staged will be added to the parent group.
@@ -193,6 +195,7 @@ if __name__ == '__main__':
                 stage_projects.stage_projects(arguments['<projects>'])
             if arguments["migrate"]:
                 threads = None
+                dry_run=False
                 skip_users = False
                 skip_project_import = False
                 skip_project_export = False
@@ -204,15 +207,16 @@ if __name__ == '__main__':
                     skip_project_import = True
                 if arguments["--skip-project-export"]:
                     skip_project_export = True
-                if not arguments["--dry-run"]:
-                    migrate.migrate(
-                        threads=threads,
-                        skip_users=skip_users,
-                        skip_project_import=skip_project_import,
-                        skip_project_export=skip_project_export
-                    )
-                else:
-                    users.user_migration_dry_run()
+                if arguments["--dry-run"]:
+                    dry_run = True
+                migrate.migrate(
+                    threads=threads,
+                    dry_run=dry_run,
+                    skip_users=skip_users,
+                    skip_project_import=skip_project_import,
+                    skip_project_export=skip_project_export)
+            if arguments["user-migration-dry-run"]:
+                users.user_migration_dry_run()
             if arguments["do_all"]:
                 do_all.do_all()
             if arguments["ui"]:
@@ -241,9 +245,9 @@ if __name__ == '__main__':
                 else:
                     log.warn("Missing access-level argument")
             if arguments["export-projects"]:
-                migrate.migrate_project_info(skip_project_export=False, skip_project_import=True)
+                migrate.migrate_project_info(skip_project_import=True)
             if arguments["import-projects"]:
-                migrate.migrate_project_info(skip_project_export=True, skip_project_import=False)
+                migrate.migrate_project_info(skip_project_export=True)
             if arguments["get-total-count"]:
                 print migrate.get_total_migrated_count()
             if arguments["find-unimported-projects"]:

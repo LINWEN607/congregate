@@ -42,7 +42,9 @@ def get_project_namespace(project):
     """
     if b.config.parent_id is not None and project["project_type"] != "user":
         parent_namespace = groups.groups_api.get_group(
-            b.config.parent_id, b.config.destination_host, b.config.destination_token).json()
+            b.config.parent_id,
+            b.config.destination_host,
+            b.config.destination_token).json()
         return "{0}/{1}".format(parent_namespace["path"], project["namespace"])
     return project["namespace"]
 
@@ -68,7 +70,6 @@ def get_member_id_for_user_project(project):
         # Determine if the project should be under a single user or group
         for member in project["members"]:
             if project["namespace"] == member["username"]:
-
                 return member["id"]
     except Exception as e:
         b.log.error(
