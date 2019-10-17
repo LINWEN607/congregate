@@ -12,7 +12,8 @@ from congregate.aws import AwsClient
 from congregate.migration.gitlab.projects import ProjectsClient
 from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.api.groups import GroupsApi
-from congregate.helpers.migrate_utils import get_project_filename, get_project_namespace, get_is_user_project
+from congregate.helpers.migrate_utils import get_project_filename, get_project_namespace, \
+    get_is_user_project, get_member_id_for_user_project
 from congregate.models.user_logging_model import UserLoggingModel
 
 
@@ -134,11 +135,31 @@ class ImportExportClient(BaseClass):
             "archived": project["archived"]
         }
 
-        is_user_project, member_id = get_is_user_project(project)
+        is_user_project = get_is_user_project(project)
         filename = get_project_filename(project)
-        namespace = get_project_namespace(project)
-
-        if not is_user_project:
+        if is_user_project:
+            member_id = get_member_id_for_user_project(project)
+            # TODO: Needs to be some user remapping in this, as well
+            #   as the username/namespace may exist on the source
+            if member_id is not None:
+                new_user = self.users.get_user(
+                    member_id,
+                    self.config.destination_host,
+                    self.config.destination_token
+                ).json()
+                namespace = new_user["username"]
+                self.log.info(
+                    "{0} is a user project belonging to {1}. Attempting to import into their namespace"
+                        .format(
+                            project["name"],
+                            UserLoggingModel().get_logging_model(new_user)
+                    )
+                )
+            else:
+                self.log.error("User project was found but not member id was returned for project {0}".format(name))
+                return None
+        else:
+            namespace = get_project_namespace(project)
             self.log.info(
                 "{0} is not a user project. Attempting to import into a group namespace"
                 .format(
@@ -165,23 +186,6 @@ class ImportExportClient(BaseClass):
                             self.log.info("Found %s" % group["full_path"])
                             namespace = group["id"]
                             break
-        else:
-            if member_id is not None:
-                new_user = self.users.get_user(
-                    member_id,
-                    self.config.destination_host,
-                    self.config.destination_token
-                ).json()
-                self.log.info(
-                    "{0} is a user project belonging to {1}. Attempting to import into their namespace"
-                        .format(
-                            project["name"],
-                            UserLoggingModel().get_logging_model(new_user)
-                        )
-                    )
-            else:
-                self.log.error("User project was found but not member id was returned for project {0}".format(name))
-                return None
 
         exported = False
         # import_response = None
@@ -217,7 +221,6 @@ class ImportExportClient(BaseClass):
                 "\nfilename: {0}\nname: {1}\nnamespace: {2}\noverrides: {3}\nproject: {4}\n"
                     .format(filename, name, namespace, override_params, project))
             return None
-
 
     def dupe_reimport_worker(
             self,

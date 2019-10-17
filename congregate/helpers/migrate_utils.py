@@ -35,6 +35,11 @@ def get_project_filename(p):
 
 
 def get_project_namespace(project):
+    """
+    If this is a user project, the namespace == username
+    :param project:
+    :return:
+    """
     if b.config.parent_id is not None and project["project_type"] != "user":
         parent_namespace = groups.groups_api.get_group(
             b.config.parent_id, b.config.destination_host, b.config.destination_token).json()
@@ -49,25 +54,27 @@ def get_is_user_project(project):
     :param project: The JSON object representing a GitLab project
     :return: True if a user project, else False
     """
-    is_user_project = False
-    if project.get("members", None) is None or not isinstance(project["members"], list):
-        return is_user_project
+    return project.get("project_type", None) is not None and project["project_type"] == "user"
 
+
+def get_member_id_for_user_project(project):
+    """
+    This assumes that the user already exists in the destination system and that userid rewrites have occurred.
+    Otherwise, you will be trying to use a source id for a destination user
+    :param project:
+    :return: The destination member id
+    """
     try:
         # Determine if the project should be under a single user or group
         for member in project["members"]:
             if project["namespace"] == member["username"]:
-                is_user_project = True
-                # Note: This assumes that the user already exists in the destination system and that userid
-                # rewrites have occurred
-                return is_user_project, member["id"]
+
+                return member["id"]
     except Exception as e:
         b.log.error(
-            "Failure checking if a user project for project {0} with error {1}"
+            "Could not find member id for user project {0} with error {1}"
             .format(project, e)
         )
         # We don't do a lot of raise, but it's honestly getting to the point where I want to just fail rather
         # than try and figure out if we should continue or not
         raise e
-
-    return is_user_project, None
