@@ -195,15 +195,14 @@ class ImportExportClient(BaseClass):
             self.log.info("Import response (duped): {}".format(import_response))
             return import_id
         else:
-            self.log.info(
-                "Project dry-run info: attempt_import would be called with"
-                "\nfilename: {0}\nname: {1}\nnamespace: {2}\noverrides: {3}\nproject: {4}\n".format(
-                    filename,
-                    name,
-                    namespace,
-                    json.dumps(override_params, indent=4),
-                    json.dumps(project, indent=4)))
-            return None
+            self.log.info("Outputing PROJECT {} migration data to dry_run_project_migration.json".format(filename))
+            misc_utils.migration_dry_run("project", {
+                "filename": filename,
+                "name": name,
+                "namespace": namespace,
+                "override_params": override_params,
+                "project": project
+            })
 
     def dupe_reimport_worker(
             self,
@@ -249,7 +248,8 @@ class ImportExportClient(BaseClass):
 
     def get_override_params(self, project):
         return {
-            # to override the dash ("-") in import/export file path
+            # To override the dash ("-") in import/export file path
+            # NOTE: Already exposed in import API, left as backup
             "name": project["name"],
             "description": project["description"],
             "shared_runners_enabled": self.config.shared_runners_enabled,

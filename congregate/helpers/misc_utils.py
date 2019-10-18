@@ -1,7 +1,9 @@
 import os
-from requests import get, head
+import json
+
 from re import sub, findall
 from datetime import timedelta, date
+from requests import get, head
 
 
 def remove_dupes(my_list):
@@ -85,7 +87,6 @@ def rewrite_list_into_dict(l, comparison_key, prefix=""):
 
     return rewritten_groups
 
-
 def get_congregate_path():
     app_path = os.getenv("CONGREGATE_PATH")
     if app_path is None:
@@ -95,3 +96,7 @@ def get_congregate_path():
 def input_generator(params):
     for param in params:
         yield param
+
+def migration_dry_run(data_type, post_data):
+    with open("{0}/data/dry_run_{1}_migration.json".format(get_congregate_path(), data_type), "a") as f:
+        json.dump(post_data, f, indent=4)

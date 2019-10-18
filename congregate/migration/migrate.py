@@ -54,6 +54,238 @@ project_export = ProjectExportClient()
 full_parent_namespace = groups.find_parent_group_path()
 
 
+def migrate(
+        threads=None,
+        dry_run=False,
+        skip_users=False,
+        skip_project_import=False,
+        skip_project_export=False):
+
+    if threads is not None:
+        b.config.threads = threads
+
+    if not b.config.keep_blocked_users:
+        users.remove_blocked_users()
+
+    # TODO: Revisit and refactor accordingly
+    if b.config.external_source != False:
+        with open("%s" % b.config.repo_list, "r") as f:
+            repo_list = json.load(f)
+        start_multi_thead(bitbucket.handle_bitbucket_migration, repo_list)
+    else:
+        # Migrate users
+        if not skip_users:
+            migrate_user_info(dry_run)
+
+        # Migrate groups
+        migrate_group_info(dry_run)
+
+        # Migrate projects
+        migrate_project_info(dry_run, skip_project_export, skip_project_import)
+
+
+def start_multi_thead(function, iterable):
+    l = Lock()
+    pool = ThreadPool(initializer=init_pool, initargs=(l,),
+                      processes=b.config.threads)
+    pool.map(function, iterable)
+    pool.close()
+    pool.join()
+
+
+def init_pool(l):
+    global lock
+    lock = l
+
+
+def migrate_user_info(dry_run):
+    b.log.info("Migrating user info")
+    new_users = users.migrate_user_info(dry_run)
+
+    # This list is of user ids from found users via email or newly created users
+    # So, new_user_ids is a bit of a misnomer
+    if new_users:
+        with open("%s/data/new_user_ids.txt" % b.app_path, "w") as f:
+            for new_user in new_users:
+                f.write("%s\n" % new_user)
+
+        # If we created or found users, do not force overwrite
+        users.update_user_info(new_users)
+    else:
+        users.update_user_info(new_users, overwrite=False)
+
+
+def migrate_group_info(dry_run):
+    with open("%s/data/staged_groups.json" % b.app_path, "r") as f:
+        groups_file = json.load(f)
+        if groups_file:
+            b.log.info("Migrating group info")
+            groups.migrate_group_info(dry_run)
+        else:
+            b.log.info("No groups to migrate")
+
+
+def migrate_project_info(dry_run=False, skip_project_export=False, skip_project_import=False):
+    staged_projects = get_staged_projects()
+    if staged_projects:
+        if not skip_project_export:
+            b.log.info("Exporting projects")
+            export_pool = ThreadPool(b.config.threads)
+            export_results = export_pool.map(
+                lambda project: handle_exporting_projects(
+                    project,
+                    skip_project_export),
+                        staged_projects)
+            export_pool.close()
+            export_pool.join()
+
+            # Create list of projects that failed update
+            if not export_results or len(export_results) == 0:
+                raise Exception("Results from exporting projects returned as empty. Aborting.")
+
+            # Append total count of projects/exported/updated
+            export_results.append(Counter(k for d in export_results for k, v in d.items() if v))
+            b.log.info("### Project export results ###\n{0}"
+                       .format(json.dumps(export_results, indent=4)))
+
+            failed_update = migrate_utils.get_failed_update_from_results(export_results)
+            b.log.warning(
+                "The following projects (project.json) failed to update and will not be imported:\n{0}"
+                    .format(json.dumps(failed_update, indent=4)))
+
+            # Filter out the failed ones
+            staged_projects = migrate_utils.get_staged_projects_without_failed_update(staged_projects, failed_update)
+
+        if not skip_project_import:
+            b.log.info("Importing projects")
+            import_pool = ThreadPool(b.config.threads)
+            import_results = import_pool.map(
+                lambda project: migrate_given_export(
+                    project,
+                    dry_run),
+                        staged_projects)
+            import_pool.close()
+            import_pool.join()
+
+            if not dry_run:
+                # append Total : Successful count of project imports
+                import_results.append(Counter(
+                    "Total : Successful: {}"
+                        .format(len(import_results)) for d in import_results for k, v in d.items() if v))
+                b.log.info(
+                    "### Project import results ###\n{0}"
+                        .format(json.dumps(import_results, indent=4, sort_keys=True)))
+    else:
+        b.log.info("No projects to migrate")
+
+
+def handle_exporting_projects(project, skip_project_export=False):
+    name = project["name"]
+    id = project["id"]
+    try:
+        namespace = migrate_utils.get_project_namespace(project)
+
+        if b.config.location == "filesystem":
+            b.log.info("Migrating project {} through filesystem".format(name))
+
+            if not skip_project_export:
+                r = ie.export_thru_filesystem(id, name, namespace)
+                filename = r["filename"]
+                exported = r["exported"]
+            else:
+                filename = "{0}_{1}.tar.gz".format(namespace, name)
+                exported = True
+            updated = False
+            try:
+                updated = project_export.update_project_export_members_for_local(
+                    name,
+                    namespace,
+                    filename)
+            except Exception as e:
+                b.log.error("Failed to update {0} project export, with error:\n{1}".format(filename, e))
+            return {"filename": filename, "exported": exported, "updated": updated}
+        elif b.config.location.lower() == "filesystem-aws":
+            b.log.info("Migrating project {} through filesystem-AWS".format(name))
+            ie.export_thru_fs_aws(id, name, namespace)
+        elif b.config.location.lower() == "aws":
+            b.log.info("Migrating project {} through AWS".format(name))
+            if not skip_project_export:
+                r = ie.export_thru_aws(id, name, namespace, full_parent_namespace)
+                filename = r["filename"]
+                exported = r["exported"]
+            else:
+                filename = "{0}_{1}.tar.gz".format(namespace, name)
+                exported = True
+            updated = False
+            try:
+                updated = project_export.update_project_export_members(name, namespace, filename)
+            except Exception, e:
+                b.log.error("Failed to update {0} project export, with error:\n{1}".format(filename, e))
+            return {"filename": filename, "exported": exported, "updated": updated}
+    except IOError, e:
+        b.log.error("Handle exporting projects failed with error:\n{}".format(e))
+
+
+def migrate_given_export(project_json, dry_run):
+    name = project_json["name"]
+    namespace = project_json["namespace"]
+    source_id = project_json["id"]
+    archived = project_json["archived"]
+    path = "{0}/{1}".format(namespace, name)
+    project_exists = False
+    project_id = None
+    results = {
+        path: False
+    }
+    if isinstance(project_json, str):
+        project_json = json.loads(project_json)
+    b.log.info("Searching for existing project {}".format(name))
+    try:
+        project_exists, project_id = projects.find_project_by_path(
+            b.config.destination_host,
+            b.config.destination_token,
+            full_parent_namespace,
+            namespace,
+            name
+        )
+        if project_id:
+            import_check = ie.get_import_status(
+                b.config.destination_host,
+                b.config.destination_token,
+                project_id).json()
+            b.log.info("Project {0} import status: {1}".format(
+                name,
+                import_check["import_status"] if import_check is not None
+                                                 and import_check.get("import_status", None) is not None
+                else import_check)
+            )
+        if not project_exists:
+            b.log.info("Project not found. Importing project {}".format(name))
+            import_id = ie.import_project(project_json, dry_run)
+            if import_id:
+                # Archived projects cannot be exported
+                if archived:
+                    b.log.info("Unarchiving source project {}".format(name))
+                    projects.projects_api.unarchive_project(
+                        b.config.source_host, b.config.source_token, source_id)
+                b.log.info("Migrating {} project info".format(name))
+                post_import_results = migrate_single_project_info(project_json, import_id)
+                results[path] = post_import_results
+    except RequestException, e:
+        b.log.error(e)
+    except KeyError, e:
+        b.log.error(e)
+        raise KeyError("Something broke in migrate_given_export ({})".format(name))
+    except OverflowError, e:
+        b.log.error(e)
+    finally:
+        if archived:
+            b.log.info("Archiving back source project {}".format(name))
+            projects.projects_api.archive_project(
+                b.config.source_host, b.config.source_token, source_id)
+    return results
+
+
 def migrate_single_project_info(project, new_id):
     """
         Subsequent function to update project info AFTER import
@@ -126,257 +358,6 @@ def migrate_single_project_info(project, new_id):
     results["container_registry"] = registries.migrate_registries(old_id, new_id, name)
 
     return results
-
-
-def migrate_given_export(project_json, dry_run):
-    name = project_json["name"]
-    namespace = project_json["namespace"]
-    source_id = project_json["id"]
-    archived = project_json["archived"]
-    path = "{0}/{1}".format(namespace, name)
-    project_exists = False
-    project_id = None
-    results = {
-        path: False
-    }
-    if isinstance(project_json, str):
-        project_json = json.loads(project_json)
-    b.log.info("Searching for existing project {}".format(name))
-    try:
-        project_exists, project_id = projects.find_project_by_path(
-            b.config.destination_host,
-            b.config.destination_token,
-            full_parent_namespace,
-            namespace,
-            name
-        )
-        if project_id:
-            import_check = ie.get_import_status(
-                b.config.destination_host,
-                b.config.destination_token,
-                project_id).json()
-            b.log.info("Project {0} import status: {1}".format(
-                name,
-                import_check["import_status"] if import_check is not None
-                                                 and import_check.get("import_status", None) is not None
-                else import_check)
-            )
-        if not project_exists:
-            b.log.info("Project not found. Importing project {}".format(name))
-            import_id = ie.import_project(project_json, dry_run)
-            if import_id:
-                # Archived projects cannot be exported
-                if archived:
-                    b.log.info("Unarchiving source project {}".format(name))
-                    projects.projects_api.unarchive_project(
-                        b.config.source_host, b.config.source_token, source_id)
-                b.log.info("Migrating {} project info".format(name))
-                post_import_results = migrate_single_project_info(project_json, import_id)
-                results[path] = post_import_results
-    except RequestException, e:
-        b.log.error(e)
-    except KeyError, e:
-        b.log.error(e)
-        raise KeyError("Something broke in migrate_given_export ({})".format(name))
-    except OverflowError, e:
-        b.log.error(e)
-    finally:
-        if archived:
-            b.log.info("Archiving back source project {}".format(name))
-            projects.projects_api.archive_project(
-                b.config.source_host, b.config.source_token, source_id)
-    return results
-
-
-def init_pool(l):
-    global lock
-    lock = l
-
-
-def start_multi_thead(function, iterable):
-    l = Lock()
-    pool = ThreadPool(initializer=init_pool, initargs=(l,),
-                      processes=b.config.threads)
-    pool.map(function, iterable)
-    pool.close()
-    pool.join()
-
-
-def migrate(
-        threads=None,
-        dry_run=False,
-        skip_users=False,
-        skip_project_import=False,
-        skip_project_export=False):
-
-    if threads is not None:
-        b.config.threads = threads
-
-    if not b.config.keep_blocked_users:
-        users.remove_blocked_users()
-
-    if b.config.external_source != False:
-        with open("%s" % b.config.repo_list, "r") as f:
-            repo_list = json.load(f)
-        # bitbucket.handle_bitbucket_migration({
-        #     "name": "repo_1",
-        #     "web_repo_url": "http://gmiller@bbhost:7990/scm/tp1/repo_1.git",
-        #     "group": "test_project_1",
-        #     "project_users": [
-        #         {
-        #             "displayName": "Migrate 1",
-        #             "name": "Migrate 1",
-        #             "username": "migrate_1",
-        #             "email": "migrate1@abc.com",
-        #             "permission": "PROJECT_WRITE"
-        #         }],
-        #     "repo_users": [
-        #         {
-        #             "displayName": "Migrate 2",
-        #             "name": "Migrate 2",
-        #             "username": "migrate_2",
-        #             "email": "migrate2@abc.com",
-        #             "permission": "PROJECT_READ"
-        #         }
-        #     ]
-        # })
-        start_multi_thead(bitbucket.handle_bitbucket_migration, repo_list)
-    else:
-        # Migrate users
-        migrate_user_info(skip_users)
-
-        # Migrate groups
-        migrate_group_info(dry_run)
-
-        # Migrate projects
-        migrate_project_info(dry_run, skip_project_export, skip_project_import)
-
-
-def migrate_user_info(skip_users):
-    if not skip_users:
-        b.log.info("Migrating user info")
-        new_users = users.migrate_user_info()
-
-        # This list is of user ids from found users via email or newly created users
-        # So, new_user_ids is a bit of a misnomer
-        with open("%s/data/new_user_ids.txt" % b.app_path, "w") as f:
-            for new_user in new_users:
-                f.write("%s\n" % new_user)
-
-        # If we created or found users, do not force overwrite
-        if new_users is not None and new_users:
-            users.update_user_info(new_users)
-        else:
-            users.update_user_info(new_users, overwrite=False)
-
-
-def migrate_group_info(dry_run):
-    with open("%s/data/staged_groups.json" % b.app_path, "r") as f:
-        groups_file = json.load(f)
-        if groups_file is not None and groups_file:
-            b.log.info("Migrating group info")
-            groups.migrate_group_info(dry_run)
-        else:
-            b.log.info("No groups to migrate")
-
-
-def migrate_project_info(dry_run=False, skip_project_export=False, skip_project_import=False):
-    staged_projects = get_staged_projects()
-    if staged_projects:
-        if not skip_project_export:
-            b.log.info("Exporting projects")
-            export_pool = ThreadPool(b.config.threads)
-            export_results = export_pool.map(
-                lambda project: handle_exporting_projects(
-                    project,
-                    skip_project_export),
-                        staged_projects)
-            export_pool.close()
-            export_pool.join()
-
-            # Create list of projects that failed update
-            if not export_results or len(export_results) == 0:
-                raise Exception("Results from exporting projects returned as empty. Aborting.")
-
-            # Append total count of projects/exported/updated
-            export_results.append(Counter(k for d in export_results for k, v in d.items() if v))
-            b.log.info("### Project export results ###\n{0}"
-                       .format(json.dumps(export_results, indent=4)))
-
-            failed_update = migrate_utils.get_failed_update_from_results(export_results)
-            b.log.warning(
-                "The following projects (project.json) failed to update and will not be imported:\n{0}"
-                    .format(json.dumps(failed_update, indent=4)))
-
-            # Filter out the failed ones
-            staged_projects = migrate_utils.get_staged_projects_without_failed_update(staged_projects, failed_update)
-
-        if not skip_project_import:
-            b.log.info("Importing projects")
-            import_pool = ThreadPool(b.config.threads)
-            import_results = import_pool.map(
-                lambda project: migrate_given_export(
-                    project,
-                    dry_run),
-                        staged_projects)
-            import_pool.close()
-            import_pool.join()
-            # append Total : Successful count of project imports
-            import_results.append(Counter(
-                "Total : Successful: {}"
-                    .format(len(import_results)) for d in import_results for k, v in d.items() if v))
-            b.log.info(
-                "### Project import results ###\n{0}"
-                    .format(json.dumps(import_results, indent=4, sort_keys=True)))
-    else:
-        b.log.info("No projects to migrate")
-
-
-def handle_exporting_projects(project, skip_project_export=False):
-    name = project["name"]
-    id = project["id"]
-    try:
-        namespace = migrate_utils.get_project_namespace(project)
-
-        if b.config.location == "filesystem":
-            b.log.info("Migrating project {} through filesystem".format(name))
-
-            if not skip_project_export:
-                r = ie.export_thru_filesystem(id, name, namespace)
-                filename = r["filename"]
-                exported = r["exported"]
-            else:
-                filename = "{0}_{1}.tar.gz".format(namespace, name)
-                exported = True
-            updated = False
-            try:
-                updated = project_export.update_project_export_members_for_local(
-                    name,
-                    namespace,
-                    filename)
-            except Exception as e:
-                b.log.error("Failed to update {0} project export, with error:\n{1}".format(filename, e))
-            return {"filename": filename, "exported": exported, "updated": updated}
-        elif b.config.location.lower() == "filesystem-aws":
-            b.log.info("Migrating project {} through filesystem-AWS".format(name))
-            ie.export_thru_fs_aws(id, name, namespace)
-        elif b.config.location.lower() == "aws":
-            b.log.info("Migrating project {} through AWS".format(name))
-            if not skip_project_export:
-                r = ie.export_thru_aws(id, name, namespace, full_parent_namespace)
-                filename = r["filename"]
-                exported = r["exported"]
-            else:
-                filename = "{0}_{1}.tar.gz".format(namespace, name)
-                exported = True
-            updated = False
-            try:
-                updated = project_export.update_project_export_members(name, namespace, filename)
-            except Exception, e:
-                b.log.error("Failed to update {0} project export, with error:\n{1}".format(filename, e))
-            return {"filename": filename, "exported": exported, "updated": updated}
-    except IOError, e:
-        b.log.error("Handle exporting projects failed with error:\n{}".format(e))
 
 
 def find_unimported_projects():

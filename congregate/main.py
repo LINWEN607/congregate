@@ -10,7 +10,6 @@ Usage:
     congregate ui
     congregate export-projects
     congregate import-projects
-    congregate user-migration-dry-run
     congregate do_all
     congregate update-staged-user-info
     congregate update-aws-creds
@@ -68,7 +67,6 @@ Commands:
     export-projects                         Export and update source instance projects. Bulk project export without user/group info.
     import-projects                         Import exported and updated projects onto destination instance. Destination user/group info required.
     do_all                                  Configure system, retrieve all projects, users, and groups, stage all information, and commence migration.
-    user-migration-dry-run                  Idividual dry-run call for user migration, outputing prepared POST data.
     update-staged-user-info                 Update staged user information after migrating only users.
     update-aws-creds                        Run awscli commands based on the keys stored in the config. Useful for docker updates.
     add-users-to-parent-group               If a parent group is set, all users staged will be added to the parent group.
@@ -215,8 +213,6 @@ if __name__ == '__main__':
                     skip_users=skip_users,
                     skip_project_import=skip_project_import,
                     skip_project_export=skip_project_export)
-            if arguments["user-migration-dry-run"]:
-                users.user_migration_dry_run()
             if arguments["do_all"]:
                 do_all.do_all()
             if arguments["ui"]:

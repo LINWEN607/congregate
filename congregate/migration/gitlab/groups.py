@@ -120,12 +120,12 @@ class GroupsClient(BaseClass):
             # Migrate group badges
             self.migrate_group_badges()
         else:
-            self.log.info(
-                "Group dry-run info: traverse_and_migrate would be called with"
-                "\nparent ID: {0}\ngroups: {1}\nrewritten groups: {2}".format(
-                    parent_id,
-                    json.dumps(groups, indent=4),
-                    json.dumps(rewritten_groups, indent=4)))
+            self.log.info("Outputing various GROUP migration data to dry_run_group_migration.json")
+            misc_utils.migration_dry_run("group", {
+                "parent_id": parent_id,
+                "groups": groups,
+                "rewritten_groups": rewritten_groups
+            })
 
     def migrate_group_badges(self):
         for old_id, new_id in self.group_id_mapping.items():

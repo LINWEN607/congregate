@@ -6,7 +6,7 @@ from requests.exceptions import RequestException
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers import api
 from congregate.helpers.threads import handle_multi_thread
-from congregate.helpers.misc_utils import remove_dupes
+from congregate.helpers.misc_utils import remove_dupes, migration_dry_run
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.users import UsersApi
 
@@ -282,8 +282,6 @@ class UsersClient(BaseClass):
         :param dry_run: If true, don't actually write the updates to stage or staged_groups
         :return: Nothing
         """
-        # not_found_users = []
-        # user_found = False
         with open("%s/data/stage.json" % self.app_path, "r") as f:
             staged_projects = json.load(f)
 
@@ -594,23 +592,17 @@ class UsersClient(BaseClass):
             self.log.info(
                 "Retrieved %d users. Check users.json to see all retrieved groups" % len(users))
 
-    def migrate_user_info(self):
-        new_ids = []
+    def migrate_user_info(self, dry_run):
         with open('%s/data/staged_users.json' % self.app_path, "r") as f:
             users = json.load(f)
 
-        new_ids = handle_multi_thread(self.handle_user_creation, users)
-        return list(filter(None, new_ids))
-
-    def user_migration_dry_run(self):
-        self.log.info("Running a dry run user migration. This will output the various POST data you will send.")
-        with open('%s/data/staged_users.json' % self.app_path, "r") as f:
-            users = json.load(f)
-        post_data = handle_multi_thread(self.generate_user_data, users)
-
-        with open('%s/data/dry_run_user_migration.json' % self.app_path, "w") as f:
-            self.log.info("Writing data to dry_run_user_migration.json")
-            json.dump(post_data, f, indent=4)
+        if not dry_run:
+            new_ids = []
+            new_ids = handle_multi_thread(self.handle_user_creation, users)
+            return list(filter(None, new_ids))
+        else:
+            self.log.info("Outputing various USER migration data to dry_run_user_migration.json")
+            migration_dry_run("user", handle_multi_thread(self.generate_user_data, users))
 
     def generate_user_data(self, user):
         if self.config.group_sso_provider is not None:
