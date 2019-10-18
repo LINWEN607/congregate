@@ -87,7 +87,9 @@ class ProjectExportClient(BaseClass):
                 if d["user"].get("state", None) is not None \
                         and str(d["user"]["state"]).lower() == "blocked" \
                         and not self.config.keep_blocked_users:
-                    self.log.info("Removing blocked user from project json {0}".format(d["user"]))
+                    self.log.info("Removing blocked user from project json {0} and mapping to import user id"
+                                  .format(d["user"]))
+                    self.users_map[d["user_id"]] = self.config.import_user_id
                     to_pop.append(data["project_members"].index(d))
                 elif d["user"].get("email", None) is not None:
                     new_user = self.users.find_user_by_email_comparison_without_id(d["user"]["email"])
