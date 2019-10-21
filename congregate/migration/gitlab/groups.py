@@ -147,9 +147,9 @@ class GroupsClient(BaseClass):
             self.log.info("Migrating %s %d/%d" %
                           (group["name"], count, len(group)))
             if group.get("id", None) is not None:
-                if rewritten_groups is not None:
-                    has_children = "child_ids" in rewritten_groups.get(
-                        group["id"], None)
+                # NOTE: Is this still needed?
+                # if rewritten_groups is not None:
+                #     has_children = "child_ids" in rewritten_groups.get(group["id"], None)
                 group_id = group["id"]
                 # group.pop("id")
                 members = group["members"]
@@ -308,36 +308,26 @@ class GroupsClient(BaseClass):
                             continue
 
                         self.group_id_mapping[group_id] = new_group_id
-                        root_user_present = False
-                        for member in members:
-                            if member["id"] == self.config.import_user_id:
-                                root_user_present = True
-                            new_member = {
-                                "user_id": member["id"],
-                                "access_level": int(member["access_level"])
-                            }
-                            try:
-                                response = api.generate_post_request(
-                                    self.config.destination_host,
-                                    self.config.destination_token,
-                                    "groups/%d/members" % new_group_id, json.dumps(new_member))
-                            except RequestException, e:
-                                self.log.error("Failed to add member {0} to new group {1}, with error:\n{2}"
-                                    .format(member, new_group_id, e))
+
+                        # Look for root user while adding members
+                        root_user_present = self.add_members(members, new_group_id)
 
                         self.vars.migrate_variables(
                             new_group_id, group_id, "group")
 
                         if not root_user_present:
                             self.log.info("Removing root user from group")
-                            response = api.generate_delete_request(
+                            self.groups_api.remove_member(
+                                new_group_id,
+                                int(self.config.import_user_id),
                                 self.config.destination_host,
-                                self.config.destination_token,
-                                "groups/%d/members/%d" % (new_group_id, int(self.config.import_user_id)))
+                                self.config.destination_token
+                            )
 
                         # Reset back group notification level
                         self.reset_group_notifications(new_group_id, current_level)
 
+                        # NOTE: Is this still needed?
                         # if has_children:
                         #     subgroup = []
                         #     self.log.info(group["child_ids"])
@@ -357,6 +347,34 @@ class GroupsClient(BaseClass):
                 print "Leaving recursion"
 
             count += 1
+
+    def add_members(self, members, group_id):
+        root_user_present = False
+        for member in members:
+            # Mark import user for removal and skip adding
+            if member["id"] == self.config.import_user_id:
+                root_user_present = True
+                continue
+            # If we do not keep_blocked_users skip adding
+            if member.get("state", None) \
+                    and str(member["state"]).lower() == "blocked" \
+                    and not self.config.keep_blocked_users:
+                continue
+            new_member = {
+                "user_id": member["id"],
+                "access_level": int(member["access_level"])
+            }
+            try:
+                self.groups_api.add_member_to_group(
+                    group_id,
+                    self.config.destination_host,
+                    self.config.destination_token,
+                    new_member
+                )
+            except RequestException, e:
+                self.log.error("Failed to add member {0} to new group {1}, with error:\n{2}"
+                    .format(member, group_id, e))
+        return root_user_present
 
     def get_current_group_notifications(self, new_group_id):
         """

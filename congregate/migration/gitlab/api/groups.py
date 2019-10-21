@@ -134,6 +134,20 @@ class GroupsApi():
         """
         return api.generate_delete_request(host, token, "groups/%d" % id)
 
+    def remove_member(self, id, user_id, host, token):
+        """
+        Removes member from group
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/members.html#remove-a-member-from-a-group-or-project
+
+            :param: id: (int) GitLab group ID
+            :param: user_id: (int) GitLab user ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :return: Response object containing a 202 (accepted) or 404 (Member not found) from DELETE /groups/:id/members/:user_id
+        """
+        return api.generate_delete_request(host, token, "groups/%d/members/%d" % (id, user_id))
+
     def get_notification_level(self, host, token, id):
         """
         Get current group notification settings.

@@ -344,3 +344,37 @@ class MockGroupsApi():
         return {
             "message": "404 Group Not Found"
         }
+
+    def get_group_members(self):
+        return [
+            {
+                "username": "import_user",
+                "web_url": "http://demo.tanuki.cloud/import_user",
+                "name": "User import_user",
+                "expires_at": None,
+                "access_level": 50,
+                "state": "active",
+                "avatar_url": "https://secure.gravatar.com/avatar/d549ee47080f3512a835905895c46545?s=80&d=identicon",
+                "id": 1
+            },
+            {
+                "username": "smart3",
+                "web_url": "http://demo.tanuki.cloud/smart3",
+                "name": "User smart3",
+                "expires_at": None,
+                "access_level": 50,
+                "state": "blocked",
+                "avatar_url": "https://secure.gravatar.com/avatar/d549ee47080f3512a835905895c46545?s=80&d=identicon",
+                "id": 285
+            },
+            {
+                "username": "smart4",
+                "web_url": "http://demo.tanuki.cloud/smart4",
+                "name": "User smart4",
+                "expires_at": None,
+                "access_level": 30,
+                "state": "active",
+                "avatar_url": "https://secure.gravatar.com/avatar/77b6da6e1b9aa2527600bc7727f5bad8?s=80&d=identicon",
+                "id": 286
+            }
+        ]
