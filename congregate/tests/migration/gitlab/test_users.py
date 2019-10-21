@@ -1,7 +1,8 @@
 import unittest
+import json
 import mock
 import responses
-import json
+
 from congregate.tests.mockapi.users import MockUsersApi
 from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.users import UsersClient

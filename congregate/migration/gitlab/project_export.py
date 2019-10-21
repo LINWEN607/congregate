@@ -83,17 +83,18 @@ class ProjectExportClient(BaseClass):
         to_pop = []
         self.log.info("Building user map")
         for d in data["project_members"]:
-            if d.get("user", None) is not None:
-                if d["user"].get("state", None) is not None \
-                        and str(d["user"]["state"]).lower() == "blocked" \
-                        and not self.config.keep_blocked_users:
-                    self.log.info("Removing blocked user from project json {0} and mapping to import user id"
-                                  .format(d["user"]))
-                    self.users_map[d["user_id"]] = self.config.import_user_id
-                    to_pop.append(data["project_members"].index(d))
-                elif d["user"].get("email", None) is not None:
+            if d.get("user", None):
+                if d["user"].get("email", None):
                     new_user = self.users.find_user_by_email_comparison_without_id(d["user"]["email"])
                     if new_user is not None:
+                        if new_user.get("state", None) \
+                                and str(new_user["state"]).lower() == "blocked" \
+                                and not self.config.keep_blocked_users:
+                            self.log.info("Removing blocked user {0} from project json {1} and mapping to import user ID"
+                                .format(d["user"], path))
+                            self.users_map[d["user_id"]] = self.config.import_user_id
+                            to_pop.append(data["project_members"].index(d))
+                            continue
                         d["user"]["id"] = new_user["id"]
                         self.users_map[d["user_id"]] = new_user["id"]
                         # We do the following to force the import tool to match on email
@@ -114,7 +115,7 @@ class ProjectExportClient(BaseClass):
             # Members invited to group/project by other group/project members.
             # Not necessarily existing users on src nor dest instance.
             # Removing them rather than creating new user objects.
-            elif d.get("invite_email", None) is not None:
+            elif d.get("invite_email", None):
                 self.log.warning("Skipping user {0}, invited by ID {1}".format(d.get("invite_email"), d.get("created_by_id")))
                 to_pop.append(data["project_members"].index(d))
             else:

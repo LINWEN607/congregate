@@ -646,10 +646,10 @@ class UsersClient(BaseClass):
             except Exception as e:
                 self.log.error("Could not get response JSON. Error was {0}".format(e))
 
-            # If we keep_blocked_users make sure they are blocked after creation
-            if user_data.get("state", None) is not None and str(user_data["state"]).lower() == "blocked":
+            # NOTE: Propagates "blocked" user state regardless of domain and creation status
+            if user_data.get("state", None) and str(user_data["state"]).lower() == "blocked":
                 self.block_user(user_data)
-            return self.handle_user_creation_status(response, user)
+            return self.handle_user_creation_status(response, user_data)
         return None
 
     def block_user(self, user_data):
