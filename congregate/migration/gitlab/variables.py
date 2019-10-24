@@ -56,6 +56,7 @@ class VariablesClient(BaseClass):
                 return True
             else:
                 self.log.warning("CI/CD is disabled for project {}".format(name))
+                return False
         except Exception, e:
             self.log.error("Failed to migrate {0} CI/CD variables, with error:\n{1}".format(name, e))
             return False

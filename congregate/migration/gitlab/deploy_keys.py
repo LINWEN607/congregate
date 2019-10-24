@@ -28,7 +28,8 @@ class DeployKeysClient(BaseClass):
                 else:
                     self.log.info("Project {} has no deploy keys".format(name))
             else:
-                self.log.warn("Failed to retrieve deploy keys for {0}, with response:\n{1}".format(name, keys))
+                self.log.warning("Failed to retrieve deploy keys for {0}, with response:\n{1}".format(name, keys))
+                return False
         except Exception, e:
             self.log.error("Failed to migrate deploy keys for {0}, with error:\n{1}".format(name, e))
             return False

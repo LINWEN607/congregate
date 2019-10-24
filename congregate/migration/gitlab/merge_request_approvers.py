@@ -71,6 +71,7 @@ class MergeRequestApproversClient(BaseClass):
                 return True
             else:
                 self.log.warning("Merge requests are disabled for project {}".format(name))
+                return False
         except Exception, e:
             self.log.error("Failed to migrate {0} merge request approvers, with error:\n{1}".format(name, e))
             return False

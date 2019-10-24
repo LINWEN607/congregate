@@ -30,11 +30,15 @@ class BranchesClient(BaseClass):
             if old_project.get("default_branch", None) is not None:
                 name = old_project["name"]
                 self.log.debug("Setting default branch to master for project {}".format(name))
-                resp = self.set_default_branch(new_id, self.config.destination_host, self.config.destination_token, old_project["default_branch"])
+                resp = self.set_default_branch(
+                    new_id,
+                    self.config.destination_host,
+                    self.config.destination_token,
+                    old_project["default_branch"])
                 self.log.debug("Project {0} default branch response: {1}".format(name, resp))
             return True
         except Exception, e:
-            self.log.info("Failed to migrate project {0} default branch, with error:\n{1}".format(name, e))
+            self.log.error("Failed to migrate project {0} default branch, with error:\n{1}".format(name, e))
             return False
 
     def protect_branch(self, id, host, token, branch_name, push_access_level=None, merge_access_level=None, allowed_to_push=None, allowed_to_merge=None, allowed_to_unprotect=None):
@@ -107,7 +111,8 @@ class BranchesClient(BaseClass):
                 else:
                     self.log.info("Project {} has no protected branches".format(name))
             else:
-                self.log.warn("Failed to retrieve protected branches for {0}, with response:\n{1}".format(name, p_branches))
+                self.log.warning("Failed to retrieve protected branches for {0}, with response:\n{1}".format(name, p_branches))
+                return False
         except Exception, e:
             self.log.info("Failed to migrate protected branches for {0}, with error:\n{1}".format(name, e))
             return False
