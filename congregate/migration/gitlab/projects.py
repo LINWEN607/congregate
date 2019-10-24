@@ -29,19 +29,18 @@ class ProjectsClient(BaseClass):
 
     def add_members(self, members, id):
         """Adds project members."""
-        root_user_present = False
         for member in members:
-            if member["id"] == self.config.import_user_id:
-                root_user_present = True
             new_member = {
                 "user_id": member["id"],
                 "access_level": member["access_level"]
             }
 
             try:
-                api.generate_post_request(
-                    self.config.destination_host, self.config.destination_token, "projects/%d/members" % id,
-                    json.dumps(new_member))
+                self.projects_api.add_member(
+                    id,
+                    self.config.destination_host,
+                    self.config.destination_token,
+                    new_member)
             except RequestException, e:
                 self.log.error(e)
                 self.log.error(
@@ -55,8 +54,7 @@ class ProjectsClient(BaseClass):
                     self.log.error(
                         "Attempting to update existing member failed")
 
-        if not root_user_present:
-            self.remove_import_user_from_project(id)
+        self.remove_import_user_from_project(id)
 
     def root_user_present(self, members):
         for member in members:
@@ -65,11 +63,15 @@ class ProjectsClient(BaseClass):
         return False
             
     def remove_import_user_from_project(self, id):
-        self.log.info("Removing import user from project")
-        api.generate_delete_request(
-            self.config.destination_host,
-            self.config.destination_token,
-            "projects/%d/members/%d" % (id, self.config.import_user_id))
+        try:
+            self.log.info("Removing import (root) user from project")
+            self.projects_api.remove_member(
+                id,
+                self.config.import_user_id,
+                self.config.destination_host,
+                self.config.destination_token)
+        except RequestException, e:
+            self.log.error("Failed to remove import (root) user from project, with error:\n{}".format(e))
 
     def add_shared_groups(self, old_id, new_id):
         """Adds the list of groups we share the project with."""
@@ -164,10 +166,12 @@ class ProjectsClient(BaseClass):
             if badges:
                 self.log.info("Updating project {0} badges".format(name))
                 self.update_badges(new_id, full_parent_namespace, badges)
+                return True
             else:
                 self.log.info("Project {} has no badges".format(name))
         else:
-            self.log.warn("Failed to retrieve badges for {0}, with response:\n{1}".format(name, badges))
+            self.log.warning("Failed to retrieve badges for {0}, with response:\n{1}".format(name, badges))
+            return False
 
     def update_badges(self, new_id, namespace, badges):
         try:
@@ -187,6 +191,7 @@ class ProjectsClient(BaseClass):
                 self.log.info("Updated project {0} (ID) badge {1}".format(new_id, data))
         except RequestException, e:
             self.log.error("Failed to update project {0} (ID) badge {1}, with error:\n{2}".format(new_id, badge, e))
+            return False
 
     def validate_staged_projects_schema(self):
         with open("%s/data/staged_groups.json" % self.app_path, "r") as f:

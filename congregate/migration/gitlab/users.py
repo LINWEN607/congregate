@@ -30,7 +30,7 @@ class UsersClient(BaseClass):
             self.log.error("Could not find user {0} email based on old user ID {1}".format(old_user, old_user_id))
         return None
 
-    def find_user_by_email_comparison_without_id(self, email):
+    def find_user_by_email_comparison_without_id(self, email, src=False):
         """
         Find a user by email address in the destination system
         :param email: the email address to check for
@@ -38,8 +38,8 @@ class UsersClient(BaseClass):
         """
         self.log.info("Searching for user email {} in destination system".format(email))
         users = self.users.search_for_user_by_email(
-            self.config.destination_host,
-            self.config.destination_token,
+            self.config.source_host if src else self.config.destination_host,
+            self.config.source_token if src else self.config.destination_token,
             email)
         # Will searching for an explicit email actually return more than one? Probably is just an array of 1
         for user in users:
@@ -626,12 +626,18 @@ class UsersClient(BaseClass):
         :return:
         """
         try:
-            user_data = self.generate_user_data(user)
-            self.log.info("Attempting to create user {0}".format(user))
-            response = self.users.create_user(
-                self.config.destination_host,
-                self.config.destination_token,
-                user_data)
+            if user.get("state", None) \
+                    and (str(user["state"]).lower() == "active" \
+                    or (str(user["state"]).lower() == "blocked"
+                        and self.config.keep_blocked_users)):
+                user_data = self.generate_user_data(user)
+                self.log.info("Attempting to create user {0}".format(user))
+                response = self.users.create_user(
+                    self.config.destination_host,
+                    self.config.destination_token,
+                    user_data)
+            else:
+                response = None
         except RequestException, e:
             self.log.error("Failed to create user {0}, with error:\n{1}".format(user_data, e))
             response = None

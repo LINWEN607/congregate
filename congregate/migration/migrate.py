@@ -64,9 +64,6 @@ def migrate(
     if threads is not None:
         b.config.threads = threads
 
-    if not b.config.keep_blocked_users:
-        users.remove_blocked_users()
-
     # TODO: Revisit and refactor accordingly
     if b.config.external_source != False:
         with open("%s" % b.config.repo_list, "r") as f:
@@ -309,8 +306,8 @@ def migrate_single_project_info(project, new_id):
     # NOTE: Members should be handled on import. If that is not the case, the line below and variable members should be uncommented.
     # TODO: Remove the `add_members` function once the import API can consistently add project members
     # projects.add_members(members, new_id)
-    if not projects.root_user_present(members):
-        projects.remove_import_user_from_project(new_id)
+
+    projects.remove_import_user_from_project(new_id)
 
     # Project Avatar
     # This assumes you have access to the host systems uploads as a URL instead of letting the
@@ -321,7 +318,7 @@ def migrate_single_project_info(project, new_id):
     projects.add_shared_groups(old_id, new_id)
 
     # Update project badges to use destination path hostname
-    projects.update_project_badges(new_id, name, full_parent_namespace)
+    results["badges"] = projects.update_project_badges(new_id, name, full_parent_namespace)
 
     # CI/CD Variables
     results["variables"] = variables.migrate_cicd_variables(old_id, new_id, name)

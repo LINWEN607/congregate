@@ -59,7 +59,7 @@ class ProjectsApi():
         """
         return api.list_all(host, token, "projects/%d/members" % id)
 
-    def add_member_to_group(self, id, host, token, member):
+    def add_member(self, id, host, token, member):
         """
         Adds a member to a group or project
         
@@ -73,6 +73,20 @@ class ProjectsApi():
 
         """
         return api.generate_post_request(host, token, "projects/%d/members" % id, json.dumps(member))
+
+    def remove_member(self, id, user_id, host, token):
+        """
+        Removes member from project
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/members.html#remove-a-member-from-a-group-or-project
+
+            :param: id: (int) GitLab project ID
+            :param: user_id: (int) GitLab user ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :return: Response object containing a 202 (accepted) or 404 (Member not found) from DELETE /projects/:id/members/:user_id
+        """
+        return api.generate_delete_request(host, token, "projects/%d/members/%d" % (id, user_id))
 
     def archive_project(self, host, token, id):
         """

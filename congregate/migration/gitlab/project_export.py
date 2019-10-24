@@ -87,8 +87,10 @@ class ProjectExportClient(BaseClass):
                 if d["user"].get("email", None):
                     new_user = self.users.find_user_by_email_comparison_without_id(d["user"]["email"])
                     if new_user is not None:
-                        if new_user.get("state", None) \
-                                and str(new_user["state"]).lower() == "blocked" \
+                        old_user = self.users.find_user_by_email_comparison_without_id(d["user"]["email"], src=True)
+                        if old_user is not None \
+                                and old_user.get("state", None) \
+                                and str(old_user["state"]).lower() == "blocked" \
                                 and not self.config.keep_blocked_users:
                             self.log.info("Removing blocked user {0} from project json {1} and mapping to import user ID"
                                 .format(d["user"], path))
