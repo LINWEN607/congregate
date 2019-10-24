@@ -143,6 +143,26 @@ class ig(object):
         return self.config.get("group_full_path_prefix", None)
 
     @property
+    def reset_password(self):
+        """
+        Whether or not we should send the reset password link on user creation. Note: The API defaults to false
+        :return: The set config value or True as default.
+        """
+        return self.config.get("reset_password", True)
+
+    @property
+    def force_random_password(self):
+        """
+        This API flag for user creation is not well-documented, but can be used in combination with password and
+        reset_password to generate a random password at create
+        :return: The set config value or False as default.
+        """
+        return self.config.get("force_random_password", False)
+
+
+    ### Hidden configuration properties (require manual entry to overwrite default values)
+
+    @property
     def shared_runners_enabled(self):
         return self.config.get("shared_runners_enabled", True)
 
@@ -177,30 +197,14 @@ class ig(object):
         return self.config.get("importexport_wait", 30)
 
     @property
-    def reset_password(self):
-        """
-        Whether or not we should send the reset password link on user creation. Note: The API defaults to false
-        :return: The set config value or True as default.
-        """
-        return self.config.get("reset_password", True)
-
-    @property
-    def force_random_password(self):
-        """
-        This API flag for user creation is not well-documented, but can be used in combination with password and
-        reset_password to generate a random password at create
-        :return: The set config value or False as default.
-        """
-        return self.config.get("force_random_password", False)
-
-    @property
     def notification_level(self):
         """
         Project/group notification level that is set before adding members to the groups/projects.
+        LEVELS = ['disabled', 'participating', 'watch', 'global', 'mention', 'custom']
         Assign it in order to control how users get notified during migrations.
-        :return: The set config value or None as default.
+        :return: The set config value or 'disabled as default.
         """
-        return self.config.get("notification_level", None)
+        return self.config.get("notification_level", "disabled")
 
     @property
     def max_import_retries(self):

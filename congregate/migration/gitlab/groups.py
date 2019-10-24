@@ -173,8 +173,10 @@ class GroupsClient(BaseClass):
                             group["parent_id"] = rewritten_groups[parent_id]["new_parent_id"]
                             found = True
                         else:
-                            for s in api.list_all(self.config.destination_host, self.config.destination_token,
-                                                  "groups?search=%s" % group["parent_namespace"]):
+                            for s in self.groups_api.search_for_group(
+                                group["parent_namespace"],
+                                self.config.destination_host,
+                                self.config.destination_token):
                                 if rewritten_groups.get(parent_id, None) is not None:
                                     if s["full_path"].lower() == rewritten_groups[group["id"]][
                                         "full_parent_namespace"].lower():
@@ -186,8 +188,10 @@ class GroupsClient(BaseClass):
                             self.traverse_and_migrate(
                                 [rewritten_groups[parent_id]], rewritten_groups)
                             # search = api.search(self.config.destination_host, self.config.destination_token, "groups", group["parent_namespace"])
-                            for s in api.list_all(self.config.destination_host, self.config.destination_token,
-                                                  "groups?search=%s" % group["parent_namespace"]):
+                            for s in self.groups_api.search_for_group(
+                                group["parent_namespace"],
+                                self.config.destination_host,
+                                self.config.destination_token):
                                 if rewritten_groups.get(parent_id, None) is not None:
                                     if s["full_path"].lower() == rewritten_groups[parent_id]["full_path"].lower():
                                         group["parent_id"] = s["id"]
@@ -241,11 +245,10 @@ class GroupsClient(BaseClass):
                                     # if new_group is not None and len(new_group) > 0:
                                     found_group = False
                                     if group["parent_id"] is not None:
-                                        for ng in api.list_all(
+                                        for ng in self.groups_api.get_all_subgroups(
+                                                group["parent_id"],
                                                 self.config.destination_host,
-                                                self.config.destination_token,
-                                                "groups/%d/subgroups" % group["parent_id"]
-                                        ):
+                                                self.config.destination_token):
                                             if ng["full_path"] == full_parent_namespace:
                                                 new_group_id = ng["id"]
                                                 print new_group_id
@@ -309,22 +312,13 @@ class GroupsClient(BaseClass):
 
                         self.group_id_mapping[group_id] = new_group_id
 
-                        # Look for root user while adding members
-                        root_user_present = self.add_members(members, new_group_id)
-
                         self.vars.migrate_variables(
                             new_group_id, group_id, "group")
 
-                        if not root_user_present:
-                            self.log.info("Removing root user from group")
-                            self.groups_api.remove_member(
-                                new_group_id,
-                                int(self.config.import_user_id),
-                                self.config.destination_host,
-                                self.config.destination_token
-                            )
+                        self.add_members(members, new_group_id)
 
-                        # Reset back group notification level
+                        self.remove_import_user(new_group_id)
+
                         self.reset_group_notifications(new_group_id, current_level)
 
                         # NOTE: Is this still needed?
@@ -349,12 +343,7 @@ class GroupsClient(BaseClass):
             count += 1
 
     def add_members(self, members, group_id):
-        root_user_present = False
         for member in members:
-            # Mark import user for removal and skip adding
-            if member["id"] == self.config.import_user_id:
-                root_user_present = True
-                continue
             # If we do not keep_blocked_users skip adding
             if member.get("state", None) \
                     and str(member["state"]).lower() == "blocked" \
@@ -369,12 +358,22 @@ class GroupsClient(BaseClass):
                     group_id,
                     self.config.destination_host,
                     self.config.destination_token,
-                    new_member
-                )
+                    new_member)
             except RequestException, e:
                 self.log.error("Failed to add member {0} to new group {1}, with error:\n{2}"
                     .format(member, group_id, e))
-        return root_user_present
+
+    def remove_import_user(self, group_id):
+        try:
+            self.log.info("Removing import (root) user from group")
+            self.groups_api.remove_member(
+                group_id,
+                int(self.config.import_user_id),
+                self.config.destination_host,
+                self.config.destination_token
+            )
+        except RequestException, e:
+            self.log.error("Failed to remove import (root) user from group, with error:\n{}".format(e))
 
     def get_current_group_notifications(self, new_group_id):
         """
@@ -389,8 +388,7 @@ class GroupsClient(BaseClass):
                 self.config.destination_token,
                 new_group_id
             )
-
-            if get_response is not None and get_response.status_code == 200 and get_response.json().get("level", None) is not None:
+            if get_response is not None and get_response.status_code == 200 and get_response.json().get("level", None):
                 self.log.info("Retrieved notification settings for group {}".format(new_group_id))
                 return get_response.json()["level"]
             else:
@@ -408,13 +406,7 @@ class GroupsClient(BaseClass):
         """
         # 177 - Update group to turn off notifications while we add users
         try:
-            if self.config.notification_level:
-                LEVELS = ["disabled", "participating", "watch", "global", "mention", "custom"]
-                level = self.config.notification_level.lower()
-                if not level in LEVELS:
-                    self.log.warn("{} is not a group notification level, Please update the config.".format(level))
-            else:
-                level = "disabled"
+            level = self.config.notification_level.lower()
             put_response = self.groups_api.update_notification_level(
                 self.config.destination_host,
                 self.config.destination_token,
@@ -476,8 +468,11 @@ class GroupsClient(BaseClass):
                 }
 
                 try:
-                    api.generate_post_request(self.config.destination_host, self.config.destination_token,
-                                              "groups/%d/members" % new_group_id, json.dumps(new_member))
+                    self.groups_api.add_member_to_group(
+                        new_group_id,
+                        self.config.destination_host,
+                        self.config.destination_token,
+                        new_member)
                 except RequestException, e:
                     self.log.error(e)
 

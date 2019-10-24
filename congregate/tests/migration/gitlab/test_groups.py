@@ -84,37 +84,3 @@ class GroupsUnitTest(unittest.TestCase):
         mock_put_api.return_value = self.MockReturn({"some": "json"}, 200)
         return_value = self.groups.reset_group_notifications(1111, "level")
         assert return_value.json() == {"some": "json"}
-
-    # pylint: disable=no-member
-    @responses.activate
-    # pylint: enable=no-member
-    @mock.patch('congregate.helpers.conf.ig.destination_host', new_callable=mock.PropertyMock)
-    @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.import_user_id', new_callable=mock.PropertyMock)
-    @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.keep_blocked_users', new_callable=mock.PropertyMock)
-    def test_add_members_keep_blocked_users(self, keep_blocked_users, import_user_id, destination):
-        import_user_id.return_value = 2
-        keep_blocked_users.return_value = False
-        destination.return_value = "https://gitlabdestination.com"
-        members = self.mock_groups.get_group_members()
-        url_value = "https://gitlabdestination.com/api/v4/groups/42/members"
-        # pylint: disable=no-member
-        responses.add(responses.POST, url_value,
-                    json=self.mock_groups.get_group_members()[0], status=202)
-        self.assertFalse(self.groups.add_members(members, 42))
-
-    # pylint: disable=no-member
-    @responses.activate
-    # pylint: enable=no-member
-    @mock.patch('congregate.helpers.conf.ig.destination_host', new_callable=mock.PropertyMock)
-    @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.import_user_id', new_callable=mock.PropertyMock)
-    @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.keep_blocked_users', new_callable=mock.PropertyMock)
-    def test_add_members_root_user_present(self, keep_blocked_users, import_user_id, destination):
-        import_user_id.return_value = 1
-        keep_blocked_users.return_value = True
-        destination.return_value = "https://gitlabdestination.com"
-        members = self.mock_groups.get_group_members()
-        url_value = "https://gitlabdestination.com/api/v4/groups/42/members"
-        # pylint: disable=no-member
-        responses.add(responses.POST, url_value,
-                    json=self.mock_groups.get_group_members()[1], status=202)
-        self.assertTrue(self.groups.add_members(members, 42))
