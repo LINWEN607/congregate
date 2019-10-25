@@ -81,10 +81,11 @@ test:end-to-end:
     - export GITLAB_DEST=http://gitlab_destination
     - pipenv run pytest -s -m e2e congregate/tests/
 
-remove test images:
+remove redundant docker images:
   stage: cleanup
   script:
     - docker images -a | grep "$CI_REGISTRY_IMAGE" | awk '{print $3}' | xargs --no-run-if-empty docker rmi
+    - docker images -a | grep -E 'gitlab/gitlab-ee.*<none>' | awk '{print $3}' | xargs --no-run-if-empty docker rmi
   tags:
     - e2e-cleanup
 
