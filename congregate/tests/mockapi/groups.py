@@ -348,14 +348,24 @@ class MockGroupsApi():
     def get_group_members(self):
         return [
             {
-                "username": "import_user",
-                "web_url": "http://demo.tanuki.cloud/import_user",
-                "name": "User import_user",
+                "username": "smart1",
+                "web_url": "http://demo.tanuki.cloud/smart1",
+                "name": "User smart1",
                 "expires_at": None,
-                "access_level": 50,
-                "state": "active",
+                "access_level": 30,
+                "state": "blocked",
                 "avatar_url": "https://secure.gravatar.com/avatar/d549ee47080f3512a835905895c46545?s=80&d=identicon",
-                "id": 1
+                "id": 284
+            },
+            {
+                "username": "smart2",
+                "web_url": "http://demo.tanuki.cloud/smart2",
+                "name": "User smart2",
+                "expires_at": None,
+                "access_level": 40,
+                "state": "blocked",
+                "avatar_url": "https://secure.gravatar.com/avatar/d549ee47080f3512a835905895c46545?s=80&d=identicon",
+                "id": 285
             },
             {
                 "username": "smart3",
@@ -363,16 +373,6 @@ class MockGroupsApi():
                 "name": "User smart3",
                 "expires_at": None,
                 "access_level": 50,
-                "state": "blocked",
-                "avatar_url": "https://secure.gravatar.com/avatar/d549ee47080f3512a835905895c46545?s=80&d=identicon",
-                "id": 285
-            },
-            {
-                "username": "smart4",
-                "web_url": "http://demo.tanuki.cloud/smart4",
-                "name": "User smart4",
-                "expires_at": None,
-                "access_level": 30,
                 "state": "active",
                 "avatar_url": "https://secure.gravatar.com/avatar/77b6da6e1b9aa2527600bc7727f5bad8?s=80&d=identicon",
                 "id": 286

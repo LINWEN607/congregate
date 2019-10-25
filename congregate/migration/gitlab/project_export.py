@@ -85,8 +85,12 @@ class ProjectExportClient(BaseClass):
         for d in data["project_members"]:
             if d.get("user", None):
                 if d["user"].get("email", None):
+                    # Lookup user by email on destination.
                     new_user = self.users.find_user_by_email_comparison_without_id(d["user"]["email"])
                     if new_user is not None:
+                        # 'project_members' have no 'state', so if we've migrated the user
+                        # look them up on dest by email (new_user) for user ID mapping,
+                        # but lookup on src (old_user) as a safer source of 'state' truth.
                         old_user = self.users.find_user_by_email_comparison_without_id(d["user"]["email"], src=True)
                         if old_user is not None \
                                 and old_user.get("state", None) \

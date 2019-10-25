@@ -84,3 +84,56 @@ class GroupsUnitTest(unittest.TestCase):
         mock_put_api.return_value = self.MockReturn({"some": "json"}, 200)
         return_value = self.groups.reset_group_notifications(1111, "level")
         assert return_value.json() == {"some": "json"}
+
+    # pylint: disable=no-member
+    @responses.activate
+    # pylint: enable=no-member
+    @mock.patch('congregate.helpers.conf.ig.destination_host', new_callable=mock.PropertyMock)
+    @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.keep_blocked_users', new_callable=mock.PropertyMock)
+    def test_add_members_skip_blocked_users(self, keep_blocked_users, destination):
+        keep_blocked_users.return_value = False
+        destination.return_value = "https://gitlabdestination.com"
+        members = self.mock_groups.get_group_members()
+        url_value = "https://gitlabdestination.com/api/v4/groups/42/members"
+        # pylint: disable=no-member
+        responses.add(responses.POST, url_value,
+                    json=self.mock_groups.get_group_members()[2], status=202)
+        new_members = [
+            {
+                "user_id": 286,
+                "access_level": 50
+            }
+        ]
+        self.assertEqual(self.groups.add_members(members, 42), new_members)
+
+    @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.keep_blocked_users', new_callable=mock.PropertyMock)
+    def test_add_members_skip_blocked_users_dry_run(self, keep_blocked_users):
+        keep_blocked_users.return_value = False
+        members = self.mock_groups.get_group_members()
+        new_members = [
+            {
+                "user_id": 286,
+                "access_level": 50
+            }
+        ]
+        self.assertEqual(self.groups.add_members(members, 42, dry_run=True), new_members)
+
+    @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.keep_blocked_users', new_callable=mock.PropertyMock)
+    def test_add_members_keep_blocked_users_dry_run(self, keep_blocked_users):
+        keep_blocked_users.return_value = True
+        members = self.mock_groups.get_group_members()
+        new_members = [
+            {
+                "user_id": 284,
+                "access_level": 30
+            },
+            {
+                "user_id": 285,
+                "access_level": 40
+            },
+            {
+                "user_id": 286,
+                "access_level": 50
+            }
+        ]
+        self.assertEqual(self.groups.add_members(members, 42, dry_run=True), new_members)

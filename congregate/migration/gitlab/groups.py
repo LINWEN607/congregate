@@ -120,12 +120,7 @@ class GroupsClient(BaseClass):
             # Migrate group badges
             self.migrate_group_badges()
         else:
-            self.log.info("Outputing various GROUP migration data to dry_run_group_migration.json")
-            misc_utils.migration_dry_run("group", {
-                "parent_id": parent_id,
-                "groups": groups,
-                "rewritten_groups": rewritten_groups
-            })
+            self.traverse_and_migrate(groups, rewritten_groups, dry_run)
 
     def migrate_group_badges(self):
         for old_id, new_id in self.group_id_mapping.items():
@@ -140,8 +135,9 @@ class GroupsClient(BaseClass):
             else:
                 self.log.warn("Failed to retrieve group badges for {0}, with response:\n{1}".format(old_id, badges))
 
-    def traverse_and_migrate(self, groups, rewritten_groups):
+    def traverse_and_migrate(self, groups, rewritten_groups, dry_run=False):
         count = 0
+        dest_groups = []
         for group in groups:
             parent_id = None
             self.log.info("Migrating %s %d/%d" %
@@ -227,13 +223,17 @@ class GroupsClient(BaseClass):
                             self.log.info("Popping full parent namespace of {0}".format(full_parent_namespace))
                             group_without_id.pop("full_parent_namespace")
 
-                        self.log.info("Creating group with JSON {0}".format(group_without_id))
-
-                        response = self.groups_api.create_group(
-                            self.config.destination_host,
-                            self.config.destination_token,
-                            group_without_id
-                        ).json()
+                        response = None
+                        if not dry_run:
+                            self.log.info("Creating group with JSON {0}".format(group_without_id))
+                            response = self.groups_api.create_group(
+                                self.config.destination_host,
+                                self.config.destination_token,
+                                group_without_id
+                            ).json()
+                        else:
+                            group_without_id.setdefault("members", []).append(self.add_members(members, new_group_id, dry_run))
+                            dest_groups.append(group_without_id)
 
                         if isinstance(response, dict):
                             if response.get("message", None) is not None:
@@ -339,10 +339,17 @@ class GroupsClient(BaseClass):
                         # rewritten_groups.pop(group_id, None)
             else:
                 print "Leaving recursion"
-
             count += 1
+        if dry_run:
+            self.log.info("Outputing various GROUP migration data to dry_run_group_migration.json")
+            misc_utils.migration_dry_run(
+                "group", {
+                    "parent_id": self.config.parent_id,
+                    "dest_groups": dest_groups,
+                    "rewritten_groups": rewritten_groups})
 
-    def add_members(self, members, group_id):
+    def add_members(self, members, group_id, dry_run=False):
+        new_members = []
         for member in members:
             # If we do not keep_blocked_users skip adding
             if member.get("state", None) \
@@ -353,15 +360,19 @@ class GroupsClient(BaseClass):
                 "user_id": member["id"],
                 "access_level": int(member["access_level"])
             }
-            try:
-                self.groups_api.add_member_to_group(
-                    group_id,
-                    self.config.destination_host,
-                    self.config.destination_token,
-                    new_member)
-            except RequestException, e:
-                self.log.error("Failed to add member {0} to new group {1}, with error:\n{2}"
-                    .format(member, group_id, e))
+            new_members.append(new_member)
+            if not dry_run:
+                try:
+                    self.log.info("Adding member {0} to new group ID {1}".format(member, group_id))
+                    self.groups_api.add_member_to_group(
+                        group_id,
+                        self.config.destination_host,
+                        self.config.destination_token,
+                        new_member)
+                except RequestException, e:
+                    self.log.error("Failed to add member {0} to new group ID {1}, with error:\n{2}"
+                        .format(member, group_id, e))
+        return new_members
 
     def remove_import_user(self, group_id):
         try:

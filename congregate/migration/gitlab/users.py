@@ -479,19 +479,19 @@ class UsersClient(BaseClass):
             staged_projects = json.load(f)
 
         with open("%s/data/staged_groups.json" % self.app_path, "r") as f:
-            groups = json.load(f)
+            staged_groups = json.load(f)
 
         with open("%s/data/new_users.json" % self.app_path, "r") as f:
             new_users = json.load(f)
 
         staged_projects = self.update_users(staged_projects, new_users)
-        groups = self.update_users(groups, new_users)
+        staged_groups = self.update_users(staged_groups, new_users)
 
         with open("%s/data/stage.json" % self.app_path, "wb") as f:
             json.dump(staged_projects, f, indent=4)
 
         with open("%s/data/staged_groups.json" % self.app_path, "wb") as f:
-            json.dump(groups, f, indent=4)
+            json.dump(staged_groups, f, indent=4)
 
     def update_staged_user_info(self):
         """
@@ -621,7 +621,8 @@ class UsersClient(BaseClass):
 
     def handle_user_creation(self, user):
         """
-        This is called when importing staged_users.json
+        This is called when importing staged_users.json.
+        Blocked users will be skipped if we do NOT 'keep_blocked_users'.
         :param user: Each iterable called is a user from the staged_users.json file
         :return:
         """
@@ -652,7 +653,7 @@ class UsersClient(BaseClass):
             except Exception as e:
                 self.log.error("Could not get response JSON. Error was {0}".format(e))
 
-            # NOTE: Propagates "blocked" user state regardless of domain and creation status
+            # NOTE: Persist 'blocked' user state regardless of domain and creation status.
             if user_data.get("state", None) and str(user_data["state"]).lower() == "blocked":
                 self.block_user(user_data)
             return self.handle_user_creation_status(response, user_data)
