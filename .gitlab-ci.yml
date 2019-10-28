@@ -84,8 +84,8 @@ test:end-to-end:
 remove redundant docker images:
   stage: cleanup
   script:
-    - docker images -a | grep "$CI_REGISTRY_IMAGE" | awk '{print $3}' | xargs --no-run-if-empty docker rmi
-    - docker images -a | grep -E 'gitlab/gitlab-ee.*<none>' | awk '{print $3}' | xargs --no-run-if-empty docker rmi
+    - docker images -a | grep "$CI_REGISTRY_IMAGE" | awk '{print $3}' | xargs docker rmi 2> /dev/null || true
+    - docker images -a | grep -E 'gitlab/gitlab-ee.*<none>' | awk '{print $3}' | xargs docker rmi 2> /dev/null || true
   tags:
     - e2e-cleanup
 
