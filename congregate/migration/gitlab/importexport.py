@@ -107,7 +107,7 @@ class ImportExportClient(BaseClass):
         except RequestException:
             return None
 
-    def import_project(self, project, dry_run):
+    def import_project(self, project, dry_run=False):
         """
             Imports project to destination GitLab instance.
             Formats users, groups, migration info (aws, filesystem) during import process.
@@ -248,9 +248,6 @@ class ImportExportClient(BaseClass):
 
     def get_override_params(self, project):
         return {
-            # To override the dash ("-") in import/export file path
-            # NOTE: Already exposed in import API, left as backup
-            "name": project["name"],
             "description": project["description"],
             "shared_runners_enabled": self.config.shared_runners_enabled,
             "wiki_access_level": project["wiki_access_level"],

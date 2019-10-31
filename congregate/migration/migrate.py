@@ -223,7 +223,7 @@ def handle_exporting_projects(project, skip_project_export=False):
         b.log.error("Handle exporting projects failed with error:\n{}".format(e))
 
 
-def migrate_given_export(project_json, dry_run):
+def migrate_given_export(project_json, dry_run=False):
     name = project_json["name"]
     namespace = project_json["namespace"]
     source_id = project_json["id"]
