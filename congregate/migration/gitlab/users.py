@@ -34,9 +34,10 @@ class UsersClient(BaseClass):
         """
         Find a user by email address in the destination system
         :param email: the email address to check for
+        :param src: Is this the source or destination system? True if source else False. Defaults to False.
         :return: The user entity found or None
         """
-        self.log.info("Searching for user email {} in destination system".format(email))
+        self.log.info("Searching for user email {0} in {1} system".format(email, "source" if src else "destination"))
         users = self.users.search_for_user_by_email(
             self.config.source_host if src else self.config.destination_host,
             self.config.source_token if src else self.config.destination_token,
