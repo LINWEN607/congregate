@@ -30,11 +30,15 @@ class ProjectsClient(BaseClass):
     def add_members(self, members, id):
         """Adds project members."""
         for member in members:
+            # If we do not keep_blocked_users skip adding
+            if member.get("state", None) is not None \
+                    and str(member["state"]).lower() == "blocked" \
+                    and not self.config.keep_blocked_users:
+                continue
             new_member = {
                 "user_id": member["id"],
                 "access_level": member["access_level"]
             }
-
             try:
                 self.projects_api.add_member(
                     id,
@@ -42,17 +46,18 @@ class ProjectsClient(BaseClass):
                     self.config.destination_token,
                     new_member)
             except RequestException, e:
-                self.log.error(e)
-                self.log.error(
-                    "Member might already exist. Attempting to update access level")
+                self.log.error("Member might already exist. Attempting to update access level despite error:\n{}".format(e))
                 try:
-                    api.generate_put_request(self.config.destination_host, self.config.destination_token,
-                                             "projects/%d/members/%d?access_level=%d" % (
-                                             id, member["id"], member["access_level"]), data=None)
+                    api.generate_put_request(
+                        self.config.destination_host,
+                        self.config.destination_token,
+                        "projects/{0}/members/{1}?access_level={2}".format(
+                            id,
+                            member["id"],
+                            member["access_level"]),
+                            data=None)
                 except RequestException, e:
-                    self.log.error(e)
-                    self.log.error(
-                        "Attempting to update existing member failed")
+                    self.log.error("Attempting to update existing member failed, with error:\n{}".format(e))
 
         self.remove_import_user_from_project(id)
 

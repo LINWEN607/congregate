@@ -352,9 +352,10 @@ class GroupsClient(BaseClass):
         new_members = []
         for member in members:
             # If we do not keep_blocked_users skip adding
-            if member.get("state", None) \
+            if member.get("state", None) is not None \
                     and str(member["state"]).lower() == "blocked" \
                     and not self.config.keep_blocked_users:
+                self.log.info("Skipping blocked group member {}".format(member))
                 continue
             new_member = {
                 "user_id": member["id"],

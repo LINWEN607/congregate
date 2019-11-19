@@ -87,24 +87,23 @@ class ProjectExportClient(BaseClass):
             if d.get("user", None):
                 if d["user"].get("email", None) is not None:
                     # Lookup user by email on destination.
-                    new_user = self.users.find_user_by_email_comparison_without_id(d["user"]["email"])
+                    email = d["user"]["email"]
+                    new_user = self.users.find_user_by_email_comparison_without_id(email)
                     if new_user is not None:
                         # 'project_members' have no 'state', so if we've migrated the user
                         # look them up on dest by email (new_user) for user ID mapping,
                         # but lookup on src (old_user) as a safer source of 'state' truth.
-                        old_user = self.users.find_user_by_email_comparison_without_id(d["user"]["email"], src=True)
+                        old_user = self.users.find_user_by_email_comparison_without_id(email, src=True)
                         if old_user is not None \
                                 and old_user.get("state", None) is not None \
                                 and str(old_user["state"]).lower() == "blocked" \
                                 and not self.config.keep_blocked_users:
-                            self.log.info(
-                                "REWRITE: Removing blocked user {0} from project json {1} and mapping to import user ID"
+                            self.log.info("REWRITE: Removing blocked user {0} from project json {1} and mapping to import user ID"
                                 .format(d["user"], path))
                             self.users_map[d["user_id"]] = self.config.import_user_id
                             to_pop.append(data["project_members"].index(d))
                             continue
-                        self.log.info("REWRITE: Mapping user {0} to destination id {1}".format(
-                            d["user"]["email"], new_user["id"]))
+                        self.log.info("REWRITE: Mapping user {0} to destination ID {1}".format(email, new_user["id"]))
                         d["user"]["id"] = new_user["id"]
                         self.users_map[d["user_id"]] = new_user["id"]
                         # We do the following to force the import tool to match on email
@@ -112,13 +111,13 @@ class ProjectExportClient(BaseClass):
                         # and may have a suffix on their username
                         d["user"]["username"] = "dont_have_this_username"
                     else:
-                        self.log.warning("REWRITE: New user on destination was not found by email {0}".format(d))
+                        self.log.warning("REWRITE: New user {0} on destination was not found by email {1}".format(email, d))
                         d["user"]["id"] = self.config.import_user_id
                         self.users_map[d["user_id"]] = self.config.import_user_id
                         d["user"]['username'] = "This is invalid"
                 else:
                     # No clue who this is, so set to import user
-                    self.log.warning("REWRITE: Project member user entity had no email {0}".format(d))
+                    self.log.warning("REWRITE: Project member user entity has no email {0}".format(d))
                     d["user"]["id"] = self.config.import_user_id
                     self.users_map[d["user_id"]] = self.config.import_user_id
                     d["user"]['username'] = "This is invalid"
@@ -126,11 +125,11 @@ class ProjectExportClient(BaseClass):
             # Not necessarily existing users on src nor dest instance.
             # Removing them rather than creating new user objects.
             elif d.get("invite_email", None):
-                self.log.warning("REWRITE: Skipping user {0}, invited by ID {1}".format(
-                    d.get("invite_email"), d.get("created_by_id")))
+                self.log.warning("REWRITE: Skipping user {0}, invited by ID {1}"
+                    .format(d.get("invite_email"), d.get("created_by_id")))
                 to_pop.append(data["project_members"].index(d))
             else:
-                self.log.error("REWRITE: Project member has no user entity or invite email {0}. Skipping.".format(d))
+                self.log.warning("REWRITE: Project member has no user entity or invite email {0}. Skipping.".format(d))
                 to_pop.append(data["project_members"].index(d))
 
         data["project_members"] = [i for j, i in enumerate(data["project_members"]) if j not in to_pop]
