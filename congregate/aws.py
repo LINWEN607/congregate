@@ -17,7 +17,6 @@ from botocore.client import Config
 from congregate.helpers.base_class import BaseClass
 
 
-
 class AwsClient(BaseClass):
     def __init__(self):
         super(AwsClient, self).__init__()
@@ -42,7 +41,8 @@ class AwsClient(BaseClass):
                         }
                         data = {
                             "path": name.replace(" ", "-"),
-                            "namespace": namespace
+                            "namespace": namespace,
+                            "name": name
                         }
                         headers = {
                             "Private-Token": self.config.destination_token
@@ -111,7 +111,8 @@ class AwsClient(BaseClass):
         url = "{}/api/v4/projects/import".format(self.config.destination_host)
         data = {
             "path": name.replace(" ", "-"),
-            "namespace": namespace
+            "namespace": namespace,
+            "name": name
         }
         headers = {
             "Private-Token": self.config.destination_token

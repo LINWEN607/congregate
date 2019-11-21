@@ -30,7 +30,7 @@ def get_project_filename(p):
     """
     if p.get("name", None) is not None and p.get("namespace", None) is not None:
         namespace = str(get_project_namespace(p)).lower()
-        return "{0}_{1}.tar.gz".format(namespace.lower(), str(p["name"]).lower())
+        return "{0}_{1}.tar.gz".format(namespace.lower(), str(p["name"]))
     return ""
 
 
