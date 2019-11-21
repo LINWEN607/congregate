@@ -114,7 +114,7 @@ class BranchesClient(BaseClass):
                 self.log.warning("Failed to retrieve protected branches for {0}, with response:\n{1}".format(name, p_branches))
                 return False
         except Exception, e:
-            self.log.info("Failed to migrate protected branches for {0}, with error:\n{1}".format(name, e))
+            self.log.error("Failed to migrate protected branches for {0}, with error:\n{1}".format(name, e))
             return False
 
     def set_default_branches_to_master(self):

@@ -11,13 +11,21 @@ config = base_module.config
 def do_all():
     users = UsersClient()
     groups = GroupsClient()
-    # if not os.path.isfile("%s/data/config.json" % app_path):
-    #     config.config()
+
+    # Gather info
     if not os.path.isfile("%s/data/users.json" % app_path):
         users.retrieve_user_info()
     if not os.path.isfile("%s/data/groups.json" % app_path):
         groups.retrieve_group_info(config.source_host, config.source_token)
+
+    # Stage
     stage_projects.stage_projects([None, "all"])
+
+    # Update and map users
+    users.update_staged_user_info()
+    users.map_new_users_to_groups_and_projects()
+
+    # Migrate
     migrate.migrate()
 
 
