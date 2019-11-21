@@ -7,6 +7,7 @@ Usage:
     congregate config
     congregate stage <projects>...
     congregate migrate [--threads=<n>] [--dry-run] [--skip-users] [--skip-project-import] [--skip-project-export]
+    congregate cleanup [--dry-run] [--hard-delete] [--skip-users] [--skip-groups] [--skip-projects]
     congregate ui
     congregate export-projects
     congregate import-projects
@@ -47,7 +48,10 @@ Options:
 Arguments:
     threads                                 Set number of threads to run in parallel.
     dry-run                                 Perform local listing of metadata that would be handled during the migration.
-    skip-users                              Migrate all but users (staged_users.json).
+    skip-users                              Include groups and projects.
+    hard-delete                             Remove user contributions and solely owned groups.
+    skip-groups                             Include users and projects.
+    skip-projects                           Include ONLY users (removing ONLY groups is not possible).
     skip-project-import                     Will do all steps up to import (export, re-write exported project json,
                                                 etc). Useful for testing export contents.
     skip-project-export                     Skips the project export and assumes that the project file is already ready
@@ -63,6 +67,7 @@ Commands:
                                                 groups to {CONGREGATE_PATH}/data/staged_groups.json.
                                                 All projects can be staged with a '.' or 'all'.
     migrate                                 Commence migration based on configuration and staged assets.
+    cleanup                                 Remove staged users/groups/projects on destination.
     ui                                      Deploy UI to port 8000.
     export-projects                         Export and update source instance projects. Bulk project export without user/group info.
     import-projects                         Import exported and updated projects onto destination instance. Destination user/group info required.
@@ -213,6 +218,28 @@ if __name__ == '__main__':
                     skip_users=skip_users,
                     skip_project_import=skip_project_import,
                     skip_project_export=skip_project_export)
+            if arguments["cleanup"]:
+                dry_run=False
+                skip_users = False
+                hard_delete = False
+                skip_groups = False
+                skip_projects = False
+                if arguments["--dry-run"]:
+                    dry_run = True
+                if arguments["--skip-users"]:
+                    skip_users = True
+                if arguments["--hard-delete"]:
+                    hard_delete = True
+                if arguments["--skip-groups"]:
+                    skip_groups = True
+                if arguments["--skip-projects"]:
+                    skip_projects = True
+                migrate.cleanup(
+                    dry_run=dry_run,
+                    skip_users=skip_users,
+                    hard_delete=hard_delete,
+                    skip_groups=skip_groups,
+                    skip_projects=skip_projects)
             if arguments["do_all"]:
                 do_all.do_all()
             if arguments["ui"]:

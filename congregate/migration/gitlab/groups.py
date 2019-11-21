@@ -16,6 +16,10 @@ class GroupsClient(BaseClass):
         self.group_id_mapping = {}
         super(GroupsClient, self).__init__()
 
+    def get_staged_groups(self):
+        with open("{}/data/staged_groups.json".format(self.app_path), "r") as f:
+            return json.load(f)
+
     def find_parent_group_path(self):
         '''
             Gate used to find an existing and valid parent group path
@@ -95,13 +99,11 @@ class GroupsClient(BaseClass):
     def migrate_group_info(self, dry_run):
         if not path.isfile("%s/data/groups.json" % self.app_path):
             self.retrieve_group_info(self.config.source_host, self.config.source_token)
-        with open("%s/data/staged_groups.json" % self.app_path, "r") as f:
-            groups = json.load(f)
-
+        staged_groups = self.get_staged_groups()
         rewritten_groups = {}
-        for i in range(len(groups)):
-            new_obj = groups[i]
-            group_id = groups[i]["id"]
+        for i in range(len(staged_groups)):
+            new_obj = staged_groups[i]
+            group_id = staged_groups[i]["id"]
             rewritten_groups[group_id] = new_obj
 
         self.group_id_mapping = {}
@@ -112,15 +114,15 @@ class GroupsClient(BaseClass):
             if parent_id:
                 current_level = self.get_current_group_notifications(parent_id)
                 self.update_group_notifications(parent_id)
-                self.traverse_and_migrate(groups, rewritten_groups)
+                self.traverse_and_migrate(staged_groups, rewritten_groups)
                 self.reset_group_notifications(parent_id, current_level)
             else:
-                self.traverse_and_migrate(groups, rewritten_groups)
+                self.traverse_and_migrate(staged_groups, rewritten_groups)
 
             # Migrate group badges
             self.migrate_group_badges()
         else:
-            self.traverse_and_migrate(groups, rewritten_groups, dry_run)
+            self.traverse_and_migrate(staged_groups, rewritten_groups, dry_run)
 
     def migrate_group_badges(self):
         for old_id, new_id in self.group_id_mapping.items():
@@ -464,9 +466,8 @@ class GroupsClient(BaseClass):
         return None
 
     def update_members(self):
-        with open("%s/data/staged_groups.json" % self.app_path, "r") as f:
-            groups = json.load(f)
-        for group in groups:
+        staged_groups = self.get_staged_groups()
+        for group in staged_groups:
             # TODO: Change this to a search check. This assumes the instance doesn't contain various nested groups with the same name
             new_group_id = api.generate_get_request(
                 self.config.destination_host, self.config.destination_token, 'groups',
@@ -507,6 +508,30 @@ class GroupsClient(BaseClass):
 
         with open("%s/data/staged_groups.json" % self.app_path, "w") as f:
             json.dump(misc_utils.remove_dupes(staged_groups), f, indent=4)
+
+    def delete_groups(self, dry_run=False):
+        staged_groups = self.get_staged_groups()
+        for g in staged_groups:
+            full_path = "{0}/{1}".format(
+                # Use find_parent_group_path instead?
+                self.config.parent_group_path,
+                g["full_path"])
+            self.log.info("Removing group {}".format(full_path))
+            resp = self.groups_api.get_group_by_full_path(
+                full_path,
+                self.config.destination_host,
+                self.config.destination_token)
+            group = resp.json() if resp.status_code == 200 else None
+            if not group:
+                self.log.info("Group {} does not exist".format(full_path))
+            elif not dry_run:
+                try:
+                    self.groups_api.delete_group(
+                        group["id"],
+                        self.config.destination_host,
+                        self.config.destination_token)
+                except RequestException, e:
+                    self.log.error("Failed to remove group {0}\nwith error:\n{1}".format(g, e))
 
     def traverse_staging(self, id, group_dict, staged_groups):
         if group_dict.get(id, None) is not None:
@@ -612,8 +637,7 @@ class GroupsClient(BaseClass):
             self.log.error("Failed to add group ID {0} badge {1}, with error:\n{2}".format(new_id, badge, e))
 
     def validate_staged_groups_schema(self):
-        with open("%s/data/staged_groups.json" % self.app_path, "r") as f:
-            staged_groups = json.load(f)
+        staged_groups = self.get_staged_groups()
         for g in staged_groups:
             self.log.info(g)
             if g.get("name", None) is None:

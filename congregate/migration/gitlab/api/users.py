@@ -45,6 +45,20 @@ class UsersApi():
         """
         return api.generate_post_request(host, token, "users", json.dumps(data))
 
+    def delete_user(self, host, token, id, hard_delete=False):
+        """
+        Delete a single user
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/users.html#user-deletion
+
+            :param: id: (int) GitLab user ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :param: hard_delete: (boo) Option to delete user contributions and solely owned groups
+            :return: Response object containing a 204 (No Content) or 404 (Group not found) from DELETE /users/:id
+        """
+        return api.generate_delete_request(host, token, "users/{0}?hard_delete={1}".format(id, hard_delete))
+
     def search_for_user_by_email(self, host, token, email):
         """
         Searches for a user by email

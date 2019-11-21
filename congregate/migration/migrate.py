@@ -113,17 +113,16 @@ def migrate_user_info(dry_run):
 
 
 def migrate_group_info(dry_run):
-    with open("%s/data/staged_groups.json" % b.app_path, "r") as f:
-        groups_file = json.load(f)
-        if groups_file:
-            b.log.info("Migrating group info")
-            groups.migrate_group_info(dry_run)
-        else:
-            b.log.info("No groups to migrate")
+    staged_groups = groups.get_staged_groups()
+    if staged_groups:
+        b.log.info("Migrating group info")
+        groups.migrate_group_info(dry_run)
+    else:
+        b.log.info("No groups to migrate")
 
 
 def migrate_project_info(dry_run=False, skip_project_export=False, skip_project_import=False):
-    staged_projects = get_staged_projects()
+    staged_projects = projects.get_staged_projects()
     if staged_projects:
         if not skip_project_export:
             b.log.info("Exporting projects")
@@ -357,6 +356,23 @@ def migrate_single_project_info(project, new_id):
     return results
 
 
+def cleanup(dry_run=False,
+            skip_users=False,
+            hard_delete=False,
+            skip_groups=False,
+            skip_projects=False):
+    dry_log = "DRY-RUN:" if dry_run else ""
+    if not skip_users:
+        b.log.info("{0} Removing staged users on destination (hard_delete={1})".format(dry_log, hard_delete))
+        users.delete_users(dry_run, hard_delete)
+
+    if not skip_groups and not skip_projects:
+        b.log.info("{} Removing groups and projects on destination".format(dry_log))
+        groups.delete_groups(dry_run)
+    elif not skip_projects:
+        b.log.info("{} Removing projects on destination".format(dry_log))
+        projects.delete_projects(dry_run)
+
 def find_unimported_projects():
     unimported_projects = []
     with open("%s/data/project_json.json" % b.app_path, "r") as f:
@@ -401,7 +417,7 @@ def remove_all_mirrors():
 
 def get_new_ids():
     ids = []
-    staged_projects = get_staged_projects()
+    staged_projects = projects.get_staged_projects()
     if staged_projects:
         for project_json in staged_projects:
             try:
@@ -425,7 +441,7 @@ def get_new_ids():
 
 def enable_mirror():
     ids = get_new_ids()
-    staged_projects = get_staged_projects()
+    staged_projects = projects.get_staged_projects()
     if staged_projects:
         for i in enumerate(staged_projects):
             id = ids[i]
@@ -535,7 +551,7 @@ def count_unarchived_projects():
 
 
 def archive_staged_projects(dry_run=False):
-    staged_projects = get_staged_projects()
+    staged_projects = projects.get_staged_projects()
     b.log.info("Project count is: %s", len(staged_projects))
     try:
         for project in staged_projects:
@@ -548,7 +564,7 @@ def archive_staged_projects(dry_run=False):
 
 
 def unarchive_staged_projects(dry_run=False):
-    staged_projects = get_staged_projects()
+    staged_projects = projects.get_staged_projects()
     b.log.info("Project count is: %s", len(staged_projects))
     try:
         for project in staged_projects:
@@ -558,11 +574,6 @@ def unarchive_staged_projects(dry_run=False):
                 projects.projects_api.unarchive_project(b.config.source_host, b.config.source_token, id)
     except RequestException, e:
         b.log.error("Failed to unarchive staged projects, with error:\n%s" % e)
-
-
-def get_staged_projects():
-    with open("%s/data/stage.json" % b.app_path, "r") as f:
-        return json.load(f)
 
 
 def find_empty_repos():

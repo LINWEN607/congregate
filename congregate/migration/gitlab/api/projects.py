@@ -32,6 +32,17 @@ class ProjectsApi():
         """
         return api.generate_get_request(host, token, "projects/%d" % id)
 
+    def get_project_by_path_with_namespace(self, path, host, token):
+        """
+        Get all details of a project matching the path_with_namespace
+
+            :param: path: (string) URL encoded path to a project
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :return: Response object containing the response to GET /projects/<path>
+        """
+        return api.generate_get_request(host, token, "projects/{}".format(quote_plus(path)))
+
     def get_all_projects(self, host, token):
         """
         Get a list of all visible projects across GitLab for the authenticated user
@@ -125,10 +136,9 @@ class ProjectsApi():
             :param: id: (int) GitLab project ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
-            :return: Response object containing a 202 (accepted) or 404 (Project not found) from DELETE /projects/:id
-
+            :return: Response object containing a 202 (Accepted) or 404 (Project not found) from DELETE /projects/:id
         """
-        return api.generate_delete_request(host, token, "projects/%d" % id)
+        return api.generate_delete_request(host, token, "projects/{}".format(id))
 
     def add_shared_group(self, host, token, id, group):
         """

@@ -13,13 +13,17 @@ from congregate.migration.gitlab.api.users import UsersApi
 
 class UsersClient(BaseClass):
     def __init__(self):
-        self.groups = GroupsApi()
-        self.users = UsersApi()
+        self.groups_api = GroupsApi()
+        self.users_api = UsersApi()
         super(UsersClient, self).__init__()
+
+    def get_staged_users(self):
+        with open("{}/data/staged_users.json".format(self.app_path), "r") as f:
+            return json.load(f)
 
     def find_user_by_email_comparison_with_id(self, old_user_id):
         self.log.info("Searching for user email by ID {}".format(old_user_id))
-        old_user = self.users.get_user(
+        old_user = self.users_api.get_user(
             old_user_id,
             self.config.source_host,
             self.config.source_token).json()
@@ -38,7 +42,7 @@ class UsersClient(BaseClass):
         :return: The user entity found or None
         """
         self.log.info("Searching for user email {0} in {1} system".format(email, "source" if src else "destination"))
-        users = self.users.search_for_user_by_email(
+        users = self.users_api.search_for_user_by_email(
             self.config.source_host if src else self.config.destination_host,
             self.config.source_token if src else self.config.destination_token,
             email)
@@ -64,7 +68,7 @@ class UsersClient(BaseClass):
             return True
         if not is_group:
             # Wasn't found as a group, and wasn't None (error) so check user as actual username
-            for user in self.users.search_for_user_by_username(
+            for user in self.users_api.search_for_user_by_username(
                     self.config.destination_host,
                     self.config.destination_token,
                     username):
@@ -90,7 +94,7 @@ class UsersClient(BaseClass):
         try:
             username = str(old_user["username"])
             namespace_check_response = []
-            for group in self.groups.search_for_group(
+            for group in self.groups_api.search_for_group(
                 username,
                 host=self.config.destination_host,
                 token=self.config.destination_token
@@ -113,7 +117,7 @@ class UsersClient(BaseClass):
         index = 0
         if old_user.get("email"):
             email = old_user["email"]
-            for user in self.users.search_for_user_by_email(self.config.destination_host, self.config.destination_token,
+            for user in self.users_api.search_for_user_by_email(self.config.destination_host, self.config.destination_token,
                                                             email):
                 if user["email"] == email:
                     return True
@@ -142,7 +146,7 @@ class UsersClient(BaseClass):
                     "api"
                 ]
             }
-            new_impersonation_token = self.users.create_user_impersonation_token(
+            new_impersonation_token = self.users_api.create_user_impersonation_token(
                 self.config.destination_host,
                 self.config.destination_token,
                 id,
@@ -154,7 +158,7 @@ class UsersClient(BaseClass):
     def delete_saved_impersonation_tokens(self, users_map):
         try:
             for user in users_map.values():
-                self.users.delete_user_impersonation_token(
+                self.users_api.delete_user_impersonation_token(
                     self.config.destination_host,
                     self.config.destination_token,
                     user["user_id"],
@@ -240,7 +244,7 @@ class UsersClient(BaseClass):
                 for member in members:
                     # Get the old user from the source system by ID
                     self.log.info("Searching for user ID {0} on source system".format(member["id"]))
-                    old_user = self.users.get_user(member["id"], self.config.source_host, self.config.source_token)
+                    old_user = self.users_api.get_user(member["id"], self.config.source_host, self.config.source_token)
                     old_user = old_user.json()
 
                     if old_user.get("email"):
@@ -252,7 +256,7 @@ class UsersClient(BaseClass):
                                 rewritten_user,
                                 rewritten_user["id"])
                             )
-                            new_user = self.users.get_user(rewritten_user["id"],
+                            new_user = self.users_api.get_user(rewritten_user["id"],
                                                            self.config.destination_host,
                                                            self.config.destination_token).json()
                             if new_user.get("message", None) is None and \
@@ -319,7 +323,7 @@ class UsersClient(BaseClass):
             }
             try:
                 self.log.debug("Adding user {} to parent group".format(user["username"]))
-                self.groups.add_member_to_group(
+                self.groups_api.add_member_to_group(
                     self.config.parent_id, self.config.destination_host, self.config.destination_token, data)
             except RequestException, e:
                 self.log.error("Failed to add user {0} to parent group, with error:\n{1}".format(user, e))
@@ -459,7 +463,7 @@ class UsersClient(BaseClass):
             with open("%s/data/new_users.json" % self.app_path, "w") as f:
                 new_users = []
                 for new_id in new_ids:
-                    new_user = self.users.get_user(
+                    new_user = self.users_api.get_user(
                         new_id, self.config.destination_host, self.config.destination_token).json()
                     if isinstance(new_user, list):
                         new_users.append(new_user[0])
@@ -500,11 +504,10 @@ class UsersClient(BaseClass):
         search based on the email address and *not* username
         :return:
         """
-        with open("%s/data/staged_users.json" % self.app_path, "r") as f:
-            users = json.load(f)
+        staged_users = self.get_staged_users()
         new_users = []
         users_not_found = []
-        for user in users:
+        for user in staged_users:
             self.log.info("Searching for user email {}".format(user["email"]))
             # Try to find a user in the destination system by email
             new_user = api.search(
@@ -541,7 +544,7 @@ class UsersClient(BaseClass):
         # Search for users by ID. If you find those, also add them to new_users
         for other_id in other_ids:
             self.log.info("Searching for user {} (ID)".format(other_id))
-            new_user = self.users.get_user(
+            new_user = self.users_api.get_user(
                 other_id, self.config.destination_host, self.config.destination_token).json()
             new_users.append(new_user)
 
@@ -594,16 +597,15 @@ class UsersClient(BaseClass):
                 "Retrieved %d users. Check users.json to see all retrieved groups" % len(users))
 
     def migrate_user_info(self, dry_run):
-        with open('%s/data/staged_users.json' % self.app_path, "r") as f:
-            users = json.load(f)
+        staged_users = self.get_staged_users()
 
         if not dry_run:
             new_ids = []
-            new_ids = handle_multi_thread(self.handle_user_creation, users)
+            new_ids = handle_multi_thread(self.handle_user_creation, staged_users)
             return list(filter(None, new_ids))
         else:
             self.log.info("Outputing various USER migration data to dry_run_user_migration.json")
-            migration_dry_run("user", handle_multi_thread(self.generate_user_data, users))
+            migration_dry_run("user", handle_multi_thread(self.generate_user_data, staged_users))
 
     def generate_user_data(self, user):
         if self.config.group_sso_provider is not None:
@@ -634,7 +636,7 @@ class UsersClient(BaseClass):
                         and self.config.keep_blocked_users)):
                 user_data = self.generate_user_data(user)
                 self.log.info("Attempting to create user {0}".format(user))
-                response = self.users.create_user(
+                response = self.users_api.create_user(
                     self.config.destination_host,
                     self.config.destination_token,
                     user_data)
@@ -665,7 +667,7 @@ class UsersClient(BaseClass):
             response = self.find_user_by_email_comparison_without_id(user_data["email"])
             user_creation_id = self.get_user_creation_id(response)
             if user_creation_id:
-                block_response = self.users.block_user(
+                block_response = self.users_api.block_user(
                     self.config.destination_host,
                     self.config.destination_token,
                     user_creation_id)
@@ -712,3 +714,20 @@ class UsersClient(BaseClass):
                         "Staging user (%s) [%d/%d]" % (u["username"], len(staged_users), len(users)))
         with open("%s/data/staged_users.json" % self.app_path, "w") as f:
             json.dump(remove_dupes(staged_users), f, indent=4)
+
+    def delete_users(self, dry_run=False, hard_delete=False):
+        staged_users = self.get_staged_users()
+        for u in staged_users:
+            self.log.info("Removing user {}".format(u["email"]))
+            user = self.find_user_by_email_comparison_without_id(u["email"])
+            if not user:
+                self.log.info("User {} does not exist".format(u["email"]))
+            elif not dry_run:
+                try:
+                    self.users_api.delete_user(
+                        self.config.destination_host,
+                        self.config.destination_token,
+                        user["id"],
+                        hard_delete)
+                except RequestException, e:
+                    self.log.error("Failed to remove user {0}\nwith error:\n{1}".format(u, e))

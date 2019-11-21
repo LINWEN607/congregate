@@ -20,6 +20,10 @@ class ProjectsClient(BaseClass):
             return namespace_prefix + "/" + namespace + "/" + project_name
         return namespace + "/" + project_name
 
+    def get_staged_projects(self):
+        with open("{}/data/stage.json".format(self.app_path), "r") as f:
+            return json.load(f)
+
     def search_for_project_with_namespace_path(self, host, token, namespace_prefix, namespace, project_name):
         url_encoded_path = quote_plus(self.get_full_namespace_path(namespace_prefix, namespace, project_name))
         resp = api.generate_get_request(host, token, "projects/%s" % url_encoded_path)
@@ -160,6 +164,31 @@ class ProjectsClient(BaseClass):
                     self.log.info("Project already exists. Skipping %s" % name)
                     return True, project["id"]
         return False, None
+
+    def delete_projects(self, dry_run=False):
+        staged_projects = self.get_staged_projects()
+        for p in staged_projects:
+            path_with_namespace = "{0}/{1}/{2}".format(
+                # Use groups.find_parent_group_path instead?
+                self.config.parent_group_path,
+                p["namespace"],
+                p["name"])
+            self.log.info("Removing project {}".format(path_with_namespace))
+            resp = self.projects_api.get_project_by_path_with_namespace(
+                path_with_namespace,
+                self.config.destination_host,
+                self.config.destination_token)
+            project = resp.json() if resp.status_code == 200 else None
+            if not project:
+                self.log.info("Project {} does not exist".format(path_with_namespace))
+            elif not dry_run:
+                try:
+                    self.projects_api.delete_project(
+                        self.config.destination_host,
+                        self.config.destination_token,
+                        project["id"])
+                except RequestException, e:
+                    self.log.error("Failed to remove project {0}\nwith error:\n{1}".format(p, e))
 
     def update_project_badges(self, new_id, name, full_parent_namespace):
         badges = self.projects_api.get_all_project_badges(
