@@ -131,17 +131,19 @@ With congregate configured and projects, groups, and users retrieved, you should
 Note: Instead of exporting an environment variable within your shell session, you can also add `CONGREGATE_PATH` to `bash_profile` or an init.d script. This is a bit more of a permanent solution than just exporting the variable within the session.
 
 ### Usage
-```
+
+``` text
 Usage:
     congregate list
     congregate config
     congregate stage <projects>...
-    congregate migrate [--threads=<n>] [--dry-run] [--skip-users] [--keep-blocked-users]
+    congregate migrate [--threads=<n>] [--dry-run] [--skip-users] [--skip-project-import] [--skip-project-export]
+    congregate cleanup [--dry-run] [--hard-delete] [--skip-users] [--skip-groups] [--skip-projects]
     congregate ui
+    congregate export-projects
     congregate import-projects
     congregate do_all
     congregate update-staged-user-info
-    congregate update-new-users
     congregate update-aws-creds
     congregate add-users-to-parent-group
     congregate remove-blocked-users [--dry-run]
@@ -172,13 +174,19 @@ Usage:
     congregate -h | --help
 
 Options:
-    -h --help     Show this screen.
+    -h, --help                              Show Usage.
 
 Arguments:
     threads                                 Set number of threads to run in parallel.
     dry-run                                 Perform local listing of metadata that would be handled during the migration.
-    skip-users                              Migrate all but users (staged_users.json).
-    keep-blocked-users                      Will skip removing blocked users from staged users/groups/projects.
+    skip-users                              Include groups and projects.
+    hard-delete                             Remove user contributions and solely owned groups.
+    skip-groups                             Include users and projects.
+    skip-projects                           Include ONLY users (removing ONLY groups is not possible).
+    skip-project-import                     Will do all steps up to import (export, re-write exported project json,
+                                                etc). Useful for testing export contents.
+    skip-project-export                     Skips the project export and assumes that the project file is already ready
+                                                for rewrite. Currently does NOT work for exports through filesystem-aws.
     access-level                            Update parent group level user permissions (Guest/Reporter/Developer/Maintainer/Owner).
     staged                                  Compare two groups that are staged for migration.
 
@@ -190,11 +198,12 @@ Commands:
                                                 groups to {CONGREGATE_PATH}/data/staged_groups.json.
                                                 All projects can be staged with a '.' or 'all'.
     migrate                                 Commence migration based on configuration and staged assets.
+    cleanup                                 Remove staged users/groups/projects on destination.
     ui                                      Deploy UI to port 8000.
-    import-projects                         Kick off import of exported projects onto destination instance.
+    export-projects                         Export and update source instance projects. Bulk project export without user/group info.
+    import-projects                         Import exported and updated projects onto destination instance. Destination user/group info required.
     do_all                                  Configure system, retrieve all projects, users, and groups, stage all information, and commence migration.
     update-staged-user-info                 Update staged user information after migrating only users.
-    update-new-users                        Update user IDs in staged groups and projects after migrating only users.
     update-aws-creds                        Run awscli commands based on the keys stored in the config. Useful for docker updates.
     add-users-to-parent-group               If a parent group is set, all users staged will be added to the parent group.
     remove-blocked-users                    Remove all blocked users from staged projects and groups.
@@ -222,6 +231,45 @@ Commands:
     validate-staged-projects-schema         Check stage.json for missing project data.
     map-users                               Maps staged user emails to emails defined in the user-provided user_map.csv
 ```
+
+#### Migration steps
+
+##### Migrate users
+
+Best practice is to first migrate ONLY users by running:
+
+* `congregate ui &` - Open the UI in your browser (by default `localhost:8000`), select and stage all users.
+* `congregate update-staged-user-info` - Check output for found and NOT found users on destination.
+  * Inspect `data/staged_users.json` if any of the NOT found users are blocked as, by default, they will not be migrated.
+  * To explicitly remove blocked users from staged users, groups and projects run `congregate remove-blocked-users`.
+* `congregate migrate --dry-run` - Inspect the output in
+  * `data/dry_run_user_migration.json`
+  * `congregate.log`
+* `congregate migrate`
+
+##### Migrate groups and projects
+
+Once all the users are migrated:
+
+* Go back to the UI, select and stage all projects, groups and users.
+* `congregate update-staged-user-info` - Check output for found and NOT found users on destination.
+  * All users should be found.
+  * Inspect `data/staged_users.json` if any of the NOT found users are blocked as, by default, they will not be migrated.
+  * To explicitly remove blocked users from staged users, groups and projects run `congregate remove-blocked-users`.
+* `congregate map-new-users-to-groups-and-projects --dry-run` - Check output for any remaining unmapped users.
+* `congregate migrate --skip-users --dry-run` - Inspect the output in
+  * `dry_run_project_migration.json`
+  * `dry_run_group_migration.json`
+  * `congregate.log` (especially `more congregate.log | grep "REWRITE"`)
+* `congregate migrate --skip-users`
+
+##### Cleanup
+
+To remove all of the staged users, groups and projects on destination run:
+
+* `congregate cleanup --dry-run` - Inspect the output.
+* `congregate cleanup`
+* For more granular cleanup see [Usage](#usage).
 
 #### Important Note
 
