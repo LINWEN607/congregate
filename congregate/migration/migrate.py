@@ -366,9 +366,13 @@ def cleanup(dry_run=False,
         b.log.info("{0} Removing staged users on destination (hard_delete={1})".format(dry_log, hard_delete))
         users.delete_users(dry_run, hard_delete)
 
-    if not skip_groups and not skip_projects:
-        b.log.info("{} Removing groups and projects on destination".format(dry_log))
-        groups.delete_groups(dry_run)
+    # Remove groups and projects or only empty groups
+    if not skip_groups:
+        b.log.info("{0} Removing groups{1} on destination".format(
+            dry_log,
+            "" if skip_projects else " and projects"))
+        groups.delete_groups(dry_run, skip_projects)
+    # Remove only projects
     elif not skip_projects:
         b.log.info("{} Removing projects on destination".format(dry_log))
         projects.delete_projects(dry_run)

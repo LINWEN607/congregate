@@ -509,25 +509,41 @@ class GroupsClient(BaseClass):
         with open("%s/data/staged_groups.json" % self.app_path, "w") as f:
             json.dump(misc_utils.remove_dupes(staged_groups), f, indent=4)
 
-    def delete_groups(self, dry_run=False):
-        staged_groups = self.get_staged_groups()
-        for g in staged_groups:
-            full_path = "{0}/{1}".format(
-                # Use find_parent_group_path instead?
-                self.config.parent_group_path,
-                g["full_path"])
-            self.log.info("Removing group {}".format(full_path))
-            resp = self.groups_api.get_group_by_full_path(
-                full_path,
+    def is_group_non_empty(self, group):
+        if group["projects"]:
+            return True
+        subgroups = self.groups_api.get_all_subgroups(
+            group["id"],
+            self.config.destination_host,
+            self.config.destination_token)
+        for sg in subgroups:
+            resp = self.groups_api.get_group(
+                sg["id"],
                 self.config.destination_host,
                 self.config.destination_token)
-            group = resp.json() if resp.status_code == 200 else None
-            if not group:
-                self.log.info("Group {} does not exist".format(full_path))
+            self.is_group_non_empty(resp.json())
+
+    def delete_groups(self, dry_run=False, skip_projects=False):
+        staged_groups = self.get_staged_groups()
+        for g in staged_groups:
+            # SaaS destination instances have a parent group
+            if self.config.parent_group_path:
+                dest_full_path = "{0}/{1}".format(self.config.parent_group_path, g["full_path"])
+            else:
+                dest_full_path = g["full_path"]
+            resp = self.groups_api.get_group_by_full_path(
+                dest_full_path,
+                self.config.destination_host,
+                self.config.destination_token)
+            if resp.status_code != 200:
+                self.log.info("Group {0} does not exist (status: {1})".format(dest_full_path, resp.status_code))
+            elif skip_projects and self.is_group_non_empty(resp.json()):
+                self.log.info("Skipping non empty group {}".format(dest_full_path))
             elif not dry_run:
+                self.log.info("Removing group {}".format(dest_full_path))
                 try:
                     self.groups_api.delete_group(
-                        group["id"],
+                        resp.json()["id"],
                         self.config.destination_host,
                         self.config.destination_token)
                 except RequestException, e:

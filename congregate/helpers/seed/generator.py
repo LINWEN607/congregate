@@ -1,7 +1,11 @@
+from datetime import timedelta, date
+import json
+
 from congregate.helpers.base_class import BaseClass
 from congregate.migration.gitlab.importexport import ImportExportClient
 from congregate.migration.gitlab.variables import VariablesClient
 from congregate.migration.gitlab.users import UsersClient
+from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.projects import ProjectsClient
 from congregate.migration.gitlab.pushrules import PushRulesClient
@@ -12,8 +16,7 @@ from congregate.migration.gitlab.registries import RegistryClient
 from congregate.migration.gitlab.pipeline_schedules import PipelineSchedulesClient
 from congregate.migration.mirror import MirrorClient
 from congregate.migration.gitlab.deploy_keys import DeployKeysClient
-from datetime import timedelta, date
-import json
+
 
 class SeedDataGenerator(BaseClass):
     def __init__(self):
@@ -21,6 +24,7 @@ class SeedDataGenerator(BaseClass):
         self.mirror = MirrorClient()
         self.variables = VariablesClient()
         self.users = UsersClient()
+        self.users_api = UsersApi()
         self.groups = GroupsApi()
         self.projects = ProjectsClient()
         self.pushrules = PushRulesClient()
@@ -72,17 +76,17 @@ class SeedDataGenerator(BaseClass):
         ]
         created_users = []
         for user in dummy_users:
-            user_search = list(self.users.users.search_for_user_by_email(self.config.source_host, self.config.source_token, user["email"]))
+            user_search = list(self.users_api.search_for_user_by_email(self.config.source_host, self.config.source_token, user["email"]))
             if len(user_search) > 0:
                 if user_search[0]["email"] == user["email"]:
                     self.log.info("%s already exists" % user["name"])
                     created_users.append(user_search[0])
                 else:
                     self.log.info("Creating %s" % user["name"])
-                    created_users.append(self.users.users.create_user(self.config.source_host, self.config.source_token, user).json())
+                    created_users.append(self.users_api.create_user(self.config.source_host, self.config.source_token, user).json())
             else:
                 self.log.info("Creating %s" % user["name"])
-                created_users.append(self.users.users.create_user(self.config.source_host, self.config.source_token, user).json())
+                created_users.append(self.users_api.create_user(self.config.source_host, self.config.source_token, user).json())
 
         return created_users
 

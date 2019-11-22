@@ -178,15 +178,14 @@ class ProjectsClient(BaseClass):
                 path_with_namespace,
                 self.config.destination_host,
                 self.config.destination_token)
-            project = resp.json() if resp.status_code == 200 else None
-            if not project:
-                self.log.info("Project {} does not exist".format(path_with_namespace))
+            if resp.status_code != 200:
+                self.log.info("Project {0} does not exist (status: {1})".format(path_with_namespace, resp.status_code))
             elif not dry_run:
                 try:
                     self.projects_api.delete_project(
                         self.config.destination_host,
                         self.config.destination_token,
-                        project["id"])
+                        resp.json()["id"])
                 except RequestException, e:
                     self.log.error("Failed to remove project {0}\nwith error:\n{1}".format(p, e))
 

@@ -720,8 +720,8 @@ class UsersClient(BaseClass):
         for u in staged_users:
             self.log.info("Removing user {}".format(u["email"]))
             user = self.find_user_by_email_comparison_without_id(u["email"])
-            if not user:
-                self.log.info("User {} does not exist".format(u["email"]))
+            if user is None:
+                self.log.info("User {} does not exist or has already been removed".format(u["email"]))
             elif not dry_run:
                 try:
                     self.users_api.delete_user(
