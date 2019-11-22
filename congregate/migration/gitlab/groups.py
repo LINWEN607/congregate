@@ -114,10 +114,10 @@ class GroupsClient(BaseClass):
             if parent_id:
                 current_level = self.get_current_group_notifications(parent_id)
                 self.update_group_notifications(parent_id)
-                self.traverse_and_migrate(staged_groups, rewritten_groups)
+                self.traverse_and_migrate(staged_groups, rewritten_groups, dry_run)
                 self.reset_group_notifications(parent_id, current_level)
             else:
-                self.traverse_and_migrate(staged_groups, rewritten_groups)
+                self.traverse_and_migrate(staged_groups, rewritten_groups, dry_run)
 
             # Migrate group badges
             self.migrate_group_badges()
@@ -184,7 +184,7 @@ class GroupsClient(BaseClass):
                                         break
                         if found is False:
                             self.traverse_and_migrate(
-                                [rewritten_groups[parent_id]], rewritten_groups)
+                                [rewritten_groups[parent_id]], rewritten_groups, dry_run)
                             # search = api.search(self.config.destination_host, self.config.destination_token, "groups", group["parent_namespace"])
                             for s in self.groups_api.search_for_group(
                                 group["parent_namespace"],
