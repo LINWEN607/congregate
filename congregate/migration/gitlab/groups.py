@@ -317,7 +317,7 @@ class GroupsClient(BaseClass):
                         self.vars.migrate_variables(
                             new_group_id, group_id, "group")
 
-                        self.add_members(members, new_group_id)
+                        self.add_members(members, new_group_id, dry_run)
 
                         self.remove_import_user(new_group_id)
 
