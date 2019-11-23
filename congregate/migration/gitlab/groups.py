@@ -303,26 +303,43 @@ class GroupsClient(BaseClass):
                             continue
 
                         # Update group notifications based
-                        put_response = self.update_group_notifications(new_group_id)
-                        if not put_response:
-                            self.log.error(
-                                "Skipping adding users for new group id {0}, notification level could not be updated ({1})".format(
-                                    new_group_id,
-                                    put_response.status_code)
+                        if not dry_run:
+                            put_response = self.update_group_notifications(new_group_id)
+                            if not put_response:
+                                self.log.error(
+                                    "Skipping adding users for new group id {0}, notification level could not be updated ({1})".format(
+                                        new_group_id,
+                                        put_response.status_code)
+                                )
+                                continue
+                            
+                            self.group_id_mapping[group_id] = new_group_id
+
+                            self.vars.migrate_variables(
+                                new_group_id, group_id, "group")
+
+                            self.add_members(members, new_group_id, dry_run)
+
+                            self.remove_import_user(new_group_id)
+
+                            self.reset_group_notifications(new_group_id, current_level)
+                        else:
+                            self.log.info(
+                                "DRY-RUN: Skipping updating notification level for group ({0})".format(
+                                    new_group_id)
                             )
-                            continue
-
-                        self.group_id_mapping[group_id] = new_group_id
-
-                        self.vars.migrate_variables(
-                            new_group_id, group_id, "group")
-
-                        self.add_members(members, new_group_id, dry_run)
-
-                        self.remove_import_user(new_group_id)
-
-                        self.reset_group_notifications(new_group_id, current_level)
-
+                            self.log.info(
+                                "DRY-RUN: Skipping variable migration for new group {0} from old group {1}".format(new_group_id, group_id)
+                            )
+                            self.log.info(
+                                "DRY-RUN: Skipping add members for new group id {0} and old group id {1} members {2}".format(new_group_id, group_id, members)
+                            )
+                            self.log.info(
+                                "DRY-RUN: Skipping remove import user for new group {0} from old group {1}".format(new_group_id, group_id)
+                            )
+                            self.log.info(
+                                "DRY-RUN: Skipping group notification reset for new group id {0} old group id {1} and level {2}".format(new_group_id, group_id, current_level)
+                            )
                         # NOTE: Is this still needed?
                         # if has_children:
                         #     subgroup = []
@@ -343,7 +360,7 @@ class GroupsClient(BaseClass):
                 print "Leaving recursion"
             count += 1
         if dry_run:
-            self.log.info("Outputing various GROUP migration data to dry_run_group_migration.json")
+            self.log.info("DRY-RUN: Outputing various GROUP migration data to dry_run_group_migration.json")
             misc_utils.migration_dry_run(
                 "group", {
                     "parent_id": self.config.parent_id,
