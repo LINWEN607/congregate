@@ -466,6 +466,9 @@ class GroupsClient(BaseClass):
         return None
 
     def update_members(self):
+        """
+        NOT CALLED? NO REFERENCES FOUND.
+        """
         staged_groups = self.get_staged_groups()
         for group in staged_groups:
             # TODO: Change this to a search check. This assumes the instance doesn't contain various nested groups with the same name
