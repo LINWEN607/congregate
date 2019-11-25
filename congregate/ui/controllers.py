@@ -19,7 +19,7 @@ def generate_stream():
         last_line = ""
         while True:
             output = subprocess.check_output(
-                ['tail', '-n 1', '%s/congregate.log' % app_path])
+                ['tail', '-n 1', '%s/data/congregate.log' % app_path])
             if output == last_line:
                 yield ""
             else:
@@ -33,7 +33,7 @@ def generate_stream():
 @app.route('/logLine')
 def return_last_line():
     output = subprocess.check_output(
-        ['tail', '-n 1', '%s/congregate.log' % app_path])
+        ['tail', '-n 1', '%s/data/congregate.log' % app_path])
     return output.split(":")[-1]
 
 

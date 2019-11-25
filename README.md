@@ -244,7 +244,7 @@ Best practice is to first migrate ONLY users by running:
   * To explicitly remove blocked users from staged users, groups and projects run `congregate remove-blocked-users`.
 * `congregate migrate --dry-run` - Inspect the output in
   * `data/dry_run_user_migration.json`
-  * `congregate.log`
+  * `data/congregate.log`
 * `congregate migrate`
 
 ##### Migrate groups and projects
