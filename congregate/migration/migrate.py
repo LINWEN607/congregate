@@ -95,8 +95,8 @@ def init_pool(l):
     lock = l
 
 
-def migrate_user_info(dry_run):
-    b.log.info("Migrating user info")
+def migrate_user_info(dry_run=False):
+    b.log.info("{}Migrating user info".format("DRY-RUN: " if dry_run else ""))
     new_users = users.migrate_user_info(dry_run)
 
     # This list is of user ids from found users via email or newly created users
@@ -112,10 +112,10 @@ def migrate_user_info(dry_run):
         users.update_user_info(new_users, overwrite=False)
 
 
-def migrate_group_info(dry_run):
+def migrate_group_info(dry_run=False):
     staged_groups = groups.get_staged_groups()
     if staged_groups:
-        b.log.info("Migrating group info")
+        b.log.info("{}Migrating group info".format("DRY-RUN: " if dry_run else ""))
         groups.migrate_group_info(dry_run)
     else:
         b.log.info("No groups to migrate")
@@ -153,7 +153,7 @@ def migrate_project_info(dry_run=False, skip_project_export=False, skip_project_
             staged_projects = migrate_utils.get_staged_projects_without_failed_update(staged_projects, failed_update)
 
         if not skip_project_import:
-            b.log.info("Importing projects")
+            b.log.info("{}Importing projects".format("DRY-RUN: " if dry_run else ""))
             import_pool = ThreadPool(b.config.threads)
             import_results = import_pool.map(
                 lambda project: migrate_given_export(
@@ -361,20 +361,20 @@ def cleanup(dry_run=False,
             hard_delete=False,
             skip_groups=False,
             skip_projects=False):
-    dry_log = "DRY-RUN:" if dry_run else ""
+    dry_log = "DRY-RUN: " if dry_run else ""
     if not skip_users:
-        b.log.info("{0} Removing staged users on destination (hard_delete={1})".format(dry_log, hard_delete))
+        b.log.info("{0}Removing staged users on destination (hard_delete={1})".format(dry_log, hard_delete))
         users.delete_users(dry_run, hard_delete)
 
     # Remove groups and projects or only empty groups
     if not skip_groups:
-        b.log.info("{0} Removing groups{1} on destination".format(
+        b.log.info("{0}Removing groups{1} on destination".format(
             dry_log,
             "" if skip_projects else " and projects"))
         groups.delete_groups(dry_run, skip_projects)
     # Remove only projects
     elif not skip_projects:
-        b.log.info("{} Removing projects on destination".format(dry_log))
+        b.log.info("{}Removing projects on destination".format(dry_log))
         projects.delete_projects(dry_run)
 
 def find_unimported_projects():

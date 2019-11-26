@@ -137,6 +137,7 @@ class GroupsClient(BaseClass):
             else:
                 self.log.warn("Failed to retrieve group badges for {0}, with response:\n{1}".format(old_id, badges))
 
+    # TODO: Refactor and break down
     def traverse_and_migrate(self, groups, rewritten_groups, dry_run=False):
         count = 0
         dest_groups = []
@@ -231,11 +232,7 @@ class GroupsClient(BaseClass):
                             response = self.groups_api.create_group(
                                 self.config.destination_host,
                                 self.config.destination_token,
-                                group_without_id
-                            ).json()
-                        else:
-                            group_without_id.setdefault("members", []).append(self.add_members(members, new_group_id, dry_run))
-                            dest_groups.append(group_without_id)
+                                group_without_id).json()
 
                         if isinstance(response, dict):
                             if response.get("message", None) is not None:
@@ -283,8 +280,12 @@ class GroupsClient(BaseClass):
                     except RequestException, e:
                         self.log.info("Group already exists")
                     if new_group_id is None:
+                        # TODO: Refactor group search to use /api and 'full_path'
                         new_group = api.search(
-                            self.config.destination_host, self.config.destination_token, 'groups', group['path'])
+                            self.config.destination_host,
+                            self.config.destination_token,
+                            'groups',
+                            group['path'])
                         if new_group is not None and len(new_group) > 0:
                             for ng in new_group:
                                 if ng["name"] == group["name"]:
@@ -294,6 +295,7 @@ class GroupsClient(BaseClass):
                                         break
 
                     if new_group_id:
+                        self.group_id_mapping[group_id] = new_group_id
                         #   177
                         current_level = self.get_current_group_notifications(new_group_id)
                         if not current_level:
@@ -302,44 +304,26 @@ class GroupsClient(BaseClass):
                                     new_group_id))
                             continue
 
-                        # Update group notifications based
                         if not dry_run:
                             put_response = self.update_group_notifications(new_group_id)
                             if not put_response:
                                 self.log.error(
                                     "Skipping adding users for new group id {0}, notification level could not be updated ({1})".format(
                                         new_group_id,
-                                        put_response.status_code)
-                                )
+                                        put_response.status_code))
                                 continue
-                            
-                            self.group_id_mapping[group_id] = new_group_id
-
-                            self.vars.migrate_variables(
-                                new_group_id, group_id, "group")
-
+                            self.vars.migrate_variables(new_group_id, group_id, "group")
                             self.add_members(members, new_group_id, dry_run)
-
                             self.remove_import_user(new_group_id)
-
                             self.reset_group_notifications(new_group_id, current_level)
                         else:
-                            self.log.info(
-                                "DRY-RUN: Skipping updating notification level for group ({0})".format(
-                                    new_group_id)
-                            )
-                            self.log.info(
-                                "DRY-RUN: Skipping variable migration for new group {0} from old group {1}".format(new_group_id, group_id)
-                            )
-                            self.log.info(
-                                "DRY-RUN: Skipping add members for new group id {0} and old group id {1} members {2}".format(new_group_id, group_id, members)
-                            )
-                            self.log.info(
-                                "DRY-RUN: Skipping remove import user for new group {0} from old group {1}".format(new_group_id, group_id)
-                            )
-                            self.log.info(
-                                "DRY-RUN: Skipping group notification reset for new group id {0} old group id {1} and level {2}".format(new_group_id, group_id, current_level)
-                            )
+                            new_members = self.add_members(members, new_group_id, dry_run)
+                            self.log.info("DRY-RUN: Adding members to group ID {0} dry-run output:\n{1}".format(
+                                new_group_id,
+                                "\n".join(m for m in new_members)))
+                            group_without_id.setdefault("members", []).append(new_members)
+                            dest_groups.append(group_without_id)
+
                         # NOTE: Is this still needed?
                         # if has_children:
                         #     subgroup = []
@@ -357,7 +341,7 @@ class GroupsClient(BaseClass):
                         #     traverse_and_migrate(subgroup, rewritten_groups)
                         # rewritten_groups.pop(group_id, None)
             else:
-                print "Leaving recursion"
+                self.log.error("Group ID not found for staged group (JSON):\n{}".format(group))
             count += 1
         if dry_run:
             self.log.info("DRY-RUN: Outputing various GROUP migration data to dry_run_group_migration.json")
@@ -482,10 +466,8 @@ class GroupsClient(BaseClass):
 
         return None
 
+    # TODO: Remove, NO references found
     def update_members(self):
-        """
-        NOT CALLED? NO REFERENCES FOUND.
-        """
         staged_groups = self.get_staged_groups()
         for group in staged_groups:
             # TODO: Change this to a search check. This assumes the instance doesn't contain various nested groups with the same name
