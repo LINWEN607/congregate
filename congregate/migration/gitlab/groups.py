@@ -512,27 +512,29 @@ class GroupsClient(BaseClass):
             json.dump(misc_utils.remove_dupes(staged_groups), f, indent=4)
 
     def is_group_non_empty(self, group):
+        # Recursively look for any nested projects
         if group["projects"]:
             return True
-        subgroups = self.groups_api.get_all_subgroups(
-            group["id"],
-            self.config.destination_host,
-            self.config.destination_token)
-        for sg in subgroups:
-            resp = self.groups_api.get_group(
-                sg["id"],
+        else:
+            subgroups = self.groups_api.get_all_subgroups(
+                group["id"],
                 self.config.destination_host,
                 self.config.destination_token)
-            self.is_group_non_empty(resp.json())
+            for sg in subgroups:
+                resp = self.groups_api.get_group(
+                    sg["id"],
+                    self.config.destination_host,
+                    self.config.destination_token)
+                return self.is_group_non_empty(resp.json())
 
     def delete_groups(self, dry_run=False, skip_projects=False):
         staged_groups = self.get_staged_groups()
-        for g in staged_groups:
+        for sg in staged_groups:
             # SaaS destination instances have a parent group
-            if self.config.parent_group_path:
-                dest_full_path = "{0}/{1}".format(self.config.parent_group_path, g["full_path"])
-            else:
-                dest_full_path = g["full_path"]
+            dest_full_path = "{0}{1}".format(
+                self.config.parent_group_path + "/" if self.config.parent_group_path else "",
+                sg["full_path"])
+            self.log.info("Removing group {}".format(dest_full_path))
             resp = self.groups_api.get_group_by_full_path(
                 dest_full_path,
                 self.config.destination_host,
@@ -542,14 +544,13 @@ class GroupsClient(BaseClass):
             elif skip_projects and self.is_group_non_empty(resp.json()):
                 self.log.info("Skipping non empty group {}".format(dest_full_path))
             elif not dry_run:
-                self.log.info("Removing group {}".format(dest_full_path))
                 try:
                     self.groups_api.delete_group(
                         resp.json()["id"],
                         self.config.destination_host,
                         self.config.destination_token)
                 except RequestException, e:
-                    self.log.error("Failed to remove group {0}\nwith error:\n{1}".format(g, e))
+                    self.log.error("Failed to remove group {0}\nwith error: {1}".format(sg, e))
 
     def traverse_staging(self, id, group_dict, staged_groups):
         if group_dict.get(id, None) is not None:

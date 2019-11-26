@@ -137,3 +137,32 @@ class GroupsUnitTest(unittest.TestCase):
             }
         ]
         self.assertEqual(self.groups.add_members(members, 42, dry_run=True), new_members)
+
+    def test_is_group_non_empty_true(self):
+        group = self.mock_groups.get_group()
+        self.assertTrue(self.groups.is_group_non_empty(group))
+
+    @mock.patch("congregate.migration.gitlab.groups.api.list_all")
+    def test_is_group_non_empty_false_no_subgroups(self, mock_list_all):
+        group = self.mock_groups.get_group()
+        group["projects"] = []
+        mock_list_all.return_value = []
+        self.assertFalse(self.groups.is_group_non_empty(group))
+
+    # pylint: disable=no-member
+    @responses.activate
+    @mock.patch("congregate.migration.gitlab.groups.api.list_all")
+    @mock.patch("congregate.migration.gitlab.groups.api.generate_get_request")
+    def test_is_group_non_empty_true_subgroups(self, mock_get_api, mock_list_all):
+        url_value = "https://gitlab.com/api/v4/groups"
+        mock_list_all.return_value = self.mock_groups.get_all_subgroups_list()
+        responses.add(
+            responses.GET,
+            url_value,
+            json=self.mock_groups.get_group(),
+            status=200,
+            content_type='text/json',
+            match_querystring=True)
+        group = self.mock_groups.get_group()
+        group["projects"] = []
+        self.assertTrue(self.groups.is_group_non_empty(group))

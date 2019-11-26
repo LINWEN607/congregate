@@ -167,12 +167,12 @@ class ProjectsClient(BaseClass):
 
     def delete_projects(self, dry_run=False):
         staged_projects = self.get_staged_projects()
-        for p in staged_projects:
-            path_with_namespace = "{0}/{1}/{2}".format(
-                # Use groups.find_parent_group_path instead?
-                self.config.parent_group_path,
-                p["namespace"],
-                p["name"])
+        for sp in staged_projects:
+            # SaaS destination instances have a parent group
+            path_with_namespace = "{0}{1}/{2}".format(
+                self.config.parent_group_path + "/" if self.config.parent_group_path else "",
+                sp["namespace"],
+                sp["name"])
             self.log.info("Removing project {}".format(path_with_namespace))
             resp = self.projects_api.get_project_by_path_with_namespace(
                 path_with_namespace,
@@ -187,7 +187,7 @@ class ProjectsClient(BaseClass):
                         self.config.destination_token,
                         resp.json()["id"])
                 except RequestException, e:
-                    self.log.error("Failed to remove project {0}\nwith error:\n{1}".format(p, e))
+                    self.log.error("Failed to remove project {0}\nwith error: {1}".format(sp, e))
 
     def update_project_badges(self, new_id, name, full_parent_namespace):
         badges = self.projects_api.get_all_project_badges(

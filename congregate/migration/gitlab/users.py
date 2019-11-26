@@ -717,11 +717,11 @@ class UsersClient(BaseClass):
 
     def delete_users(self, dry_run=False, hard_delete=False):
         staged_users = self.get_staged_users()
-        for u in staged_users:
-            self.log.info("Removing user {}".format(u["email"]))
-            user = self.find_user_by_email_comparison_without_id(u["email"])
+        for su in staged_users:
+            self.log.info("Removing user {}".format(su["email"]))
+            user = self.find_user_by_email_comparison_without_id(su["email"])
             if user is None:
-                self.log.info("User {} does not exist or has already been removed".format(u["email"]))
+                self.log.info("User {} does not exist or has already been removed".format(su["email"]))
             elif not dry_run:
                 try:
                     self.users_api.delete_user(
@@ -730,4 +730,4 @@ class UsersClient(BaseClass):
                         user["id"],
                         hard_delete)
                 except RequestException, e:
-                    self.log.error("Failed to remove user {0}\nwith error:\n{1}".format(u, e))
+                    self.log.error("Failed to remove user {0}\nwith error: {1}".format(su, e))
