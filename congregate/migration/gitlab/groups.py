@@ -539,18 +539,21 @@ class GroupsClient(BaseClass):
                 dest_full_path,
                 self.config.destination_host,
                 self.config.destination_token)
-            if resp.status_code != 200:
-                self.log.info("Group {0} does not exist (status: {1})".format(dest_full_path, resp.status_code))
-            elif skip_projects and self.is_group_non_empty(resp.json()):
-                self.log.info("Skipping non empty group {}".format(dest_full_path))
-            elif not dry_run:
-                try:
-                    self.groups_api.delete_group(
-                        resp.json()["id"],
-                        self.config.destination_host,
-                        self.config.destination_token)
-                except RequestException, e:
-                    self.log.error("Failed to remove group {0}\nwith error: {1}".format(sg, e))
+            if resp is not None:
+                if resp.status_code != 200:
+                    self.log.info("Group {0} does not exist (status: {1})".format(dest_full_path, resp.status_code))
+                elif skip_projects and self.is_group_non_empty(resp.json()):
+                    self.log.info("Skipping non empty group {}".format(dest_full_path))
+                elif not dry_run:
+                    try:
+                        self.groups_api.delete_group(
+                            resp.json()["id"],
+                            self.config.destination_host,
+                            self.config.destination_token)
+                    except RequestException, e:
+                        self.log.error("Failed to remove group {0}\nwith error: {1}".format(sg, e))
+            else:
+                self.log.error("Failed to GET group {} by full_path".format(dest_full_path))
 
     def traverse_staging(self, id, group_dict, staged_groups):
         if group_dict.get(id, None) is not None:

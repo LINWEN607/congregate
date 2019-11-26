@@ -178,16 +178,19 @@ class ProjectsClient(BaseClass):
                 path_with_namespace,
                 self.config.destination_host,
                 self.config.destination_token)
-            if resp.status_code != 200:
-                self.log.info("Project {0} does not exist (status: {1})".format(path_with_namespace, resp.status_code))
-            elif not dry_run:
-                try:
-                    self.projects_api.delete_project(
-                        self.config.destination_host,
-                        self.config.destination_token,
-                        resp.json()["id"])
-                except RequestException, e:
-                    self.log.error("Failed to remove project {0}\nwith error: {1}".format(sp, e))
+            if resp is not None:
+                if resp.status_code != 200:
+                    self.log.info("Project {0} does not exist (status: {1})".format(path_with_namespace, resp.status_code))
+                elif not dry_run:
+                    try:
+                        self.projects_api.delete_project(
+                            self.config.destination_host,
+                            self.config.destination_token,
+                            resp.json()["id"])
+                    except RequestException, e:
+                        self.log.error("Failed to remove project {0}\nwith error: {1}".format(sp, e))
+            else:
+                self.log.error("Failed to GET project {} by path_with_namespace".format(path_with_namespace))
 
     def update_project_badges(self, new_id, name, full_parent_namespace):
         badges = self.projects_api.get_all_project_badges(
