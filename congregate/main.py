@@ -6,8 +6,8 @@ Usage:
     congregate list
     congregate config
     congregate stage <projects>...
-    congregate migrate [--threads=<n>] [--dry-run] [--skip-users] [--skip-project-import] [--skip-project-export]
-    congregate cleanup [--dry-run] [--hard-delete] [--skip-users] [--skip-groups] [--skip-projects]
+    congregate migrate [--threads=<n>] [--skip-users] [--skip-project-import] [--skip-project-export] [--commit]
+    congregate cleanup [--hard-delete] [--skip-users] [--skip-groups] [--skip-projects] [--commit]
     congregate ui
     congregate export-projects
     congregate import-projects
@@ -15,7 +15,7 @@ Usage:
     congregate update-staged-user-info
     congregate update-aws-creds
     congregate add-users-to-parent-group
-    congregate remove-blocked-users [--dry-run]
+    congregate remove-blocked-users [--commit]
     congregate update-user-permissions [--access-level=<level>]
     congregate get-total-count
     congregate find-unimported-projects
@@ -30,13 +30,13 @@ Usage:
     congregate set-default-branch
     congregate enable_mirroring
     congregate count-unarchived-projects
-    congregate archive-staged-projects [--dry-run]
-    congregate unarchive-staged-projects [--dry-run]
+    congregate archive-staged-projects [--commit]
+    congregate unarchive-staged-projects [--commit]
     congregate find-empty-repos
     congregate compare-groups [--staged]
     congregate staged-user-list
     congregate generate-seed-data
-    congregate map-new-users-to-groups-and-projects [--dry-run]
+    congregate map-new-users-to-groups-and-projects [--commit]
     congregate validate-staged-groups-schema
     congregate validate-staged-projects-schema
     congregate map-users
@@ -47,7 +47,7 @@ Options:
 
 Arguments:
     threads                                 Set number of threads to run in parallel.
-    dry-run                                 Perform local listing of metadata that would be handled during the migration.
+    commit                                  Disable the dry-run and perform the full migration with all reads/writes. 
     skip-users                              Include groups and projects.
     hard-delete                             Remove user contributions and solely owned groups.
     skip-groups                             Include users and projects.
@@ -198,7 +198,7 @@ if __name__ == '__main__':
                 stage_projects.stage_projects(arguments['<projects>'])
             if arguments["migrate"]:
                 threads = None
-                dry_run=False
+                dry_run=True
                 skip_users = False
                 skip_project_import = False
                 skip_project_export = False
@@ -210,8 +210,8 @@ if __name__ == '__main__':
                     skip_project_import = True
                 if arguments["--skip-project-export"]:
                     skip_project_export = True
-                if arguments["--dry-run"]:
-                    dry_run = True
+                if arguments["--commit"]:
+                    dry_run = False
                 migrate.migrate(
                     threads=threads,
                     dry_run=dry_run,
@@ -219,13 +219,13 @@ if __name__ == '__main__':
                     skip_project_import=skip_project_import,
                     skip_project_export=skip_project_export)
             if arguments["cleanup"]:
-                dry_run=False
+                dry_run=True
                 skip_users = False
                 hard_delete = False
                 skip_groups = False
                 skip_projects = False
-                if arguments["--dry-run"]:
-                    dry_run = True
+                if arguments["--commit"]:
+                    dry_run = False
                 if arguments["--skip-users"]:
                     skip_users = True
                 if arguments["--hard-delete"]:
@@ -260,7 +260,7 @@ if __name__ == '__main__':
                 subprocess.call(command.split(" "))
                 log.info("Configured AWS secret key")
             if arguments["remove-blocked-users"]:
-                users.remove_blocked_users_dry_run() if arguments["--dry-run"] else users.remove_blocked_users()
+                users.remove_blocked_users() if arguments["--commit"] else users.remove_blocked_users_dry_run()
             if arguments["update-user-permissions"]:
                 if arguments["--access-level"]:
                     access_level = arguments["--access-level"]
@@ -296,9 +296,9 @@ if __name__ == '__main__':
             if arguments["count-unarchived-projects"]:
                 migrate.count_unarchived_projects()
             if arguments["archive-staged-projects"]:
-                migrate.archive_staged_projects(True) if arguments["--dry-run"] else migrate.archive_staged_projects()
+                migrate.archive_staged_projects() if arguments["--commit"] else migrate.archive_staged_projects(True)
             if arguments["unarchive-staged-projects"]:
-                migrate.unarchive_staged_projects(True) if arguments["--dry-run"] else migrate.unarchive_staged_projects()
+                migrate.unarchive_staged_projects() if arguments["--commit"] else migrate.unarchive_staged_projects(True)
             if arguments["find-empty-repos"]:
                 migrate.find_empty_repos()
             if arguments["compare-groups"]:
@@ -317,7 +317,7 @@ if __name__ == '__main__':
                 s = SeedDataGenerator()
                 s.generate_seed_data()
             if arguments["map-new-users-to-groups-and-projects"]:
-                users.map_new_users_to_groups_and_projects(True) if arguments["--dry-run"] else users.map_new_users_to_groups_and_projects()
+                users.map_new_users_to_groups_and_projects() if arguments["--commit"] else users.map_new_users_to_groups_and_projects(True)
             if arguments["validate-staged-groups-schema"]:
                 groups.validate_staged_groups_schema()
             if arguments["validate-staged-projects-schema"]:
