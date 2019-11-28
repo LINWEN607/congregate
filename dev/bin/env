@@ -1,20 +1,33 @@
 #!/usr/bin/env bash
 
+function get_latest_master_tag() { git ls-remote git@gitlab.com:gitlab-com/customer-success/tools/congregate.git | grep refs/heads/master | cut -f 1; }
+
 alias penv='pipenv install'
 alias ui='pipenv run dnd install'
 alias sh='pipenv shell'
 alias upd='pipenv run python congregate/update-readme.py'
-alias pt='pipenv run pytest -m "not e2e" --cov-config=.coveragerc --cov=congregate congregate/tests/'
+alias pt='pipenv run pytest \
+            -m "not e2e" \
+            --cov-config=.coveragerc \
+            --cov=congregate congregate/tests/'
 alias pt_e2e='pipenv run pytest -s -m e2e congregate/tests/'
-alias dpull='docker pull registry.gitlab.com/gitlab-com/customer-success/tools/congregate'
-alias drun='docker run --name congregate -p 8000:8000 -it registry.gitlab.com/gitlab-com/customer-success/tools/congregate:latest /bin/bash'
+alias dpull='docker pull registry.gitlab.com/gitlab-com/customer-success/tools/congregate/master:$(get_latest_master_tag)'
+alias drun='docker run \
+              --name congregate \
+              -v /var/run/docker.sock:/var/run/docker.sock \
+              -v $HOME/congregate_data:/opt/congregate/data \
+              -p 8000:8000 \
+              -it registry.gitlab.com/gitlab-com/customer-success/tools/congregate/master:$(get_latest_master_tag) \
+              /bin/bash'
 
-printf '# Pipfile and Dockerfile install aliases\n'
+printf '# Pipfile and Dockerfile aliases\n'
 alias penv
 alias ui
 alias sh
 alias upd
 alias pt
 alias pt_e2e
+printf '\n# docker pull latest docker image on master\n'
 alias dpull
+printf '\n# docker run latest docker image on master\n'
 alias drun
