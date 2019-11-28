@@ -409,7 +409,7 @@ def find_unimported_projects():
         b.log.info("Found {} unimported projects".format(len(unimported_projects)))
 
 
-def remove_all_mirrors():
+def remove_all_mirrors(dry_run=True):
     # if os.path.isfile("%s/data/new_ids.txt" % b.app_path):
     #     ids = []
     #     with open("%s/data/new_ids.txt" % b.app_path, "r") as f:
@@ -418,7 +418,7 @@ def remove_all_mirrors():
     # else:
     ids = get_new_ids()
     for i in ids:
-        mirror.remove_mirror(i)
+        mirror.remove_mirror(i, dry_run)
 
 
 def get_new_ids():
@@ -445,16 +445,17 @@ def get_new_ids():
         return ids
 
 
-def enable_mirror():
+def enable_mirror(dry_run=True):
     ids = get_new_ids()
     staged_projects = projects.get_staged_projects()
     if staged_projects:
         for i in enumerate(staged_projects):
-            id = ids[i]
+            pid = ids[i]
             project = staged_projects[i]
-            mirror.mirror_repo(project, id)
+            mirror.mirror_repo(project, pid, dry_run)
 
 
+# TODO: Refactor or rename, misleading
 def check_visibility():
     count = 0
     if os.path.isfile("%s/data/new_ids.txt" % b.app_path):

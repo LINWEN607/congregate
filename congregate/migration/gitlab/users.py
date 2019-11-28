@@ -332,20 +332,31 @@ class UsersClient(BaseClass):
                 except RequestException, e:
                     self.log.error("Failed to add user {0} to parent group, with error:\n{1}".format(user, e))
 
-    def remove_users_from_parent_group(self):
+    def remove_users_from_parent_group(self, dry_run=True):
         count = 0
-        users = api.list_all(self.config.destination_host,
-            self.config.destination_token,
-            "groups/%d/members" % self.config.parent_id)
+        users = self.groups_api.get_all_group_members(
+            self.config.parent_id,
+            self.config.destination_host,
+            self.config.destination_token)
         for user in users:
-            if user["access_level"] <= 20:
+            level = user["access_level"]
+            if level <= 20:
                 count += 1
-                api.generate_delete_request(self.config.destination_host,
-                    self.config.destination_token,
-                    "/groups/%d/members/%d" % (self.config.parent_id, user["id"]))
+                self.log.info("{0}Removing user {1} from parent group (access level: {2})".format(
+                    "DRY-RUN: " if dry_run else "",
+                    user["username"],
+                    level))
+                if not dry_run:
+                    self.groups_api.remove_member(
+                        self.config.parent_id,
+                        user["id"],
+                        self.config.destination_host,
+                        self.config.destination_token)
             else:
-                self.log.debug("Keeping user {} in parent group".format(user))
-        print count
+                self.log.info("Keeping user {0} in parent group (access level: {1})".format(
+                    user["username"],
+                    level))
+        return count
 
     def update_user_permissions(self, access_level, dry_run=True):
         PERMISSIONS = {
@@ -616,7 +627,7 @@ class UsersClient(BaseClass):
             self.log.info(
                 "Retrieved %d users. Check users.json to see all retrieved groups" % len(users))
 
-    def migrate_user_info(self, dry_run):
+    def migrate_user_info(self, dry_run=True):
         staged_users = self.get_staged_users()
 
         if not dry_run:
@@ -735,7 +746,7 @@ class UsersClient(BaseClass):
         with open("%s/data/staged_users.json" % self.app_path, "w") as f:
             json.dump(remove_dupes(staged_users), f, indent=4)
 
-    def delete_users(self, dry_run=False, hard_delete=False):
+    def delete_users(self, dry_run=True, hard_delete=False):
         staged_users = self.get_staged_users()
         for su in staged_users:
             self.log.info("Removing user {}".format(su["email"]))

@@ -96,7 +96,7 @@ class GroupsClient(BaseClass):
             json.dump(groups, f, indent=4)
         return file_path
 
-    def migrate_group_info(self, dry_run):
+    def migrate_group_info(self, dry_run=True):
         if not path.isfile("%s/data/groups.json" % self.app_path):
             self.retrieve_group_info(self.config.source_host, self.config.source_token)
         staged_groups = self.get_staged_groups()
@@ -527,7 +527,7 @@ class GroupsClient(BaseClass):
                     self.config.destination_token)
                 return self.is_group_non_empty(resp.json())
 
-    def delete_groups(self, dry_run=False, skip_projects=False):
+    def delete_groups(self, dry_run=True, skip_projects=False):
         staged_groups = self.get_staged_groups()
         for sg in staged_groups:
             # SaaS destination instances have a parent group
@@ -587,6 +587,7 @@ class GroupsClient(BaseClass):
                         staged_groups.append(parent_group)
             staged_groups.append(g)
 
+    # TODO: Rename, misleading
     def find_all_internal_projects(self):
         groups_to_change = []
         # with open("%s/data/groups.json" % self.app_path, "r") as f:
@@ -622,6 +623,7 @@ class GroupsClient(BaseClass):
 
         return groups_to_change
 
+    # TODO: Refactor or rename, as it does not make any changes
     def make_all_internal_groups_private(self):
         groups = self.find_all_internal_projects()
         ids = []

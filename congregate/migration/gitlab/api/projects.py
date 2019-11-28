@@ -166,7 +166,7 @@ class ProjectsApi():
         """
         return api.list_all(host, token, "projects/%d/badges" % id)
 
-    def edit_project_badge(self, host, token, id, badge_id, data):
+    def edit_project_badge(self, host, token, id, badge_id, data=None):
         """
         Edit a badge of a project
 
@@ -179,6 +179,17 @@ class ProjectsApi():
             :return: Response object containing the response to PUT /projects/:id/badges/:badge_id
         """
         return api.generate_put_request(host, token, "projects/%d/badges/%d" % (id, badge_id), json.dumps(data))
+
+    def edit_project(self, host, token, pid, data=None):
+        """
+        Edit a project
+
+        GitLab API doc: https://docs.gitlab.com/ee/api/projects.html#edit-project
+
+            :param: id: (int) GitLab project ID
+            :return: Response object containing the response to PUT /projects/:id
+        """
+        return api.generate_put_request(host, token, "projects/{}".format(pid), data=data)
 
     def create_project(self, host, token, name, data=None, headers=None):
         if data is not None:

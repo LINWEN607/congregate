@@ -149,7 +149,7 @@ class GroupsApi():
         """
         return api.generate_delete_request(host, token, "groups/{}".format(id))
 
-    def remove_member(self, id, user_id, host, token):
+    def remove_member(self, gid, uid, host, token):
         """
         Removes member from group
 
@@ -161,7 +161,7 @@ class GroupsApi():
             :param: token: (str) Access token to GitLab instance
             :return: Response object containing a 202 (accepted) or 404 (Member not found) from DELETE /groups/:id/members/:user_id
         """
-        return api.generate_delete_request(host, token, "groups/%d/members/%d" % (id, user_id))
+        return api.generate_delete_request(host, token, "groups/%d/members/%d" % (gid, uid))
 
     def get_notification_level(self, host, token, id):
         """

@@ -171,7 +171,7 @@ class ProjectsClient(BaseClass):
             project["namespace"],
             project["name"])
 
-    def delete_projects(self, dry_run=False):
+    def delete_projects(self, dry_run=True):
         staged_projects = self.get_staged_projects()
         for sp in staged_projects:
             # SaaS destination instances have a parent group

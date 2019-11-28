@@ -107,7 +107,7 @@ class ImportExportClient(BaseClass):
         except RequestException:
             return None
 
-    def import_project(self, project, dry_run=False):
+    def import_project(self, project, dry_run=True):
         """
             Imports project to destination GitLab instance.
             Formats users, groups, migration info (aws, filesystem) during import process.

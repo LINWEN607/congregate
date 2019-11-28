@@ -4,6 +4,7 @@ from requests.exceptions import RequestException
 from congregate.helpers import api, logger as log
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.decorators import stable_retry
+from congregate.migration.gitlab.projects import ProjectsApi
 
 
 class MirrorClient(BaseClass):
@@ -12,11 +13,12 @@ class MirrorClient(BaseClass):
         # self.config = conf.ig()
         super(MirrorClient, self).__init__()
         self.logger = log.myLogger(__name__)
+        self.projects_api = ProjectsApi()
         # self.total_to_remove = 0
         # self.total_to_keep = 0
 
     @stable_retry
-    def remove_mirror(self, project_id):
+    def remove_mirror(self, project_id, dry_run=True):
         """
             Removes repo mirror information after migration process is complete
 
@@ -28,12 +30,18 @@ class MirrorClient(BaseClass):
             "import_url": None
         }
 
-        self.log.info("Removing mirror from project %d" % project_id)
-        api.generate_put_request(self.config.destination_host, self.config.destination_token,
-                                 "projects/%d" % project_id, json.dumps(mirror_data))
+        self.log.info("{0}Removing mirror from project {1}".format(
+            "DRY-RUN: " if dry_run else "",
+            project_id))
+        if not dry_run:
+            self.projects_api.edit_project(
+                self.config.destination_host,
+                self.config.destination_token,
+                project_id,
+                json.dumps(mirror_data))
 
     @stable_retry
-    def mirror_repo(self, repo, import_id):
+    def mirror_repo(self, repo, import_id, dry_run=True):
         """
             Sets up mirrored repo to allow a soft cut-over during the migration process.
 
@@ -52,19 +60,28 @@ class MirrorClient(BaseClass):
 
         mirror_user_name = self.config.mirror_username
         mirror_user_id = self.config.import_user_id
-        self.log.info("Attempting to mirror repo")
         import_url = "%s://%s:%s@%s" % (protocol, mirror_user_name,
                                         self.config.source_token, repo_url)
-        self.log.debug(import_url)
+        self.log.info("{0}Attempting to mirror repo {1} to {2}".format(
+            "DRY-RUN: " if dry_run else "",
+            repo_url,
+            import_url))
         mirror_data = {
             "mirror": True,
             "mirror_user_id": mirror_user_id,
             "import_url": import_url
         }
 
-        response = api.generate_put_request(
-            self.config.destination_host, self.config.destination_token, "projects/%d" % import_id, json.dumps(mirror_data))
-        self.log.info(response.text)
+        if not dry_run:
+            resp = self.projects_api.edit_project(
+                self.config.destination_host,
+                self.config.destination_token,
+                import_id,
+                json.dumps(mirror_data))
+            self.log.info("Mirorred repo {0} to {1} ({2})".format(
+                repo_url,
+                import_url,
+                resp.text))
 
     @stable_retry
     def mirror_generic_repo(self, generic_repo):

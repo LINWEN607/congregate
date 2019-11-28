@@ -20,10 +20,10 @@ Usage:
     congregate get-total-count
     congregate find-unimported-projects
     congregate stage-unimported-projects
-    congregate remove-users-from-parent-group
-    congregate migrate-variables-in-stage
-    congregate add-all-mirrors
-    congregate remove-all-mirrors
+    congregate remove-users-from-parent-group [--commit]
+    congregate migrate-variables-in-stage [--commit]
+    congregate add-all-mirrors [--commit]
+    congregate remove-all-mirrors [--commit]
     congregate find-all-internal-projects
     congregate make-all-internal-groups-private
     congregate check-projects-visibility
@@ -284,11 +284,11 @@ if __name__ == '__main__':
             if arguments["stage-unimported-projects"]:
                 migrate.stage_unimported_projects()
             if arguments["remove-users-from-parent-group"]:
-                users.remove_users_from_parent_group()
+                users.remove_users_from_parent_group(dry_run=False) if arguments["--commit"] else users.remove_users_from_parent_group()
             if arguments["migrate-variables-in-stage"]:
-                variables.migrate_variables_in_stage()
+                variables.migrate_variables_in_stage(dry_run=False) if arguments["--commit"] else variables.migrate_variables_in_stage()
             if arguments["remove-all-mirrors"]:
-                migrate.remove_all_mirrors()
+                migrate.remove_all_mirrors(dry_run=False) if arguments["--commit"] else migrate.remove_all_mirrors()
             if arguments["find-all-internal-projects"]:
                 groups.find_all_internal_projects()
             if arguments["make-all-internal-groups-private"]:
@@ -296,7 +296,7 @@ if __name__ == '__main__':
             if arguments["check-projects-visibility"]:
                 migrate.check_visibility()
             if arguments["add-all-mirrors"]:
-                migrate.enable_mirror()
+                migrate.enable_mirror(dry_run=False) if arguments["--commit"] else migrate.enable_mirror()
             if arguments["set-default-branch"]:
                 branches.set_default_branches_to_master()
             if arguments["count-unarchived-projects"]:
