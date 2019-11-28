@@ -10,13 +10,13 @@ Usage:
     congregate cleanup [--hard-delete] [--skip-users] [--skip-groups] [--skip-projects] [--commit]
     congregate ui
     congregate export-projects
-    congregate import-projects
-    congregate do_all
-    congregate update-staged-user-info
+    congregate import-projects [--commit]
+    congregate do_all [--commit]
+    congregate update-staged-user-info [--commit]
     congregate update-aws-creds
-    congregate add-users-to-parent-group
+    congregate add-users-to-parent-group [--commit]
     congregate remove-blocked-users [--commit]
-    congregate update-user-permissions [--access-level=<level>]
+    congregate update-user-permissions [--access-level=<level>] [--commit]
     congregate get-total-count
     congregate find-unimported-projects
     congregate stage-unimported-projects
@@ -241,7 +241,7 @@ if __name__ == '__main__':
                     skip_groups=skip_groups,
                     skip_projects=skip_projects)
             if arguments["do_all"]:
-                do_all.do_all()
+                do_all.do_all(dry_run=False) if arguments["--commit"] else do_all.do_all()
             if arguments["ui"]:
                 # os.environ["FLASK_APP"] = "%s/congregate/ui" % app_path
                 os.chdir(app_path + "/congregate")
@@ -249,9 +249,9 @@ if __name__ == '__main__':
                 run_ui = "gunicorn -k gevent -w 4 ui:app --bind=0.0.0.0:8000"
                 subprocess.call(run_ui.split(" "))
             if arguments["update-staged-user-info"]:
-                users.update_staged_user_info()
+                users.update_staged_user_info(dry_run=False) if arguments["--commit"] else users.update_staged_user_info()
             if arguments["add-users-to-parent-group"]:
-                users.add_users_to_parent_group()
+                users.add_users_to_parent_group(dry_run=False) if arguments["--commit"] else users.add_users_to_parent_group()
             if arguments["update-aws-creds"]:
                 command = "aws configure set aws_access_key_id {}".format(config.s3_access_key)
                 subprocess.call(command.split(" "))
@@ -260,17 +260,23 @@ if __name__ == '__main__':
                 subprocess.call(command.split(" "))
                 log.info("Configured AWS secret key")
             if arguments["remove-blocked-users"]:
-                users.remove_blocked_users() if arguments["--commit"] else users.remove_blocked_users_dry_run()
+                users.remove_blocked_users(dry_run=False) if arguments["--commit"] else users.remove_blocked_users()
             if arguments["update-user-permissions"]:
-                if arguments["--access-level"]:
-                    access_level = arguments["--access-level"]
-                    users.update_user_permissions(access_level=access_level)
+                access_level = arguments["--access-level"]
+                if access_level:
+                    if arguments["--commit"]:
+                        users.update_user_permissions(access_level, dry_run=False)
+                    else:
+                        users.update_user_permissions(access_level)
                 else:
-                    log.warn("Missing access-level argument")
+                    log.warning("Missing access-level argument")
             if arguments["export-projects"]:
                 migrate.migrate_project_info(skip_project_import=True)
             if arguments["import-projects"]:
-                migrate.migrate_project_info(skip_project_export=True)
+                if arguments["--commit"]:
+                    migrate.migrate_project_info(dry_run=False, skip_project_export=True)
+                else:
+                    migrate.migrate_project_info(skip_project_export=True)
             if arguments["get-total-count"]:
                 print migrate.get_total_migrated_count()
             if arguments["find-unimported-projects"]:
@@ -294,11 +300,11 @@ if __name__ == '__main__':
             if arguments["set-default-branch"]:
                 branches.set_default_branches_to_master()
             if arguments["count-unarchived-projects"]:
-                migrate.count_unarchived_projects()
+                projects.count_unarchived_projects()
             if arguments["archive-staged-projects"]:
-                migrate.archive_staged_projects() if arguments["--commit"] else migrate.archive_staged_projects(True)
+                projects.archive_staged_projects(dry_run=False) if arguments["--commit"] else projects.archive_staged_projects()
             if arguments["unarchive-staged-projects"]:
-                migrate.unarchive_staged_projects() if arguments["--commit"] else migrate.unarchive_staged_projects(True)
+                projects.unarchive_staged_projects(dry_run=False) if arguments["--commit"] else projects.unarchive_staged_projects()
             if arguments["find-empty-repos"]:
                 migrate.find_empty_repos()
             if arguments["compare-groups"]:
@@ -317,7 +323,10 @@ if __name__ == '__main__':
                 s = SeedDataGenerator()
                 s.generate_seed_data()
             if arguments["map-new-users-to-groups-and-projects"]:
-                users.map_new_users_to_groups_and_projects() if arguments["--commit"] else users.map_new_users_to_groups_and_projects(True)
+                if arguments["--commit"]:
+                    users.map_new_users_to_groups_and_projects(dry_run=False)
+                else:
+                    users.map_new_users_to_groups_and_projects()
             if arguments["validate-staged-groups-schema"]:
                 groups.validate_staged_groups_schema()
             if arguments["validate-staged-projects-schema"]:

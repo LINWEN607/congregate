@@ -8,7 +8,7 @@ from congregate.helpers import base_module
 app_path = base_module.app_path
 config = base_module.config
 
-def do_all():
+def do_all(dry_run=True):
     users = UsersClient()
     groups = GroupsClient()
 
@@ -23,10 +23,10 @@ def do_all():
 
     # Update and map users
     users.update_staged_user_info()
-    users.map_new_users_to_groups_and_projects()
+    users.map_new_users_to_groups_and_projects(dry_run)
 
     # Migrate
-    migrate.migrate()
+    migrate.migrate(dry_run)
 
 
 if __name__ == "__main__":

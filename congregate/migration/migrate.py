@@ -56,7 +56,7 @@ full_parent_namespace = groups.find_parent_group_path()
 
 def migrate(
         threads=None,
-        dry_run=False,
+        dry_run=True,
         skip_users=False,
         skip_project_import=False,
         skip_project_export=False):
@@ -95,7 +95,7 @@ def init_pool(l):
     lock = l
 
 
-def migrate_user_info(dry_run=False):
+def migrate_user_info(dry_run=True):
     b.log.info("{}Migrating user info".format("DRY-RUN: " if dry_run else ""))
     new_users = users.migrate_user_info(dry_run)
 
@@ -112,7 +112,7 @@ def migrate_user_info(dry_run=False):
         users.update_user_info(new_users, overwrite=False)
 
 
-def migrate_group_info(dry_run=False):
+def migrate_group_info(dry_run=True):
     staged_groups = groups.get_staged_groups()
     if staged_groups:
         b.log.info("{}Migrating group info".format("DRY-RUN: " if dry_run else ""))
@@ -121,7 +121,7 @@ def migrate_group_info(dry_run=False):
         b.log.info("No groups to migrate")
 
 
-def migrate_project_info(dry_run=False, skip_project_export=False, skip_project_import=False):
+def migrate_project_info(dry_run=True, skip_project_export=False, skip_project_import=False):
     staged_projects = projects.get_staged_projects()
     if staged_projects:
         if not skip_project_export:
@@ -131,7 +131,7 @@ def migrate_project_info(dry_run=False, skip_project_export=False, skip_project_
                 lambda project: handle_exporting_projects(
                     project,
                     skip_project_export),
-                        staged_projects)
+                staged_projects)
             export_pool.close()
             export_pool.join()
 
@@ -222,7 +222,7 @@ def handle_exporting_projects(project, skip_project_export=False):
         b.log.error("Handle exporting projects failed with error:\n{}".format(e))
 
 
-def migrate_given_export(project_json, dry_run=False):
+def migrate_given_export(project_json, dry_run=True):
     name = project_json["name"]
     namespace = project_json["namespace"]
     source_id = project_json["id"]
@@ -356,7 +356,7 @@ def migrate_single_project_info(project, new_id):
     return results
 
 
-def cleanup(dry_run=False,
+def cleanup(dry_run=True,
             skip_users=False,
             hard_delete=False,
             skip_groups=False,
@@ -545,41 +545,6 @@ def generate_instance_map():
             import_url = sub('//.+:.+@', '//', project["import_url"])
             with open("new_repomap.txt", "ab") as f:
                 f.write("%s\t%s\n" % (import_url, project["id"]))
-
-
-def count_unarchived_projects():
-    unarchived_projects = []
-    for project in api.list_all(b.config.source_host, b.config.source_token, "projects"):
-        if project.get("archived", None) is not None:
-            if not project["archived"]:
-                unarchived_projects.append(project["name_with_namespace"])
-    b.log.info("Unarchived projects ({0}):\n{1}".format(unarchived_projects, len(unarchived_projects)))
-
-
-def archive_staged_projects(dry_run=False):
-    staged_projects = projects.get_staged_projects()
-    b.log.info("Project count is: %s", len(staged_projects))
-    try:
-        for project in staged_projects:
-            id = project["id"]
-            b.log.info("Archiving project %s (ID: %s)" % (project["name"], id))
-            if not dry_run:
-                projects.projects_api.archive_project(b.config.source_host, b.config.source_token, id)
-    except RequestException, e:
-        b.log.error("Failed to archive staged projects, with error:\n%s" % e)
-
-
-def unarchive_staged_projects(dry_run=False):
-    staged_projects = projects.get_staged_projects()
-    b.log.info("Project count is: %s", len(staged_projects))
-    try:
-        for project in staged_projects:
-            id = project["id"]
-            b.log.info("Unarchiving project %s (ID: %s)" % (project["name"], id))
-            if not dry_run:
-                projects.projects_api.unarchive_project(b.config.source_host, b.config.source_token, id)
-    except RequestException, e:
-        b.log.error("Failed to unarchive staged projects, with error:\n%s" % e)
 
 
 def find_empty_repos():

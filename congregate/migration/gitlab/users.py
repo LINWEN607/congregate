@@ -281,7 +281,7 @@ class UsersClient(BaseClass):
             .format(json.dumps(not_found_all, indent=4, sort_keys=True)))
         return obj
 
-    def map_new_users_to_groups_and_projects(self, dry_run=False):
+    def map_new_users_to_groups_and_projects(self, dry_run=True):
         """
         Kind of a dupe of update_new_users. Has the benefit of the dry_run flag
         :param dry_run: If true, don't actually write the updates to stage or staged_groups
@@ -312,7 +312,7 @@ class UsersClient(BaseClass):
                 json.dump(staged_groups, f, indent=4)
             self.log.info("Mapped missing (destination) users to staged projects and groups")
 
-    def add_users_to_parent_group(self):
+    def add_users_to_parent_group(self, dry_run=True):
         with open("%s/data/newer_users.json" % self.app_path, "r") as f:
             new_users = json.load(f)
 
@@ -321,12 +321,16 @@ class UsersClient(BaseClass):
                 "user_id": user["id"],
                 "access_level": 10
             }
-            try:
-                self.log.debug("Adding user {} to parent group".format(user["username"]))
-                self.groups_api.add_member_to_group(
-                    self.config.parent_id, self.config.destination_host, self.config.destination_token, data)
-            except RequestException, e:
-                self.log.error("Failed to add user {0} to parent group, with error:\n{1}".format(user, e))
+            self.log.info("{0}Adding user {1} to parent group (data: {2})".format(
+                "DRY-RUN: " if dry_run else "",
+                user["email"],
+                data))
+            if not dry_run:
+                try:
+                    self.groups_api.add_member_to_group(
+                        self.config.parent_id, self.config.destination_host, self.config.destination_token, data)
+                except RequestException, e:
+                    self.log.error("Failed to add user {0} to parent group, with error:\n{1}".format(user, e))
 
     def remove_users_from_parent_group(self):
         count = 0
@@ -343,44 +347,54 @@ class UsersClient(BaseClass):
                 self.log.debug("Keeping user {} in parent group".format(user))
         print count
 
-    def update_user_permissions(self, access_level):
+    def update_user_permissions(self, access_level, dry_run=True):
         PERMISSIONS = {
             "guest": 10,
             "reporter": 20,
             "developer": 30,
             "maintainer": 40,
-            "owner": 50
-        }
-        access_level = PERMISSIONS[access_level.lower()]
+            "owner": 50}
+        level = PERMISSIONS[access_level.lower()]
         try:
-            all_users = list(api.list_all(
+            users = list(self.groups_api.get_all_group_members(
+                self.config.parent_id,
                 self.config.destination_host,
-                self.config.destination_token,
-                "groups/%d/members" % self.config.parent_id))
-            for user in all_users:
-                response = api.generate_put_request(
-                    self.config.destination_host,
-                    self.config.destination_token,
-                    "groups/{0}/members/{1}?access_level={2}"
-                        .format(self.config.parent_id, user["id"], access_level), data=None)
-                if response.status_code != 200:
-                    self.log.warning(
-                        "Failed to update {0}'s access level ({1})".format(user["username"], response.content))
-                else:
-                    self.log.info("Updated {0}'s parent access level to {1}"
-                                  .format(user["username"], access_level))
+                self.config.destination_token))
+            for user in users:
+                self.log.info("{0}Updating {1}'s access level to {2} ({3})".format(
+                    "DRY-RUN: " if dry_run else "",
+                    user["username"],
+                    access_level,
+                    level))
+                if not dry_run:
+                    response = self.groups_api.update_member_access_level(
+                        self.config.destination_host,
+                        self.config.destination_token,
+                        self.config.parent_id,
+                        user["id"],
+                        level)
+                    if response.status_code != 200:
+                        self.log.warning("Failed to update {0}'s parent access level ({1})".format(
+                            user["username"],
+                            response.content))
+                    else:
+                        self.log.info("Updated {0}'s parent access level to {1} ({2})".format(
+                            user["username"],
+                            access_level,
+                            level))
         except RequestException, e:
             self.log.error("Failed to update user's parent access level, with error:\n{}".format(e))
 
-    def remove_blocked_users(self):
+    def remove_blocked_users(self, dry_run=True):
+        self.log.info("{}Removing blocked users form staged users/groups/projects".format("DRY-RUN: " if dry_run else ""))
         # From staged users
-        self.remove("staged_users")
+        self.remove("staged_users", dry_run)
         # From staged groups
-        self.remove("staged_groups")
+        self.remove("staged_groups", dry_run)
         # From staged projects
-        self.remove("stage")
+        self.remove("stage", dry_run)
 
-    def remove(self, data):
+    def remove(self, data, dry_run=True):
         with open("{0}/data/{1}.json".format(self.app_path, data), "r") as f:
             staged = json.load(f)
 
@@ -400,12 +414,13 @@ class UsersClient(BaseClass):
                         self.log.info("Removing blocked user {0} from {1} ({2})".format(member["username"], data, s["name"]))
                 s["members"] = [i for j, i in enumerate(s["members"]) if j not in to_pop]
 
-        with open("{0}/data/{1}.json".format(self.app_path, data), "w") as f:
-            f.write(json.dumps(staged, indent=4, sort_keys=True))
+        if not dry_run:
+            with open("{0}/data/{1}.json".format(self.app_path, data), "w") as f:
+                f.write(json.dumps(staged, indent=4, sort_keys=True))
 
         return staged
 
-    # TODO: Fix, does not show users to be removed
+    # TODO: Re-use or remove (does not show users to be removed)
     def remove_blocked_users_dry_run(self):
         # create a 'newer_users.json' file with only non-blocked users
         count = 0
@@ -498,7 +513,7 @@ class UsersClient(BaseClass):
         with open("%s/data/staged_groups.json" % self.app_path, "wb") as f:
             json.dump(staged_groups, f, indent=4)
 
-    def update_staged_user_info(self):
+    def update_staged_user_info(self, dry_run=True):
         """
         Read the information in staged_users.json and dump to new_users.json and users_not_found.json. Does the
         search based on the email address and *not* username
@@ -548,17 +563,22 @@ class UsersClient(BaseClass):
                 other_id, self.config.destination_host, self.config.destination_token).json()
             new_users.append(new_user)
 
-        # Dump everything found in new_users (email from staged or ids.txt)
-        with open("%s/data/new_users.json" % self.app_path, "w") as f:
-            json.dump(new_users, f, indent=4)
-        # Users not found will only include those not found by the email search
-        with open("%s/data/users_not_found.json" % self.app_path, "w") as f:
-            json.dump(users_not_found, f, indent=4)
+        if not dry_run:
+            # Dump everything found in new_users (email from staged or ids.txt)
+            with open("%s/data/new_users.json" % self.app_path, "w") as f:
+                json.dump(new_users, f, indent=4)
+            # Users not found will only include those not found by the email search
+            with open("%s/data/users_not_found.json" % self.app_path, "w") as f:
+                json.dump(users_not_found, f, indent=4)
 
-        self.log.info("Users found ({0}):\n{1}"
-            .format(len(new_users), "\n".join(u["email"] for u in new_users)))
-        self.log.info("Users NOT found ({0}):\n{1}"
-            .format(len(users_not_found), "\n".join(u for u in users_not_found)))
+        self.log.info("{0}Users found ({1}):\n{2}".format(
+            "DRY-RUN: " if dry_run else "",
+            len(new_users),
+            "\n".join(u["email"] for u in new_users)))
+        self.log.info("{0}Users NOT found ({1}):\n{2}".format(
+            "DRY-RUN: " if dry_run else "",
+            len(users_not_found),
+            "\n".join(u for u in users_not_found)))
 
     def retrieve_user_info(self, quiet=False):
         users = list(api.list_all(self.config.source_host,

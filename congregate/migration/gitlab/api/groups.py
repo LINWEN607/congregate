@@ -94,6 +94,9 @@ class GroupsApi():
         """
         return api.list_all(host, token, "groups/%d/members" % id)
 
+    def update_member_access_level(self, host, token, gid, uid, level):
+        return api.generate_put_request(host, token, "groups/{0}/members/{1}?access_level={2}".format(gid, uid, level), data=None)
+
     def get_all_group_badges(self, host, token, id):
         """
         List all badges of a group

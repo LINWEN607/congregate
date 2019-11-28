@@ -165,14 +165,17 @@ class ProjectsClient(BaseClass):
                     return True, project["id"]
         return False, None
 
+    def get_path_with_namespace(self, project):
+        return "{0}{1}/{2}".format(
+            self.config.parent_group_path + "/" if self.config.parent_group_path else "",
+            project["namespace"],
+            project["name"])
+
     def delete_projects(self, dry_run=False):
         staged_projects = self.get_staged_projects()
         for sp in staged_projects:
             # SaaS destination instances have a parent group
-            path_with_namespace = "{0}{1}/{2}".format(
-                self.config.parent_group_path + "/" if self.config.parent_group_path else "",
-                sp["namespace"],
-                sp["name"])
+            path_with_namespace = self.get_path_with_namespace(sp)
             self.log.info("Removing project {}".format(path_with_namespace))
             resp = self.projects_api.get_project_by_path_with_namespace(
                 path_with_namespace,
@@ -228,6 +231,48 @@ class ProjectsClient(BaseClass):
         except RequestException, e:
             self.log.error("Failed to update project {0} (ID) badge {1}, with error:\n{2}".format(new_id, badge, e))
             return False
+
+    def count_unarchived_projects(self):
+        unarchived_projects = []
+        for project in self.projects_api.get_all_projects(self.config.source_host, self.config.source_token):
+            if project.get("archived", None) is not None:
+                if not project["archived"]:
+                    unarchived_projects.append(project["name_with_namespace"])
+        self.log.info("Unarchived projects ({0}):\n{1}".format(unarchived_projects, len(unarchived_projects)))
+
+    def archive_staged_projects(self, dry_run=True):
+        staged_projects = self.get_staged_projects()
+        self.log.info("Project count is: {}".format(len(staged_projects)))
+        try:
+            for project in staged_projects:
+                pid = project["id"]
+                self.log.info("Archiving project {0} (ID: {1})".format(
+                    self.get_path_with_namespace(project),
+                    pid))
+                if not dry_run:
+                    self.projects_api.archive_project(
+                        self.config.source_host,
+                        self.config.source_token,
+                        pid)
+        except RequestException, e:
+            self.log.error("Failed to archive staged projects, with error:\n{}".format(e))
+
+    def unarchive_staged_projects(self, dry_run=True):
+        staged_projects = self.get_staged_projects()
+        self.log.info("Project count is: {}".format(len(staged_projects)))
+        try:
+            for project in staged_projects:
+                pid = project["id"]
+                self.log.info("Unarchiving project {0} (ID: {1})".format(
+                    self.get_path_with_namespace,
+                    pid))
+                if not dry_run:
+                    self.projects_api.unarchive_project(
+                        self.config.source_host,
+                        self.config.source_token,
+                        pid)
+        except RequestException, e:
+            self.log.error("Failed to unarchive staged projects, with error:\n{}".format(e))
 
     def validate_staged_projects_schema(self):
         with open("%s/data/staged_groups.json" % self.app_path, "r") as f:
