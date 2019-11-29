@@ -5,7 +5,7 @@ Copyright (c) 2018 - GitLab
 Usage:
     congregate list
     congregate config
-    congregate stage <projects>...
+    congregate stage <projects>... [--commit]
     congregate migrate [--threads=<n>] [--skip-users] [--skip-project-import] [--skip-project-export] [--commit]
     congregate cleanup [--hard-delete] [--skip-users] [--skip-groups] [--skip-projects] [--commit]
     congregate ui
@@ -18,28 +18,28 @@ Usage:
     congregate remove-blocked-users [--commit]
     congregate update-user-permissions [--access-level=<level>] [--commit]
     congregate get-total-count
-    congregate find-unimported-projects
-    congregate stage-unimported-projects
+    congregate find-unimported-projects # TODO: Refactor, project name matching does not seem correct. Possibly add dry-run
+    congregate stage-unimported-projects [--commit] # TODO: Refactor, broken
     congregate remove-users-from-parent-group [--commit]
     congregate migrate-variables-in-stage [--commit]
-    congregate add-all-mirrors [--commit]
+    congregate mirror-staged-projects [--commit]
     congregate remove-all-mirrors [--commit]
-    congregate find-all-internal-projects
-    congregate make-all-internal-groups-private
-    congregate check-projects-visibility
-    congregate set-default-branch
-    congregate enable_mirroring
+    congregate find-all-internal-projects # TODO: Refactor or rename, as it is dealing with groups
+    congregate make-all-internal-groups-private # TODO: Refactor or rename, as it does not make any changes
+    congregate check-projects-visibility # TODO: Refactor or rename, as it's not a check but does an update. Add dry-run
+    congregate set-default-branch [--commit]
+    congregate enable-mirroring [--commit]
     congregate count-unarchived-projects
     congregate archive-staged-projects [--commit]
     congregate unarchive-staged-projects [--commit]
     congregate find-empty-repos
     congregate compare-groups [--staged]
     congregate staged-user-list
-    congregate generate-seed-data
+    congregate generate-seed-data [--commit] # TODO: Refactor, broken
     congregate map-new-users-to-groups-and-projects [--commit]
     congregate validate-staged-groups-schema
     congregate validate-staged-projects-schema
-    congregate map-users
+    congregate map-users [--commit]
     congregate -h | --help
 
 Options:
@@ -82,11 +82,14 @@ Commands:
     stage-unimported-projects               Stage unimported projects based on {CONGREGATE_PATH}/data/unimported_projects.txt.
     remove-users-from-parent-group          Remove all users with at most reporter access from the parent group.
     migrate-variables-in-stage              Migrate CI variables for staged projects.
-    add-all-mirrors                         Set up project mirroring for staged projects.
+    mirror-staged-projects                  Set up project mirroring for staged projects.
     remove-all-mirrors                      Remove all project mirrors for staged projects.
     find-all-internal-projects              Find all internal projects.
     make-all-internal-groups-private        Make all internal migrated groups private.
     check-projects-visibility               Return list of all migrated projects' visibility.
+    set-default-branch                      Set default branch to master for all projects on destination.
+    enable-mirroring                        Start pull mirror process for all projects on destination.
+    count-unarchived-projects               Return total number and list of all anarchived projects on source.
     find-empty-repos                        Inspect project repo sizes between source and destination instance in search for empty repos.
                                                 This could be misleading as it sometimes shows 0 (zero) commits/tags/bytes for fully migrated projects.
     compare-groups                          Compare source and destination group results.
@@ -177,9 +180,9 @@ if __name__ == '__main__':
                 # os.environ["PYTHONPATH"] = app_path
                 run_ui = "gunicorn -k gevent -w 4 ui:app --bind=0.0.0.0:8000"
                 subprocess.call(run_ui.split(" "))
-            elif arguments["enable_mirroring"]:
+            elif arguments["enable-mirroring"]:
                 mirror = MirrorClient()
-                mirror.enable_mirroring()
+                mirror.enable_mirroring(dry_run=False) if arguments["--commit"] else mirror.enable_mirroring()
             # elif arguments["gather_metrics"]:
             #     other.gather_metrics()
             else:
@@ -195,7 +198,10 @@ if __name__ == '__main__':
             if arguments["list"]:
                 list_projects.list_projects()
             if arguments["stage"]:
-                stage_projects.stage_projects(arguments['<projects>'])
+                if arguments["--commit"]:
+                    stage_projects.stage_projects(arguments['<projects>'], dry_run=False)
+                else:
+                    stage_projects.stage_projects(arguments['<projects>'])
             if arguments["migrate"]:
                 threads = None
                 dry_run=True
@@ -280,9 +286,9 @@ if __name__ == '__main__':
             if arguments["get-total-count"]:
                 print migrate.get_total_migrated_count()
             if arguments["find-unimported-projects"]:
-                migrate.find_unimported_projects()
+                projects.find_unimported_projects()
             if arguments["stage-unimported-projects"]:
-                migrate.stage_unimported_projects()
+                migrate.stage_unimported_projects(dry_run=False) if arguments["--commit"] else migrate.stage_unimported_projects()
             if arguments["remove-users-from-parent-group"]:
                 users.remove_users_from_parent_group(dry_run=False) if arguments["--commit"] else users.remove_users_from_parent_group()
             if arguments["migrate-variables-in-stage"]:
@@ -295,10 +301,13 @@ if __name__ == '__main__':
                 groups.make_all_internal_groups_private()
             if arguments["check-projects-visibility"]:
                 migrate.check_visibility()
-            if arguments["add-all-mirrors"]:
-                migrate.enable_mirror(dry_run=False) if arguments["--commit"] else migrate.enable_mirror()
+            if arguments["mirror-staged-projects"]:
+                migrate.mirror_staged_projects(dry_run=False) if arguments["--commit"] else migrate.mirror_staged_projects()
             if arguments["set-default-branch"]:
-                branches.set_default_branches_to_master()
+                if arguments["--commit"]:
+                    branches.set_default_branches_to_master(dry_run=False)
+                else:
+                    branches.set_default_branches_to_master()
             if arguments["count-unarchived-projects"]:
                 projects.count_unarchived_projects()
             if arguments["archive-staged-projects"]:
@@ -306,7 +315,7 @@ if __name__ == '__main__':
             if arguments["unarchive-staged-projects"]:
                 projects.unarchive_staged_projects(dry_run=False) if arguments["--commit"] else projects.unarchive_staged_projects()
             if arguments["find-empty-repos"]:
-                migrate.find_empty_repos()
+                projects.find_empty_repos()
             if arguments["compare-groups"]:
                 if arguments["--staged"]:
                     results, unknown_users = compare.create_group_migration_results(staged=True)
@@ -318,10 +327,10 @@ if __name__ == '__main__':
                     dump(unknown_users, f, indent=4)
             if arguments["staged-user-list"]:
                 results = compare.compare_staged_users()
-                print dumps(results, indent=4)
+                log.info("Staged user list:\n{}".format(dumps(results, indent=4, sort_keys=True)))
             if arguments["generate-seed-data"]:
                 s = SeedDataGenerator()
-                s.generate_seed_data()
+                s.generate_seed_data(dry_run=False) if arguments["--commit"] else s.generate_seed_data()
             if arguments["map-new-users-to-groups-and-projects"]:
                 if arguments["--commit"]:
                     users.map_new_users_to_groups_and_projects(dry_run=False)
@@ -332,4 +341,4 @@ if __name__ == '__main__':
             if arguments["validate-staged-projects-schema"]:
                 projects.validate_staged_projects_schema()
             if arguments["map-users"]:
-                map_users()
+                map_users(dry_run=False) if arguments["--commit"] else map_users()

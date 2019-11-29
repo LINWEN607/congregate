@@ -1,4 +1,5 @@
 import json
+from requests.exceptions import RequestException
 
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers import api
@@ -14,14 +15,14 @@ class BranchesClient(BaseClass):
         self.projects = ProjectsApi()
         super(BranchesClient, self).__init__()
 
-    def get_branches(self, id, host, token):
-        return api.list_all(host, token, "projects/%d/repository/branches" % id)
+    def get_branches(self, pid, host, token):
+        return api.list_all(host, token, "projects/%d/repository/branches" % pid)
 
-    def get_protected_branches(self, id, host, token):
-        return api.list_all(host, token, "projects/%d/protected_branches" % id)
+    def get_protected_branches(self, pid, host, token):
+        return api.list_all(host, token, "projects/%d/protected_branches" % pid)
 
-    def set_default_branch(self, id, host, token, branch):
-        return api.generate_put_request(host, token, "projects/%d?default_branch=%s" % (id, branch), data=None)
+    def set_default_branch(self, pid, host, token, branch):
+        return api.generate_put_request(host, token, "projects/%d?default_branch=%s" % (pid, branch), data=None)
 
     def update_default_branch(self, old_id, new_id, old_project=None):
         try:
@@ -117,11 +118,18 @@ class BranchesClient(BaseClass):
             self.log.error("Failed to migrate protected branches for {0}, with error:\n{1}".format(name, e))
             return False
 
-    def set_default_branches_to_master(self):
-        for project in api.list_all(self.config.destination_host, self.config.destination_token, "projects"):
-            if project.get("default_branch", None) != "master":
-                id = project["id"]
-                name = project["name"]
-                self.log.debug("Setting default branch to master for project {}".format(name))
-                resp = self.set_default_branch(id, self.config.destination_host, self.config.destination_token, project["default_branch"])
-                self.log.debug("Project {0} default branch response: {1}".format(name, resp))
+    def set_default_branches_to_master(self, dry_run=True):
+        for project in self.projects.get_all_projects(self.config.destination_host, self.config.destination_token):
+            if project.get("default_branch", None) == "master":
+                path = project["path_with_namespace"]
+                self.log.info("{0}Setting project {1} default branch to master".format("DRY-RUN: " if dry_run else "", path))
+                if not dry_run:
+                    try:
+                        resp = self.set_default_branch(
+                            project["id"],
+                            self.config.destination_host,
+                            self.config.destination_token,
+                            "master")
+                        self.log.info("Project {0} default branch set to master ({1})".format(path, resp))
+                    except RequestException, e:
+                        self.log.error("Failed to set project {0} default branch to master, with error:\n{1}".format(path, e))

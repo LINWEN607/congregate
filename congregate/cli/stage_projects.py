@@ -15,13 +15,14 @@ from congregate.migration.gitlab.api.projects import ProjectsApi
 projects_api = ProjectsApi()
 existing_parent_ids = []
 
-def stage_projects(projects_to_stage):
+def stage_projects(projects_to_stage, dry_run=True):
     staged_projects, staged_users, staged_groups = build_staging_data(
-        projects_to_stage)
-    write_staging_files(staged_projects, staged_users, staged_groups)
+        projects_to_stage, dry_run)
+    if not dry_run:
+        write_staging_files(staged_projects, staged_users, staged_groups)
 
 
-def build_staging_data(projects_to_stage):
+def build_staging_data(projects_to_stage, dry_run=True):
     staging = []
     staged_users = []
     staged_groups = []
@@ -100,8 +101,11 @@ def build_staging_data(projects_to_stage):
                                     rewritten_users[member["username"]])
 
                 obj["members"] = members
-                b.log.info(
-                    "Staging project (%s) [%d/%d]" % (obj["name"], len(staging)+1, len(range(start, end))))
+                b.log.info("{0}Staging project ({1}) [{2}/{3}]".format(
+                    "DRY-RUN: " if dry_run else "",
+                    obj["name"],
+                    len(staging)+1,
+                    len(range(start, end))))
                 staging.append(obj)
         else:
             for i in range(0, len(projects_to_stage)):
@@ -142,8 +146,11 @@ def build_staging_data(projects_to_stage):
                                     rewritten_users[member["username"]])
 
                 obj["members"] = members
-                b.log.info(
-                    "Staging project (%s) [%d/%d]" % (obj["name"], len(staging), len(projects_to_stage)))
+                b.log.info("{0}Staging project ({1}) [{2}/{3}]".format(
+                    "DRY-RUN: " if dry_run else "",
+                    obj["name"],
+                    len(staging),
+                    len(projects_to_stage)))
                 staging.append(obj)
     else:
         staging = []

@@ -379,35 +379,6 @@ def cleanup(dry_run=True,
         b.log.info("{}Removing projects on destination".format(dry_log))
         projects.delete_projects(dry_run)
 
-def find_unimported_projects():
-    unimported_projects = []
-    with open("%s/data/project_json.json" % b.app_path, "r") as f:
-        files = json.load(f)
-    if files is not None and files:
-        for project_json in files:
-            try:
-                b.log.debug("Searching for existing %s" % project_json["name"])
-                project_exists = False
-                for proj in projects.projects_api.search_for_project(b.config.destination_host,
-                                                                     b.config.destination_token,
-                                                                     project_json['name']):
-                    if proj["name"] == project_json["name"]:
-                        if project_json["namespace"]["full_path"].lower() == proj["path_with_namespace"].lower():
-                            project_exists = True
-                            break
-                if not project_exists:
-                    b.log.info("Recording %s" % project_json["name"])
-                    unimported_projects.append(
-                        "%s/%s" % (project_json["namespace"], project_json["name"]))
-            except IOError, e:
-                b.log.error(e)
-
-    if unimported_projects is not None and unimported_projects:
-        with open("%s/data/unimported_projects.txt" % b.app_path, "w") as f:
-            for project in unimported_projects:
-                f.writelines(project + "\n")
-        b.log.info("Found {} unimported projects".format(len(unimported_projects)))
-
 
 def remove_all_mirrors(dry_run=True):
     # if os.path.isfile("%s/data/new_ids.txt" % b.app_path):
@@ -445,7 +416,7 @@ def get_new_ids():
         return ids
 
 
-def enable_mirror(dry_run=True):
+def mirror_staged_projects(dry_run=True):
     ids = get_new_ids()
     staged_projects = projects.get_staged_projects()
     if staged_projects:
@@ -455,7 +426,6 @@ def enable_mirror(dry_run=True):
             mirror.mirror_repo(project, pid, dry_run)
 
 
-# TODO: Refactor or rename, misleading
 def check_visibility():
     count = 0
     if os.path.isfile("%s/data/new_ids.txt" % b.app_path):
@@ -519,7 +489,7 @@ def dedupe_imports():
     print len(dedupe)
 
 
-def stage_unimported_projects():
+def stage_unimported_projects(dry_run=True):
     ids = []
     with open("%s/data/unimported_projects.txt" % b.app_path, "r") as f:
         projects = f.read()
@@ -537,7 +507,7 @@ def stage_unimported_projects():
             if rewritten_projects.get(p.split("/")[1], None) is not None:
                 ids.append(rewritten_projects.get(p.split("/")[1])["id"])
     if ids is not None and ids:
-        stage_projects(ids)
+        stage_projects(ids, dry_run)
 
 
 def generate_instance_map():
@@ -546,20 +516,3 @@ def generate_instance_map():
             import_url = sub('//.+:.+@', '//', project["import_url"])
             with open("new_repomap.txt", "ab") as f:
                 f.write("%s\t%s\n" % (import_url, project["id"]))
-
-
-def find_empty_repos():
-    empty_repos = []
-    dest_projects = api.list_all(b.config.destination_host, b.config.destination_token, "projects?statistics=true")
-    src_projects = api.list_all(b.config.source_host, b.config.source_token, "projects?statistics=true")
-    for project in dest_projects:
-        if project.get("statistics", None) is not None and project["statistics"]["repository_size"] == 0:
-            b.log.info("Found empty repo in destination instance")
-            for proj in src_projects:
-                if proj["name"] == project["name"] and project["namespace"]["path"] in proj["namespace"]["path"]:
-                    b.log.info("Found source project")
-                    if proj.get("statistics", None) is not None and proj["statistics"]["repository_size"] == 0:
-                        b.log.info("Project is empty in source instance. Ignoring")
-                    else:
-                        empty_repos.append(project["name_with_namespace"])
-    b.log.info("Empty repositories ({0}):\n{1}".format(len(empty_repos), empty_repos))

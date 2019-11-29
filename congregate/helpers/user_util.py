@@ -1,7 +1,10 @@
+import json
+from csv import reader
+
 from congregate.helpers import base_module as bm
 from congregate.helpers.misc_utils import strip_numbers
-from csv import reader
-import json
+
+
 '''
 
 Usage:
@@ -14,7 +17,7 @@ Usage:
 '''
 
 
-def map_users():
+def map_users(dry_run=True):
     total_matches = 0
     users_dict = {}
     user_json = {}
@@ -38,9 +41,13 @@ def map_users():
                     total_matches += 1
     for _, u in users_dict.iteritems():
         rewritten_users.append(u)
-    with open("%s/data/staged_users.json" % bm.app_path, "w") as f:
-        json.dump(rewritten_users, f, indent=4)
-    print "Found %d users to remap" % total_matches
+    bm.log.info("{0}Found {1} users to remap:\n{2}".format(
+        "DRY-RUN: " if dry_run else "",
+        total_matches,
+        "\n".join(ru for ru in rewritten_users)))
+    if not dry_run:
+        with open("%s/data/staged_users.json" % bm.app_path, "w") as f:
+            json.dump(rewritten_users, f, indent=4)
 
 
 def rm_non_ldap_users():

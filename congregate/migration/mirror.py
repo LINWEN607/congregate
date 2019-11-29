@@ -166,25 +166,27 @@ class MirrorClient(BaseClass):
             return None
 
     @stable_retry
-    def enable_mirroring(self):
-        for project in api.list_all(self.config.destination_host, self.config.destination_token, "projects"):
+    def enable_mirroring(self, dry_run=True):
+        for project in self.projects_api.get_all_projects(self.config.destination_host, self.config.destination_token):
             if isinstance(project, dict):
                 encoded_name = project["name"].encode('ascii', 'replace')
-                if project.get("import_status", None) == "failed":
-                    print "Enabling mirroring for %s" % encoded_name
-                    try:
-                        resp = api.generate_post_request(
-                            self.config.destination_host, self.config.destination_token,
-                            "projects/%d/mirror/pull" % project["id"], None)
-                        print "Status: %d" % resp.status_code
-                    except Exception, e:
-                        print e
-                        print "Skipping %s" % encoded_name
+                import_status = project.get("import_status", None)
+                if import_status == "failed":
+                    self.log.info("{0}Enabling mirroring for project {1}".format("DRY-RUN: " if dry_run else "", encoded_name))
+                    if not dry_run:
+                        try:
+                            resp = self.projects_api.start_pull_mirror(
+                                self.config.destination_host,
+                                self.config.destination_token,
+                                project["id"])
+                            self.log.info("Mirrored project {0} ({1})".format(encoded_name, resp))
+                        except RequestException, e:
+                            self.log.error("Failed to mirror project {0} ({1}), with error:\n{2}".format(encoded_name, resp, e))
                 else:
                     if project.get("name", None) is not None:
-                        print "Skipping %s" % encoded_name
+                        self.log.warning("Skipping project {0} (import status: {1})".format(encoded_name, import_status))
             else:
-                print "Skipping %s" % project
+                self.log.warning("Skipping project (not a dict) {}".format(project))
 
     @stable_retry
     def enable_mirror_by_id(self, id):

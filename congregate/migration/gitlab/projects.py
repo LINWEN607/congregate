@@ -238,22 +238,21 @@ class ProjectsClient(BaseClass):
             if project.get("archived", None) is not None:
                 if not project["archived"]:
                     unarchived_projects.append(project["name_with_namespace"])
-        self.log.info("Unarchived projects ({0}):\n{1}".format(unarchived_projects, len(unarchived_projects)))
+        self.log.info("Unarchived projects ({0}):\n{1}".format(len(unarchived_projects), "\n".join(up for up in unarchived_projects)))
 
     def archive_staged_projects(self, dry_run=True):
         staged_projects = self.get_staged_projects()
         self.log.info("Project count is: {}".format(len(staged_projects)))
         try:
             for project in staged_projects:
-                pid = project["id"]
-                self.log.info("Archiving project {0} (ID: {1})".format(
-                    self.get_path_with_namespace(project),
-                    pid))
+                self.log.info("{0}Archiving source project {1}".format(
+                    "DRY-RUN: " if dry_run else "",
+                    self.get_path_with_namespace(project)))
                 if not dry_run:
                     self.projects_api.archive_project(
                         self.config.source_host,
                         self.config.source_token,
-                        pid)
+                        project["id"])
         except RequestException, e:
             self.log.error("Failed to archive staged projects, with error:\n{}".format(e))
 
@@ -262,17 +261,68 @@ class ProjectsClient(BaseClass):
         self.log.info("Project count is: {}".format(len(staged_projects)))
         try:
             for project in staged_projects:
-                pid = project["id"]
-                self.log.info("Unarchiving project {0} (ID: {1})".format(
-                    self.get_path_with_namespace,
-                    pid))
+                self.log.info("{0}Unarchiving source project {1}".format(
+                    "DRY-RUN: " if dry_run else "",
+                    self.get_path_with_namespace(project)))
                 if not dry_run:
                     self.projects_api.unarchive_project(
                         self.config.source_host,
                         self.config.source_token,
-                        pid)
+                        project["id"])
         except RequestException, e:
             self.log.error("Failed to unarchive staged projects, with error:\n{}".format(e))
+
+    def find_unimported_projects(self):
+        unimported_projects = []
+        with open("%s/data/project_json.json" % self.app_path, "r") as f:
+            files = json.load(f)
+        if files is not None and files:
+            for project_json in files:
+                try:
+                    path = project_json["path_with_namespace"]
+                    self.log.info("Searching for project {} on destination".format(path))
+                    project_exists = False
+                    for proj in self.projects_api.search_for_project(
+                            self.config.destination_host,
+                            self.config.destination_token,
+                            project_json['name']):
+                        if proj["name"] == project_json["name"]:
+                            if project_json["namespace"]["full_path"].lower() == proj["path_with_namespace"].lower():
+                                project_exists = True
+                                break
+                    if not project_exists:
+                        self.log.info("Adding project {}".format(path))
+                        unimported_projects.append("%s/%s" % (project_json["namespace"], project_json["name"]))
+                except IOError, e:
+                    self.log.error(e)
+
+        if unimported_projects is not None and unimported_projects:
+            self.log.info("Found {} unimported projects".format(len(unimported_projects)))
+            with open("%s/data/unimported_projects.txt" % self.app_path, "w") as f:
+                for project in unimported_projects:
+                    f.writelines(project + "\n")
+
+    def find_empty_repos(self):
+        empty_repos = []
+        dest_projects = self.projects_api.get_all_projects(
+            self.config.destination_host,
+            self.config.destination_token,
+            statistics=True)
+        src_projects = self.projects_api.get_all_projects(
+            self.config.source_host,
+            self.config.source_token,
+            statistics=True)
+        for dp in dest_projects:
+            if dp.get("statistics", None) is not None and dp["statistics"]["repository_size"] == 0:
+                self.log.info("Found empty repo on destination instance: {}".format(dp["name_with_namespace"]))
+                for sp in src_projects:
+                    if sp["name"] == dp["name"] and dp["namespace"]["path"] in sp["namespace"]["path"]:
+                        self.log.info("Found source project {}".format(sp["name_with_namespace"]))
+                        if sp.get("statistics", None) is not None and sp["statistics"]["repository_size"] == 0:
+                            self.log.info("Project is empty in source instance. Ignoring")
+                        else:
+                            empty_repos.append(dp["name_with_namespace"])
+        self.log.info("Empty repositories ({0}):\n{1}".format(len(empty_repos), "\n".join(ep for ep in empty_repos)))
 
     def validate_staged_projects_schema(self):
         with open("%s/data/staged_groups.json" % self.app_path, "r") as f:
@@ -280,22 +330,22 @@ class ProjectsClient(BaseClass):
         for g in staged_groups:
             self.log.info(g)
             if g.get("name", None) is None:
-                self.log.warn("name is missing")
+                self.log.warning("name is missing")
             if g.get("namespace", None) is None:
-                self.log.warn("namespace is missing")
+                self.log.warning("namespace is missing")
             if g.get("project_type", None) is None:
-                self.log.warn("project_type is missing")
+                self.log.warning("project_type is missing")
             if g.get("default_branch", None) is None:
-                self.log.warn("default_branch is missing")
+                self.log.warning("default_branch is missing")
             if g.get("visibility", None) is None:
-                self.log.warn("visibility is missing")
+                self.log.warning("visibility is missing")
             if g.get("http_url_to_repo", None) is None:
-                self.log.warn("http_url_to_repo is missing")
+                self.log.warning("http_url_to_repo is missing")
             if g.get("shared_runners_enabled", None) is None:
-                self.log.warn("shared_runners_enabled is missing")
+                self.log.warning("shared_runners_enabled is missing")
             if g.get("members", None) is None:
-                self.log.warn("members is missing")
+                self.log.warning("members is missing")
             if g.get("id", None) is None:
-                self.log.warn("id is missing")
+                self.log.warning("id is missing")
             if g.get("description", None) is None:
-                self.log.warn("description is missing")
+                self.log.warning("description is missing")

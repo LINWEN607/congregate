@@ -587,7 +587,6 @@ class GroupsClient(BaseClass):
                         staged_groups.append(parent_group)
             staged_groups.append(g)
 
-    # TODO: Rename, misleading
     def find_all_internal_projects(self):
         groups_to_change = []
         # with open("%s/data/groups.json" % self.app_path, "r") as f:
@@ -623,7 +622,6 @@ class GroupsClient(BaseClass):
 
         return groups_to_change
 
-    # TODO: Refactor or rename, as it does not make any changes
     def make_all_internal_groups_private(self):
         groups = self.find_all_internal_projects()
         ids = []
@@ -665,22 +663,22 @@ class GroupsClient(BaseClass):
         for g in staged_groups:
             self.log.info(g)
             if g.get("name", None) is None:
-                self.log.warn("name is missing")
+                self.log.warning("name is missing")
             if g.get("namespace", None) is None:
-                self.log.warn("namespace is missing")
+                self.log.warning("namespace is missing")
             if g.get("project_type", None) is None:
-                self.log.warn("project_type is missing")
+                self.log.warning("project_type is missing")
             if g.get("default_branch", None) is None:
-                self.log.warn("default_branch is missing")
+                self.log.warning("default_branch is missing")
             if g.get("visibility", None) is None:
-                self.log.warn("visibility is missing")
+                self.log.warning("visibility is missing")
             if g.get("http_url_to_repo", None) is None:
-                self.log.warn("http_url_to_repo is missing")
+                self.log.warning("http_url_to_repo is missing")
             if g.get("shared_runners_enabled", None) is None:
-                self.log.warn("shared_runners_enabled is missing")
+                self.log.warning("shared_runners_enabled is missing")
             if g.get("members", None) is None:
-                self.log.warn("members is missing")
+                self.log.warning("members is missing")
             if g.get("id", None) is None:
-                self.log.warn("id is missing")
+                self.log.warning("id is missing")
             if g.get("description", None) is None:
-                self.log.warn("description is missing")
+                self.log.warning("description is missing")

@@ -43,7 +43,7 @@ class ProjectsApi():
         """
         return api.generate_get_request(host, token, "projects/{}".format(quote_plus(path)))
 
-    def get_all_projects(self, host, token):
+    def get_all_projects(self, host, token, statistics=False):
         """
         Get a list of all visible projects across GitLab for the authenticated user
         
@@ -54,7 +54,7 @@ class ProjectsApi():
             :yield: Generator containing JSON results from GET /projects
 
         """
-        return api.list_all(host, token, "projects")
+        return api.list_all(host, token, "projects{}".format("?statistics=true" if statistics else ""))
 
     def get_members(self, id, host, token):
         """
@@ -190,6 +190,16 @@ class ProjectsApi():
             :return: Response object containing the response to PUT /projects/:id
         """
         return api.generate_put_request(host, token, "projects/{}".format(pid), data=data)
+
+    def start_pull_mirror(self, host, token, pid, data=None):
+        """
+        Start the pull mirroring process for a Project
+        GitLab API doc: https://docs.gitlab.com/ee/api/projects.html#start-the-pull-mirroring-process-for-a-project-starter
+
+            :param: id: (int) GitLab project ID
+            :return: Response object containing the response to PUT /projects/:id/mirror/pull
+        """
+        return api.generate_post_request(host, token, "projects/{}/mirror/pull".format(pid), json.dumps(data))
 
     def create_project(self, host, token, name, data=None, headers=None):
         if data is not None:
