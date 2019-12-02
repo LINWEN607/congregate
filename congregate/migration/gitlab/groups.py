@@ -587,43 +587,32 @@ class GroupsClient(BaseClass):
                         staged_groups.append(parent_group)
             staged_groups.append(g)
 
-    def find_all_internal_projects(self):
+    def find_all_non_private_groups(self):
         groups_to_change = []
-        # with open("%s/data/groups.json" % self.app_path, "r") as f:
-        #     groups = json.load(f)
-        # count = 0
-        # for group in groups:
-        #     if group["visibility"] != "private":
-        #         self.log.info("%s has %s visibility" % (group["name"], group["visibility"]))
-        #         count += 1
-        #         groups_to_change.append(group)
-
-        # self.log.info("There are %d non-private groups" % count)
-
         transient_list = []
-
         parent_group = [self.groups_api.get_group(
-            self.config.parent_id, self.config.destination_host, self.config.destination_token).json()]
-
-        print parent_group
-
-        self.traverse_groups(parent_group, transient_list,
-                             self.config.destination_host, self.config.destination_token)
-
+            self.config.parent_id,
+            self.config.destination_host,
+            self.config.destination_token).json()]
+        self.traverse_groups(
+            parent_group,
+            transient_list,
+            self.config.destination_host,
+            self.config.destination_token)
         count = 0
 
         for group in transient_list:
-            print "%s, %s" % (group["name"], group["visibility"])
+            print "{0}, {1}".format(group["name"], group["visibility"])
             if group["visibility"] != "private":
-                self.log.info("%s has %s visibility" %
-                              (group["name"], group["visibility"]))
+                self.log.info("Group {0} has {1} visibility".format(group["name"], group["visibility"]))
                 count += 1
                 groups_to_change.append(group)
+        self.log.info("Non-private groups ({0}):\n{1}".format(len(groups_to_change), "\n".join(g for g in groups_to_change)))
 
         return groups_to_change
 
     def make_all_internal_groups_private(self):
-        groups = self.find_all_internal_projects()
+        groups = self.find_all_non_private_groups()
         ids = []
         for group in groups:
             try:

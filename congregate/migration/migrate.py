@@ -491,9 +491,9 @@ def dedupe_imports():
 
 def stage_unimported_projects(dry_run=True):
     ids = []
-    with open("%s/data/unimported_projects.txt" % b.app_path, "r") as f:
+    with open("{}/data/unimported_projects.txt".format(b.app_path), "r") as f:
         projects = f.read()
-    with open("%s/data/project_json.json" % b.app_path, "r") as f:
+    with open("{}/data/project_json.json".format(b.app_path), "r") as f:
         available_projects = json.load(f)
     rewritten_projects = {}
     for i in enumerate(available_projects):

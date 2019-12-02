@@ -1,6 +1,6 @@
 """Congregate - GitLab instance migration utility 
 
-Copyright (c) 2018 - GitLab
+Copyright (c) 2019 - GitLab
 
 Usage:
     congregate list
@@ -18,13 +18,13 @@ Usage:
     congregate remove-blocked-users [--commit]
     congregate update-user-permissions [--access-level=<level>] [--commit]
     congregate get-total-count
-    congregate find-unimported-projects # TODO: Refactor, project name matching does not seem correct. Possibly add dry-run
+    congregate find-unimported-projects [--commit] # TODO: Refactor, project name matching does not seem correct
     congregate stage-unimported-projects [--commit] # TODO: Refactor, broken
     congregate remove-users-from-parent-group [--commit]
     congregate migrate-variables-in-stage [--commit]
     congregate mirror-staged-projects [--commit]
     congregate remove-all-mirrors [--commit]
-    congregate find-all-internal-projects # TODO: Refactor or rename, as it is dealing with groups
+    congregate find-all-non-private-groups
     congregate make-all-internal-groups-private # TODO: Refactor or rename, as it does not make any changes
     congregate check-projects-visibility # TODO: Refactor or rename, as it's not a check but does an update. Add dry-run
     congregate set-default-branch [--commit]
@@ -84,7 +84,7 @@ Commands:
     migrate-variables-in-stage              Migrate CI variables for staged projects.
     mirror-staged-projects                  Set up project mirroring for staged projects.
     remove-all-mirrors                      Remove all project mirrors for staged projects.
-    find-all-internal-projects              Find all internal projects.
+    find-all-non-private-groups             Return list of all groups on destination that are either internal or public.
     make-all-internal-groups-private        Make all internal migrated groups private.
     check-projects-visibility               Return list of all migrated projects' visibility.
     set-default-branch                      Set default branch to master for all projects on destination.
@@ -286,7 +286,7 @@ if __name__ == '__main__':
             if arguments["get-total-count"]:
                 print migrate.get_total_migrated_count()
             if arguments["find-unimported-projects"]:
-                projects.find_unimported_projects()
+                projects.find_unimported_projects(dry_run=False) if arguments["--commit"] else projects.find_unimported_projects()
             if arguments["stage-unimported-projects"]:
                 migrate.stage_unimported_projects(dry_run=False) if arguments["--commit"] else migrate.stage_unimported_projects()
             if arguments["remove-users-from-parent-group"]:
@@ -295,8 +295,8 @@ if __name__ == '__main__':
                 variables.migrate_variables_in_stage(dry_run=False) if arguments["--commit"] else variables.migrate_variables_in_stage()
             if arguments["remove-all-mirrors"]:
                 migrate.remove_all_mirrors(dry_run=False) if arguments["--commit"] else migrate.remove_all_mirrors()
-            if arguments["find-all-internal-projects"]:
-                groups.find_all_internal_projects()
+            if arguments["find-all-non-private-groups"]:
+                groups.find_all_non_private_groups()
             if arguments["make-all-internal-groups-private"]:
                 groups.make_all_internal_groups_private()
             if arguments["check-projects-visibility"]:

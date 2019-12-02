@@ -272,9 +272,9 @@ class ProjectsClient(BaseClass):
         except RequestException, e:
             self.log.error("Failed to unarchive staged projects, with error:\n{}".format(e))
 
-    def find_unimported_projects(self):
+    def find_unimported_projects(self, dry_run=True):
         unimported_projects = []
-        with open("%s/data/project_json.json" % self.app_path, "r") as f:
+        with open("{}/data/project_json.json".format(self.app_path), "r") as f:
             files = json.load(f)
         if files is not None and files:
             for project_json in files:
@@ -294,13 +294,14 @@ class ProjectsClient(BaseClass):
                         self.log.info("Adding project {}".format(path))
                         unimported_projects.append("%s/%s" % (project_json["namespace"], project_json["name"]))
                 except IOError, e:
-                    self.log.error(e)
+                    self.log.error("Failed to find unimported projects, with error:\n{}".format(e))
 
         if unimported_projects is not None and unimported_projects:
-            self.log.info("Found {} unimported projects".format(len(unimported_projects)))
-            with open("%s/data/unimported_projects.txt" % self.app_path, "w") as f:
-                for project in unimported_projects:
-                    f.writelines(project + "\n")
+            self.log.info("{0}Found {1} unimported projects".format("DRY-RUN: " if dry_run else "", len(unimported_projects)))
+            if not dry_run:
+                with open("{}/data/unimported_projects.txt".format(self.app_path), "w") as f:
+                    for project in unimported_projects:
+                        f.writelines(project + "\n")
 
     def find_empty_repos(self):
         empty_repos = []
