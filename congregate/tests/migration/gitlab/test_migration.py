@@ -1,9 +1,9 @@
-import pytest
-import mock
 import os
-import json
 import unittest
 from uuid import uuid4
+
+import pytest
+import mock
 from congregate.helpers.misc_utils import input_generator
 from congregate.cli import config
 from congregate.helpers.seed.generate_token import token_generator
@@ -18,7 +18,7 @@ class MigrationEndToEndTest(unittest.TestCase):
         self.s = SeedDataGenerator()
 
     def test_seed_data(self):
-        self.s.generate_seed_data()
+        self.s.generate_seed_data(dry_run=False)
 
     def generate_default_config_with_tokens(self):
         values = [
