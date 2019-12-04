@@ -175,46 +175,71 @@ def migrate_project_info(dry_run=True, skip_project_export=False, skip_project_i
         b.log.info("No projects to migrate")
 
 
-def handle_exporting_projects(project, skip_project_export=False):
+def handle_exporting_projects(project, skip_project_export=False, dry_run=True):
     name = project["name"]
     id = project["id"]
     try:
         namespace = migrate_utils.get_project_namespace(project)
-
         if b.config.location == "filesystem":
             b.log.info("Migrating project {} through filesystem".format(name))
-
             if not skip_project_export:
-                r = ie.export_thru_filesystem(id, name, namespace)
-                filename = r["filename"]
-                exported = r["exported"]
+                if not dry_run:
+                    r = ie.export_thru_filesystem(id, name, namespace, dry_run)
+                    filename = r["filename"]
+                    exported = r["exported"]
+                else:
+                    filename = ie.get_export_filename_from_namespace_and_name(namespace, name)
+                    exported = True
+                    b.log.info("DRY-RUN: Would have attempted export of id {0} to filename {1} via name {2} and namespace {3}".format(id, filename, name, namespace))
             else:
-                filename = "{0}_{1}.tar.gz".format(namespace, name)
+                filename = ie.get_export_filename_from_namespace_and_name(namespace, name)
                 exported = True
+                if dry_run:
+                    b.log.info("DRY-RUN: Export skipped of id {0} to filename {1} via name {2} and namespace {3}".format(id, filename, name, namespace))
             updated = False
             try:
-                updated = project_export.update_project_export_members_for_local(
-                    name,
-                    namespace,
-                    filename)
+                if not dry_run:
+                    updated = project_export.update_project_export_members_for_local(
+                        name,
+                        namespace,
+                        filename,
+                        dry_run)
+                else:
+                    updated = True
+                    b.log.info("DRY-RUN: Would have tried to update export members for filename {0} via name {1} and namespace {2}".format(filename, name, namespace))
             except Exception as e:
                 b.log.error("Failed to update {0} project export, with error:\n{1}".format(filename, e))
             return {"filename": filename, "exported": exported, "updated": updated}
         elif b.config.location.lower() == "filesystem-aws":
             b.log.info("Migrating project {} through filesystem-AWS".format(name))
-            ie.export_thru_fs_aws(id, name, namespace)
+            r = ie.export_thru_fs_aws(id, name, namespace, dry_run)
+            filename = r["filename"]
+            exported = r["exported"]
+            if dry_run:
+                b.log.info("DRY-RUN: Would have exported id {0} to filename {1} via name {2} and namespace {3}".format(id, filename, name, namespace))
         elif b.config.location.lower() == "aws":
             b.log.info("Migrating project {} through AWS".format(name))
             if not skip_project_export:
-                r = ie.export_thru_aws(id, name, namespace, full_parent_namespace)
-                filename = r["filename"]
-                exported = r["exported"]
+                if not dry_run:                
+                    r = ie.export_thru_aws(id, name, namespace, full_parent_namespace, dry_run)
+                    filename = r["filename"]
+                    exported = r["exported"]
+                else:
+                    filename = ie.get_export_filename_from_namespace_and_name(namespace, name)
+                    exported = True    
+                    b.log.info("DRY-RUN: Would have exported id {0} to filename {1} via name {2} and namespace {3}".format(id, filename, name, namespace))
             else:
-                filename = "{0}_{1}.tar.gz".format(namespace, name)
+                filename = ie.get_export_filename_from_namespace_and_name(namespace, name)
                 exported = True
+                if dry_run:
+                    b.log.info("DRY-RUN: Export skipped of id {0} to filename {1} via name {2} and namespace {3}".format(id, filename, name, namespace))
             updated = False
             try:
-                updated = project_export.update_project_export_members(name, namespace, filename)
+                if not dry_run:
+                    updated = project_export.update_project_export_members(name, namespace, filename, dry_run)
+                else:
+                    updated = True
+                    b.log.info("DRY-RUN: Would have tried to update export members for filename {0} via name {1} and namespace {2}".format(filename, name, namespace))                    
             except Exception, e:
                 b.log.error("Failed to update {0} project export, with error:\n{1}".format(filename, e))
             return {"filename": filename, "exported": exported, "updated": updated}

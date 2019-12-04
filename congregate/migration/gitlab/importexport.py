@@ -416,10 +416,13 @@ class ImportExportClient(BaseClass):
                 import_response = resp.text
         return import_response
 
+    def get_export_filename_from_namespace_and_name(self, namespace, name):
+        return "{0}_{1}.tar.gz".format(namespace, name)
+
     def export_thru_filesystem(self, id, name, namespace):
         working_dir = getcwd()
         exported = False
-        filename = "{0}_{1}.tar.gz".format(namespace, name)
+        filename = self.get_export_filename_from_namespace_and_name(namespace, name)
         self.log.info("Exporting %s to %s" %
                       (name, self.config.filesystem_path))
 
@@ -495,8 +498,8 @@ class ImportExportClient(BaseClass):
 
         return success
 
-    def export_thru_aws(self, id, name, namespace, full_parent_namespace):
-        filename = "{0}_{1}.tar.gz".format(namespace, name)
+    def export_thru_aws(self, id, name, namespace, full_parent_namespace, dry_run=True):
+        filename = self.get_export_filename_from_namespace_and_name(namespace, name)
         exported = False
         self.log.debug("Searching for existing project {}".format(name))
         if self.config.strip_namespace_prefix:

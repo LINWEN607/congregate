@@ -26,7 +26,7 @@ class ProjectExportClient(BaseClass):
         os.chdir(self.app_path)
         return updated
 
-    def update_project_export_members_for_local(self, name, namespace, filename):
+    def update_project_export_members_for_local(self, name, namespace, filename, dry_run=True):
         # generate_filepaths has an explicit call out for AWS work that we don't need
         # so don't use that
         file_path = self.get_file_path(filename)
