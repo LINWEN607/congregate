@@ -138,7 +138,7 @@ class GroupsClient(BaseClass):
                 self.log.warn("Failed to retrieve group badges for {0}, with response:\n{1}".format(old_id, badges))
 
     # TODO: Refactor and break down
-    def traverse_and_migrate(self, groups, rewritten_groups, dry_run=False):
+    def traverse_and_migrate(self, groups, rewritten_groups, dry_run=True):
         count = 0
         dest_groups = []
         for group in groups:
@@ -320,7 +320,7 @@ class GroupsClient(BaseClass):
                             new_members = self.add_members(members, new_group_id, dry_run)
                             self.log.info("DRY-RUN: Adding members to group ID {0} dry-run output:\n{1}".format(
                                 new_group_id,
-                                "\n".join(m for m in new_members)))
+                                json.dumps(new_members, indent=4)))
                             group_without_id.setdefault("members", []).append(new_members)
                             dest_groups.append(group_without_id)
 
@@ -351,7 +351,7 @@ class GroupsClient(BaseClass):
                     "dest_groups": dest_groups,
                     "rewritten_groups": rewritten_groups})
 
-    def add_members(self, members, group_id, dry_run=False):
+    def add_members(self, members, group_id, dry_run=True):
         new_members = []
         for member in members:
             # If we do not keep_blocked_users skip adding

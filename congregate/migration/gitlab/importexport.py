@@ -419,25 +419,21 @@ class ImportExportClient(BaseClass):
     def get_export_filename_from_namespace_and_name(self, namespace, name):
         return "{0}_{1}.tar.gz".format(namespace, name)
 
-    def export_thru_filesystem(self, id, name, namespace):
+    def export_thru_filesystem(self, pid, name, namespace):
         working_dir = getcwd()
         exported = False
-        filename = self.get_export_filename_from_namespace_and_name(namespace, name)
-        self.log.info("Exporting %s to %s" %
-                      (name, self.config.filesystem_path))
-
+        full_name = "{0}/{1}".format(namespace, name)
         try:
             response = api.generate_post_request(
                 self.config.source_host,
                 self.config.source_token,
-                "projects/{0}/export".format(id),
+                "projects/{0}/export".format(pid),
                 ""
             )
             if response is None or response.status_code not in (200, 202):
-                self.log.error("Failed to trigger project {0} export to filesystem with response {1}".format(
-                    name,
-                    response)
-                )
+                self.log.error("Failed to trigger project {0} export to filesystem (response: {1})".format(
+                    full_name,
+                    response))
             else:
                 exported = self.wait_for_export_to_finish(
                     self.config.source_host, self.config.source_token, id, name)
@@ -446,32 +442,32 @@ class ImportExportClient(BaseClass):
                     if working_dir != self.config.filesystem_path:
                         chdir(self.config.filesystem_path)
                     url = "%s/api/v4/projects/%d/export/download" % (
-                        self.config.source_host, id)
-                    misc_utils.download_file(url, self.config.filesystem_path, headers={
-                        "PRIVATE-TOKEN": self.config.source_token}, filename=filename)
+                        self.config.source_host, pid)
+                    misc_utils.download_file(
+                        url,
+                        self.config.filesystem_path,
+                        headers={"PRIVATE-TOKEN": self.config.source_token},
+                        filename=self.get_export_filename_from_namespace_and_name(namespace, name))
                 else:
-                    self.log.error("Failed to export project {0} export to filesystem".format(
-                        name)
-                    )
-        except Exception as e:
-            self.log.error("Failed to trigger project {0} export to filesystem with error {1}".format(
-                name,
-                e))
+                    self.log.error("Failed to export project {0} to filesystem (status: {1})".format(
+                        full_name,
+                        exported))
+        except RequestException as e:
+            self.log.error("Failed to trigger project {0} export to filesystem, with error:\n{1}".format(full_name, e))
+        return exported
 
-        return {"filename": filename, "exported": exported}
-
-    def export_thru_fs_aws(self, id, name, namespace):
+    def export_thru_fs_aws(self, pid, name, namespace):
         path_with_namespace = "%s_%s.tar.gz" % (namespace, name)
         if self.keys_map.get(path_with_namespace.lower(), None) is None:
             self.log.info("Unarchiving %s" % name)
             self.projects.projects_api.unarchive_project(
-                self.config.source_host, self.config.source_token, id)
+                self.config.source_host, self.config.source_token, pid)
             self.log.info("Exporting %s to %s" %
                           (name, self.config.filesystem_path))
             api.generate_post_request(
-                self.config.source_host, self.config.source_token, "projects/%d/export" % id, {})
+                self.config.source_host, self.config.source_token, "projects/%d/export" % pid, {})
             url = "%s/api/v4/projects/%d/export/download" % (
-                self.config.source_host, id)
+                self.config.source_host, pid)
 
             exported = self.wait_for_export_to_finish(
                 self.config.source_host, self.config.source_token, id, name)
@@ -498,10 +494,10 @@ class ImportExportClient(BaseClass):
 
         return success
 
-    def export_thru_aws(self, id, name, namespace, full_parent_namespace, dry_run=True):
+    def export_thru_aws(self, pid, name, namespace, full_parent_namespace):
         filename = self.get_export_filename_from_namespace_and_name(namespace, name)
         exported = False
-        self.log.debug("Searching for existing project {}".format(name))
+        self.log.info("Searching for existing project {}".format(name))
         if self.config.strip_namespace_prefix:
             namespace = self.strip_namespace(full_parent_namespace, namespace)
         project_exists, _ = self.projects.find_project_by_path(
@@ -513,15 +509,15 @@ class ImportExportClient(BaseClass):
         if not project_exists:
             self.log.info(
                 "Project {} not found on destination instance. Exporting from source instance.".format(name))
-            response = self.export_project_to_aws(id, name, namespace)
+            response = self.export_project_to_aws(pid, name, namespace)
             if response is not None and response.status_code == 202:
                 export_status = self.wait_for_export_to_finish(
-                    self.config.source_host, self.config.source_token, id, name)
+                    self.config.source_host, self.config.source_token, pid, name)
                 # If export status is unknown lookup the file on AWS
                 exported = export_status or self.aws.is_export_on_aws(filename)
             else:
                 self.log.error("Failed to trigger project {0} export to AWS, with response {1}".format(name, response))
-        return {"filename": filename, "exported": exported}
+        return exported
 
     def strip_namespace(self, full_parent_namespace, namespace):
         if len(full_parent_namespace.split("/")) > 1:

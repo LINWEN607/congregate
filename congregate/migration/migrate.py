@@ -123,15 +123,17 @@ def migrate_group_info(dry_run=True):
 
 def migrate_project_info(dry_run=True, skip_project_export=False, skip_project_import=False):
     staged_projects = projects.get_staged_projects()
+    dry_log = "DRY-RUN: " if dry_run else ""
     if staged_projects:
         if not skip_project_export:
-            b.log.info("Exporting projects")
+            b.log.info("{}Exporting projects".format(dry_log))
             export_pool = ThreadPool(b.config.threads)
             export_results = export_pool.map(
                 lambda project: handle_exporting_projects(
                     project,
-                    skip_project_export),
-                staged_projects)
+                    dry_log,
+                    dry_run),
+                        staged_projects)
             export_pool.close()
             export_pool.join()
 
@@ -151,9 +153,11 @@ def migrate_project_info(dry_run=True, skip_project_export=False, skip_project_i
 
             # Filter out the failed ones
             staged_projects = migrate_utils.get_staged_projects_without_failed_update(staged_projects, failed_update)
+        else:
+            b.log.info("SKIP: Assuming staged projects are already exported")
 
         if not skip_project_import:
-            b.log.info("{}Importing projects".format("DRY-RUN: " if dry_run else ""))
+            b.log.info("{}Importing projects".format(dry_log))
             import_pool = ThreadPool(b.config.threads)
             import_results = import_pool.map(
                 lambda project: migrate_given_export(
@@ -171,77 +175,75 @@ def migrate_project_info(dry_run=True, skip_project_export=False, skip_project_i
                 b.log.info(
                     "### Project import results ###\n{0}"
                         .format(json.dumps(import_results, indent=4, sort_keys=True)))
+        else:
+            b.log.info("SKIP: Assuming staged projects are already imported")
     else:
         b.log.info("No projects to migrate")
 
 
-def handle_exporting_projects(project, skip_project_export=False, dry_run=True):
+# TODO: Split up into shorter, more generic methods
+def handle_exporting_projects(project, dry_log, dry_run=True):
     name = project["name"]
-    id = project["id"]
+    pid = project["id"]
     try:
         namespace = migrate_utils.get_project_namespace(project)
+        full_name = "{0}/{1}".format(namespace, name)
         if b.config.location == "filesystem":
-            b.log.info("Migrating project {} through filesystem".format(name))
-            if not skip_project_export:
-                if not dry_run:
-                    r = ie.export_thru_filesystem(id, name, namespace, dry_run)
-                    filename = r["filename"]
-                    exported = r["exported"]
-                else:
-                    filename = ie.get_export_filename_from_namespace_and_name(namespace, name)
-                    exported = True
-                    b.log.info("DRY-RUN: Would have attempted export of id {0} to filename {1} via name {2} and namespace {3}".format(id, filename, name, namespace))
-            else:
-                filename = ie.get_export_filename_from_namespace_and_name(namespace, name)
-                exported = True
-                if dry_run:
-                    b.log.info("DRY-RUN: Export skipped of id {0} to filename {1} via name {2} and namespace {3}".format(id, filename, name, namespace))
+            filename = ie.get_export_filename_from_namespace_and_name(namespace, name)
+            b.log.info("{0}Exporting project {1} (ID: {2}) to filesystem as {3}".format(
+                dry_log,
+                full_name,
+                pid,
+                filename))
+            exported = ie.export_thru_filesystem(pid, name, namespace) if not dry_run else True
             updated = False
             try:
+                b.log.info("{0}Updating project {1} (ID: {2}) export members".format(dry_log, full_name, pid))
                 if not dry_run:
                     updated = project_export.update_project_export_members_for_local(
                         name,
                         namespace,
-                        filename,
-                        dry_run)
+                        filename)
                 else:
                     updated = True
-                    b.log.info("DRY-RUN: Would have tried to update export members for filename {0} via name {1} and namespace {2}".format(filename, name, namespace))
-            except Exception as e:
-                b.log.error("Failed to update {0} project export, with error:\n{1}".format(filename, e))
+            except Exception, e:
+                b.log.error("Failed to update project {0} (ID: {1}) export members in {2}, with error:\n{3}".format(
+                    full_name,
+                    pid,
+                    filename,
+                    e))
             return {"filename": filename, "exported": exported, "updated": updated}
+        # TODO: Refactor and sync with other scenarios
         elif b.config.location.lower() == "filesystem-aws":
-            b.log.info("Migrating project {} through filesystem-AWS".format(name))
-            r = ie.export_thru_fs_aws(id, name, namespace, dry_run)
-            filename = r["filename"]
-            exported = r["exported"]
-            if dry_run:
-                b.log.info("DRY-RUN: Would have exported id {0} to filename {1} via name {2} and namespace {3}".format(id, filename, name, namespace))
+            filename = ie.get_export_filename_from_namespace_and_name(namespace, name)
+            b.log.info("{0}Exporting project {1} (ID: {2}) to filesystem through AWS".format(
+                dry_log,
+                full_name,
+                pid))
+            exported = ie.export_thru_fs_aws(pid, name, namespace) if not dry_run else True
         elif b.config.location.lower() == "aws":
-            b.log.info("Migrating project {} through AWS".format(name))
-            if not skip_project_export:
-                if not dry_run:                
-                    r = ie.export_thru_aws(id, name, namespace, full_parent_namespace, dry_run)
-                    filename = r["filename"]
-                    exported = r["exported"]
-                else:
-                    filename = ie.get_export_filename_from_namespace_and_name(namespace, name)
-                    exported = True    
-                    b.log.info("DRY-RUN: Would have exported id {0} to filename {1} via name {2} and namespace {3}".format(id, filename, name, namespace))
-            else:
-                filename = ie.get_export_filename_from_namespace_and_name(namespace, name)
-                exported = True
-                if dry_run:
-                    b.log.info("DRY-RUN: Export skipped of id {0} to filename {1} via name {2} and namespace {3}".format(id, filename, name, namespace))
+            filename = ie.get_export_filename_from_namespace_and_name(namespace, name)
+            b.log.info("{0}Exporting project {1} (ID: {2}) to AWS as {3}".format(
+                dry_log,
+                full_name,
+                pid,
+                filename))
+            exported = ie.export_thru_aws(pid, name, namespace, full_parent_namespace) if not dry_run else True
             updated = False
             try:
+                b.log.info("{0}Updating project {1} (ID: {2}) export members".format(dry_log, full_name, pid))
                 if not dry_run:
-                    updated = project_export.update_project_export_members(name, namespace, filename, dry_run)
+                    updated = project_export.update_project_export_members(name,
+                    namespace,
+                    filename)
                 else:
                     updated = True
-                    b.log.info("DRY-RUN: Would have tried to update export members for filename {0} via name {1} and namespace {2}".format(filename, name, namespace))                    
             except Exception, e:
-                b.log.error("Failed to update {0} project export, with error:\n{1}".format(filename, e))
+                b.log.error("Failed to update project {0} (ID: {1}) export members in {2}, with error:\n{3}".format(
+                    full_name,
+                    pid,
+                    filename,
+                    e))
             return {"filename": filename, "exported": exported, "updated": updated}
     except IOError, e:
         b.log.error("Handle exporting projects failed with error:\n{}".format(e))

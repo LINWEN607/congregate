@@ -26,21 +26,17 @@ class ProjectExportClient(BaseClass):
         os.chdir(self.app_path)
         return updated
 
-    def update_project_export_members_for_local(self, name, namespace, filename, dry_run=True):
+    def update_project_export_members_for_local(self, name, namespace, filename):
         # generate_filepaths has an explicit call out for AWS work that we don't need
         # so don't use that
         file_path = self.get_file_path(filename)
         extract_path = self.get_extract_path(name, namespace)
-        self.log.info(
-            "name: {0} namespace: {1} filename: {2} file_path: {3} extract_path: {4}"
-                .format(
+        self.log.info("Project name: {0}\nnamespace: {1}\nfilename: {2}\nfile_path: {3}\nextract_path: {4}".format(
                     name,
                     namespace,
                     filename,
                     file_path,
-                    extract_path
-                )
-            )
+                    extract_path))
         updated = self.__do_tar_and_rewrite(file_path, extract_path)
         shutil.rmtree(extract_path)
         os.chdir(self.app_path)
