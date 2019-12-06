@@ -125,7 +125,7 @@ class ProjectExportClient(BaseClass):
                     .format(d.get("invite_email"), d.get("created_by_id")))
                 to_pop.append(data["project_members"].index(d))
             else:
-                self.log.warning("REWRITE: Project member has no user entity or invite email {0}. Skipping.".format(d))
+                self.log.warning("REWRITE: Skipping project member that has no user entity or invite email: {}".format(d))
                 to_pop.append(data["project_members"].index(d))
 
         data["project_members"] = [i for j, i in enumerate(data["project_members"]) if j not in to_pop]

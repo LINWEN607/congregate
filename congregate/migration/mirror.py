@@ -184,9 +184,9 @@ class MirrorClient(BaseClass):
                             self.log.error("Failed to mirror project {0} ({1}), with error:\n{2}".format(encoded_name, resp, e))
                 else:
                     if project.get("name", None) is not None:
-                        self.log.warning("Skipping project {0} (import status: {1})".format(encoded_name, import_status))
+                        self.log.warning("SKIP: Mirroring project {0} (import status: {1})".format(encoded_name, import_status))
             else:
-                self.log.warning("Skipping project (not a dict) {}".format(project))
+                self.log.warning("SKIP: Mirroring project (not a dict) {}".format(project))
 
     @stable_retry
     def enable_mirror_by_id(self, id):

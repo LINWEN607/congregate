@@ -206,7 +206,7 @@ def handle_bitbucket_migration(repo):
                                             b.log.error(e)
                                             b.log.error(e.read())
                                 else:
-                                    b.log.info("Empty email. Skipping %s" % user.get("name", None))
+                                    b.log.info("SKIP: User {} with empty email" % user.get("name", None))
                             groups_map[group_id] = True
                         else:
                             b.log.info("Members already exist")

@@ -3,6 +3,7 @@ import json
 from requests.exceptions import RequestException
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers import api
+from congregate.helpers.misc_utils import get_dry_log
 from congregate.migration.gitlab.api.projects import ProjectsApi
 
 
@@ -48,20 +49,17 @@ class VariablesClient(BaseClass):
     def migrate_cicd_variables(self, old_id, new_id, name):
         try:
             if self.are_enabled(old_id):
-                self.log.info("Migrating {} CI/CD variables".format(name))
-                self.migrate_variables(
-                    new_id,
-                    old_id,
-                    "project")
+                self.log.info("Migrating project {} CI/CD variables".format(name))
+                self.migrate_variables(new_id, old_id, "project")
                 return True
             else:
                 self.log.warning("CI/CD is disabled for project {}".format(name))
                 return False
         except Exception, e:
-            self.log.error("Failed to migrate {0} CI/CD variables, with error:\n{1}".format(name, e))
+            self.log.error("Failed to migrate project {0} CI/CD variables, with error:\n{1}".format(name, e))
             return False
 
-    def migrate_variables(self, new_id, old_id, var_type, dry_run=True):
+    def migrate_variables(self, new_id, old_id, var_type):
         try:
             response = self.get_variables(old_id, var_type)
             if response.status_code == 200:
@@ -70,17 +68,14 @@ class VariablesClient(BaseClass):
                     for var in variables:
                         if var_type == "project":
                             var["environment_scope"] = "*"
-                        self.log.info("{0}Migrating {1} variables".format(
-                            "DRY-RUN: " if dry_run else "",
-                            var_type))
-                        if not dry_run:
-                            self.set_variables(new_id, var, var_type)
+                        self.log.info("Migrating {0} ID (old: {1}; new: {2}) variables"
+                            .format(var_type, old_id, new_id))
+                        self.set_variables(new_id, var, var_type)
                 else:
-                    self.log.info("Project does not have CI variables. Skipping.")
+                    self.log.info("SKIP: Project (old: {0}; new: {1}) does not have CI variables"
+                        .format(old_id, new_id))
             else:
-                self.log.error("Response returned a {0} with the message: {1}".format(
-                    response.status_code,
-                    response.text))
+                self.log.error("Failed to get variables, response: {}".format(response))
         except RequestException:
             return None
 
@@ -92,25 +87,28 @@ class VariablesClient(BaseClass):
         if len(files) > 0:
             for project_json in files:
                 try:
-                    self.log.debug("Searching for existing %s" %
-                                   project_json["name"])
+                    self.log.info("Searching for existing project {}".format(project_json["name"]))
                     for proj in self.projects.search_for_project(
                             self.config.destination_host,
                             self.config.destination_token,
                             project_json['name']):
                         if proj["name"] == project_json["name"]:
                             if "%s" % project_json["namespace"].lower() in proj["path_with_namespace"].lower():
-                                self.log.debug("Migrating variables for %s" % proj["name"])
+                                self.log.info("{0}Migrating variables for {1}"
+                                    .format(get_dry_log(dry_run), proj["name"]))
                                 project_id = proj["id"]
                                 ids.append(project_id)
                                 break
                             else:
                                 project_id = None
-                    if project_id is not None:
+                    if project_id is not None and not dry_run:
                         self.migrate_variables(project_id, project_json["id"], "project")
                 except IOError, e:
-                    self.log.error(e)
-            with open("%s/data/ids_variable.txt" % self.app_path, "w") as f:
-                for i in ids:
-                    f.write("%s\n" % i)
+                    self.log.error("Failed to migrate variables in stage, with error:\n{}".format(e))
+            self.log.info("{0}Writing {1} IDs to data/ids_variable.txt:\n{2}"
+                .format(get_dry_log(dry_run), len(ids), ids))
+            if not dry_run:
+                with open("%s/data/ids_variable.txt" % self.app_path, "w") as f:
+                    for i in ids:
+                        f.write("%s\n" % i)
             return len(ids)

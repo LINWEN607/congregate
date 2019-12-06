@@ -6,6 +6,7 @@ from requests.exceptions import RequestException
 
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers import api
+from congregate.helpers.misc_utils import get_dry_log
 from congregate.migration.gitlab.api.projects import ProjectsApi
 
 
@@ -161,7 +162,7 @@ class ProjectsClient(BaseClass):
         if project is not None:
             if project.get("path_with_namespace", None) is not None:
                 if project["path_with_namespace"] == self.get_full_namespace_path(full_parent_namespace, namespace, name):
-                    self.log.info("Project already exists. Skipping %s" % name)
+                    self.log.info("SKIP: Project {} already exists".format(project["path_with_namespace"]))
                     return True, project["id"]
         return False, None
 
@@ -246,7 +247,7 @@ class ProjectsClient(BaseClass):
         try:
             for project in staged_projects:
                 self.log.info("{0}Archiving source project {1}".format(
-                    "DRY-RUN: " if dry_run else "",
+                    get_dry_log(dry_run),
                     self.get_path_with_namespace(project)))
                 if not dry_run:
                     self.projects_api.archive_project(
@@ -262,7 +263,7 @@ class ProjectsClient(BaseClass):
         try:
             for project in staged_projects:
                 self.log.info("{0}Unarchiving source project {1}".format(
-                    "DRY-RUN: " if dry_run else "",
+                    get_dry_log(dry_run),
                     self.get_path_with_namespace(project)))
                 if not dry_run:
                     self.projects_api.unarchive_project(
@@ -297,7 +298,9 @@ class ProjectsClient(BaseClass):
                     self.log.error("Failed to find unimported projects, with error:\n{}".format(e))
 
         if unimported_projects is not None and unimported_projects:
-            self.log.info("{0}Found {1} unimported projects".format("DRY-RUN: " if dry_run else "", len(unimported_projects)))
+            self.log.info("{0}Found {1} unimported projects".format(
+                get_dry_log(dry_run),
+                len(unimported_projects)))
             if not dry_run:
                 with open("{}/data/unimported_projects.txt".format(self.app_path), "w") as f:
                     for project in unimported_projects:

@@ -5,6 +5,7 @@ from requests.exceptions import RequestException
 
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers import api
+from congregate.helpers.misc_utils import get_dry_log
 from congregate.helpers.threads import handle_multi_thread
 from congregate.helpers.misc_utils import remove_dupes, migration_dry_run
 from congregate.migration.gitlab.api.groups import GroupsApi
@@ -322,7 +323,7 @@ class UsersClient(BaseClass):
                 "access_level": 10
             }
             self.log.info("{0}Adding user {1} to parent group (data: {2})".format(
-                "DRY-RUN: " if dry_run else "",
+                get_dry_log(dry_run),
                 user["email"],
                 data))
             if not dry_run:
@@ -343,7 +344,7 @@ class UsersClient(BaseClass):
             if level <= 20:
                 count += 1
                 self.log.info("{0}Removing user {1} from parent group (access level: {2})".format(
-                    "DRY-RUN: " if dry_run else "",
+                    get_dry_log(dry_run),
                     user["username"],
                     level))
                 if not dry_run:
@@ -373,7 +374,7 @@ class UsersClient(BaseClass):
                 self.config.destination_token))
             for user in users:
                 self.log.info("{0}Updating {1}'s access level to {2} ({3})".format(
-                    "DRY-RUN: " if dry_run else "",
+                    get_dry_log(dry_run),
                     user["username"],
                     access_level,
                     level))
@@ -397,7 +398,7 @@ class UsersClient(BaseClass):
             self.log.error("Failed to update user's parent access level, with error:\n{}".format(e))
 
     def remove_blocked_users(self, dry_run=True):
-        self.log.info("{}Removing blocked users form staged users/groups/projects".format("DRY-RUN: " if dry_run else ""))
+        self.log.info("{}Removing blocked users form staged users/groups/projects".format(get_dry_log(dry_run)))
         # From staged users
         self.remove("staged_users", dry_run)
         # From staged groups
@@ -583,11 +584,11 @@ class UsersClient(BaseClass):
                 json.dump(users_not_found, f, indent=4)
 
         self.log.info("{0}Users found ({1}):\n{2}".format(
-            "DRY-RUN: " if dry_run else "",
+            get_dry_log(dry_run),
             len(new_users),
             "\n".join(u["email"] for u in new_users)))
         self.log.info("{0}Users NOT found ({1}):\n{2}".format(
-            "DRY-RUN: " if dry_run else "",
+            get_dry_log(dry_run),
             len(users_not_found),
             "\n".join(u for u in users_not_found)))
 

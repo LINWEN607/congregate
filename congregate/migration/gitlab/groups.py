@@ -3,7 +3,8 @@ from os import path
 from requests.exceptions import RequestException
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers import api, misc_utils
+from congregate.helpers import api
+from congregate.helpers.misc_utils import get_dry_log, migration_dry_run, remove_dupes
 from congregate.migration.gitlab.variables import VariablesClient as vars_client
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.helpers.exceptions import ConfigurationException
@@ -109,29 +110,30 @@ class GroupsClient(BaseClass):
         self.group_id_mapping = {}
         parent_id = self.config.parent_id
 
-        if not dry_run:
-            # Update parent group notification level
-            if parent_id:
-                current_level = self.get_current_group_notifications(parent_id)
+        # Update parent group notification level
+        if parent_id is not None:
+            current_level = self.get_current_group_notifications(parent_id)
+            if not dry_run:
                 self.update_group_notifications(parent_id)
                 self.traverse_and_migrate(staged_groups, rewritten_groups, dry_run)
                 self.reset_group_notifications(parent_id, current_level)
             else:
                 self.traverse_and_migrate(staged_groups, rewritten_groups, dry_run)
-
-            # Migrate group badges
-            self.migrate_group_badges()
         else:
             self.traverse_and_migrate(staged_groups, rewritten_groups, dry_run)
 
-    def migrate_group_badges(self):
+        # Migrate group badges
+        self.migrate_group_badges(dry_run)
+
+    def migrate_group_badges(self, dry_run=True):
         for old_id, new_id in self.group_id_mapping.items():
             badges = self.groups_api.get_all_group_badges(self.config.source_host, self.config.source_token, old_id)
             if badges:
                 badges = list(badges)
                 if badges:
-                    self.log.info("Migrating source group ID {0} badges".format(old_id))
-                    self.add_badges(new_id, self.find_parent_group_path(), badges)
+                    self.log.info("{0}Migrating source group ID {1} badges".format(get_dry_log(dry_run), old_id))
+                    if not dry_run:
+                        self.add_badges(new_id, self.find_parent_group_path(), badges)
                 else:
                     self.log.info("Group {} has no group badges".format(old_id))
             else:
@@ -143,8 +145,8 @@ class GroupsClient(BaseClass):
         dest_groups = []
         for group in groups:
             parent_id = None
-            self.log.info("Migrating %s %d/%d" %
-                          (group["name"], count, len(group)))
+            self.log.info("{0}Migrating group {1} ({2}/{3})"
+                .format(get_dry_log(dry_run), group["name"], count, len(group)))
             if group.get("id", None) is not None:
                 # NOTE: Is this still needed?
                 # if rewritten_groups is not None:
@@ -158,7 +160,7 @@ class GroupsClient(BaseClass):
                         group["visibility"] = "private"
 
                 if group.get("parent_namespace", None) is not None:
-                    self.log.info("Retrieved parent namespace of {0}".format(group["parent_namespace"]))
+                    self.log.info("Retrieved parent namespace of group {0}".format(group["parent_namespace"]))
                     found = False
                     if rewritten_groups.get(group["parent_id"], None) is not None:
                         parent_id = rewritten_groups[group["parent_id"]]["id"]
@@ -219,16 +221,16 @@ class GroupsClient(BaseClass):
                         group_without_id.pop("members")
                         full_parent_namespace = ""
                         if group_without_id.get("parent_namespace", None) is not None:
-                            self.log.info("Popping parent namespace of {0}".format(group_without_id["parent_namespace"]))
+                            self.log.info("Popping parent namespace of group {0}".format(group_without_id["parent_namespace"]))
                             group_without_id.pop("parent_namespace")
                         if group_without_id.get("full_parent_namespace", None) is not None:
                             full_parent_namespace = group_without_id["full_parent_namespace"]
-                            self.log.info("Popping full parent namespace of {0}".format(full_parent_namespace))
+                            self.log.info("Popping FULL parent namespace of group {0}".format(full_parent_namespace))
                             group_without_id.pop("full_parent_namespace")
 
                         response = None
+                        self.log.info("{0}Creating group with JSON {1}".format(get_dry_log(dry_run), group_without_id))
                         if not dry_run:
-                            self.log.info("Creating group with JSON {0}".format(group_without_id))
                             response = self.groups_api.create_group(
                                 self.config.destination_host,
                                 self.config.destination_token,
@@ -300,7 +302,7 @@ class GroupsClient(BaseClass):
                         current_level = self.get_current_group_notifications(new_group_id)
                         if not current_level:
                             self.log.error(
-                                "Skipping adding users for new group id {0}, notification level could not be determined".format(
+                                "SKIP: Adding users for new group id {0}, notification level could not be determined".format(
                                     new_group_id))
                             continue
 
@@ -308,19 +310,17 @@ class GroupsClient(BaseClass):
                             put_response = self.update_group_notifications(new_group_id)
                             if not put_response:
                                 self.log.error(
-                                    "Skipping adding users for new group id {0}, notification level could not be updated ({1})".format(
+                                    "SKIP: Adding users for new group id {0}, notification level could not be updated ({1})".format(
                                         new_group_id,
                                         put_response.status_code))
                                 continue
-                            self.vars.migrate_variables(new_group_id, group_id, "group")
+                            self.vars.migrate_variables(new_group_id, group_id, "group", dry_run)
                             self.add_members(members, new_group_id, dry_run)
                             self.remove_import_user(new_group_id)
                             self.reset_group_notifications(new_group_id, current_level)
                         else:
+                            self.vars.migrate_variables(new_group_id, group_id, "group", dry_run)
                             new_members = self.add_members(members, new_group_id, dry_run)
-                            self.log.info("DRY-RUN: Adding members to group ID {0} dry-run output:\n{1}".format(
-                                new_group_id,
-                                json.dumps(new_members, indent=4)))
                             group_without_id.setdefault("members", []).append(new_members)
                             dest_groups.append(group_without_id)
 
@@ -345,7 +345,7 @@ class GroupsClient(BaseClass):
             count += 1
         if dry_run:
             self.log.info("DRY-RUN: Outputing various GROUP migration data to dry_run_group_migration.json")
-            misc_utils.migration_dry_run(
+            migration_dry_run(
                 "group", {
                     "parent_id": self.config.parent_id,
                     "dest_groups": dest_groups,
@@ -358,29 +358,31 @@ class GroupsClient(BaseClass):
             if member.get("state", None) is not None \
                     and str(member["state"]).lower() == "blocked" \
                     and not self.config.keep_blocked_users:
-                self.log.info("Skipping blocked group member {}".format(member))
+                self.log.info("SKIP: Blocked group member {}".format(member))
                 continue
             new_member = {
                 "user_id": member["id"],
                 "access_level": int(member["access_level"])
             }
             new_members.append(new_member)
+            self.log.info("{0}Adding member to new group (ID: {1}): {2}"
+                .format(get_dry_log(dry_run), group_id, member))
             if not dry_run:
                 try:
-                    self.log.info("Adding member {0} to new group ID {1}".format(member, group_id))
                     self.groups_api.add_member_to_group(
                         group_id,
                         self.config.destination_host,
                         self.config.destination_token,
                         new_member)
                 except RequestException, e:
-                    self.log.error("Failed to add member {0} to new group ID {1}, with error:\n{2}"
-                        .format(member, group_id, e))
+                    self.log.error("Failed to add member to new group (ID: {0}): {1}\nwith error:\n{2}"
+                        .format(group_id, member, e))
         return new_members
 
     def remove_import_user(self, group_id):
         try:
-            self.log.info("Removing import (root) user from group")
+            self.log.info("Removing import (root) user (ID: {0}) from group (ID: {1})"
+                .format(self.config.import_user_id, group_id))
             self.groups_api.remove_member(
                 group_id,
                 int(self.config.import_user_id),
@@ -403,8 +405,10 @@ class GroupsClient(BaseClass):
                 self.config.destination_token,
                 new_group_id
             )
-            if get_response is not None and get_response.status_code == 200 and get_response.json().get("level", None):
-                self.log.info("Retrieved notification settings for group {}".format(new_group_id))
+            level = get_response.json().get("level", None)
+            if get_response is not None and get_response.status_code == 200 and level is not None:
+                self.log.info("Retrieved notification settings for group {0} (level: {1})"
+                    .format(new_group_id, level))
                 return get_response.json()["level"]
             else:
                 self.log.error("Could not get group {} notification settings".format(new_group_id))
@@ -509,7 +513,7 @@ class GroupsClient(BaseClass):
                                   (len(staged_groups), len(groups)))
 
         with open("%s/data/staged_groups.json" % self.app_path, "w") as f:
-            json.dump(misc_utils.remove_dupes(staged_groups), f, indent=4)
+            json.dump(remove_dupes(staged_groups), f, indent=4)
 
     def is_group_non_empty(self, group):
         # Recursively look for any nested projects
@@ -543,7 +547,7 @@ class GroupsClient(BaseClass):
                 if resp.status_code != 200:
                     self.log.info("Group {0} does not exist (status: {1})".format(dest_full_path, resp.status_code))
                 elif skip_projects and self.is_group_non_empty(resp.json()):
-                    self.log.info("Skipping non empty group {}".format(dest_full_path))
+                    self.log.info("SKIP: Non-empty group {}".format(dest_full_path))
                 elif not dry_run:
                     try:
                         self.groups_api.delete_group(

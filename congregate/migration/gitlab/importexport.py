@@ -80,7 +80,7 @@ class ImportExportClient(BaseClass):
                         exported = True
             else:
                 self.log.info(
-                    "Source project {} doesn't exist. Skipping export".format(name))
+                    "SKIP: Export, source project {} doesn't exist".format(name))
                 exported = False
                 break
 
@@ -113,7 +113,7 @@ class ImportExportClient(BaseClass):
             Formats users, groups, migration info (aws, filesystem) during import process.
         """
         if project is None:
-            self.log.error("Project is None. Skipping.")
+            self.log.error("SKIP: Import, project {} is None".format(project))
             return None
 
         if isinstance(project, str):
@@ -278,7 +278,8 @@ class ImportExportClient(BaseClass):
                 if import_response.get("id", None) is not None:
                     import_id = import_response["id"]
                 elif import_response.get("message", None) is not None:
-                    if "Name has already been taken" in import_response.get("message"):
+                    res = import_response.get("message")
+                    if "Name has already been taken" in res:
                         # issue 151.
                         self.log.debug("Searching for %s" % project["name"])
                         search_response = api.search(
@@ -302,20 +303,16 @@ class ImportExportClient(BaseClass):
                         # We already log the duped message info when we find the dupe
                         # Reuse the not found message
                         if not duped:
-                            self.log.warning(
-                                "Project may already exist but it cannot be found. Ignoring %s"
-                                % project["name"])
+                            self.log.warning("IGNORE: Project {} may already exist but it cannot be found".format(project["name"]))
                             import_id = None
                         # Break out of the while, as we don't care about exported
                         break
-                    elif "404 Namespace Not Found" in import_response.get("message"):
-                        self.log.info(
-                            "Skipping %s. Will need to migrate later." % name)
+                    elif "404 Namespace Not Found" in res:
+                        self.log.info("SKIP: Project {0} will need to import later (response: {1})".format(name, res))
                         import_id = None
                         break
-                    elif "The project is still being deleted" in import_response.get("message"):
-                        self.log.info(
-                            "Previous project export has been targeted for deletion. Skipping %s" % project["name"])
+                    elif "The project is still being deleted" in res:
+                        self.log.info("SKIP: Previous project {} export has been targeted for deletion".format(project["name"]))
                         import_id = None
                         break
                 if import_id is not None:
@@ -325,8 +322,7 @@ class ImportExportClient(BaseClass):
                         if status.status_code == 200:
                             status_json = status.json()
                             if status_json["import_status"] == "finished":
-                                self.log.info(
-                                    "Project {} has been successfully imported".format(name))
+                                self.log.info("Project {} has been successfully imported".format(name))
                                 exported = True
                                 # TODO: Fix or remove soft-cutover option
                                 # if self.config.mirror_username is not None:
@@ -490,7 +486,7 @@ class ImportExportClient(BaseClass):
                     self.log.error("Download or copy to S3 failed")
                     self.log.error(e)
         else:
-            self.log.info("Export found. Skipping %s" % path_with_namespace)
+            self.log.info("SKIP: Project {} export found".format(path_with_namespace))
 
         return success
 
