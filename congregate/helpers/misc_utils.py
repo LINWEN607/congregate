@@ -100,3 +100,6 @@ def input_generator(params):
 def migration_dry_run(data_type, post_data):
     with open("{0}/data/dry_run_{1}_migration.json".format(get_congregate_path(), data_type), "a") as f:
         json.dump(post_data, f, indent=4)
+
+def get_dry_log(dry_run=True):
+    return "DRY-RUN: " if dry_run else ""

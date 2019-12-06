@@ -13,6 +13,7 @@ from collections import Counter
 from requests.exceptions import RequestException
 
 from congregate.helpers import api, migrate_utils
+from congregate.helpers.misc_utils import get_dry_log
 from congregate.aws import AwsClient
 from congregate.cli.stage_projects import stage_projects
 from congregate.helpers import base_module as b
@@ -96,7 +97,7 @@ def init_pool(l):
 
 
 def migrate_user_info(dry_run=True):
-    b.log.info("{}Migrating user info".format("DRY-RUN: " if dry_run else ""))
+    b.log.info("{}Migrating user info".format(get_dry_log(dry_run)))
     new_users = users.migrate_user_info(dry_run)
 
     # This list is of user ids from found users via email or newly created users
@@ -115,7 +116,7 @@ def migrate_user_info(dry_run=True):
 def migrate_group_info(dry_run=True):
     staged_groups = groups.get_staged_groups()
     if staged_groups:
-        b.log.info("{}Migrating group info".format("DRY-RUN: " if dry_run else ""))
+        b.log.info("{}Migrating group info".format(get_dry_log(dry_run)))
         groups.migrate_group_info(dry_run)
     else:
         b.log.info("No groups to migrate")
@@ -123,7 +124,7 @@ def migrate_group_info(dry_run=True):
 
 def migrate_project_info(dry_run=True, skip_project_export=False, skip_project_import=False):
     staged_projects = projects.get_staged_projects()
-    dry_log = "DRY-RUN: " if dry_run else ""
+    dry_log = get_dry_log(dry_run)
     if staged_projects:
         if not skip_project_export:
             b.log.info("{}Exporting projects".format(dry_log))
@@ -131,7 +132,6 @@ def migrate_project_info(dry_run=True, skip_project_export=False, skip_project_i
             export_results = export_pool.map(
                 lambda project: handle_exporting_projects(
                     project,
-                    dry_log,
                     dry_run),
                         staged_projects)
             export_pool.close()
@@ -181,70 +181,46 @@ def migrate_project_info(dry_run=True, skip_project_export=False, skip_project_i
         b.log.info("No projects to migrate")
 
 
-# TODO: Split up into shorter, more generic methods
-def handle_exporting_projects(project, dry_log, dry_run=True):
+def handle_exporting_projects(project, dry_run=True):
     name = project["name"]
     pid = project["id"]
+    loc = b.config.location.lower()
+    dry_log = get_dry_log(dry_run)
     try:
         namespace = migrate_utils.get_project_namespace(project)
         full_name = "{0}/{1}".format(namespace, name)
-        if b.config.location == "filesystem":
-            filename = ie.get_export_filename_from_namespace_and_name(namespace, name)
-            b.log.info("{0}Exporting project {1} (ID: {2}) to filesystem as {3}".format(
-                dry_log,
-                full_name,
-                pid,
-                filename))
-            exported = ie.export_thru_filesystem(pid, name, namespace) if not dry_run else True
-            updated = False
-            try:
-                b.log.info("{0}Updating project {1} (ID: {2}) export members".format(dry_log, full_name, pid))
-                if not dry_run:
-                    updated = project_export.update_project_export_members_for_local(
-                        name,
-                        namespace,
-                        filename)
-                else:
-                    updated = True
-            except Exception, e:
-                b.log.error("Failed to update project {0} (ID: {1}) export members in {2}, with error:\n{3}".format(
-                    full_name,
-                    pid,
-                    filename,
-                    e))
-            return {"filename": filename, "exported": exported, "updated": updated}
-        # TODO: Refactor and sync with other scenarios
-        elif b.config.location.lower() == "filesystem-aws":
-            filename = ie.get_export_filename_from_namespace_and_name(namespace, name)
-            b.log.info("{0}Exporting project {1} (ID: {2}) to filesystem through AWS".format(
-                dry_log,
-                full_name,
-                pid))
-            exported = ie.export_thru_fs_aws(pid, name, namespace) if not dry_run else True
-        elif b.config.location.lower() == "aws":
-            filename = ie.get_export_filename_from_namespace_and_name(namespace, name)
-            b.log.info("{0}Exporting project {1} (ID: {2}) to AWS as {3}".format(
-                dry_log,
-                full_name,
-                pid,
-                filename))
-            exported = ie.export_thru_aws(pid, name, namespace, full_parent_namespace) if not dry_run else True
-            updated = False
-            try:
-                b.log.info("{0}Updating project {1} (ID: {2}) export members".format(dry_log, full_name, pid))
-                if not dry_run:
-                    updated = project_export.update_project_export_members(name,
-                    namespace,
-                    filename)
-                else:
-                    updated = True
-            except Exception, e:
-                b.log.error("Failed to update project {0} (ID: {1}) export members in {2}, with error:\n{3}".format(
-                    full_name,
-                    pid,
-                    filename,
-                    e))
-            return {"filename": filename, "exported": exported, "updated": updated}
+        filename = ie.get_export_filename_from_namespace_and_name(namespace, name)
+        if loc not in ["filesystem", "filesystem-aws", "aws"]:
+            b.log.warning("Unsupported export location: {}".format(loc))
+            exit(1)
+        try:
+            b.log.info("{0}Exporting project {1} (ID: {2}) to {3} as {4}"
+                .format(dry_log, full_name, pid, loc, filename))
+            if loc == "filesystem":
+                exported = ie.export_thru_filesystem(pid, name, namespace) if not dry_run else True
+            # TODO: Refactor and sync with other scenarios (#119)
+            elif loc == "filesystem-aws":
+                exported = ie.export_thru_fs_aws(pid, name, namespace) if not dry_run else True
+            elif loc == "aws":
+                exported = ie.export_thru_aws(pid, name, namespace, full_parent_namespace) if not dry_run else True
+        except Exception, e:
+            b.log.error("Failed to export project {0} (ID: {1}) to {2} as {3}, with error:\n{4}"
+                .format(full_name, pid, loc, filename, e))
+        updated = False
+        try:
+            b.log.info("{0}Updating project {1} (ID: {2}) export members in {3}"
+                .format(dry_log, full_name, pid, filename))
+            if loc == "filesystem":
+                updated = project_export.update_project_export_members_for_local(name, namespace, filename) if not dry_run else True
+            # TODO: Refactor and sync with other scenarios (#119)
+            elif loc == "filesystem-aws":
+                pass
+            elif loc == "aws":
+                updated = project_export.update_project_export_members(name, namespace, filename) if not dry_run else True
+        except Exception, e:
+            b.log.error("Failed to update project {0} (ID: {1}) export members in {2}, with error:\n{3}"
+                .format(full_name, pid, filename, e))
+        return {"filename": filename, "exported": exported, "updated": updated}
     except IOError, e:
         b.log.error("Handle exporting projects failed with error:\n{}".format(e))
 
@@ -388,7 +364,7 @@ def cleanup(dry_run=True,
             hard_delete=False,
             skip_groups=False,
             skip_projects=False):
-    dry_log = "DRY-RUN: " if dry_run else ""
+    dry_log = get_dry_log(dry_run)
     if not skip_users:
         b.log.info("{0}Removing staged users on destination (hard_delete={1})".format(
             dry_log,
