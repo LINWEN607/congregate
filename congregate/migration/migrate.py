@@ -143,8 +143,8 @@ def migrate_project_info(dry_run=True, skip_project_export=False, skip_project_i
 
             # Append total count of projects/exported/updated
             export_results.append(Counter(k for d in export_results for k, v in d.items() if v))
-            b.log.info("### Project export results ###\n{0}"
-                       .format(json.dumps(export_results, indent=4)))
+            b.log.info("### {0}Project export results ###\n{1}"
+                       .format(dry_log, json.dumps(export_results, indent=4)))
 
             failed_update = migrate_utils.get_failed_update_from_results(export_results)
             b.log.warning(
@@ -167,16 +167,15 @@ def migrate_project_info(dry_run=True, skip_project_export=False, skip_project_i
             import_pool.close()
             import_pool.join()
 
-            if not dry_run:
-                # append Total : Successful count of project imports
-                import_results.append(Counter(
-                    "Total : Successful: {}"
-                        .format(len(import_results)) for d in import_results for k, v in d.items() if v))
-                b.log.info(
-                    "### Project import results ###\n{0}"
-                        .format(json.dumps(import_results, indent=4, sort_keys=True)))
+            # append Total : Successful count of project imports
+            import_results.append(Counter("Total : Successful: {}"
+                .format(len(import_results)) for d in import_results for k, v in d.items() if v)
+                or "Total : Successful: 0 : 0")
+            b.log.info(
+                "### {0}Project import results ###\n{1}"
+                    .format(dry_log, json.dumps(import_results, indent=4, sort_keys=True)))
         else:
-            b.log.info("SKIP: Assuming staged projects are already imported")
+            b.log.info("SKIP: Assuming staged projects will be later imported")
     else:
         b.log.info("No projects to migrate")
 

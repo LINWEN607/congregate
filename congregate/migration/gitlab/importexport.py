@@ -95,20 +95,21 @@ class ImportExportClient(BaseClass):
             "upload[http_method]=PUT",
             "upload[url]=%s" % quote(presigned_put_url)
         ]
-
         headers = {
             'Private-Token': self.config.source_token,
             'Content-Type': 'application/x-www-form-urlencoded'
         }
-
         try:
-            return self.projects_api.export_project(
+            response = self.projects_api.export_project(
                 self.config.source_host,
                 self.config.source_token,
                 pid,
                 data="&".join(upload),
                 headers=headers)
-        except RequestException:
+            return response
+        except RequestException, e:
+            self.log.error("Failed to trigger project {0} (ID: {1}) export with response {2}"
+                .format(name, pid, response))
             return None
 
     def import_project(self, project, dry_run=True):
@@ -421,11 +422,10 @@ class ImportExportClient(BaseClass):
 
     def export_thru_filesystem(self, pid, name, namespace):
         exported = False
-        full_name = "{0}/{1}".format(namespace, name)
         response = self.projects_api.export_project(self.config.source_host, self.config.source_token, pid)
         if response is None or response.status_code not in (200, 202):
-            self.log.error("Failed to trigger project {0} export to filesystem (response: {1})"
-                .format(full_name, response))
+            self.log.error("Failed to trigger project {0} (ID: {1}) export, with response '{2}'"
+                .format(pid, name, response))
         else:
             exported = self.wait_for_export_to_finish(
                 self.config.source_host, self.config.source_token, pid, name)
@@ -438,8 +438,8 @@ class ImportExportClient(BaseClass):
                     filename=self.get_export_filename_from_namespace_and_name(namespace, name),
                     headers={"PRIVATE-TOKEN": self.config.source_token})
             else:
-                self.log.error("Failed to export project {0} to filesystem (status: {1})"
-                    .format(full_name, exported))
+                self.log.error("Failed to export project {0} (ID: {1}), with export status '{2}'"
+                    .format(name, pid, exported))
         return exported
 
     def export_thru_fs_aws(self, pid, name, namespace):
@@ -482,10 +482,11 @@ class ImportExportClient(BaseClass):
     def export_thru_aws(self, pid, name, namespace, full_parent_namespace):
         filename = self.get_export_filename_from_namespace_and_name(namespace, name)
         exported = False
-        self.log.info("Searching for existing project {}".format(name))
+        full_name = "{0}/{1}".format(namespace, name)
+        self.log.info("Searching on destination for project {}".format(full_name))
         if self.config.strip_namespace_prefix:
             namespace = self.strip_namespace(full_parent_namespace, namespace)
-        project_exists, _ = self.projects.find_project_by_path(
+        project_exists, dest_pid = self.projects.find_project_by_path(
             self.config.destination_host,
             self.config.destination_token,
             full_parent_namespace,
@@ -493,7 +494,7 @@ class ImportExportClient(BaseClass):
             name)
         if not project_exists:
             self.log.info(
-                "Project {} not found on destination instance. Exporting from source instance.".format(name))
+                "Project {} not found on destination instance. Exporting from source instance.".format(full_name))
             response = self.export_project_to_aws(pid, name, namespace)
             if response is not None and response.status_code == 202:
                 export_status = self.wait_for_export_to_finish(
@@ -501,7 +502,9 @@ class ImportExportClient(BaseClass):
                 # If export status is unknown lookup the file on AWS
                 exported = export_status or self.aws.is_export_on_aws(filename)
             else:
-                self.log.error("Failed to trigger project {0} export to AWS, with response {1}".format(name, response))
+                self.log.error("Failed to export project {0} (ID: {1}), with response {2}".format(name, pid, response))
+        else:
+            self.log.info("SKIP: Project {0} (ID: {1}) found on destination".format(full_name, dest_pid))
         return exported
 
     def strip_namespace(self, full_parent_namespace, namespace):
