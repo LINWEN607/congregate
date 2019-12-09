@@ -191,23 +191,19 @@ def handle_exporting_projects(project, dry_run=True):
         full_name = "{0}/{1}".format(namespace, name)
         filename = ie.get_export_filename_from_namespace_and_name(namespace, name)
         if loc not in ["filesystem", "filesystem-aws", "aws"]:
-            b.log.warning("Unsupported export location: {}".format(loc))
-            exit(1)
-        try:
-            b.log.info("{0}Exporting project {1} (ID: {2}) to {3} as {4}"
-                .format(dry_log, full_name, pid, loc, filename))
-            if loc == "filesystem":
-                exported = ie.export_thru_filesystem(pid, name, namespace) if not dry_run else True
-            # TODO: Refactor and sync with other scenarios (#119)
-            elif loc == "filesystem-aws":
-                exported = ie.export_thru_fs_aws(pid, name, namespace) if not dry_run else True
-            elif loc == "aws":
-                exported = ie.export_thru_aws(pid, name, namespace, full_parent_namespace) if not dry_run else True
-        except Exception, e:
-            b.log.error("Failed to export project {0} (ID: {1}) to {2} as {3}, with error:\n{4}"
-                .format(full_name, pid, loc, filename, e))
+            raise Exception("Unsupported export location: {}".format(loc))
+        exported = False
+        b.log.info("{0}Exporting project {1} (ID: {2}) as {3}"
+            .format(dry_log, full_name, pid, filename))
+        if loc == "filesystem":
+            exported = ie.export_thru_filesystem(pid, name, namespace) if not dry_run else True
+        # TODO: Refactor and sync with other scenarios (#119)
+        elif loc == "filesystem-aws":
+            exported = ie.export_thru_fs_aws(pid, name, namespace) if not dry_run else True
+        elif loc == "aws":
+            exported = ie.export_thru_aws(pid, name, namespace, full_parent_namespace) if not dry_run else True
         updated = False
-        try:
+        if exported:
             b.log.info("{0}Updating project {1} (ID: {2}) export members in {3}"
                 .format(dry_log, full_name, pid, filename))
             if loc == "filesystem":
@@ -217,12 +213,10 @@ def handle_exporting_projects(project, dry_run=True):
                 pass
             elif loc == "aws":
                 updated = project_export.update_project_export_members(name, namespace, filename) if not dry_run else True
-        except Exception, e:
-            b.log.error("Failed to update project {0} (ID: {1}) export members in {2}, with error:\n{3}"
-                .format(full_name, pid, filename, e))
         return {"filename": filename, "exported": exported, "updated": updated}
-    except IOError, e:
-        b.log.error("Handle exporting projects failed with error:\n{}".format(e))
+    except (IOError, RequestException) as e:
+        b.log.error("Failed to export project (ID: {0}) to {1} and update members with error:\n{2}"
+            .format(pid, loc, e))
 
 
 def migrate_given_export(project_json, dry_run=True):

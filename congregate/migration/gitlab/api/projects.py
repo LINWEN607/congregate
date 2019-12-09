@@ -205,11 +205,15 @@ class ProjectsApi():
         if data is not None:
             data["name"] = name
         else:
-            data = {
-                "name": name
-            }
-        
-        if headers is not None:
-            return api.generate_post_request(host, token, "projects", json.dumps(data), headers=headers)
-        else:
-            return api.generate_post_request(host, token, "projects", json.dumps(data))
+            data = { "name": name }
+        return api.generate_post_request(host, token, "projects", json.dumps(data), headers=headers)
+
+    def export_project(self, host, token, pid, data=None, headers=None):
+        """
+        Schedule an export
+        GitLab API doc: https://docs.gitlab.com/ee/api/project_import_export.html#schedule-an-export
+
+            :param: pid: (int) GitLab project ID
+            :return: Response object containing the response to POST /projects/:id/export
+        """
+        return api.generate_post_request(host, token, "projects/{}/export".format(pid), data=data, headers=headers)

@@ -12,6 +12,7 @@ from congregate.aws import AwsClient
 from congregate.migration.gitlab.projects import ProjectsClient
 from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.api.groups import GroupsApi
+from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.helpers.migrate_utils import get_project_filename, get_project_namespace, \
     get_is_user_project, get_member_id_for_user_project
 from congregate.models.user_logging_model import UserLoggingModel
@@ -22,6 +23,7 @@ class ImportExportClient(BaseClass):
         super(ImportExportClient, self).__init__()
         self.aws = self.get_AwsClient()
         self.projects = ProjectsClient()
+        self.projects_api = ProjectsApi()
         self.users = UsersApi()
         self.groups = GroupsApi()
         self.keys_map = self.get_keys()
@@ -86,7 +88,7 @@ class ImportExportClient(BaseClass):
 
         return exported
 
-    def export_project_to_aws(self, id, name, namespace):
+    def export_project_to_aws(self, pid, name, namespace):
         name = "%s_%s.tar.gz" % (namespace, name)
         presigned_put_url = self.aws.generate_presigned_url(name, "PUT")
         upload = [
@@ -100,10 +102,12 @@ class ImportExportClient(BaseClass):
         }
 
         try:
-            response = api.generate_post_request(
-                self.config.source_host, self.config.source_token, "projects/%d/export" % id, "&".join(upload),
+            return self.projects_api.export_project(
+                self.config.source_host,
+                self.config.source_token,
+                pid,
+                data="&".join(upload),
                 headers=headers)
-            return response
         except RequestException:
             return None
 
@@ -416,39 +420,26 @@ class ImportExportClient(BaseClass):
         return "{0}_{1}.tar.gz".format(namespace, name)
 
     def export_thru_filesystem(self, pid, name, namespace):
-        working_dir = getcwd()
         exported = False
         full_name = "{0}/{1}".format(namespace, name)
-        try:
-            response = api.generate_post_request(
-                self.config.source_host,
-                self.config.source_token,
-                "projects/{0}/export".format(pid),
-                "")
-            if response is None or response.status_code not in (200, 202):
-                self.log.error("Failed to trigger project {0} export to filesystem (response: {1})".format(
-                    full_name,
-                    response))
-            else:
-                exported = self.wait_for_export_to_finish(
-                    self.config.source_host, self.config.source_token, pid, name)
+        response = self.projects_api.export_project(self.config.source_host, self.config.source_token, pid)
+        if response is None or response.status_code not in (200, 202):
+            self.log.error("Failed to trigger project {0} export to filesystem (response: {1})"
+                .format(full_name, response))
+        else:
+            exported = self.wait_for_export_to_finish(
+                self.config.source_host, self.config.source_token, pid, name)
 
-                if exported:
-                    if working_dir != self.config.filesystem_path:
-                        chdir(self.config.filesystem_path)
-                    url = "{0}/api/v4/projects/{1}/export/download".format(self.config.source_host, pid)
-                    print(url, self.config.filesystem_path)
-                    misc_utils.download_file(
-                        url,
-                        self.config.filesystem_path,
-                        headers={"PRIVATE-TOKEN": self.config.source_token},
-                        filename=self.get_export_filename_from_namespace_and_name(namespace, name))
-                else:
-                    self.log.error("Failed to export project {0} to filesystem (status: {1})".format(
-                        full_name,
-                        exported))
-        except RequestException as e:
-            self.log.error("Failed to trigger project {0} export to filesystem, with error:\n{1}".format(full_name, e))
+            if exported:
+                url = "{0}/api/v4/projects/{1}/export/download".format(self.config.source_host, pid)
+                misc_utils.download_file(
+                    url,
+                    self.config.filesystem_path,
+                    filename=self.get_export_filename_from_namespace_and_name(namespace, name),
+                    headers={"PRIVATE-TOKEN": self.config.source_token})
+            else:
+                self.log.error("Failed to export project {0} to filesystem (status: {1})"
+                    .format(full_name, exported))
         return exported
 
     def export_thru_fs_aws(self, pid, name, namespace):
@@ -459,13 +450,12 @@ class ImportExportClient(BaseClass):
                 self.config.source_host, self.config.source_token, pid)
             self.log.info("Exporting %s to %s" %
                           (name, self.config.filesystem_path))
-            api.generate_post_request(
-                self.config.source_host, self.config.source_token, "projects/%d/export" % pid, {})
+            self.projects_api.export_project(self.config.source_host, self.config.source_token, pid)
             url = "%s/api/v4/projects/%d/export/download" % (
                 self.config.source_host, pid)
 
             exported = self.wait_for_export_to_finish(
-                self.config.source_host, self.config.source_token, id, name)
+                self.config.source_host, self.config.source_token, pid, name)
 
             if exported:
                 self.log.info("Downloading export")
