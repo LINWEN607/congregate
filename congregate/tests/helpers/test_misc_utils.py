@@ -1,3 +1,4 @@
+import pytest
 import mock
 import congregate.helpers.misc_utils as misc
 
@@ -49,6 +50,14 @@ def test_download_file_uses_filename_from_param(g, resp, o, f, idl):
     g.return_value = resp
     filename = misc.download_file("url", "path", filename="passed")
     assert filename == "passed"
+
+
+@mock.patch("os.path.exists")
+@mock.patch("os.makedirs")
+def test_create_local_project_export_structure(mock_make_dirs, mock_exists):
+    mock_exists.return_value = False
+    misc.create_local_project_export_structure("/a/b/c")
+    mock_make_dirs.assert_called_with("/a/b/c")
 
 
 def test_strip_numbers():

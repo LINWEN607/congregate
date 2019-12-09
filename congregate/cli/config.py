@@ -101,14 +101,6 @@ def generate_config():
         else:
             config["location"] = location
 
-        if "filesystem" in location.lower():
-            path = raw_input("%s. Absolute path for exported projects? (default: %s) " % (
-                str(len(config) + 1), os.getcwd()))
-            if len(path) > 0 and path != os.getcwd():
-                config["path"] = path
-            else:
-                config["path"] = os.getcwd()
-
         if "aws" in location.lower():
             bucket_name = raw_input("%s. Bucket name: " % str(len(config) + 1))
             config["bucket_name"] = bucket_name
@@ -128,6 +120,15 @@ def generate_config():
             config["secret_key"] = secret_key
             command = "aws configure set aws_secret_access_key %s" % secret_key
             subprocess.call(command.split(" "))
+
+        # Set local path for project export/update
+        path = raw_input("%s. Absolute path for exporting/updating projects? (default: %s) " % (
+            str(len(config) + 1), os.getcwd()))
+        if len(path) > 0 and path != os.getcwd() and path.startswith("/"):
+            config["path"] = path
+        else:
+            print("Not an absolute path, setting default ({})".format(os.getcwd()))
+            config["path"] = os.getcwd()
 
     reset_password = raw_input("Users receive password reset emails (default: true) ")
     if len(reset_password) != 0 and "false" in str(reset_password).lower().strip():

@@ -1,4 +1,5 @@
 import os
+import errno
 import json
 
 from re import sub, findall
@@ -25,11 +26,22 @@ def download_file(url, path, filename=None, headers=None):
         r = get(url, stream=True, headers=headers, allow_redirects=True)
         if filename is None:
             filename = __get_filename_from_cd(r.headers.get('content-disposition'))
-        with open("%s/downloads/%s" % (path, filename), 'wb') as f:
+        file_path = "{0}/downloads/{1}".format(path, filename)
+        create_local_project_export_structure(os.path.dirname(file_path))
+        with open(file_path, 'wb') as f:
             for chunk in r.iter_content(chunk_size=1024):
                 if chunk:
                     f.write(chunk)
     return filename
+
+
+def create_local_project_export_structure(dir_path):
+    if not os.path.exists(dir_path):
+        try:
+            os.makedirs(dir_path)
+        except OSError as exc: # Guard against race condition
+            if exc.errno != errno.EEXIST:
+                raise
 
 
 def __is_downloadable(url):

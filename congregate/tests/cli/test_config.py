@@ -375,6 +375,7 @@ class ConfigTests(unittest.TestCase):
             "",
             "AKIA-Dummy",
             "asdfqwer1234",
+            "/path/to/downloads",
             "",
             ""
         ]
@@ -395,6 +396,7 @@ class ConfigTests(unittest.TestCase):
                 "import_user_id": 1,
                 "s3_region": "us-east-1",
                 "secret_key": "asdfqwer1234",
+                "path": "/path/to/downloads",
                 "reset_password": True,
                 "force_random_password": False
             }
@@ -425,6 +427,7 @@ class ConfigTests(unittest.TestCase):
             "us-west-1",
             "AKIA-Dummy",
             "asdfqwer1234",
+            "/path/to/downloads",
             "",
             ""
         ]
@@ -445,6 +448,7 @@ class ConfigTests(unittest.TestCase):
                 "import_user_id": 1,
                 "s3_region": "us-west-1",
                 "secret_key": "asdfqwer1234",
+                "path": "/path/to/downloads",
                 "reset_password": True,
                 "force_random_password": False
             }
