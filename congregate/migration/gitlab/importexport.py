@@ -424,21 +424,20 @@ class ImportExportClient(BaseClass):
                 self.config.source_host,
                 self.config.source_token,
                 "projects/{0}/export".format(pid),
-                ""
-            )
+                "")
             if response is None or response.status_code not in (200, 202):
                 self.log.error("Failed to trigger project {0} export to filesystem (response: {1})".format(
                     full_name,
                     response))
             else:
                 exported = self.wait_for_export_to_finish(
-                    self.config.source_host, self.config.source_token, id, name)
+                    self.config.source_host, self.config.source_token, pid, name)
 
                 if exported:
                     if working_dir != self.config.filesystem_path:
                         chdir(self.config.filesystem_path)
-                    url = "%s/api/v4/projects/%d/export/download" % (
-                        self.config.source_host, pid)
+                    url = "{0}/api/v4/projects/{1}/export/download".format(self.config.source_host, pid)
+                    print(url, self.config.filesystem_path)
                     misc_utils.download_file(
                         url,
                         self.config.filesystem_path,

@@ -278,7 +278,7 @@ class UsersClient(BaseClass):
             not_found_all.append({obj[i]["name"]: not_found_members})
             not_found_members = []
 
-        self.log.warning("Items NOT found: {0}"
+        self.log.warning("Members NOT found: {0}"
             .format(json.dumps(not_found_all, indent=4, sort_keys=True)))
         return obj
 

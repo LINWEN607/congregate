@@ -314,12 +314,11 @@ class GroupsClient(BaseClass):
                                         new_group_id,
                                         put_response.status_code))
                                 continue
-                            self.vars.migrate_variables(new_group_id, group_id, "group", dry_run)
+                            self.vars.migrate_variables(new_group_id, group_id, "group")
                             self.add_members(members, new_group_id, dry_run)
                             self.remove_import_user(new_group_id)
                             self.reset_group_notifications(new_group_id, current_level)
                         else:
-                            self.vars.migrate_variables(new_group_id, group_id, "group", dry_run)
                             new_members = self.add_members(members, new_group_id, dry_run)
                             group_without_id.setdefault("members", []).append(new_members)
                             dest_groups.append(group_without_id)
