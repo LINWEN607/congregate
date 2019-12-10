@@ -94,7 +94,7 @@ def generate_config():
             config["mirror_username"] = mirror_user
 
         location = raw_input(
-            "%s. Staging location type for exported projects [filesystem, filesystem-aws, aws]? (default: filesystem) " % str(len(config) + 1))
+            "%s. Staging location type for exported projects [filesystem, aws]? (default: filesystem) " % str(len(config) + 1))
         if len(location) == 0 or location == "filesystem":
             config["location"] = "filesystem"
             location = "filesystem"

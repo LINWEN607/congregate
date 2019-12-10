@@ -120,7 +120,6 @@ class GroupsApi():
             :return: Response object containing the response to POST /groups/:id/badges
         """
         r = api.generate_post_request(host, token, "groups/%d/badges" % id, json.dumps(data))
-        print r.content
 
     def get_all_subgroups(self, id, host, token):
         """

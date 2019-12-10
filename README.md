@@ -52,11 +52,13 @@ Once all of the dependencies are installed, run `congregate config` to set up th
 
 There are currently *three* different methods for migrating projects (groups and users are all through the API):
 
-- **filesystem** - download all projects locally and import them locally.
-- **filesystem-aws** - download all projects locally, copy the exports to an S3 bucket for storage, then delete the project locally. Copy the files back from S3, import the file, then delete the local file again.
-- **aws** - export all projects directly to an S3 bucket and import directly from the S3 bucket.
+* **filesystem** - download all projects locally and import them locally.
+* **filesystem-aws** - download all projects locally, copy the exports to an S3 bucket for storage, then delete the project locally. Copy the files back from S3, import the file, then delete the local file again.
+* **aws** - export all projects directly to an S3 bucket and import directly from the S3 bucket.
 
 `filesystem-aws` is used to help work with company policies like restricting presigned URLs or in case any of the source instances involved in the migration cannot connect to an S3 bucket while the destination instance can.
+
+**NOTE:** The hybrid (`filesystem-aws`) method is currently NOT supported ([issue](https://gitlab.com/gitlab-com/customer-success/tools/congregate/issues/119)).
 
 ### Install & Use PipEnv (required for end-user and development setups)
 
