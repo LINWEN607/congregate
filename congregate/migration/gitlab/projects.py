@@ -169,8 +169,8 @@ class ProjectsClient(BaseClass):
     def get_path_with_namespace(self, project):
         return "{0}{1}/{2}".format(
             self.config.parent_group_path + "/" if self.config.parent_group_path else "",
-            project["namespace"],
-            project["name"])
+            project["namespace"].replace(" ", "-"),
+            project["name"].replace(" ", "-"))
 
     def delete_projects(self, dry_run=True):
         staged_projects = self.get_staged_projects()
@@ -228,9 +228,9 @@ class ProjectsClient(BaseClass):
                     new_id,
                     badge["id"],
                     data=data)
-                self.log.info("Updated project {0} (ID) badge {1}".format(new_id, data))
+                self.log.info("Updated project (ID: {0}) badge:\n{1}".format(new_id, json.dumps(data, indent=4)))
         except RequestException, e:
-            self.log.error("Failed to update project {0} (ID) badge {1}, with error:\n{2}".format(new_id, badge, e))
+            self.log.error("Failed to update project (ID: {0}) badge {1}, with error:\n{2}".format(new_id, badge, e))
             return False
 
     def count_unarchived_projects(self):

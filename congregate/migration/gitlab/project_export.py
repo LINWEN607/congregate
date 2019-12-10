@@ -101,13 +101,14 @@ class ProjectExportClient(BaseClass):
                         # and may have a suffix on their username
                         d["user"]["username"] = "dont_have_this_username"
                     else:
-                        self.log.warning("REWRITE: New user {0} on destination was not found by email {1}".format(email, d))
+                        self.log.warning("REWRITE: New user {0} on destination was not found by email:\n{1}"
+                            .format(email, json.dumps(d, indent=4)))
                         d["user"]["id"] = self.config.import_user_id
                         self.users_map[d["user_id"]] = self.config.import_user_id
                         d["user"]['username'] = "This is invalid"
                 else:
                     # No clue who this is, so set to import user
-                    self.log.warning("REWRITE: Project member user entity has no email {0}".format(d))
+                    self.log.warning("REWRITE: Project member user entity has no email:\n{0}".format(json.dumps(d, indent=4)))
                     d["user"]["id"] = self.config.import_user_id
                     self.users_map[d["user_id"]] = self.config.import_user_id
                     d["user"]['username'] = "This is invalid"
@@ -119,7 +120,8 @@ class ProjectExportClient(BaseClass):
                     .format(d.get("invite_email"), d.get("created_by_id")))
                 to_pop.append(data["project_members"].index(d))
             else:
-                self.log.warning("REWRITE: Skipping project member that has no user entity or invite email: {}".format(d))
+                self.log.warning("REWRITE: Skipping project member that has no user entity or invite email:\n{}"
+                    .format(json.dumps(d, indent=4)))
                 to_pop.append(data["project_members"].index(d))
 
         data["project_members"] = [i for j, i in enumerate(data["project_members"]) if j not in to_pop]

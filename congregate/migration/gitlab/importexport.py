@@ -7,7 +7,8 @@ from os import remove, chdir, getcwd
 from glob import glob
 from requests.exceptions import RequestException
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers import api, misc_utils
+from congregate.helpers import api
+from congregate.helpers.misc_utils import download_file, migration_dry_run, get_dry_log
 from congregate.aws import AwsClient
 from congregate.migration.gitlab.projects import ProjectsClient
 from congregate.migration.gitlab.api.users import UsersApi
@@ -88,9 +89,8 @@ class ImportExportClient(BaseClass):
 
         return exported
 
-    def export_project_to_aws(self, pid, name, namespace):
-        name = "%s_%s.tar.gz" % (namespace, name)
-        presigned_put_url = self.aws.generate_presigned_url(name, "PUT")
+    def export_project_to_aws(self, pid, filename):
+        presigned_put_url = self.aws.generate_presigned_url(filename, "PUT")
         upload = [
             "upload[http_method]=PUT",
             "upload[url]=%s" % quote(presigned_put_url)
@@ -108,8 +108,8 @@ class ImportExportClient(BaseClass):
                 headers=headers)
             return response
         except RequestException, e:
-            self.log.error("Failed to trigger project {0} (ID: {1}) export with response {2}"
-                .format(name, pid, response))
+            self.log.error("Failed to trigger project (ID: {0}) export as {1} with response {2}"
+                .format(pid, filename, response))
             return None
 
     def import_project(self, project, dry_run=True):
@@ -118,7 +118,7 @@ class ImportExportClient(BaseClass):
             Formats users, groups, migration info (aws, filesystem) during import process.
         """
         if project is None:
-            self.log.error("SKIP: Import, project {} is None".format(project))
+            self.log.error("SKIP: Import, the following project is NONE: {}".format(project))
             return None
 
         if isinstance(project, str):
@@ -137,23 +137,17 @@ class ImportExportClient(BaseClass):
                 new_user = self.users.get_user(
                     member_id,
                     self.config.destination_host,
-                    self.config.destination_token
-                ).json()
+                    self.config.destination_token).json()
                 namespace = new_user["username"]
-                self.log.info(
-                    "{0} is a user project belonging to {1}. Attempting to import into their namespace"
-                        .format(
-                            project["name"],
-                            UserLoggingModel().get_logging_model(new_user)
-                    )
-                )
+                self.log.info("{0}{1} is a USER project (owner: {2}). Attempting to import into their namespace"
+                    .format(get_dry_log(dry_run), name, UserLoggingModel().get_logging_model(new_user)))
             else:
-                self.log.error("User project was found, but NO member ID returned for project {0}".format(name))
+                self.log.error("USER project FOUND, but NO member ID returned for project {0}".format(name))
                 return None
         else:
             namespace = get_project_namespace(project)
-            self.log.info("{0} is not a user project. Attempting to import into a group namespace"
-                .format(project["name"]))
+            self.log.info("{0}{1} is NOT a USER project. Attempting to import into a group namespace"
+                .format(get_dry_log(dry_run), name))
             if self.config.parent_id is None:
                 # TODO: This section is for importing to top-level, non-user projects.
                 #   Needs a going over. We know the parent_id case is solid
@@ -177,7 +171,8 @@ class ImportExportClient(BaseClass):
 
         if not dry_run:
             import_response = self.attempt_import(filename, name, namespace, override_params, project)
-            self.log.info("Import response: {}".format(import_response))
+            self.log.info("Project {0} (file: {1}) import response:\n{2}"
+                .format(name, filename, import_response))
 
             import_results = self.get_import_id_from_import_response(import_response, exported, project, name, timeout)
             self.log.info(import_results)
@@ -195,19 +190,19 @@ class ImportExportClient(BaseClass):
                 namespace,
                 override_params,
                 project,
-                timeout
-            )
-            self.log.info("Import response (duped): {}".format(import_response))
+                timeout)
+            self.log.info("Project {0} (file: {1}) import response (DUPED): {2}"
+                .format(name, filename, import_response))
             return import_id
         else:
-            self.log.info("Outputing PROJECT {} migration data to dry_run_project_migration.json".format(filename))
-            misc_utils.migration_dry_run("project", {
+            self.log.info("DRY-RUN: Outputing project {0} (file: {1}) migration data to dry_run_project_migration.json"
+                .format(name, filename))
+            migration_dry_run("project", {
                 "filename": filename,
                 "name": name,
                 "namespace": namespace,
                 "override_params": override_params,
-                "project": project
-            })
+                "project": project})
 
     def dupe_reimport_worker(
             self,
@@ -400,8 +395,9 @@ class ImportExportClient(BaseClass):
         elif self.config.location == "filesystem":
             with open("%s/downloads/%s" % (self.config.filesystem_path, filename), "rb") as f:
                 data = {
-                    "path": name.replace(" ", "_"),
-                    "namespace": namespace
+                    "path": name.replace(" ", "-"),
+                    "namespace": namespace,
+                    "name": name
                 }
 
                 files = {
@@ -418,7 +414,7 @@ class ImportExportClient(BaseClass):
         return import_response
 
     def get_export_filename_from_namespace_and_name(self, namespace, name):
-        return "{0}_{1}.tar.gz".format(namespace, name)
+        return "{0}_{1}.tar.gz".format(namespace, name).lower()
 
     def export_thru_filesystem(self, pid, name, namespace):
         exported = False
@@ -432,7 +428,7 @@ class ImportExportClient(BaseClass):
 
             if exported:
                 url = "{0}/api/v4/projects/{1}/export/download".format(self.config.source_host, pid)
-                misc_utils.download_file(
+                download_file(
                     url,
                     self.config.filesystem_path,
                     filename=self.get_export_filename_from_namespace_and_name(namespace, name),
@@ -460,7 +456,7 @@ class ImportExportClient(BaseClass):
             if exported:
                 self.log.info("Downloading export")
                 try:
-                    filename = misc_utils.download_file(url, self.config.filesystem_path, path_with_namespace, headers={
+                    filename = download_file(url, self.config.filesystem_path, path_with_namespace, headers={
                         "PRIVATE-TOKEN": self.config.source_token})
                     self.log.info("Copying %s to s3" % filename)
                     success = self.aws.copy_file_to_s3(filename)
@@ -480,12 +476,12 @@ class ImportExportClient(BaseClass):
         return success
 
     def export_thru_aws(self, pid, name, namespace, full_parent_namespace):
-        filename = self.get_export_filename_from_namespace_and_name(namespace, name)
         exported = False
-        full_name = "{0}/{1}".format(namespace, name)
-        self.log.info("Searching on destination for project {}".format(full_name))
         if self.config.strip_namespace_prefix:
             namespace = self.strip_namespace(full_parent_namespace, namespace)
+        filename = self.get_export_filename_from_namespace_and_name(namespace, name)
+        full_name = "{0}/{1}".format(namespace, name)
+        self.log.info("Searching on destination for project {0} (ID: {1})".format(full_name, pid))
         project_exists, dest_pid = self.projects.find_project_by_path(
             self.config.destination_host,
             self.config.destination_token,
@@ -493,9 +489,9 @@ class ImportExportClient(BaseClass):
             namespace,
             name)
         if not project_exists:
-            self.log.info(
-                "Project {} not found on destination instance. Exporting from source instance.".format(full_name))
-            response = self.export_project_to_aws(pid, name, namespace)
+            self.log.info("Project {0} (ID: {1}) NOT found on destination. Exporting from source..."
+                .format(full_name, pid))
+            response = self.export_project_to_aws(pid, filename)
             if response is not None and response.status_code == 202:
                 export_status = self.wait_for_export_to_finish(
                     self.config.source_host, self.config.source_token, pid, name)

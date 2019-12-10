@@ -1,3 +1,4 @@
+import json
 from datetime import timedelta, date
 from requests.exceptions import RequestException
 
@@ -72,18 +73,19 @@ class AwardsClient(BaseClass):
             get_all_project_awardables = getattr(
                 self.awardable_client, "get_all_project_%s" % k)
             for awardable in get_all_project_awardables(self.config.source_host, self.config.source_token, old_id):
-                self.log.info("Awardable is {0}".format(awardable))
+                self.log.info("Awardable is {0}".format(json.dumps(awardable, indent=4)))
 
                 awardable_id = self.__get_awardable_id(awardable)
                 self.log.info("Awardable id is {0}".format(awardable_id))
 
                 get_single_project_awardable = v
-                for award in self.__get_all_project_awardable_emojis(self.config.source_host,
-                                                                     self.config.source_token,
-                                                                     k,
-                                                                     old_id,
-                                                                     awardable_id):
-                    self.log.info("Award is {0}".format(award))
+                for award in self.__get_all_project_awardable_emojis(
+                    self.config.source_host,
+                    self.config.source_token,
+                    k,
+                    old_id,
+                    awardable_id):
+                    self.log.info("Award is {0}".format(json.dumps(award, indent=4)))
                     try:
                         response = get_single_project_awardable(
                             self.config.destination_host,

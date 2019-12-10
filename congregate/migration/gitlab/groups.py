@@ -137,7 +137,8 @@ class GroupsClient(BaseClass):
                 else:
                     self.log.info("Group {} has no group badges".format(old_id))
             else:
-                self.log.warn("Failed to retrieve group badges for {0}, with response:\n{1}".format(old_id, badges))
+                self.log.warn("Failed to retrieve group badges for {0}, with response:\n{1}"
+                    .format(old_id, json.dumps(badges, indent=4)))
 
     # TODO: Refactor and break down
     def traverse_and_migrate(self, groups, rewritten_groups, dry_run=True):
@@ -229,7 +230,8 @@ class GroupsClient(BaseClass):
                             group_without_id.pop("full_parent_namespace")
 
                         response = None
-                        self.log.info("{0}Creating group with JSON {1}".format(get_dry_log(dry_run), group_without_id))
+                        self.log.info("{0}Creating group with JSON:\n{1}"
+                            .format(get_dry_log(dry_run), json.dumps(group_without_id, indent=4)))
                         if not dry_run:
                             response = self.groups_api.create_group(
                                 self.config.destination_host,
@@ -301,18 +303,15 @@ class GroupsClient(BaseClass):
                         #   177
                         current_level = self.get_current_group_notifications(new_group_id)
                         if not current_level:
-                            self.log.error(
-                                "SKIP: Adding users for new group id {0}, notification level could not be determined".format(
-                                    new_group_id))
+                            self.log.error("SKIP: Adding users for new group ID {0}, notification level could not be determined"
+                                .format(new_group_id))
                             continue
 
                         if not dry_run:
                             put_response = self.update_group_notifications(new_group_id)
                             if not put_response:
-                                self.log.error(
-                                    "SKIP: Adding users for new group id {0}, notification level could not be updated ({1})".format(
-                                        new_group_id,
-                                        put_response.status_code))
+                                self.log.error("SKIP: Adding users for new group ID {0}, notification level could not be updated ({1})"
+                                    .format(new_group_id, put_response.status_code))
                                 continue
                             self.vars.migrate_variables(new_group_id, group_id, "group")
                             self.add_members(members, new_group_id, dry_run)
@@ -344,11 +343,10 @@ class GroupsClient(BaseClass):
             count += 1
         if dry_run:
             self.log.info("DRY-RUN: Outputing various GROUP migration data to dry_run_group_migration.json")
-            migration_dry_run(
-                "group", {
-                    "parent_id": self.config.parent_id,
-                    "dest_groups": dest_groups,
-                    "rewritten_groups": rewritten_groups})
+            migration_dry_run("group", {
+                "parent_id": self.config.parent_id,
+                "dest_groups": dest_groups,
+                "rewritten_groups": rewritten_groups})
 
     def add_members(self, members, group_id, dry_run=True):
         new_members = []
@@ -364,8 +362,8 @@ class GroupsClient(BaseClass):
                 "access_level": int(member["access_level"])
             }
             new_members.append(new_member)
-            self.log.info("{0}Adding member to new group (ID: {1}): {2}"
-                .format(get_dry_log(dry_run), group_id, member))
+            self.log.info("{0}Adding to new group (ID: {1}) member:\n{2}"
+                .format(get_dry_log(dry_run), group_id, json.dumps(member, indent=4)))
             if not dry_run:
                 try:
                     self.groups_api.add_member_to_group(
@@ -402,13 +400,12 @@ class GroupsClient(BaseClass):
             get_response = self.groups_api.get_notification_level(
                 self.config.destination_host,
                 self.config.destination_token,
-                new_group_id
-            )
+                new_group_id)
             level = get_response.json().get("level", None)
             if get_response is not None and get_response.status_code == 200 and level is not None:
                 self.log.info("Retrieved notification settings for group {0} (level: {1})"
                     .format(new_group_id, level))
-                return get_response.json()["level"]
+                return level
             else:
                 self.log.error("Could not get group {} notification settings".format(new_group_id))
         except Exception as e:
@@ -429,8 +426,7 @@ class GroupsClient(BaseClass):
                 self.config.destination_host,
                 self.config.destination_token,
                 new_group_id,
-                level
-            )
+                level)
             if put_response is not None and put_response.status_code == 200:
                 self.log.info("Updated group {0} notification level to {1}".format(new_group_id, level))
                 return put_response
@@ -456,8 +452,7 @@ class GroupsClient(BaseClass):
                 self.config.destination_host,
                 self.config.destination_token,
                 new_group_id,
-                level
-            )
+                level)
             if put_response is not None and put_response.status_code == 200:
                 self.log.info("Reset group {0} notification level to {1}".format(new_group_id, level))
                 return put_response
@@ -536,7 +531,7 @@ class GroupsClient(BaseClass):
             # SaaS destination instances have a parent group
             dest_full_path = "{0}{1}".format(
                 self.config.parent_group_path + "/" if self.config.parent_group_path else "",
-                sg["full_path"])
+                sg["full_path"].replace(" ", "-"))
             self.log.info("Removing group {}".format(dest_full_path))
             resp = self.groups_api.get_group_by_full_path(
                 dest_full_path,
@@ -643,12 +638,14 @@ class GroupsClient(BaseClass):
                     "link_url": "{0}/{1}/{2}".format(self.config.destination_host, namespace, link_url_suffix),
                     "image_url": "{0}/{1}/{2}".format(self.config.destination_host, namespace, image_url_suffix)
                 }
-                self.groups_api.add_group_badge(self.config.destination_host,
-                                                self.config.destination_token,
-                                                new_id,
-                                                data=data)
+                self.groups_api.add_group_badge(
+                    self.config.destination_host,
+                    self.config.destination_token,
+                    new_id,
+                    data=data)
         except RequestException, e:
-            self.log.error("Failed to add group ID {0} badge {1}, with error:\n{2}".format(new_id, badge, e))
+            self.log.error("Failed to add group (ID: {0}) badge:\n{1}, with error:\n{2}"
+                .format(new_id, json.dumps(badge, indent=4), e))
 
     def validate_staged_groups_schema(self):
         staged_groups = self.get_staged_groups()
