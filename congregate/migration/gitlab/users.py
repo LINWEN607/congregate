@@ -29,10 +29,12 @@ class UsersClient(BaseClass):
             self.config.source_host,
             self.config.source_token).json()
         if old_user is not None and old_user and old_user.get("email", None) is not None:
-            self.log.info("Found user {0} and email {1}".format(old_user, old_user.get("email", None)))
+            self.log.info("Found by old user ID email {0} and user:\n{1}"
+                .format(old_user.get("email", None), json.dumps(old_user, indent=4)))
             return self.find_user_by_email_comparison_without_id(old_user["email"])
         else:
-            self.log.error("Could not find user {0} email based on old user ID {1}".format(old_user, old_user_id))
+            self.log.error("Could not by old user ID {0} email of user:\n{1}"
+                .format(old_user_id, json.dumps(old_user, indent=4)))
         return None
 
     def find_user_by_email_comparison_without_id(self, email, src=False):
@@ -53,7 +55,7 @@ class UsersClient(BaseClass):
                     user and \
                     user.get("email", None) is not None and \
                     user["email"].lower() == email.lower():
-                self.log.info("Found user {0} by email {1}".format(user, email))
+                self.log.info("Found by email {0} user:\n{1}".format(email, json.dumps(user, indent=4)))
                 return user
             else:
                 self.log.error("Could not find user based on email {}".format(email))
@@ -218,7 +220,7 @@ class UsersClient(BaseClass):
             self.log.error("Username suffix not set. Defaulting to a single underscore following the username")
             return "{0}_".format(username)
 
-    def update_users(self, obj, new_users):
+    def update_users(self, obj, new_users, obj_type):
         """
         Scan the obj JSON (usually staged projects or staged groups) and replace old user ids
         with the info from new_users. Calls to the source system to match those IDs based on email
@@ -239,12 +241,12 @@ class UsersClient(BaseClass):
             rewritten_users[user_email] = new_obj
 
         for i in range(len(obj)):
-            self.log.info("Rewriting users for %s" % obj[i]["name"])
+            self.log.info("Rewriting users for {0} {1}".format(obj_type, obj[i]["name"]))
             members = obj[i]["members"]
             if isinstance(members, list):
                 for member in members:
                     # Get the old user from the source system by ID
-                    self.log.info("Searching for user ID {0} on source system".format(member["id"]))
+                    self.log.info("Searching on source for user ID {0}".format(member["id"]))
                     old_user = self.users_api.get_user(member["id"], self.config.source_host, self.config.source_token)
                     old_user = old_user.json()
 
@@ -253,7 +255,7 @@ class UsersClient(BaseClass):
 
                         if rewritten_users.get(old_user_email, None) is not None:
                             rewritten_user = rewritten_users[old_user_email]
-                            self.log.info("Searching for user email {0} with ID {1} on destination system".format(
+                            self.log.info("Searching on destination for user email {0} with ID {1}".format(
                                 rewritten_user,
                                 rewritten_user["id"])
                             )
@@ -278,8 +280,8 @@ class UsersClient(BaseClass):
             not_found_all.append({obj[i]["name"]: not_found_members})
             not_found_members = []
 
-        self.log.warning("Members NOT found: {0}"
-            .format(json.dumps(not_found_all, indent=4, sort_keys=True)))
+        self.log.warning("Members NOT found in {0}s: {1}"
+            .format(obj_type, json.dumps(not_found_all, indent=4, sort_keys=True)))
         return obj
 
     def map_new_users_to_groups_and_projects(self, dry_run=True):
@@ -302,9 +304,8 @@ class UsersClient(BaseClass):
             self.log.info("All users have already been migrated.")
             return
 
-        staged_projects = self.update_users(staged_projects, new_users)
-
-        staged_groups = self.update_users(staged_groups, new_users)
+        staged_projects = self.update_users(staged_projects, new_users, "project")
+        staged_groups = self.update_users(staged_groups, new_users, "group")
 
         if not dry_run:
             with open("%s/data/stage.json" % self.app_path, "wb") as f:
@@ -516,8 +517,8 @@ class UsersClient(BaseClass):
         with open("%s/data/new_users.json" % self.app_path, "r") as f:
             new_users = json.load(f)
 
-        staged_projects = self.update_users(staged_projects, new_users)
-        staged_groups = self.update_users(staged_groups, new_users)
+        staged_projects = self.update_users(staged_projects, new_users, "project")
+        staged_groups = self.update_users(staged_groups, new_users, "group")
 
         with open("%s/data/stage.json" % self.app_path, "wb") as f:
             json.dump(staged_projects, f, indent=4)
@@ -636,7 +637,7 @@ class UsersClient(BaseClass):
             new_ids = handle_multi_thread(self.handle_user_creation, staged_users)
             return list(filter(None, new_ids))
         else:
-            self.log.info("Outputing various USER migration data to dry_run_user_migration.json")
+            self.log.info("DRY-RUN: Outputing various USER migration data to dry_run_user_migration.json")
             migration_dry_run("user", handle_multi_thread(self.generate_user_data, staged_users))
 
     def generate_user_data(self, user):

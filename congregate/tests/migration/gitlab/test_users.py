@@ -172,7 +172,7 @@ class UserTests(unittest.TestCase):
                     json=self.mock_users.get_dummy_new_users()[0], status=200)
         # pylint: enable=no-member
 
-        actual = self.users.update_users(old_users, new_users)
+        actual = self.users.update_users(old_users, new_users, "project")
 
         expected = [
             {
@@ -246,7 +246,7 @@ class UserTests(unittest.TestCase):
                     json=self.mock_users.get_current_user(), status=200)
         # pylint: enable=no-member
 
-        actual = self.users.update_users(old_users, new_users)
+        actual = self.users.update_users(old_users, new_users, "project")
 
         expected = [
             {
@@ -323,7 +323,7 @@ class UserTests(unittest.TestCase):
                     json=self.mock_users.get_current_user(), status=200)
         # pylint: enable=no-member
 
-        actual = self.users.update_users(old_users, new_users)
+        actual = self.users.update_users(old_users, new_users, "project")
 
         expected = [
             {
@@ -397,7 +397,7 @@ class UserTests(unittest.TestCase):
                     json=self.mock_users.get_current_user(), status=200)
         # pylint: enable=no-member
 
-        actual = self.users.update_users(old_users, new_users)
+        actual = self.users.update_users(old_users, new_users, "project")
 
         expected = [
             {
