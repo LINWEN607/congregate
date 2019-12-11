@@ -6,7 +6,7 @@ from requests.exceptions import RequestException
 
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers import api
-from congregate.helpers.misc_utils import get_dry_log
+from congregate.helpers.misc_utils import get_dry_log, json_pretty
 from congregate.migration.gitlab.api.projects import ProjectsApi
 
 
@@ -228,7 +228,7 @@ class ProjectsClient(BaseClass):
                     new_id,
                     badge["id"],
                     data=data)
-                self.log.info("Updated project (ID: {0}) badge:\n{1}".format(new_id, json.dumps(data, indent=4)))
+                self.log.info("Updated project (ID: {0}) badge:\n{1}".format(new_id, json_pretty(data)))
         except RequestException, e:
             self.log.error("Failed to update project (ID: {0}) badge {1}, with error:\n{2}".format(new_id, badge, e))
             return False

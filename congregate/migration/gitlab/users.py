@@ -5,7 +5,7 @@ from requests.exceptions import RequestException
 
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers import api
-from congregate.helpers.misc_utils import get_dry_log
+from congregate.helpers.misc_utils import get_dry_log, json_pretty
 from congregate.helpers.threads import handle_multi_thread
 from congregate.helpers.misc_utils import remove_dupes, migration_dry_run
 from congregate.migration.gitlab.api.groups import GroupsApi
@@ -30,11 +30,11 @@ class UsersClient(BaseClass):
             self.config.source_token).json()
         if old_user is not None and old_user and old_user.get("email", None) is not None:
             self.log.info("Found by old user ID email {0} and user:\n{1}"
-                .format(old_user.get("email", None), json.dumps(old_user, indent=4)))
+                .format(old_user.get("email", None), json_pretty(old_user)))
             return self.find_user_by_email_comparison_without_id(old_user["email"])
         else:
             self.log.error("Could not by old user ID {0} email of user:\n{1}"
-                .format(old_user_id, json.dumps(old_user, indent=4)))
+                .format(old_user_id, json_pretty(old_user)))
         return None
 
     def find_user_by_email_comparison_without_id(self, email, src=False):
@@ -55,7 +55,7 @@ class UsersClient(BaseClass):
                     user and \
                     user.get("email", None) is not None and \
                     user["email"].lower() == email.lower():
-                self.log.info("Found by email {0} user:\n{1}".format(email, json.dumps(user, indent=4)))
+                self.log.info("Found by email {0} user:\n{1}".format(email, json_pretty(user)))
                 return user
             else:
                 self.log.error("Could not find user based on email {}".format(email))
@@ -255,13 +255,13 @@ class UsersClient(BaseClass):
 
                         if rewritten_users.get(old_user_email, None) is not None:
                             rewritten_user = rewritten_users[old_user_email]
-                            self.log.info("Searching on destination for user email {0} with ID {1}".format(
-                                rewritten_user,
-                                rewritten_user["id"])
-                            )
-                            new_user = self.users_api.get_user(rewritten_user["id"],
-                                                           self.config.destination_host,
-                                                           self.config.destination_token).json()
+                            self.log.info("Searching on destination by ID {0} for user email {1}".format(
+                                rewritten_user["id"],
+                                old_user_email))
+                            new_user = self.users_api.get_user(
+                                rewritten_user["id"],
+                                self.config.destination_host,
+                                self.config.destination_token).json()
                             if new_user.get("message", None) is None and \
                                     new_user.get("email", None) is not None and \
                                     str(new_user["email"]).lower() == old_user_email:
@@ -281,7 +281,7 @@ class UsersClient(BaseClass):
             not_found_members = []
 
         self.log.warning("Members NOT found in {0}s: {1}"
-            .format(obj_type, json.dumps(not_found_all, indent=4, sort_keys=True)))
+            .format(obj_type, json_pretty(not_found_all)))
         return obj
 
     def map_new_users_to_groups_and_projects(self, dry_run=True):
@@ -307,12 +307,13 @@ class UsersClient(BaseClass):
         staged_projects = self.update_users(staged_projects, new_users, "project")
         staged_groups = self.update_users(staged_groups, new_users, "group")
 
+        self.log.info("{}Mapping missing (destination) users to staged projects and groups"
+            .format(get_dry_log(dry_run)))
         if not dry_run:
             with open("%s/data/stage.json" % self.app_path, "wb") as f:
                 json.dump(staged_projects, f, indent=4)
             with open("%s/data/staged_groups.json" % self.app_path, "wb") as f:
                 json.dump(staged_groups, f, indent=4)
-            self.log.info("Mapped missing (destination) users to staged projects and groups")
 
     def add_users_to_parent_group(self, dry_run=True):
         with open("%s/data/newer_users.json" % self.app_path, "r") as f:
@@ -429,7 +430,7 @@ class UsersClient(BaseClass):
 
         if not dry_run:
             with open("{0}/data/{1}.json".format(self.app_path, data), "w") as f:
-                f.write(json.dumps(staged, indent=4, sort_keys=True))
+                f.write(json_pretty(staged))
 
         return staged
 
@@ -668,7 +669,7 @@ class UsersClient(BaseClass):
                     or (str(user["state"]).lower() == "blocked"
                         and self.config.keep_blocked_users)):
                 user_data = self.generate_user_data(user)
-                self.log.info("Attempting to create user {0}".format(user))
+                self.log.info("Attempting to create user:\n{}".format(json_pretty(user)))
                 response = self.users_api.create_user(
                     self.config.destination_host,
                     self.config.destination_token,
@@ -681,11 +682,11 @@ class UsersClient(BaseClass):
 
         if response is not None:
             try:
-                self.log.info("User creation response text was {0}".format(response.text))
+                self.log.info("User creation response text was {}".format(response.text))
             except Exception as e:
                 self.log.error("Could not get response text. Error was {0}".format(e))
             try:
-                self.log.info("User creation response JSON was {0}".format(response.json()))
+                self.log.info("User creation response JSON was:\n{}".format(json_pretty(response.json())))
             except Exception as e:
                 self.log.error("Could not get response JSON. Error was {0}".format(e))
 

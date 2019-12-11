@@ -115,3 +115,6 @@ def migration_dry_run(data_type, post_data):
 
 def get_dry_log(dry_run=True):
     return "DRY-RUN: " if dry_run else ""
+
+def json_pretty(data):
+    return json.dumps(data, indent=4, sort_keys=True)

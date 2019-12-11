@@ -49,7 +49,7 @@ def get_project_namespace(project):
     return project["namespace"]
 
 
-def get_is_user_project(project):
+def is_user_project(project):
     """
     Determine if a passed staged_project object (json) is a user project or not
     :param self:

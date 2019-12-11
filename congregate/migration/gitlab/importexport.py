@@ -3,7 +3,7 @@ import json
 from re import sub
 from urllib import quote
 from time import sleep
-from os import remove, chdir, getcwd
+from os import remove
 from glob import glob
 from requests.exceptions import RequestException
 from congregate.helpers.base_class import BaseClass
@@ -15,7 +15,7 @@ from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.helpers.migrate_utils import get_project_filename, get_project_namespace, \
-    get_is_user_project, get_member_id_for_user_project
+    is_user_project, get_member_id_for_user_project
 from congregate.models.user_logging_model import UserLoggingModel
 
 
@@ -126,10 +126,9 @@ class ImportExportClient(BaseClass):
 
         name = project["name"]
         override_params = self.get_override_params(project)
-        is_user_project = get_is_user_project(project)
         filename = get_project_filename(project)
 
-        if is_user_project:
+        if is_user_project(project):
             member_id = get_member_id_for_user_project(project)
             # TODO: Needs to be some user remapping in this, as well
             #   as the username/namespace may exist on the source

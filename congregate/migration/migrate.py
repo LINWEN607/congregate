@@ -13,7 +13,7 @@ from collections import Counter
 from requests.exceptions import RequestException
 
 from congregate.helpers import api, migrate_utils
-from congregate.helpers.misc_utils import get_dry_log
+from congregate.helpers.misc_utils import get_dry_log, json_pretty
 from congregate.aws import AwsClient
 from congregate.cli.stage_projects import stage_projects
 from congregate.helpers import base_module as b
@@ -144,11 +144,11 @@ def migrate_project_info(dry_run=True, skip_project_export=False, skip_project_i
             # Append total count of projects exported/updated
             export_results.append(Counter(k for d in export_results for k, v in d.items() if v))
             b.log.info("### {0}Project export results ###\n{1}"
-                .format(dry_log, json.dumps(export_results, indent=4)))
+                .format(dry_log, json_pretty(export_results)))
 
             failed_update = migrate_utils.get_failed_update_from_results(export_results)
             b.log.warning("The following projects (project.json) failed to update and will not be imported:\n{0}"
-                .format(json.dumps(failed_update, indent=4)))
+                .format(json_pretty(failed_update)))
 
             # Filter out the failed ones
             staged_projects = migrate_utils.get_staged_projects_without_failed_update(staged_projects, failed_update)
@@ -171,7 +171,7 @@ def migrate_project_info(dry_run=True, skip_project_export=False, skip_project_i
                 .format(len(import_results)) for d in import_results for k, v in d.items() if v)
                 or "Total : Successful: 0 : 0")
             b.log.info("### {0}Project import results ###\n{1}"
-                .format(dry_log, json.dumps(import_results, indent=4, sort_keys=True)))
+                .format(dry_log, json_pretty(import_results)))
         else:
             b.log.info("SKIP: Assuming staged projects will be later imported")
     else:
