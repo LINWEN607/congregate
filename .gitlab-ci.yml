@@ -1,21 +1,21 @@
-variables:
-  DOCKER_DRIVER: overlay2
-
-  BUILD_IMAGE_NAME: "$CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHA"
-
 include:
   template: SAST.gitlab-ci.yml
 
+variables:
+  DOCKER_DRIVER: overlay2
+  BUILD_IMAGE_NAME: "$CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHA"
+  SAST_DISABLE_DIND: "true"
+  SAST_DEFAULT_ANALYZERS: "bandit,secrets"
+
 sast:
-  variables:
-    CI_DEBUG_TRACE: "true"
+  artifacts:
+    paths: [gl-sast-report.json]
 
 stages:
   - build
   - test
   - cleanup
   - release
-
 
 build:
   image: docker:19.03.1
