@@ -5,6 +5,7 @@ Copyright (c) 2019 - GitLab
 Usage:
     congregate list
     congregate config
+    congregate configure
     congregate stage <projects>... [--commit]
     congregate migrate [--threads=<n>] [--skip-users] [--skip-project-import] [--skip-project-export] [--commit]
     congregate cleanup [--hard-delete] [--skip-users] [--skip-groups] [--skip-projects] [--commit]
@@ -117,6 +118,7 @@ if __name__ == '__main__':
         from congregate.helpers import conf
         from congregate.helpers.logger import myLogger
         from congregate.cli import config as configure
+        from congregate.cli import config_test
         from congregate.helpers.misc_utils import get_congregate_path
         from congregate.helpers.user_util import map_users
     else:
@@ -128,6 +130,7 @@ else:
     import sys
     sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     from congregate.cli import config as configure
+    from congregate.cli import config_test
     from congregate.helpers import conf
     from congregate.helpers.logger import myLogger
 
@@ -137,11 +140,16 @@ log = myLogger(__name__)
 
 config = conf.ig()
 
+# New configuration class
+configuration = conf.xxx()
+
 if __name__ == '__main__':
     arguments = docopt(__doc__)
     DRY_RUN = True if not arguments["--commit"] else False
     if arguments["config"]:
         configure.config()
+    elif arguments["configure"]:
+        config_test.configure()
     else:
         # try:
         # from migration import users, groups, projects

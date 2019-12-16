@@ -1,12 +1,29 @@
 """
 Congregate - GitLab instance migration utility
 
-Copyright (c) 2018 - GitLab
+Copyright (c) 2019 - GitLab
 """
 
 import os
 import json
+
+from ConfigParser import SafeConfigParser as ConfigParser, ParsingError
+
 from congregate.helpers.misc_utils import get_congregate_path
+from congregate.cli import config_test
+
+
+class xxx(object):
+    def __init__(self):
+        app_path = get_congregate_path()
+        if not os.path.exists('{}/data/congregate.conf'.format(app_path)):
+            print("No configuration found, Configuring now...")
+            config_test.configure()
+        try:
+            self.config = ConfigParser()
+            self.config.read('{}/data/congregate.conf'.format(app_path))
+        except ParsingError, e:
+            print("Failed to parse configuration, with error:\n{}".format(e))
 
 
 class ig(object):
