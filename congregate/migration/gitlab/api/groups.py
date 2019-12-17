@@ -5,7 +5,7 @@ from congregate.helpers import api
 
 
 class GroupsApi():
-    def get_group(self, id, host, token):
+    def get_group(self, gid, host, token):
         """
         Get all details of a group
         
@@ -16,7 +16,7 @@ class GroupsApi():
             :param: token: (str) Access token to GitLab instance
             :return: Response object containing the response to GET /groups/:id
         """
-        return api.generate_get_request(host, token, "groups/%d" % id)
+        return api.generate_get_request(host, token, "groups/{}".format(gid))
 
     def get_group_by_full_path(self, full_path, host, token):
         """

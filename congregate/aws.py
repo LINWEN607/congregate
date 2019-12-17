@@ -202,3 +202,11 @@ class AwsClient(BaseClass):
         r = Popen(cmd.split("+"), stdout=PIPE)
         # Could be misleading, since it assumes the file is complete
         return filename in r.stdout.read()
+
+    def set_access_key_id(self, key):
+        command = "aws+configure+set+aws_access_key_id+{}".format(key)
+        call(command.split("+"))
+
+    def set_secret_access_key(self, key):
+        command = "aws+configure+set+aws_secret_access_key+{}".format(key)
+        call(command.split("+"))

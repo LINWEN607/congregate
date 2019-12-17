@@ -10,7 +10,6 @@ import json
 from ConfigParser import SafeConfigParser as ConfigParser, ParsingError
 
 from congregate.helpers.misc_utils import get_congregate_path
-from congregate.cli import config_test
 
 
 class xxx(object):
@@ -18,12 +17,16 @@ class xxx(object):
         app_path = get_congregate_path()
         if not os.path.exists('{}/data/congregate.conf'.format(app_path)):
             print("No configuration found, Configuring now...")
-            config_test.configure()
         try:
             self.config = ConfigParser()
             self.config.read('{}/data/congregate.conf'.format(app_path))
         except ParsingError, e:
             print("Failed to parse configuration, with error:\n{}".format(e))
+
+    def get_property(self, section, name, default=None):
+        if section not in self.config.sections() and name not in self.config.options(section):
+            return None
+        return self.config.get(section, name) if self.config.get(section, name) else default
 
 
 class ig(object):
@@ -35,6 +38,7 @@ class ig(object):
                 f.write(json.dumps(empty_config, indent=4))
         with open('%s/data/config.json' % app_path) as f:
             self.config = json.load(f)["config"]
+
 
     @property
     def props(self):
@@ -177,7 +181,7 @@ class ig(object):
         return self.config.get("force_random_password", False)
 
 
-    ### Hidden configuration properties (require manual entry to overwrite default values)
+### Hidden configuration properties (require manual entry to overwrite default values)
 
     @property
     def shared_runners_enabled(self):

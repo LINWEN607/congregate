@@ -151,8 +151,6 @@ if __name__ == '__main__':
     elif arguments["configure"]:
         config_test.configure()
     else:
-        # try:
-        # from migration import users, groups, projects
         if __package__ is None:
             from congregate.migration.gitlab.users import UsersClient
             from congregate.migration.gitlab.groups import GroupsClient
@@ -162,8 +160,6 @@ if __name__ == '__main__':
             from congregate.migration.mirror import MirrorClient
             from congregate.migration import migrate
             from congregate.migration.gitlab.branches import BranchesClient
-            # except ImportError:
-            #     import migration.users, migration.groups, migration.projects
             from congregate.cli import list_projects, stage_projects, do_all
             from congregate.helpers.seed.generator import SeedDataGenerator
         else:
@@ -174,8 +170,6 @@ if __name__ == '__main__':
             from .migration.mirror import MirrorClient
             from congregate.migration import migrate
             from .migration.gitlab.branches import BranchesClient
-            # except ImportError:
-            #     import migration.users, migration.groups, migration.projects
             from congregate.cli import list_projects, stage_projects, do_all
         if config.external_source is not None and config.external_source:
             if arguments["migrate"]:
