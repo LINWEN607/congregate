@@ -167,4 +167,3 @@ def update_config(config_data):
     data["config"] = json.loads(config_data)
     with open("%s/data/config.json" % app_path, "w") as f:
         json.dump(data, f, indent=4)
-

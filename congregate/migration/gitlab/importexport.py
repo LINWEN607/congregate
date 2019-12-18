@@ -495,6 +495,7 @@ class ImportExportClient(BaseClass):
                 export_status = self.wait_for_export_to_finish(
                     self.config.source_host, self.config.source_token, pid, name)
                 # If export status is unknown lookup the file on AWS
+                # Could be misleading, since it assumes the file is complete
                 exported = export_status or self.aws.is_export_on_aws(filename)
             else:
                 self.log.error("Failed to export project {0} (ID: {1}), with response {2}".format(name, pid, response))

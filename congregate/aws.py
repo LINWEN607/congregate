@@ -1,7 +1,7 @@
 """
 Congregate - GitLab instance migration utility
 
-Copyright (c) 2018 - GitLab
+Copyright (c) 2019 - GitLab
 """
 
 from time import sleep
@@ -195,18 +195,17 @@ class AwsClient(BaseClass):
 
     def is_export_on_aws(self, filename):
         self.log.info("Project export status unknown, looking for file {} on AWS".format(filename))
-        cmd = "aws+--region+{0}+s3+ls+s3://{1}/{2}+--recursive".format(
+        cmd = "aws --region {0} s3 ls s3://{1}/{2} --recursive".format(
             self.config.s3_region,
             self.config.bucket_name,
             filename)
-        r = Popen(cmd.split("+"), stdout=PIPE)
-        # Could be misleading, since it assumes the file is complete
+        r = Popen(cmd.split(" "), stdout=PIPE)
         return filename in r.stdout.read()
 
     def set_access_key_id(self, key):
-        command = "aws+configure+set+aws_access_key_id+{}".format(key)
-        call(command.split("+"))
+        command = "aws configure set aws_access_key_id {}".format(key)
+        call(command.split(" "))
 
     def set_secret_access_key(self, key):
-        command = "aws+configure+set+aws_secret_access_key+{}".format(key)
-        call(command.split("+"))
+        command = "aws configure set aws_secret_access_key {}".format(key)
+        call(command.split(" "))
