@@ -135,8 +135,8 @@ class UserTests(unittest.TestCase):
     # pylint: disable=no-member
     @responses.activate
     # pylint: enable=no-member
-    @mock.patch('congregate.helpers.conf.ig.source_host', new_callable=mock.PropertyMock)
-    @mock.patch('congregate.helpers.conf.ig.destination_host', new_callable=mock.PropertyMock)
+    @mock.patch('congregate.helpers.conf.Config.source_host', new_callable=mock.PropertyMock)
+    @mock.patch('congregate.helpers.conf.Config.destination_host', new_callable=mock.PropertyMock)
     def test_update_users(self, destination, source):
         source.return_value = "https://gitlabsource.com"
         destination.return_value = "https://gitlabdestination.com"
@@ -207,8 +207,8 @@ class UserTests(unittest.TestCase):
     # pylint: disable=no-member
     @responses.activate
     # pylint: enable=no-member
-    @mock.patch('congregate.helpers.conf.ig.source_host', new_callable=mock.PropertyMock)
-    @mock.patch('congregate.helpers.conf.ig.destination_host', new_callable=mock.PropertyMock)
+    @mock.patch('congregate.helpers.conf.Config.source_host', new_callable=mock.PropertyMock)
+    @mock.patch('congregate.helpers.conf.Config.destination_host', new_callable=mock.PropertyMock)
     def test_update_users_no_new_users(self, destination, source):
         source.return_value = "https://gitlabsource.com"
         destination.return_value = "https://gitlabdestination.com"
@@ -281,8 +281,8 @@ class UserTests(unittest.TestCase):
     # pylint: disable=no-member
     @responses.activate
     # pylint: enable=no-member
-    @mock.patch('congregate.helpers.conf.ig.source_host', new_callable=mock.PropertyMock)
-    @mock.patch('congregate.helpers.conf.ig.destination_host', new_callable=mock.PropertyMock)
+    @mock.patch('congregate.helpers.conf.Config.source_host', new_callable=mock.PropertyMock)
+    @mock.patch('congregate.helpers.conf.Config.destination_host', new_callable=mock.PropertyMock)
     def test_update_users_wrong_email(self, destination, source):
         source.return_value = "https://gitlabsource.com"
         destination.return_value = "https://gitlabdestination.com"
@@ -358,11 +358,11 @@ class UserTests(unittest.TestCase):
     # pylint: disable=no-member
     @responses.activate
     # pylint: enable=no-member
-    @mock.patch('congregate.helpers.conf.ig.source_host', new_callable=mock.PropertyMock)
-    @mock.patch('congregate.helpers.conf.ig.destination_host', new_callable=mock.PropertyMock)
+    @mock.patch('congregate.helpers.conf.Config.source_host', new_callable=mock.PropertyMock)
+    @mock.patch('congregate.helpers.conf.Config.destination_host', new_callable=mock.PropertyMock)
     def test_update_users_invalid_id(self, destination, source):
-        source.return_value = "https://gitlabsource.com"
         destination.return_value = "https://gitlabdestination.com"
+        source.return_value = "https://gitlabsource.com"
         old_users = [
             {
                 "name": "test-app",
@@ -432,7 +432,7 @@ class UserTests(unittest.TestCase):
     # pylint: disable=no-member
     @responses.activate
     # pylint: enable=no-member
-    @mock.patch('congregate.helpers.conf.ig.destination_host', new_callable=mock.PropertyMock)
+    @mock.patch('congregate.helpers.conf.Config.destination_host', new_callable=mock.PropertyMock)
     @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.parent_id', new_callable=mock.PropertyMock)
     @mock.patch('congregate.helpers.api.get_count')
     def test_handle_user_creation(self, count, parent_id, destination):
@@ -458,7 +458,7 @@ class UserTests(unittest.TestCase):
     # pylint: disable=no-member
     @responses.activate
     # pylint: enable=no-member
-    @mock.patch('congregate.helpers.conf.ig.destination_host', new_callable=mock.PropertyMock)
+    @mock.patch('congregate.helpers.conf.Config.destination_host', new_callable=mock.PropertyMock)
     @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.parent_id', new_callable=mock.PropertyMock)
     @mock.patch('congregate.helpers.api.get_count')
     def test_handle_user_creation_user_already_exists_no_parent_group(self, count, parent_id, destination):
@@ -484,7 +484,7 @@ class UserTests(unittest.TestCase):
     # pylint: disable=no-member
     @responses.activate
     # pylint: enable=no-member
-    @mock.patch('congregate.helpers.conf.ig.destination_host', new_callable=mock.PropertyMock)
+    @mock.patch('congregate.helpers.conf.Config.destination_host', new_callable=mock.PropertyMock)
     @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.parent_id', new_callable=mock.PropertyMock)
     @mock.patch('congregate.helpers.api.get_count')
     def test_handle_user_creation_user_already_exists_with_parent_group(self, count, parent_id, destination):
@@ -510,7 +510,7 @@ class UserTests(unittest.TestCase):
     # pylint: disable=no-member
     @responses.activate
     # pylint: enable=no-member
-    @mock.patch('congregate.helpers.conf.ig.destination_host', new_callable=mock.PropertyMock)
+    @mock.patch('congregate.helpers.conf.Config.destination_host', new_callable=mock.PropertyMock)
     @mock.patch('congregate.helpers.api.get_count')
     def test_block_user(self, count,destination):
         destination.return_value = "https://gitlabdestination.com"
@@ -574,7 +574,7 @@ class UserTests(unittest.TestCase):
         created_user_name = self.users.create_valid_username(dummy_user)
         self.assertEqual(created_user_name, dummy_user["username"])
 
-    @mock.patch('congregate.helpers.conf.ig.username_suffix', new_callable=mock.PropertyMock)
+    @mock.patch('congregate.helpers.conf.Config.username_suffix', new_callable=mock.PropertyMock)
     @mock.patch('congregate.migration.gitlab.users.UsersClient.username_exists')
     @mock.patch('congregate.migration.gitlab.users.UsersClient.find_user_by_email_comparison_without_id')
     @mock.patch('congregate.migration.gitlab.users.UsersClient.user_email_exists')
@@ -593,7 +593,7 @@ class UserTests(unittest.TestCase):
         created_user_name = self.users.create_valid_username(dummy_user)
         self.assertEqual(created_user_name, dummy_user["username"] + "_BLEPBLEP")
 
-    @mock.patch('congregate.helpers.conf.ig.username_suffix', new_callable=mock.PropertyMock)
+    @mock.patch('congregate.helpers.conf.Config.username_suffix', new_callable=mock.PropertyMock)
     @mock.patch('congregate.migration.gitlab.users.UsersClient.username_exists')
     @mock.patch('congregate.migration.gitlab.users.UsersClient.find_user_by_email_comparison_without_id')
     @mock.patch('congregate.migration.gitlab.users.UsersClient.user_email_exists')

@@ -1,11 +1,8 @@
-import base64
-
 from os import getcwd, path
 from sys import version_info
-from getpass import getpass
 from ConfigParser import SafeConfigParser as ConfigParser, NoOptionError
 
-from congregate.helpers.misc_utils import get_congregate_path
+from congregate.helpers.misc_utils import get_congregate_path, obfuscate, deobfuscate
 from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.aws import AwsClient
@@ -33,14 +30,6 @@ config_path = "data/congregate.conf"
 def configure():
     app_path = get_congregate_path()
     generate_config(app_path)
-
-
-def obfuscate(prompt):
-    return base64.b64encode(getpass(prompt))
-
-
-def deobfuscate(secret):
-    return base64.b64decode(secret)
 
 
 def generate_config(app_path):

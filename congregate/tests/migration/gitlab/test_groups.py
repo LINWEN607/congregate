@@ -88,7 +88,7 @@ class GroupsUnitTest(unittest.TestCase):
     # pylint: disable=no-member
     @responses.activate
     # pylint: enable=no-member
-    @mock.patch('congregate.helpers.conf.ig.destination_host', new_callable=mock.PropertyMock)
+    @mock.patch('congregate.helpers.conf.Config.destination_host', new_callable=mock.PropertyMock)
     @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.keep_blocked_users', new_callable=mock.PropertyMock)
     def test_add_members_skip_blocked_users(self, keep_blocked_users, destination):
         keep_blocked_users.return_value = False

@@ -66,7 +66,7 @@ def migrate(
         b.config.threads = threads
 
     # TODO: Revisit and refactor accordingly
-    if b.config.external_source != False:
+    if b.config.external_source_url:
         with open("%s" % b.config.repo_list, "r") as f:
             repo_list = json.load(f)
         start_multi_thead(bitbucket.handle_bitbucket_migration, repo_list)

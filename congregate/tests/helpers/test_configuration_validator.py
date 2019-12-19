@@ -33,7 +33,7 @@ class ConfigurationValidationTests(unittest.TestCase):
         self.config.parent_id_validated_in_session = False
         url_value = "https://gitlab.com/api/v4/groups/1234"
         url.return_value = url_value
-        self.config.props["parent_id"] = 1234
+        self.config.as_obj().set("DESTINATION", "parent_group_id", "1234")
         # pylint: disable=no-member
         responses.add(responses.GET, url_value,
                   json=self.groups.get_group_404(), status=404, content_type='text/json', match_querystring=True)
@@ -48,8 +48,8 @@ class ConfigurationValidationTests(unittest.TestCase):
         print self.config.parent_id_validated_in_session
         url_value = "https://gitlab.com/api/v4/groups/4"
         url.return_value = url_value
-        self.config.props["parent_id"] = 1234
-        self.config.props["parent_group_path"] = "twitter"
+        self.config.as_obj().set("DESTINATION", "parent_group_id", "1234")
+        self.config.as_obj().set("DESTINATION", "parent_group_path", "twitter")
         # pylint: disable=no-member
         responses.add(responses.GET, url_value,
                   json=self.groups.get_group(), status=200, content_type='text/json', match_querystring=True)
@@ -65,8 +65,8 @@ class ConfigurationValidationTests(unittest.TestCase):
         self.config.parent_id_validated_in_session = False
         url_value = "https://gitlab.com/api/v4/groups/4"
         url.return_value = url_value
-        self.config.props["parent_id"] = 1234
-        self.config.props["parent_group_path"] = "twitter"
+        self.config.as_obj().set("DESTINATION", "parent_group_id", "1234")
+        self.config.as_obj().set("DESTINATION", "parent_group_path", "twitter")
         # pylint: disable=no-member
         responses.add(responses.GET, url_value,
                     json=self.groups.get_group(), status=200, content_type='text/json', match_querystring=True)
@@ -90,9 +90,9 @@ class ConfigurationValidationTests(unittest.TestCase):
         self.assertTrue(context.exception)
 
     def test_none_parent_id_validation(self):
-        self.assertTrue(self.config.validate_parent_group_id(None))
+        self.assertRaises(ConfigurationException, self.config.validate_parent_group_id, None)
 
-    def test_no_import_user_id_validation(self):
+    def test_none_import_user_id_validation(self):
         self.assertRaises(ConfigurationException, self.config.validate_import_user_id, None)
 
     @responses.activate
@@ -125,6 +125,7 @@ class ConfigurationValidationTests(unittest.TestCase):
     def test_pass_import_user_id_validation(self, url):
         url_value = "https://gitlab.com/api/v4/users"
         url.return_value = url_value
+        self.config.as_obj().set("DESTINATION", "import_user_id", "1")
         # pylint: disable=no-member
         responses.add(responses.GET, url_value,
                   json=self.users.get_current_user(), status=200, content_type='text/json', match_querystring=True)
@@ -149,7 +150,7 @@ class ConfigurationValidationTests(unittest.TestCase):
     @mock.patch("congregate.helpers.api.generate_v4_request_url")
     def test_succeed_parent_group_path_validation(self, url, parent_id):
         parent_id.return_value = 4
-        self.config.props["parent_group_path"] = "twitter"
+        self.config.as_obj().set("DESTINATION", "parent_group_path", "twitter")
         url_value = "https://gitlab.com/api/v4/groups/4"
         url.return_value = url_value
         # pylint: disable=no-member
@@ -166,7 +167,7 @@ class ConfigurationValidationTests(unittest.TestCase):
     @mock.patch("congregate.helpers.api.generate_v4_request_url")
     def test_fail_parent_group_path_validation(self, url, parent_id):
         parent_id.return_value = 4
-        self.config.props["parent_group_path"] = "twitter"
+        self.config.as_obj().set("DESTINATION", "parent_group_path", "twitter")
         url_value = "https://gitlab.com/api/v4/groups/4"
         url.return_value = url_value
         # pylint: disable=no-member
@@ -178,25 +179,25 @@ class ConfigurationValidationTests(unittest.TestCase):
         self.assertRaises(ConfigurationException, self.config.validate_parent_group_path, "not-twitter")
 
     def test_none_parent_group_path_validation(self):
-        self.assertTrue(self.config.validate_parent_group_path(None))
+        self.assertRaises(ConfigurationException, self.config.validate_parent_group_path, None)
 
     @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.parent_group_path_validated_in_session')
     def test_already_validated_parent_group_path_validation(self, validated):
         validated.return_value = True
-        self.config.props["parent_group_path"] = "twitter"
+        self.config.as_obj().set("DESTINATION", "parent_group_path", "twitter")
         self.config.parent_group_path_validated_in_session = True
         self.assertEqual(self.config.parent_group_path, "twitter")
 
     @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.parent_id_validated_in_session')
     def test_already_validated_parent_id_validation(self, validated):
         validated.return_value = True
-        self.config.props["parent_id"] = 5
+        self.config.as_obj().set("DESTINATION", "parent_group_id", "5")
         self.config.parent_id_validated_in_session = True
         self.assertEqual(self.config.parent_id, 5)
 
     @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.import_user_id_validated_in_session')
     def test_already_validated_import_user_id_validation(self, validated):
         validated.return_value = True
-        self.config.props["import_user_id"] = 1
+        self.config.as_obj().set("DESTINATION", "import_user_id", "1")
         self.config.import_user_id_validated_in_session = True
         self.assertEqual(self.config.import_user_id, 1)

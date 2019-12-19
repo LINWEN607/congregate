@@ -9,10 +9,10 @@ import json
 
 from ConfigParser import SafeConfigParser as ConfigParser, ParsingError
 
-from congregate.helpers.misc_utils import get_congregate_path
+from congregate.helpers.misc_utils import get_congregate_path, deobfuscate
 
 
-class Config(ConfigParser):
+class Config(object):
     def __init__(self):
         app_path = get_congregate_path()
         if not os.path.exists('{}/data/congregate.conf'.format(app_path)):
@@ -23,8 +23,25 @@ class Config(ConfigParser):
         except ParsingError, e:
             print("Failed to parse configuration, with error:\n{}".format(e))
 
-    def prop(self, section, option, default=None):
-        return self.config.get(section, option) if self.config.has_option(section, option) else default
+    def option_exists(self, section, option):
+        return self.config.has_option(section, option) and self.config.get(section, option)
+
+    def prop(self, section, option, default=None, obfuscated=False):
+        if self.option_exists(section, option):
+            if not obfuscated:
+                return self.config.get(section, option)
+            return deobfuscate(self.config.get(section, option))
+        return default
+
+    def prop_int(self, section, option, default=None):
+        if self.option_exists(section, option):
+            return self.config.getint(section, option)
+        return default
+
+    def prop_bool(self, section, option, default=None):
+        if self.option_exists(section, option):
+            return self.config.getboolean(section, option)
+        return default
 
     def as_obj(self):
         """
@@ -49,7 +66,7 @@ class Config(ConfigParser):
 
     @property
     def destination_token(self):
-        return self.prop("DESTINATION", "access_token")
+        return self.prop("DESTINATION", "access_token", None, True)
 
     @property
     def destination_registry(self):
@@ -57,11 +74,11 @@ class Config(ConfigParser):
 
     @property
     def import_user_id(self):
-        return self.prop("DESTINATION", "import_user_id")
+        return self.prop_int("DESTINATION", "import_user_id")
 
     @property
     def shared_runners_enabled(self):
-        return self.prop("DESTINATION", "shared_runners_enabled", True)
+        return self.prop_bool("DESTINATION", "shared_runners_enabled", True)
 
     @property
     def append_project_suffix_on_existing_found(self):
@@ -72,7 +89,7 @@ class Config(ConfigParser):
                     The `False` return will execute the default behavior and cause the import to fail if an existing
                     project is found
         """
-        return self.prop("DESTINATION", "project_suffix", False)
+        return self.prop_bool("DESTINATION", "project_suffix", False)
 
     @property
     def notification_level(self):
@@ -90,11 +107,11 @@ class Config(ConfigParser):
         Project import retry count.
         :return: The set config value or 3 as default.
         """
-        return self.prop("DESTINATION", "max_import_retries", 3)
+        return self.prop_int("DESTINATION", "max_import_retries", 3)
 
     @property
     def parent_id(self):
-        return self.prop("DESTINATION", "parent_group_id")
+        return self.prop_int("DESTINATION", "parent_group_id")
 
     @property
     def parent_group_path(self):
@@ -102,7 +119,7 @@ class Config(ConfigParser):
 
     @property
     def make_visibility_private(self):
-        return self.prop("DESTINATION", "privatize_groups")
+        return self.prop_bool("DESTINATION", "privatize_groups", True)
 
     @property
     def group_sso_provider(self):
@@ -123,7 +140,7 @@ class Config(ConfigParser):
 
     @property
     def source_token(self):
-        return self.prop("SOURCE", "access_token")
+        return self.prop("SOURCE", "access_token", None, True)
 
     @property
     def source_registry(self):
@@ -136,7 +153,7 @@ class Config(ConfigParser):
         increments
         :return: The set config value of 3600 seconds (one hour) as default
         """
-        return self.prop("SOURCE", "max_export_wait_time", 3600)
+        return self.prop_int("SOURCE", "max_export_wait_time", 3600)
 
 ### EXT_SRC
     @property
@@ -149,7 +166,7 @@ class Config(ConfigParser):
 
     @property
     def external_user_password(self):
-        return self.prop("EXT_SRC", "password")
+        return self.prop("EXT_SRC", "password", None, True)
 
     @property
     def repo_list(self):
@@ -170,11 +187,11 @@ class Config(ConfigParser):
 
     @property
     def s3_access_key(self):
-        return self.prop("EXPORT", "s3_access_key_id")
+        return self.prop("EXPORT", "s3_access_key_id", None, True)
 
     @property
     def s3_secret_key(self):
-        return self.prop("EXPORT", "s3_secret_access_key")
+        return self.prop("EXPORT", "s3_secret_access_key", None, True)
 
     @property
     def filesystem_path(self):
@@ -187,14 +204,14 @@ class Config(ConfigParser):
         Determines if we should keep blocked users.
         :return: The set config value or False as default.
         """
-        return self.prop("USER", "keep_blocked_users", False)
+        return self.prop_bool("USER", "keep_blocked_users", False)
     @property
     def reset_password(self):
         """
         Whether or not we should send the reset password link on user creation. Note: The API defaults to false
         :return: The set config value or True as default.
         """
-        return self.prop("USER", "reset_pwd", True)
+        return self.prop_bool("USER", "reset_pwd", True)
 
     @property
     def force_random_password(self):
@@ -203,12 +220,12 @@ class Config(ConfigParser):
         reset_password to generate a random password at create
         :return: The set config value or False as default.
         """
-        return self.prop("USER", "force_rand_pwd", False)
+        return self.prop_bool("USER", "force_rand_pwd", False)
 
 ### APP
     @property
     def threads(self):
-        return self.prop("APP", "no_of_threads")
+        return self.prop_int("APP", "no_of_threads", 2)
 
     @property
     def strip_namespace_prefix(self):
@@ -217,7 +234,7 @@ class Config(ConfigParser):
         handles so nesting issues when the depth is consistent.
         :return: The set config value or True as default.
         """
-        return self.prop("APP", "strip_namespace_prefix", True)
+        return self.prop_bool("APP", "strip_namespace_prefix", True)
 
     @property
     def importexport_wait(self):
@@ -227,7 +244,7 @@ class Config(ConfigParser):
         In general it should be increased when using multiple threads i.e. when the API cannot handle all the requests.
         :return: The set config value or 30 (seconds) as default.
         """
-        return self.prop("APP", "export_import_wait_time", 30)
+        return self.prop_int("APP", "export_import_wait_time", 30)
 
 
 ### HIDDEN PROPERTIES
@@ -239,232 +256,232 @@ class Config(ConfigParser):
     # Used only by disabled migration mode "filesystem-aws"
     @property
     def allow_presigned_url(self):
-        return self.prop("EXPORT", "allow_presigned_url")
+        return self.prop_bool("EXPORT", "allow_presigned_url", False)
 
 
-class ig(object):
-    def __init__(self):
-        app_path = get_congregate_path()
-        if not os.path.isfile('%s/data/config.json' % app_path):
-            empty_config = {"config": {}}
-            with open('%s/data/config.json' % app_path, "w") as f:
-                f.write(json.dumps(empty_config, indent=4))
-        with open('%s/data/config.json' % app_path) as f:
-            self.config = json.load(f)["config"]
+# class ig(object):
+#     def __init__(self):
+#         app_path = get_congregate_path()
+#         if not os.path.isfile('%s/data/config.json' % app_path):
+#             empty_config = {"config": {}}
+#             with open('%s/data/config.json' % app_path, "w") as f:
+#                 f.write(json.dumps(empty_config, indent=4))
+#         with open('%s/data/config.json' % app_path) as f:
+#             self.config = json.load(f)["config"]
 
 
-    @property
-    def props(self):
-        """
-            Return entire config object
-        """
-        return self.config
+#     @property
+#     def props(self):
+#         """
+#             Return entire config object
+#         """
+#         return self.config
 
-    @property
-    def destination_host(self):
-        return self.config.get("destination_instance_host", None)
+#     @property
+#     def destination_host(self):
+#         return self.config.get("destination_instance_host", None)
 
-    @property
-    def destination_token(self):
-        return self.config.get("destination_instance_token", None)
+#     @property
+#     def destination_token(self):
+#         return self.config.get("destination_instance_token", None)
 
-    @property
-    def destination_registry(self):
-        return self.config.get("destination_instance_registry", None)
+#     @property
+#     def destination_registry(self):
+#         return self.config.get("destination_instance_registry", None)
 
-    @property
-    def source_host(self):
-        return self.config.get("source_instance_host", None)
+#     @property
+#     def source_host(self):
+#         return self.config.get("source_instance_host", None)
 
-    @property
-    def source_token(self):
-        return self.config.get("source_instance_token", None)
+#     @property
+#     def source_token(self):
+#         return self.config.get("source_instance_token", None)
 
-    @property
-    def source_registry(self):
-        return self.config.get("source_instance_registry", None)
+#     @property
+#     def source_registry(self):
+#         return self.config.get("source_instance_registry", None)
 
-    @property
-    def location(self):
-        return self.config.get("location", None)
+#     @property
+#     def location(self):
+#         return self.config.get("location", None)
 
-    @property
-    def bucket_name(self):
-        return self.config.get("bucket_name", None)
+#     @property
+#     def bucket_name(self):
+#         return self.config.get("bucket_name", None)
 
-    @property
-    def s3_region(self):
-        return self.config.get("s3_region", None)
+#     @property
+#     def s3_region(self):
+#         return self.config.get("s3_region", None)
 
-    @property
-    def s3_access_key(self):
-        return self.config.get("access_key", None)
+#     @property
+#     def s3_access_key(self):
+#         return self.config.get("access_key", None)
 
-    @property
-    def s3_secret_key(self):
-        return self.config.get("secret_key", None)
+#     @property
+#     def s3_secret_key(self):
+#         return self.config.get("secret_key", None)
 
-    @property
-    def filesystem_path(self):
-        return self.config.get("path", None)
+#     @property
+#     def filesystem_path(self):
+#         return self.config.get("path", None)
 
-    @property
-    def parent_id(self):
-        return self.config.get("parent_id", None)
+#     @property
+#     def parent_id(self):
+#         return self.config.get("parent_id", None)
 
-    @property
-    def parent_group_path(self):
-        return self.config.get("parent_group_path", None)
+#     @property
+#     def parent_group_path(self):
+#         return self.config.get("parent_group_path", None)
 
-    @property
-    def source_username(self):
-        return self.config.get("source_username", None)
+#     @property
+#     def source_username(self):
+#         return self.config.get("source_username", None)
 
-    @property
-    def import_user_id(self):
-        return self.config.get("import_user_id", None)
+#     @property
+#     def import_user_id(self):
+#         return self.config.get("import_user_id", None)
 
-    @property
-    def mirror_username(self):
-        return self.config.get("mirror_username", None)
+#     @property
+#     def mirror_username(self):
+#         return self.config.get("mirror_username", None)
 
-    @property
-    def external_user_name(self):
-        return self.config.get("external_user_name", None)
+#     @property
+#     def external_user_name(self):
+#         return self.config.get("external_user_name", None)
 
-    @property
-    def external_user_password(self):
-        return self.config.get("external_user_password", None)
+#     @property
+#     def external_user_password(self):
+#         return self.config.get("external_user_password", None)
 
-    @property
-    def external_source(self):
-        return self.config.get("external_source", None)
+#     @property
+#     def external_source(self):
+#         return self.config.get("external_source", None)
 
-    @property
-    def repo_list(self):
-        return self.config.get("repo_list_path", None)
+#     @property
+#     def repo_list(self):
+#         return self.config.get("repo_list_path", None)
 
-    @property
-    def user_map(self):
-        return self.config.get("user_map_csv", None)
+#     @property
+#     def user_map(self):
+#         return self.config.get("user_map_csv", None)
 
-    @property
-    def allow_presigned_url(self):
-        return self.config.get("allow_presigned_url", None)
+#     @property
+#     def allow_presigned_url(self):
+#         return self.config.get("allow_presigned_url", None)
 
-    @property
-    def threads(self):
-        return self.config.get("number_of_threads", None)
+#     @property
+#     def threads(self):
+#         return self.config.get("number_of_threads", None)
 
-    @property
-    def make_visibility_private(self):
-        return self.config.get("make_visibility_private", None)
+#     @property
+#     def make_visibility_private(self):
+#         return self.config.get("make_visibility_private", None)
 
-    @property
-    def external_source_url(self):
-        return self.config.get("external_source_url", None)
+#     @property
+#     def external_source_url(self):
+#         return self.config.get("external_source_url", None)
 
-    @property
-    def group_sso_provider(self):
-        return self.config.get("group_sso_provider", None)
+#     @property
+#     def group_sso_provider(self):
+#         return self.config.get("group_sso_provider", None)
 
-    @property
-    def username_suffix(self):
-        return self.config.get("username_suffix", None)
+#     @property
+#     def username_suffix(self):
+#         return self.config.get("username_suffix", None)
 
-    @property
-    def group_full_path_prefix(self):
-        return self.config.get("group_full_path_prefix", None)
+#     @property
+#     def group_full_path_prefix(self):
+#         return self.config.get("group_full_path_prefix", None)
 
-    @property
-    def reset_password(self):
-        """
-        Whether or not we should send the reset password link on user creation. Note: The API defaults to false
-        :return: The set config value or True as default.
-        """
-        return self.config.get("reset_password", True)
+#     @property
+#     def reset_password(self):
+#         """
+#         Whether or not we should send the reset password link on user creation. Note: The API defaults to false
+#         :return: The set config value or True as default.
+#         """
+#         return self.config.get("reset_password", True)
 
-    @property
-    def force_random_password(self):
-        """
-        This API flag for user creation is not well-documented, but can be used in combination with password and
-        reset_password to generate a random password at create
-        :return: The set config value or False as default.
-        """
-        return self.config.get("force_random_password", False)
+#     @property
+#     def force_random_password(self):
+#         """
+#         This API flag for user creation is not well-documented, but can be used in combination with password and
+#         reset_password to generate a random password at create
+#         :return: The set config value or False as default.
+#         """
+#         return self.config.get("force_random_password", False)
 
 
-### Hidden configuration properties (require manual entry to overwrite default values)
+# ### Hidden configuration properties (require manual entry to overwrite default values)
 
-    @property
-    def shared_runners_enabled(self):
-        return self.config.get("shared_runners_enabled", True)
+#     @property
+#     def shared_runners_enabled(self):
+#         return self.config.get("shared_runners_enabled", True)
 
-    @property
-    def append_project_suffix_on_existing_found(self):
-        """
-        This setting determines if, in the instance of an existing project being found at the destination with the
-        same name as the source project, if we should append a value and create the project, or just fail the import.
-        :return:    The value from the append_project_suffix configuration value, or `False` by default. Note:
-                    The `False` return will execute the default behavior and cause the import to fail if an existing
-                    project is found
-        """
-        return self.config.get("append_project_suffix_on_existing_found", False)
+#     @property
+#     def append_project_suffix_on_existing_found(self):
+#         """
+#         This setting determines if, in the instance of an existing project being found at the destination with the
+#         same name as the source project, if we should append a value and create the project, or just fail the import.
+#         :return:    The value from the append_project_suffix configuration value, or `False` by default. Note:
+#                     The `False` return will execute the default behavior and cause the import to fail if an existing
+#                     project is found
+#         """
+#         return self.config.get("append_project_suffix_on_existing_found", False)
 
-    @property
-    def strip_namespace_prefix(self):
-        """
-        If we should strip the namespace when doing the import/export routines. Should default to True, as stripping
-        handles so nesting issues when the depth is consistent.
-        :return: The set config value or True as default.
-        """
-        return self.config.get("strip_namespace_prefix", True)
+#     @property
+#     def strip_namespace_prefix(self):
+#         """
+#         If we should strip the namespace when doing the import/export routines. Should default to True, as stripping
+#         handles so nesting issues when the depth is consistent.
+#         :return: The set config value or True as default.
+#         """
+#         return self.config.get("strip_namespace_prefix", True)
 
-    @property
-    def importexport_wait(self):
-        """
-        This key-value (in seconds) concerns the import/export status wait time.
-        Depending whether we are migrating during peak hours or not we should be able to adjust it.
-        In general it should be increased when using multiple threads i.e. when the API cannot handle all the requests.
-        :return: The set config value or 30 (seconds) as default.
-        """
-        return self.config.get("importexport_wait", 30)
+#     @property
+#     def importexport_wait(self):
+#         """
+#         This key-value (in seconds) concerns the import/export status wait time.
+#         Depending whether we are migrating during peak hours or not we should be able to adjust it.
+#         In general it should be increased when using multiple threads i.e. when the API cannot handle all the requests.
+#         :return: The set config value or 30 (seconds) as default.
+#         """
+#         return self.config.get("importexport_wait", 30)
 
-    @property
-    def notification_level(self):
-        """
-        Project/group notification level that is set before adding members to the groups/projects.
-        LEVELS = ['disabled', 'participating', 'watch', 'global', 'mention', 'custom']
-        Assign it in order to control how users get notified during migrations.
-        :return: The set config value or 'disabled as default.
-        """
-        return self.config.get("notification_level", "disabled")
+#     @property
+#     def notification_level(self):
+#         """
+#         Project/group notification level that is set before adding members to the groups/projects.
+#         LEVELS = ['disabled', 'participating', 'watch', 'global', 'mention', 'custom']
+#         Assign it in order to control how users get notified during migrations.
+#         :return: The set config value or 'disabled as default.
+#         """
+#         return self.config.get("notification_level", "disabled")
 
-    @property
-    def max_import_retries(self):
-        """
-        Project import retry count.
-        :return: The set config value or 3 as default.
-        """
-        return self.config.get("max_import_retries", 3)
+#     @property
+#     def max_import_retries(self):
+#         """
+#         Project import retry count.
+#         :return: The set config value or 3 as default.
+#         """
+#         return self.config.get("max_import_retries", 3)
 
-    @property
-    def keep_blocked_users(self):
-        """
-        Determines if we should keep blocked users.
-        :return: The set config value or False as default.
-        """
-        return self.config.get("keep_blocked_users", False)
+#     @property
+#     def keep_blocked_users(self):
+#         """
+#         Determines if we should keep blocked users.
+#         :return: The set config value or False as default.
+#         """
+#         return self.config.get("keep_blocked_users", False)
 
-    @property
-    def max_export_wait_time(self):
-        """
-        The maximum amount of time to wait for exports. Accumulated in congregate.helpers.conf.ig#importexport_wait
-        increments
-        :return: The set config value of 3600 seconds (one hour) as default
-        """
-        return self.config.get("max_export_wait_time", 3600)
+#     @property
+#     def max_export_wait_time(self):
+#         """
+#         The maximum amount of time to wait for exports. Accumulated in congregate.helpers.conf.ig#importexport_wait
+#         increments
+#         :return: The set config value of 3600 seconds (one hour) as default
+#         """
+#         return self.config.get("max_export_wait_time", 3600)
 
-    @threads.setter
-    def threads(self, value):
-        self.threads = value
+#     @threads.setter
+#     def threads(self, value):
+#         self.threads = value
