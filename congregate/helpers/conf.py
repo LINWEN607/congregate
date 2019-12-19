@@ -19,7 +19,7 @@ class Config(object):
         self.config = ConfigParser()
         if not os.path.exists(config_path):
             print("WARNING: No configuration found. Configuring empty file {}".format(config_path))
-            with open("{}/data/congregate.conf".format(app_path), "w") as f:
+            with open(config_path, "w") as f:
                 self.config.write(f)
         try:
             self.config.read('{}/data/congregate.conf'.format(app_path))

@@ -207,11 +207,13 @@ class UserTests(unittest.TestCase):
     # pylint: disable=no-member
     @responses.activate
     # pylint: enable=no-member
+    @mock.patch("congregate.helpers.base_module.ConfigurationValidator.import_user_id", new_callable=mock.PropertyMock)
     @mock.patch('congregate.helpers.conf.Config.source_host', new_callable=mock.PropertyMock)
     @mock.patch('congregate.helpers.conf.Config.destination_host', new_callable=mock.PropertyMock)
-    def test_update_users_no_new_users(self, destination, source):
+    def test_update_users_no_new_users(self, destination, source, import_user_id):
         source.return_value = "https://gitlabsource.com"
         destination.return_value = "https://gitlabdestination.com"
+        import_user_id.return_value = 1
         old_users = [
             {
                 "name": "test-app",
@@ -281,11 +283,13 @@ class UserTests(unittest.TestCase):
     # pylint: disable=no-member
     @responses.activate
     # pylint: enable=no-member
+    @mock.patch("congregate.helpers.base_module.ConfigurationValidator.import_user_id", new_callable=mock.PropertyMock)
     @mock.patch('congregate.helpers.conf.Config.source_host', new_callable=mock.PropertyMock)
     @mock.patch('congregate.helpers.conf.Config.destination_host', new_callable=mock.PropertyMock)
-    def test_update_users_wrong_email(self, destination, source):
+    def test_update_users_wrong_email(self, destination, source, import_user_id):
         source.return_value = "https://gitlabsource.com"
         destination.return_value = "https://gitlabdestination.com"
+        import_user_id.return_value = 1
         old_users = [
             {
                 "name": "test-app",
@@ -358,11 +362,13 @@ class UserTests(unittest.TestCase):
     # pylint: disable=no-member
     @responses.activate
     # pylint: enable=no-member
+    @mock.patch("congregate.helpers.base_module.ConfigurationValidator.import_user_id", new_callable=mock.PropertyMock)
     @mock.patch('congregate.helpers.conf.Config.source_host', new_callable=mock.PropertyMock)
     @mock.patch('congregate.helpers.conf.Config.destination_host', new_callable=mock.PropertyMock)
-    def test_update_users_invalid_id(self, destination, source):
+    def test_update_users_invalid_id(self, destination, source, import_user_id):
         destination.return_value = "https://gitlabdestination.com"
         source.return_value = "https://gitlabsource.com"
+        import_user_id.return_value = 1
         old_users = [
             {
                 "name": "test-app",

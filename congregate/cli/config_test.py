@@ -1,4 +1,4 @@
-from os import getcwd, path
+from os import getcwd, path, mkdir
 from sys import version_info
 from ConfigParser import SafeConfigParser as ConfigParser, NoOptionError
 
@@ -14,8 +14,8 @@ if version_info.major == 3:
 elif version_info.major == 2:
     try:
         input = raw_input
-    except NameError:
-        pass
+    except NameError, ne:
+        print("Failed to alias raw_input as input, with error:\n{}".format(ne))
 else:
     print("Unknown Python version - input function not safe")
     exit(1)
@@ -24,15 +24,11 @@ else:
 users = UsersApi()
 groups = GroupsApi()
 aws = AwsClient()
-config_path = "data/congregate.conf"
+app_path = get_congregate_path()
+config_path = "{}/data/congregate.conf".format(app_path)
 
 
-def configure():
-    app_path = get_congregate_path()
-    generate_config(app_path)
-
-
-def generate_config(app_path):
+def generate_config():
     config = ConfigParser(allow_no_value=True)
     
     # Generic destination instance settings
@@ -154,7 +150,15 @@ def generate_config(app_path):
     export_import_wait_time = input("Wait time (in seconds) for project export/import status (default: 30): ")
     config.set("APP", "export_import_wait_time", export_import_wait_time if export_import_wait_time else "30")
 
+    write_to_file(config)
 
-    with open("{}/data/congregate.conf".format(app_path), "w") as f:
+
+def write_to_file(config):
+    if not path.isdir("{}/data".format(app_path)):
+        mkdir("{}/data".format(app_path))
+    if config.has_option("EXPORT", "filesystem_path") and config.get("EXPORT", "filesystem_path"):
+        if not path.isdir("{}/downloads".format(config.get("EXPORT", "filesystem_path"))):
+            mkdir("{}/downloads".format(config.get("EXPORT", "filesystem_path")))
+    with open(config_path, "w") as f:
         print("Writing configuration to file ({})...".format(config_path))
         config.write(f)

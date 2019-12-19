@@ -149,7 +149,7 @@ if __name__ == '__main__':
     if arguments["config"]:
         configure.config()
     elif arguments["configure"]:
-        config_test.configure()
+        config_test.generate_config()
     else:
         if __package__ is None:
             from congregate.migration.gitlab.users import UsersClient

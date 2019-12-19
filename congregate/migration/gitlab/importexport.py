@@ -30,7 +30,7 @@ class ImportExportClient(BaseClass):
         self.keys_map = self.get_keys()
 
     def get_AwsClient(self):
-        if "aws" in self.config.location:
+        if self.config.location == "aws":
             return AwsClient()
         return None
 
