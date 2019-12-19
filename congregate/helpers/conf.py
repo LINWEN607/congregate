@@ -15,13 +15,16 @@ from congregate.helpers.misc_utils import get_congregate_path, deobfuscate
 class Config(object):
     def __init__(self):
         app_path = get_congregate_path()
-        if not os.path.exists('{}/data/congregate.conf'.format(app_path)):
-            print("No configuration found, Configuring now...")
+        config_path = "{}/data/congregate.conf".format(app_path)
+        self.config = ConfigParser()
+        if not os.path.exists(config_path):
+            print("WARNING: No configuration found. Configuring empty file {}".format(config_path))
+            with open("{}/data/congregate.conf".format(app_path), "w") as f:
+                self.config.write(f)
         try:
-            self.config = ConfigParser()
             self.config.read('{}/data/congregate.conf'.format(app_path))
-        except ParsingError, e:
-            print("Failed to parse configuration, with error:\n{}".format(e))
+        except ParsingError, pe:
+            print("Failed to parse configuration, with error:\n{}".format(pe))
 
     def option_exists(self, section, option):
         return self.config.has_option(section, option) and self.config.get(section, option)
