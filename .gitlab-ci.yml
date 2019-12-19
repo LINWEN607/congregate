@@ -44,9 +44,8 @@ build:
   image: "$BUILD_IMAGE_NAME"
   before_script:
     - apt-get update
-    - apt-get install -y jq curl
     - mkdir data
-    - echo ${Dummy_config} | jq . > $CONGREGATE_PATH/data/config.json
+    - echo ${Dummy_config_new} > $CONGREGATE_PATH/data/congregate.conf
     - pip install pipenv
     - export PIPENV_VENV_IN_PROJECT=true
     - pipenv install

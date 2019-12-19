@@ -1,15 +1,17 @@
-from congregate.helpers import api, conf
-from congregate.helpers import logger as log
-from congregate.helpers.misc_utils import parse_query_params
-from urllib2 import HTTPError
 import urllib
 import json
 import re
 
+from urllib2 import HTTPError
+
+from congregate.helpers import api, conf
+from congregate.helpers import logger as log
+from congregate.helpers.misc_utils import parse_query_params
+
 
 class gitlab_repo:
     def __init__(self):
-        self.conf = conf.ig()
+        self.conf = conf.Config()
         self.l = log.myLogger(__name__)
 
     '''

@@ -1,7 +1,9 @@
+import base64
 import os
 import errno
 import json
 
+from getpass import getpass
 from re import sub, findall
 from datetime import timedelta, date
 from requests import get, head
@@ -118,3 +120,9 @@ def get_dry_log(dry_run=True):
 
 def json_pretty(data):
     return json.dumps(data, indent=4, sort_keys=True)
+
+def obfuscate(prompt):
+    return base64.b64encode(getpass(prompt))
+
+def deobfuscate(secret):
+    return base64.b64decode(secret)

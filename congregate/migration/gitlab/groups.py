@@ -29,8 +29,10 @@ class GroupsClient(BaseClass):
         '''
         try:
             if self.config.parent_id is not None:
-                return self.groups_api.get_group(self.config.parent_id, self.config.destination_host,
-                                                 self.config.destination_token).json()["full_path"]
+                return self.groups_api.get_group(
+                    self.config.parent_id,
+                    self.config.destination_host,
+                    self.config.destination_token).json()["full_path"]
             else:
                 return ""
         except ConfigurationException, e:

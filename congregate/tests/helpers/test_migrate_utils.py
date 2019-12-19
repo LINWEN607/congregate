@@ -139,11 +139,13 @@ class MigrateTests(unittest.TestCase):
         self.assertListEqual(filtered_staged, expected)
         print(filtered_staged)
 
+    @mock.patch("congregate.helpers.base_module.ConfigurationValidator.parent_id", new_callable=mock.PropertyMock)
     @mock.patch.object(GroupsApi, "get_group")
     @mock.patch.object(ConfigurationValidator, "validate_parent_group_id")
-    def test_get_staged_projects_without_failed_update_with_no_failure_leaves_unchanged(self, cv, ga):
+    def test_get_staged_projects_without_failed_update_with_no_failure_leaves_unchanged(self, cv, ga, pi):
         ga.return_value = self.ThingWithJson({"path": "SOME_RANDOM_PATH"})
         cv.return_value = True
+        pi.return_value = 1
         failed_results = []
         filtered_staged = get_staged_projects_without_failed_update(self.staged_projects, failed_results)
         self.assertListEqual(filtered_staged, self.staged_projects)

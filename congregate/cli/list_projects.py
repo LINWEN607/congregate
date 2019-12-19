@@ -1,6 +1,5 @@
 import json
 import os
-from congregate.helpers import api
 from congregate.helpers import base_module as b
 from congregate.migration.gitlab.groups import GroupsClient
 from congregate.migration.gitlab.users import UsersClient
@@ -22,10 +21,10 @@ def list_projects():
         json.dump(projects, f, indent=4)
 
     for project in projects:
-        id = project["id"]
+        pid = project["id"]
         name = project["name"]
         description = project["description"]
-        print "[id: %s] %s: %s" % (id, name, description)
+        print "[id: %s] %s: %s" % (pid, name, description)
 
     groupsclient.retrieve_group_info(b.config.source_host, b.config.source_token, quiet=True)
     usersclient.retrieve_user_info(quiet=True)
