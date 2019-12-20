@@ -44,11 +44,11 @@ class ConfigTests(unittest.TestCase):
         
         mock_get.return_value = self.users_api.get_current_user()
         # with mock.patch('__builtin__.raw_input', lambda x: next(g)):
-        with mock.patch('congregate.cli.config_test.get_congregate_path', lambda : "."):
+        with mock.patch('congregate.cli.config_test.app_path', "."):
             with mock.patch('congregate.cli.config_test.obfuscate', lambda x: "obfuscated"):
                 with mock.patch('congregate.cli.config_test.deobfuscate', lambda x: "deobfuscated"):
                     with mock.patch('congregate.cli.config_test.input', lambda x: next(g)):
-                        config_test.configure()
+                        config_test.generate_config()
             # self.assertEqual(expected, actual)
         
         # load the file that was just written
@@ -121,7 +121,7 @@ class ConfigTests(unittest.TestCase):
                 with mock.patch('congregate.cli.config_test.obfuscate', lambda x: "obfuscated"):
                     with mock.patch('congregate.cli.config_test.deobfuscate', lambda x: "deobfuscated"):
                         with mock.patch('congregate.cli.config_test.input', lambda x: next(g)):
-                            config_test.configure()
+                            config_test.generate_config()
             # self.assertEqual(expected, actual)
         
         # load the file that was just written
@@ -195,7 +195,7 @@ class ConfigTests(unittest.TestCase):
                 with mock.patch('congregate.cli.config_test.obfuscate', lambda x: "obfuscated"):
                     with mock.patch('congregate.cli.config_test.deobfuscate', lambda x: "deobfuscated"):
                         with mock.patch('congregate.cli.config_test.input', lambda x: next(g)):
-                            config_test.configure()
+                            config_test.generate_config()
         
         # load the file that was just written
         with open("./data/congregate.conf", "r") as f:
