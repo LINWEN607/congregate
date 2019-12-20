@@ -9,11 +9,18 @@ from congregate.tests.mockapi.groups import MockGroupsApi
 from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.api.groups import GroupsApi
 
+test_dir_prefix = "./congregate/tests/cli/data/"
+
+def mock_file(config):
+    with open("{0}congregate.conf".format(test_dir_prefix), "w") as f: 
+        config.write(f)
+
 class ConfigTests(unittest.TestCase):
     def setUp(self):
         self.users_api = MockUsersApi()
         self.groups_api = MockGroupsApi()
         self.maxDiff = None
+
 
     @mock.patch.object(UsersApi, "get_current_user")
     def test_full_ext_src_skeleton(self, mock_get):
@@ -42,21 +49,24 @@ class ConfigTests(unittest.TestCase):
 
         g = input_generator(values)
 
+        
+            
         mock_get.return_value = self.users_api.get_current_user()
         # with mock.patch('__builtin__.raw_input', lambda x: next(g)):
-        with mock.patch('congregate.cli.config_test.app_path', "."):
-            with mock.patch('congregate.cli.config_test.obfuscate', lambda x: "obfuscated==="):
-                with mock.patch('congregate.cli.config_test.deobfuscate', lambda x: "deobfuscated==="):
-                    with mock.patch('congregate.cli.config_test.input', lambda x: next(g)):
-                        config_test.generate_config()
+        with mock.patch('congregate.cli.config_test.write_to_file', mock_file):
+            with mock.patch('congregate.cli.config_test.app_path', "."):
+                with mock.patch('congregate.cli.config_test.obfuscate', lambda x: "obfuscated==="):
+                    with mock.patch('congregate.cli.config_test.deobfuscate', lambda x: "deobfuscated==="):
+                        with mock.patch('congregate.cli.config_test.input', lambda x: next(g)):
+                            config_test.generate_config()
             # self.assertEqual(expected, actual)
 
         # load the file that was just written
-        with open("./data/congregate.conf", "r") as f:
+        with open("{0}congregate.conf".format(test_dir_prefix), "r") as f:
             generated = f.readlines()
 
         # load the reference file
-        with open("./congregate/tests/cli/data/test_full_ext_src_skeleton.conf", "r") as f:
+        with open("{0}test_full_ext_src_skeleton.conf".format(test_dir_prefix), "r") as f:
             reference = f.readlines()
 
         self.assertListEqual(generated, reference)
@@ -116,20 +126,21 @@ class ConfigTests(unittest.TestCase):
                 return self._json
 
         mock_get_group.return_value = Hack()
-        with mock.patch('congregate.cli.config_test.getcwd', lambda : "."):
-            with mock.patch('congregate.cli.config_test.get_congregate_path', lambda : "."):
-                with mock.patch('congregate.cli.config_test.obfuscate', lambda x: "obfuscated==="):
-                    with mock.patch('congregate.cli.config_test.deobfuscate', lambda x: "deobfuscated==="):
-                        with mock.patch('congregate.cli.config_test.input', lambda x: next(g)):
-                            config_test.generate_config()
+        with mock.patch('congregate.cli.config_test.write_to_file', mock_file):
+            with mock.patch('congregate.cli.config_test.getcwd', lambda : "."):
+                with mock.patch('congregate.cli.config_test.get_congregate_path', lambda : "."):
+                    with mock.patch('congregate.cli.config_test.obfuscate', lambda x: "obfuscated==="):
+                        with mock.patch('congregate.cli.config_test.deobfuscate', lambda x: "deobfuscated==="):
+                            with mock.patch('congregate.cli.config_test.input', lambda x: next(g)):
+                                config_test.generate_config()
             # self.assertEqual(expected, actual)
 
         # load the file that was just written
-        with open("./data/congregate.conf", "r") as f:
+        with open("{0}congregate.conf".format(test_dir_prefix), "r") as f:
             generated = f.readlines()
 
         # load the reference file
-        with open("./congregate/tests/cli/data/test_not_ext_src_parent_group_path_no_mirror_name_aws_skeleton.conf", "r") as f:
+        with open("{0}test_not_ext_src_parent_group_path_no_mirror_name_aws_skeleton.conf".format(test_dir_prefix), "r") as f:
             reference = f.readlines()
 
         self.assertListEqual(generated, reference)
@@ -190,19 +201,20 @@ class ConfigTests(unittest.TestCase):
 
         mock_get_group.return_value = GroupHack()
 
-        with mock.patch('congregate.cli.config_test.getcwd', lambda : "."):
-            with mock.patch('congregate.cli.config_test.get_congregate_path', lambda : "."):
-                with mock.patch('congregate.cli.config_test.obfuscate', lambda x: "obfuscated==="):
-                    with mock.patch('congregate.cli.config_test.deobfuscate', lambda x: "deobfuscated==="):
-                        with mock.patch('congregate.cli.config_test.input', lambda x: next(g)):
-                            config_test.generate_config()
+        with mock.patch('congregate.cli.config_test.write_to_file', mock_file):
+            with mock.patch('congregate.cli.config_test.getcwd', lambda : "."):
+                with mock.patch('congregate.cli.config_test.get_congregate_path', lambda : "."):
+                    with mock.patch('congregate.cli.config_test.obfuscate', lambda x: "obfuscated==="):
+                        with mock.patch('congregate.cli.config_test.deobfuscate', lambda x: "deobfuscated==="):
+                            with mock.patch('congregate.cli.config_test.input', lambda x: next(g)):
+                                config_test.generate_config()
 
         # load the file that was just written
-        with open("./data/congregate.conf", "r") as f:
+        with open("{0}congregate.conf".format(test_dir_prefix), "r") as f:
             generated = f.readlines()
 
         # load the reference file
-        with open("./congregate/tests/cli/data/test_not_ext_src_no_parent_group_path_mirror_name_filesystem_skeleton.conf", "r") as f:
+        with open("{0}test_not_ext_src_no_parent_group_path_mirror_name_filesystem_skeleton.conf".format(test_dir_prefix), "r") as f:
             reference = f.readlines()
 
         self.assertListEqual(generated, reference)
