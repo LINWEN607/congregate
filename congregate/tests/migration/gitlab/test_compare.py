@@ -3,7 +3,7 @@ import responses
 from congregate.migration.gitlab.compare import CompareClient
 from congregate.tests.mockapi.groups import MockGroupsApi
 from congregate.tests.mockapi.users import MockUsersApi
-from congregate.helpers.misc_utils import rewrite_list_into_dict
+from congregate.helpers.misc_utils import rewrite_list_into_dict, deobfuscate
 from congregate.helpers.configuration_validator import ConfigurationValidator
 
 compare = CompareClient()
@@ -53,7 +53,9 @@ def test_compare_groups(parent_id, group_data):
             }
         }
     }
-    actual_results, actual_unknown_users = compare.create_group_migration_results()
+    
+    with mock.patch('congregate.helpers.conf.deobfuscate', lambda x: ""):
+        actual_results, actual_unknown_users = compare.create_group_migration_results()
     assert actual_results == expected_results
     assert actual_unknown_users == {}
 
@@ -310,7 +312,8 @@ def test_user_snapshot(url):
             'source_instance_username': 'jdoe'
         }
     }
-    actual = compare.generate_user_snapshot_map(dummy_members)
+    with mock.patch('congregate.helpers.conf.deobfuscate', lambda x: ""):
+        actual = compare.generate_user_snapshot_map(dummy_members)
     assert expected == actual
 
 # pylint: disable=no-member
@@ -336,7 +339,8 @@ def test_unknown_user_snapshot(url):
             "message": "404 User Not Found"
         }
     }
-    actual = compare.generate_user_snapshot_map(dummy_members)
+    with mock.patch('congregate.helpers.conf.deobfuscate', lambda x: ""):
+        actual = compare.generate_user_snapshot_map(dummy_members)
     assert expected == actual
 
 def mock_destination_ids():
