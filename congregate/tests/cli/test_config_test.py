@@ -20,14 +20,14 @@ class ConfigTests(unittest.TestCase):
         """
             Generates a full skeleton outline of the configuration using empty strings and default values
             Compares that against the last known-good skeleton
-        """        
+        """
         values = [
             "hostname", # Destination hostname
             # "token", # Destination access token
             # "0",  # Destination import user id
             "True",   # shared runners enabled
-            "False",  # append project suffix (retry) 
-            "disabled", # notification level 
+            "False",  # append project suffix (retry)
+            "disabled", # notification level
             "3",  # max_import_retries,
             "some_external_source", # external_src_url
             "username", # ext_src_user
@@ -39,9 +39,9 @@ class ConfigTests(unittest.TestCase):
             "True", # strip namespace prefix
             "30"   # import wait time
         ]
-        
+
         g = input_generator(values)
-        
+
         mock_get.return_value = self.users_api.get_current_user()
         # with mock.patch('__builtin__.raw_input', lambda x: next(g)):
         with mock.patch('congregate.cli.config_test.app_path', "."):
@@ -50,15 +50,15 @@ class ConfigTests(unittest.TestCase):
                     with mock.patch('congregate.cli.config_test.input', lambda x: next(g)):
                         config_test.generate_config()
             # self.assertEqual(expected, actual)
-        
+
         # load the file that was just written
         with open("./data/congregate.conf", "r") as f:
             generated = f.readlines()
-        
+
         # load the reference file
         with open("./congregate/tests/cli/data/test_full_ext_src_skeleton.conf", "r") as f:
             reference = f.readlines()
-            
+
         self.assertListEqual(generated, reference)
 
     @mock.patch.object(GroupsApi, "get_group")
@@ -67,16 +67,16 @@ class ConfigTests(unittest.TestCase):
         """
         Not external source
         parent group found (first if)
-        No mirror (default)        
+        No mirror (default)
         AWS (first if)
-        """        
+        """
         values = [
             "hostname", # Destination hostname
             # "token", # Destination access token
             # "0",  # Destination import user id
             "True",   # shared runners enabled
-            "False",  # append project suffix (retry) 
-            "disabled", # notification level 
+            "False",  # append project suffix (retry)
+            "disabled", # notification level
             "3",  # max_import_retries,
             "gitlab", # external_src_url
             "source_hostname", # source host
@@ -104,14 +104,14 @@ class ConfigTests(unittest.TestCase):
             "True", # strip namespace prefix
             "30"   # import wait time
         ]
-        
+
         g = input_generator(values)
-        
+
         mock_get.return_value = self.users_api.get_current_user()
-        
+
         class Hack(object):
             def __init__(self):
-                self._json = {"full_path": "destination_group_full_path"}  
+                self._json = {"full_path": "destination_group_full_path"}
             def json(self):
                 return self._json
 
@@ -123,15 +123,15 @@ class ConfigTests(unittest.TestCase):
                         with mock.patch('congregate.cli.config_test.input', lambda x: next(g)):
                             config_test.generate_config()
             # self.assertEqual(expected, actual)
-        
+
         # load the file that was just written
         with open("./data/congregate.conf", "r") as f:
             generated = f.readlines()
-        
+
         # load the reference file
         with open("./congregate/tests/cli/data/test_not_ext_src_parent_group_path_no_mirror_name_aws_skeleton.conf", "r") as f:
             reference = f.readlines()
-            
+
         self.assertListEqual(generated, reference)
 
     @mock.patch.object(GroupsApi, "get_group")
@@ -142,14 +142,14 @@ class ConfigTests(unittest.TestCase):
         no parent group
         mirror
         filesystem
-        """        
+        """
         values = [
             "hostname", # Destination hostname
             # "token", # Destination access token
             # "0",  # Destination import user id
             "True",   # shared runners enabled
-            "False",  # append project suffix (retry) 
-            "disabled", # notification level 
+            "False",  # append project suffix (retry)
+            "disabled", # notification level
             "3",  # max_import_retries,
             "gitlab", # external_src_url
             "source_hostname", # source host
@@ -177,34 +177,34 @@ class ConfigTests(unittest.TestCase):
             "True", # strip namespace prefix
             "30"   # import wait time
         ]
-        
+
         g = input_generator(values)
 
         mock_get_current_user.return_value = {"id": 123, "username": "username"}
-        
+
         class GroupHack(object):
             def __init__(self):
-                self._json = {"full_path": None}  
+                self._json = {"full_path": None}
             def json(self):
                 return self._json
 
         mock_get_group.return_value = GroupHack()
-        
+
         with mock.patch('congregate.cli.config_test.getcwd', lambda : "."):
             with mock.patch('congregate.cli.config_test.get_congregate_path', lambda : "."):
                 with mock.patch('congregate.cli.config_test.obfuscate', lambda x: "obfuscated"):
                     with mock.patch('congregate.cli.config_test.deobfuscate', lambda x: "deobfuscated"):
                         with mock.patch('congregate.cli.config_test.input', lambda x: next(g)):
                             config_test.generate_config()
-        
+
         # load the file that was just written
         with open("./data/congregate.conf", "r") as f:
             generated = f.readlines()
-        
+
         # load the reference file
         with open("./congregate/tests/cli/data/test_not_ext_src_no_parent_group_path_mirror_name_filesystem_skeleton.conf", "r") as f:
             reference = f.readlines()
-            
+
         self.assertListEqual(generated, reference)
 
 if __name__ == "__main__":

@@ -18,8 +18,8 @@ def test_compare_groups(parent_id, group_data):
     destination_groups = mock_destination_ids()
     group_data.side_effect = [destination_groups, source_groups]
     expected_results = {
-        'Total groups in destination instance': 4, 
-        'Total groups in source instance': 4, 
+        'Total groups in destination instance': 4,
+        'Total groups in source instance': 4,
         'results': {
             'foo-bar-2': {
                 'path': True,
@@ -53,7 +53,7 @@ def test_compare_groups(parent_id, group_data):
             }
         }
     }
-    
+
     with mock.patch('congregate.helpers.conf.deobfuscate', lambda x: ""):
         actual_results, actual_unknown_users = compare.create_group_migration_results()
     assert actual_results == expected_results
@@ -306,9 +306,9 @@ def test_user_snapshot(url):
     # pylint: enable=no-member
     expected = {
         27: {
-            'email': 'jdoe@email.com', 
-            'destination_instance_user_id': 1234, 
-            'destination_instance_username': 'jdoe', 
+            'email': 'jdoe@email.com',
+            'destination_instance_user_id': 1234,
+            'destination_instance_username': 'jdoe',
             'source_instance_username': 'jdoe'
         }
     }
