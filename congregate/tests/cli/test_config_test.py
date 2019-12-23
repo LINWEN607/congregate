@@ -1,19 +1,15 @@
 import unittest
-import os
 import mock
-import responses
 from congregate.cli import config_test
-from congregate.helpers.misc_utils import get_congregate_path, input_generator
+from congregate.helpers.misc_utils import input_generator
 from congregate.tests.mockapi.users import MockUsersApi
 from congregate.tests.mockapi.groups import MockGroupsApi
 from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.api.groups import GroupsApi
 
+
 test_dir_prefix = "./congregate/tests/cli/data/"
 
-def mock_file(config):
-    with open("{0}congregate.conf".format(test_dir_prefix), "w") as f: 
-        config.write(f)
 
 class ConfigTests(unittest.TestCase):
     def setUp(self):
@@ -49,17 +45,13 @@ class ConfigTests(unittest.TestCase):
 
         g = input_generator(values)
 
-        
-            
         mock_get.return_value = self.users_api.get_current_user()
-        # with mock.patch('__builtin__.raw_input', lambda x: next(g)):
         with mock.patch('congregate.cli.config_test.write_to_file', mock_file):
             with mock.patch('congregate.cli.config_test.app_path', "."):
                 with mock.patch('congregate.cli.config_test.obfuscate', lambda x: "obfuscated==="):
                     with mock.patch('congregate.cli.config_test.deobfuscate', lambda x: "deobfuscated==="):
                         with mock.patch('congregate.cli.config_test.input', lambda x: next(g)):
                             config_test.generate_config()
-            # self.assertEqual(expected, actual)
 
         # load the file that was just written
         with open("{0}congregate.conf".format(test_dir_prefix), "r") as f:
@@ -70,6 +62,7 @@ class ConfigTests(unittest.TestCase):
             reference = f.readlines()
 
         self.assertListEqual(generated, reference)
+
 
     @mock.patch.object(GroupsApi, "get_group")
     @mock.patch.object(UsersApi, "get_current_user")
@@ -133,7 +126,6 @@ class ConfigTests(unittest.TestCase):
                         with mock.patch('congregate.cli.config_test.deobfuscate', lambda x: "deobfuscated==="):
                             with mock.patch('congregate.cli.config_test.input', lambda x: next(g)):
                                 config_test.generate_config()
-            # self.assertEqual(expected, actual)
 
         # load the file that was just written
         with open("{0}congregate.conf".format(test_dir_prefix), "r") as f:
@@ -144,6 +136,7 @@ class ConfigTests(unittest.TestCase):
             reference = f.readlines()
 
         self.assertListEqual(generated, reference)
+
 
     @mock.patch.object(GroupsApi, "get_group")
     @mock.patch.object(UsersApi, "get_current_user")
@@ -218,6 +211,12 @@ class ConfigTests(unittest.TestCase):
             reference = f.readlines()
 
         self.assertListEqual(generated, reference)
+
+
+def mock_file(config):
+    with open("{0}congregate.conf".format(test_dir_prefix), "w") as f:
+        config.write(f)
+
 
 if __name__ == "__main__":
     unittest.main()

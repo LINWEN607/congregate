@@ -17,3 +17,4 @@ js-packages
 .pytest_cache
 .idea
 .vscode
+congregate/tests/cli/data/congregate.conf
