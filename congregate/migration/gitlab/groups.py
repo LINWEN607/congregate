@@ -37,7 +37,7 @@ class GroupsClient(BaseClass):
                 return ""
         except ConfigurationException, e:
             self.log.error(e)
-            exit(1)
+            raise SystemExit()
 
     def traverse_groups(self, base_groups, transient_list, host, token, parent_group=None):
         if parent_group is not None:

@@ -211,7 +211,7 @@ def get_project_metadata(project):
         "http_url_to_repo": project["http_url_to_repo"],
         "project_type": project["namespace"]["kind"],
         "description": project["description"],
-        "shared_runners_enabled": b.config.shared_runners_enabled,
+        "shared_runners_enabled": project["shared_runners_enabled"],
         "archived": project["archived"]
     }
 

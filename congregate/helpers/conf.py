@@ -25,6 +25,7 @@ class Config(object):
             self.config.read('{}/data/congregate.conf'.format(app_path))
         except ParsingError, pe:
             print("Failed to parse configuration, with error:\n{}".format(pe))
+            raise SystemExit()
 
     def option_exists(self, section, option):
         return self.config.has_option(section, option) and self.config.get(section, option)
