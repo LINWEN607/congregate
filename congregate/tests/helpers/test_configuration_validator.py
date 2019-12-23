@@ -1,16 +1,13 @@
 import unittest
 import mock
 import pytest
-import requests
 import responses
-import json
 from congregate.helpers.configuration_validator import ConfigurationValidator
 from congregate.tests.mockapi.groups import MockGroupsApi
 from congregate.tests.mockapi.users import MockUsersApi
 from congregate.tests.mockapi.token import invalid_token
 from congregate.tests.mockapi.error import other_error
 from congregate.helpers.exceptions import ConfigurationException
-from congregate.helpers.api import generate_v4_request_url
 
 
 class ConfigurationValidationTests(unittest.TestCase):

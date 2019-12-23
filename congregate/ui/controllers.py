@@ -3,7 +3,8 @@ from flask import request, Response, stream_with_context
 
 from congregate.helpers.base_module import app_path
 from congregate.cli import stage_projects
-from congregate.cli.config import update_config
+# from congregate.cli.config import update_config
+from congregate.cli.config_test import update_config
 from congregate.migration.gitlab.groups import GroupsClient
 from congregate.migration.gitlab.users import UsersClient
 from congregate.migration.migrate import migrate

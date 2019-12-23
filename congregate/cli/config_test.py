@@ -1,7 +1,9 @@
+import json
 from os import getcwd, path, mkdir
 from ConfigParser import SafeConfigParser as ConfigParser, NoOptionError
 
 from congregate.helpers.misc_utils import get_congregate_path, obfuscate, deobfuscate
+from congregate.helpers.configuration_validator import ConfigurationValidator
 from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.aws import AwsClient
@@ -148,3 +150,29 @@ def write_to_file(config):
     with open(config_path, "w") as f:
         print("Writing configuration to file ({})...".format(config_path))
         config.write(f)
+
+
+def update_config(data):
+    config = ConfigurationValidator()
+    config_obj = config.as_obj()
+    x = 0
+    y = 0
+    config_list = list(data.split(","))
+    for section in config_obj.sections():
+        y += len(config_obj.items(section))
+        print("data {0} -> {1}: {2}".format(x, y, config_list[x:y]))
+        # for (k1, v1), p2 in zip(config_obj.items(section), config_list[x:y]):
+        #     if k1 == p2[0]:
+        #         config_obj.set(section, k1, p2[1])
+        x += len(config_obj.items(section))
+
+    # for section in config_obj.sections():
+    #     print(section)
+    #     for key, value in config_obj.items(section):
+    #         print("{}: {}".format(key, value))
+
+    # with open("%s/data/config.json" % app_path, "r") as f:
+    #     data = json.load(f)
+    # data["config"] = json.loads(config)
+    # with open("%s/data/config.json" % app_path, "w") as f:
+    #     json.dump(data, f, indent=4)

@@ -1,7 +1,8 @@
-import os
 import json
-from . import app
 from flask import jsonify
+
+from congregate.helpers.configuration_validator import ConfigurationValidator
+from . import app
 
 # try:
 from congregate.helpers.base_module import app_path
@@ -23,6 +24,9 @@ def get_data(file_name, sort_by=None):
 
     return data
 
+def get_config():
+    config = ConfigurationValidator()
+    return config.as_obj()
 
 def get_counts():
     total_projects = len(get_data("project_json"))

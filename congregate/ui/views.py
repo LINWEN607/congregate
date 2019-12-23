@@ -1,7 +1,7 @@
-from flask import render_template, Response, stream_with_context, send_from_directory
+from flask import render_template, send_from_directory
+
+from congregate.ui.models import get_data, get_counts, get_config
 from . import app
-from models import get_data, get_counts
-#from time import sleep
 
 
 @app.route("/")
@@ -31,7 +31,7 @@ def group_page():
 
 @app.route("/config")
 def config_page():
-    data = dict(get_data("config"))
+    data = get_config()
     return render_template("config.html", data=data)
 
 
