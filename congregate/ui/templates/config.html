@@ -22,10 +22,10 @@ Congregate by GitLab
                     </thead>
                     {% for key, value in data.items(section) %}
                         <tr>
-                            <td class = "config_key">{{ key }}</td>
+                            <td class="config_key">{{ key }}</td>
                             <td>
                                 <div class="form-group">
-                                <input type = "text" class = "config_value form-control" value = {{ value }}>
+                                <input type="text" class="config_value form-control" value={{ value }}>
                                 </div>
                             </td>
                         </tr>

@@ -21,10 +21,10 @@ def generate_config():
     
     # Generic destination instance settings
     config.add_section("DESTINATION")
-    config.set("DESTINATION", "hostname", raw_input("Destination instance Host: "))
-    config.set("DESTINATION", "access_token", obfuscate("Destination instance Access token: "))
-    migration_user = users.get_current_user(config.get("DESTINATION", "hostname"),
-        deobfuscate(config.get("DESTINATION", "access_token")))
+    config.set("DESTINATION", "dstn_hostname", raw_input("Destination instance Host: "))
+    config.set("DESTINATION", "dstn_access_token", obfuscate("Destination instance Access token: "))
+    migration_user = users.get_current_user(config.get("DESTINATION", "dstn_hostname"),
+        deobfuscate(config.get("DESTINATION", "dstn_access_token")))
     if migration_user.get("id", None) is not None:
         config.set("DESTINATION", "import_user_id", str(migration_user["id"]))
     else:
@@ -57,21 +57,21 @@ def generate_config():
     if not config.has_section("EXT_SRC"):
         # Non-external source instance settings
         config.add_section("SOURCE")
-        config.set("SOURCE", "hostname", raw_input("Source instance Host: "))
-        config.set("SOURCE", "access_token", obfuscate("Source instance Access token: "))
-        config.set("SOURCE", "registry_url", raw_input("Source instance Container Registry URL: "))
+        config.set("SOURCE", "src_hostname", raw_input("Source instance Host: "))
+        config.set("SOURCE", "src_access_token", obfuscate("Source instance Access token: "))
+        config.set("SOURCE", "src_registry_url", raw_input("Source instance Container Registry URL: "))
         max_export_wait_time = raw_input("Max wait time (in seconds) for project export status (default: 3600): ")
         config.set("SOURCE", "max_export_wait_time", max_export_wait_time if max_export_wait_time else "3600")
         
         # Non-external destination instance settings
-        config.set("DESTINATION", "registry_url", raw_input("Destination instance Container Registry URL: "))
+        config.set("DESTINATION", "dstn_registry_url", raw_input("Destination instance Container Registry URL: "))
         config.set("DESTINATION", "parent_group_id",
             raw_input("Migrating to a parent group (e.g. gitlab.com)? Parent group ID (Group -> Settings -> General): "))
         
         if config.has_option("DESTINATION", "parent_group_id") and config.get("DESTINATION", "parent_group_id"):
             group = groups.get_group(config.getint("DESTINATION", "parent_group_id"),
-                config.get("DESTINATION", "hostname"),
-                deobfuscate(config.get("DESTINATION", "access_token"))).json()
+                config.get("DESTINATION", "dstn_hostname"),
+                deobfuscate(config.get("DESTINATION", "dstn_access_token"))).json()
             if group.get("full_path", None) is not None:
                 config.set("DESTINATION", "parent_group_path", group["full_path"])
             else:
@@ -155,15 +155,20 @@ def write_to_file(config):
 def update_config(data):
     config = ConfigurationValidator()
     config_obj = config.as_obj()
+
     x = 0
     y = 0
-    config_list = list(data.split(","))
+    config_list = map(lambda d: d.strip("{}").replace('"', ''), data.split(","))
     for section in config_obj.sections():
         y += len(config_obj.items(section))
-        print("data {0} -> {1}: {2}".format(x, y, config_list[x:y]))
-        # for (k1, v1), p2 in zip(config_obj.items(section), config_list[x:y]):
-        #     if k1 == p2[0]:
-        #         config_obj.set(section, k1, p2[1])
+        # print("data {0} -> {1}: {2}".format(x, y, config_list[x:y]))
+        for (k1, v1), p in zip(config_obj.items(section), config_list[x:y]):
+            print(k1, p.split(":"))
+            p1 = p.split(":")[0]
+            p2 = p.split(":")[1]
+            if str(k1) == str(p1) and v1 != p2:
+                print("Setting section {0}, key {1}, value {2}".format(section, k1, p2))
+                config_obj.set(section, k1, p2)
         x += len(config_obj.items(section))
 
     # for section in config_obj.sections():

@@ -49,13 +49,13 @@ class Config(object):
 
     def as_obj(self):
         """
-        Return entire config object
+        Return entire config object (setter)
         """
         return self.config
 
     def as_dict(self):
         """
-        Return entire config as dictionary
+        Return entire config as dictionary (copy)
         """
         d = dict(self.config._sections)
         for k in d:
@@ -66,15 +66,15 @@ class Config(object):
 ### DESTINATION
     @property
     def destination_host(self):
-        return self.prop("DESTINATION", "hostname")
+        return self.prop("DESTINATION", "dstn_hostname")
 
     @property
     def destination_token(self):
-        return self.prop("DESTINATION", "access_token", None, True)
+        return self.prop("DESTINATION", "dstn_access_token", None, True)
 
     @property
     def destination_registry(self):
-        return self.prop("DESTINATION", "registry_url")
+        return self.prop("DESTINATION", "dstn_registry_url")
 
     @property
     def import_user_id(self):
@@ -140,15 +140,15 @@ class Config(object):
 ### SOURCE
     @property
     def source_host(self):
-        return self.prop("SOURCE", "hostname")
+        return self.prop("SOURCE", "src_hostname")
 
     @property
     def source_token(self):
-        return self.prop("SOURCE", "access_token", None, True)
+        return self.prop("SOURCE", "src_access_token", None, True)
 
     @property
     def source_registry(self):
-        return self.prop("SOURCE", "registry_url")
+        return self.prop("SOURCE", "src_registry_url")
 
     @property
     def max_export_wait_time(self):
