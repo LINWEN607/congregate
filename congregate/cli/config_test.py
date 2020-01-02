@@ -155,7 +155,6 @@ def write_to_file(config):
 def update_config(data):
     config = ConfigurationValidator()
     config_obj = config.as_obj()
-
     x = 0
     y = 0
     config_list = map(lambda d: d.strip("{}").replace('"', ''), data.split(","))
@@ -163,14 +162,15 @@ def update_config(data):
         y += len(config_obj.items(section))
         # print("data {0} -> {1}: {2}".format(x, y, config_list[x:y]))
         for (k1, v1), p in zip(config_obj.items(section), config_list[x:y]):
-            print(k1, p.split(":"))
-            p1 = p.split(":")[0]
-            p2 = p.split(":")[1]
+            print(k1, p.split(":", 1))
+            p1 = p.split(":", 1)[0]
+            p2 = p.split(":", 1)[1]
             if str(k1) == str(p1) and v1 != p2:
                 print("Setting section {0}, key {1}, value {2}".format(section, k1, p2))
                 config_obj.set(section, k1, p2)
         x += len(config_obj.items(section))
 
+    write_to_file(config_obj)
     # for section in config_obj.sections():
     #     print(section)
     #     for key, value in config_obj.items(section):
