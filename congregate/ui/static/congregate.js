@@ -167,7 +167,14 @@ function register_events() {
                 url: "update_config",
                 data: JSON.stringify(conf_obj),
                 success: function(data) {
+                    document.getElementById('stage_log').innerHTML = "Config updated";
                     console.log(data);
+                },
+                error: function(xhr, status, error) {
+                    console.log(xhr);
+                    console.log(status);
+                    console.log(error);
+                    document.getElementById('stage_log').innerHTML = error;
                 }
             });
         });

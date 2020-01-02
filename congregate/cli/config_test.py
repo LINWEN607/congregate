@@ -157,7 +157,12 @@ def update_config(data):
     config_obj = config.as_obj()
     x = 0
     y = 0
-    config_list = map(lambda d: d.strip("{}").replace('"', ''), data.split(","))
+    write_new_config = False
+    # config_list = map(lambda d: d.strip("{}").replace('"', ''), data.split(","))
+    config_list = [
+            d.strip("{}").replace('"', '') for d in data.split(",")
+        ]
+    print(config_list)
     for section in config_obj.sections():
         y += len(config_obj.items(section))
         # print("data {0} -> {1}: {2}".format(x, y, config_list[x:y]))
@@ -166,11 +171,13 @@ def update_config(data):
             p1 = p.split(":", 1)[0]
             p2 = p.split(":", 1)[1]
             if str(k1) == str(p1) and v1 != p2:
+                write_new_config = True
                 print("Setting section {0}, key {1}, value {2}".format(section, k1, p2))
                 config_obj.set(section, k1, p2)
         x += len(config_obj.items(section))
 
-    write_to_file(config_obj)
+    if write_new_config:
+        write_to_file(config_obj)
     # for section in config_obj.sections():
     #     print(section)
     #     for key, value in config_obj.items(section):
