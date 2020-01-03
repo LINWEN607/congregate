@@ -151,6 +151,7 @@ def write_to_file(config):
         config.write(f)
 
 
+# Used only by the UI
 def update_config(data):
     config = ConfigurationValidator()
     config_obj = config.as_obj()
@@ -179,4 +180,4 @@ def update_config(data):
     if write_new_config:
         write_to_file(config_obj)
     else:
-        print("No pending config changes")
+        return("No pending config changes")

@@ -213,6 +213,103 @@ class ConfigTests(unittest.TestCase):
         self.assertListEqual(generated, reference)
 
 
+    def test_update_config_with_changes(self):
+        data = '{\
+            "dstn_hostname":"hostname",\
+            "dstn_access_token":"obfuscated===",\
+            "import_user_id":"1",\
+            "shared_runners_enabled":"False",\
+            "project_suffix":"False",\
+            "notification_level":"disabled",\
+            "max_import_retries":"3",\
+            "dstn_registry_url":"destination_registry_url",\
+            "parent_group_id":"1",\
+            "parent_group_path":"destination_group_full_path",\
+            "privatize_groups":"True",\
+            "group_sso_provider":"",\
+            "username_suffix":"local",\
+            "mirror_username":"",\
+            "src_hostname":"source_hostname",\
+            "src_access_token":"obfuscated===",\
+            "src_registry_url":"source_registry_url",\
+            "max_export_wait_time":"3600",\
+            "location":"aws",\
+            "s3_name":"s3_name",\
+            "s3_region":"us-east-1",\
+            "s3_access_key_id":"obfuscated===",\
+            "s3_secret_access_key":"obfuscated===",\
+            "filesystem_path":".",\
+            "keep_blocked_users":"False",\
+            "reset_pwd":"False",\
+            "force_rand_pwd":"True",\
+            "no_of_threads":"4",\
+            "strip_namespace_prefix":"False",\
+            "export_import_wait_time":"30"\
+        }'
+
+        with mock.patch('congregate.cli.config_test.write_to_file', mock_file):
+            config_test.update_config(data)
+
+        # load the file that was just written
+        with open("{0}congregate.conf".format(test_dir_prefix), "r") as f:
+            generated = f.readlines()
+
+        # load the reference file
+        with open("{0}test_not_ext_src_parent_group_path_no_mirror_name_aws_skeleton.conf".format(test_dir_prefix), "r") as f:
+            reference = f.readlines()
+
+        self.assertListEqual(generated, reference)
+
+
+    def test_update_config_no_changes(self):
+        data = '{\
+            "dstn_hostname":"hostname",\
+            "dstn_access_token":"obfuscated===",\
+            "import_user_id":"1",\
+            "shared_runners_enabled":"True",\
+            "project_suffix":"False",\
+            "notification_level":"disabled",\
+            "max_import_retries":"3",\
+            "dstn_registry_url":"destination_registry_url",\
+            "parent_group_id":"0",\
+            "parent_group_path":"destination_group_full_path",\
+            "privatize_groups":"True",\
+            "group_sso_provider":"group_sso_provider",\
+            "username_suffix":"username_suffix",\
+            "mirror_username":"",\
+            "src_hostname":"source_hostname",\
+            "src_access_token":"obfuscated===",\
+            "src_registry_url":"source_registry_url",\
+            "max_export_wait_time":"3600",\
+            "location":"aws",\
+            "s3_name":"s3_name",\
+            "s3_region":"us-east-1",\
+            "s3_access_key_id":"obfuscated===",\
+            "s3_secret_access_key":"obfuscated===",\
+            "filesystem_path":".",\
+            "keep_blocked_users":"False",\
+            "reset_pwd":"True",\
+            "force_rand_pwd":"False",\
+            "no_of_threads":"2",\
+            "strip_namespace_prefix":"True",\
+            "export_import_wait_time":"30"\
+        }'
+
+        with mock.patch('congregate.cli.config_test.write_to_file', mock_file):
+            update = config_test.update_config(data)
+
+        # load the file that was just written
+        with open("{0}congregate.conf".format(test_dir_prefix), "r") as f:
+            generated = f.readlines()
+
+        # load the reference file
+        with open("{0}test_not_ext_src_parent_group_path_no_mirror_name_aws_skeleton.conf".format(test_dir_prefix), "r") as f:
+            reference = f.readlines()
+
+        self.assertListEqual(generated, reference)
+        self.assertEqual(update, "No pending config changes")
+
+
 def mock_file(config):
     with open("{0}congregate.conf".format(test_dir_prefix), "w") as f:
         config.write(f)
