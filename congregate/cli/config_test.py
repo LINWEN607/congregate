@@ -1,4 +1,3 @@
-import json
 from os import getcwd, path, mkdir
 from ConfigParser import SafeConfigParser as ConfigParser, NoOptionError
 
@@ -157,34 +156,27 @@ def update_config(data):
     config_obj = config.as_obj()
     x = 0
     y = 0
+
+    # Flag to track config changes
     write_new_config = False
-    # config_list = map(lambda d: d.strip("{}").replace('"', ''), data.split(","))
-    config_list = [
-            d.strip("{}").replace('"', '') for d in data.split(",")
-        ]
-    print(config_list)
+    options_list = [d.strip("{}").replace('"', '') for d in data.split(",")]
+
+    # Loop over current config options, per section, and compare with UI input fields
     for section in config_obj.sections():
-        y += len(config_obj.items(section))
-        # print("data {0} -> {1}: {2}".format(x, y, config_list[x:y]))
-        for (k1, v1), p in zip(config_obj.items(section), config_list[x:y]):
-            print(k1, p.split(":", 1))
-            p1 = p.split(":", 1)[0]
-            p2 = p.split(":", 1)[1]
-            if str(k1) == str(p1) and v1 != p2:
+        options = config_obj.items(section)
+        y += len(options)
+        for (k1, v1), k in zip(options, options_list[x:y]):
+            k2 = k.split(":", 1)[0]
+            v2 = k.split(":", 1)[1]
+
+            # Set new option value in case of changes
+            if k1 == k2 and v2 != v1:
                 write_new_config = True
-                print("Setting section {0}, key {1}, value {2}".format(section, k1, p2))
-                config_obj.set(section, k1, p2)
-        x += len(config_obj.items(section))
+                print("Updating config option {0}/{1} from {2} -> {3}".format(section, k1, v1, v2))
+                config_obj.set(section, k1, v2)
+        x += len(options)
 
     if write_new_config:
         write_to_file(config_obj)
-    # for section in config_obj.sections():
-    #     print(section)
-    #     for key, value in config_obj.items(section):
-    #         print("{}: {}".format(key, value))
-
-    # with open("%s/data/config.json" % app_path, "r") as f:
-    #     data = json.load(f)
-    # data["config"] = json.loads(config)
-    # with open("%s/data/config.json" % app_path, "w") as f:
-    #     json.dump(data, f, indent=4)
+    else:
+        print("No pending config changes")
