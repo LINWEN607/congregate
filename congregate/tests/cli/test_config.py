@@ -1,12 +1,14 @@
 import unittest
-import os
 import mock
-import responses
 from congregate.cli import config
-from congregate.helpers.misc_utils import get_congregate_path, input_generator
+from congregate.helpers.misc_utils import input_generator
 from congregate.tests.mockapi.users import MockUsersApi
 from congregate.tests.mockapi.groups import MockGroupsApi
 from congregate.migration.gitlab.api.users import UsersApi
+from congregate.migration.gitlab.api.groups import GroupsApi
+
+
+test_dir_prefix = "./congregate/tests/cli/data/"
 
 
 class ConfigTests(unittest.TestCase):
@@ -15,565 +17,302 @@ class ConfigTests(unittest.TestCase):
         self.groups_api = MockGroupsApi()
         self.maxDiff = None
 
+
     @mock.patch.object(UsersApi, "get_current_user")
-    def test_default_configuration(self, mock_get):
+    def test_full_ext_src_skeleton(self, mock_get):
+        """
+            Generates a full skeleton outline of the configuration using empty strings and default values
+            Compares that against the last known-good skeleton
+        """
         values = [
-            "",  # Migration source
-            os.getenv("destination_instance_host"),
-            os.getenv("destination_instance_token"),
-            os.getenv("source_instance_host"),
-            os.getenv("source_instance_token"),
-            os.getenv("source_instance_registry"),
-            os.getenv("destination_instance_registry"),
-            "",  # Parent group id
-            "",  # Mirroring yes/no
-            "",  # Staging location (default filesystem)
-            "",  # Staging location path
-            "",     # Reset password
-            ""     # Force random password
+            "hostname", # Destination hostname
+            # "token", # Destination access token
+            # "0",  # Destination import user id
+            "True",   # shared runners enabled
+            "False",  # append project suffix (retry)
+            "disabled", # notification level
+            "3",  # max_import_retries,
+            "some_external_source", # external_src_url
+            "username", # ext_src_user
+            "repo_path", # ext_src_repo
+            "False",    # keep_blocked_users
+            "True",  # password reset email
+            "False",    # randomized password
+            "2",    # Threads
+            "True", # strip namespace prefix
+            "30"   # import wait time
         ]
+
         g = input_generator(values)
 
-        expected = {
-            "config": {
-                "external_source": False,
-                "source_instance_host": os.getenv("source_instance_host"),
-                "source_instance_token": os.getenv("source_instance_token"),
-                "source_instance_registry": os.getenv("source_instance_registry"),
-                "destination_instance_host": os.getenv("destination_instance_host"),
-                "destination_instance_token": os.getenv("destination_instance_token"),
-                "destination_instance_registry": os.getenv("destination_instance_registry"),
-                "number_of_threads": 2,
-                "location": "filesystem",
-                "import_user_id": 1,
-                "path": os.getcwd(),
-                "reset_password": True,
-                "force_random_password": False
-            }
-        }
         mock_get.return_value = self.users_api.get_current_user()
+        with mock.patch('congregate.cli.config.write_to_file', mock_file):
+            with mock.patch('congregate.cli.config.app_path', "."):
+                with mock.patch('congregate.cli.config.obfuscate', lambda x: "obfuscated==="):
+                    with mock.patch('congregate.cli.config.deobfuscate', lambda x: "deobfuscated==="):
+                        with mock.patch('__builtin__.raw_input', lambda x: next(g)):
+                            config.generate_config()
 
-        with mock.patch('__builtin__.raw_input', lambda x: next(g)):
-            actual = config.generate_config()
-            self.assertEqual(expected, actual)
+        # load the file that was just written
+        with open("{0}congregate.conf".format(test_dir_prefix), "r") as f:
+            generated = f.readlines()
 
+        # load the reference file
+        with open("{0}test_full_ext_src_skeleton.conf".format(test_dir_prefix), "r") as f:
+            reference = f.readlines()
+
+        self.assertListEqual(generated, reference)
+
+
+    @mock.patch.object(GroupsApi, "get_group")
     @mock.patch.object(UsersApi, "get_current_user")
-    def test_default_configuration_with_mirror(self, mock_get):
+    def test_not_ext_src_parent_group_path_no_mirror_name_aws_skeleton(self, mock_get, mock_get_group):
+        """
+        Not external source
+        parent group found (first if)
+        No mirror (default)
+        AWS (first if)
+        """
         values = [
-            "",  # Migration source
-            os.getenv("destination_instance_host"),
-            os.getenv("destination_instance_token"),
-            os.getenv("source_instance_host"),
-            os.getenv("source_instance_token"),
-            os.getenv("source_instance_registry"),
-            os.getenv("destination_instance_registry"),
-            "",  # Parent group id
-            "yes",  # Mirroring yes/no
-            "",  # Staging location (default filesystem)
-            "",  # Staging location path
-            "",     # Reset password
-            ""     # Force random password
+            "hostname", # Destination hostname
+            # "token", # Destination access token
+            # "0",  # Destination import user id
+            "True",   # shared runners enabled
+            "False",  # append project suffix (retry)
+            "disabled", # notification level
+            "3",  # max_import_retries,
+            "gitlab", # external_src_url
+            "source_hostname", # source host
+            # "source_access_token", # source token
+            "source_registry_url",    # source registry url
+            "3600", # max_export_wait_time
+            "destination_registry_url",    # destination registry url
+            "0",  # destination parent group id
+            # "parent_group_path",  # destination parent group full path
+            # "True",  # privatize_groups
+            "group_sso_provider",  # SSO provider
+            "username_suffix",  # username suffix
+            "No",   # mirror
+            # "mirror_username",  # mirror username
+            "aws",  # export location
+            "s3_name",  # bucket name
+            "us-east-1",    # bucket region
+            # "access key",   # access key
+            # "secret key",   # secret key
+            "absolute_path",    # file system path
+            "False",    # keep_blocked_users
+            "True",  # password reset email
+            "False",    # randomized password
+            "2",    # Threads
+            "True", # strip namespace prefix
+            "30"   # import wait time
         ]
+
         g = input_generator(values)
-
-        expected = {
-            "config": {
-                "external_source": False,
-                "source_instance_host": os.getenv("source_instance_host"),
-                "source_instance_token": os.getenv("source_instance_token"),
-                "source_instance_registry": os.getenv("source_instance_registry"),
-                "destination_instance_host": os.getenv("destination_instance_host"),
-                "destination_instance_token": os.getenv("destination_instance_token"),
-                "destination_instance_registry": os.getenv("destination_instance_registry"),
-                "mirror_username": "root",
-                "number_of_threads": 2,
-                "location": "filesystem",
-                "import_user_id": 1,
-                "path": os.getcwd(),
-                "reset_password": True,
-                "force_random_password": False
-            }
-        }
-        mock_get.return_value = self.users_api.get_current_user()
-
-        with mock.patch('__builtin__.raw_input', lambda x: next(g)):
-            actual = config.generate_config()
-            self.assertEqual(expected, actual)
-
-    # pylint: disable=no-member
-    @responses.activate
-    # pylint: enable=no-member
-    @mock.patch("congregate.helpers.api.generate_v4_request_url")
-    @mock.patch.object(UsersApi, "get_current_user")
-    def test_default_configuration_with_parent_id(self, mock_get, url):
-        values = [
-            "",  # Migration source
-            os.getenv("destination_instance_host"),
-            os.getenv("destination_instance_token"),
-            os.getenv("source_instance_host"),
-            os.getenv("source_instance_token"),
-            os.getenv("source_instance_registry"),
-            os.getenv("destination_instance_registry"),
-            "yes",  # Parent group id yes/no
-            "5",  # Parent group id
-            "",  # SSO yes/no
-            "",  # Empty username suffix
-            "",  # Mirror yes/no
-            "",  # Staging location (default filesystem)
-            "",   # Staging location path
-            "",     # Reset password
-            ""      # Force random password
-        ]
-        g = input_generator(values)
-
-        expected = {
-            "config": {
-                "external_source": False,
-                "source_instance_host": os.getenv("source_instance_host"),
-                "source_instance_token": os.getenv("source_instance_token"),
-                "source_instance_registry": os.getenv("source_instance_registry"),
-                "destination_instance_host": os.getenv("destination_instance_host"),
-                "destination_instance_token": os.getenv("destination_instance_token"),
-                "destination_instance_registry": os.getenv("destination_instance_registry"),
-                "number_of_threads": 2,
-                "parent_id": 5,
-                "parent_group_path": "twitter",
-                "location": "filesystem",
-                "make_visibility_private": True,
-                "import_user_id": 1,
-                "path": os.getcwd(),
-                "reset_password": True,
-                "force_random_password": False
-            }
-        }
-        url_value = "https://gitlab.com/api/v4/groups/5"
-        url.return_value = url_value
-        mock_get.return_value = self.users_api.get_current_user()
-        responses.add(responses.GET, url_value,
-                    json=self.groups_api.get_group(), status=200, content_type='text/json', match_querystring=True)
-
-        with mock.patch('__builtin__.raw_input', lambda x: next(g)):
-            actual = config.generate_config()
-            self.assertEqual(expected, actual)
-
-    # pylint: disable=no-member
-    @responses.activate
-    # pylint: enable=no-member
-    @mock.patch("congregate.helpers.api.generate_v4_request_url")
-    @mock.patch.object(UsersApi, "get_current_user")
-    def test_default_configuration_with_parent_id_and_sso(self, mock_get, url):
-        values = [
-            "",  # Migration source
-            os.getenv("destination_instance_host"),
-            os.getenv("destination_instance_token"),
-            os.getenv("source_instance_host"),
-            os.getenv("source_instance_token"),
-            os.getenv("source_instance_registry"),
-            os.getenv("destination_instance_registry"),
-            "yes",  # Parent group id yes/no
-            "5",    # Parent group id
-            "yes",      # SSO yes/no
-            "auth0",    # SSO provider
-            "",     # empty username suffix
-            "",     # Mirror yes/no
-            "",     # Staging location (default filesystem)
-            "",      # Staging location path
-            "",     # Reset password
-            ""      # Force random password
-        ]
-        g = input_generator(values)
-
-        expected = {
-            "config": {
-                "external_source": False,
-                "source_instance_host": os.getenv("source_instance_host"),
-                "source_instance_token": os.getenv("source_instance_token"),
-                "source_instance_registry": os.getenv("source_instance_registry"),
-                "destination_instance_host": os.getenv("destination_instance_host"),
-                "destination_instance_token": os.getenv("destination_instance_token"),
-                "destination_instance_registry": os.getenv("destination_instance_registry"),
-                "number_of_threads": 2,
-                "parent_id": 5,
-                "parent_group_path": "twitter",
-                "group_sso_provider": "auth0",
-                "location": "filesystem",
-                "make_visibility_private": True,
-                "import_user_id": 1,
-                "path": os.getcwd(),
-                "reset_password": True,
-                "force_random_password": False
-            }
-        }
-        url_value = "https://gitlab.com/api/v4/groups/5"
-        url.return_value = url_value
-        mock_get.return_value = self.users_api.get_current_user()
-        responses.add(responses.GET, url_value,
-                    json=self.groups_api.get_group(), status=200, content_type='text/json', match_querystring=True)
-
-        with mock.patch('__builtin__.raw_input', lambda x: next(g)):
-            actual = config.generate_config()
-            self.assertEqual(expected, actual)
-
-    # pylint: disable=no-member
-    @responses.activate
-    # pylint: enable=no-member
-    @mock.patch("congregate.helpers.api.generate_v4_request_url")
-    @mock.patch.object(UsersApi, "get_current_user")
-    def test_default_configuration_with_parent_id_and_sso_and_suffix(self, mock_get, url):
-        values = [
-            "",  # Migration source
-            os.getenv("destination_instance_host"),
-            os.getenv("destination_instance_token"),
-            os.getenv("source_instance_host"),
-            os.getenv("source_instance_token"),
-            os.getenv("source_instance_registry"),
-            os.getenv("destination_instance_registry"),
-            "yes",  # Parent group id yes/no
-            "5",    # Parent group id
-            "yes",  # SSO yes/no
-            "auth0",    # SSO provider
-            "_acme",    # Username suffix
-            "",     # Mirror yes/no
-            "",     # Staging location (default filesystem)
-            "",     # Staging location path
-            "",     # Reset password
-            ""      # Force random password
-        ]
-        g = input_generator(values)
-
-        expected = {
-            "config": {
-                "external_source": False,
-                "source_instance_host": os.getenv("source_instance_host"),
-                "source_instance_token": os.getenv("source_instance_token"),
-                "source_instance_registry": os.getenv("source_instance_registry"),
-                "destination_instance_host": os.getenv("destination_instance_host"),
-                "destination_instance_token": os.getenv("destination_instance_token"),
-                "destination_instance_registry": os.getenv("destination_instance_registry"),
-                "number_of_threads": 2,
-                "parent_id": 5,
-                "parent_group_path": "twitter",
-                "group_sso_provider": "auth0",
-                "username_suffix": "_acme",
-                "location": "filesystem",
-                "make_visibility_private": True,
-                "import_user_id": 1,
-                "path": os.getcwd(),
-                "reset_password": True,
-                "force_random_password": False
-            }
-        }
-        url_value = "https://gitlab.com/api/v4/groups/5"
-        url.return_value = url_value
-        mock_get.return_value = self.users_api.get_current_user()
-        responses.add(responses.GET, url_value,
-                    json=self.groups_api.get_group(), status=200, content_type='text/json', match_querystring=True)
-
-        with mock.patch('__builtin__.raw_input', lambda x: next(g)):
-            actual = config.generate_config()
-            self.assertEqual(expected, actual)
-
-    @mock.patch.object(UsersApi, "get_current_user")
-    def test_explicit_default_configuration(self, mock_get):
-        values = [
-            "gitlab",  # migration source
-            os.getenv("destination_instance_host"),
-            os.getenv("destination_instance_token"),
-            os.getenv("source_instance_host"),
-            os.getenv("source_instance_token"),
-            os.getenv("source_instance_registry"),
-            os.getenv("destination_instance_registry"),
-            "no",
-            "no",
-            "filesystem",
-            os.getcwd(),
-            "FALSE",     # Reset password
-            "TRUE"      # Force random password
-        ]
-        g = input_generator(values)
-        expected = {
-            "config": {
-                "external_source": False,
-                "source_instance_host": os.getenv("source_instance_host"),
-                "source_instance_token": os.getenv("source_instance_token"),
-                "source_instance_registry": os.getenv("source_instance_registry"),
-                "destination_instance_host": os.getenv("destination_instance_host"),
-                "destination_instance_token": os.getenv("destination_instance_token"),
-                "destination_instance_registry": os.getenv("destination_instance_registry"),
-                "number_of_threads": 2,
-                "location": "filesystem",
-                "import_user_id": 1,
-                "path": os.getcwd(),
-                "reset_password": False,
-                "force_random_password": True
-            }
-        }
 
         mock_get.return_value = self.users_api.get_current_user()
 
-        with mock.patch('__builtin__.raw_input', lambda x: next(g)):
-            actual = config.generate_config()
-            self.assertEqual(expected, actual)
+        class Hack(object):
+            def __init__(self):
+                self._json = {"full_path": "destination_group_full_path"}
+            def json(self):
+                return self._json
 
+        mock_get_group.return_value = Hack()
+        with mock.patch('congregate.cli.config.write_to_file', mock_file):
+            with mock.patch('congregate.cli.config.getcwd', lambda : "."):
+                with mock.patch('congregate.cli.config.get_congregate_path', lambda : "."):
+                    with mock.patch('congregate.cli.config.obfuscate', lambda x: "obfuscated==="):
+                        with mock.patch('congregate.cli.config.deobfuscate', lambda x: "deobfuscated==="):
+                            with mock.patch('__builtin__.raw_input', lambda x: next(g)):
+                                config.generate_config()
+
+        # load the file that was just written
+        with open("{0}congregate.conf".format(test_dir_prefix), "r") as f:
+            generated = f.readlines()
+
+        # load the reference file
+        with open("{0}test_not_ext_src_parent_group_path_no_mirror_name_aws_skeleton.conf".format(test_dir_prefix), "r") as f:
+            reference = f.readlines()
+
+        self.assertListEqual(generated, reference)
+
+
+    @mock.patch.object(GroupsApi, "get_group")
     @mock.patch.object(UsersApi, "get_current_user")
-    def test_explicit_default_configuration_with_filepath(self, mock_get):
+    def test_not_ext_src_no_parent_group_path_mirror_name_filesystem_skeleton(self, mock_get_current_user, mock_get_group):
+        """
+        Not external source
+        no parent group
+        mirror
+        filesystem
+        """
         values = [
-            "gitlab",  # Migration source
-            os.getenv("destination_instance_host"),
-            os.getenv("destination_instance_token"),
-            os.getenv("source_instance_host"),
-            os.getenv("source_instance_token"),
-            os.getenv("source_instance_registry"),
-            os.getenv("destination_instance_registry"),
-            "no",
-            "no",
-            "filesystem",
-            "/path/to/downloads",
-            "FALSE",
-            "TRUE"
+            "hostname", # Destination hostname
+            # "token", # Destination access token
+            # "0",  # Destination import user id
+            "True",   # shared runners enabled
+            "False",  # append project suffix (retry)
+            "disabled", # notification level
+            "3",  # max_import_retries,
+            "gitlab", # external_src_url
+            "source_hostname", # source host
+            # "source_access_token", # source token
+            "source_registry_url",    # source registry url
+            "3600", # max_export_wait_time
+            "destination_registry_url",    # destination registry url
+            "0",  # destination parent group id
+            # "parent_group_path",  # destination parent group full path
+            # "True",  # privatize_groups
+            "group_sso_provider",  # SSO provider
+            "username_suffix",  # username suffix
+            "Yes",   # mirror
+            # "mirror_username",  # mirror username
+            "filesystem",  # export location
+            # "s3_name",  # bucket name
+            # "us-east-1",    # bucket region
+            # "access key",   # access key
+            # "secret key",   # secret key
+            "absolute_path",    # file system path
+            "False",    # keep_blocked_users
+            "True",  # password reset email
+            "False",    # randomized password
+            "2",    # Threads
+            "True", # strip namespace prefix
+            "30"   # import wait time
         ]
+
         g = input_generator(values)
-        expected = {
-            "config": {
-                "external_source": False,
-                "source_instance_host": os.getenv("source_instance_host"),
-                "source_instance_token": os.getenv("source_instance_token"),
-                "source_instance_registry": os.getenv("source_instance_registry"),
-                "destination_instance_host": os.getenv("destination_instance_host"),
-                "destination_instance_token": os.getenv("destination_instance_token"),
-                "destination_instance_registry": os.getenv("destination_instance_registry"),
-                "number_of_threads": 2,
-                "location": "filesystem",
-                "import_user_id": 1,
-                "path": "/path/to/downloads",
-                "reset_password": False,
-                "force_random_password": True
-            }
-        }
 
-        mock_get.return_value = self.users_api.get_current_user()
+        mock_get_current_user.return_value = {"id": 123, "username": "username"}
 
-        with mock.patch('__builtin__.raw_input', lambda x: next(g)):
-            actual = config.generate_config()
-            self.assertEqual(expected, actual)
+        class GroupHack(object):
+            def __init__(self):
+                self._json = {"full_path": None}
+            def json(self):
+                return self._json
 
-    @mock.patch.object(UsersApi, "get_current_user")
-    @mock.patch('subprocess.call')
-    def test_aws_configuration(self, mock_call, mock_get):
-        values = [
-            "gitlab",  # Migration source
-            os.getenv("destination_instance_host"),
-            os.getenv("destination_instance_token"),
-            os.getenv("source_instance_host"),
-            os.getenv("source_instance_token"),
-            os.getenv("source_instance_registry"),
-            os.getenv("destination_instance_registry"),
-            "no",
-            "no",
-            "aws",
-            "test-bucket",
-            "",
-            "AKIA-Dummy",
-            "asdfqwer1234",
-            "/path/to/downloads",
-            "",
-            ""
-        ]
-        g = input_generator(values)
-        expected = {
-            "config": {
-                "access_key": "AKIA-Dummy",
-                "external_source": False,
-                "source_instance_host": os.getenv("source_instance_host"),
-                "source_instance_token": os.getenv("source_instance_token"),
-                "source_instance_registry": os.getenv("source_instance_registry"),
-                "destination_instance_host": os.getenv("destination_instance_host"),
-                "destination_instance_token": os.getenv("destination_instance_token"),
-                "destination_instance_registry": os.getenv("destination_instance_registry"),
-                "bucket_name": "test-bucket",
-                "number_of_threads": 2,
-                "location": "aws",
-                "import_user_id": 1,
-                "s3_region": "us-east-1",
-                "secret_key": "asdfqwer1234",
-                "path": "/path/to/downloads",
-                "reset_password": True,
-                "force_random_password": False
-            }
-        }
+        mock_get_group.return_value = GroupHack()
 
-        mock_get.return_value = self.users_api.get_current_user()
-        mock_call.return_value = ""
+        with mock.patch('congregate.cli.config.write_to_file', mock_file):
+            with mock.patch('congregate.cli.config.getcwd', lambda : "."):
+                with mock.patch('congregate.cli.config.get_congregate_path', lambda : "."):
+                    with mock.patch('congregate.cli.config.obfuscate', lambda x: "obfuscated==="):
+                        with mock.patch('congregate.cli.config.deobfuscate', lambda x: "deobfuscated==="):
+                            with mock.patch('__builtin__.raw_input', lambda x: next(g)):
+                                config.generate_config()
 
-        with mock.patch('__builtin__.raw_input', lambda x: next(g)):
-            actual = config.generate_config()
-            self.assertEqual(expected, actual)
+        # load the file that was just written
+        with open("{0}congregate.conf".format(test_dir_prefix), "r") as f:
+            generated = f.readlines()
 
-    @mock.patch.object(UsersApi, "get_current_user")
-    @mock.patch('subprocess.call')
-    def test_aws_configuration_specific_region(self, mock_call, mock_get):
-        values = [
-            "gitlab",  # Migration source
-            os.getenv("destination_instance_host"),
-            os.getenv("destination_instance_token"),
-            os.getenv("source_instance_host"),
-            os.getenv("source_instance_token"),
-            os.getenv("source_instance_registry"),
-            os.getenv("destination_instance_registry"),
-            "no",
-            "no",
-            "aws",
-            "test-bucket",
-            "us-west-1",
-            "AKIA-Dummy",
-            "asdfqwer1234",
-            "/path/to/downloads",
-            "",
-            ""
-        ]
-        g = input_generator(values)
-        expected = {
-            "config": {
-                "access_key": "AKIA-Dummy",
-                "external_source": False,
-                "source_instance_host": os.getenv("source_instance_host"),
-                "source_instance_token": os.getenv("source_instance_token"),
-                "source_instance_registry": os.getenv("source_instance_registry"),
-                "destination_instance_host": os.getenv("destination_instance_host"),
-                "destination_instance_token": os.getenv("destination_instance_token"),
-                "destination_instance_registry": os.getenv("destination_instance_registry"),
-                "bucket_name": "test-bucket",
-                "number_of_threads": 2,
-                "location": "aws",
-                "import_user_id": 1,
-                "s3_region": "us-west-1",
-                "secret_key": "asdfqwer1234",
-                "path": "/path/to/downloads",
-                "reset_password": True,
-                "force_random_password": False
-            }
-        }
+        # load the reference file
+        with open("{0}test_not_ext_src_no_parent_group_path_mirror_name_filesystem_skeleton.conf".format(test_dir_prefix), "r") as f:
+            reference = f.readlines()
 
-        mock_get.return_value = self.users_api.get_current_user()
-        mock_call.return_value = ""
+        self.assertListEqual(generated, reference)
 
-        with mock.patch('__builtin__.raw_input', lambda x: next(g)):
-            actual = config.generate_config()
-            self.assertEqual(expected, actual)
 
-    @mock.patch.object(UsersApi, "get_current_user")
-    def test_external_bitbucket_configuration_no_repo_list(self, mock_get):
-        values = [
-            "bitbucket",  # Migration source
-            "user",
-            "password",
-            "",
-            os.getenv("destination_instance_host"),
-            os.getenv("destination_instance_token"),
-            "no",
-            "no",
-            "filesystem",
-            os.getcwd(),
-            "",
-            ""
-        ]
-        g = input_generator(values)
-        expected = {
-            "config": {
-                "external_source": "bitbucket",
-                "destination_instance_host": os.getenv("destination_instance_host"),
-                "destination_instance_token": os.getenv("destination_instance_token"),
-                "external_user_password": "password",
-                "external_user_name": "user",
-                "number_of_threads": 2,
-                "import_user_id": 1,
-                "reset_password": True,
-                "force_random_password": False
-            }
-        }
+    def test_update_config_with_changes(self):
+        data = '{\
+            "dstn_hostname":"hostname",\
+            "dstn_access_token":"obfuscated===",\
+            "import_user_id":"1",\
+            "shared_runners_enabled":"False",\
+            "project_suffix":"False",\
+            "notification_level":"disabled",\
+            "max_import_retries":"3",\
+            "dstn_registry_url":"destination_registry_url",\
+            "parent_group_id":"1",\
+            "parent_group_path":"destination_group_full_path",\
+            "privatize_groups":"True",\
+            "group_sso_provider":"",\
+            "username_suffix":"local",\
+            "mirror_username":"",\
+            "src_hostname":"source_hostname",\
+            "src_access_token":"obfuscated===",\
+            "src_registry_url":"source_registry_url",\
+            "max_export_wait_time":"3600",\
+            "location":"aws",\
+            "s3_name":"s3_name",\
+            "s3_region":"us-east-1",\
+            "s3_access_key_id":"obfuscated===",\
+            "s3_secret_access_key":"obfuscated===",\
+            "filesystem_path":".",\
+            "keep_blocked_users":"False",\
+            "reset_pwd":"False",\
+            "force_rand_pwd":"True",\
+            "no_of_threads":"4",\
+            "strip_namespace_prefix":"False",\
+            "export_import_wait_time":"30"\
+        }'
 
-        mock_get.return_value = self.users_api.get_current_user()
+        with mock.patch('congregate.cli.config.write_to_file', mock_file):
+            config.update_config(data)
 
-        with mock.patch('__builtin__.raw_input', lambda x: next(g)):
-            actual = config.generate_config()
-            self.assertEqual(expected, actual)
+        # load the file that was just written
+        with open("{0}congregate.conf".format(test_dir_prefix), "r") as f:
+            generated = f.readlines()
 
-    @mock.patch.object(UsersApi, "get_current_user")
-    def test_external_bitbucket_configuration_relative_repo_list(self, mock_get):
-        values = [
-            "bitbucket",  # Migration source
-            "user",
-            "password",
-            "repo_list.json",
-            os.getenv("destination_instance_host"),
-            os.getenv("destination_instance_token"),
-            "no",
-            "no",
-            "filesystem",
-            os.getcwd(),
-            "",
-            ""
-        ]
-        congregate_path = get_congregate_path()
-        g = input_generator(values)
-        expected = {
-            "config": {
-                "external_source": "bitbucket",
-                "destination_instance_host": os.getenv("destination_instance_host"),
-                "destination_instance_token": os.getenv("destination_instance_token"),
-                "external_user_password": "password",
-                "external_user_name": "user",
-                "number_of_threads": 2,
-                "repo_list_path": "%s/repo_list.json" % congregate_path,
-                "import_user_id": 1,
-                "reset_password": True,
-                "force_random_password": False
-            }
-        }
+        # load the reference file
+        with open("{0}test_not_ext_src_parent_group_path_no_mirror_name_aws_skeleton.conf".format(test_dir_prefix), "r") as f:
+            reference = f.readlines()
 
-        mock_get.return_value = self.users_api.get_current_user()
+        self.assertListEqual(generated, reference)
 
-        with mock.patch('__builtin__.raw_input', lambda x: next(g)):
-            actual = config.generate_config()
-            self.assertEqual(expected, actual)
 
-    @mock.patch.object(UsersApi, "get_current_user")
-    def test_external_bitbucket_configuration_absolute_repo_list(self, mock_get):
-        values = [
-            "bitbucket",  # Migration source
-            "user",
-            "password",
-            "/path/to/repo/list.json",
-            os.getenv("destination_instance_host"),
-            os.getenv("destination_instance_token"),
-            "no",
-            "no",
-            "filesystem",
-            os.getcwd(),
-            "",
-            ""
-        ]
-        g = input_generator(values)
-        expected = {
-            "config": {
-                "external_source": "bitbucket",
-                "destination_instance_host": os.getenv("destination_instance_host"),
-                "destination_instance_token": os.getenv("destination_instance_token"),
-                "external_user_password": "password",
-                "external_user_name": "user",
-                "number_of_threads": 2,
-                "repo_list_path": "/path/to/repo/list.json",
-                "import_user_id": 1,
-                "reset_password": True,
-                "force_random_password": False
-            }
-        }
+    def test_update_config_no_changes(self):
+        data = '{\
+            "dstn_hostname":"hostname",\
+            "dstn_access_token":"obfuscated===",\
+            "import_user_id":"1",\
+            "shared_runners_enabled":"True",\
+            "project_suffix":"False",\
+            "notification_level":"disabled",\
+            "max_import_retries":"3",\
+            "dstn_registry_url":"destination_registry_url",\
+            "parent_group_id":"0",\
+            "parent_group_path":"destination_group_full_path",\
+            "privatize_groups":"True",\
+            "group_sso_provider":"group_sso_provider",\
+            "username_suffix":"username_suffix",\
+            "mirror_username":"",\
+            "src_hostname":"source_hostname",\
+            "src_access_token":"obfuscated===",\
+            "src_registry_url":"source_registry_url",\
+            "max_export_wait_time":"3600",\
+            "location":"aws",\
+            "s3_name":"s3_name",\
+            "s3_region":"us-east-1",\
+            "s3_access_key_id":"obfuscated===",\
+            "s3_secret_access_key":"obfuscated===",\
+            "filesystem_path":".",\
+            "keep_blocked_users":"False",\
+            "reset_pwd":"True",\
+            "force_rand_pwd":"False",\
+            "no_of_threads":"2",\
+            "strip_namespace_prefix":"True",\
+            "export_import_wait_time":"30"\
+        }'
 
-        mock_get.return_value = self.users_api.get_current_user()
+        with mock.patch('congregate.cli.config.write_to_file', mock_file):
+            update = config.update_config(data)
 
-        with mock.patch('__builtin__.raw_input', lambda x: next(g)):
-            actual = config.generate_config()
-            self.assertEqual(expected, actual)
+        # load the file that was just written
+        with open("{0}congregate.conf".format(test_dir_prefix), "r") as f:
+            generated = f.readlines()
+
+        # load the reference file
+        with open("{0}test_not_ext_src_parent_group_path_no_mirror_name_aws_skeleton.conf".format(test_dir_prefix), "r") as f:
+            reference = f.readlines()
+
+        self.assertListEqual(generated, reference)
+        self.assertEqual(update, "No pending config changes")
+
+
+def mock_file(conf):
+    with open("{0}congregate.conf".format(test_dir_prefix), "w") as f:
+        conf.write(f)
 
 
 if __name__ == "__main__":

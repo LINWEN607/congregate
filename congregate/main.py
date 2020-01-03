@@ -1,10 +1,9 @@
 """Congregate - GitLab instance migration utility 
 
-Copyright (c) 2019 - GitLab
+Copyright (c) 2020 - GitLab
 
 Usage:
     congregate list
-    congregate config
     congregate configure
     congregate stage <projects>... [--commit]
     congregate migrate [--threads=<n>] [--skip-users] [--skip-project-import] [--skip-project-export] [--commit]
@@ -117,8 +116,7 @@ if __name__ == '__main__':
         sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         from congregate.helpers import conf
         from congregate.helpers.logger import myLogger
-        from congregate.cli import config as configure
-        from congregate.cli import config_test
+        from congregate.cli.config import generate_config
         from congregate.helpers.misc_utils import get_congregate_path
         from congregate.helpers.user_util import map_users
     else:
@@ -129,8 +127,7 @@ if __name__ == '__main__':
 else:
     import sys
     sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    from congregate.cli import config as configure
-    from congregate.cli import config_test
+    from congregate.cli.config import generate_config
     from congregate.helpers import conf
     from congregate.helpers.logger import myLogger
 
@@ -138,18 +135,13 @@ app_path = get_congregate_path()
 
 log = myLogger(__name__)
 
-# config = conf.ig()
-
-# New configuration class
-configuration = conf.Config()
+config = conf.Config()
 
 if __name__ == '__main__':
     arguments = docopt(__doc__)
     DRY_RUN = True if not arguments["--commit"] else False
-    if arguments["config"]:
-        configure.config()
-    elif arguments["configure"]:
-        config_test.generate_config()
+    if arguments["configure"]:
+        generate_config()
     else:
         if __package__ is None:
             from congregate.migration.gitlab.users import UsersClient
@@ -171,8 +163,7 @@ if __name__ == '__main__':
             from congregate.migration import migrate
             from .migration.gitlab.branches import BranchesClient
             from congregate.cli import list_projects, stage_projects, do_all
-        # if config.external_source is not None and config.external_source:
-        if configuration.external_source_url is not None:
+        if config.external_source_url is not None:
             if arguments["migrate"]:
                 if arguments["--threads"]:
                     migrate.migrate(threads=arguments["--threads"])
@@ -254,12 +245,10 @@ if __name__ == '__main__':
             if arguments["add-users-to-parent-group"]:
                 users.add_users_to_parent_group(dry_run=DRY_RUN)
             if arguments["update-aws-creds"]:
-                # command = "aws configure set aws_access_key_id {}".format(config.s3_access_key)
-                command = "aws configure set aws_access_key_id {}".format(configuration.s3_access_key)
+                command = "aws configure set aws_access_key_id {}".format(config.s3_access_key)
                 subprocess.call(command.split(" "))
                 log.info("Configured AWS access key")
-                # command = "aws configure set aws_secret_access_key {}".format(config.s3_secret_key)
-                command = "aws configure set aws_secret_access_key {}".format(configuration.s3_secret_key)
+                command = "aws configure set aws_secret_access_key {}".format(config.s3_secret_key)
                 subprocess.call(command.split(" "))
                 log.info("Configured AWS secret key")
             if arguments["remove-blocked-users"]:

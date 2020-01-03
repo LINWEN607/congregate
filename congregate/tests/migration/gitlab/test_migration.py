@@ -5,7 +5,7 @@ import base64
 import pytest
 import mock
 from congregate.helpers.misc_utils import input_generator
-from congregate.cli import config_test
+from congregate.cli import config
 from congregate.helpers.seed.generate_token import token_generator
 from congregate.helpers.seed.generator import SeedDataGenerator
 
@@ -65,5 +65,5 @@ class MigrationEndToEndTest(unittest.TestCase):
         g = input_generator(values)
         t = input_generator(tokens)
         with mock.patch('__builtin__.raw_input', lambda x: next(g)):
-            with mock.patch('congregate.cli.config_test.obfuscate', lambda x: base64.b64encode(next(t))):
-                config_test.generate_config()
+            with mock.patch('congregate.cli.config.obfuscate', lambda x: base64.b64encode(next(t))):
+                config.generate_config()

@@ -1,7 +1,7 @@
 """
 Congregate - GitLab instance migration utility
 
-Copyright (c) 2019 - GitLab
+Copyright (c) 2020 - GitLab
 """
 
 from time import sleep

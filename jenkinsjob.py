@@ -1,6 +1,6 @@
 """Congregate - GitLab instance migration utility 
 
-Copyright (c) 2018 - GitLab
+Copyright (c) 2020 - GitLab
 
 Usage:
     jenkinsjob verify <project_url>
