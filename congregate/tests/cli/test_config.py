@@ -66,12 +66,12 @@ class ConfigTests(unittest.TestCase):
 
     @mock.patch.object(GroupsApi, "get_group")
     @mock.patch.object(UsersApi, "get_current_user")
-    def test_not_ext_src_parent_group_path_no_mirror_name_aws_skeleton(self, mock_get, mock_get_group):
+    def test_not_ext_src_parent_group_path_no_mirror_name_aws_default(self, mock_get, mock_get_group):
         """
-        Not external source
-        parent group found (first if)
-        No mirror (default)
-        AWS (first if)
+            Not external source
+            parent group found (first if)
+            No mirror (default)
+            AWS (first if)
         """
         values = [
             "hostname", # Destination hostname
@@ -132,7 +132,81 @@ class ConfigTests(unittest.TestCase):
             generated = f.readlines()
 
         # load the reference file
-        with open("{0}test_not_ext_src_parent_group_path_no_mirror_name_aws_skeleton.conf".format(test_dir_prefix), "r") as f:
+        with open("{0}test_not_ext_src_parent_group_path_no_mirror_name_aws_default.conf".format(test_dir_prefix), "r") as f:
+            reference = f.readlines()
+
+        self.assertListEqual(generated, reference)
+
+
+    @mock.patch.object(GroupsApi, "get_group")
+    @mock.patch.object(UsersApi, "get_current_user")
+    def test_not_ext_src_parent_group_path_no_mirror_name_aws(self, mock_get, mock_get_group):
+        """
+            Not external source
+            No import user ID or username
+            parent group found (first if)
+            mirror
+            AWS (first if)
+            Non-default
+        """
+        values = [
+            "hostname", # Destination hostname
+            # "token", # Destination access token
+            # "0",  # Destination import user id
+            "False",   # shared runners enabled
+            "True",  # append project suffix (retry)
+            "watch", # notification level
+            "1",  # max_import_retries,
+            "gitlab", # external_src_url
+            "source_hostname", # source host
+            # "source_access_token", # source token
+            "source_registry_url",    # source registry url
+            "1200", # max_export_wait_time
+            "destination_registry_url",    # destination registry url
+            "0",  # destination parent group id
+            # "parent_group_path",  # destination parent group full path
+            # "True",  # privatize_groups
+            "group_sso_provider",  # SSO provider
+            "_",  # username suffix
+            "Yes",   # mirror
+            # "mirror_username",  # mirror username
+            "aws",  # export location
+            "s3_name",  # bucket name
+            "us-east-2",    # bucket region
+            # "access key",   # access key
+            # "secret key",   # secret key
+            "/absolute_path",    # file system path
+            "True",    # keep_blocked_users
+            "False",  # password reset email
+            "True",    # randomized password
+            "4",    # Threads
+            "False", # strip namespace prefix
+            "60"   # import wait time
+        ]
+
+        g = input_generator(values)
+
+        mock_get.return_value = {"id": None, "username": None}
+        class Hack(object):
+            def __init__(self):
+                self._json = {"full_path": "destination_group_full_path"}
+            def json(self):
+                return self._json
+
+        mock_get_group.return_value = Hack()
+        with mock.patch('congregate.cli.config.write_to_file', mock_file):
+            with mock.patch('congregate.cli.config.get_congregate_path', lambda : "."):
+                with mock.patch('congregate.cli.config.obfuscate', lambda x: "obfuscated==="):
+                    with mock.patch('congregate.cli.config.deobfuscate', lambda x: "deobfuscated==="):
+                        with mock.patch('__builtin__.raw_input', lambda x: next(g)):
+                            config.generate_config()
+
+        # load the file that was just written
+        with open("{0}congregate.conf".format(test_dir_prefix), "r") as f:
+            generated = f.readlines()
+
+        # load the reference file
+        with open("{0}test_not_ext_src_parent_group_path_no_mirror_name_aws.conf".format(test_dir_prefix), "r") as f:
             reference = f.readlines()
 
         self.assertListEqual(generated, reference)
@@ -142,10 +216,10 @@ class ConfigTests(unittest.TestCase):
     @mock.patch.object(UsersApi, "get_current_user")
     def test_not_ext_src_no_parent_group_path_mirror_name_filesystem_skeleton(self, mock_get_current_user, mock_get_group):
         """
-        Not external source
-        no parent group
-        mirror
-        filesystem
+            Not external source
+            no parent group
+            mirror
+            filesystem
         """
         values = [
             "hostname", # Destination hostname
@@ -255,7 +329,7 @@ class ConfigTests(unittest.TestCase):
             generated = f.readlines()
 
         # load the reference file
-        with open("{0}test_not_ext_src_parent_group_path_no_mirror_name_aws_skeleton.conf".format(test_dir_prefix), "r") as f:
+        with open("{0}test_not_ext_src_parent_group_path_no_mirror_name_aws_default.conf".format(test_dir_prefix), "r") as f:
             reference = f.readlines()
 
         self.assertListEqual(generated, reference)
@@ -303,7 +377,7 @@ class ConfigTests(unittest.TestCase):
             generated = f.readlines()
 
         # load the reference file
-        with open("{0}test_not_ext_src_parent_group_path_no_mirror_name_aws_skeleton.conf".format(test_dir_prefix), "r") as f:
+        with open("{0}test_not_ext_src_parent_group_path_no_mirror_name_aws_default.conf".format(test_dir_prefix), "r") as f:
             reference = f.readlines()
 
         self.assertListEqual(generated, reference)
