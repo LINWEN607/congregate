@@ -628,7 +628,7 @@ class UsersClient(BaseClass):
 
         if not quiet:
             self.log.info(
-                "Retrieved %d users. Check users.json to see all retrieved groups" % len(users))
+                "Retrieved %d users. Check users.json to see all retrieved users" % len(users))
 
     def migrate_user_info(self, dry_run=True):
         staged_users = self.get_staged_users()

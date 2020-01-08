@@ -126,3 +126,6 @@ def obfuscate(prompt):
 
 def deobfuscate(secret):
     return base64.b64decode(secret)
+
+def is_non_empty_file(path):
+    return os.path.exists(path) and os.path.getsize(path) > 0

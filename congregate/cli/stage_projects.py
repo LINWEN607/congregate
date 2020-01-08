@@ -4,13 +4,12 @@ Congregate - GitLab instance migration utility
 Copyright (c) 2020 - GitLab
 """
 
-import os
 import json
-import subprocess
 import re
-from congregate.helpers import misc_utils
+from congregate.helpers.misc_utils import get_dry_log, remove_dupes, is_non_empty_file
 from congregate.helpers import base_module as b
 from congregate.migration.gitlab.api.projects import ProjectsApi
+from congregate.cli.list_projects import list_projects
 
 projects_api = ProjectsApi()
 existing_parent_ids = []
@@ -26,10 +25,10 @@ def build_staging_data(projects_to_stage, dry_run=True):
     staging = []
     staged_users = []
     staged_groups = []
-    if (not os.path.isfile('%s/data/project_json.json' % b.app_path)):
-        # TODO: rewrite this logic to handle subprocess more efficiently
-        cmd = "%s/list_projects.sh > /dev/null" % b.app_path
-        subprocess.call(cmd.split())
+
+    # List projects
+    if not is_non_empty_file("{}/data/project_json.json".format(b.app_path)):
+        list_projects()
 
     # Loading projects information
     projects = open_projects_file()
@@ -54,7 +53,8 @@ def build_staging_data(projects_to_stage, dry_run=True):
         new_obj = users[i]
         id_num = users[i]["username"]
         rewritten_users[id_num] = new_obj
-    if not projects_to_stage[0] == '':
+
+    if not projects_to_stage[0] == "":
         if projects_to_stage[0] == "all" or projects_to_stage[0] == ".":
             for i in range(len(projects)):
                 obj = get_project_metadata(projects[i])
@@ -102,7 +102,7 @@ def build_staging_data(projects_to_stage, dry_run=True):
 
                 obj["members"] = members
                 b.log.info("{0}Staging project ({1}) [{2}/{3}]".format(
-                    "DRY-RUN: " if dry_run else "",
+                    get_dry_log(dry_run),
                     obj["name"],
                     len(staging)+1,
                     len(range(start, end))))
@@ -147,7 +147,7 @@ def build_staging_data(projects_to_stage, dry_run=True):
 
                 obj["members"] = members
                 b.log.info("{0}Staging project ({1}) [{2}/{3}]".format(
-                    "DRY-RUN: " if dry_run else "",
+                    get_dry_log(dry_run),
                     obj["name"],
                     len(staging),
                     len(projects_to_stage)))
@@ -155,7 +155,7 @@ def build_staging_data(projects_to_stage, dry_run=True):
     else:
         staging = []
 
-    return misc_utils.remove_dupes(staging), misc_utils.remove_dupes(staged_users), misc_utils.remove_dupes(staged_groups)
+    return remove_dupes(staging), remove_dupes(staged_users), remove_dupes(staged_groups)
 
 
 def open_projects_file():

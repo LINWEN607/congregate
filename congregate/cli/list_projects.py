@@ -5,29 +5,25 @@ from congregate.migration.gitlab.groups import GroupsClient
 from congregate.migration.gitlab.users import UsersClient
 from congregate.migration.gitlab.api.projects import ProjectsApi
 
-groupsclient = GroupsClient()
-usersclient = UsersClient()
+groups = GroupsClient()
+users = UsersClient()
 projects_api = ProjectsApi()
 
 
 def list_projects():
 
-    print "Listing projects from %s" % b.config.source_host
+    b.log.info("Listing projects from source {}:".format(b.config.source_host))
 
-    projects = list(projects_api.get_all_projects(b.config.source_host,
-                                 b.config.source_token))
+    projects = list(projects_api.get_all_projects(b.config.source_host, b.config.source_token))
 
     with open("%s/data/project_json.json" % b.app_path, "wb") as f:
         json.dump(projects, f, indent=4)
 
     for project in projects:
-        pid = project["id"]
-        name = project["name"]
-        description = project["description"]
-        print "[id: %s] %s: %s" % (pid, name, description)
+        b.log.info("[ID: {0}] {1}: {2}".format(project["id"], project["name"], project["description"]))
 
-    groupsclient.retrieve_group_info(b.config.source_host, b.config.source_token, quiet=True)
-    usersclient.retrieve_user_info(quiet=True)
+    groups.retrieve_group_info(b.config.source_host, b.config.source_token, quiet=True)
+    users.retrieve_user_info(quiet=True)
 
     staged_files = ["stage", "staged_groups", "staged_users"]
 

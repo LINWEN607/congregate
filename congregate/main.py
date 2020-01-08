@@ -12,6 +12,8 @@ Usage:
     congregate export-projects
     congregate import-projects [--commit]
     congregate do_all [--commit]
+    congregate do_all_users [--commit]
+    congregate do_all_group_and_projects [--commit]
     congregate update-staged-user-info [--commit]
     congregate update-aws-creds
     congregate add-users-to-parent-group [--commit]
@@ -71,7 +73,7 @@ Commands:
     ui                                      Deploy UI to port 8000.
     export-projects                         Export and update source instance projects. Bulk project export without user/group info.
     import-projects                         Import exported and updated projects onto destination instance. Destination user/group info required.
-    do_all                                  Configure system, retrieve all projects, users, and groups, stage all information, and commence migration.
+    do_all*                                 Configure system, retrieve all projects, users, and groups, stage all information, and commence migration.
     update-staged-user-info                 Update staged user information after migrating only users.
     update-aws-creds                        Run awscli commands based on the keys stored in the config. Useful for docker updates.
     add-users-to-parent-group               If a parent group is set, all users staged will be added to the parent group.
