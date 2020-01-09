@@ -8,6 +8,10 @@ variables:
   SAST_DISABLE_DIND: "true"
   SAST_DEFAULT_ANALYZERS: "bandit,secrets"
 
+code_quality:
+  artifacts:
+    paths: [gl-code-quality-report.json]
+
 sast:
   artifacts:
     paths: [gl-sast-report.json]
