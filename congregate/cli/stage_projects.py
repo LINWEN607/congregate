@@ -14,6 +14,7 @@ from congregate.cli.list_projects import list_projects
 projects_api = ProjectsApi()
 existing_parent_ids = []
 
+# TODO: Break down into separate staging areas
 def stage_projects(projects_to_stage, dry_run=True):
     staged_projects, staged_users, staged_groups = build_staging_data(
         projects_to_stage, dry_run)
@@ -45,8 +46,8 @@ def build_staging_data(projects_to_stage, dry_run=True):
     rewritten_groups = {}
     for i in range(len(groups)):
         new_obj = groups[i]
-        group_name = groups[i]["id"]
-        rewritten_groups[group_name] = new_obj
+        group_id = groups[i]["id"]
+        rewritten_groups[group_id] = new_obj
 
     rewritten_users = {}
     for i in range(len(users)):
@@ -64,7 +65,7 @@ def build_staging_data(projects_to_stage, dry_run=True):
                     append_member_to_members_list(rewritten_users, staged_users, members, member)
 
                 if projects[i]["namespace"]["kind"] == "group":
-                    group_to_stage = projects[i]["namespace"]["path"]
+                    group_to_stage = projects[i]["namespace"]["id"]
                     staged_groups.append(rewritten_groups[group_to_stage])
 
                 obj["members"] = members

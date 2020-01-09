@@ -20,7 +20,7 @@ def list_projects():
         json.dump(projects, f, indent=4)
 
     for project in projects:
-        b.log.info("[ID: {0}] {1}: {2}".format(project["id"], project["name"], project["description"]))
+        b.log.info(u"[ID: {0}] {1}: {2}".format(project["id"], project["name"], project["description"]))
 
     groups.retrieve_group_info(b.config.source_host, b.config.source_token, quiet=True)
     users.retrieve_user_info(quiet=True)

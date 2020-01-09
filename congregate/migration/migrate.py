@@ -59,6 +59,7 @@ def migrate(
         threads=None,
         dry_run=True,
         skip_users=False,
+        skip_groups=False,
         skip_project_import=False,
         skip_project_export=False):
 
@@ -76,7 +77,8 @@ def migrate(
             migrate_user_info(dry_run)
 
         # Migrate groups
-        migrate_group_info(dry_run)
+        if not skip_groups:
+            migrate_group_info(dry_run)
 
         # Migrate projects
         migrate_project_info(dry_run, skip_project_export, skip_project_import)

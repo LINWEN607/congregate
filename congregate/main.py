@@ -6,14 +6,14 @@ Usage:
     congregate list
     congregate configure
     congregate stage <projects>... [--commit]
-    congregate migrate [--threads=<n>] [--skip-users] [--skip-project-import] [--skip-project-export] [--commit]
+    congregate migrate [--threads=<n>] [--skip-users] [--skip-groups] [--skip-project-import] [--skip-project-export] [--commit]
     congregate cleanup [--hard-delete] [--skip-users] [--skip-groups] [--skip-projects] [--commit]
     congregate ui
     congregate export-projects
     congregate import-projects [--commit]
     congregate do_all [--commit]
     congregate do_all_users [--commit]
-    congregate do_all_group_and_projects [--commit]
+    congregate do_all_groups_and_projects [--commit]
     congregate update-staged-user-info [--commit]
     congregate update-aws-creds
     congregate add-users-to-parent-group [--commit]
@@ -50,9 +50,9 @@ Options:
 Arguments:
     threads                                 Set number of threads to run in parallel.
     commit                                  Disable the dry-run and perform the full migration with all reads/writes. 
-    skip-users                              Include groups and projects.
+    skip-users                              Migrate: Skip migrating users; Cleanup: Remove only groups and projects.
     hard-delete                             Remove user contributions and solely owned groups.
-    skip-groups                             Include users and projects.
+    skip-groups                             Migrate: Skip migrating groups; Cleanup: Remove only users and projects.
     skip-projects                           Include ONLY users (removing ONLY groups is not possible).
     skip-project-import                     Will do all steps up to import (export, re-write exported project json,
                                                 etc). Useful for testing export contents.
@@ -199,12 +199,15 @@ if __name__ == '__main__':
             if arguments["migrate"]:
                 threads = None
                 skip_users = False
+                skip_groups = False
                 skip_project_import = False
                 skip_project_export = False
                 if arguments["--threads"]:
                     threads = arguments["--threads"]
                 if arguments["--skip-users"]:
                     skip_users = True
+                if arguments["--skip-groups"]:
+                    skip_groups = True
                 if arguments["--skip-project-import"]:
                     skip_project_import = True
                 if arguments["--skip-project-export"]:
@@ -213,6 +216,7 @@ if __name__ == '__main__':
                     threads=threads,
                     dry_run=DRY_RUN,
                     skip_users=skip_users,
+                    skip_groups=skip_groups,
                     skip_project_import=skip_project_import,
                     skip_project_export=skip_project_export)
             if arguments["cleanup"]:
@@ -236,6 +240,10 @@ if __name__ == '__main__':
                     skip_projects=skip_projects)
             if arguments["do_all"]:
                 do_all.do_all(dry_run=DRY_RUN)
+            if arguments["do_all_users"]:
+                do_all.do_all_users(dry_run=DRY_RUN)
+            if arguments["do_all_groups_and_projects"]:
+                do_all.do_all_groups_and_projects(dry_run=DRY_RUN)
             if arguments["ui"]:
                 # os.environ["FLASK_APP"] = "%s/congregate/ui" % app_path
                 os.chdir(app_path + "/congregate")
