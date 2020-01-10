@@ -11,9 +11,9 @@ Usage:
     congregate ui
     congregate export-projects
     congregate import-projects [--commit]
-    congregate do_all [--commit]
-    congregate do_all_users [--commit]
-    congregate do_all_groups_and_projects [--commit]
+    congregate do-all [--commit]
+    congregate do-all-users [--commit]
+    congregate do-all-groups-and-projects [--commit]
     congregate update-staged-user-info [--commit]
     congregate update-aws-creds
     congregate add-users-to-parent-group [--commit]
@@ -73,7 +73,7 @@ Commands:
     ui                                      Deploy UI to port 8000.
     export-projects                         Export and update source instance projects. Bulk project export without user/group info.
     import-projects                         Import exported and updated projects onto destination instance. Destination user/group info required.
-    do_all*                                 Configure system, retrieve all projects, users, and groups, stage all information, and commence migration.
+    do-all*                                 Configure system, retrieve all projects, users, and groups, stage all information, and commence migration.
     update-staged-user-info                 Update staged user information after migrating only users.
     update-aws-creds                        Run awscli commands based on the keys stored in the config. Useful for docker updates.
     add-users-to-parent-group               If a parent group is set, all users staged will be added to the parent group.
@@ -238,11 +238,11 @@ if __name__ == '__main__':
                     hard_delete=hard_delete,
                     skip_groups=skip_groups,
                     skip_projects=skip_projects)
-            if arguments["do_all"]:
+            if arguments["do-all"]:
                 do_all.do_all(dry_run=DRY_RUN)
-            if arguments["do_all_users"]:
+            if arguments["do-all-users"]:
                 do_all.do_all_users(dry_run=DRY_RUN)
-            if arguments["do_all_groups_and_projects"]:
+            if arguments["do-all-groups-and-projects"]:
                 do_all.do_all_groups_and_projects(dry_run=DRY_RUN)
             if arguments["ui"]:
                 # os.environ["FLASK_APP"] = "%s/congregate/ui" % app_path
@@ -315,6 +315,7 @@ if __name__ == '__main__':
             if arguments["staged-user-list"]:
                 results = compare.compare_staged_users()
                 log.info("Staged user list:\n{}".format(dumps(results, indent=4, sort_keys=True)))
+                log.info("Length: {}".format({key: len(value) for key, value in results.items()}))
             if arguments["generate-seed-data"]:
                 s = SeedDataGenerator()
                 s.generate_seed_data(dry_run=DRY_RUN)

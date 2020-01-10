@@ -462,8 +462,8 @@ def update_diverging_branch():
 
 
 def get_total_migrated_count():
-    group_projects = api.get_count(
-        b.config.destination_host, b.config.destination_token, "groups/%d/projects" % b.config.parent_id)
+    # group_projects = api.get_count(
+    #     b.config.destination_host, b.config.destination_token, "groups/%d/projects" % b.config.parent_id)
     subgroup_count = 0
     for group in api.list_all(b.config.destination_host, b.config.destination_token,
                               "groups/%d/subgroups" % b.config.parent_id):

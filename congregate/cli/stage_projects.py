@@ -6,15 +6,15 @@ Copyright (c) 2020 - GitLab
 
 import json
 import re
-from congregate.helpers.misc_utils import get_dry_log, remove_dupes, is_non_empty_file
+from congregate.helpers.misc_utils import get_dry_log, remove_dupes
 from congregate.helpers import base_module as b
 from congregate.migration.gitlab.api.projects import ProjectsApi
-from congregate.cli.list_projects import list_projects
 
 projects_api = ProjectsApi()
 existing_parent_ids = []
 
 # TODO: Break down into separate staging areas
+# Stage users, groups and projects
 def stage_projects(projects_to_stage, dry_run=True):
     staged_projects, staged_users, staged_groups = build_staging_data(
         projects_to_stage, dry_run)
@@ -26,10 +26,6 @@ def build_staging_data(projects_to_stage, dry_run=True):
     staging = []
     staged_users = []
     staged_groups = []
-
-    # List projects
-    if not is_non_empty_file("{}/data/project_json.json".format(b.app_path)):
-        list_projects()
 
     # Loading projects information
     projects = open_projects_file()

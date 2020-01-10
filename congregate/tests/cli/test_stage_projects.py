@@ -34,8 +34,7 @@ class StageProjectsTests(unittest.TestCase):
 
         projects_to_stage = ["4", "6"]
 
-        with mock.patch('congregate.cli.list_projects.list_projects', list(self.projects_api.get_all_projects())):
-            staged_projects, staged_users, staged_groups = stage_projects.build_staging_data(projects_to_stage)
+        staged_projects, staged_users, staged_groups = stage_projects.build_staging_data(projects_to_stage)
 
         expected_projects = [
             {

@@ -599,20 +599,30 @@ class UsersClient(BaseClass):
 
         return users_not_found
 
-    def remove_users_not_found(self, data, users):
+    def handle_users_not_found(self, data, users, keep=True):
         """
-            Remove NOT found users (update_staged_user_info) from staged groups and projects
+            Remove FOUND users from staged users.
+            Remove users NOT found from staged users, groups and projects.
+            Users NOT found input comes from update_staged_user_info.
+            :return: Staged users
         """
         with open("{0}/data/{1}.json".format(self.app_path, data), "r") as f:
             staged = json.load(f)
 
-        self.log.info("Removing the following NOT found users ({0}) from staged {1}:\n{2}".format(
-            len(users),
-            "projects" if data == "stage" else "groups",
-            "\n".join(u for u in users.values())))
-
-        for s in staged:
-            s["members"] = [i for j, i in enumerate(s["members"]) if i["id"] not in users.keys()]
+        if data == "staged_users":
+            self.log.info("{0} all but the NOT found users ({1}) from staged users".format(
+                "Removing" if keep else "Keeping",
+                len(users)))
+            if keep:
+                staged = [i for j, i in enumerate(staged) if i["id"] in users.keys()]
+            else:
+                staged = [i for j, i in enumerate(staged) if i["id"] not in users.keys()]
+        else:
+            self.log.info("Removing the NOT found users ({0}) from staged {1}".format(
+                len(users),
+                "projects" if data == "stage" else "groups"))
+            for s in staged:
+                s["members"] = [i for j, i in enumerate(s["members"]) if i["id"] not in users.keys()]
 
         with open("{0}/data/{1}.json".format(self.app_path, data), "w") as f:
             f.write(json_pretty(staged))
