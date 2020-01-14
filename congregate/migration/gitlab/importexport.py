@@ -1,7 +1,7 @@
 import json
 
 from re import sub
-from urllib import quote
+from urllib import quote, quote_plus
 from time import sleep
 from os import remove
 from glob import glob
@@ -62,8 +62,7 @@ class ImportExportClient(BaseClass):
         skip = False
         wait_time = self.config.importexport_wait
         while not exported:            
-            response = self.get_export_status(
-                self.config.source_host, self.config.source_token, source_id, is_project)
+            response = self.get_export_status(self.config.source_host, self.config.source_token, source_id, is_project)
             if response.status_code == 200:
                 response = response.json()
                 name = response["name"]
@@ -521,6 +520,7 @@ class ImportExportClient(BaseClass):
         :param full_parent_namespace: Complete path of the parent namespace from source. So, if this group is group3
                                         in the structure `group1/group2/group3`, full_parent_namespace is `group1/group2`
         """
+        exported = False
         
         # TODO: Should stripping parent matter in this scenario? Think we want to leave everything as is
         full_name_with_parent_namespace = "{0}/{1}".format(full_parent_namespace, group_name)
@@ -531,12 +531,24 @@ class ImportExportClient(BaseClass):
             full_name_with_parent_namespace
         )
         if group_exists:
+            # For an AWS filename, we should be able to leave the / characters, and just quote_plus (S3 key is a filepath)
+            filename = quote_plus(full_name_with_parent_namespace)
+
             # Do that export thing
-            self.log.info("Project %s (Source ID: %s) NOT found on destination. Exporting from source...", full_name_with_parent_namespace, str(group_id))
-            
+            self.log.info("Project %s (Source ID: %s) NOT found on destination. Exporting from source as filename %s", full_name_with_parent_namespace, str(group_id), filename)
+            response = self.export_to_aws(group_id, filename, False)
+            if response is not None and response.status_code == 202:
+                # TODO: We're going to need to see what the status looks like
+                # TODO: Checking the export needs to know...?            
+                export_status = self.wait_for_export_to_finish(group_id, group_name, is_project=False)
+
+                # If export status is unknown lookup the file on AWS
+                # Could be misleading, since it assumes the file is complete
+                exported = export_status or self.aws.is_export_on_aws(filename)                
         else:
             self.log.info("SKIP: Group %s found on destination with source id %s and destination id %s", 
                           full_name_with_parent_namespace, str(group_id), str(dest_group_id))
+        return exported
         
     def export_thru_aws(self, pid, name, namespace, full_parent_namespace):
         """
