@@ -11,6 +11,7 @@ from congregate.helpers import api
 from congregate.helpers.misc_utils import download_file, migration_dry_run, get_dry_log
 from congregate.aws import AwsClient
 from congregate.migration.gitlab.projects import ProjectsClient
+from congregate.migration.gitlab.groups import GroupsClient
 from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
@@ -24,7 +25,9 @@ class ImportExportClient(BaseClass):
         super(ImportExportClient, self).__init__()
         self.aws = self.get_AwsClient()
         self.projects = ProjectsClient()
+        self.groups = GroupsClient()
         self.projects_api = ProjectsApi()
+        self.groups_api = GroupsApi()
         self.users = UsersApi()
         self.groups = GroupsApi()
         self.keys_map = self.get_keys()
@@ -509,9 +512,35 @@ class ImportExportClient(BaseClass):
 
         return success
 
+    def export_group_thru_aws(self, group_id, group_name, full_parent_namespace):
+        """
+        Called from migrate to kick-off an export process. Calls export_to_aws.
+        
+        :param name: Entity name. This is the name of the group itself
+        :param namespace: Namespace where the entity lives. It's direct parent.
+        :param full_parent_namespace: Complete path of the parent namespace from source. So, if this group is group3
+                                        in the structure `group1/group2/group3`, full_parent_namespace is `group1/group2`
+        """
+        
+        # TODO: Should stripping parent matter in this scenario? Think we want to leave everything as is
+        full_name_with_parent_namespace = "{0}/{1}".format(full_parent_namespace, group_name)
+        self.log.info("Searching on destination for group %s (ID: %s)", full_name_with_parent_namespace, str(group_id))
+        group_exists, dest_group_id = self.groups.find_group_by_path(
+            self.config.destination_host,
+            self.config.destination_token,
+            full_name_with_parent_namespace
+        )
+        if group_exists:
+            # Do that export thing
+            self.log.info("Project %s (Source ID: %s) NOT found on destination. Exporting from source...", full_name_with_parent_namespace, str(group_id))
+            
+        else:
+            self.log.info("SKIP: Group %s found on destination with source id %s and destination id %s", 
+                          full_name_with_parent_namespace, str(group_id), str(dest_group_id))
+        
     def export_thru_aws(self, pid, name, namespace, full_parent_namespace):
         """
-        Called from migrate to kick-off an export process
+        Called from migrate to kick-off an export process. Calls export_to_aws.
         
         :param name: Entity name
         :param namespace: Namespace where the entity lives

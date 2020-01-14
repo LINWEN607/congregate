@@ -1,6 +1,7 @@
 import json
 from os import path
 from requests.exceptions import RequestException
+from urllib import quote_plus, quote
 
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers import api
@@ -639,3 +640,33 @@ class GroupsClient(BaseClass):
                 self.log.warning("id is missing")
             if g.get("description", None) is None:
                 self.log.warning("description is missing")
+
+    def find_group_by_path(self, host, token, full_name_with_parent_namespace):
+        """
+        Search for an existing group by the full_path
+        """
+        group = self.search_for_group_by_full_name_with_parent_namespace(host, token, full_name_with_parent_namespace)
+        if group is None:
+            # As a sanity check, do namespaces, as well
+            namespace = self.search_for_namespace_by_full_name_with_parent_namespace(host, token, full_name_with_parent_namespace)
+            if namespace is not None:
+                self.log.info("SKIP: Group %s already exists (namespace search)", full_name_with_parent_namespace)
+                return True, namespace["id"]
+        else:            
+            self.log.info("SKIP: Group %s already exists (group search)", full_name_with_parent_namespace)
+            return True, group["id"]
+        return False, None
+
+    def search_for_group_by_full_name_with_parent_namespace(self, host, token, full_name_with_parent_namespace):
+        url_encoded_path = quote(full_name_with_parent_namespace)
+        resp = api.generate_get_request(host, token, "groups/%s" % url_encoded_path)
+        if resp.status_code == 200:
+            return resp.json()
+        return None
+
+    def search_for_namespace_by_full_name_with_parent_namespace(self, host, token, full_name_with_parent_namespace):
+        url_encoded_path = quote(full_name_with_parent_namespace)
+        resp = api.generate_get_request(host, token, "namespaces/%s" % url_encoded_path)
+        if resp.status_code == 200:
+            return resp.json()
+        return None

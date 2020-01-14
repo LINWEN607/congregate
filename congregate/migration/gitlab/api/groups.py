@@ -188,3 +188,15 @@ class GroupsApi():
             :return: Response object containing the response to PUT /groups/:id/notification_settings
         """
         return api.generate_put_request(host, token, "groups/%d/notification_settings?level=%s" % (id, level), data=None)
+
+    def export_group(self, host, token, source_id, data, headers):
+        """
+        Export a group using the groups api
+        
+            :param: host: (str) The source host
+            :param: token: (str) A token that can access the source host with export permissions
+            :param: source_id: (int) The group id on the source system
+            :param: data: (str) Relevant data for the export
+            :param: headers: (str) The headers for the API request
+        """
+        return api.generate_post_request(host, token, "groups/{}/export".format(source_id), data=data, headers=headers)
