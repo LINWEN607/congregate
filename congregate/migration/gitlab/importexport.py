@@ -39,41 +39,49 @@ class ImportExportClient(BaseClass):
             return self.aws.get_s3_keys(self.config.bucket_name)
         return {}
 
-    def get_export_status(self, host, token, id):
-        return api.generate_get_request(host, token, "projects/%d/export" % id)
+    def get_export_status(self, host, token, source_id, is_project=True):
+        if is_project:
+            return self.get_project_export_status(host, token, source_id)
+        return self.get_group_export_status(host, token, source_id)
 
-    def get_import_status(self, host, token, id):
-        return api.generate_get_request(host, token, "projects/%d/import" % id)
-
-    def wait_for_export_to_finish(self, host, token, id, name):
+    def get_project_export_status(self, host, token, source_id):
+        return api.generate_get_request(host, token, "projects/%d/export" % source_id)
+    
+    def get_group_export_status(self, host, token, source_id):
+        return api.generate_get_request(host, token, "groups/%d/export" % source_id)
+    
+    def get_import_status(self, host, token, source_id):
+        return api.generate_get_request(host, token, "projects/%d/import" % source_id)
+    
+    def wait_for_export_to_finish(self, source_id, name, is_project=True):
         exported = False
         total_time = 0
         skip = False
         wait_time = self.config.importexport_wait
-        while not exported:
+        while not exported:            
             response = self.get_export_status(
-                self.config.source_host, self.config.source_token, id)
+                self.config.source_host, self.config.source_token, source_id, is_project)
             if response.status_code == 200:
                 response = response.json()
                 name = response["name"]
                 status = response.get("export_status", "")
                 if status == "finished":
-                    self.log.info("Project {} has finished exporting".format(name))
+                    self.log.info("%s %s has finished exporting", "Project" if is_project else "Group", name)
                     exported = True
                 elif status == "failed":
-                    self.log.error("Project {} export failed".format(name))
+                    self.log.error("%s %s export failed", "Project" if is_project else "Group", name)
                     break
                 elif status == "none":
                     self.log.info(
-                        "No export status could be found for project {}".format(name))
+                        "No export status could be found for %s %s", "Project" if is_project else "Group", name)
                     if not skip:
-                        self.log.info("Waiting {0}s before skipping project {1} export".format(wait_time, name))
+                        self.log.info("Waiting %s seconds before skipping %s %s export", str(wait_time), "Project" if is_project else "Group", name)
                         sleep(wait_time)
                         skip = True
                     else:
                         break
                 else:
-                    self.log.info("Waiting {0}s for project {1} to export".format(wait_time, name))
+                    self.log.info("Waiting %s seconds for %s %s to export", str(wait_time), "Project" if is_project else "Group", name)
                     if total_time < self.config.max_export_wait_time:
                         total_time += wait_time
                         sleep(wait_time)
@@ -83,7 +91,7 @@ class ImportExportClient(BaseClass):
                         exported = True
             else:
                 self.log.info(
-                    "SKIP: Export, source project {} doesn't exist".format(name))
+                    "SKIP: Export, source %s %s doesn't exist", "Project" if is_project else "Group", name)
                 exported = False
                 break
 
@@ -112,6 +120,36 @@ class ImportExportClient(BaseClass):
                 .format(pid, filename, response))
             return None
 
+    def export_to_aws(self, source_id, filename, is_project=True):
+        presigned_put_url = self.aws.generate_presigned_url(filename, "PUT")
+        upload = [
+            "upload[http_method]=PUT",
+            "upload[url]=%s" % quote(presigned_put_url)
+        ]
+        headers = {
+            'Private-Token': self.config.source_token,
+            'Content-Type': 'application/x-www-form-urlencoded'
+        }
+        try:
+            if is_project:
+                response = self.projects_api.export_project(
+                    self.config.source_host,
+                    self.config.source_token,
+                    source_id,
+                    data="&".join(upload),
+                    headers=headers)
+            else:
+                response = self.groups_api.export_group(
+                    self.config.source_host,
+                    self.config.source_token,
+                    source_id,
+                    data="&".join(upload),
+                    headers=headers)
+            return response
+        except RequestException, e:
+            self.log.error("Failed to trigger %s (ID: %s) export as %s with response %s", "project" if is_project else "group", str(source_id), filename, response)
+            return None
+        
     def import_project(self, project, dry_run=True):
         """
             Imports project to destination GitLab instance.
@@ -145,15 +183,14 @@ class ImportExportClient(BaseClass):
                 return None
         else:
             namespace = get_project_namespace(project)
-            self.log.info("{0}{1} is NOT a USER project. Attempting to import into a group namespace"
-                .format(get_dry_log(dry_run), name))
+            self.log.info("%s%s is NOT a USER project. Attempting to import into a group namespace", get_dry_log(dry_run), name)
             if self.config.parent_id is None:
                 # TODO: This section is for importing to top-level, non-user projects.
                 #   Needs a going over. We know the parent_id case is solid
                 #   but recent experience would suggest this part isn't as tight
                 #   Certainly not the GitHost scenario
                 full_path = self.get_full_path(project["http_url_to_repo"])
-                self.log.info("Searching for namespace {}".format(full_path))
+                self.log.info("Searching for namespace %s", full_path)
                 for group in self.groups.search_for_group(
                         project["namespace"],
                         self.config.destination_host,
@@ -422,8 +459,7 @@ class ImportExportClient(BaseClass):
             self.log.error("Failed to trigger project {0} (ID: {1}) export, with response '{2}'"
                 .format(pid, name, response))
         else:
-            exported = self.wait_for_export_to_finish(
-                self.config.source_host, self.config.source_token, pid, name)
+            exported = self.wait_for_export_to_finish(pid, name)
 
             if exported:
                 url = "{0}/api/v4/projects/{1}/export/download".format(self.config.source_host, pid)
@@ -449,18 +485,17 @@ class ImportExportClient(BaseClass):
             url = "%s/api/v4/projects/%d/export/download" % (
                 self.config.source_host, pid)
 
-            exported = self.wait_for_export_to_finish(
-                self.config.source_host, self.config.source_token, pid, name)
+            exported = self.wait_for_export_to_finish(pid, name)
 
             if exported:
                 self.log.info("Downloading export")
                 try:
                     filename = download_file(url, self.config.filesystem_path, path_with_namespace, headers={
                         "PRIVATE-TOKEN": self.config.source_token})
-                    self.log.info("Copying %s to s3" % filename)
+                    self.log.info("Copying %s to s3", filename)
                     success = self.aws.copy_file_to_s3(filename)
                     if success:
-                        self.log.info("Removing %s from downloads" % filename)
+                        self.log.info("Removing %s from downloads", filename)
                         filepattern = sub(
                             r'\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{3}_', '', filename)
                         for f in glob("%s/downloads/*%s" %
@@ -475,6 +510,13 @@ class ImportExportClient(BaseClass):
         return success
 
     def export_thru_aws(self, pid, name, namespace, full_parent_namespace):
+        """
+        Called from migrate to kick-off an export process
+        
+        :param name: Entity name
+        :param namespace: Namespace where the entity lives
+        :param full_parent_namespace: Complete path of the parent namespace from source
+        """
         exported = False
         if self.config.strip_namespace_prefix:
             namespace = self.strip_namespace(full_parent_namespace, namespace)
@@ -490,10 +532,9 @@ class ImportExportClient(BaseClass):
         if not project_exists:
             self.log.info("Project {0} (ID: {1}) NOT found on destination. Exporting from source..."
                 .format(full_name, pid))
-            response = self.export_project_to_aws(pid, filename)
+            response = self.export_to_aws(pid, filename, True)
             if response is not None and response.status_code == 202:
-                export_status = self.wait_for_export_to_finish(
-                    self.config.source_host, self.config.source_token, pid, name)
+                export_status = self.wait_for_export_to_finish(pid, name)
                 # If export status is unknown lookup the file on AWS
                 # Could be misleading, since it assumes the file is complete
                 exported = export_status or self.aws.is_export_on_aws(filename)
