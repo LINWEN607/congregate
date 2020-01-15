@@ -44,14 +44,14 @@ class ConfigurationValidator(Config):
         self.parent_group_path_validated_in_session = self.validate_parent_group_path(parent_group_path)
         return parent_group_path
 
-    def validate_parent_group_id(self, pid):
-        if pid is not None:
-            group_resp = self.groups.get_group(pid, self.destination_host, self.destination_token).json()
+    def validate_parent_group_id(self, pgid):
+        if pgid is not None:
+            group_resp = self.groups.get_group(pgid, self.destination_host, self.destination_token).json()
             if group_resp.get("message", None) is not None:
                 raise ConfigurationException("parent_id")
             else:
                 return True
-        raise ConfigurationException("parent_id")
+        return True
 
     def validate_import_user_id(self, iuid):
         if iuid is not None:
@@ -76,7 +76,8 @@ class ConfigurationValidator(Config):
                 self.destination_token).json()
             if group_resp["full_path"] == parent_group_path:
                 return True
-        raise ConfigurationException("parent_group_path")
+            raise ConfigurationException("parent_group_path")
+        return True
 
 
     @property
