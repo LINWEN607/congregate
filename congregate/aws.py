@@ -202,7 +202,7 @@ class AwsClient(BaseClass):
                       self.config.s3_region, 
                       self.config.bucket_name, 
                       filename)
-        r = Popen(cmd.split(" "), stdout=PIPE)
+        r = Popen(cmd.split("+"), stdout=PIPE)
         return filename in r.stdout.read()
 
     def set_access_key_id(self, key):
