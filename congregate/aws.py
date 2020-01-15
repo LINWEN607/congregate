@@ -194,8 +194,6 @@ class AwsClient(BaseClass):
         return keys
 
     def is_export_on_aws(self, filename):
-        # TODO: Hmm, do we need this?
-        # filename = quote_plus(filename)
         cmd = "aws+--region+{0}+s3+ls+s3://{1}/{2}+--recursive".format(
             self.config.s3_region,
             self.config.bucket_name,
