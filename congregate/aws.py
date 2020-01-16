@@ -193,10 +193,11 @@ class AwsClient(BaseClass):
         return keys
 
     def is_export_on_aws(self, filename):
-        cmd = "aws+--region+{0}+s3+ls+\"s3://{1}/{2}\"+--recursive".format(
+        cmd = "aws+--region+{0}+s3+ls+s3://{1}/{2}+--recursive".format(
             self.config.s3_region,
             self.config.bucket_name,
             filename)
+
         self.log.info("Export status unknown. Looking for file on AWS in region %s location s3://%s/%s", 
                       self.config.s3_region, 
                       self.config.bucket_name, 
