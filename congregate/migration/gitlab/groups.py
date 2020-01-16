@@ -646,10 +646,10 @@ class GroupsClient(BaseClass):
         """
         Search for an existing group by the full_path
         """
-        group = self.search_for_group_by_full_name_with_parent_namespace(host, token, full_name_with_parent_namespace)
+        group = self.search_for_group_pr_namespace_by_full_name_with_parent_namespace(host, token, full_name_with_parent_namespace, True)
         if group is None:
             # As a sanity check, do namespaces, as well            
-            namespace = self.search_for_namespace_by_full_name_with_parent_namespace(host, token, full_name_with_parent_namespace)
+            namespace = self.search_for_group_pr_namespace_by_full_name_with_parent_namespace(host, token, full_name_with_parent_namespace, False)
             if namespace is not None:
                 self.log.info("SKIP: Group %s already exists (namespace search)", full_name_with_parent_namespace)
                 return True, namespace["id"]
@@ -658,14 +658,12 @@ class GroupsClient(BaseClass):
             return True, group["id"]
         return False, None
 
-    def search_for_group_by_full_name_with_parent_namespace(self, host, token, full_name_with_parent_namespace):
-        resp = self.groups_api.get_group_by_full_path(full_path=full_name_with_parent_namespace, host=host, token=token)
-        if resp.status_code == 200:
-            return resp.json()
-        return None
-
-    def search_for_namespace_by_full_name_with_parent_namespace(self, host, token, full_name_with_parent_namespace):
-        resp = self.namespaces_api.get_namespace_by_full_path(full_path=full_name_with_parent_namespace, host=host, token=token)        
+    def search_for_group_pr_namespace_by_full_name_with_parent_namespace(self, host, token, full_name_with_parent_namespace, is_group):
+        resp = None
+        if is_group:
+            resp = self.groups_api.get_group_by_full_path(full_path=full_name_with_parent_namespace, host=host, token=token)
+        else:
+            resp = self.namespaces_api.get_namespace_by_full_path(full_path=full_name_with_parent_namespace, host=host, token=token) 
         if resp.status_code == 200:
             return resp.json()
         return None

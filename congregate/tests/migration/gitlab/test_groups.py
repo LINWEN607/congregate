@@ -8,7 +8,7 @@ from congregate.tests.mockapi.groups import MockGroupsApi
 
 class GroupsUnitTest(unittest.TestCase):
 
-    class MockReturn:
+    class MockReturn(object):
         status_code = None
 
         def __init__(self, json_in, status_code_in):
