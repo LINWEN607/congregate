@@ -56,6 +56,12 @@ class ImportExportClient(BaseClass):
     def get_import_status(self, host, token, source_id):
         return api.generate_get_request(host, token, "projects/%d/import" % source_id)
     
+    def log_wait_time(self, wait_time, is_project, name):
+        self.log.info("Waiting %s seconds before skipping %s %s export", 
+                        str(wait_time), 
+                        str(self.check_is_project_or_group_for_logging(is_project)).lower(), 
+                        name)
+
     def wait_for_export_to_finish(self, source_id, name, is_project=True):
         exported = False
         total_time = 0
@@ -77,19 +83,13 @@ class ImportExportClient(BaseClass):
                     self.log.info(
                         "No export status could be found for %s %s", str(self.check_is_project_or_group_for_logging(is_project)).lower(), name)
                     if not skip:
-                        self.log.info("Waiting %s seconds before skipping %s %s export", 
-                                      str(wait_time), 
-                                      str(self.check_is_project_or_group_for_logging(is_project)).lower(), 
-                                      name)
+                        self.log_wait_time(wait_time, is_project, name)
                         sleep(wait_time)
                         skip = True
                     else:
                         break
                 else:
-                    self.log.info("Waiting %s seconds for %s %s to export", 
-                                  str(wait_time), 
-                                  str(self.check_is_project_or_group_for_logging(is_project)).lower(), 
-                                  name)
+                    self.log_wait_time(wait_time, is_project, name)
                     if total_time < self.config.max_export_wait_time:
                         total_time += wait_time
                         sleep(wait_time)
@@ -107,7 +107,7 @@ class ImportExportClient(BaseClass):
 
         return exported
 
-    def export_project_to_aws(self, pid, filename):
+    def get_export_project_response(self, host, token, pid, filename):
         presigned_put_url = self.aws.generate_presigned_url(filename, "PUT")
         upload = [
             "upload[http_method]=PUT",
@@ -116,14 +116,18 @@ class ImportExportClient(BaseClass):
         headers = {
             'Private-Token': self.config.source_token,
             'Content-Type': 'application/x-www-form-urlencoded'
-        }
-        try:
-            response = self.projects_api.export_project(
-                self.config.source_host,
-                self.config.source_token,
+        }     
+        response = self.projects_api.export_project(
+                host,
+                token,
                 pid,
                 data="&".join(upload),
                 headers=headers)
+        return response
+    
+    def export_project_to_aws(self, pid, filename):
+        try:
+            response = self.get_export_project_response(self.config.source_host, self.config.source_token, pid, filename)
             return response
         except RequestException, e:
             self.log.error("Failed to trigger project (ID: {0}) export as {1} with response {2}"
@@ -142,12 +146,7 @@ class ImportExportClient(BaseClass):
         }
         try:
             if is_project:
-                response = self.projects_api.export_project(
-                    self.config.source_host,
-                    self.config.source_token,
-                    source_id,
-                    data="&".join(upload),
-                    headers=headers)
+                response = self.get_export_project_response(self.config.source_host, self.config.source_token, source_id, filename)
             else:
                 response = self.groups_api.export_group(
                     self.config.source_host,
