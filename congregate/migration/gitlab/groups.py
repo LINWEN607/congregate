@@ -1,13 +1,13 @@
 import json
 from os import path
 from requests.exceptions import RequestException
-from urllib import quote_plus, quote
 
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers import api
 from congregate.helpers.misc_utils import get_dry_log, migration_dry_run, remove_dupes, json_pretty
 from congregate.migration.gitlab.variables import VariablesClient as vars_client
 from congregate.migration.gitlab.api.groups import GroupsApi
+from congregate.migration.gitlab.api.namespaces import NamespacesApi
 from congregate.helpers.exceptions import ConfigurationException
 
 
@@ -15,6 +15,7 @@ class GroupsClient(BaseClass):
     def __init__(self):
         self.vars = vars_client()
         self.groups_api = GroupsApi()
+        self.namespaces_api = NamespacesApi()
         self.group_id_mapping = {}
         super(GroupsClient, self).__init__()
 
@@ -647,7 +648,7 @@ class GroupsClient(BaseClass):
         """
         group = self.search_for_group_by_full_name_with_parent_namespace(host, token, full_name_with_parent_namespace)
         if group is None:
-            # As a sanity check, do namespaces, as well
+            # As a sanity check, do namespaces, as well            
             namespace = self.search_for_namespace_by_full_name_with_parent_namespace(host, token, full_name_with_parent_namespace)
             if namespace is not None:
                 self.log.info("SKIP: Group %s already exists (namespace search)", full_name_with_parent_namespace)
@@ -658,15 +659,13 @@ class GroupsClient(BaseClass):
         return False, None
 
     def search_for_group_by_full_name_with_parent_namespace(self, host, token, full_name_with_parent_namespace):
-        url_encoded_path = quote(full_name_with_parent_namespace)
-        resp = api.generate_get_request(host, token, "groups/%s" % url_encoded_path)
+        resp = self.groups_api.get_group_by_full_path(full_path=full_name_with_parent_namespace, host=host, token=token)
         if resp.status_code == 200:
             return resp.json()
         return None
 
     def search_for_namespace_by_full_name_with_parent_namespace(self, host, token, full_name_with_parent_namespace):
-        url_encoded_path = quote(full_name_with_parent_namespace)
-        resp = api.generate_get_request(host, token, "namespaces/%s" % url_encoded_path)
+        resp = self.namespaces_api.get_namespace_by_full_path(full_path=full_name_with_parent_namespace, host=host, token=token)        
         if resp.status_code == 200:
             return resp.json()
         return None

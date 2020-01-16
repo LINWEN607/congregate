@@ -68,22 +68,28 @@ class ImportExportClient(BaseClass):
                 name = response["name"]
                 status = response.get("export_status", "")
                 if status == "finished":
-                    self.log.info("%s %s has finished exporting", "Project" if is_project else "Group", name)
+                    self.log.info("%s %s has finished exporting", self.check_is_project_or_group_for_logging(is_project), name)
                     exported = True
                 elif status == "failed":
-                    self.log.error("%s %s export failed", "Project" if is_project else "Group", name)
+                    self.log.error("%s %s export failed", self.check_is_project_or_group_for_logging(is_project), name)
                     break
                 elif status == "none":
                     self.log.info(
-                        "No export status could be found for %s %s", "Project" if is_project else "Group", name)
+                        "No export status could be found for %s %s", str(self.check_is_project_or_group_for_logging(is_project)).lower(), name)
                     if not skip:
-                        self.log.info("Waiting %s seconds before skipping %s %s export", str(wait_time), "Project" if is_project else "Group", name)
+                        self.log.info("Waiting %s seconds before skipping %s %s export", 
+                                      str(wait_time), 
+                                      str(self.check_is_project_or_group_for_logging(is_project)).lower(), 
+                                      name)
                         sleep(wait_time)
                         skip = True
                     else:
                         break
                 else:
-                    self.log.info("Waiting %s seconds for %s %s to export", str(wait_time), "Project" if is_project else "Group", name)
+                    self.log.info("Waiting %s seconds for %s %s to export", 
+                                  str(wait_time), 
+                                  str(self.check_is_project_or_group_for_logging(is_project)).lower(), 
+                                  name)
                     if total_time < self.config.max_export_wait_time:
                         total_time += wait_time
                         sleep(wait_time)
@@ -93,7 +99,9 @@ class ImportExportClient(BaseClass):
                         exported = True
             else:
                 self.log.info(
-                    "SKIP: Export, source %s %s doesn't exist", "Project" if is_project else "Group", name)
+                    "SKIP: Export, source %s %s doesn't exist", 
+                    str(self.check_is_project_or_group_for_logging(is_project)).lower(), 
+                    name)
                 exported = False
                 break
 
@@ -149,7 +157,11 @@ class ImportExportClient(BaseClass):
                     headers=headers)
             return response
         except RequestException, e:
-            self.log.error("Failed to trigger %s (ID: %s) export as %s with response %s", "project" if is_project else "group", str(source_id), filename, response)
+            self.log.error("Failed to trigger %s (ID: %s) export as %s with response %s", 
+                           str(self.check_is_project_or_group_for_logging(is_project)).lower(), 
+                           str(source_id), 
+                           filename, 
+                           response)
             return None
         
     def import_project(self, project, dry_run=True):
@@ -531,12 +543,13 @@ class ImportExportClient(BaseClass):
             full_name_with_parent_namespace
         )
         if group_exists:
-            # For an AWS filename, we should be able to leave the / characters, and just quote_plus (S3 key is a filepath)
-            filename = quote_plus(full_name_with_parent_namespace)
-
+            # Generating the presigned URL later down the line does the quote_plus work, and the AWS functions to generate
+            # expect an *un*quote_plus string (even through S3 itself returns a quote_plus style string)
+            # Also, the CLI commands expect no + and no encoding (for is_export_on_aws). So, leave the filename as the full path
             # Do that export thing
-            self.log.info("Project %s (Source ID: %s) NOT found on destination. Exporting from source as filename %s", full_name_with_parent_namespace, str(group_id), filename)
-            response = self.export_to_aws(group_id, filename, False)
+            self.log.info("Group %s (Source ID: %s) NOT found on destination.", full_name_with_parent_namespace, str(group_id))
+            # Passing full_name_with_parent_namespace with no +, no encoding, not a quoted string
+            response = self.export_to_aws(group_id, full_name_with_parent_namespace, False)
             if response is not None and response.status_code == 202:
                 # TODO: We're going to need to see what the status looks like
                 # TODO: Checking the export needs to know...?            
@@ -544,7 +557,7 @@ class ImportExportClient(BaseClass):
 
                 # If export status is unknown lookup the file on AWS
                 # Could be misleading, since it assumes the file is complete
-                exported = export_status or self.aws.is_export_on_aws(filename)                
+                exported = export_status or self.aws.is_export_on_aws(full_name_with_parent_namespace)                
         else:
             self.log.info("SKIP: Group %s found on destination with source id %s and destination id %s", 
                           full_name_with_parent_namespace, str(group_id), str(dest_group_id))
@@ -590,3 +603,7 @@ class ImportExportClient(BaseClass):
             if full_parent_namespace.split("/")[-1] == namespace.split("/")[0]:
                 namespace = namespace.replace(namespace.split("/")[0] + "/", "")
         return namespace
+
+    def check_is_project_or_group_for_logging(self, is_project):
+        return "Project" if is_project else "Group"
+        

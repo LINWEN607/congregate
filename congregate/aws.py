@@ -9,7 +9,6 @@ from subprocess import Popen, PIPE, call
 from os import remove, path
 from re import sub
 from io import BytesIO
-# from urllib import quote_plus
 import boto3
 import requests
 
@@ -194,7 +193,7 @@ class AwsClient(BaseClass):
         return keys
 
     def is_export_on_aws(self, filename):
-        cmd = "aws+--region+{0}+s3+ls+s3://{1}/{2}+--recursive".format(
+        cmd = "aws+--region+{0}+s3+ls+\"s3://{1}/{2}\"+--recursive".format(
             self.config.s3_region,
             self.config.bucket_name,
             filename)
