@@ -16,6 +16,10 @@ sast:
   artifacts:
     paths: [gl-sast-report.json]
 
+code_quality:
+  artifacts:
+    paths: [gl-code-quality-report.json]
+
 stages:
   - build
   - test
