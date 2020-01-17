@@ -3,10 +3,10 @@ version: "2"
 checks:
   argument-count:
     config:
-      threshold: 5
+      threshold: 4
   method-complexity:
     config:
-      threshold: 6
+      threshold: 5
   method-count:
     config:
       threshold: 30      
