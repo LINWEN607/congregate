@@ -19,7 +19,7 @@ sast:
 stages:
   - build
   - test
-  - cleanup
+  # - cleanup
   - release
 
 build:
@@ -44,78 +44,79 @@ build:
 #     paths:
 #       - .venv/
 
-.test-job: &test-job
-  stage: test
-  image: "$BUILD_IMAGE_NAME"
-  before_script:
-    - apt-get update
-    - mkdir data
-    - echo ${Dummy_config_new} > $CONGREGATE_PATH/data/congregate.conf
-    - pip install pipenv
-    - export PIPENV_VENV_IN_PROJECT=true
-    - pipenv install
+# .test-job: &test-job
+#   stage: test
+#   image: "$BUILD_IMAGE_NAME"
+#   before_script:
+#     - apt-get update
+#     - mkdir data
+#     - echo ${Dummy_config_new} > $CONGREGATE_PATH/data/congregate.conf
+#     - pip install pipenv
+#     - export PIPENV_VENV_IN_PROJECT=true
+#     - pipenv install
 
-test:pylint:
-  <<: *test-job
-  script:
-    - ./pylint.sh
-  only:
-    - /^master$/
-  artifacts:
-    paths:
-      - pylint.txt
+# test:pylint:
+#   <<: *test-job
+#   script:
+#     - ./pylint.sh
+#   only:
+#     - /^master$/
+#   artifacts:
+#     paths:
+#       - pylint.txt
 
-test:unit:
-  <<: *test-job
-  script:
-    - pipenv run pytest -m 'not e2e' --cov-config=.coveragerc --cov=congregate congregate/tests/
+# test:unit:
+#   <<: *test-job
+#   script:
+#     - pipenv run pytest -m 'not e2e' --cov-config=.coveragerc --cov=congregate congregate/tests/
 
-test:end-to-end:
-  services:
-    - name: docker:19.03.1-dind
-    - name: gitlab/gitlab-ee:latest
-      alias: gitlab_source
-    - name: gitlab/gitlab-ee:latest
-      alias: gitlab_destination
-  <<: *test-job
-  tags:
-    - e2e
-  script:
-    - export GITLAB_SRC=http://gitlab_source
-    - export GITLAB_SRC_REG_URL=gitlab_source:4567
-    - export GITLAB_DEST=http://gitlab_destination
-    - export GITLAB_DEST_REG_URL=gitlab_destination:4567
-    - pipenv run pytest -s -m e2e congregate/tests/
+# test:end-to-end:
+#   services:
+#     - name: docker:19.03.1-dind
+#     - name: gitlab/gitlab-ee:latest
+#       alias: gitlab_source
+#     - name: gitlab/gitlab-ee:latest
+#       alias: gitlab_destination
+#   <<: *test-job
+#   tags:
+#     - e2e
+#   script:
+#     - export GITLAB_SRC=http://gitlab_source
+#     - export GITLAB_SRC_REG_URL=gitlab_source:4567
+#     - export GITLAB_DEST=http://gitlab_destination
+#     - export GITLAB_DEST_REG_URL=gitlab_destination:4567
+#     - pipenv run pytest -s -m e2e congregate/tests/
 
-remove redundant docker images:
-  stage: cleanup
-  script:
-    - docker images -a | grep "$CI_REGISTRY_IMAGE" | awk '{print $3}' | xargs docker rmi 2> /dev/null || true
-    - docker images -a | grep -E 'gitlab/gitlab-ee.*<none>' | awk '{print $3}' | xargs docker rmi 2> /dev/null || true
-  tags:
-    - e2e-cleanup
+# remove redundant docker images:
+#   stage: cleanup
+#   script:
+#     - docker images -a | grep "$CI_REGISTRY_IMAGE" | awk '{print $3}' | xargs docker rmi 2> /dev/null || true
+#     - docker images -a | grep -E 'gitlab/gitlab-ee.*<none>' | awk '{print $3}' | xargs docker rmi 2> /dev/null || true
+#   tags:
+#     - e2e-cleanup
 
-release-tag:
-  stage: release
-  image: docker:stable
-  variables:
-    RELEASE_IMAGE_NAME: "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME"
-  services:
-    - docker:19.03.1-dind
-  before_script:
-    - docker login -u "$GITLAB_USER_LOGIN" -p "$ACCESS_TOKEN" "$CI_REGISTRY"
-  script:
-    - docker pull "$BUILD_IMAGE_NAME"
-    - docker tag "$BUILD_IMAGE_NAME" "$RELEASE_IMAGE_NAME"
-    - docker push "$RELEASE_IMAGE_NAME"
-  only:
-    - tags
+# release-tag:
+#   stage: release
+#   image: docker:stable
+#   variables:
+#     RELEASE_IMAGE_NAME: "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME"
+#   services:
+#     - docker:19.03.1-dind
+#   before_script:
+#     - docker login -u "$GITLAB_USER_LOGIN" -p "$ACCESS_TOKEN" "$CI_REGISTRY"
+#   script:
+#     - docker pull "$BUILD_IMAGE_NAME"
+#     - docker tag "$BUILD_IMAGE_NAME" "$RELEASE_IMAGE_NAME"
+#     - docker push "$RELEASE_IMAGE_NAME"
+#   only:
+#     - tags
 
 pages:
   stage: release
   dependencies:
     - code_quality
   script:
+    - mkdir public
     - mv gl-code-quality-report.json public/
   artifacts:
     paths:
