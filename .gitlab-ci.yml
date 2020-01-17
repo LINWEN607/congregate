@@ -17,20 +17,21 @@ sast:
     paths: [gl-sast-report.json]
 
 stages:
-  - build
+  # - build
   - test
   # - cleanup
   - release
+  - deploy
 
-build:
-  image: docker:19.03.1
-  services:
-    - docker:19.03.1-dind
-  stage: build
-  script:
-    - docker login ${CI_REGISTRY} -u ${GITLAB_USER_LOGIN} -p ${ACCESS_TOKEN}
-    - docker build --tag "$BUILD_IMAGE_NAME" .
-    - docker push "$BUILD_IMAGE_NAME"
+# build:
+#   image: docker:19.03.1
+#   services:
+#     - docker:19.03.1-dind
+#   stage: build
+#   script:
+#     - docker login ${CI_REGISTRY} -u ${GITLAB_USER_LOGIN} -p ${ACCESS_TOKEN}
+#     - docker build --tag "$BUILD_IMAGE_NAME" .
+#     - docker push "$BUILD_IMAGE_NAME"
 
 # pre-test:
 #   stage: pre-test
@@ -112,7 +113,6 @@ build:
 #     - tags
 
 pages:
-  stage: release
   dependencies:
     - code_quality
   script:
