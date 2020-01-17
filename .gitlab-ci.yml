@@ -112,7 +112,7 @@ release-tag:
     - tags
 
 pages:
-  stage: deploy
+  stage: release
   dependencies:
     - code_quality
   script:
