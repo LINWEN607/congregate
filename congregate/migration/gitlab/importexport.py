@@ -112,7 +112,7 @@ class ImportExportClient(BaseClass):
 
         return exported
 
-    def get_export_response(self, source_id, filename, data, headers, is_project):
+    def get_export_response(self, source_id, data, headers, is_project):
         """
         Gets the export response for both project and group exports
         """
@@ -147,7 +147,6 @@ class ImportExportClient(BaseClass):
         try:
             response = self.get_export_response(
                 source_id,
-                filename,
                 data,
                 headers,
                 is_project
