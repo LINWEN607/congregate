@@ -561,7 +561,7 @@ class ImportExportClient(BaseClass):
             self.config.destination_token,
             full_name_with_parent_namespace
         )
-        if group_exists:
+        if not group_exists:
             # Generating the presigned URL later down the line does the quote_plus work, and the AWS functions to generate
             # expect an *un*quote_plus string (even through S3 itself returns a quote_plus style string)
             # Also, the CLI commands expect no + and no encoding (for is_export_on_aws). So, leave the filename as the full path
