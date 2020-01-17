@@ -1,5 +1,6 @@
 include:
-  template: SAST.gitlab-ci.yml
+  - template: SAST.gitlab-ci.yml
+  - template: Code-Quality.gitlab-ci.yml
 
 variables:
   DOCKER_DRIVER: overlay2
@@ -10,6 +11,10 @@ variables:
 sast:
   artifacts:
     paths: [gl-sast-report.json]
+
+code_quality:
+  artifacts:
+    paths: [gl-code-quality-report.json]
 
 stages:
   - build
