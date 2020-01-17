@@ -20,7 +20,7 @@ stages:
   # - build
   - test
   # - cleanup
-  - release
+  # - release
   - deploy
 
 # build:
@@ -113,6 +113,7 @@ stages:
 #     - tags
 
 pages:
+  stage: deploy
   dependencies:
     - code_quality
   script:
