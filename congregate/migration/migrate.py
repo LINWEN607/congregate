@@ -198,7 +198,7 @@ def handle_exporting_projects(project, dry_run=True):
             b.log.error("NOTICE: Filesystem-AWS exports are not currently supported")
             # exported = ie.export_thru_fs_aws(pid, name, namespace) if not dry_run else True
         elif loc == "aws":
-            exported = ie.export_thru_aws(pid, name, namespace, full_parent_namespace) if not dry_run else True
+            exported = ie.export_project_thru_aws(pid, name, namespace, full_parent_namespace) if not dry_run else True
         updated = False
         if exported:
             b.log.info("{0}Updating project {1} (ID: {2}) export members in {3}"
