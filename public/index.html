@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html>
 <head>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
 </head>
 <body>
-    <table>
+    <table ng-controller="cqCtrl" class="container">
         <tbody>
             <tr ng-repeat="i in issues">
                 <td>{{$index}}</td>
