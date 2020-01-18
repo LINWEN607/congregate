@@ -1,33 +1,76 @@
-import os
-from congregate.cli import config, stage_projects
+import json
+
+from congregate.cli import stage_projects
+from congregate.cli.list_projects import list_projects
 from congregate.migration.gitlab.users import UsersClient
 from congregate.migration.gitlab.groups import GroupsClient
 from congregate.migration import migrate
-from congregate.helpers import base_module
+from congregate.helpers import base_module as b
+from congregate.helpers.misc_utils import is_recent_file, remove_dupes
 
-app_path = base_module.app_path
-config = base_module.config
+users = UsersClient()
+groups = GroupsClient()
+
+
+def do_all_users(dry_run=True):
+    list_all()
+
+    # Clear staged projects and groups and stage only users
+    stage_projects.stage_projects([""], dry_run=False)
+    groups.append_groups([])
+    with open("{}/data/users.json".format(b.app_path), "r") as u:
+        with open("{}/data/staged_users.json".format(b.app_path), "w") as su:
+            json.dump(remove_dupes(json.load(u)), su, indent=4)
+
+    # NO dry run
+    if not b.config.keep_blocked_users:
+        users.remove_blocked_users(dry_run=False)
+
+    # NO dry run
+    users_not_found = users.update_staged_user_info(dry_run=False)
+    users.handle_users_not_found("staged_users", users_not_found)
+
+    migrate.migrate(
+        dry_run=dry_run,
+        skip_groups=True,
+        skip_project_import=True,
+        skip_project_export=True)
+
+    # Lookup not found users AFTER - NO dry run
+    users.update_staged_user_info(dry_run=False)
+
+
+def do_all_groups_and_projects(dry_run=True):
+    list_all()
+    stage_and_update_all()
+
+    migrate.migrate(dry_run=dry_run, skip_users=True)
+
 
 def do_all(dry_run=True):
-    users = UsersClient()
-    groups = GroupsClient()
+    list_all()
+    stage_and_update_all()
 
-    # Gather info
-    if not os.path.isfile("%s/data/users.json" % app_path):
-        users.retrieve_user_info()
-    if not os.path.isfile("%s/data/groups.json" % app_path):
-        groups.retrieve_group_info(config.source_host, config.source_token)
-
-    # Stage
-    stage_projects.stage_projects([None, "all"])
-
-    # Update and map users
-    users.update_staged_user_info()
-    users.map_new_users_to_groups_and_projects(dry_run)
-
-    # Migrate
-    migrate.migrate(dry_run)
+    migrate.migrate(dry_run=dry_run)
 
 
-if __name__ == "__main__":
-    do_all()
+def stage_and_update_all():
+    # Stage ALL - NO dry run
+    stage_projects.stage_projects(["all"], dry_run=False)
+
+    # NO dry run
+    if not b.config.keep_blocked_users:
+        users.remove_blocked_users(dry_run=False)
+
+    # NO dry run
+    users_not_found = users.update_staged_user_info(dry_run=False)
+    users.handle_users_not_found("staged_users", users_not_found, keep=False)
+    users.handle_users_not_found("staged_groups", users_not_found)
+    users.handle_users_not_found("stage", users_not_found)
+    users.map_new_users_to_groups_and_projects(dry_run=False)
+
+
+def list_all():
+    # List ALL source instance users/groups/projects if empty or not recent
+    if not is_recent_file("{}/data/project_json.json".format(b.app_path), age=3600):
+        list_projects()

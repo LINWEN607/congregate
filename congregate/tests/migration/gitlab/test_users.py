@@ -555,6 +555,48 @@ class UserTests(unittest.TestCase):
             result = self.users.remove("staged_groups")
         self.assertEqual(result, self.mock_users.get_dummy_group_active_members())
 
+    def test_handle_users_not_found_users_keep(self):
+        users_not_found = {
+            28: "rsmith@email.com"
+        }
+        read_data = json.dumps(self.mock_users.get_dummy_new_users())
+        mock_open = mock.mock_open(read_data=read_data)
+        with mock.patch('__builtin__.open', mock_open):
+            result = self.users.handle_users_not_found("staged_users", users_not_found)
+        self.assertEqual(result, self.mock_users.get_dummy_new_users_active())
+
+    def test_handle_users_not_found_users(self):
+        users_not_found = {
+            27: "jdoe@email.com"
+        }
+        read_data = json.dumps(self.mock_users.get_dummy_new_users())
+        mock_open = mock.mock_open(read_data=read_data)
+        with mock.patch('__builtin__.open', mock_open):
+            result = self.users.handle_users_not_found("staged_users", users_not_found, keep=False)
+        self.assertEqual(result, self.mock_users.get_dummy_new_users_active())
+
+    def test_handle_users_not_found_groups(self):
+        users_not_found = {
+            87: "jdoe2@email.com",
+            88: "jdoe3@email.com"
+        }
+        read_data = json.dumps(self.mock_users.get_dummy_group())
+        mock_open = mock.mock_open(read_data=read_data)
+        with mock.patch('__builtin__.open', mock_open):
+            result = self.users.handle_users_not_found("staged_groups", users_not_found)
+        self.assertEqual(result, self.mock_users.get_dummy_group_active_members())
+
+    def test_handle_users_not_found_projects(self):
+        users_not_found = {
+            87: "jdoe2@email.com",
+            88: "jdoe3@email.com"
+        }
+        read_data = json.dumps(self.mock_users.get_dummy_project())
+        mock_open = mock.mock_open(read_data=read_data)
+        with mock.patch('__builtin__.open', mock_open):
+            result = self.users.handle_users_not_found("stage", users_not_found)
+        self.assertEqual(result, self.mock_users.get_dummy_project_active_members())
+
     @mock.patch('congregate.migration.gitlab.users.UsersClient.find_user_by_email_comparison_without_id')
     @mock.patch('congregate.migration.gitlab.users.UsersClient.user_email_exists')
     def test_create_valid_username_found_email_returns_username(self, mock_email_check, mock_email_find):

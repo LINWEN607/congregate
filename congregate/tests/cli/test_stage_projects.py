@@ -1,5 +1,5 @@
-import mock
 import unittest
+import mock
 from congregate.cli import stage_projects
 from congregate.tests.mockapi.projects import MockProjectsApi
 from congregate.tests.mockapi.groups import MockGroupsApi
@@ -34,8 +34,7 @@ class StageProjectsTests(unittest.TestCase):
 
         projects_to_stage = ["4", "6"]
 
-        staged_projects, staged_users, staged_groups = stage_projects.build_staging_data(
-            projects_to_stage)
+        staged_projects, staged_users, staged_groups = stage_projects.build_staging_data(projects_to_stage)
 
         expected_projects = [
             {

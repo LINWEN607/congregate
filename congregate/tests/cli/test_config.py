@@ -122,10 +122,12 @@ class ConfigTests(unittest.TestCase):
         with mock.patch('congregate.cli.config.write_to_file', mock_file):
             with mock.patch('congregate.cli.config.getcwd', lambda : "."):
                 with mock.patch('congregate.cli.config.get_congregate_path', lambda : "."):
-                    with mock.patch('congregate.cli.config.obfuscate', lambda x: "obfuscated==="):
-                        with mock.patch('congregate.cli.config.deobfuscate', lambda x: "deobfuscated==="):
-                            with mock.patch('__builtin__.raw_input', lambda x: next(g)):
-                                config.generate_config()
+                    with mock.patch('congregate.cli.config.aws.set_access_key_id', lambda x: "access_key_id"):
+                        with mock.patch('congregate.cli.config.aws.set_secret_access_key', lambda x: "secret_access_key"):
+                            with mock.patch('congregate.cli.config.obfuscate', lambda x: "obfuscated==="):
+                                with mock.patch('congregate.cli.config.deobfuscate', lambda x: "deobfuscated==="):
+                                    with mock.patch('__builtin__.raw_input', lambda x: next(g)):
+                                        config.generate_config()
 
         # load the file that was just written
         with open("{0}congregate.conf".format(test_dir_prefix), "r") as f:
@@ -196,10 +198,12 @@ class ConfigTests(unittest.TestCase):
         mock_get_group.return_value = Hack()
         with mock.patch('congregate.cli.config.write_to_file', mock_file):
             with mock.patch('congregate.cli.config.get_congregate_path', lambda : "."):
-                with mock.patch('congregate.cli.config.obfuscate', lambda x: "obfuscated==="):
-                    with mock.patch('congregate.cli.config.deobfuscate', lambda x: "deobfuscated==="):
-                        with mock.patch('__builtin__.raw_input', lambda x: next(g)):
-                            config.generate_config()
+                with mock.patch('congregate.cli.config.aws.set_access_key_id', lambda x: "access_key_id"):
+                    with mock.patch('congregate.cli.config.aws.set_secret_access_key', lambda x: "secret_access_key"):
+                        with mock.patch('congregate.cli.config.obfuscate', lambda x: "obfuscated==="):
+                            with mock.patch('congregate.cli.config.deobfuscate', lambda x: "deobfuscated==="):
+                                with mock.patch('__builtin__.raw_input', lambda x: next(g)):
+                                    config.generate_config()
 
         # load the file that was just written
         with open("{0}congregate.conf".format(test_dir_prefix), "r") as f:

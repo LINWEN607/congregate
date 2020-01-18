@@ -400,6 +400,9 @@ class UsersClient(BaseClass):
             self.log.error("Failed to update user's parent access level, with error:\n{}".format(e))
 
     def remove_blocked_users(self, dry_run=True):
+        """
+            Remove users with state "blocked" from staged users, groups and projects
+        """
         self.log.info("{}Removing blocked users form staged users/groups/projects".format(get_dry_log(dry_run)))
         # From staged users
         self.remove("staged_users", dry_run)
@@ -535,7 +538,7 @@ class UsersClient(BaseClass):
         """
         staged_users = self.get_staged_users()
         new_users = []
-        users_not_found = []
+        users_not_found = {}
         for user in staged_users:
             self.log.info("Searching for user email {}".format(user["email"]))
             # Try to find a user in the destination system by email
@@ -550,7 +553,7 @@ class UsersClient(BaseClass):
             # an admin token for search) set the email field
             if len(new_user) > 1:
                 self.log.error("Too many users found for email search using email {0}".format(user["email"]))
-                users_not_found.append(user["email"])
+                users_not_found[user["id"]] = user["email"]
             elif len(new_user) > 0:
                 if new_user[0].get("email", None) is None:
                     new_user[0]["email"] = user["email"]
@@ -561,9 +564,9 @@ class UsersClient(BaseClass):
                     "Could not find user by email {0}. User should have been already migrated"
                     .format(user["email"])
                 )
-                users_not_found.append(user["email"])
+                users_not_found[user["id"]] = user["email"]
 
-        # Not sure where ids.txt comes from.
+        # Add extra IDs based on manually created file data/ids.txt
         other_ids = []
         if path.isfile("%s/data/ids.txt" % self.app_path):
             with open("%s/data/ids.txt" % self.app_path, "r") as f:
@@ -592,7 +595,39 @@ class UsersClient(BaseClass):
         self.log.info("{0}Users NOT found ({1}):\n{2}".format(
             get_dry_log(dry_run),
             len(users_not_found),
-            "\n".join(u for u in users_not_found)))
+            json_pretty(users_not_found)))
+
+        return users_not_found
+
+    def handle_users_not_found(self, data, users, keep=True):
+        """
+            Remove FOUND users from staged users.
+            Remove users NOT found from staged users, groups and projects.
+            Users NOT found input comes from update_staged_user_info.
+            :return: Staged users
+        """
+        with open("{0}/data/{1}.json".format(self.app_path, data), "r") as f:
+            staged = json.load(f)
+
+        if data == "staged_users":
+            self.log.info("{0} all but the NOT found users ({1}) from staged users".format(
+                "Removing" if keep else "Keeping",
+                len(users)))
+            if keep:
+                staged = [i for j, i in enumerate(staged) if i["id"] in users.keys()]
+            else:
+                staged = [i for j, i in enumerate(staged) if i["id"] not in users.keys()]
+        else:
+            self.log.info("Removing the NOT found users ({0}) from staged {1}".format(
+                len(users),
+                "projects" if data == "stage" else "groups"))
+            for s in staged:
+                s["members"] = [i for j, i in enumerate(s["members"]) if i["id"] not in users.keys()]
+
+        with open("{0}/data/{1}.json".format(self.app_path, data), "w") as f:
+            f.write(json_pretty(staged))
+
+        return staged
 
     def retrieve_user_info(self, quiet=False):
         users = list(api.list_all(self.config.source_host,
@@ -604,17 +639,22 @@ class UsersClient(BaseClass):
                 root_index = users.index(user)
             else:
                 keys_to_delete = [
+                    "avatar_url",
                     "web_url",
+                    "bio",
+                    "location",
+                    "skype",
+                    "linkedin",
+                    "twitter",
                     "last_sign_in_at",
                     "last_activity_at",
                     "current_sign_in_at",
                     "can_create_project",
-                    "two_factor_enabled",
-                    "avatar_url",
                     "created_at",
                     "confirmed_at",
                     "last_activity_on",
-                    "id"
+                    "theme_id",
+                    "color_scheme_id"
                 ]
                 for key in keys_to_delete:
                     if key in user:
@@ -628,7 +668,7 @@ class UsersClient(BaseClass):
 
         if not quiet:
             self.log.info(
-                "Retrieved %d users. Check users.json to see all retrieved groups" % len(users))
+                "Retrieved %d users. Check users.json to see all retrieved users" % len(users))
 
     def migrate_user_info(self, dry_run=True):
         staged_users = self.get_staged_users()
