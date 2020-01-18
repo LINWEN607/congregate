@@ -2,6 +2,7 @@
 <html>
 <head>
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.6/angular.min.js"></script>
 </head>
 <body>
     <div ng-app="cqApp" ng-controller="cqCtrl" >
@@ -18,20 +19,20 @@
         {{$m_err}}
     </div>
 </body>
-<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.6/angular.min.js"></script>
+
 
 <script>
 var cqApp = angular.module('cqApp', []);   
-cqApp.controller('cqCtrl', ['$scope', function($scope, $http) {
+cqApp.controller('cqCtrl', function($scope, $http) {
     $http.get('gl-code-quality-report.json')
         .success(function (data) {
             $scope.issues = data;
-            $scope.m_err = "no error"
+            $scope.m_err = "no error";
         })
-        .error(function (err, data) {
+        .error(function (err) {
             $scope.m_err = err;
             console.log("there was an error");
         });
-}]);
+});
 </script>
 </html>
