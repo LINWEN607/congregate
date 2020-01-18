@@ -117,7 +117,6 @@ pages:
   dependencies:
     - code_quality
   script:
-    - mkdir public
     - mv gl-code-quality-report.json public/
   artifacts:
     paths:
