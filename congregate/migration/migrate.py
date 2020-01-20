@@ -32,6 +32,7 @@ from congregate.migration.gitlab.pipeline_schedules import PipelineSchedulesClie
 from congregate.migration.gitlab.project_export import ProjectExportClient
 from congregate.migration.mirror import MirrorClient
 from congregate.migration.gitlab.deploy_keys import DeployKeysClient
+from congregate.migration.gitlab.hooks import HooksClient
 from congregate.migration.bitbucket import client as bitbucket
 
 aws = AwsClient()
@@ -50,6 +51,7 @@ awards = AwardsClient()
 registries = RegistryClient()
 p_schedules = PipelineSchedulesClient()
 deploy_keys = DeployKeysClient()
+hooks = HooksClient()
 project_export = ProjectExportClient()
 
 full_parent_namespace = groups.find_parent_group_path()
@@ -75,6 +77,9 @@ def migrate(
         # Migrate users
         if not skip_users:
             migrate_user_info(dry_run)
+
+        # Migrate system hooks
+        hooks.migrate_system_hooks(dry_run)
 
         # Migrate groups
         if not skip_groups:
@@ -135,25 +140,29 @@ def migrate_project_info(dry_run=True, skip_project_export=False, skip_project_i
                 lambda project: handle_exporting_projects(
                     project,
                     dry_run),
-                        staged_projects)
+                staged_projects)
             export_pool.close()
             export_pool.join()
 
             # Create list of projects that failed update
             if not export_results or len(export_results) == 0:
-                raise Exception("Results from exporting projects returned as empty. Aborting.")
+                raise Exception(
+                    "Results from exporting projects returned as empty. Aborting.")
 
             # Append total count of projects exported/updated
-            export_results.append(Counter(k for d in export_results for k, v in d.items() if v))
+            export_results.append(
+                Counter(k for d in export_results for k, v in d.items() if v))
             b.log.info("### {0}Project export results ###\n{1}"
-                .format(dry_log, json_pretty(export_results)))
+                       .format(dry_log, json_pretty(export_results)))
 
-            failed_update = migrate_utils.get_failed_update_from_results(export_results)
+            failed_update = migrate_utils.get_failed_update_from_results(
+                export_results)
             b.log.warning("The following projects (project.json) failed to update and will not be imported:\n{0}"
-                .format(json_pretty(failed_update)))
+                          .format(json_pretty(failed_update)))
 
             # Filter out the failed ones
-            staged_projects = migrate_utils.get_staged_projects_without_failed_update(staged_projects, failed_update)
+            staged_projects = migrate_utils.get_staged_projects_without_failed_update(
+                staged_projects, failed_update)
         else:
             b.log.info("SKIP: Assuming staged projects are already exported")
 
@@ -164,16 +173,16 @@ def migrate_project_info(dry_run=True, skip_project_export=False, skip_project_i
                 lambda project: migrate_given_export(
                     project,
                     dry_run),
-                        staged_projects)
+                staged_projects)
             import_pool.close()
             import_pool.join()
 
             # append Total : Successful count of project imports
             import_results.append(Counter("Total : Successful: {}"
-                .format(len(import_results)) for d in import_results for k, v in d.items() if v)
-                or "Total : Successful: 0 : 0")
+                                          .format(len(import_results)) for d in import_results for k, v in d.items() if v)
+                                  or "Total : Successful: 0 : 0")
             b.log.info("### {0}Project import results ###\n{1}"
-                .format(dry_log, json_pretty(import_results)))
+                       .format(dry_log, json_pretty(import_results)))
         else:
             b.log.info("SKIP: Assuming staged projects will be later imported")
     else:
@@ -187,35 +196,42 @@ def handle_exporting_projects(project, dry_run=True):
     dry_log = get_dry_log(dry_run)
     try:
         namespace = migrate_utils.get_project_namespace(project)
-        filename = ie.get_export_filename_from_namespace_and_name(namespace, name)
+        filename = ie.get_export_filename_from_namespace_and_name(
+            namespace, name)
         if loc not in ["filesystem", "aws"]:
             raise Exception("Unsupported export location: {}".format(loc))
         exported = False
         b.log.info("{0}Exporting project {1} (ID: {2}) as {3}"
-            .format(dry_log, name, pid, filename))
+                   .format(dry_log, name, pid, filename))
         if loc == "filesystem":
-            exported = ie.export_thru_filesystem(pid, name, namespace) if not dry_run else True
+            exported = ie.export_thru_filesystem(
+                pid, name, namespace) if not dry_run else True
         # TODO: Refactor and sync with other scenarios (#119)
         elif loc == "filesystem-aws":
-            b.log.error("NOTICE: Filesystem-AWS exports are not currently supported")
+            b.log.error(
+                "NOTICE: Filesystem-AWS exports are not currently supported")
             # exported = ie.export_thru_fs_aws(pid, name, namespace) if not dry_run else True
         elif loc == "aws":
-            exported = ie.export_thru_aws(pid, name, namespace, full_parent_namespace) if not dry_run else True
+            exported = ie.export_project_thru_aws(
+                pid, name, namespace, full_parent_namespace) if not dry_run else True
         updated = False
         if exported:
             b.log.info("{0}Updating project {1} (ID: {2}) export members in {3}"
-                .format(dry_log, name, pid, filename))
+                       .format(dry_log, name, pid, filename))
             if loc == "filesystem":
-                updated = project_export.update_project_export_members_for_local(name, namespace, filename) if not dry_run else True
+                updated = project_export.update_project_export_members_for_local(
+                    name, namespace, filename) if not dry_run else True
             # TODO: Refactor and sync with other scenarios (#119)
             elif loc == "filesystem-aws":
-                b.log.error("NOTICE: Filesystem-AWS exports are not currently supported")
+                b.log.error(
+                    "NOTICE: Filesystem-AWS exports are not currently supported")
             elif loc == "aws":
-                updated = project_export.update_project_export_members(name, namespace, filename) if not dry_run else True
+                updated = project_export.update_project_export_members(
+                    name, namespace, filename) if not dry_run else True
         return {"filename": filename, "exported": exported, "updated": updated}
     except (IOError, RequestException) as e:
         b.log.error("Failed to export project (ID: {0}) to {1} and update members with error:\n{2}"
-            .format(pid, loc, e))
+                    .format(pid, loc, e))
 
 
 def migrate_given_export(project_json, dry_run=True):
@@ -248,33 +264,37 @@ def migrate_given_export(project_json, dry_run=True):
                 name,
                 project_id,
                 import_check["import_status"] if import_check is not None
-                    and import_check.get("import_status", None) is not None
-                    else import_check)
+                and import_check.get("import_status", None) is not None
+                else import_check)
             )
         if not project_exists:
             b.log.info("{0}Project {1} (ID: {2}) not found on destination, importing..."
-                .format(get_dry_log(dry_run), path, project_id))
+                       .format(get_dry_log(dry_run), path, project_id))
             import_id = ie.import_project(project_json, dry_run)
             if import_id and not dry_run:
                 # Archived projects cannot be migrated
                 if archived:
-                    b.log.info("Unarchiving source project {0} (ID: {1})".format(name, source_id))
+                    b.log.info(
+                        "Unarchiving source project {0} (ID: {1})".format(name, source_id))
                     projects.projects_api.unarchive_project(
                         b.config.source_host, b.config.source_token, source_id)
-                b.log.info("Migrating source project {0} (ID: {1}) info".format(name, source_id))
-                post_import_results = migrate_single_project_info(project_json, import_id)
+                b.log.info(
+                    "Migrating source project {0} (ID: {1}) info".format(name, source_id))
+                post_import_results = migrate_single_project_info(
+                    project_json, import_id)
                 results[path] = post_import_results
     except RequestException, e:
         b.log.error(e)
     except KeyError, e:
         b.log.error(e)
         raise KeyError("Something broke in migrate_given_export project {0} (ID: {1})"
-            .format(name, source_id))
+                       .format(name, source_id))
     except OverflowError, e:
         b.log.error(e)
     finally:
         if archived and not dry_run:
-            b.log.info("Archiving back source project {0} (ID: {1})".format(name, source_id))
+            b.log.info(
+                "Archiving back source project {0} (ID: {1})".format(name, source_id))
             projects.projects_api.archive_project(
                 b.config.source_host, b.config.source_token, source_id)
     return results
@@ -315,27 +335,33 @@ def migrate_single_project_info(project, new_id):
     projects.add_shared_groups(old_id, new_id)
 
     # Update project badges to use destination path hostname
-    results["badges"] = projects.update_project_badges(new_id, name, full_parent_namespace)
+    results["badges"] = projects.update_project_badges(
+        new_id, name, full_parent_namespace)
 
     # CI/CD Variables
-    results["variables"] = variables.migrate_cicd_variables(old_id, new_id, name)
+    results["variables"] = variables.migrate_cicd_variables(
+        old_id, new_id, name)
 
     # Push Rules
     results["push_rules"] = pushrules.migrate_push_rules(old_id, new_id, name)
 
     # Merge Request Approvers
-    results["merge_request_approvers"] = mr_approvers.migrate_mr_approvers(old_id, new_id, name)
+    results["merge_request_approvers"] = mr_approvers.migrate_mr_approvers(
+        old_id, new_id, name)
     mr_enabled = bool(results["merge_request_approvers"])
 
     # Default Branch
-    results["default_branch"] = branches.update_default_branch(old_id, new_id, project)
+    results["default_branch"] = branches.update_default_branch(
+        old_id, new_id, project)
 
     # Protected Branches
-    results["protected_branches"] = branches.migrate_protected_branches(old_id, new_id, name)
+    results["protected_branches"] = branches.migrate_protected_branches(
+        old_id, new_id, name)
 
     # Awards
     users_map = {}
-    results["awards"] = awards.migrate_awards(old_id, new_id, name, users_map, mr_enabled)
+    results["awards"] = awards.migrate_awards(
+        old_id, new_id, name, users_map, mr_enabled)
 
     # Pipeline Schedules
     # TODO: Remove `pipelines_schedules.py` once the import API can consistently add project pipelines schedules OR
@@ -346,10 +372,12 @@ def migrate_single_project_info(project, new_id):
     users.delete_saved_impersonation_tokens(users_map)
 
     # Deploy Keys (project only)
-    results["deploy_keys"] = deploy_keys.migrate_deploy_keys(old_id, new_id, name)
+    results["deploy_keys"] = deploy_keys.migrate_deploy_keys(
+        old_id, new_id, name)
 
     # Container Registries
-    results["container_registry"] = registries.migrate_registries(old_id, new_id, name)
+    results["container_registry"] = registries.migrate_registries(
+        old_id, new_id, name)
 
     return results
 
@@ -444,7 +472,8 @@ def check_visibility():
                 "visibility": "private"
             }
             change = api.generate_put_request(
-                b.config.destination_host, b.config.destination_token, "projects/%d?visibility=private" % int(i),
+                b.config.destination_host, b.config.destination_token, "projects/%d?visibility=private" % int(
+                    i),
                 data=None)
             print change
     print count
@@ -455,10 +484,12 @@ def update_diverging_branch():
         if project.get("mirror_overwrites_diverged_branches", None) != True:
             id = project["id"]
             name = project["name"]
-            b.log.debug("Setting mirror_overwrites_diverged_branches to true for project {}".format(name))
+            b.log.debug(
+                "Setting mirror_overwrites_diverged_branches to true for project {}".format(name))
             resp = api.generate_put_request(b.config.destination_host, b.config.destination_token,
                                             "projects/%d?mirror_overwrites_diverged_branches=true" % id, data=None)
-            b.log.debug("Project {0} mirror_overwrites_diverged_branches status: {1}".format(name, resp.status_code))
+            b.log.debug("Project {0} mirror_overwrites_diverged_branches status: {1}".format(
+                name, resp.status_code))
 
 
 def get_total_migrated_count():
