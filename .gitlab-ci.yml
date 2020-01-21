@@ -33,17 +33,17 @@ build:
     - docker build --tag "$BUILD_IMAGE_NAME" .
     - docker push "$BUILD_IMAGE_NAME"
 
-pre-test:
-  stage: pre-test
-  image: "$BUILD_IMAGE_NAME"
-  script:
-    - apt-get update
-    - pip install pipenv
-    - export PIPENV_VENV_IN_PROJECT=true
-    - pipenv install
-  cache:
-    paths:
-      - .venv/
+# pre-test:
+#   stage: pre-test
+#   image: "$BUILD_IMAGE_NAME"
+#   script:
+#     - apt-get update
+#     - pip install pipenv
+#     - export PIPENV_VENV_IN_PROJECT=true
+#     - pipenv install
+#   cache:
+#     paths:
+#       - .venv/
 
 .test-job: &test-job
   stage: test
