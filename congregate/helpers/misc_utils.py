@@ -3,6 +3,7 @@ import os
 import errno
 import json
 
+from time import time
 from getpass import getpass
 from re import sub, findall
 from datetime import timedelta, date
@@ -126,3 +127,9 @@ def obfuscate(prompt):
 
 def deobfuscate(secret):
     return base64.b64decode(secret)
+
+def is_recent_file(path, age=2592000):
+    """
+        Check whether a file path exists, is empty and older than 1 month
+    """
+    return os.path.exists(path) and os.path.getsize(path) > 0 and time() - os.path.getmtime(path) < age

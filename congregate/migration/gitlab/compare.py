@@ -123,6 +123,7 @@ class CompareClient(BaseClass):
         return results
 
     def compare_staged_users(self):
+        self.log.info("Creating snapshot for each staged group and project member...")
         with open("%s/data/staged_groups.json" % self.app_path, "r") as f:
             groups = json.load(f)
 
