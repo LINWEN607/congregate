@@ -7,6 +7,7 @@ from congregate.helpers import api
 from congregate.helpers.misc_utils import get_dry_log, migration_dry_run, remove_dupes, json_pretty
 from congregate.migration.gitlab.variables import VariablesClient as vars_client
 from congregate.migration.gitlab.api.groups import GroupsApi
+from congregate.migration.gitlab.api.namespaces import NamespacesApi
 from congregate.helpers.exceptions import ConfigurationException
 
 
@@ -14,6 +15,7 @@ class GroupsClient(BaseClass):
     def __init__(self):
         self.vars = vars_client()
         self.groups_api = GroupsApi()
+        self.namespaces_api = NamespacesApi()
         self.group_id_mapping = {}
         super(GroupsClient, self).__init__()
 
@@ -639,3 +641,29 @@ class GroupsClient(BaseClass):
                 self.log.warning("id is missing")
             if g.get("description", None) is None:
                 self.log.warning("description is missing")
+
+    def find_group_by_path(self, host, token, full_name_with_parent_namespace):
+        """
+        Search for an existing group by the full_path
+        """
+        group = self.search_for_group_pr_namespace_by_full_name_with_parent_namespace(host, token, full_name_with_parent_namespace, True)
+        if group is None:
+            # As a sanity check, do namespaces, as well            
+            namespace = self.search_for_group_pr_namespace_by_full_name_with_parent_namespace(host, token, full_name_with_parent_namespace, False)
+            if namespace is not None:
+                self.log.info("SKIP: Group %s already exists (namespace search)", full_name_with_parent_namespace)
+                return True, namespace["id"]
+        else:            
+            self.log.info("SKIP: Group %s already exists (group search)", full_name_with_parent_namespace)
+            return True, group["id"]
+        return False, None
+
+    def search_for_group_pr_namespace_by_full_name_with_parent_namespace(self, host, token, full_name_with_parent_namespace, is_group):
+        resp = None
+        if is_group:
+            resp = self.groups_api.get_group_by_full_path(full_path=full_name_with_parent_namespace, host=host, token=token)
+        else:
+            resp = self.namespaces_api.get_namespace_by_full_path(full_path=full_name_with_parent_namespace, host=host, token=token) 
+        if resp.status_code == 200:
+            return resp.json()
+        return None

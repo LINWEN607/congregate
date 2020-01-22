@@ -9,7 +9,6 @@ from subprocess import Popen, PIPE, call
 from os import remove, path
 from re import sub
 from io import BytesIO
-
 import boto3
 import requests
 
@@ -194,12 +193,16 @@ class AwsClient(BaseClass):
         return keys
 
     def is_export_on_aws(self, filename):
-        self.log.info("Project export status unknown, looking for file {} on AWS".format(filename))
-        cmd = "aws --region {0} s3 ls s3://{1}/{2} --recursive".format(
+        cmd = "aws+--region+{0}+s3+ls+s3://{1}/{2}+--recursive".format(
             self.config.s3_region,
             self.config.bucket_name,
             filename)
-        r = Popen(cmd.split(" "), stdout=PIPE)
+
+        self.log.info("Export status unknown. Looking for file on AWS in region %s location s3://%s/%s", 
+                      self.config.s3_region, 
+                      self.config.bucket_name, 
+                      filename)
+        r = Popen(cmd.split("+"), stdout=PIPE)
         return filename in r.stdout.read()
 
     def set_access_key_id(self, key):

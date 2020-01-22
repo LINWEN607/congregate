@@ -178,3 +178,9 @@ class ImportExportClientTests(unittest.TestCase):
             project=self.original_project,
             timeout=0)
         self.assertEqual(import_results, None)
+
+    def test_check_is_project_or_group_for_logging_project_on_true(self):
+        self.assertEqual(self.ie.check_is_project_or_group_for_logging(True), "Project")
+        
+    def test_check_is_project_or_group_for_logging_group_on_false(self):
+        self.assertEqual(self.ie.check_is_project_or_group_for_logging(False), "Group")

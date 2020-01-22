@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.6/angular.min.js"></script>
+</head>
+<body>
+    <div ng-app="cqApp" ng-controller="cqCtrl" >
+        <table>
+            <tbody>
+                <tr ng-repeat="i in issues">
+                    <td>{{$index}}</td>
+                    <td>{{i.categories}}</td>
+                    <td>{{i.content}}</td>
+                    <td>{{i.location}}</td>
+                </tr>
+            </tbody>
+        </table>
+        {{$m_err}}
+    </div>
+</body>
+
+
+<script>
+var cqApp = angular.module('cqApp', []);   
+cqApp.controller('cqCtrl', function($scope, $http) {
+    $http.get('gl-code-quality-report.json')
+        .success(function (data) {
+            $scope.issues = data;
+            $scope.m_err = "no error";
+        })
+        .error(function (err) {
+            $scope.m_err = err;
+            console.log("there was an error");
+        });
+});
+</script>
+</html>

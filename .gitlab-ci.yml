@@ -8,19 +8,20 @@ variables:
   SAST_DISABLE_DIND: "true"
   SAST_DEFAULT_ANALYZERS: "bandit,secrets"
 
-sast:
-  artifacts:
-    paths: [gl-sast-report.json]
-
 code_quality:
   artifacts:
     paths: [gl-code-quality-report.json]
+
+sast:
+  artifacts:
+    paths: [gl-sast-report.json]
 
 stages:
   - build
   - test
   - cleanup
   - release
+  - deploy
 
 build:
   image: docker:19.03.1
@@ -110,3 +111,16 @@ release-tag:
     - docker push "$RELEASE_IMAGE_NAME"
   only:
     - tags
+
+pages:
+  stage: deploy
+  dependencies:
+    - code_quality
+  script:
+    - mv gl-code-quality-report.json public/
+  artifacts:
+    paths:
+      - public
+    expire_in: 30 days
+  only:
+    - master

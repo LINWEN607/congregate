@@ -29,6 +29,17 @@ class GroupsApi():
         """
         return api.generate_get_request(host, token, "groups/{}".format(quote_plus(full_path)))
 
+    def get_namespace_by_full_path(self, full_path, host, token):
+        """
+        Get all details of a namespace matching the full path
+
+            :param: full_path: (string) URL encoded full path to a group
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Generator returning JSON of each result from GET /namespaces/<full_path>
+        """
+        return api.generate_get_request(host, token, "namespaces/{}".format(quote_plus(full_path)))
+    
     def search_for_group(self, name, host, token):
         """
         Get all groups that match your string in their name or path.
@@ -188,3 +199,15 @@ class GroupsApi():
             :return: Response object containing the response to PUT /groups/:id/notification_settings
         """
         return api.generate_put_request(host, token, "groups/%d/notification_settings?level=%s" % (id, level), data=None)
+
+    def export_group(self, host, token, source_id, data, headers):
+        """
+        Export a group using the groups api
+        
+            :param: host: (str) The source host
+            :param: token: (str) A token that can access the source host with export permissions
+            :param: source_id: (int) The group id on the source system
+            :param: data: (str) Relevant data for the export
+            :param: headers: (str) The headers for the API request
+        """
+        return api.generate_post_request(host, token, "groups/{}/export".format(source_id), data=data, headers=headers)
