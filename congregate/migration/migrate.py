@@ -379,6 +379,10 @@ def migrate_single_project_info(project, new_id):
     results["container_registry"] = registries.migrate_registries(
         old_id, new_id, name)
 
+    # Project hooks (webhooks)
+    results["project_hooks"] = hooks.migrate_project_hooks(
+        old_id, new_id, name)
+
     return results
 
 
