@@ -2,12 +2,13 @@ import json
 from urllib import quote_plus
 from congregate.helpers import api
 
+
 class ProjectsApi():
 
     def search_for_project(self, host, token, name):
         """
         Search for projects by name which are accessible to the authenticated user
-        
+
         GitLab API Doc: https://docs.gitlab.com/ee/api/projects.html#search-for-projects-by-name
 
             :param: host: (str) GitLab host URL
@@ -21,7 +22,7 @@ class ProjectsApi():
     def get_project(self, id, host, token):
         """
         Get a specific project
-        
+
         GitLab API Doc: https://docs.gitlab.com/ee/api/projects.html#get-single-project
 
             :param: id: (int) GitLab project ID
@@ -46,7 +47,7 @@ class ProjectsApi():
     def get_all_projects(self, host, token, statistics=False):
         """
         Get a list of all visible projects across GitLab for the authenticated user
-        
+
         GitLab API Doc: https://docs.gitlab.com/ee/api/projects.html#list-all-projects
 
             :param: host: (str) GitLab host URL
@@ -59,7 +60,7 @@ class ProjectsApi():
     def get_members(self, id, host, token):
         """
         Gets a list of group or project members viewable by the authenticated user
-        
+
         GitLab API Doc: https://docs.gitlab.com/ee/api/members.html#list-all-members-of-a-group-or-project
 
             :param: id: (int) GitLab project ID
@@ -73,7 +74,7 @@ class ProjectsApi():
     def add_member(self, id, host, token, member):
         """
         Adds a member to a group or project
-        
+
         GitLab API Doc: https://docs.gitlab.com/ee/api/members.html#add-a-member-to-a-group-or-project
 
             :param: id: (int) GitLab project ID
@@ -102,7 +103,7 @@ class ProjectsApi():
     def archive_project(self, host, token, id):
         """
         Archives the project if the user is either admin or the project owner of this project
-        
+
         GitLab API Doc: https://docs.gitlab.com/ee/api/projects.html#archive-a-project
 
             :param: id: (int) GitLab project ID
@@ -116,7 +117,7 @@ class ProjectsApi():
     def unarchive_project(self, host, token, id):
         """
         Unarchives the project if the user is either admin or the project owner of this project
-        
+
         GitLab API Doc: https://docs.gitlab.com/ee/api/projects.html#unarchive-a-project
 
             :param: id: (int) GitLab project ID
@@ -126,11 +127,11 @@ class ProjectsApi():
 
         """
         return api.generate_post_request(host, token, "projects/%d/unarchive" % id, {}).json()
-    
+
     def delete_project(self, host, token, id):
         """
         Removes a project including all associated resources
-        
+
         GitLab API Doc: https://docs.gitlab.com/ee/api/projects.html#remove-project
 
             :param: id: (int) GitLab project ID
@@ -140,45 +141,20 @@ class ProjectsApi():
         """
         return api.generate_delete_request(host, token, "projects/{}".format(id))
 
-    def add_shared_group(self, host, token, id, group):
+    def add_shared_group(self, host, token, pid, group):
         """
         Allow to share project with group
-        
+
         GitLab API Doc: https://docs.gitlab.com/ee/api/projects.html#share-project-with-group
 
-            :param: id: (int) GitLab project ID
+            :param: pid: (int) GitLab project ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
             :param: group: (dict) Object containing the necessary data for the shared group
             :return: Response object containing the response to POST /projects/:id/share
 
         """
-        return api.generate_post_request(host, token, "projects/%d/share" % id, json.dumps(group))
-
-    def get_all_project_badges(self, host, token, id):
-        """
-        List all badges of a project
-
-        GitLab API doc: https://docs.gitlab.com/ee/api/project_badges.html#list-all-badges-of-a-project
-
-            :param: id: (int) GitLab project ID
-            :yield: Generator containing JSON from GET /projects/:id/badges
-        """
-        return api.list_all(host, token, "projects/%d/badges" % id)
-
-    def edit_project_badge(self, host, token, id, badge_id, data=None):
-        """
-        Edit a badge of a project
-
-        GitLab API doc: https://docs.gitlab.com/ee/api/project_badges.html#edit-a-badge-of-a-project
-
-            :param: id: (int) GitLab project ID
-            :param: badge_id: (int) The badge ID
-            :param: link_url: (str) URL of the badge link
-            :param: image_url: (str) URL of the badge image
-            :return: Response object containing the response to PUT /projects/:id/badges/:badge_id
-        """
-        return api.generate_put_request(host, token, "projects/%d/badges/%d" % (id, badge_id), json.dumps(data))
+        return api.generate_post_request(host, token, "projects/%d/share" % pid, json.dumps(group))
 
     def edit_project(self, host, token, pid, data=None):
         """
@@ -205,7 +181,7 @@ class ProjectsApi():
         if data is not None:
             data["name"] = name
         else:
-            data = { "name": name }
+            data = {"name": name}
         return api.generate_post_request(host, token, "projects", json.dumps(data), headers=headers)
 
     def export_project(self, host, token, pid, data=None, headers=None):

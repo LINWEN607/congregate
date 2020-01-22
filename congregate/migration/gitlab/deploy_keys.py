@@ -1,7 +1,9 @@
 import json
+from requests.exceptions import RequestException
 
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers import api
+
 
 class DeployKeysClient(BaseClass):
 
@@ -14,22 +16,20 @@ class DeployKeysClient(BaseClass):
 
     def migrate_deploy_keys(self, old_id, new_id, name):
         try:
-            keys = self.list_project_deploy_keys(old_id)
-            if keys:
-                keys = list(keys)
-                if keys:
-                    self.log.info("Migrating project {} deploy keys".format(name))
-                    for key in keys:
-                        # Remove unused key-value before posting key
-                        key.pop("id", None)
-                        key.pop("created_at", None)
-                        self.__create_new_project_deploy_key(new_id, json.dumps(key))
-                    return True
-                else:
-                    self.log.info("Project {} has no deploy keys".format(name))
-            else:
-                self.log.warning("Failed to retrieve deploy keys for {0}, with response:\n{1}".format(name, keys))
-                return False
-        except Exception, e:
-            self.log.error("Failed to migrate deploy keys for {0}, with error:\n{1}".format(name, e))
+            response = self.list_project_deploy_keys(old_id)
+            keys = iter(response)
+            for key in keys:
+                # Remove unused key-value before posting key
+                key.pop("id", None)
+                key.pop("created_at", None)
+                self.__create_new_project_deploy_key(new_id, json.dumps(key))
+        except TypeError as te:
+            self.log.error(
+                "Project {0} deploy keys {1} {2}".format(name, response, te))
             return False
+        except RequestException as re:
+            self.log.error(
+                "Failed to migrate deploy keys for {0}, with error:\n{1}".format(name, re))
+            return False
+        else:
+            return True

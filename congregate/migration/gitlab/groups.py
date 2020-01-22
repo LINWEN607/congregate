@@ -5,7 +5,8 @@ from requests.exceptions import RequestException
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers import api
 from congregate.helpers.misc_utils import get_dry_log, migration_dry_run, remove_dupes, json_pretty
-from congregate.migration.gitlab.variables import VariablesClient as vars_client
+from congregate.migration.gitlab.variables import VariablesClient
+from congregate.migration.gitlab.badges import BadgesClient
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.namespaces import NamespacesApi
 from congregate.helpers.exceptions import ConfigurationException
@@ -13,8 +14,9 @@ from congregate.helpers.exceptions import ConfigurationException
 
 class GroupsClient(BaseClass):
     def __init__(self):
-        self.vars = vars_client()
+        self.vars = VariablesClient()
         self.groups_api = GroupsApi()
+        self.badges = BadgesClient()
         self.namespaces_api = NamespacesApi()
         self.group_id_mapping = {}
         super(GroupsClient, self).__init__()
@@ -51,9 +53,11 @@ class GroupsClient(BaseClass):
                 group.pop("ldap_cn")
                 group.pop("ldap_access")
             except KeyError, e:
-                self.log.error("Failed to pop group keys 'ldap_cn' and/or 'ldap_access', with error:\n{}".format(e))
+                self.log.error(
+                    "Failed to pop group keys 'ldap_cn' and/or 'ldap_access', with error:\n{}".format(e))
             group_id = group["id"]
-            members = list(self.groups_api.get_all_group_members(group_id, host, token))
+            members = list(self.groups_api.get_all_group_members(
+                group_id, host, token))
             group["members"] = members
             transient_list.append(group)
             if parent_group is not None:
@@ -62,7 +66,8 @@ class GroupsClient(BaseClass):
                 if len(subgroup) > 0:
                     parent_group = transient_list[-1]
                     self.log.debug("traversing into a subgroup")
-                    self.traverse_groups([subgroup], transient_list, host, token, parent_group)
+                    self.traverse_groups(
+                        [subgroup], transient_list, host, token, parent_group)
             parent_group = None
 
     def retrieve_group_info(self, host, token, location="source", top_level_group=False, quiet=False):
@@ -87,7 +92,8 @@ class GroupsClient(BaseClass):
         self.traverse_groups(groups, transient_list, host, token)
         self.create_groups_json(transient_list, prefix=prefix)
         if not quiet:
-            self.log.info("Retrieved %d groups. Check groups.json to see all retrieved groups" % len(groups))
+            self.log.info(
+                "Retrieved %d groups. Check groups.json to see all retrieved groups" % len(groups))
 
         return transient_list
 
@@ -99,7 +105,8 @@ class GroupsClient(BaseClass):
 
     def migrate_group_info(self, dry_run=True):
         if not path.isfile("%s/data/groups.json" % self.app_path):
-            self.retrieve_group_info(self.config.source_host, self.config.source_token)
+            self.retrieve_group_info(
+                self.config.source_host, self.config.source_token)
         staged_groups = self.get_staged_groups()
         rewritten_groups = {}
         for i in range(len(staged_groups)):
@@ -115,30 +122,19 @@ class GroupsClient(BaseClass):
             current_level = self.get_current_group_notifications(parent_id)
             if not dry_run:
                 self.update_group_notifications(parent_id)
-                self.traverse_and_migrate(staged_groups, rewritten_groups, dry_run)
+                self.traverse_and_migrate(
+                    staged_groups, rewritten_groups, dry_run)
                 self.reset_group_notifications(parent_id, current_level)
             else:
-                self.traverse_and_migrate(staged_groups, rewritten_groups, dry_run)
+                self.traverse_and_migrate(
+                    staged_groups, rewritten_groups, dry_run)
         else:
             self.traverse_and_migrate(staged_groups, rewritten_groups, dry_run)
 
         # Migrate group badges
-        self.migrate_group_badges(dry_run)
-
-    def migrate_group_badges(self, dry_run=True):
         for old_id, new_id in self.group_id_mapping.items():
-            badges = self.groups_api.get_all_group_badges(self.config.source_host, self.config.source_token, old_id)
-            if badges:
-                badges = list(badges)
-                if badges:
-                    self.log.info("{0}Migrating source group ID {1} badges".format(get_dry_log(dry_run), old_id))
-                    if not dry_run:
-                        self.add_badges(new_id, self.find_parent_group_path(), badges)
-                else:
-                    self.log.info("Group {} has no group badges".format(old_id))
-            else:
-                self.log.warn("Failed to retrieve group badges for {0}, with response:\n{1}"
-                    .format(old_id, json_pretty(badges)))
+            self.badges.migrate_group_badges(
+                old_id, new_id, self.find_parent_group_path(), dry_run)
 
     # TODO: Refactor and break down
     def traverse_and_migrate(self, groups, rewritten_groups, dry_run=True):
@@ -147,7 +143,7 @@ class GroupsClient(BaseClass):
         for group in groups:
             parent_id = None
             self.log.info("{0}Migrating group {1} ({2}/{3})"
-                .format(get_dry_log(dry_run), group["name"], count, len(group)))
+                          .format(get_dry_log(dry_run), group["name"], count, len(group)))
             if group.get("id", None) is not None:
                 group_id = group["id"]
                 members = group["members"]
@@ -157,7 +153,8 @@ class GroupsClient(BaseClass):
                         group["visibility"] = "private"
 
                 if group.get("parent_namespace", None) is not None:
-                    self.log.info("Retrieved parent namespace of group {0}".format(group["parent_namespace"]))
+                    self.log.info("Retrieved parent namespace of group {0}".format(
+                        group["parent_namespace"]))
                     found = False
                     if rewritten_groups.get(group["parent_id"], None) is not None:
                         parent_id = rewritten_groups[group["parent_id"]]["id"]
@@ -171,12 +168,12 @@ class GroupsClient(BaseClass):
                             found = True
                         else:
                             for s in self.groups_api.search_for_group(
-                                group["parent_namespace"],
-                                self.config.destination_host,
-                                self.config.destination_token):
+                                    group["parent_namespace"],
+                                    self.config.destination_host,
+                                    self.config.destination_token):
                                 if rewritten_groups.get(parent_id, None) is not None:
                                     if s["full_path"].lower() == rewritten_groups[group["id"]][
-                                        "full_parent_namespace"].lower():
+                                            "full_parent_namespace"].lower():
                                         rewritten_groups[parent_id]["new_parent_id"] = s["id"]
                                         group["parent_id"] = s["id"]
                                         found = True
@@ -185,9 +182,9 @@ class GroupsClient(BaseClass):
                             self.traverse_and_migrate(
                                 [rewritten_groups[parent_id]], rewritten_groups, dry_run)
                             for s in self.groups_api.search_for_group(
-                                group["parent_namespace"],
-                                self.config.destination_host,
-                                self.config.destination_token):
+                                    group["parent_namespace"],
+                                    self.config.destination_host,
+                                    self.config.destination_token):
                                 if rewritten_groups.get(parent_id, None) is not None:
                                     if s["full_path"].lower() == rewritten_groups[parent_id]["full_path"].lower():
                                         group["parent_id"] = s["id"]
@@ -213,16 +210,18 @@ class GroupsClient(BaseClass):
                         group_without_id.pop("members")
                         full_parent_namespace = ""
                         if group_without_id.get("parent_namespace", None) is not None:
-                            self.log.info("Popping parent namespace of group {0}".format(group_without_id["parent_namespace"]))
+                            self.log.info("Popping parent namespace of group {0}".format(
+                                group_without_id["parent_namespace"]))
                             group_without_id.pop("parent_namespace")
                         if group_without_id.get("full_parent_namespace", None) is not None:
                             full_parent_namespace = group_without_id["full_parent_namespace"]
-                            self.log.info("Popping FULL parent namespace of group {0}".format(full_parent_namespace))
+                            self.log.info("Popping FULL parent namespace of group {0}".format(
+                                full_parent_namespace))
                             group_without_id.pop("full_parent_namespace")
 
                         response = None
                         self.log.info("{0}Creating group with JSON:\n{1}"
-                            .format(get_dry_log(dry_run), json_pretty(group_without_id)))
+                                      .format(get_dry_log(dry_run), json_pretty(group_without_id)))
                         if not dry_run:
                             response = self.groups_api.create_group(
                                 self.config.destination_host,
@@ -232,7 +231,8 @@ class GroupsClient(BaseClass):
                         if isinstance(response, dict):
                             if response.get("message", None) is not None:
                                 if "Failed to save group" in response["message"]:
-                                    self.log.info("Group already exists. Searching for group ID")
+                                    self.log.info(
+                                        "Group already exists. Searching for group ID")
                                     found_group = False
                                     if group["parent_id"] is not None:
                                         for ng in self.groups_api.get_all_subgroups(
@@ -282,37 +282,46 @@ class GroupsClient(BaseClass):
                                 if ng["name"] == group["name"]:
                                     if ng["parent_id"] == group["parent_id"] == self.config.parent_id:
                                         new_group_id = ng["id"]
-                                        self.log.info("New group {0} found".format(new_group_id))
+                                        self.log.info(
+                                            "New group {0} found".format(new_group_id))
                                         break
 
                     if new_group_id:
                         self.group_id_mapping[group_id] = new_group_id
                         #   177
-                        current_level = self.get_current_group_notifications(new_group_id)
+                        current_level = self.get_current_group_notifications(
+                            new_group_id)
                         if not current_level:
                             self.log.error("SKIP: Adding users for new group ID {0}, notification level could not be determined"
-                                .format(new_group_id))
+                                           .format(new_group_id))
                             continue
 
                         if not dry_run:
-                            put_response = self.update_group_notifications(new_group_id)
+                            put_response = self.update_group_notifications(
+                                new_group_id)
                             if not put_response:
                                 self.log.error("SKIP: Adding users for new group ID {0}, notification level could not be updated ({1})"
-                                    .format(new_group_id, put_response.status_code))
+                                               .format(new_group_id, put_response.status_code))
                                 continue
-                            self.vars.migrate_variables(new_group_id, group_id, "group")
+                            self.vars.migrate_variables(
+                                new_group_id, group_id, "group")
                             self.add_members(members, new_group_id, dry_run)
                             self.remove_import_user(new_group_id)
-                            self.reset_group_notifications(new_group_id, current_level)
+                            self.reset_group_notifications(
+                                new_group_id, current_level)
                         else:
-                            new_members = self.add_members(members, new_group_id, dry_run)
-                            group_without_id.setdefault("members", []).append(new_members)
+                            new_members = self.add_members(
+                                members, new_group_id, dry_run)
+                            group_without_id.setdefault(
+                                "members", []).append(new_members)
                             dest_groups.append(group_without_id)
             else:
-                self.log.error("Group ID not found for staged group (JSON):\n{}".format(group))
+                self.log.error(
+                    "Group ID not found for staged group (JSON):\n{}".format(group))
             count += 1
         if dry_run:
-            self.log.info("DRY-RUN: Outputing various GROUP migration data to dry_run_group_migration.json")
+            self.log.info(
+                "DRY-RUN: Outputing various GROUP migration data to dry_run_group_migration.json")
             migration_dry_run("group", {
                 "parent_id": self.config.parent_id,
                 "dest_groups": dest_groups,
@@ -333,7 +342,7 @@ class GroupsClient(BaseClass):
             }
             new_members.append(new_member)
             self.log.info("{0}Adding to new group (ID: {1}) member:\n{2}"
-                .format(get_dry_log(dry_run), group_id, json_pretty(member)))
+                          .format(get_dry_log(dry_run), group_id, json_pretty(member)))
             if not dry_run:
                 try:
                     self.groups_api.add_member_to_group(
@@ -343,13 +352,13 @@ class GroupsClient(BaseClass):
                         new_member)
                 except RequestException, e:
                     self.log.error("Failed to add member to new group (ID: {0}): {1}\nwith error:\n{2}"
-                        .format(group_id, member, e))
+                                   .format(group_id, member, e))
         return new_members
 
     def remove_import_user(self, group_id):
         try:
             self.log.info("Removing import (root) user (ID: {0}) from group (ID: {1})"
-                .format(self.config.import_user_id, group_id))
+                          .format(self.config.import_user_id, group_id))
             self.groups_api.remove_member(
                 group_id,
                 int(self.config.import_user_id),
@@ -357,7 +366,8 @@ class GroupsClient(BaseClass):
                 self.config.destination_token
             )
         except RequestException, e:
-            self.log.error("Failed to remove import (root) user from group, with error:\n{}".format(e))
+            self.log.error(
+                "Failed to remove import (root) user from group, with error:\n{}".format(e))
 
     def get_current_group_notifications(self, new_group_id):
         """
@@ -374,12 +384,14 @@ class GroupsClient(BaseClass):
             level = get_response.json().get("level", None)
             if get_response is not None and get_response.status_code == 200 and level is not None:
                 self.log.info("Retrieved notification settings for group {0} (level: {1})"
-                    .format(new_group_id, level))
+                              .format(new_group_id, level))
                 return level
             else:
-                self.log.error("Could not get group {} notification settings".format(new_group_id))
+                self.log.error(
+                    "Could not get group {} notification settings".format(new_group_id))
         except Exception as e:
-            self.log.error("Exception in get_current_group_notifications of {} ".format(e))
+            self.log.error(
+                "Exception in get_current_group_notifications of {} ".format(e))
 
         return None
 
@@ -398,13 +410,15 @@ class GroupsClient(BaseClass):
                 new_group_id,
                 level)
             if put_response is not None and put_response.status_code == 200:
-                self.log.info("Updated group {0} notification level to {1}".format(new_group_id, level))
+                self.log.info("Updated group {0} notification level to {1}".format(
+                    new_group_id, level))
                 return put_response
             else:
                 self.log.error("Failed to update group {0} notification level to {1}, due to:\n{2}"
-                    .format(new_group_id, level, put_response))
+                               .format(new_group_id, level, put_response))
         except Exception as e:
-            self.log.error("Exception in update_group_notifications of {0} ".format(e))
+            self.log.error(
+                "Exception in update_group_notifications of {0} ".format(e))
 
         return None
 
@@ -424,13 +438,15 @@ class GroupsClient(BaseClass):
                 new_group_id,
                 level)
             if put_response is not None and put_response.status_code == 200:
-                self.log.info("Reset group {0} notification level to {1}".format(new_group_id, level))
+                self.log.info("Reset group {0} notification level to {1}".format(
+                    new_group_id, level))
                 return put_response
             else:
                 self.log.error("Failed to reset group {0} notification level to {1}, due to:\n{2}"
-                    .format(new_group_id, level, put_response))
+                               .format(new_group_id, level, put_response))
         except Exception as e:
-            self.log.error("Exception in reset_group_notifications of {0} ".format(e))
+            self.log.error(
+                "Exception in reset_group_notifications of {0} ".format(e))
 
         return None
 
@@ -509,9 +525,11 @@ class GroupsClient(BaseClass):
                 self.config.destination_token)
             if resp is not None:
                 if resp.status_code != 200:
-                    self.log.info("Group {0} does not exist (status: {1})".format(dest_full_path, resp.status_code))
+                    self.log.info("Group {0} does not exist (status: {1})".format(
+                        dest_full_path, resp.status_code))
                 elif skip_projects and self.is_group_non_empty(resp.json()):
-                    self.log.info("SKIP: Non-empty group {}".format(dest_full_path))
+                    self.log.info(
+                        "SKIP: Non-empty group {}".format(dest_full_path))
                 elif not dry_run:
                     try:
                         self.groups_api.delete_group(
@@ -519,9 +537,11 @@ class GroupsClient(BaseClass):
                             self.config.destination_host,
                             self.config.destination_token)
                     except RequestException, e:
-                        self.log.error("Failed to remove group {0}\nwith error: {1}".format(sg, e))
+                        self.log.error(
+                            "Failed to remove group {0}\nwith error: {1}".format(sg, e))
             else:
-                self.log.error("Failed to GET group {} by full_path".format(dest_full_path))
+                self.log.error(
+                    "Failed to GET group {} by full_path".format(dest_full_path))
 
     def traverse_staging(self, id, group_dict, staged_groups):
         if group_dict.get(id, None) is not None:
@@ -572,10 +592,12 @@ class GroupsClient(BaseClass):
         for group in transient_list:
             print "{0}, {1}".format(group["name"], group["visibility"])
             if group["visibility"] != "private":
-                self.log.info("Group {0} has {1} visibility".format(group["name"], group["visibility"]))
+                self.log.info("Group {0} has {1} visibility".format(
+                    group["name"], group["visibility"]))
                 count += 1
                 groups_to_change.append(group)
-        self.log.info("Non-private groups ({0}):\n{1}".format(len(groups_to_change), "\n".join(g for g in groups_to_change)))
+        self.log.info("Non-private groups ({0}):\n{1}".format(
+            len(groups_to_change), "\n".join(g for g in groups_to_change)))
 
         return groups_to_change
 
@@ -597,25 +619,6 @@ class GroupsClient(BaseClass):
             except IOError, e:
                 self.log.error(e)
         print ids
-
-    def add_badges(self, new_id, namespace, badges):
-        try:
-            for badge in badges:
-                # split after hostname and retrieve only reamining path
-                link_url_suffix = badge["link_url"].split("/", 3)[3]
-                image_url_suffix = badge["image_url"].split("/", 3)[3]
-                data = {
-                    "link_url": "{0}/{1}/{2}".format(self.config.destination_host, namespace, link_url_suffix),
-                    "image_url": "{0}/{1}/{2}".format(self.config.destination_host, namespace, image_url_suffix)
-                }
-                self.groups_api.add_group_badge(
-                    self.config.destination_host,
-                    self.config.destination_token,
-                    new_id,
-                    data=data)
-        except RequestException, e:
-            self.log.error("Failed to add group (ID: {0}) badge:\n{1}, with error:\n{2}"
-                .format(new_id, json_pretty(badge), e))
 
     def validate_staged_groups_schema(self):
         staged_groups = self.get_staged_groups()
@@ -646,24 +649,30 @@ class GroupsClient(BaseClass):
         """
         Search for an existing group by the full_path
         """
-        group = self.search_for_group_pr_namespace_by_full_name_with_parent_namespace(host, token, full_name_with_parent_namespace, True)
+        group = self.search_for_group_pr_namespace_by_full_name_with_parent_namespace(
+            host, token, full_name_with_parent_namespace, True)
         if group is None:
-            # As a sanity check, do namespaces, as well            
-            namespace = self.search_for_group_pr_namespace_by_full_name_with_parent_namespace(host, token, full_name_with_parent_namespace, False)
+            # As a sanity check, do namespaces, as well
+            namespace = self.search_for_group_pr_namespace_by_full_name_with_parent_namespace(
+                host, token, full_name_with_parent_namespace, False)
             if namespace is not None:
-                self.log.info("SKIP: Group %s already exists (namespace search)", full_name_with_parent_namespace)
+                self.log.info(
+                    "SKIP: Group %s already exists (namespace search)", full_name_with_parent_namespace)
                 return True, namespace["id"]
-        else:            
-            self.log.info("SKIP: Group %s already exists (group search)", full_name_with_parent_namespace)
+        else:
+            self.log.info("SKIP: Group %s already exists (group search)",
+                          full_name_with_parent_namespace)
             return True, group["id"]
         return False, None
 
     def search_for_group_pr_namespace_by_full_name_with_parent_namespace(self, host, token, full_name_with_parent_namespace, is_group):
         resp = None
         if is_group:
-            resp = self.groups_api.get_group_by_full_path(full_path=full_name_with_parent_namespace, host=host, token=token)
+            resp = self.groups_api.get_group_by_full_path(
+                full_path=full_name_with_parent_namespace, host=host, token=token)
         else:
-            resp = self.namespaces_api.get_namespace_by_full_path(full_path=full_name_with_parent_namespace, host=host, token=token) 
+            resp = self.namespaces_api.get_namespace_by_full_path(
+                full_path=full_name_with_parent_namespace, host=host, token=token)
         if resp.status_code == 200:
             return resp.json()
         return None

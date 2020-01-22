@@ -1,5 +1,7 @@
 import json
 
+from requests.exceptions import RequestException
+
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers import api
 
@@ -11,7 +13,8 @@ class PushRulesClient(BaseClass):
     def add_push_rule(self, new_id, host, token, data):
         data.pop("id", None)
         data.pop("project_id", None)
-        api.generate_post_request(host, token, "projects/{}/push_rule".format(new_id), json.dumps(data))
+        api.generate_post_request(
+            host, token, "projects/{}/push_rule".format(new_id), json.dumps(data))
 
     def migrate_push_rules(self, old_id, new_id, name):
         try:
@@ -26,7 +29,9 @@ class PushRulesClient(BaseClass):
                     self.config.destination_host,
                     self.config.destination_token,
                     push_rule)
-                return True
-        except Exception, e:
-            self.log.error("Failed to migrate {0} push rules, with error:\n{1}".format(name, e))
+        except RequestException as re:
+            self.log.error(
+                "Failed to migrate {0} push rules, with error:\n{1}".format(name, re))
             return False
+        else:
+            return True

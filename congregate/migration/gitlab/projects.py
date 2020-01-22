@@ -6,7 +6,7 @@ from requests.exceptions import RequestException
 
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers import api
-from congregate.helpers.misc_utils import get_dry_log, json_pretty
+from congregate.helpers.misc_utils import get_dry_log
 from congregate.migration.gitlab.api.projects import ProjectsApi
 
 
@@ -26,8 +26,10 @@ class ProjectsClient(BaseClass):
             return json.load(f)
 
     def search_for_project_with_namespace_path(self, host, token, namespace_prefix, namespace, project_name):
-        url_encoded_path = quote_plus(self.get_full_namespace_path(namespace_prefix, namespace, project_name))
-        resp = api.generate_get_request(host, token, "projects/%s" % url_encoded_path)
+        url_encoded_path = quote_plus(self.get_full_namespace_path(
+            namespace_prefix, namespace, project_name))
+        resp = api.generate_get_request(
+            host, token, "projects/%s" % url_encoded_path)
         if resp.status_code == 200:
             return resp.json()
         return None
@@ -51,7 +53,8 @@ class ProjectsClient(BaseClass):
                     self.config.destination_token,
                     new_member)
             except RequestException, e:
-                self.log.error("Member might already exist. Attempting to update access level despite error:\n{}".format(e))
+                self.log.error(
+                    "Member might already exist. Attempting to update access level despite error:\n{}".format(e))
                 try:
                     api.generate_put_request(
                         self.config.destination_host,
@@ -60,9 +63,10 @@ class ProjectsClient(BaseClass):
                             id,
                             member["id"],
                             member["access_level"]),
-                            data=None)
+                        data=None)
                 except RequestException, e:
-                    self.log.error("Attempting to update existing member failed, with error:\n{}".format(e))
+                    self.log.error(
+                        "Attempting to update existing member failed, with error:\n{}".format(e))
 
         self.remove_import_user_from_project(id)
 
@@ -71,7 +75,7 @@ class ProjectsClient(BaseClass):
             if member["id"] == self.config.import_user_id:
                 return True
         return False
-            
+
     def remove_import_user_from_project(self, id):
         try:
             self.log.info("Removing import (root) user from project")
@@ -81,11 +85,13 @@ class ProjectsClient(BaseClass):
                 self.config.destination_host,
                 self.config.destination_token)
         except RequestException, e:
-            self.log.error("Failed to remove import (root) user from project, with error:\n{}".format(e))
+            self.log.error(
+                "Failed to remove import (root) user from project, with error:\n{}".format(e))
 
     def add_shared_groups(self, old_id, new_id):
         """Adds the list of groups we share the project with."""
-        old_project = self.projects_api.get_project(old_id, self.config.source_host, self.config.source_token).json()
+        old_project = self.projects_api.get_project(
+            old_id, self.config.source_host, self.config.source_token).json()
         project_name = old_project["name"]
         for group in old_project["shared_with_groups"]:
             path = group["group_full_path"]
@@ -98,26 +104,33 @@ class ProjectsClient(BaseClass):
                     "expires_at": group["expires_at"]
                 }
                 try:
-                    r = self.projects_api.add_shared_group(self.config.destination_host, self.config.destination_token, new_id, data)
+                    r = self.projects_api.add_shared_group(
+                        self.config.destination_host, self.config.destination_token, new_id, data)
                     if r.status_code == 201:
-                        self.log.info("Shared project {0} with group {1}".format(project_name, name))
+                        self.log.info(
+                            "Shared project {0} with group {1}".format(project_name, name))
                     else:
-                        self.log.warn("Failed to share project {0} with group {1} due to:\n{2}".format(project_name, name, r.content))
+                        self.log.warn("Failed to share project {0} with group {1} due to:\n{2}".format(
+                            project_name, name, r.content))
                 except RequestException, e:
-                    self.log.error("Failed to POST shared group {0} to project {1}, with error:\n{2}".format(name, project_name, e))
+                    self.log.error("Failed to POST shared group {0} to project {1}, with error:\n{2}".format(
+                        name, project_name, e))
 
     def get_new_group_id(self, name, path):
         """Returns the group's ID on the destination instance."""
         try:
-            groups = api.generate_get_request(self.config.destination_host, self.config.destination_token, "groups?search=%s" % name).json()
+            groups = api.generate_get_request(
+                self.config.destination_host, self.config.destination_token, "groups?search=%s" % name).json()
             if groups:
                 for group in groups:
                     if group["full_path"] == path:
                         return group["id"]
             else:
-                self.log.warn("Shared group {} does not exist or is not yet imported".format(path))
+                self.log.warn(
+                    "Shared group {} does not exist or is not yet imported".format(path))
         except RequestException, e:
-            self.log.error("Failed to GET group {0} ID, with error:\n{1}".format(name, e))
+            self.log.error(
+                "Failed to GET group {0} ID, with error:\n{1}".format(name, e))
 
     def __old_project_avatar(self, id):
         """Returns the source project avatar."""
@@ -137,7 +150,7 @@ class ProjectsClient(BaseClass):
             }
             return api.generate_put_request(self.config.destination_host, self.config.destination_token, "projects/%d" % new_id,
                                             {}, headers=headers, files={
-                    'avatar': (filename, BytesIO(img.content))})
+                                                'avatar': (filename, BytesIO(img.content))})
         return None
 
     def migrate_avatar_locally(self, new_id, old_id, file_path):
@@ -153,16 +166,18 @@ class ProjectsClient(BaseClass):
             }
             return api.generate_put_request(self.config.destination_host, self.config.destination_token, "projects/%d" % new_id,
                                             {}, headers=headers, files={
-                    'avatar': (avatar, BytesIO(img))})
+                                                'avatar': (avatar, BytesIO(img))})
         return None
 
     def find_project_by_path(self, host, token, full_parent_namespace, namespace, name):
         """Returns a tuple (project_exists, ID) based on path."""
-        project = self.search_for_project_with_namespace_path(host, token, full_parent_namespace, namespace, name)
+        project = self.search_for_project_with_namespace_path(
+            host, token, full_parent_namespace, namespace, name)
         if project is not None:
             if project.get("path_with_namespace", None) is not None:
                 if project["path_with_namespace"] == self.get_full_namespace_path(full_parent_namespace, namespace, name):
-                    self.log.info("SKIP: Project {} already exists".format(project["path_with_namespace"]))
+                    self.log.info("SKIP: Project {} already exists".format(
+                        project["path_with_namespace"]))
                     return True, project["id"]
         return False, None
 
@@ -184,7 +199,8 @@ class ProjectsClient(BaseClass):
                 self.config.destination_token)
             if resp is not None:
                 if resp.status_code != 200:
-                    self.log.info("Project {0} does not exist (status: {1})".format(path_with_namespace, resp.status_code))
+                    self.log.info("Project {0} does not exist (status: {1})".format(
+                        path_with_namespace, resp.status_code))
                 elif not dry_run:
                     try:
                         self.projects_api.delete_project(
@@ -192,46 +208,11 @@ class ProjectsClient(BaseClass):
                             self.config.destination_token,
                             resp.json()["id"])
                     except RequestException, e:
-                        self.log.error("Failed to remove project {0}\nwith error: {1}".format(sp, e))
+                        self.log.error(
+                            "Failed to remove project {0}\nwith error: {1}".format(sp, e))
             else:
-                self.log.error("Failed to GET project {} by path_with_namespace".format(path_with_namespace))
-
-    def update_project_badges(self, new_id, name, full_parent_namespace):
-        badges = self.projects_api.get_all_project_badges(
-            self.config.destination_host,
-            self.config.destination_token,
-            new_id)
-        if badges:
-            badges = list(badges)
-            if badges:
-                self.log.info("Updating project {0} badges".format(name))
-                self.update_badges(new_id, full_parent_namespace, badges)
-                return True
-            else:
-                self.log.info("Project {} has no badges".format(name))
-        else:
-            self.log.warning("Failed to retrieve badges for {0}, with response:\n{1}".format(name, badges))
-            return False
-
-    def update_badges(self, new_id, namespace, badges):
-        try:
-            for badge in badges:
-                # split after hostname and retrieve only remaining path
-                link_url_suffix = badge["link_url"].split("/", 3)[3]
-                image_url_suffix = badge["image_url"].split("/", 3)[3]
-                data = {
-                    "link_url": "{0}/{1}/{2}".format(self.config.destination_host, namespace, link_url_suffix),
-                    "image_url": "{0}/{1}/{2}".format(self.config.destination_host, namespace, image_url_suffix)
-                }
-                self.projects_api.edit_project_badge(self.config.destination_host,
-                    self.config.destination_token,
-                    new_id,
-                    badge["id"],
-                    data=data)
-                self.log.info("Updated project (ID: {0}) badge:\n{1}".format(new_id, json_pretty(data)))
-        except RequestException, e:
-            self.log.error("Failed to update project (ID: {0}) badge {1}, with error:\n{2}".format(new_id, badge, e))
-            return False
+                self.log.error(
+                    "Failed to GET project {} by path_with_namespace".format(path_with_namespace))
 
     def count_unarchived_projects(self):
         unarchived_projects = []
@@ -239,7 +220,8 @@ class ProjectsClient(BaseClass):
             if project.get("archived", None) is not None:
                 if not project["archived"]:
                     unarchived_projects.append(project["name_with_namespace"])
-        self.log.info("Unarchived projects ({0}):\n{1}".format(len(unarchived_projects), "\n".join(up for up in unarchived_projects)))
+        self.log.info("Unarchived projects ({0}):\n{1}".format(
+            len(unarchived_projects), "\n".join(up for up in unarchived_projects)))
 
     def archive_staged_projects(self, dry_run=True):
         staged_projects = self.get_staged_projects()
@@ -255,7 +237,8 @@ class ProjectsClient(BaseClass):
                         self.config.source_token,
                         project["id"])
         except RequestException, e:
-            self.log.error("Failed to archive staged projects, with error:\n{}".format(e))
+            self.log.error(
+                "Failed to archive staged projects, with error:\n{}".format(e))
 
     def unarchive_staged_projects(self, dry_run=True):
         staged_projects = self.get_staged_projects()
@@ -271,7 +254,8 @@ class ProjectsClient(BaseClass):
                         self.config.source_token,
                         project["id"])
         except RequestException, e:
-            self.log.error("Failed to unarchive staged projects, with error:\n{}".format(e))
+            self.log.error(
+                "Failed to unarchive staged projects, with error:\n{}".format(e))
 
     def find_unimported_projects(self, dry_run=True):
         unimported_projects = []
@@ -281,7 +265,8 @@ class ProjectsClient(BaseClass):
             for project_json in files:
                 try:
                     path = project_json["path_with_namespace"]
-                    self.log.info("Searching for project {} on destination".format(path))
+                    self.log.info(
+                        "Searching for project {} on destination".format(path))
                     project_exists = False
                     for proj in self.projects_api.search_for_project(
                             self.config.destination_host,
@@ -293,9 +278,11 @@ class ProjectsClient(BaseClass):
                                 break
                     if not project_exists:
                         self.log.info("Adding project {}".format(path))
-                        unimported_projects.append("%s/%s" % (project_json["namespace"], project_json["name"]))
+                        unimported_projects.append(
+                            "%s/%s" % (project_json["namespace"], project_json["name"]))
                 except IOError, e:
-                    self.log.error("Failed to find unimported projects, with error:\n{}".format(e))
+                    self.log.error(
+                        "Failed to find unimported projects, with error:\n{}".format(e))
 
         if unimported_projects is not None and unimported_projects:
             self.log.info("{0}Found {1} unimported projects".format(
@@ -318,15 +305,19 @@ class ProjectsClient(BaseClass):
             statistics=True)
         for dp in dest_projects:
             if dp.get("statistics", None) is not None and dp["statistics"]["repository_size"] == 0:
-                self.log.info("Found empty repo on destination instance: {}".format(dp["name_with_namespace"]))
+                self.log.info("Found empty repo on destination instance: {}".format(
+                    dp["name_with_namespace"]))
                 for sp in src_projects:
                     if sp["name"] == dp["name"] and dp["namespace"]["path"] in sp["namespace"]["path"]:
-                        self.log.info("Found source project {}".format(sp["name_with_namespace"]))
+                        self.log.info("Found source project {}".format(
+                            sp["name_with_namespace"]))
                         if sp.get("statistics", None) is not None and sp["statistics"]["repository_size"] == 0:
-                            self.log.info("Project is empty in source instance. Ignoring")
+                            self.log.info(
+                                "Project is empty in source instance. Ignoring")
                         else:
                             empty_repos.append(dp["name_with_namespace"])
-        self.log.info("Empty repositories ({0}):\n{1}".format(len(empty_repos), "\n".join(ep for ep in empty_repos)))
+        self.log.info("Empty repositories ({0}):\n{1}".format(
+            len(empty_repos), "\n".join(ep for ep in empty_repos)))
 
     def validate_staged_projects_schema(self):
         with open("%s/data/staged_groups.json" % self.app_path, "r") as f:

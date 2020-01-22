@@ -17,13 +17,14 @@ from congregate.helpers.misc_utils import get_dry_log, json_pretty
 from congregate.aws import AwsClient
 from congregate.cli.stage_projects import stage_projects
 from congregate.helpers import base_module as b
-from congregate.migration.gitlab.importexport import ImportExportClient as ie_client
-from congregate.migration.gitlab.variables import VariablesClient as vars_client
-from congregate.migration.gitlab.users import UsersClient as users_client
-from congregate.migration.gitlab.groups import GroupsClient as groups_client
-from congregate.migration.gitlab.projects import ProjectsClient as proj_client
-from congregate.migration.gitlab.api.projects import ProjectsApi as proj_api
-from congregate.migration.gitlab.pushrules import PushRulesClient as pushrules_client
+from congregate.migration.gitlab.importexport import ImportExportClient
+from congregate.migration.gitlab.badges import BadgesClient
+from congregate.migration.gitlab.variables import VariablesClient
+from congregate.migration.gitlab.users import UsersClient
+from congregate.migration.gitlab.groups import GroupsClient
+from congregate.migration.gitlab.projects import ProjectsClient
+from congregate.migration.gitlab.api.projects import ProjectsApi
+from congregate.migration.gitlab.pushrules import PushRulesClient
 from congregate.migration.gitlab.branches import BranchesClient
 from congregate.migration.gitlab.merge_request_approvers import MergeRequestApproversClient
 from congregate.migration.gitlab.awards import AwardsClient
@@ -36,14 +37,15 @@ from congregate.migration.gitlab.hooks import HooksClient
 from congregate.migration.bitbucket import client as bitbucket
 
 aws = AwsClient()
-ie = ie_client()
+ie = ImportExportClient()
 mirror = MirrorClient()
-variables = vars_client()
-users = users_client()
-groups = groups_client()
-projects = proj_client()
-projects_api = proj_api()
-pushrules = pushrules_client()
+variables = VariablesClient()
+badges = BadgesClient()
+users = UsersClient()
+groups = GroupsClient()
+projects = ProjectsClient()
+projects_api = ProjectsApi()
+pushrules = PushRulesClient()
 branches = BranchesClient()
 awards = AwardsClient()
 mr_approvers = MergeRequestApproversClient()
@@ -335,7 +337,7 @@ def migrate_single_project_info(project, new_id):
     projects.add_shared_groups(old_id, new_id)
 
     # Update project badges to use destination path hostname
-    results["badges"] = projects.update_project_badges(
+    results["badges"] = badges.update_project_badges(
         new_id, name, full_parent_namespace)
 
     # CI/CD Variables
