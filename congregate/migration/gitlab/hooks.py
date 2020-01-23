@@ -100,8 +100,10 @@ class HooksClient(BaseClass):
         except TypeError as te:
             self.log.error("Project {0} (ID: {1}) hooks {2} {3}".format(
                 name, old_id, response, te))
+            return False
         except RequestException as re:
             self.log.error(
                 "Failed to migrate project {0} (ID: {1}) hooks, with error:\n{2}".format(name, old_id, re))
+            return False
         else:
             return True

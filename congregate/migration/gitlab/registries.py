@@ -42,33 +42,39 @@ class RegistryClient(BaseClass):
             if registry[0] and registry[1]:
                 self.log.info(
                     "Migrating project {0} (ID: {1}) container registries".format(name, old_id))
-                self.migrate(old_id)
-                return True
+                self.migrate(old_id, name)
             else:
                 instance = "source" if not registry[0] else "destination" if not registry[1] else "source and destination"
                 self.log.warning(
                     "Container registry is disabled for {} instance".format(instance))
-        except Exception, e:
+        except Exception as e:
             self.log.error(
-                "Failed to migrate {0} container registries, with error:\n{1}".format(name, e))
+                "Failed to migrate project {0} (ID: {1}) container registries, with error:\n{2}".format(name, old_id, e))
             return False
+        else:
+            return True
 
-    def migrate(self, old_id):
+    def migrate(self, old_id, name):
         try:
             # Login to source registry
             src_client = self.__login_to_registry(
                 self.config.source_host, self.config.source_token, self.config.source_registry)
-            registries = self.__list_registry_repositories(
+            response = self.__list_registry_repositories(
                 self.config.source_host, self.config.source_token, old_id)
+            registries = iter(response)
             for registry in registries:
                 tags = self.__list_repository_tags(
                     self.config.source_host, self.config.source_token, old_id, registry["id"])
                 if list(tags):
                     reg = registry["location"]
-                    self.log.info("Pulling images from registry %s" % reg)
+                    self.log.info("Pulling images from project {0} (ID: {1}) registry {2}".format(
+                        name, old_id, reg))
                     images = src_client.images.pull(reg)
                     # 2nd argument - passing the suffix for multi path registries
                     self.__import_registries(images, reg.split("/", 1)[1])
+        except TypeError as te:
+            self.log.error("Project {0} (ID: {1}) registries {2} {3}".format(
+                name, old_id, response, te))
         except (APIError) as err:
             self.log.error("Failed to export registry, with error:\n%s" % err)
 
