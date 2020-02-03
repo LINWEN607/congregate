@@ -64,6 +64,8 @@ def migrate(
         dry_run=True,
         skip_users=False,
         skip_groups=False,
+        skip_group_export=False,
+        skip_group_import=False,
         skip_project_import=False,
         skip_project_export=False):
 
@@ -86,6 +88,7 @@ def migrate(
         # Migrate groups
         if not skip_groups:
             migrate_group_info(dry_run)
+        # __migrate_group_info(dry_run, skip_group_export, skip_group_import)
 
         # Migrate projects
         migrate_project_info(dry_run, skip_project_export, skip_project_import)
@@ -120,6 +123,116 @@ def migrate_user_info(dry_run=True):
         users.update_user_info(new_users)
     else:
         users.update_user_info(new_users, overwrite=False)
+
+
+def __migrate_group_info(dry_run=True, skip_group_export=False, skip_group_import=False):
+    staged_groups = groups.get_staged_groups()
+    dry_log = get_dry_log(dry_run)
+    if staged_groups:
+        if not skip_group_export:
+            b.log.info("{}Exporting groups".format(dry_log))
+            export_pool = ThreadPool(b.config.threads)
+            export_results = export_pool.map(
+                lambda group: __handle_exporting_groups(
+                    group,
+                    dry_run),
+                staged_groups)
+            export_pool.close()
+            export_pool.join()
+
+            # Create list of groups that failed update
+            if not export_results:
+                raise Exception(
+                    "Results from exporting groups returned as empty. Aborting.")
+
+            # Append total count of groups exported/updated
+            export_results.append(
+                Counter(k for d in export_results for k, v in d.items() if v))
+            b.log.info("### {0}Group export results ###\n{1}"
+                       .format(dry_log, json_pretty(export_results)))
+
+            failed_update = migrate_utils.get_failed_update_from_results(
+                export_results)
+            b.log.warning("The following groups (group.json) failed to update and will not be imported:\n{0}"
+                          .format(json_pretty(failed_update)))
+
+            # Filter out the failed ones
+            staged_groups = migrate_utils.get_staged_projects_without_failed_update(
+                staged_groups, failed_update)
+        else:
+            b.log.info("SKIP: Assuming staged groups are already exported")
+        if not skip_group_import:
+            b.log.info("{}Importing groups".format(dry_log))
+            import_pool = ThreadPool(b.config.threads)
+            import_results = import_pool.map(
+                lambda group: __handle_importing_groups(
+                    group,
+                    dry_run),
+                staged_groups)
+            import_pool.close()
+            import_pool.join()
+
+            # append Total : Successful count of groups imports
+            import_results.append(Counter("Total : Successful: {}"
+                                          .format(len(import_results)) for d in import_results for k, v in d.items() if v)
+                                  or "Total : Successful: 0 : 0")
+            b.log.info("### {0}Group import results ###\n{1}"
+                       .format(dry_log, json_pretty(import_results)))
+        else:
+            b.log.info("SKIP: Assuming staged groups will be later imported")
+    else:
+        b.log.info("SKIP: No groups to migrate")
+
+
+def __handle_exporting_groups(group, dry_run=True):
+    full_path = group["full_path"]
+    name = group["name"]
+    gid = group["id"]
+    loc = b.config.location.lower()
+    dry_log = get_dry_log(dry_run)
+    try:
+        filename = ie.get_export_filename_from_namespace_and_name(full_path)
+        if loc not in ["filesystem", "aws"]:
+            raise Exception("Unsupported export location: {}".format(loc))
+        exported = False
+        b.log.info("{0}Exporting group {1} (ID: {2}) as {3}"
+                   .format(dry_log, name, gid, filename))
+        if loc == "filesystem":
+            pass
+            #     exported = ie.export_thru_filesystem(
+            #         gid, name, filename) if not dry_run else True
+            # TODO: Refactor and sync with other scenarios (#119)
+        elif loc == "filesystem-aws":
+            b.log.error(
+                "NOTICE: Filesystem-AWS exports are not currently supported")
+            # exported = ie.export_thru_fs_aws(pid, name, namespace) if not dry_run else True
+        elif loc == "aws":
+            exported = ie.export_group_thru_aws(
+                gid, full_path, full_parent_namespace, filename) if not dry_run else True
+        updated = False
+        if exported:
+            b.log.info("{0}Updating group {1} (ID: {2}) export members in {3}"
+                       .format(dry_log, full_path, gid, filename))
+            if loc == "filesystem":
+                exported = True
+                # updated = project_export.update_project_export_members_for_local(
+                #     name, namespace, filename) if not dry_run else True
+            # TODO: Refactor and sync with other scenarios (#119)
+            elif loc == "filesystem-aws":
+                b.log.error(
+                    "NOTICE: Filesystem-AWS exports are not currently supported")
+            elif loc == "aws":
+                updated = True
+                # updated = project_export.update_project_export_members(
+                #     name, namespace, filename) if not dry_run else True
+        return {"filename": filename, "exported": exported, "updated": updated}
+    except (IOError, RequestException) as e:
+        b.log.error("Failed to export group (ID: {0}) to {1} and update members with error:\n{2}"
+                    .format(gid, loc, e))
+
+
+def __handle_importing_groups(group, dry_run=True):
+    return {"filename": group["name"]}
 
 
 def migrate_group_info(dry_run=True):
@@ -172,7 +285,7 @@ def migrate_project_info(dry_run=True, skip_project_export=False, skip_project_i
             b.log.info("{}Importing projects".format(dry_log))
             import_pool = ThreadPool(b.config.threads)
             import_results = import_pool.map(
-                lambda project: migrate_given_export(
+                lambda project: handle_importing_projects(
                     project,
                     dry_run),
                 staged_projects)
@@ -236,7 +349,7 @@ def handle_exporting_projects(project, dry_run=True):
                     .format(pid, loc, e))
 
 
-def migrate_given_export(project_json, dry_run=True):
+def handle_importing_projects(project_json, dry_run=True):
     name = project_json["name"]
     namespace = project_json["namespace"]
     source_id = project_json["id"]
@@ -289,7 +402,7 @@ def migrate_given_export(project_json, dry_run=True):
         b.log.error(e)
     except KeyError, e:
         b.log.error(e)
-        raise KeyError("Something broke in migrate_given_export project {0} (ID: {1})"
+        raise KeyError("Something broke in handle_importing_projects project {0} (ID: {1})"
                        .format(name, source_id))
     except OverflowError, e:
         b.log.error(e)

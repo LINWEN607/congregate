@@ -187,3 +187,14 @@ class GroupsApi():
             :param: headers: (str) The headers for the API request
         """
         return api.generate_post_request(host, token, "groups/{}/export".format(source_id), data=data, headers=headers)
+
+    # def import_group(self, host, token, ource_id, data, headers):
+    #     """
+    #     Import a group using the groups api
+
+    #         :param: host: (str) The source host
+    #         :param: token: (str) A token that has import permissions on destination
+    #         :param: data: (str) Relevant data for the import
+    #         :param: headers: (str) The headers for the API request
+    #     """
+    #     return api.generate_post_request(host, token, "groups/import", data=data, headers=headers)

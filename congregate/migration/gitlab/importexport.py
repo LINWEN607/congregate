@@ -29,7 +29,6 @@ class ImportExportClient(BaseClass):
         self.projects_api = ProjectsApi()
         self.groups_api = GroupsApi()
         self.users = UsersApi()
-        self.groups = GroupsApi()
         self.keys_map = self.get_keys()
 
     def get_AwsClient(self):
@@ -205,7 +204,7 @@ class ImportExportClient(BaseClass):
                 #   Certainly not the GitHost scenario
                 full_path = self.get_full_path(project["http_url_to_repo"])
                 self.log.info("Searching for namespace %s", full_path)
-                for group in self.groups.search_for_group(
+                for group in self.groups_api.search_for_group(
                         project["namespace"],
                         self.config.destination_host,
                         self.config.destination_token):
@@ -476,8 +475,8 @@ class ImportExportClient(BaseClass):
                 import_response = resp.text
         return import_response
 
-    def get_export_filename_from_namespace_and_name(self, namespace, name):
-        return "{0}_{1}.tar.gz".format(namespace, name).lower()
+    def get_export_filename_from_namespace_and_name(self, namespace, name=""):
+        return "{0}{1}.tar.gz".format(namespace, "/" + name if name else "").replace("/", "_").lower()
 
     def export_thru_filesystem(self, pid, name, namespace):
         exported = False
@@ -541,7 +540,7 @@ class ImportExportClient(BaseClass):
 
         return success
 
-    def export_group_thru_aws(self, group_id, group_name, full_parent_namespace):
+    def export_group_thru_aws(self, gid, full_path, full_parent_namespace, filename):
         """
         Called from migrate to kick-off an export process. Calls export_to_aws.
 
@@ -552,38 +551,35 @@ class ImportExportClient(BaseClass):
         """
         exported = False
 
-        full_name_with_parent_namespace = "{0}/{1}".format(
-            full_parent_namespace, group_name)
-        self.log.info("Searching on destination for group %s (ID: %s)",
-                      full_name_with_parent_namespace, str(group_id))
+        full_path_with_parent_namespace = "{0}{1}".format(
+            full_parent_namespace + "/" if full_parent_namespace else "", full_path)
+        self.log.info("Searching on destination for group {}".format(
+            full_path_with_parent_namespace))
         group_exists, dest_group_id = self.groups.find_group_by_path(
             self.config.destination_host,
             self.config.destination_token,
-            full_name_with_parent_namespace
-        )
+            full_path_with_parent_namespace)
         if not group_exists:
             # Generating the presigned URL later down the line does the quote_plus work, and the AWS functions to generate
             # expect an *un*quote_plus string (even through S3 itself returns a quote_plus style string)
             # Also, the CLI commands expect no + and no encoding (for is_export_on_aws). So, leave the filename as the full path
             # Do that export thing
-            self.log.info("Group %s (Source ID: %s) NOT found on destination.",
-                          full_name_with_parent_namespace, str(group_id))
-            # Passing full_name_with_parent_namespace with no +, no encoding, not a quoted string
-            response = self.export_to_aws(
-                group_id, full_name_with_parent_namespace, False)
+            self.log.info("Group {0} (Source ID: {1}) NOT found on destination.".format(
+                full_path_with_parent_namespace, gid))
+            # Passing full_path_with_parent_namespace with no +, no encoding, not a quoted string
+            response = self.export_to_aws(gid, filename, False)
             if response is not None and response.status_code == 202:
                 # TODO: We're going to need to see what the status looks like
                 # TODO: Checking the export needs to know...?
                 export_status = self.wait_for_export_to_finish(
-                    group_id, group_name, is_project=False)
+                    gid, full_path, is_project=False)
 
                 # If export status is unknown lookup the file on AWS
                 # Could be misleading, since it assumes the file is complete
-                exported = export_status or self.aws.is_export_on_aws(
-                    full_name_with_parent_namespace)
+                exported = export_status or self.aws.is_export_on_aws(filename)
         else:
-            self.log.info("SKIP: Group %s found on destination with source id %s and destination id %s",
-                          full_name_with_parent_namespace, str(group_id), str(dest_group_id))
+            self.log.info("SKIP: Group {0} found on destination with source id {1} and destination id {2}".format(
+                full_path_with_parent_namespace, gid, dest_group_id))
         return exported
 
     def export_project_thru_aws(self, pid, name, namespace, full_parent_namespace):
