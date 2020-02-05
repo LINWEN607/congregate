@@ -640,21 +640,13 @@ class UsersClient(BaseClass):
             else:
                 keys_to_delete = [
                     "avatar_url",
-                    "web_url",
-                    "bio",
-                    "location",
-                    "skype",
-                    "linkedin",
-                    "twitter",
                     "last_sign_in_at",
                     "last_activity_at",
                     "current_sign_in_at",
-                    "can_create_project",
                     "created_at",
                     "confirmed_at",
                     "last_activity_on",
-                    "theme_id",
-                    "color_scheme_id"
+                    "id"
                 ]
                 for key in keys_to_delete:
                     if key in user:
