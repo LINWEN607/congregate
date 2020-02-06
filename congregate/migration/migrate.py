@@ -383,6 +383,7 @@ def migrate_single_project_info(project, new_id):
     results["container_registry"] = registries.migrate_registries(
         old_id, new_id, name)
 
+    # Environments
     results["environments"] = environments.migrate_project_environments(
         old_id, new_id)
 
