@@ -74,7 +74,7 @@ test:unit:
 test:end-to-end:
   services:
     - name: docker:19.03.1-dind
-    - name: gitlab/gitlab-ee:latest
+    - name: registry.gitlab.com/gitlab-com/customer-success/tools/gitlab-seed-image:latest
       alias: gitlab_source
     - name: gitlab/gitlab-ee:latest
       alias: gitlab_destination
