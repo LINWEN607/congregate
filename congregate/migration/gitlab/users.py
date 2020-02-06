@@ -639,14 +639,14 @@ class UsersClient(BaseClass):
                 root_index = users.index(user)
             else:
                 keys_to_delete = [
+                    "web_url"
                     "avatar_url",
                     "last_sign_in_at",
                     "last_activity_at",
                     "current_sign_in_at",
                     "created_at",
                     "confirmed_at",
-                    "last_activity_on",
-                    "id"
+                    "last_activity_on"
                 ]
                 for key in keys_to_delete:
                     if key in user:
