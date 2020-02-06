@@ -6,7 +6,7 @@ import pytest
 import mock
 import json
 from congregate.helpers.misc_utils import input_generator
-from congregate.cli import config, do_all
+from congregate.cli import config
 from congregate.helpers.seed.generate_token import token_generator
 from congregate.helpers.seed.generator import SeedDataGenerator
 
@@ -22,6 +22,7 @@ class MigrationEndToEndTest(unittest.TestCase):
     #     self.s.generate_seed_data(dry_run=False)
 
     def test_migration(self):
+        from congregate.cli import do_all
         do_all.do_all(dry_run=True)
 
     def generate_default_config_with_tokens(self):
