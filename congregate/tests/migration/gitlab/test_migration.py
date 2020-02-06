@@ -7,7 +7,7 @@ import mock
 from congregate.helpers.misc_utils import input_generator
 from congregate.cli import config, do_all
 from congregate.helpers.seed.generate_token import token_generator
-# from congregate.helpers.seed.generator import SeedDataGenerator
+from congregate.helpers.seed.generator import SeedDataGenerator
 
 
 @pytest.mark.e2e
@@ -15,13 +15,13 @@ class MigrationEndToEndTest(unittest.TestCase):
     def setUp(self):
         self.t = token_generator()
         self.generate_default_config_with_tokens()
-        # self.s = SeedDataGenerator()
+        self.s = SeedDataGenerator()
 
-    # def test_seed_data(self):
-    #     self.s.generate_seed_data(dry_run=False)
+    def test_seed_data(self):
+        self.s.generate_seed_data(dry_run=False)
 
-    def test_migration(self):
-        do_all.do_all(dry_run=True)
+    # def test_migration(self):
+    #     do_all.do_all(dry_run=True)
 
     def generate_default_config_with_tokens(self):
         print "Generating Destination Token"
