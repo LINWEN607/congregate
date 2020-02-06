@@ -17,11 +17,11 @@ class MigrationEndToEndTest(unittest.TestCase):
         self.generate_default_config_with_tokens()
         self.s = SeedDataGenerator()
 
-    def test_seed_data(self):
-        self.s.generate_seed_data(dry_run=False)
+    # def test_seed_data(self):
+    #     self.s.generate_seed_data(dry_run=False)
 
-    # def test_migration(self):
-    #     do_all.do_all(dry_run=True)
+    def test_migration(self):
+        do_all.do_all(dry_run=True)
 
     def generate_default_config_with_tokens(self):
         print "Generating Destination Token"
