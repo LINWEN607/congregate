@@ -674,6 +674,7 @@ class UsersClient(BaseClass):
             migration_dry_run("user", handle_multi_thread(self.generate_user_data, staged_users))
 
     def generate_user_data(self, user):
+        user.pop("id")
         if self.config.group_sso_provider is not None:
             return self.generate_user_group_saml_post_data(user)
         user["username"] = self.create_valid_username(user)
