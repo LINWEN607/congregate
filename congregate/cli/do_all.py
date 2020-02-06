@@ -48,6 +48,7 @@ def do_all_groups_and_projects(dry_run=True):
 
 
 def do_all(dry_run=True):
+    print json.dumps(b.config.as_obj)
     list_all()
     stage_and_update_all()
 

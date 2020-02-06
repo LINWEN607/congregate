@@ -4,6 +4,7 @@ from uuid import uuid4
 import base64
 import pytest
 import mock
+import json
 from congregate.helpers.misc_utils import input_generator
 from congregate.cli import config, do_all
 from congregate.helpers.seed.generate_token import token_generator
@@ -62,6 +63,7 @@ class MigrationEndToEndTest(unittest.TestCase):
             "True", # strip namespace prefix
             "30" # import wait time
         ]
+        print json.dumps(values)
         tokens = [
            destination_token,
            source_token
