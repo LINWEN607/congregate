@@ -25,7 +25,7 @@ class MigrationEndToEndTest(unittest.TestCase):
     def test_migration(self):
         # reinitializing config class in do_all module
         do_all.b.config = do_all.b.ConfigurationValidator()
-        print json.dumps(do_all.b.config.as_obj())
+        print json.dumps(do_all.b.config.as_dict())
         do_all.do_all(dry_run=True)
 
     def generate_default_config_with_tokens(self):
