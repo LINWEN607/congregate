@@ -629,9 +629,9 @@ class UsersClient(BaseClass):
 
         return staged
 
-    def retrieve_user_info(self, quiet=False):
-        users = list(api.list_all(self.config.source_host,
-                                  self.config.source_token, "users"))
+    def retrieve_user_info(self, host, token, quiet=False):
+        users = list(api.list_all(host,
+                                  token, "users"))
         root_index = None
         for user in users:
             # Removing root user
