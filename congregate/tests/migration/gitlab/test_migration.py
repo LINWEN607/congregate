@@ -6,7 +6,7 @@ import pytest
 import mock
 import json
 from congregate.helpers.misc_utils import input_generator
-from congregate.cli import config
+from congregate.cli import config, do_all
 from congregate.helpers.seed.generate_token import token_generator
 from congregate.helpers.seed.generator import SeedDataGenerator
 
@@ -17,19 +17,21 @@ class MigrationEndToEndTest(unittest.TestCase):
         self.t = token_generator()
         self.generate_default_config_with_tokens()
         self.s = SeedDataGenerator()
+        self.s.generate_seed_data(dry_run=False)
 
     # def test_seed_data(self):
     #     self.s.generate_seed_data(dry_run=False)
 
     def test_migration(self):
-        from congregate.cli import do_all
+        # reinitializing config class in do_all module
+        do_all.b.config = do_all.b.ConfigurationValidator()
         do_all.do_all(dry_run=True)
 
     def generate_default_config_with_tokens(self):
         print "Generating Destination Token"
         destination_token = self.t.generate_token("destination_token", "2020-08-27", url=os.getenv("GITLAB_DEST"), username="root", pword=uuid4().hex) # Destination access token
         print "Generating Source Token"
-        source_token = self.t.generate_token("source_token", "2020-08-27", url=os.getenv("GITLAB_SRC"), username="root", pword="5iveL!fe") # source token
+        source_token = self.t.generate_token("source_token", "2020-08-27", url=os.getenv("GITLAB_SRC"), username="root", pword=uuid4().hex) # source token
         print "Prepping config data"
         values = [
             os.getenv("GITLAB_DEST"), # Destination hostname
