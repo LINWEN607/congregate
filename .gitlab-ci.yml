@@ -69,7 +69,7 @@ test:pylint:
 test:unit:
   <<: *test-job
   script:
-    - pipenv run pytest -m 'not e2e' -m 'not e2e_setup' --cov-config=.coveragerc --cov=congregate congregate/tests/
+    - pipenv run pytest -m 'not e2e and not e2e_setup' --cov-config=.coveragerc --cov=congregate congregate/tests/
 
 test:end-to-end:
   services:
