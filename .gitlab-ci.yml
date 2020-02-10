@@ -82,12 +82,14 @@ test:end-to-end:
   tags:
     - e2e
   script:
-    - export GITLAB_SRC=http://gitlab_source
-    - export GITLAB_SRC_REG_URL=gitlab_source:4567
+    - ./spin_up_test_vm.sh
+    - export GITLAB_SRC=http://$(cat source_ip)
+    - export GITLAB_SRC_REG_URL=$(at source_ip):4567
     - export GITLAB_DEST=http://gitlab_destination
     - export GITLAB_DEST_REG_URL=gitlab_destination:4567
     - pipenv run pytest -s -m e2e_setup congregate/tests/
     - pipenv run pytest -s -m e2e congregate/tests/
+    - pipenv run aws ec2 terminate-instances --instance-ids $(cat instance_id)
 
 remove redundant docker images:
   stage: cleanup
