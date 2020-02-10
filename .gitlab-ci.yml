@@ -82,9 +82,10 @@ test:end-to-end:
   tags:
     - e2e
   script:
+    - apt install -y curl
     - ./spin_up_test_vm.sh
     - export GITLAB_SRC=http://$(cat source_ip)
-    - export GITLAB_SRC_REG_URL=$(at source_ip):4567
+    - export GITLAB_SRC_REG_URL=$(cat source_ip):4567
     - export GITLAB_DEST=http://gitlab_destination
     - export GITLAB_DEST_REG_URL=gitlab_destination:4567
     - pipenv run pytest -s -m e2e_setup congregate/tests/

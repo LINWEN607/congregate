@@ -12,7 +12,7 @@ COPY congregate.sh Pipfile README.md snakeskin.txt ./
 # Installing some basic utilities and updating apt
 RUN apt-get update && \
     apt-get upgrade -y && \
-    apt-get install less vim -y
+    apt-get install less vim jq -y
 
 # TODO: DB integration
 
