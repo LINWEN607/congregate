@@ -52,10 +52,7 @@ build:
     - apt-get update
     - mkdir data
     - echo ${Dummy_config_new} > $CONGREGATE_PATH/data/congregate.conf
-    # - curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python
     - poetry install
-    # - export PIPENV_VENV_IN_PROJECT=true
-    # - pipenv install
 
 test:pylint:
   <<: *test-job
@@ -89,7 +86,7 @@ test:end-to-end:
     - export GITLAB_DEST=http://gitlab_destination
     - export GITLAB_DEST_REG_URL=gitlab_destination:4567
     - poetry run pytest -s -m e2e_setup congregate/tests/
-    - poetry run pytest -s -m e2e congregate/tests/
+    - poetry run pytest -s -m e2e --cov-config=.coveragerc --cov=congregate congregate/tests/
     - poetry run aws ec2 terminate-instances --instance-ids $(cat instance_id)
 
 remove redundant docker images:

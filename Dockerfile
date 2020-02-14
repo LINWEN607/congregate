@@ -21,7 +21,6 @@ RUN cd /opt/congregate && \
     chmod +x congregate && \
     cp congregate.sh /usr/local/bin/congregate && \
     pip install poetry
-    # curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python
 
 # RUN export PATH=$PATH:$HOME/.poetry/bin/poetry
 RUN poetry install
