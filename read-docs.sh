@@ -1,6 +1,6 @@
 #!/bin/sh
 
-pipenv run generate-docs
+poetry run generate-docs
 cd congregate/docs
 make html
 cd build/html

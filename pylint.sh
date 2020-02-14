@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-pipenv run pylint congregate | tee pylint.txt || pipenv run pylint-exit $?
+poetry run pylint congregate | tee pylint.txt || poetry run pylint-exit $?
 export score=$(sed -n 's/^Your code has been rated at \([-0-9.]*\)\/.*/\1/p' pylint.txt)
 echo "Pylint score was ${score}"
 export json_badge_info=$(curl -H "PRIVATE-TOKEN:$ACCESS_TOKEN" -X GET https://gitlab.com/api/v4/projects/$CI_PROJECT_ID/badges)

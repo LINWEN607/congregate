@@ -50,10 +50,9 @@ build:
   image: "$BUILD_IMAGE_NAME"
   before_script:
     - apt-get update
-    - apt install -y curl
     - mkdir data
     - echo ${Dummy_config_new} > $CONGREGATE_PATH/data/congregate.conf
-    - curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python
+    # - curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python
     - poetry install
     # - export PIPENV_VENV_IN_PROJECT=true
     # - pipenv install

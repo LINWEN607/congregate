@@ -12,7 +12,7 @@ COPY congregate.sh Pipfile README.md snakeskin.txt ./
 # Installing some basic utilities and updating apt
 RUN apt-get update && \
     apt-get upgrade -y && \
-    apt-get install less vim jq -y
+    apt-get install less vim jq curl -y
 
 # TODO: DB integration
 
@@ -20,11 +20,12 @@ RUN apt-get update && \
 RUN cd /opt/congregate && \
     chmod +x congregate && \
     cp congregate.sh /usr/local/bin/congregate && \
-    pip install pipenv && \
-    pipenv install
+    curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python && \
+    source $HOME/.poetry/env && \
+    poetry install
 
 RUN cd /opt/congregate && \
-    pipenv run dnd install
+    poetry run dnd install
 
 RUN echo "alias ll='ls -al'" >> ~/.bashrc
 

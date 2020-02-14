@@ -1,7 +1,7 @@
 #!/bin/bash
 
 spin_up_instance () {
-    pipenv run aws ec2 run-instances \
+    poetry run aws ec2 run-instances \
         --image-id $AMI_ID \
         --count 1 \
         --instance-type t2.large \
@@ -10,7 +10,7 @@ spin_up_instance () {
 }
 
 get_instance_ip () {
-    pipenv run aws ec2 describe-instances --instance-ids $INSTANCE_ID | jq '.Reservations[0].Instances[0].NetworkInterfaces[0].Association.PublicIp' | tr -d '\n' | sed -e 's/^"//' -e 's/"$//' 
+    poetry run aws ec2 describe-instances --instance-ids $INSTANCE_ID | jq '.Reservations[0].Instances[0].NetworkInterfaces[0].Association.PublicIp' | tr -d '\n' | sed -e 's/^"//' -e 's/"$//' 
 }
 
 get_latest_version () {
@@ -18,7 +18,7 @@ get_latest_version () {
 }
 
 get_ami_id () {
-    pipenv run aws ec2 describe-images --filters "Name=name,Values=GitLab Seed Image-$(get_latest_version)" | jq -r '.Images[0].ImageId'
+    poetry run aws ec2 describe-images --filters "Name=name,Values=GitLab Seed Image-$(get_latest_version)" | jq -r '.Images[0].ImageId'
 }
 
 AMI_ID=$(get_ami_id)

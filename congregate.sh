@@ -9,8 +9,8 @@
 
 if [[ -z ${CONGREGATE_PATH+x} ]]; then
     echo "CONGREGATE_PATH not set. Defaulting to current directory: ($(pwd))"
-    CONGREGATE_PATH=$(pwd) pipenv run python congregate/main.py $@
+    CONGREGATE_PATH=$(pwd) poetry run python congregate/main.py $@
 else
     cd ${CONGREGATE_PATH}
-    pipenv run python congregate/main.py $@
+    poetry run python congregate/main.py $@
 fi
