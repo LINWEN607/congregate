@@ -21,10 +21,11 @@ RUN cd /opt/congregate && \
     chmod +x congregate && \
     cp congregate.sh /usr/local/bin/congregate && \
     curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python && \
-    $HOME/.poetry/bin/poetry install
+    export PATH=$PATH:$HOME/.poetry/bin/poetry && \
+    poetry install
 
 RUN cd /opt/congregate && \
-    $HOME/.poetry/bin/poetry run dnd install
+    poetry run dnd install
 
 RUN echo "alias ll='ls -al'" >> ~/.bashrc
 
