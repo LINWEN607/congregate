@@ -20,9 +20,10 @@ RUN apt-get update && \
 RUN cd /opt/congregate && \
     chmod +x congregate && \
     cp congregate.sh /usr/local/bin/congregate && \
-    curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python
+    pip install poetry
+    # curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python
 
-RUN export PATH=$PATH:$HOME/.poetry/bin/poetry
+# RUN export PATH=$PATH:$HOME/.poetry/bin/poetry
 RUN poetry install
 
 RUN cd /opt/congregate && \
