@@ -20,7 +20,7 @@ alias drun='docker run \
               -it registry.gitlab.com/gitlab-com/customer-success/tools/congregate/master:$(get_latest_master_tag) \
               /bin/bash'
 
-printf '# Pipfile and Dockerfile aliases\n'
+printf '# pyproject.toml and Dockerfile aliases\n'
 alias penv
 alias ui
 alias sh

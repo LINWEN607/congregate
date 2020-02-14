@@ -7,7 +7,7 @@ WORKDIR /opt/congregate
 
 # Copy supervisor configuration
 ADD congregate congregate
-COPY congregate.sh Pipfile README.md snakeskin.txt ./
+COPY congregate.sh pyproject.toml README.md snakeskin.txt ./
 
 # Installing some basic utilities and updating apt
 RUN apt-get update && \
