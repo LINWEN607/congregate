@@ -50,11 +50,13 @@ build:
   image: "$BUILD_IMAGE_NAME"
   before_script:
     - apt-get update
+    - apt install -y curl
     - mkdir data
     - echo ${Dummy_config_new} > $CONGREGATE_PATH/data/congregate.conf
-    - pip install pipenv
-    - export PIPENV_VENV_IN_PROJECT=true
-    - pipenv install
+    - curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python
+    - poetry install
+    # - export PIPENV_VENV_IN_PROJECT=true
+    # - pipenv install
 
 test:pylint:
   <<: *test-job
@@ -69,7 +71,7 @@ test:pylint:
 test:unit:
   <<: *test-job
   script:
-    - pipenv run pytest -m 'not e2e and not e2e_setup' --cov-config=.coveragerc --cov=congregate congregate/tests/
+    - poetry run pytest -m 'not e2e and not e2e_setup' --cov-config=.coveragerc --cov=congregate congregate/tests/
 
 test:end-to-end:
   services:
@@ -82,15 +84,14 @@ test:end-to-end:
   tags:
     - e2e
   script:
-    - apt install -y curl
     - ./spin_up_test_vm.sh
     - export GITLAB_SRC=http://$(cat source_ip)
     - export GITLAB_SRC_REG_URL=$(cat source_ip):4567
     - export GITLAB_DEST=http://gitlab_destination
     - export GITLAB_DEST_REG_URL=gitlab_destination:4567
-    - pipenv run pytest -s -m e2e_setup congregate/tests/
-    - pipenv run pytest -s -m e2e congregate/tests/
-    - pipenv run aws ec2 terminate-instances --instance-ids $(cat instance_id)
+    - poetry run pytest -s -m e2e_setup congregate/tests/
+    - poetry run pytest -s -m e2e congregate/tests/
+    - poetry run aws ec2 terminate-instances --instance-ids $(cat instance_id)
 
 remove redundant docker images:
   stage: cleanup

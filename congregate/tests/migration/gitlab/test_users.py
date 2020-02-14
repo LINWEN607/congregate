@@ -459,7 +459,11 @@ class UserTests(unittest.TestCase):
                     json=[self.mock_users.get_dummy_user()], status=200)
         # pylint: enable=no-member
 
-        self.assertEqual(self.users.handle_user_creation(new_user), 27)
+        expected = {
+            "id": 27,
+            "email": "jdoe@email.com"
+        }
+        self.assertEqual(self.users.handle_user_creation(new_user), expected)
 
     # pylint: disable=no-member
     @responses.activate
@@ -485,7 +489,11 @@ class UserTests(unittest.TestCase):
                     json=[self.mock_users.get_dummy_user()], status=200)
         # pylint: enable=no-member
 
-        self.assertEqual(self.users.handle_user_creation(new_user), 27)
+        expected = {
+            "id": 27,
+            "email": "jdoe@email.com"
+        }
+        self.assertEqual(self.users.handle_user_creation(new_user), expected)
 
     # pylint: disable=no-member
     @responses.activate
@@ -511,7 +519,11 @@ class UserTests(unittest.TestCase):
                     json=[self.mock_users.get_dummy_user()], status=200)
         # pylint: enable=no-member
 
-        self.assertEqual(self.users.handle_user_creation(new_user), 27)
+        expected = {
+            "id": 27,
+            "email": "jdoe@email.com"
+        }
+        self.assertEqual(self.users.handle_user_creation(new_user), expected)
 
     # pylint: disable=no-member
     @responses.activate
@@ -765,17 +777,17 @@ class UserTests(unittest.TestCase):
         self.assertIsNone(response)
 
     def test_get_user_creation_id_from_list(self):
-        response = [{"id": 42},{"id": 43}]
-        self.assertEqual(self.users.get_user_creation_id(response), 42)
+        response = [{"id": 42, "email": "user1@example.com"},{"id": 43, "email": "user2@example.com"}]
+        self.assertEqual(self.users.get_user_creation_id_and_email(response), response[0])
 
     def test_get_user_creation_id_from_dict(self):
-        response = {"id": 42}
-        self.assertEqual(self.users.get_user_creation_id(response), 42)
+        response = {"id": 42, "email": "user1@example.com"}
+        self.assertEqual(self.users.get_user_creation_id_and_email(response), response)
 
     def test_get_user_creation_id_invalid(self):
         response = []
-        self.assertEqual(self.users.get_user_creation_id(response), None)
+        self.assertEqual(self.users.get_user_creation_id_and_email(response), None)
         response = None
-        self.assertEqual(self.users.get_user_creation_id(response), None)
+        self.assertEqual(self.users.get_user_creation_id_and_email(response), None)
         response = {"name": "foo"}
-        self.assertEqual(self.users.get_user_creation_id(response), None)
+        self.assertEqual(self.users.get_user_creation_id_and_email(response), None)

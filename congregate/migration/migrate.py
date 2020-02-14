@@ -11,6 +11,7 @@ from multiprocessing.dummy import Pool as ThreadPool
 from multiprocessing import Lock
 from collections import Counter
 from requests.exceptions import RequestException
+from datetime import datetime
 
 from congregate.helpers import api, migrate_utils
 from congregate.helpers.misc_utils import get_dry_log, json_pretty
@@ -185,6 +186,11 @@ def migrate_project_info(dry_run=True, skip_project_export=False, skip_project_i
                                   or "Total : Successful: 0 : 0")
             b.log.info("### {0}Project import results ###\n{1}"
                        .format(dry_log, json_pretty(import_results)))
+            end_time = str(datetime.now()).replace(" ", "_")
+            file_path = "%s/data/project_results_%s.json" % (b.app_path, end_time)
+            b.log.info("### Writing output to %s" % file_path)
+            with open(file_path, "w") as f:
+                json.dump(import_results, f)
         else:
             b.log.info("SKIP: Assuming staged projects will be later imported")
     else:
