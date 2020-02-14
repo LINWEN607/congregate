@@ -110,6 +110,9 @@ def migrate_user_info(dry_run=True):
     b.log.info("{}Migrating user info".format(get_dry_log(dry_run)))
     new_users = users.migrate_user_info(dry_run)
 
+    with open("%s/data/user_migration_results.json" % b.app_path, "w") as f:
+        json.dump(new_users, f)
+
     # This list is of user ids from found users via email or newly created users
     # So, new_user_ids is a bit of a misnomer
     if new_users:
