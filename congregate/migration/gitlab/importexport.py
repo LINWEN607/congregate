@@ -478,7 +478,7 @@ class ImportExportClient(BaseClass):
     def get_export_filename_from_namespace_and_name(self, namespace, name=""):
         return "{0}{1}.tar.gz".format(namespace, "/" + name if name else "").replace("/", "_").lower()
 
-    def export_thru_filesystem(self, pid, name, namespace):
+    def export_project_thru_filesystem(self, pid, name, namespace):
         exported = False
         response = self.projects_api.export_project(
             self.config.source_host, self.config.source_token, pid)
@@ -500,6 +500,41 @@ class ImportExportClient(BaseClass):
             else:
                 self.log.error("Failed to export project {0} (ID: {1}), with export status '{2}'"
                                .format(name, pid, exported))
+        return exported
+
+    def export_group_thru_filesystem(self, gid, full_path, full_parent_namespace, filename):
+        exported = False
+        full_path_with_parent_namespace = "{0}{1}".format(
+            full_parent_namespace + "/" if full_parent_namespace else "", full_path)
+        self.log.info("Searching on destination for group {}".format(
+            full_path_with_parent_namespace))
+        group_exists, dest_group_id = self.groups.find_group_by_path(
+            self.config.destination_host,
+            self.config.destination_token,
+            full_path_with_parent_namespace)
+        if not group_exists:
+            self.log.info("Group {0} (Source ID: {1}) NOT found on destination.".format(
+                full_path_with_parent_namespace, gid))
+
+            response = self.groups_api.export_group(
+                self.config.source_host, self.config.source_token, gid)
+            if response is None or response.status_code not in (200, 202):
+                self.log.error("Failed to trigger group {0} (ID: {1}) export, with response '{2}'"
+                               .format(full_path, gid, response))
+            else:
+                # NOTE: Export status API endpoint not available yet
+                exported = self.wait_for_export_to_finish(
+                    gid, full_path) or True
+
+                url = "{0}/api/v4/groups/{1}/export/download".format(
+                    self.config.source_host, gid)
+                self.log.info("Downloading group {0} (source ID: {1}) as {2}".format(
+                    full_path_with_parent_namespace, gid, filename))
+                download_file(url, self.config.filesystem_path, filename=filename, headers={
+                              "PRIVATE-TOKEN": self.config.source_token})
+        else:
+            self.log.info("SKIP: Group {0} with source ID {1} and destination group ID {2} found on destination".format(
+                full_path_with_parent_namespace, gid, dest_group_id))
         return exported
 
     def export_thru_fs_aws(self, pid, name, namespace):
@@ -567,10 +602,11 @@ class ImportExportClient(BaseClass):
             self.log.info("Group {0} (Source ID: {1}) NOT found on destination.".format(
                 full_path_with_parent_namespace, gid))
             # Passing full_path_with_parent_namespace with no +, no encoding, not a quoted string
+            # NOTE: upload parameter not yet available for export
             response = self.export_to_aws(gid, filename, False)
             if response is not None and response.status_code == 202:
                 # TODO: We're going to need to see what the status looks like
-                # TODO: Checking the export needs to know...?
+                # NOTE: Export status API endpoint not available yet
                 export_status = self.wait_for_export_to_finish(
                     gid, full_path, is_project=False)
 
@@ -578,7 +614,7 @@ class ImportExportClient(BaseClass):
                 # Could be misleading, since it assumes the file is complete
                 exported = export_status or self.aws.is_export_on_aws(filename)
         else:
-            self.log.info("SKIP: Group {0} found on destination with source id {1} and destination id {2}".format(
+            self.log.info("SKIP: Group {0} with source ID {1} and destination group ID {2} found on destination".format(
                 full_path_with_parent_namespace, gid, dest_group_id))
         return exported
 

@@ -86,9 +86,9 @@ def migrate(
         hooks.migrate_system_hooks(dry_run)
 
         # Migrate groups
-        if not skip_groups:
-            migrate_group_info(dry_run)
-        # __migrate_group_info(dry_run, skip_group_export, skip_group_import)
+        # if not skip_groups:
+        #     migrate_group_info(dry_run)
+        __migrate_group_info(dry_run, skip_group_export, skip_group_import)
 
         # Migrate projects
         migrate_project_info(dry_run, skip_project_export, skip_project_import)
@@ -198,23 +198,23 @@ def __handle_exporting_groups(group, dry_run=True):
         b.log.info("{0}Exporting group {1} (ID: {2}) as {3}"
                    .format(dry_log, name, gid, filename))
         if loc == "filesystem":
-            pass
-            #     exported = ie.export_thru_filesystem(
-            #         gid, name, filename) if not dry_run else True
-            # TODO: Refactor and sync with other scenarios (#119)
+            exported = ie.export_group_thru_filesystem(
+                gid, full_path, full_parent_namespace, filename) if not dry_run else True
+        # TODO: Refactor and sync with other scenarios (#119)
         elif loc == "filesystem-aws":
             b.log.error(
                 "NOTICE: Filesystem-AWS exports are not currently supported")
             # exported = ie.export_thru_fs_aws(pid, name, namespace) if not dry_run else True
         elif loc == "aws":
-            exported = ie.export_group_thru_aws(
-                gid, full_path, full_parent_namespace, filename) if not dry_run else True
+            pass
+            # exported = ie.export_group_thru_aws(
+            #     gid, full_path, full_parent_namespace, filename) if not dry_run else True
         updated = False
         if exported:
-            b.log.info("{0}Updating group {1} (ID: {2}) export members in {3}"
-                       .format(dry_log, full_path, gid, filename))
+            # b.log.info("{0}Updating group {1} (ID: {2}) export members in {3}"
+            #            .format(dry_log, full_path, gid, filename))
             if loc == "filesystem":
-                exported = True
+                updated = True
                 # updated = project_export.update_project_export_members_for_local(
                 #     name, namespace, filename) if not dry_run else True
             # TODO: Refactor and sync with other scenarios (#119)
@@ -319,7 +319,7 @@ def handle_exporting_projects(project, dry_run=True):
         b.log.info("{0}Exporting project {1} (ID: {2}) as {3}"
                    .format(dry_log, name, pid, filename))
         if loc == "filesystem":
-            exported = ie.export_thru_filesystem(
+            exported = ie.export_project_thru_filesystem(
                 pid, name, namespace) if not dry_run else True
         # TODO: Refactor and sync with other scenarios (#119)
         elif loc == "filesystem-aws":
