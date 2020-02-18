@@ -42,6 +42,7 @@ Usage:
     congregate validate-staged-groups-schema
     congregate validate-staged-projects-schema
     congregate map-users [--commit]
+    congregate obfuscate
     congregate -h | --help
 
 Options:
@@ -107,6 +108,7 @@ Commands:
     validate-staged-groups-schema           Check staged_groups.json for missing group data.
     validate-staged-projects-schema         Check stage.json for missing project data.
     map-users                               Maps staged user emails to emails defined in the user-provided user_map.csv
+    obfuscate                               Obfuscate a secret or password that you want to manually update in the config.
 """
 
 import os
@@ -123,12 +125,12 @@ if __name__ == '__main__':
         from congregate.helpers import conf
         from congregate.helpers.logger import myLogger
         from congregate.cli.config import generate_config
-        from congregate.helpers.misc_utils import get_congregate_path
+        from congregate.helpers.misc_utils import get_congregate_path, obfuscate
         from congregate.helpers.user_util import map_users
     else:
         from .helpers import conf
         from .helpers.logger import myLogger
-        from .helpers.misc_utils import get_congregate_path
+        from .helpers.misc_utils import get_congregate_path, obfuscate
         from .helpers.user_util import map_users
 else:
     import sys
@@ -326,3 +328,5 @@ if __name__ == '__main__':
                 projects.validate_staged_projects_schema()
             if arguments["map-users"]:
                 map_users(dry_run=DRY_RUN)
+            if arguments["obfuscate"]:
+                print obfuscate("Secret:")
