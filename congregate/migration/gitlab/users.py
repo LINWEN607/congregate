@@ -496,7 +496,7 @@ class UsersClient(BaseClass):
                 new_users = []
                 for new_id in new_ids:
                     new_user = self.users_api.get_user(
-                        new_id, self.config.destination_host, self.config.destination_token).json()
+                        new_id["id"], self.config.destination_host, self.config.destination_token).json()
                     if isinstance(new_user, list):
                         new_users.append(new_user[0])
                     elif isinstance(new_user, dict):

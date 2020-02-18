@@ -5,6 +5,7 @@ import base64
 import pytest
 import mock
 import json
+import pprint
 from congregate.helpers.misc_utils import input_generator
 from congregate.cli import config, do_all
 from congregate.helpers.seed.generate_token import token_generator
@@ -17,6 +18,7 @@ from congregate.helpers.base_module import app_path
 @pytest.mark.e2e
 class MigrationEndToEndTest(unittest.TestCase):
     def setUp(self):
+        # pass
         do_all.do_all(dry_run=False)
     #     self.t = token_generator()
     #     self.generate_default_config_with_tokens()
@@ -31,7 +33,9 @@ class MigrationEndToEndTest(unittest.TestCase):
         # do_all.b.config = do_all.b.ConfigurationValidator()
         # do_all.do_all(dry_run=False)
         user_diff = UserDiffClient("%s/data/user_migration_results.json" % app_path)
-        print user_diff.generate_report()
+        print "**User Diff Results**"
+        pp = pprint.PrettyPrinter(indent=2)
+        pp.pprint(user_diff.generate_report())
 
 
 

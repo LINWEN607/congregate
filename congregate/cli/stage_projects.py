@@ -66,6 +66,10 @@ def build_staging_data(projects_to_stage, dry_run=True):
 
                 obj["members"] = members
                 staging.append(obj)
+
+            # Stage ALL users in the instance
+            for user in users:
+                staged_users.append(user)
         elif re.search(r"\d+-\d+", projects_to_stage[0]) is not None:
             match = (re.search(r"\d+-\d+", projects_to_stage[0])).group(0)
             start = int(match.split("-")[0])

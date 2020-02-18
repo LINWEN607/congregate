@@ -128,6 +128,29 @@ def obfuscate(prompt):
 def deobfuscate(secret):
     return base64.b64decode(secret)
 
+def clean_data():
+    app_path = get_congregate_path()
+    files_to_delete = [
+        "stage.json",
+        "staged_users.json",
+        "staged_groups.json",
+        "project_json.json",
+        "users.json",
+        "groups.json",
+        "users_not_found.json",
+        "user_migration_results.json"
+    ]
+    if os.path.isdir("{0}/data".format(app_path)):
+        for f in files_to_delete:
+            path = "{0}/data/{1}".format(app_path, f)
+            if os.path.exists(path):
+                print "Removing {}".format(f)
+                os.remove(path)
+            else:
+                print "Couldn't find {}".format(f)
+    else:
+        print "Cannot find data directory. CONGREGATE_PATH not set or you are not running this in the Congregate directory."
+
 def is_recent_file(path, age=2592000):
     """
         Check whether a file path exists, is empty and older than 1 month

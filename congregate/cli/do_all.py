@@ -49,9 +49,10 @@ def do_all_groups_and_projects(dry_run=True):
 
 def do_all(dry_run=True):
     list_all()
-    stage_and_update_all()
 
-    migrate.migrate(dry_run=dry_run)
+    do_all_users(dry_run=dry_run)
+    do_all_groups_and_projects(dry_run=dry_run)
+
 
 
 def stage_and_update_all():
