@@ -117,27 +117,31 @@ class GroupsClient(BaseClass):
         self.group_id_mapping = {}
         parent_id = self.config.parent_id
 
+        results = []
+
         # Update parent group notification level
         if parent_id is not None:
             current_level = self.get_current_group_notifications(parent_id)
             if not dry_run:
                 self.update_group_notifications(parent_id)
                 self.traverse_and_migrate(
-                    staged_groups, rewritten_groups, dry_run)
+                    staged_groups, rewritten_groups, results, dry_run)
                 self.reset_group_notifications(parent_id, current_level)
             else:
                 self.traverse_and_migrate(
-                    staged_groups, rewritten_groups, dry_run)
+                    staged_groups, rewritten_groups, results, dry_run)
         else:
-            self.traverse_and_migrate(staged_groups, rewritten_groups, dry_run)
+            self.traverse_and_migrate(staged_groups, rewritten_groups, results, dry_run)
 
         # Migrate group badges
         for old_id, new_id in self.group_id_mapping.items():
             self.badges.migrate_group_badges(
                 old_id, new_id, self.find_parent_group_path(), dry_run)
 
+        return results
+
     # TODO: Refactor and break down
-    def traverse_and_migrate(self, groups, rewritten_groups, dry_run=True):
+    def traverse_and_migrate(self, groups, rewritten_groups, results, dry_run=True):
         count = 0
         dest_groups = []
         for group in groups:
@@ -266,8 +270,10 @@ class GroupsClient(BaseClass):
                                     self.log.info("Failed to save group")
                             else:
                                 new_group_id = response["id"]
+                                results.append(response)
                         elif isinstance(response, list):
                             new_group_id = response[0]["id"]
+                            results.append(response[0])
                     except RequestException, e:
                         self.log.info("Group already exists")
                     if new_group_id is None:
@@ -284,6 +290,7 @@ class GroupsClient(BaseClass):
                                         new_group_id = ng["id"]
                                         self.log.info(
                                             "New group {0} found".format(new_group_id))
+                                        results.append(ng)
                                         break
 
                     if new_group_id:

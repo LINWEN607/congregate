@@ -19,7 +19,7 @@ Come together, right now
 
 - Python 2.7
 - [AWS CLI](https://aws.amazon.com/cli/)
-- [PipEnv](https://docs.pipenv.org/)
+- [Poetry](https://python-poetry.org/)
 
 ## Setup
 
@@ -30,14 +30,14 @@ Copy the following code snippet to a file in the congregate directory and run it
 ```bash
 #!/bin/bash
 
-# install pipenv
-pip install pipenv
+# install poetry
+pip install poetry
 
 # install python dependencies
-pipenv install
+poetry install
 
 # install UI dependencies
-pipenv run dnd install
+poetry run dnd install
 
 # create congregate path
 CONGREGATE_PATH=$(pwd)
@@ -60,22 +60,22 @@ There are currently *three* different methods for migrating projects (groups and
 
 **NOTE:** The hybrid (`filesystem-aws`) method is currently NOT supported ([issue](https://gitlab.com/gitlab-com/customer-success/tools/congregate/issues/119)).
 
-### Install & Use PipEnv (required for end-user and development setups)
+### Install & Use Poetry (required for end-user and development setups)
 
 ```bash
-pip install pipenv
+pip install poetry
 
 # install dependencies from Pipfile
 cd /path/to/congregate
-pipenv install
+poetry install
 
 # start-up python virtualenv
 cd /path/to/congregate
-pipenv shell
+poetry shell
 
 # install ui dependencies
 cd /path/to/congregate
-pipenv run dnd install
+poetry run dnd install
 ```
 
 ### Installing Congregate (end-user)
@@ -328,69 +328,21 @@ export FLASK_DEBUG=1
 
 For the UI, you will still need to save the file in your editor and refresh the page, but it's better than restarting flask every time. The app will live reload every time a .py file is changed and saved.
 
-#### Configuring VS Code for Debugging
+#### If VS Code doesn't pick up poetry virtualenv
 
-Refer to [this how-to](https://code.visualstudio.com/docs/python/debugging) for setting up the base debugging settings for a python app in VS Code. Then replace the default `launch.json` flask configuration for this:
-
-```json
-
-{
-    "name": "Python: Flask (0.11.x or later)",
-    "type": "python",
-    "request": "launch",
-    "module": "flask",
-    "env": {
-        "PYTHONPATH": "${workspaceRoot}",
-        "CONGREGATE_PATH": "/path/to/congregate",
-        "FLASK_APP": "${CONGREGATE_PATH}/ui"
-    },
-    "args": [
-        "run",
-        "--no-debugger",
-        "--no-reload"
-    ]
-}
+Find virtualenv path
 
 ```
-
-To reload the app in debugging mode, you will need to click the `refresh` icon in VS code (on the sidebar's Explorer tab). Currently VS code doesn't support live reloading flask apps on save.
-
-#### Live reloading for UI development and backend development without a debugger
-
-You will need to turn on debugging in the flask app to see a mostly live reload of the UI. Create the following environment variable before deploying the UI
-
-```bash
-export FLASK_DEBUG=1
+poetry config --list
 ```
 
-For the UI, you will still need to save the file in your editor and refresh the page, but it's better than restarting flask every time. The app will live reload every time a .py file is changed and saved.
-
-#### Configuring VS Code for Debugging
-
-Refer to [this how-to](https://code.visualstudio.com/docs/python/debugging) for setting up the base debugging settings for a python app in VS Code. Then replace the default `launch.json` flask configuration for this:
-
-```json
-
-{
-    "name": "Python: Flask (0.11.x or later)",
-    "type": "python",
-    "request": "launch",
-    "module": "flask",
-    "env": {
-        "PYTHONPATH": "${workspaceRoot}",
-        "CONGREGATE_PATH": "/path/to/congregate",
-        "FLASK_APP": "${CONGREGATE_PATH}/ui"
-    },
-    "args": [
-        "run",
-        "--no-debugger",
-        "--no-reload"
-    ]
-}
+Add the following line to .vscode/settings.json:
 
 ```
+"python.venvPath": "/path/to/virtualenv"
+```
 
-To reload the app in debugging mode, you will need to click the `refresh` icon in VS code (on the sidebar's Explorer tab). Currently VS code doesn't support live reloading flask apps on save.
+You may need to refresh VS Code. VS Code will also call this python interpreter PipEnv, but if you check out the virtualenv directory poetry has stored, you can compare the virtualenv folder names to double check.
 
 ## Migration features
 

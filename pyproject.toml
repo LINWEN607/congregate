@@ -27,7 +27,7 @@ sphinx = "<=2.4.1"
 bs4 = "^0.0.1"
 lxml = "^4.5.0"
 pylint-exit = "^1.1.0"
-jsondiff = "^1.2.0"
+opslib = "^0.0.3"
 
 [tool.poetry.dev-dependencies]
 

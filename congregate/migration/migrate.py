@@ -111,7 +111,7 @@ def migrate_user_info(dry_run=True):
     new_users = users.migrate_user_info(dry_run)
 
     with open("%s/data/user_migration_results.json" % b.app_path, "w") as f:
-        json.dump(new_users, f)
+        json.dump(new_users, f, indent=4)
 
     # This list is of user ids from found users via email or newly created users
     # So, new_user_ids is a bit of a misnomer
@@ -130,7 +130,9 @@ def migrate_group_info(dry_run=True):
     staged_groups = groups.get_staged_groups()
     if staged_groups:
         b.log.info("{}Migrating group info".format(get_dry_log(dry_run)))
-        groups.migrate_group_info(dry_run)
+        results = groups.migrate_group_info(dry_run)
+        with open("%s/data/group_migration_results.json" % b.app_path, "w") as f:
+            json.dump(results, f, indent=4)
     else:
         b.log.info("SKIP: No groups to migrate")
 

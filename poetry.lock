@@ -8,6 +8,22 @@ version = "0.7.12"
 
 [[package]]
 category = "main"
+description = "Bash tab completion for argparse"
+name = "argcomplete"
+optional = false
+python-versions = "*"
+version = "1.11.1"
+
+[package.dependencies]
+[package.dependencies.importlib-metadata]
+python = ">=2.7,<2.8"
+version = ">=0.23,<2"
+
+[package.extras]
+test = ["coverage", "flake8", "pexpect", "wheel"]
+
+[[package]]
+category = "main"
 description = "A abstract syntax tree for Python with inference support."
 name = "astroid"
 optional = false
@@ -138,6 +154,14 @@ name = "bitarray"
 optional = false
 python-versions = "*"
 version = "1.2.1"
+
+[[package]]
+category = "main"
+description = "Amazon Web Services Library"
+name = "boto"
+optional = false
+python-versions = "*"
+version = "2.49.0"
 
 [[package]]
 category = "main"
@@ -526,14 +550,6 @@ version = "0.9.4"
 
 [[package]]
 category = "main"
-description = "Diff JSON and JSON-like structures in Python"
-name = "jsondiff"
-optional = false
-python-versions = "*"
-version = "1.2.0"
-
-[[package]]
-category = "main"
 description = "A fast and thorough lazy object proxy."
 name = "lazy-object-proxy"
 optional = false
@@ -601,6 +617,20 @@ version = "5.0.0"
 
 [package.dependencies]
 six = ">=1.0.0,<2.0.0"
+
+[[package]]
+category = "main"
+description = "Library for AWS Operations"
+name = "opslib"
+optional = false
+python-versions = "*"
+version = "0.0.3.3"
+
+[package.dependencies]
+argcomplete = "*"
+boto = "*"
+botocore = "*"
+setuptools = "*"
 
 [[package]]
 category = "main"
@@ -1075,13 +1105,17 @@ docs = ["sphinx", "jaraco.packaging (>=3.2)", "rst.linker (>=1.9)"]
 testing = ["pathlib2", "unittest2", "jaraco.itertools"]
 
 [metadata]
-content-hash = "f1f36cab6d05343fd1b75f84fb62fabd27a9752a55dc5cab06d7a54dd4b10810"
+content-hash = "49797c202533935f38b1c1a98f96c170c702e0bfcb4bba73a7a19e2a1b06788f"
 python-versions = "^2.7"
 
 [metadata.files]
 alabaster = [
     {file = "alabaster-0.7.12-py2.py3-none-any.whl", hash = "sha256:446438bdcca0e05bd45ea2de1668c1d9b032e1a9154c2c259092d77031ddd359"},
     {file = "alabaster-0.7.12.tar.gz", hash = "sha256:a661d72d58e6ea8a57f7a86e37d86716863ee5e92788398526d58b26a4e4dc02"},
+]
+argcomplete = [
+    {file = "argcomplete-1.11.1-py2.py3-none-any.whl", hash = "sha256:890bdd1fcbb973ed73db241763e78b6d958580e588c2910b508c770a59ef37d7"},
+    {file = "argcomplete-1.11.1.tar.gz", hash = "sha256:5ae7b601be17bf38a749ec06aa07fb04e7b6b5fc17906948dc1866e7facf3740"},
 ]
 astroid = [
     {file = "astroid-1.6.6-py2.py3-none-any.whl", hash = "sha256:87de48a92e29cedf7210ffa853d11441e7ad94cb47bacd91b023499b51cbc756"},
@@ -1120,6 +1154,10 @@ beautifulsoup4 = [
 ]
 bitarray = [
     {file = "bitarray-1.2.1.tar.gz", hash = "sha256:2ed675f460bb0d3d66fd8042a6f1f0d36cf213e52e72a745283ddb245da7b9cf"},
+]
+boto = [
+    {file = "boto-2.49.0-py2.py3-none-any.whl", hash = "sha256:147758d41ae7240dc989f0039f27da8ca0d53734be0eb869ef16e3adcfa462e8"},
+    {file = "boto-2.49.0.tar.gz", hash = "sha256:ea0d3b40a2d852767be77ca343b58a9e3a4b00d9db440efb8da74b4e58025e5a"},
 ]
 boto3 = [
     {file = "boto3-1.11.17-py2.py3-none-any.whl", hash = "sha256:435fc7220e76894228f9ceebc19ab226de78f515652f8643e3e22581a7e08ed7"},
@@ -1345,9 +1383,6 @@ jmespath = [
     {file = "jmespath-0.9.4-py2.py3-none-any.whl", hash = "sha256:3720a4b1bd659dd2eecad0666459b9788813e032b83e7ba58578e48254e0a0e6"},
     {file = "jmespath-0.9.4.tar.gz", hash = "sha256:bde2aef6f44302dfb30320115b17d030798de8c4110e28d5cf6cf91a7a31074c"},
 ]
-jsondiff = [
-    {file = "jsondiff-1.2.0.tar.gz", hash = "sha256:34941bc431d10aa15828afe1cbb644977a114e75eef6cc74fb58951312326303"},
-]
 lazy-object-proxy = [
     {file = "lazy-object-proxy-1.4.1.tar.gz", hash = "sha256:4ba73f6089cd9b9478bc0a4fa807b47dbdb8fad1d8f31a0f0a5dbf26a4527a71"},
     {file = "lazy_object_proxy-1.4.1-cp27-cp27m-macosx_10_13_x86_64.whl", hash = "sha256:3b11be575475db2e8a6e11215f5aa95b9ec14de658628776e10d96fa0b4dac13"},
@@ -1444,6 +1479,11 @@ more-itertools = [
     {file = "more-itertools-5.0.0.tar.gz", hash = "sha256:38a936c0a6d98a38bcc2d03fdaaedaba9f412879461dd2ceff8d37564d6522e4"},
     {file = "more_itertools-5.0.0-py2-none-any.whl", hash = "sha256:c0a5785b1109a6bd7fac76d6837fd1feca158e54e521ccd2ae8bfe393cc9d4fc"},
     {file = "more_itertools-5.0.0-py3-none-any.whl", hash = "sha256:fe7a7cae1ccb57d33952113ff4fa1bc5f879963600ed74918f1236e212ee50b9"},
+]
+opslib = [
+    {file = "opslib-0.0.3.3.tar.bz2", hash = "sha256:a06a342254df26fb1739bee208a5b41897fe80145e19cee99d49a59c6f8db658"},
+    {file = "opslib-0.0.3.3.tar.gz", hash = "sha256:72d3918f53595fb678ab6bd7cf91ac701749817b84f6f5a8b76129d2c95cb24f"},
+    {file = "opslib-0.0.3.3.zip", hash = "sha256:d412e3a579e563299e24502c169cd43d3deae170be881a70e632f987dd1da40e"},
 ]
 packaging = [
     {file = "packaging-20.1-py2.py3-none-any.whl", hash = "sha256:170748228214b70b672c581a3dd610ee51f733018650740e98c7df862a583f73"},
