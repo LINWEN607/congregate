@@ -24,10 +24,5 @@ class MigrationEndToEndTest(unittest.TestCase):
     def test_group_migration_diff(self):
         group_diff = GroupDiffClient("%s/data/group_migration_results.json" % app_path)
         print "**Group Diff Results**"
-        print json.dumps(group_diff.generate_base_diff(), indent=4)
-
-
-
-
-
+        print json.dumps(group_diff.generate_group_diff_report(), indent=4)
 

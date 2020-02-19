@@ -36,10 +36,3 @@ class UserDiffClient(BaseDiffClient):
 
         return diff_report
     
-    def ignore_keys(self, data):
-        for key in self.keys_to_ignore:
-            if key in data:
-                data.pop(key)
-        return data
-
-    

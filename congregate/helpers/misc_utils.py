@@ -157,3 +157,18 @@ def is_recent_file(path, age=2592000):
         Check whether a file path exists, is empty and older than 1 month
     """
     return os.path.exists(path) and os.path.getsize(path) > 0 and time() - os.path.getmtime(path) < age
+
+def find(key, dictionary):
+    """
+        Nested dictionary lookup from https://gist.github.com/douglasmiranda/5127251
+    """
+    for k, v in dictionary.iteritems():
+        if k == key:
+            yield v
+        elif isinstance(v, dict):
+            for result in find(key, v):
+                yield result
+        elif isinstance(v, list):
+            for d in v:
+                for result in find(key, d):
+                    yield result
