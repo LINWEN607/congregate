@@ -39,25 +39,16 @@ class GroupDiffClient(BaseDiffClient):
         return diff_report
 
     def generate_diff(self, group, endpoint, critical_key=None, obfuscate=False, **kwargs):
-        source_group_data = endpoint(group["id"], self.config.source_host, self.config.source_token, **kwargs)
-        if isinstance(source_group_data, GeneratorType):
-            source_group_data = self.ignore_keys(list(source_group_data))
-        else:
-            source_group_data = self.ignore_keys(source_group_data.json())
+        source_group_data = self.generate_cleaned_instance_data(
+            endpoint(group["id"], self.config.source_host, self.config.source_token, **kwargs))
         if self.results.get(group["full_path"]) is not None:
             destination_group_id = self.results[group["full_path"]]["id"]
-            destination_group_data = endpoint(destination_group_id, self.config.destination_host, self.config.destination_token, **kwargs)
-            if isinstance(destination_group_data, GeneratorType):
-                destination_group_data = self.ignore_keys(list(destination_group_data))
-            else:
-                destination_group_data = self.ignore_keys(destination_group_data.json())
+            destination_group_data = self.generate_cleaned_instance_data(
+                endpoint(destination_group_id, self.config.destination_host, self.config.destination_token, **kwargs))
         elif self.results.get(group["path"]) is not None:
             destination_group_id = self.results[group["path"]]["id"]
-            destination_group_data = endpoint(destination_group_id, self.config.destination_host, self.config.destination_token, **kwargs)
-            if isinstance(destination_group_data, GeneratorType):
-                destination_group_data = self.ignore_keys(list(destination_group_data))
-            else:
-                destination_group_data = self.ignore_keys(destination_group_data.json())
+            destination_group_data = self.generate_cleaned_instance_data(
+                endpoint(destination_group_id, self.config.destination_host, self.config.destination_token, **kwargs))
         else:
             if isinstance(source_group_data, list):
                 destination_group_data = []
@@ -71,3 +62,10 @@ class GroupDiffClient(BaseDiffClient):
             return self.empty_diff()
             
         return self.diff(source_group_data, destination_group_data, critical_key=critical_key, obfuscate=obfuscate)
+
+    def generate_cleaned_instance_data(self, instance_data):
+        if isinstance(instance_data, GeneratorType):
+            instance_data = self.ignore_keys(list(instance_data))
+        else:
+            instance_data = self.ignore_keys(instance_data.json())
+        return instance_data
