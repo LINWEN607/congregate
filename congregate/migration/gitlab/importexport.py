@@ -175,7 +175,6 @@ class ImportExportClient(BaseClass):
 
         name = project["name"]
         override_params = self.get_override_params(project)
-        filename = get_project_filename(project)
 
         if is_user_project(project):
             member_id = get_member_id_for_user_project(project)
@@ -218,6 +217,8 @@ class ImportExportClient(BaseClass):
         exported = False
         # import_response = None
         timeout = 0
+        filename = self.get_export_filename_from_namespace_and_name(
+            namespace, name)
 
         if not dry_run:
             import_response = self.attempt_import(
@@ -255,6 +256,62 @@ class ImportExportClient(BaseClass):
                 "namespace": namespace,
                 "override_params": override_params,
                 "project": project})
+
+    def import_group(self, group, name, path, filename, dry_run=True):
+        """
+            Imports groups to destination GitLab instance.
+        """
+        if group is None:
+            self.log.error(
+                "SKIP: Import, the following group is NONE: {}".format(group))
+            return None
+
+        if isinstance(group, str):
+            group = json.loads(group)
+
+        if not dry_run:
+            import_response = self.attempt_group_import(filename, name)
+            if import_response and import_response.status_code in [200, 202]:
+                self.log.info(
+                    "Group {0} (file: {1}) successfully imported".format(path, filename))
+            else:
+                self.log.error("Group {0} (file: {1}) import failed, with status {2}".format(
+                    path, filename, import_response))
+        else:
+            self.log.info("DRY-RUN: Outputing group {0} (file: {1}) migration data to dry_run_group_migration.json"
+                          .format(path, filename))
+            migration_dry_run("group", {
+                "filename": filename,
+                "name": name,
+                "path": path,
+                "group": group})
+
+    def attempt_group_import(self, filename, name):
+        resp = None
+        try:
+            if self.config.location == "aws":
+                pass
+            elif self.config.location == "filesystem-aws":
+                pass
+            elif self.config.location == "filesystem":
+                with open("%s/downloads/%s" % (self.config.filesystem_path, filename), "rb") as f:
+                    data = {
+                        "path": name.replace(" ", "-"),
+                        "name": name,
+                        "parent_id": self.config.parent_id if self.config.parent_id else ""
+                    }
+                    files = {
+                        "file": (filename, f)
+                    }
+                    headers = {
+                        "Private-Token": self.config.destination_token
+                    }
+                    resp = api.generate_post_request(self.config.destination_host, self.config.destination_token,
+                                                     "groups/import", data, files=files, headers=headers)
+            return resp
+        except RequestException as re:
+            self.log.error(
+                "Failed to trigger group {0} (file: {1}), with error {2}".format(name, filename, re))
 
     def dupe_reimport_worker(
             self,

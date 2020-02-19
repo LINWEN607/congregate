@@ -133,7 +133,7 @@ def __migrate_group_info(dry_run=True, skip_group_export=False, skip_group_impor
             b.log.info("{}Exporting groups".format(dry_log))
             export_pool = ThreadPool(b.config.threads)
             export_results = export_pool.map(
-                lambda group: __handle_exporting_groups(
+                lambda group: handle_exporting_groups(
                     group,
                     dry_run),
                 staged_groups)
@@ -165,7 +165,7 @@ def __migrate_group_info(dry_run=True, skip_group_export=False, skip_group_impor
             b.log.info("{}Importing groups".format(dry_log))
             import_pool = ThreadPool(b.config.threads)
             import_results = import_pool.map(
-                lambda group: __handle_importing_groups(
+                lambda group: handle_importing_groups(
                     group,
                     dry_run),
                 staged_groups)
@@ -184,7 +184,7 @@ def __migrate_group_info(dry_run=True, skip_group_export=False, skip_group_impor
         b.log.info("SKIP: No groups to migrate")
 
 
-def __handle_exporting_groups(group, dry_run=True):
+def handle_exporting_groups(group, dry_run=True):
     full_path = group["full_path"]
     name = group["name"]
     gid = group["id"]
@@ -204,35 +204,63 @@ def __handle_exporting_groups(group, dry_run=True):
         elif loc == "filesystem-aws":
             b.log.error(
                 "NOTICE: Filesystem-AWS exports are not currently supported")
-            # exported = ie.export_thru_fs_aws(pid, name, namespace) if not dry_run else True
         elif loc == "aws":
             pass
-            # exported = ie.export_group_thru_aws(
-            #     gid, full_path, full_parent_namespace, filename) if not dry_run else True
         updated = False
         if exported:
-            # b.log.info("{0}Updating group {1} (ID: {2}) export members in {3}"
-            #            .format(dry_log, full_path, gid, filename))
             if loc == "filesystem":
                 updated = True
-                # updated = project_export.update_project_export_members_for_local(
-                #     name, namespace, filename) if not dry_run else True
             # TODO: Refactor and sync with other scenarios (#119)
             elif loc == "filesystem-aws":
                 b.log.error(
                     "NOTICE: Filesystem-AWS exports are not currently supported")
             elif loc == "aws":
                 updated = True
-                # updated = project_export.update_project_export_members(
-                #     name, namespace, filename) if not dry_run else True
         return {"filename": filename, "exported": exported, "updated": updated}
     except (IOError, RequestException) as e:
         b.log.error("Failed to export group (ID: {0}) to {1} and update members with error:\n{2}"
                     .format(gid, loc, e))
 
 
-def __handle_importing_groups(group, dry_run=True):
-    return {"filename": group["name"]}
+def handle_importing_groups(group, dry_run=True):
+    name = group["name"]
+    full_path = group["full_path"]
+    src_gid = group["id"]
+    filename = ie.get_export_filename_from_namespace_and_name(full_path)
+    group_exists = False
+    gid = None
+    results = {
+        full_path: None
+    }
+    if isinstance(group, str):
+        group = json.loads(group)
+    full_path_with_parent_namespace = "{0}{1}".format(
+        full_parent_namespace + "/" if full_parent_namespace else "", full_path)
+    b.log.info("Searching on destination for group {}".format(
+        full_path_with_parent_namespace))
+    try:
+        group_exists, gid = groups.find_group_by_path(
+            b.config.destination_host, b.config.destination_token, full_path_with_parent_namespace)
+        if not group_exists:
+            b.log.info("{0}Group {1} not found on destination, importing..."
+                       .format(get_dry_log(dry_run), full_path))
+            ie.import_group(
+                group, name, full_path_with_parent_namespace, filename, dry_run)
+        else:
+            b.log.info("{0}Group {1} (ID: {2}) already exists on destination".format(
+                get_dry_log(dry_run), full_path, gid))
+        # In place of checking the import status
+        results[full_path], gid = groups.find_group_by_path(
+            b.config.destination_host, b.config.destination_token, full_path_with_parent_namespace)
+    except RequestException, e:
+        b.log.error(e)
+    except KeyError, e:
+        b.log.error(e)
+        raise KeyError("Something broke in handle_importing_groups group {0} (ID: {1})".format(
+            full_path, src_gid))
+    except OverflowError, e:
+        b.log.error(e)
+    return results
 
 
 def migrate_group_info(dry_run=True):
@@ -354,15 +382,16 @@ def handle_importing_projects(project_json, dry_run=True):
     namespace = project_json["namespace"]
     source_id = project_json["id"]
     archived = project_json["archived"]
-    path = "{0}/{1}".format(namespace, name)
     project_exists = False
     project_id = None
+    dst_path = projects.get_full_namespace_path(
+        full_parent_namespace, namespace, name)
     results = {
-        path: False
+        dst_path: False
     }
     if isinstance(project_json, str):
         project_json = json.loads(project_json)
-    b.log.info("Searching on destination for project {}".format(path))
+    b.log.info("Searching on destination for project {}".format(dst_path))
     try:
         project_exists, project_id = projects.find_project_by_path(
             b.config.destination_host,
@@ -376,15 +405,15 @@ def handle_importing_projects(project_json, dry_run=True):
                 b.config.destination_token,
                 project_id).json()
             b.log.info("Project {0} (ID: {1}) found on destination, with import status: {2}".format(
-                name,
+                dst_path,
                 project_id,
                 import_check["import_status"] if import_check is not None
                 and import_check.get("import_status", None) is not None
                 else import_check)
             )
         if not project_exists:
-            b.log.info("{0}Project {1} (ID: {2}) not found on destination, importing..."
-                       .format(get_dry_log(dry_run), path, project_id))
+            b.log.info("{0}Project {1} (ID: {2}) NOT found on destination, importing..."
+                       .format(get_dry_log(dry_run), dst_path, project_id))
             import_id = ie.import_project(project_json, dry_run)
             if import_id and not dry_run:
                 # Archived projects cannot be migrated
@@ -397,7 +426,7 @@ def handle_importing_projects(project_json, dry_run=True):
                     "Migrating source project {0} (ID: {1}) info".format(name, source_id))
                 post_import_results = migrate_single_project_info(
                     project_json, import_id)
-                results[path] = post_import_results
+                results[dst_path] = post_import_results
     except RequestException, e:
         b.log.error(e)
     except KeyError, e:
