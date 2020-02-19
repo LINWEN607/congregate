@@ -1,3 +1,4 @@
+from types import GeneratorType
 from congregate.migration.gitlab.diff.basediff import BaseDiffClient
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.variables import VariablesApi
@@ -18,10 +19,6 @@ class GroupDiffClient(BaseDiffClient):
             "runners_token",
             "web_url"
         ]
-        # if staged:
-        #     self.source_data = rewrite_list_into_dict(self.load_json_data("%s/data/staged_groups.json" % self.app_path), "full_path")
-        # else:
-        #     self.source_data = rewrite_list_into_dict(self.load_json_data("%s/data/groups.json" % self.app_path), "full_path")
 
         if staged:
             self.source_data = self.load_json_data("%s/data/staged_groups.json" % self.app_path)
@@ -34,20 +31,33 @@ class GroupDiffClient(BaseDiffClient):
         
         for group in self.source_data:
             group_diff = {}
-            group_diff["/groups"] = self.generate_diff(group, self.groups_api.get_group, critical_key="full_path")
+            group_diff["/groups/:id"] = self.generate_diff(group, self.groups_api.get_group, critical_key="full_path")
             group_diff["/groups/:id/variables"] = self.generate_diff(group, self.variables_api.get_variables, obfuscate=True, var_type="group")
+            group_diff["/groups/:id/members"] = self.generate_diff(group, self.groups_api.get_all_group_members)
             diff_report[group["full_path"]] = group_diff
 
         return diff_report
 
     def generate_diff(self, group, endpoint, critical_key=None, obfuscate=False, **kwargs):
-        source_group_data = self.ignore_keys(endpoint(group["id"], self.config.source_host, self.config.source_token, **kwargs).json())
+        source_group_data = endpoint(group["id"], self.config.source_host, self.config.source_token, **kwargs)
+        if isinstance(source_group_data, GeneratorType):
+            source_group_data = self.ignore_keys(list(source_group_data))
+        else:
+            source_group_data = self.ignore_keys(source_group_data.json())
         if self.results.get(group["full_path"]) is not None:
             destination_group_id = self.results[group["full_path"]]["id"]
-            destination_group_data = self.ignore_keys(endpoint(destination_group_id, self.config.destination_host, self.config.destination_token, **kwargs).json())
+            destination_group_data = endpoint(destination_group_id, self.config.destination_host, self.config.destination_token, **kwargs)
+            if isinstance(destination_group_data, GeneratorType):
+                destination_group_data = self.ignore_keys(list(destination_group_data))
+            else:
+                destination_group_data = self.ignore_keys(destination_group_data.json())
         elif self.results.get(group["path"]) is not None:
             destination_group_id = self.results[group["path"]]["id"]
-            destination_group_data = self.ignore_keys(endpoint(destination_group_id, self.config.destination_host, self.config.destination_token, **kwargs).json())
+            destination_group_data = endpoint(destination_group_id, self.config.destination_host, self.config.destination_token, **kwargs)
+            if isinstance(destination_group_data, GeneratorType):
+                destination_group_data = self.ignore_keys(list(destination_group_data))
+            else:
+                destination_group_data = self.ignore_keys(destination_group_data.json())
         else:
             if isinstance(source_group_data, list):
                 destination_group_data = []
@@ -61,11 +71,3 @@ class GroupDiffClient(BaseDiffClient):
             return self.empty_diff()
             
         return self.diff(source_group_data, destination_group_data, critical_key=critical_key, obfuscate=obfuscate)
-
-    def empty_diff(self):
-        return {
-            "diff": None,
-            "accuracy": 1
-        }
-
-    

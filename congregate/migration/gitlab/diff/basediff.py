@@ -58,9 +58,13 @@ class BaseDiffClient(BaseClass):
         }
 
     def ignore_keys(self, data):
-        for key in self.keys_to_ignore:
-            if key in data:
-                data.pop(key)
+        if isinstance(data, list):
+            for x in xrange(len(data)):
+                data[x] = self.ignore_keys(data[x])
+        else:
+            for key in self.keys_to_ignore:
+                if key in data:
+                    data.pop(key)
         return data
 
     def obfuscate_values(self, obj):
@@ -79,4 +83,10 @@ class BaseDiffClient(BaseClass):
         return {
             "diff": diff_report,
             "results": accuracy_results
+        }
+
+    def empty_diff(self):
+        return {
+            "diff": None,
+            "accuracy": 1
         }

@@ -18,8 +18,7 @@ class MigrationEndToEndTest(unittest.TestCase):
     def test_user_migration_diff(self):
         user_diff = UserDiffClient("%s/data/user_migration_results.json" % app_path)
         print "**User Diff Results**"
-        pp = pprint.PrettyPrinter(indent=2)
-        pp.pprint(user_diff.generate_report())
+        print json.dumps(user_diff.generate_report(), indent=4)
 
     def test_group_migration_diff(self):
         group_diff = GroupDiffClient("%s/data/group_migration_results.json" % app_path)
