@@ -214,20 +214,6 @@ class GroupsApi():
         """
         return api.list_all(host, token, "groups/%d/boards" % id)
 
-    def get_group_issue_board(self, host, token, gid, bid):
-        """
-        Gets a single group issue board
-
-        GitLab API Doc: https://docs.gitlab.com/ee/api/group_boards.html#single-group-issue-board
-
-            :param: host: (str) GitLab host URL
-            :param: token: (str) Access token to GitLab instance
-            :param: gid: (int) GitLab group ID
-            :param: bid: (str) Board ID
-            :yield: Response object containing the response to GET /groups/:id/boards/:board_id
-        """
-        return api.generate_get_request(host, token, "groups/{0}/boards/{1}".format(gid, bid))
-
     def get_all_group_labels(self, id, host, token):
         """
         Get all labels for a given group
@@ -240,20 +226,6 @@ class GroupsApi():
             :yield: Generator returning JSON of each result from GET /groups/:id/labels
         """
         return api.list_all(host, token, "groups/%d/labels" % id)
-
-    def get_group_label(self, host, token, gid, lid):
-        """
-        Get a single label for a given group
-
-        GitLab API Doc: https://docs.gitlab.com/ee/api/group_labels.html#get-a-single-group-label
-
-            :param: host: (str) GitLab host URL
-            :param: token: (str) Access token to GitLab instance
-            :param: gid: (int) GitLab group ID
-            :param: lid: (int) Label ID
-            :yield: Response object containing the response to GET /groups/:id/labels/:label_id
-        """
-        return api.generate_get_request(host, token, "groups/{0}/labels/{1}".format(gid, lid))
 
     def get_all_group_milestones(self, id, host, token):
         """
@@ -268,20 +240,6 @@ class GroupsApi():
         """
         return api.list_all(host, token, "groups/%d/milestones" % id)
 
-    def get_group_milestone(self, host, token, gid, mid):
-        """
-        Gets a single group milestone
-
-        GitLab API Doc: https://docs.gitlab.com/ee/api/group_milestones.html#get-single-milestone
-
-            :param: host: (str) GitLab host URL
-            :param: token: (str) Access token to GitLab instance
-            :param: gid: (int) GitLab group ID
-            :param: mid: (int) Milestone ID
-            :yield: Response object containing the response to GET /groups/:id/milestones/:milestone_id
-        """
-        return api.generate_get_request(host, token, "groups/{0}/milestones/{1}".format(gid, mid))
-
     def get_all_group_hooks(self, id, host, token):
         """
         Get a list of group hooks
@@ -294,20 +252,6 @@ class GroupsApi():
             :yield: Generator returning JSON of each result from GET /groups/:id/hooks
         """
         return api.list_all(host, token, "groups/%d/hooks" % id)
-
-    def get_group_hook(self, host, token, gid, hid):
-        """
-        Get a specific hook for a group
-
-        GitLab API Doc: https://docs.gitlab.com/ee/api/groups.html#get-group-hook
-
-            :param: host: (str) GitLab host URL
-            :param: token: (str) Access token to GitLab instance
-            :param: gid: (int) GitLab group ID
-            :param: hid: (int) Hook ID
-            :yield: Response object containing the response to GET /groups/:id/hooks/:hook_id
-        """
-        return api.generate_get_request(host, token, "groups/{0}/hooks/{1}".format(gid, hid))
 
     def get_all_group_projects(self, id, host, token):
         """
@@ -347,17 +291,3 @@ class GroupsApi():
             :yield: Generator returning JSON of each result from GET /groups/:id/audit_events
         """
         return api.list_all(host, token, "groups/%d/audit_events" % id)
-
-    def get_group_audit_event(self, host, token, gid, aid):
-        """
-        Gets a single group audit event
-
-        GitLab API Doc: https://docs.gitlab.com/ee/api/group_milestones.html#get-single-milestone
-
-            :param: host: (str) GitLab host URL
-            :param: token: (str) Access token to GitLab instance
-            :param: gid: (int) GitLab group ID
-            :param: aid: (int) Audit Event ID
-            :yield: Response object containing the response to GET /groups/:id/audit_events/:audit_event_id
-        """
-        return api.generate_get_request(host, token, "groups/{0}/audit_events/{1}".format(gid, aid))
