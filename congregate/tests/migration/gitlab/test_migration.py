@@ -6,6 +6,7 @@ import pytest
 from congregate.cli import do_all
 from congregate.migration.gitlab.diff.userdiff import UserDiffClient
 from congregate.migration.gitlab.diff.groupdiff import GroupDiffClient
+from congregate.migration.gitlab.diff.projectdiff import ProjectDiffClient
 from congregate.helpers.base_module import app_path
 
 
@@ -24,4 +25,9 @@ class MigrationEndToEndTest(unittest.TestCase):
         group_diff = GroupDiffClient("%s/data/group_migration_results.json" % app_path)
         print "**Group Diff Results**"
         print json.dumps(group_diff.generate_group_diff_report(), indent=4)
+
+    def test_project_migration_diff(self):
+        project_diff = ProjectDiffClient("%s/data/project_results.json" % app_path)
+        print "**Project Diff Results**"
+        print json.dumps(project_diff.generate_project_diff_report(), indent=4)
 

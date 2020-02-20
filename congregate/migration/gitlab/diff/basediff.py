@@ -70,7 +70,8 @@ class BaseDiffClient(BaseClass):
     def obfuscate_values(self, obj):
         keys_to_obfuscate = [
             "value",
-            "key"
+            "key",
+            "runners_token"
         ]
         for key in keys_to_obfuscate:
             if key in obj:

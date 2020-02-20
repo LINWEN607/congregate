@@ -110,6 +110,11 @@ def rewrite_json_list_into_dict(l):
                 "hello": {
                     "world": "how are you"
                 }
+            },
+            {
+                "world": {
+                    "how": "are you"
+                }
             }
         ]
 
@@ -117,6 +122,9 @@ def rewrite_json_list_into_dict(l):
         {
             "hello": {
                 "world": "how are you"
+            },
+            "world": {
+                "how": "are you"
             }
         }
 
