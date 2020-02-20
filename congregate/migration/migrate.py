@@ -10,8 +10,9 @@ from re import sub
 from multiprocessing.dummy import Pool as ThreadPool
 from multiprocessing import Lock
 from collections import Counter
-from requests.exceptions import RequestException
 from datetime import datetime
+from shutil import copy
+from requests.exceptions import RequestException
 
 from congregate.helpers import api, migrate_utils
 from congregate.helpers.misc_utils import get_dry_log, json_pretty
@@ -110,12 +111,11 @@ def migrate_user_info(dry_run=True):
     b.log.info("{}Migrating user info".format(get_dry_log(dry_run)))
     new_users = users.migrate_user_info(dry_run)
 
-    with open("%s/data/user_migration_results.json" % b.app_path, "w") as f:
-        json.dump(new_users, f, indent=4)
-
     # This list is of user ids from found users via email or newly created users
     # So, new_user_ids is a bit of a misnomer
     if new_users:
+        with open("%s/data/user_migration_results.json" % b.app_path, "w") as f:
+            json.dump(new_users, f, indent=4)
         with open("%s/data/new_user_ids.txt" % b.app_path, "w") as f:
             for new_user in new_users:
                 f.write("%s\n" % new_user)
@@ -195,7 +195,8 @@ def migrate_project_info(dry_run=True, skip_project_export=False, skip_project_i
             file_path = "%s/data/project_results_%s.json" % (b.app_path, end_time)
             b.log.info("### Writing output to %s" % file_path)
             with open(file_path, "w") as f:
-                json.dump(import_results, f)
+                json.dump(import_results, f, indent=4)
+            copy(file_path, "%s/data/project_results.json" % b.app_path)
         else:
             b.log.info("SKIP: Assuming staged projects will be later imported")
     else:
@@ -331,6 +332,8 @@ def migrate_single_project_info(project, new_id):
             full_parent_namespace,
             project["namespace"],
             project["name"])
+
+    results["id"] = new_id
 
     # Project Members
     # NOTE: Members should be handled on import. If that is not the case, the line below and variable members should be uncommented.
