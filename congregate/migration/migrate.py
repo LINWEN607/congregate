@@ -186,9 +186,12 @@ def migrate_project_info(dry_run=True, skip_project_export=False, skip_project_i
             import_pool.join()
 
             # append Total : Successful count of project imports
-            import_results.append(Counter("Total : Successful: {}"
-                                          .format(len(import_results)) for d in import_results for k, v in d.items() if v)
-                                  or "Total : Successful: 0 : 0")
+            import_results.append({
+                "project import results": {
+                    "Total": len(import_results),
+                    "Successful": (len(import_results) for d in import_results for k, v in d.items() if v)
+                }
+            })
             b.log.info("### {0}Project import results ###\n{1}"
                        .format(dry_log, json_pretty(import_results)))
             end_time = str(datetime.now()).replace(" ", "_")
@@ -253,7 +256,8 @@ def migrate_given_export(project_json, dry_run=True):
     namespace = project_json["namespace"]
     source_id = project_json["id"]
     archived = project_json["archived"]
-    path = "{0}/{1}".format(namespace, name)
+    # path = "{0}/{1}".format(namespace, name)
+    path = project_json["path_with_namespace"]
     project_exists = False
     project_id = None
     results = {

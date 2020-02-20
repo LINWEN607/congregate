@@ -102,6 +102,33 @@ def rewrite_list_into_dict(l, comparison_key, prefix=""):
 
     return rewritten_groups
 
+def rewrite_json_list_into_dict(l):
+    """
+        Converts a JSON list:
+        [
+            {
+                "hello": {
+                    "world": "how are you"
+                }
+            }
+        ]
+
+        to:
+        {
+            "hello": {
+                "world": "how are you"
+            }
+        }
+
+        Note: The top level keys in the nested objects must be unique or else data will be overwritten
+    """
+    new_dict = {}
+    for i in xrange(len(l)):
+        key = l[i].keys()[0]
+        new_dict[key] = l[i][key]
+
+    return new_dict
+
 def get_congregate_path():
     app_path = os.getenv("CONGREGATE_PATH")
     if app_path is None:
@@ -139,7 +166,10 @@ def clean_data():
         "groups.json",
         "users_not_found.json",
         "user_migration_results.json",
-        "group_migration_results.json"
+        "group_migration_results.json",
+        "project_results.json",
+        "new_users.json",
+        "new_user_ids.txt"
     ]
     if os.path.isdir("{0}/data".format(app_path)):
         for f in files_to_delete:

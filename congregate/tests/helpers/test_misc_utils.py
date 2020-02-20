@@ -154,3 +154,28 @@ def test_is_recent_file(mtime, size, exists):
     size.return_value = 1
     mtime.return_value = 9999999999
     assert misc.is_recent_file("test") is True
+
+
+def test_rewrite_json_list_into_dict():
+    initial = [
+        {
+            "hello": {
+                "world": "how are you"
+            }
+        },
+        {
+            "world": {
+                "this": "is another test"
+            }
+        }
+    ]
+    expected = {
+        "hello": {
+            "world": "how are you"
+        },
+        "world": {
+            "this": "is another test"
+        }
+    }
+
+    assert misc.rewrite_json_list_into_dict(initial) == expected
