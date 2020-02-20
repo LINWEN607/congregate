@@ -15,7 +15,7 @@ from congregate.migration.gitlab.groups import GroupsClient
 from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
-from congregate.helpers.migrate_utils import get_project_filename, get_project_namespace, \
+from congregate.helpers.migrate_utils import get_project_namespace, \
     is_user_project, get_member_id_for_user_project
 from congregate.models.user_logging_model import UserLoggingModel
 
@@ -174,6 +174,7 @@ class ImportExportClient(BaseClass):
             project = json.loads(project)
 
         name = project["name"]
+        namespace = project["namespace"]
         override_params = self.get_override_params(project)
 
         if is_user_project(project):
@@ -185,7 +186,7 @@ class ImportExportClient(BaseClass):
                     member_id,
                     self.config.destination_host,
                     self.config.destination_token).json()
-                namespace = new_user["username"]
+                dst_namespace = new_user["username"]
                 self.log.info("{0}{1} is a USER project (owner: {2}). Attempting to import into their namespace"
                               .format(get_dry_log(dry_run), name, UserLoggingModel().get_logging_model(new_user)))
             else:
@@ -193,7 +194,7 @@ class ImportExportClient(BaseClass):
                     "USER project FOUND, but NO member ID returned for project {0}".format(name))
                 return None
         else:
-            namespace = get_project_namespace(project)
+            dst_namespace = get_project_namespace(project)
             self.log.info(
                 "%s%s is NOT a USER project. Attempting to import into a group namespace", get_dry_log(dry_run), name)
             if self.config.parent_id is None:
@@ -202,7 +203,8 @@ class ImportExportClient(BaseClass):
                 #   but recent experience would suggest this part isn't as tight
                 #   Certainly not the GitHost scenario
                 full_path = self.get_full_path(project["http_url_to_repo"])
-                self.log.info("Searching for namespace %s", full_path)
+                self.log.info(
+                    "Searching for destination namespace {}".format(dst_namespace))
                 for group in self.groups_api.search_for_group(
                         project["namespace"],
                         self.config.destination_host,
@@ -211,18 +213,17 @@ class ImportExportClient(BaseClass):
                         if group["full_path"].lower() == full_path.lower():
                             self.log.info(
                                 "Found group {}".format(group["full_path"]))
-                            namespace = group["id"]
+                            dst_namespace = group["id"]
                             break
 
         exported = False
-        # import_response = None
         timeout = 0
         filename = self.get_export_filename_from_namespace_and_name(
             namespace, name)
 
         if not dry_run:
             import_response = self.attempt_import(
-                filename, name, namespace, override_params, project)
+                filename, name, dst_namespace, override_params, project)
             self.log.info("Project {0} (file: {1}) import response:\n{2}"
                           .format(name, filename, import_response))
 
@@ -240,7 +241,7 @@ class ImportExportClient(BaseClass):
                 exported,
                 filename,
                 name,
-                namespace,
+                dst_namespace,
                 override_params,
                 project,
                 timeout)
@@ -253,7 +254,7 @@ class ImportExportClient(BaseClass):
             migration_dry_run("project", {
                 "filename": filename,
                 "name": name,
-                "namespace": namespace,
+                "namespace": dst_namespace,
                 "override_params": override_params,
                 "project": project})
 
@@ -306,8 +307,8 @@ class ImportExportClient(BaseClass):
                     headers = {
                         "Private-Token": self.config.destination_token
                     }
-                    resp = api.generate_post_request(self.config.destination_host, self.config.destination_token,
-                                                     "groups/import", data, files=files, headers=headers)
+                    resp = self.groups_api.import_group(
+                        self.config.destination_host, self.config.destination_token, data=data, files=files, headers=headers)
             return resp
         except RequestException as re:
             self.log.error(
@@ -518,17 +519,14 @@ class ImportExportClient(BaseClass):
                     "namespace": namespace,
                     "name": name
                 }
-
                 files = {
                     "file": (filename, f)
                 }
-
                 headers = {
                     "Private-Token": self.config.destination_token
                 }
-
-                resp = api.generate_post_request(self.config.destination_host, self.config.destination_token,
-                                                 "projects/import", data, files=files, headers=headers)
+                resp = self.projects_api.import_project(
+                    self.config.destination_host, self.config.destination_token, data=data, files=files, headers=headers)
                 import_response = resp.text
         return import_response
 
@@ -581,12 +579,12 @@ class ImportExportClient(BaseClass):
             else:
                 # NOTE: Export status API endpoint not available yet
                 exported = self.wait_for_export_to_finish(
-                    gid, full_path) or True
+                    gid, full_path, is_project=False) or True
 
                 url = "{0}/api/v4/groups/{1}/export/download".format(
                     self.config.source_host, gid)
                 self.log.info("Downloading group {0} (source ID: {1}) as {2}".format(
-                    full_path_with_parent_namespace, gid, filename))
+                    full_path, gid, filename))
                 download_file(url, self.config.filesystem_path, filename=filename, headers={
                               "PRIVATE-TOKEN": self.config.source_token})
         else:

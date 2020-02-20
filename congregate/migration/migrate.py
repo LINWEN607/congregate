@@ -86,6 +86,7 @@ def migrate(
         hooks.migrate_system_hooks(dry_run)
 
         # Migrate groups
+        # NOTE: Keep for historical reasons
         # if not skip_groups:
         #     migrate_group_info(dry_run)
         __migrate_group_info(dry_run, skip_group_export, skip_group_import)
@@ -226,7 +227,6 @@ def handle_importing_groups(group, dry_run=True):
     name = group["name"]
     full_path = group["full_path"]
     src_gid = group["id"]
-    filename = ie.get_export_filename_from_namespace_and_name(full_path)
     group_exists = False
     gid = None
     results = {
@@ -239,11 +239,12 @@ def handle_importing_groups(group, dry_run=True):
     b.log.info("Searching on destination for group {}".format(
         full_path_with_parent_namespace))
     try:
+        filename = ie.get_export_filename_from_namespace_and_name(full_path)
         group_exists, gid = groups.find_group_by_path(
             b.config.destination_host, b.config.destination_token, full_path_with_parent_namespace)
         if not group_exists:
             b.log.info("{0}Group {1} not found on destination, importing..."
-                       .format(get_dry_log(dry_run), full_path))
+                       .format(get_dry_log(dry_run), full_path_with_parent_namespace))
             ie.import_group(
                 group, name, full_path_with_parent_namespace, filename, dry_run)
         else:
@@ -334,11 +335,11 @@ def migrate_project_info(dry_run=True, skip_project_export=False, skip_project_i
 
 def handle_exporting_projects(project, dry_run=True):
     name = project["name"]
+    namespace = project["namespace"]
     pid = project["id"]
     loc = b.config.location.lower()
     dry_log = get_dry_log(dry_run)
     try:
-        namespace = migrate_utils.get_project_namespace(project)
         filename = ie.get_export_filename_from_namespace_and_name(
             namespace, name)
         if loc not in ["filesystem", "aws"]:
@@ -503,6 +504,7 @@ def migrate_single_project_info(project, new_id):
         old_id, new_id, name)
 
     # Awards
+    # TODO: Disable -> Project exports now include awards
     users_map = {}
     results["awards"] = awards.migrate_awards(
         old_id, new_id, name, users_map, mr_enabled)

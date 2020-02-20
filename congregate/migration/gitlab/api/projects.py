@@ -193,3 +193,15 @@ class ProjectsApi():
             :return: Response object containing the response to POST /projects/:id/export
         """
         return api.generate_post_request(host, token, "projects/{}/export".format(pid), data=data, headers=headers)
+
+    def import_project(self, host, token, data=None, files=None, headers=None):
+        """
+        Import a project using the Projects export/import API
+
+            :param: host: (str) The destination host
+            :param: token: (str) A token that can access the destination host with import permissions
+            :param: files: (str) The project filename as it was exported
+            :param: data: (str) Relevant data for the export
+            :param: headers: (str) The headers for the API request
+        """
+        return api.generate_post_request(host, token, "projects/import", data=data, files=files, headers=headers)
