@@ -189,7 +189,7 @@ def migrate_project_info(dry_run=True, skip_project_export=False, skip_project_i
             import_results.append({
                 "project import results": {
                     "Total": len(import_results),
-                    "Successful": (len(import_results) for d in import_results for k, v in d.items() if v)
+                    "Successful": sum([len(import_results[x]) for x in import_results if isinstance(import_results[x], dict)])
                 }
             })
             print import_results
