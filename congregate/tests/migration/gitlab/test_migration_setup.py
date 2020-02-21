@@ -57,7 +57,7 @@ class MigrationEndToEndTestSetup(unittest.TestCase):
             "False", # keep_blocked_users
             "True", # password reset email
             "False", # randomized password
-            "1", # Threads
+            "3", # Threads
             "True", # strip namespace prefix
             "30" # import wait time
         ]

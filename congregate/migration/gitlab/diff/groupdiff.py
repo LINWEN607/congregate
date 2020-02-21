@@ -6,7 +6,7 @@ from congregate.helpers.misc_utils import rewrite_list_into_dict
 
 class GroupDiffClient(BaseDiffClient):
     '''
-        Extension of BaseDiffClient focused on finding the differences between migrated users
+        Extension of BaseDiffClient focused on finding the differences between migrated groups
     '''
     def __init__(self, results_file, staged=False):
         super(GroupDiffClient, self).__init__()

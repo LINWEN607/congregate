@@ -192,6 +192,7 @@ def migrate_project_info(dry_run=True, skip_project_export=False, skip_project_i
                     "Successful": (len(import_results) for d in import_results for k, v in d.items() if v)
                 }
             })
+            print import_results
             b.log.info("### {0}Project import results ###\n{1}"
                        .format(dry_log, json_pretty(import_results)))
             end_time = str(datetime.now()).replace(" ", "_")
