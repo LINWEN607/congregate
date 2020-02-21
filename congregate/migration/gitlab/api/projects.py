@@ -426,3 +426,270 @@ class ProjectsApi():
             :yield: Generator returning JSON of each result from GET /projects/:id/deploy_keys
         """
         return api.list_all(host, token, "projects/%d/deploy_keys" % id)
+
+    def get_all_project_jobs(self, id, host, token):
+        """
+        Get a list of jobs in a project
+
+        https://docs.gitlab.com/ee/api/jobs.html#list-project-jobs
+
+            :param: id: (int) GitLab project ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Generator returning JSON of each result from GET /projects/:id/jobs
+        """
+        return api.list_all(host, token, "projects/%d/jobs" % id)
+
+    def get_all_project_pipelines(self, id, host, token):
+        """
+        Get a list of pipelines in a project
+
+        https://docs.gitlab.com/ee/api/pipelines.html#list-project-pipelines
+
+            :param: id: (int) GitLab project ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Generator returning JSON of each result from GET /projects/:id/pipelines
+        """
+        return api.list_all(host, token, "projects/%d/pipelines" % id)
+
+    def get_all_project_triggers(self, id, host, token):
+        """
+        Get a list of build triggers for a given project
+
+        https://docs.gitlab.com/ee/api/pipeline_triggers.html#list-project-triggers
+
+            :param: id: (int) GitLab project ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Generator returning JSON of each result from GET /projects/:id/triggers
+        """
+        return api.list_all(host, token, "projects/%d/triggers" % id)
+
+    def get_all_project_pipeline_variables(self, prid, piid, host, token):
+        """
+        Get variables of a given pipeline
+
+        https://docs.gitlab.com/ee/api/pipelines.html#get-variables-of-a-pipeline
+
+            :param: prid: (int) GitLab project ID
+            :param: piid: (int) Pipeline ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Generator returning JSON of each result from GET /projects/:id/pipelines/:pipeline_id/variables
+        """
+        return api.list_all(host, token, "projects/{0}/pipelines/{1}/variables".format(prid, piid))
+
+    def get_all_project_hooks(self, id, host, token):
+        """
+        Get a list of project hooks
+
+        https://docs.gitlab.com/ee/api/projects.html#list-project-hooks
+
+            :param: id: (int) GitLab project ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Generator returning JSON of each result from GET /projects/:id/hooks
+        """
+        return api.list_all(host, token, "projects/%d/hooks" % id)
+
+    def get_all_project_repository_tree(self, id, host, token):
+        """
+        Get a list of repository files and directories in a project
+
+        https://docs.gitlab.com/ee/api/repositories.html#list-repository-tree
+
+            :param: id: (int) GitLab project ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Generator returning JSON of each result from GET /projects/:id/repository/tree
+        """
+        return api.list_all(host, token, "projects/%d/repository/tree" % id)
+
+    def get_all_project_repository_contributors(self, id, host, token):
+        """
+        Get repository contributors list
+
+        https://docs.gitlab.com/ee/api/repositories.html#contributors
+
+            :param: id: (int) GitLab project ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Generator returning JSON of each result from GET /projects/:id/repository/contributors
+        """
+        return api.list_all(host, token, "projects/%d/repository/contributors" % id)
+
+    def get_all_project_repository_branches(self, id, host, token):
+        """
+        Get a list of repository branches from a project
+
+        https://docs.gitlab.com/ee/api/branches.html#list-repository-branches
+
+            :param: id: (int) GitLab project ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Generator returning JSON of each result from GET /projects/:id/repository/branches
+        """
+        return api.list_all(host, token, "projects/%d/repository/branches" % id)
+
+    def get_all_project_repository_tags(self, id, host, token):
+        """
+        Get a list of repository tags from a project
+
+        https://docs.gitlab.com/ee/api/tags.html#list-project-repository-tags
+
+            :param: id: (int) GitLab project ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Generator returning JSON of each result from GET /projects/:id/repository/tags
+        """
+        return api.list_all(host, token, "projects/%d/repository/tags" % id)
+
+    def get_all_project_repository_commits(self, id, host, token):
+        """
+        Get a list of repository commits in a project
+
+        https://docs.gitlab.com/ee/api/commits.html#list-repository-commits
+
+            :param: id: (int) GitLab project ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Generator returning JSON of each result from GET /projects/:id/repository/commits
+        """
+        return api.list_all(host, token, "projects/%d/repository/commits" % id)
+
+    def get_project_commit_diff(self, pid, sha, host, token):
+        """
+        Get the diff of a commit in a project
+
+        https://docs.gitlab.com/ee/api/commits.html#get-the-diff-of-a-commit
+
+            :param: pid: (int) GitLab project ID
+            :param: sha: (int) Commit SHA
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Generator returning JSON of each result from GET /projects/:id/repository/commits/:sha/diff
+        """
+        return api.list_all(host, token, "projects/{0}/repository/commits/{1}/diff".format(pid, sha))
+
+    def get_project_commit_comments(self, pid, sha, host, token):
+        """
+        Get the comments of a commit in a project
+
+        https://docs.gitlab.com/ee/api/commits.html#get-the-comments-of-a-commit
+
+            :param: pid: (int) GitLab project ID
+            :param: sha: (int) Commit SHA
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Generator returning JSON of each result from GET /projects/:id/repository/commits/:sha/comments
+        """
+        return api.list_all(host, token, "projects/{0}/repository/commits/{1}/comments".format(pid, sha))
+
+    def get_project_commit_refs(self, pid, sha, host, token):
+        """
+        Get all references (from branches or tags) a commit is pushed to
+
+        https://docs.gitlab.com/ee/api/commits.html#get-references-a-commit-is-pushed-to
+
+            :param: pid: (int) GitLab project ID
+            :param: sha: (int) Commit SHA
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Generator returning JSON of each result from GET /projects/:id/repository/commits/:sha/refs
+        """
+        return api.list_all(host, token, "projects/{0}/repository/commits/{1}/refs".format(pid, sha))
+
+    def get_project_commit_merge_requests(self, pid, sha, host, token):
+        """
+        Get a list of Merge Requests related to the specified commit
+
+        https://docs.gitlab.com/ee/api/commits.html#list-merge-requests-associated-with-a-commit
+
+            :param: pid: (int) GitLab project ID
+            :param: sha: (int) Commit SHA
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Generator returning JSON of each result from GET /projects/:id/repository/commits/:sha/merge_requests
+        """
+        return api.list_all(host, token, "projects/{0}/repository/commits/{1}/merge_requests".format(pid, sha))
+
+    def get_project_commit_statuses(self, pid, sha, host, token):
+        """
+        List the statuses of a commit in a project
+
+        https://docs.gitlab.com/ee/api/commits.html#list-the-statuses-of-a-commit
+
+            :param: pid: (int) GitLab project ID
+            :param: sha: (int) Commit SHA
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Generator returning JSON of each result from GET /projects/:id/repository/commits/:sha/statuses
+        """
+        return api.list_all(host, token, "projects/{0}/repository/commits/{1}/statuses".format(pid, sha))
+
+    def get_all_project_push_rules(self, id, host, token):
+        """
+        Get the push rules of a project
+
+        https://docs.gitlab.com/ee/api/projects.html#get-project-push-rules
+
+            :param: id: (int) GitLab project ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Generator returning JSON of each result from GET /projects/:id/push_rule
+        """
+        return api.list_all(host, token, "projects/%d/push_rule" % id)
+
+    def get_all_project_approval_configuration(self, id, host, token):
+        """
+        Get the approval configuration of a project
+
+        https://docs.gitlab.com/ee/api/merge_request_approvals.html#get-configuration
+
+            :param: id: (int) GitLab project ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Generator returning JSON of each result from GET /projects/:id/approvals
+        """
+        return api.list_all(host, token, "projects/%d/approvals" % id)
+
+    def get_all_project_approval_rules(self, id, host, token):
+        """
+        Get the approval rules of a project
+
+        https://docs.gitlab.com/ee/api/merge_request_approvals.html#get-project-level-rules
+
+            :param: id: (int) GitLab project ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Generator returning JSON of each result from GET /projects/:id/approval_rules
+        """
+        return api.list_all(host, token, "projects/%d/approval_rules" % id)
+
+    def get_all_project_registry_repositories(self, id, host, token):
+        """
+        Get a list of registry repositories in a project
+
+        https://docs.gitlab.com/ee/api/container_registry.html#list-registry-repositories
+
+            :param: id: (int) GitLab project ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Generator returning JSON of each result from GET /projects/:id/registry/repositories
+        """
+        return api.list_all(host, token, "projects/%d/registry/repositories" % id)
+
+    def get_all_project_registry_repository_tags(self, pid, rid, host, token):
+        """
+        Get a list of tags for given registry repository
+
+        https://docs.gitlab.com/ee/api/container_registry.html#list-registry-repository-tags
+
+            :param: pid: (int) GitLab project ID
+            :param: rid: (int) Repository ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Generator returning JSON of each result from GET /projects/:id/registry/repositories/:repository_id/tags
+        """
+        return api.list_all(host, token, "projects/{0}/registry/repositories/{1}/tags".format(pid, rid))
