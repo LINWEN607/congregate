@@ -22,6 +22,9 @@ class MigrationEndToEndTestSetup(unittest.TestCase):
     def test_seed_data(self):
         self.s.generate_seed_data(dry_run=False)
 
+    def test_do_all(self):
+        do_all.do_all(dry_run=False)
+
     def generate_default_config_with_tokens(self):
         print "Generating Destination Token"
         destination_token = self.t.generate_token("destination_token", "2020-08-27", url=os.getenv("GITLAB_DEST"), username="root", pword=uuid4().hex) # Destination access token

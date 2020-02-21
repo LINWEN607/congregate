@@ -12,9 +12,9 @@ from congregate.helpers.base_module import app_path
 
 @pytest.mark.e2e
 class MigrationEndToEndTest(unittest.TestCase):
-    def setUp(self):
-        # pass
-        do_all.do_all(dry_run=False)
+    # def setUp(self):
+    #     # pass
+    #     do_all.do_all(dry_run=False)
 
     def test_user_migration_diff(self):
         user_diff = UserDiffClient("%s/data/user_migration_results.json" % app_path)
