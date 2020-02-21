@@ -260,7 +260,7 @@ class ProjectsApi():
 
     def get_all_project_starrers(self, id, host, token):
         """
-        Gets a list of a project’s badges and its group badges
+        Gets a list of a project badges and its group badges
 
         https://docs.gitlab.com/ee/api/project_badges.html#project-badges-api
 
@@ -273,7 +273,7 @@ class ProjectsApi():
 
     def get_all_project_issues(self, id, host, token):
         """
-        Get a list of a project’s issues
+        Get a list of issues for the given project
 
         https://docs.gitlab.com/ee/api/issues.html#list-project-issues
 
@@ -338,7 +338,7 @@ class ProjectsApi():
 
     def get_all_project_releases(self, id, host, token):
         """
-        Returns a paginated list of given project's releases
+        Returns a paginated list releases for a given project
 
         https://docs.gitlab.com/ee/api/releases/#list-releases
 
@@ -364,7 +364,7 @@ class ProjectsApi():
 
     def get_all_project_variables(self, id, host, token):
         """
-        Get list of a project’s variables
+        Get list of variables for the given project
 
         https://docs.gitlab.com/ee/api/project_level_variables.html#list-project-variables
 
@@ -416,7 +416,7 @@ class ProjectsApi():
 
     def get_all_project_deploy_keys(self, id, host, token):
         """
-        Get a list of a project’s deploy keys
+        Get a list of deploy keys for the given project
 
         https://docs.gitlab.com/ee/api/deploy_keys.html#list-project-deploy-keys
 
