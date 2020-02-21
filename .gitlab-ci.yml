@@ -87,6 +87,7 @@ test:end-to-end:
     - export GITLAB_DEST_REG_URL=gitlab_destination:4567
     - poetry run pytest -s -m e2e_setup congregate/tests/
     - poetry run pytest -s -m e2e --cov-config=.coveragerc --cov=congregate congregate/tests/
+  after_script:
     - poetry run aws ec2 terminate-instances --instance-ids $(cat instance_id)
 
 remove redundant docker images:
