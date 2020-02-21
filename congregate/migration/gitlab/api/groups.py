@@ -202,7 +202,7 @@ class GroupsApi():
 
     def get_all_group_members_incl_inherited(self, gid, host, token):
         """
-        Gets a list of group or project members viewable by the authenticated user, including inherited members through ancestor groups
+        Gets a list of group members viewable by the authenticated user, including inherited members through ancestor groups
 
         GitLab API Doc: https://docs.gitlab.com/ee/api/members.html#list-all-members-of-a-group-or-project-including-inherited-members
 

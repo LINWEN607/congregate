@@ -205,3 +205,224 @@ class ProjectsApi():
             :param: headers: (str) The headers for the API request
         """
         return api.generate_post_request(host, token, "projects/import", data=data, files=files, headers=headers)
+
+    def get_all_project_users(self, id, host, token):
+        """
+        Get the users list of a project
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/projects.html#get-project-users
+
+            :param: id: (int) GitLab project ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Generator returning JSON of each result from GET /projects/:id/users
+        """
+        return api.list_all(host, token, "projects/%d/users" % id)
+
+    def get_all_project_forks(self, id, host, token):
+        """
+        List the projects accessible to the calling user that have an established, forked relationship with the specified project
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/projects.html#list-forks-of-a-project
+
+            :param: id: (int) GitLab project ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Generator returning JSON of each result from GET /projects/:id/forks
+        """
+        return api.list_all(host, token, "projects/%d/forks" % id)
+
+    def get_all_project_members_incl_inherited(self, id, host, token):
+        """
+        Gets a list of project members viewable by the authenticated user, including inherited members through ancestor groups
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/members.html#list-all-members-of-a-group-or-project-including-inherited-members
+
+            :param: id: (int) GitLab project ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Generator returning JSON of each result from GET /projects/:id/members/all
+        """
+        return api.list_all(host, token, "projects/%d/members/all" % id)
+
+    def get_all_project_starrers(self, id, host, token):
+        """
+        List the users who starred the specified project
+
+        https://docs.gitlab.com/ee/api/projects.html#list-starrers-of-a-project
+
+            :param: id: (int) GitLab project ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Generator returning JSON of each result from GET /projects/:id/starrers
+        """
+        return api.list_all(host, token, "projects/%d/starrers" % id)
+
+    def get_all_project_starrers(self, id, host, token):
+        """
+        Gets a list of a project’s badges and its group badges
+
+        https://docs.gitlab.com/ee/api/project_badges.html#project-badges-api
+
+            :param: id: (int) GitLab project ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Generator returning JSON of each result from GET /projects/:id/badges
+        """
+        return api.list_all(host, token, "projects/%d/badges" % id)
+
+    def get_all_project_issues(self, id, host, token):
+        """
+        Get a list of a project’s issues
+
+        https://docs.gitlab.com/ee/api/issues.html#list-project-issues
+
+            :param: id: (int) GitLab project ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Generator returning JSON of each result from GET /projects/:id/issues
+        """
+        return api.list_all(host, token, "projects/%d/issues" % id)
+
+    def get_all_project_issue_notes(self, pid, iid, host, token):
+        """
+        Gets a list of all notes for a given issue
+
+        https://docs.gitlab.com/ee/api/notes.html#list-project-issue-notes
+
+            :param: id: (int) GitLab project ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Generator returning JSON of each result from GET /projects/:id/issues/:issue_iid/notes
+        """
+        return api.list_all(host, token, "projects/{0}/issues/{1}/notes".format(pid, iid))
+
+    def get_all_project_boards(self, id, host, token):
+        """
+        Lists Issue Boards in the given project
+
+        https://docs.gitlab.com/ee/api/boards.html#project-board
+
+            :param: id: (int) GitLab project ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Generator returning JSON of each result from GET /projects/:id/boards
+        """
+        return api.list_all(host, token, "projects/%d/boards" % id)
+
+    def get_all_project_labels(self, id, host, token):
+        """
+        Get all labels for a given project
+
+        https://docs.gitlab.com/ee/api/labels.html#list-labels
+
+            :param: id: (int) GitLab project ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Generator returning JSON of each result from GET /projects/:id/labels
+        """
+        return api.list_all(host, token, "projects/%d/labels" % id)
+
+    def get_all_project_milestones(self, id, host, token):
+        """
+        Returns a list of project milestones
+
+        https://docs.gitlab.com/ee/api/milestones.html#list-project-milestones
+
+            :param: id: (int) GitLab project ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Generator returning JSON of each result from GET /projects/:id/milestones
+        """
+        return api.list_all(host, token, "projects/%d/milestones" % id)
+
+    def get_all_project_releases(self, id, host, token):
+        """
+        Returns a paginated list of given project's releases
+
+        https://docs.gitlab.com/ee/api/releases/#list-releases
+
+            :param: id: (int) GitLab project ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Generator returning JSON of each result from GET /projects/:id/releases
+        """
+        return api.list_all(host, token, "projects/%d/releases" % id)
+
+    def get_all_project_events(self, id, host, token):
+        """
+        Get a list of visible events for a particular project
+
+        https://docs.gitlab.com/ee/api/events.html#list-a-projects-visible-events
+
+            :param: id: (int) GitLab project ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Generator returning JSON of each result from GET /projects/:project_id/events
+        """
+        return api.list_all(host, token, "projects/%d/events" % id)
+
+    def get_all_project_variables(self, id, host, token):
+        """
+        Get list of a project’s variables
+
+        https://docs.gitlab.com/ee/api/project_level_variables.html#list-project-variables
+
+            :param: id: (int) GitLab project ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Generator returning JSON of each result from GET /projects/:id/variables
+        """
+        return api.list_all(host, token, "projects/%d/variables" % id)
+
+    def get_all_project_protected_branches(self, id, host, token):
+        """
+        Gets a list of protected branches from a project
+
+        https://docs.gitlab.com/ee/api/protected_branches.html#list-protected-branches
+
+            :param: id: (int) GitLab project ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Generator returning JSON of each result from GET /projects/:id/protected_branches
+        """
+        return api.list_all(host, token, "projects/%d/protected_branches" % id)
+
+    def get_all_project_protected_environments(self, id, host, token):
+        """
+        Gets a list of protected environments from a project
+
+        https://docs.gitlab.com/ee/api/protected_environments.html#list-protected-environments
+
+            :param: id: (int) GitLab project ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Generator returning JSON of each result from GET /projects/:id/protected_environments
+        """
+        return api.list_all(host, token, "projects/%d/protected_environments" % id)
+
+    def get_all_project_protected_tags(self, id, host, token):
+        """
+        Gets a list of protected tags from a project
+
+        https://docs.gitlab.com/ee/api/protected_tags.html#list-protected-tags
+
+            :param: id: (int) GitLab project ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Generator returning JSON of each result from GET /projects/:id/protected_tags
+        """
+        return api.list_all(host, token, "projects/%d/protected_tags" % id)
+
+    def get_all_project_deploy_keys(self, id, host, token):
+        """
+        Get a list of a project’s deploy keys
+
+        https://docs.gitlab.com/ee/api/deploy_keys.html#list-project-deploy-keys
+
+            :param: id: (int) GitLab project ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Generator returning JSON of each result from GET /projects/:id/deploy_keys
+        """
+        return api.list_all(host, token, "projects/%d/deploy_keys" % id)
