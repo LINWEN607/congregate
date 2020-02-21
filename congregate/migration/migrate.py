@@ -205,6 +205,7 @@ def handle_exporting_groups(group, dry_run=True):
         elif loc == "filesystem-aws":
             b.log.error(
                 "NOTICE: Filesystem-AWS exports are not currently supported")
+        # NOTE: Group export does not yet support (AWS/S3) user attributes
         elif loc == "aws":
             pass
         updated = False
@@ -228,9 +229,8 @@ def handle_importing_groups(group, dry_run=True):
     full_path = group["full_path"]
     src_gid = group["id"]
     group_exists = False
-    gid = None
     results = {
-        full_path: None
+        full_path: False
     }
     if isinstance(group, str):
         group = json.loads(group)
@@ -251,8 +251,8 @@ def handle_importing_groups(group, dry_run=True):
             b.log.info("{0}Group {1} (ID: {2}) already exists on destination".format(
                 get_dry_log(dry_run), full_path, gid))
         # In place of checking the import status
-        results[full_path], gid = groups.find_group_by_path(
-            b.config.destination_host, b.config.destination_token, full_path_with_parent_namespace)
+        results[full_path] = ie.wait_for_group_import(
+            full_path_with_parent_namespace)
     except RequestException, e:
         b.log.error(e)
     except KeyError, e:
@@ -401,10 +401,7 @@ def handle_importing_projects(project_json, dry_run=True):
             namespace,
             name)
         if project_id:
-            import_check = ie.get_import_status(
-                b.config.destination_host,
-                b.config.destination_token,
-                project_id).json()
+            import_check = ie.get_import_status(project_id).json()
             b.log.info("Project {0} (ID: {1}) found on destination, with import status: {2}".format(
                 dst_path,
                 project_id,

@@ -41,19 +41,22 @@ class ImportExportClient(BaseClass):
             return self.aws.get_s3_keys(self.config.bucket_name)
         return {}
 
-    def get_export_status(self, host, token, source_id, is_project=True):
+    def get_export_status(self, src_id, is_project=True):
         if is_project:
-            return self.get_project_export_status(host, token, source_id)
-        return self.get_group_export_status(host, token, source_id)
+            return self.get_project_export_status(src_id)
+        return self.get_group_export_status(src_id)
 
-    def get_project_export_status(self, host, token, source_id):
-        return api.generate_get_request(host, token, "projects/%d/export" % source_id)
+    def get_project_export_status(self, src_id):
+        return api.generate_get_request(self.config.source_host, self.config.source_token, "projects/%d/export" % src_id)
 
-    def get_group_export_status(self, host, token, source_id):
-        return api.generate_get_request(host, token, "groups/%d/export" % source_id)
+    def get_group_export_status(self, src_id):
+        return api.generate_get_request(self.config.source_host, self.config.source_token, "groups/%d/export" % src_id)
 
-    def get_import_status(self, host, token, source_id):
-        return api.generate_get_request(host, token, "projects/%d/import" % source_id)
+    def get_group_download_status(self, src_id):
+        return api.generate_get_request(self.config.source_host, self.config.source_token, "groups/%d/export/download" % src_id)
+
+    def get_import_status(self, dest_id):
+        return api.generate_get_request(self.config.destination_host, self.config.destination_token, "projects/%d/import" % dest_id)
 
     def log_wait_time(self, wait_time, is_project, name):
         self.log.info("Waiting %s seconds before skipping %s %s export",
@@ -68,8 +71,7 @@ class ImportExportClient(BaseClass):
         skip = False
         wait_time = self.config.importexport_wait
         while not exported:
-            response = self.get_export_status(
-                self.config.source_host, self.config.source_token, source_id, is_project)
+            response = self.get_export_status(source_id, is_project)
             if response.status_code == 200:
                 response = response.json()
                 name = response["name"]
@@ -110,6 +112,37 @@ class ImportExportClient(BaseClass):
                 break
 
         return exported
+
+    def wait_for_group_download(self, gid):
+        exported = False
+        timer = 0
+        wait_time = self.config.importexport_wait
+        response = self.get_group_download_status(gid)
+        while True:
+            if response.status_code == 200:
+                exported = True
+                break
+            sleep(wait_time)
+            timer += wait_time
+            if timer > self.config.max_export_wait_time:
+                break
+        return exported
+
+    def wait_for_group_import(self, path):
+        imported = False
+        timer = 0
+        wait_time = self.config.importexport_wait
+        group_exists, _ = self.groups.find_group_by_path(
+            self.config.destination_host, self.config.destination_token, path)
+        while True:
+            if group_exists:
+                imported = True
+                break
+            sleep(wait_time)
+            timer += wait_time
+            if timer > self.config.max_export_wait_time:
+                break
+        return imported
 
     def get_export_response(self, source_id, data, headers, is_project):
         """
@@ -290,6 +323,7 @@ class ImportExportClient(BaseClass):
     def attempt_group_import(self, filename, name):
         resp = None
         try:
+            # NOTE: Group export does not yet support (AWS/S3) user attributes
             if self.config.location == "aws":
                 pass
             elif self.config.location == "filesystem-aws":
@@ -429,8 +463,7 @@ class ImportExportClient(BaseClass):
                         import_id = None
                         break
                 if import_id is not None:
-                    status = self.get_import_status(
-                        self.config.destination_host, self.config.destination_token, import_id)
+                    status = self.get_import_status(import_id)
                     try:
                         if status.status_code == 200:
                             status_json = status.json()
@@ -557,39 +590,39 @@ class ImportExportClient(BaseClass):
                                .format(name, pid, exported))
         return exported
 
-    def export_group_thru_filesystem(self, gid, full_path, full_parent_namespace, filename):
+    def export_group_thru_filesystem(self, src_gid, full_path, full_parent_namespace, filename):
         exported = False
         full_path_with_parent_namespace = "{0}{1}".format(
             full_parent_namespace + "/" if full_parent_namespace else "", full_path)
         self.log.info("Searching on destination for group {}".format(
             full_path_with_parent_namespace))
-        group_exists, dest_group_id = self.groups.find_group_by_path(
+        group_exists, dest_gid = self.groups.find_group_by_path(
             self.config.destination_host,
             self.config.destination_token,
             full_path_with_parent_namespace)
         if not group_exists:
             self.log.info("Group {0} (Source ID: {1}) NOT found on destination.".format(
-                full_path_with_parent_namespace, gid))
+                full_path_with_parent_namespace, src_gid))
 
             response = self.groups_api.export_group(
-                self.config.source_host, self.config.source_token, gid)
-            if response is None or response.status_code not in (200, 202):
+                self.config.source_host, self.config.source_token, src_gid)
+            if response is None or response.status_code not in [200, 202]:
                 self.log.error("Failed to trigger group {0} (ID: {1}) export, with response '{2}'"
-                               .format(full_path, gid, response))
+                               .format(full_path, src_gid, response))
             else:
-                # NOTE: Export status API endpoint not available yet
-                exported = self.wait_for_export_to_finish(
-                    gid, full_path, is_project=False) or True
-
+                # NOTE: Export status API endpoint not yet available
+                # exported = self.wait_for_export_to_finish(
+                #     src_gid, full_path, is_project=False) or True
+                exported = self.wait_for_group_download(src_gid)
                 url = "{0}/api/v4/groups/{1}/export/download".format(
-                    self.config.source_host, gid)
+                    self.config.source_host, src_gid)
                 self.log.info("Downloading group {0} (source ID: {1}) as {2}".format(
-                    full_path, gid, filename))
+                    full_path, src_gid, filename))
                 download_file(url, self.config.filesystem_path, filename=filename, headers={
                               "PRIVATE-TOKEN": self.config.source_token})
         else:
             self.log.info("SKIP: Group {0} with source ID {1} and destination group ID {2} found on destination".format(
-                full_path_with_parent_namespace, gid, dest_group_id))
+                full_path_with_parent_namespace, src_gid, dest_gid))
         return exported
 
     def export_thru_fs_aws(self, pid, name, namespace):
