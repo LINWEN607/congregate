@@ -89,6 +89,7 @@ test:end-to-end:
     - poetry run pytest -s -m e2e --cov-config=.coveragerc --cov=congregate congregate/tests/
   after_script:
     - poetry run aws ec2 terminate-instances --instance-ids $(cat instance_id)
+  allow_failure: true
 
 remove redundant docker images:
   stage: cleanup

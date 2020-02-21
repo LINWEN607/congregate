@@ -30,11 +30,23 @@ class GroupDiffClient(BaseDiffClient):
         self.log.info("Generating Group Diff Report")
         
         for group in self.source_data:
-            group_diff = {}
-            group_diff["/groups/:id"] = self.generate_diff(group, self.groups_api.get_group, critical_key="full_path")
-            group_diff["/groups/:id/variables"] = self.generate_diff(group, self.variables_api.get_variables, obfuscate=True, var_type="group")
-            group_diff["/groups/:id/members"] = self.generate_diff(group, self.groups_api.get_all_group_members)
-            diff_report[group["full_path"]] = group_diff
+            if self.results.get(group["full_path"]) is not None or self.results.get(group["path"]) is not None:
+                group_diff = {}
+                group_diff["/groups/:id"] = self.generate_diff(group, self.groups_api.get_group, critical_key="full_path")
+                group_diff["/groups/:id/variables"] = self.generate_diff(group, self.variables_api.get_variables, obfuscate=True, var_type="group")
+                group_diff["/groups/:id/members"] = self.generate_diff(group, self.groups_api.get_all_group_members)
+                diff_report[group["full_path"]] = group_diff
+                diff_report[group["full_path"]]["overall_accuracy"] = self.calculate_overall_accuracy(diff_report[group["full_path"]])
+            else:
+                diff_report[group["full_path"]] = {
+                    "error": "group missing",
+                    "overall_accuracy": {
+                        "accuracy": 0,
+                        "result": "failure"
+                    }
+                }
+
+        diff_report["group_migration_results"] = self.calculate_overall_stage_accuracy(diff_report)
 
         return diff_report
 

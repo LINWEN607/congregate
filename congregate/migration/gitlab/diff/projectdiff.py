@@ -34,11 +34,23 @@ class ProjectDiffClient(BaseDiffClient):
         self.log.info("Generating Project Diff Report")
         
         for project in self.source_data:
-            project_diff = {}
-            project_diff["/projects/:id"] = self.generate_diff(project, self.projects_api.get_project, obfuscate=True)
-            project_diff["/projects/:id/variables"] = self.generate_diff(project, self.variables_api.get_variables, obfuscate=True, var_type="project")
-            project_diff["/projects/:id/members"] = self.generate_diff(project, self.projects_api.get_members)
-            diff_report[project["path_with_namespace"]] = project_diff
+            if self.results.get(project["path_with_namespace"]):
+                project_diff = {}
+                project_diff["/projects/:id"] = self.generate_diff(project, self.projects_api.get_project, obfuscate=True)
+                project_diff["/projects/:id/variables"] = self.generate_diff(project, self.variables_api.get_variables, obfuscate=True, var_type="project")
+                project_diff["/projects/:id/members"] = self.generate_diff(project, self.projects_api.get_members)
+                diff_report[project["path_with_namespace"]] = project_diff
+                diff_report[project["path_with_namespace"]]["overall_accuracy"] = self.calculate_overall_accuracy(diff_report[project["path_with_namespace"]])
+            else:
+                diff_report[project["path_with_namespace"]] = {
+                    "error": "project missing",
+                    "overall_accuracy": {
+                        "accuracy": 0,
+                        "result": "failure"
+                    }
+                }
+
+        diff_report["project_migration_results"] = self.calculate_overall_stage_accuracy(diff_report)
 
         return diff_report
 

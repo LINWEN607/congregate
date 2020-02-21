@@ -36,5 +36,6 @@ class UserDiffClient(BaseDiffClient):
             source_user_data = self.ignore_keys(self.users_api.get_user(self.source_data[user["email"]]["id"], self.config.source_host, self.config.source_token).json())
             diff_report[user["email"]] = (self.diff(source_user_data, destination_user_data, user["email"]))
 
+        diff_report["user_migration_results"] = self.calculate_overall_accuracy(diff_report)
         return diff_report
     

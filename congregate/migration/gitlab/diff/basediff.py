@@ -57,6 +57,23 @@ class BaseDiffClient(BaseClass):
             "result": result
         }
 
+    def calculate_overall_stage_accuracy(self, obj):
+        accuracy = 0
+        percentage_sum = 0
+        result = None
+        total_number_of_keys = len(obj)
+        for o in obj.keys():
+            percentage_sum += obj[o]["overall_accuracy"]["accuracy"]
+            if obj[o]["overall_accuracy"]["accuracy"] == 0:
+                result = "failure"
+        accuracy = percentage_sum / total_number_of_keys
+        if result is None:
+            result = "success"
+        return {
+            "overall_accuracy": accuracy,
+            "result": result
+        }
+
     def ignore_keys(self, data):
         if isinstance(data, list):
             for x in xrange(len(data)):
