@@ -550,6 +550,14 @@ version = "0.9.4"
 
 [[package]]
 category = "main"
+description = "JSON to HTML Table Representation"
+name = "json2html"
+optional = false
+python-versions = "*"
+version = "1.3.0"
+
+[[package]]
+category = "main"
 description = "A fast and thorough lazy object proxy."
 name = "lazy-object-proxy"
 optional = false
@@ -1105,7 +1113,7 @@ docs = ["sphinx", "jaraco.packaging (>=3.2)", "rst.linker (>=1.9)"]
 testing = ["pathlib2", "unittest2", "jaraco.itertools"]
 
 [metadata]
-content-hash = "49797c202533935f38b1c1a98f96c170c702e0bfcb4bba73a7a19e2a1b06788f"
+content-hash = "e15cbd086cce5151142c7376a514a93f1c83bff700d562bec76431e27b47dfff"
 python-versions = "^2.7"
 
 [metadata.files]
@@ -1382,6 +1390,9 @@ jinja2 = [
 jmespath = [
     {file = "jmespath-0.9.4-py2.py3-none-any.whl", hash = "sha256:3720a4b1bd659dd2eecad0666459b9788813e032b83e7ba58578e48254e0a0e6"},
     {file = "jmespath-0.9.4.tar.gz", hash = "sha256:bde2aef6f44302dfb30320115b17d030798de8c4110e28d5cf6cf91a7a31074c"},
+]
+json2html = [
+    {file = "json2html-1.3.0.tar.gz", hash = "sha256:8951a53662ae9cfd812685facdba693fc950ffc1c1fd1a8a2d3cf4c34600689c"},
 ]
 lazy-object-proxy = [
     {file = "lazy-object-proxy-1.4.1.tar.gz", hash = "sha256:4ba73f6089cd9b9478bc0a4fa807b47dbdb8fad1d8f31a0f0a5dbf26a4527a71"},

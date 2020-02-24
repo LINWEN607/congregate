@@ -7,7 +7,7 @@ Usage:
     congregate configure
     congregate stage <projects>... [--commit]
     congregate migrate [--threads=<n>] [--skip-users] [--skip-groups] [--skip-project-import] [--skip-project-export] [--commit]
-    congregate cleanup [--hard-delete] [--skip-users] [--skip-groups] [--skip-projects] [--commit]
+    congregate rollback [--hard-delete] [--skip-users] [--skip-groups] [--skip-projects] [--commit]
     congregate ui
     congregate export-projects
     congregate import-projects [--commit]
@@ -42,6 +42,7 @@ Usage:
     congregate validate-staged-groups-schema
     congregate validate-staged-projects-schema
     congregate map-users [--commit]
+    congregate generate-diff
     congregate clean
     congregate -h | --help
 
@@ -51,9 +52,9 @@ Options:
 Arguments:
     threads                                 Set number of threads to run in parallel.
     commit                                  Disable the dry-run and perform the full migration with all reads/writes. 
-    skip-users                              Migrate: Skip migrating users; Cleanup: Remove only groups and projects.
+    skip-users                              Migrate: Skip migrating users; Rollback: Remove only groups and projects.
     hard-delete                             Remove user contributions and solely owned groups.
-    skip-groups                             Migrate: Skip migrating groups; Cleanup: Remove only users and projects.
+    skip-groups                             Migrate: Skip migrating groups; Rollback: Remove only users and projects.
     skip-projects                           Include ONLY users (removing ONLY groups is not possible).
     skip-project-import                     Will do all steps up to import (export, re-write exported project json,
                                                 etc). Useful for testing export contents.
@@ -70,7 +71,7 @@ Commands:
                                                 groups to {CONGREGATE_PATH}/data/staged_groups.json.
                                                 All projects can be staged with a '.' or 'all'.
     migrate                                 Commence migration based on configuration and staged assets.
-    cleanup                                 Remove staged users/groups/projects on destination.
+    rollback                                 Remove staged users/groups/projects on destination.
     ui                                      Deploy UI to port 8000.
     export-projects                         Export and update source instance projects. Bulk project export without user/group info.
     import-projects                         Import exported and updated projects onto destination instance. Destination user/group info required.
@@ -105,6 +106,7 @@ Commands:
     validate-staged-groups-schema           Check staged_groups.json for missing group data.
     validate-staged-projects-schema         Check stage.json for missing project data.
     clean                                   Delete all retrieved and staged data
+    generate-diff                           Generates HTML files containing the diff results of the migration
     map-users                               Maps staged user emails to emails defined in the user-provided user_map.csv
 """
 
@@ -158,6 +160,9 @@ if __name__ == '__main__':
             from congregate.migration.gitlab.branches import BranchesClient
             from congregate.cli import list_projects, stage_projects, do_all
             from congregate.helpers.seed.generator import SeedDataGenerator
+            from congregate.migration.gitlab.diff.userdiff import UserDiffClient
+            from congregate.migration.gitlab.diff.projectdiff import ProjectDiffClient
+            from congregate.migration.gitlab.diff.groupdiff import GroupDiffClient
         else:
             from .migration.gitlab.users import UsersClient
             from .migration.gitlab.groups import GroupsClient
@@ -221,7 +226,7 @@ if __name__ == '__main__':
                     skip_groups=skip_groups,
                     skip_project_import=skip_project_import,
                     skip_project_export=skip_project_export)
-            if arguments["cleanup"]:
+            if arguments["rollback"]:
                 skip_users = False
                 hard_delete = False
                 skip_groups = False
@@ -234,7 +239,7 @@ if __name__ == '__main__':
                     skip_groups = True
                 if arguments["--skip-projects"]:
                     skip_projects = True
-                migrate.cleanup(
+                migrate.rollback(
                     dry_run=DRY_RUN,
                     skip_users=skip_users,
                     hard_delete=hard_delete,
@@ -331,4 +336,14 @@ if __name__ == '__main__':
                 map_users(dry_run=DRY_RUN)
             if arguments["clean"]:
                 clean_data()
+            if arguments["generate-diff"]:
+                user_diff = UserDiffClient("%s/data/user_migration_results.json" % app_path)
+                diff_report = user_diff.generate_report()
+                user_diff.generate_html_report(diff_report, "%s/data/user_migration_results.html" % app_path)
+                group_diff = GroupDiffClient("%s/data/group_migration_results.json" % app_path)
+                diff_report = group_diff.generate_group_diff_report()
+                group_diff.generate_html_report(diff_report, "%s/data/group_migration_results.html" % app_path)
+                project_diff = ProjectDiffClient("%s/data/project_results.json" % app_path)
+                diff_report = project_diff.generate_project_diff_report()
+                project_diff.generate_html_report(diff_report, "%s/data/project_migration_results.html" % app_path)
 

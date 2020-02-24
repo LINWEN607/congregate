@@ -1,6 +1,8 @@
 import json
 import base64
 from opslib.icsutils.jsondiff import Comparator
+from bs4 import BeautifulSoup as bs
+from json2html import *
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.misc_utils import find as nested_find
 
@@ -108,3 +110,9 @@ class BaseDiffClient(BaseClass):
             "diff": None,
             "accuracy": 1
         }
+
+    def generate_html_report(self, diff, filepath):
+        html_data = json2html.convert(json=diff, clubbing=True)
+        soup = bs(html_data, features="lxml")
+        with open(filepath, "w") as f:
+            f.write(soup.prettify())

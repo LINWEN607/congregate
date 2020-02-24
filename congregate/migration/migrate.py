@@ -407,7 +407,7 @@ def migrate_single_project_info(project, new_id):
     return results
 
 
-def cleanup(dry_run=True,
+def rollback(dry_run=True,
             skip_users=False,
             hard_delete=False,
             skip_groups=False,
