@@ -303,3 +303,16 @@ class GroupsApi():
             :yield: Generator returning JSON of each result from GET /groups/:id/audit_events
         """
         return api.list_all(host, token, "groups/%d/audit_events" % gid)
+
+    def get_all_group_registry_repositories(self, id, host, token):
+        """
+        Get a list of registry repositories in a group
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/container_registry.html#within-a-group
+
+            :param: id: (int) GitLab group ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Generator returning JSON of each result from GET /groups/:id/registry/repositories
+        """
+        return api.list_all(host, token, "groups/%d/registry/repositories" % id)
