@@ -82,8 +82,9 @@ def migrate(
         if not skip_users:
             migrate_user_info(dry_run)
 
-        # Migrate system hooks
-        hooks.migrate_system_hooks(dry_run)
+        # Migrate system hooks (except for gitlab.com)
+        if "gitlab.com" not in b.config.destination_host:
+            hooks.migrate_system_hooks(dry_run)
 
         # Migrate groups
         # NOTE: Keep for historical reasons
