@@ -177,7 +177,10 @@ def clean_data():
         "group_migration_results.json",
         "project_results.json",
         "new_users.json",
-        "new_user_ids.txt"
+        "new_user_ids.txt",
+        "dry_run_user_migration.json",
+        "dry_run_group_migration.json",
+        "dry_run_project_migration.json"
     ]
     if os.path.isdir("{0}/data".format(app_path)):
         for f in files_to_delete:
