@@ -185,3 +185,17 @@ class UsersApi():
 
         """
         return api.generate_get_request(host, token, "users/%d/emails" % id)
+
+    def get_all_user_custom_attributes(self, id, host, token):
+        """
+        Get all custom attributes on a user
+
+        https://docs.gitlab.com/ee/api/custom_attributes.html#list-custom-attributes
+
+            :param: id: (int) GitLab user ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Generator returning JSON of each result from GET /users/:id/custom_attributes
+        """
+        return api.list_all(host, token, "users/%d/custom_attributes" % id)
+    
