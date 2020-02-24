@@ -61,7 +61,7 @@ class AwardsClient(BaseClass):
 
     def migrate(self, new_id, old_id, users_map, mr_enabled=False):
         AWARDABLES = {
-            "issues": self.issues.get_single_project_issues,
+            "issues": self.issues.get_single_project_issue,
             "merge_requests": self.merge_requests.get_single_project_merge_requests,
             "snippets": self.projects.get_single_project_snippets
         }

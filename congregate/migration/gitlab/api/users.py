@@ -129,3 +129,59 @@ class UsersApi():
             :return: 201 OK / 404 User Not Found / 403 Forbidden
         """
         return api.generate_post_request(host, token, "users/%d/block" % user_id, data=None)
+
+    def get_all_user_contribution_events(self, id, host, token):
+        """
+        Get the contribution events for the specified user
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/events.html#get-user-contribution-events
+
+            :param: id: (int) GitLab user ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :return: Generator returning JSON of each result from GET /users/:id/events
+
+        """
+        return api.generate_get_request(host, token, "users/%d/events" % id)
+
+    def get_all_user_memberships(self, id, host, token):
+        """
+        Lists all projects and groups a user is a member of
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/users.html#user-memberships-admin-only
+
+            :param: id: (int) GitLab user ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :return: Generator returning JSON of each result from GET /users/:id/memberships
+
+        """
+        return api.generate_get_request(host, token, "users/%d/memberships" % id)
+
+    def get_user_status(self, id, host, token):
+        """
+        Get the status of a user
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/users.html#get-the-status-of-a-user
+
+            :param: id: (int) GitLab user ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :return: Response object containing the response to GET /users/:id_or_username/status
+
+        """
+        return api.generate_get_request(host, token, "users/%d/status" % id)
+
+    def get_user_emails(self, id, host, token):
+        """
+        Get a list of a specified user’s emails
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/users.html#list-emails-for-user
+
+            :param: id: (int) GitLab user ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :return: Response object containing the response to GET /users/:id/emails
+
+        """
+        return api.generate_get_request(host, token, "users/%d/emails" % id)
