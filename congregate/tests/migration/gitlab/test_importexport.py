@@ -1,6 +1,6 @@
 import json
-import mock
 import unittest
+import mock
 from congregate.migration.gitlab.importexport import ImportExportClient
 
 
@@ -10,7 +10,8 @@ class ImportExportClientTests(unittest.TestCase):
         self.ie = ImportExportClient()
         self.original_project_name = "original_project_name"
         self.original_namespace_path = "original_namespace_path"
-        self.name_taken_import_response = json.dumps({"message": "Name has already been taken"})
+        self.name_taken_import_response = json.dumps(
+            {"message": "Name has already been taken"})
         self.search_response = [{
             "id": 13240969,
             "description": "",
@@ -55,7 +56,8 @@ class ImportExportClientTests(unittest.TestCase):
 
     def test_create_override_name(self):
         original_name = "some_project"
-        self.assertEqual(self.ie.create_override_name(original_name), "some_project_1")
+        self.assertEqual(self.ie.create_override_name(
+            original_name), "some_project_1")
 
     @mock.patch("congregate.migration.gitlab.importexport.api.search")
     def test_get_import_id_from_import_response_happy(self, mock_search_api):
@@ -76,7 +78,8 @@ class ImportExportClientTests(unittest.TestCase):
                                                                       self.original_project_name,
                                                                       0)
 
-        self.assertEqual(import_id_entity, {'import_id': 13240969, 'exported': False, 'duped': True})
+        self.assertEqual(import_id_entity, {
+                         'import_id': 13240969, 'exported': False, 'duped': True})
 
     @mock.patch("congregate.migration.gitlab.importexport.api.search")
     def test_get_import_id_from_import_response_dupe_not_found(self, mock_search_api):
@@ -100,13 +103,15 @@ class ImportExportClientTests(unittest.TestCase):
                                                                       self.original_project_name,
                                                                       0)
 
-        self.assertEqual(import_id_entity, {'import_id': None, 'exported': False, 'duped': False})
+        self.assertEqual(import_id_entity, {
+                         'import_id': None, 'exported': False, 'duped': False})
 
     @mock.patch.object(ImportExportClient, "get_import_id_from_import_response")
     @mock.patch.object(ImportExportClient, "attempt_import")
     def test_dupe_reimport_worker_happy(self, mock_attempt_import, mock_get_import_id_from_import_response):
         mock_attempt_import.return_value = self.name_taken_import_response
-        mock_get_import_id_from_import_response.return_value = {'import_id': None, 'exported': False, 'duped': False}
+        mock_get_import_id_from_import_response.return_value = {
+            'import_id': None, 'exported': False, 'duped': False}
         import_results = self.ie.dupe_reimport_worker(
             duped=True,
             append_suffix_on_dupe=True,
@@ -117,7 +122,8 @@ class ImportExportClientTests(unittest.TestCase):
             override_params=self.override_params,
             project=self.original_project,
             timeout=0)
-        self.assertEqual(import_results, {'import_id': None, 'exported': False, 'duped': False})
+        self.assertEqual(import_results, {
+                         'import_id': None, 'exported': False, 'duped': False})
 
     @mock.patch.object(ImportExportClient, "get_import_id_from_import_response")
     @mock.patch.object(ImportExportClient, "attempt_import")
@@ -126,7 +132,8 @@ class ImportExportClientTests(unittest.TestCase):
             mock_attempt_import,
             mock_get_import_id_from_import_response):
         mock_attempt_import.return_value = self.name_taken_import_response
-        mock_get_import_id_from_import_response.return_value = {'import_id': None, 'exported': False, 'duped': False}
+        mock_get_import_id_from_import_response.return_value = {
+            'import_id': None, 'exported': False, 'duped': False}
         import_results = self.ie.dupe_reimport_worker(
             duped=False,
             append_suffix_on_dupe=True,
@@ -146,7 +153,8 @@ class ImportExportClientTests(unittest.TestCase):
             mock_attempt_import,
             mock_get_import_id_from_import_response):
         mock_attempt_import.return_value = self.name_taken_import_response
-        mock_get_import_id_from_import_response.return_value = {'import_id': None, 'exported': False, 'duped': False}
+        mock_get_import_id_from_import_response.return_value = {
+            'import_id': None, 'exported': False, 'duped': False}
         import_results = self.ie.dupe_reimport_worker(
             duped=True,
             append_suffix_on_dupe=True,
@@ -166,7 +174,8 @@ class ImportExportClientTests(unittest.TestCase):
             mock_attempt_import,
             mock_get_import_id_from_import_response):
         mock_attempt_import.return_value = self.name_taken_import_response
-        mock_get_import_id_from_import_response.return_value = {'import_id': None, 'exported': False, 'duped': False}
+        mock_get_import_id_from_import_response.return_value = {
+            'import_id': None, 'exported': False, 'duped': False}
         import_results = self.ie.dupe_reimport_worker(
             duped=True,
             append_suffix_on_dupe=False,
@@ -180,7 +189,43 @@ class ImportExportClientTests(unittest.TestCase):
         self.assertEqual(import_results, None)
 
     def test_check_is_project_or_group_for_logging_project_on_true(self):
-        self.assertEqual(self.ie.check_is_project_or_group_for_logging(True), "Project")
-        
+        self.assertEqual(
+            self.ie.check_is_project_or_group_for_logging(True), "Project")
+
     def test_check_is_project_or_group_for_logging_group_on_false(self):
-        self.assertEqual(self.ie.check_is_project_or_group_for_logging(False), "Group")
+        self.assertEqual(
+            self.ie.check_is_project_or_group_for_logging(False), "Group")
+
+    @mock.patch.object(ImportExportClient, "get_group_download_status")
+    def test_wait_for_group_download_200(self, mock_get_group_download_status):
+        ok_response_mock = mock.MagicMock()
+        type(ok_response_mock).status_code = mock.PropertyMock(
+            return_value=200)
+        mock_get_group_download_status.return_value = ok_response_mock
+        self.assertTrue(self.ie.wait_for_group_download(1))
+
+    @mock.patch.object(ImportExportClient, "get_group_download_status")
+    @mock.patch('congregate.helpers.conf.Config.importexport_wait', new_callable=mock.PropertyMock)
+    @mock.patch('congregate.helpers.conf.Config.max_export_wait_time', new_callable=mock.PropertyMock)
+    def test_wait_for_group_download_404(self, max_wait, wait, mock_get_group_download_status):
+        max_wait.return_value = 0
+        wait.return_value = 0.01
+        nok_response_mock = mock.MagicMock()
+        type(nok_response_mock).status_code = mock.PropertyMock(
+            return_value=404)
+        mock_get_group_download_status.return_value = nok_response_mock
+        self.assertFalse(self.ie.wait_for_group_download(1))
+
+    @mock.patch('congregate.migration.gitlab.groups.GroupsClient.find_group_by_path')
+    def test_wait_for_group_import_200(self, mock_find_group_by_path):
+        mock_find_group_by_path.return_value = (True, 1)
+        self.assertTrue(self.ie.wait_for_group_import("mock"))
+
+    @mock.patch('congregate.migration.gitlab.groups.GroupsClient.find_group_by_path')
+    @mock.patch('congregate.helpers.conf.Config.importexport_wait', new_callable=mock.PropertyMock)
+    @mock.patch('congregate.helpers.conf.Config.max_export_wait_time', new_callable=mock.PropertyMock)
+    def test_wait_for_group_import_404(self, max_wait, wait, mock_find_group_by_path):
+        max_wait.return_value = 0
+        wait.return_value = 0.01
+        mock_find_group_by_path.return_value = (False, 1)
+        self.assertFalse(self.ie.wait_for_group_import("mock"))

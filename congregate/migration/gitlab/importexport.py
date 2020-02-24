@@ -621,7 +621,7 @@ class ImportExportClient(BaseClass):
                 download_file(url, self.config.filesystem_path, filename=filename, headers={
                               "PRIVATE-TOKEN": self.config.source_token})
         else:
-            self.log.info("SKIP: Group {0} with source ID {1} and destination group ID {2} found on destination".format(
+            self.log.info("SKIP: Group {0} with source ID {1} and destination ID {2} found on destination".format(
                 full_path_with_parent_namespace, src_gid, dest_gid))
         return exported
 
