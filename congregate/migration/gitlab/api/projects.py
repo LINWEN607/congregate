@@ -480,6 +480,19 @@ class ProjectsApi():
         """
         return api.list_all(host, token, "projects/{0}/pipelines/{1}/variables".format(prid, piid))
 
+    def get_all_project_pipeline_schedule(self, id, host, token):
+        """
+        Get a list of the pipeline schedules of a project
+
+        https://docs.gitlab.com/ee/api/pipeline_schedules.html#get-all-pipeline-schedules
+
+            :param: id: (int) GitLab project ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Generator returning JSON of each result from GET /projects/:id/pipeline_schedules
+        """
+        return api.list_all(host, token, "projects/%d/pipeline_schedules" % id)
+
     def get_all_project_hooks(self, id, host, token):
         """
         Get a list of project hooks
@@ -693,3 +706,29 @@ class ProjectsApi():
             :yield: Generator returning JSON of each result from GET /projects/:id/registry/repositories/:repository_id/tags
         """
         return api.list_all(host, token, "projects/{0}/registry/repositories/{1}/tags".format(pid, rid))
+
+    def get_all_project_feature_flags(self, id, host, token):
+        """
+        Gets all feature flags of the requested project
+
+        https://docs.gitlab.com/ee/api/feature_flags.html#list-feature-flags-for-a-project
+
+            :param: id: (int) GitLab project ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Generator returning JSON of each result from GET /projects/:id/feature_flags
+        """
+        return api.list_all(host, token, "projects/%d/feature_flags" % id)
+
+    def get_all_project_custom_attributes(self, id, host, token):
+        """
+        Get all custom attributes on a resource
+
+        https://docs.gitlab.com/ee/api/custom_attributes.html#list-custom-attributes
+
+            :param: id: (int) GitLab project ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Generator returning JSON of each result from GET /projects/:id/custom_attributes
+        """
+        return api.list_all(host, token, "projects/%d/custom_attributes" % id)
