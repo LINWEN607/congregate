@@ -140,7 +140,7 @@ Usage:
     congregate config
     congregate stage <projects>...
     congregate migrate [--threads=<n>] [--dry-run] [--skip-users] [--skip-project-import] [--skip-project-export]
-    congregate cleanup [--dry-run] [--hard-delete] [--skip-users] [--skip-groups] [--skip-projects]
+    congregate rollback [--dry-run] [--hard-delete] [--skip-users] [--skip-groups] [--skip-projects]
     congregate ui
     congregate export-projects
     congregate import-projects
@@ -200,7 +200,7 @@ Commands:
                                                 groups to {CONGREGATE_PATH}/data/staged_groups.json.
                                                 All projects can be staged with a '.' or 'all'.
     migrate                                 Commence migration based on configuration and staged assets.
-    cleanup                                 Remove staged users/groups/projects on destination.
+    rollback                                 Remove staged users/groups/projects on destination.
     ui                                      Deploy UI to port 8000.
     export-projects                         Export and update source instance projects. Bulk project export without user/group info.
     import-projects                         Import exported and updated projects onto destination instance. Destination user/group info required.
@@ -269,9 +269,9 @@ Once all the users are migrated:
 
 To remove all of the staged users, groups and projects on destination run:
 
-* `congregate cleanup --dry-run` - Inspect the output.
-* `congregate cleanup`
-* For more granular cleanup see [Usage](#usage).
+* `congregate rollback --dry-run` - Inspect the output.
+* `congregate rollback`
+* For more granular rollback see [Usage](#usage).
 
 #### Important Note
 

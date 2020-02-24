@@ -8,7 +8,7 @@ from congregate.migration.gitlab.diff.userdiff import UserDiffClient
 from congregate.migration.gitlab.diff.groupdiff import GroupDiffClient
 from congregate.migration.gitlab.diff.projectdiff import ProjectDiffClient
 from congregate.helpers.base_module import app_path
-from congregate.migration.migrate import cleanup
+from congregate.migration.migrate import rollback
 
 
 @pytest.mark.e2e
@@ -20,7 +20,7 @@ class MigrationEndToEndTest(unittest.TestCase):
     
     @classmethod
     def tearDownClass(self):
-        cleanup(dry_run=False, hard_delete=True)
+        rollback(dry_run=False, hard_delete=True)
 
     def test_user_migration_diff(self):
         user_diff = UserDiffClient("%s/data/user_migration_results.json" % app_path)
