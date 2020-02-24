@@ -174,7 +174,7 @@ class UsersApi():
 
     def get_user_emails(self, id, host, token):
         """
-        Get a list of a specified user’s emails
+        Get a list of emails for a give user
 
         GitLab API Doc: https://docs.gitlab.com/ee/api/users.html#list-emails-for-user
 
@@ -198,4 +198,3 @@ class UsersApi():
             :yield: Generator returning JSON of each result from GET /users/:id/custom_attributes
         """
         return api.list_all(host, token, "users/%d/custom_attributes" % id)
-    
