@@ -60,9 +60,13 @@ def build_staging_data(projects_to_stage, dry_run=True):
                 for member in projects_api.get_members(int(projects[i]["id"]), b.config.source_host, b.config.source_token):
                     append_member_to_members_list(rewritten_users, staged_users, members, member)
 
-                if projects[i]["namespace"]["kind"] == "group":
-                    group_to_stage = projects[i]["namespace"]["id"]
-                    staged_groups.append(rewritten_groups[group_to_stage])
+                # if projects[i]["namespace"]["kind"] == "group":
+                #     group_to_stage = projects[i]["namespace"]["id"]
+                #     staged_groups.append(rewritten_groups[group_to_stage])
+
+                for group in groups:
+                    if group["parent_id"] is None:
+                        staged_groups.append(group)
 
                 obj["members"] = members
                 staging.append(obj)
