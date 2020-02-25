@@ -6,7 +6,7 @@ Usage:
     congregate list
     congregate configure
     congregate stage <projects>... [--commit]
-    congregate migrate [--threads=<n>] [--skip-users] [--skip-groups] [--skip-project-import] [--skip-project-export] [--commit]
+    congregate migrate [--threads=<n>] [--skip-users] [--skip-groups] [--skip-group-export] [--skip-group-import] [--skip-project-export] [--skip-project-import] [--commit]
     congregate rollback [--hard-delete] [--skip-users] [--skip-groups] [--skip-projects] [--commit]
     congregate ui
     congregate export-projects
@@ -44,6 +44,7 @@ Usage:
     congregate map-users [--commit]
     congregate generate-diff
     congregate clean
+    congregate obfuscate
     congregate -h | --help
 
 Options:
@@ -54,12 +55,15 @@ Arguments:
     commit                                  Disable the dry-run and perform the full migration with all reads/writes. 
     skip-users                              Migrate: Skip migrating users; Rollback: Remove only groups and projects.
     hard-delete                             Remove user contributions and solely owned groups.
-    skip-groups                             Migrate: Skip migrating groups; Rollback: Remove only users and projects.
+    # skip-groups                             Remove only users and projects.
+    skip-groups                             Migrate: Skip migrating groups; Cleanup: Remove only users and projects.
+    skip-group-export                       Skip exporting groups from source instance.
+    skip-group-import                       Skip importing groups to destination instance.
     skip-projects                           Include ONLY users (removing ONLY groups is not possible).
-    skip-project-import                     Will do all steps up to import (export, re-write exported project json,
-                                                etc). Useful for testing export contents.
     skip-project-export                     Skips the project export and assumes that the project file is already ready
                                                 for rewrite. Currently does NOT work for exports through filesystem-aws.
+    skip-project-import                     Will do all steps up to import (export, re-write exported project json,
+                                                etc). Useful for testing export contents.
     access-level                            Update parent group level user permissions (Guest/Reporter/Developer/Maintainer/Owner).
     staged                                  Compare two groups that are staged for migration.
 
@@ -108,6 +112,7 @@ Commands:
     clean                                   Delete all retrieved and staged data
     generate-diff                           Generates HTML files containing the diff results of the migration
     map-users                               Maps staged user emails to emails defined in the user-provided user_map.csv
+    obfuscate                               Obfuscate a secret or password that you want to manually update in the config.
 """
 
 import os
@@ -119,20 +124,22 @@ if __name__ == '__main__':
     if __package__ is None:
         import sys
 
-        sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        sys.path.append(os.path.dirname(
+            os.path.dirname(os.path.abspath(__file__))))
         from congregate.helpers import conf
         from congregate.helpers.logger import myLogger
         from congregate.cli.config import generate_config
-        from congregate.helpers.misc_utils import get_congregate_path, clean_data
+        from congregate.helpers.misc_utils import get_congregate_path, clean_data, obfuscate
         from congregate.helpers.user_util import map_users
     else:
         from .helpers import conf
         from .helpers.logger import myLogger
-        from .helpers.misc_utils import get_congregate_path, clean_data
+        from .helpers.misc_utils import get_congregate_path, clean_data, obfuscate
         from .helpers.user_util import map_users
 else:
     import sys
-    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    sys.path.append(os.path.dirname(
+        os.path.dirname(os.path.abspath(__file__))))
     from congregate.cli.config import generate_config
     from congregate.helpers import conf
     from congregate.helpers.logger import myLogger
@@ -202,43 +209,30 @@ if __name__ == '__main__':
             if arguments["list"]:
                 list_projects.list_projects()
             if arguments["stage"]:
-                stage_projects.stage_projects(arguments['<projects>'], dry_run=DRY_RUN)
+                stage_projects.stage_projects(
+                    arguments['<projects>'], dry_run=DRY_RUN)
             if arguments["migrate"]:
-                threads = None
-                skip_users = False
-                skip_groups = False
-                skip_project_import = False
-                skip_project_export = False
-                if arguments["--threads"]:
-                    threads = arguments["--threads"]
-                if arguments["--skip-users"]:
-                    skip_users = True
-                if arguments["--skip-groups"]:
-                    skip_groups = True
-                if arguments["--skip-project-import"]:
-                    skip_project_import = True
-                if arguments["--skip-project-export"]:
-                    skip_project_export = True
+                threads = arguments["--threads"] if arguments["--threads"] else None
+                skip_users = True if arguments["--skip-users"] else False
+                skip_groups = True if arguments["--skip-groups"] else False
+                skip_group_export = True if arguments["--skip-group-export"] else False
+                skip_group_import = True if arguments["--skip-group-import"] else False
+                skip_project_import = True if arguments["--skip-project-import"] else False
+                skip_project_export = True if arguments["--skip-project-export"] else False
                 migrate.migrate(
                     threads=threads,
                     dry_run=DRY_RUN,
                     skip_users=skip_users,
                     skip_groups=skip_groups,
+                    skip_group_export=skip_group_export,
+                    skip_group_import=skip_group_import,
                     skip_project_import=skip_project_import,
                     skip_project_export=skip_project_export)
             if arguments["rollback"]:
-                skip_users = False
-                hard_delete = False
-                skip_groups = False
-                skip_projects = False
-                if arguments["--skip-users"]:
-                    skip_users = True
-                if arguments["--hard-delete"]:
-                    hard_delete = True
-                if arguments["--skip-groups"]:
-                    skip_groups = True
-                if arguments["--skip-projects"]:
-                    skip_projects = True
+                skip_users = True if arguments["--skip-users"] else False
+                hard_delete = True if arguments["--hard-delete"] else False
+                skip_groups = True if arguments["--skip-groups"] else False
+                skip_projects = True if arguments["--skip-projects"] else False
                 migrate.rollback(
                     dry_run=DRY_RUN,
                     skip_users=skip_users,
@@ -262,24 +256,32 @@ if __name__ == '__main__':
             if arguments["add-users-to-parent-group"]:
                 users.add_users_to_parent_group(dry_run=DRY_RUN)
             if arguments["update-aws-creds"]:
-                command = "aws configure set aws_access_key_id {}".format(config.s3_access_key)
-                subprocess.call(command.split(" "))
-                log.info("Configured AWS access key")
-                command = "aws configure set aws_secret_access_key {}".format(config.s3_secret_key)
-                subprocess.call(command.split(" "))
-                log.info("Configured AWS secret key")
+                if config.s3_access_key and config.s3_secret_key:
+                    command = "aws configure set aws_access_key_id {}".format(
+                        config.s3_access_key)
+                    subprocess.call(command.split(" "))
+                    command = "aws configure set aws_secret_access_key {}".format(
+                        config.s3_secret_key)
+                    subprocess.call(command.split(" "))
+                    log.info(
+                        "Configured local AWS access and secret keys (~/.aws/credentials)")
+                else:
+                    log.warning("No AWS configuration. Export location: {}".format(
+                        config.location))
             if arguments["remove-blocked-users"]:
                 users.remove_blocked_users(dry_run=DRY_RUN)
             if arguments["update-user-permissions"]:
                 access_level = arguments["--access-level"]
                 if access_level:
-                    users.update_user_permissions(access_level, dry_run=DRY_RUN)
+                    users.update_user_permissions(
+                        access_level, dry_run=DRY_RUN)
                 else:
                     log.warning("Missing access-level argument")
             if arguments["export-projects"]:
                 migrate.migrate_project_info(skip_project_import=True)
             if arguments["import-projects"]:
-                migrate.migrate_project_info(dry_run=DRY_RUN, skip_project_export=True)
+                migrate.migrate_project_info(
+                    dry_run=DRY_RUN, skip_project_export=True)
             if arguments["get-total-count"]:
                 print migrate.get_total_migrated_count()
             if arguments["find-unimported-projects"]:
@@ -312,7 +314,8 @@ if __name__ == '__main__':
                 projects.find_empty_repos()
             if arguments["compare-groups"]:
                 if arguments["--staged"]:
-                    results, unknown_users = compare.create_group_migration_results(staged=True)
+                    results, unknown_users = compare.create_group_migration_results(
+                        staged=True)
                 else:
                     results, unknown_users = compare.create_group_migration_results()
                 with open("%s/data/groups_audit.json" % app_path, "w") as f:
@@ -321,8 +324,10 @@ if __name__ == '__main__':
                     dump(unknown_users, f, indent=4)
             if arguments["staged-user-list"]:
                 results = compare.compare_staged_users()
-                log.info("Staged user list:\n{}".format(dumps(results, indent=4, sort_keys=True)))
-                log.info("Length: {}".format({key: len(value) for key, value in results.items()}))
+                log.info("Staged user list:\n{}".format(
+                    dumps(results, indent=4, sort_keys=True)))
+                log.info("Length: {}".format({key: len(value)
+                                              for key, value in results.items()}))
             if arguments["generate-seed-data"]:
                 s = SeedDataGenerator()
                 s.generate_seed_data(dry_run=DRY_RUN)
@@ -346,4 +351,5 @@ if __name__ == '__main__':
                 project_diff = ProjectDiffClient("%s/data/project_migration_results.json" % app_path)
                 diff_report = project_diff.generate_project_diff_report()
                 project_diff.generate_html_report(diff_report, "%s/data/project_migration_results.html" % app_path)
-
+            if arguments["obfuscate"]:
+                print obfuscate("Secret:")

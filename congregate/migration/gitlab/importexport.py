@@ -15,7 +15,7 @@ from congregate.migration.gitlab.groups import GroupsClient
 from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
-from congregate.helpers.migrate_utils import get_project_filename, get_project_namespace, \
+from congregate.helpers.migrate_utils import get_project_namespace, \
     is_user_project, get_member_id_for_user_project
 from congregate.models.user_logging_model import UserLoggingModel
 
@@ -29,7 +29,6 @@ class ImportExportClient(BaseClass):
         self.projects_api = ProjectsApi()
         self.groups_api = GroupsApi()
         self.users = UsersApi()
-        self.groups = GroupsApi()
         self.keys_map = self.get_keys()
 
     def get_AwsClient(self):
@@ -42,19 +41,22 @@ class ImportExportClient(BaseClass):
             return self.aws.get_s3_keys(self.config.bucket_name)
         return {}
 
-    def get_export_status(self, host, token, source_id, is_project=True):
+    def get_export_status(self, src_id, is_project=True):
         if is_project:
-            return self.get_project_export_status(host, token, source_id)
-        return self.get_group_export_status(host, token, source_id)
+            return self.get_project_export_status(src_id)
+        return self.get_group_export_status(src_id)
 
-    def get_project_export_status(self, host, token, source_id):
-        return api.generate_get_request(host, token, "projects/%d/export" % source_id)
+    def get_project_export_status(self, src_id):
+        return api.generate_get_request(self.config.source_host, self.config.source_token, "projects/%d/export" % src_id)
 
-    def get_group_export_status(self, host, token, source_id):
-        return api.generate_get_request(host, token, "groups/%d/export" % source_id)
+    def get_group_export_status(self, src_id):
+        return api.generate_get_request(self.config.source_host, self.config.source_token, "groups/%d/export" % src_id)
 
-    def get_import_status(self, host, token, source_id):
-        return api.generate_get_request(host, token, "projects/%d/import" % source_id)
+    def get_group_download_status(self, src_id):
+        return api.generate_get_request(self.config.source_host, self.config.source_token, "groups/%d/export/download" % src_id)
+
+    def get_import_status(self, dest_id):
+        return api.generate_get_request(self.config.destination_host, self.config.destination_token, "projects/%d/import" % dest_id)
 
     def log_wait_time(self, wait_time, is_project, name):
         self.log.info("Waiting %s seconds before skipping %s %s export",
@@ -69,8 +71,7 @@ class ImportExportClient(BaseClass):
         skip = False
         wait_time = self.config.importexport_wait
         while not exported:
-            response = self.get_export_status(
-                self.config.source_host, self.config.source_token, source_id, is_project)
+            response = self.get_export_status(source_id, is_project)
             if response.status_code == 200:
                 response = response.json()
                 name = response["name"]
@@ -111,6 +112,37 @@ class ImportExportClient(BaseClass):
                 break
 
         return exported
+
+    def wait_for_group_download(self, gid):
+        exported = False
+        timer = 0
+        wait_time = self.config.importexport_wait
+        response = self.get_group_download_status(gid)
+        while True:
+            if response.status_code == 200:
+                exported = True
+                break
+            sleep(wait_time)
+            timer += wait_time
+            if timer > self.config.max_export_wait_time:
+                break
+        return exported
+
+    def wait_for_group_import(self, path):
+        imported = False
+        timer = 0
+        wait_time = self.config.importexport_wait
+        group_exists, _ = self.groups.find_group_by_path(
+            self.config.destination_host, self.config.destination_token, path)
+        while True:
+            if group_exists:
+                imported = True
+                break
+            sleep(wait_time)
+            timer += wait_time
+            if timer > self.config.max_export_wait_time:
+                break
+        return imported
 
     def get_export_response(self, source_id, data, headers, is_project):
         """
@@ -175,8 +207,8 @@ class ImportExportClient(BaseClass):
             project = json.loads(project)
 
         name = project["name"]
+        namespace = project["namespace"]
         override_params = self.get_override_params(project)
-        filename = get_project_filename(project)
 
         if is_user_project(project):
             member_id = get_member_id_for_user_project(project)
@@ -187,7 +219,7 @@ class ImportExportClient(BaseClass):
                     member_id,
                     self.config.destination_host,
                     self.config.destination_token).json()
-                namespace = new_user["username"]
+                dst_namespace = new_user["username"]
                 self.log.info("{0}{1} is a USER project (owner: {2}). Attempting to import into their namespace"
                               .format(get_dry_log(dry_run), name, UserLoggingModel().get_logging_model(new_user)))
             else:
@@ -195,7 +227,7 @@ class ImportExportClient(BaseClass):
                     "USER project FOUND, but NO member ID returned for project {0}".format(name))
                 return None
         else:
-            namespace = get_project_namespace(project)
+            dst_namespace = get_project_namespace(project)
             self.log.info(
                 "%s%s is NOT a USER project. Attempting to import into a group namespace", get_dry_log(dry_run), name)
             if self.config.parent_id is None:
@@ -204,8 +236,9 @@ class ImportExportClient(BaseClass):
                 #   but recent experience would suggest this part isn't as tight
                 #   Certainly not the GitHost scenario
                 full_path = self.get_full_path(project["http_url_to_repo"])
-                self.log.info("Searching for namespace %s", full_path)
-                for group in self.groups.search_for_group(
+                self.log.info(
+                    "Searching for destination namespace {}".format(dst_namespace))
+                for group in self.groups_api.search_for_group(
                         project["namespace"],
                         self.config.destination_host,
                         self.config.destination_token):
@@ -213,16 +246,17 @@ class ImportExportClient(BaseClass):
                         if group["full_path"].lower() == full_path.lower():
                             self.log.info(
                                 "Found group {}".format(group["full_path"]))
-                            namespace = group["id"]
+                            dst_namespace = group["id"]
                             break
 
         exported = False
-        # import_response = None
         timeout = 0
+        filename = self.get_export_filename_from_namespace_and_name(
+            namespace, name)
 
         if not dry_run:
             import_response = self.attempt_import(
-                filename, name, namespace, override_params, project)
+                filename, name, dst_namespace, override_params, project)
             self.log.info("Project {0} (file: {1}) import response:\n{2}"
                           .format(name, filename, import_response))
 
@@ -240,7 +274,7 @@ class ImportExportClient(BaseClass):
                 exported,
                 filename,
                 name,
-                namespace,
+                dst_namespace,
                 override_params,
                 project,
                 timeout)
@@ -253,9 +287,66 @@ class ImportExportClient(BaseClass):
             migration_dry_run("project", {
                 "filename": filename,
                 "name": name,
-                "namespace": namespace,
+                "namespace": dst_namespace,
                 "override_params": override_params,
                 "project": project})
+
+    def import_group(self, group, name, path, filename, dry_run=True):
+        """
+            Imports groups to destination GitLab instance.
+        """
+        if group is None:
+            self.log.error(
+                "SKIP: Import, the following group is NONE: {}".format(group))
+            return None
+
+        if isinstance(group, str):
+            group = json.loads(group)
+
+        if not dry_run:
+            import_response = self.attempt_group_import(filename, name)
+            if import_response and import_response.status_code in [200, 202]:
+                self.log.info(
+                    "Group {0} (file: {1}) successfully imported".format(path, filename))
+            else:
+                self.log.error("Group {0} (file: {1}) import failed, with status {2}".format(
+                    path, filename, import_response))
+        else:
+            self.log.info("DRY-RUN: Outputing group {0} (file: {1}) migration data to dry_run_group_migration.json"
+                          .format(path, filename))
+            migration_dry_run("group", {
+                "filename": filename,
+                "name": name,
+                "path": path,
+                "group": group})
+
+    def attempt_group_import(self, filename, name):
+        resp = None
+        try:
+            # NOTE: Group export does not yet support (AWS/S3) user attributes
+            if self.config.location == "aws":
+                pass
+            elif self.config.location == "filesystem-aws":
+                pass
+            elif self.config.location == "filesystem":
+                with open("%s/downloads/%s" % (self.config.filesystem_path, filename), "rb") as f:
+                    data = {
+                        "path": name.replace(" ", "-"),
+                        "name": name,
+                        "parent_id": self.config.parent_id if self.config.parent_id else ""
+                    }
+                    files = {
+                        "file": (filename, f)
+                    }
+                    headers = {
+                        "Private-Token": self.config.destination_token
+                    }
+                    resp = self.groups_api.import_group(
+                        self.config.destination_host, self.config.destination_token, data=data, files=files, headers=headers)
+            return resp
+        except RequestException as re:
+            self.log.error(
+                "Failed to trigger group {0} (file: {1}), with error {2}".format(name, filename, re))
 
     def dupe_reimport_worker(
             self,
@@ -372,8 +463,7 @@ class ImportExportClient(BaseClass):
                         import_id = None
                         break
                 if import_id is not None:
-                    status = self.get_import_status(
-                        self.config.destination_host, self.config.destination_token, import_id)
+                    status = self.get_import_status(import_id)
                     try:
                         if status.status_code == 200:
                             status_json = status.json()
@@ -462,24 +552,21 @@ class ImportExportClient(BaseClass):
                     "namespace": namespace,
                     "name": name
                 }
-
                 files = {
                     "file": (filename, f)
                 }
-
                 headers = {
                     "Private-Token": self.config.destination_token
                 }
-
-                resp = api.generate_post_request(self.config.destination_host, self.config.destination_token,
-                                                 "projects/import", data, files=files, headers=headers)
+                resp = self.projects_api.import_project(
+                    self.config.destination_host, self.config.destination_token, data=data, files=files, headers=headers)
                 import_response = resp.text
         return import_response
 
-    def get_export_filename_from_namespace_and_name(self, namespace, name):
-        return "{0}_{1}.tar.gz".format(namespace, name).lower()
+    def get_export_filename_from_namespace_and_name(self, namespace, name=""):
+        return "{0}{1}.tar.gz".format(namespace, "/" + name if name else "").replace("/", "_").lower()
 
-    def export_thru_filesystem(self, pid, name, namespace):
+    def export_project_thru_filesystem(self, pid, name, namespace):
         exported = False
         response = self.projects_api.export_project(
             self.config.source_host, self.config.source_token, pid)
@@ -501,6 +588,41 @@ class ImportExportClient(BaseClass):
             else:
                 self.log.error("Failed to export project {0} (ID: {1}), with export status '{2}'"
                                .format(name, pid, exported))
+        return exported
+
+    def export_group_thru_filesystem(self, src_gid, full_path, full_parent_namespace, filename):
+        exported = False
+        full_path_with_parent_namespace = "{0}{1}".format(
+            full_parent_namespace + "/" if full_parent_namespace else "", full_path)
+        self.log.info("Searching on destination for group {}".format(
+            full_path_with_parent_namespace))
+        group_exists, dest_gid = self.groups.find_group_by_path(
+            self.config.destination_host,
+            self.config.destination_token,
+            full_path_with_parent_namespace)
+        if not group_exists:
+            self.log.info("Group {0} (Source ID: {1}) NOT found on destination.".format(
+                full_path_with_parent_namespace, src_gid))
+
+            response = self.groups_api.export_group(
+                self.config.source_host, self.config.source_token, src_gid)
+            if response is None or response.status_code not in [200, 202]:
+                self.log.error("Failed to trigger group {0} (ID: {1}) export, with response '{2}'"
+                               .format(full_path, src_gid, response))
+            else:
+                # NOTE: Export status API endpoint not yet available
+                # exported = self.wait_for_export_to_finish(
+                #     src_gid, full_path, is_project=False) or True
+                exported = self.wait_for_group_download(src_gid)
+                url = "{0}/api/v4/groups/{1}/export/download".format(
+                    self.config.source_host, src_gid)
+                self.log.info("Downloading group {0} (source ID: {1}) as {2}".format(
+                    full_path, src_gid, filename))
+                download_file(url, self.config.filesystem_path, filename=filename, headers={
+                              "PRIVATE-TOKEN": self.config.source_token})
+        else:
+            self.log.info("SKIP: Group {0} with source ID {1} and destination ID {2} found on destination".format(
+                full_path_with_parent_namespace, src_gid, dest_gid))
         return exported
 
     def export_thru_fs_aws(self, pid, name, namespace):
@@ -541,7 +663,7 @@ class ImportExportClient(BaseClass):
 
         return success
 
-    def export_group_thru_aws(self, group_id, group_name, full_parent_namespace):
+    def export_group_thru_aws(self, gid, full_path, full_parent_namespace, filename):
         """
         Called from migrate to kick-off an export process. Calls export_to_aws.
 
@@ -552,38 +674,36 @@ class ImportExportClient(BaseClass):
         """
         exported = False
 
-        full_name_with_parent_namespace = "{0}/{1}".format(
-            full_parent_namespace, group_name)
-        self.log.info("Searching on destination for group %s (ID: %s)",
-                      full_name_with_parent_namespace, str(group_id))
+        full_path_with_parent_namespace = "{0}{1}".format(
+            full_parent_namespace + "/" if full_parent_namespace else "", full_path)
+        self.log.info("Searching on destination for group {}".format(
+            full_path_with_parent_namespace))
         group_exists, dest_group_id = self.groups.find_group_by_path(
             self.config.destination_host,
             self.config.destination_token,
-            full_name_with_parent_namespace
-        )
+            full_path_with_parent_namespace)
         if not group_exists:
             # Generating the presigned URL later down the line does the quote_plus work, and the AWS functions to generate
             # expect an *un*quote_plus string (even through S3 itself returns a quote_plus style string)
             # Also, the CLI commands expect no + and no encoding (for is_export_on_aws). So, leave the filename as the full path
             # Do that export thing
-            self.log.info("Group %s (Source ID: %s) NOT found on destination.",
-                          full_name_with_parent_namespace, str(group_id))
-            # Passing full_name_with_parent_namespace with no +, no encoding, not a quoted string
-            response = self.export_to_aws(
-                group_id, full_name_with_parent_namespace, False)
+            self.log.info("Group {0} (Source ID: {1}) NOT found on destination.".format(
+                full_path_with_parent_namespace, gid))
+            # Passing full_path_with_parent_namespace with no +, no encoding, not a quoted string
+            # NOTE: upload parameter not yet available for export
+            response = self.export_to_aws(gid, filename, False)
             if response is not None and response.status_code == 202:
                 # TODO: We're going to need to see what the status looks like
-                # TODO: Checking the export needs to know...?
+                # NOTE: Export status API endpoint not available yet
                 export_status = self.wait_for_export_to_finish(
-                    group_id, group_name, is_project=False)
+                    gid, full_path, is_project=False)
 
                 # If export status is unknown lookup the file on AWS
                 # Could be misleading, since it assumes the file is complete
-                exported = export_status or self.aws.is_export_on_aws(
-                    full_name_with_parent_namespace)
+                exported = export_status or self.aws.is_export_on_aws(filename)
         else:
-            self.log.info("SKIP: Group %s found on destination with source id %s and destination id %s",
-                          full_name_with_parent_namespace, str(group_id), str(dest_group_id))
+            self.log.info("SKIP: Group {0} with source ID {1} and destination group ID {2} found on destination".format(
+                full_path_with_parent_namespace, gid, dest_group_id))
         return exported
 
     def export_project_thru_aws(self, pid, name, namespace, full_parent_namespace):

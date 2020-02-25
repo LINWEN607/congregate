@@ -11,7 +11,7 @@ class GroupsApi():
 
         GitLab API Doc: https://docs.gitlab.com/ee/api/groups.html#details-of-a-group
 
-            :param: id: (int) GitLab group ID
+            :param: gid: (int) GitLab group ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
             :return: Response object containing the response to GET /groups/:id
@@ -42,7 +42,7 @@ class GroupsApi():
 
     def search_for_group(self, name, host, token):
         """
-        Get all groups that match your string in their name or path.
+        Get all groups that match your string in their name or path
 
         GitLab API Doc: https://docs.gitlab.com/ee/api/groups.html#search-for-group
 
@@ -66,19 +66,19 @@ class GroupsApi():
         """
         return api.generate_post_request(host, token, "groups", json.dumps(data))
 
-    def add_member_to_group(self, id, host, token, member):
+    def add_member_to_group(self, gid, host, token, member):
         """
         Adds a member to a group or project
 
         GitLab API Doc: https://docs.gitlab.com/ee/api/members.html#add-a-member-to-a-group-or-project
 
-            :param: id: (int) GitLab group ID
+            :param: gid: (int) GitLab group ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
             :param: member: (dict) Object containing the member data. Refer to the link above for specific examples
             :return: Response object containing the response to POST /groups/:id/members
         """
-        return api.generate_post_request(host, token, "groups/%d/members" % id, json.dumps(member))
+        return api.generate_post_request(host, token, "groups/%d/members" % gid, json.dumps(member))
 
     def get_all_groups(self, host, token):
         """
@@ -92,48 +92,48 @@ class GroupsApi():
         """
         return api.list_all(host, token, "groups")
 
-    def get_all_group_members(self, id, host, token):
+    def get_all_group_members(self, gid, host, token):
         """
         https://docs.gitlab.com/ee/api/members.html#list-all-members-of-a-group-or-project
 
         GitLab API Doc: https://docs.gitlab.com/ee/api/members.html#list-all-members-of-a-group-or-project
 
-            :param: id: (int) GitLab group ID
+            :param: gid: (int) GitLab group ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
             :yield: Response object containing the response to GET /groups/:id/members
         """
-        return api.list_all(host, token, "groups/%d/members" % id)
+        return api.list_all(host, token, "groups/%d/members" % gid)
 
     def update_member_access_level(self, host, token, gid, uid, level):
         return api.generate_put_request(host, token, "groups/{0}/members/{1}?access_level={2}".format(gid, uid, level), data=None)
 
-    def get_all_subgroups(self, id, host, token):
+    def get_all_subgroups(self, gid, host, token):
         """
         Get a list of visible direct subgroups in this group
 
         GitLab API Doc: https://docs.gitlab.com/ee/api/groups.html#list-a-groups-subgroups
 
-            :param: id: (int) GitLab group ID
+            :param: gid: (int) GitLab group ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
             :yield: Response object containing the response to GET /groups/:id/subgroups
 
         """
-        return api.list_all(host, token, "groups/%d/subgroups" % id)
+        return api.list_all(host, token, "groups/%d/subgroups" % gid)
 
-    def delete_group(self, id, host, token):
+    def delete_group(self, gid, host, token):
         """
         Removes group with all projects inside
 
         GitLab API Doc: https://docs.gitlab.com/ee/api/groups.html#remove-group
 
-            :param: id: (int) GitLab group ID
+            :param: gid: (int) GitLab group ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
             :return: Response object containing a 202 (Accepted) or 404 (Group not found) from DELETE /groups/:id
         """
-        return api.generate_delete_request(host, token, "groups/{}".format(id))
+        return api.generate_delete_request(host, token, "groups/{}".format(gid))
 
     def remove_member(self, gid, uid, host, token):
         """
@@ -141,49 +141,165 @@ class GroupsApi():
 
         GitLab API Doc: https://docs.gitlab.com/ee/api/members.html#remove-a-member-from-a-group-or-project
 
-            :param: id: (int) GitLab group ID
-            :param: user_id: (int) GitLab user ID
+            :param: gid: (int) GitLab group ID
+            :param: uid: (int) GitLab user ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
             :return: Response object containing a 202 (accepted) or 404 (Member not found) from DELETE /groups/:id/members/:user_id
         """
         return api.generate_delete_request(host, token, "groups/%d/members/%d" % (gid, uid))
 
-    def get_notification_level(self, host, token, id):
+    def get_notification_level(self, host, token, gid):
         """
-        Get current group notification settings.
+        Get current group notification settings
 
         GitLab API Doc: hhttps://docs.gitlab.com/ee/api/notification_settings.html#group--project-level-notification-settings
 
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
-            :param: id: (int) GitLab group ID
+            :param: gid: (int) GitLab group ID
             :return: Response object containing the response to GET /groups/:id/notification_settings
         """
-        return api.generate_get_request(host, token, "groups/%d/notification_settings" % id)
+        return api.generate_get_request(host, token, "groups/%d/notification_settings" % gid)
 
-    def update_notification_level(self, host, token, id, level):
+    def update_notification_level(self, host, token, gid, level):
         """
-        Update current group notification settings.
+        Update current group notification settings
 
         GitLab API Doc: https://docs.gitlab.com/ee/api/notification_settings.html#update-groupproject-level-notification-settings
 
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
-            :param: id: (int) GitLab group ID
+            :param: gid: (int) GitLab group ID
             :param: level: (str) Current group notification level
             :return: Response object containing the response to PUT /groups/:id/notification_settings
         """
-        return api.generate_put_request(host, token, "groups/%d/notification_settings?level=%s" % (id, level), data=None)
+        return api.generate_put_request(host, token, "groups/%d/notification_settings?level=%s" % (gid, level), data=None)
 
-    def export_group(self, host, token, source_id, data, headers):
+    def export_group(self, host, token, gid, data=None, headers=None):
         """
         Export a group using the groups api
 
             :param: host: (str) The source host
             :param: token: (str) A token that can access the source host with export permissions
-            :param: source_id: (int) The group id on the source system
+            :param: gid: (int) The group id on the source system
             :param: data: (str) Relevant data for the export
             :param: headers: (str) The headers for the API request
         """
-        return api.generate_post_request(host, token, "groups/{}/export".format(source_id), data=data, headers=headers)
+        return api.generate_post_request(host, token, "groups/{}/export".format(gid), data=data, headers=headers)
+
+    def import_group(self, host, token, data=None, files=None, headers=None):
+        """
+        Import a group using the groups api
+
+            :param: host: (str) The destination host
+            :param: token: (str) A token that can access the destination host with import permissions
+            :param: files: (str) The group filename as it was exported
+            :param: data: (str) Relevant data for the export
+            :param: headers: (str) The headers for the API request
+        """
+        return api.generate_post_request(host, token, "groups/import", data=data, files=files, headers=headers)
+
+    def get_all_group_members_incl_inherited(self, gid, host, token):
+        """
+        Gets a list of group or project members viewable by the authenticated user, including inherited members through ancestor groups
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/members.html#list-all-members-of-a-group-or-project-including-inherited-members
+
+            :param: gid: (int) GitLab group ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Generator returning JSON of each result from GET /groups/:id/members/all
+        """
+        return api.list_all(host, token, "groups/%d/members/all" % gid)
+
+    def get_all_group_issue_boards(self, gid, host, token):
+        """
+        Lists Issue Boards in the given group
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/group_boards.html#list-all-group-issue-boards-in-a-group
+
+            :param: gid: (int) GitLab group ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Generator returning JSON of each result from GET /groups/:id/boards
+        """
+        return api.list_all(host, token, "groups/%d/boards" % gid)
+
+    def get_all_group_labels(self, gid, host, token):
+        """
+        Get all labels for a given group
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/group_labels.html#group-labels-api
+
+            :param: gid: (int) GitLab group ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Generator returning JSON of each result from GET /groups/:id/labels
+        """
+        return api.list_all(host, token, "groups/%d/labels" % gid)
+
+    def get_all_group_milestones(self, gid, host, token):
+        """
+        Returns a list of group milestones
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/group_milestones.html#list-group-milestones
+
+            :param: gid: (int) GitLab group ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Generator returning JSON of each result from GET /groups/:id/milestones
+        """
+        return api.list_all(host, token, "groups/%d/milestones" % gid)
+
+    def get_all_group_hooks(self, gid, host, token):
+        """
+        Get a list of group hooks
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/groups.html#list-group-hooks
+
+            :param: gid: (int) GitLab group ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Generator returning JSON of each result from GET /groups/:id/hooks
+        """
+        return api.list_all(host, token, "groups/%d/hooks" % gid)
+
+    def get_all_group_projects(self, gid, host, token):
+        """
+        Get a list of projects in this group
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/groups.html#list-a-groups-projects
+
+            :param: gid: (int) GitLab group ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Generator returning JSON of each result from GET /groups/:id/projects
+        """
+        return api.list_all(host, token, "groups/%d/projects" % gid)
+
+    def get_all_group_subgroups(self, gid, host, token):
+        """
+        Get a list of visible direct subgroups in a group
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/groups.html#list-a-groups-subgroups
+
+            :param: gid: (int) GitLab group ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Generator returning JSON of each result from GET /groups/:id/subgroups
+        """
+        return api.list_all(host, token, "groups/%d/subgroups" % gid)
+
+    def get_all_group_audit_events(self, gid, host, token):
+        """
+        Get a list of audit events for this group
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/audit_events.html#retrieve-all-group-audit-events
+
+            :param: gid: (int) GitLab group ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Generator returning JSON of each result from GET /groups/:id/audit_events
+        """
+        return api.list_all(host, token, "groups/%d/audit_events" % gid)

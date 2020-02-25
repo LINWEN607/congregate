@@ -491,13 +491,10 @@ class GroupsClient(BaseClass):
             group_name = group_file[i]["id"]
             rewritten_groups[group_name] = new_obj
         staged_groups = []
-        if len(groups) > 0:
-            if len(groups[0]) > 0:
-                for group in groups:
-                    self.traverse_staging(
-                        int(group), rewritten_groups, staged_groups)
-                    self.log.info("Staging group [%d/%d]" %
-                                  (len(staged_groups), len(groups)))
+        if groups and all(i > 0 for i in groups):
+            for group in groups:
+                self.traverse_staging(
+                    int(group), rewritten_groups, staged_groups)
 
         with open("%s/data/staged_groups.json" % self.app_path, "w") as f:
             json.dump(remove_dupes(staged_groups), f, indent=4)
@@ -554,6 +551,8 @@ class GroupsClient(BaseClass):
         if group_dict.get(id, None) is not None:
             g = group_dict[id]
             if g["parent_id"] is None:
+                self.log.info(
+                    "Staging top level group {0} (ID: {1})".format(g["full_path"], g["id"]))
                 if self.config.parent_id is not None:
                     parent_group = self.groups_api.get_group(
                         self.config.parent_id, self.config.destination_host, self.config.destination_token).json()
@@ -561,6 +560,10 @@ class GroupsClient(BaseClass):
                     g["parent_namespace"] = parent_group["path"]
                     g["parent_id"] = self.config.parent_id
             else:
+                self.log.info(
+                    "SKIP: Staging sub-group {0} (ID: {1})".format(g["full_path"], g["id"]))
+                return
+                # TODO: Remove if we want to completely abandon staging sub-groups
                 parent_group = group_dict.get(g["parent_id"])
                 if parent_group is not None:
                     parent_group_resp = self.groups_api.get_group(
