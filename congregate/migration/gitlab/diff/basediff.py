@@ -2,7 +2,7 @@ import json
 import base64
 from opslib.icsutils.jsondiff import Comparator
 from bs4 import BeautifulSoup as bs
-from json2html import *
+from json2html import json2html
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.misc_utils import find as nested_find
 
@@ -112,7 +112,15 @@ class BaseDiffClient(BaseClass):
         }
 
     def generate_html_report(self, diff, filepath):
-        html_data = json2html.convert(json=diff, clubbing=True)
+        html_data = json2html.convert(json=diff)
         soup = bs(html_data, features="lxml")
+        style = soup.new_tag("style")
+        style.content = "table tr th td { border: 1px solid #000 }"
+        soup.html.append(soup.new_tag("head"))
+        soup.html.head.append(style)
+        for tr in soup.html.body.table.find_all('tr', recursive=False):
+            new_tr = soup.new_tag("tr")
+            new_tr.append(tr.td)
+            tr.insert_after(new_tr)
         with open(filepath, "w") as f:
             f.write(soup.prettify())
