@@ -123,7 +123,7 @@ class ImportExportClient(BaseClass):
                 exported = True
                 break
             print response.text
-            sleep(wait_time)
+            sleep(5)
             timer += 5
             if timer > self.config.max_export_wait_time:
                 break
