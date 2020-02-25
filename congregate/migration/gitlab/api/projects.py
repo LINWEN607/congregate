@@ -375,6 +375,21 @@ class ProjectsApi():
         """
         return api.list_all(host, token, "projects/%d/variables" % id)
 
+
+    def create_project_variable(self, id, host, token, data):
+        """
+        Creates a new project variable
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/project_level_variables.html#create-variable
+
+            :param: id: (int) GitLab project ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :param: data: (dict) Object containing the various data required for creating a project variable. Refer to the link above for specific examples
+            :return: Response object containing the response to POST /projects/:id/variables
+        """
+        return api.generate_post_request(host, token, "projects/%d/variables" % id, json.dumps(data))
+
     def get_all_project_protected_branches(self, id, host, token):
         """
         Gets a list of protected branches from a project
