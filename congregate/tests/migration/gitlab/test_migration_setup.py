@@ -40,7 +40,7 @@ class MigrationEndToEndTestSetup(unittest.TestCase):
             os.getenv("GITLAB_SRC"), # source host
             # self.t.generate_token("source_token", "2020-08-27", url=os.getenv("GITLAB_SRC"), username="root", pword=uuid4().hex), # source token
             os.getenv("GITLAB_SRC_REG_URL"), # source registry url
-            "3600", # max_export_wait_time
+            "120", # max_export_wait_time
             os.getenv("GITLAB_DEST_REG_URL"), # destination registry url
             "", # destination parent group id
             # "parent_group_path",  # destination parent group full path

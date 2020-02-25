@@ -178,9 +178,12 @@ def __migrate_group_info(dry_run=True, skip_group_export=False, skip_group_impor
             import_pool.join()
 
             # append Total : Successful count of groups imports
-            import_results.append(Counter("Total : Successful: {}"
-                                          .format(len(import_results)) for d in import_results for k, v in d.items() if v)
-                                  or "Total : Successful: 0 : 0")
+            import_results.append({
+                "group import results": {
+                    "Total": len(import_results),
+                    "Successful": sum([len(import_results[x]) for x in xrange(len(import_results)) if isinstance(import_results[x][import_results[x].keys()[0]], dict)])
+                }
+            })
             b.log.info("### {0}Group import results ###\n{1}"
                        .format(dry_log, json_pretty(import_results)))
         else:
