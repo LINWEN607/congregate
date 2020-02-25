@@ -122,8 +122,9 @@ class ImportExportClient(BaseClass):
             if response.status_code == 200:
                 exported = True
                 break
+            print response.text
             sleep(wait_time)
-            timer += wait_time
+            timer += 5
             if timer > self.config.max_export_wait_time:
                 break
         return exported
