@@ -72,9 +72,9 @@ test:unit:
 test:end-to-end:
   services:
     - name: docker:19.03.1-dind
-    - name: gitlab/gitlab-ee:latest
-      alias: gitlab_source
-    - name: gitlab/gitlab-ee:latest
+    # - name: gitlab/gitlab-ee:latest
+    #   alias: gitlab_source
+    - name: gitlab/gitlab-ee:nightly
       alias: gitlab_destination
   <<: *test-job
   tags:
