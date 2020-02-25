@@ -19,6 +19,8 @@ alias drun='docker run \
               -p 8000:8000 \
               -it registry.gitlab.com/gitlab-com/customer-success/tools/congregate/master:$(get_latest_master_tag) \
               /bin/bash'
+alias pyclean="find ./congregate -name '*.pyc' -delete"
+alias gendocs='sphinx-apidoc -f -o congregate/docs/source/ ./'
 
 printf '# pyproject.toml and Dockerfile aliases\n'
 alias penv

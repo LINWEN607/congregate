@@ -157,6 +157,12 @@ def get_dry_log(dry_run=True):
 def json_pretty(data):
     return json.dumps(data, indent=4, sort_keys=True)
 
+def write_json_to_file(path, data, log=None):
+    if log:
+        log.info("### Writing output to %s" % path)
+    with open(path, "w") as f:
+        json.dump(data, f, indent=4)
+
 def obfuscate(prompt):
     return base64.b64encode(getpass(prompt))
 

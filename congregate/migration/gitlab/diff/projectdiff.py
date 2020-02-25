@@ -1,7 +1,7 @@
 from types import GeneratorType
 from congregate.migration.gitlab.diff.basediff import BaseDiffClient
 from congregate.migration.gitlab.api.projects import ProjectsApi
-from congregate.migration.gitlab.api.variables import VariablesApi
+from congregate.migration.gitlab.variables import VariablesClient
 from congregate.helpers.misc_utils import rewrite_json_list_into_dict
 
 class ProjectDiffClient(BaseDiffClient):
@@ -11,7 +11,7 @@ class ProjectDiffClient(BaseDiffClient):
     def __init__(self, results_file, staged=False):
         super(ProjectDiffClient, self).__init__()
         self.projects_api = ProjectsApi()
-        self.variables_api = VariablesApi()
+        self.variables_api = VariablesClient()
         self.results = rewrite_json_list_into_dict(self.load_json_data(results_file))
         self.keys_to_ignore = [
             "id",

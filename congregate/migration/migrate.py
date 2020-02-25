@@ -15,7 +15,7 @@ from shutil import copy
 from requests.exceptions import RequestException
 
 from congregate.helpers import api, migrate_utils
-from congregate.helpers.misc_utils import get_dry_log, json_pretty
+from congregate.helpers.misc_utils import get_dry_log, json_pretty, write_json_to_file
 from congregate.aws import AwsClient
 from congregate.cli.stage_projects import stage_projects
 from congregate.helpers import base_module as b
@@ -114,8 +114,7 @@ def migrate_user_info(dry_run=True):
     # This list is of user ids from found users via email or newly created users
     # So, new_user_ids is a bit of a misnomer
     if new_users:
-        with open("%s/data/user_migration_results.json" % b.app_path, "w") as f:
-            json.dump(new_users, f, indent=4)
+        write_results_to_file(new_users, result_type="user")
         with open("%s/data/new_user_ids.txt" % b.app_path, "w") as f:
             for new_user in new_users:
                 f.write("%s\n" % new_user)
@@ -131,11 +130,9 @@ def migrate_group_info(dry_run=True):
     if staged_groups:
         b.log.info("{}Migrating group info".format(get_dry_log(dry_run)))
         results = groups.migrate_group_info(dry_run)
-        with open("%s/data/group_migration_results.json" % b.app_path, "w") as f:
-            json.dump(results, f, indent=4)
+        write_results_to_file(results, result_type="group")
     else:
         b.log.info("SKIP: No groups to migrate")
-
 
 def migrate_project_info(dry_run=True, skip_project_export=False, skip_project_import=False):
     staged_projects = projects.get_staged_projects()
@@ -192,20 +189,19 @@ def migrate_project_info(dry_run=True, skip_project_export=False, skip_project_i
                     "Successful": sum([len(import_results[x]) for x in xrange(len(import_results)) if isinstance(import_results[x][import_results[x].keys()[0]], dict)])
                 }
             })
-            print import_results
             b.log.info("### {0}Project import results ###\n{1}"
                        .format(dry_log, json_pretty(import_results)))
-            end_time = str(datetime.now()).replace(" ", "_")
-            file_path = "%s/data/project_results_%s.json" % (b.app_path, end_time)
-            b.log.info("### Writing output to %s" % file_path)
-            with open(file_path, "w") as f:
-                json.dump(import_results, f, indent=4)
-            copy(file_path, "%s/data/project_results.json" % b.app_path)
+            write_results_to_file(import_results)
         else:
             b.log.info("SKIP: Assuming staged projects will be later imported")
     else:
         b.log.info("SKIP: No projects to migrate")
 
+def write_results_to_file(import_results, result_type="project"):
+    end_time = str(datetime.now()).replace(" ", "_")
+    file_path = "%s/data/%s_migration_results_%s.json" % (b.app_path, result_type, end_time)
+    write_json_to_file(file_path, import_results, log=b.log)
+    copy(file_path, "%s/data/%s_migration_results.json" % (b.app_path, result_type))
 
 def handle_exporting_projects(project, dry_run=True):
     name = project["name"]

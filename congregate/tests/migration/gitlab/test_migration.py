@@ -33,7 +33,7 @@ class MigrationEndToEndTest(unittest.TestCase):
         self.assertGreater(diff_report["group_migration_results"]["overall_accuracy"], 0.90)
 
     def test_project_migration_diff(self):
-        project_diff = ProjectDiffClient("%s/data/project_results.json" % app_path)
+        project_diff = ProjectDiffClient("%s/data/project_migration_results.json" % app_path)
         diff_report = project_diff.generate_project_diff_report()
         self.assertGreater(diff_report["project_migration_results"]["overall_accuracy"], 0.90)
     

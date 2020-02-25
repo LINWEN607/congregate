@@ -343,7 +343,7 @@ if __name__ == '__main__':
                 group_diff = GroupDiffClient("%s/data/group_migration_results.json" % app_path)
                 diff_report = group_diff.generate_group_diff_report()
                 group_diff.generate_html_report(diff_report, "%s/data/group_migration_results.html" % app_path)
-                project_diff = ProjectDiffClient("%s/data/project_results.json" % app_path)
+                project_diff = ProjectDiffClient("%s/data/project_migration_results.json" % app_path)
                 diff_report = project_diff.generate_project_diff_report()
                 project_diff.generate_html_report(diff_report, "%s/data/project_migration_results.html" % app_path)
 

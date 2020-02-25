@@ -4,18 +4,32 @@ from requests.exceptions import RequestException
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers import api
 from congregate.helpers.misc_utils import get_dry_log
-from congregate.migration.gitlab.api.variables import VariablesApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
 
 class VariablesClient(BaseClass):
     def __init__(self):
         self.projects = ProjectsApi()
-        self.variables = VariablesApi()
         super(VariablesClient, self).__init__()
 
     def are_enabled(self, id):
         project = api.generate_get_request(self.config.source_host, self.config.source_token, "projects/%d" % id).json()
         return project.get("jobs_enabled", False)
+
+    def get_variables(self, id, host, token, var_type="projects"):
+        if var_type == "group":
+            endpoint = "groups/%d/variables" % id
+        else:
+            endpoint = "projects/%d/variables" % id
+
+        return api.generate_get_request(host, token, endpoint)
+
+    def set_variables(self, id, data, host, token, var_type="projects", instance_type="destination"):
+        if var_type == "group":
+            endpoint = "groups/%d/variables" % id
+        else:
+            endpoint = "projects/%d/variables" % id
+
+        return api.generate_post_request(host, token, endpoint, json.dumps(data))
 
     def migrate_cicd_variables(self, old_id, new_id, name):
         try:
@@ -32,7 +46,7 @@ class VariablesClient(BaseClass):
 
     def migrate_variables(self, new_id, old_id, var_type):
         try:
-            response = self.variables.get_variables(old_id, self.config.source_host, self.config.source_token, var_type=var_type)
+            response = self.get_variables(old_id, self.config.source_host, self.config.source_token, var_type)
             if response.status_code == 200:
                 variables = response.json()
                 if len(variables) > 0:
@@ -41,7 +55,7 @@ class VariablesClient(BaseClass):
                             var["environment_scope"] = "*"
                         self.log.info("Migrating {0} ID (old: {1}; new: {2}) variables"
                             .format(var_type, old_id, new_id))
-                        self.variables.set_variables(new_id, var, self.config.destination_host, self.config.destination_token, var_type=var_type)
+                        self.set_variables(new_id, var, self.config.destination_host, self.config.destination_token, var_type)
                 else:
                     self.log.info("SKIP: Project (old: {0}; new: {1}) does not have CI variables"
                         .format(old_id, new_id))
