@@ -249,14 +249,18 @@ if __name__ == '__main__':
             if arguments["add-users-to-parent-group"]:
                 users.add_users_to_parent_group(dry_run=DRY_RUN)
             if arguments["update-aws-creds"]:
-                command = "aws configure set aws_access_key_id {}".format(
-                    config.s3_access_key)
-                subprocess.call(command.split(" "))
-                log.info("Configured AWS access key")
-                command = "aws configure set aws_secret_access_key {}".format(
-                    config.s3_secret_key)
-                subprocess.call(command.split(" "))
-                log.info("Configured AWS secret key")
+                if config.s3_access_key and config.s3_secret_key:
+                    command = "aws configure set aws_access_key_id {}".format(
+                        config.s3_access_key)
+                    subprocess.call(command.split(" "))
+                    command = "aws configure set aws_secret_access_key {}".format(
+                        config.s3_secret_key)
+                    subprocess.call(command.split(" "))
+                    log.info(
+                        "Configured local AWS access and secret keys (~/.aws/credentials)")
+                else:
+                    log.warning("No AWS configuration. Export location: {}".format(
+                        config.location))
             if arguments["remove-blocked-users"]:
                 users.remove_blocked_users(dry_run=DRY_RUN)
             if arguments["update-user-permissions"]:
