@@ -87,8 +87,8 @@ test:end-to-end:
     - export GITLAB_DEST_REG_URL=gitlab_destination:4567
     - poetry run pytest -s -m e2e_setup congregate/tests/
     - poetry run pytest -s -m e2e --cov-config=.coveragerc --cov=congregate congregate/tests/
-    - congregate generate-diff
   after_script:
+    - congregate generate-diff
     - poetry run aws ec2 terminate-instances --instance-ids $(cat instance_id)
   artifacts:
     when: always
