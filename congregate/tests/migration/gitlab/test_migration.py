@@ -25,16 +25,18 @@ class MigrationEndToEndTest(unittest.TestCase):
     def test_user_migration_diff(self):
         user_diff = UserDiffClient("%s/data/user_migration_results.json" % app_path)
         diff_report = user_diff.generate_report()
+        user_diff.generate_html_report(diff_report, "%s/data/user_migration_results.html" % app_path)
         self.assertGreater(diff_report["user_migration_results"]["accuracy"], 0.95)
 
     def test_group_migration_diff(self):
         group_diff = GroupDiffClient("%s/data/group_migration_results.json" % app_path)
         diff_report = group_diff.generate_group_diff_report()
+        group_diff.generate_html_report(diff_report, "%s/data/group_migration_results.html" % app_path)
         self.assertGreater(diff_report["group_migration_results"]["overall_accuracy"], 0.90)
 
     def test_project_migration_diff(self):
         project_diff = ProjectDiffClient("%s/data/project_migration_results.json" % app_path)
         diff_report = project_diff.generate_project_diff_report()
+        project_diff.generate_html_report(diff_report, "%s/data/project_migration_results.html" % app_path)
         self.assertGreater(diff_report["project_migration_results"]["overall_accuracy"], 0.90)
     
-

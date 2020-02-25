@@ -88,7 +88,6 @@ test:end-to-end:
     - poetry run pytest -s -m e2e_setup congregate/tests/
     - poetry run pytest -s -m e2e --cov-config=.coveragerc --cov=congregate congregate/tests/
   after_script:
-    - congregate generate-diff
     - poetry run aws ec2 terminate-instances --instance-ids $(cat instance_id)
   artifacts:
     when: always
