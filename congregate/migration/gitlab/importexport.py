@@ -117,8 +117,8 @@ class ImportExportClient(BaseClass):
         exported = False
         timer = 0
         wait_time = self.config.importexport_wait
-        response = self.get_group_download_status(gid)
         while True:
+            response = self.get_group_download_status(gid)
             if response.status_code == 200:
                 exported = True
                 break
@@ -344,6 +344,7 @@ class ImportExportClient(BaseClass):
                     }
                     resp = self.groups_api.import_group(
                         self.config.destination_host, self.config.destination_token, data=data, files=files, headers=headers)
+                    print resp.text
             return resp
         except RequestException as re:
             self.log.error(
@@ -607,6 +608,9 @@ class ImportExportClient(BaseClass):
 
             response = self.groups_api.export_group(
                 self.config.source_host, self.config.source_token, src_gid)
+            print src_gid
+            print response.text
+            print response.status_code
             if response is None or response.status_code not in [200, 202]:
                 self.log.error("Failed to trigger group {0} (ID: {1}) export, with response '{2}'"
                                .format(full_path, src_gid, response))
