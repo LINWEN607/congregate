@@ -91,6 +91,7 @@ test:end-to-end:
   after_script:
     - poetry run aws ec2 terminate-instances --instance-ids $(cat instance_id)
   artifacts:
+    when: always
     paths:
       - data/*.html
   allow_failure: true
