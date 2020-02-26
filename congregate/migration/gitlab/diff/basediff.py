@@ -27,16 +27,26 @@ class BaseDiffClient(BaseClass):
             diff = engine.compare_dicts(source_data, destination_data)
 
         if source_data:
-            accuracy = 1 - float(len(diff)) / float(len(source_data))
+            original_accuracy = 1 - float(len(diff)) / float(len(source_data))
+            accuracy = self.critical_key_case_check(diff, critical_key, original_accuracy)
         else:
             accuracy = 0
-        if critical_key in diff or bool(list(nested_find("error", diff))):
+        if bool(list(nested_find("error", diff))):
             accuracy = 0
                     
         return {
             "diff": diff,
             "accuracy": accuracy
         }
+
+    def critical_key_case_check(self, diff, critical_key, original_accuracy):
+        if critical_key in diff:
+            diff_minus = diff[critical_key]['---']
+            diff_plus = diff[critical_key]['+++']
+            if diff_minus.lower() != diff_plus.lower():
+                return 0
+            return 1
+        return original_accuracy
         
     def load_json_data(self, path):
         with open(path, "r") as f:
