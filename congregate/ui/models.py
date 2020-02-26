@@ -5,7 +5,7 @@ from congregate.helpers.configuration_validator import ConfigurationValidator
 from . import app
 
 # try:
-from congregate.helpers.base_module import app_path
+from congregate.helpers.misc_utils import get_congregate_path
 # except ImportError:
 #     from cli import stage_projects
 #     from cli.config import update_config
@@ -16,7 +16,7 @@ from congregate.helpers.base_module import app_path
 
 def get_data(file_name, sort_by=None):
     data = None
-    with open("%s/data/%s.json" % (app_path, file_name), "r") as f:
+    with open("%s/data/%s.json" % (get_congregate_path(), file_name), "r") as f:
         data = json.load(f)
 
     if sort_by is not None:
@@ -24,9 +24,11 @@ def get_data(file_name, sort_by=None):
 
     return data
 
+
 def get_config():
     config = ConfigurationValidator()
     return config.as_obj()
+
 
 def get_counts():
     total_projects = len(get_data("project_json"))

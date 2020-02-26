@@ -1,5 +1,5 @@
 """
-Congregate - GitLab instance migration utility 
+Congregate - GitLab instance migration utility
 
 Copyright (c) 2020 - GitLab
 """
@@ -7,14 +7,17 @@ Copyright (c) 2020 - GitLab
 import json
 import re
 from congregate.helpers.misc_utils import get_dry_log, remove_dupes
-from congregate.helpers import base_module as b
+from congregate.helpers.base_class import BaseClass
 from congregate.migration.gitlab.api.projects import ProjectsApi
 
 projects_api = ProjectsApi()
 existing_parent_ids = []
+b = BaseClass()
 
 # TODO: Break down into separate staging areas
 # Stage users, groups and projects
+
+
 def stage_projects(projects_to_stage, dry_run=True):
     staged_projects, staged_users, staged_groups = build_staging_data(
         projects_to_stage, dry_run)
@@ -57,8 +60,10 @@ def build_staging_data(projects_to_stage, dry_run=True):
                 obj = get_project_metadata(projects[i])
 
                 members = []
-                for member in projects_api.get_members(int(projects[i]["id"]), b.config.source_host, b.config.source_token):
-                    append_member_to_members_list(rewritten_users, staged_users, members, member)
+                for member in projects_api.get_members(
+                        int(projects[i]["id"]), b.config.source_host, b.config.source_token):
+                    append_member_to_members_list(
+                        rewritten_users, staged_users, members, member)
 
                 # if projects[i]["namespace"]["kind"] == "group":
                 #     group_to_stage = projects[i]["namespace"]["id"]
@@ -84,8 +89,10 @@ def build_staging_data(projects_to_stage, dry_run=True):
                 obj = get_project_metadata(projects[i])
 
                 members = []
-                for member in projects_api.get_members(int(projects[i]["id"]), b.config.source_host, b.config.source_token):
-                    append_member_to_members_list(rewritten_users, staged_users, members, member)
+                for member in projects_api.get_members(
+                        int(projects[i]["id"]), b.config.source_host, b.config.source_token):
+                    append_member_to_members_list(
+                        rewritten_users, staged_users, members, member)
 
                 if projects[0]["namespace"]["kind"] == "group":
                     group_to_stage = projects[0]["namespace"]["id"]
@@ -109,12 +116,13 @@ def build_staging_data(projects_to_stage, dry_run=True):
                 b.log.info("{0}Staging project ({1}) [{2}/{3}]".format(
                     get_dry_log(dry_run),
                     obj["name"],
-                    len(staging)+1,
+                    len(staging) + 1,
                     len(range(start, end))))
                 staging.append(obj)
         else:
             for i in range(0, len(projects_to_stage)):
-                # Hacky check for id or project name by explicitly checking variable type
+                # Hacky check for id or project name by explicitly checking
+                # variable type
                 try:
                     if (isinstance(int(projects_to_stage[i]), int)):
                         key = projects_to_stage[i]
@@ -129,9 +137,11 @@ def build_staging_data(projects_to_stage, dry_run=True):
                 obj = get_project_metadata(project)
 
                 members = []
-                for member in projects_api.get_members(int(project["id"]), b.config.source_host, b.config.source_token):
-                    append_member_to_members_list(rewritten_users, staged_users, members, member)
-                    
+                for member in projects_api.get_members(
+                        int(project["id"]), b.config.source_host, b.config.source_token):
+                    append_member_to_members_list(
+                        rewritten_users, staged_users, members, member)
+
                 if project["namespace"]["kind"] == "group":
                     group_to_stage = project["namespace"]["id"]
                     if rewritten_groups[group_to_stage]["parent_id"] is None:
@@ -160,7 +170,8 @@ def build_staging_data(projects_to_stage, dry_run=True):
     else:
         staging = []
 
-    return remove_dupes(staging), remove_dupes(staged_users), remove_dupes(staged_groups)
+    return remove_dupes(staging), remove_dupes(
+        staged_users), remove_dupes(staged_groups)
 
 
 def open_projects_file():
@@ -196,7 +207,9 @@ def write_staging_files(staging, staged_users, staged_groups):
         with open("%s/data/stage.json" % b.app_path, "wb") as f:
             f.write("[]")
 
-def append_member_to_members_list(rewritten_users, staged_users, members_list, member):
+
+def append_member_to_members_list(
+        rewritten_users, staged_users, members_list, member):
     if isinstance(member, dict):
         if member.get("username", None) is not None:
             if member["username"] != "root":
@@ -206,6 +219,7 @@ def append_member_to_members_list(rewritten_users, staged_users, members_list, m
                 members_list.append(member)
     else:
         b.log.error(member)
+
 
 def get_project_metadata(project):
     obj = {

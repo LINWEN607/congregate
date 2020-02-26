@@ -1,6 +1,6 @@
 import json
 from urllib2 import HTTPError
-from congregate.helpers import base_module as b
+from congregate.helpers.base_class import BaseClass
 from congregate.helpers import bitbucket_client as bbc
 from congregate.migration.mirror import MirrorClient
 from congregate.migration.gitlab.repo import gitlab_repo
@@ -25,13 +25,15 @@ mirror = MirrorClient()
 
 # TODO: decouple this as much as possible
 def handle_bitbucket_migration(repo):
+    b = BaseClass()
     project_id = None
     group_id = None
     personal_repo = False
     # searching for project
     if len(repo["name"]) > 0:
         b.log.info("Searching for project %s" % repo["name"])
-        search_name = repo["web_repo_url"].split("%s/scm/" % b.config.external_source_url)[1]
+        search_name = repo["web_repo_url"].split(
+            "%s/scm/" % b.config.external_source_url)[1]
         search_name = search_name.split(".git")[0]
         if len(search_name.split("~")) > 1:
             search_name = search_name.split("~")[1]
@@ -39,11 +41,15 @@ def handle_bitbucket_migration(repo):
         if len(search_name) > 0:
             try:
                 # Search for the project in our target GitLab space
-                project_id = gl.search_for_project(repo["name"], repo["group"], search_name)
+                project_id = gl.search_for_project(
+                    repo["name"], repo["group"], search_name)
                 if project_id is None:
-                    b.log.info("Couldn't find %s. Creating it now." % search_name)
+                    b.log.info(
+                        "Couldn't find %s. Creating it now." %
+                        search_name)
                 # Group or project available to migrate?
-                if repo.get("group", None) is not None or repo.get("project", None) is not None:
+                if repo.get("group", None) is not None or repo.get(
+                        "project", None) is not None:
                     if repo.get("web_repo_url", None) is None:
                         repo["web_repo_url"] = repo["links"]["clone"][0]["href"]
                     # Check if this is a personal repo
@@ -55,10 +61,13 @@ def handle_bitbucket_migration(repo):
                             user_id = None
                             for user in cat_users:
                                 if len(user["email"]) > 0:
-                                    user_search = bbc.user_search_by_email_or_name(user["email"])
+                                    user_search = bbc.user_search_by_email_or_name(
+                                        user["email"])
 
                                     if len(user_search) > 0:
-                                        b.log.info("Found %s: %s" % (user_search[0]["id"], user_search[0]["email"]))
+                                        b.log.info(
+                                            "Found %s: %s" %
+                                            (user_search[0]["id"], user_search[0]["email"]))
                                         user_objects = bbc.get_user_objects_from_user_search_and_user(
                                             user_search,
                                             user,
@@ -70,16 +79,24 @@ def handle_bitbucket_migration(repo):
                                         users_map[user_name] = user_id
                                     else:
                                         if len(user["email"]) > 0:
-                                            user_name = user["email"].split("@")[0]
-                                            if users_map.get(user_name, None) is None:
-                                                new_user_data = bbc.new_user_data_from_user(user)
-                                                b.log.info("Creating new user %s" % user["email"])
-                                                created_user = bbc.create_user(new_user_data)
+                                            user_name = user["email"].split("@")[
+                                                0]
+                                            if users_map.get(
+                                                    user_name, None) is None:
+                                                new_user_data = bbc.new_user_data_from_user(
+                                                    user)
+                                                b.log.info(
+                                                    "Creating new user %s" %
+                                                    user["email"])
+                                                created_user = bbc.create_user(
+                                                    new_user_data)
                                                 user_id = created_user["id"]
                                             else:
-                                                # TODO: This else doesn't do much
+                                                # TODO: This else doesn't do
+                                                # much
                                                 group_id = users_map[user_name]
-                                                b.log.info("Adding new email to user %s" % user["email"])
+                                                b.log.info(
+                                                    "Adding new email to user %s" % user["email"])
                                     if user["permission"] == "PROJECT_ADMIN":
                                         group_id = user_id
                     else:
@@ -91,10 +108,13 @@ def handle_bitbucket_migration(repo):
                         else:
                             # Should never need this, as we know either group or project exists from the outer
                             # if statement. Just keeps the syntax checker happy until we
-                            # TODO: can refactor for better group or project logic
+                            # TODO: can refactor for better group or project
+                            # logic
                             group_name = ""
                         group_name = group_name.replace(" ", "_")
-                        b.log.info("Searching for existing group '%s'" % group_name)
+                        b.log.info(
+                            "Searching for existing group '%s'" %
+                            group_name)
                         group_search = bbc.group_search_by_name(group_name)
                         for group in group_search:
                             if group["path"] == group_name:
@@ -109,25 +129,31 @@ def handle_bitbucket_migration(repo):
                                 "visibility": "private"
                             }
                             b.log.info("Creating new group %s" % group_name)
-                            new_group = bbc.create_group_from_group_data(group_data)
+                            new_group = bbc.create_group_from_group_data(
+                                group_data)
                             group_id = new_group["id"]
 
                         print("group_id", group_id)
 
-                    # Seems that the groups_map.get calls and members_already_added check are dupes?
-                    if len(repo["project_users"]) > 0 and groups_map.get(group_id, None) is None:
+                    # Seems that the groups_map.get calls and
+                    # members_already_added check are dupes?
+                    if len(repo["project_users"]) > 0 and groups_map.get(
+                            group_id, None) is None:
                         members_already_added = groups_map.get(group_id, False)
                         if not members_already_added:
                             for user in repo["project_users"]:
-                                # First, don't even try unless there is an email
+                                # First, don't even try unless there is an
+                                # email
                                 if user.get("email", None) is not None:
                                     user_id = None
-                                    search_array = [user["email"], user["email"].split("@")[0]]
+                                    search_array = [
+                                        user["email"], user["email"].split("@")[0]]
                                     if user.get("name", None) is not None:
                                         search_array.append(user["name"])
                                     if user.get("username", None) is not None:
                                         search_array.append(user["username"])
-                                    if user.get("displayName", None) is not None:
+                                    if user.get("displayName",
+                                                None) is not None:
                                         search_array.append("displayName")
                                     user_data = None
                                     user_search = None
@@ -135,16 +161,22 @@ def handle_bitbucket_migration(repo):
                                     # on the user info from the repo, and try them until one works.
                                     # When a user doesn't exist. Four tries for nothing.
                                     # Maybe when GraphGL is out of alpha, there will be an easier way to
-                                    # filter across an entire result set in a group
+                                    # filter across an entire result set in a
+                                    # group
 
                                     # based on some of the issues we've had with imports, user_ids, and usernames
-                                    # with other imports to .COM, should we just do email or bust?
+                                    # with other imports to .COM, should we
+                                    # just do email or bust?
                                     for search_term in search_array:
-                                        b.log.info("Searching for existing user '%s'" % search_term)
+                                        b.log.info(
+                                            "Searching for existing user '%s'" % search_term)
                                         if search_term is not None:
-                                            user_search = bbc.user_search_by_email_or_name(search_term)
-                                        if user_search is not None and len(user_search) > 0:
-                                            b.log.info("Found %s" % user_search[0])
+                                            user_search = bbc.user_search_by_email_or_name(
+                                                search_term)
+                                        if user_search is not None and len(
+                                                user_search) > 0:
+                                            b.log.info("Found %s" %
+                                                       user_search[0])
                                             user_objects = bbc.get_user_objects_from_user_search_and_user(user_search,
                                                                                                           user,
                                                                                                           users_map)
@@ -152,25 +184,35 @@ def handle_bitbucket_migration(repo):
                                             user_name = user_objects["user_name"]
                                             users_map[user_name] = user_objects["user_id"]
                                             break
-                                    # user_data is set if we find a user, so use it as a flag to create
+                                    # user_data is set if we find a user, so
+                                    # use it as a flag to create
                                     if user_data is None:
                                         if len(user["email"]) > 0:
-                                            user_name = user["email"].split("@")[0]
-                                            if users_map.get(user_name, None) is None:
-                                                new_user_data = bbc.new_user_data_from_user(user)
-                                                b.log.info("Creating new user %s" % user["email"])
+                                            user_name = user["email"].split("@")[
+                                                0]
+                                            if users_map.get(
+                                                    user_name, None) is None:
+                                                new_user_data = bbc.new_user_data_from_user(
+                                                    user)
+                                                b.log.info(
+                                                    "Creating new user %s" %
+                                                    user["email"])
                                                 if user["name"] == "admin":
                                                     new_user_data["username"] = "bb_root"
                                                 try:
-                                                    created_user = bbc.create_user(new_user_data)
-                                                    print("created_user: ", created_user)
-                                                    b.log.info(json.dumps(created_user, indent=4))
+                                                    created_user = bbc.create_user(
+                                                        new_user_data)
+                                                    print(
+                                                        "created_user: ", created_user)
+                                                    b.log.info(json.dumps(
+                                                        created_user, indent=4))
                                                     user_data = {
                                                         "user_id": created_user["id"],
                                                         "access_level": bbc.bitbucket_permission_map[user["permission"]]
                                                     }
                                                 except HTTPError as e:
-                                                    b.log.error("Failed to create user %s" % user["email"])
+                                                    b.log.error(
+                                                        "Failed to create user %s" % user["email"])
                                                     b.log.error(e)
                                                     b.log.error(e.read())
                                             else:
@@ -178,35 +220,50 @@ def handle_bitbucket_migration(repo):
                                                     "email": user["email"],
                                                     "skip_confirmation": True,
                                                 }
-                                                b.log.info("Adding new email to user %s" % user["email"])
+                                                b.log.info(
+                                                    "Adding new email to user %s" % user["email"])
                                                 try:
                                                     created_user = bbc.create_user_by_email_and_user_id(
                                                         new_user_email_data,
                                                         user_id
                                                     )
-                                                    b.log.info(json.dumps(created_user, indent=4))
+                                                    b.log.info(json.dumps(
+                                                        created_user, indent=4))
                                                     user_data = {
                                                         "user_id": created_user["id"],
                                                         "access_level": bbc.bitbucket_permission_map[user["permission"]]
                                                     }
                                                 except HTTPError as e:
-                                                    b.log.error("Failed to create %s" % user["email"])
+                                                    b.log.error(
+                                                        "Failed to create %s" %
+                                                        user["email"])
                                                     b.log.error(e)
                                                     b.log.error(e.read())
 
-                                    # Add the new or existing user to the proper group
-                                    b.log.info("%d: %s" % (group_id, groups_map.get(group_id, None)))
+                                    # Add the new or existing user to the
+                                    # proper group
+                                    b.log.info(
+                                        "%d: %s" %
+                                        (group_id, groups_map.get(
+                                            group_id, None)))
                                     if user_data is not None and personal_repo is False and \
                                             members_already_added is False:
                                         try:
-                                            b.log.info("Adding %s to group" % user["email"])
-                                            bbc.add_user_to_group(user_data, group_id)
+                                            b.log.info(
+                                                "Adding %s to group" %
+                                                user["email"])
+                                            bbc.add_user_to_group(
+                                                user_data, group_id)
                                         except HTTPError as e:
-                                            b.log.error("Failed to add %s to group" % user["email"])
+                                            b.log.error(
+                                                "Failed to add %s to group" % user["email"])
                                             b.log.error(e)
                                             b.log.error(e.read())
                                 else:
-                                    b.log.info("SKIP: User {} with empty email" % user.get("name", None))
+                                    b.log.info(
+                                        "SKIP: User {} with empty email" %
+                                        user.get(
+                                            "name", None))
                             groups_map[group_id] = True
                         else:
                             b.log.info("Members already exist")
@@ -234,10 +291,13 @@ def handle_bitbucket_migration(repo):
                             if len(repo["repo_users"]) > 0:
                                 for user in repo["repo_users"]:
                                     if len(user["email"]) > 0:
-                                        print("search by email:", user["email"])
+                                        print(
+                                            "search by email:", user["email"])
                                         user_data = None
-                                        b.log.info("Searching for existing user '%s'" % user["email"])
-                                        user_search = bbc.user_search_by_email_or_name(user["email"])
+                                        b.log.info(
+                                            "Searching for existing user '%s'" % user["email"])
+                                        user_search = bbc.user_search_by_email_or_name(
+                                            user["email"])
                                         print("user search:", user_search)
                                         if len(user_search) > 0:
                                             user_objects = bbc.get_user_objects_from_user_search_and_user(
@@ -251,37 +311,52 @@ def handle_bitbucket_migration(repo):
                                             users_map[user_name] = user_objects["user_id"]
                                         else:
                                             if len(user["email"]) > 0:
-                                                user_name = user["email"].split("@")[0]
-                                                if users_map.get(user_name, None) is None:
-                                                    new_user_data = bbc.new_user_data_from_user(user)
-                                                    b.log.info("Creating new user %s" % user["email"])
-                                                    created_user = bbc.create_user(new_user_data)
-                                                    b.log.info(json.dumps(created_user, indent=4))
+                                                user_name = user["email"].split("@")[
+                                                    0]
+                                                if users_map.get(
+                                                        user_name, None) is None:
+                                                    new_user_data = bbc.new_user_data_from_user(
+                                                        user)
+                                                    b.log.info(
+                                                        "Creating new user %s" %
+                                                        user["email"])
+                                                    created_user = bbc.create_user(
+                                                        new_user_data)
+                                                    b.log.info(json.dumps(
+                                                        created_user, indent=4))
                                                 else:
                                                     new_user_email_data = {
                                                         "email": user["email"],
                                                         "skip_confirmation": True,
                                                     }
-                                                    b.log.info("Adding new email to user %s" % user["email"])
+                                                    b.log.info(
+                                                        "Adding new email to user %s" % user["email"])
                                                     created_user = bbc.create_user_by_group(new_user_email_data,
                                                                                             group_id)
-                                                    b.log.info(json.dumps(created_user, indent=4))
+                                                    b.log.info(json.dumps(
+                                                        created_user, indent=4))
                                                 user_data = {
                                                     "user_id": created_user["id"],
                                                     "access_level": bbc.bitbucket_permission_map[user["permission"]]
                                                 }
                                         if user_data is not None:
                                             try:
-                                                b.log.info("Adding %s to project" % user["email"])
-                                                bbc.add_user_to_project(user_data, project_id)
+                                                b.log.info(
+                                                    "Adding %s to project" %
+                                                    user["email"])
+                                                bbc.add_user_to_project(
+                                                    user_data, project_id)
                                             except HTTPError as e:
-                                                b.log.error("Failed to add %s to project" % user["email"])
+                                                b.log.error(
+                                                    "Failed to add %s to project" % user["email"])
                                                 b.log.error(e)
                                                 b.log.error(e.read())
                                         else:
                                             b.log.info("No user data found")
                     else:
-                        b.log.info("Namespace ID null. Ignoring %s" % repo["name"])
+                        b.log.info(
+                            "Namespace ID null. Ignoring %s" %
+                            repo["name"])
                 else:
                     b.log.info("Invalid JSON found. Ignoring object")
             except HTTPError as e:

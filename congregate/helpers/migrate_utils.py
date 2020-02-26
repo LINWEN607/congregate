@@ -1,11 +1,11 @@
-from congregate.helpers import base_module as b
+from congregate.helpers.base_class import BaseClass
 from congregate.migration.gitlab.groups import GroupsClient as groupsClient
 from congregate.migration.gitlab.users import UsersApi as usersApi
 
 
-if __name__ == "__main__":
-    groups = groupsClient()
-    users_api = usersApi()
+b = BaseClass()
+groups = groupsClient()
+users_api = usersApi()
 
 
 def get_failed_update_from_results(results):
@@ -21,7 +21,8 @@ def get_staged_projects_without_failed_update(staged_projects, failed_update):
     :param failed_update: A list of project export filenames
     :return: A new staged_projects list removing those that failed update
     """
-    return [p for p in staged_projects if get_project_filename(p) not in failed_update]
+    return [p for p in staged_projects if get_project_filename(
+        p) not in failed_update]
 
 
 def get_project_filename(p):
@@ -30,7 +31,8 @@ def get_project_filename(p):
     :param p:
     :return:
     """
-    if p.get("name", None) is not None and p.get("namespace", None) is not None:
+    if p.get("name", None) is not None and p.get(
+            "namespace", None) is not None:
         namespace = str(get_project_namespace(p))
         return "{0}_{1}.tar.gz".format(namespace, str(p["name"])).lower()
     return ""
@@ -58,7 +60,8 @@ def is_user_project(project):
     :param project: The JSON object representing a GitLab project
     :return: True if a user project, else False
     """
-    return project.get("project_type", None) is not None and project["project_type"] == "user"
+    return project.get(
+        "project_type", None) is not None and project["project_type"] == "user"
 
 
 def get_member_id_for_user_project(project):

@@ -18,7 +18,7 @@ from congregate.helpers import api, migrate_utils
 from congregate.helpers.misc_utils import get_dry_log, json_pretty, write_json_to_file
 from congregate.aws import AwsClient
 from congregate.cli.stage_projects import stage_projects
-from congregate.helpers import base_module as b
+from congregate.helpers.base_class import BaseClass
 from congregate.migration.gitlab.importexport import ImportExportClient
 from congregate.migration.gitlab.badges import BadgesClient
 from congregate.migration.gitlab.variables import VariablesClient
@@ -38,27 +38,27 @@ from congregate.migration.gitlab.deploy_keys import DeployKeysClient
 from congregate.migration.gitlab.hooks import HooksClient
 from congregate.migration.bitbucket import client as bitbucket
 
-if __name__ == "__main__":
-    aws = AwsClient()
-    ie = ImportExportClient()
-    mirror = MirrorClient()
-    variables = VariablesClient()
-    badges = BadgesClient()
-    users = UsersClient()
-    groups = GroupsClient()
-    projects = ProjectsClient()
-    projects_api = ProjectsApi()
-    pushrules = PushRulesClient()
-    branches = BranchesClient()
-    awards = AwardsClient()
-    mr_approvers = MergeRequestApproversClient()
-    awards = AwardsClient()
-    registries = RegistryClient()
-    p_schedules = PipelineSchedulesClient()
-    deploy_keys = DeployKeysClient()
-    hooks = HooksClient()
-    project_export = ProjectExportClient()
-    full_parent_namespace = groups.find_parent_group_path()
+b = BaseClass()
+aws = AwsClient()
+ie = ImportExportClient()
+mirror = MirrorClient()
+variables = VariablesClient()
+badges = BadgesClient()
+users = UsersClient()
+groups = GroupsClient()
+projects = ProjectsClient()
+projects_api = ProjectsApi()
+pushrules = PushRulesClient()
+branches = BranchesClient()
+awards = AwardsClient()
+mr_approvers = MergeRequestApproversClient()
+awards = AwardsClient()
+registries = RegistryClient()
+p_schedules = PipelineSchedulesClient()
+deploy_keys = DeployKeysClient()
+hooks = HooksClient()
+project_export = ProjectExportClient()
+full_parent_namespace = groups.find_parent_group_path()
 
 
 def migrate(
@@ -130,7 +130,8 @@ def migrate_user_info(dry_run=True):
         users.update_user_info(new_users, overwrite=False)
 
 
-def __migrate_group_info(dry_run=True, skip_group_export=False, skip_group_import=False):
+def __migrate_group_info(
+        dry_run=True, skip_group_export=False, skip_group_import=False):
     staged_groups = groups.get_staged_groups()
     dry_log = get_dry_log(dry_run)
     if staged_groups:
@@ -261,13 +262,13 @@ def handle_importing_groups(group, dry_run=True):
         # In place of checking the import status
         results[full_path] = ie.wait_for_group_import(
             full_path_with_parent_namespace)
-    except RequestException, e:
+    except RequestException as e:
         b.log.error(e)
-    except KeyError, e:
+    except KeyError as e:
         b.log.error(e)
         raise KeyError("Something broke in handle_importing_groups group {0} (ID: {1})".format(
             full_path, src_gid))
-    except OverflowError, e:
+    except OverflowError as e:
         b.log.error(e)
     return results
 
@@ -281,7 +282,9 @@ def migrate_group_info(dry_run=True):
     else:
         b.log.info("SKIP: No groups to migrate")
 
-def migrate_project_info(dry_run=True, skip_project_export=False, skip_project_import=False):
+
+def migrate_project_info(
+        dry_run=True, skip_project_export=False, skip_project_import=False):
     staged_projects = projects.get_staged_projects()
     dry_log = get_dry_log(dry_run)
     if staged_projects:
@@ -344,11 +347,16 @@ def migrate_project_info(dry_run=True, skip_project_export=False, skip_project_i
     else:
         b.log.info("SKIP: No projects to migrate")
 
+
 def write_results_to_file(import_results, result_type="project"):
     end_time = str(datetime.now()).replace(" ", "_")
-    file_path = "%s/data/%s_migration_results_%s.json" % (b.app_path, result_type, end_time)
+    file_path = "%s/data/%s_migration_results_%s.json" % (
+        b.app_path, result_type, end_time)
     write_json_to_file(file_path, import_results, log=b.log)
-    copy(file_path, "%s/data/%s_migration_results.json" % (b.app_path, result_type))
+    copy(
+        file_path, "%s/data/%s_migration_results.json" %
+        (b.app_path, result_type))
+
 
 def handle_exporting_projects(project, dry_run=True):
     name = project["name"]
@@ -443,13 +451,13 @@ def handle_importing_projects(project_json, dry_run=True):
                 post_import_results = migrate_single_project_info(
                     project_json, import_id)
                 results[path] = post_import_results
-    except RequestException, e:
+    except RequestException as e:
         b.log.error(e)
-    except KeyError, e:
+    except KeyError as e:
         b.log.error(e)
         raise KeyError("Something broke in handle_importing_projects project {0} (ID: {1})"
                        .format(name, source_id))
-    except OverflowError, e:
+    except OverflowError as e:
         b.log.error(e)
     finally:
         if archived and not dry_run:
@@ -550,10 +558,10 @@ def migrate_single_project_info(project, new_id):
 
 
 def rollback(dry_run=True,
-            skip_users=False,
-            hard_delete=False,
-            skip_groups=False,
-            skip_projects=False):
+             skip_users=False,
+             hard_delete=False,
+             skip_groups=False,
+             skip_projects=False):
     dry_log = get_dry_log(dry_run)
     if not skip_users:
         b.log.info("{0}Removing staged users on destination (hard_delete={1})".format(
@@ -597,14 +605,16 @@ def get_new_ids():
                                                                      project_json['name']):
                     if proj["name"] == project_json["name"]:
 
-                        if "%s" % project_json["namespace"].lower() in proj["path_with_namespace"].lower():
-                            if project_json["namespace"].lower() == proj["namespace"]["name"].lower():
+                        if "%s" % project_json["namespace"].lower(
+                        ) in proj["path_with_namespace"].lower():
+                            if project_json["namespace"].lower(
+                            ) == proj["namespace"]["name"].lower():
                                 b.log.debug("Adding {0}/{1}".format(
                                     project_json["namespace"], project_json["name"]))
                                 # b.log.info("Migrating variables for %s" % proj["name"])
                                 ids.append(proj["id"])
                                 break
-            except IOError, e:
+            except IOError as e:
                 b.log.error(e)
         return ids
 
@@ -647,7 +657,8 @@ def check_visibility():
 
 
 def update_diverging_branch():
-    for project in api.list_all(b.config.destination_host, b.config.destination_token, "projects"):
+    for project in api.list_all(
+            b.config.destination_host, b.config.destination_token, "projects"):
         if project.get("mirror_overwrites_diverged_branches", None) != True:
             id = project["id"]
             name = project["name"]
@@ -661,7 +672,8 @@ def update_diverging_branch():
 
 def get_total_migrated_count():
     # group_projects = api.get_count(
-    #     b.config.destination_host, b.config.destination_token, "groups/%d/projects" % b.config.parent_id)
+    # b.config.destination_host, b.config.destination_token,
+    # "groups/%d/projects" % b.config.parent_id)
     subgroup_count = 0
     for group in api.list_all(b.config.destination_host, b.config.destination_token,
                               "groups/%d/subgroups" % b.config.parent_id):
@@ -707,7 +719,8 @@ def stage_unimported_projects(dry_run=True):
 
 
 def generate_instance_map():
-    for project in api.list_all(b.config.destination_host, b.config.destination_token, "projects"):
+    for project in api.list_all(
+            b.config.destination_host, b.config.destination_token, "projects"):
         if project.get("import_url", None) is not None:
             import_url = sub('//.+:.+@', '//', project["import_url"])
             with open("new_repomap.txt", "ab") as f:

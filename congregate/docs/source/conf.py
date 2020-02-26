@@ -194,9 +194,9 @@ epub_exclude_files = ['search.html']
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = True
 
+
 def setup(app):
     app.add_config_value('recommonmark_config', {
-        #'url_resolver': lambda url: github_doc_root + url,
         'auto_toc_tree_section': 'Contents',
         'enable_math': False,
         'enable_inline_math': False,
