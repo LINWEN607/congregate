@@ -172,6 +172,20 @@ class UsersApi():
         """
         return api.generate_get_request(host, token, "users/%d/status" % id)
 
+    def get_user_projects(self, id, host, token):
+        """
+        Get a list of visible projects owned by the given user
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/projects.html#list-user-projects
+
+            :param: id: (int) GitLab user ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :return: Response object containing the response to GET /users/:user_id/projects
+
+        """
+        return api.generate_get_request(host, token, "users/%d/status" % id)
+
     def get_user_emails(self, id, host, token):
         """
         Get a list of emails for a give user
@@ -198,3 +212,15 @@ class UsersApi():
             :yield: Generator returning JSON of each result from GET /users/:id/custom_attributes
         """
         return api.list_all(host, token, "users/%d/custom_attributes" % id)
+
+    def get_user_counts(self, host, token):
+        """
+        Get the counts (same as in top right menu) of the currently signed in user
+
+        https://docs.gitlab.com/ee/api/users.html#user-counts
+
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield:  Response object containing the response to GET /user_counts
+        """
+        return api.generate_get_request(host, token, "user_counts")
