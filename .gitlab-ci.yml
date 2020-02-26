@@ -119,15 +119,28 @@ release-tag:
   only:
     - tags
 
+# pages:
+#   stage: deploy
+#   dependencies:
+#     - code_quality
+#   script:
+#     - mv gl-code-quality-report.json public/
+#   artifacts:
+#     paths:
+#       - public
+#     expire_in: 30 days
+#   only:
+#     - master
+
 pages:
   stage: deploy
-  dependencies:
-    - code_quality
   script:
-    - mv gl-code-quality-report.json public/
+    - poetry run sphinx-apidoc -f -o congregate/docs/source/ ./
+    - cd congregate/docs
+    - make html
+    - cd build/html
+    - mv build/html ../../public
   artifacts:
     paths:
       - public
-    expire_in: 30 days
-  only:
-    - master
+    
