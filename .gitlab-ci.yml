@@ -69,39 +69,39 @@ test:unit:
   script:
     - poetry run pytest -m 'not e2e and not e2e_setup' --cov-config=.coveragerc --cov=congregate congregate/tests/
 
-test:end-to-end:
-  services:
-    - name: docker:19.03.1-dind
-    # - name: gitlab/gitlab-ee:latest
-    #   alias: gitlab_source
-    - name: gitlab/gitlab-ee:nightly
-      alias: gitlab_destination
-  <<: *test-job
-  tags:
-    - e2e
-  script:
-    - ./spin_up_test_vm.sh
-    - export GITLAB_SRC=http://$(cat source_ip)
-    - export GITLAB_SRC_REG_URL=$(cat source_ip):4567
-    - export GITLAB_DEST=http://gitlab_destination
-    - export GITLAB_DEST_REG_URL=gitlab_destination:4567
-    - poetry run pytest -s -m e2e_setup congregate/tests/
-    - poetry run pytest -s -m e2e --cov-config=.coveragerc --cov=congregate congregate/tests/
-  after_script:
-    - poetry run aws ec2 terminate-instances --instance-ids $(cat instance_id)
-  artifacts:
-    when: always
-    paths:
-      - data/*.html
-  allow_failure: true
+# test:end-to-end:
+#   services:
+#     - name: docker:19.03.1-dind
+#     # - name: gitlab/gitlab-ee:latest
+#     #   alias: gitlab_source
+#     - name: gitlab/gitlab-ee:nightly
+#       alias: gitlab_destination
+#   <<: *test-job
+#   tags:
+#     - e2e
+#   script:
+#     - ./spin_up_test_vm.sh
+#     - export GITLAB_SRC=http://$(cat source_ip)
+#     - export GITLAB_SRC_REG_URL=$(cat source_ip):4567
+#     - export GITLAB_DEST=http://gitlab_destination
+#     - export GITLAB_DEST_REG_URL=gitlab_destination:4567
+#     - poetry run pytest -s -m e2e_setup congregate/tests/
+#     - poetry run pytest -s -m e2e --cov-config=.coveragerc --cov=congregate congregate/tests/
+#   after_script:
+#     - poetry run aws ec2 terminate-instances --instance-ids $(cat instance_id)
+#   artifacts:
+#     when: always
+#     paths:
+#       - data/*.html
+#   allow_failure: true
 
-remove redundant docker images:
-  stage: cleanup
-  script:
-    - docker images -a | grep "$CI_REGISTRY_IMAGE" | awk '{print $3}' | xargs docker rmi 2> /dev/null || true
-    - docker images -a | grep -E 'gitlab/gitlab-ee.*<none>' | awk '{print $3}' | xargs docker rmi 2> /dev/null || true
-  tags:
-    - e2e-cleanup
+# remove redundant docker images:
+#   stage: cleanup
+#   script:
+#     - docker images -a | grep "$CI_REGISTRY_IMAGE" | awk '{print $3}' | xargs docker rmi 2> /dev/null || true
+#     - docker images -a | grep -E 'gitlab/gitlab-ee.*<none>' | awk '{print $3}' | xargs docker rmi 2> /dev/null || true
+#   tags:
+#     - e2e-cleanup
 
 release-tag:
   stage: release
@@ -136,6 +136,8 @@ pages:
   stage: deploy
   image: "$BUILD_IMAGE_NAME"
   script:
+    - apt-get update
+    - poetry install
     - poetry run sphinx-apidoc -f -o congregate/docs/source/ ./
     - cd congregate/docs
     - make html
