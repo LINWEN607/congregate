@@ -236,7 +236,7 @@ class ProjectsApi():
         """
         Gets a list of project members viewable by the authenticated user, including inherited members through ancestor groups
 
-        GitLab API Doc: https://docs.gitlab.com/ee/api/members.html#list-all-members-of-a-group-or-project-including-inherited-members
+        GitLab API Doc: GitLab API Doc: https://docs.gitlab.com/ee/api/members.html#list-all-members-of-a-group-or-project-including-inherited-members
 
             :param: id: (int) GitLab project ID
             :param: host: (str) GitLab host URL
@@ -249,7 +249,7 @@ class ProjectsApi():
         """
         List the users who starred the specified project
 
-        https://docs.gitlab.com/ee/api/projects.html#list-starrers-of-a-project
+        GitLab API Doc: https://docs.gitlab.com/ee/api/projects.html#list-starrers-of-a-project
 
             :param: id: (int) GitLab project ID
             :param: host: (str) GitLab host URL
@@ -258,11 +258,11 @@ class ProjectsApi():
         """
         return api.list_all(host, token, "projects/%d/starrers" % id)
 
-    def get_all_project_starrers(self, id, host, token):
+    def get_all_project_badges(self, id, host, token):
         """
         Gets a list of a project badges and its group badges
 
-        https://docs.gitlab.com/ee/api/project_badges.html#project-badges-api
+        GitLab API Doc: https://docs.gitlab.com/ee/api/project_badges.html#project-badges-api
 
             :param: id: (int) GitLab project ID
             :param: host: (str) GitLab host URL
@@ -275,7 +275,7 @@ class ProjectsApi():
         """
         Get a list of issues for the given project
 
-        https://docs.gitlab.com/ee/api/issues.html#list-project-issues
+        GitLab API Doc: https://docs.gitlab.com/ee/api/issues.html#list-project-issues
 
             :param: id: (int) GitLab project ID
             :param: host: (str) GitLab host URL
@@ -288,7 +288,7 @@ class ProjectsApi():
         """
         Gets a list of all notes for a given issue
 
-        https://docs.gitlab.com/ee/api/notes.html#list-project-issue-notes
+        GitLab API Doc: https://docs.gitlab.com/ee/api/notes.html#list-project-issue-notes
 
             :param: id: (int) GitLab project ID
             :param: host: (str) GitLab host URL
@@ -301,7 +301,7 @@ class ProjectsApi():
         """
         Lists Issue Boards in the given project
 
-        https://docs.gitlab.com/ee/api/boards.html#project-board
+        GitLab API Doc: https://docs.gitlab.com/ee/api/boards.html#project-board
 
             :param: id: (int) GitLab project ID
             :param: host: (str) GitLab host URL
@@ -314,7 +314,7 @@ class ProjectsApi():
         """
         Get all labels for a given project
 
-        https://docs.gitlab.com/ee/api/labels.html#list-labels
+        GitLab API Doc: https://docs.gitlab.com/ee/api/labels.html#list-labels
 
             :param: id: (int) GitLab project ID
             :param: host: (str) GitLab host URL
@@ -327,7 +327,7 @@ class ProjectsApi():
         """
         Returns a list of project milestones
 
-        https://docs.gitlab.com/ee/api/milestones.html#list-project-milestones
+        GitLab API Doc: https://docs.gitlab.com/ee/api/milestones.html#list-project-milestones
 
             :param: id: (int) GitLab project ID
             :param: host: (str) GitLab host URL
@@ -340,7 +340,7 @@ class ProjectsApi():
         """
         Returns a paginated list releases for a given project
 
-        https://docs.gitlab.com/ee/api/releases/#list-releases
+        GitLab API Doc: https://docs.gitlab.com/ee/api/releases/#list-releases
 
             :param: id: (int) GitLab project ID
             :param: host: (str) GitLab host URL
@@ -353,7 +353,7 @@ class ProjectsApi():
         """
         Get a list of visible events for a particular project
 
-        https://docs.gitlab.com/ee/api/events.html#list-a-projects-visible-events
+        GitLab API Doc: https://docs.gitlab.com/ee/api/events.html#list-a-projects-visible-events
 
             :param: id: (int) GitLab project ID
             :param: host: (str) GitLab host URL
@@ -366,7 +366,7 @@ class ProjectsApi():
         """
         Get list of variables for the given project
 
-        https://docs.gitlab.com/ee/api/project_level_variables.html#list-project-variables
+        GitLab API Doc: https://docs.gitlab.com/ee/api/project_level_variables.html#list-project-variables
 
             :param: id: (int) GitLab project ID
             :param: host: (str) GitLab host URL
@@ -394,7 +394,7 @@ class ProjectsApi():
         """
         Gets a list of protected branches from a project
 
-        https://docs.gitlab.com/ee/api/protected_branches.html#list-protected-branches
+        GitLab API Doc: https://docs.gitlab.com/ee/api/protected_branches.html#list-protected-branches
 
             :param: id: (int) GitLab project ID
             :param: host: (str) GitLab host URL
@@ -407,7 +407,7 @@ class ProjectsApi():
         """
         Gets a list of protected environments from a project
 
-        https://docs.gitlab.com/ee/api/protected_environments.html#list-protected-environments
+        GitLab API Doc: https://docs.gitlab.com/ee/api/protected_environments.html#list-protected-environments
 
             :param: id: (int) GitLab project ID
             :param: host: (str) GitLab host URL
@@ -420,7 +420,7 @@ class ProjectsApi():
         """
         Gets a list of protected tags from a project
 
-        https://docs.gitlab.com/ee/api/protected_tags.html#list-protected-tags
+        GitLab API Doc: https://docs.gitlab.com/ee/api/protected_tags.html#list-protected-tags
 
             :param: id: (int) GitLab project ID
             :param: host: (str) GitLab host URL
@@ -433,7 +433,7 @@ class ProjectsApi():
         """
         Get a list of deploy keys for the given project
 
-        https://docs.gitlab.com/ee/api/deploy_keys.html#list-project-deploy-keys
+        GitLab API Doc: https://docs.gitlab.com/ee/api/deploy_keys.html#list-project-deploy-keys
 
             :param: id: (int) GitLab project ID
             :param: host: (str) GitLab host URL
@@ -446,7 +446,7 @@ class ProjectsApi():
         """
         Get a list of jobs in a project
 
-        https://docs.gitlab.com/ee/api/jobs.html#list-project-jobs
+        GitLab API Doc: https://docs.gitlab.com/ee/api/jobs.html#list-project-jobs
 
             :param: id: (int) GitLab project ID
             :param: host: (str) GitLab host URL
@@ -459,7 +459,7 @@ class ProjectsApi():
         """
         Get a list of pipelines in a project
 
-        https://docs.gitlab.com/ee/api/pipelines.html#list-project-pipelines
+        GitLab API Doc: https://docs.gitlab.com/ee/api/pipelines.html#list-project-pipelines
 
             :param: id: (int) GitLab project ID
             :param: host: (str) GitLab host URL
@@ -472,7 +472,7 @@ class ProjectsApi():
         """
         Get a list of build triggers for a given project
 
-        https://docs.gitlab.com/ee/api/pipeline_triggers.html#list-project-triggers
+        GitLab API Doc: https://docs.gitlab.com/ee/api/pipeline_triggers.html#list-project-triggers
 
             :param: id: (int) GitLab project ID
             :param: host: (str) GitLab host URL
@@ -485,7 +485,7 @@ class ProjectsApi():
         """
         Get variables of a given pipeline
 
-        https://docs.gitlab.com/ee/api/pipelines.html#get-variables-of-a-pipeline
+        GitLab API Doc: https://docs.gitlab.com/ee/api/pipelines.html#get-variables-of-a-pipeline
 
             :param: prid: (int) GitLab project ID
             :param: piid: (int) Pipeline ID
@@ -495,11 +495,11 @@ class ProjectsApi():
         """
         return api.list_all(host, token, "projects/{0}/pipelines/{1}/variables".format(prid, piid))
 
-    def get_all_project_pipeline_schedule(self, id, host, token):
+    def get_all_project_pipeline_schedules(self, id, host, token):
         """
         Get a list of the pipeline schedules of a project
 
-        https://docs.gitlab.com/ee/api/pipeline_schedules.html#get-all-pipeline-schedules
+        GitLab API Doc: https://docs.gitlab.com/ee/api/pipeline_schedules.html#get-all-pipeline-schedules
 
             :param: id: (int) GitLab project ID
             :param: host: (str) GitLab host URL
@@ -512,7 +512,7 @@ class ProjectsApi():
         """
         Get a list of project hooks
 
-        https://docs.gitlab.com/ee/api/projects.html#list-project-hooks
+        GitLab API Doc: https://docs.gitlab.com/ee/api/projects.html#list-project-hooks
 
             :param: id: (int) GitLab project ID
             :param: host: (str) GitLab host URL
@@ -525,7 +525,7 @@ class ProjectsApi():
         """
         Get the push rules of a project
 
-        https://docs.gitlab.com/ee/api/projects.html#get-project-push-rules
+        GitLab API Doc: https://docs.gitlab.com/ee/api/projects.html#get-project-push-rules
 
             :param: id: (int) GitLab project ID
             :param: host: (str) GitLab host URL
@@ -538,7 +538,7 @@ class ProjectsApi():
         """
         Get the approval configuration of a project
 
-        https://docs.gitlab.com/ee/api/merge_request_approvals.html#get-configuration
+        GitLab API Doc: https://docs.gitlab.com/ee/api/merge_request_approvals.html#get-configuration
 
             :param: id: (int) GitLab project ID
             :param: host: (str) GitLab host URL
@@ -551,7 +551,7 @@ class ProjectsApi():
         """
         Get the approval rules of a project
 
-        https://docs.gitlab.com/ee/api/merge_request_approvals.html#get-project-level-rules
+        GitLab API Doc: https://docs.gitlab.com/ee/api/merge_request_approvals.html#get-project-level-rules
 
             :param: id: (int) GitLab project ID
             :param: host: (str) GitLab host URL
@@ -564,7 +564,7 @@ class ProjectsApi():
         """
         Get a list of registry repositories in a project
 
-        https://docs.gitlab.com/ee/api/container_registry.html#list-registry-repositories
+        GitLab API Doc: https://docs.gitlab.com/ee/api/container_registry.html#list-registry-repositories
 
             :param: id: (int) GitLab project ID
             :param: host: (str) GitLab host URL
@@ -577,7 +577,7 @@ class ProjectsApi():
         """
         Get a list of tags for given registry repository
 
-        https://docs.gitlab.com/ee/api/container_registry.html#list-registry-repository-tags
+        GitLab API Doc: https://docs.gitlab.com/ee/api/container_registry.html#list-registry-repository-tags
 
             :param: pid: (int) GitLab project ID
             :param: rid: (int) Repository ID
@@ -591,7 +591,7 @@ class ProjectsApi():
         """
         Gets all feature flags of the requested project
 
-        https://docs.gitlab.com/ee/api/feature_flags.html#list-feature-flags-for-a-project
+        GitLab API Doc: https://docs.gitlab.com/ee/api/feature_flags.html#list-feature-flags-for-a-project
 
             :param: id: (int) GitLab project ID
             :param: host: (str) GitLab host URL
@@ -604,7 +604,7 @@ class ProjectsApi():
         """
         Get all custom attributes on a resource
 
-        https://docs.gitlab.com/ee/api/custom_attributes.html#list-custom-attributes
+        GitLab API Doc: https://docs.gitlab.com/ee/api/custom_attributes.html#list-custom-attributes
 
             :param: id: (int) GitLab project ID
             :param: host: (str) GitLab host URL
@@ -612,3 +612,57 @@ class ProjectsApi():
             :yield: Generator returning JSON of each result from GET /projects/:id/custom_attributes
         """
         return api.list_all(host, token, "projects/%d/custom_attributes" % id)
+
+    def get_all_project_snippets(self, host, token, project_id):
+        """
+        Get a list of project snippets
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/notes.html#list-project-issue-notes
+
+            :param: project_id: (int) GitLab project ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Generator returning JSON of each result from GET /projects/:id/snippets
+        """
+        return api.list_all(host, token, "projects/%d/snippets" % project_id)
+
+    def get_single_project_snippets(self, host, token, project_id, snippet_id):
+        """
+        Get a single project snippet
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/project_snippets.html#single-snippet
+
+            :param: project_id: (int) GitLab project ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Response object containing the response to GET /projects/:id/snippets/:snippet_id
+        """
+        return api.generate_get_request(host, token, "projects/%d/snippets/%d" % (project_id, snippet_id))
+
+    def get_project_snippet_awards(self, host, token, project_id, snipped_id):
+        """
+        Get a list of all award emoji for a specified project snippet
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/award_emoji.html#list-an-awardables-award-emoji
+
+            :param: project_id: (int) GitLab group ID
+            :param: snipped_id: (int) Snipped ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Generator returning JSON of each result from GET /projects/:id/issues/:snipped_id/award_emoji
+        """
+        return api.generate_get_request(host, token, "projects/%d/snippets/%d/award_emoji" % (project_id, snipped_id))
+
+    def get_project_snippet_notes(self, host, token, project_id, snipped_id):
+        """
+        Gets a list of all notes for a single snippet
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/notes.html#list-all-snippet-notes
+
+            :param: project_id: (int) GitLab group ID
+            :param: snipped_id: (int) Snipped ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Generator returning JSON of each result from GET /projects/:id/snippets/:snippet_id/notes
+        """
+        return api.generate_get_request(host, token, "projects/%d/snippets/%d/notes" % (project_id, snipped_id))
