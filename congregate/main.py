@@ -6,7 +6,7 @@ Usage:
     congregate list
     congregate configure
     congregate stage <projects>... [--commit]
-    congregate migrate [--threads=<n>] [--skip-users] [--skip-groups] [--skip-group-export] [--skip-group-import] [--skip-project-export] [--skip-project-import] [--commit]
+    congregate migrate [--threads=<n>] [--skip-users] [--skip-group-export] [--skip-group-import] [--skip-project-export] [--skip-project-import] [--commit]
     congregate rollback [--hard-delete] [--skip-users] [--skip-groups] [--skip-projects] [--commit]
     congregate ui
     congregate export-projects
@@ -55,8 +55,7 @@ Arguments:
     commit                                  Disable the dry-run and perform the full migration with all reads/writes. 
     skip-users                              Migrate: Skip migrating users; Rollback: Remove only groups and projects.
     hard-delete                             Remove user contributions and solely owned groups.
-    # skip-groups                             Remove only users and projects.
-    skip-groups                             Migrate: Skip migrating groups; Cleanup: Remove only users and projects.
+    skip-groups                             Rollback: Remove only users and projects.
     skip-group-export                       Skip exporting groups from source instance.
     skip-group-import                       Skip importing groups to destination instance.
     skip-projects                           Include ONLY users (removing ONLY groups is not possible).
@@ -214,7 +213,6 @@ if __name__ == '__main__':
             if arguments["migrate"]:
                 threads = arguments["--threads"] if arguments["--threads"] else None
                 skip_users = True if arguments["--skip-users"] else False
-                skip_groups = True if arguments["--skip-groups"] else False
                 skip_group_export = True if arguments["--skip-group-export"] else False
                 skip_group_import = True if arguments["--skip-group-import"] else False
                 skip_project_import = True if arguments["--skip-project-import"] else False
@@ -223,7 +221,6 @@ if __name__ == '__main__':
                     threads=threads,
                     dry_run=DRY_RUN,
                     skip_users=skip_users,
-                    skip_groups=skip_groups,
                     skip_group_export=skip_group_export,
                     skip_group_import=skip_group_import,
                     skip_project_import=skip_project_import,
@@ -342,14 +339,20 @@ if __name__ == '__main__':
             if arguments["clean"]:
                 clean_data()
             if arguments["generate-diff"]:
-                user_diff = UserDiffClient("%s/data/user_migration_results.json" % app_path)
+                user_diff = UserDiffClient(
+                    "%s/data/user_migration_results.json" % app_path)
                 diff_report = user_diff.generate_report()
-                user_diff.generate_html_report(diff_report, "%s/data/user_migration_results.html" % app_path)
-                group_diff = GroupDiffClient("%s/data/group_migration_results.json" % app_path)
+                user_diff.generate_html_report(
+                    diff_report, "%s/data/user_migration_results.html" % app_path)
+                group_diff = GroupDiffClient(
+                    "%s/data/group_migration_results.json" % app_path)
                 diff_report = group_diff.generate_group_diff_report()
-                group_diff.generate_html_report(diff_report, "%s/data/group_migration_results.html" % app_path)
-                project_diff = ProjectDiffClient("%s/data/project_migration_results.json" % app_path)
+                group_diff.generate_html_report(
+                    diff_report, "%s/data/group_migration_results.html" % app_path)
+                project_diff = ProjectDiffClient(
+                    "%s/data/project_migration_results.json" % app_path)
                 diff_report = project_diff.generate_project_diff_report()
-                project_diff.generate_html_report(diff_report, "%s/data/project_migration_results.html" % app_path)
+                project_diff.generate_html_report(
+                    diff_report, "%s/data/project_migration_results.html" % app_path)
             if arguments["obfuscate"]:
                 print obfuscate("Secret:")
