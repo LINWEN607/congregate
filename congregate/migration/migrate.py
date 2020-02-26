@@ -38,27 +38,27 @@ from congregate.migration.gitlab.deploy_keys import DeployKeysClient
 from congregate.migration.gitlab.hooks import HooksClient
 from congregate.migration.bitbucket import client as bitbucket
 
-aws = AwsClient()
-ie = ImportExportClient()
-mirror = MirrorClient()
-variables = VariablesClient()
-badges = BadgesClient()
-users = UsersClient()
-groups = GroupsClient()
-projects = ProjectsClient()
-projects_api = ProjectsApi()
-pushrules = PushRulesClient()
-branches = BranchesClient()
-awards = AwardsClient()
-mr_approvers = MergeRequestApproversClient()
-awards = AwardsClient()
-registries = RegistryClient()
-p_schedules = PipelineSchedulesClient()
-deploy_keys = DeployKeysClient()
-hooks = HooksClient()
-project_export = ProjectExportClient()
-
-full_parent_namespace = groups.find_parent_group_path()
+if __name__ == "__main__":
+    aws = AwsClient()
+    ie = ImportExportClient()
+    mirror = MirrorClient()
+    variables = VariablesClient()
+    badges = BadgesClient()
+    users = UsersClient()
+    groups = GroupsClient()
+    projects = ProjectsClient()
+    projects_api = ProjectsApi()
+    pushrules = PushRulesClient()
+    branches = BranchesClient()
+    awards = AwardsClient()
+    mr_approvers = MergeRequestApproversClient()
+    awards = AwardsClient()
+    registries = RegistryClient()
+    p_schedules = PipelineSchedulesClient()
+    deploy_keys = DeployKeysClient()
+    hooks = HooksClient()
+    project_export = ProjectExportClient()
+    full_parent_namespace = groups.find_parent_group_path()
 
 
 def migrate(

@@ -2,8 +2,10 @@ from congregate.helpers import base_module as b
 from congregate.migration.gitlab.groups import GroupsClient as groupsClient
 from congregate.migration.gitlab.users import UsersApi as usersApi
 
-groups = groupsClient()
-users_api = usersApi()
+
+if __name__ == "__main__":
+    groups = groupsClient()
+    users_api = usersApi()
 
 
 def get_failed_update_from_results(results):
