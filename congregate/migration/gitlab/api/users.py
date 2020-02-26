@@ -184,7 +184,7 @@ class UsersApi():
             :return: Response object containing the response to GET /users/:user_id/projects
 
         """
-        return api.generate_get_request(host, token, "users/%d/status" % id)
+        return api.generate_get_request(host, token, "users/%d/projects" % id)
 
     def get_user_emails(self, id, host, token):
         """
