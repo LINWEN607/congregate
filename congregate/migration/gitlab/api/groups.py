@@ -202,7 +202,7 @@ class GroupsApi():
 
     def get_all_group_members_incl_inherited(self, gid, host, token):
         """
-        Gets a list of group or project members viewable by the authenticated user, including inherited members through ancestor groups
+        Gets a list of group members viewable by the authenticated user, including inherited members through ancestor groups
 
         GitLab API Doc: https://docs.gitlab.com/ee/api/members.html#list-all-members-of-a-group-or-project-including-inherited-members
 
@@ -303,3 +303,83 @@ class GroupsApi():
             :yield: Generator returning JSON of each result from GET /groups/:id/audit_events
         """
         return api.list_all(host, token, "groups/%d/audit_events" % gid)
+
+    def get_all_group_registry_repositories(self, id, host, token):
+        """
+        Get a list of registry repositories in a group
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/container_registry.html#within-a-group
+
+            :param: id: (int) GitLab group ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Generator returning JSON of each result from GET /groups/:id/registry/repositories
+        """
+        return api.list_all(host, token, "groups/%d/registry/repositories" % id)
+
+    def get_all_group_epics(self, gid, host, token):
+        """
+        Gets all epics of the requested group and its subgroups
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/epics.html#list-epics-for-a-group
+
+            :param: gid: (int) GitLab group ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Generator returning JSON of each result from GET /groups/:id/epics
+        """
+        return api.list_all(host, token, "groups/%d/epics" % gid)
+
+    def get_group_epic_notes(self, gid, eid, host, token):
+        """
+        Gets a list of all notes for a single epic
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/notes.html#list-all-epic-notes
+
+            :param: gid: (int) GitLab group ID
+            :param: eid: (int) Epic ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Generator returning JSON of each result from GET /groups/:id/epics/:epic_id/notes
+        """
+        return api.list_all(host, token, "groups/%d/epics/%d/notes" % (gid, eid))
+
+    def get_all_group_custom_attributes(self, gid, host, token):
+        """
+        Get all custom attributes on a group
+
+        https://docs.gitlab.com/ee/api/custom_attributes.html#list-custom-attributes
+
+            :param: gid: (int) GitLab group ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Generator returning JSON of each result from GET /groups/:id/custom_attributes
+        """
+        return api.list_all(host, token, "groups/%d/custom_attributes" % gid)
+
+    def get_all_group_variables(self, gid, host, token):
+        """
+        Get list of a variables for the given group
+
+        https://docs.gitlab.com/ee/api/group_level_variables.html
+
+            :param: gid: (int) GitLab group ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Generator returning JSON of each result from GET /groups/:id/variables
+        """
+        return api.list_all(host, token, "groups/%d/variables" % gid)
+
+    def create_group_variable(self, gid, host, token, data):
+        """
+        Creates a new group variable
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/group_level_variables.html#create-variable
+
+            :param: gid: (int) GitLab group ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :param: data: (dict) Object containing the various data required for creating a group variable. Refer to the link above for specific examples
+            :return: Response object containing the response to POST /groups/:id/variables
+        """
+        return api.generate_post_request(host, token, "groups/%d/variables" % gid, json.dumps(data))
