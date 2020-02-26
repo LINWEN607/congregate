@@ -134,6 +134,7 @@ release-tag:
 
 pages:
   stage: deploy
+  image: "$BUILD_IMAGE_NAME"
   script:
     - poetry run sphinx-apidoc -f -o congregate/docs/source/ ./
     - cd congregate/docs
