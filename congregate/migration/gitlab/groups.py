@@ -117,27 +117,31 @@ class GroupsClient(BaseClass):
         self.group_id_mapping = {}
         parent_id = self.config.parent_id
 
+        results = []
+
         # Update parent group notification level
         if parent_id is not None:
             current_level = self.get_current_group_notifications(parent_id)
             if not dry_run:
                 self.update_group_notifications(parent_id)
                 self.traverse_and_migrate(
-                    staged_groups, rewritten_groups, dry_run)
+                    staged_groups, rewritten_groups, results, dry_run)
                 self.reset_group_notifications(parent_id, current_level)
             else:
                 self.traverse_and_migrate(
-                    staged_groups, rewritten_groups, dry_run)
+                    staged_groups, rewritten_groups, results, dry_run)
         else:
-            self.traverse_and_migrate(staged_groups, rewritten_groups, dry_run)
+            self.traverse_and_migrate(staged_groups, rewritten_groups, results, dry_run)
 
         # Migrate group badges
         for old_id, new_id in self.group_id_mapping.items():
             self.badges.migrate_group_badges(
                 old_id, new_id, self.find_parent_group_path(), dry_run)
 
+        return results
+
     # TODO: Refactor and break down
-    def traverse_and_migrate(self, groups, rewritten_groups, dry_run=True):
+    def traverse_and_migrate(self, groups, rewritten_groups, results, dry_run=True):
         count = 0
         dest_groups = []
         for group in groups:
@@ -266,8 +270,10 @@ class GroupsClient(BaseClass):
                                     self.log.info("Failed to save group")
                             else:
                                 new_group_id = response["id"]
+                                results.append(response)
                         elif isinstance(response, list):
                             new_group_id = response[0]["id"]
+                            results.append(response[0])
                     except RequestException, e:
                         self.log.info("Group already exists")
                     if new_group_id is None:
@@ -284,6 +290,7 @@ class GroupsClient(BaseClass):
                                         new_group_id = ng["id"]
                                         self.log.info(
                                             "New group {0} found".format(new_group_id))
+                                        results.append(ng)
                                         break
 
                     if new_group_id:
@@ -484,13 +491,10 @@ class GroupsClient(BaseClass):
             group_name = group_file[i]["id"]
             rewritten_groups[group_name] = new_obj
         staged_groups = []
-        if len(groups) > 0:
-            if len(groups[0]) > 0:
-                for group in groups:
-                    self.traverse_staging(
-                        int(group), rewritten_groups, staged_groups)
-                    self.log.info("Staging group [%d/%d]" %
-                                  (len(staged_groups), len(groups)))
+        if groups and all(i > 0 for i in groups):
+            for group in groups:
+                self.traverse_staging(
+                    int(group), rewritten_groups, staged_groups)
 
         with open("%s/data/staged_groups.json" % self.app_path, "w") as f:
             json.dump(remove_dupes(staged_groups), f, indent=4)
@@ -547,6 +551,8 @@ class GroupsClient(BaseClass):
         if group_dict.get(id, None) is not None:
             g = group_dict[id]
             if g["parent_id"] is None:
+                self.log.info(
+                    "Staging top level group {0} (ID: {1})".format(g["full_path"], g["id"]))
                 if self.config.parent_id is not None:
                     parent_group = self.groups_api.get_group(
                         self.config.parent_id, self.config.destination_host, self.config.destination_token).json()
@@ -554,6 +560,10 @@ class GroupsClient(BaseClass):
                     g["parent_namespace"] = parent_group["path"]
                     g["parent_id"] = self.config.parent_id
             else:
+                self.log.info(
+                    "SKIP: Staging sub-group {0} (ID: {1})".format(g["full_path"], g["id"]))
+                return
+                # TODO: Remove if we want to completely abandon staging sub-groups
                 parent_group = group_dict.get(g["parent_id"])
                 if parent_group is not None:
                     parent_group_resp = self.groups_api.get_group(

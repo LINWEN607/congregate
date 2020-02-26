@@ -102,6 +102,41 @@ def rewrite_list_into_dict(l, comparison_key, prefix=""):
 
     return rewritten_groups
 
+def rewrite_json_list_into_dict(l):
+    """
+        Converts a JSON list:
+        [
+            {
+                "hello": {
+                    "world": "how are you"
+                }
+            },
+            {
+                "world": {
+                    "how": "are you"
+                }
+            }
+        ]
+
+        to:
+        {
+            "hello": {
+                "world": "how are you"
+            },
+            "world": {
+                "how": "are you"
+            }
+        }
+
+        Note: The top level keys in the nested objects must be unique or else data will be overwritten
+    """
+    new_dict = {}
+    for i in xrange(len(l)):
+        key = l[i].keys()[0]
+        new_dict[key] = l[i][key]
+
+    return new_dict
+
 def get_congregate_path():
     app_path = os.getenv("CONGREGATE_PATH")
     if app_path is None:
@@ -122,14 +157,65 @@ def get_dry_log(dry_run=True):
 def json_pretty(data):
     return json.dumps(data, indent=4, sort_keys=True)
 
+def write_json_to_file(path, data, log=None):
+    if log:
+        log.info("### Writing output to %s" % path)
+    with open(path, "w") as f:
+        json.dump(data, f, indent=4)
+
 def obfuscate(prompt):
     return base64.b64encode(getpass(prompt))
 
 def deobfuscate(secret):
     return base64.b64decode(secret)
 
+def clean_data():
+    app_path = get_congregate_path()
+    files_to_delete = [
+        "stage.json",
+        "staged_users.json",
+        "staged_groups.json",
+        "project_json.json",
+        "users.json",
+        "groups.json",
+        "users_not_found.json",
+        "user_migration_results.json",
+        "group_migration_results.json",
+        "project_migration_results.json",
+        "new_users.json",
+        "new_user_ids.txt",
+        "dry_run_user_migration.json",
+        "dry_run_group_migration.json",
+        "dry_run_project_migration.json"
+    ]
+    if os.path.isdir("{0}/data".format(app_path)):
+        for f in files_to_delete:
+            path = "{0}/data/{1}".format(app_path, f)
+            if os.path.exists(path):
+                print "Removing {}".format(f)
+                os.remove(path)
+            else:
+                print "Couldn't find {}".format(f)
+    else:
+        print "Cannot find data directory. CONGREGATE_PATH not set or you are not running this in the Congregate directory."
+
 def is_recent_file(path, age=2592000):
     """
         Check whether a file path exists, is empty and older than 1 month
     """
     return os.path.exists(path) and os.path.getsize(path) > 0 and time() - os.path.getmtime(path) < age
+
+def find(key, dictionary):
+    """
+        Nested dictionary lookup from https://gist.github.com/douglasmiranda/5127251
+    """
+    for k, v in dictionary.iteritems():
+        if k == key:
+            yield v
+        elif isinstance(v, dict):
+            for result in find(key, v):
+                yield result
+        elif isinstance(v, list):
+            for d in v:
+                for result in find(key, d):
+                    yield result

@@ -7,12 +7,12 @@ WORKDIR /opt/congregate
 
 # Copy supervisor configuration
 ADD congregate congregate
-COPY congregate.sh Pipfile README.md snakeskin.txt ./
+COPY congregate.sh pyproject.toml README.md snakeskin.txt ./
 
 # Installing some basic utilities and updating apt
 RUN apt-get update && \
     apt-get upgrade -y && \
-    apt-get install less vim -y
+    apt-get install less vim jq curl -y
 
 # TODO: DB integration
 
@@ -20,11 +20,13 @@ RUN apt-get update && \
 RUN cd /opt/congregate && \
     chmod +x congregate && \
     cp congregate.sh /usr/local/bin/congregate && \
-    pip install pipenv && \
-    pipenv install
+    pip install poetry
+
+# RUN export PATH=$PATH:$HOME/.poetry/bin/poetry
+RUN poetry install
 
 RUN cd /opt/congregate && \
-    pipenv run dnd install
+    poetry run dnd install
 
 RUN echo "alias ll='ls -al'" >> ~/.bashrc
 

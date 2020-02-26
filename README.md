@@ -19,7 +19,7 @@ Come together, right now
 
 - Python 2.7
 - [AWS CLI](https://aws.amazon.com/cli/)
-- [PipEnv](https://docs.pipenv.org/)
+- [Poetry](https://python-poetry.org/)
 
 ## Setup
 
@@ -30,14 +30,14 @@ Copy the following code snippet to a file in the congregate directory and run it
 ```bash
 #!/bin/bash
 
-# install pipenv
-pip install pipenv
+# install poetry
+pip install poetry
 
 # install python dependencies
-pipenv install
+poetry install
 
 # install UI dependencies
-pipenv run dnd install
+poetry run dnd install
 
 # create congregate path
 CONGREGATE_PATH=$(pwd)
@@ -60,22 +60,22 @@ There are currently *three* different methods for migrating projects (groups and
 
 **NOTE:** The hybrid (`filesystem-aws`) method is currently NOT supported ([issue](https://gitlab.com/gitlab-com/customer-success/tools/congregate/issues/119)).
 
-### Install & Use PipEnv (required for end-user and development setups)
+### Install & Use Poetry (required for end-user and development setups)
 
 ```bash
-pip install pipenv
+pip install poetry
 
 # install dependencies from Pipfile
 cd /path/to/congregate
-pipenv install
+poetry install
 
 # start-up python virtualenv
 cd /path/to/congregate
-pipenv shell
+poetry shell
 
 # install ui dependencies
 cd /path/to/congregate
-pipenv run dnd install
+poetry run dnd install
 ```
 
 ### Installing Congregate (end-user)
@@ -137,42 +137,44 @@ Note: Instead of exporting an environment variable within your shell session, yo
 ``` text
 Usage:
     congregate list
-    congregate config
-    congregate stage <projects>...
-    congregate migrate [--threads=<n>] [--dry-run] [--skip-users] [--skip-project-import] [--skip-project-export]
-    congregate cleanup [--dry-run] [--hard-delete] [--skip-users] [--skip-groups] [--skip-projects]
+    congregate configure
+    congregate stage <projects>... [--commit]
+    congregate migrate [--threads=<n>] [--skip-users] [--skip-groups] [--skip-project-import] [--skip-project-export] [--commit]
+    congregate rollback [--hard-delete] [--skip-users] [--skip-groups] [--skip-projects] [--commit]
     congregate ui
     congregate export-projects
-    congregate import-projects
-    congregate do_all
-    congregate update-staged-user-info
+    congregate import-projects [--commit]
+    congregate do-all [--commit]
+    congregate do-all-users [--commit]
+    congregate do-all-groups-and-projects [--commit]
+    congregate update-staged-user-info [--commit]
     congregate update-aws-creds
-    congregate add-users-to-parent-group
-    congregate remove-blocked-users [--dry-run]
-    congregate update-user-permissions [--access-level=<level>]
+    congregate add-users-to-parent-group [--commit]
+    congregate remove-blocked-users [--commit]
+    congregate update-user-permissions [--access-level=<level>] [--commit]
     congregate get-total-count
-    congregate find-unimported-projects
-    congregate stage-unimported-projects
-    congregate remove-users-from-parent-group
-    congregate migrate-variables-in-stage
-    congregate add-all-mirrors
-    congregate remove-all-mirrors
-    congregate find-all-internal-projects
-    congregate make-all-internal-groups-private
-    congregate check-projects-visibility
-    congregate set-default-branch
-    congregate enable_mirroring
+    congregate find-unimported-projects [--commit] # TODO: Refactor, project name matching does not seem correct
+    congregate stage-unimported-projects [--commit] # TODO: Refactor, broken
+    congregate remove-users-from-parent-group [--commit]
+    congregate migrate-variables-in-stage [--commit]
+    congregate mirror-staged-projects [--commit]
+    congregate remove-all-mirrors [--commit]
+    congregate find-all-non-private-groups
+    congregate make-all-internal-groups-private # TODO: Refactor or rename, as it does not make any changes
+    congregate check-projects-visibility # TODO: Refactor or rename, as it's not a check but does an update. Add dry-run
+    congregate set-default-branch [--commit]
+    congregate enable-mirroring [--commit]
     congregate count-unarchived-projects
-    congregate archive-staged-projects [--dry-run]
-    congregate unarchive-staged-projects [--dry-run]
+    congregate archive-staged-projects [--commit]
+    congregate unarchive-staged-projects [--commit]
     congregate find-empty-repos
     congregate compare-groups [--staged]
     congregate staged-user-list
-    congregate generate-seed-data
-    congregate map-new-users-to-groups-and-projects [--dry-run]
+    congregate generate-seed-data [--commit] # TODO: Refactor, broken
+    congregate map-new-users-to-groups-and-projects [--commit]
     congregate validate-staged-groups-schema
     congregate validate-staged-projects-schema
-    congregate map-users
+    congregate map-users [--commit]
     congregate -h | --help
 
 Options:
@@ -180,10 +182,10 @@ Options:
 
 Arguments:
     threads                                 Set number of threads to run in parallel.
-    dry-run                                 Perform local listing of metadata that would be handled during the migration.
-    skip-users                              Include groups and projects.
+    commit                                  Disable the dry-run and perform the full migration with all reads/writes. 
+    skip-users                              Migrate: Skip migrating users; Cleanup: Remove only groups and projects.
     hard-delete                             Remove user contributions and solely owned groups.
-    skip-groups                             Include users and projects.
+    skip-groups                             Migrate: Skip migrating groups; Cleanup: Remove only users and projects.
     skip-projects                           Include ONLY users (removing ONLY groups is not possible).
     skip-project-import                     Will do all steps up to import (export, re-write exported project json,
                                                 etc). Useful for testing export contents.
@@ -200,11 +202,11 @@ Commands:
                                                 groups to {CONGREGATE_PATH}/data/staged_groups.json.
                                                 All projects can be staged with a '.' or 'all'.
     migrate                                 Commence migration based on configuration and staged assets.
-    cleanup                                 Remove staged users/groups/projects on destination.
+    rollback                                 Remove staged users/groups/projects on destination.
     ui                                      Deploy UI to port 8000.
     export-projects                         Export and update source instance projects. Bulk project export without user/group info.
     import-projects                         Import exported and updated projects onto destination instance. Destination user/group info required.
-    do_all                                  Configure system, retrieve all projects, users, and groups, stage all information, and commence migration.
+    do-all*                                 Configure system, retrieve all projects, users, and groups, stage all information, and commence migration.
     update-staged-user-info                 Update staged user information after migrating only users.
     update-aws-creds                        Run awscli commands based on the keys stored in the config. Useful for docker updates.
     add-users-to-parent-group               If a parent group is set, all users staged will be added to the parent group.
@@ -215,11 +217,14 @@ Commands:
     stage-unimported-projects               Stage unimported projects based on {CONGREGATE_PATH}/data/unimported_projects.txt.
     remove-users-from-parent-group          Remove all users with at most reporter access from the parent group.
     migrate-variables-in-stage              Migrate CI variables for staged projects.
-    add-all-mirrors                         Set up project mirroring for staged projects.
+    mirror-staged-projects                  Set up project mirroring for staged projects.
     remove-all-mirrors                      Remove all project mirrors for staged projects.
-    find-all-internal-projects              Find all internal projects.
+    find-all-non-private-groups             Return list of all groups on destination that are either internal or public.
     make-all-internal-groups-private        Make all internal migrated groups private.
     check-projects-visibility               Return list of all migrated projects' visibility.
+    set-default-branch                      Set default branch to master for all projects on destination.
+    enable-mirroring                        Start pull mirror process for all projects on destination.
+    count-unarchived-projects               Return total number and list of all anarchived projects on source.
     find-empty-repos                        Inspect project repo sizes between source and destination instance in search for empty repos.
                                                 This could be misleading as it sometimes shows 0 (zero) commits/tags/bytes for fully migrated projects.
     compare-groups                          Compare source and destination group results.
@@ -236,6 +241,11 @@ Commands:
 
 #### Migration steps
 
+##### Dry-run
+
+For all API facing commands `dry_run` is the default mode.
+To revert it add `--commit` at the end.
+
 ##### Migrate users
 
 Best practice is to first migrate ONLY users by running:
@@ -244,10 +254,10 @@ Best practice is to first migrate ONLY users by running:
 * `congregate update-staged-user-info` - Check output for found and NOT found users on destination.
   * Inspect `data/staged_users.json` if any of the NOT found users are blocked as, by default, they will not be migrated.
   * To explicitly remove blocked users from staged users, groups and projects run `congregate remove-blocked-users`.
-* `congregate migrate --dry-run` - Inspect the output in
+* `congregate migrate` - Inspect the output in:
   * `data/dry_run_user_migration.json`
   * `data/congregate.log`
-* `congregate migrate`
+* `congregate migrate --commit`
 
 ##### Migrate groups and projects
 
@@ -259,19 +269,29 @@ Once all the users are migrated:
   * Inspect `data/staged_users.json` if any of the NOT found users are blocked as, by default, they will not be migrated.
   * To explicitly remove blocked users from staged users, groups and projects run `congregate remove-blocked-users`.
 * `congregate map-new-users-to-groups-and-projects --dry-run` - Check output for any remaining unmapped users.
-* `congregate migrate --skip-users --dry-run` - Inspect the output in
+* `congregate migrate --skip-users` - Inspect the output in:
   * `dry_run_project_migration.json`
   * `dry_run_group_migration.json`
   * `congregate.log` (especially `more congregate.log | grep "REWRITE"`)
-* `congregate migrate --skip-users`
+* `congregate migrate --skip-users --commit`
 
 ##### Cleanup
 
 To remove all of the staged users, groups and projects on destination run:
 
-* `congregate cleanup --dry-run` - Inspect the output.
-* `congregate cleanup`
-* For more granular cleanup see [Usage](#usage).
+* `congregate rollback --dry-run` - Inspect the output.
+* `congregate rollback`
+* For more granular rollback see [Usage](#usage).
+
+##### do-all commands
+
+For a CLI only based migration, the following commands are available:
+
+* `do-all` - Migrate all users, projects and their groups
+* `do-all-users` - Migrate all users
+* `do-all-groups-and-projects` - Migrate all projects and their groups
+
+**N.B.** By default these commands will run in `dry_run` mode. To revert it add `--commit` at the end.
 
 #### Important Note
 
@@ -328,75 +348,27 @@ export FLASK_DEBUG=1
 
 For the UI, you will still need to save the file in your editor and refresh the page, but it's better than restarting flask every time. The app will live reload every time a .py file is changed and saved.
 
-#### Configuring VS Code for Debugging
+#### If VS Code doesn't pick up poetry virtualenv
 
-Refer to [this how-to](https://code.visualstudio.com/docs/python/debugging) for setting up the base debugging settings for a python app in VS Code. Then replace the default `launch.json` flask configuration for this:
-
-```json
-
-{
-    "name": "Python: Flask (0.11.x or later)",
-    "type": "python",
-    "request": "launch",
-    "module": "flask",
-    "env": {
-        "PYTHONPATH": "${workspaceRoot}",
-        "CONGREGATE_PATH": "/path/to/congregate",
-        "FLASK_APP": "${CONGREGATE_PATH}/ui"
-    },
-    "args": [
-        "run",
-        "--no-debugger",
-        "--no-reload"
-    ]
-}
+Find virtualenv path
 
 ```
-
-To reload the app in debugging mode, you will need to click the `refresh` icon in VS code (on the sidebar's Explorer tab). Currently VS code doesn't support live reloading flask apps on save.
-
-#### Live reloading for UI development and backend development without a debugger
-
-You will need to turn on debugging in the flask app to see a mostly live reload of the UI. Create the following environment variable before deploying the UI
-
-```bash
-export FLASK_DEBUG=1
+poetry config --list
 ```
 
-For the UI, you will still need to save the file in your editor and refresh the page, but it's better than restarting flask every time. The app will live reload every time a .py file is changed and saved.
-
-#### Configuring VS Code for Debugging
-
-Refer to [this how-to](https://code.visualstudio.com/docs/python/debugging) for setting up the base debugging settings for a python app in VS Code. Then replace the default `launch.json` flask configuration for this:
-
-```json
-
-{
-    "name": "Python: Flask (0.11.x or later)",
-    "type": "python",
-    "request": "launch",
-    "module": "flask",
-    "env": {
-        "PYTHONPATH": "${workspaceRoot}",
-        "CONGREGATE_PATH": "/path/to/congregate",
-        "FLASK_APP": "${CONGREGATE_PATH}/ui"
-    },
-    "args": [
-        "run",
-        "--no-debugger",
-        "--no-reload"
-    ]
-}
+Add the following line to .vscode/settings.json:
 
 ```
+"python.venvPath": "/path/to/virtualenv"
+```
 
-To reload the app in debugging mode, you will need to click the `refresh` icon in VS code (on the sidebar's Explorer tab). Currently VS code doesn't support live reloading flask apps on save.
+You may need to refresh VS Code. VS Code will also call this python interpreter PipEnv, but if you check out the virtualenv directory poetry has stored, you can compare the virtualenv folder names to double check.
 
 ## Migration features
 
-| Main | Feature | Sub-feature | Status |
-|-|-|-|-|
-| BitBucket ||| :heavy_minus_sign: |
+| Main      | Feature | Sub-feature | Status             |
+|-----------|---------|-------------|--------------------|
+| BitBucket |         |             | :heavy_minus_sign: |
 | Groups |
 || Sub-groups || :white_check_mark: |
 || Group CI variables || :white_check_mark: |
@@ -419,11 +391,13 @@ To reload the app in debugging mode, you will need to click the `refresh` icon i
 || Awards || :white_check_mark: |
 || Pipeline schedules || :white_check_mark: |
 || Badges || :white_check_mark: |
+|| Webhooks (w/o token) || :white_check_mark: |
 | Standalone |
 || Users |
 ||| Avatars | :white_check_mark: |
 ||| User info | :white_check_mark: |
 || Version || :white_check_mark: |
+|| System hooks (w/o token) || :white_check_mark: |
 || Services || :x: |
 || Deploy keys || :x: |
 
@@ -435,27 +409,28 @@ To reload the app in debugging mode, you will need to click the `refresh` icon i
 
 ## Features matrix
 
-| Features  |  Import/Export API |  Congregate |
-|---|---|---|
-| Project and wiki repositories  |  :white_check_mark:   |  :white_check_mark: |
-| Project uploads  | :white_check_mark:  | :white_check_mark:  |
-| Project configuration, including services  |  :white_check_mark: |  :white_check_mark: |
-| Issues with comments, merge requests with diffs and comments, labels, milestones, snippets, and other project entities  |  :white_check_mark: |  :white_check_mark: |
-| LFS objects  |  :white_check_mark: |  :white_check_mark: |
-| Project badges  | :white_check_mark: (URL data not propagated)  | :white_check_mark: (update only) |
-| Protected branches  |  :white_check_mark: (unstable) |  :white_check_mark: |
-| Pipelines schedules  |  :white_check_mark: (unstable) |  :white_check_mark: |
-| Build traces and artifacts  |  :x: |  :x: |
-| Container Registry  |  :x:  |  :white_check_mark:  |
-| CI variables  | :x:  |  :white_check_mark:  |
-| Webhooks  | :x:  | :heavy_minus_sign:   |
-| Deploy Keys | :x: | :white_check_mark: (project only) |
-| Any encrypted tokens  |  :x: | :heavy_minus_sign:   |
-| Merge Request Approvers  | :x:  | :white_check_mark:  |
-| Group badges  | :x:  | :white_check_mark:  |
-| Push Rules  |  :x: |  :white_check_mark: |
-| Users  | :x:  |  :white_check_mark: |
-| Groups  | :x:  | :white_check_mark:  |
+| Features                                                                                                               | Import/Export API                            | Congregate                           |
+|------------------------------------------------------------------------------------------------------------------------|----------------------------------------------|--------------------------------------|
+| Project and wiki repositories                                                                                          | :white_check_mark:                           | :white_check_mark:                   |
+| Project uploads                                                                                                        | :white_check_mark:                           | :white_check_mark:                   |
+| Project configuration, including services                                                                              | :white_check_mark:                           | :white_check_mark:                   |
+| Issues with comments, merge requests with diffs and comments, labels, milestones, snippets, and other project entities | :white_check_mark:                           | :white_check_mark:                   |
+| LFS objects                                                                                                            | :white_check_mark:                           | :white_check_mark:                   |
+| Project badges                                                                                                         | :white_check_mark: (URL data not propagated) | :white_check_mark: (update only)     |
+| Protected branches                                                                                                     | :white_check_mark: (unstable)                | :white_check_mark:                   |
+| Pipelines schedules                                                                                                    | :white_check_mark: (unstable)                | :white_check_mark:                   |
+| Build traces and artifacts                                                                                             | :x:                                          | :x:                                  |
+| Container Registry                                                                                                     | :x:                                          | :white_check_mark:                   |
+| CI variables                                                                                                           | :x:                                          | :white_check_mark:                   |
+| Webhooks                                                                                                               | :x:                                          | :white_check_mark:       (w/o token) |
+| System hooks                                                                                                           | :x:                                          | :white_check_mark:       (w/o token) |
+| Deploy Keys                                                                                                            | :x:                                          | :white_check_mark: (project only)    |
+| Any encrypted tokens                                                                                                   | :x:                                          | :heavy_minus_sign:                   |
+| Merge Request Approvers                                                                                                | :x:                                          | :white_check_mark:                   |
+| Group badges                                                                                                           | :x:                                          | :white_check_mark:                   |
+| Push Rules                                                                                                             | :x:                                          | :white_check_mark:                   |
+| Users                                                                                                                  | :x:                                          | :white_check_mark:                   |
+| Groups                                                                                                                 | :x:                                          | :white_check_mark:                   |
 
 :x: = not supported
 

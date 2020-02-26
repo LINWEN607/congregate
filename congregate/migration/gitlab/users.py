@@ -496,7 +496,7 @@ class UsersClient(BaseClass):
                 new_users = []
                 for new_id in new_ids:
                     new_user = self.users_api.get_user(
-                        new_id, self.config.destination_host, self.config.destination_token).json()
+                        new_id["id"], self.config.destination_host, self.config.destination_token).json()
                     if isinstance(new_user, list):
                         new_users.append(new_user[0])
                     elif isinstance(new_user, dict):
@@ -629,9 +629,9 @@ class UsersClient(BaseClass):
 
         return staged
 
-    def retrieve_user_info(self, quiet=False):
-        users = list(api.list_all(self.config.source_host,
-                                  self.config.source_token, "users"))
+    def retrieve_user_info(self, host, token, quiet=False):
+        users = list(api.list_all(host,
+                                  token, "users"))
         root_index = None
         for user in users:
             # Removing root user
@@ -733,12 +733,12 @@ class UsersClient(BaseClass):
     def block_user(self, user_data):
         try:
             response = self.find_user_by_email_comparison_without_id(user_data["email"])
-            user_creation_id = self.get_user_creation_id(response)
-            if user_creation_id:
+            user_creation_data = self.get_user_creation_id_and_email(response)
+            if user_creation_data:
                 block_response = self.users_api.block_user(
                     self.config.destination_host,
                     self.config.destination_token,
-                    user_creation_id)
+                    user_creation_data["id"])
                 self.log.info("Blocking user {0} email {1} (status: {2})"
                     .format(user_data["username"], user_data["email"], block_response))
                 return block_response
@@ -757,18 +757,28 @@ class UsersClient(BaseClass):
             try:
                 # Try to find the user by email. We either just created this, or it already existed
                 response = self.find_user_by_email_comparison_without_id(user["email"])
-                return self.get_user_creation_id(response)
+                return self.get_user_creation_id_and_email(response)
             except RequestException, e:
                 self.log.error("Failed to retrieve user {0} status, due to:\n{1}".format(user, e))
         else:
-            return response.json()["id"]
+            resp = response.json()
+            return {
+                "id": resp["id"],
+                "email": resp["email"]
+            }
 
-    def get_user_creation_id(self, response):
+    def get_user_creation_id_and_email(self, response):
         if response is not None and response:
             if isinstance(response, list):
-                return response[0]["id"]
+                return {
+                    "email": response[0]["email"],
+                    "id": response[0]["id"]
+                }
             elif isinstance(response, dict) and response.get("id", None) is not None:
-                return response["id"]
+                return {
+                    "email": response["email"],
+                    "id": response["id"]
+                }
 
     def append_users(self, users):
         with open("%s/data/users.json" % self.app_path, "r") as f:

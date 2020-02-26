@@ -20,7 +20,8 @@ class ProjectExportClient(BaseClass):
         super(ProjectExportClient, self).__init__()
 
     def update_project_export_members(self, name, namespace, filename):
-        file_path, extract_path = self.generate_filepaths(name, namespace, filename)
+        file_path, extract_path = self.generate_filepaths(
+            name, namespace, filename)
         updated = self.__do_tar_and_rewrite(file_path, extract_path)
         self.aws.copy_file_to_s3(filename)
         self.remove_local_project_export(name, namespace, filename)
@@ -52,17 +53,20 @@ class ProjectExportClient(BaseClass):
                 tar.add(extract_path, arcname="")
                 return True
             except ValueError, e:
-                self.log.error("Failed to rewrite project JSON file {0}, with error:\n{1}".format(file_path, e))
+                self.log.error(
+                    "Failed to rewrite project JSON file {0}, with error:\n{1}".format(file_path, e))
                 return False
 
     def remove_local_project_export(self, name, namespace, filename):
-        file_path, extract_path = self.generate_filepaths(name, namespace, filename)
+        file_path, extract_path = self.generate_filepaths(
+            name, namespace, filename)
         os.remove(file_path)
         shutil.rmtree(extract_path)
 
     def generate_filepaths(self, name, namespace, filename):
         file_path = self.aws.get_local_file_path(filename)
-        extract_path = "%s/downloads/%s_%s" % (self.config.filesystem_path, name, namespace)
+        extract_path = "%s/downloads/%s_%s" % (
+            self.config.filesystem_path, name, namespace)
 
         return file_path, extract_path
 
@@ -79,22 +83,26 @@ class ProjectExportClient(BaseClass):
                 if d["user"].get("email", None) is not None:
                     # Lookup user by email on destination.
                     email = d["user"]["email"]
-                    new_user = self.users.find_user_by_email_comparison_without_id(email)
+                    new_user = self.users.find_user_by_email_comparison_without_id(
+                        email)
                     if new_user is not None:
                         # 'project_members' have no 'state', so if we've migrated the user
                         # look them up on dest by email (new_user) for user ID mapping,
                         # but lookup on src (old_user) as a safer source of 'state' truth.
-                        old_user = self.users.find_user_by_email_comparison_without_id(email, src=True)
+                        old_user = self.users.find_user_by_email_comparison_without_id(
+                            email, src=True)
                         if old_user is not None \
                                 and old_user.get("state", None) is not None \
                                 and str(old_user["state"]).lower() == "blocked" \
                                 and not self.config.keep_blocked_users:
                             self.log.info("REWRITE: Removing blocked user {0} from project json {1} and mapping to import user ID"
-                                .format(d["user"], path))
-                            self.users_map[d["user_id"]] = self.config.import_user_id
+                                          .format(d["user"], path))
+                            self.users_map[d["user_id"]
+                                           ] = self.config.import_user_id
                             to_pop.append(data["project_members"].index(d))
                             continue
-                        self.log.info("REWRITE: Mapping user {0} to destination ID {1}".format(email, new_user["id"]))
+                        self.log.info("REWRITE: Mapping user {0} to destination ID {1}".format(
+                            email, new_user["id"]))
                         d["user"]["id"] = new_user["id"]
                         self.users_map[d["user_id"]] = new_user["id"]
                         # We do the following to force the import tool to match on email
@@ -103,13 +111,15 @@ class ProjectExportClient(BaseClass):
                         d["user"]["username"] = "dont_have_this_username"
                     else:
                         self.log.warning("REWRITE: New user {0} on destination was not found by email:\n{1}"
-                            .format(email, json_pretty(d)))
+                                         .format(email, json_pretty(d)))
                         d["user"]["id"] = self.config.import_user_id
-                        self.users_map[d["user_id"]] = self.config.import_user_id
+                        self.users_map[d["user_id"]
+                                       ] = self.config.import_user_id
                         d["user"]['username'] = "This is invalid"
                 else:
                     # No clue who this is, so set to import user
-                    self.log.warning("REWRITE: Project member user entity has no email:\n{0}".format(json_pretty(d)))
+                    self.log.warning(
+                        "REWRITE: Project member user entity has no email:\n{0}".format(json_pretty(d)))
                     d["user"]["id"] = self.config.import_user_id
                     self.users_map[d["user_id"]] = self.config.import_user_id
                     d["user"]['username'] = "This is invalid"
@@ -118,14 +128,15 @@ class ProjectExportClient(BaseClass):
             # Removing them rather than creating new user objects.
             elif d.get("invite_email", None):
                 self.log.warning("REWRITE: Skipping user {0}, invited by ID {1}"
-                    .format(d.get("invite_email"), d.get("created_by_id")))
+                                 .format(d.get("invite_email"), d.get("created_by_id")))
                 to_pop.append(data["project_members"].index(d))
             else:
                 self.log.warning("REWRITE: Skipping project member that has no user entity or invite email:\n{}"
-                    .format(json_pretty(d)))
+                                 .format(json_pretty(d)))
                 to_pop.append(data["project_members"].index(d))
 
-        data["project_members"] = [i for j, i in enumerate(data["project_members"]) if j not in to_pop]
+        data["project_members"] = [i for j, i in enumerate(
+            data["project_members"]) if j not in to_pop]
 
         # Update project_json
         data = self.__traverse_json(data)
@@ -147,20 +158,27 @@ class ProjectExportClient(BaseClass):
                     elif isinstance(data[k], dict):
                         self.__traverse_json(data[k])
         return data
-    
+
     def __remove_items(self, data):
         if data.get("merge_requests", None) is not None:
-            self.__remove_notes_from_merge_requests(data["merge_requests"], "DiffNote")
-            self.__remove_notes_from_merge_requests(data["merge_requests"], "Commit")
-            self.__remove_suggestions_from_merge_requests(data["merge_requests"])
+            self.__remove_notes_from_merge_requests(
+                data["merge_requests"], "DiffNote")
+            self.__remove_notes_from_merge_requests(
+                data["merge_requests"], "Commit")
+            self.__remove_suggestions_from_merge_requests(
+                data["merge_requests"])
         if data.get("pipelines", None) is not None:
-            self.__remove_notes_from_merge_requests(data["pipelines"], "DiffNote")
-            self.__remove_notes_from_merge_requests(data["pipelines"], "Commit")
+            self.__remove_notes_from_merge_requests(
+                data["pipelines"], "DiffNote")
+            self.__remove_notes_from_merge_requests(
+                data["pipelines"], "Commit")
             # This line needs to be removed once https://gitlab.com/gitlab-org/gitlab/issues/27883 is resolved
             data['pipelines'].reverse()
         if data.get("ci_pipelines", None) is not None:
-            self.__remove_notes_from_merge_requests(data["ci_pipelines"], "DiffNote")
-            self.__remove_notes_from_merge_requests(data["ci_pipelines"], "Commit")
+            self.__remove_notes_from_merge_requests(
+                data["ci_pipelines"], "DiffNote")
+            self.__remove_notes_from_merge_requests(
+                data["ci_pipelines"], "Commit")
             # This line needs to be removed once https://gitlab.com/gitlab-org/gitlab/issues/27883 is resolved
             data['ci_pipelines'].reverse()
         if data.get("services", None) is not None:

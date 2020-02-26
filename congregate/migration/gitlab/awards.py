@@ -6,7 +6,7 @@ from congregate.helpers.base_class import BaseClass
 from congregate.helpers import api
 from congregate.migration.gitlab.api.issues import IssuesApi
 from congregate.migration.gitlab.api.merge_requests import MergeRequestsApi
-from congregate.migration.gitlab.api.snippets import SnippetsApi
+from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.users import UsersClient
 
 
@@ -14,7 +14,7 @@ class AwardsClient(BaseClass):
     def __init__(self):
         self.issues = IssuesApi()
         self.merge_requests = MergeRequestsApi()
-        self.snippets = SnippetsApi()
+        self.projects = ProjectsApi()
         self.users = UsersClient()
         self.token_expiration_date = (date.today() + timedelta(days=2)
                                       ).strftime('%Y-%m-%d')
@@ -61,9 +61,9 @@ class AwardsClient(BaseClass):
 
     def migrate(self, new_id, old_id, users_map, mr_enabled=False):
         AWARDABLES = {
-            "issues": self.issues.get_single_project_issues,
+            "issues": self.issues.get_single_project_issue,
             "merge_requests": self.merge_requests.get_single_project_merge_requests,
-            "snippets": self.snippets.get_single_project_snippets
+            "snippets": self.projects.get_single_project_snippets
         }
         for k, v in AWARDABLES.items():
             if not mr_enabled and "merge_requests" in k:
