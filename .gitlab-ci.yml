@@ -141,7 +141,6 @@ pages:
     - poetry run sphinx-apidoc -f -o congregate/docs/source/ ./
     - cd congregate/docs
     - make html
-    - cd build/html
     - mv build/html ../../public
   artifacts:
     paths:
