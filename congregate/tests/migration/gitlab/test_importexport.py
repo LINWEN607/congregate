@@ -1,13 +1,16 @@
 import json
 import unittest
 import mock
+import responses
 from congregate.migration.gitlab.importexport import ImportExportClient
+from congregate.tests.mockapi.groups import MockGroupsApi
 
 
 class ImportExportClientTests(unittest.TestCase):
 
     def setUp(self):
         self.ie = ImportExportClient()
+        self.mock_groups = MockGroupsApi()
         self.original_project_name = "original_project_name"
         self.original_namespace_path = "original_namespace_path"
         self.name_taken_import_response = json.dumps(
@@ -216,9 +219,19 @@ class ImportExportClientTests(unittest.TestCase):
         mock_get_group_download_status.return_value = nok_response_mock
         self.assertFalse(self.ie.wait_for_group_download(1))
 
+    # pylint: disable=no-member
+    @responses.activate
+    # pylint: enable=no-member
+    @mock.patch("congregate.helpers.api.generate_v4_request_url")
     @mock.patch('congregate.migration.gitlab.groups.GroupsClient.find_group_by_path')
-    def test_wait_for_group_import_200(self, mock_find_group_by_path):
+    def test_wait_for_group_import_200(self, mock_find_group_by_path, url):
         mock_find_group_by_path.return_value = (True, 1)
+        url_value = "https://gitlabdestination.com/api/v4/groups/1"
+        url.return_value = url_value
+        # pylint: disable=no-member
+        responses.add(responses.GET, url_value,
+                    json=self.mock_groups.get_group(), status=200)
+        # pylint: enable=no-member
         self.assertTrue(self.ie.wait_for_group_import("mock"))
 
     @mock.patch('congregate.migration.gitlab.groups.GroupsClient.find_group_by_path')
