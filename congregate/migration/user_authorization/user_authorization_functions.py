@@ -7,7 +7,7 @@ from congregate.migration.user_authorization.classes.user_and_repo_operations im
 from congregate.helpers import conf
 import logging
 
-config = conf.ig()
+config = conf.Config()
 
 
 def user_is_authorized(migration_type, **kwargs):
