@@ -640,7 +640,6 @@ class UsersClient(BaseClass):
             else:
                 keys_to_delete = [
                     "web_url"
-                    "avatar_url",
                     "last_sign_in_at",
                     "last_activity_at",
                     "current_sign_in_at",
@@ -648,6 +647,9 @@ class UsersClient(BaseClass):
                     "confirmed_at",
                     "last_activity_on"
                 ]
+                # SSO causes issues with the avatar URL due to the authentication
+                if self.config.group_sso_provider:
+                    keys_to_delete.append("avatar_url")
                 for key in keys_to_delete:
                     if key in user:
                         user.pop(key)
