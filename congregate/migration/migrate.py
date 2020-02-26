@@ -449,7 +449,6 @@ def migrate_single_project_info(project, new_id):
     """
         Subsequent function to update project info AFTER import
     """
-    members = project["members"]
     project.pop("members")
     name = project["name"]
     old_id = project["id"]
@@ -466,17 +465,7 @@ def migrate_single_project_info(project, new_id):
 
     results["id"] = new_id
 
-    # Project Members
-    # NOTE: Members should be handled on import. If that is not the case, the line below and variable members should be uncommented.
-    # TODO: Remove the `add_members` function once the import API can consistently add project members
-    # projects.add_members(members, new_id)
-
     projects.remove_import_user_from_project(new_id)
-
-    # Project Avatar
-    # This assumes you have access to the host systems uploads as a URL instead of letting the
-    # TODO: Remove the `migrate_avatar` function once the import API can consistently add project avatars
-    # projects.migrate_avatar(new_id, old_id)
 
     # Shared with groups
     projects.add_shared_groups(old_id, new_id)
@@ -500,24 +489,6 @@ def migrate_single_project_info(project, new_id):
     # Default Branch
     results["default_branch"] = branches.update_default_branch(
         old_id, new_id, project)
-
-    # Protected Branches
-    results["protected_branches"] = branches.migrate_protected_branches(
-        old_id, new_id, name)
-
-    # Awards
-    # TODO: Disable -> Project exports now include awards
-    users_map = {}
-    results["awards"] = awards.migrate_awards(
-        old_id, new_id, name, users_map, mr_enabled)
-
-    # Pipeline Schedules
-    # TODO: Remove `pipelines_schedules.py` once the import API can consistently add project pipelines schedules OR
-    # Address pending issues mentioned in congregate #205
-    # results["pipeline_schedules"] = p_schedules.migrate_pipeline_schedules(old_id, new_id, users_map, name)
-
-    # Deleting any impersonation tokens used by the awards migration
-    users.delete_saved_impersonation_tokens(users_map)
 
     # Deploy Keys (project only)
     results["deploy_keys"] = deploy_keys.migrate_deploy_keys(

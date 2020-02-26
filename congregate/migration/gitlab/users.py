@@ -30,11 +30,11 @@ class UsersClient(BaseClass):
             self.config.source_token).json()
         if old_user is not None and old_user and old_user.get("email", None) is not None:
             self.log.info("Found by old user ID email {0} and user:\n{1}"
-                .format(old_user.get("email", None), json_pretty(old_user)))
+                          .format(old_user.get("email", None), json_pretty(old_user)))
             return self.find_user_by_email_comparison_without_id(old_user["email"])
         else:
             self.log.error("Could not by old user ID {0} email of user:\n{1}"
-                .format(old_user_id, json_pretty(old_user)))
+                           .format(old_user_id, json_pretty(old_user)))
         return None
 
     def find_user_by_email_comparison_without_id(self, email, src=False):
@@ -44,7 +44,8 @@ class UsersClient(BaseClass):
         :param src: Is this the source or destination system? True if source else False. Defaults to False.
         :return: The user entity found or None
         """
-        self.log.info("Searching for user email {0} in {1} system".format(email, "source" if src else "destination"))
+        self.log.info("Searching for user email {0} in {1} system".format(
+            email, "source" if src else "destination"))
         users = self.users_api.search_for_user_by_email(
             self.config.source_host if src else self.config.destination_host,
             self.config.source_token if src else self.config.destination_token,
@@ -55,10 +56,12 @@ class UsersClient(BaseClass):
                     user and \
                     user.get("email", None) is not None and \
                     user["email"].lower() == email.lower():
-                self.log.info("Found by email {0} user:\n{1}".format(email, json_pretty(user)))
+                self.log.info("Found by email {0} user:\n{1}".format(
+                    email, json_pretty(user)))
                 return user
             else:
-                self.log.error("Could not find user based on email {}".format(email))
+                self.log.error(
+                    "Could not find user based on email {}".format(email))
         return None
 
     def username_exists(self, old_user):
@@ -83,7 +86,8 @@ class UsersClient(BaseClass):
                 index += 1
             return False
         else:
-            self.log.info("Username {0} for user {1} exists as a group name".format(username, old_user))
+            self.log.info(
+                "Username {0} for user {1} exists as a group name".format(username, old_user))
             return True
 
     def is_username_group_name(self, old_user):
@@ -121,7 +125,7 @@ class UsersClient(BaseClass):
         if old_user.get("email"):
             email = old_user["email"]
             for user in self.users_api.search_for_user_by_email(self.config.destination_host, self.config.destination_token,
-                                                            email):
+                                                                email):
                 if user["email"] == email:
                     return True
                 elif index > 100:
@@ -132,10 +136,12 @@ class UsersClient(BaseClass):
     def find_user_primarily_by_email(self, user):
         new_user = None
         if user:
-            if user.get("email", None) is not None: 
-                new_user = self.find_user_by_email_comparison_without_id(user["email"])
+            if user.get("email", None) is not None:
+                new_user = self.find_user_by_email_comparison_without_id(
+                    user["email"])
             elif user.get("id", None) is not None:
-                new_user = self.find_user_by_email_comparison_with_id(user["id"])
+                new_user = self.find_user_by_email_comparison_with_id(
+                    user["id"])
         return new_user
 
     def find_or_create_impersonation_token(self, host, token, user, users_map, expiration_date):
@@ -158,29 +164,20 @@ class UsersClient(BaseClass):
             users_map[email]["user_id"] = id
         return users_map[email]
 
-    def delete_saved_impersonation_tokens(self, users_map):
-        try:
-            for user in users_map.values():
-                self.users_api.delete_user_impersonation_token(
-                    self.config.destination_host,
-                    self.config.destination_token,
-                    user["user_id"],
-                    user["id"])
-        except Exception, e:
-            self.log.error("Failed to delete saved impersonation tokens:\n{0}\nwith error\n:{1}".format(users_map, e))
-
     def generate_user_group_saml_post_data(self, user):
         identities = user.pop("identities")
         user["external"] = True
         user["group_id_for_saml"] = self.config.parent_id
-        user["extern_uid"] = self.find_extern_uid_by_provider(identities, self.config.group_sso_provider)
+        user["extern_uid"] = self.find_extern_uid_by_provider(
+            identities, self.config.group_sso_provider)
         user["provider"] = "group_saml"
         user["reset_password"] = self.config.reset_password
         # make sure the blocked user cannot do anything
         user["force_random_password"] = "true" if user["state"] == "blocked" else self.config.force_random_password
         if not self.config.reset_password and not self.config.force_random_password:
-            #TODO: add config for 'password' field
-            self.log.warning("If both 'reset_password' and 'force_random_password' are False, the 'password' field has to be set")
+            # TODO: add config for 'password' field
+            self.log.warning(
+                "If both 'reset_password' and 'force_random_password' are False, the 'password' field has to be set")
         user["skip_confirmation"] = True
         user["username"] = self.create_valid_username(user)
 
@@ -207,7 +204,8 @@ class UsersClient(BaseClass):
             # This means we're going to attempt to create the same user at some point, which is fine
             # However, this also messes up some of our remapping efforts, as those match on source username
             # and not email
-            found_by_email_user = self.find_user_by_email_comparison_without_id(user["email"])
+            found_by_email_user = self.find_user_by_email_comparison_without_id(
+                user["email"])
             if found_by_email_user and found_by_email_user.get("username", None):
                 return found_by_email_user["username"]
         return username
@@ -217,7 +215,8 @@ class UsersClient(BaseClass):
         if self.config.username_suffix is not None:
             return "{0}_{1}".format(username, self.config.username_suffix)
         else:
-            self.log.error("Username suffix not set. Defaulting to a single underscore following the username")
+            self.log.error(
+                "Username suffix not set. Defaulting to a single underscore following the username")
             return "{0}_".format(username)
 
     def update_users(self, obj, new_users, obj_type):
@@ -241,13 +240,16 @@ class UsersClient(BaseClass):
             rewritten_users[user_email] = new_obj
 
         for i in range(len(obj)):
-            self.log.info("Rewriting users for {0} {1}".format(obj_type, obj[i]["name"]))
+            self.log.info("Rewriting users for {0} {1}".format(
+                obj_type, obj[i]["name"]))
             members = obj[i]["members"]
             if isinstance(members, list):
                 for member in members:
                     # Get the old user from the source system by ID
-                    self.log.info("Searching on source for user ID {0}".format(member["id"]))
-                    old_user = self.users_api.get_user(member["id"], self.config.source_host, self.config.source_token)
+                    self.log.info(
+                        "Searching on source for user ID {0}".format(member["id"]))
+                    old_user = self.users_api.get_user(
+                        member["id"], self.config.source_host, self.config.source_token)
                     old_user = old_user.json()
 
                     if old_user.get("email"):
@@ -281,7 +283,7 @@ class UsersClient(BaseClass):
             not_found_members = []
 
         self.log.warning("Members NOT found in {0}s: {1}"
-            .format(obj_type, json_pretty(not_found_all)))
+                         .format(obj_type, json_pretty(not_found_all)))
         return obj
 
     def map_new_users_to_groups_and_projects(self, dry_run=True):
@@ -304,11 +306,12 @@ class UsersClient(BaseClass):
             self.log.info("All users have already been migrated.")
             return
 
-        staged_projects = self.update_users(staged_projects, new_users, "project")
+        staged_projects = self.update_users(
+            staged_projects, new_users, "project")
         staged_groups = self.update_users(staged_groups, new_users, "group")
 
         self.log.info("{}Mapping missing (destination) users to staged projects and groups"
-            .format(get_dry_log(dry_run)))
+                      .format(get_dry_log(dry_run)))
         if not dry_run:
             with open("%s/data/stage.json" % self.app_path, "wb") as f:
                 json.dump(staged_projects, f, indent=4)
@@ -333,7 +336,8 @@ class UsersClient(BaseClass):
                     self.groups_api.add_member_to_group(
                         self.config.parent_id, self.config.destination_host, self.config.destination_token, data)
                 except RequestException, e:
-                    self.log.error("Failed to add user {0} to parent group, with error:\n{1}".format(user, e))
+                    self.log.error(
+                        "Failed to add user {0} to parent group, with error:\n{1}".format(user, e))
 
     def remove_users_from_parent_group(self, dry_run=True):
         count = 0
@@ -397,13 +401,15 @@ class UsersClient(BaseClass):
                             access_level,
                             level))
         except RequestException, e:
-            self.log.error("Failed to update user's parent access level, with error:\n{}".format(e))
+            self.log.error(
+                "Failed to update user's parent access level, with error:\n{}".format(e))
 
     def remove_blocked_users(self, dry_run=True):
         """
             Remove users with state "blocked" from staged users, groups and projects
         """
-        self.log.info("{}Removing blocked users form staged users/groups/projects".format(get_dry_log(dry_run)))
+        self.log.info(
+            "{}Removing blocked users form staged users/groups/projects".format(get_dry_log(dry_run)))
         # From staged users
         self.remove("staged_users", dry_run)
         # From staged groups
@@ -420,7 +426,8 @@ class UsersClient(BaseClass):
             for user in staged:
                 if user.get("state", None) == "blocked":
                     to_pop.append(staged.index(user))
-                    self.log.info("Removing blocked user {0} from {1}".format(user["username"], data))
+                    self.log.info("Removing blocked user {0} from {1}".format(
+                        user["username"], data))
             staged = [i for j, i in enumerate(staged) if j not in to_pop]
         else:
             for s in staged:
@@ -428,8 +435,10 @@ class UsersClient(BaseClass):
                 for member in s["members"]:
                     if member.get("state", None) == "blocked":
                         to_pop.append(s["members"].index(member))
-                        self.log.info("Removing blocked user {0} from {1} ({2})".format(member["username"], data, s["name"]))
-                s["members"] = [i for j, i in enumerate(s["members"]) if j not in to_pop]
+                        self.log.info("Removing blocked user {0} from {1} ({2})".format(
+                            member["username"], data, s["name"]))
+                s["members"] = [i for j, i in enumerate(
+                    s["members"]) if j not in to_pop]
 
         if not dry_run:
             with open("{0}/data/{1}.json".format(self.app_path, data), "w") as f:
@@ -474,7 +483,8 @@ class UsersClient(BaseClass):
                         count += 1
                     else:
                         newer_users.append(new_user)
-        self.log.info("Newer user count after blocking ({0}). {1} to remove".format(len(newer_users), count))
+        self.log.info("Newer user count after blocking ({0}). {1} to remove".format(
+            len(newer_users), count))
 
         with open("%s/data/newer_users.json" % self.app_path, "wb") as f:
             json.dump(newer_users, f, indent=4)
@@ -521,7 +531,8 @@ class UsersClient(BaseClass):
         with open("%s/data/new_users.json" % self.app_path, "r") as f:
             new_users = json.load(f)
 
-        staged_projects = self.update_users(staged_projects, new_users, "project")
+        staged_projects = self.update_users(
+            staged_projects, new_users, "project")
         staged_groups = self.update_users(staged_groups, new_users, "group")
 
         with open("%s/data/stage.json" % self.app_path, "wb") as f:
@@ -552,7 +563,8 @@ class UsersClient(BaseClass):
             # If we find the user by email, but didn't get the email field back (will happen if you are not using
             # an admin token for search) set the email field
             if len(new_user) > 1:
-                self.log.error("Too many users found for email search using email {0}".format(user["email"]))
+                self.log.error(
+                    "Too many users found for email search using email {0}".format(user["email"]))
                 users_not_found[user["id"]] = user["email"]
             elif len(new_user) > 0:
                 if new_user[0].get("email", None) is None:
@@ -614,15 +626,18 @@ class UsersClient(BaseClass):
                 "Removing" if keep else "Keeping",
                 len(users)))
             if keep:
-                staged = [i for j, i in enumerate(staged) if i["id"] in users.keys()]
+                staged = [i for j, i in enumerate(
+                    staged) if i["id"] in users.keys()]
             else:
-                staged = [i for j, i in enumerate(staged) if i["id"] not in users.keys()]
+                staged = [i for j, i in enumerate(
+                    staged) if i["id"] not in users.keys()]
         else:
             self.log.info("Removing the NOT found users ({0}) from staged {1}".format(
                 len(users),
                 "projects" if data == "stage" else "groups"))
             for s in staged:
-                s["members"] = [i for j, i in enumerate(s["members"]) if i["id"] not in users.keys()]
+                s["members"] = [i for j, i in enumerate(
+                    s["members"]) if i["id"] not in users.keys()]
 
         with open("{0}/data/{1}.json".format(self.app_path, data), "w") as f:
             f.write(json_pretty(staged))
@@ -675,11 +690,14 @@ class UsersClient(BaseClass):
 
         if not dry_run:
             new_ids = []
-            new_ids = handle_multi_thread(self.handle_user_creation, staged_users)
+            new_ids = handle_multi_thread(
+                self.handle_user_creation, staged_users)
             return list(filter(None, new_ids))
         else:
-            self.log.info("DRY-RUN: Outputing various USER migration data to dry_run_user_migration.json")
-            migration_dry_run("user", handle_multi_thread(self.generate_user_data, staged_users))
+            self.log.info(
+                "DRY-RUN: Outputing various USER migration data to dry_run_user_migration.json")
+            migration_dry_run("user", handle_multi_thread(
+                self.generate_user_data, staged_users))
 
     def generate_user_data(self, user):
         if self.config.group_sso_provider is not None:
@@ -690,8 +708,9 @@ class UsersClient(BaseClass):
         # make sure the blocked user cannot do anything
         user["force_random_password"] = "true" if user["state"] == "blocked" else self.config.force_random_password
         if not self.config.reset_password and not self.config.force_random_password:
-            #TODO: add config for 'password' field
-            self.log.warning("If both 'reset_password' and 'force_random_password' are False, the 'password' field has to be set")
+            # TODO: add config for 'password' field
+            self.log.warning(
+                "If both 'reset_password' and 'force_random_password' are False, the 'password' field has to be set")
         if self.config.parent_id is not None:
             user["is_admin"] = False
         return user
@@ -705,11 +724,12 @@ class UsersClient(BaseClass):
         """
         try:
             if user.get("state", None) \
-                    and (str(user["state"]).lower() == "active" \
-                    or (str(user["state"]).lower() == "blocked"
-                        and self.config.keep_blocked_users)):
+                    and (str(user["state"]).lower() == "active"
+                         or (str(user["state"]).lower() == "blocked"
+                             and self.config.keep_blocked_users)):
                 user_data = self.generate_user_data(user)
-                self.log.info("Attempting to create user:\n{}".format(json_pretty(user)))
+                self.log.info(
+                    "Attempting to create user:\n{}".format(json_pretty(user)))
                 response = self.users_api.create_user(
                     self.config.destination_host,
                     self.config.destination_token,
@@ -717,18 +737,23 @@ class UsersClient(BaseClass):
             else:
                 response = None
         except RequestException, e:
-            self.log.error("Failed to create user {0}, with error:\n{1}".format(user_data, e))
+            self.log.error(
+                "Failed to create user {0}, with error:\n{1}".format(user_data, e))
             response = None
 
         if response is not None:
             try:
-                self.log.info("User creation response text was {}".format(response.text))
+                self.log.info(
+                    "User creation response text was {}".format(response.text))
             except Exception as e:
-                self.log.error("Could not get response text. Error was {0}".format(e))
+                self.log.error(
+                    "Could not get response text. Error was {0}".format(e))
             try:
-                self.log.info("User creation response JSON was:\n{}".format(json_pretty(response.json())))
+                self.log.info("User creation response JSON was:\n{}".format(
+                    json_pretty(response.json())))
             except Exception as e:
-                self.log.error("Could not get response JSON. Error was {0}".format(e))
+                self.log.error(
+                    "Could not get response JSON. Error was {0}".format(e))
 
             # NOTE: Persist 'blocked' user state regardless of domain and creation status.
             if user_data.get("state", None) and str(user_data["state"]).lower() == "blocked":
@@ -738,7 +763,8 @@ class UsersClient(BaseClass):
 
     def block_user(self, user_data):
         try:
-            response = self.find_user_by_email_comparison_without_id(user_data["email"])
+            response = self.find_user_by_email_comparison_without_id(
+                user_data["email"])
             user_creation_data = self.get_user_creation_id_and_email(response)
             if user_creation_data:
                 block_response = self.users_api.block_user(
@@ -746,10 +772,11 @@ class UsersClient(BaseClass):
                     self.config.destination_token,
                     user_creation_data["id"])
                 self.log.info("Blocking user {0} email {1} (status: {2})"
-                    .format(user_data["username"], user_data["email"], block_response))
+                              .format(user_data["username"], user_data["email"], block_response))
                 return block_response
         except RequestException, e:
-            self.log.error("Failed to block user {0}, with error:\n{1}".format(user_data, e))
+            self.log.error(
+                "Failed to block user {0}, with error:\n{1}".format(user_data, e))
 
     def handle_user_creation_status(self, response, user):
         """
@@ -762,10 +789,12 @@ class UsersClient(BaseClass):
             self.log.info("User {0} already exists".format(user["email"]))
             try:
                 # Try to find the user by email. We either just created this, or it already existed
-                response = self.find_user_by_email_comparison_without_id(user["email"])
+                response = self.find_user_by_email_comparison_without_id(
+                    user["email"])
                 return self.get_user_creation_id_and_email(response)
             except RequestException, e:
-                self.log.error("Failed to retrieve user {0} status, due to:\n{1}".format(user, e))
+                self.log.error(
+                    "Failed to retrieve user {0} status, due to:\n{1}".format(user, e))
         else:
             resp = response.json()
             return {
@@ -805,7 +834,8 @@ class UsersClient(BaseClass):
             self.log.info("Removing user {}".format(su["email"]))
             user = self.find_user_by_email_comparison_without_id(su["email"])
             if user is None:
-                self.log.info("User {} does not exist or has already been removed".format(su["email"]))
+                self.log.info(
+                    "User {} does not exist or has already been removed".format(su["email"]))
             elif not dry_run:
                 try:
                     self.users_api.delete_user(
@@ -814,4 +844,5 @@ class UsersClient(BaseClass):
                         user["id"],
                         hard_delete)
                 except RequestException, e:
-                    self.log.error("Failed to remove user {0}\nwith error: {1}".format(su, e))
+                    self.log.error(
+                        "Failed to remove user {0}\nwith error: {1}".format(su, e))
