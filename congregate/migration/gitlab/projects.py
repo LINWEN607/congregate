@@ -21,6 +21,10 @@ class ProjectsClient(BaseClass):
             return namespace_prefix + "/" + namespace + "/" + project_name
         return namespace + "/" + project_name
 
+    def get_projects(self):
+        with open("{}/data/project_json.json".format(self.app_path), "r") as f:
+            return json.load(f)
+
     def get_staged_projects(self):
         with open("{}/data/stage.json".format(self.app_path), "r") as f:
             return json.load(f)
@@ -259,8 +263,7 @@ class ProjectsClient(BaseClass):
 
     def find_unimported_projects(self, dry_run=True):
         unimported_projects = []
-        with open("{}/data/project_json.json".format(self.app_path), "r") as f:
-            files = json.load(f)
+        files = self.get_projects()
         if files is not None and files:
             for project_json in files:
                 try:
