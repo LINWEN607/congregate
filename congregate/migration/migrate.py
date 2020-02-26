@@ -186,6 +186,7 @@ def __migrate_group_info(dry_run=True, skip_group_export=False, skip_group_impor
             })
             b.log.info("### {0}Group import results ###\n{1}"
                        .format(dry_log, json_pretty(import_results)))
+            write_results_to_file(import_results, result_type="group")
         else:
             b.log.info("SKIP: Assuming staged groups will be later imported")
     else:
@@ -399,13 +400,13 @@ def handle_importing_projects(project_json, dry_run=True):
     namespace = project_json["namespace"]
     source_id = project_json["id"]
     archived = project_json["archived"]
-    # path = project_json["path_with_namespace"]
+    path = project_json["path_with_namespace"]
     project_exists = False
     project_id = None
     dst_path = projects.get_full_namespace_path(
         full_parent_namespace, namespace, name)
     results = {
-        dst_path: False
+        path: False
     }
     if isinstance(project_json, str):
         project_json = json.loads(project_json)
@@ -441,7 +442,7 @@ def handle_importing_projects(project_json, dry_run=True):
                     "Migrating source project {0} (ID: {1}) info".format(name, source_id))
                 post_import_results = migrate_single_project_info(
                     project_json, import_id)
-                results[dst_path] = post_import_results
+                results[path] = post_import_results
     except RequestException, e:
         b.log.error(e)
     except KeyError, e:

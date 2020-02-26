@@ -58,6 +58,8 @@ class ProjectDiffClient(BaseDiffClient):
         source_project_data = self.generate_cleaned_instance_data(
             endpoint(project["id"], self.config.source_host, self.config.source_token, **kwargs))
         if source_project_data:
+            if self.results.get(project["path_with_namespace"].lower()) is not None:
+                project["path_with_namespace"] = project["path_with_namespace"].lower()
             if self.results.get(project["path_with_namespace"]) is not None:
                 if isinstance(self.results[project["path_with_namespace"]], dict):
                     destination_project_id = self.results[project["path_with_namespace"]]["id"]

@@ -133,11 +133,11 @@ class ImportExportClient(BaseClass):
         imported = False
         timer = 0
         wait_time = self.config.importexport_wait
-        group_exists, _ = self.groups.find_group_by_path(
+        group_exists, id = self.groups.find_group_by_path(
             self.config.destination_host, self.config.destination_token, path)
         while True:
             if group_exists:
-                imported = True
+                imported = self.groups_api.get_group(id, self.config.destination_host, self.config.destination_token).json()
                 break
             sleep(wait_time)
             timer += wait_time

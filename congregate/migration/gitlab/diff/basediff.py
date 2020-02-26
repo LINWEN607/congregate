@@ -118,9 +118,16 @@ class BaseDiffClient(BaseClass):
         style.content = "table tr th td { border: 1px solid #000 }"
         soup.html.append(soup.new_tag("head"))
         soup.html.head.append(style)
+        # header_element = None
         for tr in soup.html.body.table.find_all('tr', recursive=False):
+            # if "migration_results" in tr.th.text:
+            #     header_index = tr
             new_tr = soup.new_tag("tr")
             new_tr.append(tr.td)
             tr.insert_after(new_tr)
+        # new_order = soup.html.body.table.find_all('tr', recursive=False)
+        # soup.html.body.table.insert(0, soup.html.body.table[header_index])
+        # new_soup.insert_before
+        # print soup.html.body.table.find_all('tr', recursive=False)[0]
         with open(filepath, "w") as f:
             f.write(soup.prettify())

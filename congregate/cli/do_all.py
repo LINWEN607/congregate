@@ -32,7 +32,8 @@ def do_all_users(dry_run=True):
 
     migrate.migrate(
         dry_run=dry_run,
-        skip_groups=True,
+        skip_group_export=True,
+        skip_group_import=True,
         skip_project_import=True,
         skip_project_export=True)
 

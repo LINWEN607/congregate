@@ -181,7 +181,7 @@ def clean_data():
         "users_not_found.json",
         "user_migration_results.json",
         "group_migration_results.json",
-        "project_results.json",
+        "project_migration_results.json",
         "new_users.json",
         "new_user_ids.txt",
         "dry_run_user_migration.json",
