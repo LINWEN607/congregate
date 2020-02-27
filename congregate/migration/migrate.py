@@ -152,14 +152,14 @@ def migrate_group_info(dry_run=True, skip_group_export=False, skip_group_import=
             b.log.info("### {0}Group export results ###\n{1}"
                        .format(dry_log, json_pretty(export_results)))
 
-            failed_export = migrate_utils.get_failed_export_from_results(
+            failed = migrate_utils.get_failed_export_from_results(
                 export_results)
             b.log.warning("The following groups (group.json) failed to export and will not be imported:\n{0}"
-                          .format(json_pretty(failed_export)))
+                          .format(json_pretty(failed)))
 
             # Filter out the failed ones
             staged_groups = migrate_utils.get_staged_groups_without_failed_export(
-                staged_groups, failed_export)
+                staged_groups, failed)
         else:
             b.log.info("SKIP: Assuming staged groups are already exported")
         if not skip_group_import:
@@ -281,25 +281,25 @@ def migrate_project_info(dry_run=True, skip_project_export=False, skip_project_i
             export_pool.close()
             export_pool.join()
 
-            # Create list of projects that failed update
+            # Create list of projects that failed export
             if not export_results or len(export_results) == 0:
                 raise Exception(
                     "Results from exporting projects returned as empty. Aborting.")
 
-            # Append total count of projects exported/updated
+            # Append total count of projects exported
             export_results.append(
                 Counter(k for d in export_results for k, v in d.items() if v))
             b.log.info("### {0}Project export results ###\n{1}"
                        .format(dry_log, json_pretty(export_results)))
 
-            failed_update = migrate_utils.get_failed_update_from_results(
+            failed = migrate_utils.get_failed_export_from_results(
                 export_results)
-            b.log.warning("The following projects (project.json) failed to update and will not be imported:\n{0}"
-                          .format(json_pretty(failed_update)))
+            b.log.warning("The following projects (project.json) failed to export and will not be imported:\n{0}"
+                          .format(json_pretty(failed)))
 
             # Filter out the failed ones
-            staged_projects = migrate_utils.get_staged_projects_without_failed_update(
-                staged_projects, failed_update)
+            staged_projects = migrate_utils.get_staged_projects_without_failed_export(
+                staged_projects, failed)
         else:
             b.log.info("SKIP: Assuming staged projects are already exported")
 
@@ -364,21 +364,7 @@ def handle_exporting_projects(project, dry_run=True):
         elif loc == "aws":
             exported = ie.export_project_thru_aws(
                 pid, name, namespace, full_parent_namespace) if not dry_run else True
-        updated = False
-        if exported:
-            b.log.info("{0}Updating project {1} (ID: {2}) export members in {3}"
-                       .format(dry_log, name, pid, filename))
-            if loc == "filesystem":
-                updated = project_export.update_project_export_members_for_local(
-                    name, namespace, filename) if not dry_run else True
-            # TODO: Refactor and sync with other scenarios (#119)
-            elif loc == "filesystem-aws":
-                b.log.error(
-                    "NOTICE: Filesystem-AWS exports are not currently supported")
-            elif loc == "aws":
-                updated = project_export.update_project_export_members(
-                    name, namespace, filename) if not dry_run else True
-        return {"filename": filename, "exported": exported, "updated": updated}
+        return {"filename": filename, "exported": exported}
     except (IOError, RequestException) as e:
         b.log.error("Failed to export project (ID: {0}) to {1} and update members with error:\n{2}"
                     .format(pid, loc, e))
