@@ -58,6 +58,37 @@ class IssuesApi(BaseClass):
         """
         return api.generate_get_request(host, token, "projects/%d/issues/%d/notes" % (project_id, issue_iid))
 
+    def get_project_issue_note_awards(self, host, token, project_id, issue_iid, note_id):
+        """
+        Get all award emoji for an issue note
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/award_emoji.html#get-an-award-emoji-for-a-comment
+
+            :param: project_id: (int) GitLab group ID
+            :param: issue_iid: (int) Internal ID of an issue
+            :param: note_id: (int) Note ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Generator returning JSON of each result from GET /projects/:id/issues/:issue_iid/notes/:note_id/award_emoji
+        """
+        return api.generate_get_request(host, token, "projects/%d/issues/%d/notes/%d/award_emoji" % (project_id, issue_iid, note_id))
+
+    def create_project_issue_note_award(self, host, token, project_id, issue_iid, note_id, name):
+        """
+        Create an award emoji on the specified project issue note
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/award_emoji.html#award-a-new-emoji-on-a-comment
+
+            :param: project_id: (int) GitLab project ID
+            :param: issue_iid: (int) Internal ID of an issue
+            :param: note_id: (int) Note ID
+            :param: name: (int) Name of the award
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :return: Response object containing the response to POST /projects/:id/issues/:issue_iid/notes/:note_id/award_emoji
+        """
+        return api.generate_post_request(host, token, "projects/%d/issues/%d/notes/%d/award_emoji?name=%s" % (project_id, issue_iid, note_id, name), None)
+
     def get_project_issue_awards(self, host, token, project_id, issue_iid):
         """
         Get a list of all award emoji for a specified issue
@@ -71,6 +102,21 @@ class IssuesApi(BaseClass):
             :yield: Generator returning JSON of each result from GET /projects/:id/issues/:issue_iid/award_emoji
         """
         return api.generate_get_request(host, token, "projects/%d/issues/%d/award_emoji" % (project_id, issue_iid))
+
+    def create_project_issue_award(self, host, token, project_id, issue_iid, name):
+        """
+        Create an award emoji on the specified project issue
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/award_emoji.html#award-a-new-emoji
+
+            :param: project_id: (int) GitLab project ID
+            :param: issue_iid: (int) Internal ID of an issue
+            :param: name: (int) Name of the award
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :return: Response object containing the response to POST /projects/:id/snippets/:issue_iid/award_emoji
+        """
+        return api.generate_post_request(host, token, "projects/%d/snippets/%d/award_emoji?name=%s" % (project_id, issue_iid, name), None)
 
     def get_project_issue_merge_requests(self, host, token, project_id, issue_iid):
         """

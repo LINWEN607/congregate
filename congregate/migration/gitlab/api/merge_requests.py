@@ -85,6 +85,52 @@ class MergeRequestsApi(BaseClass):
         """
         return api.list_all(host, token, "projects/%d/merge_requests/%d/award_emoji" % (project_id, mr_iid))
 
+    def create_merge_request_award(self, host, token, project_id, mr_iid, name):
+        """
+        Create an award emoji on the specified project merge request
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/award_emoji.html#award-a-new-emoji
+
+            :param: project_id: (int) GitLab project ID
+            :param: mr_iid: (int) Internal ID of the merge request
+            :param: name: (int) Name of the award
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :return: Response object containing the response to POST /projects/:id/merge_requests/:merge_request_iid/award_emoji
+        """
+        return api.generate_post_request(host, token, "projects/%d/merge_requests/%d/award_emoji?name=%s" % (project_id, mr_iid, name), None)
+
+    def get_merge_request_note_awards(self, host, token, project_id, mr_iid, note_id):
+        """
+        Get all award emoji for a merge request note
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/award_emoji.html#get-an-award-emoji-for-a-comment
+
+            :param: project_id: (int) GitLab group ID
+            :param: mr_iid: (int) Internal ID of the merge request
+            :param: note_id: (int) Note ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Generator returning JSON of each result from GET /projects/:id/merge_requests/:mr_iid/notes/:note_id/award_emoji
+        """
+        return api.generate_get_request(host, token, "projects/%d/merge_requests/%d/notes/%d/award_emoji" % (project_id, mr_iid, note_id))
+
+    def create_merge_request_note_award(self, host, token, project_id, mr_iid, note_id, name):
+        """
+        Create an award emoji on the specified project merge request note
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/award_emoji.html#award-a-new-emoji-on-a-comment
+
+            :param: project_id: (int) GitLab project ID
+            :param: mr_iid: (int) Internal ID of the merge request
+            :param: note_id: (int) Note ID
+            :param: name: (int) Name of the award
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :return: Response object containing the response to POST /projects/:id/merge_requests/:mr_iid/notes/:note_id/award_emoji
+        """
+        return api.generate_post_request(host, token, "projects/%d/merge_requests/%d/notes/%d/award_emoji?name=%s" % (project_id, mr_iid, note_id, name), None)
+
     def get_merge_request_changes(self, host, token, project_id, mr_iid):
         """
         Shows information about the merge request including its files and changes

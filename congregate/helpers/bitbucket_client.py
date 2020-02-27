@@ -2,7 +2,8 @@ import json
 from urllib import quote
 from uuid import uuid4
 
-from congregate.helpers import api, base_module as b
+from congregate.helpers import api
+from congregate.helpers.base_class import BaseClass
 
 bitbucket_permission_map = {
     "PROJECT_ADMIN": 50,
@@ -12,6 +13,8 @@ bitbucket_permission_map = {
     "REPO_WRITE": 30,
     "REPO_READ": 20
 }
+
+b = BaseClass()
 
 
 # Start API section

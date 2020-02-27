@@ -134,8 +134,9 @@ class MigrateTests(unittest.TestCase):
                 "wiki_access_level": "enabled"
             }
         ]
-        failed_results = ['some_random_path/dictionary-web_darci1.tar.gz']
-        filtered_staged = get_staged_projects_without_failed_update(self.staged_projects, failed_results)
+        failed_results = ['dictionary-web_darci1.tar.gz']
+        filtered_staged = get_staged_projects_without_failed_update(
+            self.staged_projects, failed_results)
         self.assertListEqual(filtered_staged, expected)
         print(filtered_staged)
 
@@ -147,7 +148,8 @@ class MigrateTests(unittest.TestCase):
         cv.return_value = True
         pi.return_value = 1
         failed_results = []
-        filtered_staged = get_staged_projects_without_failed_update(self.staged_projects, failed_results)
+        filtered_staged = get_staged_projects_without_failed_update(
+            self.staged_projects, failed_results)
         self.assertListEqual(filtered_staged, self.staged_projects)
 
     class ThingWithJson:
@@ -164,10 +166,11 @@ class MigrateTests(unittest.TestCase):
         pi.return_value = 1
         ga.return_value = self.ThingWithJson({"path": "SOME_RANDOM_PATH"})
         cv.return_value = True
-        failed_results = ['some_random_path/dictionary-web_darci1.tar.gz',
-                          'some_random_path/dictionary-web_darci2.tar.gz',
-                          'some_random_path/dictionary-web_darci3.tar.gz']
-        filtered_staged = get_staged_projects_without_failed_update(self.staged_projects, failed_results)
+        failed_results = ['dictionary-web_darci1.tar.gz',
+                          'dictionary-web_darci2.tar.gz',
+                          'dictionary-web_darci3.tar.gz']
+        filtered_staged = get_staged_projects_without_failed_update(
+            self.staged_projects, failed_results)
         self.assertListEqual(filtered_staged, [])
 
     @mock.patch("congregate.helpers.base_module.ConfigurationValidator.parent_id", new_callable=mock.PropertyMock)
@@ -180,5 +183,6 @@ class MigrateTests(unittest.TestCase):
         failed_results = ['dictionary-web_darci1.tar.gz',
                           'dictionary-web_darci2.tar.gz',
                           'dictionary-web_darci3.tar.gz']
-        filtered_staged = get_staged_projects_without_failed_update(self.staged_projects, failed_results)
+        filtered_staged = get_staged_projects_without_failed_update(
+            self.staged_projects, failed_results)
         self.assertListEqual(filtered_staged, [])

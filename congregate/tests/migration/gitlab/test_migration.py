@@ -7,15 +7,17 @@ from congregate.cli import do_all
 from congregate.migration.gitlab.diff.userdiff import UserDiffClient
 from congregate.migration.gitlab.diff.groupdiff import GroupDiffClient
 from congregate.migration.gitlab.diff.projectdiff import ProjectDiffClient
-from congregate.helpers.base_module import app_path
+from congregate.helpers.base_class import BaseClass
 from congregate.migration.migrate import rollback
 
 
 @pytest.mark.e2e
 class MigrationEndToEndTest(unittest.TestCase):
+
     @classmethod
     def setUpClass(self):
         # pass
+        self.b = BaseClass()
         do_all.do_all(dry_run=False)
     
     @classmethod
@@ -23,20 +25,20 @@ class MigrationEndToEndTest(unittest.TestCase):
         rollback(dry_run=False, hard_delete=True)
 
     def test_user_migration_diff(self):
-        user_diff = UserDiffClient("%s/data/user_migration_results.json" % app_path)
+        user_diff = UserDiffClient("%s/data/user_migration_results.json" % self.b.app_path)
         diff_report = user_diff.generate_report()
-        user_diff.generate_html_report(diff_report, "%s/data/user_migration_results.html" % app_path)
+        user_diff.generate_html_report(diff_report, "%s/data/user_migration_results.html" % self.b.app_path)
         self.assertGreater(diff_report["user_migration_results"]["accuracy"], 0.95)
 
     def test_group_migration_diff(self):
-        group_diff = GroupDiffClient("%s/data/group_migration_results.json" % app_path)
+        group_diff = GroupDiffClient("%s/data/group_migration_results.json" % self.b.app_path)
         diff_report = group_diff.generate_group_diff_report()
-        group_diff.generate_html_report(diff_report, "%s/data/group_migration_results.html" % app_path)
+        group_diff.generate_html_report(diff_report, "%s/data/group_migration_results.html" % self.b.app_path)
         self.assertGreater(diff_report["group_migration_results"]["overall_accuracy"], 0.90)
 
     def test_project_migration_diff(self):
-        project_diff = ProjectDiffClient("%s/data/project_migration_results.json" % app_path)
+        project_diff = ProjectDiffClient("%s/data/project_migration_results.json" % self.b.app_path)
         diff_report = project_diff.generate_project_diff_report()
-        project_diff.generate_html_report(diff_report, "%s/data/project_migration_results.html" % app_path)
+        project_diff.generate_html_report(diff_report, "%s/data/project_migration_results.html" % self.b.app_path)
         self.assertGreater(diff_report["project_migration_results"]["overall_accuracy"], 0.90)
     

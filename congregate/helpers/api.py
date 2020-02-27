@@ -19,7 +19,8 @@ def generate_v4_request_header(token):
 
 
 @stable_retry
-def generate_get_request(host, token, api, url=None, params=None, stream=False):
+def generate_get_request(host, token, api, url=None,
+                         params=None, stream=False):
     """
     Generates GET request to GitLab API.
     You will need to provide the GL host, access token, and specific api url.
@@ -57,6 +58,7 @@ def generate_post_request(host, token, api, data, headers=None, files=None):
         :return: request object containing response
     """
     url = generate_v4_request_url(host, api)
+    log.info("Generating POST request to %s" % url)
     if headers is None:
         headers = generate_v4_request_header(token)
 
@@ -76,6 +78,7 @@ def generate_put_request(host, token, api, data, headers=None, files=None):
         :return: request object containing response
     """
     url = generate_v4_request_url(host, api)
+    log.info("Generating PUT request to %s" % url)
     if headers is None:
         headers = generate_v4_request_header(token)
 
@@ -94,6 +97,7 @@ def generate_delete_request(host, token, api):
         :return: request object containing response
     """
     url = generate_v4_request_url(host, api)
+    log.info("Generating DELETE request to %s" % url)
     headers = generate_v4_request_header(token)
 
     return requests.delete(url, headers=headers)
@@ -188,7 +192,7 @@ def list_all(host, token, api, params=None, per_page=100):
                     break
                 current_page += 1
                 retried = False
-            except ValueError, e:
+            except ValueError as e:
                 log.error(e)
                 log.error("API request didn't return JSON")
                 log.info("Attempting to retry after 10 seconds")
@@ -208,7 +212,8 @@ def list_all(host, token, api, params=None, per_page=100):
                 "per_page": PER_PAGE
             }
             try:
-                data = generate_get_request(host, token, api, params=params).json()
+                data = generate_get_request(
+                    host, token, api, params=params).json()
 
                 for project in data:
                     yield project
@@ -216,10 +221,11 @@ def list_all(host, token, api, params=None, per_page=100):
                 if len(data) < PER_PAGE:
                     break
                 current_page += 1
-            except ValueError, e:
+            except ValueError as e:
                 log.error(e)
                 log.error("API Request didn't return JSON")
-                # Retry interval is smaller here because it will just retry until it succeeds
+                # Retry interval is smaller here because it will just retry
+                # until it succeeds
                 log.info("Attempting to retry after 3 seconds")
                 sleep(3)
 
@@ -236,4 +242,5 @@ def search(host, token, api, search_query):
 
         :return: JSON object containing the request response
     """
-    return generate_get_request(host, token, api, params={'search': search_query}).json()
+    return generate_get_request(host, token, api, params={
+                                'search': search_query}).json()

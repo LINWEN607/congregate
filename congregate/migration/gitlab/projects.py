@@ -21,6 +21,10 @@ class ProjectsClient(BaseClass):
             return namespace_prefix + "/" + namespace + "/" + project_name
         return namespace + "/" + project_name
 
+    def get_projects(self):
+        with open("{}/data/project_json.json".format(self.app_path), "r") as f:
+            return json.load(f)
+
     def get_staged_projects(self):
         with open("{}/data/stage.json".format(self.app_path), "r") as f:
             return json.load(f)
@@ -34,59 +38,24 @@ class ProjectsClient(BaseClass):
             return resp.json()
         return None
 
-    def add_members(self, members, id):
-        """Adds project members."""
-        for member in members:
-            # If we do not keep_blocked_users skip adding
-            if member.get("state", None) is not None \
-                    and str(member["state"]).lower() == "blocked" \
-                    and not self.config.keep_blocked_users:
-                continue
-            new_member = {
-                "user_id": member["id"],
-                "access_level": member["access_level"]
-            }
-            try:
-                self.projects_api.add_member(
-                    id,
-                    self.config.destination_host,
-                    self.config.destination_token,
-                    new_member)
-            except RequestException, e:
-                self.log.error(
-                    "Member might already exist. Attempting to update access level despite error:\n{}".format(e))
-                try:
-                    api.generate_put_request(
-                        self.config.destination_host,
-                        self.config.destination_token,
-                        "projects/{0}/members/{1}?access_level={2}".format(
-                            id,
-                            member["id"],
-                            member["access_level"]),
-                        data=None)
-                except RequestException, e:
-                    self.log.error(
-                        "Attempting to update existing member failed, with error:\n{}".format(e))
-
-        self.remove_import_user_from_project(id)
-
     def root_user_present(self, members):
         for member in members:
             if member["id"] == self.config.import_user_id:
                 return True
         return False
 
-    def remove_import_user_from_project(self, id):
+    def remove_import_user(self, pid):
         try:
-            self.log.info("Removing import (root) user from project")
+            self.log.info("Removing import user (ID: {0}) from project (ID: {1})".format(
+                self.config.import_user_id, pid))
             self.projects_api.remove_member(
-                id,
+                pid,
                 self.config.import_user_id,
                 self.config.destination_host,
                 self.config.destination_token)
         except RequestException, e:
             self.log.error(
-                "Failed to remove import (root) user from project, with error:\n{}".format(e))
+                "Failed to remove import user (ID: {0}) from project (ID: {1}), with error:\n{2}".format(self.config.import_user_id, pid, e))
 
     def add_shared_groups(self, old_id, new_id):
         """Adds the list of groups we share the project with."""
@@ -137,37 +106,6 @@ class ProjectsClient(BaseClass):
         old_project = self.projects_api.get_project(
             id, self.config.source_host, self.config.source_token).json()
         return old_project["avatar_url"]
-
-    def migrate_avatar(self, new_id, old_id):
-        """Assigns the project avatar from memory."""
-        old_project_avatar = self.__old_project_avatar(old_id)
-        if old_project_avatar is not None:
-            img = api.generate_get_request(
-                self.config.source_host, self.config.source_token, None, url=old_project_avatar)
-            filename = old_project_avatar.split("/")[-1]
-            headers = {
-                'Private-Token': self.config.destination_token
-            }
-            return api.generate_put_request(self.config.destination_host, self.config.destination_token, "projects/%d" % new_id,
-                                            {}, headers=headers, files={
-                                                'avatar': (filename, BytesIO(img.content))})
-        return None
-
-    def migrate_avatar_locally(self, new_id, old_id, file_path):
-        """Assigns the project avatar from a locally stored image."""
-        old_project_avatar = self.__old_project_avatar(old_id)
-        if bool(old_project_avatar):
-            for _, _, filename in walk("%s/avatar"):
-                avatar = filename[0]
-            with open("%s/avatar/%s" % (file_path, avatar), 'rb') as f:
-                img = f.read()
-            headers = {
-                'Private-Token': self.config.destination_token
-            }
-            return api.generate_put_request(self.config.destination_host, self.config.destination_token, "projects/%d" % new_id,
-                                            {}, headers=headers, files={
-                                                'avatar': (avatar, BytesIO(img))})
-        return None
 
     def find_project_by_path(self, host, token, full_parent_namespace, namespace, name):
         """Returns a tuple (project_exists, ID) based on path."""
@@ -259,8 +197,7 @@ class ProjectsClient(BaseClass):
 
     def find_unimported_projects(self, dry_run=True):
         unimported_projects = []
-        with open("{}/data/project_json.json".format(self.app_path), "r") as f:
-            files = json.load(f)
+        files = self.get_projects()
         if files is not None and files:
             for project_json in files:
                 try:

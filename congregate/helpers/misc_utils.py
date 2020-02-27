@@ -28,7 +28,8 @@ def download_file(url, path, filename=None, headers=None):
     if __is_downloadable(url):
         r = get(url, stream=True, headers=headers, allow_redirects=True)
         if filename is None:
-            filename = __get_filename_from_cd(r.headers.get('content-disposition'))
+            filename = __get_filename_from_cd(
+                r.headers.get('content-disposition'))
         file_path = "{0}/downloads/{1}".format(path, filename)
         create_local_project_export_structure(os.path.dirname(file_path))
         with open(file_path, 'wb') as f:
@@ -42,7 +43,7 @@ def create_local_project_export_structure(dir_path):
     if not os.path.exists(dir_path):
         try:
             os.makedirs(dir_path)
-        except OSError as exc: # Guard against race condition
+        except OSError as exc:  # Guard against race condition
             if exc.errno != errno.EEXIST:
                 raise
 
@@ -92,7 +93,8 @@ def parse_query_params(params):
         query_params_string = "?%s" % "&".join(query_params_list)
 
     return query_params_string
-    
+
+
 def rewrite_list_into_dict(l, comparison_key, prefix=""):
     rewritten_groups = {}
     for i in range(len(l)):
@@ -101,6 +103,7 @@ def rewrite_list_into_dict(l, comparison_key, prefix=""):
         rewritten_groups[prefix + str(key)] = new_obj
 
     return rewritten_groups
+
 
 def rewrite_json_list_into_dict(l):
     """
@@ -137,25 +140,31 @@ def rewrite_json_list_into_dict(l):
 
     return new_dict
 
+
 def get_congregate_path():
     app_path = os.getenv("CONGREGATE_PATH")
     if app_path is None:
         app_path = os.getcwd()
     return app_path
 
+
 def input_generator(params):
     for param in params:
         yield param
+
 
 def migration_dry_run(data_type, post_data):
     with open("{0}/data/dry_run_{1}_migration.json".format(get_congregate_path(), data_type), "a") as f:
         json.dump(post_data, f, indent=4)
 
+
 def get_dry_log(dry_run=True):
     return "DRY-RUN: " if dry_run else ""
 
+
 def json_pretty(data):
     return json.dumps(data, indent=4, sort_keys=True)
+
 
 def write_json_to_file(path, data, log=None):
     if log:
@@ -163,11 +172,14 @@ def write_json_to_file(path, data, log=None):
     with open(path, "w") as f:
         json.dump(data, f, indent=4)
 
+
 def obfuscate(prompt):
     return base64.b64encode(getpass(prompt))
 
+
 def deobfuscate(secret):
     return base64.b64decode(secret)
+
 
 def clean_data():
     app_path = get_congregate_path()
@@ -199,11 +211,14 @@ def clean_data():
     else:
         print "Cannot find data directory. CONGREGATE_PATH not set or you are not running this in the Congregate directory."
 
+
 def is_recent_file(path, age=2592000):
     """
         Check whether a file path exists, is empty and older than 1 month
     """
-    return os.path.exists(path) and os.path.getsize(path) > 0 and time() - os.path.getmtime(path) < age
+    return os.path.exists(path) and os.path.getsize(
+        path) > 0 and time() - os.path.getmtime(path) < age
+
 
 def find(key, dictionary):
     """

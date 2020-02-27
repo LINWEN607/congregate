@@ -16,7 +16,7 @@ from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.helpers.migrate_utils import get_project_namespace, \
-    is_user_project, get_member_id_for_user_project
+    is_user_project, get_member_id_for_user_project, get_export_filename_from_namespace_and_name
 from congregate.models.user_logging_model import UserLoggingModel
 
 
@@ -122,9 +122,8 @@ class ImportExportClient(BaseClass):
             if response.status_code == 200:
                 exported = True
                 break
-            print response.text
-            sleep(5)
-            timer += 5
+            sleep(wait_time)
+            timer += wait_time
             if timer > self.config.max_export_wait_time:
                 break
         return exported
@@ -133,11 +132,12 @@ class ImportExportClient(BaseClass):
         imported = False
         timer = 0
         wait_time = self.config.importexport_wait
-        group_exists, id = self.groups.find_group_by_path(
-            self.config.destination_host, self.config.destination_token, path)
         while True:
+            group_exists, gid = self.groups.find_group_by_path(
+                self.config.destination_host, self.config.destination_token, path)
             if group_exists:
-                imported = self.groups_api.get_group(id, self.config.destination_host, self.config.destination_token).json()
+                imported = self.groups_api.get_group(
+                    gid, self.config.destination_host, self.config.destination_token).json()
                 break
             sleep(wait_time)
             timer += wait_time
@@ -252,7 +252,7 @@ class ImportExportClient(BaseClass):
 
         exported = False
         timeout = 0
-        filename = self.get_export_filename_from_namespace_and_name(
+        filename = get_export_filename_from_namespace_and_name(
             namespace, name)
 
         if not dry_run:
@@ -344,7 +344,6 @@ class ImportExportClient(BaseClass):
                     }
                     resp = self.groups_api.import_group(
                         self.config.destination_host, self.config.destination_token, data=data, files=files, headers=headers)
-                    print resp.text
             return resp
         except RequestException as re:
             self.log.error(
@@ -565,9 +564,6 @@ class ImportExportClient(BaseClass):
                 import_response = resp.text
         return import_response
 
-    def get_export_filename_from_namespace_and_name(self, namespace, name=""):
-        return "{0}{1}.tar.gz".format(namespace, "/" + name if name else "").replace("/", "_").lower()
-
     def export_project_thru_filesystem(self, pid, name, namespace):
         exported = False
         response = self.projects_api.export_project(
@@ -584,7 +580,7 @@ class ImportExportClient(BaseClass):
                 download_file(
                     url,
                     self.config.filesystem_path,
-                    filename=self.get_export_filename_from_namespace_and_name(
+                    filename=get_export_filename_from_namespace_and_name(
                         namespace, name),
                     headers={"PRIVATE-TOKEN": self.config.source_token})
             else:
@@ -605,12 +601,8 @@ class ImportExportClient(BaseClass):
         if not group_exists:
             self.log.info("Group {0} (Source ID: {1}) NOT found on destination.".format(
                 full_path_with_parent_namespace, src_gid))
-
             response = self.groups_api.export_group(
                 self.config.source_host, self.config.source_token, src_gid)
-            print src_gid
-            print response.text
-            print response.status_code
             if response is None or response.status_code not in [200, 202]:
                 self.log.error("Failed to trigger group {0} (ID: {1}) export, with response '{2}'"
                                .format(full_path, src_gid, response))
@@ -722,7 +714,7 @@ class ImportExportClient(BaseClass):
         exported = False
         if self.config.strip_namespace_prefix:
             namespace = self.strip_namespace(full_parent_namespace, namespace)
-        filename = self.get_export_filename_from_namespace_and_name(
+        filename = get_export_filename_from_namespace_and_name(
             namespace, name)
         full_name = "{0}/{1}".format(namespace, name)
         self.log.info(

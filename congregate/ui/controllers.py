@@ -1,7 +1,7 @@
 import subprocess
 from flask import request, Response, stream_with_context
 
-from congregate.helpers.base_module import app_path
+from congregate.helpers.misc_utils import get_congregate_path
 from congregate.cli import stage_projects
 from congregate.cli.config import update_config
 from congregate.migration.gitlab.groups import GroupsClient
@@ -20,7 +20,7 @@ def generate_stream():
         last_line = ""
         while True:
             output = subprocess.check_output(
-                ['tail', '-n 1', '%s/data/congregate.log' % app_path])
+                ['tail', '-n 1', '%s/data/congregate.log' % get_congregate_path()])
             if output == last_line:
                 yield ""
             else:
@@ -34,7 +34,7 @@ def generate_stream():
 @app.route('/logLine')
 def return_last_line():
     output = subprocess.check_output(
-        ['tail', '-n 1', '%s/data/congregate.log' % app_path])
+        ['tail', '-n 1', '%s/data/congregate.log' % get_congregate_path()])
     return output.split(":")[-1]
 
 

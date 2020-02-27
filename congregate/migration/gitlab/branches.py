@@ -31,16 +31,15 @@ class BranchesClient(BaseClass):
                 old_project = self.projects.get_project(
                     old_id, self.config.source_host, self.config.source_token).json()
             if old_project.get("default_branch", None) is not None:
+                default_branch = old_project["default_branch"]
                 name = old_project["name"]
-                self.log.debug(
-                    "Setting default branch to master for project {}".format(name))
-                resp = self.set_default_branch(
+                self.log.info(
+                    "Setting default branch to {0} for project {1}".format(default_branch, name))
+                self.set_default_branch(
                     new_id,
                     self.config.destination_host,
                     self.config.destination_token,
-                    old_project["default_branch"])
-                self.log.debug(
-                    "Project {0} default branch response: {1}".format(name, resp))
+                    default_branch)
             return True
         except RequestException as re:
             self.log.error(

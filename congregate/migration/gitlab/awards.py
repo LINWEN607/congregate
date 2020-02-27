@@ -28,22 +28,44 @@ class AwardsClient(BaseClass):
                 project.get("snippets_enabled", False))
 
     def __get_all_project_awardable_emojis(self, host, token, awardable, project_id, awardable_id):
-        return api.list_all(host, token, "projects/%d/%s/%d/award_emoji" % (project_id, awardable, awardable_id))
+        if awardable == 'issue':
+            return self.issues.get_project_issue_awards(host, token, project_id, awardable_id)
+        elif awardable == 'merge_requests':
+            return self.merge_requests.get_merge_request_awards(host, token, project_id, awardable_id)
+        else:
+            return self.projects.get_project_snippet_awards(host, token, project_id, awardable_id)
 
     def __create_awardable_emoji(self, host, token, awardable, project_id, awardable_id, name):
-        return api.generate_post_request(host, token, "projects/%d/%s/%d/award_emoji?name=%s" % (
-            project_id, awardable, awardable_id, name), None)
+        if awardable == 'issue':
+            return self.issues.create_project_issue_award(host, token, project_id, awardable_id, name)
+        elif awardable == 'merge_requests':
+            return self.merge_requests.create_merge_request_award(host, token, project_id, awardable_id, name)
+        else:
+            return self.projects.create_project_snippet_award(host, token, project_id, awardable_id, name)
 
     def __get_all_project_awardable_notes(self, host, token, awardable, project_id, awardable_id):
-        return api.list_all(host, token, "projects/%d/%s/%d/notes" % (project_id, awardable, awardable_id))
+        if awardable == 'issue':
+            return self.issues.get_project_issue_notes(host, token, project_id, awardable_id)
+        elif awardable == 'merge_requests':
+            return self.merge_requests.get_merge_request_notes(host, token, project_id, awardable_id)
+        else:
+            return self.projects.get_project_snippet_notes(host, token, project_id, awardable_id)
 
     def __get_single_project_awardable_note_emoji(self, host, token, awardable, project_id, awardable_id, note_id):
-        return api.generate_get_request(host, token, "projects/%d/%s/%d/notes/%d/award_emoji" % (
-            project_id, awardable, awardable_id, note_id))
+        if awardable == 'issue':
+            return self.issues.get_project_issue_note_awards(host, token, project_id, awardable_id, note_id)
+        elif awardable == 'merge_requests':
+            return self.merge_requests.get_merge_request_note_awards(host, token, project_id, awardable_id, note_id)
+        else:
+            return self.projects.get_project_snippet_note_awards(host, token, project_id, awardable_id, note_id)
 
     def __create_awardable_note_emoji(self, host, token, awardable, project_id, awardable_id, note_id, name):
-        return api.generate_post_request(host, token, "projects/%d/%s/%d/notes/%d/award_emoji?name=%s" % (
-            project_id, awardable, awardable_id, note_id, name), None)
+        if awardable == 'issue':
+            return self.issues.create_project_issue_note_award(host, token, project_id, awardable_id, note_id, name)
+        elif awardable == 'merge_requests':
+            return self.merge_requests.create_merge_request_note_award(host, token, project_id, awardable_id, note_id, name)
+        else:
+            return self.projects.create_project_snippet_note_award(host, token, project_id, awardable_id, note_id, name)
 
     def migrate_awards(self, old_id, new_id, name, users_map, mr_enabled):
         try:
@@ -80,11 +102,11 @@ class AwardsClient(BaseClass):
 
                 get_single_project_awardable = v
                 for award in self.__get_all_project_awardable_emojis(
-                    self.config.source_host,
-                    self.config.source_token,
-                    k,
-                    old_id,
-                    awardable_id):
+                        self.config.source_host,
+                        self.config.source_token,
+                        k,
+                        old_id,
+                        awardable_id):
                     self.log.info("Award is {0}".format(json.dumps(award, indent=4)))
                     try:
                         response = get_single_project_awardable(
@@ -142,7 +164,7 @@ class AwardsClient(BaseClass):
                             if isinstance(dn, dict):
                                 for n in notes_json:
                                     i = notes_json.index(n)
-                                    
+
                                     token = self.__generate_token(n["user"], users_map)
 
                                     self.__create_awardable_note_emoji(

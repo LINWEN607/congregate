@@ -17,17 +17,19 @@ class Config(object):
         config_path = "{}/data/congregate.conf".format(app_path)
         self.config = ConfigParser()
         if not os.path.exists(config_path):
-            print("WARNING: No configuration found. Configuring empty file {}".format(config_path))
+            print(
+                "WARNING: No configuration found. Configuring empty file {}".format(config_path))
             with open(config_path, "w") as f:
                 self.config.write(f)
         try:
             self.config.read('{}/data/congregate.conf'.format(app_path))
-        except ParsingError, pe:
+        except ParsingError as pe:
             print("Failed to parse configuration, with error:\n{}".format(pe))
             raise SystemExit()
 
     def option_exists(self, section, option):
-        return self.config.has_option(section, option) and self.config.get(section, option)
+        return self.config.has_option(
+            section, option) and self.config.get(section, option)
 
     def prop(self, section, option, default=None, obfuscated=False):
         if self.option_exists(section, option):
@@ -62,7 +64,7 @@ class Config(object):
             d[k].pop('__name__', None)
         return d
 
-### DESTINATION
+# DESTINATION
     @property
     def destination_host(self):
         return self.prop("DESTINATION", "dstn_hostname")
@@ -136,7 +138,7 @@ class Config(object):
     def mirror_username(self):
         return self.prop("DESTINATION", "mirror_username")
 
-### SOURCE
+# SOURCE
     @property
     def source_host(self):
         return self.prop("SOURCE", "src_hostname")
@@ -158,7 +160,7 @@ class Config(object):
         """
         return self.prop_int("SOURCE", "max_export_wait_time", 3600)
 
-### EXT_SRC
+# EXT_SRC
     @property
     def external_source_url(self):
         return self.prop("EXT_SRC", "url")
@@ -175,7 +177,7 @@ class Config(object):
     def repo_list(self):
         return self.prop("EXT_SRC", "repo_path")
 
-### EXPORT
+# EXPORT
     @property
     def location(self):
         return self.prop("EXPORT", "location")
@@ -200,7 +202,7 @@ class Config(object):
     def filesystem_path(self):
         return self.prop("EXPORT", "filesystem_path")
 
-### USER
+# USER
     @property
     def keep_blocked_users(self):
         """
@@ -208,6 +210,7 @@ class Config(object):
         :return: The set config value or False as default.
         """
         return self.prop_bool("USER", "keep_blocked_users", False)
+
     @property
     def reset_password(self):
         """
@@ -225,7 +228,7 @@ class Config(object):
         """
         return self.prop_bool("USER", "force_rand_pwd", False)
 
-### APP
+# APP
     @property
     def threads(self):
         return self.prop_int("APP", "no_of_threads", 2)
@@ -250,7 +253,7 @@ class Config(object):
         return self.prop_int("APP", "export_import_wait_time", 30)
 
 
-### HIDDEN PROPERTIES
+# HIDDEN PROPERTIES
     # Used only by "map-users" command
     @property
     def user_map(self):
