@@ -654,23 +654,17 @@ class UsersClient(BaseClass):
                 root_index = users.index(user)
             else:
                 keys_to_delete = [
-                    "avatar_url",
-                    "web_url",
-                    "bio",
-                    "location",
-                    "skype",
-                    "linkedin",
-                    "twitter",
+                    "web_url"
                     "last_sign_in_at",
                     "last_activity_at",
                     "current_sign_in_at",
-                    "can_create_project",
                     "created_at",
                     "confirmed_at",
-                    "last_activity_on",
-                    "theme_id",
-                    "color_scheme_id"
+                    "last_activity_on"
                 ]
+                # SSO causes issues with the avatar URL due to the authentication
+                if self.config.group_sso_provider:
+                    keys_to_delete.append("avatar_url")
                 for key in keys_to_delete:
                     if key in user:
                         user.pop(key)
@@ -700,6 +694,8 @@ class UsersClient(BaseClass):
                 self.generate_user_data, staged_users))
 
     def generate_user_data(self, user):
+        if user.get("id", None) is not None:
+            user.pop("id")
         if self.config.group_sso_provider is not None:
             return self.generate_user_group_saml_post_data(user)
         user["username"] = self.create_valid_username(user)

@@ -72,7 +72,9 @@ class SeedDataGenerator(BaseClass):
                 "email": "jane@example.com",
                 "name": "Jane Doe",
                 "reset_password": True,
-                "skip_confirmation": True
+                "skip_confirmation": True,
+                "theme_id": 3,
+                "color_scheme_id": 3
             }
         ]
         created_users = []
