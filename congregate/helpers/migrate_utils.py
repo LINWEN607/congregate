@@ -45,9 +45,12 @@ def get_project_filename(p):
     :return:
     """
     if p.get("name", None) is not None and p.get("namespace", None) is not None:
-        namespace = str(get_project_namespace(p))
-        return "{0}_{1}.tar.gz".format(namespace, str(p["name"])).lower()
+        return get_export_filename_from_namespace_and_name(p["namespace"], p["name"])
     return ""
+
+
+def get_export_filename_from_namespace_and_name(namespace, name=""):
+    return "{0}{1}.tar.gz".format(namespace, "/" + name if name else "").replace("/", "_").lower()
 
 
 def get_project_namespace(project):
@@ -95,7 +98,3 @@ def get_member_id_for_user_project(project):
         # We don't do a lot of raise, but it's honestly getting to the point where I want to just fail rather
         # than try and figure out if we should continue or not
         raise e
-
-
-def get_export_filename_from_namespace_and_name(namespace, name=""):
-    return "{0}{1}.tar.gz".format(namespace, "/" + name if name else "").replace("/", "_").lower()
