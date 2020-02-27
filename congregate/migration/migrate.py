@@ -65,7 +65,6 @@ def migrate(
         threads=None,
         dry_run=True,
         skip_users=False,
-        skip_groups=False,
         skip_group_export=False,
         skip_group_import=False,
         skip_project_import=False,
@@ -89,10 +88,7 @@ def migrate(
             hooks.migrate_system_hooks(dry_run)
 
         # Migrate groups
-        # NOTE: Keep for historical reasons
-        # if not skip_groups:
-        #     migrate_group_info(dry_run)
-        __migrate_group_info(dry_run, skip_group_export, skip_group_import)
+        migrate_group_info(dry_run, skip_group_export, skip_group_import)
 
         # Migrate projects
         migrate_project_info(dry_run, skip_project_export, skip_project_import)
@@ -130,8 +126,7 @@ def migrate_user_info(dry_run=True):
         users.update_user_info(new_users, overwrite=False)
 
 
-def __migrate_group_info(
-        dry_run=True, skip_group_export=False, skip_group_import=False):
+def migrate_group_info(dry_run=True, skip_group_export=False, skip_group_import=False):
     staged_groups = groups.get_staged_groups()
     dry_log = get_dry_log(dry_run)
     if staged_groups:
@@ -146,25 +141,25 @@ def __migrate_group_info(
             export_pool.close()
             export_pool.join()
 
-            # Create list of groups that failed update
+            # Create list of groups that failed export
             if not export_results:
                 raise Exception(
                     "Results from exporting groups returned as empty. Aborting.")
 
-            # Append total count of groups exported/updated
+            # Append total count of groups exported
             export_results.append(
                 Counter(k for d in export_results for k, v in d.items() if v))
             b.log.info("### {0}Group export results ###\n{1}"
                        .format(dry_log, json_pretty(export_results)))
 
-            failed_update = migrate_utils.get_failed_update_from_results(
+            failed_export = migrate_utils.get_failed_export_from_results(
                 export_results)
-            b.log.warning("The following groups (group.json) failed to update and will not be imported:\n{0}"
-                          .format(json_pretty(failed_update)))
+            b.log.warning("The following groups (group.json) failed to export and will not be imported:\n{0}"
+                          .format(json_pretty(failed_export)))
 
             # Filter out the failed ones
-            staged_groups = migrate_utils.get_staged_projects_without_failed_update(
-                staged_groups, failed_update)
+            staged_groups = migrate_utils.get_staged_groups_without_failed_export(
+                staged_groups, failed_export)
         else:
             b.log.info("SKIP: Assuming staged groups are already exported")
         if not skip_group_import:
@@ -201,7 +196,8 @@ def handle_exporting_groups(group, dry_run=True):
     loc = b.config.location.lower()
     dry_log = get_dry_log(dry_run)
     try:
-        filename = ie.get_export_filename_from_namespace_and_name(full_path)
+        filename = migrate_utils.get_export_filename_from_namespace_and_name(
+            full_path)
         if loc not in ["filesystem", "aws"]:
             raise Exception("Unsupported export location: {}".format(loc))
         exported = False
@@ -217,19 +213,9 @@ def handle_exporting_groups(group, dry_run=True):
         # NOTE: Group export does not yet support (AWS/S3) user attributes
         elif loc == "aws":
             pass
-        updated = False
-        if exported:
-            if loc == "filesystem":
-                updated = True
-            # TODO: Refactor and sync with other scenarios (#119)
-            elif loc == "filesystem-aws":
-                b.log.error(
-                    "NOTICE: Filesystem-AWS exports are not currently supported")
-            elif loc == "aws":
-                updated = True
-        return {"filename": filename, "exported": exported, "updated": updated}
+        return {"filename": filename, "exported": exported}
     except (IOError, RequestException) as e:
-        b.log.error("Failed to export group (ID: {0}) to {1} and update members with error:\n{2}"
+        b.log.error("Failed to export group (ID: {0}) to {1} with error:\n{2}"
                     .format(gid, loc, e))
 
 
@@ -248,7 +234,8 @@ def handle_importing_groups(group, dry_run=True):
     b.log.info("Searching on destination for group {}".format(
         full_path_with_parent_namespace))
     try:
-        filename = ie.get_export_filename_from_namespace_and_name(full_path)
+        filename = migrate_utils.get_export_filename_from_namespace_and_name(
+            full_path)
         group_exists, gid = groups.find_group_by_path(
             b.config.destination_host, b.config.destination_token, full_path_with_parent_namespace)
         if not group_exists:
@@ -262,7 +249,13 @@ def handle_importing_groups(group, dry_run=True):
         # In place of checking the import status
         results[full_path] = ie.wait_for_group_import(
             full_path_with_parent_namespace)
-    except RequestException as e:
+        if results[full_path] and results[full_path].get("id", None) is not None:
+            # Remove import user
+            groups.remove_import_user(results[full_path]["id"])
+            # Migrate CI/CD Variables
+            variables.migrate_variables(
+                results[full_path]["id"], src_gid, "group")
+    except RequestException, e:
         b.log.error(e)
     except KeyError as e:
         b.log.error(e)
@@ -273,18 +266,7 @@ def handle_importing_groups(group, dry_run=True):
     return results
 
 
-def migrate_group_info(dry_run=True):
-    staged_groups = groups.get_staged_groups()
-    if staged_groups:
-        b.log.info("{}Migrating group info".format(get_dry_log(dry_run)))
-        results = groups.migrate_group_info(dry_run)
-        write_results_to_file(results, result_type="group")
-    else:
-        b.log.info("SKIP: No groups to migrate")
-
-
-def migrate_project_info(
-        dry_run=True, skip_project_export=False, skip_project_import=False):
+def migrate_project_info(dry_run=True, skip_project_export=False, skip_project_import=False):
     staged_projects = projects.get_staged_projects()
     dry_log = get_dry_log(dry_run)
     if staged_projects:
@@ -353,9 +335,8 @@ def write_results_to_file(import_results, result_type="project"):
     file_path = "%s/data/%s_migration_results_%s.json" % (
         b.app_path, result_type, end_time)
     write_json_to_file(file_path, import_results, log=b.log)
-    copy(
-        file_path, "%s/data/%s_migration_results.json" %
-        (b.app_path, result_type))
+    copy(file_path, "%s/data/%s_migration_results.json" %
+         (b.app_path, result_type))
 
 
 def handle_exporting_projects(project, dry_run=True):
@@ -365,7 +346,7 @@ def handle_exporting_projects(project, dry_run=True):
     loc = b.config.location.lower()
     dry_log = get_dry_log(dry_run)
     try:
-        filename = ie.get_export_filename_from_namespace_and_name(
+        filename = migrate_utils.get_export_filename_from_namespace_and_name(
             namespace, name)
         if loc not in ["filesystem", "aws"]:
             raise Exception("Unsupported export location: {}".format(loc))
@@ -472,7 +453,6 @@ def migrate_single_project_info(project, new_id):
     """
         Subsequent function to update project info AFTER import
     """
-    members = project["members"]
     project.pop("members")
     name = project["name"]
     old_id = project["id"]
@@ -489,17 +469,7 @@ def migrate_single_project_info(project, new_id):
 
     results["id"] = new_id
 
-    # Project Members
-    # NOTE: Members should be handled on import. If that is not the case, the line below and variable members should be uncommented.
-    # TODO: Remove the `add_members` function once the import API can consistently add project members
-    # projects.add_members(members, new_id)
-
-    projects.remove_import_user_from_project(new_id)
-
-    # Project Avatar
-    # This assumes you have access to the host systems uploads as a URL instead of letting the
-    # TODO: Remove the `migrate_avatar` function once the import API can consistently add project avatars
-    # projects.migrate_avatar(new_id, old_id)
+    projects.remove_import_user(new_id)
 
     # Shared with groups
     projects.add_shared_groups(old_id, new_id)
@@ -518,29 +488,6 @@ def migrate_single_project_info(project, new_id):
     # Merge Request Approvers
     results["merge_request_approvers"] = mr_approvers.migrate_mr_approvers(
         old_id, new_id, name)
-    mr_enabled = bool(results["merge_request_approvers"])
-
-    # Default Branch
-    results["default_branch"] = branches.update_default_branch(
-        old_id, new_id, project)
-
-    # Protected Branches
-    results["protected_branches"] = branches.migrate_protected_branches(
-        old_id, new_id, name)
-
-    # Awards
-    # TODO: Disable -> Project exports now include awards
-    users_map = {}
-    results["awards"] = awards.migrate_awards(
-        old_id, new_id, name, users_map, mr_enabled)
-
-    # Pipeline Schedules
-    # TODO: Remove `pipelines_schedules.py` once the import API can consistently add project pipelines schedules OR
-    # Address pending issues mentioned in congregate #205
-    # results["pipeline_schedules"] = p_schedules.migrate_pipeline_schedules(old_id, new_id, users_map, name)
-
-    # Deleting any impersonation tokens used by the awards migration
-    users.delete_saved_impersonation_tokens(users_map)
 
     # Deploy Keys (project only)
     results["deploy_keys"] = deploy_keys.migrate_deploy_keys(
@@ -691,29 +638,28 @@ def get_total_migrated_count():
 
 def dedupe_imports():
     with open("%s/data/unimported_projects.txt" % b.app_path, "r") as f:
-        projects = f.read()
-    projects = projects.split("\n")
-    dedupe = set(projects)
+        unimported_projects = f.read()
+    unimported_projects = unimported_projects.split("\n")
+    dedupe = set(unimported_projects)
     print len(dedupe)
 
 
 def stage_unimported_projects(dry_run=True):
     ids = []
     with open("{}/data/unimported_projects.txt".format(b.app_path), "r") as f:
-        projects = f.read()
-    with open("{}/data/project_json.json".format(b.app_path), "r") as f:
-        available_projects = json.load(f)
+        unimported_projects = f.read()
+    available_projects = projects.get_projects()
     rewritten_projects = {}
     for i in enumerate(available_projects):
         new_obj = available_projects[i]
         id_num = available_projects[i]["path"]
         rewritten_projects[id_num] = new_obj
 
-    projects = projects.split("\n")
-    for p in projects:
-        if p is not None and p:
-            if rewritten_projects.get(p.split("/")[1], None) is not None:
-                ids.append(rewritten_projects.get(p.split("/")[1])["id"])
+    unimported_projects = unimported_projects.split("\n")
+    for up in unimported_projects:
+        if up is not None and up:
+            if rewritten_projects.get(up.split("/")[1], None) is not None:
+                ids.append(rewritten_projects.get(up.split("/")[1])["id"])
     if ids is not None and ids:
         stage_projects(ids, dry_run)
 
