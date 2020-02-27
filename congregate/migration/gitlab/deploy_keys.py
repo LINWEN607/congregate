@@ -3,26 +3,25 @@ from requests.exceptions import RequestException
 
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers import api
+from congregate.migration.gitlab.api.projects import ProjectsApi
 
 
 class DeployKeysClient(BaseClass):
-
-    # NOTICE: No import API for global deploy keys (admin level)
-    def list_project_deploy_keys(self, id):
-        return api.list_all(self.config.source_host, self.config.source_token, "projects/%d/deploy_keys" % id)
-
-    def __create_new_project_deploy_key(self, id, key):
-        return api.generate_post_request(self.config.destination_host, self.config.destination_token, "projects/%d/deploy_keys/" % id, key)
+    def __init__(self):
+        self.projects_api = ProjectsApi()
+        super(DeployKeysClient, self).__init__()
 
     def migrate_deploy_keys(self, old_id, new_id, name):
         try:
-            response = self.list_project_deploy_keys(old_id)
+            response = self.projects_api.get_all_project_deploy_keys(
+                old_id, self.config.source_host, self.config.source_token)
             keys = iter(response)
             for key in keys:
                 # Remove unused key-value before posting key
                 key.pop("id", None)
                 key.pop("created_at", None)
-                self.__create_new_project_deploy_key(new_id, json.dumps(key))
+                self.projects_api.create_new_project_deploy_key(
+                    new_id, self.config.destination_host, self.config.destination_token, json.dumps(key))
         except TypeError as te:
             self.log.error(
                 "Project {0} deploy keys {1} {2}".format(name, response, te))
