@@ -250,7 +250,11 @@ def handle_importing_groups(group, dry_run=True):
         results[full_path] = ie.wait_for_group_import(
             full_path_with_parent_namespace)
         if results[full_path] and results[full_path].get("id", None) is not None:
+            # Remove import user
             groups.remove_import_user(results[full_path]["id"])
+            # Migrate CI/CD Variables
+            variables.migrate_variables(
+                results[full_path]["id"], src_gid, "group")
     except RequestException, e:
         b.log.error(e)
     except KeyError, e:
