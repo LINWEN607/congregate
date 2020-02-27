@@ -135,11 +135,13 @@ release-tag:
 pages:
   stage: deploy
   image: "$BUILD_IMAGE_NAME"
+  dependencies:
+    - code_quality
   script:
     - apt-get update
     - poetry install
+    - mv gl-code-quality-report.json congregate/docs/source/_static/
     - poetry run sphinx-apidoc -f -o congregate/docs/source/ ./
-    - rm -r public
     - cd congregate/docs
     - make html
     - mv build/html ../../public

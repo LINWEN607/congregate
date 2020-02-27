@@ -20,6 +20,7 @@ Our guidance on some other migrations at this time:
 
 * [Getting Started](static_docs/setup.md)
 * [README](static_docs/readme.md)
+* [Code quality report](static_docs/code_quality.md)
 
 # Indices and tables
 
