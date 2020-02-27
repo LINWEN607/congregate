@@ -3,7 +3,7 @@
 
 # You can set these variables from the command line.
 SPHINXOPTS    =
-SPHINXBUILD   = pipenv run python -c "import sys,sphinx;sys.exit(sphinx.main(sys.argv))"
+SPHINXBUILD   = poetry run python -c "import sys,sphinx;sys.exit(sphinx.main(sys.argv))"
 SOURCEDIR     = source
 BUILDDIR      = build
 

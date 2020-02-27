@@ -52,9 +52,7 @@ build:
     - apt-get update
     - mkdir data
     - echo ${Dummy_config_new} > $CONGREGATE_PATH/data/congregate.conf
-    - pip install pipenv
-    - export PIPENV_VENV_IN_PROJECT=true
-    - pipenv install
+    - poetry install
 
 test:pylint:
   <<: *test-job
@@ -69,24 +67,33 @@ test:pylint:
 test:unit:
   <<: *test-job
   script:
-    - pipenv run pytest -m 'not e2e' --cov-config=.coveragerc --cov=congregate congregate/tests/
+    - poetry run pytest -m 'not e2e and not e2e_setup' --cov-config=.coveragerc --cov=congregate congregate/tests/
 
 test:end-to-end:
   services:
     - name: docker:19.03.1-dind
-    - name: gitlab/gitlab-ee:latest
-      alias: gitlab_source
-    - name: gitlab/gitlab-ee:latest
+    # - name: gitlab/gitlab-ee:latest
+    #   alias: gitlab_source
+    - name: gitlab/gitlab-ee:nightly
       alias: gitlab_destination
   <<: *test-job
   tags:
     - e2e
   script:
-    - export GITLAB_SRC=http://gitlab_source
-    - export GITLAB_SRC_REG_URL=gitlab_source:4567
+    - ./spin_up_test_vm.sh
+    - export GITLAB_SRC=http://$(cat source_ip)
+    - export GITLAB_SRC_REG_URL=$(cat source_ip):4567
     - export GITLAB_DEST=http://gitlab_destination
     - export GITLAB_DEST_REG_URL=gitlab_destination:4567
-    - pipenv run pytest -s -m e2e congregate/tests/
+    - poetry run pytest -s -m e2e_setup congregate/tests/
+    - poetry run pytest -s -m e2e --cov-config=.coveragerc --cov=congregate congregate/tests/
+  after_script:
+    - poetry run aws ec2 terminate-instances --instance-ids $(cat instance_id)
+  artifacts:
+    when: always
+    paths:
+      - data/*.html
+  allow_failure: true
 
 remove redundant docker images:
   stage: cleanup

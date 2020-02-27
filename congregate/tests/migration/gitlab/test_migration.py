@@ -1,69 +1,42 @@
 import os
+import json
+import pprint
 import unittest
-from uuid import uuid4
-import base64
 import pytest
-import mock
-from congregate.helpers.misc_utils import input_generator
-from congregate.cli import config
-from congregate.helpers.seed.generate_token import token_generator
-from congregate.helpers.seed.generator import SeedDataGenerator
+from congregate.cli import do_all
+from congregate.migration.gitlab.diff.userdiff import UserDiffClient
+from congregate.migration.gitlab.diff.groupdiff import GroupDiffClient
+from congregate.migration.gitlab.diff.projectdiff import ProjectDiffClient
+from congregate.helpers.base_module import app_path
+from congregate.migration.migrate import rollback
 
 
 @pytest.mark.e2e
 class MigrationEndToEndTest(unittest.TestCase):
-    def setUp(self):
-        self.t = token_generator()
-        self.generate_default_config_with_tokens()
-        self.s = SeedDataGenerator()
+    @classmethod
+    def setUpClass(self):
+        # pass
+        do_all.do_all(dry_run=False)
+    
+    @classmethod
+    def tearDownClass(self):
+        rollback(dry_run=False, hard_delete=True)
 
-    def test_seed_data(self):
-        self.s.generate_seed_data(dry_run=False)
+    def test_user_migration_diff(self):
+        user_diff = UserDiffClient("%s/data/user_migration_results.json" % app_path)
+        diff_report = user_diff.generate_report()
+        user_diff.generate_html_report(diff_report, "%s/data/user_migration_results.html" % app_path)
+        self.assertGreater(diff_report["user_migration_results"]["accuracy"], 0.95)
 
-    def generate_default_config_with_tokens(self):
-        destination_token = self.t.generate_token("destination_token", "2020-08-27", url=os.getenv("GITLAB_DEST"), username="root", pword=uuid4().hex) # Destination access token
-        source_token = self.t.generate_token("source_token", "2020-08-27", url=os.getenv("GITLAB_SRC"), username="root", pword=uuid4().hex) # source token
+    def test_group_migration_diff(self):
+        group_diff = GroupDiffClient("%s/data/group_migration_results.json" % app_path)
+        diff_report = group_diff.generate_group_diff_report()
+        group_diff.generate_html_report(diff_report, "%s/data/group_migration_results.html" % app_path)
+        self.assertGreater(diff_report["group_migration_results"]["overall_accuracy"], 0.90)
 
-        values = [
-            os.getenv("GITLAB_DEST"), # Destination hostname
-            # self.t.generate_token("destination_token", "2020-08-27", url=os.getenv("GITLAB_DEST"), username="root", pword=uuid4().hex), # Destination access token
-            # "0",  # Destination import user id
-            "True", # shared runners enabled
-            "False", # append project suffix (retry)
-            "disabled", # notification level
-            "3", # max_import_retries,
-            "gitlab", # external_src_url
-            os.getenv("GITLAB_SRC"), # source host
-            # self.t.generate_token("source_token", "2020-08-27", url=os.getenv("GITLAB_SRC"), username="root", pword=uuid4().hex), # source token
-            os.getenv("GITLAB_SRC_REG_URL"), # source registry url
-            "3600", # max_export_wait_time
-            os.getenv("GITLAB_DEST_REG_URL"), # destination registry url
-            "", # destination parent group id
-            # "parent_group_path",  # destination parent group full path
-            # "True",  # privatize_groups
-            # "group_sso_provider",  # SSO provider
-            # "username_suffix",  # username suffix
-            "No", # mirror
-            "filesystem", # export location
-            # "s3_name",  # bucket name
-            # "us-east-1",    # bucket region
-            # "access key",   # access key
-            # "secret key",   # secret key
-            "", # file system path
-            "False", # keep_blocked_users
-            "True", # password reset email
-            "False", # randomized password
-            "2", # Threads
-            "True", # strip namespace prefix
-            "30" # import wait time
-        ]
-        tokens = [
-           destination_token,
-           source_token
-        ]
-
-        g = input_generator(values)
-        t = input_generator(tokens)
-        with mock.patch('__builtin__.raw_input', lambda x: next(g)):
-            with mock.patch('congregate.cli.config.obfuscate', lambda x: base64.b64encode(next(t))):
-                config.generate_config()
+    def test_project_migration_diff(self):
+        project_diff = ProjectDiffClient("%s/data/project_migration_results.json" % app_path)
+        diff_report = project_diff.generate_project_diff_report()
+        project_diff.generate_html_report(diff_report, "%s/data/project_migration_results.html" % app_path)
+        self.assertGreater(diff_report["project_migration_results"]["overall_accuracy"], 0.90)
+    

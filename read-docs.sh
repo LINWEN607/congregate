@@ -1,6 +1,6 @@
 #!/bin/sh
 
-pipenv run generate-docs
+poetry run sphinx-apidoc -f -o congregate/docs/source/ ./
 cd congregate/docs
 make html
 cd build/html

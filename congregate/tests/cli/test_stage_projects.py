@@ -75,6 +75,7 @@ class StageProjectsTests(unittest.TestCase):
                 "builds_access_level": "enabled",
                 "snippets_access_level": "disabled",
                 "repository_access_level": "enabled",
+                "path_with_namespace": "diaspora/diaspora-client",
                 "archived": False
             },
             {
@@ -115,6 +116,7 @@ class StageProjectsTests(unittest.TestCase):
                 "builds_access_level": "enabled",
                 "snippets_access_level": "disabled",
                 "repository_access_level": "enabled",
+                "path_with_namespace": "brightbox/puppet",
                 "archived": False
             }
         ]
@@ -298,6 +300,7 @@ class StageProjectsTests(unittest.TestCase):
                 "builds_access_level": "enabled",
                 "snippets_access_level": "disabled",
                 "repository_access_level": "enabled",
+                "path_with_namespace": "diaspora/diaspora-client",
                 "archived": False
             },
             {
@@ -338,6 +341,7 @@ class StageProjectsTests(unittest.TestCase):
                 "builds_access_level": "enabled",
                 "snippets_access_level": "disabled",
                 "repository_access_level": "enabled",
+                "path_with_namespace": "brightbox/puppet",
                 "archived": False
             },
             {
@@ -378,6 +382,7 @@ class StageProjectsTests(unittest.TestCase):
                 "builds_access_level": "enabled",
                 "snippets_access_level": "disabled",
                 "repository_access_level": "enabled",
+                "path_with_namespace": "brightbox/puppet",
                 "archived": False
             }
         ]
