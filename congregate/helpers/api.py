@@ -57,6 +57,7 @@ def generate_post_request(host, token, api, data, headers=None, files=None):
         :return: request object containing response
     """
     url = generate_v4_request_url(host, api)
+    log.info("Generating POST request to %s" % url)
     if headers is None:
         headers = generate_v4_request_header(token)
 
@@ -76,6 +77,7 @@ def generate_put_request(host, token, api, data, headers=None, files=None):
         :return: request object containing response
     """
     url = generate_v4_request_url(host, api)
+    log.info("Generating PUT request to %s" % url)
     if headers is None:
         headers = generate_v4_request_header(token)
 
@@ -94,6 +96,7 @@ def generate_delete_request(host, token, api):
         :return: request object containing response
     """
     url = generate_v4_request_url(host, api)
+    log.info("Generating DELETE request to %s" % url)
     headers = generate_v4_request_header(token)
 
     return requests.delete(url, headers=headers)
