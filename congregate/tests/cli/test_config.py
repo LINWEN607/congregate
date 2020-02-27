@@ -17,7 +17,6 @@ class ConfigTests(unittest.TestCase):
         self.groups_api = MockGroupsApi()
         self.maxDiff = None
 
-
     @mock.patch.object(UsersApi, "get_current_user")
     def test_full_ext_src_skeleton(self, mock_get):
         """
@@ -25,21 +24,20 @@ class ConfigTests(unittest.TestCase):
             Compares that against the last known-good skeleton
         """
         values = [
-            "hostname", # Destination hostname
+            "hostname",  # Destination hostname
             # "token", # Destination access token
             # "0",  # Destination import user id
             "True",   # shared runners enabled
             "False",  # append project suffix (retry)
-            "disabled", # notification level
+            "disabled",  # notification level
             "3",  # max_import_retries,
-            "some_external_source", # external_src_url
-            "username", # ext_src_user
-            "repo_path", # ext_src_repo
+            "some_external_source",  # external_src_url
+            "username",  # ext_src_user
+            "repo_path",  # ext_src_repo
             "False",    # keep_blocked_users
             "True",  # password reset email
             "False",    # randomized password
             "2",    # Threads
-            "True", # strip namespace prefix
             "30"   # import wait time
         ]
 
@@ -63,7 +61,6 @@ class ConfigTests(unittest.TestCase):
 
         self.assertListEqual(generated, reference)
 
-
     @mock.patch.object(GroupsApi, "get_group")
     @mock.patch.object(UsersApi, "get_current_user")
     def test_not_ext_src_parent_group_path_no_mirror_name_aws_default(self, mock_get, mock_get_group):
@@ -74,18 +71,18 @@ class ConfigTests(unittest.TestCase):
             AWS (first if)
         """
         values = [
-            "hostname", # Destination hostname
+            "hostname",  # Destination hostname
             # "token", # Destination access token
             # "0",  # Destination import user id
             "True",   # shared runners enabled
             "False",  # append project suffix (retry)
-            "disabled", # notification level
+            "disabled",  # notification level
             "3",  # max_import_retries,
-            "gitlab", # external_src_url
-            "source_hostname", # source host
+            "gitlab",  # external_src_url
+            "source_hostname",  # source host
             # "source_access_token", # source token
             "source_registry_url",    # source registry url
-            "3600", # max_export_wait_time
+            "3600",  # max_export_wait_time
             "destination_registry_url",    # destination registry url
             "0",  # destination parent group id
             # "parent_group_path",  # destination parent group full path
@@ -104,7 +101,6 @@ class ConfigTests(unittest.TestCase):
             "True",  # password reset email
             "False",    # randomized password
             "2",    # Threads
-            "True", # strip namespace prefix
             "30"   # import wait time
         ]
 
@@ -115,13 +111,14 @@ class ConfigTests(unittest.TestCase):
         class Hack(object):
             def __init__(self):
                 self._json = {"full_path": "destination_group_full_path"}
+
             def json(self):
                 return self._json
 
         mock_get_group.return_value = Hack()
         with mock.patch('congregate.cli.config.write_to_file', mock_file):
-            with mock.patch('congregate.cli.config.getcwd', lambda : "."):
-                with mock.patch('congregate.cli.config.get_congregate_path', lambda : "."):
+            with mock.patch('congregate.cli.config.getcwd', lambda: "."):
+                with mock.patch('congregate.cli.config.get_congregate_path', lambda: "."):
                     with mock.patch('congregate.cli.config.aws.set_access_key_id', lambda x: "access_key_id"):
                         with mock.patch('congregate.cli.config.aws.set_secret_access_key', lambda x: "secret_access_key"):
                             with mock.patch('congregate.cli.config.obfuscate', lambda x: "obfuscated==="):
@@ -139,7 +136,6 @@ class ConfigTests(unittest.TestCase):
 
         self.assertListEqual(generated, reference)
 
-
     @mock.patch.object(GroupsApi, "get_group")
     @mock.patch.object(UsersApi, "get_current_user")
     def test_not_ext_src_parent_group_path_no_mirror_name_aws(self, mock_get, mock_get_group):
@@ -152,18 +148,18 @@ class ConfigTests(unittest.TestCase):
             Non-default
         """
         values = [
-            "hostname", # Destination hostname
+            "hostname",  # Destination hostname
             # "token", # Destination access token
             # "0",  # Destination import user id
             "False",   # shared runners enabled
             "True",  # append project suffix (retry)
-            "watch", # notification level
+            "watch",  # notification level
             "1",  # max_import_retries,
-            "gitlab", # external_src_url
-            "source_hostname", # source host
+            "gitlab",  # external_src_url
+            "source_hostname",  # source host
             # "source_access_token", # source token
             "source_registry_url",    # source registry url
-            "1200", # max_export_wait_time
+            "1200",  # max_export_wait_time
             "destination_registry_url",    # destination registry url
             "0",  # destination parent group id
             # "parent_group_path",  # destination parent group full path
@@ -182,22 +178,23 @@ class ConfigTests(unittest.TestCase):
             "False",  # password reset email
             "True",    # randomized password
             "4",    # Threads
-            "False", # strip namespace prefix
             "60"   # import wait time
         ]
 
         g = input_generator(values)
 
         mock_get.return_value = {"id": None, "username": None}
+
         class Hack(object):
             def __init__(self):
                 self._json = {"full_path": "destination_group_full_path"}
+
             def json(self):
                 return self._json
 
         mock_get_group.return_value = Hack()
         with mock.patch('congregate.cli.config.write_to_file', mock_file):
-            with mock.patch('congregate.cli.config.get_congregate_path', lambda : "."):
+            with mock.patch('congregate.cli.config.get_congregate_path', lambda: "."):
                 with mock.patch('congregate.cli.config.aws.set_access_key_id', lambda x: "access_key_id"):
                     with mock.patch('congregate.cli.config.aws.set_secret_access_key', lambda x: "secret_access_key"):
                         with mock.patch('congregate.cli.config.obfuscate', lambda x: "obfuscated==="):
@@ -215,7 +212,6 @@ class ConfigTests(unittest.TestCase):
 
         self.assertListEqual(generated, reference)
 
-
     @mock.patch.object(GroupsApi, "get_group")
     @mock.patch.object(UsersApi, "get_current_user")
     def test_not_ext_src_no_parent_group_path_mirror_name_filesystem_skeleton(self, mock_get_current_user, mock_get_group):
@@ -226,18 +222,18 @@ class ConfigTests(unittest.TestCase):
             filesystem
         """
         values = [
-            "hostname", # Destination hostname
+            "hostname",  # Destination hostname
             # "token", # Destination access token
             # "0",  # Destination import user id
             "True",   # shared runners enabled
             "False",  # append project suffix (retry)
-            "disabled", # notification level
+            "disabled",  # notification level
             "3",  # max_import_retries,
-            "gitlab", # external_src_url
-            "source_hostname", # source host
+            "gitlab",  # external_src_url
+            "source_hostname",  # source host
             # "source_access_token", # source token
             "source_registry_url",    # source registry url
-            "3600", # max_export_wait_time
+            "3600",  # max_export_wait_time
             "destination_registry_url",    # destination registry url
             "0",  # destination parent group id
             # "parent_group_path",  # destination parent group full path
@@ -256,25 +252,26 @@ class ConfigTests(unittest.TestCase):
             "True",  # password reset email
             "False",    # randomized password
             "2",    # Threads
-            "True", # strip namespace prefix
             "30"   # import wait time
         ]
 
         g = input_generator(values)
 
-        mock_get_current_user.return_value = {"id": 123, "username": "username"}
+        mock_get_current_user.return_value = {
+            "id": 123, "username": "username"}
 
         class GroupHack(object):
             def __init__(self):
                 self._json = {"full_path": None}
+
             def json(self):
                 return self._json
 
         mock_get_group.return_value = GroupHack()
 
         with mock.patch('congregate.cli.config.write_to_file', mock_file):
-            with mock.patch('congregate.cli.config.getcwd', lambda : "."):
-                with mock.patch('congregate.cli.config.get_congregate_path', lambda : "."):
+            with mock.patch('congregate.cli.config.getcwd', lambda: "."):
+                with mock.patch('congregate.cli.config.get_congregate_path', lambda: "."):
                     with mock.patch('congregate.cli.config.obfuscate', lambda x: "obfuscated==="):
                         with mock.patch('congregate.cli.config.deobfuscate', lambda x: "deobfuscated==="):
                             with mock.patch('__builtin__.raw_input', lambda x: next(g)):
@@ -289,7 +286,6 @@ class ConfigTests(unittest.TestCase):
             reference = f.readlines()
 
         self.assertListEqual(generated, reference)
-
 
     def test_update_config_with_changes(self):
         data = '{\
@@ -321,7 +317,6 @@ class ConfigTests(unittest.TestCase):
             "reset_pwd":"False",\
             "force_rand_pwd":"True",\
             "no_of_threads":"4",\
-            "strip_namespace_prefix":"False",\
             "export_import_wait_time":"30"\
         }'
 
@@ -337,7 +332,6 @@ class ConfigTests(unittest.TestCase):
             reference = f.readlines()
 
         self.assertListEqual(generated, reference)
-
 
     def test_update_config_no_changes(self):
         data = '{\
@@ -369,7 +363,6 @@ class ConfigTests(unittest.TestCase):
             "reset_pwd":"True",\
             "force_rand_pwd":"False",\
             "no_of_threads":"2",\
-            "strip_namespace_prefix":"True",\
             "export_import_wait_time":"30"\
         }'
 

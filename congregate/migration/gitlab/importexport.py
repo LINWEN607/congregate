@@ -712,8 +712,6 @@ class ImportExportClient(BaseClass):
         :param full_parent_namespace: Complete path of the parent namespace from source
         """
         exported = False
-        if self.config.strip_namespace_prefix:
-            namespace = self.strip_namespace(full_parent_namespace, namespace)
         filename = get_export_filename_from_namespace_and_name(
             namespace, name)
         full_name = "{0}/{1}".format(namespace, name)
