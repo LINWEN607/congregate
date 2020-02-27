@@ -23,7 +23,8 @@ class ProjectDiffClient(BaseDiffClient):
             "http_url_to_repo",
             "readme_url",
             "web_url",
-            "ssh_url_to_repo"
+            "ssh_url_to_repo",
+            "project"
         ]
 
         if staged:
