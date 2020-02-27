@@ -18,7 +18,7 @@ import sys
 
 from congregate.helpers import conf
 
-config = conf.ig()
+config = conf.Config()
 main_url = config.external_source_url
 
 
