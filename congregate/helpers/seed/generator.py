@@ -1,5 +1,6 @@
 from datetime import timedelta, date
 import json
+from uuid import uuid4
 
 from congregate.helpers.base_class import BaseClass
 from congregate.migration.gitlab.importexport import ImportExportClient
@@ -16,6 +17,7 @@ from congregate.migration.gitlab.registries import RegistryClient
 from congregate.migration.gitlab.pipeline_schedules import PipelineSchedulesClient
 from congregate.migration.mirror import MirrorClient
 from congregate.migration.gitlab.deploy_keys import DeployKeysClient
+from congregate.migration.gitlab.api.environments import EnvironmentsApi
 
 
 class SeedDataGenerator(BaseClass):
@@ -34,6 +36,7 @@ class SeedDataGenerator(BaseClass):
         self.registries = RegistryClient()
         self.schedules = PipelineSchedulesClient()
         self.deploy_keys = DeployKeysClient()
+        self.environments = EnvironmentsApi()
         super(SeedDataGenerator, self).__init__()
 
     def generate_seed_data(self, dry_run=True):
@@ -42,6 +45,8 @@ class SeedDataGenerator(BaseClass):
         groups = self.generate_groups(dry_log, dry_run)
         self.add_group_members(users, groups, dry_log, dry_run)
         projects = self.generate_group_projects(groups, dry_log, dry_run)
+        for project in projects:
+            self.generate_dummy_environment(project["id"], dry_log, dry_run)
         projects += self.generate_user_projects(users, dry_log, dry_run)
 
         print "---Generated Users---"
@@ -188,3 +193,12 @@ class SeedDataGenerator(BaseClass):
                     self.projects.projects_api.create_project(self.config.source_host, self.config.source_token, dummy_project_data[i]["name"], data=dummy_project_data[i]).json()
 
         return created_projects
+
+    def generate_dummy_environment(self, project_id, dry_log, dry_run=True):
+        data = {
+            "name": "production",
+            "external_url": "http://production-%s.site" % uuid4()
+        }
+        self.log.info("{0}Creating project environment ({1})".format(dry_log, data))
+        if not dry_run:
+            return self.environments.create_environment(self.config.source_host, self.config.source_token, project_id, data)
