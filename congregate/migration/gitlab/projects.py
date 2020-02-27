@@ -44,17 +44,18 @@ class ProjectsClient(BaseClass):
                 return True
         return False
 
-    def remove_import_user_from_project(self, id):
+    def remove_import_user(self, pid):
         try:
-            self.log.info("Removing import (root) user from project")
+            self.log.info("Removing import user (ID: {0}) from project (ID: {1})".format(
+                self.config.import_user_id, pid))
             self.projects_api.remove_member(
-                id,
+                pid,
                 self.config.import_user_id,
                 self.config.destination_host,
                 self.config.destination_token)
         except RequestException, e:
             self.log.error(
-                "Failed to remove import (root) user from project, with error:\n{}".format(e))
+                "Failed to remove import user (ID: {0}) from project (ID: {1}), with error:\n{2}".format(self.config.import_user_id, pid, e))
 
     def add_shared_groups(self, old_id, new_id):
         """Adds the list of groups we share the project with."""

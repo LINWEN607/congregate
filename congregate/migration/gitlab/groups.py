@@ -102,19 +102,19 @@ class GroupsClient(BaseClass):
             json.dump(groups, f, indent=4)
         return file_path
 
-    def remove_import_user(self, group_id):
+    def remove_import_user(self, gid):
         try:
-            self.log.info("Removing import (root) user (ID: {0}) from group (ID: {1})"
-                          .format(self.config.import_user_id, group_id))
+            self.log.info("Removing import user (ID: {0}) from group (ID: {1})"
+                          .format(self.config.import_user_id, gid))
             self.groups_api.remove_member(
-                group_id,
+                gid,
                 self.config.import_user_id,
                 self.config.destination_host,
                 self.config.destination_token
             )
         except RequestException, e:
             self.log.error(
-                "Failed to remove import (root) user from group, with error:\n{}".format(e))
+                "Failed to remove import user (ID: {0}) from group (ID: {1}), with error:\n{2}".format(self.config.import_user_id, gid, e))
 
     def append_groups(self, groups):
         with open("%s/data/groups.json" % self.app_path, "r") as f:
