@@ -29,7 +29,6 @@ class ConfigTests(unittest.TestCase):
             # "0",  # Destination import user id
             "True",   # shared runners enabled
             "False",  # append project suffix (retry)
-            "disabled",  # notification level
             "3",  # max_import_retries,
             "some_external_source",  # external_src_url
             "username",  # ext_src_user
@@ -76,7 +75,6 @@ class ConfigTests(unittest.TestCase):
             # "0",  # Destination import user id
             "True",   # shared runners enabled
             "False",  # append project suffix (retry)
-            "disabled",  # notification level
             "3",  # max_import_retries,
             "gitlab",  # external_src_url
             "source_hostname",  # source host
@@ -153,7 +151,6 @@ class ConfigTests(unittest.TestCase):
             # "0",  # Destination import user id
             "False",   # shared runners enabled
             "True",  # append project suffix (retry)
-            "watch",  # notification level
             "1",  # max_import_retries,
             "gitlab",  # external_src_url
             "source_hostname",  # source host
@@ -227,7 +224,6 @@ class ConfigTests(unittest.TestCase):
             # "0",  # Destination import user id
             "True",   # shared runners enabled
             "False",  # append project suffix (retry)
-            "disabled",  # notification level
             "3",  # max_import_retries,
             "gitlab",  # external_src_url
             "source_hostname",  # source host
@@ -294,7 +290,6 @@ class ConfigTests(unittest.TestCase):
             "import_user_id":"1",\
             "shared_runners_enabled":"False",\
             "project_suffix":"False",\
-            "notification_level":"disabled",\
             "max_import_retries":"3",\
             "dstn_registry_url":"destination_registry_url",\
             "parent_group_id":"1",\
@@ -340,7 +335,6 @@ class ConfigTests(unittest.TestCase):
             "import_user_id":"1",\
             "shared_runners_enabled":"True",\
             "project_suffix":"False",\
-            "notification_level":"disabled",\
             "max_import_retries":"3",\
             "dstn_registry_url":"destination_registry_url",\
             "parent_group_id":"0",\

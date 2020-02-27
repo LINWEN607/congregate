@@ -96,16 +96,6 @@ class Config(object):
         return self.prop_bool("DESTINATION", "project_suffix", False)
 
     @property
-    def notification_level(self):
-        """
-        Project/group notification level that is set before adding members to the groups/projects.
-        LEVELS = ['disabled', 'participating', 'watch', 'global', 'mention', 'custom']
-        Assign it in order to control how users get notified during migrations.
-        :return: The set config value or 'disabled as default.
-        """
-        return self.prop("DESTINATION", "notification_level", "disabled")
-
-    @property
     def max_import_retries(self):
         """
         Project import retry count.

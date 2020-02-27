@@ -162,20 +162,6 @@ class GroupsApi():
         """
         return api.generate_get_request(host, token, "groups/%d/notification_settings" % gid)
 
-    def update_notification_level(self, host, token, gid, level):
-        """
-        Update current group notification settings
-
-        GitLab API Doc: https://docs.gitlab.com/ee/api/notification_settings.html#update-groupproject-level-notification-settings
-
-            :param: host: (str) GitLab host URL
-            :param: token: (str) Access token to GitLab instance
-            :param: gid: (int) GitLab group ID
-            :param: level: (str) Current group notification level
-            :return: Response object containing the response to PUT /groups/:id/notification_settings
-        """
-        return api.generate_put_request(host, token, "groups/%d/notification_settings?level=%s" % (gid, level), data=None)
-
     def export_group(self, host, token, gid, data=None, headers=None):
         """
         Export a group using the groups api

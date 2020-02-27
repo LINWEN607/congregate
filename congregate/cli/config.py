@@ -40,10 +40,6 @@ def generate_config():
         "Append suffix to project found on destination instance (default: False): ")
     config.set("DESTINATION", "project_suffix",
                "True" if project_suffix and project_suffix.lower() == "true" else "False")
-    notification_level = raw_input(
-        "Set project/group notification level, disabled (default), participating, watch, global, mention or custom: ")
-    config.set("DESTINATION", "notification_level",
-               notification_level if notification_level and notification_level.lower() != "disabled" else "disabled")
     max_import_retries = raw_input(
         "Max no. of project import retries (default: 3): ")
     config.set("DESTINATION", "max_import_retries",
