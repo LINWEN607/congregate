@@ -9,14 +9,11 @@ import sys
 # job for migration by confirming appropriate admin status of the user.
 ***REMOVED***
 if os.getenv('FirstName') is None:
-    first_name_env = re.sub(
-        '[^a-zA-Z]+',
-        '',
-        os.getenv('BUILD_USER_FIRST_NAME'))
+    first_name_env = re.sub('[^a-zA-Z]+', '', os.getenv('BUILD_USER_FIRST_NAME', ''))
 else:
     first_name_env = os.getenv('FirstName')
 if os.getenv('LastName') is None:
-    last_name_env = re.sub('[^a-zA-Z]+', '', os.getenv('BUILD_USER_LAST_NAME'))
+    last_name_env = re.sub('[^a-zA-Z]+', '', os.getenv('BUILD_USER_LAST_NAME', ''))
 else:
     last_name_env = os.getenv('LastName')
 username = os.getenv('mirror_username')

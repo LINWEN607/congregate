@@ -10,6 +10,7 @@ unused_stuff
 docker-copy
 downloads/*
 congregate/docs/build
+congregate/docs/data/congregate*
 congregate/docs/source/*.rst
 !congregate/docs/source/index.rst
 js-packages

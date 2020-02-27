@@ -142,6 +142,7 @@ else:
     from congregate.cli.config import generate_config
     from congregate.helpers import conf
     from congregate.helpers.logger import myLogger
+    from congregate.helpers.misc_utils import get_congregate_path
 
 app_path = get_congregate_path()
 

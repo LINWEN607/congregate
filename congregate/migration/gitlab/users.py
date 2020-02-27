@@ -166,7 +166,6 @@ class UsersClient(BaseClass):
 
     def generate_user_group_saml_post_data(self, user):
         identities = user.pop("identities")
-        user["external"] = True
         user["group_id_for_saml"] = self.config.parent_id
         user["extern_uid"] = self.find_extern_uid_by_provider(
             identities, self.config.group_sso_provider)

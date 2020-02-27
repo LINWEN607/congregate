@@ -1,7 +1,7 @@
 import json
 from csv import reader
 
-from congregate.helpers import base_module as bm
+from congregate.helpers.base_class import BaseClass
 from congregate.helpers.misc_utils import strip_numbers
 
 
@@ -18,6 +18,7 @@ Usage:
 
 
 def map_users(dry_run=True):
+    bm = BaseClass()
     total_matches = 0
     users_dict = {}
     user_json = {}
@@ -51,6 +52,7 @@ def map_users(dry_run=True):
 
 
 def rm_non_ldap_users():
+    bm = BaseClass()
     total_matches = 0
     users_dict = {}
     user_json = {}

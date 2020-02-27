@@ -5,14 +5,24 @@ from congregate.cli.list_projects import list_projects
 from congregate.migration.gitlab.users import UsersClient
 from congregate.migration.gitlab.groups import GroupsClient
 from congregate.migration import migrate
-from congregate.helpers import base_module as b
+from congregate.helpers.base_class import BaseClass
 from congregate.helpers.misc_utils import is_recent_file, remove_dupes
 
 users = UsersClient()
 groups = GroupsClient()
+b = BaseClass()
+
+"""
+    CLI utility to run a full migration without specifically staging data
+"""
 
 
 def do_all_users(dry_run=True):
+    """
+        Stages all users and migrates users to destination instance
+
+        :param: dry_run (bool) If true, will write POST request payload to JSON files for review. If false, will conduct full user migration
+    """
     list_all()
 
     # Clear staged projects and groups and stage only users
@@ -40,7 +50,13 @@ def do_all_users(dry_run=True):
     # Lookup not found users AFTER - NO dry run
     users.update_staged_user_info(dry_run=False)
 
+
 def do_all_groups_and_projects(dry_run=True):
+    """
+        Stages all groups and projects and migrates them to the destination instance
+
+        :param: dry_run (bool) If true, will write POST request payload to JSON files for review. If false, will conduct full group and project migration
+    """
     list_all()
 
     # Stage ALL - NO dry run
@@ -61,12 +77,22 @@ def do_all_groups_and_projects(dry_run=True):
 
 
 def do_all(dry_run=True):
+    """
+        Stages all users, groups, and projects and migrates them to the destination instance
+
+        :param: dry_run (bool) If true, will write POST request payload to JSON files for review. If false, will conduct full migration
+    """
     list_all()
 
     do_all_users(dry_run=dry_run)
     do_all_groups_and_projects(dry_run=dry_run)
 
+
 def list_all():
+    """
+        Checks if data has been retrieved from source via `congregate list`. If not, run `congregate list`
+    """
     # List ALL source instance users/groups/projects if empty or not recent
-    if not is_recent_file("{}/data/project_json.json".format(b.app_path), age=3600):
+    if not is_recent_file(
+            "{}/data/project_json.json".format(b.app_path), age=3600):
         list_projects()

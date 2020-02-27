@@ -23,12 +23,13 @@ class Config(object):
                 self.config.write(f)
         try:
             self.config.read('{}/data/congregate.conf'.format(app_path))
-        except ParsingError, pe:
+        except ParsingError as pe:
             print("Failed to parse configuration, with error:\n{}".format(pe))
             raise SystemExit()
 
     def option_exists(self, section, option):
-        return self.config.has_option(section, option) and self.config.get(section, option)
+        return self.config.has_option(
+            section, option) and self.config.get(section, option)
 
     def prop(self, section, option, default=None, obfuscated=False):
         if self.option_exists(section, option):

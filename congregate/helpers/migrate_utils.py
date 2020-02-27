@@ -1,7 +1,9 @@
-from congregate.helpers import base_module as b
+from congregate.helpers.base_class import BaseClass
 from congregate.migration.gitlab.groups import GroupsClient as groupsClient
 from congregate.migration.gitlab.users import UsersApi as usersApi
 
+
+b = BaseClass()
 groups = groupsClient()
 users_api = usersApi()
 
@@ -26,7 +28,8 @@ def get_staged_projects_without_failed_export(staged_projects, failed_update):
     :param failed_update: A list of project export filenames
     :return: A new staged_projects list removing those that failed update
     """
-    return [p for p in staged_projects if get_project_filename(p) not in failed_update]
+    return [p for p in staged_projects if get_project_filename(
+        p) not in failed_update]
 
 
 def get_staged_groups_without_failed_export(staged_groups, failed_export):
@@ -75,7 +78,8 @@ def is_user_project(project):
     :param project: The JSON object representing a GitLab project
     :return: True if a user project, else False
     """
-    return project.get("project_type", None) is not None and project["project_type"] == "user"
+    return project.get(
+        "project_type", None) is not None and project["project_type"] == "user"
 
 
 def get_member_id_for_user_project(project):

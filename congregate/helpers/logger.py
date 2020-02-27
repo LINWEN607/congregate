@@ -14,10 +14,12 @@ def myLogger(name):
     else:
         logger = logging.getLogger(name)
         logger.setLevel(logging.INFO)
-        file_log_handler = logging.FileHandler('%s/data/congregate.log' % app_path)
+        file_log_handler = logging.FileHandler(
+            '%s/data/congregate.log' % app_path)
         stderr_log_handler = logging.StreamHandler()
 
-        formatter = logging.Formatter(log_file_format, datefmt="%d %b %Y %H:%M:%S")
+        formatter = logging.Formatter(
+            log_file_format, datefmt="%d %b %Y %H:%M:%S")
         file_log_handler.setFormatter(formatter)
         stderr_log_handler.setFormatter(formatter)
         logger.addHandler(file_log_handler)

@@ -14,8 +14,14 @@ aws = AwsClient()
 app_path = get_congregate_path()
 config_path = "{}/data/congregate.conf".format(app_path)
 
+"""
+    CLI for configuring congregate
+"""
 
 def generate_config():
+    """
+        CLI for generating congregate.conf
+    """
     config = ConfigParser(allow_no_value=True)
 
     # Generic destination instance settings
@@ -174,6 +180,11 @@ def generate_config():
 
 
 def write_to_file(config):
+    """
+        Helper method to write congregate config to congregate.conf
+
+        :param: data: (dict) config object
+    """
     if not path.isdir("{}/data".format(app_path)):
         mkdir("{}/data".format(app_path))
     if config.has_option("EXPORT", "filesystem_path") and config.get("EXPORT", "filesystem_path"):
@@ -184,8 +195,13 @@ def write_to_file(config):
         config.write(f)
 
 
-# Used only by the UI
 def update_config(data):
+    """
+        Update function used by the congregate UI
+
+        :param: data: (dict) Config data provided by user
+        :return: No update message if config wasn't changed
+    """
     config = ConfigurationValidator()
     config_obj = config.as_obj()
     x = 0
