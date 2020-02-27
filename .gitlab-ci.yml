@@ -72,8 +72,6 @@ test:unit:
 test:end-to-end:
   services:
     - name: docker:19.03.1-dind
-    # - name: gitlab/gitlab-ee:latest
-    #   alias: gitlab_source
     - name: gitlab/gitlab-ee:nightly
       alias: gitlab_destination
   <<: *test-job
@@ -119,19 +117,6 @@ release-tag:
   only:
     - tags
 
-# pages:
-#   stage: deploy
-#   dependencies:
-#     - code_quality
-#   script:
-#     - mv gl-code-quality-report.json public/
-#   artifacts:
-#     paths:
-#       - public
-#     expire_in: 30 days
-#   only:
-#     - master
-
 pages:
   stage: deploy
   image: "$BUILD_IMAGE_NAME"
@@ -148,4 +133,6 @@ pages:
   artifacts:
     paths:
       - public
+  only:
+    - master
     
