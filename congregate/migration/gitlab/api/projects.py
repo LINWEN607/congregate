@@ -86,6 +86,21 @@ class ProjectsApi():
         """
         return api.generate_post_request(host, token, "projects/%d/members" % id, json.dumps(member))
 
+    def create_new_project_deploy_key(self, id, host, token, key):
+        """
+        Creates a new deploy key for a project
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/deploy_keys.html#add-deploy-key
+
+            :param: id: (int) GitLab project ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :param: key: (dict) Object containing the key data. Refer to the link above for specific examples
+            :return: Response object containing the response to POST /projects/:id/deploy_keys
+
+        """
+        return api.generate_post_request(host, token, "projects/%d/deploy_keys" % id, json.dumps(key))
+
     def remove_member(self, id, user_id, host, token):
         """
         Removes member from project
@@ -649,9 +664,55 @@ class ProjectsApi():
             :param: snipped_id: (int) Snipped ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
-            :yield: Generator returning JSON of each result from GET /projects/:id/issues/:snipped_id/award_emoji
+            :yield: Generator returning JSON of each result from GET /projects/:id/snippets/:snipped_id/award_emoji
         """
         return api.generate_get_request(host, token, "projects/%d/snippets/%d/award_emoji" % (project_id, snipped_id))
+
+    def create_project_snippet_award(self, host, token, project_id, snipped_id, name):
+        """
+        Create an award emoji on the specified project snippet
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/award_emoji.html#award-a-new-emoji
+
+            :param: project_id: (int) GitLab project ID
+            :param: snipped_id: (int) Snipped ID
+            :param: name: (int) Name of the award
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :return: Response object containing the response to POST /projects/:id/snippets/:snipped_id/award_emoji
+        """
+        return api.generate_post_request(host, token, "projects/%d/snippets/%d/award_emoji?name=%s" % (project_id, snipped_id, name), None)
+
+    def get_project_snippet_note_awards(self, host, token, project_id, snipped_id, note_id):
+        """
+        Get all award emoji for an snippet note
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/award_emoji.html#get-an-award-emoji-for-a-comment
+
+            :param: project_id: (int) GitLab group ID
+            :param: snipped_id: (int) Snipped ID
+            :param: note_id: (int) Note ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Generator returning JSON of each result from GET /projects/:id/snippets/:snipped_id/notes/:note_id/award_emoji
+        """
+        return api.generate_get_request(host, token, "projects/%d/snippets/%d/notes/%d/award_emoji" % (project_id, snipped_id, note_id))
+
+    def create_project_snippet_note_award(self, host, token, project_id, snipped_id, note_id, name):
+        """
+        Create an award emoji on the specified project snippet note
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/award_emoji.html#award-a-new-emoji-on-a-comment
+
+            :param: project_id: (int) GitLab project ID
+            :param: snipped_id: (int) Snipped ID
+            :param: note_id: (int) Note ID
+            :param: name: (int) Name of the award
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :return: Response object containing the response to POST /projects/:id/snippets/:snipped_id/notes/:note_id/award_emoji
+        """
+        return api.generate_post_request(host, token, "projects/%d/snippets/%d/notes/%d/award_emoji?name=%s" % (project_id, snipped_id, note_id, name), None)
 
     def get_project_snippet_notes(self, host, token, project_id, snipped_id):
         """
