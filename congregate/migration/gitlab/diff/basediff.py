@@ -27,8 +27,15 @@ class BaseDiffClient(BaseClass):
             diff = engine.compare_dicts(source_data, destination_data)
 
         if source_data:
-            original_accuracy = 1 - float(len(diff)) / float(len(source_data))
-            accuracy = self.critical_key_case_check(diff, critical_key, original_accuracy)
+            accuracy = 0
+            if isinstance(source_data, list):
+                if diff:
+                    for i in xrange(len(source_data)):
+                        if diff.get(i):
+                            accuracy += self.calculate_individual_accuracy(diff[i], source_data[i], critical_key)
+                accuracy = float(accuracy) / float(len(source_data))
+            else:
+                accuracy = self.calculate_individual_accuracy(diff, source_data, critical_key)
         else:
             accuracy = 0
         if bool(list(nested_find("error", diff))):
@@ -38,6 +45,10 @@ class BaseDiffClient(BaseClass):
             "diff": diff,
             "accuracy": accuracy
         }
+    
+    def calculate_individual_accuracy(self, diff, source_data, critical_key):
+        original_accuracy = 1 - float(len(diff)) / float(len(source_data))
+        return self.critical_key_case_check(diff, critical_key, original_accuracy)
 
     def critical_key_case_check(self, diff, critical_key, original_accuracy):
         if critical_key in diff:
