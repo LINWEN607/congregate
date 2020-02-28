@@ -33,6 +33,8 @@ class BaseDiffClient(BaseClass):
                     for i in xrange(len(source_data)):
                         if diff.get(i):
                             accuracy += self.calculate_individual_accuracy(diff[i], source_data[i], critical_key)
+                else:
+                    accuracy = 1.0
                 accuracy = float(accuracy) / float(len(source_data))
             else:
                 accuracy = self.calculate_individual_accuracy(diff, source_data, critical_key)
