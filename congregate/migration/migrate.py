@@ -32,7 +32,6 @@ from congregate.migration.gitlab.merge_request_approvers import MergeRequestAppr
 from congregate.migration.gitlab.awards import AwardsClient
 from congregate.migration.gitlab.registries import RegistryClient
 from congregate.migration.gitlab.pipeline_schedules import PipelineSchedulesClient
-from congregate.migration.gitlab.project_export import ProjectExportClient
 from congregate.migration.mirror import MirrorClient
 from congregate.migration.gitlab.deploy_keys import DeployKeysClient
 from congregate.migration.gitlab.hooks import HooksClient
@@ -57,7 +56,6 @@ registries = RegistryClient()
 p_schedules = PipelineSchedulesClient()
 deploy_keys = DeployKeysClient()
 hooks = HooksClient()
-project_export = ProjectExportClient()
 full_parent_namespace = groups.find_parent_group_path()
 
 
