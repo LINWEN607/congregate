@@ -366,7 +366,7 @@ def handle_exporting_projects(project, dry_run=True):
                 pid, name, namespace, full_parent_namespace) if not dry_run else True
         return {"filename": filename, "exported": exported}
     except (IOError, RequestException) as e:
-        b.log.error("Failed to export project (ID: {0}) to {1} and update members with error:\n{2}"
+        b.log.error("Failed to export project (ID: {0}) to {1} with error:\n{2}"
                     .format(pid, loc, e))
 
 

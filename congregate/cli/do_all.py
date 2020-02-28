@@ -71,7 +71,7 @@ def do_all_groups_and_projects(dry_run=True):
     users.handle_users_not_found("staged_users", users_not_found, keep=False)
     users.handle_users_not_found("staged_groups", users_not_found)
     users.handle_users_not_found("stage", users_not_found)
-    users.map_new_users_to_groups_and_projects(dry_run=False)
+    # users.map_new_users_to_groups_and_projects(dry_run=False)
 
     migrate.migrate(dry_run=dry_run, skip_users=True)
 
