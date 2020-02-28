@@ -34,11 +34,13 @@ class StageProjectsTests(unittest.TestCase):
 
         projects_to_stage = ["4", "6"]
 
-        staged_projects, staged_users, staged_groups = stage_projects.build_staging_data(projects_to_stage)
+        staged_projects, staged_users, staged_groups = stage_projects.build_staging_data(
+            projects_to_stage)
 
         expected_projects = [
             {
                 "name": "Diaspora Client",
+                "path": "diaspora-client",
                 "namespace": "diaspora",
                 "members": [
                     {
@@ -80,6 +82,7 @@ class StageProjectsTests(unittest.TestCase):
             },
             {
                 "name": "Puppet",
+                "path": "puppet",
                 "namespace": "brightbox",
                 "members": [
                     {
@@ -230,12 +233,14 @@ class StageProjectsTests(unittest.TestCase):
             self.assertItemsEqual(expected_projects[i], staged_projects[i])
         for i in range(len(expected_groups)):
             try:
-                self.assertDictContainsSubset(expected_groups[i], staged_groups[i])
+                self.assertDictContainsSubset(
+                    expected_groups[i], staged_groups[i])
                 self.assertItemsEqual(expected_groups[i], staged_groups[i])
             except AssertionError:
                 print("Expected: ", expected_groups[i])
                 print("Staged: ", staged_groups[i])
-                self.assertDictContainsSubset(expected_groups[i], staged_groups[i])
+                self.assertDictContainsSubset(
+                    expected_groups[i], staged_groups[i])
 
         for i in range(len(expected_users)):
             self.assertDictContainsSubset(expected_users[i], staged_users[i])
@@ -264,6 +269,7 @@ class StageProjectsTests(unittest.TestCase):
         expected_projects = [
             {
                 "name": "Diaspora Client",
+                "path": "diaspora-client",
                 "namespace": "diaspora",
                 "members": [
                     {
@@ -305,6 +311,7 @@ class StageProjectsTests(unittest.TestCase):
             },
             {
                 "name": "Puppet",
+                "path": "puppet",
                 "namespace": "brightbox",
                 "members": [
                     {
@@ -346,6 +353,7 @@ class StageProjectsTests(unittest.TestCase):
             },
             {
                 "name": "Puppet",
+                "path": "puppet",
                 "namespace": "brightbox",
                 "members": [
                     {

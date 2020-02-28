@@ -220,7 +220,6 @@ def handle_exporting_groups(group, dry_run=True):
 
 
 def handle_importing_groups(group, dry_run=True):
-    name = group["name"]
     full_path = group["full_path"]
     src_gid = group["id"]
     group_exists = False
@@ -242,7 +241,7 @@ def handle_importing_groups(group, dry_run=True):
             b.log.info("{0}Group {1} not found on destination, importing..."
                        .format(get_dry_log(dry_run), full_path_with_parent_namespace))
             ie.import_group(
-                group, name, full_path_with_parent_namespace, filename, dry_run)
+                group, full_path_with_parent_namespace, filename, dry_run)
         else:
             b.log.info("{0}Group {1} (ID: {2}) already exists on destination".format(
                 get_dry_log(dry_run), full_path, gid))

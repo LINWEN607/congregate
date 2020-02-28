@@ -208,6 +208,7 @@ class ImportExportClient(BaseClass):
             project = json.loads(project)
 
         name = project["name"]
+        path = project["path"]
         namespace = project["namespace"]
         override_params = self.get_override_params(project)
 
@@ -257,7 +258,7 @@ class ImportExportClient(BaseClass):
 
         if not dry_run:
             import_response = self.attempt_import(
-                filename, name, dst_namespace, override_params, project)
+                filename, name, path, dst_namespace, override_params)
             self.log.info("Project {0} (file: {1}) import response:\n{2}"
                           .format(name, filename, import_response))
 
@@ -292,7 +293,63 @@ class ImportExportClient(BaseClass):
                 "override_params": override_params,
                 "project": project})
 
-    def import_group(self, group, name, path, filename, dry_run=True):
+    def attempt_import(self, filename, name, path, namespace, override_params):
+        import_response = None
+        if self.config.location == "aws":
+            presigned_get_url = self.aws.generate_presigned_url(
+                filename, "GET")
+            self.log.info(
+                "Importing {} from AWS presigned_url (aws mode)".format(filename))
+            import_response = self.aws.import_from_s3(
+                name, namespace, presigned_get_url, filename, override_params=override_params)
+        elif self.config.location == "filesystem-aws":
+            if self.config.allow_presigned_url:
+                presigned_get_url = self.aws.generate_presigned_url(
+                    filename, "GET")
+                self.log.info(
+                    "Importing {} from AWS presigned_url (filesystem-aws mode)".format(filename))
+                import_response = self.aws.import_from_s3(
+                    name, namespace, presigned_get_url, filename, override_params=override_params)
+            else:
+                self.log.info("Copying {} to local machine".format(filename))
+                formatted_name = name.lower()
+                download = "%s_%s.tar.gz" % (
+                    namespace, formatted_name)
+                downloaded_filename = self.keys_map.get(
+                    download.lower(), None)
+                if downloaded_filename is None:
+                    self.log.info("Continuing to search for filename")
+                    placeholder = len(formatted_name)
+                    for i in range(placeholder, 0, -1):
+                        split_name = "%s_%s.tar.gz" % (
+                            namespace, formatted_name[:(i * (1))])
+                        downloaded_filename = self.keys_map.get(
+                            split_name.lower(), None)
+                        if downloaded_filename is not None:
+                            break
+                if downloaded_filename is not None:
+                    import_response = self.aws.copy_from_s3_and_import(
+                        name, namespace, downloaded_filename)
+        elif self.config.location == "filesystem":
+            print(path)
+            with open("%s/downloads/%s" % (self.config.filesystem_path, filename), "rb") as f:
+                data = {
+                    "path": path,
+                    "namespace": namespace,
+                    "name": name
+                }
+                files = {
+                    "file": (filename, f)
+                }
+                headers = {
+                    "Private-Token": self.config.destination_token
+                }
+                resp = self.projects_api.import_project(
+                    self.config.destination_host, self.config.destination_token, data=data, files=files, headers=headers)
+                import_response = resp.text
+        return import_response
+
+    def import_group(self, group, full_path, filename, dry_run=True):
         """
             Imports groups to destination GitLab instance.
         """
@@ -304,24 +361,27 @@ class ImportExportClient(BaseClass):
         if isinstance(group, str):
             group = json.loads(group)
 
+        name = group["name"]
+        path = group["path"]
         if not dry_run:
-            import_response = self.attempt_group_import(filename, name)
+            import_response = self.attempt_group_import(filename, name, path)
             if import_response and import_response.status_code in [200, 202]:
                 self.log.info(
-                    "Group {0} (file: {1}) successfully imported".format(path, filename))
+                    "Group {0} (file: {1}) successfully imported".format(full_path, filename))
             else:
                 self.log.error("Group {0} (file: {1}) import failed, with status {2}".format(
-                    path, filename, import_response))
+                    full_path, filename, import_response))
         else:
             self.log.info("DRY-RUN: Outputing group {0} (file: {1}) migration data to dry_run_group_migration.json"
-                          .format(path, filename))
+                          .format(full_path, filename))
             migration_dry_run("group", {
                 "filename": filename,
                 "name": name,
                 "path": path,
+                "full_path": full_path,
                 "group": group})
 
-    def attempt_group_import(self, filename, name):
+    def attempt_group_import(self, filename, name, path):
         resp = None
         try:
             # NOTE: Group export does not yet support (AWS/S3) user attributes
@@ -332,7 +392,7 @@ class ImportExportClient(BaseClass):
             elif self.config.location == "filesystem":
                 with open("%s/downloads/%s" % (self.config.filesystem_path, filename), "rb") as f:
                     data = {
-                        "path": name.replace(" ", "-"),
+                        "path": path,
                         "name": name,
                         "parent_id": self.config.parent_id if self.config.parent_id else ""
                     }
@@ -508,61 +568,6 @@ class ImportExportClient(BaseClass):
                             "Moving on to the next project. Time limit exceeded")
                         break
         return {"import_id": import_id, "exported": exported, "duped": duped}
-
-    def attempt_import(self, filename, name, namespace, override_params, project):
-        import_response = None
-        if self.config.location == "aws":
-            presigned_get_url = self.aws.generate_presigned_url(
-                filename, "GET")
-            self.log.info(
-                "Importing {} from AWS presigned_url (aws mode)".format(filename))
-            import_response = self.aws.import_from_s3(
-                name, namespace, presigned_get_url, filename, override_params=override_params)
-        elif self.config.location == "filesystem-aws":
-            if self.config.allow_presigned_url:
-                presigned_get_url = self.aws.generate_presigned_url(
-                    filename, "GET")
-                self.log.info(
-                    "Importing {} from AWS presigned_url (filesystem-aws mode)".format(filename))
-                import_response = self.aws.import_from_s3(
-                    name, namespace, presigned_get_url, filename, override_params=override_params)
-            else:
-                self.log.info("Copying {} to local machine".format(filename))
-                formatted_name = project["name"].lower()
-                download = "%s_%s.tar.gz" % (
-                    project["namespace"], formatted_name)
-                downloaded_filename = self.keys_map.get(
-                    download.lower(), None)
-                if downloaded_filename is None:
-                    self.log.info("Continuing to search for filename")
-                    placeholder = len(formatted_name)
-                    for i in range(placeholder, 0, -1):
-                        split_name = "%s_%s.tar.gz" % (
-                            project["namespace"], formatted_name[:(i * (1))])
-                        downloaded_filename = self.keys_map.get(
-                            split_name.lower(), None)
-                        if downloaded_filename is not None:
-                            break
-                if downloaded_filename is not None:
-                    import_response = self.aws.copy_from_s3_and_import(
-                        name, namespace, downloaded_filename)
-        elif self.config.location == "filesystem":
-            with open("%s/downloads/%s" % (self.config.filesystem_path, filename), "rb") as f:
-                data = {
-                    "path": name.replace(" ", "-"),
-                    "namespace": namespace,
-                    "name": name
-                }
-                files = {
-                    "file": (filename, f)
-                }
-                headers = {
-                    "Private-Token": self.config.destination_token
-                }
-                resp = self.projects_api.import_project(
-                    self.config.destination_host, self.config.destination_token, data=data, files=files, headers=headers)
-                import_response = resp.text
-        return import_response
 
     def export_project_thru_filesystem(self, pid, name, namespace):
         exported = False
