@@ -17,8 +17,8 @@ class Config(object):
         config_path = "{}/data/congregate.conf".format(app_path)
         self.config = ConfigParser()
         if not os.path.exists(config_path):
-            print(
-                "WARNING: No configuration found. Configuring empty file {}".format(config_path))
+            print("WARNING: No configuration found. Configuring empty file {}".format(
+                config_path))
             with open(config_path, "w") as f:
                 self.config.write(f)
         try:
@@ -95,16 +95,6 @@ class Config(object):
                     project is found
         """
         return self.prop_bool("DESTINATION", "project_suffix", False)
-
-    @property
-    def notification_level(self):
-        """
-        Project/group notification level that is set before adding members to the groups/projects.
-        LEVELS = ['disabled', 'participating', 'watch', 'global', 'mention', 'custom']
-        Assign it in order to control how users get notified during migrations.
-        :return: The set config value or 'disabled as default.
-        """
-        return self.prop("DESTINATION", "notification_level", "disabled")
 
     @property
     def max_import_retries(self):
@@ -232,15 +222,6 @@ class Config(object):
     @property
     def threads(self):
         return self.prop_int("APP", "no_of_threads", 2)
-
-    @property
-    def strip_namespace_prefix(self):
-        """
-        If we should strip the namespace when doing the import/export routines. Should default to True, as stripping
-        handles so nesting issues when the depth is consistent.
-        :return: The set config value or True as default.
-        """
-        return self.prop_bool("APP", "strip_namespace_prefix", True)
 
     @property
     def importexport_wait(self):

@@ -294,7 +294,6 @@ Once all the users and groups (w/ sub-groups) are migrated:
   * All users should be found.
   * Inspect `data/staged_users.json` if any of the NOT found users are blocked as, by default, they will not be migrated.
   * To explicitly remove blocked users from staged users, groups and projects run `congregate remove-blocked-users`.
-* `congregate map-new-users-to-groups-and-projects --dry-run` - Check output for any remaining unmapped users.
 * `congregate migrate --skip-users --skip-group-export --skip-group-import` - Inspect the output in:
   * `dry_run_project_migration.json`
   * `congregate.log` (especially `more congregate.log | grep "REWRITE"`)
@@ -304,8 +303,8 @@ Once all the users and groups (w/ sub-groups) are migrated:
 
 To remove all of the staged users, groups (w/ sub-groups) and projects on destination run:
 
-* `congregate rollback --dry-run` - Inspect the output.
-* `congregate rollback`
+* `congregate rollback` - Inspect the output.
+* `congregate rollback --commit`
 * For more granular rollback see [Usage](#usage).
 
 ##### do-all commands

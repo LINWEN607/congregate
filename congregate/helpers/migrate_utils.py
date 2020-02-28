@@ -8,13 +8,6 @@ groups = groupsClient()
 users_api = usersApi()
 
 
-def get_failed_update_from_results(results):
-    return [str(x["filename"]).lower() for x in results
-            if x.get("updated", None) is not None
-            and x.get("filename", None) is not None
-            and not x["updated"]]
-
-
 def get_failed_export_from_results(results):
     return [str(x["filename"]).lower() for x in results
             if x.get("exported", None) is not None
@@ -22,7 +15,7 @@ def get_failed_export_from_results(results):
             and not x["exported"]]
 
 
-def get_staged_projects_without_failed_update(staged_projects, failed_update):
+def get_staged_projects_without_failed_export(staged_projects, failed_update):
     """
     :param staged_projects: The current list of staged projects
     :param failed_update: A list of project export filenames
