@@ -42,7 +42,7 @@ Usage:
     congregate validate-staged-groups-schema
     congregate validate-staged-projects-schema
     congregate map-users [--commit]
-    congregate generate-diff
+    congregate generate-diff [--wave]
     congregate clean
     congregate obfuscate
     congregate -h | --help
@@ -65,6 +65,7 @@ Arguments:
                                                 etc). Useful for testing export contents.
     access-level                            Update parent group level user permissions (Guest/Reporter/Developer/Maintainer/Owner).
     staged                                  Compare two groups that are staged for migration.
+    wave                                    Diff between actual and staged data
 
 Commands:
     list                                    List all projects of a source instance and save it to {CONGREGATE_PATH}/data/project_json.json.
@@ -153,6 +154,7 @@ config = conf.Config()
 if __name__ == '__main__':
     arguments = docopt(__doc__)
     DRY_RUN = True if not arguments["--commit"] else False
+    WAVE = True if arguments["--wave"] else False
     if arguments["configure"]:
         generate_config()
     else:
@@ -341,17 +343,17 @@ if __name__ == '__main__':
                 clean_data()
             if arguments["generate-diff"]:
                 user_diff = UserDiffClient(
-                    "%s/data/user_migration_results.json" % app_path)
+                    "%s/data/user_migration_results.json" % app_path, staged=WAVE)
                 diff_report = user_diff.generate_report()
                 user_diff.generate_html_report(
                     diff_report, "%s/data/user_migration_results.html" % app_path)
                 group_diff = GroupDiffClient(
-                    "%s/data/group_migration_results.json" % app_path)
+                    "%s/data/group_migration_results.json" % app_path, staged=WAVE)
                 diff_report = group_diff.generate_group_diff_report()
                 group_diff.generate_html_report(
                     diff_report, "%s/data/group_migration_results.html" % app_path)
                 project_diff = ProjectDiffClient(
-                    "%s/data/project_migration_results.json" % app_path)
+                    "%s/data/project_migration_results.json" % app_path, staged=WAVE)
                 diff_report = project_diff.generate_project_diff_report()
                 project_diff.generate_html_report(
                     diff_report, "%s/data/project_migration_results.html" % app_path)

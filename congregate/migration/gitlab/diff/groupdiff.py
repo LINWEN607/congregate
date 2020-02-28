@@ -57,19 +57,21 @@ class GroupDiffClient(BaseDiffClient):
 
     def handle_endpoints(self, group):
         group_diff = {}
-        group_diff["/groups/:id"] = self.generate_diff(group, self.groups_api.get_group, critical_key="full_path")
+        new_parent_group_name = self.groups_api.get_group(self.config.parent_id, self.config.destination_host, self.config.destination_token).json()["full_path"]
+        group_diff["/groups/:id"] = self.generate_diff(group, self.groups_api.get_group, critical_key="full_path", parent_group=new_parent_group_name)
         group_diff["/groups/:id/variables"] = self.generate_diff(group, self.variables_api.get_variables, obfuscate=True, var_type="group")
         group_diff["/groups/:id/members"] = self.generate_diff(group, self.groups_api.get_all_group_members)
         return group_diff
 
-    def generate_diff(self, group, endpoint, critical_key=None, obfuscate=False, **kwargs):
+    def generate_diff(self, group, endpoint, critical_key=None, obfuscate=False, parent_group=None, **kwargs):
         source_group_data = self.generate_cleaned_instance_data(
             endpoint(group["id"], self.config.source_host, self.config.source_token, **kwargs))
-        if self.results.get(group["full_path"]) is not None:
-            destination_group_id = self.results[group["full_path"]]["id"]
-            destination_group_data = self.generate_cleaned_instance_data(
-                endpoint(destination_group_id, self.config.destination_host, self.config.destination_token, **kwargs))
-        elif self.results.get(group["path"]) is not None:
+        if self.results.get(group["full_path"]) is not None and self.results.get(group["full_path"]) is not False:
+            if not isinstance(self.results.get(group["full_path"]), bool):
+                destination_group_id = self.results[group["full_path"]]["id"]
+                destination_group_data = self.generate_cleaned_instance_data(
+                    endpoint(destination_group_id, self.config.destination_host, self.config.destination_token, **kwargs))
+        elif self.results.get(group["path"]) is not None and self.results.get(group["path"]) is not False:
             destination_group_id = self.results[group["path"]]["id"]
             destination_group_data = self.generate_cleaned_instance_data(
                 endpoint(destination_group_id, self.config.destination_host, self.config.destination_token, **kwargs))
@@ -85,7 +87,7 @@ class GroupDiffClient(BaseDiffClient):
         elif source_group_data == [] and destination_group_data == []:
             return self.empty_diff()
             
-        return self.diff(source_group_data, destination_group_data, critical_key=critical_key, obfuscate=obfuscate)
+        return self.diff(source_group_data, destination_group_data, critical_key=critical_key, obfuscate=obfuscate, parent_group=parent_group)
 
     def generate_cleaned_instance_data(self, instance_data):
         if isinstance(instance_data, GeneratorType):

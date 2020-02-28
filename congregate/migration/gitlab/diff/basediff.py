@@ -11,7 +11,7 @@ class BaseDiffClient(BaseClass):
         super(BaseDiffClient, self).__init__()
         self.keys_to_ignore = []
 
-    def diff(self, source_data, destination_data, critical_key=None, obfuscate=False):
+    def diff(self, source_data, destination_data, critical_key=None, obfuscate=False, parent_group=None):
         engine = Comparator()
         if isinstance(source_data, list):
             if obfuscate:
@@ -32,12 +32,13 @@ class BaseDiffClient(BaseClass):
                 if diff:
                     for i in xrange(len(source_data)):
                         if diff.get(i):
-                            accuracy += self.calculate_individual_accuracy(diff[i], source_data[i], critical_key)
+                            accuracy += self.calculate_individual_accuracy(diff[i], source_data[i], critical_key, parent_group=parent_group)
+                    if accuracy != 0:
+                        accuracy = float(accuracy) / float(len(source_data))
                 else:
                     accuracy = 1.0
-                accuracy = float(accuracy) / float(len(source_data))
             else:
-                accuracy = self.calculate_individual_accuracy(diff, source_data, critical_key)
+                accuracy = self.calculate_individual_accuracy(diff, source_data, critical_key, parent_group=parent_group)
         else:
             accuracy = 0
         if bool(list(nested_find("error", diff))):
@@ -48,17 +49,19 @@ class BaseDiffClient(BaseClass):
             "accuracy": accuracy
         }
     
-    def calculate_individual_accuracy(self, diff, source_data, critical_key):
+    def calculate_individual_accuracy(self, diff, source_data, critical_key, parent_group=None):
         original_accuracy = 1 - float(len(diff)) / float(len(source_data))
-        return self.critical_key_case_check(diff, critical_key, original_accuracy)
+        return self.critical_key_case_check(diff, critical_key, original_accuracy, parent_group=parent_group)
 
-    def critical_key_case_check(self, diff, critical_key, original_accuracy):
+    def critical_key_case_check(self, diff, critical_key, original_accuracy, parent_group=None):
         if critical_key in diff:
             diff_minus = diff[critical_key]['---']
             diff_plus = diff[critical_key]['+++']
-            if diff_minus.lower() != diff_plus.lower():
+            if parent_group:
+                if parent_group not in diff_plus:
+                    return 0
+            elif diff_minus.lower() != diff_plus.lower():
                 return 0
-            return 1
         return original_accuracy
         
     def load_json_data(self, path):
