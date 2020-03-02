@@ -18,6 +18,7 @@ config_path = "{}/data/congregate.conf".format(app_path)
     CLI for configuring congregate
 """
 
+
 def generate_config():
     """
         CLI for generating congregate.conf
@@ -97,8 +98,6 @@ def generate_config():
                 config.set("DESTINATION", "parent_group_path", "")
                 print("WARNING: Destination group not found. Please enter 'parent_group_id' and 'parent_group_path' manually (in {})".format(
                     config_path))
-            print("NOTE: Setting all internal groups to private on destination. You can edit 'privatize_groups' manually (in {})".format(config_path))
-            config.set("DESTINATION", "privatize_groups", "True")
             config.set("DESTINATION", "group_sso_provider",
                        raw_input("Migrating to a group with SAML SSO enabled? Input SSO provider (auth0, adfs, etc.): "))
             username_suffix = raw_input(

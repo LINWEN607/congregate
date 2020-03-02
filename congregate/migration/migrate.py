@@ -208,9 +208,10 @@ def handle_exporting_groups(group, dry_run=True):
         elif loc == "filesystem-aws":
             b.log.error(
                 "NOTICE: Filesystem-AWS exports are not currently supported")
-        # NOTE: Group export does not yet support (AWS/S3) user attributes
+        # NOTE: Group export does not yet support AWS (S3) user attributes
         elif loc == "aws":
-            pass
+            b.log.error(
+                "NOTICE: AWS group exports are not currently supported")
         return {"filename": filename, "exported": exported}
     except (IOError, RequestException) as e:
         b.log.error("Failed to export group (ID: {0}) to {1} with error:\n{2}"

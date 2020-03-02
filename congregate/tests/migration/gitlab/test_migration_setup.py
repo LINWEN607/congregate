@@ -45,7 +45,6 @@ class MigrationEndToEndTestSetup(unittest.TestCase):
             os.getenv("GITLAB_DEST_REG_URL"),  # destination registry url
             "",  # destination parent group id
             # "parent_group_path",  # destination parent group full path
-            # "True",  # privatize_groups
             # "group_sso_provider",  # SSO provider
             # "username_suffix",  # username suffix
             "No",  # mirror

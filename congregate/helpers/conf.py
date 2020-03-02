@@ -113,10 +113,6 @@ class Config(object):
         return self.prop("DESTINATION", "parent_group_path")
 
     @property
-    def make_visibility_private(self):
-        return self.prop_bool("DESTINATION", "privatize_groups", True)
-
-    @property
     def group_sso_provider(self):
         return self.prop("DESTINATION", "group_sso_provider")
 
