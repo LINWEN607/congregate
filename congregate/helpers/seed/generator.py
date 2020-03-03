@@ -17,7 +17,6 @@ from congregate.migration.gitlab.registries import RegistryClient
 from congregate.migration.gitlab.pipeline_schedules import PipelineSchedulesClient
 from congregate.migration.mirror import MirrorClient
 from congregate.migration.gitlab.deploy_keys import DeployKeysClient
-from congregate.migration.gitlab.api.environments import EnvironmentsApi
 
 
 class SeedDataGenerator(BaseClass):
@@ -36,7 +35,6 @@ class SeedDataGenerator(BaseClass):
         self.registries = RegistryClient()
         self.schedules = PipelineSchedulesClient()
         self.deploy_keys = DeployKeysClient()
-        self.environments = EnvironmentsApi()
         super(SeedDataGenerator, self).__init__()
 
     def generate_seed_data(self, dry_run=True):
@@ -201,4 +199,4 @@ class SeedDataGenerator(BaseClass):
         }
         self.log.info("{0}Creating project environment ({1})".format(dry_log, data))
         if not dry_run:
-            return self.environments.create_environment(self.config.source_host, self.config.source_token, project_id, data)
+            return self.projects.projects_api.create_environment(self.config.source_host, self.config.source_token, project_id, data)

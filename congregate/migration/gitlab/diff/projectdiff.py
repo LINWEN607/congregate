@@ -2,7 +2,6 @@ from types import GeneratorType
 from congregate.migration.gitlab.diff.basediff import BaseDiffClient
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.variables import VariablesClient
-from congregate.migration.gitlab.api.environments import EnvironmentsApi
 from congregate.helpers.misc_utils import rewrite_json_list_into_dict
 
 class ProjectDiffClient(BaseDiffClient):
@@ -13,7 +12,6 @@ class ProjectDiffClient(BaseDiffClient):
         super(ProjectDiffClient, self).__init__()
         self.projects_api = ProjectsApi()
         self.variables_api = VariablesClient()
-        self.environments_api = EnvironmentsApi()
         self.results = rewrite_json_list_into_dict(self.load_json_data(results_file))
         self.keys_to_ignore = [
             "id",
@@ -42,7 +40,7 @@ class ProjectDiffClient(BaseDiffClient):
                 project_diff["/projects/:id"] = self.generate_diff(project, self.projects_api.get_project, obfuscate=True)
                 project_diff["/projects/:id/variables"] = self.generate_diff(project, self.variables_api.get_variables, obfuscate=True, var_type="project")
                 project_diff["/projects/:id/members"] = self.generate_diff(project, self.projects_api.get_members)
-                project_diff["/projects/:id/environments"] = self.generate_diff(project, self.environments_api.get_all_environments)
+                project_diff["/projects/:id/environments"] = self.generate_diff(project, self.projects_api.get_all_environments)
                 diff_report[project["path_with_namespace"]] = project_diff
                 diff_report[project["path_with_namespace"]]["overall_accuracy"] = self.calculate_overall_accuracy(diff_report[project["path_with_namespace"]])
             else:
