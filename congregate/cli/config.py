@@ -121,7 +121,7 @@ def generate_config():
         # Project export/update settings
         config.add_section("EXPORT")
         location = raw_input(
-            "Staging location for exported projects, AWS or filesystem (default): ")
+            "Staging location for exported projects and groups, AWS (projects only) or filesystem (default): ")
         if location.lower() == "aws":
             config.set("EXPORT", "location", "aws")
             config.set("EXPORT", "s3_name", raw_input("AWS S3 bucket name: "))

@@ -53,18 +53,21 @@ echo "export CONGREGATE_PATH=$CONGREGATE_PATH" >> ~/.bash_profile
 
 Once all of the dependencies are installed, run `congregate config` to set up the congregate config.
 
-There are currently *three* different methods for exporting projects and groups:
+### Config staging location
 
-* **filesystem** - download all projects and groups locally and import them locally.
-* ~~**filesystem-aws**~~ - download all projects and groups locally, copy the exports to an S3 bucket for storage, then delete the projects and groups locally. Copy the files back from S3, import the file, then delete the local file again.
-* ~~**aws**~~ - export all projects and groups directly to an S3 bucket and import directly from the S3 bucket.
+The only fully supported method for both group and project export / import is:
 
-`filesystem-aws` is used to help work with company policies like restricting presigned URLs or in case any of the source instances involved in the migration cannot connect to an S3 bucket while the destination instance can.
+* **filesystem** - export, download and import data locally.
 
-**NOTES:**
+The following method is supported only for project export / import:
 
-* The hybrid (`filesystem-aws`) method is currently **not** supported ([issue](https://gitlab.com/gitlab-com/customer-success/tools/congregate/issues/119)).
-* The `aws` method is curently **not** supported for group export / import. AWS (S3) user attributes are **not yet** available on the Group export / import API.
+* **aws** - export and download data directly to an S3 bucket and import directly from the S3 bucket.
+  * AWS (S3) user attributes are **not yet** available on the Group export / import API.
+
+The following method may be supported in the future ([issue](https://gitlab.com/gitlab-com/customer-success/tools/congregate/issues/119)):
+
+* **filesystem-aws** - export and download data locally, copy it to an S3 bucket for storage, then delete the data locally. Copy the data back from S3, import it and then delete the local data again.
+  * This is used to help work with company policies like restricting presigned URLs or in case any of the source instances involved in the migration cannot connect to an S3 bucket while the destination instance can.
 
 ### Install & Use Poetry (required for end-user and development setups)
 
@@ -390,7 +393,9 @@ You may need to refresh VS Code. VS Code will also call this python interpreter 
 ## Migration features
 
 :white_check_mark: = supported
+
 :heavy_minus_sign: = not yet supported / in development
+
 :x: = not supported
 
 | Main           | Feature                     | Sub-feature                                                                                                                                                       | GitLab             | Congregate                                      |
