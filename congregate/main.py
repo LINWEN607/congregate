@@ -42,7 +42,7 @@ Usage:
     congregate validate-staged-groups-schema
     congregate validate-staged-projects-schema
     congregate map-users [--commit]
-    congregate generate-diff [--wave]
+    congregate generate-diff [--staged]
     congregate clean
     congregate obfuscate
     congregate -h | --help
