@@ -132,6 +132,10 @@ class BaseDiffClient(BaseClass):
         for tr in soup.html.body.table.find_all('tr', recursive=False):
             # if "migration_results" in tr.th.text:
             #     header_index = tr
+            if "results" not in tr.th.text:
+                tr.th['class'] = "accordion"
+                if tr.td:
+                    tr.td['class'] = "accordion-content"
             new_tr = soup.new_tag("tr")
             new_tr.append(tr.td)
             tr.insert_after(new_tr)
@@ -139,5 +143,55 @@ class BaseDiffClient(BaseClass):
         # soup.html.body.table.insert(0, soup.html.body.table[header_index])
         # new_soup.insert_before
         # print soup.html.body.table.find_all('tr', recursive=False)[0]
+        head = soup.new_tag("head")
+        script = soup.new_tag("script")
+        script.string = """
+            window.onload = function () {
+                var acc = document.getElementsByClassName("accordion");
+                var accordionContentList = document.getElementsByClassName("accordion-content");
+                for (var i = 0; i < acc.length; i++) {
+                    acc[i].setAttribute("id", i);
+                    acc[i].addEventListener("click", function() {
+                        this.classList.toggle("active");
+                        var accordionContent = accordionContentList[this.getAttribute("id")];
+                        console.log(accordionContent);
+                        if (accordionContent.style.display === "block") {
+                        accordionContent.style.display = "none";
+                        } else {
+                        accordionContent.style.display = "block";
+                        }
+                    });
+                }
+            }
+        """
+        style = soup.new_tag("style")
+        style.string = """
+            .accordion {
+                background-color: #eee;
+                color: #444;
+                cursor: pointer;
+                padding: 18px;
+                width: 100%;
+                border: none;
+                text-align: left;
+                outline: none;
+                font-size: 15px;
+                transition: 0.4s;
+            }
+            
+            .active, .accordion:hover {
+                background-color: #ccc; 
+            }
+            
+            .accordion-content {
+                padding: 0 18px;
+                display: none;
+                background-color: white;
+                overflow: hidden;
+            }
+        """
+        head.append(script)
+        head.append(style)
+        soup.html.append(head)
         with open(filepath, "w") as f:
             f.write(soup.prettify())
