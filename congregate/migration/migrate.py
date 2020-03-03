@@ -35,6 +35,7 @@ from congregate.migration.gitlab.pipeline_schedules import PipelineSchedulesClie
 from congregate.migration.mirror import MirrorClient
 from congregate.migration.gitlab.deploy_keys import DeployKeysClient
 from congregate.migration.gitlab.hooks import HooksClient
+from congregate.migration.gitlab.environments import EnvironmentsClient
 from congregate.migration.bitbucket import client as bitbucket
 
 b = BaseClass()
@@ -56,6 +57,8 @@ registries = RegistryClient()
 p_schedules = PipelineSchedulesClient()
 deploy_keys = DeployKeysClient()
 hooks = HooksClient()
+environments = EnvironmentsClient()
+
 full_parent_namespace = groups.find_parent_group_path()
 
 
@@ -480,6 +483,10 @@ def migrate_single_project_info(project, new_id):
     # Container Registries
     results["container_registry"] = registries.migrate_registries(
         old_id, new_id, name)
+
+    # Environments
+    results["environments"] = environments.migrate_project_environments(
+        old_id, new_id)
 
     # Project hooks (webhooks)
     results["project_hooks"] = hooks.migrate_project_hooks(

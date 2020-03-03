@@ -21,7 +21,8 @@ class ProjectDiffClient(BaseDiffClient):
             "http_url_to_repo",
             "readme_url",
             "web_url",
-            "ssh_url_to_repo"
+            "ssh_url_to_repo",
+            "project"
         ]
 
         if staged:
@@ -39,6 +40,7 @@ class ProjectDiffClient(BaseDiffClient):
                 project_diff["/projects/:id"] = self.generate_diff(project, self.projects_api.get_project, obfuscate=True)
                 project_diff["/projects/:id/variables"] = self.generate_diff(project, self.variables_api.get_variables, obfuscate=True, var_type="project")
                 project_diff["/projects/:id/members"] = self.generate_diff(project, self.projects_api.get_members)
+                project_diff["/projects/:id/environments"] = self.generate_diff(project, self.projects_api.get_all_environments)
                 diff_report[project["path_with_namespace"]] = project_diff
                 diff_report[project["path_with_namespace"]]["overall_accuracy"] = self.calculate_overall_accuracy(diff_report[project["path_with_namespace"]])
             else:
