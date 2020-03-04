@@ -486,7 +486,7 @@ def migrate_single_project_info(project, new_id):
 
     # Environments
     results["environments"] = environments.migrate_project_environments(
-        old_id, new_id)
+        old_id, new_id, name)
 
     # Project hooks (webhooks)
     results["project_hooks"] = hooks.migrate_project_hooks(
