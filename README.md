@@ -33,8 +33,30 @@ Copy the following code snippet to a file in the congregate directory and run it
 ```bash
 #!/bin/bash
 
-# install poetry
+# Install pip for different OSs
+
+# mac os x
+brew install pip
+
+# debian/ubuntu
+apt install python-pip
+
+# rhel/centos
+yum install python-pip
+
+# Install poetry with different OSs
+
+# osx/Linux/bash on Windows Install Instructions
+curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python
+
+# windows powershell Install Instructions
+Invoke-WebRequest -Uri https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py -UseBasicParsing).Content | python
+
+# Install with pip
 pip install poetry
+
+source $HOME/.poetry/env
+poetry --version
 
 # install python dependencies
 poetry install
@@ -46,7 +68,7 @@ poetry run dnd install
 CONGREGATE_PATH=$(pwd)
 
 # copy congregate script to a bin directory
-cp congregate /usr/local/bin
+cp congregate.sh /usr/local/bin
 
 echo "export CONGREGATE_PATH=$CONGREGATE_PATH" >> ~/.bash_profile
 ```
@@ -74,15 +96,15 @@ The following method may be supported in the future ([issue](https://gitlab.com/
 ```bash
 pip install poetry
 
-# install dependencies from Pipfile
+# Install dependencies from Pipfile
 cd /path/to/congregate
 poetry install
 
-# start-up python virtualenv
+# Start-up python virtualenv
 cd /path/to/congregate
 poetry shell
 
-# install ui dependencies
+# Install ui dependencies
 cd /path/to/congregate
 poetry run dnd install
 ```
@@ -95,6 +117,7 @@ From **docker**:
 2. Run the following command:
 
 ```bash
+docker login registry.gitlab.com/gitlab-com/customer-success/tools/congregate:latest -u <user name> -p <personal token>
 docker run --name congregate -p 8000:8000 -it registry.gitlab.com/gitlab-com/customer-success/tools/congregate:latest /bin/bash
 congregate config
 congregate list
