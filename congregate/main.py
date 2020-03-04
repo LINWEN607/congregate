@@ -342,19 +342,19 @@ if __name__ == '__main__':
                 clean_data()
             if arguments["generate-diff"]:
                 user_diff = UserDiffClient(
-                    "%s/data/user_migration_results.json" % app_path, staged=STAGED)
+                    "/data/user_migration_results.json", staged=STAGED)
                 diff_report = user_diff.generate_report()
                 user_diff.generate_html_report(
-                    diff_report, "%s/data/user_migration_results.html" % app_path)
+                    diff_report, "/data/user_migration_results.html")
                 group_diff = GroupDiffClient(
-                    "%s/data/group_migration_results.json" % app_path, staged=STAGED)
-                diff_report = group_diff.generate_group_diff_report()
+                    "/data/group_migration_results.json", staged=STAGED)
+                diff_report = group_diff.generate_diff_report()
                 group_diff.generate_html_report(
-                    diff_report, "%s/data/group_migration_results.html" % app_path)
+                    diff_report, "/data/group_migration_results.html")
                 project_diff = ProjectDiffClient(
-                    "%s/data/project_migration_results.json" % app_path, staged=STAGED)
-                diff_report = project_diff.generate_project_diff_report()
+                    "/data/project_migration_results.json", staged=STAGED)
+                diff_report = project_diff.generate_diff_report()
                 project_diff.generate_html_report(
-                    diff_report, "%s/data/project_migration_results.html" % app_path)
+                    diff_report, "/data/project_migration_results.html")
             if arguments["obfuscate"]:
                 print obfuscate("Secret:")

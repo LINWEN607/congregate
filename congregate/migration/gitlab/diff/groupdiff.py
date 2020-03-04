@@ -4,15 +4,18 @@ from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.variables import VariablesClient
 from congregate.helpers.misc_utils import rewrite_json_list_into_dict
 
+
 class GroupDiffClient(BaseDiffClient):
     '''
         Extension of BaseDiffClient focused on finding the differences between migrated groups
     '''
-    def __init__(self, results_file, staged=False):
+
+    def __init__(self, results_path, staged=False):
         super(GroupDiffClient, self).__init__()
         self.groups_api = GroupsApi()
         self.variables_api = VariablesClient()
-        self.results = rewrite_json_list_into_dict(self.load_json_data(results_file))
+        self.results = rewrite_json_list_into_dict(
+            self.load_json_data("{0}{1}".format(self.app_path, results_path)))
         self.keys_to_ignore = [
             "id",
             "projects",
@@ -21,27 +24,33 @@ class GroupDiffClient(BaseDiffClient):
         ]
 
         if staged:
-            self.source_data = self.load_json_data("%s/data/staged_groups.json" % self.app_path)
+            self.source_data = self.load_json_data(
+                "%s/data/staged_groups.json" % self.app_path)
         else:
-            self.source_data = self.load_json_data("%s/data/groups.json" % self.app_path)
+            self.source_data = self.load_json_data(
+                "%s/data/groups.json" % self.app_path)
 
-    def generate_group_diff_report(self):
+    def generate_diff_report(self):
         diff_report = {}
         self.log.info("Generating Group Diff Report")
-        
+
         for group in self.source_data:
-            group_path = "%s/%s" % (self.config.parent_group_path, group["full_path"]) if self.config.parent_group_path else group["full_path"]
+            group_path = "%s/%s" % (self.config.parent_group_path,
+                                    group["full_path"]) if self.config.parent_group_path else group["full_path"]
             if self.results.get(group_path) is not None or self.results.get(group["path"]) is not None:
                 group_diff = self.handle_endpoints(group)
                 diff_report[group_path] = group_diff
-                diff_report[group_path]["overall_accuracy"] = self.calculate_overall_accuracy(diff_report[group_path])
+                diff_report[group_path]["overall_accuracy"] = self.calculate_overall_accuracy(
+                    diff_report[group_path])
             else:
-                found_group = self.groups_api.get_group_by_full_path(group_path, self.config.destination_host, self.config.destination_token)
+                found_group = self.groups_api.get_group_by_full_path(
+                    group_path, self.config.destination_host, self.config.destination_token)
                 if found_group.status_code == 200:
                     self.results[group_path] = found_group.json()
                     group_diff = self.handle_endpoints(group)
                     diff_report[group_path] = group_diff
-                    diff_report[group_path]["overall_accuracy"] = self.calculate_overall_accuracy(diff_report[group_path])
+                    diff_report[group_path]["overall_accuracy"] = self.calculate_overall_accuracy(
+                        diff_report[group_path])
                 else:
                     diff_report[group_path] = {
                         "error": "group missing",
@@ -51,16 +60,21 @@ class GroupDiffClient(BaseDiffClient):
                         }
                     }
 
-        diff_report["group_migration_results"] = self.calculate_overall_stage_accuracy(diff_report)
+        diff_report["group_migration_results"] = self.calculate_overall_stage_accuracy(
+            diff_report)
 
         return diff_report
 
     def handle_endpoints(self, group):
         group_diff = {}
-        new_parent_group_name = self.groups_api.get_group(self.config.parent_id, self.config.destination_host, self.config.destination_token).json()["full_path"]
-        group_diff["/groups/:id"] = self.generate_diff(group, self.groups_api.get_group, critical_key="full_path", parent_group=new_parent_group_name)
-        group_diff["/groups/:id/variables"] = self.generate_diff(group, self.variables_api.get_variables, obfuscate=True, var_type="group")
-        group_diff["/groups/:id/members"] = self.generate_diff(group, self.groups_api.get_all_group_members)
+        new_parent_group_name = self.groups_api.get_group(
+            self.config.parent_id, self.config.destination_host, self.config.destination_token).json()["full_path"]
+        group_diff["/groups/:id"] = self.generate_diff(
+            group, self.groups_api.get_group, critical_key="full_path", parent_group=new_parent_group_name)
+        group_diff["/groups/:id/variables"] = self.generate_diff(
+            group, self.variables_api.get_variables, obfuscate=True, var_type="group")
+        group_diff["/groups/:id/members"] = self.generate_diff(
+            group, self.groups_api.get_all_group_members)
         return group_diff
 
     def generate_diff(self, group, endpoint, critical_key=None, obfuscate=False, parent_group=None, **kwargs):
@@ -86,7 +100,7 @@ class GroupDiffClient(BaseDiffClient):
             return self.empty_diff()
         elif source_group_data == [] and destination_group_data == []:
             return self.empty_diff()
-            
+
         return self.diff(source_group_data, destination_group_data, critical_key=critical_key, obfuscate=obfuscate, parent_group=parent_group)
 
     def generate_cleaned_instance_data(self, instance_data):

@@ -6,6 +6,7 @@ from json2html import json2html
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.misc_utils import find as nested_find
 
+
 class BaseDiffClient(BaseClass):
     def __init__(self):
         super(BaseDiffClient, self).__init__()
@@ -14,11 +15,16 @@ class BaseDiffClient(BaseClass):
     def diff(self, source_data, destination_data, critical_key=None, obfuscate=False, parent_group=None):
         engine = Comparator()
         if isinstance(source_data, list):
+            if not isinstance(destination_data, list) and destination_data.get("message", None) is not None:
+                destination_data = []
+            else:
+                destination_data = {}
             if obfuscate:
-                for i in xrange(len(source_data)):
+                for i, _ in enumerate(source_data):
                     source_data[i] = self.obfuscate_values(source_data[i])
-                for i in xrange(len(destination_data)):
-                    destination_data[i] = self.obfuscate_values(destination_data[i])
+                for i, _ in enumerate(destination_data):
+                    destination_data[i] = self.obfuscate_values(
+                        destination_data[i])
             diff = engine._compare_arrays(source_data, destination_data)
         else:
             if obfuscate:
@@ -30,25 +36,27 @@ class BaseDiffClient(BaseClass):
             accuracy = 0
             if isinstance(source_data, list):
                 if diff:
-                    for i in xrange(len(source_data)):
+                    for i, _ in enumerate(source_data):
                         if diff.get(i):
-                            accuracy += self.calculate_individual_accuracy(diff[i], source_data[i], critical_key, parent_group=parent_group)
+                            accuracy += self.calculate_individual_accuracy(
+                                diff[i], source_data[i], critical_key, parent_group=parent_group)
                     if accuracy != 0:
                         accuracy = float(accuracy) / float(len(source_data))
                 else:
                     accuracy = 1.0
             else:
-                accuracy = self.calculate_individual_accuracy(diff, source_data, critical_key, parent_group=parent_group)
+                accuracy = self.calculate_individual_accuracy(
+                    diff, source_data, critical_key, parent_group=parent_group)
         else:
             accuracy = 0
-        if bool(list(nested_find("error", diff))):
+        if bool(list(nested_find("error", diff))) or bool(list(nested_find("message", diff))):
             accuracy = 0
-                    
+
         return {
             "diff": diff,
             "accuracy": accuracy
         }
-    
+
     def calculate_individual_accuracy(self, diff, source_data, critical_key, parent_group=None):
         original_accuracy = 1 - float(len(diff)) / float(len(source_data))
         return self.critical_key_case_check(diff, critical_key, original_accuracy, parent_group=parent_group)
@@ -63,7 +71,7 @@ class BaseDiffClient(BaseClass):
             elif diff_minus.lower() != diff_plus.lower():
                 return 0
         return original_accuracy
-        
+
     def load_json_data(self, path):
         with open(path, "r") as f:
             return json.load(f)
@@ -104,8 +112,8 @@ class BaseDiffClient(BaseClass):
 
     def ignore_keys(self, data):
         if isinstance(data, list):
-            for x in xrange(len(data)):
-                data[x] = self.ignore_keys(data[x])
+            for i, _ in enumerate(data):
+                data[i] = self.ignore_keys(data[i])
         else:
             for key in self.keys_to_ignore:
                 if key in data:
@@ -155,5 +163,5 @@ class BaseDiffClient(BaseClass):
         # soup.html.body.table.insert(0, soup.html.body.table[header_index])
         # new_soup.insert_before
         # print soup.html.body.table.find_all('tr', recursive=False)[0]
-        with open(filepath, "w") as f:
+        with open("{0}{1}".format(self.app_path, filepath), "w") as f:
             f.write(soup.prettify())
