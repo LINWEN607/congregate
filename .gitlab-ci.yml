@@ -91,7 +91,6 @@ test:end-to-end:
     when: always
     paths:
       - data/*.html
-  allow_failure: true
 
 remove redundant docker images:
   stage: cleanup
@@ -135,4 +134,3 @@ pages:
       - public
   only:
     - master
-    

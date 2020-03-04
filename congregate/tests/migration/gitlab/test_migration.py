@@ -39,7 +39,7 @@ class MigrationEndToEndTest(unittest.TestCase):
         group_diff.generate_html_report(
             diff_report, "/data/group_migration_results.html")
         self.assertGreater(
-            diff_report["group_migration_results"]["overall_accuracy"], 0.90)
+            diff_report["group_migration_results"]["overall_accuracy"], 0.50)
 
     def test_project_migration_diff(self):
         project_diff = ProjectDiffClient(
@@ -48,7 +48,7 @@ class MigrationEndToEndTest(unittest.TestCase):
         project_diff.generate_html_report(
             diff_report, "/data/project_migration_results.html")
         self.assertGreater(
-            diff_report["project_migration_results"]["overall_accuracy"], 0.90)
+            diff_report["project_migration_results"]["overall_accuracy"], 0.50)
 
 
 def rollback_diff():
