@@ -1,6 +1,6 @@
 from congregate.migration.gitlab.diff.basediff import BaseDiffClient
 from congregate.migration.gitlab.api.users import UsersApi
-from congregate.helpers.misc_utils import rewrite_list_into_dict
+from congregate.helpers.misc_utils import rewrite_list_into_dict, get_rollback_log
 
 
 class UserDiffClient(BaseDiffClient):
@@ -32,9 +32,10 @@ class UserDiffClient(BaseDiffClient):
             self.source_data = rewrite_list_into_dict(
                 self.load_json_data("%s/data/users.json" % self.app_path), "email")
 
-    def generate_report(self):
+    def generate_diff_report(self, rollback=False):
         diff_report = {}
-        self.log.info("Generating User Diff Report")
+        self.log.info("{}Generating User Diff Report".format(
+            get_rollback_log(rollback)))
 
         for user in self.results:
             destination_user_data = self.ignore_keys(self.users_api.get_user(

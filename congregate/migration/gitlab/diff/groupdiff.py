@@ -2,7 +2,7 @@ from types import GeneratorType
 from congregate.migration.gitlab.diff.basediff import BaseDiffClient
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.variables import VariablesClient
-from congregate.helpers.misc_utils import rewrite_json_list_into_dict
+from congregate.helpers.misc_utils import rewrite_json_list_into_dict, get_rollback_log
 
 
 class GroupDiffClient(BaseDiffClient):
@@ -30,9 +30,10 @@ class GroupDiffClient(BaseDiffClient):
             self.source_data = self.load_json_data(
                 "%s/data/groups.json" % self.app_path)
 
-    def generate_diff_report(self):
+    def generate_diff_report(self, rollback=False):
         diff_report = {}
-        self.log.info("Generating Group Diff Report")
+        self.log.info("{}Generating Group Diff Report".format(
+            get_rollback_log(rollback)))
 
         for group in self.source_data:
             group_path = "%s/%s" % (self.config.parent_group_path,

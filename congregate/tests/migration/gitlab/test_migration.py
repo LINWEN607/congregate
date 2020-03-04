@@ -1,5 +1,7 @@
 import unittest
+from time import sleep
 import pytest
+
 from congregate.cli import do_all
 from congregate.migration.gitlab.diff.basediff import BaseDiffClient
 from congregate.migration.gitlab.diff.userdiff import UserDiffClient
@@ -20,11 +22,12 @@ class MigrationEndToEndTest(unittest.TestCase):
     @classmethod
     def tearDownClass(self):
         rollback(dry_run=False, hard_delete=True)
+        sleep(self.b.config.max_export_wait_time)
         rollback_diff()
 
     def test_user_migration_diff(self):
         user_diff = UserDiffClient("/data/user_migration_results.json")
-        diff_report = user_diff.generate_report()
+        diff_report = user_diff.generate_diff_report()
         user_diff.generate_html_report(
             diff_report, "/data/user_migration_results.html")
         self.assertGreater(
@@ -53,17 +56,13 @@ def rollback_diff():
     base_diff = BaseDiffClient()
     user_diff = UserDiffClient(
         "/data/user_migration_results.json")
-    diff_report["user_diff"] = user_diff.generate_report()
+    diff_report["user_diff"] = user_diff.generate_diff_report(rollback=True)
     group_diff = GroupDiffClient(
         "/data/group_migration_results.json")
-    diff_report["group_diff"] = group_diff.generate_diff_report()
+    diff_report["group_diff"] = group_diff.generate_diff_report(rollback=True)
     project_diff = ProjectDiffClient(
         "/data/project_migration_results.json")
-    diff_report["project_diff"] = project_diff.generate_diff_report()
+    diff_report["project_diff"] = project_diff.generate_diff_report(
+        rollback=True)
     base_diff.generate_html_report(
         diff_report, "/data/migration_rollback_results.html")
-    print(diff_report["user_diff"]["user_migration_results"]["accuracy"])
-    print(diff_report["group_diff"]
-          ["group_migration_results"]["overall_accuracy"])
-    print(diff_report["project_diff"]
-          ["project_migration_results"]["overall_accuracy"])

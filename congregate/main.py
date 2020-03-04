@@ -171,6 +171,7 @@ if __name__ == '__main__':
             from congregate.migration.gitlab.diff.userdiff import UserDiffClient
             from congregate.migration.gitlab.diff.projectdiff import ProjectDiffClient
             from congregate.migration.gitlab.diff.groupdiff import GroupDiffClient
+            from congregate.tests.migration.gitlab.test_migration import rollback_diff
         else:
             from .migration.gitlab.users import UsersClient
             from .migration.gitlab.groups import GroupsClient
@@ -343,7 +344,7 @@ if __name__ == '__main__':
             if arguments["generate-diff"]:
                 user_diff = UserDiffClient(
                     "/data/user_migration_results.json", staged=STAGED)
-                diff_report = user_diff.generate_report()
+                diff_report = user_diff.generate_diff_report()
                 user_diff.generate_html_report(
                     diff_report, "/data/user_migration_results.html")
                 group_diff = GroupDiffClient(

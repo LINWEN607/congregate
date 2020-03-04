@@ -2,7 +2,7 @@ from types import GeneratorType
 from congregate.migration.gitlab.diff.basediff import BaseDiffClient
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.variables import VariablesClient
-from congregate.helpers.misc_utils import rewrite_json_list_into_dict
+from congregate.helpers.misc_utils import rewrite_json_list_into_dict, get_rollback_log
 
 
 class ProjectDiffClient(BaseDiffClient):
@@ -35,9 +35,10 @@ class ProjectDiffClient(BaseDiffClient):
             self.source_data = self.load_json_data(
                 "%s/data/project_json.json" % self.app_path)
 
-    def generate_diff_report(self):
+    def generate_diff_report(self, rollback=False):
         diff_report = {}
-        self.log.info("Generating Project Diff Report")
+        self.log.info("{}Generating Project Diff Report".format(
+            get_rollback_log(rollback)))
 
         for project in self.source_data:
             if self.results.get(project["path_with_namespace"]):

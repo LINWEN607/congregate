@@ -49,6 +49,7 @@ class BaseDiffClient(BaseClass):
                     diff, source_data, critical_key, parent_group=parent_group)
         else:
             accuracy = 0
+
         if bool(list(nested_find("error", diff))) or bool(list(nested_find("message", diff))):
             accuracy = 0
 
@@ -82,6 +83,10 @@ class BaseDiffClient(BaseClass):
         result = None
         total_number_of_keys = len(obj)
         for o in obj.keys():
+            if (o == "/projects/:id" or o == "/groups/:id") and obj[o]["accuracy"] == 0:
+                result = "failure"
+                percentage_sum = 0
+                break
             percentage_sum += obj[o]["accuracy"]
             if obj[o]["accuracy"] == 0:
                 result = "failure"
@@ -99,6 +104,10 @@ class BaseDiffClient(BaseClass):
         result = None
         total_number_of_keys = len(obj)
         for o in obj.keys():
+            if (o == "/projects/:id" or o == "/groups/:id") and obj[o]["accuracy"] == 0:
+                result = "failure"
+                percentage_sum = 0
+                break
             percentage_sum += obj[o]["overall_accuracy"]["accuracy"]
             if obj[o]["overall_accuracy"]["accuracy"] == 0:
                 result = "failure"

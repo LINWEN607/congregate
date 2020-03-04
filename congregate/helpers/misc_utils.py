@@ -162,6 +162,10 @@ def get_dry_log(dry_run=True):
     return "DRY-RUN: " if dry_run else ""
 
 
+def get_rollback_log(rollback=False):
+    return "Rollback: " if rollback else ""
+
+
 def json_pretty(data):
     return json.dumps(data, indent=4, sort_keys=True)
 

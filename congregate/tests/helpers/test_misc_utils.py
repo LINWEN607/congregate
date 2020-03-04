@@ -112,6 +112,12 @@ def test_get_dry_log():
     assert misc.get_dry_log("whatever") == "DRY-RUN: "
 
 
+def test_get_rollback_log():
+    assert misc.get_rollback_log() == ""
+    assert misc.get_rollback_log(True) == "Rollback: "
+    assert misc.get_rollback_log("whatever") == "Rollback: "
+
+
 # @mock.patch("getpass.getpass")
 # def test_obfuscate(secret):
 #     secret.return_value = "test"
