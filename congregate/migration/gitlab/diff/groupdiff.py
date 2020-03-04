@@ -1,6 +1,7 @@
 from types import GeneratorType
 from congregate.migration.gitlab.diff.basediff import BaseDiffClient
 from congregate.migration.gitlab.api.groups import GroupsApi
+from congregate.migration.gitlab.groups import GroupsClient
 from congregate.migration.gitlab.variables import VariablesClient
 from congregate.helpers.misc_utils import rewrite_json_list_into_dict, get_rollback_log
 
@@ -13,6 +14,7 @@ class GroupDiffClient(BaseDiffClient):
     def __init__(self, results_path, staged=False):
         super(GroupDiffClient, self).__init__()
         self.groups_api = GroupsApi()
+        self.groups = GroupsClient()
         self.variables_api = VariablesClient()
         self.results = rewrite_json_list_into_dict(
             self.load_json_data("{0}{1}".format(self.app_path, results_path)))
@@ -68,8 +70,7 @@ class GroupDiffClient(BaseDiffClient):
 
     def handle_endpoints(self, group):
         group_diff = {}
-        new_parent_group_name = self.groups_api.get_group(
-            self.config.parent_id, self.config.destination_host, self.config.destination_token).json()["full_path"]
+        new_parent_group_name = self.groups.find_parent_group_path()
         group_diff["/groups/:id"] = self.generate_diff(
             group, self.groups_api.get_group, critical_key="full_path", parent_group=new_parent_group_name)
         group_diff["/groups/:id/variables"] = self.generate_diff(
