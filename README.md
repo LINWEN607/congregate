@@ -44,14 +44,6 @@ apt install python-pip
 # rhel/centos
 yum install python-pip
 
-# Install poetry with different OSs
-
-# osx/Linux/bash on Windows Install Instructions
-curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python
-
-# windows powershell Install Instructions
-Invoke-WebRequest -Uri https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py -UseBasicParsing).Content | python
-
 # Install with pip
 pip install poetry
 
@@ -94,6 +86,16 @@ The following method may be supported in the future ([issue](https://gitlab.com/
 ### Install & Use Poetry (required for end-user and development setups)
 
 ```bash
+
+# Install poetry with different OSs
+
+# osx/Linux/bash on Windows Install Instructions
+curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python
+
+# windows powershell Install Instructions
+Invoke-WebRequest -Uri https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py -UseBasicParsing).Content | python
+
+# Install with pip
 pip install poetry
 
 # Install dependencies from Pipfile
