@@ -93,7 +93,7 @@ class HooksClient(BaseClass):
                 self.log.info("Migrating project {0} (ID: {1}) hook {2} (ID: {3})".format(
                     name, old_id, hook["url"], hook["id"]))
                 hook.pop("created_at", None)
-                hook["project_id"] == new_id
+                hook["project_id"] = new_id
                 # hook does not include secret token
                 self.add_project_hook(
                     self.config.destination_host, self.config.destination_token, new_id, hook)

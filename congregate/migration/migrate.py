@@ -35,6 +35,7 @@ from congregate.migration.gitlab.pipeline_schedules import PipelineSchedulesClie
 from congregate.migration.mirror import MirrorClient
 from congregate.migration.gitlab.deploy_keys import DeployKeysClient
 from congregate.migration.gitlab.hooks import HooksClient
+from congregate.migration.gitlab.environments import EnvironmentsClient
 from congregate.migration.bitbucket import client as bitbucket
 
 b = BaseClass()
@@ -56,6 +57,8 @@ registries = RegistryClient()
 p_schedules = PipelineSchedulesClient()
 deploy_keys = DeployKeysClient()
 hooks = HooksClient()
+environments = EnvironmentsClient()
+
 full_parent_namespace = groups.find_parent_group_path()
 
 
@@ -208,9 +211,10 @@ def handle_exporting_groups(group, dry_run=True):
         elif loc == "filesystem-aws":
             b.log.error(
                 "NOTICE: Filesystem-AWS exports are not currently supported")
-        # NOTE: Group export does not yet support (AWS/S3) user attributes
+        # NOTE: Group export does not yet support AWS (S3) user attributes
         elif loc == "aws":
-            pass
+            b.log.error(
+                "NOTICE: AWS group exports are not currently supported")
         return {"filename": filename, "exported": exported}
     except (IOError, RequestException) as e:
         b.log.error("Failed to export group (ID: {0}) to {1} with error:\n{2}"
@@ -478,6 +482,10 @@ def migrate_single_project_info(project, new_id):
 
     # Container Registries
     results["container_registry"] = registries.migrate_registries(
+        old_id, new_id, name)
+
+    # Environments
+    results["environments"] = environments.migrate_project_environments(
         old_id, new_id, name)
 
     # Project hooks (webhooks)

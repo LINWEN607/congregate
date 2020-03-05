@@ -7,7 +7,10 @@
 
 ## About
 
-Congregate is a utility for migrating one or more GitLab instances into another, single GitLab instance.
+* Congregate is a Professional Services utility for migrating one or more GitLab instances into another, single GitLab instance.
+* Users are migrated using individual API endpoints.
+* Congregate leverages both the [Project](https://docs.gitlab.com/ee/api/project_import_export.html) and [Group](https://docs.gitlab.com/ee/api/group_import_export.html) export / import API to migrate projects and groups.
+* Missing project and group export / import features are migrated using individual API endpoints.
 
 ```text
 Come together, right now
@@ -17,9 +20,9 @@ Come together, right now
 
 ## Dependencies
 
-- Python 2.7
-- [AWS CLI](https://aws.amazon.com/cli/)
-- [Poetry](https://python-poetry.org/)
+* Python 2.7
+* [AWS CLI](https://aws.amazon.com/cli/)
+* [Poetry](https://python-poetry.org/)
 
 ## Setup
 
@@ -50,15 +53,21 @@ echo "export CONGREGATE_PATH=$CONGREGATE_PATH" >> ~/.bash_profile
 
 Once all of the dependencies are installed, run `congregate config` to set up the congregate config.
 
-There are currently *three* different methods for migrating projects (groups and users are all through the API):
+### Config staging location
 
-* **filesystem** - download all projects locally and import them locally.
-* **filesystem-aws** - download all projects locally, copy the exports to an S3 bucket for storage, then delete the project locally. Copy the files back from S3, import the file, then delete the local file again.
-* **aws** - export all projects directly to an S3 bucket and import directly from the S3 bucket.
+The only fully supported method for both group and project export / import is:
 
-`filesystem-aws` is used to help work with company policies like restricting presigned URLs or in case any of the source instances involved in the migration cannot connect to an S3 bucket while the destination instance can.
+* **filesystem** - export, download and import data locally.
 
-**NOTE:** The hybrid (`filesystem-aws`) method is currently NOT supported ([issue](https://gitlab.com/gitlab-com/customer-success/tools/congregate/issues/119)).
+The following method is supported only for project export / import:
+
+* **aws** - export and download data directly to an S3 bucket and import directly from the S3 bucket.
+  * AWS (S3) user attributes are **not yet** available on the Group export / import API.
+
+The following method may be supported in the future ([issue](https://gitlab.com/gitlab-com/customer-success/tools/congregate/issues/119)):
+
+* **filesystem-aws** - export and download data locally, copy it to an S3 bucket for storage, then delete the data locally. Copy the data back from S3, import it and then delete the local data again.
+  * This is used to help work with company policies like restricting presigned URLs or in case any of the source instances involved in the migration cannot connect to an S3 bucket while the destination instance can.
 
 ### Install & Use Poetry (required for end-user and development setups)
 
@@ -249,11 +258,8 @@ Commands:
 
 #### Important Notes
 
-* Users are migrated using individual API endpoints.
-* Congregate leverages both the Project and Group export/import API to migrate projects and groups.
-* Missing project export features are migrated using individual API endpoints.
-* The GitLab Project export/import API versions need to match between instances. [This documentation](https://docs.gitlab.com/ee/user/project/settings/import_export.html) shows which versions of the API exist in each version of GitLab.
-* The GitLab Group export/import API currently only migrates the group tree structure.
+* The GitLab Project export / import API versions need to match between instances. [This documentation](https://docs.gitlab.com/ee/user/project/settings/import_export.html) shows which versions of the API exist in each version of GitLab.
+* The GitLab Group export / import API versions need to match between instances and be at least on **12.8**.
 
 #### Migration steps
 
@@ -270,10 +276,10 @@ Best practice is to first migrate ONLY users by running:
 * `congregate update-staged-user-info` - Check output for found and NOT found users on destination.
   * Inspect `data/staged_users.json` if any of the NOT found users are blocked as, by default, they will not be migrated.
   * To explicitly remove blocked users from staged users, groups and projects run `congregate remove-blocked-users`.
-* `congregate migrate` - Inspect the output in:
+* `congregate migrate --skip-group-export --skip-group-import --skip-project-export --skip-project-import` - Inspect the output in:
   * `data/dry_run_user_migration.json`
   * `data/congregate.log`
-* `congregate migrate --commit`
+* `congregate migrate --skip-group-export --skip-group-import --skip-project-export --skip-project-import --commit`
 
 ##### Migrate groups and sub-groups
 
@@ -387,7 +393,9 @@ You may need to refresh VS Code. VS Code will also call this python interpreter 
 ## Migration features
 
 :white_check_mark: = supported
+
 :heavy_minus_sign: = not yet supported / in development
+
 :x: = not supported
 
 | Main           | Feature                     | Sub-feature                                                                                                                                                       | GitLab             | Congregate                                      |
@@ -445,7 +453,7 @@ You may need to refresh VS Code. VS Code will also call this python interpreter 
 |                | Deploy keys                 |                                                                                                                                                                   | :x:                | :white_check_mark:                              |
 |                | Awards                      |                                                                                                                                                                   | :white_check_mark: | :white_check_mark:                              |
 |                | Webhooks (w/o token)        |                                                                                                                                                                   | :x:                | :white_check_mark:                              |
-|                | Environments                |                                                                                                                                                                   | :x:                | :heavy_minus_sign:                              |
+|                | Environments                |                                                                                                                                                                   | :x:                | :white_check_mark:                              |
 |                | Audit Events                |                                                                                                                                                                   | :x:                | :x:                                             |
 | **User**       |
 |                | Avatars                     |                                                                                                                                                                   | :x:                | :white_check_mark:                              |

@@ -84,7 +84,6 @@ class ConfigTests(unittest.TestCase):
             "destination_registry_url",    # destination registry url
             "0",  # destination parent group id
             # "parent_group_path",  # destination parent group full path
-            # "True",  # privatize_groups
             "group_sso_provider",  # SSO provider
             "username_suffix",  # username suffix
             "No",   # mirror
@@ -160,7 +159,6 @@ class ConfigTests(unittest.TestCase):
             "destination_registry_url",    # destination registry url
             "0",  # destination parent group id
             # "parent_group_path",  # destination parent group full path
-            # "True",  # privatize_groups
             "group_sso_provider",  # SSO provider
             "_",  # username suffix
             "Yes",   # mirror
@@ -233,7 +231,6 @@ class ConfigTests(unittest.TestCase):
             "destination_registry_url",    # destination registry url
             "0",  # destination parent group id
             # "parent_group_path",  # destination parent group full path
-            # "True",  # privatize_groups
             "group_sso_provider",  # SSO provider
             "username_suffix",  # username suffix
             "Yes",   # mirror
@@ -294,7 +291,6 @@ class ConfigTests(unittest.TestCase):
             "dstn_registry_url":"destination_registry_url",\
             "parent_group_id":"1",\
             "parent_group_path":"destination_group_full_path",\
-            "privatize_groups":"True",\
             "group_sso_provider":"",\
             "username_suffix":"local",\
             "mirror_username":"",\
@@ -339,7 +335,6 @@ class ConfigTests(unittest.TestCase):
             "dstn_registry_url":"destination_registry_url",\
             "parent_group_id":"0",\
             "parent_group_path":"destination_group_full_path",\
-            "privatize_groups":"True",\
             "group_sso_provider":"group_sso_provider",\
             "username_suffix":"username_suffix",\
             "mirror_username":"",\

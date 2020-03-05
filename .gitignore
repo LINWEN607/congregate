@@ -12,6 +12,8 @@ downloads/*
 congregate/docs/build
 congregate/docs/data/congregate*
 congregate/docs/source/*.rst
+congregate/docs/source/static_docs/*.html
+congregate/docs/source/*.html
 !congregate/docs/source/index.rst
 js-packages
 .venv
@@ -19,3 +21,4 @@ js-packages
 .idea
 .vscode
 congregate/tests/cli/data/congregate.conf
+congregate.egg-info/*
