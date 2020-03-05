@@ -122,6 +122,8 @@ class BaseDiffClient(BaseClass):
     def ignore_keys(self, data):
         if isinstance(data, list):
             for i, _ in enumerate(data):
+                if isinstance(data[i], str) or isinstance(data[i], unicode):
+                    return data
                 data[i] = self.ignore_keys(data[i])
         else:
             for key in self.keys_to_ignore:
@@ -155,6 +157,7 @@ class BaseDiffClient(BaseClass):
         }
 
     def generate_html_report(self, diff, filepath):
+        filepath = "{0}{1}".format(self.app_path, filepath)
         html_data = json2html.convert(json=diff)
         soup = bs(html_data, features="lxml")
         style = soup.new_tag("style")

@@ -232,13 +232,14 @@ def find(key, dictionary):
     """
         Nested dictionary lookup from https://gist.github.com/douglasmiranda/5127251
     """
-    for k, v in dictionary.iteritems():
-        if k == key:
-            yield v
-        elif isinstance(v, dict):
-            for result in find(key, v):
-                yield result
-        elif isinstance(v, list):
-            for d in v:
-                for result in find(key, d):
+    if isinstance(dictionary, dict):
+        for k, v in dictionary.iteritems():
+            if k == key:
+                yield v
+            elif isinstance(v, dict):
+                for result in find(key, v):
                     yield result
+            elif isinstance(v, list):
+                for d in v:
+                    for result in find(key, d):
+                        yield result
