@@ -118,6 +118,10 @@ class ProjectDiffClient(BaseDiffClient):
             project, self.projects_api.get_all_project_badges)
         project_diff["/projects/:id/feature_flags"] = self.generate_diff(
             project, self.projects_api.get_all_project_feature_flags)
+        project_diff["/projects/:id/custom_attributes"] = self.generate_diff(
+            project, self.projects_api.get_all_project_custom_attributes)
+        project_diff["/projects/:id/registry/repositories"] = self.generate_diff(
+            project, self.projects_api.get_all_project_registry_repositories)
         
         return project_diff
 
