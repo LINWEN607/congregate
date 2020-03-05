@@ -1,4 +1,4 @@
-# Welcome to Congregate's documentation\!
+# Welcome to Congregate\'s documentation\!
 
 Congregate is an internal tool for GitLab professional services to handle migrating customers to GitLab. Congregate currently supports the following migration directions:
 
@@ -15,17 +15,15 @@ Our guidance on some other migrations at this time:
 * SVN
   * We have some [documentation](https://docs.gitlab.com/ee/user/project/import/svn.html) on gitlab.com discussing migrating from SVN
 
-
-# Contents
+## Contents
 
 * [Getting Started](static_docs/setup.md)
 * [Migration Workflow](static_docs/workflow.md)
 * [README](static_docs/readme.md)
 * [Code quality report](static_docs/code_quality.md)
 
-# Indices and tables
+## Indices and tables
 
-  - [Index](genindex)
-  - [Module Index](modindex)
-  - [Search](search)
-
+* [Index](genindex)
+* [Module Index](modindex)
+* [Search](search)
