@@ -3,6 +3,7 @@ from congregate.migration.gitlab.diff.basediff import BaseDiffClient
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.variables import VariablesClient
 from congregate.helpers.misc_utils import rewrite_json_list_into_dict, get_rollback_log
+from congregate.helpers.threads import handle_multi_thread
 
 
 class ProjectDiffClient(BaseDiffClient):
@@ -40,24 +41,31 @@ class ProjectDiffClient(BaseDiffClient):
         self.log.info("{}Generating Project Diff Report".format(
             get_rollback_log(rollback)))
 
-        for project in self.source_data:
-            if self.results.get(project["path_with_namespace"]):
-                project_diff = self.handle_endpoints(project)
-                diff_report[project["path_with_namespace"]] = project_diff
-                diff_report[project["path_with_namespace"]]["overall_accuracy"] = self.calculate_overall_accuracy(
-                    diff_report[project["path_with_namespace"]])
-            else:
-                diff_report[project["path_with_namespace"]] = {
-                    "error": "project missing",
-                    "overall_accuracy": {
-                        "accuracy": 0,
-                        "result": "failure"
-                    }
-                }
+        results = handle_multi_thread(self.generate_single_diff_report, self.source_data)
+
+        for result in results:
+            diff_report.update(result)
 
         diff_report["project_migration_results"] = self.calculate_overall_stage_accuracy(
             diff_report)
 
+        return diff_report
+
+    def generate_single_diff_report(self, project):
+        diff_report = {}
+        if self.results.get(project["path_with_namespace"]):
+            project_diff = self.handle_endpoints(project)
+            diff_report[project["path_with_namespace"]] = project_diff
+            diff_report[project["path_with_namespace"]]["overall_accuracy"] = self.calculate_overall_accuracy(
+                diff_report[project["path_with_namespace"]])
+        else:
+            diff_report[project["path_with_namespace"]] = {
+                "error": "project missing",
+                "overall_accuracy": {
+                    "accuracy": 0,
+                    "result": "failure"
+                }
+            }
         return diff_report
 
     def handle_endpoints(self, project):

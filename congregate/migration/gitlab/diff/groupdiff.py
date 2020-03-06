@@ -4,6 +4,7 @@ from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.groups import GroupsClient
 from congregate.migration.gitlab.variables import VariablesClient
 from congregate.helpers.misc_utils import rewrite_json_list_into_dict, get_rollback_log
+from congregate.helpers.threads import handle_multi_thread
 
 
 class GroupDiffClient(BaseDiffClient):
@@ -37,36 +38,44 @@ class GroupDiffClient(BaseDiffClient):
         self.log.info("{}Generating Group Diff Report".format(
             get_rollback_log(rollback)))
 
-        for group in self.source_data:
-            group_path = "%s/%s" % (self.config.parent_group_path,
-                                    group["full_path"]) if self.config.parent_group_path else group["full_path"]
-            if self.results.get(group_path) is not None or self.results.get(group["path"]) is not None:
+        results = handle_multi_thread(self.generate_single_diff_report, self.source_data)
+
+        for result in results:
+            diff_report.update(result)
+            
+        diff_report["group_migration_results"] = self.calculate_overall_stage_accuracy(
+            diff_report)
+
+        return diff_report
+
+    def generate_single_diff_report(self, group):
+        diff_report = {}
+        group_path = "%s/%s" % (self.config.parent_group_path,
+                                group["full_path"]) if self.config.parent_group_path else group["full_path"]
+        if self.results.get(group_path) is not None or self.results.get(group["path"]) is not None:
+            group_diff = self.handle_endpoints(group)
+            diff_report[group_path] = group_diff
+            diff_report[group_path]["overall_accuracy"] = self.calculate_overall_accuracy(
+                diff_report[group_path])
+        else:
+            found_group = self.groups_api.get_group_by_full_path(
+                group_path, self.config.destination_host, self.config.destination_token)
+            if found_group.status_code == 200:
+                self.results[group_path] = found_group.json()
                 group_diff = self.handle_endpoints(group)
                 diff_report[group_path] = group_diff
                 diff_report[group_path]["overall_accuracy"] = self.calculate_overall_accuracy(
                     diff_report[group_path])
             else:
-                found_group = self.groups_api.get_group_by_full_path(
-                    group_path, self.config.destination_host, self.config.destination_token)
-                if found_group.status_code == 200:
-                    self.results[group_path] = found_group.json()
-                    group_diff = self.handle_endpoints(group)
-                    diff_report[group_path] = group_diff
-                    diff_report[group_path]["overall_accuracy"] = self.calculate_overall_accuracy(
-                        diff_report[group_path])
-                else:
-                    diff_report[group_path] = {
-                        "error": "group missing",
-                        "overall_accuracy": {
-                            "accuracy": 0,
-                            "result": "failure"
-                        }
+                diff_report[group_path] = {
+                    "error": "group missing",
+                    "overall_accuracy": {
+                        "accuracy": 0,
+                        "result": "failure"
                     }
-
-        diff_report["group_migration_results"] = self.calculate_overall_stage_accuracy(
-            diff_report)
-
+                }
         return diff_report
+            
 
     def handle_endpoints(self, group):
         group_diff = {}

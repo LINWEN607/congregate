@@ -8,6 +8,50 @@ from congregate.helpers.misc_utils import find as nested_find
 
 
 class BaseDiffClient(BaseClass):
+    SCRIPT = """
+        window.onload = function () {
+            var acc = document.getElementsByClassName("accordion");
+            var accordionContentList = document.getElementsByClassName("accordion-content");
+            for (var i = 0; i < acc.length; i++) {
+                acc[i].setAttribute("id", i);
+                acc[i].addEventListener("click", function() {
+                    this.classList.toggle("active");
+                    var accordionContent = accordionContentList[this.getAttribute("id")];
+                    console.log(accordionContent);
+                    if (accordionContent.style.display === "block") {
+                    accordionContent.style.display = "none";
+                    } else {
+                    accordionContent.style.display = "block";
+                    }
+                });
+            }
+        }
+    """
+    STYLE = """
+        .accordion {
+            background-color: #eee;
+            color: #444;
+            cursor: pointer;
+            padding: 18px;
+            width: 100%;
+            border: none;
+            text-align: left;
+            outline: none;
+            font-size: 15px;
+            transition: 0.4s;
+        }
+        
+        .active, .accordion:hover {
+            background-color: #ccc; 
+        }
+        
+        .accordion-content {
+            padding: 0 18px;
+            display: none;
+            background-color: white;
+            overflow: hidden;
+        }
+    """
     def __init__(self):
         super(BaseDiffClient, self).__init__()
         self.keys_to_ignore = []
@@ -181,51 +225,9 @@ class BaseDiffClient(BaseClass):
         # print soup.html.body.table.find_all('tr', recursive=False)[0]
         head = soup.new_tag("head")
         script = soup.new_tag("script")
-        script.string = """
-            window.onload = function () {
-                var acc = document.getElementsByClassName("accordion");
-                var accordionContentList = document.getElementsByClassName("accordion-content");
-                for (var i = 0; i < acc.length; i++) {
-                    acc[i].setAttribute("id", i);
-                    acc[i].addEventListener("click", function() {
-                        this.classList.toggle("active");
-                        var accordionContent = accordionContentList[this.getAttribute("id")];
-                        console.log(accordionContent);
-                        if (accordionContent.style.display === "block") {
-                        accordionContent.style.display = "none";
-                        } else {
-                        accordionContent.style.display = "block";
-                        }
-                    });
-                }
-            }
-        """
+        script.string = self.SCRIPT
         style = soup.new_tag("style")
-        style.string = """
-            .accordion {
-                background-color: #eee;
-                color: #444;
-                cursor: pointer;
-                padding: 18px;
-                width: 100%;
-                border: none;
-                text-align: left;
-                outline: none;
-                font-size: 15px;
-                transition: 0.4s;
-            }
-            
-            .active, .accordion:hover {
-                background-color: #ccc; 
-            }
-            
-            .accordion-content {
-                padding: 0 18px;
-                display: none;
-                background-color: white;
-                overflow: hidden;
-            }
-        """
+        style.string = self.STYLE
         head.append(script)
         head.append(style)
         soup.html.append(head)
