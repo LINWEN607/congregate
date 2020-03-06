@@ -30,7 +30,7 @@ class ProjectRepositoryApi():
         """
         return api.list_all(host, token, "projects/%d/repository/contributors" % id)
 
-    def get_all_project_repository_branches(self, id, host, token):
+    def get_all_project_repository_branches(self, host, token, id, query_params=""):
         """
         Get a list of repository branches from a project
 
@@ -39,9 +39,24 @@ class ProjectRepositoryApi():
             :param: id: (int) GitLab project ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
+            :param: query_params: (str) Query parameters
             :yield: Generator returning JSON of each result from GET /projects/:id/repository/branches
         """
-        return api.list_all(host, token, "projects/%d/repository/branches" % id)
+        return api.list_all(host, token, "projects/%d/repository/branches%s" % (id, query_params))
+
+    def get_single_project_repository_branch(self, host, token, pid, branch_name):
+        """
+        Get a single project repository branch
+
+        https://docs.gitlab.com/ee/api/branches.html#get-single-repository-branch
+
+            :param: pid: (int) GitLab project ID
+            :param: branch_name: (str) Branch name
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Response object containing the response to GET /projects/:id/repository/branches/:branch
+        """
+        return api.generate_get_request(host, token, "projects/%d/repository/branches/%s" % (pid, quote_plus(branch_name)))
 
     def get_all_project_repository_tags(self, id, host, token):
         """
@@ -56,18 +71,33 @@ class ProjectRepositoryApi():
         """
         return api.list_all(host, token, "projects/%d/repository/tags" % id)
 
-    def get_all_project_repository_commits(self, id, host, token):
+    def get_all_project_repository_commits(self, host, token, id, query_params=""):
         """
         Get a list of repository commits in a project
 
         https://docs.gitlab.com/ee/api/commits.html#list-repository-commits
 
             :param: id: (int) GitLab project ID
+            :param: query_params: (str) Query parameters
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /projects/:id/repository/commits
         """
-        return api.list_all(host, token, "projects/%d/repository/commits" % id)
+        return api.list_all(host, token, "projects/%d/repository/commits%s" % (id, query_params))
+
+    def get_single_project_repository_commit(self, host, token, id, sha):
+        """
+        Get a specific commit identified by the commit hash or name of a branch or tag
+
+        https://docs.gitlab.com/ee/api/commits.html#get-a-single-commit
+
+            :param: id: (int) GitLab project ID
+            :param: sha: (str) The commit hash or name of a repository branch or tag
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Response object containing the response GET /projects/:id/repository/commits/:sha
+        """
+        return api.generate_get_request(host, token, "projects/%d/repository/commits/%s" % (id, sha))
 
     def get_project_repository_commit_diff(self, pid, sha, host, token):
         """
@@ -97,7 +127,7 @@ class ProjectRepositoryApi():
         """
         return api.list_all(host, token, "projects/{0}/repository/commits/{1}/comments".format(pid, sha))
 
-    def get_project_repository_commit_refs(self, pid, sha, host, token):
+    def get_project_repository_commit_refs(self, host, token, pid, sha, query_params=""):
         """
         Get all references (from branches or tags) a commit is pushed to
 
@@ -105,11 +135,12 @@ class ProjectRepositoryApi():
 
             :param: pid: (int) GitLab project ID
             :param: sha: (int) Commit SHA
+            :param: query_params: (str) Query parameters
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /projects/:id/repository/commits/:sha/refs
         """
-        return api.list_all(host, token, "projects/{0}/repository/commits/{1}/refs".format(pid, sha))
+        return api.list_all(host, token, "projects/%d/repository/commits/%s/refs%s" %(pid, sha, query_params))
 
     def get_project_repository_commit_merge_requests(self, pid, sha, host, token):
         """

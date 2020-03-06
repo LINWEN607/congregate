@@ -28,7 +28,7 @@ class ImportExportClient(BaseClass):
         self.groups = GroupsClient()
         self.projects_api = ProjectsApi()
         self.groups_api = GroupsApi()
-        self.users = UsersApi()
+        self.users_api = UsersApi()
         self.keys_map = self.get_keys()
 
     def get_AwsClient(self):
@@ -43,20 +43,14 @@ class ImportExportClient(BaseClass):
 
     def get_export_status(self, src_id, is_project=True):
         if is_project:
-            return self.get_project_export_status(src_id)
+            return self.projects_api.get_project_export_status(src_id, self.config.source_host, self.config.source_token)
         return self.get_group_export_status(src_id)
-
-    def get_project_export_status(self, src_id):
-        return api.generate_get_request(self.config.source_host, self.config.source_token, "projects/%d/export" % src_id)
 
     def get_group_export_status(self, src_id):
         return api.generate_get_request(self.config.source_host, self.config.source_token, "groups/%d/export" % src_id)
 
     def get_group_download_status(self, src_id):
-        return api.generate_get_request(self.config.source_host, self.config.source_token, "groups/%d/export/download" % src_id)
-
-    def get_import_status(self, dest_id):
-        return api.generate_get_request(self.config.destination_host, self.config.destination_token, "projects/%d/import" % dest_id)
+        return self.groups_api.get_group_export_download(self.config.source_host, self.config.source_token, src_id)
 
     def log_wait_time(self, wait_time, is_project, name):
         self.log.info("Waiting %s seconds before skipping %s %s export",
@@ -217,7 +211,7 @@ class ImportExportClient(BaseClass):
             # TODO: Needs to be some user remapping in this, as well
             #   as the username/namespace may exist on the source
             if member_id:
-                new_user = self.users.get_user(
+                new_user = self.users_api.get_user(
                     member_id,
                     self.config.destination_host,
                     self.config.destination_token).json()
@@ -524,7 +518,8 @@ class ImportExportClient(BaseClass):
                         import_id = None
                         break
                 if import_id is not None:
-                    status = self.get_import_status(import_id)
+                    status = self.projects_api.get_project_import_status(
+                        self.config.destination_host, self.config.destination_token, import_id)
                     try:
                         if status.status_code == 200:
                             status_json = status.json()

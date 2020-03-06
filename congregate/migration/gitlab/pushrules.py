@@ -3,22 +3,23 @@ import json
 from requests.exceptions import RequestException
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers import api
+from congregate.migration.gitlab.api.projects import ProjectsApi
 
 
 class PushRulesClient(BaseClass):
-    def get_push_rules(self, old_id, host, token):
-        return api.generate_get_request(host, token, "projects/{}/push_rule".format(old_id))
+    def __init__(self):
+        self.projects_api = ProjectsApi()
+        super(PushRulesClient, self).__init__()
 
     def add_push_rule(self, new_id, host, token, data):
         data.pop("id", None)
         data.pop("project_id", None)
-        api.generate_post_request(
-            host, token, "projects/{}/push_rule".format(new_id), json.dumps(data))
+        self.projects_api.create_project_push_rule(
+            new_id, host, token, json.dumps(data))
 
     def migrate_push_rules(self, old_id, new_id, name):
         try:
-            push_rule = self.get_push_rules(
+            push_rule = self.projects_api.get_all_project_push_rules(
                 old_id,
                 self.config.source_host,
                 self.config.source_token).json()

@@ -9,7 +9,7 @@ from congregate.migration.gitlab.api.projects import ProjectsApi
 class RegistryClient(BaseClass):
     def __init__(self):
         self.users = UsersApi()
-        self.projects = ProjectsApi()
+        self.projects_api = ProjectsApi()
         super(RegistryClient, self).__init__()
 
     def are_enabled(self, new_id, old_id):
@@ -20,21 +20,8 @@ class RegistryClient(BaseClass):
         return (src, dest)
 
     def is_enabled(self, host, token, id):
-        project = api.generate_get_request(
-            host, token, "projects/%d" % id).json()
+        project = self.projects_api.get_project(id, host, token).json()
         return project.get("container_registry_enabled", False)
-
-    # Get a list of registry repositories in a project
-    def __list_registry_repositories(self, host, token, id):
-        return api.list_all(host, token, "projects/%d/registry/repositories" % id)
-
-    # Get a list of tags for given registry repository
-    def __list_repository_tags(self, host, token, id, repo_id):
-        return api.list_all(host, token, "projects/%d/registry/repositories/%d/tags" % (id, repo_id))
-
-    # Get details of a registry repository tag
-    def __get_repository_tag_details(self, host, token, id, repo_id, tag_name):
-        return api.generate_get_request(host, token, "projects/%d/registry/repositories/%d/tags/%s" % (id, repo_id, tag_name))
 
     def migrate_registries(self, old_id, new_id, name):
         try:
@@ -59,12 +46,12 @@ class RegistryClient(BaseClass):
             # Login to source registry
             src_client = self.__login_to_registry(
                 self.config.source_host, self.config.source_token, self.config.source_registry)
-            response = self.__list_registry_repositories(
-                self.config.source_host, self.config.source_token, old_id)
+            response = self.projects_api.get_all_project_registry_repositories(
+                old_id, self.config.source_host, self.config.source_token)
             registries = iter(response)
             for registry in registries:
-                tags = self.__list_repository_tags(
-                    self.config.source_host, self.config.source_token, old_id, registry["id"])
+                tags = self.projects_api.get_all_project_registry_repositories_tags(
+                    old_id, registry["id"], self.config.source_host, self.config.source_token)
                 if list(tags):
                     reg = registry["location"]
                     self.log.info("Pulling images from project {0} (ID: {1}) registry {2}".format(

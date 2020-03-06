@@ -8,11 +8,13 @@ from congregate.helpers.base_class import BaseClass
 from congregate.helpers import api
 from congregate.helpers.misc_utils import get_dry_log
 from congregate.migration.gitlab.api.projects import ProjectsApi
+from congregate.migration.gitlab.api.groups import GroupsApi
 
 
 class ProjectsClient(BaseClass):
     def __init__(self):
         self.projects_api = ProjectsApi()
+        self.groups_api = GroupsApi()
         super(ProjectsClient, self).__init__()
 
     @staticmethod
@@ -32,8 +34,8 @@ class ProjectsClient(BaseClass):
     def search_for_project_with_namespace_path(self, host, token, namespace_prefix, namespace, project_name):
         url_encoded_path = quote_plus(self.get_full_namespace_path(
             namespace_prefix, namespace, project_name))
-        resp = api.generate_get_request(
-            host, token, "projects/%s" % url_encoded_path)
+        resp = self.projects_api.get_project_by_path_with_namespace(
+            url_encoded_path, host, token)
         if resp.status_code == 200:
             return resp.json()
         return None
@@ -88,8 +90,8 @@ class ProjectsClient(BaseClass):
     def get_new_group_id(self, name, path):
         """Returns the group's ID on the destination instance."""
         try:
-            groups = api.generate_get_request(
-                self.config.destination_host, self.config.destination_token, "groups?search=%s" % name).json()
+            groups = self.groups_api.search_for_group(
+                name, self.config.destination_host, self.config.destination_token)
             if groups:
                 for group in groups:
                     if group["full_path"] == path:
