@@ -13,10 +13,11 @@ class EnvironmentsClient(BaseClass):
     def migrate_project_environments(self, src_id, dest_id, name):
         try:
             for environment in self.projects.get_all_environments(src_id, self.config.source_host, self.config.source_token):
-                self.log.info("Migrating project {0} (ID: {1}) environment:\n{2}".format(
-                    name, src_id, json_pretty(environment)))
-                self.projects.create_environment(
-                    self.config.destination_host, self.config.destination_token, dest_id, self.generate_environment_data(environment))
+                if "message" not in json_pretty(environment):
+                    self.log.info("Migrating project {0} (ID: {1}) environment:\n{2}".format(
+                        name, src_id, json_pretty(environment)))
+                    self.projects.create_environment(
+                        self.config.destination_host, self.config.destination_token, dest_id, self.generate_environment_data(environment))
         except RequestException as re:
             self.log.error(
                 "Failed to migrate project {0} (ID: {1}) environments, with error:\n{2}".format(name, src_id, re))

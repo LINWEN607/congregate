@@ -70,8 +70,9 @@ class GroupDiffClient(BaseDiffClient):
 
     def handle_endpoints(self, group):
         group_diff = {}
+        parent_group = self.config.parent_group_path
         group_diff["/groups/:id"] = self.generate_diff(
-            group, self.groups_api.get_group, critical_key="full_path")
+            group, self.groups_api.get_group, critical_key="full_path", parent_group=parent_group)
         group_diff["/groups/:id/variables"] = self.generate_diff(
             group, self.variables_api.get_variables, obfuscate=True, var_type="group")
         group_diff["/groups/:id/members"] = self.generate_diff(
