@@ -3,7 +3,7 @@ from congregate.migration.gitlab.diff.basediff import BaseDiffClient
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.variables import VariablesClient
 from congregate.helpers.misc_utils import rewrite_json_list_into_dict, get_rollback_log
-from congregate.helpers.threads import handle_multi_thread
+from congregate.helpers.threads import handle_multi_thread_write_to_file_and_return_results
 
 
 class ProjectDiffClient(BaseDiffClient):
@@ -41,7 +41,8 @@ class ProjectDiffClient(BaseDiffClient):
         self.log.info("{}Generating Project Diff Report".format(
             get_rollback_log(rollback)))
 
-        results = handle_multi_thread(self.generate_single_diff_report, self.source_data)
+        results = handle_multi_thread_write_to_file_and_return_results(
+            self.generate_single_diff_report, self.return_only_accuracies, self.source_data, "%s/data/project_diff.json" % self.app_path)
 
         for result in results:
             diff_report.update(result)
@@ -94,13 +95,13 @@ class ProjectDiffClient(BaseDiffClient):
             project, self.projects_api.get_all_project_members_incl_inherited)
         project_diff["/projects/:id/users"] = self.generate_diff(
             project, self.projects_api.get_all_project_users)
-        
+
         # Merge request approvers
         project_diff["/projects/:id/approvals"] = self.generate_diff(
             project, self.projects_api.get_all_project_approval_configuration)
         project_diff["/projects/:id/approval_rules"] = self.generate_diff(
             project, self.projects_api.get_all_project_approval_rules)
-        
+
         # Repository
         project_diff["/projects/:id/forks"] = self.generate_diff(
             project, self.projects_api.get_all_project_forks)
@@ -118,7 +119,7 @@ class ProjectDiffClient(BaseDiffClient):
             project, self.projects_api.get_all_project_labels)
         project_diff["/projects/:id/milestones"] = self.generate_diff(
             project, self.projects_api.get_all_project_milestones)
-        
+
         # Misc
         project_diff["/projects/:id/starrers"] = self.generate_diff(
             project, self.projects_api.get_all_project_starrers)
@@ -130,9 +131,8 @@ class ProjectDiffClient(BaseDiffClient):
             project, self.projects_api.get_all_project_custom_attributes)
         project_diff["/projects/:id/registry/repositories"] = self.generate_diff(
             project, self.projects_api.get_all_project_registry_repositories)
-        
-        return project_diff
 
+        return project_diff
 
     def generate_diff(self, project, endpoint, critical_key=None, obfuscate=False, **kwargs):
         source_project_data = self.generate_cleaned_instance_data(

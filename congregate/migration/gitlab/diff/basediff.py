@@ -200,6 +200,12 @@ class BaseDiffClient(BaseClass):
             "accuracy": 1
         }
 
+    def return_only_accuracies(self, obj):
+        accuracies = {}
+        for o in obj.keys():
+            accuracies[o] = {i:obj[o][i] for i in obj[o] if i!='diff'}
+        return accuracies
+            
     def generate_html_report(self, diff, filepath):
         filepath = "{0}{1}".format(self.app_path, filepath)
         html_data = json2html.convert(json=diff)
