@@ -174,7 +174,7 @@ class GroupsApi():
         """
         return api.generate_post_request(host, token, "groups/{}/export".format(gid), data=data, headers=headers)
 
-    def get_group_export_download(self, host, token, gid):
+    def get_group_download_status(self, host, token, gid):
         """
         Download the finished export
 
