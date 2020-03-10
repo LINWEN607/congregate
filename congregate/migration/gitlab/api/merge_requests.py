@@ -1,6 +1,6 @@
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers import api
-from congregate.helpers.misc_utils import strip_numbers, remove_dupes
+
 
 class MergeRequestsApi(BaseClass):
     def get_all_project_merge_requests(self, host, token, project_id):

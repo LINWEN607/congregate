@@ -640,29 +640,18 @@ class ProjectsApi():
         """
         return api.generate_post_request(host, token, "projects/%d/push_rule" % id, json.dumps(data))
 
-    def get_all_project_approval_configuration(self, id, host, token):
+    def get_all_project_approval_configuration(self, pid, host, token):
         """
         Get the approval configuration of a project
 
         GitLab API Doc: https://docs.gitlab.com/ee/api/merge_request_approvals.html#get-configuration
 
-            :param: id: (int) GitLab project ID
+            :param: pid: (int) GitLab project ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /projects/:id/approvals
         """
-        return api.generate_get_request(host, token, "projects/%d/approvals" % id)
-
-    def get_all_project_approval_settings(self, id, host, token):
-        """
-        Get all project approval rules (Private API subject to change)
-
-            :param: id: (int) GitLab project ID
-            :param: host: (str) GitLab host URL
-            :param: token: (str) Access token to GitLab instance
-            :yield: Generator returning JSON of each result from GET /projects/:id/approval_settings
-        """
-        return api.generate_get_request(host, token, "projects/%d/approval_settings" % id)
+        return api.generate_get_request(host, token, "projects/%d/approvals" % pid)
 
     def create_approval_settings_rule(self, id, host, token, data):
         """

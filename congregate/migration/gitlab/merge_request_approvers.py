@@ -1,6 +1,3 @@
-import json
-
-from urllib import urlencode
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers import api
 from congregate.migration.gitlab.version import VersionClient
@@ -19,15 +16,9 @@ class MergeRequestApproversClient(BaseClass):
         super(MergeRequestApproversClient, self).__init__()
 
     def are_enabled(self, id):
-        project = self.projects_api.get_project(id, self.config.source_host, self.config.source_token).json()
+        project = self.projects_api.get_project(
+            id, self.config.source_host, self.config.source_token).json()
         return project.get("merge_requests_enabled", False)
-
-    def get_approvals(self, id, host, token):
-        version = self.version.get_version(host, token)
-        if self.version.is_older_than(version["version"], self.break_change_version):
-            return self.projects_api.get_all_project_approval_configuration(id, host, token).json()
-        else:
-            return self.projects_api.get_all_project_approval_settings(id, host, token).json()
 
     def set_approvers(self, project_id, host, token, approver_ids, approver_group_ids):
         if not isinstance(approver_ids, list):
@@ -52,19 +43,22 @@ class MergeRequestApproversClient(BaseClass):
     def migrate_mr_approvers(self, old_id, new_id, name):
         try:
             if self.are_enabled(old_id):
-                self.log.info("Migrating merge request approvers for {}".format(name))
+                self.log.info(
+                    "Migrating merge request approvers for {}".format(name))
                 self.migrate_merge_request_approvers(new_id, old_id)
                 return True
             else:
-                self.log.warning("Merge requests are disabled for project {}".format(name))
+                self.log.warning(
+                    "Merge requests are disabled for project {}".format(name))
                 return False
         except Exception, e:
-            self.log.error("Failed to migrate {0} merge request approvers, with error:\n{1}".format(name, e))
+            self.log.error(
+                "Failed to migrate {0} merge request approvers, with error:\n{1}".format(name, e))
             return False
 
     def migrate_merge_request_approvers(self, new_id, old_id):
-        approval_data = self.get_approvals(
-            old_id, self.config.source_host, self.config.source_token)
+        approval_data = self.projects_api.get_all_project_approval_configuration(
+            old_id, self.config.source_host, self.config.source_token).json()
         source_version = self.version.get_version(
             self.config.source_host, self.config.source_token)["version"]
         destination_version = self.version.get_version(
@@ -132,7 +126,8 @@ class MergeRequestApproversClient(BaseClass):
                     user["id"], self.config.source_host, self.config.source_token).json()
                 new_user = api.search(
                     self.config.destination_host, self.config.destination_token, 'users', user['email'])
-                approver_ids = self.user_search_check_and_log(new_user, user, approver_ids)
+                approver_ids = self.user_search_check_and_log(
+                    new_user, user, approver_ids)
         for approved_group in approval_data["approver_groups"]:
             group = approved_group["group"]
             if group.get("id", None) is not None:
@@ -158,7 +153,8 @@ class MergeRequestApproversClient(BaseClass):
                     user["id"], self.config.source_host, self.config.source_token).json()
                 new_user = api.search(
                     self.config.destination_host, self.config.destination_token, 'users', user['email'])
-                approver_ids = self.user_search_check_and_log(new_user, user, approver_ids)
+                approver_ids = self.user_search_check_and_log(
+                    new_user, user, approver_ids)
         for group in rule["groups"]:
             if group.get("id", None) is not None:
                 group = self.groups_api.get_group(
