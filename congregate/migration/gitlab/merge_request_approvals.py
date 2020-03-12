@@ -2,7 +2,6 @@ from requests.exceptions import RequestException
 
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers import api
-from congregate.migration.gitlab.version import VersionClient
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.users import UsersApi
@@ -10,11 +9,9 @@ from congregate.migration.gitlab.api.users import UsersApi
 
 class MergeRequestApprovalsClient(BaseClass):
     def __init__(self):
-        self.version = VersionClient()
         self.users_api = UsersApi()
         self.groups_api = GroupsApi()
         self.projects_api = ProjectsApi()
-        self.break_change_version = "11.10.0"
         super(MergeRequestApprovalsClient, self).__init__()
 
     def are_enabled(self, pid):
@@ -32,7 +29,6 @@ class MergeRequestApprovalsClient(BaseClass):
             else:
                 self.log.warning(
                     "Merge requests are disabled for project {}".format(name))
-                return False
         except RequestException as re:
             self.log.error(
                 "Failed to migrate project-level MR approvals for {0}, with error:\n{1}".format(name, re))
@@ -54,9 +50,17 @@ class MergeRequestApprovalsClient(BaseClass):
             "Migrating project-level MR approval rules for {0} (ID: {1})".format(name, old_id))
 
         for rule in approval_rules:
-            rule_params = self.get_project_level_rule_params(rule)
+            user_ids, group_ids, protected_branch_ids = self.get_missing_rule_params(
+                rule, new_id)
+            data = {
+                "name": rule["name"],
+                "approvals_required": rule["approvals_required"],
+                "user_ids": user_ids,
+                "group_ids": group_ids,
+                "protected_branch_ids": protected_branch_ids
+            }
             self.projects_api.create_project_level_mr_approval_rule(
-                new_id, self.config.destination_host, self.config.destination_token, rule_params)
+                new_id, self.config.destination_host, self.config.destination_token, data)
 
     def migrate_mr_level_mr_approvals(self, old_id, new_id, name):
         pass
@@ -89,16 +93,16 @@ class MergeRequestApprovalsClient(BaseClass):
                 user['email'], new_user))
         return user_ids
 
-    def get_missing_rule_params(self, rule):
+    def get_missing_rule_params(self, rule, pid):
         user_ids = []
         group_ids = []
-        protected_branch_ids = []
+        p_branch_ids = []
         for user in rule["users"]:
             if user.get("id", None) is not None:
                 user = self.users_api.get_user(
                     user["id"], self.config.source_host, self.config.source_token).json()
                 new_user = api.search(
-                    self.config.destination_host, self.config.destination_token, 'users', user['email'])
+                    self.config.destination_host, self.config.destination_token, "users", user["email"])
                 user_ids = self.user_search_check_and_log(
                     new_user, user, user_ids)
         for group in rule["groups"]:
@@ -115,16 +119,10 @@ class MergeRequestApprovalsClient(BaseClass):
                         group_ids.append(new_group["id"])
                         break
         for p_branch in rule["protected_branches"]:
-            pass
-        return user_ids, group_ids, protected_branch_ids
+            if p_branch.get("name", None) is not None:
+                p_branch = self.projects_api.get_single_project_protected_branch(
+                    pid, p_branch["name"], self.config.destination_host, self.config.destination_token).json()
+                if p_branch.get("id", None) is not None:
+                    p_branch_ids.append(p_branch["id"])
 
-    def get_project_level_rule_params(self, rule):
-        user_ids, group_ids, protected_branch_ids = self.get_missing_rule_params(
-            rule)
-        return {
-            "name": rule["name"],
-            "approvals_required": rule["approvals_required"],
-            "user_ids": user_ids,
-            "group_ids": group_ids,
-            "protected_branch_ids": protected_branch_ids
-        }
+        return user_ids, group_ids, p_branch_ids

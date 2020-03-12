@@ -453,6 +453,20 @@ class ProjectsApi():
         """
         return api.list_all(host, token, "projects/%d/protected_branches" % id)
 
+    def get_single_project_protected_branch(self, pid, name, host, token):
+        """
+        Gets a single protected branch or wildcard protected branch.
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/protected_branches.html#get-a-single-protected-branch-or-wildcard-protected-branch
+
+            :param: pid: (int) GitLab project ID
+            :param: name: (str) GitLab project branch or wildcard name
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Generator returning JSON of each result from GET /projects/:id/protected_branches/:name
+        """
+        return api.generate_get_request(host, token, "projects/{0}/protected_branches/{1}".format(pid, quote_plus(name)))
+
     def get_all_project_protected_environments(self, id, host, token):
         """
         Gets a list of protected environments from a project
