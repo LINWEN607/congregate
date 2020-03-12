@@ -43,7 +43,7 @@ Usage:
     congregate validate-staged-projects-schema
     congregate map-users [--commit]
     congregate generate-diff [--staged]
-    congregate clean
+    congregate clean [--commit]
     congregate obfuscate
     congregate -h | --help
 
@@ -339,7 +339,7 @@ if __name__ == '__main__':
             if arguments["map-users"]:
                 map_users(dry_run=DRY_RUN)
             if arguments["clean"]:
-                clean_data()
+                clean_data(dry_run=DRY_RUN)
             if arguments["generate-diff"]:
                 user_diff = UserDiffClient(
                     "/data/user_migration_results.json", staged=STAGED)
