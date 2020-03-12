@@ -395,7 +395,8 @@ def handle_importing_projects(project_json, dry_run=True):
             namespace,
             name)
         if project_id:
-            import_check = ie.get_import_status(project_id).json()
+            import_check = projects_api.get_project_import_status(
+                b.config.destination_host, b.config.destination_token, project_id).json()
             b.log.info("Project {0} (ID: {1}) found on destination, with import status: {2}".format(
                 dst_path,
                 project_id,

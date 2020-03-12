@@ -174,6 +174,19 @@ class GroupsApi():
         """
         return api.generate_post_request(host, token, "groups/{}/export".format(gid), data=data, headers=headers)
 
+    def get_group_download_status(self, host, token, gid):
+        """
+        Download the finished export
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/group_import_export.html#export-download
+
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :param: gid: (int) GitLab group ID
+            :return: The exported archive
+        """
+        return api.generate_get_request(host, token, "groups/%d/export/download" % gid)
+
     def import_group(self, host, token, data=None, files=None, headers=None):
         """
         Import a group using the groups api
@@ -354,7 +367,7 @@ class GroupsApi():
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /groups/:id/variables
         """
-        return api.list_all(host, token, "groups/%d/variables" % gid)
+        return api.generate_get_request(host, token, "groups/%d/variables" % gid)
 
     def create_group_variable(self, gid, host, token, data):
         """
@@ -369,3 +382,16 @@ class GroupsApi():
             :return: Response object containing the response to POST /groups/:id/variables
         """
         return api.generate_post_request(host, token, "groups/%d/variables" % gid, json.dumps(data))
+
+    def get_all_group_badges(self, gid, host, token):
+        """
+        Gets a list of all badges for a given group
+
+        https://docs.gitlab.com/ee/api/group_badges.html#list-all-badges-of-a-group
+
+            :param: gid: (int) GitLab group ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Generator returning JSON of each result from GET /groups/:id/badges
+        """
+        return api.list_all(host, token, "groups/%d/badges" % gid)

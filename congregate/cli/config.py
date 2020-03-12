@@ -1,4 +1,4 @@
-from os import getcwd, path, mkdir
+from os import getcwd, path, mkdir, makedirs
 from ConfigParser import SafeConfigParser as ConfigParser, NoOptionError
 
 from congregate.helpers.misc_utils import get_congregate_path, obfuscate, deobfuscate
@@ -187,8 +187,13 @@ def write_to_file(config):
     if not path.isdir("{}/data".format(app_path)):
         mkdir("{}/data".format(app_path))
     if config.has_option("EXPORT", "filesystem_path") and config.get("EXPORT", "filesystem_path"):
-        if not path.isdir("{}/downloads".format(config.get("EXPORT", "filesystem_path"))):
-            mkdir("{}/downloads".format(config.get("EXPORT", "filesystem_path")))
+        down_dir = config.get("EXPORT", "filesystem_path")
+        sub_dir = "downloads"
+        if not path.isdir("{0}/{1}".format(down_dir, sub_dir)):
+            print(
+                "Filesystem path {} sub-folder 'downloads' does not exist. Creating it...".format(down_dir))
+            f_path = path.join(down_dir, sub_dir)
+            makedirs(f_path)
     with open(config_path, "w") as f:
         print("Writing configuration to file ({})...".format(config_path))
         config.write(f)

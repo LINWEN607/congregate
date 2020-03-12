@@ -7,11 +7,15 @@ from urllib2 import HTTPError
 from congregate.helpers import api, conf
 from congregate.helpers import logger as log
 from congregate.helpers.misc_utils import parse_query_params
+from congregate.migration.gitlab.api.projects import ProjectsApi
+from congregate.migration.gitlab.api.project_repository import ProjectRepositoryApi
 
 
 class gitlab_repo:
     def __init__(self):
         self.conf = conf.Config()
+        self.project_repository_api = ProjectRepositoryApi()
+        self.projects_api = ProjectsApi()
         self.l = log.myLogger(__name__)
 
     '''
@@ -20,17 +24,15 @@ class gitlab_repo:
     '''
 
     def get_branches(self, id, search=None, include_count=False):
+        search_query = ""
         if search is not None:
             search_query = "?search=%s" % search
-        else:
-            search_query = ""
         try:
-            resp = api.generate_get_request(
+            resp = self.project_repository_api.get_all_project_repository_branches(
                 self.conf.destination_host,
                 self.conf.destination_token,
-                "projects/%d/repository/branches%s" %
-                (id,
-                 search_query))
+                id,
+                search_query)
             resp_json = json.load(resp)
             if include_count:
                 resp_json = {
@@ -48,12 +50,11 @@ class gitlab_repo:
 
     def get_single_branch(self, id, branch):
         try:
-            resp = api.generate_get_request(
+            resp = self.project_repository_api.get_single_project_repository_branch(
                 self.conf.destination_host,
                 self.conf.destination_token,
-                "projects/%d/repository/branches/%s" %
-                (id,
-                 urllib.quote_plus(branch)))
+                id,
+                branch)
             return json.load(resp)
         except HTTPError:
             return None
@@ -69,12 +70,11 @@ class gitlab_repo:
         params.pop('self', None)
         params.pop('id', None)
         query_params = parse_query_params(params)
-        resp = api.generate_get_request(
+        resp = self.project_repository_api.get_all_project_repository_commits(
             self.conf.destination_host,
             self.conf.destination_token,
-            "projects/%d/repository/commits%s" %
-            (id,
-             query_params))
+            id,
+            query_params)
         if include_count:
             resp = {
                 "response": resp,
@@ -89,12 +89,11 @@ class gitlab_repo:
 
     def get_single_commit(self, id, sha):
         try:
-            resp = api.generate_get_request(
+            resp = self.project_repository_api.get_single_project_repository_commit(
                 self.conf.destination_host,
                 self.conf.destination_token,
-                "projects/%d/repository/commits/%s" %
-                (id,
-                 sha))
+                id,
+                sha)
             return json.load(resp)
         except HTTPError:
             return None
@@ -109,34 +108,28 @@ class gitlab_repo:
             query_param = ""
             if reftype is not None:
                 query_param = "?type=%s" % reftype
-
-            resp = api.generate_get_request(
+            resp = self.project_repository_api.get_project_repository_commit_refs(
                 self.conf.destination_host,
                 self.conf.destination_token,
-                "projects/%d/repository/commits/%s/refs%s" %
-                (id,
-                 sha,
-                 query_param))
+                id,
+                sha,
+                query_param)
             return json.load(resp)
         except HTTPError:
             return None
 
     def get_mirror_url(self, id):
         resp = json.load(
-            api.generate_get_request(
+            self.projects_api.get_project(
+                id,
                 self.conf.destination_host,
-                self.conf.destination_token,
-                "projects/%d" %
-                id))
+                self.conf.destination_token))
         return resp["import_url"]
 
     def search_for_project(self, name, group, search_name):
-        for project in api.list_all(self.conf.destination_host,
+        for project in self.projects_api.search_for_project(self.conf.destination_host,
                                     self.conf.destination_token,
-                                    "projects",
-                                    params={
-                                        "search": urllib.quote_plus(name)
-                                    }):
+                                    name):
             # with_group = ("%s/%s" % (group.replace(" ", "_"), name.replace(" ", "-"))).lower()
             with_group = ("%s/%s" % (group.replace(" ", "_"), re.sub(r"\.| ", "-", name))).lower()
             pwn = project["path_with_namespace"]

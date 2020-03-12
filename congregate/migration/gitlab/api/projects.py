@@ -1,6 +1,7 @@
 import json
 from urllib import quote_plus
 from congregate.helpers import api
+from urllib import urlencode
 
 
 class ProjectsApi():
@@ -209,6 +210,19 @@ class ProjectsApi():
         """
         return api.generate_post_request(host, token, "projects/{}/export".format(pid), data=data, headers=headers)
 
+    def get_project_export_status(self, id, host, token):
+        """
+        Get the status of export
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/project_import_export.html#export-status
+
+            :param: id: (int) GitLab project ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Response object containing the response to GET /projects/:id/export
+        """
+        return api.generate_get_request(host, token, "projects/%d/export" % id)
+
     def import_project(self, host, token, data=None, files=None, headers=None):
         """
         Import a project using the Projects export/import API
@@ -220,6 +234,19 @@ class ProjectsApi():
             :param: headers: (str) The headers for the API request
         """
         return api.generate_post_request(host, token, "projects/import", data=data, files=files, headers=headers)
+
+    def get_project_import_status(self, host, token, pid):
+        """
+        Get the status of an import
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/project_import_export.html#import-status
+
+            :param: id: (int) GitLab project ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Response object containing the response to GET /projects/:id/import
+        """
+        return api.generate_get_request(host, token, "projects/%d/import" % pid)
 
     def get_all_project_users(self, id, host, token):
         """
@@ -386,10 +413,9 @@ class ProjectsApi():
             :param: id: (int) GitLab project ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
-            :yield: Generator returning JSON of each result from GET /projects/:id/variables
+            :yield: Response object containing the response to GET /projects/:id/variables
         """
-        return api.list_all(host, token, "projects/%d/variables" % id)
-
+        return api.generate_get_request(host, token, "projects/%d/variables" % id)
 
     def create_project_variable(self, id, host, token, data):
         """
@@ -523,7 +549,46 @@ class ProjectsApi():
         """
         return api.list_all(host, token, "projects/%d/pipeline_schedules" % id)
 
-    def get_all_project_hooks(self, id, host, token):
+    def get_single_project_pipeline_schedule(self, pid, sid, host, token):
+        """
+        Get the pipeline schedule of a project.
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/pipeline_schedules.html#get-a-single-pipeline-schedule
+
+            :param: pid: (int) GitLab project ID
+            :param: sid: (int) Schedule ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Generator returning JSON of each result from GET /projects/:id/pipeline_schedules/:pipeline_schedule_id
+        """
+        return api.list_all(host, token, "projects/%d/pipeline_schedules/%d" % (pid, sid))
+
+    def create_new_project_pipeline_schedule(self, host, token, pid, data):
+        """
+        Add a hook to a specified project
+
+        GitLab API doc: https://docs.gitlab.com/ee/api/pipeline_schedules.html#create-a-new-pipeline-schedule
+
+            :param: pid: (int) GitLab project ID
+            :param: data: (dict) Object containing the various data required for creating a pipeline schedule
+            :return: Response object containing the response to POST /projects/:id/pipeline_schedules
+        """
+        return api.generate_post_request(host, token, "projects/%d/pipeline_schedules" % pid, json.dumps(data))
+
+    def create_new_project_pipeline_schedule_variable(self, pid, sid, host, token, data):
+        """
+        Create a new variable of a pipeline schedule.
+
+        GitLab API doc: https://docs.gitlab.com/ee/api/pipeline_schedules.html#create-a-new-pipeline-schedule-variable
+
+            :param: pid: (int) GitLab project ID
+            :param: sid: (int) Schedule ID
+            :param: data: (dict) Object containing the various data required for creating a pipeline schedule variable
+            :return: Response object containing the response to POST /projects/:id/pipeline_schedules/:pipeline_schedule_id/variables
+        """
+        return api.generate_post_request(host, token, "projects/%d/pipeline_schedules/%d/variables" % (pid, sid), json.dumps(data))
+
+    def get_all_project_hooks(self, host, token, pid):
         """
         Get a list of project hooks
 
@@ -534,7 +599,19 @@ class ProjectsApi():
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /projects/:id/hooks
         """
-        return api.list_all(host, token, "projects/%d/hooks" % id)
+        return api.list_all(host, token, "projects/%d/hooks" % pid)
+
+    def add_project_hook(self, host, token, pid, data):
+        """
+        Add a hook to a specified project
+
+        GitLab API doc: https://docs.gitlab.com/ee/api/projects.html#add-project-hook
+
+            :param: pid: (int) GitLab project ID
+            :param: data: (dict) Object containing the various data requried for creating a hook. Refer to the link above for specific examples
+            :return: Response object containing the response to POST /projects/:id/hooks
+        """
+        return api.generate_post_request(host, token, "projects/{}/hooks".format(pid), json.dumps(data))
 
     def get_all_project_push_rules(self, id, host, token):
         """
@@ -547,7 +624,21 @@ class ProjectsApi():
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /projects/:id/push_rule
         """
-        return api.list_all(host, token, "projects/%d/push_rule" % id)
+        return api.generate_get_request(host, token, "projects/%d/push_rule" % id)
+
+    def create_project_push_rule(self, id, host, token, data):
+        """
+        Adds a push rule to a specified project
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/projects.html#add-project-push-rule
+
+            :param: id: (int) GitLab project ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :param: data: (str) Relevant data for creating a push rule
+            :return: Response object containing the response to POST /projects/:id/push_rule
+        """
+        return api.generate_post_request(host, token, "projects/%d/push_rule" % id, json.dumps(data))
 
     def get_all_project_approval_configuration(self, id, host, token):
         """
@@ -560,7 +651,58 @@ class ProjectsApi():
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /projects/:id/approvals
         """
-        return api.list_all(host, token, "projects/%d/approvals" % id)
+        return api.generate_get_request(host, token, "projects/%d/approvals" % id)
+
+    def get_all_project_approval_settings(self, id, host, token):
+        """
+        Get all project approval rules (Private API subject to change)
+
+            :param: id: (int) GitLab project ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Generator returning JSON of each result from GET /projects/:id/approval_settings
+        """
+        return api.generate_get_request(host, token, "projects/%d/approval_settings" % id)
+
+    def create_approval_settings_rule(self, id, host, token, data):
+        """
+        Create project approval rule (Private API subject to change)
+
+            :param: id: (int) GitLab project ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :param: data: (str) Relevant data for approval rule
+            :return: Response object containing the response to POST /projects/:id/approval_settings/rules
+        """
+        return api.generate_post_request(host, token, "projects/%d/approval_settings/rules" % id, json.dumps(data))
+
+    def set_approval_configuration(self, id, host, token, data):
+        """
+        Change the approval configuration of a project
+
+         GitLab API Doc: https://docs.gitlab.com/ee/api/merge_request_approvals.html#change-configuration
+
+            :param: id: (int) GitLab project ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :param: data: (str) Relevant data for approval configuration
+            :return: Response object containing the response to PUT /projects/:id/approvals
+        """
+        return api.generate_put_request(host, token, "projects/%d/approvers?%s" % (id, urlencode(data)), None)
+
+    def set_approvers(self, id, host, token, data):
+        """
+        Change the approval configuration of a project
+
+        GitLab API Doc:https://docs.gitlab.com/ee/api/merge_request_approvals.html#change-allowed-approvers
+
+            :param: id: (int) GitLab project ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :param: data: (str) Relevant data for approvers
+            :return: Response object containing the response to PUT /projects/:id/approvers
+        """
+        return api.generate_put_request(host, token, "projects/%d/approvals?%s" % (id, urlencode(data)), None)
 
     def get_all_project_approval_rules(self, id, host, token):
         """
@@ -601,6 +743,21 @@ class ProjectsApi():
             :yield: Generator returning JSON of each result from GET /projects/:id/registry/repositories/:repository_id/tags
         """
         return api.list_all(host, token, "projects/{0}/registry/repositories/{1}/tags".format(pid, rid))
+
+    def get_project_registry_repository_tag_details(self, pid, rid, tag_name, host, token):
+        """
+        Get a list of tags for given registry repository
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/container_registry.html#get-details-of-a-registry-repository-tag
+
+            :param: pid: (int) GitLab project ID
+            :param: rid: (int) Repository ID
+            :param: tag_name: (int) Tag name
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Response object containing the response to GET /projects/:id/registry/repositories/:repository_id/tags/:tag_name
+        """
+        return api.generate_get_request(host, token, "projects/%d/registry/repositories/%d/tags/%s" % (pid, rid, tag_name))
 
     def get_all_project_feature_flags(self, id, host, token):
         """
@@ -731,7 +888,7 @@ class ProjectsApi():
     def get_environment(self, project_id, env_id, host, token):
         """
         Get a specific environment
-        
+
         GitLab API Doc: https://docs.gitlab.com/ee/api/environments.html#get-a-specific-environment
 
             :param: project_id: (int) GitLab project ID
@@ -746,7 +903,7 @@ class ProjectsApi():
     def get_all_environments(self, project_id, host, token):
         """
         Get a specific environment
-        
+
         GitLab API Doc: https://docs.gitlab.com/ee/api/environments.html#get-a-specific-environment
 
             :param: project_id: (int) GitLab project ID
@@ -760,7 +917,7 @@ class ProjectsApi():
     def create_environment(self, host, token, project_id, data):
         """
         Creates a new environment
-        
+
         GitLab API Doc: https://docs.gitlab.com/ee/api/environments.html#create-a-new-environment
 
             :param: host: (str) GitLab host URL
