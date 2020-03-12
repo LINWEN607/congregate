@@ -3,6 +3,7 @@ import unittest
 import mock
 import responses
 from congregate.migration.gitlab.importexport import ImportExportClient
+from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.tests.mockapi.groups import MockGroupsApi
 
 
@@ -199,7 +200,7 @@ class ImportExportClientTests(unittest.TestCase):
         self.assertEqual(
             self.ie.check_is_project_or_group_for_logging(False), "Group")
 
-    @mock.patch.object(ImportExportClient, "get_group_download_status")
+    @mock.patch.object(GroupsApi, "get_group_download_status")
     def test_wait_for_group_download_200(self, mock_get_group_download_status):
         ok_response_mock = mock.MagicMock()
         type(ok_response_mock).status_code = mock.PropertyMock(
@@ -207,7 +208,7 @@ class ImportExportClientTests(unittest.TestCase):
         mock_get_group_download_status.return_value = ok_response_mock
         self.assertTrue(self.ie.wait_for_group_download(1))
 
-    @mock.patch.object(ImportExportClient, "get_group_download_status")
+    @mock.patch.object(GroupsApi, "get_group_download_status")
     @mock.patch('congregate.helpers.conf.Config.importexport_wait', new_callable=mock.PropertyMock)
     @mock.patch('congregate.helpers.conf.Config.max_export_wait_time', new_callable=mock.PropertyMock)
     def test_wait_for_group_download_404(self, max_wait, wait, mock_get_group_download_status):
@@ -230,7 +231,7 @@ class ImportExportClientTests(unittest.TestCase):
         url.return_value = url_value
         # pylint: disable=no-member
         responses.add(responses.GET, url_value,
-                    json=self.mock_groups.get_group(), status=200)
+                      json=self.mock_groups.get_group(), status=200)
         # pylint: enable=no-member
         self.assertTrue(self.ie.wait_for_group_import("mock"))
 

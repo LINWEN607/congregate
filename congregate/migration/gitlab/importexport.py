@@ -49,9 +49,6 @@ class ImportExportClient(BaseClass):
     def get_group_export_status(self, src_id):
         return api.generate_get_request(self.config.source_host, self.config.source_token, "groups/%d/export" % src_id)
 
-    def get_group_download_status(self, src_id):
-        return self.groups_api.get_group_export_download(self.config.source_host, self.config.source_token, src_id)
-
     def log_wait_time(self, wait_time, is_project, name):
         self.log.info("Waiting %s seconds before skipping %s %s export",
                       str(wait_time),
@@ -64,6 +61,7 @@ class ImportExportClient(BaseClass):
         total_time = 0
         skip = False
         wait_time = self.config.importexport_wait
+        export_type = self.check_is_project_or_group_for_logging(is_project)
         while not exported:
             response = self.get_export_status(source_id, is_project)
             if response.status_code == 200:
@@ -71,16 +69,16 @@ class ImportExportClient(BaseClass):
                 name = response["name"]
                 status = response.get("export_status", "")
                 if status == "finished":
-                    self.log.info("%s %s has finished exporting",
-                                  self.check_is_project_or_group_for_logging(is_project), name)
+                    self.log.info(
+                        "{0} {1} has finished exporting".format(export_type, name))
                     exported = True
                 elif status == "failed":
-                    self.log.error("%s %s export failed", self.check_is_project_or_group_for_logging(
-                        is_project), name)
+                    self.log.error(
+                        "{0} {1} export failed".format(export_type, name))
                     break
                 elif status == "none":
                     self.log.info(
-                        "No export status could be found for %s %s", str(self.check_is_project_or_group_for_logging(is_project)).lower(), name)
+                        "No export status could be found for {0} {1}".format(export_type, name))
                     if not skip:
                         self.log_wait_time(wait_time, is_project, name)
                         sleep(wait_time)
@@ -93,9 +91,12 @@ class ImportExportClient(BaseClass):
                         total_time += wait_time
                         sleep(wait_time)
                     else:
-                        self.log.warning(
-                            "Time limit exceeded. Going to attempt to download anyway")
-                        exported = True
+                        response = self.groups_api.get_group_download_status(
+                            self.config.source_host, self.config.source_token, source_id)
+                        self.log.error("Time limit exceeded, {0} {1} download status: {2}".format(
+                            export_type, name, response))
+                        exported = False
+                        break
             else:
                 self.log.info(
                     "SKIP: Export, source %s %s doesn't exist",
@@ -112,7 +113,8 @@ class ImportExportClient(BaseClass):
         timer = 0
         wait_time = self.config.importexport_wait
         while True:
-            response = self.get_group_download_status(gid)
+            response = self.groups_api.get_group_download_status(
+                self.config.source_host, self.config.source_token, gid)
             if response.status_code == 200:
                 exported = True
                 break
@@ -584,8 +586,8 @@ class ImportExportClient(BaseClass):
                         namespace, name),
                     headers={"PRIVATE-TOKEN": self.config.source_token})
             else:
-                self.log.error("Failed to export project {0} (ID: {1}), with export status '{2}'"
-                               .format(name, pid, exported))
+                self.log.error(
+                    "Failed to export project {0} (ID: {1})".format(name, pid))
         return exported
 
     def export_group_thru_filesystem(self, src_gid, full_path, full_parent_namespace, filename):
