@@ -84,36 +84,3 @@ class BadgesClient(BaseClass):
         except RequestException as re:
             self.log.error("Failed to migrate group {0} (ID: {1}) badges, with error:\n{2}".format(
                 parent_group_path, old_id, re))
-
-    def update_project_badges(self, new_id, name, full_parent_namespace):
-        try:
-            response = self.get_all_project_badges(
-                self.config.destination_host,
-                self.config.destination_token,
-                new_id)
-            badges = iter(response)
-            for badge in badges:
-                # split after hostname and retrieve only remaining path
-                link_url_suffix = badge["link_url"].split("/", 3)[3]
-                image_url_suffix = badge["image_url"].split("/", 3)[3]
-                data = {
-                    "link_url": "{0}/{1}/{2}".format(self.config.destination_host, full_parent_namespace, link_url_suffix),
-                    "image_url": "{0}/{1}/{2}".format(self.config.destination_host, full_parent_namespace, image_url_suffix)
-                }
-                self.edit_project_badge(self.config.destination_host,
-                                        self.config.destination_token,
-                                        new_id,
-                                        badge["id"],
-                                        data=data)
-                self.log.info("Updated project {0} (ID: {1}) badge with data:\n{2}".format(
-                    name, new_id, json_pretty(data)))
-        except TypeError as te:
-            self.log.error(
-                "Project {0} badges {1} {2}".format(name, response, te))
-            return False
-        except RequestException as re:
-            self.log.error("Failed to update project {0} (ID: {1}) badges, with error:\n{3}".format(
-                name, new_id, re))
-            return False
-        else:
-            return True

@@ -462,10 +462,6 @@ def migrate_single_project_info(project, new_id):
     # Shared with groups
     projects.add_shared_groups(old_id, new_id)
 
-    # Update project badges to use destination path hostname
-    results["badges"] = badges.update_project_badges(
-        new_id, name, full_parent_namespace)
-
     # CI/CD Variables
     results["variables"] = variables.migrate_cicd_variables(
         old_id, new_id, name)
