@@ -535,7 +535,7 @@ class ImportExportClient(BaseClass):
                             elif status_json["import_status"] == "failed":
                                 self.log.error(
                                     "Project {0} failed to import ({1})".format(name, status_json["import_error"]))
-                                exported = True
+                                exported = False
                             elif status_json["import_status"] != "started":
                                 # If it is started, we just ignore the status
                                 self.log.warning(

@@ -22,6 +22,7 @@ class DeployKeysClient(BaseClass):
                 key.pop("created_at", None)
                 self.projects_api.create_new_project_deploy_key(
                     new_id, self.config.destination_host, self.config.destination_token, json.dumps(key))
+            return True
         except TypeError as te:
             self.log.error(
                 "Project {0} deploy keys {1} {2}".format(name, response, te))
@@ -30,5 +31,3 @@ class DeployKeysClient(BaseClass):
             self.log.error(
                 "Failed to migrate deploy keys for {0}, with error:\n{1}".format(name, re))
             return False
-        else:
-            return True
