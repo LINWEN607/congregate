@@ -472,9 +472,6 @@ def migrate_single_project_info(project, new_id):
     # Merge Request Approvals
     results["project_level_mr_approvals"] = mr_approvals.migrate_project_level_mr_approvals(
         old_id, new_id, name)
-    # TODO in #252
-    results["mr_level_mr_approvals"] = mr_approvals.migrate_mr_level_mr_approvals(
-        old_id, new_id, name)
 
     # Deploy Keys (project only)
     results["deploy_keys"] = deploy_keys.migrate_deploy_keys(

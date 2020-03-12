@@ -62,9 +62,6 @@ class MergeRequestApprovalsClient(BaseClass):
             self.projects_api.create_project_level_mr_approval_rule(
                 new_id, self.config.destination_host, self.config.destination_token, data)
 
-    def migrate_mr_level_mr_approvals(self, old_id, new_id, name):
-        pass
-
     def user_search_check_and_log(self, new_user, user, user_ids):
         """
         :param new_user: A user entity from API search
