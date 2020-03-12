@@ -3,7 +3,7 @@ import congregate.migration.gitlab.merge_request_approvals as mra
 
 
 # TODO: Mock logging capture
-class MergeRequestApproversTests(unittest.TestCase):
+class MergeRequestApprovalsTests(unittest.TestCase):
 
     @staticmethod
     def test_user_search_check_and_log_new_user_empty_returns_base_approver_ids():

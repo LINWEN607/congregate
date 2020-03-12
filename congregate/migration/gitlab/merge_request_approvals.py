@@ -26,8 +26,8 @@ class MergeRequestApprovalsClient(BaseClass):
         try:
             if self.are_enabled(old_id):
                 self.log.info(
-                    "Migrating merge request approvers for {}".format(name))
-                self.migrate_project_approvals(new_id, old_id)
+                    "Migrating project-level MR approvals for {}".format(name))
+                self.migrate_project_approvals(new_id, old_id, name)
                 return True
             else:
                 self.log.warning(
@@ -35,24 +35,28 @@ class MergeRequestApprovalsClient(BaseClass):
                 return False
         except RequestException as re:
             self.log.error(
-                "Failed to migrate {0} merge request approvers, with error:\n{1}".format(name, re))
+                "Failed to migrate project-level MR approvals for {0}, with error:\n{1}".format(name, re))
             return False
 
-    def migrate_project_approvals(self, new_id, old_id):
+    def migrate_project_approvals(self, new_id, old_id, name):
         # migrate configuration
-        approval_data = self.projects_api.get_project_level_mr_approval_configuration(
+        configuration = self.projects_api.get_project_level_mr_approval_configuration(
             old_id, self.config.source_host, self.config.source_token).json()
-        self.change_project_approval_configuration(new_id, approval_data)
+        self.log.info(
+            "Migrating project-level MR approval configuration for {0} (ID: {1})".format(name, old_id))
+        self.projects_api.change_project_level_mr_approval_configuration(
+            new_id, self.config.destination_host, self.config.destination_token, configuration)
 
         # migrate approval rules
-        project_level_approval_rules = self.projects_api.get_all_project_level_mr_approval_rules(
+        approval_rules = self.projects_api.get_all_project_level_mr_approval_rules(
             old_id, self.config.source_host, self.config.source_token)
+        self.log.info(
+            "Migrating project-level MR approval rules for {0} (ID: {1})".format(name, old_id))
 
-        for rule in project_level_approval_rules:
-            project_level_rule_params = self.get_project_level_rule_params(
-                rule)
+        for rule in approval_rules:
+            rule_params = self.get_project_level_rule_params(rule)
             self.projects_api.create_project_level_mr_approval_rule(
-                new_id, self.config.destination_host, self.config.destination_token, project_level_rule_params)
+                new_id, self.config.destination_host, self.config.destination_token, rule_params)
 
     def migrate_mr_level_mr_approvals(self, old_id, new_id, name):
         pass
@@ -76,22 +80,16 @@ class MergeRequestApprovalsClient(BaseClass):
                     user_ids.append(new_user_id)
                 else:
                     self.log.warn(
-                        "Could not retrieve user id from {0}"
-                            .format(new_user_dict)
-                    )
+                        "Could not retrieve user id from {0}".format(new_user_dict))
             else:
                 self.log.warn(
-                    "Could not retrieve user dictionary from {0}"
-                        .format(new_user[0])
-                )
+                    "Could not retrieve user dictionary from {0}".format(new_user[0]))
         else:
-            self.log.warn(
-                "Could not find merge request approver email {0} in destination system. {1}"
-                    .format(user['email'], new_user)
-            )
+            self.log.warn("Could not find merge request approver email {0} in destination system. {1}".format(
+                user['email'], new_user))
         return user_ids
 
-    def get_rule_params(self, rule):
+    def get_missing_rule_params(self, rule):
         user_ids = []
         group_ids = []
         protected_branch_ids = []
@@ -120,25 +118,13 @@ class MergeRequestApprovalsClient(BaseClass):
             pass
         return user_ids, group_ids, protected_branch_ids
 
-    def change_project_approval_configuration(self, new_id, approval_data):
-        approval_configuration = {
-            "approvals_before_merge": approval_data["approvals_before_merge"],
-            "reset_approvals_on_push": approval_data["reset_approvals_on_push"],
-            "disable_overriding_approvers_per_merge_request": approval_data["disable_overriding_approvers_per_merge_request"],
-            "merge_requests_author_approval": approval_data["merge_requests_author_approval"],
-            "merge_requests_disable_committers_approval": approval_data["merge_requests_disable_committers_approval"],
-            "require_password_to_approve": approval_data["require_password_to_approve"]
-        }
-        self.projects_api.change_project_level_mr_approval_configuration(
-            new_id, self.config.destination_host, self.config.destination_token, approval_configuration)
-
     def get_project_level_rule_params(self, rule):
-        for r in rule:
-            user_ids, group_ids, protected_branch_ids = self.get_rule_params(r)
-            yield {
-                "name": rule["name"],
-                "approvals_required": rule["approvals_required"],
-                "user_ids": user_ids,
-                "group_ids": group_ids,
-                "protected_branch_ids": protected_branch_ids
-            }
+        user_ids, group_ids, protected_branch_ids = self.get_missing_rule_params(
+            rule)
+        return {
+            "name": rule["name"],
+            "approvals_required": rule["approvals_required"],
+            "user_ids": user_ids,
+            "group_ids": group_ids,
+            "protected_branch_ids": protected_branch_ids
+        }

@@ -10,7 +10,7 @@ class ProjectsApi():
         """
         Search for projects by name which are accessible to the authenticated user
 
-        #search-for-projects-by-name
+        # search-for-projects-by-name
         GitLab API Doc: https://docs.gitlab.com/ee/api/projects.html
 
             :param: host: (str) GitLab host URL
@@ -63,7 +63,7 @@ class ProjectsApi():
         """
         Gets a list of group or project members viewable by the authenticated user
 
-        #list-all-members-of-a-group-or-project
+        # list-all-members-of-a-group-or-project
         GitLab API Doc: https://docs.gitlab.com/ee/api/members.html
 
             :param: id: (int) GitLab project ID
@@ -78,7 +78,7 @@ class ProjectsApi():
         """
         Adds a member to a group or project
 
-        #add-a-member-to-a-group-or-project
+        # add-a-member-to-a-group-or-project
         GitLab API Doc: https://docs.gitlab.com/ee/api/members.html
 
             :param: id: (int) GitLab project ID
@@ -109,7 +109,7 @@ class ProjectsApi():
         """
         Removes member from project
 
-        #remove-a-member-from-a-group-or-project
+        # remove-a-member-from-a-group-or-project
         GitLab API Doc: https://docs.gitlab.com/ee/api/members.html
 
             :param: id: (int) GitLab project ID
@@ -190,7 +190,7 @@ class ProjectsApi():
     def start_pull_mirror(self, host, token, pid, data=None):
         """
         Start the pull mirroring process for a Project
-        #start-the-pull-mirroring-process-for-a-project-starter
+        # start-the-pull-mirroring-process-for-a-project-starter
         GitLab API doc: https://docs.gitlab.com/ee/api/projects.html
 
             :param: id: (int) GitLab project ID
@@ -283,7 +283,7 @@ class ProjectsApi():
         """
         Gets a list of project members viewable by the authenticated user, including inherited members through ancestor groups
 
-        #list-all-members-of-a-group-or-project-including-inherited-members
+        # list-all-members-of-a-group-or-project-including-inherited-members
         GitLab API Doc: GitLab API Doc: https://docs.gitlab.com/ee/api/members.html
 
             :param: id: (int) GitLab project ID
@@ -401,7 +401,7 @@ class ProjectsApi():
         """
         Get a list of visible events for a particular project
 
-        #list-a-projects-visible-events
+        # list-a-projects-visible-events
         GitLab API Doc: https://docs.gitlab.com/ee/api/events.html
 
             :param: id: (int) GitLab project ID
@@ -415,7 +415,7 @@ class ProjectsApi():
         """
         Get list of variables for the given project
 
-        #list-project-variables
+        # list-project-variables
         GitLab API Doc: https://docs.gitlab.com/ee/api/project_level_variables.html
 
             :param: id: (int) GitLab project ID
@@ -443,7 +443,7 @@ class ProjectsApi():
         """
         Gets a list of protected branches from a project
 
-        #list-protected-branches
+        # list-protected-branches
         GitLab API Doc: https://docs.gitlab.com/ee/api/protected_branches.html
 
             :param: id: (int) GitLab project ID
@@ -457,7 +457,7 @@ class ProjectsApi():
         """
         Gets a list of protected environments from a project
 
-        #list-protected-environments
+        # list-protected-environments
         GitLab API Doc: https://docs.gitlab.com/ee/api/protected_environments.html
 
             :param: id: (int) GitLab project ID
@@ -523,7 +523,7 @@ class ProjectsApi():
         """
         Get a list of build triggers for a given project
 
-        #list-project-triggers
+        # list-project-triggers
         GitLab API Doc: https://docs.gitlab.com/ee/api/pipeline_triggers.html
 
             :param: id: (int) GitLab project ID
@@ -537,7 +537,7 @@ class ProjectsApi():
         """
         Get variables of a given pipeline
 
-        #get-variables-of-a-pipeline
+        # get-variables-of-a-pipeline
         GitLab API Doc: https://docs.gitlab.com/ee/api/pipelines.html
 
             :param: prid: (int) GitLab project ID
@@ -552,7 +552,7 @@ class ProjectsApi():
         """
         Get a list of the pipeline schedules of a project
 
-        #get-all-pipeline-schedules
+        # get-all-pipeline-schedules
         GitLab API Doc: https://docs.gitlab.com/ee/api/pipeline_schedules.html
 
             :param: id: (int) GitLab project ID
@@ -566,7 +566,7 @@ class ProjectsApi():
         """
         Get the pipeline schedule of a project.
 
-        #get-a-single-pipeline-schedule
+        # get-a-single-pipeline-schedule
         GitLab API Doc: https://docs.gitlab.com/ee/api/pipeline_schedules.html
 
             :param: pid: (int) GitLab project ID
@@ -581,7 +581,7 @@ class ProjectsApi():
         """
         Add a hook to a specified project
 
-        #create-a-new-pipeline-schedule
+        # create-a-new-pipeline-schedule
         GitLab API doc: https://docs.gitlab.com/ee/api/pipeline_schedules.html
 
             :param: pid: (int) GitLab project ID
@@ -594,7 +594,7 @@ class ProjectsApi():
         """
         Create a new variable of a pipeline schedule.
 
-        #create-a-new-pipeline-schedule-variable
+        # create-a-new-pipeline-schedule-variable
         GitLab API doc: https://docs.gitlab.com/ee/api/pipeline_schedules.html
 
             :param: pid: (int) GitLab project ID
@@ -673,7 +673,7 @@ class ProjectsApi():
         """
         Change the approval configuration of a project
 
-         #change-configuration
+         # change-configuration
          GitLab API Doc: https://docs.gitlab.com/ee/api/merge_request_approvals.html
 
             :param: pid: (int) GitLab project ID
@@ -682,13 +682,13 @@ class ProjectsApi():
             :param: data: (str) Relevant data for approval configuration
             :return: Response object containing the response to PUT /projects/:id/approvals
         """
-        return api.generate_post_request(host, token, "projects/%d/approvals?%s" % (pid, urlencode(data)), None)
+        return api.generate_post_request(host, token, "projects/{}/approvals".format(pid), json.dumps(data))
 
     def get_all_project_level_mr_approval_rules(self, pid, host, token):
         """
         Get the approval rules of a project
 
-        #get-project-level-rules
+        # get-project-level-rules
         GitLab API Doc: https://docs.gitlab.com/ee/api/merge_request_approvals.html
 
             :param: pid: (int) GitLab project ID
@@ -702,7 +702,7 @@ class ProjectsApi():
         """
         Create project-level rule
 
-        #create-project-level-rule
+        # create-project-level-rule
         GitLab API Doc: https://docs.gitlab.com/ee/api/merge_request_approvals.html
 
             :param: pid: (int) GitLab project ID
@@ -711,13 +711,13 @@ class ProjectsApi():
             :param: data: (str) Relevant data for approval rule
             :yield: Generator returning JSON of each result from POST /projects/:id/approval_rules
         """
-        return api.generate_post_request(host, token, "projects/%d/approval_rules?%s" % (pid, urlencode(data)), None)
+        return api.generate_post_request(host, token, "projects/{}/approval_rules".format(pid), json.dumps(data))
 
     def get_all_project_registry_repositories(self, id, host, token):
         """
         Get a list of registry repositories in a project
 
-        #list-registry-repositories
+        # list-registry-repositories
         GitLab API Doc: https://docs.gitlab.com/ee/api/container_registry.html
 
             :param: id: (int) GitLab project ID
@@ -731,7 +731,7 @@ class ProjectsApi():
         """
         Get a list of tags for given registry repository
 
-        #list-registry-repository-tags
+        # list-registry-repository-tags
         GitLab API Doc: https://docs.gitlab.com/ee/api/container_registry.html
 
             :param: pid: (int) GitLab project ID
@@ -746,7 +746,7 @@ class ProjectsApi():
         """
         Get a list of tags for given registry repository
 
-        #get-details-of-a-registry-repository-tag
+        # get-details-of-a-registry-repository-tag
         GitLab API Doc: https://docs.gitlab.com/ee/api/container_registry.html
 
             :param: pid: (int) GitLab project ID
@@ -762,7 +762,7 @@ class ProjectsApi():
         """
         Gets all feature flags of the requested project
 
-        #list-feature-flags-for-a-project
+        # list-feature-flags-for-a-project
         GitLab API Doc: https://docs.gitlab.com/ee/api/feature_flags.html
 
             :param: id: (int) GitLab project ID
@@ -776,7 +776,7 @@ class ProjectsApi():
         """
         Get all custom attributes on a resource
 
-        #list-custom-attributes
+        # list-custom-attributes
         GitLab API Doc: https://docs.gitlab.com/ee/api/custom_attributes.html
 
             :param: id: (int) GitLab project ID
@@ -816,7 +816,7 @@ class ProjectsApi():
         """
         Get a list of all award emoji for a specified project snippet
 
-        #list-an-awardables-award-emoji
+        # list-an-awardables-award-emoji
         GitLab API Doc: https://docs.gitlab.com/ee/api/award_emoji.html
 
             :param: project_id: (int) GitLab group ID
@@ -846,7 +846,7 @@ class ProjectsApi():
         """
         Get all award emoji for an snippet note
 
-        #get-an-award-emoji-for-a-comment
+        # get-an-award-emoji-for-a-comment
         GitLab API Doc: https://docs.gitlab.com/ee/api/award_emoji.html
 
             :param: project_id: (int) GitLab group ID
@@ -862,7 +862,7 @@ class ProjectsApi():
         """
         Create an award emoji on the specified project snippet note
 
-        #award-a-new-emoji-on-a-comment
+        # award-a-new-emoji-on-a-comment
         GitLab API Doc: https://docs.gitlab.com/ee/api/award_emoji.html
 
             :param: project_id: (int) GitLab project ID
@@ -893,7 +893,7 @@ class ProjectsApi():
         """
         Get a specific environment
 
-        #get-a-specific-environment
+        # get-a-specific-environment
         GitLab API Doc: https://docs.gitlab.com/ee/api/environments.html
 
             :param: project_id: (int) GitLab project ID
@@ -909,7 +909,7 @@ class ProjectsApi():
         """
         Get a specific environment
 
-        #get-a-specific-environment
+        # get-a-specific-environment
         GitLab API Doc: https://docs.gitlab.com/ee/api/environments.html
 
             :param: project_id: (int) GitLab project ID
@@ -924,7 +924,7 @@ class ProjectsApi():
         """
         Creates a new environment
 
-        #create-a-new-environment
+        # create-a-new-environment
         GitLab API Doc: https://docs.gitlab.com/ee/api/environments.html
 
             :param: host: (str) GitLab host URL
