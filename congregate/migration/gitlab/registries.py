@@ -19,8 +19,8 @@ class RegistryClient(BaseClass):
                                self.config.destination_token, new_id)
         return (src, dest)
 
-    def is_enabled(self, host, token, id):
-        project = self.projects_api.get_project(id, host, token).json()
+    def is_enabled(self, host, token, pid):
+        project = self.projects_api.get_project(pid, host, token).json()
         return project.get("container_registry_enabled", False)
 
     def migrate_registries(self, old_id, new_id, name):
@@ -34,7 +34,7 @@ class RegistryClient(BaseClass):
             else:
                 instance = "source" if not registry[0] else "destination" if not registry[1] else "source and destination"
                 self.log.warning(
-                    "Container registry is disabled for {} instance".format(instance))
+                    "Container registry is disabled for project {0} on {1} instance".format(name, instance))
         except Exception as e:
             self.log.error(
                 "Failed to migrate project {0} (ID: {1}) container registries, with error:\n{2}".format(name, old_id, e))

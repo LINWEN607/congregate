@@ -1,14 +1,12 @@
 import json
 from urllib import quote_plus
-from io import BytesIO
-from os import walk
 from requests.exceptions import RequestException
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers import api
 from congregate.helpers.misc_utils import get_dry_log
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.groups import GroupsApi
+from congregate.helpers.migrate_utils import get_project_namespace, is_user_project, get_user_project_namespace
 
 
 class ProjectsClient(BaseClass):
@@ -121,17 +119,12 @@ class ProjectsClient(BaseClass):
                     return True, project["id"]
         return False, None
 
-    def get_path_with_namespace(self, project):
-        return "{0}{1}/{2}".format(
-            self.config.parent_group_path + "/" if self.config.parent_group_path else "",
-            project["namespace"].replace(" ", "-"),
-            project["name"].replace(" ", "-"))
-
     def delete_projects(self, dry_run=True):
         staged_projects = self.get_staged_projects()
         for sp in staged_projects:
             # SaaS destination instances have a parent group
-            path_with_namespace = self.get_path_with_namespace(sp)
+            path_with_namespace = "{0}/{1}".format(get_user_project_namespace(sp) if is_user_project(
+                sp) else get_project_namespace(sp), sp["name"].replace(" ", "-"))
             self.log.info("Removing project {}".format(path_with_namespace))
             resp = self.projects_api.get_project_by_path_with_namespace(
                 path_with_namespace,
@@ -170,7 +163,7 @@ class ProjectsClient(BaseClass):
             for project in staged_projects:
                 self.log.info("{0}Archiving source project {1}".format(
                     get_dry_log(dry_run),
-                    self.get_path_with_namespace(project)))
+                    project["path_with_namespace"]))
                 if not dry_run:
                     self.projects_api.archive_project(
                         self.config.source_host,
@@ -187,7 +180,7 @@ class ProjectsClient(BaseClass):
             for project in staged_projects:
                 self.log.info("{0}Unarchiving source project {1}".format(
                     get_dry_log(dry_run),
-                    self.get_path_with_namespace(project)))
+                    project["path_with_namespace"]))
                 if not dry_run:
                     self.projects_api.unarchive_project(
                         self.config.source_host,

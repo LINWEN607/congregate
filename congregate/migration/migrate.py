@@ -255,7 +255,7 @@ def handle_importing_groups(group, dry_run=True):
             groups.remove_import_user(results[full_path]["id"])
             # Migrate CI/CD Variables
             variables.migrate_variables(
-                results[full_path]["id"], src_gid, "group")
+                results[full_path]["id"], src_gid, "group", full_path)
     except RequestException, e:
         b.log.error(e)
     except KeyError as e:
@@ -353,7 +353,7 @@ def handle_exporting_projects(project, dry_run=True):
             raise Exception("Unsupported export location: {}".format(loc))
         exported = False
         b.log.info("{0}Exporting project {1} (ID: {2}) as {3}"
-                   .format(dry_log, name, pid, filename))
+                   .format(dry_log, project["path_with_namespace"], pid, filename))
         if loc == "filesystem":
             exported = ie.export_project_thru_filesystem(
                 pid, name, namespace) if not dry_run else True
@@ -510,8 +510,9 @@ def rollback(dry_run=True,
             dry_log,
             "" if skip_projects else " and projects"))
         groups.delete_groups(dry_run, skip_projects)
+
     # Remove only projects
-    elif not skip_projects:
+    if not skip_projects:
         b.log.info("{}Removing projects on destination".format(dry_log))
         projects.delete_projects(dry_run)
 

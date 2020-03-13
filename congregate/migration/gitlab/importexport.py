@@ -210,7 +210,7 @@ class ImportExportClient(BaseClass):
         if is_user_project(project):
             self.log.info("{0}{1} is a USER project ({2}). Attempting to import into their namespace".format(
                 get_dry_log(dry_run), name, namespace))
-            dst_namespace = get_user_project_namespace(project, namespace)
+            dst_namespace = get_user_project_namespace(project)
         else:
             self.log.info("{0}{1} is NOT a USER project. Attempting to import into a group namespace".format(
                 get_dry_log(dry_run), name))

@@ -70,11 +70,7 @@ def get_project_namespace(p):
         :return: Destination group project namespace
     """
     if b.config.parent_id is not None and p["project_type"] != "user":
-        parent_namespace = groups.groups_api.get_group(
-            b.config.parent_id,
-            b.config.destination_host,
-            b.config.destination_token).json()
-        return "{0}/{1}".format(parent_namespace["path"], p["namespace"])
+        return "{0}/{1}".format(b.config.parent_group_path, p["namespace"])
     return p["namespace"]
 
 
@@ -88,7 +84,7 @@ def is_user_project(p):
     return p.get("project_type", None) is not None and p["project_type"] == "user"
 
 
-def get_user_project_namespace(p, namespace):
+def get_user_project_namespace(p):
     """
     Determine if user project should be imported under the import_user (.com or self-managed root) or member namespace (self-managed)
 
@@ -96,10 +92,10 @@ def get_user_project_namespace(p, namespace):
         :param: namespace:
         :return: Destination user project namespace
     """
-    if is_dot_com(b.config.destination_host) or namespace == "root":
+    if is_dot_com(b.config.destination_host) or p["namespace"] == "root":
         b.log.info("Assigning user project {0} to import user id (ID: {1})".format(
             p["path_with_namespace"], b.config.import_user_id))
         return users_api.get_user(
             b.config.import_user_id, b.config.destination_host, b.config.destination_token).json()["username"]
     else:
-        return namespace
+        return p["namespace"]
