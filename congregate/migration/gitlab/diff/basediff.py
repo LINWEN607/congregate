@@ -4,7 +4,7 @@ from opslib.icsutils.jsondiff import Comparator
 from bs4 import BeautifulSoup as bs
 from json2html import json2html
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import find as nested_find
+from congregate.helpers.misc_utils import find as nested_find, is_error_message_present
 
 
 class BaseDiffClient(BaseClass):
@@ -59,7 +59,7 @@ class BaseDiffClient(BaseClass):
     def diff(self, source_data, destination_data, critical_key=None, obfuscate=False, parent_group=None):
         engine = Comparator()
         if isinstance(source_data, list):
-            if not isinstance(destination_data, list) and destination_data.get("message", None) is not None:
+            if not isinstance(destination_data, list) and is_error_message_present(destination_data):
                 destination_data = []
             else:
                 destination_data = {}

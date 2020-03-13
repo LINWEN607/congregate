@@ -2,7 +2,7 @@ from requests.exceptions import RequestException
 
 from congregate.helpers.base_class import BaseClass
 from congregate.migration.gitlab.api.projects import ProjectsApi
-from congregate.helpers.misc_utils import json_pretty
+from congregate.helpers.misc_utils import is_error_message_present, json_pretty
 
 
 class EnvironmentsClient(BaseClass):
@@ -13,7 +13,7 @@ class EnvironmentsClient(BaseClass):
     def migrate_project_environments(self, src_id, dest_id, name):
         try:
             for environment in self.projects.get_all_environments(src_id, self.config.source_host, self.config.source_token):
-                if "message" not in json_pretty(environment):
+                if not is_error_message_present(environment):
                     self.log.info("Migrating project {0} (ID: {1}) environment:\n{2}".format(
                         name, src_id, json_pretty(environment)))
                     self.projects.create_environment(

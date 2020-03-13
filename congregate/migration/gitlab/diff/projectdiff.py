@@ -98,9 +98,9 @@ class ProjectDiffClient(BaseDiffClient):
 
         # Merge request approvers
         project_diff["/projects/:id/approvals"] = self.generate_diff(
-            project, self.projects_api.get_all_project_approval_configuration)
+            project, self.projects_api.get_project_level_mr_approval_configuration)
         project_diff["/projects/:id/approval_rules"] = self.generate_diff(
-            project, self.projects_api.get_all_project_approval_rules)
+            project, self.projects_api.get_all_project_level_mr_approval_rules)
 
         # Repository
         project_diff["/projects/:id/forks"] = self.generate_diff(
@@ -173,6 +173,7 @@ class ProjectDiffClient(BaseDiffClient):
             try:
                 instance_data = self.ignore_keys(list(instance_data))
             except TypeError:
+                self.log.error("Unable to generate cleaned instance data. Returning empty list")
                 return []
         else:
             instance_data = self.ignore_keys(instance_data.json())

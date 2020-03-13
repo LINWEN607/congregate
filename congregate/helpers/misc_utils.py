@@ -7,7 +7,7 @@ from time import time
 from getpass import getpass
 from re import sub, findall
 from datetime import timedelta, date
-from requests import get, head
+from requests import get, head, Response
 
 
 def remove_dupes(my_list):
@@ -251,3 +251,10 @@ def find(key, dictionary):
                 for d in v:
                     for result in find(key, d):
                         yield result
+
+def is_error_message_present(response):
+    if isinstance(response, Response):
+        response = response.json()
+    if response.get("message", None) is not None:
+        return True
+    return False

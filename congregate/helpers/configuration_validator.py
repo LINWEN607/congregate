@@ -2,6 +2,7 @@ from congregate.helpers.exceptions import ConfigurationException
 from congregate.helpers.conf import Config
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.users import UsersApi
+from congregate.helpers.misc_utils import is_error_message_present
 
 
 class ConfigurationValidator(Config):
@@ -47,7 +48,7 @@ class ConfigurationValidator(Config):
     def validate_parent_group_id(self, pgid):
         if pgid is not None:
             group_resp = self.groups.get_group(pgid, self.destination_host, self.destination_token).json()
-            if group_resp.get("message", None) is not None:
+            if is_error_message_present(group_resp):
                 raise ConfigurationException("parent_id")
             else:
                 return True
@@ -56,7 +57,7 @@ class ConfigurationValidator(Config):
     def validate_import_user_id(self, iuid):
         if iuid is not None:
             user_resp = self.users.get_current_user(self.destination_host, self.destination_token)
-            if user_resp.get("message", None) is not None:
+            if is_error_message_present(user_resp):
                 raise ConfigurationException("import_user_id")
             elif user_resp.get("error", None) is not None:
                 if user_resp["error"] == "invalid_token":

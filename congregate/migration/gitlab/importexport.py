@@ -8,7 +8,7 @@ from glob import glob
 from requests.exceptions import RequestException
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers import api
-from congregate.helpers.misc_utils import download_file, migration_dry_run, get_dry_log
+from congregate.helpers.misc_utils import download_file, migration_dry_run, get_dry_log, is_error_message_present
 from congregate.aws import AwsClient
 from congregate.migration.gitlab.projects import ProjectsClient
 from congregate.migration.gitlab.groups import GroupsClient
@@ -255,6 +255,12 @@ class ImportExportClient(BaseClass):
         if not dry_run:
             import_response = self.attempt_import(
                 filename, name, path, dst_namespace, override_params)
+            if "Try again later" in import_response:
+                self.log.info("Reached rate limit for import. Waiting 10 minutes.")
+                sleep(600) # 10 min
+                import_response = self.attempt_import(
+                    filename, name, path, dst_namespace, override_params)
+
             self.log.info("Project {0} (file: {1}) import response:\n{2}"
                           .format(name, filename, import_response))
 
@@ -478,7 +484,7 @@ class ImportExportClient(BaseClass):
             while not exported:
                 if import_response.get("id", None) is not None:
                     import_id = import_response["id"]
-                elif import_response.get("message", None) is not None:
+                elif is_error_message_present(import_response):
                     res = import_response.get("message")
                     if "Name has already been taken" in res:
                         # issue 151.
