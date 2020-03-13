@@ -251,11 +251,11 @@ def handle_importing_groups(group, dry_run=True):
         results[full_path] = ie.wait_for_group_import(
             full_path_with_parent_namespace)
         if results[full_path] and results[full_path].get("id", None) is not None:
-            # Remove import user
-            groups.remove_import_user(results[full_path]["id"])
             # Migrate CI/CD Variables
             variables.migrate_variables(
                 results[full_path]["id"], src_gid, "group", full_path)
+            # Remove import user
+            groups.remove_import_user(results[full_path]["id"])
     except RequestException, e:
         b.log.error(e)
     except KeyError as e:
@@ -443,51 +443,49 @@ def migrate_single_project_info(project, new_id):
     """
     project.pop("members")
     name = project["name"]
+    path_with_namespace = project["path_with_namespace"]
     old_id = project["id"]
     results = {}
 
     b.log.info("Searching for project %s" % name)
     if new_id is None:
         _, new_id = projects.find_project_by_path(
-            b.config.destination_host,
-            b.config.destination_token,
-            full_parent_namespace,
-            project["namespace"],
-            project["name"])
+            b.config.destination_host, b.config.destination_token, full_parent_namespace, project["namespace"], name)
 
     results["id"] = new_id
-
-    projects.remove_import_user(new_id)
 
     # Shared with groups
     projects.add_shared_groups(old_id, new_id)
 
     # CI/CD Variables
     results["variables"] = variables.migrate_cicd_variables(
-        old_id, new_id, name)
+        old_id, new_id, path_with_namespace)
 
     # Push Rules
-    results["push_rules"] = pushrules.migrate_push_rules(old_id, new_id, name)
+    results["push_rules"] = pushrules.migrate_push_rules(
+        old_id, new_id, path_with_namespace)
 
     # Merge Request Approvals
     results["project_level_mr_approvals"] = mr_approvals.migrate_project_level_mr_approvals(
-        old_id, new_id, name)
+        old_id, new_id, path_with_namespace)
 
     # Deploy Keys (project only)
     results["deploy_keys"] = deploy_keys.migrate_deploy_keys(
-        old_id, new_id, name)
+        old_id, new_id, path_with_namespace)
 
     # Container Registries
     results["container_registry"] = registries.migrate_registries(
-        old_id, new_id, name)
+        old_id, new_id, path_with_namespace)
 
     # Environments
     results["environments"] = environments.migrate_project_environments(
-        old_id, new_id, name)
+        old_id, new_id, path_with_namespace)
 
     # Project hooks (webhooks)
     results["project_hooks"] = hooks.migrate_project_hooks(
-        old_id, new_id, name)
+        old_id, new_id, path_with_namespace)
+
+    projects.remove_import_user(new_id)
 
     return results
 

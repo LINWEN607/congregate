@@ -41,11 +41,10 @@ class HooksClient(BaseClass):
     def migrate_project_hooks(self, old_id, new_id, name):
         try:
             response = self.projects_api.get_all_project_hooks(
-                self.config.source_host, self.config.source_token, old_id)
+                old_id, self.config.source_host, self.config.source_token)
             p_hooks = iter(response)
+            self.log.info("Migrating project {} hooks".format(name))
             for h in p_hooks:
-                self.log.info("Migrating project {0} (ID: {1}) hook {2} (ID: {3})".format(
-                    name, old_id, h["url"], h["id"]))
                 h.pop("created_at", None)
                 h["project_id"] = new_id
                 # hook does not include secret token

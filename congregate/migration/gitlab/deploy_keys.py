@@ -15,12 +15,13 @@ class DeployKeysClient(BaseClass):
             response = self.projects_api.get_all_project_deploy_keys(
                 old_id, self.config.source_host, self.config.source_token)
             keys = iter(response)
+            self.log.info("Migrating project {} deploy keys".format(name))
             for key in keys:
                 # Remove unused key-value before posting key
                 key.pop("id", None)
                 key.pop("created_at", None)
                 self.projects_api.create_new_project_deploy_key(
-                    new_id, self.config.destination_host, self.config.destination_token, json.dumps(key))
+                    new_id, self.config.destination_host, self.config.destination_token, key)
             return True
         except TypeError as te:
             self.log.error(
@@ -28,5 +29,5 @@ class DeployKeysClient(BaseClass):
             return False
         except RequestException as re:
             self.log.error(
-                "Failed to migrate deploy keys for {0}, with error:\n{1}".format(name, re))
+                "Failed to migrate deploy keys for project {0}, with error:\n{1}".format(name, re))
             return False

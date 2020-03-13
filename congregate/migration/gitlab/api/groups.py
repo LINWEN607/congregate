@@ -367,7 +367,7 @@ class GroupsApi():
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /groups/:id/variables
         """
-        return api.generate_get_request(host, token, "groups/%d/variables" % gid)
+        return api.list_all(host, token, "groups/%d/variables" % gid)
 
     def create_group_variable(self, gid, host, token, data):
         """

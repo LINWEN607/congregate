@@ -22,45 +22,50 @@ class MergeRequestApprovalsClient(BaseClass):
     def migrate_project_level_mr_approvals(self, old_id, new_id, name):
         try:
             if self.are_enabled(old_id):
-                self.log.info(
-                    "Migrating project-level MR approvals for {}".format(name))
                 self.migrate_project_approvals(new_id, old_id, name)
                 return True
             else:
                 self.log.warning(
                     "Merge requests are disabled for project {}".format(name))
-        except RequestException as re:
+        except Exception as e:
             self.log.error(
-                "Failed to migrate project-level MR approvals for {0}, with error:\n{1}".format(name, re))
+                "Failed to migrate project-level MR approvals for {0}, with error:\n{1}".format(name, e))
             return False
 
     def migrate_project_approvals(self, new_id, old_id, name):
-        # migrate configuration
-        configuration = self.projects_api.get_project_level_mr_approval_configuration(
-            old_id, self.config.source_host, self.config.source_token).json()
-        self.log.info(
-            "Migrating project-level MR approval configuration for {0} (ID: {1})".format(name, old_id))
-        self.projects_api.change_project_level_mr_approval_configuration(
-            new_id, self.config.destination_host, self.config.destination_token, configuration)
+        try:
+            # migrate configuration
+            configuration = self.projects_api.get_project_level_mr_approval_configuration(
+                old_id, self.config.source_host, self.config.source_token).json()
+            self.log.info(
+                "Migrating project-level MR approval configuration for {0} (ID: {1})".format(name, old_id))
+            self.projects_api.change_project_level_mr_approval_configuration(
+                new_id, self.config.destination_host, self.config.destination_token, configuration)
 
-        # migrate approval rules
-        approval_rules = self.projects_api.get_all_project_level_mr_approval_rules(
-            old_id, self.config.source_host, self.config.source_token)
-        self.log.info(
-            "Migrating project-level MR approval rules for {0} (ID: {1})".format(name, old_id))
-
-        for rule in approval_rules:
-            user_ids, group_ids, protected_branch_ids = self.get_missing_rule_params(
-                rule, new_id)
-            data = {
-                "name": rule["name"],
-                "approvals_required": rule["approvals_required"],
-                "user_ids": user_ids,
-                "group_ids": group_ids,
-                "protected_branch_ids": protected_branch_ids
-            }
-            self.projects_api.create_project_level_mr_approval_rule(
-                new_id, self.config.destination_host, self.config.destination_token, data)
+            # migrate approval rules
+            response = self.projects_api.get_all_project_level_mr_approval_rules(
+                old_id, self.config.source_host, self.config.source_token)
+            self.log.info(
+                "Migrating project-level MR approval rules for {0} (ID: {1})".format(name, old_id))
+            approval_rules = iter(response)
+            for rule in approval_rules:
+                user_ids, group_ids, protected_branch_ids = self.get_missing_rule_params(
+                    rule, new_id)
+                data = {
+                    "name": rule["name"],
+                    "approvals_required": rule["approvals_required"],
+                    "user_ids": user_ids,
+                    "group_ids": group_ids,
+                    "protected_branch_ids": protected_branch_ids
+                }
+                self.projects_api.create_project_level_mr_approval_rule(
+                    new_id, self.config.destination_host, self.config.destination_token, data)
+        except TypeError as te:
+            self.log.error(
+                "Project {0} MR approvals {1} {2}".format(name, response, te))
+        except RequestException as re:
+            self.log.error(
+                "Failed to migrate MR approvals for project {0}, with error:\n{1}".format(name, re))
 
     def user_search_check_and_log(self, new_user, user, user_ids):
         """

@@ -24,7 +24,7 @@ class VariablesClient(BaseClass):
         else:
             return self.projects_api.get_all_project_variables(id, host, token)
 
-    def set_variables(self, id, data, host, token, var_type="projects", instance_type="destination"):
+    def set_variables(self, id, data, host, token, var_type="projects"):
         if var_type == "group":
             return self.groups_api.create_group_variable(id, host, token, data)
         else:
@@ -35,39 +35,34 @@ class VariablesClient(BaseClass):
             if self.are_enabled(old_id):
                 self.log.info(
                     "Migrating project {} CI/CD variables".format(name))
-                self.migrate_variables(new_id, old_id, "project")
+                self.migrate_variables(new_id, old_id, "project", name)
                 return True
             else:
                 self.log.warning(
                     "CI/CD is disabled for project {}".format(name))
-                return False
         except Exception, e:
             self.log.error(
                 "Failed to migrate project {0} CI/CD variables, with error:\n{1}".format(name, e))
             return False
 
-    def migrate_variables(self, new_id, old_id, var_type):
+    def migrate_variables(self, new_id, old_id, var_type, name):
         try:
             response = self.get_variables(
                 old_id, self.config.source_host, self.config.source_token, var_type)
-            if response.status_code == 200:
-                variables = response.json()
-                if len(variables) > 0:
-                    for var in variables:
-                        if var_type == "project":
-                            var["environment_scope"] = "*"
-                        self.log.info("Migrating {0} ID (old: {1}; new: {2}) variables"
-                                      .format(var_type, old_id, new_id))
-                        self.set_variables(
-                            new_id, var, self.config.destination_host, self.config.destination_token, var_type)
-                else:
-                    self.log.info("SKIP: Project (old: {0}; new: {1}) does not have CI variables"
-                                  .format(old_id, new_id))
-            else:
-                self.log.error(
-                    "Failed to get variables, response: {}".format(response))
+            variables = iter(response)
+            for var in variables:
+                if var_type == "project":
+                    var["environment_scope"] = "*"
+                self.log.info("Migrating {0} ID (old: {1}; new: {2}) CI/CD variables"
+                              .format(var_type, old_id, new_id))
+                self.set_variables(
+                    new_id, var, self.config.destination_host, self.config.destination_token, var_type)
+        except TypeError as te:
+            self.log.error(
+                "{0} {1} variables {2} {3}".format(var_type, name, response, te))
         except RequestException:
-            return None
+            self.log.error(
+                "Failed to get CI/CD variables, response: {}".format(response))
 
     def migrate_variables_in_stage(self, dry_run=True):
         with open("%s/data/stage.json" % self.app_path, "r") as f:
@@ -82,7 +77,7 @@ class VariablesClient(BaseClass):
                     for proj in self.projects_api.search_for_project(
                             self.config.destination_host,
                             self.config.destination_token,
-                            project_json['name']):
+                            project_json["name"]):
                         if proj["name"] == project_json["name"]:
                             if "%s" % project_json["namespace"].lower() in proj["path_with_namespace"].lower():
                                 self.log.info("{0}Migrating variables for {1}"
@@ -94,7 +89,7 @@ class VariablesClient(BaseClass):
                                 project_id = None
                     if project_id is not None and not dry_run:
                         self.migrate_variables(
-                            project_id, project_json["id"], "project")
+                            project_id, project_json["id"], "project", project_json["path_with_namespace"])
                 except IOError, e:
                     self.log.error(
                         "Failed to migrate variables in stage, with error:\n{}".format(e))
