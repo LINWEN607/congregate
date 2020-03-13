@@ -263,7 +263,7 @@ class UsersClient(BaseClass):
                                 rewritten_user["id"],
                                 self.config.destination_host,
                                 self.config.destination_token).json()
-                            if is_error_message_present(new_user) and\
+                            if not is_error_message_present(new_user) and \
                                     new_user.get("email", None) is not None and \
                                     str(new_user["email"]).lower() == old_user_email:
                                 # If we find the user by new ID, and the emails match (as they should by this point
