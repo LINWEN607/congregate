@@ -16,8 +16,7 @@ from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.helpers.migrate_utils import get_project_namespace, \
-    is_user_project, get_member_id_for_user_project, get_export_filename_from_namespace_and_name
-from congregate.models.user_logging_model import UserLoggingModel
+    is_user_project, get_user_project_namespace, get_export_filename_from_namespace_and_name
 
 
 class ImportExportClient(BaseClass):
@@ -209,25 +208,13 @@ class ImportExportClient(BaseClass):
         override_params = self.get_override_params(project)
 
         if is_user_project(project):
-            member_id = get_member_id_for_user_project(project)
-            # TODO: Needs to be some user remapping in this, as well
-            #   as the username/namespace may exist on the source
-            if member_id:
-                new_user = self.users_api.get_user(
-                    member_id,
-                    self.config.destination_host,
-                    self.config.destination_token).json()
-                dst_namespace = new_user["username"]
-                self.log.info("{0}{1} is a USER project (owner: {2}). Attempting to import into their namespace"
-                              .format(get_dry_log(dry_run), name, UserLoggingModel().get_logging_model(new_user)))
-            else:
-                self.log.error(
-                    "USER project FOUND, but NO member ID returned for project {0}".format(name))
-                return None
+            self.log.info("{0}{1} is a USER project ({2}). Attempting to import into their namespace".format(
+                get_dry_log(dry_run), name, namespace))
+            dst_namespace = get_user_project_namespace(project, namespace)
         else:
+            self.log.info("{0}{1} is NOT a USER project. Attempting to import into a group namespace".format(
+                get_dry_log(dry_run), name))
             dst_namespace = get_project_namespace(project)
-            self.log.info(
-                "%s%s is NOT a USER project. Attempting to import into a group namespace", get_dry_log(dry_run), name)
             if self.config.parent_id is None:
                 # TODO: This section is for importing to top-level, non-user projects.
                 #   Needs a going over. We know the parent_id case is solid
@@ -327,7 +314,6 @@ class ImportExportClient(BaseClass):
                     import_response = self.aws.copy_from_s3_and_import(
                         name, namespace, downloaded_filename)
         elif self.config.location == "filesystem":
-            print(path)
             with open("%s/downloads/%s" % (self.config.filesystem_path, filename), "rb") as f:
                 data = {
                     "path": path,

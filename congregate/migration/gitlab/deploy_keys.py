@@ -2,7 +2,6 @@ import json
 from requests.exceptions import RequestException
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers import api
 from congregate.migration.gitlab.api.projects import ProjectsApi
 
 

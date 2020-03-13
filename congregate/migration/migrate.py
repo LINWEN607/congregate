@@ -15,7 +15,7 @@ from shutil import copy
 from requests.exceptions import RequestException
 
 from congregate.helpers import api, migrate_utils
-from congregate.helpers.misc_utils import get_dry_log, json_pretty, write_json_to_file
+from congregate.helpers.misc_utils import get_dry_log, json_pretty, write_json_to_file, is_dot_com
 from congregate.aws import AwsClient
 from congregate.cli.stage_projects import stage_projects
 from congregate.helpers.base_class import BaseClass
@@ -85,7 +85,7 @@ def migrate(
             migrate_user_info(dry_run)
 
         # Migrate system hooks (except for gitlab.com)
-        if "gitlab.com" not in b.config.destination_host:
+        if is_dot_com(b.config.destination_host):
             hooks.migrate_system_hooks(dry_run)
 
         # Migrate groups

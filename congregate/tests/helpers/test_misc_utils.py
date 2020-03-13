@@ -185,3 +185,8 @@ def test_rewrite_json_list_into_dict():
     }
 
     assert misc.rewrite_json_list_into_dict(initial) == expected
+
+
+def test_is_dot_com():
+    assert misc.is_dot_com("asdasd") is False
+    assert misc.is_dot_com("https://gitlab.com") is True

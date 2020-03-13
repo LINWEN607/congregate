@@ -1,4 +1,5 @@
 from congregate.helpers.base_class import BaseClass
+from congregate.helpers.misc_utils import is_dot_com
 from congregate.migration.gitlab.groups import GroupsClient as groupsClient
 from congregate.migration.gitlab.users import UsersApi as usersApi
 
@@ -17,9 +18,11 @@ def get_failed_export_from_results(results):
 
 def get_staged_projects_without_failed_export(staged_projects, failed_update):
     """
-    :param staged_projects: The current list of staged projects
-    :param failed_update: A list of project export filenames
-    :return: A new staged_projects list removing those that failed update
+    Filter out projects that failed to export from the staged projects
+
+        :param staged_projects: The current list of staged projects
+        :param failed_update: A list of project export filenames
+        :return: A new staged_projects list removing those that failed export
     """
     return [p for p in staged_projects if get_project_filename(
         p) not in failed_update]
@@ -27,9 +30,11 @@ def get_staged_projects_without_failed_export(staged_projects, failed_update):
 
 def get_staged_groups_without_failed_export(staged_groups, failed_export):
     """
-    :param staged_groups: The current list of staged groups
-    :param failed_export: A list of gorup export filenames
-    :return: A new staged_gorups list removing those that failed export
+    Filter out groups that failed to export from the staged groups
+
+        :param staged_groups: The current list of staged groups
+        :param failed_export: A list of group export filenames
+        :return: A new staged_grups list removing those that failed export
     """
     return [g for g in staged_groups if get_export_filename_from_namespace_and_name(g["full_path"]) not in failed_export]
 
@@ -37,8 +42,9 @@ def get_staged_groups_without_failed_export(staged_groups, failed_export):
 def get_project_filename(p):
     """
     Filename can be namespace and project-type dependent
-    :param p:
-    :return:
+
+        :param p: The JSON object representing a GitLab project
+        :return: Project filename or empty string
     """
     if p.get("name", None) is not None and p.get("namespace", None) is not None:
         return get_export_filename_from_namespace_and_name(p["namespace"], p["name"])
@@ -46,52 +52,54 @@ def get_project_filename(p):
 
 
 def get_export_filename_from_namespace_and_name(namespace, name=""):
+    """
+    Determine exported filename for project or group (wihout name)
+
+        :param namespace: Project or group namespace
+        :param name: Project name
+        :return: Exported filename
+    """
     return "{0}{1}.tar.gz".format(namespace, "/" + name if name else "").replace("/", "_").lower()
 
 
-def get_project_namespace(project):
+def get_project_namespace(p):
     """
     If this is a user project, the namespace == username
-    :param project:
-    :return:
+
+        :param p: The JSON object representing a GitLab project
+        :return: Destination group project namespace
     """
-    if b.config.parent_id is not None and project["project_type"] != "user":
+    if b.config.parent_id is not None and p["project_type"] != "user":
         parent_namespace = groups.groups_api.get_group(
             b.config.parent_id,
             b.config.destination_host,
             b.config.destination_token).json()
-        return "{0}/{1}".format(parent_namespace["path"], project["namespace"])
-    return project["namespace"]
+        return "{0}/{1}".format(parent_namespace["path"], p["namespace"])
+    return p["namespace"]
 
 
-def is_user_project(project):
+def is_user_project(p):
     """
     Determine if a passed staged_project object (json) is a user project or not
-    :param self:
-    :param project: The JSON object representing a GitLab project
-    :return: True if a user project, else False
+
+        :param p: The JSON object representing a GitLab project
+        :return: True if a user project, else False
     """
-    return project.get(
-        "project_type", None) is not None and project["project_type"] == "user"
+    return p.get("project_type", None) is not None and p["project_type"] == "user"
 
 
-def get_member_id_for_user_project(project):
+def get_user_project_namespace(p, namespace):
     """
-    This assumes that the user already exists in the destination system and that userid rewrites have occurred.
-    Otherwise, you will be trying to use a source id for a destination user
-    :param project:
-    :return: The destination member id
+    Determine if user project should be imported under the import_user (.com or self-managed root) or member namespace (self-managed)
+
+        :param p: The JSON object representing a GitLab project
+        :param: namespace:
+        :return: Destination user project namespace
     """
-    try:
-        # Determine if the project should be under a single user or group
-        for member in project["members"]:
-            if project["namespace"] == member["username"]:
-                return member["id"]
-    except Exception as e:
-        b.log.error(
-            "Could not find member id for user project {0} with error {1}"
-            .format(project, e)
-        )
-        # We don't do a lot of raise, but it's honestly getting to the point where I want to just fail rather
-        # than try and figure out if we should continue or not
-        raise e
+    if is_dot_com(b.config.destination_host) or namespace == "root":
+        b.log.info("Assigning user project {0} to import user id (ID: {1})".format(
+            p["path_with_namespace"], b.config.import_user_id))
+        return users_api.get_user(
+            b.config.import_user_id, b.config.destination_host, b.config.destination_token).json()["username"]
+    else:
+        return namespace

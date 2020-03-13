@@ -250,3 +250,7 @@ def find(key, dictionary):
             for d in v:
                 for result in find(key, d):
                     yield result
+
+
+def is_dot_com(host):
+    return True if "gitlab.com" in host else False
