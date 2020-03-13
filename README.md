@@ -225,7 +225,7 @@ Arguments:
     skip-groups                             Rollback: Remove only users and projects.
     skip-group-export                       Skip exporting groups from source instance.
     skip-group-import                       Skip importing groups to destination instance.
-    skip-projects                           Include ONLY users (removing ONLY groups is not possible).
+    skip-projects                           Rollback: Remove only users and empty groups.
     skip-project-export                     Skips the project export and assumes that the project file is already ready
                                                 for rewrite. Currently does NOT work for exports through filesystem-aws.
     skip-project-import                     Will do all steps up to import (export, re-write exported project json,
