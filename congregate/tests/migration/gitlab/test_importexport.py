@@ -178,14 +178,6 @@ class ImportExportClientTests(unittest.TestCase):
             timeout=0)
         self.assertEqual(import_results, None)
 
-    def test_check_is_project_or_group_for_logging_project_on_true(self):
-        self.assertEqual(
-            self.ie.check_is_project_or_group_for_logging(True), "Project")
-
-    def test_check_is_project_or_group_for_logging_group_on_false(self):
-        self.assertEqual(
-            self.ie.check_is_project_or_group_for_logging(False), "Group")
-
     @mock.patch.object(GroupsApi, "get_group_download_status")
     def test_wait_for_group_download_200(self, mock_get_group_download_status):
         ok_response_mock = mock.MagicMock()

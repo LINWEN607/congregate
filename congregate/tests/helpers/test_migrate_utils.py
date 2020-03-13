@@ -1,12 +1,79 @@
 import unittest
 import mock
-from congregate.helpers.migrate_utils import get_failed_export_from_results, get_staged_projects_without_failed_export
+import responses
+import congregate.helpers.migrate_utils as mutils
+
+from congregate.tests.mockapi.users import MockUsersApi
 from congregate.helpers.configuration_validator import ConfigurationValidator
 from congregate.migration.gitlab.api.groups import GroupsApi
 
 
 class MigrateTests(unittest.TestCase):
     def setUp(self):
+        self.mock_users = MockUsersApi()
+        self.staged_group_project = {
+            "snippets_access_level": "enabled",
+            "description": "",
+            "default_branch": "patch-01",
+            "visibility": "public",
+            "http_url_to_repo": "https://pse.tanuki.cloud/pmm-demo/spring-app-secure-2.git",
+            "shared_runners_enabled": False,
+            "project_type": "group",
+            "path": "spring-app-secure-2",
+            "id": 287,
+            "merge_requests_access_level": "enabled",
+            "repository_access_level": "enabled",
+            "builds_access_level": "enabled",
+            "archived": False,
+            "name": "spring-app-secure-2",
+            "wiki_access_level": "enabled",
+            "namespace": "pmm-demo",
+            "members": [],
+            "issues_access_level": "enabled",
+            "path_with_namespace": "pmm-demo/spring-app-secure-2"
+        }
+        self.staged_user_project = {
+            "snippets_access_level": "enabled",
+            "description": "",
+            "default_branch": "patch-01",
+            "visibility": "public",
+            "http_url_to_repo": "https://pse.tanuki.cloud/pmm-demo/spring-app-secure-2.git",
+            "shared_runners_enabled": False,
+            "project_type": "user",
+            "path": "spring-app-secure-2",
+            "id": 287,
+            "merge_requests_access_level": "enabled",
+            "repository_access_level": "enabled",
+            "builds_access_level": "enabled",
+            "archived": False,
+            "name": "spring-app-secure-2",
+            "wiki_access_level": "enabled",
+            "namespace": "pmm-demo",
+            "members": [],
+            "issues_access_level": "enabled",
+            "path_with_namespace": "pmm-demo/spring-app-secure-2"
+        }
+        self.staged_root_user_project = {
+            "snippets_access_level": "enabled",
+            "description": "",
+            "default_branch": "patch-01",
+            "visibility": "public",
+            "http_url_to_repo": "https://pse.tanuki.cloud/pmm-demo/spring-app-secure-2.git",
+            "shared_runners_enabled": False,
+            "project_type": "user",
+            "path": "spring-app-secure-2",
+            "id": 287,
+            "merge_requests_access_level": "enabled",
+            "repository_access_level": "enabled",
+            "builds_access_level": "enabled",
+            "archived": False,
+            "name": "spring-app-secure-2",
+            "wiki_access_level": "enabled",
+            "namespace": "root",
+            "members": [],
+            "issues_access_level": "enabled",
+            "path_with_namespace": "pmm-demo/spring-app-secure-2"
+        }
         self.staged_projects = [
             {
                 "archived": False,
@@ -66,10 +133,76 @@ class MigrateTests(unittest.TestCase):
                 "wiki_access_level": "enabled"
             }
         ]
+        self.staged_groups = [
+            {
+                "lfs_enabled": True,
+                "request_access_enabled": False,
+                "full_parent_namespace": "test-parent-group-1",
+                "project_creation_level": "developer",
+                "subgroup_creation_level": "owner",
+                "path": "pmm-demo-1",
+                "id": 129,
+                "parent_id": 814,
+                "share_with_group_lock": False,
+                "description": "PMM Demos",
+                "two_factor_grace_period": 48,
+                "visibility": "public",
+                "members": [],
+                "parent_namespace": "test-parent-group-1",
+                "name": "pmm-demo-1",
+                "require_two_factor_authentication": False,
+                "full_path": "pmm-demo-1"
+            },
+            {
+                "lfs_enabled": True,
+                "request_access_enabled": False,
+                "full_parent_namespace": "test-parent-group-2",
+                "project_creation_level": "developer",
+                "subgroup_creation_level": "owner",
+                "path": "pmm-demo-2",
+                "id": 129,
+                "parent_id": 814,
+                "share_with_group_lock": False,
+                "description": "PMM Demos",
+                "two_factor_grace_period": 48,
+                "visibility": "public",
+                "members": [],
+                "parent_namespace": "test-parent-group-2",
+                "name": "pmm-demo-2",
+                "require_two_factor_authentication": False,
+                "full_path": "pmm-demo-2"
+            },
+            {
+                "lfs_enabled": True,
+                "request_access_enabled": False,
+                "full_parent_namespace": "test-parent-group-3",
+                "project_creation_level": "developer",
+                "subgroup_creation_level": "owner",
+                "path": "pmm-demo-3",
+                "id": 129,
+                "parent_id": 814,
+                "share_with_group_lock": False,
+                "description": "PMM Demos",
+                "two_factor_grace_period": 48,
+                "visibility": "public",
+                "members": [],
+                "parent_namespace": "test-parent-group-3",
+                "name": "pmm-demo-3",
+                "require_two_factor_authentication": False,
+                "full_path": "pmm-demo-3"
+            }
+        ]
+
+    class ThingWithJson:
+        def __init__(self, jsons):
+            self._json = jsons
+
+        def json(self):
+            return self._json
 
     def test_get_failed_export_from_results_exported_false(self):
         results = [{"exported": False, "filename": "DaRcI1"}]
-        failed_results = get_failed_export_from_results(results)
+        failed_results = mutils.get_failed_export_from_results(results)
         expected = ["darci1"]
         self.assertListEqual(failed_results, expected)
 
@@ -77,13 +210,13 @@ class MigrateTests(unittest.TestCase):
         results = [{"exported": False, "filename": "DaRcI1"},
                    {"exported": False, "filename": "DaRcI2"},
                    {"exported": False, "filename": "DaRcI3"}]
-        failed_results = get_failed_export_from_results(results)
+        failed_results = mutils.get_failed_export_from_results(results)
         expected = ["darci1", "darci2", "darci3"]
         self.assertListEqual(failed_results, expected)
 
     def test_get_failed_export_from_results_exported_true(self):
         results = [{"exported": True, "filename": "DaRcI1"}]
-        failed_results = get_failed_export_from_results(results)
+        failed_results = mutils.get_failed_export_from_results(results)
         expected = []
         self.assertListEqual(failed_results, expected)
 
@@ -135,7 +268,7 @@ class MigrateTests(unittest.TestCase):
             }
         ]
         failed_results = ['dictionary-web_darci1.tar.gz']
-        filtered_staged = get_staged_projects_without_failed_export(
+        filtered_staged = mutils.get_staged_projects_without_failed_export(
             self.staged_projects, failed_results)
         self.assertListEqual(filtered_staged, expected)
         print(filtered_staged)
@@ -148,16 +281,9 @@ class MigrateTests(unittest.TestCase):
         cv.return_value = True
         pi.return_value = 1
         failed_results = []
-        filtered_staged = get_staged_projects_without_failed_export(
+        filtered_staged = mutils.get_staged_projects_without_failed_export(
             self.staged_projects, failed_results)
         self.assertListEqual(filtered_staged, self.staged_projects)
-
-    class ThingWithJson:
-        def __init__(self, jsons):
-            self._json = jsons
-
-        def json(self):
-            return self._json
 
     @mock.patch("congregate.helpers.base_module.ConfigurationValidator.parent_id", new_callable=mock.PropertyMock)
     @mock.patch.object(GroupsApi, "get_group")
@@ -169,7 +295,7 @@ class MigrateTests(unittest.TestCase):
         failed_results = ['dictionary-web_darci1.tar.gz',
                           'dictionary-web_darci2.tar.gz',
                           'dictionary-web_darci3.tar.gz']
-        filtered_staged = get_staged_projects_without_failed_export(
+        filtered_staged = mutils.get_staged_projects_without_failed_export(
             self.staged_projects, failed_results)
         self.assertListEqual(filtered_staged, [])
 
@@ -183,6 +309,241 @@ class MigrateTests(unittest.TestCase):
         failed_results = ['dictionary-web_darci1.tar.gz',
                           'dictionary-web_darci2.tar.gz',
                           'dictionary-web_darci3.tar.gz']
-        filtered_staged = get_staged_projects_without_failed_export(
+        filtered_staged = mutils.get_staged_projects_without_failed_export(
             self.staged_projects, failed_results)
         self.assertListEqual(filtered_staged, [])
+
+    @mock.patch("congregate.helpers.base_module.ConfigurationValidator.parent_id", new_callable=mock.PropertyMock)
+    @mock.patch.object(GroupsApi, "get_group")
+    @mock.patch.object(ConfigurationValidator, "validate_parent_group_id")
+    def test_get_staged_groups_without_failed_export_with_failure(self, cv, ga, pi):
+        pi.return_value = 1
+        ga.return_value = self.ThingWithJson({"path": "SOME_RANDOM_PATH"})
+        cv.return_value = True
+        expected = [
+            {
+                "lfs_enabled": True,
+                "request_access_enabled": False,
+                "full_parent_namespace": "test-parent-group-2",
+                "project_creation_level": "developer",
+                "subgroup_creation_level": "owner",
+                "path": "pmm-demo-2",
+                "id": 129,
+                "parent_id": 814,
+                "share_with_group_lock": False,
+                "description": "PMM Demos",
+                "two_factor_grace_period": 48,
+                "visibility": "public",
+                "members": [],
+                "parent_namespace": "test-parent-group-2",
+                "name": "pmm-demo-2",
+                "require_two_factor_authentication": False,
+                "full_path": "pmm-demo-2"
+            },
+            {
+                "lfs_enabled": True,
+                "request_access_enabled": False,
+                "full_parent_namespace": "test-parent-group-3",
+                "project_creation_level": "developer",
+                "subgroup_creation_level": "owner",
+                "path": "pmm-demo-3",
+                "id": 129,
+                "parent_id": 814,
+                "share_with_group_lock": False,
+                "description": "PMM Demos",
+                "two_factor_grace_period": 48,
+                "visibility": "public",
+                "members": [],
+                "parent_namespace": "test-parent-group-3",
+                "name": "pmm-demo-3",
+                "require_two_factor_authentication": False,
+                "full_path": "pmm-demo-3"
+            }
+        ]
+        failed_results = ['pmm-demo-1.tar.gz']
+        filtered_staged = mutils.get_staged_groups_without_failed_export(
+            self.staged_groups, failed_results)
+        self.assertListEqual(filtered_staged, expected)
+        print(filtered_staged)
+
+    @mock.patch("congregate.helpers.base_module.ConfigurationValidator.parent_id", new_callable=mock.PropertyMock)
+    @mock.patch.object(GroupsApi, "get_group")
+    @mock.patch.object(ConfigurationValidator, "validate_parent_group_id")
+    def test_get_staged_groups_without_failed_export_with_no_failure_leaves_unchanged(self, cv, ga, pi):
+        ga.return_value = self.ThingWithJson({"path": "SOME_RANDOM_PATH"})
+        cv.return_value = True
+        pi.return_value = 1
+        failed_results = []
+        filtered_staged = mutils.get_staged_groups_without_failed_export(
+            self.staged_groups, failed_results)
+        self.assertListEqual(filtered_staged, self.staged_groups)
+
+    @mock.patch("congregate.helpers.base_module.ConfigurationValidator.parent_id", new_callable=mock.PropertyMock)
+    @mock.patch.object(GroupsApi, "get_group")
+    @mock.patch.object(ConfigurationValidator, "validate_parent_group_id")
+    def test_get_staged_groups_without_failed_export_with_no_all_fail_returns_empty_group(self, cv, ga, pi):
+        pi.return_value = 1
+        ga.return_value = self.ThingWithJson({"path": "SOME_RANDOM_PATH"})
+        cv.return_value = True
+        failed_results = ['pmm-demo-1.tar.gz',
+                          'pmm-demo-2.tar.gz',
+                          'pmm-demo-3.tar.gz']
+        filtered_staged = mutils.get_staged_groups_without_failed_export(
+            self.staged_groups, failed_results)
+        self.assertListEqual(filtered_staged, [])
+
+    def test_is_user_project_false(self):
+        self.assertFalse(mutils.is_user_project(self.staged_group_project))
+
+    def test_is_user_project_none(self):
+        staged_project = {
+            "archived": False,
+            "builds_access_level": "enabled",
+            "default_branch": "master",
+            "description": "",
+            "http_url_to_repo": "https://dictionary.githost.io/dictionary-web/darci.git",
+            "id": 132,
+            "issues_access_level": "enabled",
+            "members": [],
+            "merge_requests_access_level": "enabled",
+            "name": "darci1",
+            "namespace": "dictionary-web",
+            "project_type": None,
+            "repository_access_level": "enabled",
+            "shared_runners_enabled": False,
+            "snippets_access_level": "disabled",
+            "visibility": "private",
+            "wiki_access_level": "enabled"
+        }
+        self.assertFalse(mutils.is_user_project(staged_project))
+
+    def test_is_user_project_true(self):
+        self.assertTrue(mutils.is_user_project(self.staged_user_project))
+
+    def test_get_export_filename_from_namespace_and_name(self):
+        self.assertEqual(mutils.get_export_filename_from_namespace_and_name(
+            "Test-Group/Test-SubGroup", "Test-Project"), "test-group_test-subgroup_test-project.tar.gz")
+        self.assertEqual(mutils.get_export_filename_from_namespace_and_name(
+            "Test-Group/Test-SubGroup"), "test-group_test-subgroup.tar.gz")
+
+    @mock.patch.object(ConfigurationValidator, "parent_group_path", new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, "parent_id", new_callable=mock.PropertyMock)
+    def test_get_project_namespace(self, parent_id, parent_group_path):
+        parent_id.return_value = 4
+        parent_group_path.return_value = "test"
+        self.assertEqual(mutils.get_project_namespace(
+            self.staged_group_project), "test/pmm-demo")
+        parent_id.return_value = None
+        self.assertEqual(mutils.get_project_namespace(
+            self.staged_group_project), "pmm-demo")
+        parent_id.return_value = 1
+        self.assertEqual(mutils.get_project_namespace(
+            self.staged_user_project), "pmm-demo")
+
+    # pylint: disable=no-member
+    @responses.activate
+    # pylint: enable=no-member
+    @mock.patch("congregate.helpers.api.generate_v4_request_url")
+    @mock.patch.object(ConfigurationValidator, "import_user_id", new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, "destination_host", new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, "destination_token", new_callable=mock.PropertyMock)
+    def test_get_user_project_namespace_dot_com(self, token, host, user_id, url):
+        token.return_value = "abc"
+        host.return_value = "https://gitlab.com"
+        user_id.return_value = 1
+        url_value = "https://gitlab.com/api/v4/users/5"
+        url.return_value = url_value
+        # pylint: disable=no-member
+        responses.add(responses.GET, url_value,
+                      json=self.mock_users.get_dummy_user(), status=200)
+        # pylint: enable=no-member
+        self.assertEqual(mutils.get_user_project_namespace(
+            self.staged_user_project), "jdoe")
+
+    # pylint: disable=no-member
+    @responses.activate
+    # pylint: enable=no-member
+    @mock.patch("congregate.helpers.api.generate_v4_request_url")
+    @mock.patch.object(ConfigurationValidator, "import_user_id", new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, "destination_host", new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, "destination_token", new_callable=mock.PropertyMock)
+    def test_get_user_project_namespace_root(self, token, host, user_id, url):
+        token.return_value = "abc"
+        host.return_value = "https://githost.io"
+        user_id.return_value = 1
+        url_value = "https://gitlab.com/api/v4/users/5"
+        url.return_value = url_value
+        # pylint: disable=no-member
+        responses.add(responses.GET, url_value,
+                      json=self.mock_users.get_dummy_user(), status=200)
+        # pylint: enable=no-member
+        self.assertEqual(mutils.get_user_project_namespace(
+            self.staged_root_user_project), "jdoe")
+
+    # pylint: disable=no-member
+    @responses.activate
+    # pylint: enable=no-member
+    @mock.patch("congregate.helpers.api.generate_v4_request_url")
+    @mock.patch.object(ConfigurationValidator, "import_user_id", new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, "destination_host", new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, "destination_token", new_callable=mock.PropertyMock)
+    def test_get_user_project_namespace_non_root(self, token, host, user_id, url):
+        token.return_value = "abc"
+        host.return_value = "https://githost.io"
+        user_id.return_value = 1
+        url_value = "https://gitlab.com/api/v4/users/5"
+        url.return_value = url_value
+        # pylint: disable=no-member
+        responses.add(responses.GET, url_value,
+                      json=self.mock_users.get_dummy_user(), status=200)
+        # pylint: enable=no-member
+        self.assertEqual(mutils.get_user_project_namespace(
+            self.staged_user_project), "pmm-demo")
+
+    def test_get_project_filename(self):
+        self.assertEqual(mutils.get_project_filename(
+            self.staged_user_project), "pmm-demo_spring-app-secure-2.tar.gz")
+
+    def test_get_project_filename_no_name(self):
+        staged_project = {
+            "archived": False,
+            "builds_access_level": "enabled",
+            "default_branch": "master",
+            "description": "",
+            "http_url_to_repo": "https://dictionary.githost.io/dictionary-web/darci.git",
+            "id": 132,
+            "issues_access_level": "enabled",
+            "members": [],
+            "merge_requests_access_level": "enabled",
+            "name": None,
+            "namespace": "dictionary-web",
+            "project_type": None,
+            "repository_access_level": "enabled",
+            "shared_runners_enabled": False,
+            "snippets_access_level": "disabled",
+            "visibility": "private",
+            "wiki_access_level": "enabled"
+        }
+        self.assertEqual(mutils.get_project_filename(staged_project), "")
+
+    def test_get_project_filename_no_namespace(self):
+        staged_project = {
+            "archived": False,
+            "builds_access_level": "enabled",
+            "default_branch": "master",
+            "description": "",
+            "http_url_to_repo": "https://dictionary.githost.io/dictionary-web/darci.git",
+            "id": 132,
+            "issues_access_level": "enabled",
+            "members": [],
+            "merge_requests_access_level": "enabled",
+            "name": "darci1",
+            "namespace": None,
+            "project_type": None,
+            "repository_access_level": "enabled",
+            "shared_runners_enabled": False,
+            "snippets_access_level": "disabled",
+            "visibility": "private",
+            "wiki_access_level": "enabled"
+        }
+        self.assertEqual(mutils.get_project_filename(staged_project), "")

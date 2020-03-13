@@ -190,3 +190,8 @@ def test_rewrite_json_list_into_dict():
 def test_is_dot_com():
     assert misc.is_dot_com("asdasd") is False
     assert misc.is_dot_com("https://gitlab.com") is True
+
+
+def test_check_is_project_or_group_for_logging_project():
+    assert misc.check_is_project_or_group_for_logging(True) is "Project"
+    assert misc.check_is_project_or_group_for_logging(False) is "Group"

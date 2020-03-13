@@ -8,7 +8,7 @@ from glob import glob
 from requests.exceptions import RequestException
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers import api
-from congregate.helpers.misc_utils import download_file, migration_dry_run, get_dry_log
+from congregate.helpers.misc_utils import download_file, migration_dry_run, get_dry_log, check_is_project_or_group_for_logging
 from congregate.aws import AwsClient
 from congregate.migration.gitlab.projects import ProjectsClient
 from congregate.migration.gitlab.groups import GroupsClient
@@ -50,14 +50,14 @@ class ImportExportClient(BaseClass):
 
     def log_wait_time(self, wait_time, is_project, name):
         self.log.info("Waiting {0} seconds before skipping {1} {2} export".format(
-            wait_time, self.check_is_project_or_group_for_logging(is_project).lower(), name))
+            wait_time, check_is_project_or_group_for_logging(is_project).lower(), name))
 
     def wait_for_export_to_finish(self, source_id, name, is_project=True):
         exported = False
         total_time = 0
         skip = False
         wait_time = self.config.importexport_wait
-        export_type = self.check_is_project_or_group_for_logging(is_project)
+        export_type = check_is_project_or_group_for_logging(is_project)
         while not exported:
             response = self.get_export_status(source_id, is_project)
             if response.status_code == 200:
@@ -96,7 +96,7 @@ class ImportExportClient(BaseClass):
             else:
                 self.log.info(
                     "SKIP: Export, source {0} {1} doesn't exist".format(
-                        self.check_is_project_or_group_for_logging(is_project).lower(), name))
+                        check_is_project_or_group_for_logging(is_project).lower(), name))
                 exported = False
                 break
 
@@ -177,7 +177,7 @@ class ImportExportClient(BaseClass):
             return response
         except RequestException, e:
             self.log.error("Failed to trigger {0} (ID: {1}) export as {2} with response {3}".format(
-                self.check_is_project_or_group_for_logging(is_project).lower(), source_id, filename, response))
+                check_is_project_or_group_for_logging(is_project).lower(), source_id, filename, response))
             return None
 
     def import_project(self, project, dry_run=True):
@@ -718,6 +718,3 @@ class ImportExportClient(BaseClass):
             self.log.info("SKIP: Project {0} (ID: {1}) found on destination".format(
                 full_name, dest_pid))
         return exported
-
-    def check_is_project_or_group_for_logging(self, is_project):
-        return "Project" if is_project else "Group"

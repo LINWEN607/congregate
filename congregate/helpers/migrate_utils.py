@@ -16,16 +16,16 @@ def get_failed_export_from_results(results):
             and not x["exported"]]
 
 
-def get_staged_projects_without_failed_export(staged_projects, failed_update):
+def get_staged_projects_without_failed_export(staged_projects, failed_export):
     """
     Filter out projects that failed to export from the staged projects
 
         :param staged_projects: The current list of staged projects
-        :param failed_update: A list of project export filenames
+        :param failed_export: A list of project export filenames
         :return: A new staged_projects list removing those that failed export
     """
     return [p for p in staged_projects if get_project_filename(
-        p) not in failed_update]
+        p) not in failed_export]
 
 
 def get_staged_groups_without_failed_export(staged_groups, failed_export):
