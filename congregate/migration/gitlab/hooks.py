@@ -51,6 +51,7 @@ class HooksClient(BaseClass):
                 # hook does not include secret token
                 self.projects_api.add_project_hook(
                     self.config.destination_host, self.config.destination_token, new_id, h)
+            return True
         except TypeError as te:
             self.log.error("Project {0} (ID: {1}) hooks {2} {3}".format(
                 name, old_id, response, te))
@@ -59,5 +60,3 @@ class HooksClient(BaseClass):
             self.log.error(
                 "Failed to migrate project {0} (ID: {1}) hooks, with error:\n{2}".format(name, old_id, re))
             return False
-        else:
-            return True

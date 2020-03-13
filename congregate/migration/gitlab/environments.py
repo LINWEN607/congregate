@@ -18,12 +18,11 @@ class EnvironmentsClient(BaseClass):
                         name, src_id, json_pretty(environment)))
                     self.projects.create_environment(
                         self.config.destination_host, self.config.destination_token, dest_id, self.generate_environment_data(environment))
+            return True
         except RequestException as re:
             self.log.error(
                 "Failed to migrate project {0} (ID: {1}) environments, with error:\n{2}".format(name, src_id, re))
             return False
-        else:
-            return True
 
     def generate_environment_data(self, environment):
         environment.pop("state")

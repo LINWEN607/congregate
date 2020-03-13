@@ -28,7 +28,7 @@ from congregate.migration.gitlab.projects import ProjectsClient
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.pushrules import PushRulesClient
 from congregate.migration.gitlab.branches import BranchesClient
-from congregate.migration.gitlab.merge_request_approvers import MergeRequestApproversClient
+from congregate.migration.gitlab.merge_request_approvals import MergeRequestApprovalsClient
 from congregate.migration.gitlab.awards import AwardsClient
 from congregate.migration.gitlab.registries import RegistryClient
 from congregate.migration.gitlab.pipeline_schedules import PipelineSchedulesClient
@@ -51,7 +51,7 @@ projects_api = ProjectsApi()
 pushrules = PushRulesClient()
 branches = BranchesClient()
 awards = AwardsClient()
-mr_approvers = MergeRequestApproversClient()
+mr_approvals = MergeRequestApprovalsClient()
 awards = AwardsClient()
 registries = RegistryClient()
 p_schedules = PipelineSchedulesClient()
@@ -462,10 +462,6 @@ def migrate_single_project_info(project, new_id):
     # Shared with groups
     projects.add_shared_groups(old_id, new_id)
 
-    # Update project badges to use destination path hostname
-    results["badges"] = badges.update_project_badges(
-        new_id, name, full_parent_namespace)
-
     # CI/CD Variables
     results["variables"] = variables.migrate_cicd_variables(
         old_id, new_id, name)
@@ -473,8 +469,8 @@ def migrate_single_project_info(project, new_id):
     # Push Rules
     results["push_rules"] = pushrules.migrate_push_rules(old_id, new_id, name)
 
-    # Merge Request Approvers
-    results["merge_request_approvers"] = mr_approvers.migrate_mr_approvers(
+    # Merge Request Approvals
+    results["project_level_mr_approvals"] = mr_approvals.migrate_project_level_mr_approvals(
         old_id, new_id, name)
 
     # Deploy Keys (project only)

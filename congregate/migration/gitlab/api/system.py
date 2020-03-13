@@ -28,15 +28,3 @@ class SystemApi():
             :return: Response object containing the response to POST /hooks
         """
         return api.generate_post_request(host, token, "hooks", json.dumps(data))
-
-    def get_version(self, host, token):
-        """
-        Retrieve version information for this GitLab instance
-
-        GitLab API Doc: https://docs.gitlab.com/ee/api/version.html
-
-            :param: host: (str) GitLab host URL
-            :param: token: (str) Access token to GitLab instance
-            :yield: Response object containing the response to from GET /version
-        """
-        return api.generate_get_request(host, token, "version")

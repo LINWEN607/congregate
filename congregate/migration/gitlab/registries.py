@@ -30,6 +30,7 @@ class RegistryClient(BaseClass):
                 self.log.info(
                     "Migrating project {0} (ID: {1}) container registries".format(name, old_id))
                 self.migrate(old_id, name)
+                return True
             else:
                 instance = "source" if not registry[0] else "destination" if not registry[1] else "source and destination"
                 self.log.warning(
@@ -38,8 +39,6 @@ class RegistryClient(BaseClass):
             self.log.error(
                 "Failed to migrate project {0} (ID: {1}) container registries, with error:\n{2}".format(name, old_id, e))
             return False
-        else:
-            return True
 
     def migrate(self, old_id, name):
         try:

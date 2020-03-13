@@ -185,7 +185,7 @@ def deobfuscate(secret):
     return base64.b64decode(secret)
 
 
-def clean_data():
+def clean_data(dry_run=True):
     app_path = get_congregate_path()
     files_to_delete = [
         "stage.json",
@@ -197,13 +197,19 @@ def clean_data():
         "users_not_found.json",
         "user_migration_results.json",
         "user_migration_results.html",
+        "user_diff.json",
         "group_migration_results.json",
         "group_migration_results.html",
+        "group_diff.json",
         "project_migration_results.json",
         "project_migration_results.html",
+        "project_diff.json",
         "migration_rollback_results.html",
         "new_users.json",
         "new_user_ids.txt",
+        "newer_users.json",
+        "unknown_users.json",
+        "groups_audit.json",
         "dry_run_user_migration.json",
         "dry_run_group_migration.json",
         "dry_run_project_migration.json"
@@ -211,11 +217,13 @@ def clean_data():
     if os.path.isdir("{0}/data".format(app_path)):
         for f in files_to_delete:
             path = "{0}/data/{1}".format(app_path, f)
-            if os.path.exists(path):
-                print "Removing {}".format(f)
-                os.remove(path)
-            else:
-                print "Couldn't find {}".format(f)
+            try:
+                print "{0}Removing {1}".format(get_dry_log(dry_run), f)
+                if not dry_run:
+                    os.remove(path)
+            except OSError as e:
+                if e.errno != errno.ENOENT:
+                    raise
     else:
         print "Cannot find data directory. CONGREGATE_PATH not set or you are not running this in the Congregate directory."
 

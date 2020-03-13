@@ -30,9 +30,8 @@ class PushRulesClient(BaseClass):
                     self.config.destination_host,
                     self.config.destination_token,
                     push_rule)
+                return True
         except RequestException as re:
             self.log.error(
                 "Failed to migrate {0} push rules, with error:\n{1}".format(name, re))
             return False
-        else:
-            return True
