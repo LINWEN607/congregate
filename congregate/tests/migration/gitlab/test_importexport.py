@@ -44,20 +44,6 @@ class ImportExportClientTests(unittest.TestCase):
             "override_params[shared_runners_enabled]=%s" % self.original_project["shared_runners_enabled"]
         ]
 
-    def test_strip_namespace_single_slash(self):
-        fpn = "Top-level-group/subgroup"
-        n = "Top-level-group/subgroup_project"
-        actual = self.ie.strip_namespace(fpn, n)
-        expected = n
-        self.assertEqual(expected, actual)
-
-    def test_strip_namespace_multi_slash(self):
-        fpn = "Top-level-group/subgroup1"
-        n = "subgroup1/subgroup2_project"
-        actual = self.ie.strip_namespace(fpn, n)
-        expected = "subgroup2_project"
-        self.assertEqual(expected, actual)
-
     def test_create_override_name(self):
         original_name = "some_project"
         self.assertEqual(self.ie.create_override_name(

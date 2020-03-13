@@ -49,11 +49,8 @@ class ImportExportClient(BaseClass):
         return api.generate_get_request(self.config.source_host, self.config.source_token, "groups/%d/export" % src_id)
 
     def log_wait_time(self, wait_time, is_project, name):
-        self.log.info("Waiting %s seconds before skipping %s %s export",
-                      str(wait_time),
-                      str(self.check_is_project_or_group_for_logging(
-                          is_project)).lower(),
-                      name)
+        self.log.info("Waiting {0} seconds before skipping {1} {2} export".format(
+            wait_time, self.check_is_project_or_group_for_logging(is_project).lower(), name))
 
     def wait_for_export_to_finish(self, source_id, name, is_project=True):
         exported = False
@@ -98,10 +95,8 @@ class ImportExportClient(BaseClass):
                         break
             else:
                 self.log.info(
-                    "SKIP: Export, source %s %s doesn't exist",
-                    str(self.check_is_project_or_group_for_logging(
-                        is_project)).lower(),
-                    name)
+                    "SKIP: Export, source {0} {1} doesn't exist".format(
+                        self.check_is_project_or_group_for_logging(is_project).lower(), name))
                 exported = False
                 break
 
@@ -181,12 +176,8 @@ class ImportExportClient(BaseClass):
             )
             return response
         except RequestException, e:
-            self.log.error("Failed to trigger %s (ID: %s) export as %s with response %s",
-                           str(self.check_is_project_or_group_for_logging(
-                               is_project)).lower(),
-                           str(source_id),
-                           filename,
-                           response)
+            self.log.error("Failed to trigger {0} (ID: {1}) export as {2} with response {3}".format(
+                self.check_is_project_or_group_for_logging(is_project).lower(), source_id, filename, response))
             return None
 
     def import_project(self, project, dry_run=True):
@@ -727,13 +718,6 @@ class ImportExportClient(BaseClass):
             self.log.info("SKIP: Project {0} (ID: {1}) found on destination".format(
                 full_name, dest_pid))
         return exported
-
-    def strip_namespace(self, full_parent_namespace, namespace):
-        if len(full_parent_namespace.split("/")) > 1:
-            if full_parent_namespace.split("/")[-1] == namespace.split("/")[0]:
-                namespace = namespace.replace(
-                    namespace.split("/")[0] + "/", "")
-        return namespace
 
     def check_is_project_or_group_for_logging(self, is_project):
         return "Project" if is_project else "Group"
