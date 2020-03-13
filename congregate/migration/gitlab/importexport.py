@@ -257,7 +257,7 @@ class ImportExportClient(BaseClass):
                 filename, name, path, dst_namespace, override_params)
             if "Try again later" in import_response:
                 self.log.info("Reached rate limit for import. Waiting 10 minutes.")
-                sleep(600) # 10 min
+                sleep(300) # 5 min
                 import_response = self.attempt_import(
                     filename, name, path, dst_namespace, override_params)
 
