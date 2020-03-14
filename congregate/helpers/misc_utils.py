@@ -7,7 +7,7 @@ from time import time
 from getpass import getpass
 from re import sub, findall
 from datetime import timedelta, date
-from requests import get, head
+from requests import get, head, Response
 
 
 def remove_dupes(my_list):
@@ -240,16 +240,17 @@ def find(key, dictionary):
     """
         Nested dictionary lookup from https://gist.github.com/douglasmiranda/5127251
     """
-    for k, v in dictionary.iteritems():
-        if k == key:
-            yield v
-        elif isinstance(v, dict):
-            for result in find(key, v):
-                yield result
-        elif isinstance(v, list):
-            for d in v:
-                for result in find(key, d):
+    if isinstance(dictionary, dict):
+        for k, v in dictionary.iteritems():
+            if k == key:
+                yield v
+            elif isinstance(v, dict):
+                for result in find(key, v):
                     yield result
+            elif isinstance(v, list):
+                for d in v:
+                    for result in find(key, d):
+                        yield result
 
 
 def is_dot_com(host):
@@ -258,3 +259,11 @@ def is_dot_com(host):
 
 def check_is_project_or_group_for_logging(is_project):
     return "Project" if is_project else "Group"
+
+
+def is_error_message_present(response):
+    if isinstance(response, Response):
+        response = response.json()
+    if response.get("message", None) is not None:
+        return True
+    return False

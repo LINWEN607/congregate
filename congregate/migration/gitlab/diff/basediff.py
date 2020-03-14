@@ -4,10 +4,54 @@ from opslib.icsutils.jsondiff import Comparator
 from bs4 import BeautifulSoup as bs
 from json2html import json2html
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import find as nested_find
+from congregate.helpers.misc_utils import find as nested_find, is_error_message_present
 
 
 class BaseDiffClient(BaseClass):
+    SCRIPT = """
+        window.onload = function () {
+            var acc = document.getElementsByClassName("accordion");
+            var accordionContentList = document.getElementsByClassName("accordion-content");
+            for (var i = 0; i < acc.length; i++) {
+                acc[i].setAttribute("id", i);
+                acc[i].addEventListener("click", function() {
+                    this.classList.toggle("active");
+                    var accordionContent = accordionContentList[this.getAttribute("id")];
+                    console.log(accordionContent);
+                    if (accordionContent.style.display === "block") {
+                    accordionContent.style.display = "none";
+                    } else {
+                    accordionContent.style.display = "block";
+                    }
+                });
+            }
+        }
+    """
+    STYLE = """
+        .accordion {
+            background-color: #eee;
+            color: #444;
+            cursor: pointer;
+            padding: 18px;
+            width: 100%;
+            border: none;
+            text-align: left;
+            outline: none;
+            font-size: 15px;
+            transition: 0.4s;
+        }
+        
+        .active, .accordion:hover {
+            background-color: #ccc; 
+        }
+        
+        .accordion-content {
+            padding: 0 18px;
+            display: none;
+            background-color: white;
+            overflow: hidden;
+        }
+    """
     def __init__(self):
         super(BaseDiffClient, self).__init__()
         self.keys_to_ignore = []
@@ -15,7 +59,7 @@ class BaseDiffClient(BaseClass):
     def diff(self, source_data, destination_data, critical_key=None, obfuscate=False, parent_group=None):
         engine = Comparator()
         if isinstance(source_data, list):
-            if not isinstance(destination_data, list) and destination_data.get("message", None) is not None:
+            if not isinstance(destination_data, list) and is_error_message_present(destination_data):
                 destination_data = []
             else:
                 destination_data = {}
@@ -122,6 +166,8 @@ class BaseDiffClient(BaseClass):
     def ignore_keys(self, data):
         if isinstance(data, list):
             for i, _ in enumerate(data):
+                if isinstance(data[i], str) or isinstance(data[i], unicode):
+                    return data
                 data[i] = self.ignore_keys(data[i])
         else:
             for key in self.keys_to_ignore:
@@ -154,7 +200,14 @@ class BaseDiffClient(BaseClass):
             "accuracy": 1
         }
 
+    def return_only_accuracies(self, obj):
+        accuracies = {}
+        for o in obj.keys():
+            accuracies[o] = {i:obj[o][i] for i in obj[o] if i!='diff'}
+        return accuracies
+            
     def generate_html_report(self, diff, filepath):
+        filepath = "{0}{1}".format(self.app_path, filepath)
         html_data = json2html.convert(json=diff)
         soup = bs(html_data, features="lxml")
         style = soup.new_tag("style")
@@ -165,6 +218,10 @@ class BaseDiffClient(BaseClass):
         for tr in soup.html.body.table.find_all('tr', recursive=False):
             # if "migration_results" in tr.th.text:
             #     header_index = tr
+            if "results" not in tr.th.text:
+                tr.th['class'] = "accordion"
+                if tr.td:
+                    tr.td['class'] = "accordion-content"
             new_tr = soup.new_tag("tr")
             new_tr.append(tr.td)
             tr.insert_after(new_tr)
@@ -172,5 +229,13 @@ class BaseDiffClient(BaseClass):
         # soup.html.body.table.insert(0, soup.html.body.table[header_index])
         # new_soup.insert_before
         # print soup.html.body.table.find_all('tr', recursive=False)[0]
-        with open("{0}{1}".format(self.app_path, filepath), "w") as f:
+        head = soup.new_tag("head")
+        script = soup.new_tag("script")
+        script.string = self.SCRIPT
+        style = soup.new_tag("style")
+        style.string = self.STYLE
+        head.append(script)
+        head.append(style)
+        soup.html.append(head)
+        with open(filepath, "w") as f:
             f.write(soup.prettify())

@@ -170,7 +170,7 @@ class CompareClient(BaseClass):
         for d in data:
             for member in d["members"]:
                 user = self.users.get_user(member["id"], self.config.destination_host, self.config.destination_token).json()
-                if user.get("message", None) is not None:
+                if misc_utils.is_error_message_present(user):
                     users_map[member["id"]] = {
                         "message": user["message"]
                     }

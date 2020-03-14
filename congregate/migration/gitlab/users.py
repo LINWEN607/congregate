@@ -7,7 +7,7 @@ from congregate.helpers.base_class import BaseClass
 from congregate.helpers import api
 from congregate.helpers.misc_utils import get_dry_log, json_pretty
 from congregate.helpers.threads import handle_multi_thread
-from congregate.helpers.misc_utils import remove_dupes, migration_dry_run
+from congregate.helpers.misc_utils import remove_dupes, migration_dry_run, is_error_message_present
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.users import UsersApi
 
@@ -263,7 +263,7 @@ class UsersClient(BaseClass):
                                 rewritten_user["id"],
                                 self.config.destination_host,
                                 self.config.destination_token).json()
-                            if new_user.get("message", None) is None and \
+                            if not is_error_message_present(new_user) and \
                                     new_user.get("email", None) is not None and \
                                     str(new_user["email"]).lower() == old_user_email:
                                 # If we find the user by new ID, and the emails match (as they should by this point
