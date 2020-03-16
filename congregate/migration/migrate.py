@@ -123,16 +123,17 @@ def migrate_user_info(dry_run=True):
 
     # This list is of user ids from found users via email or newly created users
     # So, new_user_ids is a bit of a misnomer
-    if new_users:
-        write_results_to_file(new_users, result_type="user")
-        with open("%s/data/new_user_ids.txt" % b.app_path, "w") as f:
-            for new_user in new_users:
-                f.write("%s\n" % new_user)
+    if not dry_run:
+        if new_users:
+            write_results_to_file(new_users, result_type="user")
+            with open("%s/data/new_user_ids.txt" % b.app_path, "w") as f:
+                for new_user in new_users:
+                    f.write("%s\n" % new_user)
 
-        # If we created or found users, do not force overwrite
-        users.update_user_info(new_users)
-    else:
-        users.update_user_info(new_users, overwrite=False)
+            # If we created or found users, do not force overwrite
+            users.update_user_info(new_users)
+        else:
+            users.update_user_info(new_users, overwrite=False)
 
 
 def migrate_group_info(dry_run=True, skip_group_export=False, skip_group_import=False):
@@ -256,8 +257,9 @@ def handle_importing_groups(group, dry_run=True):
             b.log.info("{0}Group {1} (ID: {2}) already exists on destination".format(
                 get_dry_log(dry_run), full_path, gid))
         # In place of checking the import status
-        results[full_path] = ie.wait_for_group_import(
-            full_path_with_parent_namespace)
+        if not dry_run:
+            results[full_path] = ie.wait_for_group_import(
+                full_path_with_parent_namespace)
         if results[full_path] and results[full_path].get("id", None) is not None:
             # Migrate CI/CD Variables
             variables.migrate_variables(
