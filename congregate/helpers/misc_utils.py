@@ -185,7 +185,7 @@ def deobfuscate(secret):
     return base64.b64decode(secret)
 
 
-def clean_data(dry_run=True):
+def clean_data(dry_run=True, files=None):
     app_path = get_congregate_path()
     files_to_delete = [
         "stage.json",
@@ -213,7 +213,8 @@ def clean_data(dry_run=True):
         "dry_run_user_migration.json",
         "dry_run_group_migration.json",
         "dry_run_project_migration.json"
-    ]
+    ] if not files else files
+
     if os.path.isdir("{0}/data".format(app_path)):
         for f in files_to_delete:
             path = "{0}/data/{1}".format(app_path, f)
