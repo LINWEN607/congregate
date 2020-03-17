@@ -15,7 +15,7 @@ from shutil import copy
 from requests.exceptions import RequestException
 
 from congregate.helpers import api, migrate_utils
-from congregate.helpers.misc_utils import get_dry_log, json_pretty, write_json_to_file, is_dot_com, clean_data, add_post_migration_stats
+from congregate.helpers.misc_utils import get_dry_log, json_pretty, write_json_to_file, is_dot_com, clean_data, add_post_migration_stats, clean_log
 from congregate.aws import AwsClient
 from congregate.cli.stage_projects import stage_projects
 from congregate.helpers.base_class import BaseClass
@@ -80,12 +80,13 @@ def migrate(
             repo_list = json.load(f)
         start_multi_thead(bitbucket.handle_bitbucket_migration, repo_list)
     else:
-        # Dry-run cleanup
+        # Dry-run and log cleanup
         if dry_run:
             clean_data(dry_run=False, files=[
                 "dry_run_user_migration.json",
                 "dry_run_group_migration.json",
                 "dry_run_project_migration.json"])
+        clean_log()
 
         # Migrate users
         if not skip_users:
@@ -506,6 +507,7 @@ def rollback(dry_run=True,
              hard_delete=False,
              skip_groups=False,
              skip_projects=False):
+    clean_log()
     dry_log = get_dry_log(dry_run)
     if not skip_users:
         b.log.info("{0}Removing staged users on destination (hard_delete={1})".format(

@@ -814,7 +814,7 @@ class UsersClient(BaseClass):
         with open("%s/data/users.json" % self.app_path, "r") as f:
             user_file = json.load(f)
         staged_users = []
-        for user in users:
+        for user in filter(None, users):
             for u in user_file:
                 if user == u["username"]:
                     staged_users.append(u)

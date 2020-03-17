@@ -524,11 +524,11 @@ class ImportExportClient(BaseClass):
                                 # If it is started, we just ignore the status
                                 self.log.warning(
                                     "Could not get import status: {0}".format(status_json))
+                                timeout += wait_time
+                                sleep(wait_time)
                         else:
                             self.log.error(
                                 "Import status code was {0}".format(status.status_code))
-                        timeout += wait_time
-                        sleep(wait_time)
                     except ValueError as e:
                         self.log.error(e)
                         self.log.error(

@@ -37,26 +37,26 @@ def build_staging_data(projects_to_stage, dry_run=True):
 
     # Rewriting projects to retrieve objects by ID more efficiently
     rewritten_projects = {}
-    for i in range(len(projects)):
+    for i, _ in enumerate(projects):
         new_obj = projects[i]
         id_num = projects[i]["id"]
         rewritten_projects[id_num] = new_obj
 
     rewritten_groups = {}
-    for i in range(len(groups)):
+    for i, _ in enumerate(groups):
         new_obj = groups[i]
         group_id = groups[i]["id"]
         rewritten_groups[group_id] = new_obj
 
     rewritten_users = {}
-    for i in range(len(users)):
+    for i, _ in enumerate(users):
         new_obj = users[i]
         id_num = users[i]["username"]
         rewritten_users[id_num] = new_obj
 
     if not projects_to_stage[0] == "":
         if projects_to_stage[0] == "all" or projects_to_stage[0] == ".":
-            for i in range(len(projects)):
+            for i, _ in enumerate(projects):
                 obj = get_project_metadata(projects[i])
 
                 members = []
@@ -120,7 +120,7 @@ def build_staging_data(projects_to_stage, dry_run=True):
                     len(range(start, end))))
                 staging.append(obj)
         else:
-            for i in range(0, len(projects_to_stage)):
+            for i, _ in enumerate(projects_to_stage):
                 # Hacky check for id or project name by explicitly checking
                 # variable type
                 try:
@@ -130,7 +130,7 @@ def build_staging_data(projects_to_stage, dry_run=True):
                         project = rewritten_projects[int(key)]
                 except ValueError:
                     # Iterate over original project_json.json file
-                    for j in range(len(projects)):
+                    for j, _ in enumerate(projects):
                         if projects[j]["name"] == projects_to_stage[i]:
                             project = projects[j]
 

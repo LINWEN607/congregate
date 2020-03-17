@@ -219,7 +219,7 @@ def clean_data(dry_run=True, files=None):
         for f in files_to_delete:
             path = "{0}/data/{1}".format(app_path, f)
             try:
-                print "{0}Removing {1}".format(get_dry_log(dry_run), f)
+                print "{0}Removing {1}".format(get_dry_log(dry_run), path)
                 if not dry_run:
                     os.remove(path)
             except OSError as e:
@@ -227,6 +227,15 @@ def clean_data(dry_run=True, files=None):
                     raise
     else:
         print "Cannot find data directory. CONGREGATE_PATH not set or you are not running this in the Congregate directory."
+
+
+def clean_log():
+    """
+        Empty congregate.log file
+    """
+    log = "{}/data/congregate.log".format(get_congregate_path())
+    print("Removing {}".format(log))
+    open(log, "w").close()
 
 
 def is_recent_file(path, age=2592000):
