@@ -712,29 +712,32 @@ class UsersClient(BaseClass):
 
     def handle_user_creation(self, user):
         """
-        This is called when importing staged_users.json.
-        Blocked users will be skipped if we do NOT 'keep_blocked_users'.
-        :param user: Each iterable called is a user from the staged_users.json file
-        :return:
+            This is called when importing staged_users.json.
+            Blocked users will be skipped if we do NOT 'keep_blocked_users'.
+
+            :param user: Each iterable called is a user from the staged_users.json file
+            :return:
         """
+        response = None
         try:
-            if user.get("state", None) \
-                    and (str(user["state"]).lower() == "active"
-                         or (str(user["state"]).lower() == "blocked"
-                             and self.config.keep_blocked_users)):
-                user_data = self.generate_user_data(user)
-                self.log.info(
-                    "Attempting to create user:\n{}".format(json_pretty(user)))
-                response = self.users_api.create_user(
-                    self.config.destination_host,
-                    self.config.destination_token,
-                    user_data)
+            if user.get("state", None):
+                if str(user["state"]).lower() == "active" or (str(user["state"]).lower() == "blocked" and self.config.keep_blocked_users):
+                    user_data = self.generate_user_data(user)
+                    self.log.info(
+                        "Attempting to create user:\n{}".format(json_pretty(user)))
+                    response = self.users_api.create_user(
+                        self.config.destination_host,
+                        self.config.destination_token,
+                        user_data)
+                else:
+                    self.log.info(
+                        "SKIP: Not migrating {0} user:\n{1}".format(user["state"], json_pretty(user)))
             else:
-                response = None
+                self.log.info(
+                    "No state found for user:\n{}".format(json_pretty(user)))
         except RequestException, e:
             self.log.error(
                 "Failed to create user {0}, with error:\n{1}".format(user_data, e))
-            response = None
 
         if response is not None:
             try:
