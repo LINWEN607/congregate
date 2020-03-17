@@ -270,3 +270,21 @@ def is_error_message_present(response):
     if response.get("message", None) is not None:
         return True
     return False
+
+
+def add_post_migration_stats():
+    """
+        Print all POST/PUT/DELETE requests and their total number.
+        Assuming you've started the migration with an empty congregate.log
+    """
+    reqs = ["Generating POST request to",
+            "Generating PUT request to",
+            "Generating DELETE request to"]
+    reqs_no = 0
+    with open("{}/data/congregate.log".format(get_congregate_path()), "r") as f:
+        print("POST/PUT/DELETE requests:")
+        for line in f:
+            if any(req in line for req in reqs):
+                print(line.rstrip())
+                reqs_no += 1
+        print("Total number of POST/PUT/DELETE requests: {}".format(reqs_no))

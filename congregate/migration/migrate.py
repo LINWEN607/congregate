@@ -15,7 +15,7 @@ from shutil import copy
 from requests.exceptions import RequestException
 
 from congregate.helpers import api, migrate_utils
-from congregate.helpers.misc_utils import get_dry_log, json_pretty, write_json_to_file, is_dot_com, clean_data
+from congregate.helpers.misc_utils import get_dry_log, json_pretty, write_json_to_file, is_dot_com, clean_data, add_post_migration_stats
 from congregate.aws import AwsClient
 from congregate.cli.stage_projects import stage_projects
 from congregate.helpers.base_class import BaseClass
@@ -85,8 +85,7 @@ def migrate(
             clean_data(dry_run=False, files=[
                 "dry_run_user_migration.json",
                 "dry_run_group_migration.json",
-                "dry_run_project_migration.json"
-            ])
+                "dry_run_project_migration.json"])
 
         # Migrate users
         if not skip_users:
@@ -101,6 +100,8 @@ def migrate(
 
         # Migrate projects
         migrate_project_info(dry_run, skip_project_export, skip_project_import)
+
+        add_post_migration_stats()
 
 
 def start_multi_thead(function, iterable):
@@ -523,6 +524,8 @@ def rollback(dry_run=True,
     if not skip_projects:
         b.log.info("{}Removing projects on destination".format(dry_log))
         projects.delete_projects(dry_run)
+
+    add_post_migration_stats()
 
 
 def remove_all_mirrors(dry_run=True):
