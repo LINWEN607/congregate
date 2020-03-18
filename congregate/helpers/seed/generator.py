@@ -12,9 +12,7 @@ from congregate.migration.gitlab.projects import ProjectsClient
 from congregate.migration.gitlab.pushrules import PushRulesClient
 from congregate.migration.gitlab.branches import BranchesClient
 from congregate.migration.gitlab.merge_request_approvals import MergeRequestApprovalsClient
-from congregate.migration.gitlab.awards import AwardsClient
 from congregate.migration.gitlab.registries import RegistryClient
-from congregate.migration.gitlab.pipeline_schedules import PipelineSchedulesClient
 from congregate.migration.mirror import MirrorClient
 from congregate.migration.gitlab.deploy_keys import DeployKeysClient
 
@@ -30,10 +28,8 @@ class SeedDataGenerator(BaseClass):
         self.projects = ProjectsClient()
         self.pushrules = PushRulesClient()
         self.branches = BranchesClient()
-        self.awards = AwardsClient()
         self.mra = MergeRequestApprovalsClient()
         self.registries = RegistryClient()
-        self.schedules = PipelineSchedulesClient()
         self.deploy_keys = DeployKeysClient()
         super(SeedDataGenerator, self).__init__()
 
@@ -201,7 +197,7 @@ class SeedDataGenerator(BaseClass):
                 "{0}Creating user project ({1})".format(dry_log, user))
             if not dry_run:
                 token = self.users.find_or_create_impersonation_token(
-                    self.config.source_host, self.config.source_token, user, users_map, expiration_date)
+                    user, users_map, expiration_date)
                 if token.get("token") is not None:
                     created_projects.append(self.projects.projects_api.create_project(
                         self.config.source_host, token, dummy_project_data[i]["name"], data=dummy_project_data[i]).json())

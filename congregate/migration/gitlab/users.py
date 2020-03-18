@@ -144,9 +144,9 @@ class UsersClient(BaseClass):
                     user["id"])
         return new_user
 
-    def find_or_create_impersonation_token(self, host, token, user, users_map, expiration_date):
+    def find_or_create_impersonation_token(self, user, users_map, expiration_date):
         email = user["email"]
-        id = user["id"]
+        uid = user["id"]
         if users_map.get(email, None) is None:
             data = {
                 "name": "temp_migration_token",
@@ -158,10 +158,10 @@ class UsersClient(BaseClass):
             new_impersonation_token = self.users_api.create_user_impersonation_token(
                 self.config.destination_host,
                 self.config.destination_token,
-                id,
+                uid,
                 data).json()
             users_map[email] = new_impersonation_token
-            users_map[email]["user_id"] = id
+            users_map[email]["user_id"] = uid
         return users_map[email]
 
     def generate_user_group_saml_post_data(self, user):
