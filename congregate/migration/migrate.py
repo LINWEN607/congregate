@@ -29,9 +29,7 @@ from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.pushrules import PushRulesClient
 from congregate.migration.gitlab.branches import BranchesClient
 from congregate.migration.gitlab.merge_request_approvals import MergeRequestApprovalsClient
-from congregate.migration.gitlab.awards import AwardsClient
 from congregate.migration.gitlab.registries import RegistryClient
-from congregate.migration.gitlab.pipeline_schedules import PipelineSchedulesClient
 from congregate.migration.mirror import MirrorClient
 from congregate.migration.gitlab.deploy_keys import DeployKeysClient
 from congregate.migration.gitlab.hooks import HooksClient
@@ -50,11 +48,8 @@ projects = ProjectsClient()
 projects_api = ProjectsApi()
 pushrules = PushRulesClient()
 branches = BranchesClient()
-awards = AwardsClient()
 mr_approvals = MergeRequestApprovalsClient()
-awards = AwardsClient()
 registries = RegistryClient()
-p_schedules = PipelineSchedulesClient()
 deploy_keys = DeployKeysClient()
 hooks = HooksClient()
 environments = EnvironmentsClient()

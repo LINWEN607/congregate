@@ -3,10 +3,11 @@ import os
 import errno
 import json
 
+from shutil import copy
 from time import time
 from getpass import getpass
 from re import sub, findall
-from datetime import timedelta, date
+from datetime import timedelta, date, datetime
 from requests import get, head, Response
 
 
@@ -215,7 +216,7 @@ def clean_data(dry_run=True, files=None):
         "dry_run_project_migration.json"
     ] if not files else files
 
-    if os.path.isdir("{0}/data".format(app_path)):
+    if os.path.isdir("{}/data".format(app_path)):
         for f in files_to_delete:
             path = "{0}/data/{1}".format(app_path, f)
             try:
@@ -233,9 +234,19 @@ def clean_log():
     """
         Empty congregate.log file
     """
-    log = "{}/data/congregate.log".format(get_congregate_path())
-    print("Removing {}".format(log))
-    open(log, "w").close()
+    app_path = get_congregate_path()
+    if os.path.isdir("{}/data".format(app_path)):
+        log = "{}/data/congregate.log".format(app_path)
+        end_time = str(datetime.now()).replace(" ", "_")
+        print("Rotating and removing {}".format(log))
+        try:
+            copy(log, "{0}/data/congregate_{1}.log".format(app_path, end_time))
+            open(log, "w").close()
+        except OSError as e:
+            if e.errno != errno.ENOENT:
+                raise
+    else:
+        print "Cannot find data directory. CONGREGATE_PATH not set or you are not running this in the Congregate directory."
 
 
 def is_recent_file(path, age=2592000):
