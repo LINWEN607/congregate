@@ -1,67 +1,21 @@
-import json
-
 from requests.exceptions import RequestException
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers import api
 from congregate.helpers.misc_utils import json_pretty, get_dry_log
+from congregate.migration.gitlab.api.groups import GroupsApi
+from congregate.migration.gitlab.api.projects import ProjectsApi
 
 
 class BadgesClient(BaseClass):
-    def get_all_group_badges(self, host, token, gid):
-        """
-        List all badges of a group
-
-        GitLab API doc: https://docs.gitlab.com/ee/api/group_badges.html#list-all-badges-of-a-group
-
-            :param: id: (int) GitLab group ID
-            :yield: Generator containing JSON from GET /groups/:id/badges
-        """
-        return api.list_all(host, token, "groups/%d/badges" % gid)
-
-    def add_group_badge(self, host, token, gid, data):
-        """
-        Add a badge to a group
-
-        GitLab API doc: https://docs.gitlab.com/ee/api/group_badges.html#add-a-badge-to-a-group
-
-            :param: id: (int) GitLab group ID
-            :param: data: (dict) Object containing the various data requried for creating a badge. Refer to the link above for specific examples
-            :return: Response object containing the response to POST /groups/:id/badges
-        """
-        return api.generate_post_request(host, token, "groups/%d/badges" % gid, json.dumps(data))
-
-    def get_all_project_badges(self, host, token, pid):
-        """
-        List all badges of a project
-
-        GitLab API doc: https://docs.gitlab.com/ee/api/project_badges.html#list-all-badges-of-a-project
-
-            :param: pid: (int) GitLab project ID
-            :param: host: (str) GitLab host URL
-            :param: token: (str) Access token to GitLab instance
-            :yield: Generator containing JSON from GET /projects/:id/badges
-        """
-        return api.list_all(host, token, "projects/%d/badges" % pid)
-
-    def edit_project_badge(self, host, token, pid, badge_id, data=None):
-        """
-        Edit a badge of a project
-
-        GitLab API doc: https://docs.gitlab.com/ee/api/project_badges.html#edit-a-badge-of-a-project
-
-            :param: pid: (int) GitLab project ID
-            :param: badge_id: (int) The badge ID
-            :param: link_url: (str) URL of the badge link
-            :param: image_url: (str) URL of the badge image
-            :return: Response object containing the response to PUT /projects/:id/badges/:badge_id
-        """
-        return api.generate_put_request(host, token, "projects/%d/badges/%d" % (pid, badge_id), json.dumps(data))
+    def __init__(self):
+        self.groups = GroupsApi()
+        self.projects = ProjectsApi()
+        super(BadgesClient, self).__init__()
 
     def migrate_group_badges(self, old_id, new_id, parent_group_path, dry_run=True):
         try:
-            response = self.get_all_group_badges(
-                self.config.source_host, self.config.source_token, old_id)
+            response = self.groups.get_all_group_badges(
+                old_id, self.config.source_host, self.config.source_token)
             badges = iter(response)
             for badge in badges:
                 # split after hostname and retrieve only reamining path
@@ -74,11 +28,8 @@ class BadgesClient(BaseClass):
                 self.log.info("{0}Migrating group {1} (ID: {2}) badge:\n{3}".format(
                     get_dry_log(dry_run), parent_group_path, old_id, json_pretty(badge)))
                 if not dry_run:
-                    self.add_group_badge(
-                        self.config.destination_host,
-                        self.config.destination_token,
-                        new_id,
-                        data=data)
+                    self.groups.add_group_badge(
+                        new_id, self.config.destination_host, self.config.destination_token, data=data)
         except TypeError as te:
             self.log.error("Group badges {0} {1}".format(response, te))
         except RequestException as re:

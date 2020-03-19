@@ -264,6 +264,8 @@ def check_is_project_or_group_for_logging(is_project):
 def is_error_message_present(response):
     if isinstance(response, Response):
         response = response.json()
-    if response.get("message", None) is not None:
+    if isinstance(response, list) and response and response[0] == "message":
+        return True
+    if isinstance(response, dict) and response.get("message", None) is not None:
         return True
     return False

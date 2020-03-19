@@ -43,7 +43,7 @@ class GroupDiffClient(BaseDiffClient):
 
         for result in results:
             diff_report.update(result)
-            
+
         diff_report["group_migration_results"] = self.calculate_overall_stage_accuracy(
             diff_report)
 
@@ -76,7 +76,6 @@ class GroupDiffClient(BaseDiffClient):
                     }
                 }
         return diff_report
-            
 
     def handle_endpoints(self, group):
         group_diff = {}
@@ -107,6 +106,8 @@ class GroupDiffClient(BaseDiffClient):
             group, self.groups_api.get_all_group_members_incl_inherited)
         group_diff["/groups/:id/registry/repositories"] = self.generate_diff(
             group, self.groups_api.get_all_group_registry_repositories)
+        group_diff["/groups/:id/badges"] = self.generate_diff(
+            group, self.groups_api.get_all_group_badges)
         return group_diff
 
     def generate_diff(self, group, endpoint, critical_key=None, obfuscate=False, parent_group=None, **kwargs):
@@ -137,7 +138,14 @@ class GroupDiffClient(BaseDiffClient):
 
     def generate_cleaned_instance_data(self, instance_data):
         if isinstance(instance_data, GeneratorType):
-            instance_data = self.ignore_keys(list(instance_data))
+            try:
+                instance_data = self.ignore_keys(list(instance_data))
+                instance_data.sort()
+            except TypeError:
+                self.log.error(
+                    "Unable to generate cleaned instance data. Returning empty list")
+                return []
         else:
             instance_data = self.ignore_keys(instance_data.json())
+            sorted(instance_data)
         return instance_data

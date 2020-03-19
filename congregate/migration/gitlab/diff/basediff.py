@@ -52,6 +52,7 @@ class BaseDiffClient(BaseClass):
             overflow: hidden;
         }
     """
+
     def __init__(self):
         super(BaseDiffClient, self).__init__()
         self.keys_to_ignore = []
@@ -59,10 +60,8 @@ class BaseDiffClient(BaseClass):
     def diff(self, source_data, destination_data, critical_key=None, obfuscate=False, parent_group=None):
         engine = Comparator()
         if isinstance(source_data, list):
-            if not isinstance(destination_data, list) and is_error_message_present(destination_data):
+            if is_error_message_present(destination_data):
                 destination_data = []
-            else:
-                destination_data = {}
             if obfuscate:
                 for i, _ in enumerate(source_data):
                     source_data[i] = self.obfuscate_values(source_data[i])
@@ -75,7 +74,6 @@ class BaseDiffClient(BaseClass):
                 source_data = self.obfuscate_values(source_data)
                 destination_data = self.obfuscate_values(destination_data)
             diff = engine.compare_dicts(source_data, destination_data)
-
         if source_data:
             accuracy = 0
             if isinstance(source_data, list):
@@ -203,9 +201,9 @@ class BaseDiffClient(BaseClass):
     def return_only_accuracies(self, obj):
         accuracies = {}
         for o in obj.keys():
-            accuracies[o] = {i:obj[o][i] for i in obj[o] if i!='diff'}
+            accuracies[o] = {i: obj[o][i] for i in obj[o] if i != 'diff'}
         return accuracies
-            
+
     def generate_html_report(self, diff, filepath):
         filepath = "{0}{1}".format(self.app_path, filepath)
         html_data = json2html.convert(json=diff)
