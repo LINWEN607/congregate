@@ -1,4 +1,3 @@
-import json
 from urllib import quote_plus
 from congregate.helpers import api
 
@@ -30,19 +29,19 @@ class ProjectRepositoryApi():
         """
         return api.list_all(host, token, "projects/%d/repository/contributors" % id)
 
-    def get_all_project_repository_branches(self, host, token, id, query_params=""):
+    def get_all_project_repository_branches(self, pid, host, token, query_params=""):
         """
         Get a list of repository branches from a project
 
         https://docs.gitlab.com/ee/api/branches.html#list-repository-branches
 
-            :param: id: (int) GitLab project ID
+            :param: pid: (int) GitLab project ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
             :param: query_params: (str) Query parameters
             :yield: Generator returning JSON of each result from GET /projects/:id/repository/branches
         """
-        return api.list_all(host, token, "projects/%d/repository/branches%s" % (id, query_params))
+        return api.list_all(host, token, "projects/{0}/repository/branches{1}".format(pid, query_params))
 
     def get_single_project_repository_branch(self, host, token, pid, branch_name):
         """
@@ -140,7 +139,7 @@ class ProjectRepositoryApi():
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /projects/:id/repository/commits/:sha/refs
         """
-        return api.list_all(host, token, "projects/%d/repository/commits/%s/refs%s" %(pid, sha, query_params))
+        return api.list_all(host, token, "projects/%d/repository/commits/%s/refs%s" % (pid, sha, query_params))
 
     def get_project_repository_commit_merge_requests(self, pid, sha, host, token):
         """
@@ -169,4 +168,3 @@ class ProjectRepositoryApi():
             :yield: Generator returning JSON of each result from GET /projects/:id/repository/commits/:sha/statuses
         """
         return api.list_all(host, token, "projects/{0}/repository/commits/{1}/statuses".format(pid, sha))
-    

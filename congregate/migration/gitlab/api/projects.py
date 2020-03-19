@@ -460,6 +460,18 @@ class ProjectsApi():
         """
         return api.generate_get_request(host, token, "projects/{0}/protected_branches/{1}".format(pid, quote_plus(name)))
 
+    def set_default_project_branch(self, pid, host, token, branch, data=None):
+        """
+        Set default branch for project
+
+            :param: pid: (int) GitLab project ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :param: branch: (str) GitLab project branch name
+            :return: Response object containing the response to PUT /projects/:id
+        """
+        return api.generate_put_request(host, token, "projects/{0}?default_branch={1}".format(pid, branch), data=data)
+
     def get_all_project_protected_environments(self, id, host, token):
         """
         Gets a list of protected environments from a project

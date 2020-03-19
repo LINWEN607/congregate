@@ -1,6 +1,7 @@
 from types import GeneratorType
 from congregate.migration.gitlab.diff.basediff import BaseDiffClient
 from congregate.migration.gitlab.api.projects import ProjectsApi
+from congregate.migration.gitlab.api.project_repository import ProjectRepositoryApi
 from congregate.migration.gitlab.variables import VariablesClient
 from congregate.helpers.misc_utils import rewrite_json_list_into_dict, get_rollback_log
 from congregate.helpers.threads import handle_multi_thread_write_to_file_and_return_results
@@ -14,6 +15,7 @@ class ProjectDiffClient(BaseDiffClient):
     def __init__(self, results_path, staged=False):
         super(ProjectDiffClient, self).__init__()
         self.projects_api = ProjectsApi()
+        self.repository_api = ProjectRepositoryApi()
         self.variables_api = VariablesClient()
         self.results = rewrite_json_list_into_dict(
             self.load_json_data("{0}{1}".format(self.app_path, results_path)))
@@ -105,6 +107,8 @@ class ProjectDiffClient(BaseDiffClient):
         # Repository
         project_diff["/projects/:id/forks"] = self.generate_diff(
             project, self.projects_api.get_all_project_forks)
+        project_diff["/projects/:id/repository/branches"] = self.generate_diff(
+            project, self.repository_api.get_all_project_repository_branches)
         project_diff["/projects/:id/protected_branches"] = self.generate_diff(
             project, self.projects_api.get_all_project_protected_branches)
         project_diff["/projects/:id/push_rule"] = self.generate_diff(
@@ -173,7 +177,8 @@ class ProjectDiffClient(BaseDiffClient):
             try:
                 instance_data = self.ignore_keys(list(instance_data))
             except TypeError:
-                self.log.error("Unable to generate cleaned instance data. Returning empty list")
+                self.log.error(
+                    "Unable to generate cleaned instance data. Returning empty list")
                 return []
         else:
             instance_data = self.ignore_keys(instance_data.json())
