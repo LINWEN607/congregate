@@ -1,4 +1,3 @@
-from types import GeneratorType
 from congregate.migration.gitlab.diff.basediff import BaseDiffClient
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.groups import GroupsClient
@@ -135,17 +134,3 @@ class GroupDiffClient(BaseDiffClient):
             return self.empty_diff()
 
         return self.diff(source_group_data, destination_group_data, critical_key=critical_key, obfuscate=obfuscate, parent_group=parent_group)
-
-    def generate_cleaned_instance_data(self, instance_data):
-        if isinstance(instance_data, GeneratorType):
-            try:
-                instance_data = self.ignore_keys(list(instance_data))
-                instance_data.sort()
-            except TypeError:
-                self.log.error(
-                    "Unable to generate cleaned instance data. Returning empty list")
-                return []
-        else:
-            instance_data = self.ignore_keys(instance_data.json())
-            sorted(instance_data)
-        return instance_data

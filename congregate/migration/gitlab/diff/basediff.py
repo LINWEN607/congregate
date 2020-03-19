@@ -1,5 +1,6 @@
 import json
 import base64
+from types import GeneratorType
 from opslib.icsutils.jsondiff import Comparator
 from bs4 import BeautifulSoup as bs
 from json2html import json2html
@@ -203,6 +204,20 @@ class BaseDiffClient(BaseClass):
         for o in obj.keys():
             accuracies[o] = {i: obj[o][i] for i in obj[o] if i != 'diff'}
         return accuracies
+
+    def generate_cleaned_instance_data(self, instance_data):
+        if isinstance(instance_data, GeneratorType):
+            try:
+                instance_data = self.ignore_keys(list(instance_data))
+                instance_data.sort()
+            except TypeError:
+                self.log.error(
+                    "Unable to generate cleaned instance data. Returning empty list")
+                return []
+        else:
+            instance_data = self.ignore_keys(instance_data.json())
+            sorted(instance_data)
+        return instance_data
 
     def generate_html_report(self, diff, filepath):
         filepath = "{0}{1}".format(self.app_path, filepath)

@@ -1,4 +1,3 @@
-from types import GeneratorType
 from congregate.migration.gitlab.diff.basediff import BaseDiffClient
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.variables import VariablesClient
@@ -167,17 +166,3 @@ class ProjectDiffClient(BaseDiffClient):
         return {
             'error': 'project is missing'
         }
-
-    def generate_cleaned_instance_data(self, instance_data):
-        if isinstance(instance_data, GeneratorType):
-            try:
-                instance_data = self.ignore_keys(list(instance_data))
-                instance_data.sort()
-            except TypeError:
-                self.log.error(
-                    "Unable to generate cleaned instance data. Returning empty list")
-                return []
-        else:
-            instance_data = self.ignore_keys(instance_data.json())
-            sorted(instance_data)
-        return instance_data
