@@ -52,6 +52,7 @@ class BaseDiffClient(BaseClass):
             overflow: hidden;
         }
     """
+
     def __init__(self):
         super(BaseDiffClient, self).__init__()
         self.keys_to_ignore = []
@@ -203,9 +204,9 @@ class BaseDiffClient(BaseClass):
     def return_only_accuracies(self, obj):
         accuracies = {}
         for o in obj.keys():
-            accuracies[o] = {i:obj[o][i] for i in obj[o] if i!='diff'}
+            accuracies[o] = {i: obj[o][i] for i in obj[o] if i != 'diff'}
         return accuracies
-            
+
     def generate_html_report(self, diff, filepath):
         filepath = "{0}{1}".format(self.app_path, filepath)
         html_data = json2html.convert(json=diff)
@@ -238,4 +239,4 @@ class BaseDiffClient(BaseClass):
         head.append(style)
         soup.html.append(head)
         with open(filepath, "w") as f:
-            f.write(soup.prettify())
+            f.write(soup.prettify(encoding="UTF-8"))
