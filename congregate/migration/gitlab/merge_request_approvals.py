@@ -1,6 +1,7 @@
 from requests.exceptions import RequestException
 
 from congregate.helpers.base_class import BaseClass
+from congregate.helpers.misc_utils import is_error_message_present
 from congregate.helpers import api
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
@@ -22,8 +23,7 @@ class MergeRequestApprovalsClient(BaseClass):
     def migrate_project_level_mr_approvals(self, old_id, new_id, name):
         try:
             if self.are_enabled(old_id):
-                self.migrate_project_approvals(new_id, old_id, name)
-                return True
+                return self.migrate_project_approvals(new_id, old_id, name)
             else:
                 self.log.warning(
                     "Merge requests are disabled for project {}".format(name))
@@ -35,20 +35,29 @@ class MergeRequestApprovalsClient(BaseClass):
     def migrate_project_approvals(self, new_id, old_id, name):
         try:
             # migrate configuration
-            configuration = self.projects_api.get_project_level_mr_approval_configuration(
+            conf = self.projects_api.get_project_level_mr_approval_configuration(
                 old_id, self.config.source_host, self.config.source_token).json()
-            self.log.info(
-                "Migrating project-level MR approval configuration for {0} (ID: {1})".format(name, old_id))
-            self.projects_api.change_project_level_mr_approval_configuration(
-                new_id, self.config.destination_host, self.config.destination_token, configuration)
+            if is_error_message_present(conf):
+                self.log.error(
+                    "Failed to fetch MR approval configuration ({0}) for project {1}".format(conf, name))
+                return False
+            else:
+                self.log.info(
+                    "Migrating project-level MR approval configuration for {0} (ID: {1})".format(name, old_id))
+                self.projects_api.change_project_level_mr_approval_configuration(
+                    new_id, self.config.destination_host, self.config.destination_token, conf)
 
             # migrate approval rules
-            response = self.projects_api.get_all_project_level_mr_approval_rules(
+            resp = self.projects_api.get_all_project_level_mr_approval_rules(
                 old_id, self.config.source_host, self.config.source_token)
+            approval_rules = iter(resp)
             self.log.info(
                 "Migrating project-level MR approval rules for {0} (ID: {1})".format(name, old_id))
-            approval_rules = iter(response)
             for rule in approval_rules:
+                if is_error_message_present(rule):
+                    self.log.error(
+                        "Failed to fetch MR approval rules ({0}) for project {1}".format(rule, name))
+                    return False
                 user_ids, group_ids, protected_branch_ids = self.get_missing_rule_params(
                     rule, new_id)
                 data = {
@@ -60,12 +69,15 @@ class MergeRequestApprovalsClient(BaseClass):
                 }
                 self.projects_api.create_project_level_mr_approval_rule(
                     new_id, self.config.destination_host, self.config.destination_token, data)
+            return True
         except TypeError as te:
             self.log.error(
-                "Project {0} MR approvals {1} {2}".format(name, response, te))
+                "Project {0} MR approvals {1} {2}".format(name, resp, te))
+            return False
         except RequestException as re:
             self.log.error(
-                "Failed to migrate MR approvals for project {0}, with error:\n{1}".format(name, re))
+                "Failed to migrate project-level MR approvals for {0}, with error:\n{1}".format(name, re))
+            return False
 
     def user_search_check_and_log(self, new_user, user, user_ids):
         """

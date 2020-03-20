@@ -2,7 +2,7 @@ import json
 
 from requests.exceptions import RequestException
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import get_dry_log
+from congregate.helpers.misc_utils import get_dry_log, is_error_message_present
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.groups import GroupsApi
 
@@ -33,36 +33,42 @@ class VariablesClient(BaseClass):
     def migrate_cicd_variables(self, old_id, new_id, name):
         try:
             if self.are_enabled(old_id):
-                self.log.info(
-                    "Migrating project {} CI/CD variables".format(name))
-                self.migrate_variables(new_id, old_id, "project", name)
-                return True
+                return self.migrate_variables(new_id, old_id, "project", name)
             else:
                 self.log.warning(
                     "CI/CD is disabled for project {}".format(name))
-        except Exception, e:
+        except Exception as e:
             self.log.error(
                 "Failed to migrate project {0} CI/CD variables, with error:\n{1}".format(name, e))
             return False
 
     def migrate_variables(self, new_id, old_id, var_type, name):
         try:
-            response = self.get_variables(
+            resp = self.get_variables(
                 old_id, self.config.source_host, self.config.source_token, var_type)
-            variables = iter(response)
+            variables = iter(resp)
+            self.log.info(
+                "Migrating project {} CI/CD variables".format(name))
             for var in variables:
+                if is_error_message_present(var):
+                    self.log.error(
+                        "Failed to fetch CI/CD variables ({0}) for project {1}".format(var, name))
+                    return False
                 if var_type == "project":
                     var["environment_scope"] = "*"
                 self.log.info("Migrating {0} ID (old: {1}; new: {2}) CI/CD variables"
                               .format(var_type, old_id, new_id))
                 self.set_variables(
                     new_id, var, self.config.destination_host, self.config.destination_token, var_type)
+            return True
         except TypeError as te:
+            self.log.error("{0} {1} variables {2} {3}".format(
+                var_type, name, resp, te))
+            return False
+        except RequestException as re:
             self.log.error(
-                "{0} {1} variables {2} {3}".format(var_type, name, response, te))
-        except RequestException:
-            self.log.error(
-                "Failed to get CI/CD variables, response: {}".format(response))
+                "Failed to migrate project {0} CI/CD variables, with error:\m{1}".format(name, re))
+            return False
 
     def migrate_variables_in_stage(self, dry_run=True):
         with open("%s/data/stage.json" % self.app_path, "r") as f:

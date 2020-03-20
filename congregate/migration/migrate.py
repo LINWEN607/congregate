@@ -15,7 +15,7 @@ from shutil import copy
 from requests.exceptions import RequestException
 
 from congregate.helpers import api, migrate_utils
-from congregate.helpers.misc_utils import get_dry_log, json_pretty, write_json_to_file, is_dot_com
+from congregate.helpers.misc_utils import get_dry_log, json_pretty, write_json_to_file, is_dot_com, clean_data, add_post_migration_stats, clean_log
 from congregate.aws import AwsClient
 from congregate.cli.stage_projects import stage_projects
 from congregate.helpers.base_class import BaseClass
@@ -29,9 +29,7 @@ from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.pushrules import PushRulesClient
 from congregate.migration.gitlab.branches import BranchesClient
 from congregate.migration.gitlab.merge_request_approvals import MergeRequestApprovalsClient
-from congregate.migration.gitlab.awards import AwardsClient
 from congregate.migration.gitlab.registries import RegistryClient
-from congregate.migration.gitlab.pipeline_schedules import PipelineSchedulesClient
 from congregate.migration.mirror import MirrorClient
 from congregate.migration.gitlab.deploy_keys import DeployKeysClient
 from congregate.migration.gitlab.hooks import HooksClient
@@ -50,11 +48,8 @@ projects = ProjectsClient()
 projects_api = ProjectsApi()
 pushrules = PushRulesClient()
 branches = BranchesClient()
-awards = AwardsClient()
 mr_approvals = MergeRequestApprovalsClient()
-awards = AwardsClient()
 registries = RegistryClient()
-p_schedules = PipelineSchedulesClient()
 deploy_keys = DeployKeysClient()
 hooks = HooksClient()
 environments = EnvironmentsClient()
@@ -80,6 +75,14 @@ def migrate(
             repo_list = json.load(f)
         start_multi_thead(bitbucket.handle_bitbucket_migration, repo_list)
     else:
+        # Dry-run and log cleanup
+        if dry_run:
+            clean_data(dry_run=False, files=[
+                "dry_run_user_migration.json",
+                "dry_run_group_migration.json",
+                "dry_run_project_migration.json"])
+        clean_log()
+
         # Migrate users
         if not skip_users:
             migrate_user_info(dry_run)
@@ -93,6 +96,8 @@ def migrate(
 
         # Migrate projects
         migrate_project_info(dry_run, skip_project_export, skip_project_import)
+
+        add_post_migration_stats()
 
 
 def start_multi_thead(function, iterable):
@@ -115,16 +120,17 @@ def migrate_user_info(dry_run=True):
 
     # This list is of user ids from found users via email or newly created users
     # So, new_user_ids is a bit of a misnomer
-    if new_users:
-        write_results_to_file(new_users, result_type="user")
-        with open("%s/data/new_user_ids.txt" % b.app_path, "w") as f:
-            for new_user in new_users:
-                f.write("%s\n" % new_user)
+    if not dry_run:
+        if new_users:
+            write_results_to_file(new_users, result_type="user")
+            with open("%s/data/new_user_ids.txt" % b.app_path, "w") as f:
+                for new_user in new_users:
+                    f.write("%s\n" % new_user)
 
-        # If we created or found users, do not force overwrite
-        users.update_user_info(new_users)
-    else:
-        users.update_user_info(new_users, overwrite=False)
+            # If we created or found users, do not force overwrite
+            users.update_user_info(new_users)
+        else:
+            users.update_user_info(new_users, overwrite=False)
 
 
 def migrate_group_info(dry_run=True, skip_group_export=False, skip_group_import=False):
@@ -248,8 +254,9 @@ def handle_importing_groups(group, dry_run=True):
             b.log.info("{0}Group {1} (ID: {2}) already exists on destination".format(
                 get_dry_log(dry_run), full_path, gid))
         # In place of checking the import status
-        results[full_path] = ie.wait_for_group_import(
-            full_path_with_parent_namespace)
+        if not dry_run:
+            results[full_path] = ie.wait_for_group_import(
+                full_path_with_parent_namespace)
         if results[full_path] and results[full_path].get("id", None) is not None:
             # Migrate CI/CD Variables
             variables.migrate_variables(
@@ -495,6 +502,7 @@ def rollback(dry_run=True,
              hard_delete=False,
              skip_groups=False,
              skip_projects=False):
+    clean_log()
     dry_log = get_dry_log(dry_run)
     if not skip_users:
         b.log.info("{0}Removing staged users on destination (hard_delete={1})".format(
@@ -513,6 +521,8 @@ def rollback(dry_run=True,
     if not skip_projects:
         b.log.info("{}Removing projects on destination".format(dry_log))
         projects.delete_projects(dry_run)
+
+    add_post_migration_stats()
 
 
 def remove_all_mirrors(dry_run=True):
