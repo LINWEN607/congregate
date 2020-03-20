@@ -234,9 +234,10 @@ class ImportExportClient(BaseClass):
             import_response = self.attempt_import(
                 filename, name, path, dst_namespace, override_params)
             if "Try again later" in import_response:
-                self.log.info(
-                    "Reached rate limit for import. Waiting 10 minutes.")
-                sleep(300)  # 5 min
+                self.log.warning(
+                    "Reached rate limit for import. Waiting 5 minutes.")
+                # 5 min (https://gitlab.com/gitlab-org/gitlab/-/merge_requests/26903)
+                sleep(300)
                 import_response = self.attempt_import(
                     filename, name, path, dst_namespace, override_params)
 
@@ -524,11 +525,11 @@ class ImportExportClient(BaseClass):
                                 # If it is started, we just ignore the status
                                 self.log.warning(
                                     "Could not get import status: {0}".format(status_json))
+                                timeout += wait_time
+                                sleep(wait_time)
                         else:
                             self.log.error(
                                 "Import status code was {0}".format(status.status_code))
-                        timeout += wait_time
-                        sleep(wait_time)
                     except ValueError as e:
                         self.log.error(e)
                         self.log.error(

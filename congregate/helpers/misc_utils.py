@@ -3,10 +3,11 @@ import os
 import errno
 import json
 
+from shutil import copy
 from time import time
 from getpass import getpass
 from re import sub, findall
-from datetime import timedelta, date
+from datetime import timedelta, date, datetime
 from requests import get, head, Response
 
 
@@ -185,7 +186,7 @@ def deobfuscate(secret):
     return base64.b64decode(secret)
 
 
-def clean_data(dry_run=True):
+def clean_data(dry_run=True, files=None):
     app_path = get_congregate_path()
     files_to_delete = [
         "stage.json",
@@ -213,17 +214,37 @@ def clean_data(dry_run=True):
         "dry_run_user_migration.json",
         "dry_run_group_migration.json",
         "dry_run_project_migration.json"
-    ]
-    if os.path.isdir("{0}/data".format(app_path)):
+    ] if not files else files
+
+    if os.path.isdir("{}/data".format(app_path)):
         for f in files_to_delete:
             path = "{0}/data/{1}".format(app_path, f)
             try:
-                print "{0}Removing {1}".format(get_dry_log(dry_run), f)
+                print "{0}Removing {1}".format(get_dry_log(dry_run), path)
                 if not dry_run:
                     os.remove(path)
             except OSError as e:
                 if e.errno != errno.ENOENT:
                     raise
+    else:
+        print "Cannot find data directory. CONGREGATE_PATH not set or you are not running this in the Congregate directory."
+
+
+def clean_log():
+    """
+        Empty congregate.log file
+    """
+    app_path = get_congregate_path()
+    if os.path.isdir("{}/data".format(app_path)):
+        log = "{}/data/congregate.log".format(app_path)
+        end_time = str(datetime.now()).replace(" ", "_")
+        print("Rotating and removing {}".format(log))
+        try:
+            copy(log, "{0}/data/congregate_{1}.log".format(app_path, end_time))
+            open(log, "w").close()
+        except OSError as e:
+            if e.errno != errno.ENOENT:
+                raise
     else:
         print "Cannot find data directory. CONGREGATE_PATH not set or you are not running this in the Congregate directory."
 
@@ -264,6 +285,28 @@ def check_is_project_or_group_for_logging(is_project):
 def is_error_message_present(response):
     if isinstance(response, Response):
         response = response.json()
-    if response.get("message", None) is not None:
+    if isinstance(response, list) and response and response[0] == "message":
+        return True
+    elif isinstance(response, dict) and response.get("message", None) is not None:
+        return True
+    elif isinstance(response, unicode) and response == "message":
         return True
     return False
+
+
+def add_post_migration_stats():
+    """
+        Print all POST/PUT/DELETE requests and their total number.
+        Assuming you've started the migration with an empty congregate.log
+    """
+    reqs = ["Generating POST request to",
+            "Generating PUT request to",
+            "Generating DELETE request to"]
+    reqs_no = 0
+    with open("{}/data/congregate.log".format(get_congregate_path()), "r") as f:
+        print("POST/PUT/DELETE requests:")
+        for line in f:
+            if any(req in line for req in reqs):
+                print(line.rstrip())
+                reqs_no += 1
+        print("Total number of POST/PUT/DELETE requests: {}".format(reqs_no))

@@ -1,4 +1,3 @@
-from types import GeneratorType
 from congregate.migration.gitlab.diff.basediff import BaseDiffClient
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.groups import GroupsClient
@@ -43,7 +42,7 @@ class GroupDiffClient(BaseDiffClient):
 
         for result in results:
             diff_report.update(result)
-            
+
         diff_report["group_migration_results"] = self.calculate_overall_stage_accuracy(
             diff_report)
 
@@ -76,7 +75,6 @@ class GroupDiffClient(BaseDiffClient):
                     }
                 }
         return diff_report
-            
 
     def handle_endpoints(self, group):
         group_diff = {}
@@ -107,6 +105,8 @@ class GroupDiffClient(BaseDiffClient):
             group, self.groups_api.get_all_group_members_incl_inherited)
         group_diff["/groups/:id/registry/repositories"] = self.generate_diff(
             group, self.groups_api.get_all_group_registry_repositories)
+        group_diff["/groups/:id/badges"] = self.generate_diff(
+            group, self.groups_api.get_all_group_badges)
         return group_diff
 
     def generate_diff(self, group, endpoint, critical_key=None, obfuscate=False, parent_group=None, **kwargs):
@@ -134,10 +134,3 @@ class GroupDiffClient(BaseDiffClient):
             return self.empty_diff()
 
         return self.diff(source_group_data, destination_group_data, critical_key=critical_key, obfuscate=obfuscate, parent_group=parent_group)
-
-    def generate_cleaned_instance_data(self, instance_data):
-        if isinstance(instance_data, GeneratorType):
-            instance_data = self.ignore_keys(list(instance_data))
-        else:
-            instance_data = self.ignore_keys(instance_data.json())
-        return instance_data

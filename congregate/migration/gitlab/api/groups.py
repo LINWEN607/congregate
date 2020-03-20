@@ -395,3 +395,17 @@ class GroupsApi():
             :yield: Generator returning JSON of each result from GET /groups/:id/badges
         """
         return api.list_all(host, token, "groups/%d/badges" % gid)
+
+    def add_group_badge(self, gid, host, token, data):
+        """
+        Add a badge to a group
+
+        GitLab API doc: https://docs.gitlab.com/ee/api/group_badges.html#add-a-badge-to-a-group
+
+            :param: gid: (int) GitLab group ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :param: data: (dict) Object containing the various data requried for creating a badge. Refer to the link above for specific examples
+            :return: Response object containing the response to POST /groups/:id/badges
+        """
+        return api.generate_post_request(host, token, "groups/%d/badges" % gid, json.dumps(data))

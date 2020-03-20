@@ -1,5 +1,6 @@
 import json
 import base64
+from types import GeneratorType
 from opslib.icsutils.jsondiff import Comparator
 from bs4 import BeautifulSoup as bs
 from json2html import json2html
@@ -60,10 +61,8 @@ class BaseDiffClient(BaseClass):
     def diff(self, source_data, destination_data, critical_key=None, obfuscate=False, parent_group=None):
         engine = Comparator()
         if isinstance(source_data, list):
-            if not isinstance(destination_data, list) and is_error_message_present(destination_data):
+            if is_error_message_present(destination_data):
                 destination_data = []
-            else:
-                destination_data = {}
             if obfuscate:
                 for i, _ in enumerate(source_data):
                     source_data[i] = self.obfuscate_values(source_data[i])
@@ -76,7 +75,6 @@ class BaseDiffClient(BaseClass):
                 source_data = self.obfuscate_values(source_data)
                 destination_data = self.obfuscate_values(destination_data)
             diff = engine.compare_dicts(source_data, destination_data)
-
         if source_data:
             accuracy = 0
             if isinstance(source_data, list):
@@ -206,6 +204,20 @@ class BaseDiffClient(BaseClass):
         for o in obj.keys():
             accuracies[o] = {i: obj[o][i] for i in obj[o] if i != 'diff'}
         return accuracies
+
+    def generate_cleaned_instance_data(self, instance_data):
+        if isinstance(instance_data, GeneratorType):
+            try:
+                instance_data = self.ignore_keys(list(instance_data))
+                instance_data.sort()
+            except TypeError:
+                self.log.error(
+                    "Unable to generate cleaned instance data. Returning empty list")
+                return []
+        else:
+            instance_data = self.ignore_keys(instance_data.json())
+            sorted(instance_data)
+        return instance_data
 
     def generate_html_report(self, diff, filepath):
         filepath = "{0}{1}".format(self.app_path, filepath)

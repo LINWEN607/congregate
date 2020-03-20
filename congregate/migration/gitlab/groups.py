@@ -117,18 +117,16 @@ class GroupsClient(BaseClass):
                 "Failed to remove import user (ID: {0}) from group (ID: {1}), with error:\n{2}".format(self.config.import_user_id, gid, e))
 
     def append_groups(self, groups):
-        with open("%s/data/groups.json" % self.app_path, "r") as f:
+        with open("{}/data/groups.json".format(self.app_path), "r") as f:
             group_file = json.load(f)
         rewritten_groups = {}
-        for i in range(len(group_file)):
+        for i, _ in enumerate(group_file):
             new_obj = group_file[i]
             group_name = group_file[i]["id"]
             rewritten_groups[group_name] = new_obj
         staged_groups = []
-        if groups and all(i > 0 for i in groups):
-            for group in groups:
-                self.traverse_staging(
-                    int(group), rewritten_groups, staged_groups)
+        for group in filter(None, groups):
+            self.traverse_staging(int(group), rewritten_groups, staged_groups)
 
         with open("%s/data/staged_groups.json" % self.app_path, "w") as f:
             json.dump(remove_dupes(staged_groups), f, indent=4)
@@ -181,9 +179,9 @@ class GroupsClient(BaseClass):
                 self.log.error(
                     "Failed to GET group {} by full_path".format(dest_full_path))
 
-    def traverse_staging(self, id, group_dict, staged_groups):
-        if group_dict.get(id, None) is not None:
-            g = group_dict[id]
+    def traverse_staging(self, gid, group_dict, staged_groups):
+        if group_dict.get(gid, None) is not None:
+            g = group_dict[gid]
             if g["parent_id"] is None:
                 self.log.info(
                     "Staging top level group {0} (ID: {1})".format(g["full_path"], g["id"]))
@@ -198,25 +196,25 @@ class GroupsClient(BaseClass):
                     "SKIP: Staging sub-group {0} (ID: {1})".format(g["full_path"], g["id"]))
                 return
                 # TODO: Remove if we want to completely abandon staging sub-groups
-                parent_group = group_dict.get(g["parent_id"])
-                if parent_group is not None:
-                    parent_group_resp = self.groups_api.get_group(
-                        parent_group["id"], self.config.source_host, self.config.source_token).json()
-                    if self.config.parent_id is not None:
-                        tlg = self.groups_api.get_group(
-                            self.config.parent_id, self.config.destination_host, self.config.destination_token).json()
-                        g["full_parent_namespace"] = "%s/%s" % (
-                            tlg["full_path"], parent_group["full_path"])
-                        g["parent_namespace"] = parent_group["path"]
-                    else:
-                        g["full_parent_namespace"] = "%s/%s" % (
-                            parent_group_resp["full_path"], parent_group["full_path"])
-                        g["parent_namespace"] = parent_group["path"]
-                    if parent_group.get("parent_id", None) is not None:
-                        self.traverse_staging(
-                            parent_group["id"], group_dict, staged_groups)
-                    else:
-                        staged_groups.append(parent_group)
+                # parent_group = group_dict.get(g["parent_id"])
+                # if parent_group is not None:
+                #     parent_group_resp = self.groups_api.get_group(
+                #         parent_group["id"], self.config.source_host, self.config.source_token).json()
+                #     if self.config.parent_id is not None:
+                #         tlg = self.groups_api.get_group(
+                #             self.config.parent_id, self.config.destination_host, self.config.destination_token).json()
+                #         g["full_parent_namespace"] = "%s/%s" % (
+                #             tlg["full_path"], parent_group["full_path"])
+                #         g["parent_namespace"] = parent_group["path"]
+                #     else:
+                #         g["full_parent_namespace"] = "%s/%s" % (
+                #             parent_group_resp["full_path"], parent_group["full_path"])
+                #         g["parent_namespace"] = parent_group["path"]
+                #     if parent_group.get("parent_id", None) is not None:
+                #         self.traverse_staging(
+                #             parent_group["id"], group_dict, staged_groups)
+                #     else:
+                #         staged_groups.append(parent_group)
             staged_groups.append(g)
 
     def find_all_non_private_groups(self):

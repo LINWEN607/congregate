@@ -144,9 +144,9 @@ class UsersClient(BaseClass):
                     user["id"])
         return new_user
 
-    def find_or_create_impersonation_token(self, host, token, user, users_map, expiration_date):
+    def find_or_create_impersonation_token(self, user, users_map, expiration_date):
         email = user["email"]
-        id = user["id"]
+        uid = user["id"]
         if users_map.get(email, None) is None:
             data = {
                 "name": "temp_migration_token",
@@ -158,10 +158,10 @@ class UsersClient(BaseClass):
             new_impersonation_token = self.users_api.create_user_impersonation_token(
                 self.config.destination_host,
                 self.config.destination_token,
-                id,
+                uid,
                 data).json()
             users_map[email] = new_impersonation_token
-            users_map[email]["user_id"] = id
+            users_map[email]["user_id"] = uid
         return users_map[email]
 
     def generate_user_group_saml_post_data(self, user):
@@ -712,29 +712,32 @@ class UsersClient(BaseClass):
 
     def handle_user_creation(self, user):
         """
-        This is called when importing staged_users.json.
-        Blocked users will be skipped if we do NOT 'keep_blocked_users'.
-        :param user: Each iterable called is a user from the staged_users.json file
-        :return:
+            This is called when importing staged_users.json.
+            Blocked users will be skipped if we do NOT 'keep_blocked_users'.
+
+            :param user: Each iterable called is a user from the staged_users.json file
+            :return:
         """
+        response = None
         try:
-            if user.get("state", None) \
-                    and (str(user["state"]).lower() == "active"
-                         or (str(user["state"]).lower() == "blocked"
-                             and self.config.keep_blocked_users)):
-                user_data = self.generate_user_data(user)
-                self.log.info(
-                    "Attempting to create user:\n{}".format(json_pretty(user)))
-                response = self.users_api.create_user(
-                    self.config.destination_host,
-                    self.config.destination_token,
-                    user_data)
+            if user.get("state", None):
+                if str(user["state"]).lower() == "active" or (str(user["state"]).lower() == "blocked" and self.config.keep_blocked_users):
+                    user_data = self.generate_user_data(user)
+                    self.log.info(
+                        "Attempting to create user:\n{}".format(json_pretty(user)))
+                    response = self.users_api.create_user(
+                        self.config.destination_host,
+                        self.config.destination_token,
+                        user_data)
+                else:
+                    self.log.info(
+                        "SKIP: Not migrating {0} user:\n{1}".format(user["state"], json_pretty(user)))
             else:
-                response = None
+                self.log.info(
+                    "No state found for user:\n{}".format(json_pretty(user)))
         except RequestException, e:
             self.log.error(
                 "Failed to create user {0}, with error:\n{1}".format(user_data, e))
-            response = None
 
         if response is not None:
             try:
@@ -814,7 +817,7 @@ class UsersClient(BaseClass):
         with open("%s/data/users.json" % self.app_path, "r") as f:
             user_file = json.load(f)
         staged_users = []
-        for user in users:
+        for user in filter(None, users):
             for u in user_file:
                 if user == u["username"]:
                     staged_users.append(u)

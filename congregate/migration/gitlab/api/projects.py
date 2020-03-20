@@ -302,18 +302,18 @@ class ProjectsApi():
         """
         return api.list_all(host, token, "projects/%d/starrers" % id)
 
-    def get_all_project_badges(self, id, host, token):
+    def get_all_project_badges(self, pid, host, token):
         """
         Gets a list of a project badges and its group badges
 
         GitLab API Doc: https://docs.gitlab.com/ee/api/project_badges.html#project-badges-api
 
-            :param: id: (int) GitLab project ID
+            :param: pid: (int) GitLab project ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /projects/:id/badges
         """
-        return api.list_all(host, token, "projects/%d/badges" % id)
+        return api.list_all(host, token, "projects/%d/badges" % pid)
 
     def get_all_project_issues(self, id, host, token):
         """
