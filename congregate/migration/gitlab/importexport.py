@@ -74,7 +74,7 @@ class ImportExportClient(BaseClass):
                     break
                 elif status == "none":
                     self.log.info(
-                        "No export status could be found for {0} {1}".format(export_type, name))
+                        "{0} {1} has no export status".format(export_type, name))
                     if not skip:
                         self.log_wait_time(wait_time, is_project, name)
                         sleep(wait_time)
@@ -87,9 +87,7 @@ class ImportExportClient(BaseClass):
                         total_time += wait_time
                         sleep(wait_time)
                     else:
-                        response = self.groups_api.get_group_download_status(
-                            self.config.source_host, self.config.source_token, source_id)
-                        self.log.error("Time limit exceeded, {0} {1} download status: {2}".format(
+                        self.log.error("{0} {1} export time limit exceeded, download status: {2}".format(
                             export_type, name, response))
                         exported = False
                         break
@@ -99,7 +97,6 @@ class ImportExportClient(BaseClass):
                         check_is_project_or_group_for_logging(is_project).lower(), name))
                 exported = False
                 break
-
         return exported
 
     def wait_for_group_download(self, gid):
@@ -185,11 +182,6 @@ class ImportExportClient(BaseClass):
             Imports project to destination GitLab instance.
             Formats users, groups, migration info (aws, filesystem) during import process.
         """
-        if project is None:
-            self.log.error(
-                "SKIP: Import, the following project is NONE: {}".format(project))
-            return None
-
         if isinstance(project, str):
             project = json.loads(project)
 
@@ -197,6 +189,8 @@ class ImportExportClient(BaseClass):
         path = project["path"]
         namespace = project["namespace"]
         override_params = self.get_override_params(project)
+        filename = get_export_filename_from_namespace_and_name(namespace, name)
+        import_id = None
 
         if is_user_project(project):
             self.log.info("{0}{1} is a USER project ({2}). Attempting to import into their namespace".format(
@@ -206,65 +200,22 @@ class ImportExportClient(BaseClass):
             self.log.info("{0}{1} is NOT a USER project. Attempting to import into a group namespace".format(
                 get_dry_log(dry_run), name))
             dst_namespace = get_project_namespace(project)
-            if self.config.parent_id is None:
-                # TODO: This section is for importing to top-level, non-user projects.
-                #   Needs a going over. We know the parent_id case is solid
-                #   but recent experience would suggest this part isn't as tight
-                #   Certainly not the GitHost scenario
-                full_path = self.get_full_path(project["http_url_to_repo"])
-                self.log.info(
-                    "Searching for destination namespace {}".format(dst_namespace))
-                for group in self.groups_api.search_for_group(
-                        project["namespace"],
-                        self.config.destination_host,
-                        self.config.destination_token):
-                    if isinstance(group, dict):
-                        if group["full_path"].lower() == full_path.lower():
-                            self.log.info(
-                                "Found group {}".format(group["full_path"]))
-                            dst_namespace = group["id"]
-                            break
-
-        exported = False
-        timeout = 0
-        filename = get_export_filename_from_namespace_and_name(
-            namespace, name)
 
         if not dry_run:
             import_response = self.attempt_import(
                 filename, name, path, dst_namespace, override_params)
-            if "Try again later" in import_response:
+            if is_error_message_present(import_response) or not import_response:
+                self.log.error("Project {0} (file: {1}) failed to import due to:\n{2}".format(
+                    name, filename, import_response))
+            elif "Try again later" in import_response:
                 self.log.warning(
-                    "Reached rate limit for import. Waiting 5 minutes.")
-                # 5 min (https://gitlab.com/gitlab-org/gitlab/-/merge_requests/26903)
-                sleep(300)
+                    "Waiting 5 minutes and re-importing project {0} (file: {1}) due to:\n{2}".format(name, filename, import_response))
+                # TODO: Set to 5 min (https://gitlab.com/gitlab-org/gitlab/-/merge_requests/26903)
+                sleep(600)
                 import_response = self.attempt_import(
                     filename, name, path, dst_namespace, override_params)
-
-            self.log.info("Project {0} (file: {1}) import response:\n{2}"
-                          .format(name, filename, import_response))
-
-            import_results = self.get_import_id_from_import_response(
-                import_response, exported, project, name, timeout)
-            self.log.info(import_results)
-
-            import_id = import_results["import_id"]
-            exported = import_results["exported"]
-            duped = import_results["duped"]
-
-            import_results = self.dupe_reimport_worker(
-                duped,
-                self.config.append_project_suffix_on_existing_found,
-                exported,
-                filename,
-                name,
-                dst_namespace,
-                override_params,
-                project,
-                timeout)
-            self.log.info("Project {0} (file: {1}) import response (DUPED): {2}"
-                          .format(name, filename, import_response))
-            return import_id
+            import_id = self.get_import_id_from_response(
+                import_response, name, filename)
         else:
             self.log.info("DRY-RUN: Outputing project {0} (file: {1}) migration data to dry_run_project_migration.json"
                           .format(name, filename))
@@ -274,6 +225,7 @@ class ImportExportClient(BaseClass):
                 "namespace": dst_namespace,
                 "override_params": override_params,
                 "project": project})
+        return import_id
 
     def attempt_import(self, filename, name, path, namespace, override_params):
         import_response = None
@@ -390,44 +342,6 @@ class ImportExportClient(BaseClass):
             self.log.error(
                 "Failed to trigger group {0} (file: {1}), with error {2}".format(name, filename, re))
 
-    def dupe_reimport_worker(
-            self,
-            duped,
-            append_suffix_on_dupe,
-            exported,
-            filename,
-            name,
-            namespace,
-            override_params,
-            project,
-            timeout
-    ):
-        # Issue 151
-        # The exported check *should not* be needed, as it should be impossible to be exported and duped
-        # but crazier things have happened
-        if duped and append_suffix_on_dupe and not exported:
-            # One of the few times we will retry an import
-            # Some next-level hackery. If the project already "exists", append and _1 to it and try, again
-            # Note: we only do this retry one time
-            project["name"] = self.create_override_name(project["name"])
-            self.log.info("Project name is {0}".format(project["name"]))
-
-            import_response = self.attempt_import(
-                filename,
-                name,
-                namespace,
-                override_params,
-                project
-            )
-            self.log.info(import_response)
-
-            import_results = self.get_import_id_from_import_response(
-                import_response, False, project, name, timeout)
-            self.log.info(import_results)
-
-            return import_results
-        return None
-
     @staticmethod
     def create_override_name(current_project_name):
         return "".join([current_project_name, "_1"])
@@ -453,103 +367,45 @@ class ImportExportClient(BaseClass):
                 another_strip.pop(ind)
         return "/".join(another_strip)
 
-    def get_import_id_from_import_response(self, import_response, exported, project, name, timeout):
+    def get_import_id_from_response(self, import_response, name, filename):
+        timeout = 0
         import_id = None
-        duped = False
         wait_time = self.config.importexport_wait
-        value_error_count = 0
-        if import_response is not None and len(import_response) > 0:
-            import_response = json.loads(import_response)
-            while not exported:
-                if import_response.get("id", None) is not None:
-                    import_id = import_response["id"]
-                elif is_error_message_present(import_response):
-                    res = import_response.get("message")
-                    if "Name has already been taken" in res:
-                        # issue 151.
-                        self.log.debug("Searching for %s" % project["name"])
-                        search_response = api.search(
-                            self.config.destination_host, self.config.destination_token, 'projects', project['name'])
-                        # Search for the project by name
-                        if len(search_response) > 0:
-                            if isinstance(search_response, list):
-                                for proj in search_response:
-                                    if proj["name"] == project["name"] \
-                                            and project["namespace"] in proj["namespace"]["path"]:
-                                        self.log.info("Found project")
-                                        import_id = proj["id"]
-                                        duped = True
-                                        self.log.info("Existing project found at id: {0}. "
-                                                      "Setting duped status and returning."
-                                                      .format(import_id))
-                                        # Found a match, so dump out of the for loop
-                                        # import_id (project id) and duped flag are set
-                                        break
-                        # We can get here via a search match, or by exhausting the dict
-                        # We already log the duped message info when we find the dupe
-                        # Reuse the not found message
-                        if not duped:
-                            self.log.warning(
-                                "IGNORE: Project {} may already exist but it cannot be found".format(project["name"]))
-                            import_id = None
-                        # Break out of the while, as we don't care about exported
-                        break
-                    elif "404 Namespace Not Found" in res:
-                        self.log.info(
-                            "SKIP: Project {0} will need to import later (response: {1})".format(name, res))
-                        import_id = None
-                        break
-                    elif "The project is still being deleted" in res:
-                        self.log.info("SKIP: Previous project {} export has been targeted for deletion".format(
-                            project["name"]))
-                        import_id = None
-                        break
-                if import_id is not None:
+        import_response = json.loads(import_response)
+        if import_response.get("id", None) is not None:
+            import_id = import_response["id"]
+            while True:
+                try:
                     status = self.projects_api.get_project_import_status(
                         self.config.destination_host, self.config.destination_token, import_id)
-                    try:
-                        if status.status_code == 200:
-                            status_json = status.json()
-                            if status_json["import_status"] == "finished":
-                                self.log.info(
-                                    "Project {} has been successfully imported".format(name))
-                                exported = True
-                                # TODO: Fix or remove soft-cutover option
-                                # if self.config.mirror_username is not None:
-                                #     mirror_repo(project, import_id)
-                            elif status_json["import_status"] == "failed":
-                                self.log.error(
-                                    "Project {0} failed to import ({1})".format(name, status_json["import_error"]))
-                                exported = True
-                            elif status_json["import_status"] != "started":
-                                # If it is started, we just ignore the status
-                                self.log.warning(
-                                    "Could not get import status: {0}".format(status_json))
-                                timeout += wait_time
-                                sleep(wait_time)
-                        else:
-                            self.log.error(
-                                "Import status code was {0}".format(status.status_code))
-                    except ValueError as e:
-                        self.log.error(e)
-                        self.log.error(
-                            "Status content was {0}".format(status.content))
-                        if value_error_count > 2:
-                            self.log.error(
-                                "ValueError failed twice. Moving on for {0}".format(import_id))
+                    if status.status_code == 200:
+                        status_json = status.json()
+                        if status_json["import_status"] == "finished":
+                            self.log.info(
+                                "Project {0} (file: {1}) successfully imported, with status:\n{2}".format(name, filename, status_json))
                             break
-                        value_error_count += 1
-                else:
-                    if timeout < 3600:
-                        self.log.info(
-                            "Waiting {0}s for project {1} to import".format(wait_time, name))
-                        timeout += wait_time
-                        sleep(wait_time)
+                        elif status_json["import_status"] == "failed":
+                            self.log.error(
+                                "Project {0} (file: {1}) failed to import, with status:\n{2}".format(name, filename, status_json))
+                            break
+                        elif timeout < self.config.max_export_wait_time:
+                            self.log.info(
+                                "Checking project {0} (file: {1}) import status in {2} seconds".format(name, filename, wait_time))
+                            timeout += wait_time
+                            sleep(wait_time)
+                        else:
+                            self.log.error("Time limit exceeded, project {0} (file: {1}) import status: {2}".format(
+                                name, filename, status_json))
+                            break
                     else:
-                        self.log.warning(
-                            "Moving on to the next project. Time limit exceeded")
+                        self.log.error(
+                            "Project {0} (file: {1}) import attempt failed with status:\n{2}".format(name, filename, status))
                         break
-        return {"import_id": import_id, "exported": exported, "duped": duped}
+                except RequestException as re:
+                    self.log.error(
+                        "Project {0} (file: {1}) import status ({2}) check failed with error:\n{3}".format(name, filename, status, re))
+                    break
+        return import_id
 
     def export_project_thru_filesystem(self, pid, name, namespace):
         exported = False

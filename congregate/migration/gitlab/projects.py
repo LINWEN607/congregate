@@ -124,7 +124,7 @@ class ProjectsClient(BaseClass):
         for sp in staged_projects:
             # SaaS destination instances have a parent group
             path_with_namespace = "{0}/{1}".format(get_user_project_namespace(sp) if is_user_project(
-                sp) else get_project_namespace(sp), sp["name"].replace(" ", "-"))
+                sp) else get_project_namespace(sp), sp["path"].replace(" ", "-"))
             self.log.info("Removing project {}".format(path_with_namespace))
             resp = self.projects_api.get_project_by_path_with_namespace(
                 path_with_namespace,
