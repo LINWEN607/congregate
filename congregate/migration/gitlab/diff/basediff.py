@@ -133,7 +133,7 @@ class BaseDiffClient(BaseClass):
             percentage_sum += obj[o]["accuracy"]
             if obj[o]["accuracy"] == 0:
                 result = "failure"
-        accuracy = percentage_sum / total_number_of_keys
+        accuracy = percentage_sum / total_number_of_keys if total_number_of_keys else 0
         if result is None:
             result = "success"
         return {
@@ -154,7 +154,7 @@ class BaseDiffClient(BaseClass):
             percentage_sum += obj[o]["overall_accuracy"]["accuracy"]
             if obj[o]["overall_accuracy"]["accuracy"] == 0:
                 result = "failure"
-        accuracy = percentage_sum / total_number_of_keys
+        accuracy = percentage_sum / total_number_of_keys if total_number_of_keys else 0
         if result is None:
             result = "success"
         return {

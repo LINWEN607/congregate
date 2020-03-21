@@ -59,7 +59,8 @@ def generate_post_request(host, token, api, data, headers=None, files=None):
         :return: request object containing response
     """
     url = generate_v4_request_url(host, api)
-    log.info("Generating POST request to {0}:\n{1}".format(url, data))
+    log.info("Generating POST request to {0}{1}".format(
+        url, " with data:\n{}".format(data) if data else ""))
     if headers is None:
         headers = generate_v4_request_header(token)
 
@@ -79,7 +80,8 @@ def generate_put_request(host, token, api, data, headers=None, files=None):
         :return: request object containing response
     """
     url = generate_v4_request_url(host, api)
-    log.info("Generating PUT request to {0}:\n{1}".format(url, data))
+    log.info("Generating PUT request to {0}{1}".format(
+        url, " with data:\n".format(data) if data else ""))
     if headers is None:
         headers = generate_v4_request_header(token)
 
