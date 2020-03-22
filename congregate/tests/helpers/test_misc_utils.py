@@ -1,4 +1,5 @@
 import mock
+from datetime import datetime, timedelta
 import congregate.helpers.misc_utils as misc
 
 
@@ -195,3 +196,20 @@ def test_is_dot_com():
 def test_check_is_project_or_group_for_logging_project():
     assert misc.check_is_project_or_group_for_logging(True) is "Project"
     assert misc.check_is_project_or_group_for_logging(False) is "Group"
+
+def test_get_timedelta_older_than_twenty_four_hours():
+    timestamp = "2020-03-10T17:09:32.322Z"
+    assert misc.get_timedelta(timestamp) > 24
+
+def test_get_timedelta_older_than_twenty_four_hours_different_format():
+    timestamp = "2013-09-30T13:46:02Z"
+    assert misc.get_timedelta(timestamp) > 24
+
+def test_get_timedelta_newer_than_twenty_four_hours():
+    timestamp = str(datetime.now()).replace(" ", "T")
+    assert misc.get_timedelta(timestamp) < 24
+
+def test_get_timedelta_exactly_twenty_four_hours():
+    timestamp = str(datetime.today() - timedelta(days=1)).replace(" ", "T")
+    assert misc.get_timedelta(timestamp) == 24
+

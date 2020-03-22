@@ -318,6 +318,9 @@ def get_timedelta(timestamp):
         :param timestamp: A timestamp string
         :return: timedelta between provided timestamp and datetime.now() in hours
     """
-    created_at = datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%SZ')
+    try:
+        created_at = datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%SZ')
+    except ValueError:
+        created_at = datetime.strptime(timestamp.split(".")[0], '%Y-%m-%dT%H:%M:%S')
     now = datetime.now()
     return (now - created_at).days * 24
