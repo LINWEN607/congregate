@@ -380,11 +380,11 @@ class ImportExportClient(BaseClass):
                         self.config.destination_host, self.config.destination_token, import_id)
                     if status.status_code == 200:
                         status_json = status.json()
-                        if status_json["import_status"] == "finished":
+                        if status_json.get("import_status", None) == "finished":
                             self.log.info(
                                 "Project {0} (file: {1}) successfully imported, with status:\n{2}".format(name, filename, status_json))
                             break
-                        elif status_json["import_status"] == "failed":
+                        elif status_json.get("import_status", None) == "failed":
                             self.log.error(
                                 "Project {0} (file: {1}) failed to import, with status:\n{2}".format(name, filename, status_json))
                             break

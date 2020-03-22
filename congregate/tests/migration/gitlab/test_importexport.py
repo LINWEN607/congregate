@@ -4,6 +4,7 @@ import mock
 import responses
 from congregate.migration.gitlab.importexport import ImportExportClient
 from congregate.migration.gitlab.api.groups import GroupsApi
+from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.tests.mockapi.groups import MockGroupsApi
 
 
@@ -55,7 +56,51 @@ class ImportExportClientTests(unittest.TestCase):
         self.assertEqual(self.ie.create_override_name(
             original_name), "some_project_1")
 
-    def test_get_import_id_from_response_happy(self):
+    @mock.patch.object(ProjectsApi, "get_project_import_status")
+    def test_get_import_id_from_response_finished(self, mock_status):
+        ok_response_mock = mock.MagicMock()
+        type(ok_response_mock).status_code = mock.PropertyMock(return_value=200)
+        ok_response_mock.json.return_value = {
+            "import_status": "finished"
+        }
+        mock_status.return_value = ok_response_mock
+        import_id = self.ie.get_import_id_from_response(
+            self.import_response, self.original_project_name, self.original_project_filename)
+        self.assertEqual(import_id, 12345)
+
+    @mock.patch.object(ProjectsApi, "get_project_import_status")
+    def test_get_import_id_from_response_failed(self, mock_status):
+        nok_response_mock = mock.MagicMock()
+        type(nok_response_mock).status_code = mock.PropertyMock(return_value=200)
+        nok_response_mock.json.return_value = {
+            "import_status": "failed"
+        }
+        mock_status.return_value = nok_response_mock
+        import_id = self.ie.get_import_id_from_response(
+            self.import_response, self.original_project_name, self.original_project_filename)
+        self.assertEqual(import_id, 12345)
+
+    @mock.patch.object(ProjectsApi, "get_project_import_status")
+    def test_get_import_id_from_response_non_200(self, mock_status):
+        nok_response_mock = mock.MagicMock()
+        type(nok_response_mock).status_code = mock.PropertyMock(return_value=404)
+        mock_status.return_value = nok_response_mock
+        import_id = self.ie.get_import_id_from_response(
+            self.import_response, self.original_project_name, self.original_project_filename)
+        self.assertEqual(import_id, 12345)
+
+    @mock.patch('congregate.helpers.conf.Config.importexport_wait', new_callable=mock.PropertyMock)
+    @mock.patch('congregate.helpers.conf.Config.max_export_wait_time', new_callable=mock.PropertyMock)
+    @mock.patch.object(ProjectsApi, "get_project_import_status")
+    def test_get_import_id_from_response_other(self, mock_status, max_wait, wait):
+        wait.return_value = 0.01
+        max_wait.return_value = 0.1
+        nok_response_mock = mock.MagicMock()
+        type(nok_response_mock).status_code = mock.PropertyMock(return_value=200)
+        nok_response_mock.json.return_value = {
+            "import_status": "scheduled"
+        }
+        mock_status.return_value = nok_response_mock
         import_id = self.ie.get_import_id_from_response(
             self.import_response, self.original_project_name, self.original_project_filename)
         self.assertEqual(import_id, 12345)
@@ -77,7 +122,7 @@ class ImportExportClientTests(unittest.TestCase):
     @mock.patch('congregate.helpers.conf.Config.importexport_wait', new_callable=mock.PropertyMock)
     @mock.patch('congregate.helpers.conf.Config.max_export_wait_time', new_callable=mock.PropertyMock)
     def test_wait_for_group_download_404(self, max_wait, wait, mock_get_group_download_status):
-        max_wait.return_value = 0
+        max_wait.return_value = 0.1
         wait.return_value = 0.01
         nok_response_mock = mock.MagicMock()
         type(nok_response_mock).status_code = mock.PropertyMock(
@@ -104,7 +149,7 @@ class ImportExportClientTests(unittest.TestCase):
     @mock.patch('congregate.helpers.conf.Config.importexport_wait', new_callable=mock.PropertyMock)
     @mock.patch('congregate.helpers.conf.Config.max_export_wait_time', new_callable=mock.PropertyMock)
     def test_wait_for_group_import_404(self, max_wait, wait, mock_find_group_by_path):
-        max_wait.return_value = 0
+        max_wait.return_value = 0.1
         wait.return_value = 0.01
         mock_find_group_by_path.return_value = (False, 1)
         self.assertFalse(self.ie.wait_for_group_import("mock"))
