@@ -1,7 +1,6 @@
 import json
 from requests.exceptions import RequestException
 
-from congregate.helpers import api
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.misc_utils import remove_dupes
 from congregate.migration.gitlab.variables import VariablesClient
@@ -9,6 +8,7 @@ from congregate.migration.gitlab.badges import BadgesClient
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.namespaces import NamespacesApi
 from congregate.helpers.exceptions import ConfigurationException
+from congregate.helpers.migrate_utils import get_timedelta
 
 
 class GroupsClient(BaseClass):
@@ -168,10 +168,15 @@ class GroupsClient(BaseClass):
                         "SKIP: Non-empty group {}".format(dest_full_path))
                 elif not dry_run:
                     try:
-                        self.groups_api.delete_group(
-                            resp.json()["id"],
-                            self.config.destination_host,
-                            self.config.destination_token)
+                        group = resp.json()
+                        if get_timedelta(group["created_at"]) < self.config.max_asset_expiration_time:
+                            self.groups_api.delete_group(
+                                group["id"],
+                                self.config.destination_host,
+                                self.config.destination_token)
+                        else:
+                            self.log("Ignoring %s. Group existed before %d hours" % (group["path_with_namespace"], self.config.max_asset_expiration_time))
+
                     except RequestException, e:
                         self.log.error(
                             "Failed to remove group {0}\nwith error: {1}".format(sg, e))

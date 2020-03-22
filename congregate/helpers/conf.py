@@ -146,6 +146,14 @@ class Config(object):
         """
         return self.prop_int("SOURCE", "max_export_wait_time", 3600)
 
+    @property
+    def max_asset_expiration_time(self):
+        """
+        The maximum number of hours to rollback users, groups, and projects
+        :return: The set config value of 3600 seconds (one hour) as default
+        """
+        return self.prop("SOURCE", "max_asset_expiration_time", 24)
+
 # EXT_SRC
     @property
     def external_source_url(self):

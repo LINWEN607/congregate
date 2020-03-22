@@ -1,3 +1,4 @@
+from datetime import datetime
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.misc_utils import is_dot_com
 from congregate.migration.gitlab.groups import GroupsClient as groupsClient
@@ -99,3 +100,15 @@ def get_user_project_namespace(p):
             b.config.import_user_id, b.config.destination_host, b.config.destination_token).json()["username"]
     else:
         return p["namespace"]
+
+def get_timedelta(timestamp):
+    """
+    Get timedelta between provided timestampe and current time
+
+        :param timestamp: A timestamp string
+        :return: timedelta between provided timestamp and datetime.now() in hours
+    """
+    created_at = datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%SZ')
+    now = datetime.now()
+    return (now - created_at).days * 24
+

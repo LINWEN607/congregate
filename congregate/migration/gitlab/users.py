@@ -10,6 +10,7 @@ from congregate.helpers.threads import handle_multi_thread
 from congregate.helpers.misc_utils import remove_dupes, migration_dry_run, is_error_message_present
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.users import UsersApi
+from congregate.helpers.migrate_utils import get_timedelta
 
 
 class UsersClient(BaseClass):
@@ -836,11 +837,14 @@ class UsersClient(BaseClass):
                     "User {} does not exist or has already been removed".format(su["email"]))
             elif not dry_run:
                 try:
-                    self.users_api.delete_user(
-                        self.config.destination_host,
-                        self.config.destination_token,
-                        user["id"],
-                        hard_delete)
+                    if get_timedelta(user["created_at"]) < self.config.max_asset_expiration_time:
+                        self.users_api.delete_user(
+                            self.config.destination_host,
+                            self.config.destination_token,
+                            user["id"],
+                            hard_delete)
+                    else:
+                        self.log("Ignoring %s. User existed before %d hours" % (user["email"], self.config.max_asset_expiration_time))
                 except RequestException, e:
                     self.log.error(
                         "Failed to remove user {0}\nwith error: {1}".format(su, e))

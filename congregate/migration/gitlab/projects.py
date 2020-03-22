@@ -6,7 +6,7 @@ from congregate.helpers.base_class import BaseClass
 from congregate.helpers.misc_utils import get_dry_log
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.groups import GroupsApi
-from congregate.helpers.migrate_utils import get_project_namespace, is_user_project, get_user_project_namespace
+from congregate.helpers.migrate_utils import get_project_namespace, is_user_project, get_user_project_namespace, get_timedelta
 
 
 class ProjectsClient(BaseClass):
@@ -136,10 +136,14 @@ class ProjectsClient(BaseClass):
                         path_with_namespace, resp.status_code))
                 elif not dry_run:
                     try:
-                        self.projects_api.delete_project(
-                            self.config.destination_host,
-                            self.config.destination_token,
-                            resp.json()["id"])
+                        project = resp.json()
+                        if get_timedelta(project["created_at"]) < self.config.max_asset_expiration_time:
+                            self.projects_api.delete_project(
+                                self.config.destination_host,
+                                self.config.destination_token,
+                                project["id"])
+                        else:
+                            self.log("Ignoring %s. Project existed before %d hours" % (project["name_with_namespace"], self.config.max_asset_expiration_time))
                     except RequestException, e:
                         self.log.error(
                             "Failed to remove project {0}\nwith error: {1}".format(sp, e))
