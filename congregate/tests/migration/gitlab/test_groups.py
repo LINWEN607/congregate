@@ -26,7 +26,7 @@ class GroupsUnitTest(unittest.TestCase):
         group = self.mock_groups.get_group()
         self.assertTrue(self.groups.is_group_non_empty(group))
 
-    @mock.patch("congregate.migration.gitlab.groups.api.list_all")
+    @mock.patch("congregate.migration.gitlab.api.groups.api.list_all")
     def test_is_group_non_empty_false_no_subgroups(self, mock_list_all):
         group = self.mock_groups.get_group()
         group["projects"] = []
@@ -35,8 +35,8 @@ class GroupsUnitTest(unittest.TestCase):
 
     # pylint: disable=no-member
     @responses.activate
-    @mock.patch("congregate.migration.gitlab.groups.api.list_all")
-    @mock.patch("congregate.migration.gitlab.groups.api.generate_get_request")
+    @mock.patch("congregate.migration.gitlab.api.groups.api.list_all")
+    @mock.patch("congregate.migration.gitlab.api.groups.api.generate_get_request")
     def test_is_group_non_empty_true_subgroups(self, mock_get_api, mock_list_all):
         url_value = "https://gitlab.com/api/v4/groups"
         mock_list_all.return_value = self.mock_groups.get_all_subgroups_list()

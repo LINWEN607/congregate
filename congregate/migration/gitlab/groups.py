@@ -2,13 +2,12 @@ import json
 from requests.exceptions import RequestException
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import remove_dupes
+from congregate.helpers.misc_utils import remove_dupes, get_timedelta
 from congregate.migration.gitlab.variables import VariablesClient
 from congregate.migration.gitlab.badges import BadgesClient
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.namespaces import NamespacesApi
 from congregate.helpers.exceptions import ConfigurationException
-from congregate.helpers.migrate_utils import get_timedelta
 
 
 class GroupsClient(BaseClass):

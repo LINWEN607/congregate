@@ -5,12 +5,11 @@ from requests.exceptions import RequestException
 
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers import api
-from congregate.helpers.misc_utils import get_dry_log, json_pretty
+from congregate.helpers.misc_utils import get_dry_log, json_pretty, get_timedelta
 from congregate.helpers.threads import handle_multi_thread
 from congregate.helpers.misc_utils import remove_dupes, migration_dry_run, is_error_message_present
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.users import UsersApi
-from congregate.helpers.migrate_utils import get_timedelta
 
 
 class UsersClient(BaseClass):

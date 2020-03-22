@@ -3,10 +3,10 @@ from urllib import quote_plus
 from requests.exceptions import RequestException
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import get_dry_log
+from congregate.helpers.misc_utils import get_dry_log, get_timedelta
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.groups import GroupsApi
-from congregate.helpers.migrate_utils import get_project_namespace, is_user_project, get_user_project_namespace, get_timedelta
+from congregate.helpers.migrate_utils import get_project_namespace, is_user_project, get_user_project_namespace
 
 
 class ProjectsClient(BaseClass):
