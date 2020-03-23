@@ -6,6 +6,7 @@ from time import sleep
 from os import remove
 from glob import glob
 from requests.exceptions import RequestException
+from requests_toolbelt.multipart.encoder import MultipartEncoder
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers import api
 from congregate.helpers.misc_utils import download_file, migration_dry_run, get_dry_log, is_error_message_present, check_is_project_or_group_for_logging
@@ -227,7 +228,7 @@ class ImportExportClient(BaseClass):
                 "project": project})
         return import_id
 
-    def attempt_import(self, filename, name, path, namespace, override_params, overwrite=False):
+    def attempt_import(self, filename, name, path, namespace, override_params, overwrite="false"):
         import_response = None
         if self.config.location == "aws":
             presigned_get_url = self.aws.generate_presigned_url(
@@ -265,22 +266,45 @@ class ImportExportClient(BaseClass):
                     import_response = self.aws.copy_from_s3_and_import(
                         name, namespace, downloaded_filename)
         elif self.config.location == "filesystem":
-            with open("%s/downloads/%s" % (self.config.filesystem_path, filename), "rb") as f:
-                data = {
-                    "path": path,
-                    "namespace": namespace,
-                    "name": name,
-                    "overwrite": overwrite
-                }
-                files = {
-                    "file": (filename, f)
-                }
-                headers = {
-                    "Private-Token": self.config.destination_token
-                }
-                resp = self.projects_api.import_project(
-                    self.config.destination_host, self.config.destination_token, data=data, files=files, headers=headers)
-                import_response = resp.text
+            resp = None
+            try:
+                # Handle large files
+                with open("%s/downloads/%s" % (self.config.filesystem_path, filename), "rb") as f:
+                    m = MultipartEncoder(fields={
+                        "file": (filename, f),
+                        "path": path,
+                        "namespace": namespace,
+                        "name": name,
+                        "overwrite": overwrite
+                    })
+                    headers = {
+                        "Private-Token": self.config.destination_token,
+                        "Content-Type": m.content_type
+                    }
+                    resp = self.projects_api.import_project(
+                        self.config.destination_host, self.config.destination_token, data=m, headers=headers)
+                    import_response = resp.text
+            except AttributeError as ae:
+                self.log.error(
+                    "Large file upload failed for {0}. Using standard file upload, due to: \n{1}".format(
+                        filename, ae))
+                with open("%s/downloads/%s" % (self.config.filesystem_path, filename), "rb") as f:
+                    data = {
+                        "path": path,
+                        "namespace": namespace,
+                        "name": name,
+                        "overwrite": overwrite
+                    }
+                    files = {
+                        "file": (filename, f)
+                    }
+                    headers = {
+                        "Private-Token": self.config.destination_token
+                    }
+                    resp = self.projects_api.import_project(
+                        self.config.destination_host, self.config.destination_token, data=data, files=files, headers=headers)
+                    import_response = resp.text
+
         return import_response
 
     def import_group(self, group, full_path, filename, dry_run=True):
@@ -399,7 +423,7 @@ class ImportExportClient(BaseClass):
                                 name, dst_namespace, " (re-importing)" if retry else "", status_json))
                             if retry:
                                 import_response = self.attempt_import(
-                                    filename, name, path, dst_namespace, override_params, overwrite=True)
+                                    filename, name, path, dst_namespace, override_params, overwrite="true")
                                 retry = False
                             else:
                                 self.log.info("Removing project {0} from {1} after failed import, due to {2}".format(
@@ -421,7 +445,7 @@ class ImportExportClient(BaseClass):
                             "Project {0} (file: {1}) import attempt failed, with status:\n{2}".format(name, filename, status))
                         return None
                 else:
-                    self.log.error("Project {0} (file: {1}) faild to import, with response:\n{2}".format(
+                    self.log.error("Project {0} (file: {1}) failed to import, with response:\n{2}".format(
                         name, filename, import_response))
                     return None
             except RequestException as re:

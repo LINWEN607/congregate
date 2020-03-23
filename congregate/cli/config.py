@@ -105,7 +105,6 @@ def generate_config():
             "To avoid username collision, please input suffix to append: ")
         config.set("DESTINATION", "username_suffix",
                    username_suffix if username_suffix != "_" else "")
-
         mirror = raw_input(
             "Planning a soft cut-over migration by mirroring repos to keep both instances running? Yes or No (default): ")
         if mirror and mirror.lower() != "no":

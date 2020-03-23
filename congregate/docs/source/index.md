@@ -21,6 +21,7 @@ Our guidance on some other migrations at this time:
 * [Migration Workflow](static_docs/workflow.md)
 * [README](static_docs/readme.md)
 * [Code quality report](static_docs/code_quality.md)
+* [Migration metrics](static_docs/migration_metrics.md)
 
 ## Indices and tables
 
