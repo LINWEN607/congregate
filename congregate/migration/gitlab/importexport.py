@@ -6,6 +6,7 @@ from time import sleep
 from os import remove
 from glob import glob
 from requests.exceptions import RequestException
+from requests_toolbelt.multipart.encoder import MultipartEncoder
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers import api
 from congregate.helpers.misc_utils import download_file, migration_dry_run, get_dry_log, is_error_message_present, check_is_project_or_group_for_logging
@@ -313,21 +314,41 @@ class ImportExportClient(BaseClass):
                     import_response = self.aws.copy_from_s3_and_import(
                         name, namespace, downloaded_filename)
         elif self.config.location == "filesystem":
-            with open("%s/downloads/%s" % (self.config.filesystem_path, filename), "rb") as f:
-                data = {
-                    "path": path,
-                    "namespace": namespace,
-                    "name": name
-                }
-                files = {
-                    "file": (filename, f)
-                }
-                headers = {
-                    "Private-Token": self.config.destination_token
-                }
-                resp = self.projects_api.import_project(
-                    self.config.destination_host, self.config.destination_token, data=data, files=files, headers=headers)
-                import_response = resp.text
+            resp = None
+            try:
+                # Handle large files
+                with open("%s/downloads/%s" % (self.config.filesystem_path, filename), "rb") as f:
+                    m = MultipartEncoder(fields={
+                        "file": (filename, f),
+                        "path": path,
+                        "namespace": namespace,
+                        "name": name
+                    })
+                    headers = {
+                        "Private-Token": self.config.destination_token,
+                        "Content-Type": m.content_type
+                    }
+                    resp = self.projects_api.import_project(
+                        self.config.destination_host, self.config.destination_token, data=m, headers=headers)
+                    import_response = resp.text
+            except AttributeError as e:
+                self.log.error("Large file upload failed for %s. Using standard file upload." % filename)
+                with open("%s/downloads/%s" % (self.config.filesystem_path, filename), "rb") as f:
+                    data = {
+                        "path": path,
+                        "namespace": namespace,
+                        "name": name
+                    }
+                    files = {
+                        "file": (filename, f)
+                    }
+                    headers = {
+                        "Private-Token": self.config.destination_token
+                    }
+                    resp = self.projects_api.import_project(
+                        self.config.destination_host, self.config.destination_token, data=data, files=files, headers=headers)
+                    import_response = resp.text
+
         return import_response
 
     def import_group(self, group, full_path, filename, dry_run=True):
@@ -540,7 +561,7 @@ class ImportExportClient(BaseClass):
                             break
                         value_error_count += 1
                 else:
-                    if timeout < 3600:
+                    if timeout < self.config.max_export_wait_time:
                         self.log.info(
                             "Waiting {0}s for project {1} to import".format(wait_time, name))
                         timeout += wait_time

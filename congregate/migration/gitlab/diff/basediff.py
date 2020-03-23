@@ -7,7 +7,6 @@ from json2html import json2html
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.misc_utils import find as nested_find, is_error_message_present
 
-
 class BaseDiffClient(BaseClass):
     SCRIPT = """
         window.onload = function () {
@@ -125,17 +124,21 @@ class BaseDiffClient(BaseClass):
         percentage_sum = 0
         result = None
         total_number_of_keys = len(obj)
-        for o in obj.keys():
-            if (o == "/projects/:id" or o == "/groups/:id") and obj[o]["accuracy"] == 0:
-                result = "failure"
-                percentage_sum = 0
-                break
-            percentage_sum += obj[o]["accuracy"]
-            if obj[o]["accuracy"] == 0:
-                result = "failure"
-        accuracy = percentage_sum / total_number_of_keys
-        if result is None:
-            result = "success"
+        try:
+            if isinstance(obj, dict):
+                for o in obj.keys():
+                    if (o == "/projects/:id" or o == "/groups/:id") and obj[o]["accuracy"] == 0:
+                        result = "failure"
+                        percentage_sum = 0
+                        break
+                    percentage_sum += obj[o]["accuracy"]
+                    if obj[o]["accuracy"] == 0:
+                        result = "failure"
+                accuracy = percentage_sum / total_number_of_keys
+                if result is None:
+                    result = "success"
+        except Exception:
+            self.log.info("Failed to calculate accuracy for %s" % obj)
         return {
             "accuracy": accuracy,
             "result": result
@@ -146,21 +149,30 @@ class BaseDiffClient(BaseClass):
         percentage_sum = 0
         result = None
         total_number_of_keys = len(obj)
-        for o in obj.keys():
-            if (o == "/projects/:id" or o == "/groups/:id") and obj[o]["accuracy"] == 0:
-                result = "failure"
-                percentage_sum = 0
-                break
-            percentage_sum += obj[o]["overall_accuracy"]["accuracy"]
-            if obj[o]["overall_accuracy"]["accuracy"] == 0:
-                result = "failure"
-        accuracy = percentage_sum / total_number_of_keys
-        if result is None:
-            result = "success"
-        return {
-            "overall_accuracy": accuracy,
-            "result": result
-        }
+        try:
+            if isinstance(obj, dict):
+                for o in obj.keys():
+                    if (o == "/projects/:id" or o == "/groups/:id") and obj[o]["accuracy"] == 0:
+                        result = "failure"
+                        percentage_sum = 0
+                        break
+                    percentage_sum += obj[o]["overall_accuracy"]["accuracy"]
+                    if obj[o]["overall_accuracy"]["accuracy"] == 0:
+                        result = "failure"
+                accuracy = percentage_sum / total_number_of_keys
+                if result is None:
+                    result = "success"
+                return {
+                    "overall_accuracy": accuracy,
+                    "result": result
+                }
+        except Exception:
+            self.log.info(obj)
+            self.log.info("Unable to calculate overall_accuracy")
+            return {
+                "overall_accuracy": 0,
+                "results": "failure"
+            }
 
     def ignore_keys(self, data):
         if isinstance(data, list):
@@ -227,10 +239,7 @@ class BaseDiffClient(BaseClass):
         style.content = "table tr th td { border: 1px solid #000 }"
         soup.html.append(soup.new_tag("head"))
         soup.html.head.append(style)
-        # header_element = None
         for tr in soup.html.body.table.find_all('tr', recursive=False):
-            # if "migration_results" in tr.th.text:
-            #     header_index = tr
             if "results" not in tr.th.text:
                 tr.th['class'] = "accordion"
                 if tr.td:
@@ -238,10 +247,6 @@ class BaseDiffClient(BaseClass):
             new_tr = soup.new_tag("tr")
             new_tr.append(tr.td)
             tr.insert_after(new_tr)
-        # new_order = soup.html.body.table.find_all('tr', recursive=False)
-        # soup.html.body.table.insert(0, soup.html.body.table[header_index])
-        # new_soup.insert_before
-        # print soup.html.body.table.find_all('tr', recursive=False)[0]
         head = soup.new_tag("head")
         script = soup.new_tag("script")
         script.string = self.SCRIPT

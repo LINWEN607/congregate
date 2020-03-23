@@ -16,8 +16,11 @@ def handle_multi_thread_write_to_file_and_return_results(function, results_funct
     results = []
     with open(path, 'w') as f:
         f.write("[\n")
-        for result in pool.imap(function, data):
-            results.append(results_function(result))
-            f.write(json_pretty(result))
+        try:
+            for result in pool.imap_unordered(function, data):
+                results.append(results_function(result))
+                f.write(json_pretty(result))
+        except TypeError:
+            print "Found None. Stopping write to file"
         f.write("\n]")
     return results

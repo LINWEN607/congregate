@@ -37,17 +37,17 @@ class ProjectDiffClient(BaseDiffClient):
             self.source_data = self.load_json_data(
                 "%s/data/project_json.json" % self.app_path)
 
+        self.source_data = [i for i in self.source_data if i] 
+
     def generate_diff_report(self, rollback=False):
         diff_report = {}
         self.log.info("{}Generating Project Diff Report".format(
             get_rollback_log(rollback)))
-
         results = handle_multi_thread_write_to_file_and_return_results(
             self.generate_single_diff_report, self.return_only_accuracies, self.source_data, "%s/data/project_diff.json" % self.app_path)
 
         for result in results:
             diff_report.update(result)
-
         diff_report["project_migration_results"] = self.calculate_overall_stage_accuracy(
             diff_report)
 
@@ -55,13 +55,24 @@ class ProjectDiffClient(BaseDiffClient):
 
     def generate_single_diff_report(self, project):
         diff_report = {}
-        if self.results.get(project["path_with_namespace"]):
+        project_path = project["path_with_namespace"]
+        if self.results.get(project_path):
             project_diff = self.handle_endpoints(project)
-            diff_report[project["path_with_namespace"]] = project_diff
-            diff_report[project["path_with_namespace"]]["overall_accuracy"] = self.calculate_overall_accuracy(
-                diff_report[project["path_with_namespace"]])
+            diff_report[project_path] = project_diff
+            try:
+                diff_report[project_path]["overall_accuracy"] = self.calculate_overall_accuracy(
+                    diff_report[project_path])
+            except Exception:
+                self.log.info("Failed to generate diff for %s" % project_path)
+                diff_report[project_path] = {
+                    "error": "project missing",
+                    "overall_accuracy": {
+                        "accuracy": 0,
+                        "result": "failure"
+                    }        
+                }
         else:
-            diff_report[project["path_with_namespace"]] = {
+            diff_report[project_path] = {
                 "error": "project missing",
                 "overall_accuracy": {
                     "accuracy": 0,
