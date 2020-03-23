@@ -53,9 +53,9 @@ class ProjectsClient(BaseClass):
                 self.config.import_user_id,
                 self.config.destination_host,
                 self.config.destination_token)
-        except RequestException, e:
+        except RequestException as re:
             self.log.error(
-                "Failed to remove import user (ID: {0}) from project (ID: {1}), with error:\n{2}".format(self.config.import_user_id, pid, e))
+                "Failed to remove import user (ID: {0}) from project (ID: {1}), with error:\n{2}".format(self.config.import_user_id, pid, re))
 
     def add_shared_groups(self, old_id, new_id):
         """Adds the list of groups we share the project with."""
@@ -81,9 +81,9 @@ class ProjectsClient(BaseClass):
                     else:
                         self.log.warn("Failed to share project {0} with group {1} due to:\n{2}".format(
                             project_name, name, r.content))
-                except RequestException, e:
+                except RequestException as re:
                     self.log.error("Failed to POST shared group {0} to project {1}, with error:\n{2}".format(
-                        name, project_name, e))
+                        name, project_name, re))
 
     def get_new_group_id(self, name, path):
         """Returns the group's ID on the destination instance."""
@@ -97,9 +97,9 @@ class ProjectsClient(BaseClass):
             else:
                 self.log.warn(
                     "Shared group {} does not exist or is not yet imported".format(path))
-        except RequestException, e:
+        except RequestException as re:
             self.log.error(
-                "Failed to GET group {0} ID, with error:\n{1}".format(name, e))
+                "Failed to GET group {0} ID, with error:\n{1}".format(name, re))
 
     def __old_project_avatar(self, id):
         """Returns the source project avatar."""
@@ -140,9 +140,9 @@ class ProjectsClient(BaseClass):
                             self.config.destination_host,
                             self.config.destination_token,
                             resp.json()["id"])
-                    except RequestException, e:
+                    except RequestException as re:
                         self.log.error(
-                            "Failed to remove project {0}\nwith error: {1}".format(sp, e))
+                            "Failed to remove project {0}, with error:\n{1}".format(sp, re))
             else:
                 self.log.error(
                     "Failed to GET project {} by path_with_namespace".format(path_with_namespace))
@@ -169,9 +169,9 @@ class ProjectsClient(BaseClass):
                         self.config.source_host,
                         self.config.source_token,
                         project["id"])
-        except RequestException, e:
+        except RequestException as re:
             self.log.error(
-                "Failed to archive staged projects, with error:\n{}".format(e))
+                "Failed to archive staged projects, with error:\n{}".format(re))
 
     def unarchive_staged_projects(self, dry_run=True):
         staged_projects = self.get_staged_projects()
@@ -186,9 +186,9 @@ class ProjectsClient(BaseClass):
                         self.config.source_host,
                         self.config.source_token,
                         project["id"])
-        except RequestException, e:
+        except RequestException as re:
             self.log.error(
-                "Failed to unarchive staged projects, with error:\n{}".format(e))
+                "Failed to unarchive staged projects, with error:\n{}".format(re))
 
     def find_unimported_projects(self, dry_run=True):
         unimported_projects = []
@@ -212,9 +212,9 @@ class ProjectsClient(BaseClass):
                         self.log.info("Adding project {}".format(path))
                         unimported_projects.append(
                             "%s/%s" % (project_json["namespace"], project_json["name"]))
-                except IOError, e:
+                except IOError as ioe:
                     self.log.error(
-                        "Failed to find unimported projects, with error:\n{}".format(e))
+                        "Failed to find unimported projects, with error:\n{}".format(ioe))
 
         if unimported_projects is not None and unimported_projects:
             self.log.info("{0}Found {1} unimported projects".format(

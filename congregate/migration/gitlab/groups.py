@@ -51,9 +51,9 @@ class GroupsClient(BaseClass):
             try:
                 group.pop("ldap_cn")
                 group.pop("ldap_access")
-            except KeyError, e:
+            except KeyError as ke:
                 self.log.error(
-                    "Failed to pop group keys 'ldap_cn' and/or 'ldap_access', with error:\n{}".format(e))
+                    "Failed to pop group keys 'ldap_cn' and/or 'ldap_access', with error:\n{}".format(ke))
             group_id = group["id"]
             members = list(self.groups_api.get_all_group_members(
                 group_id, host, token))
@@ -112,9 +112,9 @@ class GroupsClient(BaseClass):
                 self.config.destination_host,
                 self.config.destination_token
             )
-        except RequestException, e:
+        except RequestException as re:
             self.log.error(
-                "Failed to remove import user (ID: {0}) from group (ID: {1}), with error:\n{2}".format(self.config.import_user_id, gid, e))
+                "Failed to remove import user (ID: {0}) from group (ID: {1}), with error:\n{2}".format(self.config.import_user_id, gid, re))
 
     def append_groups(self, groups):
         with open("{}/data/groups.json".format(self.app_path), "r") as f:
@@ -172,9 +172,9 @@ class GroupsClient(BaseClass):
                             resp.json()["id"],
                             self.config.destination_host,
                             self.config.destination_token)
-                    except RequestException, e:
+                    except RequestException as re:
                         self.log.error(
-                            "Failed to remove group {0}\nwith error: {1}".format(sg, e))
+                            "Failed to remove group {0}, with error:\n{1}".format(sg, re))
             else:
                 self.log.error(
                     "Failed to GET group {} by full_path".format(dest_full_path))
