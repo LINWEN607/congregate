@@ -118,6 +118,8 @@ def generate_config():
         else:
             config.set("DESTINATION", "mirror_username", "")
 
+        config.set("DESTINATION", "max_asset_expiration_time", "24")
+        
         # Project export/update settings
         config.add_section("EXPORT")
         location = raw_input(
