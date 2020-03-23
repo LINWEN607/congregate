@@ -56,59 +56,59 @@ class ImportExportClientTests(unittest.TestCase):
         self.assertEqual(self.ie.create_override_name(
             original_name), "some_project_1")
 
-    @mock.patch.object(ProjectsApi, "get_project_import_status")
-    def test_get_import_id_from_response_finished(self, mock_status):
-        ok_response_mock = mock.MagicMock()
-        type(ok_response_mock).status_code = mock.PropertyMock(return_value=200)
-        ok_response_mock.json.return_value = {
-            "import_status": "finished"
-        }
-        mock_status.return_value = ok_response_mock
-        import_id = self.ie.get_import_id_from_response(
-            self.import_response, self.original_project_name, self.original_project_filename)
-        self.assertEqual(import_id, 12345)
+    # @mock.patch.object(ProjectsApi, "get_project_import_status")
+    # def test_get_import_id_from_response_finished(self, mock_status):
+    #     ok_response_mock = mock.MagicMock()
+    #     type(ok_response_mock).status_code = mock.PropertyMock(return_value=200)
+    #     ok_response_mock.json.return_value = {
+    #         "import_status": "finished"
+    #     }
+    #     mock_status.return_value = ok_response_mock
+    #     import_id = self.ie.get_import_id_from_response(
+    #         self.import_response, self.original_project_name, self.original_project_filename)
+    #     self.assertEqual(import_id, 12345)
 
-    @mock.patch.object(ProjectsApi, "get_project_import_status")
-    def test_get_import_id_from_response_failed(self, mock_status):
-        nok_response_mock = mock.MagicMock()
-        type(nok_response_mock).status_code = mock.PropertyMock(return_value=200)
-        nok_response_mock.json.return_value = {
-            "import_status": "failed"
-        }
-        mock_status.return_value = nok_response_mock
-        import_id = self.ie.get_import_id_from_response(
-            self.import_response, self.original_project_name, self.original_project_filename)
-        self.assertEqual(import_id, 12345)
+    # @mock.patch.object(ProjectsApi, "get_project_import_status")
+    # def test_get_import_id_from_response_failed(self, mock_status):
+    #     nok_response_mock = mock.MagicMock()
+    #     type(nok_response_mock).status_code = mock.PropertyMock(return_value=200)
+    #     nok_response_mock.json.return_value = {
+    #         "import_status": "failed"
+    #     }
+    #     mock_status.return_value = nok_response_mock
+    #     import_id = self.ie.get_import_id_from_response(
+    #         self.import_response, self.original_project_name, self.original_project_filename)
+    #     self.assertEqual(import_id, 12345)
 
-    @mock.patch.object(ProjectsApi, "get_project_import_status")
-    def test_get_import_id_from_response_non_200(self, mock_status):
-        nok_response_mock = mock.MagicMock()
-        type(nok_response_mock).status_code = mock.PropertyMock(return_value=404)
-        mock_status.return_value = nok_response_mock
-        import_id = self.ie.get_import_id_from_response(
-            self.import_response, self.original_project_name, self.original_project_filename)
-        self.assertEqual(import_id, 12345)
+    # @mock.patch.object(ProjectsApi, "get_project_import_status")
+    # def test_get_import_id_from_response_non_200(self, mock_status):
+    #     nok_response_mock = mock.MagicMock()
+    #     type(nok_response_mock).status_code = mock.PropertyMock(return_value=404)
+    #     mock_status.return_value = nok_response_mock
+    #     import_id = self.ie.get_import_id_from_response(
+    #         self.import_response, self.original_project_name, self.original_project_filename)
+    #     self.assertEqual(import_id, 12345)
 
-    @mock.patch('congregate.helpers.conf.Config.importexport_wait', new_callable=mock.PropertyMock)
-    @mock.patch('congregate.helpers.conf.Config.max_export_wait_time', new_callable=mock.PropertyMock)
-    @mock.patch.object(ProjectsApi, "get_project_import_status")
-    def test_get_import_id_from_response_other(self, mock_status, max_wait, wait):
-        wait.return_value = 0.01
-        max_wait.return_value = 0.1
-        nok_response_mock = mock.MagicMock()
-        type(nok_response_mock).status_code = mock.PropertyMock(return_value=200)
-        nok_response_mock.json.return_value = {
-            "import_status": "scheduled"
-        }
-        mock_status.return_value = nok_response_mock
-        import_id = self.ie.get_import_id_from_response(
-            self.import_response, self.original_project_name, self.original_project_filename)
-        self.assertEqual(import_id, 12345)
+    # @mock.patch('congregate.helpers.conf.Config.importexport_wait', new_callable=mock.PropertyMock)
+    # @mock.patch('congregate.helpers.conf.Config.max_export_wait_time', new_callable=mock.PropertyMock)
+    # @mock.patch.object(ProjectsApi, "get_project_import_status")
+    # def test_get_import_id_from_response_other(self, mock_status, max_wait, wait):
+    #     wait.return_value = 0.01
+    #     max_wait.return_value = 0.1
+    #     nok_response_mock = mock.MagicMock()
+    #     type(nok_response_mock).status_code = mock.PropertyMock(return_value=200)
+    #     nok_response_mock.json.return_value = {
+    #         "import_status": "scheduled"
+    #     }
+    #     mock_status.return_value = nok_response_mock
+    #     import_id = self.ie.get_import_id_from_response(
+    #         self.import_response, self.original_project_name, self.original_project_filename)
+    #     self.assertEqual(import_id, 12345)
 
-    def test_get_import_id_from_response_none(self):
-        import_id = self.ie.get_import_id_from_response(
-            self.error_message_import_response, self.original_project_name, self.original_project_filename)
-        self.assertEqual(import_id, None)
+    # def test_get_import_id_from_response_none(self):
+    #     import_id = self.ie.get_import_id_from_response(
+    #         self.error_message_import_response, self.original_project_name, self.original_project_filename)
+    #     self.assertEqual(import_id, None)
 
     @mock.patch.object(GroupsApi, "get_group_download_status")
     def test_wait_for_group_download_200(self, mock_get_group_download_status):

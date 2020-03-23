@@ -215,7 +215,7 @@ class ImportExportClient(BaseClass):
                 import_response = self.attempt_import(
                     filename, name, path, dst_namespace, override_params)
             import_id = self.get_import_id_from_response(
-                import_response, name, filename)
+                import_response, filename, name, path, dst_namespace, override_params)
         else:
             self.log.info("DRY-RUN: Outputing project {0} (file: {1}) migration data to dry_run_project_migration.json"
                           .format(name, filename))
@@ -227,7 +227,7 @@ class ImportExportClient(BaseClass):
                 "project": project})
         return import_id
 
-    def attempt_import(self, filename, name, path, namespace, override_params):
+    def attempt_import(self, filename, name, path, namespace, override_params, overwrite=False):
         import_response = None
         if self.config.location == "aws":
             presigned_get_url = self.aws.generate_presigned_url(
@@ -269,7 +269,8 @@ class ImportExportClient(BaseClass):
                 data = {
                     "path": path,
                     "namespace": namespace,
-                    "name": name
+                    "name": name,
+                    "overwrite": overwrite
                 }
                 files = {
                     "file": (filename, f)
@@ -367,27 +368,45 @@ class ImportExportClient(BaseClass):
                 another_strip.pop(ind)
         return "/".join(another_strip)
 
-    def get_import_id_from_response(self, import_response, name, filename):
+    def get_import_id_from_response(self, import_response, filename, name, path, dst_namespace, override_params):
         timeout = 0
+        retry = True
         import_id = None
         wait_time = self.config.importexport_wait
         import_response = json.loads(import_response)
-        if import_response.get("id", None) is not None:
-            import_id = import_response["id"]
-            while True:
-                try:
+        while True:
+            if not retry:
+                import_response = json.loads(import_response)
+                if is_error_message_present(import_response):
+                    self.log.error("Project {0} failed to overwrite to {1} (removing), with response:\n{2}".format(
+                        name, dst_namespace, import_response))
+                    self.projects_api.delete_project(
+                        self.config.destination_host, self.config.destination_token, import_id)
+                    return None
+            import_id = import_response.get("id", None)
+            try:
+                if import_id:
                     status = self.projects_api.get_project_import_status(
                         self.config.destination_host, self.config.destination_token, import_id)
                     if status.status_code == 200:
                         status_json = status.json()
                         if status_json.get("import_status", None) == "finished":
                             self.log.info(
-                                "Project {0} (file: {1}) successfully imported, with status:\n{2}".format(name, filename, status_json))
+                                "Project {0} successfully imported to {1}, with status:\n{2}".format(name, dst_namespace, status_json))
                             break
                         elif status_json.get("import_status", None) == "failed":
-                            self.log.error(
-                                "Project {0} (file: {1}) failed to import, with status:\n{2}".format(name, filename, status_json))
-                            break
+                            self.log.error("Project {0} failed to import to {1}, with status{2}:\n{3}".format(
+                                name, dst_namespace, " (re-importing)" if retry else "", status_json))
+                            if retry:
+                                import_response = self.attempt_import(
+                                    filename, name, path, dst_namespace, override_params, overwrite=True)
+                                retry = False
+                            else:
+                                self.log.info("Removing project {0} from {1} after failed import, due to {2}".format(
+                                    name, dst_namespace, status_json))
+                                self.projects_api.delete_project(
+                                    self.config.destination_host, self.config.destination_token, status_json.get("id", None))
+                                return None
                         elif timeout < self.config.max_export_wait_time:
                             self.log.info(
                                 "Checking project {0} (file: {1}) import status in {2} seconds".format(name, filename, wait_time))
@@ -396,15 +415,15 @@ class ImportExportClient(BaseClass):
                         else:
                             self.log.error("Time limit exceeded, project {0} (file: {1}) import status: {2}".format(
                                 name, filename, status_json))
-                            break
+                            return None
                     else:
                         self.log.error(
-                            "Project {0} (file: {1}) import attempt failed with status:\n{2}".format(name, filename, status))
-                        break
-                except RequestException as re:
-                    self.log.error(
-                        "Project {0} (file: {1}) import status ({2}) check failed with error:\n{3}".format(name, filename, status, re))
-                    break
+                            "Project {0} (file: {1}) import attempt failed, with status:\n{2}".format(name, filename, status))
+                        return None
+            except RequestException as re:
+                self.log.error(
+                    "Project {0} (file: {1}) import status ({2}) check failed, with error:\n{3}".format(name, filename, status, re))
+                return None
         return import_id
 
     def export_project_thru_filesystem(self, pid, name, namespace):
