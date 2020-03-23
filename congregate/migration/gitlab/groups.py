@@ -168,13 +168,14 @@ class GroupsClient(BaseClass):
                 elif not dry_run:
                     try:
                         group = resp.json()
-                        if get_timedelta(group["created_at"]) < self.config.max_asset_expiration_time:
-                            self.groups_api.delete_group(
-                                group["id"],
-                                self.config.destination_host,
-                                self.config.destination_token)
-                        else:
-                            self.log("Ignoring %s. Group existed before %d hours" % (group["path_with_namespace"], self.config.max_asset_expiration_time))
+                        # The groups API doesn't have timestamps available currently. This property needs to be exposed in the API before uncommenting these lines
+                        # if get_timedelta(group["created_at"]) < self.config.max_asset_expiration_time:
+                        self.groups_api.delete_group(
+                            group["id"],
+                            self.config.destination_host,
+                            self.config.destination_token)
+                        # else:
+                        #     self.log("Ignoring %s. Group existed before %d hours" % (group["path_with_namespace"], self.config.max_asset_expiration_time))
 
                     except RequestException, e:
                         self.log.error(
