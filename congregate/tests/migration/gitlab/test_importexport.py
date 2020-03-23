@@ -15,9 +15,10 @@ class ImportExportClientTests(unittest.TestCase):
         self.mock_groups = MockGroupsApi()
         self.original_project_name = "original_project_name"
         self.original_project_filename = "original_project_filename"
+        self.original_project_path = "original_project_path"
+        self.original_project_override_params = {
+            "description": "test description"}
         self.original_namespace_path = "original_namespace_path"
-        self.error_message_import_response = json.dumps(
-            {"message": "Name has already been taken"})
         self.import_response = json.dumps({
             "id": 12345,
             "name": self.original_project_name,
@@ -51,64 +52,111 @@ class ImportExportClientTests(unittest.TestCase):
             "override_params[shared_runners_enabled]=%s" % self.original_project["shared_runners_enabled"]
         ]
 
+    def import_status_finished(self, *args, **kwargs):
+        ok_status_mock = mock.MagicMock()
+        type(ok_status_mock).status_code = mock.PropertyMock(return_value=200)
+        ok_status_mock.json.return_value = {
+            "id": 111,
+            "import_status": "finished"
+        }
+        return ok_status_mock
+
+    def import_status_failed(self, *args, **kwargs):
+        nok_status_mock = mock.MagicMock()
+        type(nok_status_mock).status_code = mock.PropertyMock(return_value=200)
+        nok_status_mock.json.return_value = {
+            "id": 222,
+            "import_status": "failed"
+        }
+        return nok_status_mock
+
     def test_create_override_name(self):
         original_name = "some_project"
         self.assertEqual(self.ie.create_override_name(
             original_name), "some_project_1")
 
-    # @mock.patch.object(ProjectsApi, "get_project_import_status")
-    # def test_get_import_id_from_response_finished(self, mock_status):
-    #     ok_response_mock = mock.MagicMock()
-    #     type(ok_response_mock).status_code = mock.PropertyMock(return_value=200)
-    #     ok_response_mock.json.return_value = {
-    #         "import_status": "finished"
-    #     }
-    #     mock_status.return_value = ok_response_mock
-    #     import_id = self.ie.get_import_id_from_response(
-    #         self.import_response, self.original_project_name, self.original_project_filename)
-    #     self.assertEqual(import_id, 12345)
+    @mock.patch.object(ProjectsApi, "get_project_import_status")
+    def test_get_import_id_from_response_finished(self, mock_status):
+        ok_response_mock = mock.MagicMock()
+        type(ok_response_mock).status_code = mock.PropertyMock(return_value=200)
+        ok_response_mock.json.return_value = {
+            "id": 111,
+            "import_status": "finished"
+        }
+        mock_status.return_value = ok_response_mock
+        import_id = self.ie.get_import_id_from_response(self.import_response, self.original_project_filename, self.original_project_name,
+                                                        self.original_project_path, self.original_namespace_path, self.original_project_override_params)
+        self.assertEqual(import_id, 12345)
 
-    # @mock.patch.object(ProjectsApi, "get_project_import_status")
-    # def test_get_import_id_from_response_failed(self, mock_status):
-    #     nok_response_mock = mock.MagicMock()
-    #     type(nok_response_mock).status_code = mock.PropertyMock(return_value=200)
-    #     nok_response_mock.json.return_value = {
-    #         "import_status": "failed"
-    #     }
-    #     mock_status.return_value = nok_response_mock
-    #     import_id = self.ie.get_import_id_from_response(
-    #         self.import_response, self.original_project_name, self.original_project_filename)
-    #     self.assertEqual(import_id, 12345)
+    def test_get_import_id_from_response_import_id_none(self):
+        import_response_none = json.dumps({
+            "message": "not found"
+        })
+        import_id = self.ie.get_import_id_from_response(import_response_none, self.original_project_filename, self.original_project_name,
+                                                        self.original_project_path, self.original_namespace_path, self.original_project_override_params)
+        self.assertEqual(import_id, None)
 
-    # @mock.patch.object(ProjectsApi, "get_project_import_status")
-    # def test_get_import_id_from_response_non_200(self, mock_status):
-    #     nok_response_mock = mock.MagicMock()
-    #     type(nok_response_mock).status_code = mock.PropertyMock(return_value=404)
-    #     mock_status.return_value = nok_response_mock
-    #     import_id = self.ie.get_import_id_from_response(
-    #         self.import_response, self.original_project_name, self.original_project_filename)
-    #     self.assertEqual(import_id, 12345)
+    @mock.patch.object(ProjectsApi, "get_project_import_status")
+    def test_get_import_id_from_response_status_code_400(self, mock_status):
+        nok_status_mock = mock.MagicMock()
+        type(nok_status_mock).status_code = mock.PropertyMock(return_value=404)
+        mock_status.return_value = nok_status_mock
+        import_id = self.ie.get_import_id_from_response(self.import_response, self.original_project_filename, self.original_project_name,
+                                                        self.original_project_path, self.original_namespace_path, self.original_project_override_params)
+        self.assertEqual(import_id, None)
 
-    # @mock.patch('congregate.helpers.conf.Config.importexport_wait', new_callable=mock.PropertyMock)
-    # @mock.patch('congregate.helpers.conf.Config.max_export_wait_time', new_callable=mock.PropertyMock)
-    # @mock.patch.object(ProjectsApi, "get_project_import_status")
-    # def test_get_import_id_from_response_other(self, mock_status, max_wait, wait):
-    #     wait.return_value = 0.01
-    #     max_wait.return_value = 0.1
-    #     nok_response_mock = mock.MagicMock()
-    #     type(nok_response_mock).status_code = mock.PropertyMock(return_value=200)
-    #     nok_response_mock.json.return_value = {
-    #         "import_status": "scheduled"
-    #     }
-    #     mock_status.return_value = nok_response_mock
-    #     import_id = self.ie.get_import_id_from_response(
-    #         self.import_response, self.original_project_name, self.original_project_filename)
-    #     self.assertEqual(import_id, 12345)
+    @mock.patch('congregate.migration.gitlab.importexport.ImportExportClient.attempt_import')
+    @mock.patch.object(ProjectsApi, "get_project_import_status", side_effect=import_status_finished)
+    def test_get_import_id_from_response_failed_retry_success(self, mock_status, mock_import_response):
+        nok_status_mock = mock.MagicMock()
+        type(nok_status_mock).status_code = mock.PropertyMock(return_value=200)
+        nok_status_mock.json.return_value = {
+            "id": 222,
+            "import_status": "failed"
+        }
+        mock_status.return_value = nok_status_mock
+        mock_import_response.return_value = json.dumps({
+            "id": 111,
+            "import_status": "finished"
+        })
+        import_id = self.ie.get_import_id_from_response(self.import_response, self.original_project_filename, self.original_project_name,
+                                                        self.original_project_path, self.original_namespace_path, self.original_project_override_params)
+        self.assertEqual(import_id, 12345)
 
-    # def test_get_import_id_from_response_none(self):
-    #     import_id = self.ie.get_import_id_from_response(
-    #         self.error_message_import_response, self.original_project_name, self.original_project_filename)
-    #     self.assertEqual(import_id, None)
+    @mock.patch('congregate.migration.gitlab.importexport.ImportExportClient.attempt_import')
+    @mock.patch.object(ProjectsApi, "get_project_import_status", side_effect=import_status_failed)
+    def test_get_import_id_from_response_failed_retry_failed(self, mock_status, mock_import_response):
+        nok_status_mock = mock.MagicMock()
+        type(nok_status_mock).status_code = mock.PropertyMock(return_value=200)
+        nok_status_mock.json.return_value = {
+            "id": 222,
+            "import_status": "failed"
+        }
+        mock_status.return_value = nok_status_mock
+        mock_import_response.return_value = json.dumps({
+            "id": 222,
+            "import_status": "failed"
+        })
+        import_id = self.ie.get_import_id_from_response(self.import_response, self.original_project_filename, self.original_project_name,
+                                                        self.original_project_path, self.original_namespace_path, self.original_project_override_params)
+        self.assertEqual(import_id, None)
+
+    @mock.patch('congregate.helpers.conf.Config.importexport_wait', new_callable=mock.PropertyMock)
+    @mock.patch('congregate.helpers.conf.Config.max_export_wait_time', new_callable=mock.PropertyMock)
+    @mock.patch.object(ProjectsApi, "get_project_import_status")
+    def test_get_import_id_from_response_timeout(self, mock_status, max_wait, wait):
+        wait.return_value = 0.01
+        max_wait.return_value = 0.1
+        ok_status_mock = mock.MagicMock()
+        type(ok_status_mock).status_code = mock.PropertyMock(return_value=200)
+        ok_status_mock.json.return_value = {
+            "id": 333,
+            "import_status": "scheduled"
+        }
+        mock_status.return_value = ok_status_mock
+        import_id = self.ie.get_import_id_from_response(self.import_response, self.original_project_filename, self.original_project_name,
+                                                        self.original_project_path, self.original_namespace_path, self.original_project_override_params)
+        self.assertEqual(import_id, None)
 
     @mock.patch.object(GroupsApi, "get_group_download_status")
     def test_wait_for_group_download_200(self, mock_get_group_download_status):

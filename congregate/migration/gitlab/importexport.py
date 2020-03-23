@@ -375,16 +375,16 @@ class ImportExportClient(BaseClass):
         wait_time = self.config.importexport_wait
         import_response = json.loads(import_response)
         while True:
-            if not retry:
-                import_response = json.loads(import_response)
-                if is_error_message_present(import_response):
-                    self.log.error("Project {0} failed to overwrite to {1} (removing), with response:\n{2}".format(
-                        name, dst_namespace, import_response))
-                    self.projects_api.delete_project(
-                        self.config.destination_host, self.config.destination_token, import_id)
-                    return None
-            import_id = import_response.get("id", None)
             try:
+                if not retry:
+                    import_response = json.loads(import_response)
+                    if (is_error_message_present(import_response) or "Try again later" in import_response) and import_id:
+                        self.log.error("Project {0} failed to overwrite to {1} (removing), with response:\n{2}".format(
+                            name, dst_namespace, import_response))
+                        self.projects_api.delete_project(
+                            self.config.destination_host, self.config.destination_token, import_id)
+                        return None
+                import_id = import_response.get("id", None)
                 if import_id:
                     status = self.projects_api.get_project_import_status(
                         self.config.destination_host, self.config.destination_token, import_id)
@@ -405,7 +405,7 @@ class ImportExportClient(BaseClass):
                                 self.log.info("Removing project {0} from {1} after failed import, due to {2}".format(
                                     name, dst_namespace, status_json))
                                 self.projects_api.delete_project(
-                                    self.config.destination_host, self.config.destination_token, status_json.get("id", None))
+                                    self.config.destination_host, self.config.destination_token, import_id)
                                 return None
                         elif timeout < self.config.max_export_wait_time:
                             self.log.info(
@@ -420,6 +420,10 @@ class ImportExportClient(BaseClass):
                         self.log.error(
                             "Project {0} (file: {1}) import attempt failed, with status:\n{2}".format(name, filename, status))
                         return None
+                else:
+                    self.log.error("Project {0} (file: {1}) faild to import, with response:\n{2}".format(
+                        name, filename, import_response))
+                    return None
             except RequestException as re:
                 self.log.error(
                     "Project {0} (file: {1}) import status ({2}) check failed, with error:\n{3}".format(name, filename, status, re))
