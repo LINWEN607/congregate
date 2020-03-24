@@ -46,7 +46,7 @@ class MigrationEndToEndTestSetup(unittest.TestCase):
             "",  # destination parent group id
             # "parent_group_path",  # destination parent group full path
             # "group_sso_provider",  # SSO provider
-            # "username_suffix",  # username suffix
+            "",  # username suffix
             "No",  # mirror
             "filesystem",  # export location
             # "s3_name",  # bucket name
