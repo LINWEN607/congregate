@@ -346,12 +346,16 @@ class ImportExportClient(BaseClass):
         path = group["path"]
         if not dry_run:
             import_response = self.attempt_group_import(filename, name, path)
+            try:
+                import_response_text = import_response.text
+            except AttributeError as e:
+                import_response_text = ""
             if import_response and import_response.status_code in [200, 202]:
                 self.log.info(
                     "Group {0} (file: {1}) successfully imported".format(full_path, filename))
             else:
-                self.log.error("Group {0} (file: {1}) import failed, with status {2}".format(
-                    full_path, filename, import_response))
+                self.log.error("Group {0} (file: {1}) import failed, with status {2}: {3}".format(
+                    full_path, filename, import_response, import_response_text))
         else:
             self.log.info("DRY-RUN: Outputing group {0} (file: {1}) migration data to dry_run_group_migration.json"
                           .format(full_path, filename))
