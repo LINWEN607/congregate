@@ -100,10 +100,11 @@ def generate_config():
                     config_path))
             config.set("DESTINATION", "group_sso_provider",
                        raw_input("Migrating to a group with SAML SSO enabled? Input SSO provider (auth0, adfs, etc.): "))
-            username_suffix = raw_input(
-                "To avoid username collision, please input suffix to append: ")
-            config.set("DESTINATION", "username_suffix",
-                       username_suffix if username_suffix != "_" else "")
+
+        username_suffix = raw_input(
+            "To avoid username collision, please input suffix to append: ")
+        config.set("DESTINATION", "username_suffix",
+                    username_suffix if username_suffix != "_" else "")
 
         mirror = raw_input(
             "Planning a soft cut-over migration by mirroring repos to keep both instances running? Yes or No (default): ")

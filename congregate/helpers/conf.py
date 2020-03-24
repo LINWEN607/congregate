@@ -128,7 +128,7 @@ class Config(object):
     def max_asset_expiration_time(self):
         """
         The maximum number of hours to rollback users, groups, and projects
-        :return: The set config value of 3600 seconds (one hour) as default
+        :return: The set config value or 24 hours as default
         """
         return self.prop("DESTINATION", "max_asset_expiration_time", 24)
 
