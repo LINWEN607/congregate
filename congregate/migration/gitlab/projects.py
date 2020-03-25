@@ -1,12 +1,11 @@
 import json
-from urllib import quote_plus
 from requests.exceptions import RequestException
 
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.misc_utils import get_dry_log
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.groups import GroupsApi
-from congregate.helpers.migrate_utils import get_project_namespace, is_user_project, get_user_project_namespace
+from congregate.helpers.migrate_utils import get_dst_path_with_namespace
 
 
 class ProjectsClient(BaseClass):
@@ -15,12 +14,6 @@ class ProjectsClient(BaseClass):
         self.groups_api = GroupsApi()
         super(ProjectsClient, self).__init__()
 
-    @staticmethod
-    def get_full_namespace_path(namespace_prefix, namespace, project_name):
-        if len(namespace_prefix) > 0:
-            return namespace_prefix + "/" + namespace + "/" + project_name
-        return namespace + "/" + project_name
-
     def get_projects(self):
         with open("{}/data/project_json.json".format(self.app_path), "r") as f:
             return json.load(f)
@@ -28,15 +21,6 @@ class ProjectsClient(BaseClass):
     def get_staged_projects(self):
         with open("{}/data/stage.json".format(self.app_path), "r") as f:
             return json.load(f)
-
-    def search_for_project_with_namespace_path(self, host, token, namespace_prefix, namespace, project_name):
-        url_encoded_path = quote_plus(self.get_full_namespace_path(
-            namespace_prefix, namespace, project_name))
-        resp = self.projects_api.get_project_by_path_with_namespace(
-            url_encoded_path, host, token)
-        if resp.status_code == 200:
-            return resp.json()
-        return None
 
     def root_user_present(self, members):
         for member in members:
@@ -107,24 +91,21 @@ class ProjectsClient(BaseClass):
             id, self.config.source_host, self.config.source_token).json()
         return old_project["avatar_url"]
 
-    def find_project_by_path(self, host, token, full_parent_namespace, namespace, name):
-        """Returns a tuple (project_exists, ID) based on path."""
-        project = self.search_for_project_with_namespace_path(
-            host, token, full_parent_namespace, namespace, name)
-        if project is not None:
-            if project.get("path_with_namespace", None) is not None:
-                if project["path_with_namespace"] == self.get_full_namespace_path(full_parent_namespace, namespace, name):
-                    self.log.info("SKIP: Project {} already exists".format(
-                        project["path_with_namespace"]))
-                    return True, project["id"]
-        return False, None
+    def find_project_by_path(self, host, token, dst_path_with_namespace):
+        """Returns the project ID based on search by path."""
+        resp = self.projects_api.get_project_by_path_with_namespace(
+            dst_path_with_namespace, host, token)
+        if resp.status_code == 200:
+            project = resp.json()
+            if project and project.get("path_with_namespace", None) == dst_path_with_namespace:
+                return project.get("id", None)
+        return None
 
     def delete_projects(self, dry_run=True):
         staged_projects = self.get_staged_projects()
         for sp in staged_projects:
             # SaaS destination instances have a parent group
-            path_with_namespace = "{0}/{1}".format(get_user_project_namespace(sp) if is_user_project(
-                sp) else get_project_namespace(sp), sp["path"].replace(" ", "-"))
+            path_with_namespace = get_dst_path_with_namespace(sp)
             self.log.info("Removing project {}".format(path_with_namespace))
             resp = self.projects_api.get_project_by_path_with_namespace(
                 path_with_namespace,

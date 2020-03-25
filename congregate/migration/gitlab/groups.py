@@ -300,12 +300,12 @@ class GroupsClient(BaseClass):
             if namespace is not None:
                 self.log.info(
                     "SKIP: Group %s already exists (namespace search)", full_name_with_parent_namespace)
-                return True, namespace["id"]
+                return namespace.get("id", None)
         else:
             self.log.info("SKIP: Group %s already exists (group search)",
                           full_name_with_parent_namespace)
-            return True, group["id"]
-        return False, None
+            return group.get("id", None)
+        return None
 
     def search_for_group_pr_namespace_by_full_name_with_parent_namespace(self, host, token, full_name_with_parent_namespace, is_group):
         resp = None

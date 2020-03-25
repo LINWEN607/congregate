@@ -547,3 +547,103 @@ class MigrateTests(unittest.TestCase):
             "wiki_access_level": "enabled"
         }
         self.assertEqual(mutils.get_project_filename(staged_project), "")
+
+    # pylint: disable=no-member
+    @responses.activate
+    # pylint: enable=no-member
+    @mock.patch("congregate.helpers.api.generate_v4_request_url")
+    @mock.patch.object(ConfigurationValidator, "import_user_id", new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, "destination_host", new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, "destination_token", new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, "parent_group_path", new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, "parent_id", new_callable=mock.PropertyMock)
+    def test_get_dst_path_with_namespace_with_parent_id(self, parent_id, parent_group_path, token, host, user_id, url):
+        parent_id.return_value = 1
+        parent_group_path.return_value = "test-group"
+        token.return_value = "abc"
+        host.return_value = "https://gitlab.com"
+        user_id.return_value = 5
+        url_value = "https://gitlab.com/api/v4/users/5"
+        url.return_value = url_value
+        # pylint: disable=no-member
+        responses.add(responses.GET, url_value,
+                      json=self.mock_users.get_dummy_user(), status=200)
+        # pylint: enable=no-member
+        self.assertEqual(mutils.get_dst_path_with_namespace(
+            self.staged_group_project), "test-group/pmm-demo/spring-app-secure-2")
+        self.assertEqual(mutils.get_dst_path_with_namespace(
+            self.staged_user_project), "jdoe/spring-app-secure-2")
+
+    # pylint: disable=no-member
+    @responses.activate
+    # pylint: enable=no-member
+    @mock.patch("congregate.helpers.api.generate_v4_request_url")
+    @mock.patch.object(ConfigurationValidator, "import_user_id", new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, "destination_host", new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, "destination_token", new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, "parent_group_path", new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, "parent_id", new_callable=mock.PropertyMock)
+    def test_get_dst_path_with_namespace_with_parent_id_root(self, parent_id, parent_group_path, token, host, user_id, url):
+        parent_id.return_value = 1
+        parent_group_path.return_value = "test-group"
+        token.return_value = "abc"
+        host.return_value = "https://gitlab.com"
+        user_id.return_value = 5
+        url_value = "https://gitlab.com/api/v4/users/5"
+        url.return_value = url_value
+        # pylint: disable=no-member
+        responses.add(responses.GET, url_value,
+                      json=self.mock_users.get_current_user(), status=200)
+        # pylint: enable=no-member
+        self.assertEqual(mutils.get_dst_path_with_namespace(
+            self.staged_root_user_project), "root/spring-app-secure-2")
+
+    # pylint: disable=no-member
+    @responses.activate
+    # pylint: enable=no-member
+    @mock.patch("congregate.helpers.api.generate_v4_request_url")
+    @mock.patch.object(ConfigurationValidator, "import_user_id", new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, "destination_host", new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, "destination_token", new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, "parent_group_path", new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, "parent_id", new_callable=mock.PropertyMock)
+    def test_get_dst_path_with_namespace_without_parent_id(self, parent_id, parent_group_path, token, host, user_id, url):
+        parent_id.return_value = None
+        parent_group_path.return_value = None
+        token.return_value = "abc"
+        host.return_value = "https://gitlab.com"
+        user_id.return_value = 5
+        url_value = "https://gitlab.com/api/v4/users/5"
+        url.return_value = url_value
+        # pylint: disable=no-member
+        responses.add(responses.GET, url_value,
+                      json=self.mock_users.get_dummy_user(), status=200)
+        # pylint: enable=no-member
+        self.assertEqual(mutils.get_dst_path_with_namespace(
+            self.staged_group_project), "pmm-demo/spring-app-secure-2")
+        self.assertEqual(mutils.get_dst_path_with_namespace(
+            self.staged_user_project), "jdoe/spring-app-secure-2")
+
+    # pylint: disable=no-member
+    @responses.activate
+    # pylint: enable=no-member
+    @mock.patch("congregate.helpers.api.generate_v4_request_url")
+    @mock.patch.object(ConfigurationValidator, "import_user_id", new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, "destination_host", new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, "destination_token", new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, "parent_group_path", new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, "parent_id", new_callable=mock.PropertyMock)
+    def test_get_dst_path_with_namespace_without_parent_id_root(self, parent_id, parent_group_path, token, host, user_id, url):
+        parent_id.return_value = None
+        parent_group_path.return_value = None
+        token.return_value = "abc"
+        host.return_value = "https://gitlab.com"
+        user_id.return_value = 5
+        url_value = "https://gitlab.com/api/v4/users/5"
+        url.return_value = url_value
+        # pylint: disable=no-member
+        responses.add(responses.GET, url_value,
+                      json=self.mock_users.get_current_user(), status=200)
+        # pylint: enable=no-member
+        self.assertEqual(mutils.get_dst_path_with_namespace(
+            self.staged_root_user_project), "root/spring-app-secure-2")

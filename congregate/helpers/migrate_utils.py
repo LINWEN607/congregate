@@ -99,3 +99,13 @@ def get_user_project_namespace(p):
             b.config.import_user_id, b.config.destination_host, b.config.destination_token).json()["username"]
     else:
         return p["namespace"]
+
+
+def get_dst_path_with_namespace(p):
+    """
+    Determine project path with namespace on destination
+
+        :param p: The JSON object representing a GitLab project
+        :return: Destination project path with namespace
+    """
+    return "{0}/{1}".format(get_user_project_namespace(p) if is_user_project(p) else get_project_namespace(p), p["path"])

@@ -159,7 +159,7 @@ class ImportExportClientTests(unittest.TestCase):
     @mock.patch("congregate.helpers.api.generate_v4_request_url")
     @mock.patch('congregate.migration.gitlab.groups.GroupsClient.find_group_by_path')
     def test_wait_for_group_import_200(self, mock_find_group_by_path, url):
-        mock_find_group_by_path.return_value = (True, 1)
+        mock_find_group_by_path.return_value = 1
         url_value = "https://gitlabdestination.com/api/v4/groups/1"
         url.return_value = url_value
         # pylint: disable=no-member
@@ -174,5 +174,5 @@ class ImportExportClientTests(unittest.TestCase):
     def test_wait_for_group_import_404(self, max_wait, wait, mock_find_group_by_path):
         max_wait.return_value = 0.1
         wait.return_value = 0.01
-        mock_find_group_by_path.return_value = (False, 1)
+        mock_find_group_by_path.return_value = None
         self.assertFalse(self.ie.wait_for_group_import("mock"))

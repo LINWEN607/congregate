@@ -17,8 +17,8 @@ from congregate.migration.gitlab.groups import GroupsClient
 from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
-from congregate.helpers.migrate_utils import get_project_namespace, \
-    is_user_project, get_user_project_namespace, get_export_filename_from_namespace_and_name
+from congregate.helpers.migrate_utils import get_project_namespace, is_user_project, \
+    get_user_project_namespace, get_export_filename_from_namespace_and_name, get_dst_path_with_namespace
 
 
 class ImportExportClient(BaseClass):
@@ -122,9 +122,9 @@ class ImportExportClient(BaseClass):
         timer = 0
         wait_time = self.config.importexport_wait
         while True:
-            group_exists, gid = self.groups.find_group_by_path(
+            gid = self.groups.find_group_by_path(
                 self.config.destination_host, self.config.destination_token, path)
-            if group_exists:
+            if gid:
                 imported = self.groups_api.get_group(
                     gid, self.config.destination_host, self.config.destination_token).json()
                 break
@@ -501,11 +501,14 @@ class ImportExportClient(BaseClass):
             full_parent_namespace + "/" if full_parent_namespace else "", full_path)
         self.log.info("Searching on destination for group {}".format(
             full_path_with_parent_namespace))
-        group_exists, dest_gid = self.groups.find_group_by_path(
+        dst_gid = self.groups.find_group_by_path(
             self.config.destination_host,
             self.config.destination_token,
             full_path_with_parent_namespace)
-        if not group_exists:
+        if dst_gid:
+            self.log.info("SKIP: Group {0} with source ID {1} and destination ID {2} found on destination".format(
+                full_path_with_parent_namespace, src_gid, dst_gid))
+        else:
             self.log.info("Group {0} (Source ID: {1}) NOT found on destination.".format(
                 full_path_with_parent_namespace, src_gid))
             response = self.groups_api.export_group(
@@ -524,9 +527,6 @@ class ImportExportClient(BaseClass):
                     full_path, src_gid, filename))
                 download_file(url, self.config.filesystem_path, filename=filename, headers={
                               "PRIVATE-TOKEN": self.config.source_token})
-        else:
-            self.log.info("SKIP: Group {0} with source ID {1} and destination ID {2} found on destination".format(
-                full_path_with_parent_namespace, src_gid, dest_gid))
         return exported
 
     def export_thru_fs_aws(self, pid, name, namespace):
@@ -582,11 +582,14 @@ class ImportExportClient(BaseClass):
             full_parent_namespace + "/" if full_parent_namespace else "", full_path)
         self.log.info("Searching on destination for group {}".format(
             full_path_with_parent_namespace))
-        group_exists, dest_group_id = self.groups.find_group_by_path(
+        dst_gid = self.groups.find_group_by_path(
             self.config.destination_host,
             self.config.destination_token,
             full_path_with_parent_namespace)
-        if not group_exists:
+        if dst_gid:
+            self.log.info("SKIP: Group {0} with source ID {1} and destination group ID {2} found on destination".format(
+                full_path_with_parent_namespace, gid, dst_gid))
+        else:
             # Generating the presigned URL later down the line does the quote_plus work, and the AWS functions to generate
             # expect an *un*quote_plus string (even through S3 itself returns a quote_plus style string)
             # Also, the CLI commands expect no + and no encoding (for is_export_on_aws). So, leave the filename as the full path
@@ -605,34 +608,28 @@ class ImportExportClient(BaseClass):
                 # If export status is unknown lookup the file on AWS
                 # Could be misleading, since it assumes the file is complete
                 exported = export_status or self.aws.is_export_on_aws(filename)
-        else:
-            self.log.info("SKIP: Group {0} with source ID {1} and destination group ID {2} found on destination".format(
-                full_path_with_parent_namespace, gid, dest_group_id))
         return exported
 
-    def export_project_thru_aws(self, pid, name, namespace, full_parent_namespace):
+    def export_project_thru_aws(self, project):
         """
         Called from migrate to kick-off an export process. This is project specific at this time. Calls export_to_aws.
 
-        :param name: Entity name
-        :param namespace: Namespace where the entity lives
-        :param full_parent_namespace: Complete path of the parent namespace from source
+        :param name: Project JSON
         """
         exported = False
+        name = project["name"]
+        namespace = project["namespace"]
+        pid = project["id"]
+        dst_path_with_namespace = get_dst_path_with_namespace(project)
         filename = get_export_filename_from_namespace_and_name(
             namespace, name)
-        full_name = "{0}/{1}".format(namespace, name)
-        self.log.info(
-            "Searching on destination for project {0} (ID: {1})".format(full_name, pid))
-        project_exists, dest_pid = self.projects.find_project_by_path(
-            self.config.destination_host,
-            self.config.destination_token,
-            full_parent_namespace,
-            namespace,
-            name)
-        if not project_exists:
-            self.log.info("Project {0} (ID: {1}) NOT found on destination. Exporting from source..."
-                          .format(full_name, pid))
+        self.log.info("Searching on destination for project {0}".format(
+            dst_path_with_namespace))
+        dst_pid = self.projects.find_project_by_path(
+            self.config.destination_host, self.config.destination_token, dst_path_with_namespace)
+        if not dst_pid:
+            self.log.info("Project {0} NOT found on destination. Exporting from source...".format(
+                dst_path_with_namespace))
             response = self.export_to_aws(pid, filename, True)
             if response is not None and response.status_code == 202:
                 export_status = self.wait_for_export_to_finish(pid, name)
@@ -644,5 +641,5 @@ class ImportExportClient(BaseClass):
                     name, pid, response))
         else:
             self.log.info("SKIP: Project {0} (ID: {1}) found on destination".format(
-                full_name, dest_pid))
+                dst_path_with_namespace, dst_pid))
         return exported

@@ -55,9 +55,8 @@ class GroupsUnitTest(unittest.TestCase):
     def test_find_group_by_path_returns_true_and_id_when_found(self, mock_get_group_by_full_path):
         mock_get_group_by_full_path.return_value = self.MockReturn({
                                                                    "id": 123}, 200)
-        found, group_id = self.groups.find_group_by_path(
+        group_id = self.groups.find_group_by_path(
             "host", "token", "some_full_path")
-        self.assertTrue(found)
         self.assertEqual(group_id, 123)
 
     @mock.patch("congregate.migration.gitlab.api.groups.GroupsApi.get_group_by_full_path")
@@ -67,9 +66,8 @@ class GroupsUnitTest(unittest.TestCase):
                                                                    "id": 123}, 500)
         mock_get_namespace_by_full_path.return_value = self.MockReturn({
                                                                        "id": 456}, 200)
-        found, group_id = self.groups.find_group_by_path(
+        group_id = self.groups.find_group_by_path(
             "host", "token", "some_full_path")
-        self.assertTrue(found)
         self.assertEqual(group_id, 456)
 
     @mock.patch("congregate.migration.gitlab.api.groups.GroupsApi.get_group_by_full_path")
@@ -79,7 +77,6 @@ class GroupsUnitTest(unittest.TestCase):
                                                                    "id": 123}, 500)
         mock_get_namespace_by_full_path.return_value = self.MockReturn({
                                                                        "id": 456}, 500)
-        found, group_id = self.groups.find_group_by_path(
+        group_id = self.groups.find_group_by_path(
             "host", "token", "some_full_path")
-        self.assertFalse(found)
         self.assertIsNone(group_id)
