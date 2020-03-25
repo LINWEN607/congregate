@@ -122,7 +122,10 @@ def migrate_user_info(dry_run=True):
     # So, new_user_ids is a bit of a misnomer
     if not dry_run:
         if new_users:
-            write_results_to_file(new_users, result_type="user")
+            formatted_users = {}
+            for n in new_users:
+                formatted_users[n["email"]] = n
+            write_results_to_file(formatted_users, result_type="user")
             with open("%s/data/new_user_ids.txt" % b.app_path, "w") as f:
                 for new_user in new_users:
                     f.write("%s\n" % new_user)

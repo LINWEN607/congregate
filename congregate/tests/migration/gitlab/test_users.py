@@ -460,10 +460,8 @@ class UserTests(unittest.TestCase):
         # pylint: enable=no-member
 
         expected = {
-            "jdoe@email.com": {
-                "id": 27,
-                "email": "jdoe@email.com"
-            }
+            "id": 27,
+            "email": "jdoe@email.com"
         }
         self.assertEqual(self.users.handle_user_creation(new_user), expected)
 

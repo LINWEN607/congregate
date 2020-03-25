@@ -796,10 +796,8 @@ class UsersClient(BaseClass):
         else:
             resp = response.json()
             return {
-                resp["email"]: {
-                    "email": resp["email"],
-                    "id": resp["id"]
-                }
+                "email": resp["email"],
+                "id": resp["id"]
             }
 
     def get_user_creation_id_and_email(self, response):
