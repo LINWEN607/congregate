@@ -91,6 +91,8 @@ test:end-to-end:
     when: always
     paths:
       - data/*.html
+      - data/*.json
+      - data/*.log
 
 remove redundant docker images:
   stage: cleanup
