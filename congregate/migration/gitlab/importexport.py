@@ -322,6 +322,7 @@ class ImportExportClient(BaseClass):
         path = group["path"]
         if not dry_run:
             import_response = self.attempt_group_import(filename, name, path)
+            
             try:
                 import_response_text = import_response.text
             except AttributeError as e:
@@ -344,7 +345,6 @@ class ImportExportClient(BaseClass):
 
     def attempt_group_import(self, filename, name, path):
         resp = None
-        import_response = None
         # NOTE: Group export does not yet support (AWS/S3) user attributes
         if self.config.location == "aws":
             pass
@@ -365,8 +365,7 @@ class ImportExportClient(BaseClass):
                 }
                 resp = self.groups_api.import_group(
                     self.config.destination_host, self.config.destination_token, data=data, files=files, headers=headers)
-                import_response = resp.text
-        return import_response
+        return resp
 
     @staticmethod
     def create_override_name(current_project_name):
