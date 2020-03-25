@@ -15,7 +15,8 @@ from shutil import copy
 from requests.exceptions import RequestException
 
 from congregate.helpers import api, migrate_utils
-from congregate.helpers.misc_utils import get_dry_log, json_pretty, write_json_to_file, is_dot_com, clean_data, add_post_migration_stats, clean_log
+from congregate.helpers.misc_utils import get_dry_log, json_pretty, write_json_to_file, \
+    is_dot_com, clean_data, add_post_migration_stats, rotate_log
 from congregate.aws import AwsClient
 from congregate.cli.stage_projects import stage_projects
 from congregate.helpers.base_class import BaseClass
@@ -81,7 +82,7 @@ def migrate(
                 "dry_run_user_migration.json",
                 "dry_run_group_migration.json",
                 "dry_run_project_migration.json"])
-        clean_log()
+        rotate_log()
 
         # Migrate users
         if not skip_users:
@@ -201,7 +202,6 @@ def migrate_group_info(dry_run=True, skip_group_export=False, skip_group_import=
 
 def handle_exporting_groups(group, dry_run=True):
     full_path = group["full_path"]
-    name = group["name"]
     gid = group["id"]
     loc = b.config.location.lower()
     dry_log = get_dry_log(dry_run)
@@ -212,7 +212,7 @@ def handle_exporting_groups(group, dry_run=True):
             raise Exception("Unsupported export location: {}".format(loc))
         exported = False
         b.log.info("{0}Exporting group {1} (ID: {2}) as {3}"
-                   .format(dry_log, name, gid, filename))
+                   .format(dry_log, full_path, gid, filename))
         if loc == "filesystem":
             exported = ie.export_group_thru_filesystem(
                 gid, full_path, full_parent_namespace, filename) if not dry_run else True
@@ -226,14 +226,13 @@ def handle_exporting_groups(group, dry_run=True):
                 "NOTICE: AWS group exports are not currently supported")
         return {"filename": filename, "exported": exported}
     except (IOError, RequestException) as e:
-        b.log.error("Failed to export group (ID: {0}) to {1} with error:\n{2}"
-                    .format(gid, loc, e))
+        b.log.error("Failed to export group {0} (ID: {1}) to {2} with error:\n{3}".format(
+            full_path, gid, loc, e))
 
 
 def handle_importing_groups(group, dry_run=True):
     full_path = group["full_path"]
     src_gid = group["id"]
-    group_exists = False
     results = {
         full_path: False
     }
@@ -246,26 +245,26 @@ def handle_importing_groups(group, dry_run=True):
     try:
         filename = migrate_utils.get_export_filename_from_namespace_and_name(
             full_path)
-        group_exists, gid = groups.find_group_by_path(
+        dst_gid = groups.find_group_by_path(
             b.config.destination_host, b.config.destination_token, full_path_with_parent_namespace)
-        if not group_exists:
-            b.log.info("{0}Group {1} not found on destination, importing..."
+        if dst_gid:
+            b.log.info("{0}Group {1} (ID: {2}) already exists on destination".format(
+                get_dry_log(dry_run), full_path, dst_gid))
+        else:
+            b.log.info("{0}Group {1} NOT found on destination, importing..."
                        .format(get_dry_log(dry_run), full_path_with_parent_namespace))
             ie.import_group(
                 group, full_path_with_parent_namespace, filename, dry_run)
-        else:
-            b.log.info("{0}Group {1} (ID: {2}) already exists on destination".format(
-                get_dry_log(dry_run), full_path, gid))
-        # In place of checking the import status
-        if not dry_run:
-            results[full_path] = ie.wait_for_group_import(
-                full_path_with_parent_namespace)
-        if results[full_path] and results[full_path].get("id", None) is not None:
-            # Migrate CI/CD Variables
-            variables.migrate_variables(
-                results[full_path]["id"], src_gid, "group", full_path)
-            # Remove import user
-            groups.remove_import_user(results[full_path]["id"])
+            # In place of checking the import status
+            if not dry_run:
+                results[full_path] = ie.wait_for_group_import(
+                    full_path_with_parent_namespace)
+                if results[full_path] and results[full_path].get("id", None):
+                    # Migrate CI/CD Variables
+                    variables.migrate_variables(
+                        results[full_path]["id"], src_gid, "group", full_path)
+                    # Remove import user
+                    groups.remove_import_user(results[full_path]["id"])
     except RequestException, e:
         b.log.error(e)
     except KeyError as e:
@@ -374,7 +373,7 @@ def handle_exporting_projects(project, dry_run=True):
             # exported = ie.export_thru_fs_aws(pid, name, namespace) if not dry_run else True
         elif loc == "aws":
             exported = ie.export_project_thru_aws(
-                pid, name, namespace, full_parent_namespace) if not dry_run else True
+                project) if not dry_run else True
         return {"filename": filename, "exported": exported}
     except (IOError, RequestException) as e:
         b.log.error("Failed to export project (ID: {0}) to {1} with error:\n{2}"
@@ -382,51 +381,40 @@ def handle_exporting_projects(project, dry_run=True):
 
 
 def handle_importing_projects(project_json, dry_run=True):
-    name = project_json["name"]
-    namespace = project_json["namespace"]
-    source_id = project_json["id"]
+    src_id = project_json["id"]
     archived = project_json["archived"]
     path = project_json["path_with_namespace"]
-    project_exists = False
     project_id = None
-    dst_path = projects.get_full_namespace_path(
-        full_parent_namespace, namespace, name)
+    dst_path_with_namespace = migrate_utils.get_dst_path_with_namespace(
+        project_json)
     results = {
         path: False
     }
     if isinstance(project_json, str):
         project_json = json.loads(project_json)
-    b.log.info("Searching on destination for project {}".format(dst_path))
+    b.log.info("Searching on destination for project {}".format(
+        dst_path_with_namespace))
     try:
-        project_exists, project_id = projects.find_project_by_path(
-            b.config.destination_host,
-            b.config.destination_token,
-            full_parent_namespace,
-            namespace,
-            name)
-        if project_id:
-            import_check = projects_api.get_project_import_status(
-                b.config.destination_host, b.config.destination_token, project_id).json()
+        dst_pid = projects.find_project_by_path(
+            b.config.destination_host, b.config.destination_token, dst_path_with_namespace)
+        if dst_pid:
+            import_status = projects_api.get_project_import_status(
+                b.config.destination_host, b.config.destination_token, dst_pid).json()
             b.log.info("Project {0} (ID: {1}) found on destination, with import status: {2}".format(
-                dst_path,
-                project_id,
-                import_check["import_status"] if import_check is not None
-                and import_check.get("import_status", None) is not None
-                else import_check)
-            )
-        if not project_exists:
+                dst_path_with_namespace, dst_pid, import_status))
+        else:
             b.log.info("{0}Project {1} (ID: {2}) NOT found on destination, importing..."
-                       .format(get_dry_log(dry_run), dst_path, project_id))
+                       .format(get_dry_log(dry_run), dst_path_with_namespace, project_id))
             import_id = ie.import_project(project_json, dry_run)
             if import_id and not dry_run:
                 # Archived projects cannot be migrated
                 if archived:
                     b.log.info(
-                        "Unarchiving source project {0} (ID: {1})".format(name, source_id))
+                        "Unarchiving source project {0} (ID: {1})".format(path, src_id))
                     projects.projects_api.unarchive_project(
-                        b.config.source_host, b.config.source_token, source_id)
+                        b.config.source_host, b.config.source_token, src_id)
                 b.log.info(
-                    "Migrating source project {0} (ID: {1}) info".format(name, source_id))
+                    "Migrating source project {0} (ID: {1}) info".format(path, src_id))
                 post_import_results = migrate_single_project_info(
                     project_json, import_id)
                 results[path] = post_import_results
@@ -435,67 +423,61 @@ def handle_importing_projects(project_json, dry_run=True):
     except KeyError as e:
         b.log.error(e)
         raise KeyError("Something broke in handle_importing_projects project {0} (ID: {1})"
-                       .format(name, source_id))
+                       .format(path, src_id))
     except OverflowError as e:
         b.log.error(e)
     finally:
         if archived and not dry_run:
             b.log.info(
-                "Archiving back source project {0} (ID: {1})".format(name, source_id))
+                "Archiving back source project {0} (ID: {1})".format(path, src_id))
             projects.projects_api.archive_project(
-                b.config.source_host, b.config.source_token, source_id)
+                b.config.source_host, b.config.source_token, src_id)
     return results
 
 
-def migrate_single_project_info(project, new_id):
+def migrate_single_project_info(project, dst_id):
     """
         Subsequent function to update project info AFTER import
     """
     project.pop("members")
-    name = project["name"]
     path_with_namespace = project["path_with_namespace"]
-    old_id = project["id"]
+    src_id = project["id"]
     results = {}
 
-    b.log.info("Searching for project %s" % name)
-    if new_id is None:
-        _, new_id = projects.find_project_by_path(
-            b.config.destination_host, b.config.destination_token, full_parent_namespace, project["namespace"], name)
-
-    results["id"] = new_id
+    results["id"] = dst_id
 
     # Shared with groups
-    projects.add_shared_groups(old_id, new_id)
+    projects.add_shared_groups(src_id, dst_id)
 
     # CI/CD Variables
     results["variables"] = variables.migrate_cicd_variables(
-        old_id, new_id, path_with_namespace)
+        src_id, dst_id, path_with_namespace)
 
     # Push Rules
     results["push_rules"] = pushrules.migrate_push_rules(
-        old_id, new_id, path_with_namespace)
+        src_id, dst_id, path_with_namespace)
 
     # Merge Request Approvals
     results["project_level_mr_approvals"] = mr_approvals.migrate_project_level_mr_approvals(
-        old_id, new_id, path_with_namespace)
+        src_id, dst_id, path_with_namespace)
 
     # Deploy Keys (project only)
     results["deploy_keys"] = deploy_keys.migrate_deploy_keys(
-        old_id, new_id, path_with_namespace)
+        src_id, dst_id, path_with_namespace)
 
     # Container Registries
     results["container_registry"] = registries.migrate_registries(
-        old_id, new_id, path_with_namespace)
+        src_id, dst_id, path_with_namespace)
 
     # Environments
     results["environments"] = environments.migrate_project_environments(
-        old_id, new_id, path_with_namespace)
+        src_id, dst_id, path_with_namespace)
 
     # Project hooks (webhooks)
     results["project_hooks"] = hooks.migrate_project_hooks(
-        old_id, new_id, path_with_namespace)
+        src_id, dst_id, path_with_namespace)
 
-    projects.remove_import_user(new_id)
+    projects.remove_import_user(dst_id)
 
     return results
 
@@ -505,7 +487,7 @@ def rollback(dry_run=True,
              hard_delete=False,
              skip_groups=False,
              skip_projects=False):
-    clean_log()
+    rotate_log()
     dry_log = get_dry_log(dry_run)
     if not skip_users:
         b.log.info("{0}Removing staged users on destination (hard_delete={1})".format(

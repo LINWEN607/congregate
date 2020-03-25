@@ -51,7 +51,7 @@ class VariablesClient(BaseClass):
                 "Migrating project {} CI/CD variables".format(name))
             for var in variables:
                 if is_error_message_present(var):
-                    self.log.error(
+                    self.log.warning(
                         "Failed to fetch CI/CD variables ({0}) for project {1}".format(var, name))
                     return False
                 if var_type == "project":

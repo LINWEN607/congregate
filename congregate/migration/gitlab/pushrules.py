@@ -19,15 +19,14 @@ class PushRulesClient(BaseClass):
         try:
             push_rules = self.projects_api.get_all_project_push_rules(
                 old_id, self.config.source_host, self.config.source_token).json()
-            if is_error_message_present(push_rules):
-                self.log.error(
+            if is_error_message_present(push_rules) or not push_rules:
+                self.log.warning(
                     "Failed to fetch push rules ({0}) for project {1}".format(push_rules, name))
                 return False
-            else:
-                self.log.info("Migrating project {} push rules".format(name))
-                self.add_push_rules(
-                    new_id, self.config.destination_host, self.config.destination_token, push_rules)
-                return True
+            self.log.info("Migrating project {} push rules".format(name))
+            self.add_push_rules(
+                new_id, self.config.destination_host, self.config.destination_token, push_rules)
+            return True
         except RequestException as re:
             self.log.error(
                 "Failed to migrate {0} push rules, with error:\n{1}".format(name, re))

@@ -230,15 +230,15 @@ def clean_data(dry_run=True, files=None):
         print "Cannot find data directory. CONGREGATE_PATH not set or you are not running this in the Congregate directory."
 
 
-def clean_log():
+def rotate_log():
     """
-        Empty congregate.log file
+        Rotate and empty congregate.log file
     """
     app_path = get_congregate_path()
     if os.path.isdir("{}/data".format(app_path)):
         log = "{}/data/congregate.log".format(app_path)
         end_time = str(datetime.now()).replace(" ", "_")
-        print("Rotating and removing {}".format(log))
+        print("Rotating and emptying {}".format(log))
         try:
             copy(log, "{0}/data/congregate_{1}.log".format(app_path, end_time))
             open(log, "w").close()
