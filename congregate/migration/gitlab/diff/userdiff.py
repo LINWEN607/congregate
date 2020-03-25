@@ -11,8 +11,7 @@ class UserDiffClient(BaseDiffClient):
     def __init__(self, results_path, staged=False):
         super(UserDiffClient, self).__init__()
         self.users_api = UsersApi()
-        self.results = rewrite_json_list_into_dict(
-            self.load_json_data("{0}{1}".format(self.app_path, results_path)))
+        self.results = self.load_json_data("{0}{1}".format(self.app_path, results_path))
         self.keys_to_ignore = [
             "web_url",
             "last_sign_in_at",
