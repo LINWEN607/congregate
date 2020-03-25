@@ -160,13 +160,4 @@ class ProjectDiffClient(BaseDiffClient):
 
         return self.empty_diff()
 
-    def generate_empty_data(self, source):
-        if isinstance(source, list):
-            return [
-                {
-                    'error': 'project is missing'
-                }
-            ]
-        return {
-            'error': 'project is missing'
-        }
+    

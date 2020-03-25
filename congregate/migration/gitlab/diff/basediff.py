@@ -57,6 +57,7 @@ class BaseDiffClient(BaseClass):
     def __init__(self):
         super(BaseDiffClient, self).__init__()
         self.keys_to_ignore = []
+        self.results = None
 
     def diff(self, source_data, destination_data, critical_key=None, obfuscate=False, parent_group=None):
         engine = Comparator()
@@ -100,6 +101,30 @@ class BaseDiffClient(BaseClass):
             "diff": diff,
             "accuracy": accuracy
         }
+
+    def generate_diff(self, asset, key, endpoint, critical_key=None, obfuscate=False, **kwargs):
+        source_user_data = self.generate_cleaned_instance_data(
+            endpoint(asset["id"], self.config.source_host, self.config.source_token, **kwargs))
+        if source_user_data:
+            identifier = asset[key]
+            if self.results.get(identifier.lower()) is not None:
+                identifier = identifier.lower()
+            if self.results.get(identifier) is not None:
+                if isinstance(self.results[identifier], dict):
+                    destination_id = self.results[identifier]["id"]
+                    destination_data = self.generate_cleaned_instance_data(
+                        endpoint(destination_id, self.config.destination_host, self.config.destination_token, **kwargs))
+                else:
+                    destination_data = {
+                        "error": "asset missing"
+                    }
+            else:
+                destination_data = self.generate_empty_data(
+                    source_user_data)
+
+            return self.diff(source_user_data, destination_data, critical_key=critical_key, obfuscate=obfuscate)
+
+        return self.empty_diff()
 
     def calculate_individual_accuracy(self, diff, source_data, critical_key, parent_group=None):
         original_accuracy = 1 - float(len(diff)) / float(len(source_data))
@@ -218,6 +243,17 @@ class BaseDiffClient(BaseClass):
             instance_data = self.ignore_keys(instance_data.json())
             sorted(instance_data)
         return instance_data
+
+    def generate_empty_data(self, source):
+        if isinstance(source, list):
+            return [
+                {
+                    'error': 'asset is missing'
+                }
+            ]
+        return {
+            'error': 'asset is missing'
+        }
 
     def generate_html_report(self, diff, filepath):
         filepath = "{0}{1}".format(self.app_path, filepath)
