@@ -843,7 +843,7 @@ class UsersClient(BaseClass):
                             user["id"],
                             hard_delete)
                     else:
-                        self.log("Ignoring %s. User existed before %d hours" % (user["email"], self.config.max_asset_expiration_time))
+                        self.log.info("Ignoring %s. User existed before %d hours" % (user["email"], self.config.max_asset_expiration_time))
                 except RequestException, e:
                     self.log.error(
                         "Failed to remove user {0}\nwith error: {1}".format(su, e))

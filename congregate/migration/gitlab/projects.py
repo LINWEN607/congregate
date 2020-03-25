@@ -124,7 +124,7 @@ class ProjectsClient(BaseClass):
                                 self.config.destination_token,
                                 project["id"])
                         else:
-                            self.log("Ignoring %s. Project existed before %d hours" % (project["name_with_namespace"], self.config.max_asset_expiration_time))
+                            self.log.info("Ignoring %s. Project existed before %d hours" % (project["name_with_namespace"], self.config.max_asset_expiration_time))
                     except RequestException, re:
                         self.log.error(
                             "Failed to remove project {0}, with error:\n{1}".format(sp, re))

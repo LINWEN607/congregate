@@ -175,7 +175,7 @@ class GroupsClient(BaseClass):
                                     self.config.destination_host,
                                     self.config.destination_token)
                             else:
-                                self.log("Ignoring %s. Group existed before %d hours" % (group["full_path"], self.config.max_asset_expiration_time))
+                                self.log.info("Ignoring %s. Group existed before %d hours" % (group["full_path"], self.config.max_asset_expiration_time))
                         else:
                             # TODO: Remove this block when the `created_at` field is properly exposed in the groups API
                             self.log.warn("Unable to find timestamp for group %s. Deleting group anyway." % group["full_path"])

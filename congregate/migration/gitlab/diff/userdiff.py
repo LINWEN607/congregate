@@ -22,7 +22,11 @@ class UserDiffClient(BaseDiffClient):
             "last_activity_on",
             "current_sign_in_ip",
             "last_sign_in_ip",
-            "id"
+            "source_id",
+            "id",
+            "author_id",
+            "project_id",
+            "target_id"
         ]
         if staged:
             self.source_data = self.load_json_data(
