@@ -103,9 +103,9 @@ class BaseDiffClient(BaseClass):
         }
 
     def generate_diff(self, asset, key, endpoint, critical_key=None, obfuscate=False, **kwargs):
-        source_user_data = self.generate_cleaned_instance_data(
+        source_data = self.generate_cleaned_instance_data(
             endpoint(asset["id"], self.config.source_host, self.config.source_token, **kwargs))
-        if source_user_data:
+        if source_data:
             identifier = asset[key]
             if self.results.get(identifier.lower()) is not None:
                 identifier = identifier.lower()
@@ -120,9 +120,9 @@ class BaseDiffClient(BaseClass):
                     }
             else:
                 destination_data = self.generate_empty_data(
-                    source_user_data)
+                    source_data)
 
-            return self.diff(source_user_data, destination_data, critical_key=critical_key, obfuscate=obfuscate)
+            return self.diff(source_data, destination_data, critical_key=critical_key, obfuscate=obfuscate)
 
         return self.empty_diff()
 

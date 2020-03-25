@@ -72,17 +72,14 @@ class UserDiffClient(BaseDiffClient):
     def handle_endpoints(self, user):
         user_diff = {}
         # General endpoint
-        user_diff["/users/:id"] = self.generate_diff(
-            user, "email", self.users_api.get_user, obfuscate=True)
-        user_diff["/users/:id/projects"] = self.generate_diff(
-            user, "email", self.users_api.get_user_projects)
-        user_diff["/users/:id/emails"] = self.generate_diff(
-            user, "email", self.users_api.get_user_emails)
-        user_diff["/users/:id/memberships"] = self.generate_diff(
-            user, "email", self.users_api.get_all_user_memberships)
-        user_diff["/users/:id/events"] = self.generate_diff(
-            user, "email", self.users_api.get_all_user_contribution_events)
-        user_diff["/users/:id/custom_attributes"] = self.generate_diff(
-            user, "email", self.users_api.get_all_user_custom_attributes)
+        user_diff["/users/:id"] = self.generate_user_diff(user, self.users_api.get_user, obfuscate=True)
+        user_diff["/users/:id/projects"] = self.generate_user_diff(user, self.users_api.get_user_projects)
+        user_diff["/users/:id/emails"] = self.generate_user_diff(user, self.users_api.get_user_emails)
+        user_diff["/users/:id/memberships"] = self.generate_user_diff(user, self.users_api.get_all_user_memberships)
+        user_diff["/users/:id/events"] = self.generate_user_diff(user, self.users_api.get_all_user_contribution_events)
+        user_diff["/users/:id/custom_attributes"] = self.generate_user_diff(user, self.users_api.get_all_user_custom_attributes)
         
         return user_diff
+
+    def generate_user_diff(self, user, endpoint, **kwargs):
+        return self.generate_diff(user, "email", endpoint, **kwargs)

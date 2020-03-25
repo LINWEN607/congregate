@@ -84,91 +84,45 @@ class ProjectDiffClient(BaseDiffClient):
     def handle_endpoints(self, project):
         project_diff = {}
         # General endpoint
-        project_diff["/projects/:id"] = self.generate_diff(
-            project, self.projects_api.get_project, obfuscate=True)
+        project_diff["/projects/:id"] = self.generate_project_diff(project, self.projects_api.get_project, obfuscate=True)
+
         # CI/CD
-        project_diff["/projects/:id/variables"] = self.generate_diff(
-            project, self.variables_api.get_variables, obfuscate=True, var_type="project")
-        project_diff["/projects/:id/triggers"] = self.generate_diff(
-            project, self.projects_api.get_all_project_triggers)
-        project_diff["/projects/:id/deploy_keys"] = self.generate_diff(
-            project, self.projects_api.get_all_project_deploy_keys, obfuscate=True)
-        project_diff["/projects/:id/pipeline_schedules"] = self.generate_diff(
-            project, self.projects_api.get_all_project_pipeline_schedules)
-        project_diff["/projects/:id/environments"] = self.generate_diff(
-            project, self.projects_api.get_all_environments)
-        project_diff["/projects/:id/jobs"] = self.generate_diff(
-            project, self.projects_api.get_all_project_jobs)
+        project_diff["/projects/:id/variables"] = self.generate_project_diff(project, self.variables_api.get_variables, obfuscate=True, var_type="project")
+        project_diff["/projects/:id/triggers"] = self.generate_project_diff(project, self.projects_api.get_all_project_triggers)
+        project_diff["/projects/:id/deploy_keys"] = self.generate_project_diff(project, self.projects_api.get_all_project_deploy_keys, obfuscate=True)
+        project_diff["/projects/:id/pipeline_schedules"] = self.generate_project_diff(project, self.projects_api.get_all_project_pipeline_schedules)
+        project_diff["/projects/:id/environments"] = self.generate_project_diff(project, self.projects_api.get_all_environments)
+        project_diff["/projects/:id/jobs"] = self.generate_project_diff(project, self.projects_api.get_all_project_jobs)
 
         # Membership
-        project_diff["/projects/:id/members"] = self.generate_diff(
-            project, self.projects_api.get_members)
-        project_diff["/projects/:id/members/all"] = self.generate_diff(
-            project, self.projects_api.get_all_project_members_incl_inherited)
-        project_diff["/projects/:id/users"] = self.generate_diff(
-            project, self.projects_api.get_all_project_users)
+        project_diff["/projects/:id/members"] = self.generate_project_diff(project, self.projects_api.get_members)
+        project_diff["/projects/:id/members/all"] = self.generate_project_diff(project, self.projects_api.get_all_project_members_incl_inherited)
+        project_diff["/projects/:id/users"] = self.generate_project_diff(project, self.projects_api.get_all_project_users)
 
         # Merge request approvers
-        project_diff["/projects/:id/approvals"] = self.generate_diff(
-            project, self.projects_api.get_project_level_mr_approval_configuration)
-        project_diff["/projects/:id/approval_rules"] = self.generate_diff(
-            project, self.projects_api.get_all_project_level_mr_approval_rules)
+        project_diff["/projects/:id/approvals"] = self.generate_project_diff(project, self.projects_api.get_project_level_mr_approval_configuration)
+        project_diff["/projects/:id/approval_rules"] = self.generate_project_diff(project, self.projects_api.get_all_project_level_mr_approval_rules)
 
         # Repository
-        project_diff["/projects/:id/forks"] = self.generate_diff(
-            project, self.projects_api.get_all_project_forks)
-        project_diff["/projects/:id/repository/branches"] = self.generate_diff(
-            project, self.repository_api.get_all_project_repository_branches)
-        project_diff["/projects/:id/protected_branches"] = self.generate_diff(
-            project, self.projects_api.get_all_project_protected_branches)
-        project_diff["/projects/:id/push_rule"] = self.generate_diff(
-            project, self.projects_api.get_all_project_push_rules)
-        project_diff["/projects/:id/releases"] = self.generate_diff(
-            project, self.projects_api.get_all_project_releases)
+        project_diff["/projects/:id/forks"] = self.generate_project_diff(project, self.projects_api.get_all_project_forks)
+        project_diff["/projects/:id/repository/branches"] = self.generate_project_diff(project, self.repository_api.get_all_project_repository_branches)
+        project_diff["/projects/:id/protected_branches"] = self.generate_project_diff(project, self.projects_api.get_all_project_protected_branches)
+        project_diff["/projects/:id/push_rule"] = self.generate_project_diff(project, self.projects_api.get_all_project_push_rules)
+        project_diff["/projects/:id/releases"] = self.generate_project_diff(project, self.projects_api.get_all_project_releases)
 
         # Issue Tracker
-        project_diff["/projects/:id/issues"] = self.generate_diff(
-            project, self.projects_api.get_all_project_issues)
-        project_diff["/projects/:id/labels"] = self.generate_diff(
-            project, self.projects_api.get_all_project_labels)
-        project_diff["/projects/:id/milestones"] = self.generate_diff(
-            project, self.projects_api.get_all_project_milestones)
+        project_diff["/projects/:id/issues"] = self.generate_project_diff(project, self.projects_api.get_all_project_issues)
+        project_diff["/projects/:id/labels"] = self.generate_project_diff(project, self.projects_api.get_all_project_labels)
+        project_diff["/projects/:id/milestones"] = self.generate_project_diff(project, self.projects_api.get_all_project_milestones)
 
         # Misc
-        project_diff["/projects/:id/starrers"] = self.generate_diff(
-            project, self.projects_api.get_all_project_starrers)
-        project_diff["/projects/:id/badges"] = self.generate_diff(
-            project, self.projects_api.get_all_project_badges)
-        project_diff["/projects/:id/feature_flags"] = self.generate_diff(
-            project, self.projects_api.get_all_project_feature_flags)
-        project_diff["/projects/:id/custom_attributes"] = self.generate_diff(
-            project, self.projects_api.get_all_project_custom_attributes)
-        project_diff["/projects/:id/registry/repositories"] = self.generate_diff(
-            project, self.projects_api.get_all_project_registry_repositories)
+        project_diff["/projects/:id/starrers"] = self.generate_project_diff(project, self.projects_api.get_all_project_starrers)
+        project_diff["/projects/:id/badges"] = self.generate_project_diff(project, self.projects_api.get_all_project_badges)
+        project_diff["/projects/:id/feature_flags"] = self.generate_project_diff(project, self.projects_api.get_all_project_feature_flags)
+        project_diff["/projects/:id/custom_attributes"] = self.generate_project_diff(project, self.projects_api.get_all_project_custom_attributes)
+        project_diff["/projects/:id/registry/repositories"] = self.generate_project_diff(project, self.projects_api.get_all_project_registry_repositories)
 
         return project_diff
 
-    def generate_diff(self, project, endpoint, critical_key=None, obfuscate=False, **kwargs):
-        source_project_data = self.generate_cleaned_instance_data(
-            endpoint(project["id"], self.config.source_host, self.config.source_token, **kwargs))
-        if source_project_data:
-            if self.results.get(project["path_with_namespace"].lower()) is not None:
-                project["path_with_namespace"] = project["path_with_namespace"].lower()
-            if self.results.get(project["path_with_namespace"]) is not None:
-                if isinstance(self.results[project["path_with_namespace"]], dict):
-                    destination_project_id = self.results[project["path_with_namespace"]]["id"]
-                    destination_project_data = self.generate_cleaned_instance_data(
-                        endpoint(destination_project_id, self.config.destination_host, self.config.destination_token, **kwargs))
-                else:
-                    destination_project_data = {
-                        "error": "project missing"
-                    }
-            else:
-                destination_project_data = self.generate_empty_data(
-                    source_project_data)
-
-            return self.diff(source_project_data, destination_project_data, critical_key=critical_key, obfuscate=obfuscate)
-
-        return self.empty_diff()
-
-    
+    def generate_project_diff(self, project, endpoint, **kwargs):
+        return self.generate_diff(project, "path_with_namespace", endpoint, **kwargs)

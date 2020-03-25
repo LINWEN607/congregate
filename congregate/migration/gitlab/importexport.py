@@ -344,31 +344,29 @@ class ImportExportClient(BaseClass):
 
     def attempt_group_import(self, filename, name, path):
         resp = None
-        try:
-            # NOTE: Group export does not yet support (AWS/S3) user attributes
-            if self.config.location == "aws":
-                pass
-            elif self.config.location == "filesystem-aws":
-                pass
-            elif self.config.location == "filesystem":
-                with open("%s/downloads/%s" % (self.config.filesystem_path, filename), "rb") as f:
-                    data = {
-                        "path": path,
-                        "name": name,
-                        "parent_id": self.config.parent_id if self.config.parent_id else ""
-                    }
-                    files = {
-                        "file": (filename, f)
-                    }
-                    headers = {
-                        "Private-Token": self.config.destination_token
-                    }
-                    resp = self.groups_api.import_group(
-                        self.config.destination_host, self.config.destination_token, data=data, files=files, headers=headers)
-            return resp
-        except RequestException as re:
-            self.log.error(
-                "Failed to trigger group {0} (file: {1}), with error {2}".format(name, filename, re))
+        import_response = None
+        # NOTE: Group export does not yet support (AWS/S3) user attributes
+        if self.config.location == "aws":
+            pass
+        elif self.config.location == "filesystem-aws":
+            pass
+        elif self.config.location == "filesystem":
+            with open("%s/downloads/%s" % (self.config.filesystem_path, filename), "rb") as f:
+                data = {
+                    "path": path,
+                    "name": name,
+                    "parent_id": self.config.parent_id if self.config.parent_id else ""
+                }
+                files = {
+                    "file": (filename, f)
+                }
+                headers = {
+                    "Private-Token": self.config.destination_token
+                }
+                resp = self.groups_api.import_group(
+                    self.config.destination_host, self.config.destination_token, data=data, files=files, headers=headers)
+                import_response = resp.text
+        return import_response
 
     @staticmethod
     def create_override_name(current_project_name):
