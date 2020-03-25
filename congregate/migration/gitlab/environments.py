@@ -4,6 +4,7 @@ from congregate.helpers.base_class import BaseClass
 from congregate.helpers.misc_utils import is_error_message_present
 from congregate.migration.gitlab.api.projects import ProjectsApi
 
+
 class EnvironmentsClient(BaseClass):
     def __init__(self):
         self.projects = ProjectsApi()
@@ -17,7 +18,7 @@ class EnvironmentsClient(BaseClass):
             self.log.info("Migrating project {} environments".format(name))
             for env in envs:
                 if is_error_message_present(env):
-                    self.log.error(
+                    self.log.warning(
                         "Failed to fetch environments ({0}) for project {1}".format(env, name))
                     return False
                 self.projects.create_environment(
