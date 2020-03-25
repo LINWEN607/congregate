@@ -9,7 +9,8 @@ from requests.exceptions import RequestException
 from requests_toolbelt.multipart.encoder import MultipartEncoder
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers import api
-from congregate.helpers.misc_utils import download_file, migration_dry_run, get_dry_log, is_error_message_present, check_is_project_or_group_for_logging
+from congregate.helpers.misc_utils import download_file, migration_dry_run, get_dry_log, \
+    is_error_message_present, check_is_project_or_group_for_logging
 from congregate.aws import AwsClient
 from congregate.migration.gitlab.projects import ProjectsClient
 from congregate.migration.gitlab.groups import GroupsClient
@@ -206,11 +207,12 @@ class ImportExportClient(BaseClass):
             import_response = self.attempt_import(
                 filename, name, path, dst_namespace, override_params)
             if is_error_message_present(import_response) or not import_response:
-                self.log.error("Project {0} (file: {1}) failed to import due to:\n{2}".format(
-                    name, filename, import_response))
+                self.log.error("Project {0} failed to import to {1}, due to:\n{2}".format(
+                    name, dst_namespace, import_response))
+                return None
             elif "Try again later" in import_response:
                 self.log.warning(
-                    "Waiting 5 minutes and re-importing project {0} (file: {1}) due to:\n{2}".format(name, filename, import_response))
+                    "Re-importing project {0} to {1}, waiting 10 minutes due to:\n{2}".format(name, dst_namespace, import_response))
                 # TODO: Set to 5 min (https://gitlab.com/gitlab-org/gitlab/-/merge_requests/26903)
                 sleep(600)
                 import_response = self.attempt_import(
@@ -228,7 +230,7 @@ class ImportExportClient(BaseClass):
                 "project": project})
         return import_id
 
-    def attempt_import(self, filename, name, path, namespace, override_params, overwrite="false"):
+    def attempt_import(self, filename, name, path, namespace, override_params):
         import_response = None
         if self.config.location == "aws":
             presigned_get_url = self.aws.generate_presigned_url(
@@ -274,8 +276,7 @@ class ImportExportClient(BaseClass):
                         "file": (filename, f),
                         "path": path,
                         "namespace": namespace,
-                        "name": name,
-                        "overwrite": overwrite
+                        "name": name
                     })
                     headers = {
                         "Private-Token": self.config.destination_token,
@@ -292,8 +293,7 @@ class ImportExportClient(BaseClass):
                     data = {
                         "path": path,
                         "namespace": namespace,
-                        "name": name,
-                        "overwrite": overwrite
+                        "name": name
                     }
                     files = {
                         "file": (filename, f)
@@ -304,7 +304,6 @@ class ImportExportClient(BaseClass):
                     resp = self.projects_api.import_project(
                         self.config.destination_host, self.config.destination_token, data=data, files=files, headers=headers)
                     import_response = resp.text
-
         return import_response
 
     def import_group(self, group, full_path, filename, dry_run=True):
@@ -401,13 +400,21 @@ class ImportExportClient(BaseClass):
         while True:
             try:
                 if not retry:
+                    # Re-import in case of project import status failed
                     import_response = json.loads(import_response)
-                    if (is_error_message_present(import_response) or "Try again later" in import_response) and import_id:
-                        self.log.error("Project {0} failed to overwrite to {1} (removing), with response:\n{2}".format(
+                    if is_error_message_present(import_response) or not import_response:
+                        self.log.error("Project {0} failed to re-import to {1}, due to:\n{2}".format(
                             name, dst_namespace, import_response))
-                        self.projects_api.delete_project(
-                            self.config.destination_host, self.config.destination_token, import_id)
                         return None
+                    # There is a small chance that the re-import exceeds the rate limit
+                    elif "Try again later" in import_response:
+                        self.log.warning(
+                            "Re-importing project {0} to {1}, waiting 10 minutes due to:\n{2}".format(name, dst_namespace, import_response))
+                        # TODO: Set to 5 min (https://gitlab.com/gitlab-org/gitlab/-/merge_requests/26903)
+                        sleep(600)
+                        import_response = self.attempt_import(
+                            filename, name, path, dst_namespace, override_params)
+                        import_response = json.loads(import_response)
                 import_id = import_response.get("id", None)
                 if import_id:
                     status = self.projects_api.get_project_import_status(
@@ -416,29 +423,39 @@ class ImportExportClient(BaseClass):
                         status_json = status.json()
                         if status_json.get("import_status", None) == "finished":
                             self.log.info(
-                                "Project {0} successfully imported to {1}, with status:\n{2}".format(name, dst_namespace, status_json))
+                                "Project {0} successfully imported to {1}, with import status:\n{2}".format(name, dst_namespace, status_json))
                             break
                         elif status_json.get("import_status", None) == "failed":
-                            self.log.error("Project {0} failed to import to {1}, with status{2}:\n{3}".format(
+                            self.log.error("Project {0} import to {1} failed, with import status{2}:\n{3}".format(
                                 name, dst_namespace, " (re-importing)" if retry else "", status_json))
+                            # Delete and re-import once if the project import status failed, otherwise just delete
                             if retry:
+                                self.log.info("Deleting project {0} from {1} after import status failed (re-importing), due to:\n{2}".format(
+                                    name, dst_namespace, status_json))
+                                self.projects_api.delete_project(
+                                    self.config.destination_host, self.config.destination_token, import_id)
+                                sleep(wait_time)
                                 import_response = self.attempt_import(
-                                    filename, name, path, dst_namespace, override_params, overwrite="true")
+                                    filename, name, path, dst_namespace, override_params)
                                 retry = False
                             else:
-                                self.log.info("Removing project {0} from {1} after failed import, due to {2}".format(
+                                self.log.info("Deleting project {0} from {1} after re-import status failed, due to:\n{2}".format(
                                     name, dst_namespace, status_json))
                                 self.projects_api.delete_project(
                                     self.config.destination_host, self.config.destination_token, import_id)
                                 return None
+                        # For any other import status (started, scheduled, etc.) wait for it to update
                         elif timeout < self.config.max_export_wait_time:
                             self.log.info(
                                 "Checking project {0} (file: {1}) import status in {2} seconds".format(name, filename, wait_time))
                             timeout += wait_time
                             sleep(wait_time)
+                        # In case of timeout delete
                         else:
-                            self.log.error("Time limit exceeded, project {0} (file: {1}) import status: {2}".format(
+                            self.log.error("Time limit exceeded (deleting), project {0} (file: {1}) import status: {2}".format(
                                 name, filename, status_json))
+                            self.projects_api.delete_project(
+                                self.config.destination_host, self.config.destination_token, import_id)
                             return None
                     else:
                         self.log.error(

@@ -52,15 +52,6 @@ class ImportExportClientTests(unittest.TestCase):
             "override_params[shared_runners_enabled]=%s" % self.original_project["shared_runners_enabled"]
         ]
 
-    def import_status_finished(self, *args, **kwargs):
-        ok_status_mock = mock.MagicMock()
-        type(ok_status_mock).status_code = mock.PropertyMock(return_value=200)
-        ok_status_mock.json.return_value = {
-            "id": 111,
-            "import_status": "finished"
-        }
-        return ok_status_mock
-
     def import_status_failed(self, *args, **kwargs):
         nok_status_mock = mock.MagicMock()
         type(nok_status_mock).status_code = mock.PropertyMock(return_value=200)
@@ -105,27 +96,11 @@ class ImportExportClientTests(unittest.TestCase):
                                                         self.original_project_path, self.original_namespace_path, self.original_project_override_params)
         self.assertEqual(import_id, None)
 
-    @mock.patch('congregate.migration.gitlab.importexport.ImportExportClient.attempt_import')
-    @mock.patch.object(ProjectsApi, "get_project_import_status", side_effect=import_status_finished)
-    def test_get_import_id_from_response_failed_retry_success(self, mock_status, mock_import_response):
-        nok_status_mock = mock.MagicMock()
-        type(nok_status_mock).status_code = mock.PropertyMock(return_value=200)
-        nok_status_mock.json.return_value = {
-            "id": 222,
-            "import_status": "failed"
-        }
-        mock_status.return_value = nok_status_mock
-        mock_import_response.return_value = json.dumps({
-            "id": 111,
-            "import_status": "finished"
-        })
-        import_id = self.ie.get_import_id_from_response(self.import_response, self.original_project_filename, self.original_project_name,
-                                                        self.original_project_path, self.original_namespace_path, self.original_project_override_params)
-        self.assertEqual(import_id, 12345)
-
+    @mock.patch('congregate.helpers.conf.Config.importexport_wait', new_callable=mock.PropertyMock)
     @mock.patch('congregate.migration.gitlab.importexport.ImportExportClient.attempt_import')
     @mock.patch.object(ProjectsApi, "get_project_import_status", side_effect=import_status_failed)
-    def test_get_import_id_from_response_failed_retry_failed(self, mock_status, mock_import_response):
+    def test_get_import_id_from_response_failed_retry(self, mock_status, mock_import_response, wait):
+        wait.return_value = 0.01
         nok_status_mock = mock.MagicMock()
         type(nok_status_mock).status_code = mock.PropertyMock(return_value=200)
         nok_status_mock.json.return_value = {
