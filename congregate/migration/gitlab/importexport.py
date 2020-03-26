@@ -322,7 +322,6 @@ class ImportExportClient(BaseClass):
         path = group["path"]
         if not dry_run:
             import_response = self.attempt_group_import(filename, name, path)
-            
             try:
                 import_response_text = import_response.text
             except AttributeError as e:

@@ -1,7 +1,8 @@
 from congregate.migration.gitlab.diff.basediff import BaseDiffClient
 from congregate.migration.gitlab.api.groups import GroupsApi
+from congregate.migration.gitlab.api.issues import IssuesApi
+from congregate.migration.gitlab.api.merge_requests import MergeRequestsApi
 from congregate.migration.gitlab.groups import GroupsClient
-from congregate.migration.gitlab.variables import VariablesClient
 from congregate.helpers.misc_utils import rewrite_json_list_into_dict, get_rollback_log
 from congregate.helpers.threads import handle_multi_thread_write_to_file_and_return_results
 
@@ -14,8 +15,9 @@ class GroupDiffClient(BaseDiffClient):
     def __init__(self, results_path, staged=False):
         super(GroupDiffClient, self).__init__()
         self.groups_api = GroupsApi()
+        self.issues_api = IssuesApi()
+        self.mr_api = MergeRequestsApi()
         self.groups = GroupsClient()
-        self.variables_api = VariablesClient()
         self.results = rewrite_json_list_into_dict(
             self.load_json_data("{0}{1}".format(self.app_path, results_path)))
         self.keys_to_ignore = [
@@ -80,7 +82,7 @@ class GroupDiffClient(BaseDiffClient):
         group_diff = {}
         parent_group = self.config.parent_group_path
         group_diff["/groups/:id"] = self.generate_group_diff(group, self.groups_api.get_group, critical_key="full_path", parent_group=parent_group)
-        group_diff["/groups/:id/variables"] = self.generate_group_diff(group, self.variables_api.get_variables, obfuscate=True, var_type="group")
+        group_diff["/groups/:id/variables"] = self.generate_group_diff(group, self.groups_api.get_all_group_variables, obfuscate=True, var_type="group")
         group_diff["/groups/:id/members"] = self.generate_group_diff(group, self.groups_api.get_all_group_members)
         group_diff["/groups/:id/boards"] = self.generate_group_diff(group, self.groups_api.get_all_group_issue_boards)
         group_diff["/groups/:id/labels"] = self.generate_group_diff(group, self.groups_api.get_all_group_labels)
@@ -93,6 +95,7 @@ class GroupDiffClient(BaseDiffClient):
         group_diff["/groups/:id/members/all"] = self.generate_group_diff(group, self.groups_api.get_all_group_members_incl_inherited)
         group_diff["/groups/:id/registry/repositories"] = self.generate_group_diff(group, self.groups_api.get_all_group_registry_repositories)
         group_diff["/groups/:id/badges"] = self.generate_group_diff(group, self.groups_api.get_all_group_badges)
+        group_diff["/groups/:id/merge_requests"] = self.generate_group_diff(group, self.mr_api.get_all_group_merge_requests)
         return group_diff
 
     def generate_group_diff(self, group, endpoint, **kwargs):

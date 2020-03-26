@@ -17,8 +17,8 @@ class DeployKeysClient(BaseClass):
             d_keys = iter(resp)
             self.log.info("Migrating project {} deploy keys".format(name))
             for key in d_keys:
-                if is_error_message_present(key):
-                    self.log.warning(
+                if is_error_message_present(key) or not key:
+                    self.log.error(
                         "Failed to fetch deploy keys ({0}) for project {1}".format(key, name))
                     return False
                 # Remove unused key-value before posting key

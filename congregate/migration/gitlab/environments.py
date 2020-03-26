@@ -12,13 +12,13 @@ class EnvironmentsClient(BaseClass):
 
     def migrate_project_environments(self, src_id, dest_id, name):
         try:
-            resp = self.projects.get_all_environments(
+            resp = self.projects.get_all_project_environments(
                 src_id, self.config.source_host, self.config.source_token)
             envs = iter(resp)
             self.log.info("Migrating project {} environments".format(name))
             for env in envs:
-                if is_error_message_present(env):
-                    self.log.warning(
+                if is_error_message_present(env) or not env:
+                    self.log.error(
                         "Failed to fetch environments ({0}) for project {1}".format(env, name))
                     return False
                 self.projects.create_environment(

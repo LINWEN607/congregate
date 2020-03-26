@@ -1,7 +1,8 @@
 from congregate.migration.gitlab.diff.basediff import BaseDiffClient
 from congregate.migration.gitlab.api.projects import ProjectsApi
+from congregate.migration.gitlab.api.issues import IssuesApi
+from congregate.migration.gitlab.api.merge_requests import MergeRequestsApi
 from congregate.migration.gitlab.api.project_repository import ProjectRepositoryApi
-from congregate.migration.gitlab.variables import VariablesClient
 from congregate.helpers.misc_utils import rewrite_json_list_into_dict, get_rollback_log
 from congregate.helpers.threads import handle_multi_thread_write_to_file_and_return_results
 
@@ -14,8 +15,9 @@ class ProjectDiffClient(BaseDiffClient):
     def __init__(self, results_path, staged=False):
         super(ProjectDiffClient, self).__init__()
         self.projects_api = ProjectsApi()
+        self.issues_api = IssuesApi()
+        self.mr_api = MergeRequestsApi()
         self.repository_api = ProjectRepositoryApi()
-        self.variables_api = VariablesClient()
         self.results = rewrite_json_list_into_dict(
             self.load_json_data("{0}{1}".format(self.app_path, results_path)))
         self.keys_to_ignore = [
@@ -87,11 +89,12 @@ class ProjectDiffClient(BaseDiffClient):
         project_diff["/projects/:id"] = self.generate_project_diff(project, self.projects_api.get_project, obfuscate=True)
 
         # CI/CD
-        project_diff["/projects/:id/variables"] = self.generate_project_diff(project, self.variables_api.get_variables, obfuscate=True, var_type="project")
+        project_diff["/projects/:id/variables"] = self.generate_project_diff(project, self.projects_api.get_all_project_variables, obfuscate=True)
         project_diff["/projects/:id/triggers"] = self.generate_project_diff(project, self.projects_api.get_all_project_triggers)
         project_diff["/projects/:id/deploy_keys"] = self.generate_project_diff(project, self.projects_api.get_all_project_deploy_keys, obfuscate=True)
         project_diff["/projects/:id/pipeline_schedules"] = self.generate_project_diff(project, self.projects_api.get_all_project_pipeline_schedules)
-        project_diff["/projects/:id/environments"] = self.generate_project_diff(project, self.projects_api.get_all_environments)
+        project_diff["/projects/:id/environments"] = self.generate_project_diff(project, self.projects_api.get_all_project_environments)
+        project_diff["/projects/:id/protected_environments"] = self.generate_project_diff(project, self.projects_api.get_all_project_protected_environments)
         project_diff["/projects/:id/jobs"] = self.generate_project_diff(project, self.projects_api.get_all_project_jobs)
 
         # Membership
@@ -99,7 +102,15 @@ class ProjectDiffClient(BaseDiffClient):
         project_diff["/projects/:id/members/all"] = self.generate_project_diff(project, self.projects_api.get_all_project_members_incl_inherited)
         project_diff["/projects/:id/users"] = self.generate_project_diff(project, self.projects_api.get_all_project_users)
 
+        # Repository
+        project_diff["/projects/:id/repository/tree"] = self.generate_project_diff(project, self.repository_api.get_all_project_repository_tree)
+        project_diff["/projects/:id/repository/contributors"] = self.generate_project_diff(project, self.repository_api.get_all_project_repository_contributors)
+        project_diff["/projects/:id/repository/tags"] = self.generate_project_diff(project, self.repository_api.get_all_project_repository_tags)
+        project_diff["/projects/:id/repository/commits"] = self.generate_project_diff(project, self.repository_api.get_all_project_repository_commits)
+        project_diff["/projects/:id/protected_tags"] = self.generate_project_diff(project, self.projects_api.get_all_project_protected_tags)
+
         # Merge request approvers
+        project_diff["/projects/:id/merge_requests"] = self.generate_project_diff(project, self.mr_api.get_all_project_merge_requests)
         project_diff["/projects/:id/approvals"] = self.generate_project_diff(project, self.projects_api.get_project_level_mr_approval_configuration)
         project_diff["/projects/:id/approval_rules"] = self.generate_project_diff(project, self.projects_api.get_all_project_level_mr_approval_rules)
 
@@ -111,9 +122,10 @@ class ProjectDiffClient(BaseDiffClient):
         project_diff["/projects/:id/releases"] = self.generate_project_diff(project, self.projects_api.get_all_project_releases)
 
         # Issue Tracker
-        project_diff["/projects/:id/issues"] = self.generate_project_diff(project, self.projects_api.get_all_project_issues)
+        project_diff["/projects/:id/issues"] = self.generate_project_diff(project, self.issues_api.get_all_project_issues)
         project_diff["/projects/:id/labels"] = self.generate_project_diff(project, self.projects_api.get_all_project_labels)
         project_diff["/projects/:id/milestones"] = self.generate_project_diff(project, self.projects_api.get_all_project_milestones)
+        project_diff["/projects/:id/boards"] = self.generate_project_diff(project, self.projects_api.get_all_project_boards)
 
         # Misc
         project_diff["/projects/:id/starrers"] = self.generate_project_diff(project, self.projects_api.get_all_project_starrers)
@@ -121,6 +133,10 @@ class ProjectDiffClient(BaseDiffClient):
         project_diff["/projects/:id/feature_flags"] = self.generate_project_diff(project, self.projects_api.get_all_project_feature_flags)
         project_diff["/projects/:id/custom_attributes"] = self.generate_project_diff(project, self.projects_api.get_all_project_custom_attributes)
         project_diff["/projects/:id/registry/repositories"] = self.generate_project_diff(project, self.projects_api.get_all_project_registry_repositories)
+        project_diff["/projects/:id/events"] = self.generate_project_diff(project, self.projects_api.get_all_project_events)
+        project_diff["/projects/:id/hooks"] = self.generate_project_diff(project, self.projects_api.get_all_project_hooks)
+        project_diff["/projects/:id/snippets"] = self.generate_project_diff(project, self.projects_api.get_all_project_snippets)
+        project_diff["/projects/:id/wikis"] = self.generate_project_diff(project, self.projects_api.get_all_project_wikis)
 
         return project_diff
 
