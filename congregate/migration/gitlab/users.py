@@ -408,7 +408,7 @@ class UsersClient(BaseClass):
             Remove users with state "blocked" from staged users, groups and projects
         """
         self.log.info(
-            "{}Removing blocked users form staged users/groups/projects".format(get_dry_log(dry_run)))
+            "{}Removing blocked users from staged users/groups/projects".format(get_dry_log(dry_run)))
         # From staged users
         self.remove("staged_users", dry_run)
         # From staged groups
@@ -843,7 +843,8 @@ class UsersClient(BaseClass):
                             user["id"],
                             hard_delete)
                     else:
-                        self.log.info("Ignoring %s. User existed before %d hours" % (user["email"], self.config.max_asset_expiration_time))
+                        self.log.info("Ignoring %s. User existed before %d hours" % (
+                            user["email"], self.config.max_asset_expiration_time))
                 except RequestException, e:
                     self.log.error(
                         "Failed to remove user {0}\nwith error: {1}".format(su, e))

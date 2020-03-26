@@ -10,7 +10,7 @@ from requests_toolbelt.multipart.encoder import MultipartEncoder
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers import api
 from congregate.helpers.misc_utils import download_file, migration_dry_run, get_dry_log, \
-    is_error_message_present, check_is_project_or_group_for_logging
+    is_error_message_present, check_is_project_or_group_for_logging, json_pretty
 from congregate.aws import AwsClient
 from congregate.migration.gitlab.projects import ProjectsClient
 from congregate.migration.gitlab.groups import GroupsClient
@@ -50,14 +50,9 @@ class ImportExportClient(BaseClass):
     def get_group_export_status(self, src_id):
         return api.generate_get_request(self.config.source_host, self.config.source_token, "groups/%d/export" % src_id)
 
-    def log_wait_time(self, wait_time, is_project, name):
-        self.log.info("Waiting {0} seconds before skipping {1} {2} export".format(
-            wait_time, check_is_project_or_group_for_logging(is_project).lower(), name))
-
     def wait_for_export_to_finish(self, source_id, name, is_project=True):
         exported = False
         total_time = 0
-        skip = False
         wait_time = self.config.importexport_wait
         export_type = check_is_project_or_group_for_logging(is_project)
         while not exported:
@@ -65,7 +60,7 @@ class ImportExportClient(BaseClass):
             if response.status_code == 200:
                 response = response.json()
                 name = response["name"]
-                status = response.get("export_status", "")
+                status = response.get("export_status", None)
                 if status == "finished":
                     self.log.info(
                         "{0} {1} has finished exporting".format(export_type, name))
@@ -74,30 +69,18 @@ class ImportExportClient(BaseClass):
                     self.log.error(
                         "{0} {1} export failed".format(export_type, name))
                     break
-                elif status == "none":
-                    self.log.info(
-                        "{0} {1} has no export status".format(export_type, name))
-                    if not skip:
-                        self.log_wait_time(wait_time, is_project, name)
-                        sleep(wait_time)
-                        skip = True
-                    else:
-                        break
+                elif total_time < self.config.max_export_wait_time:
+                    self.log.info("Checking {0} {1} export status in {2} seconds".format(
+                        export_type.lower(), name, wait_time))
+                    total_time += wait_time
+                    sleep(wait_time)
                 else:
-                    self.log_wait_time(wait_time, is_project, name)
-                    if total_time < self.config.max_export_wait_time:
-                        total_time += wait_time
-                        sleep(wait_time)
-                    else:
-                        self.log.error("{0} {1} export time limit exceeded, download status: {2}".format(
-                            export_type, name, response))
-                        exported = False
-                        break
+                    self.log.error("{0} {1} export time limit exceeded, download status:\n{2}".format(
+                        export_type, name, response))
+                    break
             else:
-                self.log.info(
-                    "SKIP: Export, source {0} {1} doesn't exist".format(
-                        check_is_project_or_group_for_logging(is_project).lower(), name))
-                exported = False
+                self.log.error("SKIP: Export, source {0} {1} doesn't exist:\n{2}".format(
+                    export_type.lower(), name, response))
                 break
         return exported
 
@@ -206,17 +189,17 @@ class ImportExportClient(BaseClass):
         if not dry_run:
             import_response = self.attempt_import(
                 filename, name, path, dst_namespace, override_params)
-            if is_error_message_present(import_response) or not import_response:
-                self.log.error("Project {0} failed to import to {1}, due to:\n{2}".format(
-                    name, dst_namespace, import_response))
-                return None
-            elif "Try again later" in import_response:
+            if "Try again later" in import_response:
                 self.log.warning(
                     "Re-importing project {0} to {1}, waiting 10 minutes due to:\n{2}".format(name, dst_namespace, import_response))
                 # TODO: Set to 5 min (https://gitlab.com/gitlab-org/gitlab/-/merge_requests/26903)
-                sleep(600)
+                sleep(720)
                 import_response = self.attempt_import(
                     filename, name, path, dst_namespace, override_params)
+            elif is_error_message_present(import_response) or not import_response:
+                self.log.error("Project {0} failed to import to {1}, due to:\n{2}".format(
+                    name, dst_namespace, import_response))
+                return None
             import_id = self.get_import_id_from_response(
                 import_response, filename, name, path, dst_namespace, override_params)
         else:
@@ -287,7 +270,7 @@ class ImportExportClient(BaseClass):
                     import_response = resp.text
             except AttributeError as ae:
                 self.log.error(
-                    "Large file upload failed for {0}. Using standard file upload, due to: \n{1}".format(
+                    "Large file upload failed for {0}. Using standard file upload, due to:\n{1}".format(
                         filename, ae))
                 with open("%s/downloads/%s" % (self.config.filesystem_path, filename), "rb") as f:
                     data = {
@@ -400,21 +383,21 @@ class ImportExportClient(BaseClass):
         while True:
             try:
                 if not retry:
-                    # Re-import in case of project import status failed
                     import_response = json.loads(import_response)
-                    if is_error_message_present(import_response) or not import_response:
-                        self.log.error("Project {0} failed to re-import to {1}, due to:\n{2}".format(
-                            name, dst_namespace, import_response))
-                        return None
                     # There is a small chance that the re-import exceeds the rate limit
-                    elif "Try again later" in import_response:
+                    if "Try again later" in import_response:
                         self.log.warning(
                             "Re-importing project {0} to {1}, waiting 10 minutes due to:\n{2}".format(name, dst_namespace, import_response))
                         # TODO: Set to 5 min (https://gitlab.com/gitlab-org/gitlab/-/merge_requests/26903)
-                        sleep(600)
+                        sleep(720)
+                        timeout = 0
                         import_response = self.attempt_import(
                             filename, name, path, dst_namespace, override_params)
                         import_response = json.loads(import_response)
+                    elif is_error_message_present(import_response) or not import_response:
+                        self.log.error("Project {0} failed to re-import to {1}, due to:\n{2}".format(
+                            name, dst_namespace, import_response))
+                        return None
                 import_id = import_response.get("id", None)
                 if import_id:
                     status = self.projects_api.get_project_import_status(
@@ -423,51 +406,52 @@ class ImportExportClient(BaseClass):
                         status_json = status.json()
                         if status_json.get("import_status", None) == "finished":
                             self.log.info(
-                                "Project {0} successfully imported to {1}, with import status:\n{2}".format(name, dst_namespace, status_json))
+                                "Project {0} successfully imported to {1}, with import status:\n{2}".format(name, dst_namespace, json_pretty(status_json)))
                             break
                         elif status_json.get("import_status", None) == "failed":
                             self.log.error("Project {0} import to {1} failed, with import status{2}:\n{3}".format(
-                                name, dst_namespace, " (re-importing)" if retry else "", status_json))
+                                name, dst_namespace, " (re-importing)" if retry else "", json_pretty(status_json)))
                             # Delete and re-import once if the project import status failed, otherwise just delete
                             if retry:
                                 self.log.info("Deleting project {0} from {1} after import status failed (re-importing), due to:\n{2}".format(
-                                    name, dst_namespace, status_json))
+                                    name, dst_namespace, json_pretty(status_json)))
                                 self.projects_api.delete_project(
                                     self.config.destination_host, self.config.destination_token, import_id)
                                 sleep(wait_time)
+                                timeout = 0
+                                retry = False
                                 import_response = self.attempt_import(
                                     filename, name, path, dst_namespace, override_params)
-                                retry = False
                             else:
                                 self.log.info("Deleting project {0} from {1} after re-import status failed, due to:\n{2}".format(
-                                    name, dst_namespace, status_json))
+                                    name, dst_namespace, json_pretty(status_json)))
                                 self.projects_api.delete_project(
                                     self.config.destination_host, self.config.destination_token, import_id)
                                 return None
                         # For any other import status (started, scheduled, etc.) wait for it to update
                         elif timeout < self.config.max_export_wait_time:
                             self.log.info(
-                                "Checking project {0} (file: {1}) import status in {2} seconds".format(name, filename, wait_time))
+                                "Checking project {0} ({1}) import status in {2} seconds".format(name, dst_namespace, wait_time))
                             timeout += wait_time
                             sleep(wait_time)
                         # In case of timeout delete
                         else:
-                            self.log.error("Time limit exceeded (deleting), project {0} (file: {1}) import status: {2}".format(
-                                name, filename, status_json))
+                            self.log.error("Time limit exceeded (deleting), project {0} ({1}) import status: {2}".format(
+                                name, dst_namespace, json_pretty(status_json)))
                             self.projects_api.delete_project(
                                 self.config.destination_host, self.config.destination_token, import_id)
                             return None
                     else:
                         self.log.error(
-                            "Project {0} (file: {1}) import attempt failed, with status:\n{2}".format(name, filename, status))
+                            "Project {0} ({1}) import attempt failed, with status:\n{2}".format(name, dst_namespace, status))
                         return None
                 else:
-                    self.log.error("Project {0} (file: {1}) failed to import, with response:\n{2}".format(
-                        name, filename, import_response))
+                    self.log.error("Project {0} ({1}) failed to import, with response:\n{2}".format(
+                        name, dst_namespace, import_response))
                     return None
             except RequestException as re:
                 self.log.error(
-                    "Project {0} (file: {1}) import status ({2}) check failed, with error:\n{3}".format(name, filename, status, re))
+                    "Project {0} ({1}) import status ({2}) check failed, with error:\n{3}".format(name, dst_namespace, status, re))
                 return None
         return import_id
 
