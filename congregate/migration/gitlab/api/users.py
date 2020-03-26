@@ -163,7 +163,7 @@ class UsersApi():
         """
         return api.generate_get_request(host, token, "users/%d/status" % id)
 
-    def get_user_projects(self, id, host, token):
+    def get_all_user_projects(self, id, host, token):
         """
         Get a list of visible projects owned by the given user
 
@@ -176,7 +176,7 @@ class UsersApi():
         """
         return api.generate_get_request(host, token, "users/%d/projects" % id)
 
-    def get_user_emails(self, id, host, token):
+    def get_all_user_emails(self, id, host, token):
         """
         Get a list of emails for a give user
 

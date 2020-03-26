@@ -64,16 +64,16 @@ class gitlab_repo:
         https://docs.gitlab.com/ee/api/commits.html#list-repository-commits
     '''
 
-    def get_commits(self, id, ref_name=None, since=None, until=None,
+    def get_commits(self, pid, ref_name=None, since=None, until=None,
                     path=None, all=False, with_stats=False, include_count=False):
         params = locals()
         params.pop('self', None)
         params.pop('id', None)
         query_params = parse_query_params(params)
         resp = self.project_repository_api.get_all_project_repository_commits(
+            pid,
             self.conf.destination_host,
             self.conf.destination_token,
-            id,
             query_params)
         if include_count:
             resp = {
@@ -128,10 +128,11 @@ class gitlab_repo:
 
     def search_for_project(self, name, group, search_name):
         for project in self.projects_api.search_for_project(self.conf.destination_host,
-                                    self.conf.destination_token,
-                                    name):
+                                                            self.conf.destination_token,
+                                                            name):
             # with_group = ("%s/%s" % (group.replace(" ", "_"), name.replace(" ", "-"))).lower()
-            with_group = ("%s/%s" % (group.replace(" ", "_"), re.sub(r"\.| ", "-", name))).lower()
+            with_group = ("%s/%s" % (group.replace(" ", "_"),
+                                     re.sub(r"\.| ", "-", name))).lower()
             pwn = project["path_with_namespace"]
             if project.get("path_with_namespace",
                            None) == search_name or pwn.lower() == with_group:

@@ -1,7 +1,6 @@
 import json
 from urllib import quote_plus
 from congregate.helpers import api
-from urllib import urlencode
 
 
 class ProjectsApi():
@@ -315,44 +314,18 @@ class ProjectsApi():
         """
         return api.list_all(host, token, "projects/%d/badges" % pid)
 
-    def get_all_project_issues(self, id, host, token):
-        """
-        Get a list of issues for the given project
-
-        GitLab API Doc: https://docs.gitlab.com/ee/api/issues.html#list-project-issues
-
-            :param: id: (int) GitLab project ID
-            :param: host: (str) GitLab host URL
-            :param: token: (str) Access token to GitLab instance
-            :yield: Generator returning JSON of each result from GET /projects/:id/issues
-        """
-        return api.list_all(host, token, "projects/%d/issues" % id)
-
-    def get_all_project_issue_notes(self, pid, iid, host, token):
-        """
-        Gets a list of all notes for a given issue
-
-        GitLab API Doc: https://docs.gitlab.com/ee/api/notes.html#list-project-issue-notes
-
-            :param: id: (int) GitLab project ID
-            :param: host: (str) GitLab host URL
-            :param: token: (str) Access token to GitLab instance
-            :yield: Generator returning JSON of each result from GET /projects/:id/issues/:issue_iid/notes
-        """
-        return api.list_all(host, token, "projects/{0}/issues/{1}/notes".format(pid, iid))
-
-    def get_all_project_boards(self, id, host, token):
+    def get_all_project_boards(self, pid, host, token):
         """
         Lists Issue Boards in the given project
 
         GitLab API Doc: https://docs.gitlab.com/ee/api/boards.html#project-board
 
-            :param: id: (int) GitLab project ID
+            :param: pid: (int) GitLab project ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /projects/:id/boards
         """
-        return api.list_all(host, token, "projects/%d/boards" % id)
+        return api.list_all(host, token, "projects/{}/boards".format(pid))
 
     def get_all_project_labels(self, id, host, token):
         """
@@ -393,18 +366,18 @@ class ProjectsApi():
         """
         return api.list_all(host, token, "projects/%d/releases" % id)
 
-    def get_all_project_events(self, id, host, token):
+    def get_all_project_events(self, pid, host, token):
         """
         Get a list of visible events for a particular project
 
         GitLab API Doc: https://docs.gitlab.com/ee/api/events.html
 
-            :param: id: (int) GitLab project ID
+            :param: pid: (int) GitLab project ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /projects/:project_id/events
         """
-        return api.list_all(host, token, "projects/%d/events" % id)
+        return api.list_all(host, token, "projects/{}/events".format(pid))
 
     def get_all_project_variables(self, pid, host, token):
         """
@@ -790,18 +763,18 @@ class ProjectsApi():
         """
         return api.list_all(host, token, "projects/%d/custom_attributes" % id)
 
-    def get_all_project_snippets(self, host, token, project_id):
+    def get_all_project_snippets(self, pid, host, token):
         """
         Get a list of project snippets
 
         GitLab API Doc: https://docs.gitlab.com/ee/api/notes.html#list-project-issue-notes
 
-            :param: project_id: (int) GitLab project ID
+            :param: pid: (int) GitLab project ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /projects/:id/snippets
         """
-        return api.list_all(host, token, "projects/%d/snippets" % project_id)
+        return api.list_all(host, token, "projects/{}/snippets".format(pid))
 
     def get_single_project_snippets(self, host, token, project_id, snippet_id):
         """
@@ -905,9 +878,9 @@ class ProjectsApi():
         """
         return api.generate_get_request(host, token, "projects/{0}/environments/{1}".format(project_id, env_id))
 
-    def get_all_environments(self, pid, host, token):
+    def get_all_project_environments(self, pid, host, token):
         """
-        Get a specific environment
+        Get all project environments
 
         GitLab API Doc: https://docs.gitlab.com/ee/api/environments.html
 
@@ -918,6 +891,20 @@ class ProjectsApi():
 
         """
         return api.list_all(host, token, "projects/{}/environments".format(pid))
+
+    def get_all_project_wikis(self, pid, host, token):
+        """
+        Get all project wikis
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/wikis.html#list-wiki-pages
+
+            :param: pid: (int) GitLab project ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: RGenerator returning JSON of each result from GET /projects/:id/wikis
+
+        """
+        return api.list_all(host, token, "projects/{}/wikis".format(pid))
 
     def create_environment(self, host, token, project_id, data):
         """

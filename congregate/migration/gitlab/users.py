@@ -5,7 +5,7 @@ from requests.exceptions import RequestException
 
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers import api
-from congregate.helpers.misc_utils import get_dry_log, json_pretty
+from congregate.helpers.misc_utils import get_dry_log, json_pretty, get_timedelta
 from congregate.helpers.threads import handle_multi_thread
 from congregate.helpers.misc_utils import remove_dupes, migration_dry_run, is_error_message_present
 from congregate.migration.gitlab.api.groups import GroupsApi
@@ -796,8 +796,8 @@ class UsersClient(BaseClass):
         else:
             resp = response.json()
             return {
-                "id": resp["id"],
-                "email": resp["email"]
+                "email": resp["email"],
+                "id": resp["id"]
             }
 
     def get_user_creation_id_and_email(self, response):
@@ -836,11 +836,14 @@ class UsersClient(BaseClass):
                     "User {} does not exist or has already been removed".format(su["email"]))
             elif not dry_run:
                 try:
-                    self.users_api.delete_user(
-                        self.config.destination_host,
-                        self.config.destination_token,
-                        user["id"],
-                        hard_delete)
+                    if get_timedelta(user["created_at"]) < self.config.max_asset_expiration_time:
+                        self.users_api.delete_user(
+                            self.config.destination_host,
+                            self.config.destination_token,
+                            user["id"],
+                            hard_delete)
+                    else:
+                        self.log.info("Ignoring %s. User existed before %d hours" % (user["email"], self.config.max_asset_expiration_time))
                 except RequestException, e:
                     self.log.error(
                         "Failed to remove user {0}\nwith error: {1}".format(su, e))

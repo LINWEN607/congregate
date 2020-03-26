@@ -3,31 +3,31 @@ from congregate.helpers import api
 
 
 class MergeRequestsApi(BaseClass):
-    def get_all_project_merge_requests(self, host, token, project_id):
+    def get_all_project_merge_requests(self, pid, host, token):
         """
         Get all merge requests for the given project
 
         GitLab API Doc: https://docs.gitlab.com/ee/api/merge_requests.html#list-project-merge-requests
 
-            :param: project_id: (int) GitLab project ID
+            :param: pid: (int) GitLab project ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /projects/:id/merge_requests
         """
-        return api.list_all(host, token, "projects/%d/merge_requests" % project_id)
+        return api.list_all(host, token, "projects/{}/merge_requests".format(pid))
 
-    def get_all_group_merge_requests(self, host, token, group_id):
+    def get_all_group_merge_requests(self, gid, host, token):
         """
         Get all merge requests for the given group
 
         GitLab API Doc: https://docs.gitlab.com/ee/api/merge_requests.html#list-group-merge-requests
 
-            :param: group_id: (int) GitLab project ID
+            :param: gid: (int) GitLab project ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /groups/:id/merge_requests
         """
-        return api.list_all(host, token, "groups/%d/merge_requests" % group_id)
+        return api.list_all(host, token, "groups/{}/merge_requests".format(gid))
 
     def get_single_project_merge_requests(self, host, token, project_id, mr_iid):
         """

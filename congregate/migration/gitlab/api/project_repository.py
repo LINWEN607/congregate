@@ -70,19 +70,19 @@ class ProjectRepositoryApi():
         """
         return api.list_all(host, token, "projects/%d/repository/tags" % id)
 
-    def get_all_project_repository_commits(self, host, token, id, query_params=""):
+    def get_all_project_repository_commits(self, pid, host, token, query_params=""):
         """
         Get a list of repository commits in a project
 
         https://docs.gitlab.com/ee/api/commits.html#list-repository-commits
 
-            :param: id: (int) GitLab project ID
+            :param: pid: (int) GitLab project ID
             :param: query_params: (str) Query parameters
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /projects/:id/repository/commits
         """
-        return api.list_all(host, token, "projects/%d/repository/commits%s" % (id, query_params))
+        return api.list_all(host, token, "projects/{0}/repository/commits{1}".format(pid, query_params))
 
     def get_single_project_repository_commit(self, host, token, id, sha):
         """

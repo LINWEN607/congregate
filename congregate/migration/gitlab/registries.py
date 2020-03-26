@@ -49,8 +49,8 @@ class RegistryClient(BaseClass):
             self.log.info(
                 "Migrating project {0} (ID: {1}) container registries".format(name, old_id))
             for reg in regs:
-                if is_error_message_present(reg):
-                    self.log.warning(
+                if is_error_message_present(reg) or not reg:
+                    self.log.error(
                         "Failed to fetch container registries ({0}) for project {1}".format(reg, name))
                     return False
                 tags = self.projects_api.get_all_project_registry_repositories_tags(

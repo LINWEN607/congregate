@@ -124,6 +124,14 @@ class Config(object):
     def mirror_username(self):
         return self.prop("DESTINATION", "mirror_username")
 
+    @property
+    def max_asset_expiration_time(self):
+        """
+        The maximum number of hours to rollback users, groups, and projects
+        :return: The set config value or 24 hours as default
+        """
+        return self.prop("DESTINATION", "max_asset_expiration_time", 24)
+
 # SOURCE
     @property
     def source_host(self):

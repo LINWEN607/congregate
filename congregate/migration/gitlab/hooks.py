@@ -24,8 +24,8 @@ class HooksClient(BaseClass):
                 shd.pop("id", None)
                 shd.pop("created_at", None)
             for shc in s_hooks_src:
-                if is_error_message_present(shc):
-                    self.log.warning(
+                if is_error_message_present(shc) or not shc:
+                    self.log.error(
                         "Failed to fetch source instance system hooks ({})".format(shc))
                     break
                 self.log.info("{0}Migrating system hook {1} (ID: {2})".format(
@@ -49,8 +49,8 @@ class HooksClient(BaseClass):
             hooks = iter(resp)
             self.log.info("Migrating project {} hooks".format(name))
             for h in hooks:
-                if is_error_message_present(h):
-                    self.log.warning(
+                if is_error_message_present(h) or not h:
+                    self.log.error(
                         "Failed to fetch hooks ({0}) for project {1}".format(h, name))
                     return False
                 h.pop("created_at", None)

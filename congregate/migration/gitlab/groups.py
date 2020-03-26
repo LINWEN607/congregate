@@ -1,9 +1,8 @@
 import json
 from requests.exceptions import RequestException
 
-from congregate.helpers import api
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import remove_dupes
+from congregate.helpers.misc_utils import remove_dupes, get_timedelta
 from congregate.migration.gitlab.variables import VariablesClient
 from congregate.migration.gitlab.badges import BadgesClient
 from congregate.migration.gitlab.api.groups import GroupsApi
@@ -167,12 +166,25 @@ class GroupsClient(BaseClass):
                     self.log.info(
                         "SKIP: Non-empty group {}".format(dest_full_path))
                 elif not dry_run:
+                    group = resp.json()
                     try:
-                        self.groups_api.delete_group(
-                            resp.json()["id"],
-                            self.config.destination_host,
-                            self.config.destination_token)
-                    except RequestException as re:
+                        if group.get("created_at", None):
+                            if get_timedelta(group["created_at"]) < self.config.max_asset_expiration_time:
+                                self.groups_api.delete_group(
+                                    group["id"],
+                                    self.config.destination_host,
+                                    self.config.destination_token)
+                            else:
+                                self.log.info("Ignoring %s. Group existed before %d hours" % (group["full_path"], self.config.max_asset_expiration_time))
+                        else:
+                            # TODO: Remove this block when the `created_at` field is properly exposed in the groups API
+                            self.log.warn("Unable to find timestamp for group %s. Deleting group anyway." % group["full_path"])
+                            self.groups_api.delete_group(
+                                    group["id"],
+                                    self.config.destination_host,
+                                    self.config.destination_token)
+
+                    except RequestException, re:
                         self.log.error(
                             "Failed to remove group {0}, with error:\n{1}".format(sg, re))
             else:
