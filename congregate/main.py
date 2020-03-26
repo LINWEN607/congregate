@@ -68,13 +68,13 @@ Arguments:
 
 Commands:
     list                                    List all projects of a source instance and save it to {CONGREGATE_PATH}/data/project_json.json.
-    config                                  Configure congregate for migrating between two instances and save it to {CONGREGATE_PATH}/data/config.json.
+    configure                               Configure congregate for migrating between two instances and save it to {CONGREGATE_PATH}/data/congregate.conf.
     stage                                   Stage projects to {CONGREGATE_PATH}/data/stage.json,
                                                 users to {CONGREGATE_PATH}/data/staged_users.json,
                                                 groups to {CONGREGATE_PATH}/data/staged_groups.json.
                                                 All projects can be staged with a '.' or 'all'.
     migrate                                 Commence migration based on configuration and staged assets.
-    rollback                                 Remove staged users/groups/projects on destination.
+    rollback                                Remove staged users/groups/projects on destination.
     ui                                      Deploy UI to port 8000.
     export-projects                         Export and update source instance projects. Bulk project export without user/group info.
     import-projects                         Import exported and updated projects onto destination instance. Destination user/group info required.

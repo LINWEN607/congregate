@@ -120,9 +120,15 @@ From **docker**:
 
 ```bash
 docker login registry.gitlab.com/gitlab-com/customer-success/tools/congregate:latest -u <user name> -p <personal token>
-docker run --name congregate -p 8000:8000 -it registry.gitlab.com/gitlab-com/customer-success/tools/congregate:latest /bin/bash
-congregate config
-congregate list
+docker run \
+--name <name> \
+-v /var/run/docker.sock:/var/run/docker.sock \ # expose docker socket as volume
+-v <path_to_local_storage>:/opt/congregate/data \ # expose data directory as volume
+-p 8000:8000 \ # expose UI port
+-it registry.gitlab.com/gitlab-com/customer-success/tools/congregate:latest \
+/bin/bash
+./congregate.sh configure
+./congregate.sh list
 ```
 
 To resume the container:
@@ -140,8 +146,8 @@ From **tar.gz**:
 
 ```bash
 tar -zxvf congregate-${version}.tar.gz
-export CONGREGATE_PATH=/path/to/congregate
-cp congregate /usr/local/bin
+export CONGREGATE_PATH=<path_to_congregate>
+cp congregate.sh /usr/local/bin
 ```
 
 From **source**:
@@ -150,15 +156,15 @@ From **source**:
 2. Run the following commands:
 
 ```bash
-cd /path/to/congregate
-export CONGREGATE_PATH=/path/to/congregate
-cp congregate /usr/local/bin
+cd <path_to_congregate>
+export CONGREGATE_PATH=<path_to_congregate>
+cp congregate.sh /usr/local/bin
 ```
 
 Run the following commands to configure congregate and retrieve info from the source instance:
 
 ```bash
-congregate config
+congregate configure
 congregate list
 ```
 
@@ -209,8 +215,8 @@ Usage:
     congregate validate-staged-groups-schema
     congregate validate-staged-projects-schema
     congregate map-users [--commit]
-    congregate generate-diff
-    congregate clean
+    congregate generate-diff [--staged]
+    congregate clean [--commit]
     congregate obfuscate
     congregate -h | --help
 
@@ -231,17 +237,17 @@ Arguments:
     skip-project-import                     Will do all steps up to import (export, re-write exported project json,
                                                 etc). Useful for testing export contents.
     access-level                            Update parent group level user permissions (Guest/Reporter/Developer/Maintainer/Owner).
-    staged                                  Compare two groups that are staged for migration.
+    staged                                  Compare using staged data
 
 Commands:
     list                                    List all projects of a source instance and save it to {CONGREGATE_PATH}/data/project_json.json.
-    config                                  Configure congregate for migrating between two instances and save it to {CONGREGATE_PATH}/data/config.json.
+    configure                               Configure congregate for migrating between two instances and save it to {CONGREGATE_PATH}/data/congregate.conf.
     stage                                   Stage projects to {CONGREGATE_PATH}/data/stage.json,
                                                 users to {CONGREGATE_PATH}/data/staged_users.json,
                                                 groups to {CONGREGATE_PATH}/data/staged_groups.json.
                                                 All projects can be staged with a '.' or 'all'.
     migrate                                 Commence migration based on configuration and staged assets.
-    rollback                                 Remove staged users/groups/projects on destination.
+    rollback                                Remove staged users/groups/projects on destination.
     ui                                      Deploy UI to port 8000.
     export-projects                         Export and update source instance projects. Bulk project export without user/group info.
     import-projects                         Import exported and updated projects onto destination instance. Destination user/group info required.
