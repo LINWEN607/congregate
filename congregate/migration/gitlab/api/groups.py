@@ -2,9 +2,13 @@ import json
 
 from urllib import quote_plus
 from congregate.helpers import api
+from congregate.migration.gitlab.api.users import UsersApi
 
 
 class GroupsApi():
+    def __init__(self):
+        self.users = UsersApi()
+
     def get_group(self, gid, host, token):
         """
         Get all details of a group
@@ -103,7 +107,11 @@ class GroupsApi():
             :param: token: (str) Access token to GitLab instance
             :yield: Response object containing the response to GET /groups/:id/members
         """
-        return api.list_all(host, token, "groups/%d/members" % gid)
+        members = []
+        for member in api.list_all(host, token, "groups/%d/members" % gid):
+            member["email"] = self.users.get_user_email(member["id"], host, token)
+            members.append(member)
+        return members
 
     def update_member_access_level(self, host, token, gid, uid, level):
         return api.generate_put_request(host, token, "groups/{0}/members/{1}?access_level={2}".format(gid, uid, level), data=None)
@@ -210,7 +218,11 @@ class GroupsApi():
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /groups/:id/members/all
         """
-        return api.list_all(host, token, "groups/%d/members/all" % gid)
+        members = []
+        for member in api.list_all(host, token, "groups/%d/members/all" % gid):
+            member["email"] = self.users.get_user_email(member["id"], host, token)
+            members.append(member)
+        return members
 
     def get_all_group_issue_boards(self, gid, host, token):
         """

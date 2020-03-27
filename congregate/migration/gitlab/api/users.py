@@ -16,6 +16,9 @@ class UsersApi():
             :return: Response object containing the response to GET /users/:id
         """
         return api.generate_get_request(host, token, "users/%d" % id)
+    
+    def get_user_email(self, id, host, token):
+        return self.get_user(id, host, token).json()["email"]
 
     def get_current_user(self, host, token):
         """

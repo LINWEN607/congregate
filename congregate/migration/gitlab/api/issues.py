@@ -43,7 +43,7 @@ class IssuesApi(BaseClass):
         """
         return api.generate_get_request(host, token, "projects/%d/issues/%d" % (project_id, issue_iid))
 
-    def get_all_project_issue_notes(self, pid, iid, host, token):
+    def get_all_project_issue_notes(self, host, token, pid, iid):
         """
         Gets a list of all notes for a single issue
 
