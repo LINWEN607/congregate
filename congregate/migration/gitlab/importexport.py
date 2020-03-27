@@ -22,6 +22,15 @@ from congregate.helpers.migrate_utils import get_project_namespace, is_user_proj
 
 
 class ImportExportClient(BaseClass):
+    ERROR_MESSAGES = [
+        "This endpoint has been requested too many times",
+        "404 Namespace Not Found",
+        "The project is still being deleted"
+    ]
+
+    # TODO: Set to 5 min (https://gitlab.com/gitlab-org/gitlab/-/merge_requests/26903)
+    COOL_OFF_MINUTES = 10 * 1.1  # Padding
+
     def __init__(self):
         super(ImportExportClient, self).__init__()
         self.aws = self.get_AwsClient()
@@ -189,11 +198,10 @@ class ImportExportClient(BaseClass):
         if not dry_run:
             import_response = self.attempt_import(
                 filename, name, path, dst_namespace, override_params)
-            if "Try again later" in import_response:
-                self.log.warning(
-                    "Re-importing project {0} to {1}, waiting 10 minutes due to:\n{2}".format(name, dst_namespace, import_response))
-                # TODO: Set to 5 min (https://gitlab.com/gitlab-org/gitlab/-/merge_requests/26903)
-                sleep(720)
+            if any(err_msg in str(import_response) for err_msg in self.ERROR_MESSAGES):
+                self.log.warning("Re-importing project {0} to {1}, waiting {2} minutes due to:\n{3}".format(
+                    name, dst_namespace, self.COOL_OFF_MINUTES, import_response))
+                sleep(self.COOL_OFF_MINUTES * 60)
                 import_response = self.attempt_import(
                     filename, name, path, dst_namespace, override_params)
             elif is_error_message_present(import_response) or not import_response:
@@ -385,11 +393,10 @@ class ImportExportClient(BaseClass):
                 if not retry:
                     import_response = json.loads(import_response)
                     # There is a small chance that the re-import exceeds the rate limit
-                    if "Try again later" in import_response:
-                        self.log.warning(
-                            "Re-importing project {0} to {1}, waiting 10 minutes due to:\n{2}".format(name, dst_namespace, import_response))
-                        # TODO: Set to 5 min (https://gitlab.com/gitlab-org/gitlab/-/merge_requests/26903)
-                        sleep(720)
+                    if any(err_msg in str(import_response) for err_msg in self.ERROR_MESSAGES):
+                        self.log.warning("Re-importing project {0} to {1}, waiting {2} minutes due to:\n{3}".format(
+                            name, dst_namespace, self.COOL_OFF_MINUTES, import_response))
+                        sleep(self.COOL_OFF_MINUTES * 60)
                         timeout = 0
                         import_response = self.attempt_import(
                             filename, name, path, dst_namespace, override_params)
@@ -417,9 +424,9 @@ class ImportExportClient(BaseClass):
                                     name, dst_namespace, json_pretty(status_json)))
                                 self.projects_api.delete_project(
                                     self.config.destination_host, self.config.destination_token, import_id)
+                                retry = False
                                 sleep(wait_time)
                                 timeout = 0
-                                retry = False
                                 import_response = self.attempt_import(
                                     filename, name, path, dst_namespace, override_params)
                             else:
