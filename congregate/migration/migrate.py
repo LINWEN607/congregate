@@ -6,6 +6,7 @@
 
 import os
 import json
+import traceback
 from re import sub
 from multiprocessing.dummy import Pool as ThreadPool
 from multiprocessing import Lock
@@ -206,28 +207,32 @@ def handle_exporting_groups(group, dry_run=True):
     loc = b.config.location.lower()
     dry_log = get_dry_log(dry_run)
     try:
-        filename = migrate_utils.get_export_filename_from_namespace_and_name(
-            full_path)
-        if loc not in ["filesystem", "aws"]:
-            raise Exception("Unsupported export location: {}".format(loc))
-        exported = False
-        b.log.info("{0}Exporting group {1} (ID: {2}) as {3}"
-                   .format(dry_log, full_path, gid, filename))
-        if loc == "filesystem":
-            exported = ie.export_group_thru_filesystem(
-                gid, full_path, full_parent_namespace, filename) if not dry_run else True
-        # TODO: Refactor and sync with other scenarios (#119)
-        elif loc == "filesystem-aws":
-            b.log.error(
-                "NOTICE: Filesystem-AWS exports are not currently supported")
-        # NOTE: Group export does not yet support AWS (S3) user attributes
-        elif loc == "aws":
-            b.log.error(
-                "NOTICE: AWS group exports are not currently supported")
-        return {"filename": filename, "exported": exported}
-    except (IOError, RequestException) as e:
-        b.log.error("Failed to export group {0} (ID: {1}) to {2} with error:\n{3}".format(
-            full_path, gid, loc, e))
+        try:
+            filename = migrate_utils.get_export_filename_from_namespace_and_name(
+                full_path)
+            if loc not in ["filesystem", "aws"]:
+                raise Exception("Unsupported export location: {}".format(loc))
+            exported = False
+            b.log.info("{0}Exporting group {1} (ID: {2}) as {3}"
+                    .format(dry_log, full_path, gid, filename))
+            if loc == "filesystem":
+                exported = ie.export_group_thru_filesystem(
+                    gid, full_path, full_parent_namespace, filename) if not dry_run else True
+            # TODO: Refactor and sync with other scenarios (#119)
+            elif loc == "filesystem-aws":
+                b.log.error(
+                    "NOTICE: Filesystem-AWS exports are not currently supported")
+            # NOTE: Group export does not yet support AWS (S3) user attributes
+            elif loc == "aws":
+                b.log.error(
+                    "NOTICE: AWS group exports are not currently supported")
+            return {"filename": filename, "exported": exported}
+        except (IOError, RequestException) as e:
+            b.log.error("Failed to export group {0} (ID: {1}) to {2} with error:\n{3}".format(
+                full_path, gid, loc, e))
+    except Exception as e:
+       b.log.error(e)
+       b.log.error(traceback.print_exc)
 
 
 def handle_importing_groups(group, dry_run=True):
@@ -236,43 +241,47 @@ def handle_importing_groups(group, dry_run=True):
     results = {
         full_path: False
     }
-    if isinstance(group, str):
-        group = json.loads(group)
-    full_path_with_parent_namespace = "{0}{1}".format(
-        full_parent_namespace + "/" if full_parent_namespace else "", full_path)
-    b.log.info("Searching on destination for group {}".format(
-        full_path_with_parent_namespace))
     try:
-        filename = migrate_utils.get_export_filename_from_namespace_and_name(
-            full_path)
-        dst_gid = groups.find_group_by_path(
-            b.config.destination_host, b.config.destination_token, full_path_with_parent_namespace)
-        if dst_gid:
-            b.log.info("{0}Group {1} (ID: {2}) already exists on destination".format(
-                get_dry_log(dry_run), full_path, dst_gid))
-        else:
-            b.log.info("{0}Group {1} NOT found on destination, importing..."
-                       .format(get_dry_log(dry_run), full_path_with_parent_namespace))
-            ie.import_group(
-                group, full_path_with_parent_namespace, filename, dry_run)
-            # In place of checking the import status
-            if not dry_run:
-                results[full_path] = ie.wait_for_group_import(
-                    full_path_with_parent_namespace)
-                if results[full_path] and results[full_path].get("id", None):
-                    # Migrate CI/CD Variables
-                    variables.migrate_variables(
-                        results[full_path]["id"], src_gid, "group", full_path)
-                    # Remove import user
-                    groups.remove_import_user(results[full_path]["id"])
-    except RequestException, e:
-        b.log.error(e)
-    except KeyError as e:
-        b.log.error(e)
-        raise KeyError("Something broke in handle_importing_groups group {0} (ID: {1})".format(
-            full_path, src_gid))
-    except OverflowError as e:
-        b.log.error(e)
+        if isinstance(group, str):
+            group = json.loads(group)
+        full_path_with_parent_namespace = "{0}{1}".format(
+            full_parent_namespace + "/" if full_parent_namespace else "", full_path)
+        b.log.info("Searching on destination for group {}".format(
+            full_path_with_parent_namespace))
+        try:
+            filename = migrate_utils.get_export_filename_from_namespace_and_name(
+                full_path)
+            dst_gid = groups.find_group_by_path(
+                b.config.destination_host, b.config.destination_token, full_path_with_parent_namespace)
+            if dst_gid:
+                b.log.info("{0}Group {1} (ID: {2}) already exists on destination".format(
+                    get_dry_log(dry_run), full_path, dst_gid))
+            else:
+                b.log.info("{0}Group {1} NOT found on destination, importing..."
+                        .format(get_dry_log(dry_run), full_path_with_parent_namespace))
+                ie.import_group(
+                    group, full_path_with_parent_namespace, filename, dry_run)
+                # In place of checking the import status
+                if not dry_run:
+                    results[full_path] = ie.wait_for_group_import(
+                        full_path_with_parent_namespace)
+                    if results[full_path] and results[full_path].get("id", None):
+                        # Migrate CI/CD Variables
+                        variables.migrate_variables(
+                            results[full_path]["id"], src_gid, "group", full_path)
+                        # Remove import user
+                        groups.remove_import_user(results[full_path]["id"])
+        except RequestException, e:
+            b.log.error(e)
+        except KeyError as e:
+            b.log.error(e)
+            raise KeyError("Something broke in handle_importing_groups group {0} (ID: {1})".format(
+                full_path, src_gid))
+        except OverflowError as e:
+            b.log.error(e)
+    except Exception as e:
+       b.log.error(e)
+       b.log.error(traceback.print_exc)
     return results
 
 
@@ -356,28 +365,32 @@ def handle_exporting_projects(project, dry_run=True):
     loc = b.config.location.lower()
     dry_log = get_dry_log(dry_run)
     try:
-        filename = migrate_utils.get_export_filename_from_namespace_and_name(
-            namespace, name)
-        if loc not in ["filesystem", "aws"]:
-            raise Exception("Unsupported export location: {}".format(loc))
-        exported = False
-        b.log.info("{0}Exporting project {1} (ID: {2}) as {3}"
-                   .format(dry_log, project["path_with_namespace"], pid, filename))
-        if loc == "filesystem":
-            exported = ie.export_project_thru_filesystem(
-                pid, name, namespace) if not dry_run else True
-        # TODO: Refactor and sync with other scenarios (#119)
-        elif loc == "filesystem-aws":
-            b.log.error(
-                "NOTICE: Filesystem-AWS exports are not currently supported")
-            # exported = ie.export_thru_fs_aws(pid, name, namespace) if not dry_run else True
-        elif loc == "aws":
-            exported = ie.export_project_thru_aws(
-                project) if not dry_run else True
-        return {"filename": filename, "exported": exported}
-    except (IOError, RequestException) as e:
-        b.log.error("Failed to export project (ID: {0}) to {1} with error:\n{2}"
-                    .format(pid, loc, e))
+        try:
+            filename = migrate_utils.get_export_filename_from_namespace_and_name(
+                namespace, name)
+            if loc not in ["filesystem", "aws"]:
+                raise Exception("Unsupported export location: {}".format(loc))
+            exported = False
+            b.log.info("{0}Exporting project {1} (ID: {2}) as {3}"
+                    .format(dry_log, project["path_with_namespace"], pid, filename))
+            if loc == "filesystem":
+                exported = ie.export_project_thru_filesystem(
+                    pid, name, namespace) if not dry_run else True
+            # TODO: Refactor and sync with other scenarios (#119)
+            elif loc == "filesystem-aws":
+                b.log.error(
+                    "NOTICE: Filesystem-AWS exports are not currently supported")
+                # exported = ie.export_thru_fs_aws(pid, name, namespace) if not dry_run else True
+            elif loc == "aws":
+                exported = ie.export_project_thru_aws(
+                    project) if not dry_run else True
+            return {"filename": filename, "exported": exported}
+        except (IOError, RequestException) as e:
+            b.log.error("Failed to export project (ID: {0}) to {1} with error:\n{2}"
+                        .format(pid, loc, e))
+    except Exception as e:
+        b.log.error(e)
+        b.log.error(traceback.print_exc)
 
 
 def handle_importing_projects(project_json, dry_run=True):
@@ -390,48 +403,52 @@ def handle_importing_projects(project_json, dry_run=True):
     results = {
         path: False
     }
-    if isinstance(project_json, str):
-        project_json = json.loads(project_json)
-    b.log.info("Searching on destination for project {}".format(
-        dst_path_with_namespace))
     try:
-        dst_pid = projects.find_project_by_path(
-            b.config.destination_host, b.config.destination_token, dst_path_with_namespace)
-        if dst_pid:
-            import_status = projects_api.get_project_import_status(
-                b.config.destination_host, b.config.destination_token, dst_pid).json()
-            b.log.info("Project {0} (ID: {1}) found on destination, with import status: {2}".format(
-                dst_path_with_namespace, dst_pid, import_status))
-        else:
-            b.log.info("{0}Project {1} (ID: {2}) NOT found on destination, importing..."
-                       .format(get_dry_log(dry_run), dst_path_with_namespace, project_id))
-            import_id = ie.import_project(project_json, dry_run)
-            if import_id and not dry_run:
-                # Archived projects cannot be migrated
-                if archived:
+        if isinstance(project_json, str):
+            project_json = json.loads(project_json)
+        b.log.info("Searching on destination for project {}".format(
+            dst_path_with_namespace))
+        try:
+            dst_pid = projects.find_project_by_path(
+                b.config.destination_host, b.config.destination_token, dst_path_with_namespace)
+            if dst_pid:
+                import_status = projects_api.get_project_import_status(
+                    b.config.destination_host, b.config.destination_token, dst_pid).json()
+                b.log.info("Project {0} (ID: {1}) found on destination, with import status: {2}".format(
+                    dst_path_with_namespace, dst_pid, import_status))
+            else:
+                b.log.info("{0}Project {1} (ID: {2}) NOT found on destination, importing..."
+                        .format(get_dry_log(dry_run), dst_path_with_namespace, project_id))
+                import_id = ie.import_project(project_json, dry_run)
+                if import_id and not dry_run:
+                    # Archived projects cannot be migrated
+                    if archived:
+                        b.log.info(
+                            "Unarchiving source project {0} (ID: {1})".format(path, src_id))
+                        projects.projects_api.unarchive_project(
+                            b.config.source_host, b.config.source_token, src_id)
                     b.log.info(
-                        "Unarchiving source project {0} (ID: {1})".format(path, src_id))
-                    projects.projects_api.unarchive_project(
-                        b.config.source_host, b.config.source_token, src_id)
+                        "Migrating source project {0} (ID: {1}) info".format(path, src_id))
+                    post_import_results = migrate_single_project_info(
+                        project_json, import_id)
+                    results[path] = post_import_results
+        except RequestException as e:
+            b.log.error(e)
+        except KeyError as e:
+            b.log.error(e)
+            raise KeyError("Something broke in handle_importing_projects project {0} (ID: {1})"
+                        .format(path, src_id))
+        except OverflowError as e:
+            b.log.error(e)
+        finally:
+            if archived and not dry_run:
                 b.log.info(
-                    "Migrating source project {0} (ID: {1}) info".format(path, src_id))
-                post_import_results = migrate_single_project_info(
-                    project_json, import_id)
-                results[path] = post_import_results
-    except RequestException as e:
+                    "Archiving back source project {0} (ID: {1})".format(path, src_id))
+                projects.projects_api.archive_project(
+                    b.config.source_host, b.config.source_token, src_id)
+    except Exception as e:
         b.log.error(e)
-    except KeyError as e:
-        b.log.error(e)
-        raise KeyError("Something broke in handle_importing_projects project {0} (ID: {1})"
-                       .format(path, src_id))
-    except OverflowError as e:
-        b.log.error(e)
-    finally:
-        if archived and not dry_run:
-            b.log.info(
-                "Archiving back source project {0} (ID: {1})".format(path, src_id))
-            projects.projects_api.archive_project(
-                b.config.source_host, b.config.source_token, src_id)
+        b.log.error(traceback.print_exc)
     return results
 
 
