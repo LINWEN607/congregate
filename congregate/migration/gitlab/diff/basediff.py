@@ -121,7 +121,6 @@ class BaseDiffClient(BaseClass):
             else:
                 destination_data = self.generate_empty_data(
                     source_data)
-
             return self.diff(source_data, destination_data, critical_key=critical_key, obfuscate=obfuscate)
 
         return self.empty_diff()
@@ -202,26 +201,29 @@ class BaseDiffClient(BaseClass):
             }
 
     def ignore_keys(self, data):
-        if isinstance(data, list):
-            for i, _ in enumerate(data):
-                if isinstance(data[i], str) or isinstance(data[i], unicode):
-                    return data
-                data[i] = self.ignore_keys(data[i])
-        else:
-            for key in self.keys_to_ignore:
-                if key in data:
-                    data.pop(key)
-        return data
+        if data is not None:
+            if isinstance(data, list):
+                for i, _ in enumerate(data):
+                    if isinstance(data[i], str) or isinstance(data[i], unicode):
+                        return data
+                    data[i] = self.ignore_keys(data[i])
+            else:
+                for key in self.keys_to_ignore:
+                    if key in data:
+                        data.pop(key)
+            return data
+        return {}
 
     def obfuscate_values(self, obj):
-        keys_to_obfuscate = [
-            "value",
-            "key",
-            "runners_token"
-        ]
-        for key in keys_to_obfuscate:
-            if key in obj:
-                obj[key] = base64.b64encode(obj[key])
+        if isinstance(obj, dict):
+            keys_to_obfuscate = [
+                "value",
+                "key",
+                "runners_token"
+            ]
+            for key in keys_to_obfuscate:
+                if key in obj:
+                    obj[key] = base64.b64encode(obj[key])
 
         return obj
 
@@ -245,19 +247,19 @@ class BaseDiffClient(BaseClass):
         return accuracies
 
     def generate_cleaned_instance_data(self, instance_data):
-        if isinstance(instance_data, GeneratorType):
-            try:
-                instance_data = self.ignore_keys(list(instance_data))
-                instance_data.sort()
-            except TypeError:
-                self.log.error(
-                    "Unable to generate cleaned instance data. Returning empty list")
-                return []
-        elif isinstance(instance_data, list):
-            instance_data = sorted(self.ignore_keys(instance_data))
-        else:
-            instance_data = sorted(self.ignore_keys(instance_data.json()))
-        
+        if instance_data is not None:
+            if isinstance(instance_data, GeneratorType):
+                try:
+                    instance_data = self.ignore_keys(list(instance_data))
+                    instance_data.sort()
+                except TypeError:
+                    self.log.error(
+                        "Unable to generate cleaned instance data. Returning empty list")
+                    return []
+            elif isinstance(instance_data, list):
+                instance_data = sorted(self.ignore_keys(instance_data))
+            else:
+                instance_data = sorted(self.ignore_keys(instance_data.json()))
         return instance_data
 
     def generate_empty_data(self, source):
