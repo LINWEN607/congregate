@@ -72,11 +72,9 @@ class ProjectsApi():
             :yield: Generator containing JSON results from GET /projects
 
         """
-        members = []
         for member in api.list_all(host, token, "projects/%d/members" % id):
             member["email"] = self.users.get_user_email(member["id"], host, token)
-            members.append(member)
-        return members
+            yield member
 
     def add_member(self, id, host, token, member):
         """
@@ -293,11 +291,9 @@ class ProjectsApi():
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /projects/:id/members/all
         """
-        members = []
         for member in api.list_all(host, token, "projects/%d/members/all" % id):
             member["email"] = self.users.get_user_email(member["id"], host, token)
-            members.append(member)
-        return members
+            yield member
 
     def get_all_project_starrers(self, id, host, token):
         """

@@ -256,8 +256,8 @@ class BaseDiffClient(BaseClass):
             instance_data = self.ignore_keys(instance_data)
         else:
             instance_data = self.ignore_keys(instance_data.json())
-        instance_data.sort()
-        return instance_data
+        
+        return sorted(instance_data)
 
     def generate_empty_data(self, source):
         if isinstance(source, list):
