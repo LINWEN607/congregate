@@ -324,3 +324,7 @@ def get_timedelta(timestamp):
         created_at = datetime.strptime(timestamp.split(".")[0], '%Y-%m-%dT%H:%M:%S')
     now = datetime.now()
     return (now - created_at).days * 24
+
+def list_to_dict(lst): 
+    res_dct = {lst[i]: True for i in range(0, len(lst), 2)} 
+    return res_dct 

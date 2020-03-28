@@ -1,11 +1,11 @@
 import json
 import base64
 from types import GeneratorType
-from opslib.icsutils.jsondiff import Comparator
 from bs4 import BeautifulSoup as bs
 from json2html import json2html
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.misc_utils import find as nested_find, is_error_message_present
+from congregate.helpers.jsondiff import Comparator
 
 
 class BaseDiffClient(BaseClass):
