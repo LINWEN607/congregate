@@ -94,17 +94,23 @@ def migrate(
         if not skip_users:
             users.migrate_user_info(dry_run=_DRY_RUN, threads=_THREADS)
 
-        # Migrate system hooks (except for gitlab.com)
-        if is_dot_com(b.config.destination_host):
-            hooks.migrate_system_hooks()
-
         # Migrate groups
         migrate_group_info(skip_group_export, skip_group_import)
 
         # Migrate projects
         migrate_project_info(skip_project_export, skip_project_import)
 
+        # Migrate system hooks (except for gitlab.com)
+        if is_dot_com(b.config.destination_host):
+            hooks.migrate_system_hooks()
+
         add_post_migration_stats()
+
+
+def are_results(results, var, stage):
+    if not results:
+        raise Exception(
+            "Results from {0} {1} returned as empty. Aborting.".format(var, stage))
 
 
 def migrate_group_info(skip_group_export=False, skip_group_import=False):
@@ -116,10 +122,7 @@ def migrate_group_info(skip_group_export=False, skip_group_import=False):
             export_results = start_multi_process(
                 handle_exporting_groups, staged_groups, threads=_THREADS)
 
-            # Create list of groups that failed export
-            if not export_results:
-                raise Exception(
-                    "Results from exporting groups returned as empty. Aborting.")
+            are_results(export_results, "group", "export")
 
             # Append total count of groups exported
             export_results.append(
@@ -127,6 +130,7 @@ def migrate_group_info(skip_group_export=False, skip_group_import=False):
             b.log.info("### {0}Group export results ###\n{1}"
                        .format(dry_log, json_pretty(export_results)))
 
+            # Create list of groups that failed export
             failed = migrate_utils.get_failed_export_from_results(
                 export_results)
             b.log.warning("The following groups (group.json) failed to export and will not be imported:\n{0}"
@@ -141,6 +145,8 @@ def migrate_group_info(skip_group_export=False, skip_group_import=False):
             b.log.info("{}Importing groups".format(dry_log))
             import_results = start_multi_process(
                 handle_importing_groups, staged_groups, threads=_THREADS)
+
+            are_results(import_results, "group", "import")
 
             # append Total : Successful count of groups imports
             import_results.append({
@@ -248,12 +254,15 @@ def migrate_project_info(skip_project_export=False, skip_project_import=False):
                 raise Exception(
                     "Results from exporting projects returned as empty. Aborting.")
 
+            are_results(export_results, "project", "export")
+
             # Append total count of projects exported
             export_results.append(
                 Counter(k for d in export_results for k, v in d.items() if v))
             b.log.info("### {0}Project export results ###\n{1}"
                        .format(dry_log, json_pretty(export_results)))
 
+            # Create list of projects that failed export
             failed = migrate_utils.get_failed_export_from_results(
                 export_results)
             b.log.warning("The following projects (project.json) failed to export and will not be imported:\n{0}"
@@ -269,6 +278,8 @@ def migrate_project_info(skip_project_export=False, skip_project_import=False):
             b.log.info("{}Importing projects".format(dry_log))
             import_results = start_multi_process(
                 handle_importing_projects, staged_projects, threads=_THREADS)
+
+            are_results(import_results, "project", "import")
 
             # append Total : Successful count of project imports
             import_results.append({

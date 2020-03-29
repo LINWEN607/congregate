@@ -207,7 +207,6 @@ def clean_data(dry_run=True, files=None):
         "project_diff.json",
         "migration_rollback_results.html",
         "new_users.json",
-        "new_user_ids.txt",
         "newer_users.json",
         "unknown_users.json",
         "groups_audit.json",
@@ -311,6 +310,7 @@ def add_post_migration_stats():
                 reqs_no += 1
         print("Total number of POST/PUT/DELETE requests: {}".format(reqs_no))
 
+
 def get_timedelta(timestamp):
     """
     Get timedelta between provided timestampe and current time
@@ -321,6 +321,7 @@ def get_timedelta(timestamp):
     try:
         created_at = datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%SZ')
     except ValueError:
-        created_at = datetime.strptime(timestamp.split(".")[0], '%Y-%m-%dT%H:%M:%S')
+        created_at = datetime.strptime(
+            timestamp.split(".")[0], '%Y-%m-%dT%H:%M:%S')
     now = datetime.now()
     return (now - created_at).days * 24

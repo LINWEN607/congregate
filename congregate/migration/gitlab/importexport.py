@@ -17,19 +17,13 @@ from congregate.migration.gitlab.groups import GroupsClient
 from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
+from congregate.migration.gitlab.api.namespaces import NamespacesApi
 from congregate.helpers.migrate_utils import get_project_namespace, is_user_project, \
     get_user_project_namespace, get_export_filename_from_namespace_and_name, get_dst_path_with_namespace
 
 
 class ImportExportClient(BaseClass):
-    ERROR_MESSAGES = [
-        "This endpoint has been requested too many times",
-        "404 Namespace Not Found",
-        "The project is still being deleted"
-    ]
-
-    # TODO: Set to 5 min (https://gitlab.com/gitlab-org/gitlab/-/merge_requests/26903)
-    COOL_OFF_MINUTES = 10 * 1.1  # Padding
+    COOL_OFF_MINUTES = 5 * 1.1  # Padding
 
     def __init__(self):
         super(ImportExportClient, self).__init__()
@@ -39,6 +33,7 @@ class ImportExportClient(BaseClass):
         self.projects_api = ProjectsApi()
         self.groups_api = GroupsApi()
         self.users_api = UsersApi()
+        self.namespaces_api = NamespacesApi()
         self.keys_map = self.get_keys()
 
     def get_AwsClient(self):
@@ -198,16 +193,30 @@ class ImportExportClient(BaseClass):
         if not dry_run:
             import_response = self.attempt_import(
                 filename, name, path, dst_namespace, override_params)
-            if not import_response or is_error_message_present(import_response):
-                self.log.error("Project {0} failed to import to {1}, due to:\n{2}".format(
-                    name, dst_namespace, import_response))
-                return None
-            elif any(err_msg in str(import_response) for err_msg in self.ERROR_MESSAGES):
+            if "This endpoint has been requested too many times" in str(import_response):
                 self.log.warning("Re-importing project {0} to {1}, waiting {2} minutes due to:\n{3}".format(
                     name, dst_namespace, self.COOL_OFF_MINUTES, import_response))
                 sleep(self.COOL_OFF_MINUTES * 60)
                 import_response = self.attempt_import(
                     filename, name, path, dst_namespace, override_params)
+            elif "404 Namespace Not Found" in str(import_response):
+                timeout = 0
+                wait_time = self.config.importexport_wait
+                while self.namespaces_api.get_namespace_by_full_path(dst_namespace, self.config.destination_host, self.config.destination_token).status_code != 200:
+                    self.log.info("Waiting {0} seconds to create {1} for project {2}".format(
+                        self.config.importexport_wait, dst_namespace, name))
+                    timeout += wait_time
+                    sleep(wait_time)
+                    if timeout > self.config.max_export_wait_time:
+                        self.log.error("Project {0} failed to import to {1}, due to:\n{2}".format(
+                            name, dst_namespace, import_response))
+                        return None
+                import_response = self.attempt_import(
+                    filename, name, path, dst_namespace, override_params)
+            elif not import_response or is_error_message_present(import_response):
+                self.log.error("Project {0} failed to import to {1}, due to:\n{2}".format(
+                    name, dst_namespace, import_response))
+                return None
             import_id = self.get_import_id_from_response(
                 import_response, filename, name, path, dst_namespace, override_params)
         else:
@@ -260,6 +269,8 @@ class ImportExportClient(BaseClass):
                         name, namespace, downloaded_filename)
         elif self.config.location == "filesystem":
             resp = None
+            self.log.info(
+                "Importing project {0} from filesystem to {1}".format(name, namespace))
             try:
                 # Handle large files
                 with open("%s/downloads/%s" % (self.config.filesystem_path, filename), "rb") as f:
@@ -335,6 +346,7 @@ class ImportExportClient(BaseClass):
 
     def attempt_group_import(self, filename, name, path):
         resp = None
+        self.log.info("Importing group {} from filesystem".format(name))
         # NOTE: Group export does not yet support (AWS/S3) user attributes
         if self.config.location == "aws":
             pass
@@ -390,19 +402,13 @@ class ImportExportClient(BaseClass):
         import_response = json.loads(import_response)
         while True:
             try:
-                if not retry:
-                    # There is a small chance that the re-import exceeds the rate limit
-                    if not import_response or is_error_message_present(import_response):
-                        self.log.error("Project {0} failed to re-import to {1}, due to:\n{2}".format(
-                            name, dst_namespace, import_response))
-                        return None
-                    elif any(err_msg in str(import_response) for err_msg in self.ERROR_MESSAGES):
-                        self.log.warning("Re-importing project {0} to {1} (retry), waiting {2} minutes due to:\n{3}".format(
-                            name, dst_namespace, self.COOL_OFF_MINUTES, import_response))
-                        sleep(self.COOL_OFF_MINUTES * 60)
-                        timeout = 0
-                        import_response = self.attempt_import(
-                            filename, name, path, dst_namespace, override_params)
+                # There is a small chance that the re-import exceeds the rate limit
+                if not retry and "This endpoint has been requested too many times" in str(import_response):
+                    self.log.warning("Re-importing project {0} to {1}, waiting {2} minutes due to:\n{3}".format(
+                        name, dst_namespace, self.COOL_OFF_MINUTES, import_response))
+                    sleep(self.COOL_OFF_MINUTES * 60)
+                    import_response = self.attempt_import(
+                        filename, name, path, dst_namespace, override_params)
                     import_response = json.loads(import_response)
                 import_id = import_response.get("id", None)
                 if import_id:
@@ -419,18 +425,22 @@ class ImportExportClient(BaseClass):
                                 name, dst_namespace, " (re-importing)" if retry else "", json_pretty(status_json)))
                             # Delete and re-import once if the project import status failed, otherwise just delete
                             if retry:
-                                self.log.info("Deleting project {0} from {1} after import status failed (re-importing), due to:\n{2}".format(
-                                    name, dst_namespace, json_pretty(status_json)))
+                                self.log.info("Deleting project {0} from {1} after import status failed (re-importing)".format(
+                                    name, dst_namespace))
                                 self.projects_api.delete_project(
                                     self.config.destination_host, self.config.destination_token, import_id)
+                                while self.projects_api.get_project(import_id, self.config.destination_host, self.config.destination_token).status_code != 404:
+                                    self.log.info(
+                                        "Waiting {0} seconds for project {1} to delete from {2} before re-importing".format(wait_time, name, dst_namespace))
+                                    sleep(wait_time)
                                 retry = False
-                                sleep(wait_time)
                                 timeout = 0
                                 import_response = self.attempt_import(
                                     filename, name, path, dst_namespace, override_params)
+                                import_response = json.loads(import_response)
                             else:
-                                self.log.info("Deleting project {0} from {1} after re-import status failed, due to:\n{2}".format(
-                                    name, dst_namespace, json_pretty(status_json)))
+                                self.log.info("Deleting project {0} from {1} after re-import status failed".format(
+                                    name, dst_namespace))
                                 self.projects_api.delete_project(
                                     self.config.destination_host, self.config.destination_token, import_id)
                                 return None

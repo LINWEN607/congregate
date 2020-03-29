@@ -20,8 +20,7 @@ def generate_v4_request_header(token):
 
 
 @stable_retry
-def generate_get_request(host, token, api, url=None,
-                         params=None, stream=False):
+def generate_get_request(host, token, api, url=None, params=None, stream=False):
     """
     Generates GET request to GitLab API.
     You will need to provide the GL host, access token, and specific api url.
