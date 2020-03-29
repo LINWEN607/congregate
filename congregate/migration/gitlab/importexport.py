@@ -429,15 +429,23 @@ class ImportExportClient(BaseClass):
                                     name, dst_namespace))
                                 self.projects_api.delete_project(
                                     self.config.destination_host, self.config.destination_token, import_id)
-                                while self.projects_api.get_project(import_id, self.config.destination_host, self.config.destination_token).status_code != 404:
-                                    self.log.info(
-                                        "Waiting {0} seconds for project {1} to delete from {2} before re-importing".format(wait_time, name, dst_namespace))
-                                    sleep(wait_time)
-                                retry = False
-                                timeout = 0
                                 import_response = self.attempt_import(
                                     filename, name, path, dst_namespace, override_params)
+                                total = 0
+                                while "The project is still being deleted" in str(import_response):
+                                    self.log.info(
+                                        "Waiting {0} seconds for project {1} to delete from {2} before re-importing".format(wait_time, name, dst_namespace))
+                                    total += wait_time
+                                    sleep(wait_time)
+                                    import_response = self.attempt_import(
+                                        filename, name, path, dst_namespace, override_params)
+                                    if total > self.config.max_export_wait_time:
+                                        self.log.error("Project {0} timed out while deleting from {1}, with response:\n{2}".format(
+                                            name, dst_namespace, import_response))
+                                        return None
                                 import_response = json.loads(import_response)
+                                retry = False
+                                timeout = 0
                             else:
                                 self.log.info("Deleting project {0} from {1} after re-import status failed".format(
                                     name, dst_namespace))
