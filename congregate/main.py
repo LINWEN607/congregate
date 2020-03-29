@@ -10,7 +10,6 @@ Usage:
     congregate rollback [--hard-delete] [--skip-users] [--skip-groups] [--skip-projects] [--commit]
     congregate ui
     congregate export-projects
-    congregate import-projects [--commit]
     congregate do-all [--commit]
     congregate do-all-users [--commit]
     congregate do-all-groups-and-projects [--commit]
@@ -38,7 +37,6 @@ Usage:
     congregate compare-groups [--staged]
     congregate staged-user-list
     congregate generate-seed-data [--commit] # TODO: Refactor, broken
-    congregate map-new-users-to-groups-and-projects [--commit]
     congregate validate-staged-groups-schema
     congregate validate-staged-projects-schema
     congregate map-users [--commit]
@@ -77,7 +75,6 @@ Commands:
     rollback                                Remove staged users/groups/projects on destination.
     ui                                      Deploy UI to port 8000.
     export-projects                         Export and update source instance projects. Bulk project export without user/group info.
-    import-projects                         Import exported and updated projects onto destination instance. Destination user/group info required.
     do-all*                                 Configure system, retrieve all projects, users, and groups, stage all information, and commence migration.
     update-staged-user-info                 Update staged user information after migrating only users.
     update-aws-creds                        Run awscli commands based on the keys stored in the config. Useful for docker updates.
@@ -104,8 +101,6 @@ Commands:
     archive-staged-projects                 Archive projects that are staged, not necessarily migrated.
     unarchive-staged-projects               Unarchive projects that are staged, not necessarily migrate.
     generate-seed-data                      Generate dummy data to test a migration.
-    map-new-users-to-groups-and-projects    Map new_users.json to the staged_groups.json and stage.json (projects) files without making API calls.
-                                                Requires that update-staged-user-info has been called, first, to create new_users.json.
     validate-staged-groups-schema           Check staged_groups.json for missing group data.
     validate-staged-projects-schema         Check stage.json for missing project data.
     clean                                   Delete all retrieved and staged data
@@ -278,9 +273,6 @@ if __name__ == '__main__':
                     log.warning("Missing access-level argument")
             if arguments["export-projects"]:
                 migrate.migrate_project_info(skip_project_import=True)
-            if arguments["import-projects"]:
-                migrate.migrate_project_info(
-                    dry_run=DRY_RUN, skip_project_export=True)
             if arguments["get-total-count"]:
                 print migrate.get_total_migrated_count()
             if arguments["find-unimported-projects"]:
@@ -330,8 +322,6 @@ if __name__ == '__main__':
             if arguments["generate-seed-data"]:
                 s = SeedDataGenerator()
                 s.generate_seed_data(dry_run=DRY_RUN)
-            if arguments["map-new-users-to-groups-and-projects"]:
-                users.map_new_users_to_groups_and_projects(dry_run=DRY_RUN)
             if arguments["validate-staged-groups-schema"]:
                 groups.validate_staged_groups_schema()
             if arguments["validate-staged-projects-schema"]:

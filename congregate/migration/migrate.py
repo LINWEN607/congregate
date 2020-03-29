@@ -90,6 +90,7 @@ def migrate(
         rotate_log()
 
         # Migrate users
+        # TODO: Replace threading with multiprocessing
         if not skip_users:
             users.migrate_user_info(dry_run=_DRY_RUN, threads=_THREADS)
 
@@ -427,6 +428,7 @@ def migrate_single_project_info(project, dst_id):
     return results
 
 
+# TODO: Add multiprocessing
 def rollback(dry_run=True,
              skip_users=False,
              hard_delete=False,

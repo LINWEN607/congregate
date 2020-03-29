@@ -1,5 +1,4 @@
 from os import path
-import copy
 import json
 from requests.exceptions import RequestException
 
@@ -7,7 +6,7 @@ from congregate.helpers.base_class import BaseClass
 from congregate.helpers import api
 from congregate.helpers.misc_utils import get_dry_log, json_pretty, get_timedelta
 from congregate.helpers.threads import handle_multi_thread
-from congregate.helpers.misc_utils import remove_dupes, migration_dry_run, is_error_message_present
+from congregate.helpers.misc_utils import remove_dupes, migration_dry_run
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.users import UsersApi
 
@@ -218,105 +217,6 @@ class UsersClient(BaseClass):
                 "Username suffix not set. Defaulting to a single underscore following the username")
             return "{0}_".format(username)
 
-    def update_users(self, obj, new_users, obj_type):
-        """
-        Scan the obj JSON (usually staged projects or staged groups) and replace old user ids
-        with the info from new_users. Calls to the source system to match those IDs based on email
-        :param obj: Usually the data from stage.json (projects) or staged_groups.json
-        :param new_users: The content of new_users.json (or similar) that will be used to find the destination ID
-        :return:
-        """
-
-        not_found_all = []
-        not_found_members = []
-        # An email-index dictionary of the new user objects
-        rewritten_users = {}
-        for i in range(len(new_users)):
-            new_obj = new_users[i]
-            user_email = str(new_users[i]["email"]).lower()
-
-            # Create a username based dictionary of the new_users.json objects
-            rewritten_users[user_email] = new_obj
-
-        for i in range(len(obj)):
-            self.log.info("Rewriting users for {0} {1}".format(
-                obj_type, obj[i]["name"]))
-            members = obj[i]["members"]
-            if isinstance(members, list):
-                for member in members:
-                    # Get the old user from the source system by ID
-                    self.log.info(
-                        "Searching on source for user ID {0}".format(member["id"]))
-                    old_user = self.users_api.get_user(
-                        member["id"], self.config.source_host, self.config.source_token)
-                    old_user = old_user.json()
-
-                    if old_user.get("email"):
-                        old_user_email = str(old_user.get("email")).lower()
-
-                        if rewritten_users.get(old_user_email, None) is not None:
-                            rewritten_user = rewritten_users[old_user_email]
-                            self.log.info("Searching on destination by ID {0} for user email {1}".format(
-                                rewritten_user["id"],
-                                old_user_email))
-                            new_user = self.users_api.get_user(
-                                rewritten_user["id"],
-                                self.config.destination_host,
-                                self.config.destination_token).json()
-                            if not is_error_message_present(new_user) and \
-                                    new_user.get("email", None) is not None and \
-                                    str(new_user["email"]).lower() == old_user_email:
-                                # If we find the user by new ID, and the emails match (as they should by this point
-                                # as these users are either newly created or found by email, earlier)
-                                # reassign the user ids in the object (staged project or staged group)
-                                # Assign the member id to the *new* member id. We've checked this
-                                # many times by this point, so some of the searches may be redundant, but sane
-                                member["id"] = rewritten_user["id"]
-                                continue
-
-                    # In all other cases, default the action to the import_user_id
-                    not_found_members.append(copy.deepcopy(member))
-                    member["id"] = self.config.import_user_id
-
-            not_found_all.append({obj[i]["name"]: not_found_members})
-            not_found_members = []
-
-        self.log.warning("Members NOT found in {0}s: {1}"
-                         .format(obj_type, json_pretty(not_found_all)))
-        return obj
-
-    def map_new_users_to_groups_and_projects(self, dry_run=True):
-        """
-        Kind of a dupe of update_new_users. Has the benefit of the dry_run flag
-        :param dry_run: If true, don't actually write the updates to stage or staged_groups
-        :return: Nothing
-        """
-        with open("%s/data/stage.json" % self.app_path, "r") as f:
-            staged_projects = json.load(f)
-
-        with open("%s/data/staged_groups.json" % self.app_path, "r") as f:
-            staged_groups = json.load(f)
-
-        new_users_dir = "{}/data/new_users.json".format(self.app_path)
-        if path.exists(new_users_dir):
-            with open(new_users_dir, "r") as f:
-                new_users = json.load(f)
-        else:
-            self.log.info("All users have already been migrated.")
-            return
-
-        staged_projects = self.update_users(
-            staged_projects, new_users, "project")
-        staged_groups = self.update_users(staged_groups, new_users, "group")
-
-        self.log.info("{}Mapping missing (destination) users to staged projects and groups"
-                      .format(get_dry_log(dry_run)))
-        if not dry_run:
-            with open("%s/data/stage.json" % self.app_path, "wb") as f:
-                json.dump(staged_projects, f, indent=4)
-            with open("%s/data/staged_groups.json" % self.app_path, "wb") as f:
-                json.dump(staged_groups, f, indent=4)
-
     def add_users_to_parent_group(self, dry_run=True):
         with open("%s/data/newer_users.json" % self.app_path, "r") as f:
             new_users = json.load(f)
@@ -487,58 +387,6 @@ class UsersClient(BaseClass):
 
         with open("%s/data/newer_users.json" % self.app_path, "wb") as f:
             json.dump(newer_users, f, indent=4)
-
-    def update_user_info(self, new_ids, overwrite=True):
-        """
-        Update the user ids in stage.json (projects) and staged_groups.json with the proper user ids via a call
-        to update_users as pulled from new_users.json.
-        By default, rewrite (overwrite) the new_users.json file before doing this with freshly found info based on the
-        ids
-        :param new_ids: The list of user ids from found (email) or created users
-        :param overwrite: Rewrite the new_users.json file with the user information returned from a find on
-                            new_ids. Default as True.
-        :return: No return
-        """
-
-        if overwrite:
-            with open("%s/data/new_users.json" % self.app_path, "w") as f:
-                new_users = []
-                for new_id in new_ids:
-                    new_user = self.users_api.get_user(
-                        new_id["id"], self.config.destination_host, self.config.destination_token).json()
-                    if isinstance(new_user, list):
-                        new_users.append(new_user[0])
-                    elif isinstance(new_user, dict):
-                        new_users.append(new_user)
-
-                root_index = None
-                for user in new_users:
-                    if user["id"] == 1:
-                        root_index = new_users.index(user)
-                        break
-                if root_index:
-                    new_users.pop(root_index)
-
-                json.dump(new_users, f, indent=4)
-
-        with open("%s/data/stage.json" % self.app_path, "r") as f:
-            staged_projects = json.load(f)
-
-        with open("%s/data/staged_groups.json" % self.app_path, "r") as f:
-            staged_groups = json.load(f)
-
-        with open("%s/data/new_users.json" % self.app_path, "r") as f:
-            new_users = json.load(f)
-
-        staged_projects = self.update_users(
-            staged_projects, new_users, "project")
-        staged_groups = self.update_users(staged_groups, new_users, "group")
-
-        with open("%s/data/stage.json" % self.app_path, "wb") as f:
-            json.dump(staged_projects, f, indent=4)
-
-        with open("%s/data/staged_groups.json" % self.app_path, "wb") as f:
-            json.dump(staged_groups, f, indent=4)
 
     def update_staged_user_info(self, dry_run=True):
         """
