@@ -108,8 +108,11 @@ class ImportExportClientTests(unittest.TestCase):
     @mock.patch('congregate.helpers.conf.Config.importexport_wait', new_callable=mock.PropertyMock)
     @mock.patch('congregate.migration.gitlab.importexport.ImportExportClient.attempt_import')
     @mock.patch.object(ProjectsApi, "get_project_import_status", side_effect=import_status_finished)
-    def test_get_import_id_from_response_finished_retry(self, mock_status, mock_import_response, wait):
-        wait.return_value = 0.01
+    @mock.patch.object(ProjectsApi, "get_project")
+    def test_get_import_id_from_response_finished_retry(self, get_project, mock_status, mock_import_response, wait):
+        nok_get_project = mock.MagicMock()
+        type(nok_get_project).status_code = mock.PropertyMock(return_value=404)
+        get_project.return_value = nok_get_project
         nok_status_mock = mock.MagicMock()
         type(nok_status_mock).status_code = mock.PropertyMock(return_value=200)
         nok_status_mock.json.return_value = {
@@ -121,6 +124,7 @@ class ImportExportClientTests(unittest.TestCase):
             "id": 111,
             "import_status": "finished"
         }
+        wait.return_value = 0.01
         import_id = self.ie.get_import_id_from_response(self.import_response, self.original_project_filename, self.original_project_name,
                                                         self.original_project_path, self.original_namespace_path, self.original_project_override_params)
         self.assertEqual(import_id, 12345)
@@ -128,8 +132,11 @@ class ImportExportClientTests(unittest.TestCase):
     @mock.patch('congregate.helpers.conf.Config.importexport_wait', new_callable=mock.PropertyMock)
     @mock.patch('congregate.migration.gitlab.importexport.ImportExportClient.attempt_import')
     @mock.patch.object(ProjectsApi, "get_project_import_status", side_effect=import_status_failed)
-    def test_get_import_id_from_response_failed_retry(self, mock_status, mock_import_response, wait):
-        wait.return_value = 0.01
+    @mock.patch.object(ProjectsApi, "get_project")
+    def test_get_import_id_from_response_failed_retry(self, get_project, mock_status, mock_import_response, wait):
+        nok_get_project = mock.MagicMock()
+        type(nok_get_project).status_code = mock.PropertyMock(return_value=404)
+        get_project.return_value = nok_get_project
         nok_status_mock = mock.MagicMock()
         type(nok_status_mock).status_code = mock.PropertyMock(return_value=200)
         nok_status_mock.json.return_value = {
@@ -141,6 +148,7 @@ class ImportExportClientTests(unittest.TestCase):
             "id": 222,
             "import_status": "failed"
         })
+        wait.return_value = 0.01
         import_id = self.ie.get_import_id_from_response(self.import_response, self.original_project_filename, self.original_project_name,
                                                         self.original_project_path, self.original_namespace_path, self.original_project_override_params)
         self.assertEqual(import_id, None)
