@@ -1,5 +1,5 @@
 from congregate.migration.bitbucket.client import handle_bitbucket_migration
-from congregate.migration.migrate import start_multi_thead
+from congregate.migration.migrate import start_multi_process
 from congregate.migration.mirror import MirrorClient
 from congregate.migration.verify import Verification
 from congregate.helpers import logger as log, api, conf
@@ -36,7 +36,7 @@ class OnDemand:
             for _, repo_data in bb_json.projects[self.project_key]["repos"].iteritems():
                 data.append(repo_data["metadata"])
             self.l.logger.debug(data)
-            start_multi_thead(handle_bitbucket_migration, data)
+            start_multi_process(handle_bitbucket_migration, data)
         else:
             for _, repo_data in bb_json.projects[self.project_key]["repos"].iteritems():
                 handle_bitbucket_migration(repo_data["metadata"])
@@ -47,7 +47,8 @@ class OnDemand:
             exit(1)
 
         for _, repo_data in bb_json.projects[self.project_key]["repos"].iteritems():
-            self.mark_as_read_only(migration_type, repo_data["metadata"]["web_repo_url"], repo_data["metadata"]["name"])
+            self.mark_as_read_only(
+                migration_type, repo_data["metadata"]["web_repo_url"], repo_data["metadata"]["name"])
 
         for err in self.v.errors:
             if "The git history may have diverged. Please sync your git history." in err or "User not authorized to mark" in err:
@@ -120,25 +121,28 @@ class OnDemand:
         gl = gitlab_repo()
         while attempt <= 4:
             re_attempt = False
-            verification_results = self.v.compare_multiple_repositories(self.bb_json.projects[self.project_key]["repos"])
+            verification_results = self.v.compare_multiple_repositories(
+                self.bb_json.projects[self.project_key]["repos"])
             print verification_results
             for k, v in verification_results["results"].iteritems():
                 if v is False:
                     verified = False
                     if attempt == 3:
                         self.l.logger.info("Manually pushing %s to GitLab" % k)
-                        self.hard_push(self.bb_json.projects[self.project_key]["repos"][k])
+                        self.hard_push(
+                            self.bb_json.projects[self.project_key]["repos"][k])
                     re_attempt = True
                 else:
                     self.l.logger.info("Removing mirror for %s" % k)
                     gitlab_id = gl.search_for_project(
-                        self.bb_json.projects[self.project_key]["repos"][k]["metadata"]["name"], 
-                        self.bb_json.projects[self.project_key]["repos"][k]["metadata"]["group"], 
+                        self.bb_json.projects[self.project_key]["repos"][k]["metadata"]["name"],
+                        self.bb_json.projects[self.project_key]["repos"][k]["metadata"]["group"],
                         self.bb_json.projects[self.project_key]["repos"][k]["metadata"]["name"])
                     m.remove_mirror(gitlab_id)
 
             if re_attempt is True:
-                self.l.logger.info("Waiting 5 seconds to re-attempt verification")
+                self.l.logger.info(
+                    "Waiting 5 seconds to re-attempt verification")
                 sleep(5)
                 attempt += 1
             else:
@@ -146,16 +150,17 @@ class OnDemand:
                 break
 
         if verified is False:
-            self.l.logger.error("Migration failed. Verification results are the following:")
+            self.l.logger.error(
+                "Migration failed. Verification results are the following:")
             return {
                 "Status": "Failure",
                 "Results": verification_results
             }
-        
+
         self.l.logger.info(
             "%s repositories have been migrated successfully" %
             len(verification_results["results"]))
-        
+
         return {
             "Status": "Success",
             "Results": verification_results
@@ -171,29 +176,36 @@ class OnDemand:
         repoSlug = bbStuff.split("/")[2]
         repo_slug = repoSlug.replace(".git", "")
         build_user_id = os.getenv('BUILD_USER_ID')
-        auth = user_is_authorized(migration_type, https_clone_url=repo_url, repo_name=repo_name, first_name=first_name, last_name=last_name, email=email, build_user_id=build_user_id)
+        auth = user_is_authorized(migration_type, https_clone_url=repo_url, repo_name=repo_name,
+                                  first_name=first_name, last_name=last_name, email=email, build_user_id=build_user_id)
         if auth is True:
             m = MirrorClient()
-            self.l.logger.info("Marking %s/%s as read-only" % (project_key, repo_slug))
+            self.l.logger.info("Marking %s/%s as read-only" %
+                               (project_key, repo_slug))
             m.set_repo_read_only(project_key, repo_slug)
         else:
-            self.v.errors.append("User not authorized to mark %s/%s assets as read-only" % (project_key, repo_slug))
-            self.l.logger.error("User not authorized to mark %s/%s assets as read-only" % (project_key, repo_slug))
+            self.v.errors.append(
+                "User not authorized to mark %s/%s assets as read-only" % (project_key, repo_slug))
+            self.l.logger.error(
+                "User not authorized to mark %s/%s assets as read-only" % (project_key, repo_slug))
 
     def hard_push(self, repo):
         gl = gitlab_repo()
         if not os.path.isdir("repos"):
             os.mkdir("repos")
         gitlab_id = gitlab_id = gl.search_for_project(
-                repo["metadata"]["name"], repo["metadata"]["group"], repo["metadata"]["name"])
+            repo["metadata"]["name"], repo["metadata"]["group"], repo["metadata"]["name"])
         if gitlab_id is not None:
-            clone_url = json.load(api.generate_get_request(self.config.destination_host, self.config.destination_token, "projects/%d" % gitlab_id))["http_url_to_repo"]
-            
+            clone_url = json.load(api.generate_get_request(self.config.destination_host,
+                                                           self.config.destination_token, "projects/%d" % gitlab_id))["http_url_to_repo"]
+
             protocol = clone_url.split("://")[0]
             url = clone_url.split("://")[1]
-            new_clone_url = "%s://%s:%s@%s" % (protocol, self.config.external_user_name, self.config.destination_token, url)
+            new_clone_url = "%s://%s:%s@%s" % (
+                protocol, self.config.external_user_name, self.config.destination_token, url)
             os.chdir("repos")
-            subprocess.call(["git", "clone", re.sub('@onestash', ':%s@onestash' % self.config.external_user_password, repo["metadata"]["web_repo_url"]), repo["metadata"]["name"]])
+            subprocess.call(["git", "clone", re.sub('@onestash', ':%s@onestash' %
+                                                    self.config.external_user_password, repo["metadata"]["web_repo_url"]), repo["metadata"]["name"]])
             os.chdir(repo["metadata"]["name"])
             # # the following pulls the current branches and makes the local repo aware of all the remotes
             subprocess.call(["git", "pull", "--all"])

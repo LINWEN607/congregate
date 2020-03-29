@@ -245,17 +245,19 @@ class BaseDiffClient(BaseClass):
         return accuracies
 
     def generate_cleaned_instance_data(self, instance_data):
-        if isinstance(instance_data, GeneratorType):
-            try:
-                instance_data = self.ignore_keys(list(instance_data))
-                instance_data.sort()
-            except TypeError:
-                self.log.error(
-                    "Unable to generate cleaned instance data. Returning empty list")
-                return []
-        else:
-            instance_data = self.ignore_keys(instance_data.json())
-            sorted(instance_data)
+        if instance_data is not None:
+            if isinstance(instance_data, GeneratorType):
+                try:
+                    instance_data = self.ignore_keys(list(instance_data))
+                    instance_data.sort()
+                except TypeError:
+                    self.log.error(
+                        "Unable to generate cleaned instance data. Returning empty list")
+                    return []
+            elif isinstance(instance_data, list):
+                instance_data = sorted(self.ignore_keys(instance_data))
+            else:
+                instance_data = sorted(self.ignore_keys(instance_data.json()))
         return instance_data
 
     def generate_empty_data(self, source):

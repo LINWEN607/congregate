@@ -7,8 +7,6 @@
 import os
 import json
 from re import sub
-from multiprocessing.dummy import Pool as ThreadPool
-from multiprocessing import Lock
 from collections import Counter
 from datetime import datetime
 from shutil import copy
@@ -17,6 +15,7 @@ from requests.exceptions import RequestException
 from congregate.helpers import api, migrate_utils
 from congregate.helpers.misc_utils import get_dry_log, json_pretty, write_json_to_file, \
     is_dot_com, clean_data, add_post_migration_stats, rotate_log
+from congregate.helpers.threads import start_multi_process
 from congregate.aws import AwsClient
 from congregate.cli.stage_projects import stage_projects
 from congregate.helpers.base_class import BaseClass
@@ -56,6 +55,8 @@ hooks = HooksClient()
 environments = EnvironmentsClient()
 
 full_parent_namespace = groups.find_parent_group_path()
+_DRY_RUN = True
+_THREADS = None
 
 
 def migrate(
@@ -67,14 +68,18 @@ def migrate(
         skip_project_import=False,
         skip_project_export=False):
 
-    if threads is not None:
-        b.config.threads = threads
+    global _DRY_RUN
+    _DRY_RUN = dry_run
+
+    global _THREADS
+    _THREADS = threads
 
     # TODO: Revisit and refactor accordingly
     if b.config.external_source_url:
         with open("%s" % b.config.repo_list, "r") as f:
             repo_list = json.load(f)
-        start_multi_thead(bitbucket.handle_bitbucket_migration, repo_list)
+        start_multi_process(
+            bitbucket.handle_bitbucket_migration, repo_list, threads=_THREADS)
     else:
         # Dry-run and log cleanup
         if dry_run:
@@ -86,71 +91,29 @@ def migrate(
 
         # Migrate users
         if not skip_users:
-            migrate_user_info(dry_run)
+            users.migrate_user_info(dry_run=_DRY_RUN, threads=_THREADS)
 
         # Migrate system hooks (except for gitlab.com)
         if is_dot_com(b.config.destination_host):
-            hooks.migrate_system_hooks(dry_run)
+            hooks.migrate_system_hooks()
 
         # Migrate groups
-        migrate_group_info(dry_run, skip_group_export, skip_group_import)
+        migrate_group_info(skip_group_export, skip_group_import)
 
         # Migrate projects
-        migrate_project_info(dry_run, skip_project_export, skip_project_import)
+        migrate_project_info(skip_project_export, skip_project_import)
 
         add_post_migration_stats()
 
 
-def start_multi_thead(function, iterable):
-    l = Lock()
-    pool = ThreadPool(initializer=init_pool, initargs=(l,),
-                      processes=b.config.threads)
-    pool.map(function, iterable)
-    pool.close()
-    pool.join()
-
-
-def init_pool(l):
-    global lock
-    lock = l
-
-
-def migrate_user_info(dry_run=True):
-    b.log.info("{}Migrating user info".format(get_dry_log(dry_run)))
-    new_users = users.migrate_user_info(dry_run)
-
-    # This list is of user ids from found users via email or newly created users
-    # So, new_user_ids is a bit of a misnomer
-    if not dry_run:
-        if new_users:
-            formatted_users = {}
-            for n in new_users:
-                formatted_users[n["email"]] = n
-            write_results_to_file(formatted_users, result_type="user")
-            with open("%s/data/new_user_ids.txt" % b.app_path, "w") as f:
-                for new_user in new_users:
-                    f.write("%s\n" % new_user)
-
-            # If we created or found users, do not force overwrite
-            users.update_user_info(new_users)
-        else:
-            users.update_user_info(new_users, overwrite=False)
-
-
-def migrate_group_info(dry_run=True, skip_group_export=False, skip_group_import=False):
+def migrate_group_info(skip_group_export=False, skip_group_import=False):
     staged_groups = groups.get_staged_groups()
-    dry_log = get_dry_log(dry_run)
+    dry_log = get_dry_log(_DRY_RUN)
     if staged_groups:
         if not skip_group_export:
             b.log.info("{}Exporting groups".format(dry_log))
-            export_pool = ThreadPool(b.config.threads)
-            export_results = export_pool.map(
-                lambda group: handle_exporting_groups(
-                    group,
-                    dry_run),
-                staged_groups)
-            export_pool.close()
-            export_pool.join()
+            export_results = start_multi_process(
+                handle_exporting_groups, staged_groups, threads=_THREADS)
 
             # Create list of groups that failed export
             if not export_results:
@@ -175,14 +138,8 @@ def migrate_group_info(dry_run=True, skip_group_export=False, skip_group_import=
             b.log.info("SKIP: Assuming staged groups are already exported")
         if not skip_group_import:
             b.log.info("{}Importing groups".format(dry_log))
-            import_pool = ThreadPool(b.config.threads)
-            import_results = import_pool.map(
-                lambda group: handle_importing_groups(
-                    group,
-                    dry_run),
-                staged_groups)
-            import_pool.close()
-            import_pool.join()
+            import_results = start_multi_process(
+                handle_importing_groups, staged_groups, threads=_THREADS)
 
             # append Total : Successful count of groups imports
             import_results.append({
@@ -200,11 +157,11 @@ def migrate_group_info(dry_run=True, skip_group_export=False, skip_group_import=
         b.log.info("SKIP: No groups to migrate")
 
 
-def handle_exporting_groups(group, dry_run=True):
+def handle_exporting_groups(group):
     full_path = group["full_path"]
     gid = group["id"]
     loc = b.config.location.lower()
-    dry_log = get_dry_log(dry_run)
+    dry_log = get_dry_log(_DRY_RUN)
     try:
         filename = migrate_utils.get_export_filename_from_namespace_and_name(
             full_path)
@@ -215,7 +172,7 @@ def handle_exporting_groups(group, dry_run=True):
                    .format(dry_log, full_path, gid, filename))
         if loc == "filesystem":
             exported = ie.export_group_thru_filesystem(
-                gid, full_path, full_parent_namespace, filename) if not dry_run else True
+                gid, full_path, full_parent_namespace, filename) if not _DRY_RUN else True
         # TODO: Refactor and sync with other scenarios (#119)
         elif loc == "filesystem-aws":
             b.log.error(
@@ -230,7 +187,7 @@ def handle_exporting_groups(group, dry_run=True):
             full_path, gid, loc, e))
 
 
-def handle_importing_groups(group, dry_run=True):
+def handle_importing_groups(group):
     full_path = group["full_path"]
     src_gid = group["id"]
     results = {
@@ -249,14 +206,14 @@ def handle_importing_groups(group, dry_run=True):
             b.config.destination_host, b.config.destination_token, full_path_with_parent_namespace)
         if dst_gid:
             b.log.info("{0}Group {1} (ID: {2}) already exists on destination".format(
-                get_dry_log(dry_run), full_path, dst_gid))
+                get_dry_log(_DRY_RUN), full_path, dst_gid))
         else:
             b.log.info("{0}Group {1} NOT found on destination, importing..."
-                       .format(get_dry_log(dry_run), full_path_with_parent_namespace))
+                       .format(get_dry_log(_DRY_RUN), full_path_with_parent_namespace))
             ie.import_group(
-                group, full_path_with_parent_namespace, filename, dry_run)
+                group, full_path_with_parent_namespace, filename, dry_run=_DRY_RUN)
             # In place of checking the import status
-            if not dry_run:
+            if not _DRY_RUN:
                 results[full_path] = ie.wait_for_group_import(
                     full_path_with_parent_namespace)
                 if results[full_path] and results[full_path].get("id", None):
@@ -276,20 +233,14 @@ def handle_importing_groups(group, dry_run=True):
     return results
 
 
-def migrate_project_info(dry_run=True, skip_project_export=False, skip_project_import=False):
+def migrate_project_info(skip_project_export=False, skip_project_import=False):
     staged_projects = projects.get_staged_projects()
-    dry_log = get_dry_log(dry_run)
+    dry_log = get_dry_log(_DRY_RUN)
     if staged_projects:
         if not skip_project_export:
             b.log.info("{}Exporting projects".format(dry_log))
-            export_pool = ThreadPool(b.config.threads)
-            export_results = export_pool.map(
-                lambda project: handle_exporting_projects(
-                    project,
-                    dry_run),
-                staged_projects)
-            export_pool.close()
-            export_pool.join()
+            export_results = start_multi_process(
+                handle_exporting_projects, staged_projects, threads=_THREADS)
 
             # Create list of projects that failed export
             if not export_results or len(export_results) == 0:
@@ -315,14 +266,8 @@ def migrate_project_info(dry_run=True, skip_project_export=False, skip_project_i
 
         if not skip_project_import:
             b.log.info("{}Importing projects".format(dry_log))
-            import_pool = ThreadPool(b.config.threads)
-            import_results = import_pool.map(
-                lambda project: handle_importing_projects(
-                    project,
-                    dry_run),
-                staged_projects)
-            import_pool.close()
-            import_pool.join()
+            import_results = start_multi_process(
+                handle_importing_projects, staged_projects, threads=_THREADS)
 
             # append Total : Successful count of project imports
             import_results.append({
@@ -349,12 +294,12 @@ def write_results_to_file(import_results, result_type="project"):
          (b.app_path, result_type))
 
 
-def handle_exporting_projects(project, dry_run=True):
+def handle_exporting_projects(project):
     name = project["name"]
     namespace = project["namespace"]
     pid = project["id"]
     loc = b.config.location.lower()
-    dry_log = get_dry_log(dry_run)
+    dry_log = get_dry_log(_DRY_RUN)
     try:
         filename = migrate_utils.get_export_filename_from_namespace_and_name(
             namespace, name)
@@ -365,7 +310,7 @@ def handle_exporting_projects(project, dry_run=True):
                    .format(dry_log, project["path_with_namespace"], pid, filename))
         if loc == "filesystem":
             exported = ie.export_project_thru_filesystem(
-                pid, name, namespace) if not dry_run else True
+                pid, name, namespace) if not _DRY_RUN else True
         # TODO: Refactor and sync with other scenarios (#119)
         elif loc == "filesystem-aws":
             b.log.error(
@@ -373,14 +318,14 @@ def handle_exporting_projects(project, dry_run=True):
             # exported = ie.export_thru_fs_aws(pid, name, namespace) if not dry_run else True
         elif loc == "aws":
             exported = ie.export_project_thru_aws(
-                project) if not dry_run else True
+                project) if not _DRY_RUN else True
         return {"filename": filename, "exported": exported}
     except (IOError, RequestException) as e:
         b.log.error("Failed to export project (ID: {0}) to {1} with error:\n{2}"
                     .format(pid, loc, e))
 
 
-def handle_importing_projects(project_json, dry_run=True):
+def handle_importing_projects(project_json):
     src_id = project_json["id"]
     archived = project_json["archived"]
     path = project_json["path_with_namespace"]
@@ -404,9 +349,9 @@ def handle_importing_projects(project_json, dry_run=True):
                 dst_path_with_namespace, dst_pid, import_status))
         else:
             b.log.info("{0}Project {1} (ID: {2}) NOT found on destination, importing..."
-                       .format(get_dry_log(dry_run), dst_path_with_namespace, project_id))
-            import_id = ie.import_project(project_json, dry_run)
-            if import_id and not dry_run:
+                       .format(get_dry_log(_DRY_RUN), dst_path_with_namespace, project_id))
+            import_id = ie.import_project(project_json, dry_run=_DRY_RUN)
+            if import_id and not _DRY_RUN:
                 # Archived projects cannot be migrated
                 if archived:
                     b.log.info(
@@ -427,7 +372,7 @@ def handle_importing_projects(project_json, dry_run=True):
     except OverflowError as e:
         b.log.error(e)
     finally:
-        if archived and not dry_run:
+        if archived and not _DRY_RUN:
             b.log.info(
                 "Archiving back source project {0} (ID: {1})".format(path, src_id))
             projects.projects_api.archive_project(
@@ -489,23 +434,24 @@ def rollback(dry_run=True,
              skip_projects=False):
     rotate_log()
     dry_log = get_dry_log(dry_run)
-    if not skip_users:
-        b.log.info("{0}Removing staged users on destination (hard_delete={1})".format(
-            dry_log,
-            hard_delete))
-        users.delete_users(dry_run, hard_delete)
+
+    # Remove only projects
+    if not skip_projects:
+        b.log.info("{}Removing projects on destination".format(dry_log))
+        projects.delete_projects(dry_run=dry_run)
 
     # Remove groups and projects OR only empty groups
     if not skip_groups:
         b.log.info("{0}Removing groups{1} on destination".format(
             dry_log,
             "" if skip_projects else " and projects"))
-        groups.delete_groups(dry_run, skip_projects)
+        groups.delete_groups(dry_run=dry_run, skip_projects=skip_projects)
 
-    # Remove only projects
-    if not skip_projects:
-        b.log.info("{}Removing projects on destination".format(dry_log))
-        projects.delete_projects(dry_run)
+    if not skip_users:
+        b.log.info("{0}Removing staged users on destination (hard_delete={1})".format(
+            dry_log,
+            hard_delete))
+        users.delete_users(dry_run=dry_run, hard_delete=hard_delete)
 
     add_post_migration_stats()
 

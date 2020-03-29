@@ -94,7 +94,7 @@ def get_user_project_namespace(p):
         :return: Destination user project namespace
     """
     if is_dot_com(b.config.destination_host) or p["namespace"] == "root":
-        b.log.info("Assigning user project {0} to import user id (ID: {1})".format(
+        b.log.info("User project {0} is assigned to import user id (ID: {1})".format(
             p["path_with_namespace"], b.config.import_user_id))
         return users_api.get_user(
             b.config.import_user_id, b.config.destination_host, b.config.destination_token).json()["username"]

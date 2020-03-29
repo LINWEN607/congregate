@@ -198,16 +198,16 @@ class ImportExportClient(BaseClass):
         if not dry_run:
             import_response = self.attempt_import(
                 filename, name, path, dst_namespace, override_params)
-            if any(err_msg in str(import_response) for err_msg in self.ERROR_MESSAGES):
+            if not import_response or is_error_message_present(import_response):
+                self.log.error("Project {0} failed to import to {1}, due to:\n{2}".format(
+                    name, dst_namespace, import_response))
+                return None
+            elif any(err_msg in str(import_response) for err_msg in self.ERROR_MESSAGES):
                 self.log.warning("Re-importing project {0} to {1}, waiting {2} minutes due to:\n{3}".format(
                     name, dst_namespace, self.COOL_OFF_MINUTES, import_response))
                 sleep(self.COOL_OFF_MINUTES * 60)
                 import_response = self.attempt_import(
                     filename, name, path, dst_namespace, override_params)
-            elif is_error_message_present(import_response) or not import_response:
-                self.log.error("Project {0} failed to import to {1}, due to:\n{2}".format(
-                    name, dst_namespace, import_response))
-                return None
             import_id = self.get_import_id_from_response(
                 import_response, filename, name, path, dst_namespace, override_params)
         else:
@@ -392,17 +392,17 @@ class ImportExportClient(BaseClass):
             try:
                 if not retry:
                     # There is a small chance that the re-import exceeds the rate limit
-                    if any(err_msg in str(import_response) for err_msg in self.ERROR_MESSAGES):
+                    if not import_response or is_error_message_present(import_response):
+                        self.log.error("Project {0} failed to re-import to {1}, due to:\n{2}".format(
+                            name, dst_namespace, import_response))
+                        return None
+                    elif any(err_msg in str(import_response) for err_msg in self.ERROR_MESSAGES):
                         self.log.warning("Re-importing project {0} to {1} (retry), waiting {2} minutes due to:\n{3}".format(
                             name, dst_namespace, self.COOL_OFF_MINUTES, import_response))
                         sleep(self.COOL_OFF_MINUTES * 60)
                         timeout = 0
                         import_response = self.attempt_import(
                             filename, name, path, dst_namespace, override_params)
-                    elif is_error_message_present(import_response) or not import_response:
-                        self.log.error("Project {0} failed to re-import to {1}, due to:\n{2}".format(
-                            name, dst_namespace, import_response))
-                        return None
                     import_response = json.loads(import_response)
                 import_id = import_response.get("id", None)
                 if import_id:

@@ -678,19 +678,18 @@ class UsersClient(BaseClass):
             self.log.info(
                 "Retrieved %d users. Check users.json to see all retrieved users" % len(users))
 
-    def migrate_user_info(self, dry_run=True):
+    def migrate_user_info(self, dry_run=True, threads=None):
         staged_users = self.get_staged_users()
 
+        self.log.info("{}Migrating user info".format(get_dry_log(dry_run)))
         if not dry_run:
-            new_ids = []
-            new_ids = handle_multi_thread(
-                self.handle_user_creation, staged_users)
-            return list(filter(None, new_ids))
+            handle_multi_thread(self.handle_user_creation,
+                                staged_users, threads)
         else:
             self.log.info(
                 "DRY-RUN: Outputing various USER migration data to dry_run_user_migration.json")
             migration_dry_run("user", handle_multi_thread(
-                self.generate_user_data, staged_users))
+                self.generate_user_data, staged_users, threads))
 
     def generate_user_data(self, user):
         if user.get("id", None) is not None:
