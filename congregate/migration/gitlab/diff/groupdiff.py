@@ -24,7 +24,8 @@ class GroupDiffClient(BaseDiffClient):
             "id",
             "projects",
             "runners_token",
-            "web_url"
+            "web_url",
+            "created_at"
         ]
 
         if staged:
@@ -81,21 +82,36 @@ class GroupDiffClient(BaseDiffClient):
     def handle_endpoints(self, group):
         group_diff = {}
         parent_group = self.config.parent_group_path
-        group_diff["/groups/:id"] = self.generate_group_diff(group, self.groups_api.get_group, critical_key="full_path", parent_group=parent_group)
-        group_diff["/groups/:id/variables"] = self.generate_group_diff(group, self.groups_api.get_all_group_variables, obfuscate=True, var_type="group")
-        group_diff["/groups/:id/members"] = self.generate_group_diff(group, self.groups_api.get_all_group_members)
-        group_diff["/groups/:id/boards"] = self.generate_group_diff(group, self.groups_api.get_all_group_issue_boards)
-        group_diff["/groups/:id/labels"] = self.generate_group_diff(group, self.groups_api.get_all_group_labels)
-        group_diff["/groups/:id/milestones"] = self.generate_group_diff(group, self.groups_api.get_all_group_milestones)
-        group_diff["/groups/:id/hooks"] = self.generate_group_diff(group, self.groups_api.get_all_group_hooks)
-        group_diff["/groups/:id/projects"] = self.generate_group_diff(group, self.groups_api.get_all_group_projects)
-        group_diff["/groups/:id/subgroups"] = self.generate_group_diff(group, self.groups_api.get_all_group_subgroups)
-        group_diff["/groups/:id/epics"] = self.generate_group_diff(group, self.groups_api.get_all_group_epics)
-        group_diff["/groups/:id/custom_attributes"] = self.generate_group_diff(group, self.groups_api.get_all_group_custom_attributes)
-        group_diff["/groups/:id/members/all"] = self.generate_group_diff(group, self.groups_api.get_all_group_members_incl_inherited)
-        group_diff["/groups/:id/registry/repositories"] = self.generate_group_diff(group, self.groups_api.get_all_group_registry_repositories)
-        group_diff["/groups/:id/badges"] = self.generate_group_diff(group, self.groups_api.get_all_group_badges)
-        group_diff["/groups/:id/merge_requests"] = self.generate_group_diff(group, self.mr_api.get_all_group_merge_requests)
+        group_diff["/groups/:id"] = self.generate_group_diff(
+            group, self.groups_api.get_group, critical_key="full_path", parent_group=parent_group)
+        group_diff["/groups/:id/variables"] = self.generate_group_diff(
+            group, self.groups_api.get_all_group_variables, obfuscate=True, var_type="group")
+        group_diff["/groups/:id/members"] = self.generate_group_diff(
+            group, self.groups_api.get_all_group_members)
+        group_diff["/groups/:id/boards"] = self.generate_group_diff(
+            group, self.groups_api.get_all_group_issue_boards)
+        group_diff["/groups/:id/labels"] = self.generate_group_diff(
+            group, self.groups_api.get_all_group_labels)
+        group_diff["/groups/:id/milestones"] = self.generate_group_diff(
+            group, self.groups_api.get_all_group_milestones)
+        group_diff["/groups/:id/hooks"] = self.generate_group_diff(
+            group, self.groups_api.get_all_group_hooks)
+        group_diff["/groups/:id/projects"] = self.generate_group_diff(
+            group, self.groups_api.get_all_group_projects)
+        group_diff["/groups/:id/subgroups"] = self.generate_group_diff(
+            group, self.groups_api.get_all_group_subgroups)
+        group_diff["/groups/:id/epics"] = self.generate_group_diff(
+            group, self.groups_api.get_all_group_epics)
+        group_diff["/groups/:id/custom_attributes"] = self.generate_group_diff(
+            group, self.groups_api.get_all_group_custom_attributes)
+        group_diff["/groups/:id/members/all"] = self.generate_group_diff(
+            group, self.groups_api.get_all_group_members_incl_inherited)
+        group_diff["/groups/:id/registry/repositories"] = self.generate_group_diff(
+            group, self.groups_api.get_all_group_registry_repositories)
+        group_diff["/groups/:id/badges"] = self.generate_group_diff(
+            group, self.groups_api.get_all_group_badges)
+        group_diff["/groups/:id/merge_requests"] = self.generate_group_diff(
+            group, self.mr_api.get_all_group_merge_requests)
         return group_diff
 
     def generate_group_diff(self, group, endpoint, **kwargs):

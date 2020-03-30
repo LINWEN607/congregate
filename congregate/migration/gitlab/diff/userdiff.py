@@ -3,6 +3,7 @@ from congregate.migration.gitlab.api.users import UsersApi
 from congregate.helpers.misc_utils import rewrite_json_list_into_dict, get_rollback_log
 from congregate.helpers.threads import handle_multi_thread_write_to_file_and_return_results
 
+
 class UserDiffClient(BaseDiffClient):
     '''
         Extension of BaseDiffClient focused on finding the differences between migrated users
@@ -11,7 +12,8 @@ class UserDiffClient(BaseDiffClient):
     def __init__(self, results_path, staged=False):
         super(UserDiffClient, self).__init__()
         self.users_api = UsersApi()
-        self.results = self.load_json_data("{0}{1}".format(self.app_path, results_path))
+        self.results = self.load_json_data(
+            "{0}{1}".format(self.app_path, results_path))
         self.keys_to_ignore = [
             "web_url",
             "last_sign_in_at",
@@ -72,13 +74,19 @@ class UserDiffClient(BaseDiffClient):
     def handle_endpoints(self, user):
         user_diff = {}
         # General endpoint
-        user_diff["/users/:id"] = self.generate_user_diff(user, self.users_api.get_user, obfuscate=True)
-        user_diff["/users/:id/projects"] = self.generate_user_diff(user, self.users_api.get_all_user_projects)
-        user_diff["/users/:id/emails"] = self.generate_user_diff(user, self.users_api.get_all_user_emails)
-        user_diff["/users/:id/memberships"] = self.generate_user_diff(user, self.users_api.get_all_user_memberships)
-        user_diff["/users/:id/events"] = self.generate_user_diff(user, self.users_api.get_all_user_contribution_events)
-        user_diff["/users/:id/custom_attributes"] = self.generate_user_diff(user, self.users_api.get_all_user_custom_attributes)
-        
+        user_diff["/users/:id"] = self.generate_user_diff(
+            user, self.users_api.get_user, obfuscate=True)
+        user_diff["/users/:id/projects"] = self.generate_user_diff(
+            user, self.users_api.get_all_user_projects)
+        user_diff["/users/:id/emails"] = self.generate_user_diff(
+            user, self.users_api.get_all_user_emails)
+        user_diff["/users/:id/memberships"] = self.generate_user_diff(
+            user, self.users_api.get_all_user_memberships)
+        user_diff["/users/:id/events"] = self.generate_user_diff(
+            user, self.users_api.get_all_user_contribution_events)
+        user_diff["/users/:id/custom_attributes"] = self.generate_user_diff(
+            user, self.users_api.get_all_user_custom_attributes)
+
         return user_diff
 
     def generate_user_diff(self, user, endpoint, **kwargs):
