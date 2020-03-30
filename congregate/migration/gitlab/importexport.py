@@ -10,7 +10,7 @@ from requests_toolbelt.multipart.encoder import MultipartEncoder
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers import api
 from congregate.helpers.misc_utils import download_file, migration_dry_run, get_dry_log, \
-    is_error_message_present, check_is_project_or_group_for_logging, json_pretty
+    is_error_message_present, check_is_project_or_group_for_logging, json_pretty, validate_name
 from congregate.aws import AwsClient
 from congregate.migration.gitlab.projects import ProjectsClient
 from congregate.migration.gitlab.groups import GroupsClient
@@ -98,9 +98,13 @@ class ImportExportClient(BaseClass):
             if response.status_code == 200:
                 exported = True
                 break
+            self.log.info(
+                "Waiting {0} seconds for group {1} to export".format(wait_time, gid))
             sleep(wait_time)
             timer += wait_time
             if timer > self.config.max_export_wait_time:
+                self.log.error(
+                    "Time limit exceeded for exporting group {0}, due to:\n{1}".format(gid, response))
                 break
         return exported
 
@@ -115,9 +119,13 @@ class ImportExportClient(BaseClass):
                 imported = self.groups_api.get_group(
                     gid, self.config.destination_host, self.config.destination_token).json()
                 break
+            self.log.info(
+                "Waiting {0} seconds for group {1} to import".format(wait_time, path))
             sleep(wait_time)
             timer += wait_time
             if timer > self.config.max_export_wait_time:
+                self.log.error(
+                    "Time limit exceeded for importing group {}".format(path))
                 break
         return imported
 
@@ -278,7 +286,7 @@ class ImportExportClient(BaseClass):
                         "file": (filename, f),
                         "path": path,
                         "namespace": namespace,
-                        "name": name
+                        "name": validate_name(name)
                     })
                     headers = {
                         "Private-Token": self.config.destination_token,
@@ -295,7 +303,7 @@ class ImportExportClient(BaseClass):
                     data = {
                         "path": path,
                         "namespace": namespace,
-                        "name": name
+                        "name": validate_name(name)
                     }
                     files = {
                         "file": (filename, f)
@@ -332,8 +340,8 @@ class ImportExportClient(BaseClass):
                 self.log.info(
                     "Group {0} (file: {1}) successfully imported".format(full_path, filename))
             else:
-                self.log.error("Group {0} (file: {1}) import failed, with status {2}: {3}".format(
-                    full_path, filename, import_response, import_response_text))
+                self.log.error("Group {0} (file: {1}) import failed, with status:\n{2}".format(
+                    full_path, filename, import_response_text))
         else:
             self.log.info("DRY-RUN: Outputing group {0} (file: {1}) migration data to dry_run_group_migration.json"
                           .format(full_path, filename))
@@ -356,7 +364,7 @@ class ImportExportClient(BaseClass):
             with open("%s/downloads/%s" % (self.config.filesystem_path, filename), "rb") as f:
                 data = {
                     "path": path,
-                    "name": name,
+                    "name": validate_name(name),
                     "parent_id": self.config.parent_id if self.config.parent_id else ""
                 }
                 files = {

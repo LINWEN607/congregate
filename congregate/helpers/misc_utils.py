@@ -325,3 +325,12 @@ def get_timedelta(timestamp):
             timestamp.split(".")[0], '%Y-%m-%dT%H:%M:%S')
     now = datetime.now()
     return (now - created_at).days * 24
+
+
+def validate_name(name):
+    """
+    Validate group and project names to satisfy the following criteria:
+    Name can only contain letters, digits, emojis, '_', '.', dash, space.
+    It must start with letter, digit, emoji or '_'.
+    """
+    return " ".join(sub(r"[^a-zA-Z0-9\_ ]", " ", name).split())
