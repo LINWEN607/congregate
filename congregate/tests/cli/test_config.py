@@ -36,7 +36,6 @@ class ConfigTests(unittest.TestCase):
             "False",    # keep_blocked_users
             "True",  # password reset email
             "False",    # randomized password
-            "2",    # Threads
             "30"   # import wait time
         ]
 
@@ -97,7 +96,6 @@ class ConfigTests(unittest.TestCase):
             "False",    # keep_blocked_users
             "True",  # password reset email
             "False",    # randomized password
-            "2",    # Threads
             "30"   # import wait time
         ]
 
@@ -172,7 +170,6 @@ class ConfigTests(unittest.TestCase):
             "True",    # keep_blocked_users
             "False",  # password reset email
             "True",    # randomized password
-            "4",    # Threads
             "60"   # import wait time
         ]
 
@@ -244,7 +241,6 @@ class ConfigTests(unittest.TestCase):
             "False",    # keep_blocked_users
             "True",  # password reset email
             "False",    # randomized password
-            "2",    # Threads
             "30"   # import wait time
         ]
 
@@ -307,7 +303,6 @@ class ConfigTests(unittest.TestCase):
             "keep_blocked_users":"False",\
             "reset_pwd":"False",\
             "force_rand_pwd":"True",\
-            "no_of_threads":"4",\
             "export_import_wait_time":"30"\
         }'
 
@@ -351,7 +346,6 @@ class ConfigTests(unittest.TestCase):
             "keep_blocked_users":"False",\
             "reset_pwd":"True",\
             "force_rand_pwd":"False",\
-            "no_of_threads":"2",\
             "export_import_wait_time":"30"\
         }'
 

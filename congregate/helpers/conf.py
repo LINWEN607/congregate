@@ -224,18 +224,14 @@ class Config(object):
 
 # APP
     @property
-    def threads(self):
-        return self.prop_int("APP", "no_of_threads", 2)
-
-    @property
     def importexport_wait(self):
         """
         This key-value (in seconds) concerns the import/export status wait time.
         Depending whether we are migrating during peak hours or not we should be able to adjust it.
         In general it should be increased when using multiple threads i.e. when the API cannot handle all the requests.
-        :return: The set config value or 30 (seconds) as default.
+        :return: The set config value or 10 (seconds) as default.
         """
-        return self.prop_int("APP", "export_import_wait_time", 30)
+        return self.prop_int("APP", "export_import_wait_time", 10)
 
 
 # HIDDEN PROPERTIES

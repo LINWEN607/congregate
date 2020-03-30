@@ -119,7 +119,7 @@ def generate_config():
             config.set("DESTINATION", "mirror_username", "")
 
         config.set("DESTINATION", "max_asset_expiration_time", "24")
-        
+
         # Project export/update settings
         config.add_section("EXPORT")
         location = raw_input(
@@ -169,13 +169,10 @@ def generate_config():
 
     # Generic App settings
     config.add_section("APP")
-    no_of_threads = raw_input("Number of threads (default: 2, max: 4): ")
-    config.set("APP", "no_of_threads", no_of_threads if no_of_threads and int(
-        no_of_threads) < 5 else "2")
     export_import_wait_time = raw_input(
-        "Wait time (in seconds) for project export/import status (default: 30): ")
+        "Wait time (in seconds) for project export/import status (default: 10): ")
     config.set("APP", "export_import_wait_time",
-               export_import_wait_time if export_import_wait_time else "30")
+               export_import_wait_time if export_import_wait_time else "10")
 
     write_to_file(config)
 

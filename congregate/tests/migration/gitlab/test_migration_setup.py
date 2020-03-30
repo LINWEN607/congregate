@@ -57,7 +57,6 @@ class MigrationEndToEndTestSetup(unittest.TestCase):
             "False",  # keep_blocked_users
             "True",  # password reset email
             "False",  # randomized password
-            "4",  # Threads
             "10"  # import wait time
         ]
         print json.dumps(values)
