@@ -6,6 +6,7 @@
 
 import os
 import json
+import traceback
 from re import sub
 from collections import Counter
 from datetime import datetime
@@ -113,6 +114,11 @@ def are_results(results, var, stage):
             "Results from {0} {1} returned as empty. Aborting.".format(var, stage))
 
 
+def is_loc_supported(loc):
+    if loc not in ["filesystem", "aws"]:
+        raise Exception("Unsupported export location: {}".format(loc))
+
+
 def migrate_group_info(skip_group_export=False, skip_group_import=False):
     staged_groups = groups.get_staged_groups()
     dry_log = get_dry_log(_DRY_RUN)
@@ -170,10 +176,9 @@ def handle_exporting_groups(group):
     loc = b.config.location.lower()
     dry_log = get_dry_log(_DRY_RUN)
     try:
+        is_loc_supported(loc)
         filename = migrate_utils.get_export_filename_from_namespace_and_name(
             full_path)
-        if loc not in ["filesystem", "aws"]:
-            raise Exception("Unsupported export location: {}".format(loc))
         exported = False
         b.log.info("{0}Exporting group {1} (ID: {2}) as {3}"
                    .format(dry_log, full_path, gid, filename))
@@ -192,6 +197,9 @@ def handle_exporting_groups(group):
     except (IOError, RequestException) as e:
         b.log.error("Failed to export group {0} (ID: {1}) to {2} with error:\n{3}".format(
             full_path, gid, loc, e))
+    except Exception as e:
+        b.log.error(e)
+        b.log.error(traceback.print_exc)
 
 
 def handle_importing_groups(group):
@@ -200,13 +208,13 @@ def handle_importing_groups(group):
     results = {
         full_path: False
     }
-    if isinstance(group, str):
-        group = json.loads(group)
-    full_path_with_parent_namespace = "{0}{1}".format(
-        full_parent_namespace + "/" if full_parent_namespace else "", full_path)
-    b.log.info("Searching on destination for group {}".format(
-        full_path_with_parent_namespace))
     try:
+        if isinstance(group, str):
+            group = json.loads(group)
+        full_path_with_parent_namespace = "{0}{1}".format(
+            full_parent_namespace + "/" if full_parent_namespace else "", full_path)
+        b.log.info("Searching on destination for group {}".format(
+            full_path_with_parent_namespace))
         filename = migrate_utils.get_export_filename_from_namespace_and_name(
             full_path)
         dst_gid = groups.find_group_by_path(
@@ -237,6 +245,9 @@ def handle_importing_groups(group):
             full_path, src_gid))
     except OverflowError as e:
         b.log.error(e)
+    except Exception as e:
+        b.log.error(e)
+        b.log.error(traceback.print_exc)
     return results
 
 
@@ -248,11 +259,6 @@ def migrate_project_info(skip_project_export=False, skip_project_import=False):
             b.log.info("{}Exporting projects".format(dry_log))
             export_results = start_multi_process(
                 handle_exporting_projects, staged_projects, threads=_THREADS)
-
-            # Create list of projects that failed export
-            if not export_results or len(export_results) == 0:
-                raise Exception(
-                    "Results from exporting projects returned as empty. Aborting.")
 
             are_results(export_results, "project", "export")
 
@@ -313,10 +319,9 @@ def handle_exporting_projects(project):
     loc = b.config.location.lower()
     dry_log = get_dry_log(_DRY_RUN)
     try:
+        is_loc_supported(loc)
         filename = migrate_utils.get_export_filename_from_namespace_and_name(
             namespace, name)
-        if loc not in ["filesystem", "aws"]:
-            raise Exception("Unsupported export location: {}".format(loc))
         exported = False
         b.log.info("{0}Exporting project {1} (ID: {2}) as {3}"
                    .format(dry_log, project["path_with_namespace"], pid, filename))
@@ -335,6 +340,9 @@ def handle_exporting_projects(project):
     except (IOError, RequestException) as e:
         b.log.error("Failed to export project (ID: {0}) to {1} with error:\n{2}"
                     .format(pid, loc, e))
+    except Exception as e:
+        b.log.error(e)
+        b.log.error(traceback.print_exc)
 
 
 def handle_importing_projects(project_json):
@@ -342,16 +350,16 @@ def handle_importing_projects(project_json):
     archived = project_json["archived"]
     path = project_json["path_with_namespace"]
     project_id = None
-    dst_path_with_namespace = migrate_utils.get_dst_path_with_namespace(
-        project_json)
     results = {
         path: False
     }
-    if isinstance(project_json, str):
-        project_json = json.loads(project_json)
-    b.log.info("Searching on destination for project {}".format(
-        dst_path_with_namespace))
     try:
+        if isinstance(project_json, str):
+            project_json = json.loads(project_json)
+        dst_path_with_namespace = migrate_utils.get_dst_path_with_namespace(
+            project_json)
+        b.log.info("Searching on destination for project {}".format(
+            dst_path_with_namespace))
         dst_pid = projects.find_project_by_path(
             b.config.destination_host, b.config.destination_token, dst_path_with_namespace)
         if dst_pid:
@@ -383,6 +391,9 @@ def handle_importing_projects(project_json):
                        .format(path, src_id))
     except OverflowError as e:
         b.log.error(e)
+    except Exception as e:
+        b.log.error(e)
+        b.log.error(traceback.print_exc)
     finally:
         if archived and not _DRY_RUN:
             b.log.info(

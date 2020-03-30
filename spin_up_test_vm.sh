@@ -14,7 +14,7 @@ get_instance_ip () {
 }
 
 get_latest_version () {
-    curl --header "PRIVATE-TOKEN: $ACCESS_TOKEN" https://gitlab.com/api/v4/version | jq -r '.version'
+    curl --header "PRIVATE-TOKEN: $ACCESS_TOKEN" https://gitlab.com/api/v4/version | jq -r '. | "\(.version)-\(.revision)"'
 }
 
 get_ami_id () {

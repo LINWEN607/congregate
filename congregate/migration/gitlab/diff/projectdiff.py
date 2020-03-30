@@ -6,7 +6,6 @@ from congregate.migration.gitlab.api.project_repository import ProjectRepository
 from congregate.helpers.misc_utils import rewrite_json_list_into_dict, get_rollback_log
 from congregate.helpers.threads import handle_multi_thread_write_to_file_and_return_results
 
-
 class ProjectDiffClient(BaseDiffClient):
     '''
         Extension of BaseDiffClient focused on finding the differences between migrated projects
@@ -137,7 +136,7 @@ class ProjectDiffClient(BaseDiffClient):
         project_diff["/projects/:id/hooks"] = self.generate_project_diff(project, self.projects_api.get_all_project_hooks)
         project_diff["/projects/:id/snippets"] = self.generate_project_diff(project, self.projects_api.get_all_project_snippets)
         project_diff["/projects/:id/wikis"] = self.generate_project_diff(project, self.projects_api.get_all_project_wikis)
-
+        
         return project_diff
 
     def generate_project_diff(self, project, endpoint, **kwargs):

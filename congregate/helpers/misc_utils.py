@@ -334,3 +334,24 @@ def validate_name(name):
     It must start with letter, digit, emoji or '_'.
     """
     return " ".join(sub(r"[^a-zA-Z0-9\_ ]", " ", name).split())
+
+
+def list_to_dict(lst):
+    """
+    Convert list to dictionary for unique key comparison
+    Example input:
+        [1, 2, 3, 4, 5]
+    Example output:
+        {
+            1: True,
+            2: True,
+            3: True,
+            4: True,
+            5L True
+        }
+
+        :param lst: list to convert
+        :return: dictionary converted from list
+    """
+    res_dct = {lst[i]: True for i in range(0, len(lst), 2)}
+    return res_dct

@@ -23,6 +23,10 @@ from congregate.helpers.migrate_utils import get_project_namespace, is_user_proj
 
 
 class ImportExportClient(BaseClass):
+    ERROR_MESSAGES = [
+        "This endpoint has been requested too many times",
+        "Namespace is not valid"
+    ]
     COOL_OFF_MINUTES = 5 * 1.1  # Padding
 
     def __init__(self):
@@ -201,7 +205,7 @@ class ImportExportClient(BaseClass):
         if not dry_run:
             import_response = self.attempt_import(
                 filename, name, path, dst_namespace, override_params)
-            if "This endpoint has been requested too many times" in str(import_response):
+            if any(err_msg in str(import_response) for err_msg in self.ERROR_MESSAGES):
                 self.log.warning("Re-importing project {0} to {1}, waiting {2} minutes due to:\n{3}".format(
                     name, dst_namespace, self.COOL_OFF_MINUTES, import_response))
                 sleep(self.COOL_OFF_MINUTES * 60)
@@ -411,13 +415,14 @@ class ImportExportClient(BaseClass):
         while True:
             try:
                 # There is a small chance that the re-import exceeds the rate limit
-                if not retry and "This endpoint has been requested too many times" in str(import_response):
+                if any(err_msg in str(import_response) for err_msg in self.ERROR_MESSAGES):
                     self.log.warning("Re-importing project {0} to {1}, waiting {2} minutes due to:\n{3}".format(
                         name, dst_namespace, self.COOL_OFF_MINUTES, import_response))
                     sleep(self.COOL_OFF_MINUTES * 60)
                     import_response = self.attempt_import(
                         filename, name, path, dst_namespace, override_params)
                     import_response = json.loads(import_response)
+                    timeout = 0
                 import_id = import_response.get("id", None)
                 if import_id:
                     status = self.projects_api.get_project_import_status(

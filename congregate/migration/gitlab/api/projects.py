@@ -1,9 +1,12 @@
 import json
 from urllib import quote_plus
 from congregate.helpers import api
+from congregate.migration.gitlab.api.users import UsersApi
 
 
 class ProjectsApi():
+    def __init__(self):
+        self.users = UsersApi()
 
     def search_for_project(self, host, token, name):
         """
@@ -69,7 +72,9 @@ class ProjectsApi():
             :yield: Generator containing JSON results from GET /projects
 
         """
-        return api.list_all(host, token, "projects/%d/members" % id)
+        for member in api.list_all(host, token, "projects/%d/members" % id):
+            member["email"] = self.users.get_user_email(member["id"], host, token)
+            yield member
 
     def add_member(self, id, host, token, member):
         """
@@ -286,7 +291,9 @@ class ProjectsApi():
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /projects/:id/members/all
         """
-        return api.list_all(host, token, "projects/%d/members/all" % id)
+        for member in api.list_all(host, token, "projects/%d/members/all" % id):
+            member["email"] = self.users.get_user_email(member["id"], host, token)
+            yield member
 
     def get_all_project_starrers(self, id, host, token):
         """

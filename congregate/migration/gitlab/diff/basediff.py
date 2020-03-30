@@ -1,11 +1,11 @@
 import json
 import base64
 from types import GeneratorType
-from opslib.icsutils.jsondiff import Comparator
 from bs4 import BeautifulSoup as bs
 from json2html import json2html
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.misc_utils import find as nested_find, is_error_message_present
+from congregate.helpers.jsondiff import Comparator
 
 
 class BaseDiffClient(BaseClass):
@@ -121,7 +121,6 @@ class BaseDiffClient(BaseClass):
             else:
                 destination_data = self.generate_empty_data(
                     source_data)
-
             return self.diff(source_data, destination_data, critical_key=critical_key, obfuscate=obfuscate)
 
         return self.empty_diff()
@@ -202,26 +201,29 @@ class BaseDiffClient(BaseClass):
             }
 
     def ignore_keys(self, data):
-        if isinstance(data, list):
-            for i, _ in enumerate(data):
-                if isinstance(data[i], str) or isinstance(data[i], unicode):
-                    return data
-                data[i] = self.ignore_keys(data[i])
-        else:
-            for key in self.keys_to_ignore:
-                if key in data:
-                    data.pop(key)
-        return data
+        if data is not None:
+            if isinstance(data, list):
+                for i, _ in enumerate(data):
+                    if isinstance(data[i], str) or isinstance(data[i], unicode):
+                        return data
+                    data[i] = self.ignore_keys(data[i])
+            else:
+                for key in self.keys_to_ignore:
+                    if key in data:
+                        data.pop(key)
+            return data
+        return {}
 
     def obfuscate_values(self, obj):
-        keys_to_obfuscate = [
-            "value",
-            "key",
-            "runners_token"
-        ]
-        for key in keys_to_obfuscate:
-            if key in obj:
-                obj[key] = base64.b64encode(obj[key])
+        if isinstance(obj, dict):
+            keys_to_obfuscate = [
+                "value",
+                "key",
+                "runners_token"
+            ]
+            for key in keys_to_obfuscate:
+                if key in obj:
+                    obj[key] = base64.b64encode(obj[key])
 
         return obj
 
