@@ -28,7 +28,7 @@ Come together, right now
 
 ### TL;DR Install
 
-Copy the following code snippet to a file in the congregate directory and run it
+Copy the following code snippet to a file in the Congregate directory and run it
 
 ```bash
 #!/bin/bash
@@ -65,7 +65,7 @@ cp congregate.sh /usr/local/bin
 echo "export CONGREGATE_PATH=$CONGREGATE_PATH" >> ~/.bash_profile
 ```
 
-Once all of the dependencies are installed, run `congregate config` to set up the congregate config.
+Once all of the dependencies are installed, run `congregate configure` to set up the Congregate config.
 
 ### Config staging location
 
@@ -99,19 +99,19 @@ Invoke-WebRequest -Uri https://raw.githubusercontent.com/python-poetry/poetry/ma
 pip install poetry
 
 # Install dependencies from Pipfile
-cd /path/to/congregate
+cd <path_to_congregate>
 poetry install
 
 # Start-up python virtualenv
-cd /path/to/congregate
+cd <path_to_congregate>
 poetry shell
 
 # Install ui dependencies
-cd /path/to/congregate
+cd <path_to_congregate>
 poetry run dnd install
 ```
 
-### Installing Congregate (end-user)
+### Installing and configuring Congregate (end-user)
 
 From **docker**:
 
@@ -138,10 +138,14 @@ docker start <container-id>
 docker exec -it <container-id> /bin/bash
 ```
 
+**N.B.** To bring up docker aliases and others run:
+
+`. dev/bin/env`
+
 From **tar.gz**:
 
-1. Navigate to the CI/CD section of this project
-2. Download the latest tar.gz of congregate
+1. Navigate to the project's *Repository -> Files* page
+2. Download the latest tar.gz
 3. Run the following commands:
 
 ```bash
@@ -161,16 +165,34 @@ export CONGREGATE_PATH=<path_to_congregate>
 cp congregate.sh /usr/local/bin
 ```
 
-Run the following commands to configure congregate and retrieve info from the source instance:
+#### Configuring
+
+Before you start make sure to have a source and destination instance available and accessible from Congregate.
+
+**N.B.** Congregate is currently only configurable to migrate from GitLab -> GitLab (either SaaS or self-managed).
+Migrating from and to other external instances (BitBucket, GitHub, etc.) is currently not supported.
+
+Using the `root` user account create a Personal Access Token or PAT (preferably create a separate user with Admin privileges) on both instances.
+From the user profile's *Settings -> Access Tokens* enter a name and check `api` from *Scopes*. This may change once more granular rights are introduced for PATs as described [here](https://gitlab.com/groups/gitlab-org/-/epics/637).
+Make sure to safely store the tokens before configuring.
+
+As part of project migrations Congregate extends the Project export/import API by migrating registries (docker images).
+Make sure to enable the **Container Registry** on both instances as you will need the hostnames during configuration.
+Apart from the `/etc/gitlab/gitlab.rb` file you may lookup the hostname on an empty project's *Packages -> Container Registry* page.
+
+Run the following commands to configure Congregate and retrieve info from the source instance:
 
 ```bash
 congregate configure
 congregate list
 ```
 
-With congregate configured and projects, groups, and users retrieved, you should be ready to use the tool or test your changes.
+All secrets (PATs, S3 keys) are obfuscated in your `congregate.conf` configuration file.
 
-Note: Instead of exporting an environment variable within your shell session, you can also add `CONGREGATE_PATH` to `bash_profile` or an init.d script. This is a bit more of a permanent solution than just exporting the variable within the session.
+With Congregate configured and projects, groups, and users retrieved, you should be ready to use the tool or test your changes.
+
+**N.B.** Instead of exporting an environment variable within your shell session, you can also add `CONGREGATE_PATH` to `bash_profile` or an `init.d` script.
+This is a bit more of a permanent solution than just exporting the variable within the session.
 
 ### Usage
 
@@ -183,7 +205,6 @@ Usage:
     congregate rollback [--hard-delete] [--skip-users] [--skip-groups] [--skip-projects] [--commit]
     congregate ui
     congregate export-projects
-    congregate import-projects [--commit]
     congregate do-all [--commit]
     congregate do-all-users [--commit]
     congregate do-all-groups-and-projects [--commit]
@@ -211,7 +232,6 @@ Usage:
     congregate compare-groups [--staged]
     congregate staged-user-list
     congregate generate-seed-data [--commit] # TODO: Refactor, broken
-    congregate map-new-users-to-groups-and-projects [--commit]
     congregate validate-staged-groups-schema
     congregate validate-staged-projects-schema
     congregate map-users [--commit]
@@ -250,7 +270,6 @@ Commands:
     rollback                                Remove staged users/groups/projects on destination.
     ui                                      Deploy UI to port 8000.
     export-projects                         Export and update source instance projects. Bulk project export without user/group info.
-    import-projects                         Import exported and updated projects onto destination instance. Destination user/group info required.
     do-all*                                 Configure system, retrieve all projects, users, and groups, stage all information, and commence migration.
     update-staged-user-info                 Update staged user information after migrating only users.
     update-aws-creds                        Run awscli commands based on the keys stored in the config. Useful for docker updates.
@@ -277,8 +296,6 @@ Commands:
     archive-staged-projects                 Archive projects that are staged, not necessarily migrated.
     unarchive-staged-projects               Unarchive projects that are staged, not necessarily migrate.
     generate-seed-data                      Generate dummy data to test a migration.
-    map-new-users-to-groups-and-projects    Map new_users.json to the staged_groups.json and stage.json (projects) files without making API calls.
-                                                Requires that update-staged-user-info has been called, first, to create new_users.json.
     validate-staged-groups-schema           Check staged_groups.json for missing group data.
     validate-staged-projects-schema         Check stage.json for missing project data.
     clean                                   Delete all retrieved and staged data
@@ -317,9 +334,10 @@ Best practice is to first migrate ONLY users by running:
 Once all the users are migrated:
 
 * Go back to the UI, select and stage all groups and sub-groups
+* Only the top level groups will be staged as they comprise the entire tree structure.
 * `congregate migrate --skip-users --skip-project-export --skip-project-import` - Inspect the output in:
-  * `dry_run_group_migration.json`
-  * `congregate.log` (especially `more congregate.log | grep "REWRITE"`)
+  * `data/dry_run_group_migration.json`
+  * `data/congregate.log`
 * `congregate migrate --skip-users --skip-project-export --skip-project-import --commit`
 
 ##### Migrate projects
@@ -332,15 +350,16 @@ Once all the users and groups (w/ sub-groups) are migrated:
   * Inspect `data/staged_users.json` if any of the NOT found users are blocked as, by default, they will not be migrated.
   * To explicitly remove blocked users from staged users, groups and projects run `congregate remove-blocked-users`.
 * `congregate migrate --skip-users --skip-group-export --skip-group-import` - Inspect the output in:
-  * `dry_run_project_migration.json`
-  * `congregate.log` (especially `more congregate.log | grep "REWRITE"`)
+  * `data/dry_run_project_migration.json`
+  * `data/congregate.log`
 * `congregate migrate --skip-users --skip-group-export --skip-group-import --commit`
 
 ##### Rollback
 
 To remove all of the staged users, groups (w/ sub-groups) and projects on destination run:
 
-* `congregate rollback` - Inspect the output.
+* `congregate rollback` - Inspect the output in:
+  * `data/congregate.log`
 * `congregate rollback --commit`
 * For more granular rollback see [Usage](#usage).
 
@@ -355,8 +374,6 @@ For a CLI only based migration, the following commands are available:
 **N.B.** By default these commands will run in `dry_run` mode. To revert it add `--commit` at the end.
 
 ### Development Environment Setup
-
-Once congregate is installed
 
 #### Live reloading for UI development and backend development without a debugger
 
@@ -381,7 +398,7 @@ Refer to [this how-to](https://code.visualstudio.com/docs/python/debugging) for 
     "module": "flask",
     "env": {
         "PYTHONPATH": "${workspaceRoot}",
-        "CONGREGATE_PATH": "/path/to/congregate",
+        "CONGREGATE_PATH": "<path_to_congregate>",
         "FLASK_APP": "${CONGREGATE_PATH}/ui"
     },
     "args": [
@@ -395,27 +412,17 @@ Refer to [this how-to](https://code.visualstudio.com/docs/python/debugging) for 
 
 To reload the app in debugging mode, you will need to click the `refresh` icon in VS code (on the sidebar's Explorer tab). Currently VS code doesn't support live reloading flask apps on save.
 
-#### Live reloading for UI development and backend development without a debugger
-
-You will need to turn on debugging in the flask app to see a mostly live reload of the UI. Create the following environment variable before deploying the UI
-
-```bash
-export FLASK_DEBUG=1
-```
-
-For the UI, you will still need to save the file in your editor and refresh the page, but it's better than restarting flask every time. The app will live reload every time a .py file is changed and saved.
-
 #### If VS Code doesn't pick up poetry virtualenv
 
 Find virtualenv path
 
-```
+```bash
 poetry config --list
 ```
 
 Add the following line to .vscode/settings.json:
 
-```
+```text
 "python.venvPath": "/path/to/virtualenv"
 ```
 
@@ -429,72 +436,72 @@ You may need to refresh VS Code. VS Code will also call this python interpreter 
 
 :x: = not supported
 
-| Main           | Feature                     | Sub-feature                                                                                                                                                       | GitLab             | Congregate                              |
-| -------------- | --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ | --------------------------------------- |
+| Main           | Feature                     | Sub-feature                                                                                                                                                       | GitLab             | Congregate         |
+| -------------- | --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ | ------------------ |
 | **Group**      |
-|                | Milestones                  |                                                                                                                                                                   | :white_check_mark: | :white_check_mark:                      |
-|                | Badges                      |                                                                                                                                                                   | :white_check_mark: | :white_check_mark:                      |
-|                | Labels                      |                                                                                                                                                                   | :white_check_mark: | :white_check_mark:                      |
-|                | Boards                      | Board Assignee, Labels, Lists                                                                                                                                     | :white_check_mark: | :white_check_mark:                      |
-|                | Members                     |                                                                                                                                                                   | :white_check_mark: | :white_check_mark:                      |
-|                | Epics                       | Parent, Award Emoji, Events, Notes                                                                                                                                | :white_check_mark: | :white_check_mark:                      |
-|                | CI variables                |                                                                                                                                                                   | :x:                | :white_check_mark:                      |
-|                | Hooks                       |                                                                                                                                                                   | :x:                | :heavy_minus_sign:                      |
-|                | Audit Events                |                                                                                                                                                                   | :x:                | :x:                                     |
-|                | Avatars                     |                                                                                                                                                                   | :x:                | :x:                                     |
+|                | Milestones                  |                                                                                                                                                                   | :white_check_mark: | :white_check_mark: |
+|                | Badges                      |                                                                                                                                                                   | :white_check_mark: | :white_check_mark: |
+|                | Labels                      |                                                                                                                                                                   | :white_check_mark: | :white_check_mark: |
+|                | Boards                      | Board Assignee, Labels, Lists                                                                                                                                     | :white_check_mark: | :white_check_mark: |
+|                | Members                     |                                                                                                                                                                   | :white_check_mark: | :white_check_mark: |
+|                | Epics                       | Parent, Award Emoji, Events, Notes                                                                                                                                | :white_check_mark: | :white_check_mark: |
+|                | CI variables                |                                                                                                                                                                   | :x:                | :white_check_mark: |
+|                | Hooks                       |                                                                                                                                                                   | :x:                | :heavy_minus_sign: |
+|                | Audit Events                |                                                                                                                                                                   | :x:                | :x:                |
+|                | Avatars                     |                                                                                                                                                                   | :x:                | :x:                |
 | **Project**    |
-|                | Labels                      |                                                                                                                                                                   | :white_check_mark: | :white_check_mark:                      |
-|                | Milestones                  | Events                                                                                                                                                            | :white_check_mark: | :white_check_mark:                      |
-|                | Issues                      | Events, Timelogs, Notes, Label Links, Milestone, Resource Label Events, Issue Assignees, Zoom Meetings, Sentry Issue, Award Emoji, Designs, Design Versions, Epic | :white_check_mark: | :white_check_mark:                      |
-|                | Snippets                    | Notes, Award Emoji                                                                                                                                                | :white_check_mark: | :white_check_mark:                      |
-|                | Releases                    |                                                                                                                                                                   | :white_check_mark: | :white_check_mark:                      |
-|                | Members                     |                                                                                                                                                                   | :white_check_mark: | :white_check_mark:                      |
-|                | Group Members               |                                                                                                                                                                   | :white_check_mark: | :white_check_mark:                      |
-|                | Merge requests              | Metrics, Award Emoji, Notes, Merge Request Diff, Events, Timelogs, Label Links, Milestone, Resource Label Events                                                  | :white_check_mark: | :white_check_mark:                      |
-|                | CI Pipelines                | Notes, Stages, External Pull Requests, Merge Request                                                                                                              | :white_check_mark: | :white_check_mark:                      |
-|                | Pipeline schedules          |                                                                                                                                                                   | :white_check_mark: | :white_check_mark:                      |
-|                | External Pull Requests      |                                                                                                                                                                   | :white_check_mark: | :white_check_mark:                      |
-|                | Auto DevOps                 |                                                                                                                                                                   | :white_check_mark: | :white_check_mark:                      |
-|                | Triggers                    |                                                                                                                                                                   | :white_check_mark: | :white_check_mark:                      |
-|                | Services                    |                                                                                                                                                                   | :white_check_mark: | :white_check_mark:                      |
-|                | Protected Branches          | Merge Access Levels, Push Access Levels, Unprotect Access Levels                                                                                                  | :white_check_mark: | :white_check_mark:                      |
-|                | Branches                    |                                                                                                                                                                   | :white_check_mark: | :white_check_mark:                      |
-|                | Default Branch              |                                                                                                                                                                   | :white_check_mark: | :white_check_mark:                      |
-|                | Protected Environments      | Deploy Access Levels                                                                                                                                              | :white_check_mark: | :white_check_mark:                      |
-|                | Protected Tags              | Create Access Levels                                                                                                                                              | :white_check_mark: | :white_check_mark:                      |
-|                | Project Feature             |                                                                                                                                                                   | :white_check_mark: | :white_check_mark:                      |
-|                | Custom Attributes           |                                                                                                                                                                   | :white_check_mark: | :white_check_mark:                      |
-|                | Badges                      |                                                                                                                                                                   | :white_check_mark: | :white_check_mark:                      |
-|                | CI/CD Settings              |                                                                                                                                                                   | :white_check_mark: | :white_check_mark:                      |
-|                | Error Tracking Setting      |                                                                                                                                                                   | :white_check_mark: | :white_check_mark:                      |
-|                | Metrics Setting             |                                                                                                                                                                   | :white_check_mark: | :white_check_mark:                      |
-|                | Boards                      | Lists                                                                                                                                                             | :white_check_mark: | :white_check_mark:                      |
-|                | Service Desk Setting        |                                                                                                                                                                   | :white_check_mark: | :white_check_mark:                      |
-|                | CI variables                |                                                                                                                                                                   | :x:                | :white_check_mark:                      |
-|                | Avatars                     |                                                                                                                                                                   | :white_check_mark: | :white_check_mark:                      |
-|                | Uploads                     |                                                                                                                                                                   | :white_check_mark: | :white_check_mark:                      |
-|                | LFS Objects                 |                                                                                                                                                                   | :white_check_mark: | :white_check_mark:                      |
-|                | Wikis                       |                                                                                                                                                                   | :white_check_mark: | :white_check_mark:                      |
-|                | Push rules                  |                                                                                                                                                                   | :x:                | :white_check_mark:                      |
-|                | Merge request approvers     |                                                                                                                                                                   | :x:                | :white_check_mark: (project-level only) |
-|                | Shared Groups               |                                                                                                                                                                   | :x:                | :white_check_mark:                      |
-|                | Registry Repositories       |                                                                                                                                                                   | :x:                | :white_check_mark:                      |
-|                | Container Expiration Policy |                                                                                                                                                                   | :white_check_mark: | :white_check_mark:                      |
-|                | Deploy keys                 |                                                                                                                                                                   | :x:                | :white_check_mark:                      |
-|                | Awards                      |                                                                                                                                                                   | :white_check_mark: | :white_check_mark:                      |
-|                | Webhooks (w/o token)        |                                                                                                                                                                   | :x:                | :white_check_mark:                      |
-|                | Environments                |                                                                                                                                                                   | :x:                | :white_check_mark:                      |
-|                | Audit Events                |                                                                                                                                                                   | :x:                | :x:                                     |
+|                | Labels                      |                                                                                                                                                                   | :white_check_mark: | :white_check_mark: |
+|                | Milestones                  | Events                                                                                                                                                            | :white_check_mark: | :white_check_mark: |
+|                | Issues                      | Events, Timelogs, Notes, Label Links, Milestone, Resource Label Events, Issue Assignees, Zoom Meetings, Sentry Issue, Award Emoji, Designs, Design Versions, Epic | :white_check_mark: | :white_check_mark: |
+|                | Snippets                    | Notes, Award Emoji                                                                                                                                                | :white_check_mark: | :white_check_mark: |
+|                | Releases                    |                                                                                                                                                                   | :white_check_mark: | :white_check_mark: |
+|                | Members                     |                                                                                                                                                                   | :white_check_mark: | :white_check_mark: |
+|                | Group Members               |                                                                                                                                                                   | :white_check_mark: | :white_check_mark: |
+|                | Merge requests              | Metrics, Award Emoji, Notes, Merge Request Diff, Events, Timelogs, Label Links, Milestone, Resource Label Events                                                  | :white_check_mark: | :white_check_mark: |
+|                | CI Pipelines                | Notes, Stages, External Pull Requests, Merge Request                                                                                                              | :white_check_mark: | :white_check_mark: |
+|                | Pipeline schedules          |                                                                                                                                                                   | :white_check_mark: | :white_check_mark: |
+|                | External Pull Requests      |                                                                                                                                                                   | :white_check_mark: | :white_check_mark: |
+|                | Auto DevOps                 |                                                                                                                                                                   | :white_check_mark: | :white_check_mark: |
+|                | Triggers                    |                                                                                                                                                                   | :white_check_mark: | :white_check_mark: |
+|                | Services                    |                                                                                                                                                                   | :white_check_mark: | :white_check_mark: |
+|                | Protected Branches          | Merge Access Levels, Push Access Levels, Unprotect Access Levels                                                                                                  | :white_check_mark: | :white_check_mark: |
+|                | Branches                    |                                                                                                                                                                   | :white_check_mark: | :white_check_mark: |
+|                | Default Branch              |                                                                                                                                                                   | :white_check_mark: | :white_check_mark: |
+|                | Protected Environments      | Deploy Access Levels                                                                                                                                              | :white_check_mark: | :white_check_mark: |
+|                | Protected Tags              | Create Access Levels                                                                                                                                              | :white_check_mark: | :white_check_mark: |
+|                | Project Feature             |                                                                                                                                                                   | :white_check_mark: | :white_check_mark: |
+|                | Custom Attributes           |                                                                                                                                                                   | :white_check_mark: | :white_check_mark: |
+|                | Badges                      |                                                                                                                                                                   | :white_check_mark: | :white_check_mark: |
+|                | CI/CD Settings              |                                                                                                                                                                   | :white_check_mark: | :white_check_mark: |
+|                | Error Tracking Setting      |                                                                                                                                                                   | :white_check_mark: | :white_check_mark: |
+|                | Metrics Setting             |                                                                                                                                                                   | :white_check_mark: | :white_check_mark: |
+|                | Boards                      | Lists                                                                                                                                                             | :white_check_mark: | :white_check_mark: |
+|                | Service Desk Setting        |                                                                                                                                                                   | :white_check_mark: | :white_check_mark: |
+|                | CI variables                |                                                                                                                                                                   | :x:                | :white_check_mark: |
+|                | Avatars                     |                                                                                                                                                                   | :white_check_mark: | :white_check_mark: |
+|                | Uploads                     |                                                                                                                                                                   | :white_check_mark: | :white_check_mark: |
+|                | LFS Objects                 |                                                                                                                                                                   | :white_check_mark: | :white_check_mark: |
+|                | Wikis                       |                                                                                                                                                                   | :white_check_mark: | :white_check_mark: |
+|                | Push rules                  |                                                                                                                                                                   | :x:                | :white_check_mark: |
+|                | Merge request approvals     |                                                                                                                                                                   | :x:                | :white_check_mark: |
+|                | Shared Groups               |                                                                                                                                                                   | :x:                | :white_check_mark: |
+|                | Registry Repositories       |                                                                                                                                                                   | :x:                | :white_check_mark: |
+|                | Container Expiration Policy |                                                                                                                                                                   | :white_check_mark: | :white_check_mark: |
+|                | Deploy keys                 |                                                                                                                                                                   | :x:                | :white_check_mark: |
+|                | Awards                      |                                                                                                                                                                   | :white_check_mark: | :white_check_mark: |
+|                | Webhooks (w/o token)        |                                                                                                                                                                   | :x:                | :white_check_mark: |
+|                | Environments                |                                                                                                                                                                   | :x:                | :white_check_mark: |
+|                | Audit Events                |                                                                                                                                                                   | :x:                | :x:                |
 | **User**       |
-|                | Avatars                     |                                                                                                                                                                   | :x:                | :white_check_mark:                      |
-|                | User info                   |                                                                                                                                                                   | :x:                | :white_check_mark:                      |
-|                | User preferences            |                                                                                                                                                                   | :x:                | :white_check_mark:                      |
+|                | Avatars                     |                                                                                                                                                                   | :x:                | :white_check_mark: |
+|                | User info                   |                                                                                                                                                                   | :x:                | :white_check_mark: |
+|                | User preferences            |                                                                                                                                                                   | :x:                | :white_check_mark: |
 | **Standalone** |
-|                | Version                     |                                                                                                                                                                   | :x:                | :white_check_mark:                      |
-|                | System hooks (w/o token)    |                                                                                                                                                                   | :x:                | :white_check_mark:                      |
-|                | Services                    |                                                                                                                                                                   | :x:                | :x:                                     |
-|                | Deploy keys                 |                                                                                                                                                                   | :x:                | :x:                                     |
-|                | ToDos                       |                                                                                                                                                                   | :x:                | :x:                                     |
+|                | Version                     |                                                                                                                                                                   | :x:                | :white_check_mark: |
+|                | System hooks (w/o token)    |                                                                                                                                                                   | :x:                | :white_check_mark: |
+|                | Services                    |                                                                                                                                                                   | :x:                | :x:                |
+|                | Deploy keys                 |                                                                                                                                                                   | :x:                | :x:                |
+|                | ToDos                       |                                                                                                                                                                   | :x:                | :x:                |
 
 ## Notes from Migration Merge
 * Unit tests won't run unless there is a config file in `data/config.json`
@@ -502,7 +509,7 @@ You may need to refresh VS Code. VS Code will also call this python interpreter 
 * Follow the instructions for setting up a local BitBucket server in Docker. Use version 4.14 of the server from `https://hub.docker.com/r/atlassian/bitbucket-server/`
     * Create one project, two repos, two additional users (beyond the admin)
 * Run congregate.sh in the local project directory in the `pipenv shell`
-    * `./congregate.sh config`
+    * `./congregate.sh configure`
     * `./congregate.sh migrate`
 * Missing items from the "simple" config found when running migrate
     * `location`: Expecting something like 'aws'
@@ -514,7 +521,7 @@ You may need to refresh VS Code. VS Code will also call this python interpreter 
 
 ### Example JSONs
 #### List
-* Generated through `congregate.sh list`
+* Generated through `./congregate.sh list`
 ##### users.json
 ```json
 [
