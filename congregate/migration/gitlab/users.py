@@ -5,6 +5,7 @@ from requests.exceptions import RequestException
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers import api
 from congregate.helpers.misc_utils import get_dry_log, json_pretty, get_timedelta
+from congregate.helpers.migrate_utils import write_results_to_file
 from congregate.helpers.threads import handle_multi_thread
 from congregate.helpers.misc_utils import remove_dupes, migration_dry_run
 from congregate.migration.gitlab.api.groups import GroupsApi
@@ -531,8 +532,14 @@ class UsersClient(BaseClass):
 
         self.log.info("{}Migrating user info".format(get_dry_log(dry_run)))
         if not dry_run:
-            handle_multi_thread(self.handle_user_creation,
+            new_users = handle_multi_thread(self.handle_user_creation,
                                 staged_users, threads)
+            if new_users:
+                formatted_users = {}
+                for n in new_users:
+                    formatted_users[n["email"]] = n
+                write_results_to_file(formatted_users, result_type="user")
+
         else:
             self.log.info(
                 "DRY-RUN: Outputing various USER migration data to dry_run_user_migration.json")

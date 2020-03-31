@@ -1,6 +1,7 @@
 from datetime import datetime
+from shutil import copy
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import is_dot_com
+from congregate.helpers.misc_utils import is_dot_com, write_json_to_file
 from congregate.migration.gitlab.groups import GroupsClient as groupsClient
 from congregate.migration.gitlab.users import UsersApi as usersApi
 
@@ -110,3 +111,12 @@ def get_dst_path_with_namespace(p):
         :return: Destination project path with namespace
     """
     return "{0}/{1}".format(get_user_project_namespace(p) if is_user_project(p) else get_project_namespace(p), p["path"])
+
+
+def write_results_to_file(import_results, result_type="project"):
+    end_time = str(datetime.now()).replace(" ", "_")
+    file_path = "%s/data/%s_migration_results_%s.json" % (
+        b.app_path, result_type, end_time)
+    write_json_to_file(file_path, import_results, log=b.log)
+    copy(file_path, "%s/data/%s_migration_results.json" %
+         (b.app_path, result_type))

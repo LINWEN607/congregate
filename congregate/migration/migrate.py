@@ -9,8 +9,6 @@ import json
 import traceback
 from re import sub
 from collections import Counter
-from datetime import datetime
-from shutil import copy
 from requests.exceptions import RequestException
 
 from congregate.helpers import api, migrate_utils
@@ -163,7 +161,7 @@ def migrate_group_info(skip_group_export=False, skip_group_import=False):
             })
             b.log.info("### {0}Group import results ###\n{1}"
                        .format(dry_log, json_pretty(import_results)))
-            write_results_to_file(import_results, result_type="group")
+            migrate_utils.write_results_to_file(import_results, result_type="group")
         else:
             b.log.info("SKIP: Assuming staged groups will be later imported")
     else:
@@ -296,20 +294,14 @@ def migrate_project_info(skip_project_export=False, skip_project_import=False):
             })
             b.log.info("### {0}Project import results ###\n{1}"
                        .format(dry_log, json_pretty(import_results)))
-            write_results_to_file(import_results)
+            migrate_utils.write_results_to_file(import_results)
         else:
             b.log.info("SKIP: Assuming staged projects will be later imported")
     else:
         b.log.info("SKIP: No projects to migrate")
 
 
-def write_results_to_file(import_results, result_type="project"):
-    end_time = str(datetime.now()).replace(" ", "_")
-    file_path = "%s/data/%s_migration_results_%s.json" % (
-        b.app_path, result_type, end_time)
-    write_json_to_file(file_path, import_results, log=b.log)
-    copy(file_path, "%s/data/%s_migration_results.json" %
-         (b.app_path, result_type))
+
 
 
 def handle_exporting_projects(project):
