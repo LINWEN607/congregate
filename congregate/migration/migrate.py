@@ -103,6 +103,10 @@ def migrate(
         if is_dot_com(b.config.destination_host):
             hooks.migrate_system_hooks()
 
+        # Remove from parent group to avoid inheritance
+        if b.config.parent_id is not None:
+            groups.remove_import_user(b.config.parent_id)
+
         add_post_migration_stats()
 
 
@@ -161,7 +165,8 @@ def migrate_group_info(skip_group_export=False, skip_group_import=False):
             })
             b.log.info("### {0}Group import results ###\n{1}"
                        .format(dry_log, json_pretty(import_results)))
-            write_results_to_file(import_results, result_type="group", log=b.log)
+            write_results_to_file(
+                import_results, result_type="group", log=b.log)
         else:
             b.log.info("SKIP: Assuming staged groups will be later imported")
     else:
@@ -299,9 +304,6 @@ def migrate_project_info(skip_project_export=False, skip_project_import=False):
             b.log.info("SKIP: Assuming staged projects will be later imported")
     else:
         b.log.info("SKIP: No projects to migrate")
-
-
-
 
 
 def handle_exporting_projects(project):
