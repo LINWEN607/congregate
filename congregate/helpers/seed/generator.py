@@ -37,11 +37,13 @@ class SeedDataGenerator(BaseClass):
         dry_log = "DRY-RUN: " if dry_run else ""
         users = self.generate_users(dry_log, dry_run)
         groups = self.generate_groups(dry_log, dry_run)
+        for group in groups:
+            self.generate_dummy_group_variables(group["id"], dry_log, dry_run)
         self.add_group_members(users, groups, dry_log, dry_run)
         projects = self.generate_group_projects(groups, dry_log, dry_run)
         for project in projects:
             self.generate_dummy_environment(project["id"], dry_log, dry_run)
-            self.generate_dummy_variables(project["id"], dry_log, dry_run)
+            self.generate_dummy_project_variables(project["id"], dry_log, dry_run)
         projects += self.generate_user_projects(users, dry_log, dry_run)
 
         print "---Generated Users---"
@@ -219,7 +221,7 @@ class SeedDataGenerator(BaseClass):
         if not dry_run:
             return self.projects.projects_api.create_environment(self.config.source_host, self.config.source_token, project_id, data)
 
-    def generate_dummy_variables(self, project_id, dry_log, dry_run=True):
+    def generate_dummy_project_variables(self, project_id, dry_log, dry_run=True):
         data = [
             {
                 "key": "NEW_VARIABLE",
@@ -244,3 +246,27 @@ class SeedDataGenerator(BaseClass):
                 "{0}Creating project variable ({1})".format(dry_log, data))
             if not dry_run:
                 self.variables.set_variables(project_id, d, self.config.source_host, self.config.source_token)
+
+    def generate_dummy_group_variables(self, group_id, dry_log, dry_run=True):
+        data = [
+            {
+                "key": "NEW_VARIABLE",
+                "value": "updated value",
+                "variable_type": "env_var",
+                "protected": True,
+                "masked": False
+            },
+            {
+                "key": "NEWER_VARIABLE",
+                "value": "this is another variable",
+                "variable_type": "env_var",
+                "protected": True,
+                "masked": False
+            }
+        ]
+
+        for d in data:
+            self.log.info(
+                "{0}Creating group variable ({1})".format(dry_log, data))
+            if not dry_run:
+                self.variables.set_variables(group_id, d, self.config.source_host, self.config.source_token, var_type="group")
