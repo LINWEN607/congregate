@@ -73,7 +73,8 @@ class ProjectsApi():
 
         """
         for member in api.list_all(host, token, "projects/%d/members" % id):
-            member["email"] = self.users.get_user_email(member["id"], host, token)
+            member["email"] = self.users.get_user_email(
+                member["id"], host, token)
             yield member
 
     def add_member(self, id, host, token, member):
@@ -161,7 +162,7 @@ class ProjectsApi():
         """
         return api.generate_delete_request(host, token, "projects/{}".format(id))
 
-    def add_shared_group(self, host, token, pid, group):
+    def add_shared_group(self, host, token, pid, data=None):
         """
         Allow to share project with group
 
@@ -174,7 +175,7 @@ class ProjectsApi():
             :return: Response object containing the response to POST /projects/:id/share
 
         """
-        return api.generate_post_request(host, token, "projects/%d/share" % pid, json.dumps(group))
+        return api.generate_post_request(host, token, "projects/%d/share" % pid, json.dumps(data))
 
     def edit_project(self, host, token, pid, data=None):
         """
@@ -292,7 +293,8 @@ class ProjectsApi():
             :yield: Generator returning JSON of each result from GET /projects/:id/members/all
         """
         for member in api.list_all(host, token, "projects/%d/members/all" % id):
-            member["email"] = self.users.get_user_email(member["id"], host, token)
+            member["email"] = self.users.get_user_email(
+                member["id"], host, token)
             yield member
 
     def get_all_project_starrers(self, id, host, token):

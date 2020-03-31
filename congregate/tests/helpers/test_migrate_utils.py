@@ -648,14 +648,18 @@ class MigrateTests(unittest.TestCase):
         self.assertEqual(mutils.get_dst_path_with_namespace(
             self.staged_root_user_project), "root/spring-app-secure-2")
 
+    @mock.patch.object(ConfigurationValidator, "parent_id", new_callable=mock.PropertyMock)
     @mock.patch.object(ConfigurationValidator, "parent_group_path", new_callable=mock.PropertyMock)
-    def test_get_full_path_with_parent_namespace_with_parent(self, parent_group_path):
+    def test_get_full_path_with_parent_namespace_with_parent(self, parent_group_path, parent_id):
         parent_group_path.return_value = "test-parent-group-path"
+        parent_id.return_value = 1
         self.assertEqual(mutils.get_full_path_with_parent_namespace(
             "test-path"), "test-parent-group-path/test-path")
 
+    @mock.patch.object(ConfigurationValidator, "parent_id", new_callable=mock.PropertyMock)
     @mock.patch.object(ConfigurationValidator, "parent_group_path", new_callable=mock.PropertyMock)
-    def test_get_full_path_with_parent_namespace(self, parent_group_path):
+    def test_get_full_path_with_parent_namespace(self, parent_group_path, parent_id):
         parent_group_path.return_value = ""
+        parent_id.return_value = ""
         self.assertEqual(mutils.get_full_path_with_parent_namespace(
             "test-path"), "test-path")
