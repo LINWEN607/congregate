@@ -300,10 +300,6 @@ def migrate_project_info(skip_project_export=False, skip_project_import=False):
     else:
         b.log.info("SKIP: No projects to migrate")
 
-
-
-
-
 def handle_exporting_projects(project):
     name = project["name"]
     namespace = project["namespace"]
@@ -409,6 +405,10 @@ def migrate_single_project_info(project, dst_id):
     # Shared with groups
     projects.add_shared_groups(src_id, dst_id)
 
+    # Environments
+    results["environments"] = environments.migrate_project_environments(
+        src_id, dst_id, path_with_namespace)
+
     # CI/CD Variables
     results["variables"] = variables.migrate_cicd_variables(
         src_id, dst_id, path_with_namespace)
@@ -429,10 +429,6 @@ def migrate_single_project_info(project, dst_id):
     results["container_registry"] = registries.migrate_registries(
         src_id, dst_id, path_with_namespace)
 
-    # Environments
-    results["environments"] = environments.migrate_project_environments(
-        src_id, dst_id, path_with_namespace)
-
     # Project hooks (webhooks)
     results["project_hooks"] = hooks.migrate_project_hooks(
         src_id, dst_id, path_with_namespace)
@@ -440,7 +436,6 @@ def migrate_single_project_info(project, dst_id):
     projects.remove_import_user(dst_id)
 
     return results
-
 
 # TODO: Add multiprocessing
 def rollback(dry_run=True,
