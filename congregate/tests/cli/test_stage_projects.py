@@ -78,7 +78,8 @@ class StageProjectsTests(unittest.TestCase):
                 "snippets_access_level": "disabled",
                 "repository_access_level": "enabled",
                 "path_with_namespace": "diaspora/diaspora-client",
-                "archived": False
+                "archived": False,
+                "shared_with_groups": []
             },
             {
                 "name": "Puppet",
@@ -120,7 +121,8 @@ class StageProjectsTests(unittest.TestCase):
                 "snippets_access_level": "disabled",
                 "repository_access_level": "enabled",
                 "path_with_namespace": "brightbox/puppet",
-                "archived": False
+                "archived": False,
+                "shared_with_groups": []
             }
         ]
 
@@ -307,7 +309,8 @@ class StageProjectsTests(unittest.TestCase):
                 "snippets_access_level": "disabled",
                 "repository_access_level": "enabled",
                 "path_with_namespace": "diaspora/diaspora-client",
-                "archived": False
+                "archived": False,
+                "shared_with_groups": []
             },
             {
                 "name": "Puppet",
@@ -349,7 +352,8 @@ class StageProjectsTests(unittest.TestCase):
                 "snippets_access_level": "disabled",
                 "repository_access_level": "enabled",
                 "path_with_namespace": "brightbox/puppet",
-                "archived": False
+                "archived": False,
+                "shared_with_groups": []
             },
             {
                 "name": "Puppet",
@@ -391,7 +395,8 @@ class StageProjectsTests(unittest.TestCase):
                 "snippets_access_level": "disabled",
                 "repository_access_level": "enabled",
                 "path_with_namespace": "brightbox/puppet",
-                "archived": False
+                "archived": False,
+                "shared_with_groups": []
             }
         ]
 

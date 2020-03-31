@@ -233,7 +233,8 @@ def get_project_metadata(project):
         "shared_runners_enabled": project["shared_runners_enabled"],
         "archived": project["archived"],
         "path_with_namespace": project["path_with_namespace"],
-        "path": project["path"]
+        "path": project["path"],
+        "shared_with_groups": project["shared_with_groups"]
     }
 
     # In case of projects without repos (e.g. Wiki)
