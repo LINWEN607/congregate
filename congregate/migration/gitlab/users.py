@@ -4,8 +4,7 @@ from requests.exceptions import RequestException
 
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers import api
-from congregate.helpers.misc_utils import get_dry_log, json_pretty, get_timedelta
-from congregate.helpers.migrate_utils import write_results_to_file
+from congregate.helpers.misc_utils import get_dry_log, json_pretty, get_timedelta, write_results_to_file
 from congregate.helpers.threads import handle_multi_thread
 from congregate.helpers.misc_utils import remove_dupes, migration_dry_run
 from congregate.migration.gitlab.api.groups import GroupsApi
@@ -538,7 +537,7 @@ class UsersClient(BaseClass):
                 formatted_users = {}
                 for n in new_users:
                     formatted_users[n["email"]] = n
-                write_results_to_file(formatted_users, result_type="user")
+                write_results_to_file(formatted_users, result_type="user", log=self.log)
 
         else:
             self.log.info(

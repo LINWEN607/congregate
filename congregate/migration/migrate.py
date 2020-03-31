@@ -13,7 +13,7 @@ from requests.exceptions import RequestException
 
 from congregate.helpers import api, migrate_utils
 from congregate.helpers.misc_utils import get_dry_log, json_pretty, write_json_to_file, \
-    is_dot_com, clean_data, add_post_migration_stats, rotate_log
+    is_dot_com, clean_data, add_post_migration_stats, rotate_log, write_results_to_file
 from congregate.helpers.threads import start_multi_process
 from congregate.aws import AwsClient
 from congregate.cli.stage_projects import stage_projects
@@ -161,7 +161,7 @@ def migrate_group_info(skip_group_export=False, skip_group_import=False):
             })
             b.log.info("### {0}Group import results ###\n{1}"
                        .format(dry_log, json_pretty(import_results)))
-            migrate_utils.write_results_to_file(import_results, result_type="group")
+            write_results_to_file(import_results, result_type="group", log=b.log)
         else:
             b.log.info("SKIP: Assuming staged groups will be later imported")
     else:
@@ -294,7 +294,7 @@ def migrate_project_info(skip_project_export=False, skip_project_import=False):
             })
             b.log.info("### {0}Project import results ###\n{1}"
                        .format(dry_log, json_pretty(import_results)))
-            migrate_utils.write_results_to_file(import_results)
+            write_results_to_file(import_results, log=b.log)
         else:
             b.log.info("SKIP: Assuming staged projects will be later imported")
     else:

@@ -355,3 +355,11 @@ def list_to_dict(lst):
     """
     res_dct = {lst[i]: True for i in range(0, len(lst), 2)}
     return res_dct
+
+def write_results_to_file(import_results, result_type="project", log=None):
+    end_time = str(datetime.now()).replace(" ", "_")
+    file_path = "%s/data/%s_migration_results_%s.json" % (
+        get_congregate_path(), result_type, end_time)
+    write_json_to_file(file_path, import_results, log=log)
+    copy(file_path, "%s/data/%s_migration_results.json" %
+         (get_congregate_path(), result_type))
