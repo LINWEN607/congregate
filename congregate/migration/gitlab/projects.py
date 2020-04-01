@@ -5,13 +5,15 @@ from congregate.helpers.base_class import BaseClass
 from congregate.helpers.misc_utils import get_dry_log, get_timedelta
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.groups import GroupsApi
-from congregate.helpers.migrate_utils import get_dst_path_with_namespace
+from congregate.migration.gitlab.groups import GroupsClient
+from congregate.helpers.migrate_utils import get_dst_path_with_namespace, get_full_path_with_parent_namespace
 
 
 class ProjectsClient(BaseClass):
     def __init__(self):
         self.projects_api = ProjectsApi()
         self.groups_api = GroupsApi()
+        self.groups = GroupsClient()
         super(ProjectsClient, self).__init__()
 
     def get_projects(self):
@@ -41,55 +43,35 @@ class ProjectsClient(BaseClass):
             self.log.error(
                 "Failed to remove import user (ID: {0}) from project (ID: {1}), with error:\n{2}".format(self.config.import_user_id, pid, re))
 
-    def add_shared_groups(self, old_id, new_id):
+    def add_shared_groups(self, new_id, path, shared_with_groups):
         """Adds the list of groups we share the project with."""
-        old_project = self.projects_api.get_project(
-            old_id, self.config.source_host, self.config.source_token).json()
-        project_name = old_project["name"]
-        for group in old_project["shared_with_groups"]:
-            path = group["group_full_path"]
-            name = group["group_name"]
-            new_group_id = self.get_new_group_id(name, path)
-            if new_group_id is not None:
-                data = {
-                    "group_access": group["group_access_level"],
-                    "group_id": new_group_id,
-                    "expires_at": group["expires_at"]
-                }
-                try:
+        try:
+            self.log.info(
+                "Migrating project {} shared with groups".format(path))
+            for group in shared_with_groups:
+                dst_full_path = get_full_path_with_parent_namespace(
+                    group["group_full_path"])
+                new_gid = self.groups.find_group_by_path(
+                    self.config.destination_host, self.config.destination_token, dst_full_path)
+                if new_gid is not None:
+                    data = {
+                        "group_access": group["group_access_level"],
+                        "group_id": new_gid,
+                        "expires_at": group["expires_at"]
+                    }
                     r = self.projects_api.add_shared_group(
                         self.config.destination_host, self.config.destination_token, new_id, data)
                     if r.status_code == 201:
                         self.log.info(
-                            "Shared project {0} with group {1}".format(project_name, name))
+                            "Shared project {0} with group {1}".format(path, dst_full_path))
                     else:
-                        self.log.warn("Failed to share project {0} with group {1} due to:\n{2}".format(
-                            project_name, name, r.content))
-                except RequestException as re:
-                    self.log.error("Failed to POST shared group {0} to project {1}, with error:\n{2}".format(
-                        name, project_name, re))
-
-    def get_new_group_id(self, name, path):
-        """Returns the group's ID on the destination instance."""
-        try:
-            groups = self.groups_api.search_for_group(
-                name, self.config.destination_host, self.config.destination_token)
-            if groups:
-                for group in groups:
-                    if group["full_path"] == path:
-                        return group["id"]
-            else:
-                self.log.warn(
-                    "Shared group {} does not exist or is not yet imported".format(path))
+                        self.log.error("Failed to share project {0} with group {1} due to:\n{2}".format(
+                            path, dst_full_path, r.content))
+            return True
         except RequestException as re:
-            self.log.error(
-                "Failed to GET group {0} ID, with error:\n{1}".format(name, re))
-
-    def __old_project_avatar(self, id):
-        """Returns the source project avatar."""
-        old_project = self.projects_api.get_project(
-            id, self.config.source_host, self.config.source_token).json()
-        return old_project["avatar_url"]
+            self.log.error("Failed to POST shared group {0} to project {1}, with error:\n{2}".format(
+                dst_full_path, path, re))
+            return False
 
     def find_project_by_path(self, host, token, dst_path_with_namespace):
         """Returns the project ID based on search by path."""

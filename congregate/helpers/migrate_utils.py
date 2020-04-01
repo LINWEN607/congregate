@@ -1,14 +1,10 @@
-from datetime import datetime
-from shutil import copy
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import is_dot_com, write_json_to_file
-from congregate.migration.gitlab.groups import GroupsClient as groupsClient
-from congregate.migration.gitlab.users import UsersApi as usersApi
+from congregate.helpers.misc_utils import is_dot_com
+from congregate.migration.gitlab.users import UsersApi
 
 
 b = BaseClass()
-groups = groupsClient()
-users_api = usersApi()
+users_api = UsersApi()
 
 
 def get_failed_export_from_results(results):
@@ -74,6 +70,18 @@ def get_project_namespace(p):
     if b.config.parent_id is not None and p["project_type"] != "user":
         return "{0}/{1}".format(b.config.parent_group_path, p["namespace"])
     return p["namespace"]
+
+
+def get_full_path_with_parent_namespace(full_path):
+    """
+    Determine the full path with parent namespace of a group on destination
+
+        :param full_path: The full path of a group
+        :return: Destination instance group full path with parent namespace
+    """
+    if b.config.parent_id and b.config.parent_group_path:
+        return "{0}/{1}".format(b.config.parent_group_path, full_path)
+    return full_path
 
 
 def is_user_project(p):

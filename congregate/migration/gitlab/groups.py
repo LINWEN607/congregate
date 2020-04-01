@@ -3,11 +3,11 @@ from requests.exceptions import RequestException
 
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.misc_utils import remove_dupes, get_timedelta
+from congregate.helpers.migrate_utils import get_full_path_with_parent_namespace
 from congregate.migration.gitlab.variables import VariablesClient
 from congregate.migration.gitlab.badges import BadgesClient
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.namespaces import NamespacesApi
-from congregate.helpers.exceptions import ConfigurationException
 
 
 class GroupsClient(BaseClass):
@@ -22,24 +22,6 @@ class GroupsClient(BaseClass):
     def get_staged_groups(self):
         with open("{}/data/staged_groups.json".format(self.app_path), "r") as f:
             return json.load(f)
-
-    def find_parent_group_path(self):
-        '''
-            Gate used to find an existing and valid parent group path
-
-            :raises: ConfigurationException
-        '''
-        try:
-            if self.config.parent_id is not None:
-                return self.groups_api.get_group(
-                    self.config.parent_id,
-                    self.config.destination_host,
-                    self.config.destination_token).json()["full_path"]
-            else:
-                return ""
-        except ConfigurationException, e:
-            self.log.error(e)
-            raise SystemExit()
 
     def traverse_groups(self, base_groups, transient_list, host, token, parent_group=None):
         if parent_group is not None:
@@ -150,9 +132,8 @@ class GroupsClient(BaseClass):
         staged_groups = self.get_staged_groups()
         for sg in staged_groups:
             # SaaS destination instances have a parent group
-            dest_full_path = "{0}{1}".format(
-                self.config.parent_group_path + "/" if self.config.parent_group_path else "",
-                sg["full_path"].replace(" ", "-"))
+            dest_full_path = get_full_path_with_parent_namespace(
+                sg["full_path"])
             self.log.info("Removing group {}".format(dest_full_path))
             resp = self.groups_api.get_group_by_full_path(
                 dest_full_path,
@@ -175,14 +156,16 @@ class GroupsClient(BaseClass):
                                     self.config.destination_host,
                                     self.config.destination_token)
                             else:
-                                self.log.info("Ignoring %s. Group existed before %d hours" % (group["full_path"], self.config.max_asset_expiration_time))
+                                self.log.info("Ignoring %s. Group existed before %d hours" % (
+                                    group["full_path"], self.config.max_asset_expiration_time))
                         else:
                             # TODO: Remove this block when the `created_at` field is properly exposed in the groups API
-                            self.log.warn("Unable to find timestamp for group %s. Deleting group anyway." % group["full_path"])
+                            self.log.warning(
+                                "Unable to find timestamp for group %s. Deleting group anyway." % group["full_path"])
                             self.groups_api.delete_group(
-                                    group["id"],
-                                    self.config.destination_host,
-                                    self.config.destination_token)
+                                group["id"],
+                                self.config.destination_host,
+                                self.config.destination_token)
 
                     except RequestException, re:
                         self.log.error(
@@ -310,12 +293,12 @@ class GroupsClient(BaseClass):
             namespace = self.search_for_group_pr_namespace_by_full_name_with_parent_namespace(
                 host, token, full_name_with_parent_namespace, False)
             if namespace is not None:
-                self.log.info(
-                    "SKIP: Group %s already exists (namespace search)", full_name_with_parent_namespace)
+                self.log.info("Group {} exists (namespace search)".format(
+                    full_name_with_parent_namespace))
                 return namespace.get("id", None)
         else:
-            self.log.info("SKIP: Group %s already exists (group search)",
-                          full_name_with_parent_namespace)
+            self.log.info("Group {} exists (group search)".format(
+                full_name_with_parent_namespace))
             return group.get("id", None)
         return None
 

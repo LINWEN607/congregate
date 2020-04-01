@@ -18,14 +18,18 @@ from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.namespaces import NamespacesApi
-from congregate.helpers.migrate_utils import get_project_namespace, is_user_project, \
-    get_user_project_namespace, get_export_filename_from_namespace_and_name, get_dst_path_with_namespace
+from congregate.helpers.migrate_utils import get_project_namespace, is_user_project, get_user_project_namespace, \
+    get_export_filename_from_namespace_and_name, get_dst_path_with_namespace, get_full_path_with_parent_namespace
 
 
 class ImportExportClient(BaseClass):
-    ERROR_MESSAGES = [
+    ERR_MSGS = [
         "This endpoint has been requested too many times",
         "Namespace is not valid"
+    ]
+    DEL_ERR_MSGS = [
+        "The project is still being deleted",
+        "Name has already been taken"
     ]
     COOL_OFF_MINUTES = 5 * 1.1  # Padding
 
@@ -205,7 +209,7 @@ class ImportExportClient(BaseClass):
         if not dry_run:
             import_response = self.attempt_import(
                 filename, name, path, dst_namespace, override_params)
-            if any(err_msg in str(import_response) for err_msg in self.ERROR_MESSAGES):
+            if any(err_msg in str(import_response) for err_msg in self.ERR_MSGS):
                 self.log.warning("Re-importing project {0} to {1}, waiting {2} minutes due to:\n{3}".format(
                     name, dst_namespace, self.COOL_OFF_MINUTES, import_response))
                 sleep(self.COOL_OFF_MINUTES * 60)
@@ -415,7 +419,7 @@ class ImportExportClient(BaseClass):
         while True:
             try:
                 # There is a small chance that the re-import exceeds the rate limit
-                if any(err_msg in str(import_response) for err_msg in self.ERROR_MESSAGES):
+                if any(err_msg in str(import_response) for err_msg in self.ERR_MSGS):
                     self.log.warning("Re-importing project {0} to {1}, waiting {2} minutes due to:\n{3}".format(
                         name, dst_namespace, self.COOL_OFF_MINUTES, import_response))
                     sleep(self.COOL_OFF_MINUTES * 60)
@@ -445,7 +449,7 @@ class ImportExportClient(BaseClass):
                                 import_response = self.attempt_import(
                                     filename, name, path, dst_namespace, override_params)
                                 total = 0
-                                while "The project is still being deleted" in str(import_response):
+                                while any(del_err_msg in str(import_response) for del_err_msg in self.DEL_ERR_MSGS):
                                     self.log.info(
                                         "Waiting {0} seconds for project {1} to delete from {2} before re-importing".format(wait_time, name, dst_namespace))
                                     total += wait_time
@@ -516,10 +520,10 @@ class ImportExportClient(BaseClass):
                     "Failed to export project {0} (ID: {1})".format(name, pid))
         return exported
 
-    def export_group_thru_filesystem(self, src_gid, full_path, full_parent_namespace, filename):
+    def export_group_thru_filesystem(self, src_gid, full_path, filename):
         exported = False
-        full_path_with_parent_namespace = "{0}{1}".format(
-            full_parent_namespace + "/" if full_parent_namespace else "", full_path)
+        full_path_with_parent_namespace = get_full_path_with_parent_namespace(
+            full_path)
         self.log.info("Searching on destination for group {}".format(
             full_path_with_parent_namespace))
         dst_gid = self.groups.find_group_by_path(
@@ -588,7 +592,7 @@ class ImportExportClient(BaseClass):
 
         return success
 
-    def export_group_thru_aws(self, gid, full_path, full_parent_namespace, filename):
+    def export_group_thru_aws(self, gid, full_path, filename):
         """
         Called from migrate to kick-off an export process. Calls export_to_aws.
 
@@ -599,8 +603,8 @@ class ImportExportClient(BaseClass):
         """
         exported = False
 
-        full_path_with_parent_namespace = "{0}{1}".format(
-            full_parent_namespace + "/" if full_parent_namespace else "", full_path)
+        full_path_with_parent_namespace = get_full_path_with_parent_namespace(
+            full_path)
         self.log.info("Searching on destination for group {}".format(
             full_path_with_parent_namespace))
         dst_gid = self.groups.find_group_by_path(

@@ -3,11 +3,13 @@ import json
 from uuid import uuid4
 
 from congregate.helpers.base_class import BaseClass
+from congregate.helpers.misc_utils import get_dry_log
 from congregate.migration.gitlab.importexport import ImportExportClient
 from congregate.migration.gitlab.variables import VariablesClient
 from congregate.migration.gitlab.users import UsersClient
 from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.api.groups import GroupsApi
+from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.projects import ProjectsClient
 from congregate.migration.gitlab.pushrules import PushRulesClient
 from congregate.migration.gitlab.branches import BranchesClient
@@ -26,6 +28,7 @@ class SeedDataGenerator(BaseClass):
         self.users_api = UsersApi()
         self.groups = GroupsApi()
         self.projects = ProjectsClient()
+        self.projects_api = ProjectsApi()
         self.pushrules = PushRulesClient()
         self.branches = BranchesClient()
         self.mra = MergeRequestApprovalsClient()
@@ -34,17 +37,19 @@ class SeedDataGenerator(BaseClass):
         super(SeedDataGenerator, self).__init__()
 
     def generate_seed_data(self, dry_run=True):
-        dry_log = "DRY-RUN: " if dry_run else ""
-        users = self.generate_users(dry_log, dry_run)
-        groups = self.generate_groups(dry_log, dry_run)
+        users = self.generate_users(dry_run)
+        groups = self.generate_groups(dry_run)
         for group in groups:
-            self.generate_dummy_group_variables(group["id"], dry_log, dry_run)
-        self.add_group_members(users, groups, dry_log, dry_run)
-        projects = self.generate_group_projects(groups, dry_log, dry_run)
+            self.generate_dummy_group_variables(group["id"], dry_run)
+        self.add_group_members(users, groups, dry_run)
+        projects = self.generate_group_projects(groups, dry_run)
         for project in projects:
-            self.generate_dummy_environment(project["id"], dry_log, dry_run)
-            self.generate_dummy_project_variables(project["id"], dry_log, dry_run)
-        projects += self.generate_user_projects(users, dry_log, dry_run)
+            self.generate_dummy_environment(project["id"], dry_run)
+            self.generate_dummy_project_variables(
+                project["id"], dry_run)
+            self.generate_shared_with_group_data(
+                project["id"], groups, dry_run)
+        projects += self.generate_user_projects(users, dry_run)
 
         print "---Generated Users---"
         print json.dumps(users, indent=4)
@@ -53,7 +58,7 @@ class SeedDataGenerator(BaseClass):
         print "---Generated Projects---"
         print json.dumps(projects, indent=4)
 
-    def generate_users(self, dry_log, dry_run=True):
+    def generate_users(self, dry_run=True):
         dummy_users = [
             {
                 "username": "john_smith",
@@ -90,20 +95,20 @@ class SeedDataGenerator(BaseClass):
                     created_users.append(user_search[0])
                 else:
                     self.log.info("{0}Creating user {1}".format(
-                        dry_log, user["email"]))
+                        get_dry_log(dry_run), user["email"]))
                     if not dry_run:
                         created_users.append(self.users_api.create_user(
                             self.config.source_host, self.config.source_token, user).json())
             else:
                 self.log.info("{0}Creating user {1}".format(
-                    dry_log, user["email"]))
+                    get_dry_log(dry_run), user["email"]))
                 if not dry_run:
                     created_users.append(self.users_api.create_user(
                         self.config.source_host, self.config.source_token, user).json())
 
         return created_users
 
-    def generate_groups(self, dry_log, dry_run=True):
+    def generate_groups(self, dry_run=True):
         dummy_groups = [
             {
                 "name": "Dummy Group 1",
@@ -125,27 +130,27 @@ class SeedDataGenerator(BaseClass):
                     created_groups.append(group_search[0])
                 else:
                     self.log.info("{0}Creating group {1}".format(
-                        dry_log, group["name"]))
+                        get_dry_log(dry_run), group["name"]))
                     if not dry_run:
                         created_groups.append(self.groups.create_group(
                             self.config.source_host, self.config.source_token, group).json())
             else:
                 self.log.info("{0}Creating group {1}".format(
-                    dry_log, group["name"]))
+                    get_dry_log(dry_run), group["name"]))
                 if not dry_run:
                     created_groups.append(self.groups.create_group(
                         self.config.source_host, self.config.source_token, group).json())
 
         return created_groups
 
-    def add_group_members(self, created_users, created_groups, dry_log, dry_run=True):
+    def add_group_members(self, created_users, created_groups, dry_run=True):
         for user in created_users:
             data = {
                 "user_id": user["id"],
                 "access_level": 40
             }
             self.log.info("{0}Adding user {1} ({2}) to group {3}".format(
-                dry_log,
+                get_dry_log(dry_run),
                 user["email"],
                 data,
                 created_groups[-1]["name"]))
@@ -153,7 +158,7 @@ class SeedDataGenerator(BaseClass):
                 self.groups.add_member_to_group(
                     created_groups[-1]["id"], self.config.source_host, self.config.source_token, data)
 
-    def generate_group_projects(self, created_groups, dry_log, dry_run=True):
+    def generate_group_projects(self, created_groups, dry_run=True):
         dummy_projects = {
             "spring": "https://gitlab.com/gitlab-org/project-templates/spring.git",
             "react": "https://gitlab.com/gitlab-org/project-templates/react.git",
@@ -168,14 +173,14 @@ class SeedDataGenerator(BaseClass):
                 "namespace_id": created_groups[-1]["id"]
             }
             self.log.info(
-                "{0}Creating group project ({1})".format(dry_log, data))
+                "{0}Creating group project ({1})".format(get_dry_log(dry_run), data))
             if not dry_run:
                 created_projects.append(self.projects.projects_api.create_project(
                     self.config.source_host, self.config.source_token, project_name, data).json())
 
         return created_projects
 
-    def generate_user_projects(self, created_users, dry_log, dry_run=True):
+    def generate_user_projects(self, created_users, dry_run=True):
         dummy_project_data = [
             {
                 "name": "my-project",
@@ -197,7 +202,7 @@ class SeedDataGenerator(BaseClass):
         for i in range(0, len(created_users)):
             user = created_users[i]
             self.log.info(
-                "{0}Creating user project ({1})".format(dry_log, user))
+                "{0}Creating user project ({1})".format(get_dry_log(dry_run), user))
             if not dry_run:
                 token = self.users.find_or_create_impersonation_token(
                     user, users_map, expiration_date)
@@ -211,17 +216,17 @@ class SeedDataGenerator(BaseClass):
 
         return created_projects
 
-    def generate_dummy_environment(self, project_id, dry_log, dry_run=True):
+    def generate_dummy_environment(self, project_id, dry_run=True):
         data = {
             "name": "production",
             "external_url": "http://production-%s.site" % uuid4()
         }
         self.log.info(
-            "{0}Creating project environment ({1})".format(dry_log, data))
+            "{0}Creating project environment ({1})".format(get_dry_log(dry_run), data))
         if not dry_run:
             return self.projects.projects_api.create_environment(self.config.source_host, self.config.source_token, project_id, data)
 
-    def generate_dummy_project_variables(self, project_id, dry_log, dry_run=True):
+    def generate_dummy_project_variables(self, project_id, dry_run=True):
         data = [
             {
                 "key": "NEW_VARIABLE",
@@ -243,11 +248,12 @@ class SeedDataGenerator(BaseClass):
 
         for d in data:
             self.log.info(
-                "{0}Creating project variable ({1})".format(dry_log, data))
+                "{0}Creating project variable ({1})".format(get_dry_log(dry_run), data))
             if not dry_run:
-                self.variables.set_variables(project_id, d, self.config.source_host, self.config.source_token)
+                self.variables.set_variables(
+                    project_id, d, self.config.source_host, self.config.source_token)
 
-    def generate_dummy_group_variables(self, group_id, dry_log, dry_run=True):
+    def generate_dummy_group_variables(self, group_id, dry_run=True):
         data = [
             {
                 "key": "NEW_VARIABLE",
@@ -267,6 +273,20 @@ class SeedDataGenerator(BaseClass):
 
         for d in data:
             self.log.info(
-                "{0}Creating group variable ({1})".format(dry_log, data))
+                "{0}Creating group variable ({1})".format(get_dry_log(dry_run), data))
             if not dry_run:
-                self.variables.set_variables(group_id, d, self.config.source_host, self.config.source_token, var_type="group")
+                self.variables.set_variables(
+                    group_id, d, self.config.source_host, self.config.source_token, var_type="group")
+
+    def generate_shared_with_group_data(self, pid, groups, dry_run):
+        for group in groups:
+            data = {
+                "group_access": 30,
+                "group_id": group["id"],
+                "expires_at": None
+            }
+            self.log.info(
+                "{0}Sharing project {0} with group:\n{1}".format(get_dry_log(dry_run), data))
+            if not dry_run:
+                self.projects_api.add_shared_group(
+                    self.config.source_host, self.config.source_token, pid, data)

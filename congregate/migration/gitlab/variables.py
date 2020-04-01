@@ -48,7 +48,7 @@ class VariablesClient(BaseClass):
                 old_id, self.config.source_host, self.config.source_token, var_type)
             variables = iter(resp)
             self.log.info(
-                "Migrating project {} CI/CD variables".format(name))
+                "Migrating {0} {1} CI/CD variables".format(var_type, name))
             for var in variables:
                 if is_error_message_present(var) or not var:
                     self.log.error(

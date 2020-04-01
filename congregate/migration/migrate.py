@@ -12,7 +12,7 @@ from collections import Counter
 from requests.exceptions import RequestException
 
 from congregate.helpers import api, migrate_utils
-from congregate.helpers.misc_utils import get_dry_log, json_pretty, write_json_to_file, \
+from congregate.helpers.misc_utils import get_dry_log, json_pretty, \
     is_dot_com, clean_data, add_post_migration_stats, rotate_log, write_results_to_file
 from congregate.helpers.threads import start_multi_process
 from congregate.aws import AwsClient
@@ -53,7 +53,6 @@ deploy_keys = DeployKeysClient()
 hooks = HooksClient()
 environments = EnvironmentsClient()
 
-full_parent_namespace = groups.find_parent_group_path()
 _DRY_RUN = True
 _THREADS = None
 
@@ -102,6 +101,10 @@ def migrate(
         # Migrate system hooks (except for gitlab.com)
         if is_dot_com(b.config.destination_host):
             hooks.migrate_system_hooks()
+
+        # Remove from parent group to avoid inheritance
+        if b.config.parent_id is not None:
+            groups.remove_import_user(b.config.parent_id)
 
         add_post_migration_stats()
 
@@ -161,7 +164,8 @@ def migrate_group_info(skip_group_export=False, skip_group_import=False):
             })
             b.log.info("### {0}Group import results ###\n{1}"
                        .format(dry_log, json_pretty(import_results)))
-            write_results_to_file(import_results, result_type="group", log=b.log)
+            write_results_to_file(
+                import_results, result_type="group", log=b.log)
         else:
             b.log.info("SKIP: Assuming staged groups will be later imported")
     else:
@@ -182,7 +186,7 @@ def handle_exporting_groups(group):
                    .format(dry_log, full_path, gid, filename))
         if loc == "filesystem":
             exported = ie.export_group_thru_filesystem(
-                gid, full_path, full_parent_namespace, filename) if not _DRY_RUN else True
+                gid, full_path, filename) if not _DRY_RUN else True
         # TODO: Refactor and sync with other scenarios (#119)
         elif loc == "filesystem-aws":
             b.log.error(
@@ -209,8 +213,8 @@ def handle_importing_groups(group):
     try:
         if isinstance(group, str):
             group = json.loads(group)
-        full_path_with_parent_namespace = "{0}{1}".format(
-            full_parent_namespace + "/" if full_parent_namespace else "", full_path)
+        full_path_with_parent_namespace = migrate_utils.get_full_path_with_parent_namespace(
+            full_path)
         b.log.info("Searching on destination for group {}".format(
             full_path_with_parent_namespace))
         filename = migrate_utils.get_export_filename_from_namespace_and_name(
@@ -299,6 +303,7 @@ def migrate_project_info(skip_project_export=False, skip_project_import=False):
             b.log.info("SKIP: Assuming staged projects will be later imported")
     else:
         b.log.info("SKIP: No projects to migrate")
+
 
 def handle_exporting_projects(project):
     name = project["name"]
@@ -397,13 +402,15 @@ def migrate_single_project_info(project, dst_id):
     """
     project.pop("members")
     path_with_namespace = project["path_with_namespace"]
+    shared_with_groups = project["shared_with_groups"]
     src_id = project["id"]
     results = {}
 
     results["id"] = dst_id
 
     # Shared with groups
-    projects.add_shared_groups(src_id, dst_id)
+    results["shared_with_groups"] = projects.add_shared_groups(
+        dst_id, path_with_namespace, shared_with_groups)
 
     # Environments
     results["environments"] = environments.migrate_project_environments(
@@ -438,6 +445,8 @@ def migrate_single_project_info(project, dst_id):
     return results
 
 # TODO: Add multiprocessing
+
+
 def rollback(dry_run=True,
              skip_users=False,
              hard_delete=False,
