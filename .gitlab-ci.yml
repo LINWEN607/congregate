@@ -4,7 +4,7 @@ include:
 
 variables:
   DOCKER_DRIVER: overlay2
-  BUILD_IMAGE_NAME: "$CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHA"
+  TEST_IMAGE_NAME: "$CI_REGISTRY_IMAGE/test:latest"
   SAST_DISABLE_DIND: "true"
   SAST_DEFAULT_ANALYZERS: "bandit,secrets"
 
@@ -30,28 +30,19 @@ build:
   stage: build
   script:
     - docker login ${CI_REGISTRY} -u gitlab-ci-token -p $CI_BUILD_TOKEN
-    - docker build --tag "$BUILD_IMAGE_NAME" .
-    - docker push "$BUILD_IMAGE_NAME"
-
-# pre-test:
-#   stage: pre-test
-#   image: "$BUILD_IMAGE_NAME"
-#   script:
-#     - apt-get update
-#     - pip install pipenv
-#     - export PIPENV_VENV_IN_PROJECT=true
-#     - pipenv install
-#   cache:
-#     paths:
-#       - .venv/
+    - docker build --tag "$TEST_IMAGE_NAME" docker/test
+    - docker push "$TEST_IMAGE_NAME"
+  only:
+    changes:
+      - docker/test/Dockerfile
 
 .test-job: &test-job
   stage: test
-  image: "$BUILD_IMAGE_NAME"
+  image: "$TEST_IMAGE_NAME"
   before_script:
-    - apt-get update
     - mkdir data
-    - echo ${Dummy_config_new} > $CONGREGATE_PATH/data/congregate.conf
+    - echo ${Dummy_config} > $CONGREGATE_PATH/data/congregate.conf
+    - pip install poetry
     - poetry install
 
 test:pylint:
@@ -113,19 +104,19 @@ release-tag:
   before_script:
     - docker login ${CI_REGISTRY} -u gitlab-ci-token -p $CI_BUILD_TOKEN
   script:
-    - docker pull "$BUILD_IMAGE_NAME"
-    - docker tag "$BUILD_IMAGE_NAME" "$RELEASE_IMAGE_NAME"
+    - docker build --tag "$RELEASE_IMAGE_NAME" docker/release
     - docker push "$RELEASE_IMAGE_NAME"
   only:
     - tags
 
 pages:
   stage: deploy
-  image: "$BUILD_IMAGE_NAME"
+  image: "$TEST_IMAGE_NAME"
   dependencies:
     - code_quality
   script:
-    - apt-get update
+    - mkdir data
+    - echo ${Dummy_config} > $CONGREGATE_PATH/data/congregate.conf
     - poetry install
     - mv gl-code-quality-report.json congregate/docs/source/_static/
     - poetry run sphinx-apidoc -f -o congregate/docs/source/ ./
