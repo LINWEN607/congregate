@@ -19,7 +19,7 @@ sast:
 stages:
   - build
   - test
-  - cleanup
+  # - cleanup
   - release
   - deploy
 
@@ -67,7 +67,7 @@ test:end-to-end:
       alias: gitlab_destination
   <<: *test-job
   tags:
-    - e2e
+    - congregate-auto-scale-runner
   script:
     - ./spin_up_test_vm.sh
     - export GITLAB_SRC=http://$(cat source_ip)
@@ -86,13 +86,13 @@ test:end-to-end:
       - data/*results.json
       - data/congregate.log
 
-remove redundant docker images:
-  stage: cleanup
-  script:
-    - docker images -a | grep "$CI_REGISTRY_IMAGE" | awk '{print $3}' | xargs docker rmi 2> /dev/null || true
-    - docker images -a | grep -E 'gitlab/gitlab-ee.*<none>' | awk '{print $3}' | xargs docker rmi 2> /dev/null || true
-  tags:
-    - e2e-cleanup
+# remove redundant docker images:
+#   stage: cleanup
+#   script:
+#     - docker images -a | grep "$CI_REGISTRY_IMAGE" | awk '{print $3}' | xargs docker rmi 2> /dev/null || true
+#     - docker images -a | grep -E 'gitlab/gitlab-ee.*<none>' | awk '{print $3}' | xargs docker rmi 2> /dev/null || true
+#   tags:
+#     - e2e-cleanup
 
 release-tag:
   stage: release
