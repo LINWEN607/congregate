@@ -23,9 +23,13 @@ from congregate.helpers.migrate_utils import get_project_namespace, is_user_proj
 
 
 class ImportExportClient(BaseClass):
-    ERROR_MESSAGES = [
+    ERR_MSGS = [
         "This endpoint has been requested too many times",
         "Namespace is not valid"
+    ]
+    DEL_ERR_MSGS = [
+        "The project is still being deleted",
+        "Name has already been taken"
     ]
     COOL_OFF_MINUTES = 5 * 1.1  # Padding
 
@@ -205,7 +209,7 @@ class ImportExportClient(BaseClass):
         if not dry_run:
             import_response = self.attempt_import(
                 filename, name, path, dst_namespace, override_params)
-            if any(err_msg in str(import_response) for err_msg in self.ERROR_MESSAGES):
+            if any(err_msg in str(import_response) for err_msg in self.ERR_MSGS):
                 self.log.warning("Re-importing project {0} to {1}, waiting {2} minutes due to:\n{3}".format(
                     name, dst_namespace, self.COOL_OFF_MINUTES, import_response))
                 sleep(self.COOL_OFF_MINUTES * 60)
@@ -415,7 +419,7 @@ class ImportExportClient(BaseClass):
         while True:
             try:
                 # There is a small chance that the re-import exceeds the rate limit
-                if any(err_msg in str(import_response) for err_msg in self.ERROR_MESSAGES):
+                if any(err_msg in str(import_response) for err_msg in self.ERR_MSGS):
                     self.log.warning("Re-importing project {0} to {1}, waiting {2} minutes due to:\n{3}".format(
                         name, dst_namespace, self.COOL_OFF_MINUTES, import_response))
                     sleep(self.COOL_OFF_MINUTES * 60)
@@ -445,7 +449,7 @@ class ImportExportClient(BaseClass):
                                 import_response = self.attempt_import(
                                     filename, name, path, dst_namespace, override_params)
                                 total = 0
-                                while "The project is still being deleted" in str(import_response):
+                                while any(del_err_msg in str(import_response) for del_err_msg in self.DEL_ERR_MSGS):
                                     self.log.info(
                                         "Waiting {0} seconds for project {1} to delete from {2} before re-importing".format(wait_time, name, dst_namespace))
                                     total += wait_time
