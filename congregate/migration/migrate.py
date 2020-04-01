@@ -412,6 +412,10 @@ def migrate_single_project_info(project, dst_id):
     results["shared_with_groups"] = projects.add_shared_groups(
         src_id, dst_id, path_with_namespace, shared_with_groups)
 
+    # Environments
+    results["environments"] = environments.migrate_project_environments(
+        src_id, dst_id, path_with_namespace)
+
     # CI/CD Variables
     results["variables"] = variables.migrate_cicd_variables(
         src_id, dst_id, path_with_namespace)
@@ -432,10 +436,6 @@ def migrate_single_project_info(project, dst_id):
     results["container_registry"] = registries.migrate_registries(
         src_id, dst_id, path_with_namespace)
 
-    # Environments
-    results["environments"] = environments.migrate_project_environments(
-        src_id, dst_id, path_with_namespace)
-
     # Project hooks (webhooks)
     results["project_hooks"] = hooks.migrate_project_hooks(
         src_id, dst_id, path_with_namespace)
@@ -444,8 +444,9 @@ def migrate_single_project_info(project, dst_id):
 
     return results
 
-
 # TODO: Add multiprocessing
+
+
 def rollback(dry_run=True,
              skip_users=False,
              hard_delete=False,

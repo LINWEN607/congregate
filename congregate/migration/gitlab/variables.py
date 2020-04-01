@@ -54,8 +54,6 @@ class VariablesClient(BaseClass):
                     self.log.error(
                         "Failed to fetch CI/CD variables ({0}) for project {1}".format(var, name))
                     return False
-                if var_type == "project":
-                    var["environment_scope"] = "*"
                 self.log.info("Migrating {0} ID (old: {1}; new: {2}) CI/CD variables"
                               .format(var_type, old_id, new_id))
                 self.set_variables(
