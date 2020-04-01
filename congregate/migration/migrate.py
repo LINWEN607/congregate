@@ -410,7 +410,7 @@ def migrate_single_project_info(project, dst_id):
 
     # Shared with groups
     results["shared_with_groups"] = projects.add_shared_groups(
-        src_id, dst_id, path_with_namespace, shared_with_groups)
+        dst_id, path_with_namespace, shared_with_groups)
 
     # Environments
     results["environments"] = environments.migrate_project_environments(

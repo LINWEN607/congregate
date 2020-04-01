@@ -43,10 +43,11 @@ class ProjectsClient(BaseClass):
             self.log.error(
                 "Failed to remove import user (ID: {0}) from project (ID: {1}), with error:\n{2}".format(self.config.import_user_id, pid, re))
 
-    def add_shared_groups(self, old_id, new_id, path, shared_with_groups):
+    def add_shared_groups(self, new_id, path, shared_with_groups):
         """Adds the list of groups we share the project with."""
         try:
-            self.log.info("Migrating project {} shared groups".format(path))
+            self.log.info(
+                "Migrating project {} shared with groups".format(path))
             for group in shared_with_groups:
                 dst_full_path = get_full_path_with_parent_namespace(
                     group["group_full_path"])
