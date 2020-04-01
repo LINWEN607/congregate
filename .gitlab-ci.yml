@@ -19,7 +19,6 @@ sast:
 stages:
   - build
   - test
-  # - cleanup
   - release
   - deploy
 
@@ -85,14 +84,6 @@ test:end-to-end:
       - data/*diff*.json
       - data/*results.json
       - data/congregate.log
-
-# remove redundant docker images:
-#   stage: cleanup
-#   script:
-#     - docker images -a | grep "$CI_REGISTRY_IMAGE" | awk '{print $3}' | xargs docker rmi 2> /dev/null || true
-#     - docker images -a | grep -E 'gitlab/gitlab-ee.*<none>' | awk '{print $3}' | xargs docker rmi 2> /dev/null || true
-#   tags:
-#     - e2e-cleanup
 
 release-tag:
   stage: release
