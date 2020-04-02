@@ -137,7 +137,6 @@ class MigrateTests(unittest.TestCase):
             {
                 "lfs_enabled": True,
                 "request_access_enabled": False,
-                "full_parent_namespace": "test-parent-group-1",
                 "project_creation_level": "developer",
                 "subgroup_creation_level": "owner",
                 "path": "pmm-demo-1",
@@ -148,7 +147,6 @@ class MigrateTests(unittest.TestCase):
                 "two_factor_grace_period": 48,
                 "visibility": "public",
                 "members": [],
-                "parent_namespace": "test-parent-group-1",
                 "name": "pmm-demo-1",
                 "require_two_factor_authentication": False,
                 "full_path": "pmm-demo-1"
@@ -156,7 +154,6 @@ class MigrateTests(unittest.TestCase):
             {
                 "lfs_enabled": True,
                 "request_access_enabled": False,
-                "full_parent_namespace": "test-parent-group-2",
                 "project_creation_level": "developer",
                 "subgroup_creation_level": "owner",
                 "path": "pmm-demo-2",
@@ -167,7 +164,6 @@ class MigrateTests(unittest.TestCase):
                 "two_factor_grace_period": 48,
                 "visibility": "public",
                 "members": [],
-                "parent_namespace": "test-parent-group-2",
                 "name": "pmm-demo-2",
                 "require_two_factor_authentication": False,
                 "full_path": "pmm-demo-2"
@@ -175,7 +171,6 @@ class MigrateTests(unittest.TestCase):
             {
                 "lfs_enabled": True,
                 "request_access_enabled": False,
-                "full_parent_namespace": "test-parent-group-3",
                 "project_creation_level": "developer",
                 "subgroup_creation_level": "owner",
                 "path": "pmm-demo-3",
@@ -186,7 +181,6 @@ class MigrateTests(unittest.TestCase):
                 "two_factor_grace_period": 48,
                 "visibility": "public",
                 "members": [],
-                "parent_namespace": "test-parent-group-3",
                 "name": "pmm-demo-3",
                 "require_two_factor_authentication": False,
                 "full_path": "pmm-demo-3"
@@ -324,7 +318,6 @@ class MigrateTests(unittest.TestCase):
             {
                 "lfs_enabled": True,
                 "request_access_enabled": False,
-                "full_parent_namespace": "test-parent-group-2",
                 "project_creation_level": "developer",
                 "subgroup_creation_level": "owner",
                 "path": "pmm-demo-2",
@@ -335,7 +328,6 @@ class MigrateTests(unittest.TestCase):
                 "two_factor_grace_period": 48,
                 "visibility": "public",
                 "members": [],
-                "parent_namespace": "test-parent-group-2",
                 "name": "pmm-demo-2",
                 "require_two_factor_authentication": False,
                 "full_path": "pmm-demo-2"
@@ -343,7 +335,6 @@ class MigrateTests(unittest.TestCase):
             {
                 "lfs_enabled": True,
                 "request_access_enabled": False,
-                "full_parent_namespace": "test-parent-group-3",
                 "project_creation_level": "developer",
                 "subgroup_creation_level": "owner",
                 "path": "pmm-demo-3",
@@ -354,7 +345,6 @@ class MigrateTests(unittest.TestCase):
                 "two_factor_grace_period": 48,
                 "visibility": "public",
                 "members": [],
-                "parent_namespace": "test-parent-group-3",
                 "name": "pmm-demo-3",
                 "require_two_factor_authentication": False,
                 "full_path": "pmm-demo-3"
