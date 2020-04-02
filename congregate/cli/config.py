@@ -30,7 +30,7 @@ def generate_config():
     config.set("DESTINATION", "dstn_hostname",
                raw_input("Destination instance Host: "))
     config.set("DESTINATION", "dstn_access_token",
-               obfuscate("Destination instance Access token: "))
+               obfuscate("Destination instance GitLab access token (Settings -> Access Tokens): "))
     migration_user = users.get_current_user(config.get("DESTINATION", "dstn_hostname"),
                                             deobfuscate(config.get("DESTINATION", "dstn_access_token")))
     if migration_user.get("id", None) is not None:
@@ -72,7 +72,7 @@ def generate_config():
         config.set("SOURCE", "src_hostname",
                    raw_input("Source instance Host: "))
         config.set("SOURCE", "src_access_token", obfuscate(
-            "Source instance Access token: "))
+            "Source instance GitLab access token  (Settings -> Access tokens): "))
         config.set("SOURCE", "src_registry_url", raw_input(
             "Source instance Container Registry URL: "))
         max_export_wait_time = raw_input(

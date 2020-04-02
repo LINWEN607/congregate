@@ -3,9 +3,11 @@ from time import sleep
 import requests
 
 from congregate.helpers.logger import myLogger
+from congregate.helpers.audit_logger import audit_logger
 from congregate.helpers.decorators import stable_retry
 
 log = myLogger(__name__)
+audit = audit_logger(__name__)
 
 
 def generate_v4_request_url(host, api):
@@ -46,7 +48,7 @@ def generate_get_request(host, token, api, url=None, params=None, stream=False):
 
 
 @stable_retry
-def generate_post_request(host, token, api, data, headers=None, files=None):
+def generate_post_request(host, token, api, data, headers=None, files=None, description=None):
     """
         Generates POST request to GitLab API.
 
@@ -58,8 +60,7 @@ def generate_post_request(host, token, api, data, headers=None, files=None):
         :return: request object containing response
     """
     url = generate_v4_request_url(host, api)
-    log.info("Generating POST request to {0}{1}".format(
-        url, " with data:\n{}".format(data) if data else ""))
+    audit.info(generate_audit_log_message("POST", description, url))
     if headers is None:
         headers = generate_v4_request_header(token)
 
@@ -67,7 +68,7 @@ def generate_post_request(host, token, api, data, headers=None, files=None):
 
 
 @stable_retry
-def generate_put_request(host, token, api, data, headers=None, files=None):
+def generate_put_request(host, token, api, data, headers=None, files=None, description=None):
     """
         Generates PUT request to GitLab API.
 
@@ -79,8 +80,7 @@ def generate_put_request(host, token, api, data, headers=None, files=None):
         :return: request object containing response
     """
     url = generate_v4_request_url(host, api)
-    log.info("Generating PUT request to {0}{1}".format(
-        url, " with data:\n{}".format(data) if data else ""))
+    audit.info(generate_audit_log_message("PUT", description, url))
     if headers is None:
         headers = generate_v4_request_header(token)
 
@@ -88,7 +88,7 @@ def generate_put_request(host, token, api, data, headers=None, files=None):
 
 
 @stable_retry
-def generate_delete_request(host, token, api):
+def generate_delete_request(host, token, api, description=None):
     """
         Generates DELETE request to GitLab API.
 
@@ -99,7 +99,7 @@ def generate_delete_request(host, token, api):
         :return: request object containing response
     """
     url = generate_v4_request_url(host, api)
-    log.info("Generating DELETE request to {}".format(url))
+    audit.info(generate_audit_log_message("DELETE", description, url))
     headers = generate_v4_request_header(token)
 
     return requests.delete(url, headers=headers)
@@ -246,3 +246,13 @@ def search(host, token, api, search_query):
     """
     return generate_get_request(host, token, api, params={
                                 'search': search_query}).json()
+
+def generate_audit_log_message(req_type, message, url, data=None):
+    try:
+        return "{0}enerating {1} request to {2}{3}".format(
+            "{} by g".format(message) if message else "G", 
+            req_type,
+            url, 
+            " with data: {}".format(data) if data else "")
+    except TypeError as e:
+        return "Message formatting ERROR. No specific message generated. Generating {0} request to {1}".format(req_type, url)

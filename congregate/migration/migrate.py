@@ -13,7 +13,7 @@ from requests.exceptions import RequestException
 
 from congregate.helpers import api, migrate_utils
 from congregate.helpers.misc_utils import get_dry_log, json_pretty, \
-    is_dot_com, clean_data, add_post_migration_stats, rotate_log, write_results_to_file
+    is_dot_com, clean_data, add_post_migration_stats, rotate_logs, write_results_to_file
 from congregate.helpers.threads import start_multi_process
 from congregate.aws import AwsClient
 from congregate.cli.stage_projects import stage_projects
@@ -85,7 +85,7 @@ def migrate(
                 "dry_run_user_migration.json",
                 "dry_run_group_migration.json",
                 "dry_run_project_migration.json"])
-        rotate_log()
+        rotate_logs()
 
         # Migrate users
         # TODO: Replace threading with multiprocessing
@@ -452,7 +452,7 @@ def rollback(dry_run=True,
              hard_delete=False,
              skip_groups=False,
              skip_projects=False):
-    rotate_log()
+    rotate_logs()
     dry_log = get_dry_log(dry_run)
 
     # Remove only projects

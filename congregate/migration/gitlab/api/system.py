@@ -16,7 +16,7 @@ class SystemApi():
         """
         return api.list_all(host, token, "hooks")
 
-    def create_system_hook(self, host, token, data):
+    def create_system_hook(self, host, token, data, message=None):
         """
         Add a new system hook
 
@@ -27,4 +27,6 @@ class SystemApi():
             :param: url: (str) The hook URL
             :return: Response object containing the response to POST /hooks
         """
-        return api.generate_post_request(host, token, "hooks", json.dumps(data))
+        if not message:
+            message = "Creating system hook"
+        return api.generate_post_request(host, token, "hooks", json.dumps(data), description=message)

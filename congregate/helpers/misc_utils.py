@@ -229,18 +229,22 @@ def clean_data(dry_run=True, files=None):
         print "Cannot find data directory. CONGREGATE_PATH not set or you are not running this in the Congregate directory."
 
 
-def rotate_log():
+def rotate_logs():
     """
-        Rotate and empty congregate.log file
+        Rotate and empty logs
     """
     app_path = get_congregate_path()
     if os.path.isdir("{}/data".format(app_path)):
         log = "{}/data/congregate.log".format(app_path)
+        audit_log = "{}/data/audit.log".format(app_path)
         end_time = str(datetime.now()).replace(" ", "_")
-        print("Rotating and emptying {}".format(log))
+        print("Rotating and emptying:\n{}".format("\n".join([log, audit_log])))
         try:
             copy(log, "{0}/data/congregate_{1}.log".format(app_path, end_time))
             open(log, "w").close()
+            copy(
+                audit_log, "{0}/data/audit_{1}.log".format(app_path, end_time))
+            open(audit_log, "w").close()
         except OSError as e:
             if e.errno != errno.ENOENT:
                 raise
@@ -298,15 +302,11 @@ def add_post_migration_stats():
         Print all POST/PUT/DELETE requests and their total number.
         Assuming you've started the migration with an empty congregate.log
     """
-    reqs = ["Generating POST request to",
-            "Generating PUT request to",
-            "Generating DELETE request to"]
+    reqs = ["POST request to", "PUT request to", "DELETE request to"]
     reqs_no = 0
-    with open("{}/data/congregate.log".format(get_congregate_path()), "r") as f:
-        print("POST/PUT/DELETE requests:")
+    with open("{}/data/audit.log".format(get_congregate_path()), "r") as f:
         for line in f:
             if any(req in line for req in reqs):
-                print(line.rstrip())
                 reqs_no += 1
         print("Total number of POST/PUT/DELETE requests: {}".format(reqs_no))
 
@@ -355,6 +355,7 @@ def list_to_dict(lst):
     """
     res_dct = {lst[i]: True for i in range(0, len(lst), 2)}
     return res_dct
+
 
 def write_results_to_file(import_results, result_type="project", log=None):
     end_time = str(datetime.now()).replace(" ", "_")

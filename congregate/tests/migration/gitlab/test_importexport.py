@@ -51,6 +51,34 @@ class ImportExportClientTests(unittest.TestCase):
             "override_params[default_branch]=%s" % self.original_project["default_branch"],
             "override_params[shared_runners_enabled]=%s" % self.original_project["shared_runners_enabled"]
         ]
+        self.members = [
+            {
+                "id": 1,
+                "username": "raymond_smith",
+                "name": "Raymond Smith",
+                "state": "active",
+                "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon",
+                "web_url": "http://192.168.1.8:3000/root",
+                "expires_at": "2012-10-22T14:13:35Z",
+                "access_level": 30,
+                "group_saml_identity": None
+            },
+            {
+                "id": 2,
+                "username": "john_doe",
+                "name": "John Doe",
+                "state": "active",
+                "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon",
+                "web_url": "http://192.168.1.8:3000/root",
+                "expires_at": "2012-10-22T14:13:35Z",
+                "access_level": 30,
+                "group_saml_identity": {
+                "extern_uid":"ABC-1234567890",
+                "provider": "group_saml",
+                "saml_provider_id": 10
+                }
+            }
+        ]
 
     def import_status_failed(self, *args, **kwargs):
         nok_status_mock = mock.MagicMock()
@@ -85,7 +113,7 @@ class ImportExportClientTests(unittest.TestCase):
         }
         mock_status.return_value = ok_response_mock
         import_id = self.ie.get_import_id_from_response(self.import_response, self.original_project_filename, self.original_project_name,
-                                                        self.original_project_path, self.original_namespace_path, self.original_project_override_params)
+                                                        self.original_project_path, self.original_namespace_path, self.original_project_override_params, self.members)
         self.assertEqual(import_id, 12345)
 
     def test_get_import_id_from_response_import_id_none(self):
@@ -93,7 +121,7 @@ class ImportExportClientTests(unittest.TestCase):
             "message": "not found"
         })
         import_id = self.ie.get_import_id_from_response(import_response_none, self.original_project_filename, self.original_project_name,
-                                                        self.original_project_path, self.original_namespace_path, self.original_project_override_params)
+                                                        self.original_project_path, self.original_namespace_path, self.original_project_override_params, self.members)
         self.assertEqual(import_id, None)
 
     @mock.patch.object(ProjectsApi, "get_project_import_status")
@@ -102,7 +130,7 @@ class ImportExportClientTests(unittest.TestCase):
         type(nok_status_mock).status_code = mock.PropertyMock(return_value=404)
         mock_status.return_value = nok_status_mock
         import_id = self.ie.get_import_id_from_response(self.import_response, self.original_project_filename, self.original_project_name,
-                                                        self.original_project_path, self.original_namespace_path, self.original_project_override_params)
+                                                        self.original_project_path, self.original_namespace_path, self.original_project_override_params, self.members)
         self.assertEqual(import_id, None)
 
     @mock.patch('congregate.helpers.conf.Config.importexport_wait', new_callable=mock.PropertyMock)
@@ -126,7 +154,7 @@ class ImportExportClientTests(unittest.TestCase):
         }
         wait.return_value = 0.01
         import_id = self.ie.get_import_id_from_response(self.import_response, self.original_project_filename, self.original_project_name,
-                                                        self.original_project_path, self.original_namespace_path, self.original_project_override_params)
+                                                        self.original_project_path, self.original_namespace_path, self.original_project_override_params, [])
         self.assertEqual(import_id, 12345)
 
     @mock.patch('congregate.helpers.conf.Config.importexport_wait', new_callable=mock.PropertyMock)
@@ -150,7 +178,7 @@ class ImportExportClientTests(unittest.TestCase):
         })
         wait.return_value = 0.01
         import_id = self.ie.get_import_id_from_response(self.import_response, self.original_project_filename, self.original_project_name,
-                                                        self.original_project_path, self.original_namespace_path, self.original_project_override_params)
+                                                        self.original_project_path, self.original_namespace_path, self.original_project_override_params, self.members)
         self.assertEqual(import_id, None)
 
     @mock.patch('congregate.helpers.conf.Config.importexport_wait', new_callable=mock.PropertyMock)
@@ -167,7 +195,7 @@ class ImportExportClientTests(unittest.TestCase):
         }
         mock_status.return_value = ok_status_mock
         import_id = self.ie.get_import_id_from_response(self.import_response, self.original_project_filename, self.original_project_name,
-                                                        self.original_project_path, self.original_namespace_path, self.original_project_override_params)
+                                                        self.original_project_path, self.original_namespace_path, self.original_project_override_params, self.members)
         self.assertEqual(import_id, None)
 
     @mock.patch.object(GroupsApi, "get_group_download_status")

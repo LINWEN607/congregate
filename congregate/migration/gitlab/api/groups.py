@@ -57,7 +57,7 @@ class GroupsApi():
         """
         return api.list_all(host, token, "groups?search=%s" % name)
 
-    def create_group(self, host, token, data):
+    def create_group(self, host, token, data, message=None):
         """
         Creates a new project group
 
@@ -68,9 +68,9 @@ class GroupsApi():
             :param: data: (dict) Object containing the various data requried for creating a group. Refer to the link above for specific examples
             :return: Response object containing the response to POST /groups
         """
-        return api.generate_post_request(host, token, "groups", json.dumps(data))
+        return api.generate_post_request(host, token, "groups", json.dumps(data), description=message)
 
-    def add_member_to_group(self, gid, host, token, member):
+    def add_member_to_group(self, gid, host, token, member, message=None):
         """
         Adds a member to a group or project
 
@@ -82,7 +82,9 @@ class GroupsApi():
             :param: member: (dict) Object containing the member data. Refer to the link above for specific examples
             :return: Response object containing the response to POST /groups/:id/members
         """
-        return api.generate_post_request(host, token, "groups/%d/members" % gid, json.dumps(member))
+        if not message:
+            message = "Adding member to %d with payload %s" % (gid, str(member))
+        return api.generate_post_request(host, token, "groups/%d/members" % gid, json.dumps(member), description=message)
 
     def get_all_groups(self, host, token):
         """
@@ -111,8 +113,8 @@ class GroupsApi():
             member["email"] = self.users.get_user_email(member["id"], host, token)
             yield member
 
-    def update_member_access_level(self, host, token, gid, uid, level):
-        return api.generate_put_request(host, token, "groups/{0}/members/{1}?access_level={2}".format(gid, uid, level), data=None)
+    def update_member_access_level(self, host, token, gid, uid, level, message=None):
+        return api.generate_put_request(host, token, "groups/{0}/members/{1}?access_level={2}".format(gid, uid, level), data=None, description=message)
 
     def get_all_subgroups(self, gid, host, token):
         """
@@ -168,7 +170,7 @@ class GroupsApi():
         """
         return api.generate_get_request(host, token, "groups/%d/notification_settings" % gid)
 
-    def export_group(self, host, token, gid, data=None, headers=None):
+    def export_group(self, host, token, gid, data=None, headers=None, message=None):
         """
         Export a group using the groups api
 
@@ -178,7 +180,7 @@ class GroupsApi():
             :param: data: (str) Relevant data for the export
             :param: headers: (str) The headers for the API request
         """
-        return api.generate_post_request(host, token, "groups/{}/export".format(gid), data=data, headers=headers)
+        return api.generate_post_request(host, token, "groups/{}/export".format(gid), data=data, headers=headers, description=message)
 
     def get_group_download_status(self, host, token, gid):
         """
@@ -193,7 +195,7 @@ class GroupsApi():
         """
         return api.generate_get_request(host, token, "groups/%d/export/download" % gid)
 
-    def import_group(self, host, token, data=None, files=None, headers=None):
+    def import_group(self, host, token, data=None, files=None, headers=None, message=None):
         """
         Import a group using the groups api
 
@@ -203,7 +205,9 @@ class GroupsApi():
             :param: data: (str) Relevant data for the export
             :param: headers: (str) The headers for the API request
         """
-        return api.generate_post_request(host, token, "groups/import", data=data, files=files, headers=headers)
+        if not message:
+            message = "Importing group with payload %s" % str(data)
+        return api.generate_post_request(host, token, "groups/import", data=data, files=files, headers=headers, description=message)
 
     def get_all_group_members_incl_inherited(self, gid, host, token):
         """
@@ -377,7 +381,7 @@ class GroupsApi():
         """
         return api.list_all(host, token, "groups/%d/variables" % gid)
 
-    def create_group_variable(self, gid, host, token, data):
+    def create_group_variable(self, gid, host, token, data, message=None):
         """
         Creates a new group variable
 
@@ -389,7 +393,9 @@ class GroupsApi():
             :param: data: (dict) Object containing the various data required for creating a group variable. Refer to the link above for specific examples
             :return: Response object containing the response to POST /groups/:id/variables
         """
-        return api.generate_post_request(host, token, "groups/%d/variables" % gid, json.dumps(data))
+        if not message:
+            message = "Creating new variable for group %d" % gid
+        return api.generate_post_request(host, token, "groups/%d/variables" % gid, json.dumps(data), description=message)
 
     def get_all_group_badges(self, gid, host, token):
         """
@@ -404,7 +410,7 @@ class GroupsApi():
         """
         return api.list_all(host, token, "groups/%d/badges" % gid)
 
-    def add_group_badge(self, gid, host, token, data):
+    def add_group_badge(self, gid, host, token, data, message=None):
         """
         Add a badge to a group
 
@@ -416,4 +422,6 @@ class GroupsApi():
             :param: data: (dict) Object containing the various data requried for creating a badge. Refer to the link above for specific examples
             :return: Response object containing the response to POST /groups/:id/badges
         """
-        return api.generate_post_request(host, token, "groups/%d/badges" % gid, json.dumps(data))
+        if not message:
+            message = "Adding badge to group"
+        return api.generate_post_request(host, token, "groups/%d/badges" % gid, json.dumps(data), description=message)

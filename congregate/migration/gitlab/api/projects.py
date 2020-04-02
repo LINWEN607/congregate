@@ -77,7 +77,7 @@ class ProjectsApi():
                 member["id"], host, token)
             yield member
 
-    def add_member(self, id, host, token, member):
+    def add_member(self, id, host, token, member, message=None):
         """
         Adds a member to a group or project
 
@@ -90,9 +90,11 @@ class ProjectsApi():
             :return: Response object containing the response to POST /projects/:id/members
 
         """
-        return api.generate_post_request(host, token, "projects/%d/members" % id, json.dumps(member))
+        if not message:
+            message = "Adding user %d to project %d" % (member["user_id"], id)
+        return api.generate_post_request(host, token, "projects/%d/members" % id, json.dumps(member), description=message)
 
-    def create_new_project_deploy_key(self, pid, host, token, key):
+    def create_new_project_deploy_key(self, pid, host, token, key, message=None):
         """
         Creates a new deploy key for a project
 
@@ -105,9 +107,11 @@ class ProjectsApi():
             :return: Response object containing the response to POST /projects/:id/deploy_keys
 
         """
-        return api.generate_post_request(host, token, "projects/%d/deploy_keys" % pid, json.dumps(key))
+        if not message:
+            message = "Creating new deploy key"
+        return api.generate_post_request(host, token, "projects/%d/deploy_keys" % pid, json.dumps(key), description=message)
 
-    def remove_member(self, id, user_id, host, token):
+    def remove_member(self, id, user_id, host, token, message=None):
         """
         Removes member from project
 
@@ -119,9 +123,11 @@ class ProjectsApi():
             :param: token: (str) Access token to GitLab instance
             :return: Response object containing a 202 (accepted) or 404 (Member not found) from DELETE /projects/:id/members/:user_id
         """
-        return api.generate_delete_request(host, token, "projects/%d/members/%d" % (id, user_id))
+        if not message:
+            message = "Deleting member from project"
+        return api.generate_delete_request(host, token, "projects/%d/members/%d" % (id, user_id), description=message)
 
-    def archive_project(self, host, token, id):
+    def archive_project(self, host, token, id, message=None):
         """
         Archives the project if the user is either admin or the project owner of this project
 
@@ -133,9 +139,11 @@ class ProjectsApi():
             :return: Response object containing the response to POST /projects/:id/archive
 
         """
-        return api.generate_post_request(host, token, "projects/%d/archive" % id, {}).json()
+        if not message:
+            message = "Archiving project"
+        return api.generate_post_request(host, token, "projects/%d/archive" % id, {}, description=message).json()
 
-    def unarchive_project(self, host, token, id):
+    def unarchive_project(self, host, token, id, message=None):
         """
         Unarchives the project if the user is either admin or the project owner of this project
 
@@ -147,7 +155,9 @@ class ProjectsApi():
             :return: Response object containing the response to POST /projects/:id/unarchive
 
         """
-        return api.generate_post_request(host, token, "projects/%d/unarchive" % id, {}).json()
+        if not message:
+            message = "Unarchiving project"
+        return api.generate_post_request(host, token, "projects/%d/unarchive" % id, {}, description=message).json()
 
     def delete_project(self, host, token, id):
         """
@@ -160,9 +170,10 @@ class ProjectsApi():
             :param: token: (str) Access token to GitLab instance
             :return: Response object containing a 202 (Accepted) or 404 (Project not found) from DELETE /projects/:id
         """
-        return api.generate_delete_request(host, token, "projects/{}".format(id))
+        message = "Deleting project"
+        return api.generate_delete_request(host, token, "projects/{}".format(id), description=message)
 
-    def add_shared_group(self, host, token, pid, data=None):
+    def add_shared_group(self, host, token, pid, data=None, message=None):
         """
         Allow to share project with group
 
@@ -175,7 +186,9 @@ class ProjectsApi():
             :return: Response object containing the response to POST /projects/:id/share
 
         """
-        return api.generate_post_request(host, token, "projects/%d/share" % pid, json.dumps(data))
+        if not message:
+            message = "Sharing project %d with group %d" % (pid, data["group_id"])
+        return api.generate_post_request(host, token, "projects/%d/share" % pid, json.dumps(data), description=message)
 
     def edit_project(self, host, token, pid, data=None):
         """
@@ -199,14 +212,16 @@ class ProjectsApi():
         """
         return api.generate_post_request(host, token, "projects/{}/mirror/pull".format(pid), json.dumps(data))
 
-    def create_project(self, host, token, name, data=None, headers=None):
+    def create_project(self, host, token, name, data=None, headers=None, message=None):
         if data is not None:
             data["name"] = name
         else:
             data = {"name": name}
-        return api.generate_post_request(host, token, "projects", json.dumps(data), headers=headers)
+        if not message:
+            message = "Creating project %s with payload %s" % (name, str(data))
+        return api.generate_post_request(host, token, "projects", json.dumps(data), headers=headers, description=message)
 
-    def export_project(self, host, token, pid, data=None, headers=None):
+    def export_project(self, host, token, pid, data=None, headers=None, message=None):
         """
         Schedule an export
 
@@ -215,7 +230,9 @@ class ProjectsApi():
             :param: pid: (int) GitLab project ID
             :return: Response object containing the response to POST /projects/:id/export
         """
-        return api.generate_post_request(host, token, "projects/{}/export".format(pid), data=data, headers=headers)
+        if not message:
+            message = "Exporting project"
+        return api.generate_post_request(host, token, "projects/{}/export".format(pid), data=data, headers=headers, description=message)
 
     def get_project_export_status(self, id, host, token):
         """
@@ -230,7 +247,7 @@ class ProjectsApi():
         """
         return api.generate_get_request(host, token, "projects/%d/export" % id)
 
-    def import_project(self, host, token, data=None, files=None, headers=None):
+    def import_project(self, host, token, data=None, files=None, headers=None, message=None):
         """
         Import a project using the Projects export/import API
 
@@ -240,7 +257,9 @@ class ProjectsApi():
             :param: data: (str) Relevant data for the export
             :param: headers: (str) The headers for the API request
         """
-        return api.generate_post_request(host, token, "projects/import", data=data, files=files, headers=headers)
+        if not message:
+            message = "Importing project with payload %s" % str(data)
+        return api.generate_post_request(host, token, "projects/import", data=data, files=files, headers=headers, description=message)
 
     def get_project_import_status(self, host, token, pid):
         """
@@ -401,7 +420,7 @@ class ProjectsApi():
         """
         return api.list_all(host, token, "projects/%d/variables" % pid)
 
-    def create_project_variable(self, id, host, token, data):
+    def create_project_variable(self, id, host, token, data, message=None):
         """
         Creates a new project variable
 
@@ -413,7 +432,9 @@ class ProjectsApi():
             :param: data: (dict) Object containing the various data required for creating a project variable. Refer to the link above for specific examples
             :return: Response object containing the response to POST /projects/:id/variables
         """
-        return api.generate_post_request(host, token, "projects/%d/variables" % id, json.dumps(data))
+        if not message:
+            message = "Creating project variable"
+        return api.generate_post_request(host, token, "projects/%d/variables" % id, json.dumps(data), description=message)
 
     def get_all_project_protected_branches(self, id, host, token):
         """
@@ -442,7 +463,7 @@ class ProjectsApi():
         """
         return api.generate_get_request(host, token, "projects/{0}/protected_branches/{1}".format(pid, quote_plus(name)))
 
-    def set_default_project_branch(self, pid, host, token, branch, data=None):
+    def set_default_project_branch(self, pid, host, token, branch, data=None, message=None):
         """
         Set default branch for project
 
@@ -452,7 +473,9 @@ class ProjectsApi():
             :param: branch: (str) GitLab project branch name
             :return: Response object containing the response to PUT /projects/:id
         """
-        return api.generate_put_request(host, token, "projects/{0}?default_branch={1}".format(pid, branch), data=data)
+        if not message:
+            message = "Setting default branch for project to %s" % branch
+        return api.generate_put_request(host, token, "projects/{0}?default_branch={1}".format(pid, branch), data=data, description=message)
 
     def get_all_project_protected_environments(self, id, host, token):
         """
@@ -573,7 +596,7 @@ class ProjectsApi():
         """
         return api.list_all(host, token, "projects/%d/pipeline_schedules/%d" % (pid, sid))
 
-    def create_new_project_pipeline_schedule(self, host, token, pid, data):
+    def create_new_project_pipeline_schedule(self, host, token, pid, data, message=None):
         """
         Add a hook to a specified project
 
@@ -583,9 +606,11 @@ class ProjectsApi():
             :param: data: (dict) Object containing the various data required for creating a pipeline schedule
             :return: Response object containing the response to POST /projects/:id/pipeline_schedules
         """
-        return api.generate_post_request(host, token, "projects/%d/pipeline_schedules" % pid, json.dumps(data))
+        if not message:
+            message = "Creating new pipeline schedule"
+        return api.generate_post_request(host, token, "projects/%d/pipeline_schedules" % pid, json.dumps(data), description=message)
 
-    def create_new_project_pipeline_schedule_variable(self, pid, sid, host, token, data):
+    def create_new_project_pipeline_schedule_variable(self, pid, sid, host, token, data, message=None):
         """
         Create a new variable of a pipeline schedule.
 
@@ -596,7 +621,9 @@ class ProjectsApi():
             :param: data: (dict) Object containing the various data required for creating a pipeline schedule variable
             :return: Response object containing the response to POST /projects/:id/pipeline_schedules/:pipeline_schedule_id/variables
         """
-        return api.generate_post_request(host, token, "projects/%d/pipeline_schedules/%d/variables" % (pid, sid), json.dumps(data))
+        if not message:
+            message = "Creating new project pipeline schedule variable"
+        return api.generate_post_request(host, token, "projects/%d/pipeline_schedules/%d/variables" % (pid, sid), json.dumps(data), description=message)
 
     def get_all_project_hooks(self, pid, host, token):
         """
@@ -611,7 +638,7 @@ class ProjectsApi():
         """
         return api.list_all(host, token, "projects/%d/hooks" % pid)
 
-    def add_project_hook(self, host, token, pid, data):
+    def add_project_hook(self, host, token, pid, data, message=None):
         """
         Add a hook to a specified project
 
@@ -621,7 +648,9 @@ class ProjectsApi():
             :param: data: (dict) Object containing the various data requried for creating a hook. Refer to the link above for specific examples
             :return: Response object containing the response to POST /projects/:id/hooks
         """
-        return api.generate_post_request(host, token, "projects/{}/hooks".format(pid), json.dumps(data))
+        if not message:
+            message = "Adding project hook"
+        return api.generate_post_request(host, token, "projects/{}/hooks".format(pid), json.dumps(data), description=message)
 
     def get_all_project_push_rules(self, pid, host, token):
         """
@@ -636,7 +665,7 @@ class ProjectsApi():
         """
         return api.generate_get_request(host, token, "projects/%d/push_rule" % pid)
 
-    def create_project_push_rule(self, pid, host, token, data):
+    def create_project_push_rule(self, pid, host, token, data, message=None):
         """
         Adds a push rule to a specified project
 
@@ -648,7 +677,9 @@ class ProjectsApi():
             :param: data: (str) Relevant data for creating a push rule
             :return: Response object containing the response to POST /projects/:id/push_rule
         """
-        return api.generate_post_request(host, token, "projects/%d/push_rule" % pid, json.dumps(data))
+        if not message:
+            message = "Creating new push rule"
+        return api.generate_post_request(host, token, "projects/%d/push_rule" % pid, json.dumps(data), description=message)
 
     def get_project_level_mr_approval_configuration(self, pid, host, token):
         """
@@ -663,7 +694,7 @@ class ProjectsApi():
         """
         return api.generate_get_request(host, token, "projects/%d/approvals" % pid)
 
-    def change_project_level_mr_approval_configuration(self, pid, host, token, data):
+    def change_project_level_mr_approval_configuration(self, pid, host, token, data, message=None):
         """
         Change the approval configuration of a project
 
@@ -675,7 +706,9 @@ class ProjectsApi():
             :param: data: (str) Relevant data for approval configuration
             :return: Response object containing the response to PUT /projects/:id/approvals
         """
-        return api.generate_post_request(host, token, "projects/{}/approvals".format(pid), json.dumps(data))
+        if not message:
+            message = "Changing project merge request approval"
+        return api.generate_post_request(host, token, "projects/{}/approvals".format(pid), json.dumps(data), description=message)
 
     def get_all_project_level_mr_approval_rules(self, pid, host, token):
         """
@@ -690,7 +723,7 @@ class ProjectsApi():
         """
         return api.list_all(host, token, "projects/%d/approval_rules" % pid)
 
-    def create_project_level_mr_approval_rule(self, pid, host, token, data):
+    def create_project_level_mr_approval_rule(self, pid, host, token, data, message=None):
         """
         Create project-level rule
 
@@ -702,7 +735,9 @@ class ProjectsApi():
             :param: data: (str) Relevant data for approval rule
             :yield: Generator returning JSON of each result from POST /projects/:id/approval_rules
         """
-        return api.generate_post_request(host, token, "projects/{}/approval_rules".format(pid), json.dumps(data))
+        if not message:
+            message = "Creating project level merge request approval rule with payloda %s" % str(data)
+        return api.generate_post_request(host, token, "projects/{}/approval_rules".format(pid), json.dumps(data), description=message)
 
     def get_all_project_registry_repositories(self, pid, host, token):
         """
@@ -915,7 +950,7 @@ class ProjectsApi():
         """
         return api.list_all(host, token, "projects/{}/wikis".format(pid))
 
-    def create_environment(self, host, token, project_id, data):
+    def create_environment(self, host, token, project_id, data, message=None):
         """
         Creates a new environment
 
@@ -928,7 +963,9 @@ class ProjectsApi():
             :return: Response object containing the response to POST /projects/:id/environments
 
         """
-        return api.generate_post_request(host, token, "projects/{}/environments".format(project_id), json.dumps(data))
+        if not message:
+            message = "Creating new environment with payload %s" % str(data)
+        return api.generate_post_request(host, token, "projects/{}/environments".format(project_id), json.dumps(data), description=message)
 
     def delete_environment(self, project_id, env_id, host, token):
         """

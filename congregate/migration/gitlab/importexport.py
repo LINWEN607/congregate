@@ -193,6 +193,7 @@ class ImportExportClient(BaseClass):
         name = project["name"]
         path = project["path"]
         namespace = project["namespace"]
+        members = project["members"]
         override_params = self.get_override_params(project)
         filename = get_export_filename_from_namespace_and_name(namespace, name)
         import_id = None
@@ -208,13 +209,13 @@ class ImportExportClient(BaseClass):
 
         if not dry_run:
             import_response = self.attempt_import(
-                filename, name, path, dst_namespace, override_params)
+                filename, name, path, dst_namespace, override_params, members)
             if any(err_msg in str(import_response) for err_msg in self.ERR_MSGS):
                 self.log.warning("Re-importing project {0} to {1}, waiting {2} minutes due to:\n{3}".format(
                     name, dst_namespace, self.COOL_OFF_MINUTES, import_response))
                 sleep(self.COOL_OFF_MINUTES * 60)
                 import_response = self.attempt_import(
-                    filename, name, path, dst_namespace, override_params)
+                    filename, name, path, dst_namespace, override_params, members)
             elif "404 Namespace Not Found" in str(import_response):
                 timeout = 0
                 wait_time = self.config.importexport_wait
@@ -228,13 +229,13 @@ class ImportExportClient(BaseClass):
                             name, dst_namespace, import_response))
                         return None
                 import_response = self.attempt_import(
-                    filename, name, path, dst_namespace, override_params)
+                    filename, name, path, dst_namespace, override_params, members)
             elif not import_response or is_error_message_present(import_response):
                 self.log.error("Project {0} failed to import to {1}, due to:\n{2}".format(
                     name, dst_namespace, import_response))
                 return None
             import_id = self.get_import_id_from_response(
-                import_response, filename, name, path, dst_namespace, override_params)
+                import_response, filename, name, path, dst_namespace, override_params, members)
         else:
             self.log.info("DRY-RUN: Outputing project {0} (file: {1}) migration data to dry_run_project_migration.json"
                           .format(name, filename))
@@ -246,7 +247,7 @@ class ImportExportClient(BaseClass):
                 "project": project})
         return import_id
 
-    def attempt_import(self, filename, name, path, namespace, override_params):
+    def attempt_import(self, filename, name, path, namespace, override_params, members):
         import_response = None
         if self.config.location == "aws":
             presigned_get_url = self.aws.generate_presigned_url(
@@ -300,8 +301,9 @@ class ImportExportClient(BaseClass):
                         "Private-Token": self.config.destination_token,
                         "Content-Type": m.content_type
                     }
+                    message = "Importing project %s with the following payload %s and following members %s" % (name, m, members)
                     resp = self.projects_api.import_project(
-                        self.config.destination_host, self.config.destination_token, data=m, headers=headers)
+                        self.config.destination_host, self.config.destination_token, data=m, headers=headers, message=message)
                     import_response = resp.text
             except AttributeError as ae:
                 self.log.error(
@@ -319,8 +321,9 @@ class ImportExportClient(BaseClass):
                     headers = {
                         "Private-Token": self.config.destination_token
                     }
+                    message = "Importing project %s with the following payload %s and following members %s" % (name, data, members)
                     resp = self.projects_api.import_project(
-                        self.config.destination_host, self.config.destination_token, data=data, files=files, headers=headers)
+                        self.config.destination_host, self.config.destination_token, data=data, files=files, headers=headers, message=message)
                     import_response = resp.text
         return import_response
 
@@ -338,8 +341,9 @@ class ImportExportClient(BaseClass):
 
         name = group["name"]
         path = group["path"]
+        members = group["members"]
         if not dry_run:
-            import_response = self.attempt_group_import(filename, name, path)
+            import_response = self.attempt_group_import(filename, name, path, members)
             try:
                 import_response_text = import_response.text
             except AttributeError as e:
@@ -360,7 +364,7 @@ class ImportExportClient(BaseClass):
                 "full_path": full_path,
                 "group": group})
 
-    def attempt_group_import(self, filename, name, path):
+    def attempt_group_import(self, filename, name, path, members):
         resp = None
         self.log.info("Importing group {} from filesystem".format(name))
         # NOTE: Group export does not yet support (AWS/S3) user attributes
@@ -381,8 +385,9 @@ class ImportExportClient(BaseClass):
                 headers = {
                     "Private-Token": self.config.destination_token
                 }
+                message = "Importing group %s with payload %s and members %s" % (path, data, members)
                 resp = self.groups_api.import_group(
-                    self.config.destination_host, self.config.destination_token, data=data, files=files, headers=headers)
+                    self.config.destination_host, self.config.destination_token, data=data, files=files, headers=headers, message=message)
         return resp
 
     @staticmethod
@@ -410,7 +415,7 @@ class ImportExportClient(BaseClass):
                 another_strip.pop(ind)
         return "/".join(another_strip)
 
-    def get_import_id_from_response(self, import_response, filename, name, path, dst_namespace, override_params):
+    def get_import_id_from_response(self, import_response, filename, name, path, dst_namespace, override_params, members):
         timeout = 0
         retry = True
         import_id = None
@@ -424,7 +429,7 @@ class ImportExportClient(BaseClass):
                         name, dst_namespace, self.COOL_OFF_MINUTES, import_response))
                     sleep(self.COOL_OFF_MINUTES * 60)
                     import_response = self.attempt_import(
-                        filename, name, path, dst_namespace, override_params)
+                        filename, name, path, dst_namespace, override_params, members)
                     import_response = json.loads(import_response)
                     timeout = 0
                 import_id = import_response.get("id", None)
@@ -447,7 +452,7 @@ class ImportExportClient(BaseClass):
                                 self.projects_api.delete_project(
                                     self.config.destination_host, self.config.destination_token, import_id)
                                 import_response = self.attempt_import(
-                                    filename, name, path, dst_namespace, override_params)
+                                    filename, name, path, dst_namespace, override_params, members)
                                 total = 0
                                 while any(del_err_msg in str(import_response) for del_err_msg in self.DEL_ERR_MSGS):
                                     self.log.info(
@@ -455,7 +460,7 @@ class ImportExportClient(BaseClass):
                                     total += wait_time
                                     sleep(wait_time)
                                     import_response = self.attempt_import(
-                                        filename, name, path, dst_namespace, override_params)
+                                        filename, name, path, dst_namespace, override_params, members)
                                     if total > self.config.max_export_wait_time:
                                         self.log.error("Project {0} timed out while deleting from {1}, with response:\n{2}".format(
                                             name, dst_namespace, import_response))

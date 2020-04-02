@@ -33,7 +33,7 @@ class UsersApi():
         """
         return api.generate_get_request(host, token, "user").json()
 
-    def create_user(self, host, token, data):
+    def create_user(self, host, token, data, message=None):
         """
         Creates a new user
 
@@ -44,7 +44,9 @@ class UsersApi():
             :param: data: (dict) Object containing the necessary data for creating a user. Refer to the link above for specific examples
             :return: Response object containing the response to POST /users
         """
-        return api.generate_post_request(host, token, "users", json.dumps(data))
+        if not message:
+            message = "Creating new user %s with payload %s" % (data["email"], str(data))
+        return api.generate_post_request(host, token, "users", json.dumps(data), description=message)
 
     def delete_user(self, host, token, id, hard_delete=False):
         """
@@ -86,7 +88,7 @@ class UsersApi():
         """
         return api.list_all(host, token, "users?username=%s" % username, per_page=50)
 
-    def create_user_impersonation_token(self, host, token, id, data):
+    def create_user_impersonation_token(self, host, token, id, data, message=None):
         """
         It creates a new impersonation token. Note that only administrators can do this.
 
@@ -98,7 +100,9 @@ class UsersApi():
             :param: data: (dict) Object containing the necessary data for creating a user. Refer to the link above for specific examples
             :return: Response object containing the response to POST /users/:id/impersonation_tokens
         """
-        return api.generate_post_request(host, token, "users/%d/impersonation_tokens" % id, json.dumps(data))
+        if not message:
+            message = "Creating impersonation token for %d" % id
+        return api.generate_post_request(host, token, "users/%d/impersonation_tokens" % id, json.dumps(data), description=message)
 
     def delete_user_impersonation_token(self, host, token, user_id, token_id):
         """
@@ -114,7 +118,7 @@ class UsersApi():
         """
         return api.generate_delete_request(host, token, "users/%d/impersonation_tokens/%d" % (user_id, token_id))
 
-    def block_user(self, host, token, user_id):
+    def block_user(self, host, token, user_id, message=None):
         """
         Blocks the specified user. Available only for admin.
 
@@ -125,6 +129,8 @@ class UsersApi():
             :param: user_id: (int) GitLab user ID
             :return: 201 OK / 404 User Not Found / 403 Forbidden
         """
+        if not message:
+            message = "Blocking user %d" % user_id
         return api.generate_post_request(host, token, "users/%d/block" % user_id, data=None)
 
     def get_all_user_contribution_events(self, id, host, token):

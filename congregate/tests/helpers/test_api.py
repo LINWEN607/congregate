@@ -177,3 +177,37 @@ def test_search(g, resp):
     j = api.search("host", "token", "path", "search_query")
     g.assert_called()
     assert j == resp.json()
+
+def test_audit_message_with_message():
+    message = "Modifying some data"
+    url = "https://gitlab.test.io"
+    req_type = "POST"
+    data = {
+        "test": "data"
+    }
+
+    expected = "Modifying some data by generating POST request to https://gitlab.test.io with data: {'test': 'data'}"
+    actual = api.generate_audit_log_message(req_type, message, url, data)
+    assert expected == actual
+
+def test_audit_message_without_message():
+    message = None
+    url = "https://gitlab.test.io"
+    req_type = "POST"
+    data = {
+        "test": "data"
+    }
+
+    expected = "Generating POST request to https://gitlab.test.io with data: {'test': 'data'}"
+    actual = api.generate_audit_log_message(req_type, message, url, data)
+    assert expected == actual
+
+def test_audit_message_without_data():
+    message = "Modifying some data"
+    url = "https://gitlab.test.io"
+    req_type = "DELETE"
+    data = None
+
+    expected = "Modifying some data by generating DELETE request to https://gitlab.test.io"
+    actual = api.generate_audit_log_message(req_type, message, url, data)
+    assert expected == actual

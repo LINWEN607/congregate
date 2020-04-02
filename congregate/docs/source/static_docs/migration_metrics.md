@@ -4,7 +4,9 @@ Various migration metrics are generated while running congregate. These are the 
 
 ## During runtime
 - congregate.log
-    - The application log for congregate. This is a fairly verbose log containing the status of the migration and any POST, PUT, or DELETE requests and their subsequent payloads
+    - The application log for congregate. This is a fairly verbose log containing the status of the migration 
+- audit.log
+    - This log contains any POST, PUT, or DELETE requests made and their subsequent payloads
 
 ## After dry run
 

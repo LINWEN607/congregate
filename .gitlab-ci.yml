@@ -84,6 +84,7 @@ test:end-to-end:
       - data/*diff*.json
       - data/*results.json
       - data/congregate.log
+      - data/audit.log
 
 release-tag:
   stage: release
