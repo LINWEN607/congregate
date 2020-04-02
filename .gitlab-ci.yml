@@ -95,7 +95,8 @@ release-tag:
   before_script:
     - docker login ${CI_REGISTRY} -u gitlab-ci-token -p $CI_BUILD_TOKEN
   script:
-    - docker build --tag "$RELEASE_IMAGE_NAME" docker/release
+    - cp docker/release/Dockerfile ./
+    - docker build --tag "$RELEASE_IMAGE_NAME" .
     - docker push "$RELEASE_IMAGE_NAME"
   only:
     - tags
