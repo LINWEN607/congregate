@@ -12,7 +12,7 @@ class MockUsersApi():
             "avatar_url": "http://localhost:3000/uploads/user/avatar/1/cd8.jpeg",
             "web_url": "http://localhost:3000/john_smith"
         }
-    
+
     def get_user_404(self):
         return {
             "message": "404 User Not Found"
@@ -62,7 +62,7 @@ class MockUsersApi():
                 "access_level": 30
             }
         ]
-    
+
     def get_dummy_user(self):
         return {
             "id": 27,
@@ -136,7 +136,7 @@ class MockUsersApi():
             "shared_runners_minutes_limit": None,
             "extra_shared_runners_minutes_limit": None
         }
-    
+
     def get_dummy_old_users(self):
         return [
             {
@@ -416,7 +416,6 @@ class MockUsersApi():
                 "avatar_url": None,
                 "description": "",
                 "file_template_project_id": None,
-                "full_parent_namespace": "parent-migration-test-group",
                 "full_path": "jdoe-testing",
                 "id": 279,
                 "lfs_enabled": True,
@@ -454,7 +453,6 @@ class MockUsersApi():
                 ],
                 "name": "jdoe-testing",
                 "parent_id": 244,
-                "parent_namespace": "parent-migration-test-group",
                 "path": "jdoe-testing",
                 "request_access_enabled": False,
                 "visibility": "private"
@@ -467,7 +465,6 @@ class MockUsersApi():
                 "avatar_url": None,
                 "description": "",
                 "file_template_project_id": None,
-                "full_parent_namespace": "parent-migration-test-group",
                 "full_path": "jdoe-testing",
                 "id": 279,
                 "lfs_enabled": True,
@@ -485,7 +482,6 @@ class MockUsersApi():
                 ],
                 "name": "jdoe-testing",
                 "parent_id": 244,
-                "parent_namespace": "parent-migration-test-group",
                 "path": "jdoe-testing",
                 "request_access_enabled": False,
                 "visibility": "private"
