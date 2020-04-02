@@ -55,14 +55,13 @@ def rollback_diff():
     diff_report = {}
     base_diff = BaseDiffClient()
     user_diff = UserDiffClient(
-        "/data/user_migration_results.json")
-    diff_report["user_diff"] = user_diff.generate_diff_report(rollback=True)
+        "/data/user_migration_results.json", rollback=True)
+    diff_report["user_diff"] = user_diff.generate_diff_report()
     group_diff = GroupDiffClient(
-        "/data/group_migration_results.json")
-    diff_report["group_diff"] = group_diff.generate_diff_report(rollback=True)
+        "/data/group_migration_results.json", rollback=True)
+    diff_report["group_diff"] = group_diff.generate_diff_report()
     project_diff = ProjectDiffClient(
-        "/data/project_migration_results.json")
-    diff_report["project_diff"] = project_diff.generate_diff_report(
-        rollback=True)
+        "/data/project_migration_results.json", rollback=True)
+    diff_report["project_diff"] = project_diff.generate_diff_report()
     base_diff.generate_html_report(
         diff_report, "/data/migration_rollback_results.html")

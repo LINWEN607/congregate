@@ -1,5 +1,6 @@
 import json
 import base64
+from traceback import print_exc
 from types import GeneratorType
 from bs4 import BeautifulSoup as bs
 from json2html import json2html
@@ -61,41 +62,43 @@ class BaseDiffClient(BaseClass):
 
     def diff(self, source_data, destination_data, critical_key=None, obfuscate=False, parent_group=None):
         engine = Comparator()
-        if isinstance(source_data, list):
-            if is_error_message_present(destination_data):
-                destination_data = []
-            if obfuscate:
-                for i, _ in enumerate(source_data):
-                    source_data[i] = self.obfuscate_values(source_data[i])
-                for i, _ in enumerate(destination_data):
-                    destination_data[i] = self.obfuscate_values(
-                        destination_data[i])
-            diff = engine._compare_arrays(source_data, destination_data)
-        else:
-            if obfuscate:
-                source_data = self.obfuscate_values(source_data)
-                destination_data = self.obfuscate_values(destination_data)
-            diff = engine.compare_dicts(source_data, destination_data)
-        if source_data:
-            accuracy = 0
-            if isinstance(source_data, list):
-                if diff:
-                    for i, _ in enumerate(source_data):
-                        if diff.get(i):
-                            accuracy += self.calculate_individual_accuracy(
-                                diff[i], source_data[i], critical_key, parent_group=parent_group)
-                    if accuracy != 0:
-                        accuracy = float(accuracy) / float(len(source_data))
+        diff = None
+        accuracy = 0
+        if destination_data:
+            if not is_error_message_present(destination_data):
+                if isinstance(source_data, list):
+                    if obfuscate:
+                        for i, _ in enumerate(source_data):
+                            source_data[i] = self.obfuscate_values(source_data[i])
+                        for i, _ in enumerate(destination_data):
+                            destination_data[i] = self.obfuscate_values(
+                                destination_data[i])
+                    diff = engine._compare_arrays(source_data, destination_data)
                 else:
-                    accuracy = 1.0
-            else:
-                accuracy = self.calculate_individual_accuracy(
-                    diff, source_data, critical_key, parent_group=parent_group)
-        else:
-            accuracy = 0
+                    if obfuscate:
+                        source_data = self.obfuscate_values(source_data)
+                        destination_data = self.obfuscate_values(destination_data)
+                    diff = engine.compare_dicts(source_data, destination_data)
+                if source_data:
+                    accuracy = 0
+                    if isinstance(source_data, list):
+                        if diff:
+                            for i, _ in enumerate(source_data):
+                                if diff.get(i):
+                                    accuracy += self.calculate_individual_accuracy(
+                                        diff[i], source_data[i], critical_key, parent_group=parent_group)
+                            if accuracy != 0:
+                                accuracy = float(accuracy) / float(len(source_data))
+                        else:
+                            accuracy = 1.0
+                    else:
+                        accuracy = self.calculate_individual_accuracy(
+                            diff, source_data, critical_key, parent_group=parent_group)
+                else:
+                    accuracy = 0
 
-        if bool(list(nested_find("error", diff))) or bool(list(nested_find("message", diff))):
-            accuracy = 0
+                if bool(list(nested_find("error", diff))) or bool(list(nested_find("message", diff))):
+                    accuracy = 0
 
         return {
             "diff": diff,
@@ -299,3 +302,10 @@ class BaseDiffClient(BaseClass):
         soup.html.append(head)
         with open(filepath, "w") as f:
             f.write(soup.prettify(encoding="UTF-8"))
+
+    def asset_exists(self, endpoint, identifier):
+        if identifier:
+            resp = endpoint(identifier, self.config.destination_host, self.config.destination_token)
+            if not is_error_message_present(resp):
+                return True
+        return False
