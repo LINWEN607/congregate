@@ -535,7 +535,7 @@ class UsersClient(BaseClass):
                                 staged_users, threads)
             if new_users:
                 formatted_users = {}
-                for n in new_users:
+                for n in filter(None,new_users):
                     formatted_users[n["email"]] = n
                 write_results_to_file(formatted_users, result_type="user", log=self.log)
 
