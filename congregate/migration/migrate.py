@@ -80,7 +80,7 @@ def migrate(
             bitbucket.handle_bitbucket_migration, repo_list, threads=_THREADS)
     else:
         # Dry-run and log cleanup
-        if dry_run:
+        if _DRY_RUN:
             clean_data(dry_run=False, files=[
                 "dry_run_user_migration.json",
                 "dry_run_group_migration.json",
@@ -100,10 +100,10 @@ def migrate(
 
         # Migrate system hooks (except for gitlab.com)
         if is_dot_com(b.config.destination_host):
-            hooks.migrate_system_hooks()
+            hooks.migrate_system_hooks(dry_run=_DRY_RUN)
 
         # Remove from parent group to avoid inheritance
-        if b.config.parent_id is not None:
+        if b.config.parent_id is not None and not _DRY_RUN:
             groups.remove_import_user(b.config.parent_id)
 
         add_post_migration_stats()
@@ -111,13 +111,15 @@ def migrate(
 
 def are_results(results, var, stage):
     if not results:
-        raise Exception(
+        b.log.error(
             "Results from {0} {1} returned as empty. Aborting.".format(var, stage))
+        raise Exception
 
 
 def is_loc_supported(loc):
     if loc not in ["filesystem", "aws"]:
-        raise Exception("Unsupported export location: {}".format(loc))
+        b.log.error("Unsupported export location: {}".format(loc))
+        raise Exception
 
 
 def migrate_group_info(skip_group_export=False, skip_group_import=False):
@@ -126,8 +128,8 @@ def migrate_group_info(skip_group_export=False, skip_group_import=False):
     if staged_groups:
         if not skip_group_export:
             b.log.info("{}Exporting groups".format(dry_log))
-            export_results = start_multi_process(
-                handle_exporting_groups, staged_groups, threads=_THREADS)
+            export_results = list(start_multi_process(
+                handle_exporting_groups, staged_groups, threads=_THREADS))
 
             are_results(export_results, "group", "export")
 
@@ -150,8 +152,8 @@ def migrate_group_info(skip_group_export=False, skip_group_import=False):
             b.log.info("SKIP: Assuming staged groups are already exported")
         if not skip_group_import:
             b.log.info("{}Importing groups".format(dry_log))
-            import_results = start_multi_process(
-                handle_importing_groups, staged_groups, threads=_THREADS)
+            import_results = list(start_multi_process(
+                handle_importing_groups, staged_groups, threads=_THREADS))
 
             are_results(import_results, "group", "import")
 
@@ -259,8 +261,8 @@ def migrate_project_info(skip_project_export=False, skip_project_import=False):
     if staged_projects:
         if not skip_project_export:
             b.log.info("{}Exporting projects".format(dry_log))
-            export_results = start_multi_process(
-                handle_exporting_projects, staged_projects, threads=_THREADS)
+            export_results = list(start_multi_process(
+                handle_exporting_projects, staged_projects, threads=_THREADS))
 
             are_results(export_results, "project", "export")
 
@@ -284,8 +286,8 @@ def migrate_project_info(skip_project_export=False, skip_project_import=False):
 
         if not skip_project_import:
             b.log.info("{}Importing projects".format(dry_log))
-            import_results = start_multi_process(
-                handle_importing_projects, staged_projects, threads=_THREADS)
+            import_results = list(start_multi_process(
+                handle_importing_projects, staged_projects, threads=_THREADS))
 
             are_results(import_results, "project", "import")
 
@@ -444,21 +446,15 @@ def migrate_single_project_info(project, dst_id):
 
     return results
 
-# TODO: Add multiprocessing
-
 
 def rollback(dry_run=True,
              skip_users=False,
              hard_delete=False,
              skip_groups=False,
              skip_projects=False):
+    # TODO: Add multiprocessing
     rotate_logs()
     dry_log = get_dry_log(dry_run)
-
-    # Remove only projects
-    if not skip_projects:
-        b.log.info("{}Removing projects on destination".format(dry_log))
-        projects.delete_projects(dry_run=dry_run)
 
     # Remove groups and projects OR only empty groups
     if not skip_groups:
@@ -466,6 +462,11 @@ def rollback(dry_run=True,
             dry_log,
             "" if skip_projects else " and projects"))
         groups.delete_groups(dry_run=dry_run, skip_projects=skip_projects)
+
+    # Remove only projects
+    if not skip_projects:
+        b.log.info("{}Removing projects on destination".format(dry_log))
+        projects.delete_projects(dry_run=dry_run)
 
     if not skip_users:
         b.log.info("{0}Removing staged users on destination (hard_delete={1})".format(

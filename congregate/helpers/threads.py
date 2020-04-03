@@ -9,7 +9,8 @@ b = BaseClass()
 def handle_multi_thread(function, data, threads=None):
     try:
         p = ThreadPool(processes=get_no_of_processes(threads))
-        return p.map(function, data)
+        for result in p.map(function, data):
+            yield result
     except Exception as e:
         b.log.error("Multi thread failed with error:\n{}".format(e))
     finally:
@@ -20,7 +21,8 @@ def handle_multi_thread(function, data, threads=None):
 def start_multi_process(function, iterable, threads=None):
     try:
         p = Pool(processes=get_no_of_processes(threads))
-        return p.map(function, iterable)
+        for result in p.map(function, iterable):
+            yield result
     except Exception as e:
         b.log.error("Migration pool failed with error:\n{}".format(e))
     finally:

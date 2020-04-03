@@ -532,13 +532,13 @@ class UsersClient(BaseClass):
         self.log.info("{}Migrating user info".format(get_dry_log(dry_run)))
         if not dry_run:
             new_users = handle_multi_thread(self.handle_user_creation,
-                                staged_users, threads)
+                                            staged_users, threads)
             if new_users:
                 formatted_users = {}
-                for n in filter(None,new_users):
+                for n in filter(None, new_users):
                     formatted_users[n["email"]] = n
-                write_results_to_file(formatted_users, result_type="user", log=self.log)
-
+                write_results_to_file(
+                    formatted_users, result_type="user", log=self.log)
         else:
             self.log.info(
                 "DRY-RUN: Outputing various USER migration data to dry_run_user_migration.json")
@@ -647,7 +647,8 @@ class UsersClient(BaseClass):
                 self.log.error(
                     "Failed to retrieve user {0} status, due to:\n{1}".format(user, e))
         elif response.status_code == 400:
-            self.log.error("Unable to create user due to improperly formatted request: {}".format(str(response.text)))
+            self.log.error(
+                "Unable to create user due to improperly formatted request:\n{}".format(response.text))
             return {
                 "email": user["email"],
                 "id": None

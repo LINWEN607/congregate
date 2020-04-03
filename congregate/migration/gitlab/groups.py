@@ -106,22 +106,24 @@ class GroupsClient(BaseClass):
             group_name = group_file[i]["id"]
             rewritten_groups[group_name] = new_obj
         staged_groups = []
-        for g in filter(None, groups):
-            gid = int(g)
-            if rewritten_groups.get(gid, None) is not None:
-                g = rewritten_groups[gid]
-                if g["parent_id"] is None:
-                    self.log.info(
-                        "Staging top level group {0} (ID: {1})".format(g["full_path"], g["id"]))
-                else:
-                    # TODO: Refactor to re-introduce staging sub-groups
-                    self.log.info(
-                        "SKIP: Staging sub-group {0} (ID: {1})".format(g["full_path"], g["id"]))
-                    return
-                staged_groups.append(g)
+        for group in filter(None, groups):
+            self.traverse_staging(int(group), rewritten_groups, staged_groups)
 
         with open("%s/data/staged_groups.json" % self.app_path, "w") as f:
             json.dump(remove_dupes(staged_groups), f, indent=4)
+
+    def traverse_staging(self, gid, group_dict, staged_groups):
+        if group_dict.get(gid, None) is not None:
+            g = group_dict[gid]
+            if g["parent_id"] is None:
+                self.log.info(
+                    "Staging top level group {0} (ID: {1})".format(g["full_path"], g["id"]))
+            else:
+                # TODO: Refactor to re-introduce staging sub-groups
+                self.log.info(
+                    "SKIP: Staging sub-group {0} (ID: {1})".format(g["full_path"], g["id"]))
+                return
+            staged_groups.append(g)
 
     def is_group_non_empty(self, group):
         # Recursively look for any nested projects

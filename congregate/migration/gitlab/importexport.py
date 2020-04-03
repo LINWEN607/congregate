@@ -126,6 +126,8 @@ class ImportExportClient(BaseClass):
             if gid:
                 imported = self.groups_api.get_group(
                     gid, self.config.destination_host, self.config.destination_token).json()
+                self.log.info(
+                    "Group {0} imported successfully with ID {1}".format(path, gid))
                 break
             self.log.info(
                 "Waiting {0} seconds for group {1} to import".format(wait_time, path))
@@ -224,8 +226,8 @@ class ImportExportClient(BaseClass):
                         self.config.importexport_wait, dst_namespace, name))
                     timeout += wait_time
                     sleep(wait_time)
-                    if timeout > self.config.max_export_wait_time:
-                        self.log.error("Project {0} failed to import to {1}, due to:\n{2}".format(
+                    if timeout > self.COOL_OFF_MINUTES * 60:
+                        self.log.error("Time limit exceeded waiting for project {0} to import to {1}, with response:\n{2}".format(
                             name, dst_namespace, import_response))
                         return None
                 import_response = self.attempt_import(
@@ -301,7 +303,8 @@ class ImportExportClient(BaseClass):
                         "Private-Token": self.config.destination_token,
                         "Content-Type": m.content_type
                     }
-                    message = "Importing project %s with the following payload %s and following members %s" % (name, m, members)
+                    message = "Importing project %s with the following payload %s and following members %s" % (
+                        name, m, members)
                     resp = self.projects_api.import_project(
                         self.config.destination_host, self.config.destination_token, data=m, headers=headers, message=message)
                     import_response = resp.text
@@ -321,7 +324,8 @@ class ImportExportClient(BaseClass):
                     headers = {
                         "Private-Token": self.config.destination_token
                     }
-                    message = "Importing project %s with the following payload %s and following members %s" % (name, data, members)
+                    message = "Importing project %s with the following payload %s and following members %s" % (
+                        name, data, members)
                     resp = self.projects_api.import_project(
                         self.config.destination_host, self.config.destination_token, data=data, files=files, headers=headers, message=message)
                     import_response = resp.text
@@ -343,7 +347,8 @@ class ImportExportClient(BaseClass):
         path = group["path"]
         members = group["members"]
         if not dry_run:
-            import_response = self.attempt_group_import(filename, name, path, members)
+            import_response = self.attempt_group_import(
+                filename, name, path, members)
             try:
                 import_response_text = import_response.text
             except AttributeError as e:
@@ -385,7 +390,8 @@ class ImportExportClient(BaseClass):
                 headers = {
                     "Private-Token": self.config.destination_token
                 }
-                message = "Importing group %s with payload %s and members %s" % (path, data, members)
+                message = "Importing group %s with payload %s and members %s" % (
+                    path, data, members)
                 resp = self.groups_api.import_group(
                     self.config.destination_host, self.config.destination_token, data=data, files=files, headers=headers, message=message)
         return resp
@@ -462,7 +468,7 @@ class ImportExportClient(BaseClass):
                                     import_response = self.attempt_import(
                                         filename, name, path, dst_namespace, override_params, members)
                                     if total > self.config.max_export_wait_time:
-                                        self.log.error("Project {0} timed out while deleting from {1}, with response:\n{2}".format(
+                                        self.log.error("Time limit exceeded waiting for project {0} to delete from {1}, with response:\n{2}".format(
                                             name, dst_namespace, import_response))
                                         return None
                                 import_response = json.loads(import_response)
@@ -482,7 +488,7 @@ class ImportExportClient(BaseClass):
                             sleep(wait_time)
                         # In case of timeout delete
                         else:
-                            self.log.error("Time limit exceeded (deleting), project {0} ({1}) import status: {2}".format(
+                            self.log.error("Time limit exceeded waiting for project {0} ({1}) import status (deleting):\n{2}".format(
                                 name, dst_namespace, json_pretty(status_json)))
                             self.projects_api.delete_project(
                                 self.config.destination_host, self.config.destination_token, import_id)
