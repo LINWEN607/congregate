@@ -505,3 +505,34 @@ class UserTests(unittest.TestCase):
         response = {"name": "foo"}
         self.assertEqual(
             self.users.get_user_creation_id_and_email(response), None)
+
+    # pylint: disable=no-member
+    @responses.activate
+    # pylint: enable=no-member
+    @mock.patch('congregate.helpers.conf.Config.destination_host', new_callable=mock.PropertyMock)
+    @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.parent_id', new_callable=mock.PropertyMock)
+    @mock.patch('congregate.helpers.api.get_count')
+    def test_handle_user_creation_improperly_formatted_json(self, count, parent_id, destination):
+        count.return_value = 1
+        parent_id.return_value = None
+        destination.return_value = "https://gitlabdestination.com"
+        new_user = self.mock_users.get_dummy_user()
+        new_user.pop("id")
+
+        url_value = "https://gitlabdestination.com/api/v4/users"
+        # pylint: disable=no-member
+        responses.add(responses.POST, url_value,
+                      json=self.mock_users.get_user_400(), status=400)
+        # pylint: enable=no-member
+        url_value = "https://gitlabdestination.com/api/v4/users?search=%s&per_page=50&page=%d" % (
+            new_user["email"], count.return_value)
+        # pylint: disable=no-member
+        responses.add(responses.GET, url_value,
+                      json=[self.mock_users.get_dummy_user()], status=200)
+        # pylint: enable=no-member
+
+        expected = {
+            "id": None,
+            "email": "jdoe@email.com"
+        }
+        self.assertEqual(self.users.handle_user_creation(new_user), expected)

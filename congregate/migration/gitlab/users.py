@@ -646,6 +646,12 @@ class UsersClient(BaseClass):
             except RequestException, e:
                 self.log.error(
                     "Failed to retrieve user {0} status, due to:\n{1}".format(user, e))
+        elif response.status_code == 400:
+            self.log.error("Unable to create user due to improperly formatted request: {}".format(str(response.text)))
+            return {
+                "email": user["email"],
+                "id": None
+            }
         else:
             resp = response.json()
             return {

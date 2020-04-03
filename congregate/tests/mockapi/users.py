@@ -487,3 +487,13 @@ class MockUsersApi():
                 "visibility": "private"
             }
         ]
+
+    def get_user_400(self):
+        return {
+            "message": {
+                "identities.name_id": [
+                    "can't be blank"
+                ]
+            }
+        }
+
