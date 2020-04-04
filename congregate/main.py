@@ -6,7 +6,7 @@ Usage:
     congregate list
     congregate configure
     congregate stage <projects>... [--commit]
-    congregate migrate [--threads=<n>] [--skip-users] [--skip-group-export] [--skip-group-import] [--skip-project-export] [--skip-project-import] [--commit]
+    congregate migrate [--processes=<n>] [--skip-users] [--skip-group-export] [--skip-group-import] [--skip-project-export] [--skip-project-import] [--commit]
     congregate rollback [--hard-delete] [--skip-users] [--skip-groups] [--skip-projects] [--commit]
     congregate ui
     congregate export-projects
@@ -49,7 +49,7 @@ Options:
     -h, --help                              Show Usage.
 
 Arguments:
-    threads                                 Set number of threads to run in parallel.
+    processes                               Set number of processes to run in parallel.
     commit                                  Disable the dry-run and perform the full migration with all reads/writes. 
     skip-users                              Migrate: Skip migrating users; Rollback: Remove only groups and projects.
     hard-delete                             Remove user contributions and solely owned groups.
@@ -177,8 +177,8 @@ if __name__ == '__main__':
             from congregate.cli import list_projects, stage_projects, do_all
         if config.external_source_url is not None:
             if arguments["migrate"]:
-                if arguments["--threads"]:
-                    migrate.migrate(threads=arguments["--threads"])
+                if arguments["--processes"]:
+                    migrate.migrate(processes=arguments["--processes"])
                 else:
                     migrate.migrate()
             elif arguments["ui"]:
@@ -208,14 +208,14 @@ if __name__ == '__main__':
                 stage_projects.stage_projects(
                     arguments['<projects>'], dry_run=DRY_RUN)
             if arguments["migrate"]:
-                threads = arguments["--threads"] if arguments["--threads"] else None
+                processes = arguments["--processes"] if arguments["--processes"] else None
                 skip_users = True if arguments["--skip-users"] else False
                 skip_group_export = True if arguments["--skip-group-export"] else False
                 skip_group_import = True if arguments["--skip-group-import"] else False
                 skip_project_import = True if arguments["--skip-project-import"] else False
                 skip_project_export = True if arguments["--skip-project-export"] else False
                 migrate.migrate(
-                    threads=threads,
+                    processes=processes,
                     dry_run=DRY_RUN,
                     skip_users=skip_users,
                     skip_group_export=skip_group_export,

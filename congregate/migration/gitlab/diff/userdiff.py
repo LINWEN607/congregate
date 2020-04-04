@@ -1,7 +1,7 @@
 from congregate.migration.gitlab.diff.basediff import BaseDiffClient
 from congregate.migration.gitlab.api.users import UsersApi
-from congregate.helpers.misc_utils import rewrite_json_list_into_dict, get_rollback_log, is_error_message_present
-from congregate.helpers.threads import handle_multi_thread_write_to_file_and_return_results
+from congregate.helpers.misc_utils import get_rollback_log
+from congregate.helpers.processes import handle_multi_process_write_to_file_and_return_results
 
 
 class UserDiffClient(BaseDiffClient):
@@ -43,7 +43,7 @@ class UserDiffClient(BaseDiffClient):
         self.log.info("{}Generating User Diff Report".format(
             get_rollback_log(self.rollback)))
 
-        results = handle_multi_thread_write_to_file_and_return_results(
+        results = handle_multi_process_write_to_file_and_return_results(
             self.generate_single_diff_report, self.return_only_accuracies, self.source_data, "%s/data/user_diff.json" % self.app_path)
 
         for result in results:

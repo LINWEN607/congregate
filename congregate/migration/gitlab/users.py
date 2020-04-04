@@ -5,7 +5,7 @@ from requests.exceptions import RequestException
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers import api
 from congregate.helpers.misc_utils import get_dry_log, json_pretty, get_timedelta, write_results_to_file
-from congregate.helpers.threads import handle_multi_thread
+from congregate.helpers.processes import start_multi_process
 from congregate.helpers.misc_utils import remove_dupes, migration_dry_run
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.users import UsersApi
@@ -526,13 +526,12 @@ class UsersClient(BaseClass):
             self.log.info(
                 "Retrieved %d users. Check users.json to see all retrieved users" % len(users))
 
-    def migrate_user_info(self, dry_run=True, threads=None):
+    def migrate_user_info(self, dry_run=True, processes=None):
         staged_users = self.get_staged_users()
-
         self.log.info("{}Migrating user info".format(get_dry_log(dry_run)))
         if not dry_run:
-            new_users = handle_multi_thread(self.handle_user_creation,
-                                            staged_users, threads)
+            new_users = list(start_multi_process(
+                self.handle_user_creation, staged_users, processes))
             if new_users:
                 formatted_users = {}
                 for n in filter(None, new_users):
@@ -542,8 +541,8 @@ class UsersClient(BaseClass):
         else:
             self.log.info(
                 "DRY-RUN: Outputing various USER migration data to dry_run_user_migration.json")
-            migration_dry_run("user", handle_multi_thread(
-                self.generate_user_data, staged_users, threads))
+            migration_dry_run("user", list(start_multi_process(
+                self.generate_user_data, staged_users, processes)))
 
     def generate_user_data(self, user):
         if user.get("id", None) is not None:
@@ -689,11 +688,12 @@ class UsersClient(BaseClass):
     def delete_users(self, dry_run=True, hard_delete=False):
         staged_users = self.get_staged_users()
         for su in staged_users:
-            self.log.info("Removing user {}".format(su["email"]))
-            user = self.find_user_by_email_comparison_without_id(su["email"])
+            email = su["email"]
+            self.log.info("Removing user {}".format(email))
+            user = self.find_user_by_email_comparison_without_id(email)
             if user is None:
                 self.log.info(
-                    "User {} does not exist or has already been removed".format(su["email"]))
+                    "User {} does not exist or has already been removed".format(email))
             elif not dry_run:
                 try:
                     if get_timedelta(user["created_at"]) < self.config.max_asset_expiration_time:
@@ -703,8 +703,8 @@ class UsersClient(BaseClass):
                             user["id"],
                             hard_delete)
                     else:
-                        self.log.info("Ignoring %s. User existed before %d hours" % (
+                        self.log.info("Ignoring {0}. User existed before {1} hours".format(
                             user["email"], self.config.max_asset_expiration_time))
-                except RequestException, e:
+                except RequestException as re:
                     self.log.error(
-                        "Failed to remove user {0}\nwith error: {1}".format(su, e))
+                        "Failed to remove user\n{0}\nwith error:\n{1}".format(json_pretty(su), re))

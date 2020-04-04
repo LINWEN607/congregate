@@ -14,7 +14,7 @@ from requests.exceptions import RequestException
 from congregate.helpers import api, migrate_utils
 from congregate.helpers.misc_utils import get_dry_log, json_pretty, \
     is_dot_com, clean_data, add_post_migration_stats, rotate_logs, write_results_to_file
-from congregate.helpers.threads import start_multi_process
+from congregate.helpers.processes import start_multi_process
 from congregate.aws import AwsClient
 from congregate.cli.stage_projects import stage_projects
 from congregate.helpers.base_class import BaseClass
@@ -54,11 +54,11 @@ hooks = HooksClient()
 environments = EnvironmentsClient()
 
 _DRY_RUN = True
-_THREADS = None
+_PROCESSES = None
 
 
 def migrate(
-        threads=None,
+        processes=None,
         dry_run=True,
         skip_users=False,
         skip_group_export=False,
@@ -69,15 +69,15 @@ def migrate(
     global _DRY_RUN
     _DRY_RUN = dry_run
 
-    global _THREADS
-    _THREADS = threads
+    global _PROCESSES
+    _PROCESSES = processes
 
     # TODO: Revisit and refactor accordingly
     if b.config.external_source_url:
         with open("%s" % b.config.repo_list, "r") as f:
             repo_list = json.load(f)
         start_multi_process(
-            bitbucket.handle_bitbucket_migration, repo_list, threads=_THREADS)
+            bitbucket.handle_bitbucket_migration, repo_list, processes=_PROCESSES)
     else:
         # Dry-run and log cleanup
         if _DRY_RUN:
@@ -88,9 +88,8 @@ def migrate(
         rotate_logs()
 
         # Migrate users
-        # TODO: Replace threading with multiprocessing
         if not skip_users:
-            users.migrate_user_info(dry_run=_DRY_RUN, threads=_THREADS)
+            users.migrate_user_info(dry_run=_DRY_RUN, processes=_PROCESSES)
 
         # Migrate groups
         migrate_group_info(skip_group_export, skip_group_import)
@@ -111,15 +110,15 @@ def migrate(
 
 def are_results(results, var, stage):
     if not results:
-        b.log.error(
+        b.log.warning(
             "Results from {0} {1} returned as empty. Aborting.".format(var, stage))
-        raise Exception
+        exit()
 
 
 def is_loc_supported(loc):
     if loc not in ["filesystem", "aws"]:
         b.log.error("Unsupported export location: {}".format(loc))
-        raise Exception
+        exit()
 
 
 def migrate_group_info(skip_group_export=False, skip_group_import=False):
@@ -129,20 +128,24 @@ def migrate_group_info(skip_group_export=False, skip_group_import=False):
         if not skip_group_export:
             b.log.info("{}Exporting groups".format(dry_log))
             export_results = list(start_multi_process(
-                handle_exporting_groups, staged_groups, threads=_THREADS))
+                handle_exporting_groups, staged_groups, processes=_PROCESSES))
 
             are_results(export_results, "group", "export")
 
             # Append total count of groups exported
-            export_results.append(
-                Counter(k for d in export_results for k, v in d.items() if v))
+            export_results.append({
+                "group export results": {
+                    "Total": len(export_results),
+                    "Successful": Counter(v for d in export_results for k, v in d.items() if v).get(True, 0)
+                }
+            })
             b.log.info("### {0}Group export results ###\n{1}"
                        .format(dry_log, json_pretty(export_results)))
 
             # Create list of groups that failed export
             failed = migrate_utils.get_failed_export_from_results(
                 export_results)
-            b.log.warning("The following groups (group.json) failed to export and will not be imported:\n{0}"
+            b.log.warning("The following groups failed to export or already exists, and will not be imported:\n{0}"
                           .format(json_pretty(failed)))
 
             # Filter out the failed ones
@@ -153,7 +156,7 @@ def migrate_group_info(skip_group_export=False, skip_group_import=False):
         if not skip_group_import:
             b.log.info("{}Importing groups".format(dry_log))
             import_results = list(start_multi_process(
-                handle_importing_groups, staged_groups, threads=_THREADS))
+                handle_importing_groups, staged_groups, processes=_PROCESSES))
 
             are_results(import_results, "group", "import")
 
@@ -161,7 +164,7 @@ def migrate_group_info(skip_group_export=False, skip_group_import=False):
             import_results.append({
                 "group import results": {
                     "Total": len(import_results),
-                    "Successful": sum([len(import_results[x]) for x in xrange(len(import_results)) if isinstance(import_results[x][import_results[x].keys()[0]], dict)])
+                    "Successful": Counter(v for d in import_results for k, v in d.items() if v).get(True, 0)
                 }
             })
             b.log.info("### {0}Group import results ###\n{1}"
@@ -226,6 +229,7 @@ def handle_importing_groups(group):
         if dst_gid:
             b.log.info("{0}Group {1} (ID: {2}) already exists on destination".format(
                 get_dry_log(_DRY_RUN), full_path, dst_gid))
+            results[full_path] = True
         else:
             b.log.info("{0}Group {1} NOT found on destination, importing..."
                        .format(get_dry_log(_DRY_RUN), full_path_with_parent_namespace))
@@ -262,7 +266,7 @@ def migrate_project_info(skip_project_export=False, skip_project_import=False):
         if not skip_project_export:
             b.log.info("{}Exporting projects".format(dry_log))
             export_results = list(start_multi_process(
-                handle_exporting_projects, staged_projects, threads=_THREADS))
+                handle_exporting_projects, staged_projects, processes=_PROCESSES))
 
             are_results(export_results, "project", "export")
 
@@ -287,7 +291,7 @@ def migrate_project_info(skip_project_export=False, skip_project_import=False):
         if not skip_project_import:
             b.log.info("{}Importing projects".format(dry_log))
             import_results = list(start_multi_process(
-                handle_importing_projects, staged_projects, threads=_THREADS))
+                handle_importing_projects, staged_projects, processes=_PROCESSES))
 
             are_results(import_results, "project", "import")
 
@@ -362,6 +366,7 @@ def handle_importing_projects(project_json):
                 b.config.destination_host, b.config.destination_token, dst_pid).json()
             b.log.info("Project {0} (ID: {1}) found on destination, with import status: {2}".format(
                 dst_path_with_namespace, dst_pid, import_status))
+            results[path] = True
         else:
             b.log.info("{0}Project {1} (ID: {2}) NOT found on destination, importing..."
                        .format(get_dry_log(_DRY_RUN), dst_path_with_namespace, project_id))

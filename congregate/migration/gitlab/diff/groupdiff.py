@@ -4,7 +4,7 @@ from congregate.migration.gitlab.api.issues import IssuesApi
 from congregate.migration.gitlab.api.merge_requests import MergeRequestsApi
 from congregate.migration.gitlab.groups import GroupsClient
 from congregate.helpers.misc_utils import rewrite_json_list_into_dict, get_rollback_log
-from congregate.helpers.threads import handle_multi_thread_write_to_file_and_return_results
+from congregate.helpers.processes import handle_multi_process_write_to_file_and_return_results
 
 
 class GroupDiffClient(BaseDiffClient):
@@ -41,7 +41,7 @@ class GroupDiffClient(BaseDiffClient):
         self.log.info("{}Generating Group Diff Report".format(
             get_rollback_log(self.rollback)))
 
-        results = handle_multi_thread_write_to_file_and_return_results(
+        results = handle_multi_process_write_to_file_and_return_results(
             self.generate_single_diff_report, self.return_only_accuracies, self.source_data, "%s/data/group_diff.json" % self.app_path)
 
         for result in results:

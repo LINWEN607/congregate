@@ -239,8 +239,8 @@ class ImportExportClient(BaseClass):
             import_id = self.get_import_id_from_response(
                 import_response, filename, name, path, dst_namespace, override_params, members)
         else:
-            self.log.info("DRY-RUN: Outputing project {0} (file: {1}) migration data to dry_run_project_migration.json"
-                          .format(name, filename))
+            self.log.info(
+                "DRY-RUN: Outputing project {0} (file: {1}) migration data to dry_run_project_migration.json".format(name, filename))
             migration_dry_run("project", {
                 "filename": filename,
                 "name": name,

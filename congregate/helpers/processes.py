@@ -1,0 +1,52 @@
+from multiprocessing import Pool, cpu_count
+from congregate.helpers.base_class import BaseClass
+from congregate.helpers.misc_utils import json_pretty
+
+b = BaseClass()
+_func = None
+
+
+def worker_init(func):
+    global _func
+    _func = func
+
+
+def worker(x):
+    return _func(x)
+
+
+def start_multi_process(function, iterable, processes=None):
+    try:
+        p = Pool(processes=get_no_of_processes(processes),
+                 initializer=worker_init, initargs=(function,))
+        for result in p.map(worker, iterable):
+            yield result
+    except Exception as e:
+        b.log.error("Migration pool failed with error:\n{}".format(e))
+    finally:
+        p.close()
+        p.join()
+
+
+def handle_multi_process_write_to_file_and_return_results(function, results_function, iterable, path, processes=None):
+    with open(path, 'w') as f:
+        f.write("[\n")
+        try:
+            p = Pool(processes=get_no_of_processes(processes),
+                     initializer=worker_init, initargs=(function,))
+            for result in p.map(worker, iterable):
+                f.write(json_pretty(result))
+                yield results_function(result)
+        except TypeError as te:
+            print("Found None ({}). Stopping write to file".format(te))
+        except Exception as e:
+            b.log.error("Migration processes failed with error:\n{}".format(e))
+        else:
+            f.write("\n]")
+        finally:
+            p.close()
+            p.join()
+
+
+def get_no_of_processes(processes):
+    return processes if processes else cpu_count() - 1
