@@ -2,7 +2,7 @@ import json
 from requests.exceptions import RequestException
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import get_dry_log, get_timedelta
+from congregate.helpers.misc_utils import get_dry_log, get_timedelta, json_pretty
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.groups import GroupsClient
@@ -106,11 +106,11 @@ class ProjectsClient(BaseClass):
                                 self.config.destination_token,
                                 project["id"])
                         else:
-                            self.log.info("Ignoring %s. Project existed before %d hours" % (
+                            self.log.info("Ignoring {0}. Project existed before {1} hours".format(
                                 project["name_with_namespace"], self.config.max_asset_expiration_time))
-                    except RequestException, re:
+                    except RequestException as re:
                         self.log.error(
-                            "Failed to remove project {0}, with error:\n{1}".format(sp, re))
+                            "Failed to remove project\n{0}\nwith error:\n{1}".format(json_pretty(sp), re))
             else:
                 self.log.error(
                     "Failed to GET project {} by path_with_namespace".format(path_with_namespace))

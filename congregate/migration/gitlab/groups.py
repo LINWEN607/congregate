@@ -2,7 +2,7 @@ import json
 from requests.exceptions import RequestException
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import remove_dupes, get_timedelta
+from congregate.helpers.misc_utils import remove_dupes, get_timedelta, json_pretty
 from congregate.helpers.migrate_utils import get_full_path_with_parent_namespace
 from congregate.migration.gitlab.variables import VariablesClient
 from congregate.migration.gitlab.badges import BadgesClient
@@ -169,20 +169,11 @@ class GroupsClient(BaseClass):
                                     self.config.destination_host,
                                     self.config.destination_token)
                             else:
-                                self.log.info("Ignoring %s. Group existed before %d hours" % (
+                                self.log.info("Ignoring {0}. Group existed before {1} hours".format(
                                     group["full_path"], self.config.max_asset_expiration_time))
-                        else:
-                            # TODO: Remove this block when the `created_at` field is properly exposed in the groups API
-                            self.log.warning(
-                                "Unable to find timestamp for group %s. Deleting group anyway." % group["full_path"])
-                            self.groups_api.delete_group(
-                                group["id"],
-                                self.config.destination_host,
-                                self.config.destination_token)
-
                     except RequestException, re:
                         self.log.error(
-                            "Failed to remove group {0}, with error:\n{1}".format(sg, re))
+                            "Failed to remove group\n{0}\nwith error:\n{1}".format(json_pretty(sg), re))
             else:
                 self.log.error(
                     "Failed to GET group {} by full_path".format(dest_full_path))
