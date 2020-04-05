@@ -1,3 +1,5 @@
+from collections import Counter
+
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.misc_utils import is_dot_com
 from congregate.migration.gitlab.users import UsersApi
@@ -7,11 +9,14 @@ b = BaseClass()
 users_api = UsersApi()
 
 
-def get_failed_export_from_results(results):
-    return [str(x["filename"]).lower() for x in results
-            if x.get("exported", None) is not None
-            and x.get("filename", None) is not None
-            and not x["exported"]]
+def get_failed_export_from_results(res):
+    """
+    Filter out groups or projects that either failed to export or have been found on destination.
+
+        :param res: List of group or project exported filenames and their (boolean) status
+        :return: List of group or project filenames
+    """
+    return [k for r in res for k, v in r.items() if not v]
 
 
 def get_staged_projects_without_failed_export(staged_projects, failed_export):
@@ -119,3 +124,16 @@ def get_dst_path_with_namespace(p):
         :return: Destination project path with namespace
     """
     return "{0}/{1}".format(get_user_project_namespace(p) if is_user_project(p) else get_project_namespace(p), p["path"])
+
+
+def get_results(res):
+    """
+    Calculate number of total and successful export or import results.
+
+        :param res: List of dicts containing export or import results
+        :return: Dict of "Total" and "Successful" number of exports or imports
+    """
+    return {
+        "Total": len(res),
+        "Successful": len(res) - Counter(v for r in res for k, v in r.items() if not v).get(False, 0)
+    }

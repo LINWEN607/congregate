@@ -195,21 +195,19 @@ class MigrateTests(unittest.TestCase):
             return self._json
 
     def test_get_failed_export_from_results_exported_false(self):
-        results = [{"exported": False, "filename": "DaRcI1"}]
+        results = [{"darci1": False}, {"darci2": True}, {"darci3": False}]
         failed_results = mutils.get_failed_export_from_results(results)
-        expected = ["darci1"]
+        expected = ["darci1", "darci3"]
         self.assertListEqual(failed_results, expected)
 
     def test_get_failed_export_from_results_exported_all_false(self):
-        results = [{"exported": False, "filename": "DaRcI1"},
-                   {"exported": False, "filename": "DaRcI2"},
-                   {"exported": False, "filename": "DaRcI3"}]
+        results = [{"darci1": False}, {"darci2": False}, {"darci3": False}]
         failed_results = mutils.get_failed_export_from_results(results)
         expected = ["darci1", "darci2", "darci3"]
         self.assertListEqual(failed_results, expected)
 
     def test_get_failed_export_from_results_exported_true(self):
-        results = [{"exported": True, "filename": "DaRcI1"}]
+        results = [{"darci1": True}, {"darci2": True}]
         failed_results = mutils.get_failed_export_from_results(results)
         expected = []
         self.assertListEqual(failed_results, expected)
@@ -653,3 +651,57 @@ class MigrateTests(unittest.TestCase):
         parent_id.return_value = ""
         self.assertEqual(mutils.get_full_path_with_parent_namespace(
             "test-path"), "test-path")
+
+    def test_get_results_export_mix(self):
+        results = [
+            {"export1": True},
+            {"export2": False},
+            {"export3": True}
+        ]
+        self.assertEqual(mutils.get_results(results), {
+                         "Total": 3, "Successful": 2})
+
+    def test_get_results_export_happy(self):
+        results = [
+            {"export1": True},
+            {"export2": True},
+            {"export3": True}
+        ]
+        self.assertEqual(mutils.get_results(results), {
+                         "Total": 3, "Successful": 3})
+
+    def test_get_results_export_unhappy(self):
+        results = [
+            {"export1": False},
+            {"export2": False},
+            {"export3": False}
+        ]
+        self.assertEqual(mutils.get_results(results), {
+                         "Total": 3, "Successful": 0})
+
+    def test_get_results_import_mix(self):
+        results = [
+            {"import1": {"key": "value"}},
+            {"import2": False},
+            {"import3": {"key": 1}}
+        ]
+        self.assertEqual(mutils.get_results(results), {
+                         "Total": 3, "Successful": 2})
+
+    def test_get_results_import_happy(self):
+        results = [
+            {"import1": {"key": "value"}},
+            {"import2": {"key": None}},
+            {"import3": {"key": 1}}
+        ]
+        self.assertEqual(mutils.get_results(results), {
+                         "Total": 3, "Successful": 3})
+
+    def test_get_results_import_unhappy(self):
+        results = [
+            {"import1": False},
+            {"import2": False},
+            {"import3": False}
+        ]
+        self.assertEqual(mutils.get_results(results), {
+                         "Total": 3, "Successful": 0})

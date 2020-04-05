@@ -117,14 +117,14 @@ class ImportExportClient(BaseClass):
         return exported
 
     def wait_for_group_import(self, path):
-        imported = False
+        group = False
         timer = 0
         wait_time = self.config.importexport_wait
         while True:
             gid = self.groups.find_group_by_path(
                 self.config.destination_host, self.config.destination_token, path)
             if gid:
-                imported = self.groups_api.get_group(
+                group = self.groups_api.get_group(
                     gid, self.config.destination_host, self.config.destination_token).json()
                 self.log.info(
                     "Group {0} imported successfully with ID {1}".format(path, gid))
@@ -137,7 +137,7 @@ class ImportExportClient(BaseClass):
                 self.log.error(
                     "Time limit exceeded for importing group {}".format(path))
                 break
-        return imported
+        return group
 
     def get_export_response(self, source_id, data, headers, is_project):
         """
@@ -507,28 +507,41 @@ class ImportExportClient(BaseClass):
                 return None
         return import_id
 
-    def export_project_thru_filesystem(self, pid, name, namespace):
+    def export_project_thru_filesystem(self, project):
         exported = False
-        response = self.projects_api.export_project(
-            self.config.source_host, self.config.source_token, pid)
-        if response is None or response.status_code not in (200, 202):
-            self.log.error("Failed to trigger project {0} (ID: {1}) export, with response '{2}'"
-                           .format(pid, name, response))
+        name = project["name"]
+        namespace = project["namespace"]
+        pid = project["id"]
+        dst_path_with_namespace = get_dst_path_with_namespace(project)
+        self.log.info("Searching on destination for project {}".format(
+            dst_path_with_namespace))
+        dst_pid = self.projects.find_project_by_path(
+            self.config.destination_host, self.config.destination_token, dst_path_with_namespace)
+        if dst_pid:
+            self.log.info("SKIP: Project {0} (ID: {1}) found on destination".format(
+                dst_path_with_namespace, dst_pid))
         else:
-            exported = self.wait_for_export_to_finish(pid, name)
-
-            if exported:
-                url = "{0}/api/v4/projects/{1}/export/download".format(
-                    self.config.source_host, pid)
-                download_file(
-                    url,
-                    self.config.filesystem_path,
-                    filename=get_export_filename_from_namespace_and_name(
-                        namespace, name),
-                    headers={"PRIVATE-TOKEN": self.config.source_token})
+            self.log.info("Project {} NOT found on destination. Exporting from source...".format(
+                dst_path_with_namespace))
+            response = self.projects_api.export_project(
+                self.config.source_host, self.config.source_token, pid)
+            if response is None or response.status_code not in (200, 202):
+                self.log.error("Failed to trigger project {0} (ID: {1}) export, with response {2}"
+                               .format(pid, name, response))
             else:
-                self.log.error(
-                    "Failed to export project {0} (ID: {1})".format(name, pid))
+                exported = self.wait_for_export_to_finish(pid, name)
+                if exported:
+                    url = "{0}/api/v4/projects/{1}/export/download".format(
+                        self.config.source_host, pid)
+                    download_file(
+                        url,
+                        self.config.filesystem_path,
+                        filename=get_export_filename_from_namespace_and_name(
+                            namespace, name),
+                        headers={"PRIVATE-TOKEN": self.config.source_token})
+                else:
+                    self.log.error(
+                        "Failed to export project {0} (ID: {1})".format(name, pid))
         return exported
 
     def export_group_thru_filesystem(self, src_gid, full_path, filename):
