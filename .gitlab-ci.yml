@@ -91,6 +91,7 @@ release-tag:
   image: docker:stable
   variables:
     RELEASE_IMAGE_NAME: "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME"
+    LATEST: "$CI_REGISTRY_IMAGE:latest"
   services:
     - docker:19.03.1-dind
   before_script:
@@ -98,7 +99,9 @@ release-tag:
   script:
     - cp docker/release/Dockerfile ./
     - docker build --tag "$RELEASE_IMAGE_NAME" .
+    - docker image tag $RELEASE_IMAGE_NAME $LATEST
     - docker push "$RELEASE_IMAGE_NAME"
+    - docker push "$LATEST"
   only:
     - tags
 
