@@ -191,15 +191,13 @@ def handle_exporting_groups(group):
         elif loc == "aws":
             b.log.error(
                 "NOTICE: AWS group exports are not currently supported")
-        return results
     except (IOError, RequestException) as oe:
         b.log.error("Failed to export group {0} (ID: {1}) to {2} as {3} with error:\n{4}".format(
             full_path, gid, loc, filename, oe))
-        return results
     except Exception as e:
         b.log.error(e)
         b.log.error(traceback.print_exc)
-        return results
+    return results
 
 
 def handle_importing_groups(group):
@@ -239,15 +237,13 @@ def handle_importing_groups(group):
                         group["id"], src_gid, "group", full_path)
                     # Remove import user
                     groups.remove_import_user(group["id"])
-        return results
     except (RequestException, KeyError, OverflowError) as oe:
         b.log.error("Failed to import group {0} (ID: {1}) as {2} with error:\n{3}".format(
             full_path, src_gid, filename, oe))
-        return results
     except Exception as e:
         b.log.error(e)
         b.log.error(traceback.print_exc)
-        return results
+    return results
 
 
 def migrate_project_info(skip_project_export=False, skip_project_import=False):
@@ -322,15 +318,13 @@ def handle_exporting_projects(project):
         elif loc == "aws":
             results[filename] = ie.export_project_thru_aws(
                 project) if not _DRY_RUN else True
-        return results
     except (IOError, RequestException) as oe:
         b.log.error("Failed to export project {0} (ID: {1}) to {2} as {3} with error:\n{4}".format(
             name, pid, loc, filename, oe))
-        return results
     except Exception as e:
         b.log.error(e)
         b.log.error(traceback.print_exc)
-        return results
+    return results
 
 
 def handle_importing_projects(project_json):
@@ -371,21 +365,19 @@ def handle_importing_projects(project_json):
                 post_import_results = migrate_single_project_info(
                     project_json, import_id)
                 results[dst_path_with_namespace] = post_import_results
-        return results
     except (RequestException, KeyError, OverflowError) as oe:
         b.log.error("Failed to import project {0} (ID: {1}) with error:\n{2}".format(
             path, src_id, oe))
-        return results
     except Exception as e:
         b.log.error(e)
         b.log.error(traceback.print_exc)
-        return results
     finally:
         if archived and not _DRY_RUN:
             b.log.info(
                 "Archiving back source project {0} (ID: {1})".format(path, src_id))
             projects.projects_api.archive_project(
                 b.config.source_host, b.config.source_token, src_id)
+    return results
 
 
 def migrate_single_project_info(project, dst_id):
