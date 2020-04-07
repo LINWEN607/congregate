@@ -43,6 +43,9 @@ build:
     - echo ${Dummy_config} > $CONGREGATE_PATH/data/congregate.conf
     - pip install poetry
     - poetry install
+  only:
+    changes:
+      - congregate/*
 
 test:pylint:
   <<: *test-job
