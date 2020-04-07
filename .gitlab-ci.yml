@@ -102,8 +102,8 @@ rolling release:
     - docker image tag $RELEASE_IMAGE_NAME $LATEST
     - docker push "$RELEASE_IMAGE_NAME"
     - docker push "$LATEST"
-  # only:
-  #   - /^master$/
+  only:
+    - /^master$/
 
 release-tag:
   stage: release
