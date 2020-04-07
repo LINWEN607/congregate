@@ -333,18 +333,15 @@ if __name__ == '__main__':
             if arguments["generate-diff"]:
                 user_diff = UserDiffClient(
                     "/data/user_migration_results.json", staged=STAGED)
-                diff_report = user_diff.generate_diff_report()
                 user_diff.generate_html_report(
-                    diff_report, "/data/user_migration_results.html")
+                    user_diff.generate_diff_report(), "/data/user_migration_results.html")
                 group_diff = GroupDiffClient(
                     "/data/group_migration_results.json", staged=STAGED)
-                diff_report = group_diff.generate_diff_report()
                 group_diff.generate_html_report(
-                    diff_report, "/data/group_migration_results.html")
+                    group_diff.generate_diff_report(), "/data/group_migration_results.html")
                 project_diff = ProjectDiffClient(
                     "/data/project_migration_results.json", staged=STAGED)
-                diff_report = project_diff.generate_diff_report()
                 project_diff.generate_html_report(
-                    diff_report, "/data/project_migration_results.html")
+                    project_diff.generate_diff_report(), "/data/project_migration_results.html")
             if arguments["obfuscate"]:
                 print obfuscate("Secret:")

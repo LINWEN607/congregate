@@ -126,8 +126,8 @@ def migrate_group_info(skip_group_export=False, skip_group_import=False):
     if staged_groups:
         if not skip_group_export:
             b.log.info("{}Exporting groups".format(dry_log))
-            export_results = list(start_multi_process(
-                handle_exporting_groups, staged_groups, processes=_PROCESSES))
+            export_results = start_multi_process(
+                handle_exporting_groups, staged_groups, processes=_PROCESSES)
 
             are_results(export_results, "group", "export")
 
@@ -149,8 +149,8 @@ def migrate_group_info(skip_group_export=False, skip_group_import=False):
             b.log.info("SKIP: Assuming staged groups are already exported")
         if not skip_group_import:
             b.log.info("{}Importing groups".format(dry_log))
-            import_results = list(start_multi_process(
-                handle_importing_groups, staged_groups, processes=_PROCESSES))
+            import_results = start_multi_process(
+                handle_importing_groups, staged_groups, processes=_PROCESSES)
 
             are_results(import_results, "group", "import")
 
@@ -174,14 +174,14 @@ def handle_exporting_groups(group):
     is_loc_supported(loc)
     filename = migrate_utils.get_export_filename_from_namespace_and_name(
         full_path)
-    results = {
+    result = {
         filename: False
     }
     try:
         b.log.info("{0}Exporting group {1} (ID: {2}) as {3}"
                    .format(dry_log, full_path, gid, filename))
         if loc == "filesystem":
-            results[filename] = ie.export_group_thru_filesystem(
+            result[filename] = ie.export_group_thru_filesystem(
                 gid, full_path, filename) if not _DRY_RUN else True
         # TODO: Refactor and sync with other scenarios (#119)
         elif loc == "filesystem-aws":
@@ -197,7 +197,7 @@ def handle_exporting_groups(group):
     except Exception as e:
         b.log.error(e)
         b.log.error(traceback.print_exc)
-    return results
+    return result
 
 
 def handle_importing_groups(group):
@@ -207,7 +207,7 @@ def handle_importing_groups(group):
         full_path)
     filename = migrate_utils.get_export_filename_from_namespace_and_name(
         full_path)
-    results = {
+    result = {
         full_path_with_parent_namespace: False
     }
     try:
@@ -220,7 +220,7 @@ def handle_importing_groups(group):
         if dst_gid:
             b.log.info("{0}Group {1} (ID: {2}) already exists on destination".format(
                 get_dry_log(_DRY_RUN), full_path, dst_gid))
-            results[full_path_with_parent_namespace] = True
+            result[full_path_with_parent_namespace] = True
         else:
             b.log.info("{0}Group {1} NOT found on destination, importing..."
                        .format(get_dry_log(_DRY_RUN), full_path_with_parent_namespace))
@@ -231,7 +231,7 @@ def handle_importing_groups(group):
                 group = ie.wait_for_group_import(
                     full_path_with_parent_namespace)
                 if group and group.get("id", None):
-                    results[full_path_with_parent_namespace] = group
+                    result[full_path_with_parent_namespace] = group
                     # Migrate CI/CD Variables
                     variables.migrate_variables(
                         group["id"], src_gid, "group", full_path)
@@ -243,7 +243,7 @@ def handle_importing_groups(group):
     except Exception as e:
         b.log.error(e)
         b.log.error(traceback.print_exc)
-    return results
+    return result
 
 
 def migrate_project_info(skip_project_export=False, skip_project_import=False):
@@ -252,8 +252,8 @@ def migrate_project_info(skip_project_export=False, skip_project_import=False):
     if staged_projects:
         if not skip_project_export:
             b.log.info("{}Exporting projects".format(dry_log))
-            export_results = list(start_multi_process(
-                handle_exporting_projects, staged_projects, processes=_PROCESSES))
+            export_results = start_multi_process(
+                handle_exporting_projects, staged_projects, processes=_PROCESSES)
 
             are_results(export_results, "project", "export")
 
@@ -276,8 +276,8 @@ def migrate_project_info(skip_project_export=False, skip_project_import=False):
 
         if not skip_project_import:
             b.log.info("{}Importing projects".format(dry_log))
-            import_results = list(start_multi_process(
-                handle_importing_projects, staged_projects, processes=_PROCESSES))
+            import_results = start_multi_process(
+                handle_importing_projects, staged_projects, processes=_PROCESSES)
 
             are_results(import_results, "project", "import")
 
@@ -301,14 +301,14 @@ def handle_exporting_projects(project):
     is_loc_supported(loc)
     filename = migrate_utils.get_export_filename_from_namespace_and_name(
         namespace, name)
-    results = {
+    result = {
         filename: False
     }
     try:
         b.log.info("{0}Exporting project {1} (ID: {2}) as {3}"
                    .format(dry_log, project["path_with_namespace"], pid, filename))
         if loc == "filesystem":
-            results[filename] = ie.export_project_thru_filesystem(
+            result[filename] = ie.export_project_thru_filesystem(
                 project) if not _DRY_RUN else True
         # TODO: Refactor and sync with other scenarios (#119)
         elif loc == "filesystem-aws":
@@ -316,7 +316,7 @@ def handle_exporting_projects(project):
                 "NOTICE: Filesystem-AWS exports are not currently supported")
             # exported = ie.export_thru_fs_aws(pid, name, namespace) if not dry_run else True
         elif loc == "aws":
-            results[filename] = ie.export_project_thru_aws(
+            result[filename] = ie.export_project_thru_aws(
                 project) if not _DRY_RUN else True
     except (IOError, RequestException) as oe:
         b.log.error("Failed to export project {0} (ID: {1}) to {2} as {3} with error:\n{4}".format(
@@ -324,7 +324,7 @@ def handle_exporting_projects(project):
     except Exception as e:
         b.log.error(e)
         b.log.error(traceback.print_exc)
-    return results
+    return result
 
 
 def handle_importing_projects(project_json):
@@ -333,7 +333,7 @@ def handle_importing_projects(project_json):
     path = project_json["path_with_namespace"]
     dst_path_with_namespace = migrate_utils.get_dst_path_with_namespace(
         project_json)
-    results = {
+    result = {
         dst_path_with_namespace: False
     }
     try:
@@ -348,7 +348,7 @@ def handle_importing_projects(project_json):
                 b.config.destination_host, b.config.destination_token, dst_pid).json()
             b.log.info("Project {0} (ID: {1}) found on destination, with import status: {2}".format(
                 dst_path_with_namespace, dst_pid, import_status))
-            results[dst_path_with_namespace] = True
+            result[dst_path_with_namespace] = True
         else:
             b.log.info("{0}Project {1} NOT found on destination, importing...".format(
                 get_dry_log(_DRY_RUN), dst_path_with_namespace))
@@ -364,7 +364,7 @@ def handle_importing_projects(project_json):
                     "Migrating source project {0} (ID: {1}) info".format(path, src_id))
                 post_import_results = migrate_single_project_info(
                     project_json, import_id)
-                results[dst_path_with_namespace] = post_import_results
+                result[dst_path_with_namespace] = post_import_results
     except (RequestException, KeyError, OverflowError) as oe:
         b.log.error("Failed to import project {0} (ID: {1}) with error:\n{2}".format(
             path, src_id, oe))
@@ -377,7 +377,7 @@ def handle_importing_projects(project_json):
                 "Archiving back source project {0} (ID: {1})".format(path, src_id))
             projects.projects_api.archive_project(
                 b.config.source_host, b.config.source_token, src_id)
-    return results
+    return result
 
 
 def migrate_single_project_info(project, dst_id):
