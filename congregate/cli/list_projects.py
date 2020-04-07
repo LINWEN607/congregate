@@ -12,7 +12,9 @@ b = BaseClass()
 
 
 def list_projects():
-
+    """
+        List the projects information, and Retrieve user info, group info from source instance.
+    """
     b.log.info("Listing projects from source {}:".format(b.config.source_host))
 
     projects = list(
@@ -46,6 +48,11 @@ def list_projects():
 
 
 def write_empty_file(filename):
+    """
+        Write an empty json file containing an empty list, it's used to make sure a file is present in the filesystem
+
+        :param: filename: (str) json file
+    """
     if not os.path.isfile("%s/data/%s.json" % (b.app_path, filename)):
         with open("%s/data/%s.json" % (b.app_path, filename), "w") as f:
             f.write("[]")
