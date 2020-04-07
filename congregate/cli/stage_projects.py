@@ -19,6 +19,12 @@ b = BaseClass()
 
 
 def stage_projects(projects_to_stage, dry_run=True):
+    """
+        Stage all the projects from the source instance
+ 
+        :param: projects_to_stage: (dict) the staged projects objects
+        :param: dry_run (bool) If true, it will only build the staging data lists
+    """
     staged_projects, staged_users, staged_groups = build_staging_data(
         projects_to_stage, dry_run)
     if not dry_run:
@@ -26,6 +32,12 @@ def stage_projects(projects_to_stage, dry_run=True):
 
 
 def build_staging_data(projects_to_stage, dry_run=True):
+    """
+        Stage all the data including project, groups and users from the source instance
+ 
+        :param: projects_to_stage: (dict) the staged projects objects
+        :param: dry_run (bool) dry_run (bool) If true, it will only build the staging data lists.
+    """
     staging = []
     staged_users = []
     staged_groups = []
@@ -175,24 +187,46 @@ def build_staging_data(projects_to_stage, dry_run=True):
 
 
 def open_projects_file():
+    """
+        Open project.json file to read, turning JSON encoded data to projects.
+
+        :return: projects object
+    """
     with open('%s/data/project_json.json' % b.app_path, "r") as f:
         projects = json.load(f)
     return projects
 
 
 def open_groups_file():
+    """
+        Open group.json file to read, turning JSON encoded data to groups object.
+
+        :return: groups object
+    """
     with open("%s/data/groups.json" % b.app_path, "r") as f:
         groups = json.load(f)
     return groups
 
 
 def open_users_file():
+    """
+        Open users.json file to read, turning JSON encoded data to users object.
+
+        :return: users object
+    """    
     with open("%s/data/users.json" % b.app_path, "r") as f:
         users = json.load(f)
     return users
 
 
 def write_staging_files(staging, staged_users, staged_groups):
+    """
+        Write all staged projects, users and groups objects into JSON files
+
+        :param: staging: (dict) staged projects
+        :param: staged_users:(dict) staged users
+        :param: staged_groups: (dict) staged groups
+    """
     for group in staged_groups:
         if group["parent_id"] not in existing_parent_ids:
             group["parent_id"] = b.config.parent_id
@@ -210,6 +244,14 @@ def write_staging_files(staging, staged_users, staged_groups):
 
 def append_member_to_members_list(
         rewritten_users, staged_users, members_list, member):
+    """
+        Appends the members found in the /members endpoint to the staged asset object
+
+        params: rewritten_users: object containing the various users from the instance
+        params: staged_users:  object containing the specific users to be staged
+        params: member_users: object containing the specific members of the group or project
+        params: rewritten_users: object containing the specific member to be added to the group or project
+    """
     if isinstance(member, dict):
         if member.get("username", None) is not None:
             if member["username"] != "root":
@@ -222,6 +264,12 @@ def append_member_to_members_list(
 
 
 def get_project_metadata(project):
+    """
+        Get the object data providing project information
+
+        :param project: (str) project information
+        :return: obj object
+    """
     obj = {
         "id": project["id"],
         "name": project["name"],
