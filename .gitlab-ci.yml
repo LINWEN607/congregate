@@ -43,6 +43,9 @@ build:
     - echo ${Dummy_config} > $CONGREGATE_PATH/data/congregate.conf
     - pip install poetry
     - poetry install
+  only:
+    changes:
+      - congregate/*
 
 test:pylint:
   <<: *test-job
@@ -85,6 +88,25 @@ test:end-to-end:
       - data/*results.json
       - data/congregate.log
       - data/audit.log
+
+rolling release:
+  stage: release
+  image: docker:stable
+  variables:
+    RELEASE_IMAGE_NAME: "$CI_REGISTRY_IMAGE/$CI_COMMIT_REF_NAME:$CI_COMMIT_SHA"
+    LATEST: "$CI_REGISTRY_IMAGE/$CI_COMMIT_REF_NAME:latest"
+  services:
+    - docker:19.03.1-dind
+  before_script:
+    - docker login ${CI_REGISTRY} -u gitlab-ci-token -p $CI_BUILD_TOKEN
+  script:
+    - cp docker/release/Dockerfile ./
+    - docker build --tag "$RELEASE_IMAGE_NAME" .
+    - docker image tag $RELEASE_IMAGE_NAME $LATEST
+    - docker push "$RELEASE_IMAGE_NAME"
+    - docker push "$LATEST"
+  only:
+    - /^master$/
 
 release-tag:
   stage: release

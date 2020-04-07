@@ -116,10 +116,12 @@ poetry run dnd install
 From **docker**:
 
 1. Pull the docker image from the container registry
+    * For official versioned releases, pull from registry.gitlab.com/gitlab-com/customer-success/tools/congregate
+    * For rolling releases, pull from registry.gitlab.com/gitlab-com/customer-success/tools/congregate/master
 2. Run the following command:
 
 ```bash
-docker login registry.gitlab.com/gitlab-com/customer-success/tools/congregate:latest -u <user name> -p <personal token>
+docker login registry.gitlab.com/gitlab-com/customer-success/tools/congregate -u <user name> -p <personal token>
 docker run \
 --name <name> \
 -v /var/run/docker.sock:/var/run/docker.sock \ # expose docker socket as volume
