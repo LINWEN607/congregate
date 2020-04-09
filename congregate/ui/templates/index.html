@@ -6,28 +6,19 @@ Congregate by GitLab
 {% endblock %}
 
 {% block content %}
-    <div class="card">
-        <div class="card-header">
-            <h4>Status</h4>
-        </div>
-        <ul class="list-group list-group-flush">
-            {% for key, value in data.items() %}
-                <li class="list-group-item">
-                    <h5 class="card-title">
-                        {{ key }}: 
-                        <span class="badge badge-secondary">{{ value }}</span>
-                    </h5>
-                </li>
-            {% endfor %}
-            <li class="list-group-item" id = "migration-status">
-                <h5 class="card-title">
-                    Migration Status: 
-                    <span class="badge badge-secondary" id = "logs"></span>
-                </h5>
-            </li>
-        </ul>
+<div class="card">
+    <div class="card-header">
+        <h4>Status</h4>
     </div>
+    <ul class="list-group list-group-flush">
+        {% for key, value in data.items() %}
+        <li class="list-group-item">
+            <h5 class="card-title">
+                {{ key }}:
+                <span class="badge badge-secondary">{{ value }}</span>
+            </h5>
+        </li>
+        {% endfor %}
+    </ul>
+</div>
 {% endblock %}
-
-{% block button_id %}migrate_button{% endblock %}
-{% block button_label %}Migrate{% endblock %}

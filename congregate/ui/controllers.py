@@ -3,10 +3,10 @@ from flask import request, Response, stream_with_context
 
 from congregate.helpers.misc_utils import get_congregate_path
 from congregate.cli import stage_projects
-from congregate.cli.config import update_config
+# from congregate.cli.config import update_config
 from congregate.migration.gitlab.groups import GroupsClient
 from congregate.migration.gitlab.users import UsersClient
-from congregate.migration.migrate import migrate
+# from congregate.migration.migrate import migrate
 
 from . import app
 
@@ -67,14 +67,14 @@ def add_groups():
     return message(groups, "group")
 
 
-@app.route("/update_config", methods=['POST'])
-def update_config_post():
-    config = request.get_data()
-    update_config(config)
-    return "Updated config"
+# @app.route("/update_config", methods=['POST'])
+# def update_config_post():
+#     config = request.get_data()
+#     update_config(config)
+#     return "Updated config"
 
 
-@app.route("/migrate", methods=['GET'])
-def migrate_projects_get():
-    migrate()
-    return "Migrated projects"
+# @app.route("/migrate", methods=['GET'])
+# def migrate_projects_get():
+#     migrate()
+#     return "Migrated projects"
