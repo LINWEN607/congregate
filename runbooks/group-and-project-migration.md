@@ -4,7 +4,15 @@
 
 # <customer name> Migration Wave <insert-number-here>
 
-This runbook covers the process of migrating a wave of groups and projects from a source GitLab instance to a destination GitLab instance. This is assuming all users have already been migrated.
+This runbook covers the process of migrating a wave of **groups and projects** from a source GitLab instance to a destination GitLab instance. This is assuming all users have already been migrated.
+
+## Migration Blackout Period
+
+<!--
+    Specify the date and time of this migration wave. For example
+
+    3:00PM 4/13/20 - 3:00AM 4/14/20
+-->
 
 ## Groups to migrate
 
@@ -39,6 +47,11 @@ Completed | Project Path | Repo Size
 ### Preparation
 
 * [ ] Review migration schedule (see customer migration schedule)
+* [ ] Check the status of the destination instance
+    * In the case of gitlab.com, check https://status.gitlab.com/
+    * A manual spot check of the instance
+        * [ ] Confirm you can reach the UI of the instance
+        * [ ] Confirm you can reach the API through cURL or a REST client
 * [ ] Run `congregate list` at the beginning of the migration blackout period
 * [ ] Stage projects based on the wave schedule in the UI
 * [ ] Stage groups based on the wave schedule in the UI
@@ -70,6 +83,16 @@ Completed | Project Path | Repo Size
 * [ ] Notify in the slack channel dedicated to this migration you are running the diff report
 * [ ] Run `congregate generate-diff --staged` to generate the various diff reports
 * [ ] Review the diff reports once they are finished generating
+    * Review the following:
+        * Overall accuracy of groups and projects
+        * Individual accuracy of each group and project
+        * Confirm nothing has an accuracy of 0. If an asset is missing (one of the causes of an accuracy of 0), take note of the missing asset in this issue and plan to restage it for another, smaller run of this wave
+        * If the namespaces are incorrect, meaning a project or a group has been migrated to the wrong location, do the following:
+            * For projects:
+                * If the project is in an incorrect namespace within the parent group, move the project to the correct group
+                * If the project is in a completely incorrect, random location on the destination, confirm the spread of the leaked data, and refer to the [rollback instructions](#Rollback)
+            * For groups:
+                * If the group is not within the expected parent group, make a note of the incorrectly migrated group in this issue, delete the group, and refer to the [rollback instructions](#Rollback)
 * [ ] Post a comment in this issue containing the following information:
    * Projects: `<insert-overall-accuracy>`
    * Groups: `<insert-overall-accuracy>`
@@ -92,10 +115,12 @@ Completed | Project Path | Repo Size
 
 ### Rollback
 
-If data was migrated incorrectly, i.e to the wrong namespace, you **must** rollback the migration **completely**
+If **any** data was migrated incorrectly (i.e to the wrong namespace) to a random location, you **must** rollback the migration **completely**
 
 * [ ] Notify in the slack channel dedicated to this migration you are running a rollback due an issue with the migration
 * [ ] Run `nohup ./congregate.sh rollback --skip-users --commit > data/waves/wave_<insert_wave_number>/rollback.log 2>&1 &`
 * [ ] Post a comment describing the reason for the rollback and attach the rollback log and `data/audit.log` and
 * [ ] Follow these [instructions in the handbook](https://about.gitlab.com/handbook/engineering/security/#engaging-the-security-on-call) and link to this issue.
 
+
+/confidential
