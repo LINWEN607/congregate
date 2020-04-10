@@ -1,7 +1,7 @@
 import json
 from flask import jsonify
 
-from congregate.helpers.configuration_validator import ConfigurationValidator
+# from congregate.helpers.configuration_validator import ConfigurationValidator
 from . import app
 
 # try:
@@ -25,9 +25,9 @@ def get_data(file_name, sort_by=None):
     return data
 
 
-def get_config():
-    config = ConfigurationValidator()
-    return config.as_obj()
+# def get_config():
+#     config = ConfigurationValidator()
+#     return config.as_obj()
 
 
 def get_counts():

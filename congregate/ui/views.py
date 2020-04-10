@@ -1,6 +1,7 @@
 from flask import render_template, send_from_directory
 
-from congregate.ui.models import get_data, get_counts, get_config
+from congregate.ui.models import get_data, get_counts
+# from congregate.ui.models import get_config
 from . import app
 
 
@@ -29,10 +30,10 @@ def group_page():
     return render_template("groups.html", data=data)
 
 
-@app.route("/config")
-def config_page():
-    data = get_config()
-    return render_template("config.html", data=data)
+# @app.route("/config")
+# def config_page():
+#     data = get_config()
+#     return render_template("config.html", data=data)
 
 
 @app.route('/base/<path:filename>')
