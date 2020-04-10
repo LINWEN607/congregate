@@ -14,6 +14,12 @@ This runbook covers the process of migrating a wave of **groups and projects** f
     3:00PM 4/13/20 - 3:00AM 4/14/20
 -->
 
+## Slack channel for communication
+
+<!--
+    Provide the name and link of the slack channel dedicated to communicating the status and events of the migration
+-->
+
 ## Groups to migrate
 
 <!-- 
