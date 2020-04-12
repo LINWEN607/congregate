@@ -8,6 +8,7 @@ import os
 import json
 import traceback
 from re import sub
+from time import time
 from requests.exceptions import RequestException
 
 from congregate.helpers import api, migrate_utils
@@ -71,6 +72,8 @@ def migrate(
     global _PROCESSES
     _PROCESSES = processes
 
+    start = time()
+
     # TODO: Revisit and refactor accordingly
     if b.config.external_source_url:
         with open("%s" % b.config.repo_list, "r") as f:
@@ -104,7 +107,7 @@ def migrate(
         if b.config.parent_id is not None and not _DRY_RUN:
             groups.remove_import_user(b.config.parent_id)
 
-        add_post_migration_stats()
+    add_post_migration_stats(start)
 
 
 def are_results(results, var, stage):
@@ -434,6 +437,8 @@ def rollback(dry_run=True,
              hard_delete=False,
              skip_groups=False,
              skip_projects=False):
+    start = time()
+
     # TODO: Add multiprocessing
     rotate_logs()
     dry_log = get_dry_log(dry_run)
@@ -456,7 +461,7 @@ def rollback(dry_run=True,
             hard_delete))
         users.delete_users(dry_run=dry_run, hard_delete=hard_delete)
 
-    add_post_migration_stats()
+    add_post_migration_stats(start)
 
 
 def remove_all_mirrors(dry_run=True):

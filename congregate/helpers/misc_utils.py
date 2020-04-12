@@ -297,10 +297,11 @@ def is_error_message_present(response):
     return False
 
 
-def add_post_migration_stats():
+def add_post_migration_stats(start):
     """
-        Print all POST/PUT/DELETE requests and their total number.
+        Print all POST/PUT/DELETE requests and their total number
         Assuming you've started the migration with an empty congregate.log
+        Print total migration time
     """
     reqs = ["POST request to", "PUT request to", "DELETE request to"]
     reqs_no = 0
@@ -309,6 +310,7 @@ def add_post_migration_stats():
             if any(req in line for req in reqs):
                 reqs_no += 1
         print("Total number of POST/PUT/DELETE requests: {}".format(reqs_no))
+    print("Total time: {}".format(timedelta(seconds=time() - start)))
 
 
 def get_timedelta(timestamp):
