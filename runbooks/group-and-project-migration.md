@@ -105,7 +105,7 @@ Copy the following data and add subsequent columns for single group migration
 ### Post Migration
 
 * [ ] Notify in the internal slack channel dedicated to this migration you are running the diff report
-* [ ] Run `congregate generate-diff --staged` to generate the various diff reports
+* [ ] Run `nohup ./congregate.sh generate-diff --staged > data/waves/wave_<insert_wave_number>/diff<insert-wave-here>.log 2>&1 &` to generate the various diff reports
 * [ ] Reach out the whoever has rails console access to the destination instance and have them run the following script where `group_paths` is a list of all expected full_paths for this migration wave:
 
 ```ruby

@@ -129,7 +129,7 @@ Copy the following data and add subsequent columns for single group migration
 <h3 id="post-migration">Post Migration</h3>
 <ul class="contains-task-list">
 <li class="task-list-item"><input class="task-list-item-checkbox" disabled="" type="checkbox"> Notify in the internal slack channel dedicated to this migration you are running the diff report</li>
-<li class="task-list-item"><input class="task-list-item-checkbox" disabled="" type="checkbox"> Run <code>congregate generate-diff --staged</code> to generate the various diff reports</li>
+<li class="task-list-item"><input class="task-list-item-checkbox" disabled="" type="checkbox"> Run <code>nohup ./congregate.sh generate-diff --staged &gt; data/waves/wave_&lt;insert_wave_number&gt;/diff&lt;insert-wave-here&gt;.log 2&gt;&amp;1 &amp;</code> to generate the various diff reports</li>
 <li class="task-list-item"><input class="task-list-item-checkbox" disabled="" type="checkbox"> Reach out the whoever has rails console access to the destination instance and have them run the following script where <code>group_paths</code> is a list of all expected full_paths for this migration wave:</li>
 </ul>
 <pre><code class="language-ruby"><div>group_paths = [<span class="hljs-string">'root_group/group-1'</span>, <span class="hljs-string">'root_group/group-2'</span>, <span class="hljs-string">'...'</span>]
