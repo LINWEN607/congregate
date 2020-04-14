@@ -96,7 +96,7 @@ Copy the following data and add subsequent columns for single group migration
 </ul>
 <h3 id="dry-run">Dry run</h3>
 <ul class="contains-task-list">
-<li class="task-list-item"><input class="task-list-item-checkbox" disabled="" type="checkbox"> Run the following command: <code>nohup ./congregate.sh migrate --skip-users migrate &gt; data/waves/wave_&lt;insert_wave_number&gt;/wave_&lt;insert_wave_number&gt;_dry_run.log 2&gt;&amp;1 &amp;</code></li>
+<li class="task-list-item"><input class="task-list-item-checkbox" disabled="" type="checkbox"> Run the following command: <code>nohup ./congregate.sh migrate --skip-users &gt; data/waves/wave_&lt;insert_wave_number&gt;/wave_&lt;insert_wave_number&gt;_dry_run.log 2&gt;&amp;1 &amp;</code></li>
 <li class="task-list-item"><input class="task-list-item-checkbox" disabled="" type="checkbox"> Confirm everything looks correct and move on to the next step in the runbook
 <ul>
 <li>Specifically, review the API requests and make sure the paths look correct. For example, make sure any parent IDs or namespaces are matching the parent ID and parent namespaces we have specified in the congregate config.</li>
