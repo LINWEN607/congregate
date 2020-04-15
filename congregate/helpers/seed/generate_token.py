@@ -23,11 +23,11 @@ A lot of improvements can be done on this script, will do that as time permits. 
 # Import Modules
 import os
 import sys
-import requests
-import argparse
 from urlparse import urljoin
+import requests
 from bs4 import BeautifulSoup
 from congregate.helpers.decorators import configurable_stable_retry
+
 
 class token_generator():
     def __init__(self):
@@ -45,7 +45,7 @@ class token_generator():
         data = {param.get("content"): token.get("content")}
         return data
 
-    @configurable_stable_retry(delay=10, tries=50)
+    @configurable_stable_retry(retries=50, delay=10)
     def obtain_csrf_token(self):
         r = requests.get(self.__get_root_route())
         print r.status_code
@@ -65,7 +65,8 @@ class token_generator():
             "utf8": "✓"
         }
         data.update(csrf)
-        r = requests.post(self.__get_sign_in_route(), data=data, cookies=cookies)
+        r = requests.post(self.__get_sign_in_route(),
+                          data=data, cookies=cookies)
         token = self.find_csrf_token(r.text)
         if len(r.history) > 0:
             return token, r.history[0].cookies
@@ -81,7 +82,8 @@ class token_generator():
                 "user[reset_password_token]": reset_password_token,
             }
             data.update(csrf)
-            r = requests.post(self.__get_password_route(), data=data, cookies=cookies)
+            r = requests.post(self.__get_password_route(),
+                              data=data, cookies=cookies)
             token = self.find_csrf_token(r.text)
             if len(r.history) > 0:
                 return token, r.history[0].cookies
@@ -98,7 +100,8 @@ class token_generator():
         data.update(csrf)
         r = requests.post(self.__get_pat_route(), data=data, cookies=cookies)
         soup = BeautifulSoup(r.text, "lxml")
-        token = soup.find('input', id='created-personal-access-token').get('value')
+        token = soup.find(
+            'input', id='created-personal-access-token').get('value')
         return token
 
     def generate_token(self, name, expires_at, url=None, username=None, pword=None):
@@ -111,12 +114,14 @@ class token_generator():
 
         csrf1, cookies1, reset_password_token = self.obtain_csrf_token()
         if reset_password_token is not None:
-            csrf2, cookies2 = self.change_password(csrf1, cookies1, reset_password_token)
+            csrf2, cookies2 = self.change_password(
+                csrf1, cookies1, reset_password_token)
             csrf3, cookies3 = self.sign_in(csrf2, cookies2)
         else:
             csrf3, cookies3 = self.sign_in(csrf1, cookies1)
 
-        token = self.obtain_personal_access_token(name, expires_at, csrf3, cookies3)
+        token = self.obtain_personal_access_token(
+            name, expires_at, csrf3, cookies3)
         return token
 
     def __set_endpoint(self, endpoint):
@@ -139,6 +144,7 @@ class token_generator():
 
     def __get_pat_route(self):
         return urljoin(self.endpoint, "/profile/personal_access_tokens")
+
 
 if __name__ == "__main__":
     t = token_generator()
