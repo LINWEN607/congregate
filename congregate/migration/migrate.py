@@ -103,8 +103,8 @@ def migrate(
         if is_dot_com(b.config.destination_host):
             hooks.migrate_system_hooks(dry_run=_DRY_RUN)
 
-        # Remove from parent group to avoid inheritance
-        if b.config.parent_id is not None and not _DRY_RUN:
+        # Remove import user from parent group to avoid inheritance (self-managed only)
+        if b.config.parent_id is not None and not _DRY_RUN and not is_dot_com(b.config.destination_host):
             groups.remove_import_user(b.config.parent_id)
 
     add_post_migration_stats(start)
