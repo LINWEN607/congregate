@@ -99,7 +99,7 @@ def migrate(
         # Migrate projects
         migrate_project_info(skip_project_export, skip_project_import)
 
-        # Migrate system hooks (except for gitlab.com)
+        # Migrate system hooks (except to gitlab.com)
         if is_dot_com(b.config.destination_host):
             hooks.migrate_system_hooks(dry_run=_DRY_RUN)
 

@@ -45,7 +45,11 @@ build:
     - poetry install
   only:
     changes:
-      - congregate/*
+      - congregate/**/*
+      - docker/test/Dockerfile
+      - congregate.sh
+      - SAST.gitlab-ci.yml
+      - code_quality.html
 
 test:pylint:
   <<: *test-job
