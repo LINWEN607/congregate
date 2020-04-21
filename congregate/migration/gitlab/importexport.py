@@ -10,7 +10,7 @@ from requests_toolbelt.multipart.encoder import MultipartEncoder
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers import api
 from congregate.helpers.misc_utils import download_file, migration_dry_run, get_dry_log, \
-    is_error_message_present, check_is_project_or_group_for_logging, json_pretty, validate_name
+    is_error_message_present, check_is_project_or_group_for_logging, json_pretty, validate_name, is_dot_com
 from congregate.aws import AwsClient
 from congregate.migration.gitlab.projects import ProjectsClient
 from congregate.migration.gitlab.groups import GroupsClient
@@ -432,7 +432,8 @@ class ImportExportClient(BaseClass):
                     self.log.warning("Re-importing project {0} to {1}, waiting {2} minutes due to:\n{3}".format(
                         name, dst_namespace, self.COOL_OFF_MINUTES, import_response))
                     sleep(self.COOL_OFF_MINUTES * 60)
-                elif any(del_err_msg in str(import_response) for del_err_msg in self.DEL_ERR_MSGS):
+                # Assuming Default deletion adjourned period (Admin -> Settings -> General -> Visibility and access controls) is 0
+                elif any(del_err_msg in str(import_response) for del_err_msg in self.DEL_ERR_MSGS) and not is_dot_com(self.config.destination_host):
                     if total > self.config.max_export_wait_time:
                         self.log.error("Time limit exceeded waiting for project {0} to delete from {1}, with response:\n{2}".format(
                             name, dst_namespace, import_response))
@@ -459,7 +460,8 @@ class ImportExportClient(BaseClass):
                         self.log.error("Project {0} import to {1} failed, with import status{2}:\n{3}".format(
                             name, dst_namespace, " (re-importing)" if retry else "", json_pretty(status_json)))
                         # Delete and re-import once if the project import status failed, otherwise just delete
-                        if retry:
+                        # Assuming Default deletion adjourned period (Admin -> Settings -> General -> Visibility and access controls) is 0
+                        if retry and not is_dot_com(self.config.destination_host):
                             self.log.info("Deleting project {0} from {1} after import status failed (re-importing)".format(
                                 name, dst_namespace))
                             self.projects_api.delete_project(
