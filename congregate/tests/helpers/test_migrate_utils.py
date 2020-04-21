@@ -383,28 +383,6 @@ class MigrateTests(unittest.TestCase):
     def test_is_user_project_false(self):
         self.assertFalse(mutils.is_user_project(self.staged_group_project))
 
-    def test_is_user_project_none(self):
-        staged_project = {
-            "archived": False,
-            "builds_access_level": "enabled",
-            "default_branch": "master",
-            "description": "",
-            "http_url_to_repo": "https://dictionary.githost.io/dictionary-web/darci.git",
-            "id": 132,
-            "issues_access_level": "enabled",
-            "members": [],
-            "merge_requests_access_level": "enabled",
-            "name": "darci1",
-            "namespace": "dictionary-web",
-            "project_type": None,
-            "repository_access_level": "enabled",
-            "shared_runners_enabled": False,
-            "snippets_access_level": "disabled",
-            "visibility": "private",
-            "wiki_access_level": "enabled"
-        }
-        self.assertFalse(mutils.is_user_project(staged_project))
-
     def test_is_user_project_true(self):
         self.assertTrue(mutils.is_user_project(self.staged_user_project))
 

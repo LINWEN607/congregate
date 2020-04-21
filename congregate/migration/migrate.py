@@ -6,7 +6,7 @@
 
 import os
 import json
-import traceback
+from traceback import print_exc
 from re import sub
 from time import time
 from requests.exceptions import RequestException
@@ -99,12 +99,12 @@ def migrate(
         # Migrate projects
         migrate_project_info(skip_project_export, skip_project_import)
 
-        # Migrate system hooks (except for gitlab.com)
+        # Migrate system hooks (except to gitlab.com)
         if is_dot_com(b.config.destination_host):
             hooks.migrate_system_hooks(dry_run=_DRY_RUN)
 
         # Remove import user from parent group to avoid inheritance (self-managed only)
-        if b.config.parent_id is not None and not _DRY_RUN and not is_dot_com(b.config.destination_host):
+        if b.config.parent_id and not _DRY_RUN and not is_dot_com(b.config.destination_host):
             groups.remove_import_user(b.config.parent_id)
 
     add_post_migration_stats(start)
@@ -199,7 +199,7 @@ def handle_exporting_groups(group):
             full_path, gid, loc, filename, oe))
     except Exception as e:
         b.log.error(e)
-        b.log.error(traceback.print_exc)
+        b.log.error(print_exc())
     return result
 
 
@@ -223,7 +223,7 @@ def handle_importing_groups(group):
         if dst_gid:
             b.log.info("{0}Group {1} (ID: {2}) already exists on destination".format(
                 get_dry_log(_DRY_RUN), full_path, dst_gid))
-            result[full_path_with_parent_namespace] = True
+            result[full_path_with_parent_namespace] = dst_gid
         else:
             b.log.info("{0}Group {1} NOT found on destination, importing..."
                        .format(get_dry_log(_DRY_RUN), full_path_with_parent_namespace))
@@ -245,7 +245,7 @@ def handle_importing_groups(group):
             full_path, src_gid, filename, oe))
     except Exception as e:
         b.log.error(e)
-        b.log.error(traceback.print_exc)
+        b.log.error(print_exc())
     return result
 
 
@@ -326,7 +326,7 @@ def handle_exporting_projects(project):
             name, pid, loc, filename, oe))
     except Exception as e:
         b.log.error(e)
-        b.log.error(traceback.print_exc)
+        b.log.error(print_exc())
     return result
 
 
@@ -351,7 +351,7 @@ def handle_importing_projects(project_json):
                 b.config.destination_host, b.config.destination_token, dst_pid).json()
             b.log.info("Project {0} (ID: {1}) found on destination, with import status: {2}".format(
                 dst_path_with_namespace, dst_pid, import_status))
-            result[dst_path_with_namespace] = True
+            result[dst_path_with_namespace] = dst_pid
         else:
             b.log.info("{0}Project {1} NOT found on destination, importing...".format(
                 get_dry_log(_DRY_RUN), dst_path_with_namespace))
@@ -373,7 +373,7 @@ def handle_importing_projects(project_json):
             path, src_id, oe))
     except Exception as e:
         b.log.error(e)
-        b.log.error(traceback.print_exc)
+        b.log.error(print_exc())
     finally:
         if archived and not _DRY_RUN:
             b.log.info(

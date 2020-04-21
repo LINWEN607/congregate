@@ -10,7 +10,7 @@ from requests_toolbelt.multipart.encoder import MultipartEncoder
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers import api
 from congregate.helpers.misc_utils import download_file, migration_dry_run, get_dry_log, \
-    is_error_message_present, check_is_project_or_group_for_logging, json_pretty, validate_name
+    is_error_message_present, check_is_project_or_group_for_logging, json_pretty, validate_name, is_dot_com
 from congregate.aws import AwsClient
 from congregate.migration.gitlab.projects import ProjectsClient
 from congregate.migration.gitlab.groups import GroupsClient
@@ -23,12 +23,9 @@ from congregate.helpers.migrate_utils import get_project_namespace, is_user_proj
 
 
 class ImportExportClient(BaseClass):
-    ERR_MSGS = [
-        # Import rate limit, 30 within 5 minutes
-        "This endpoint has been requested too many times",
-        # Usually occurs when group "project_creation_level" is set to "noone"
-        "Namespace is not valid"
-    ]
+    # Import rate limit, 30 within 5 minutes
+    RATE_LIMIT_MSG = "This endpoint has been requested too many times"
+
     # Import responses for a project re-import while it's still being deleted
     DEL_ERR_MSGS = [
         "The project is still being deleted",
@@ -217,14 +214,8 @@ class ImportExportClient(BaseClass):
         if not dry_run:
             import_response = self.attempt_import(
                 filename, name, path, dst_namespace, override_params, members)
-            if any(err_msg in str(import_response) for err_msg in self.ERR_MSGS):
-                self.log.warning("Re-importing project {0} to {1}, waiting {2} minutes due to:\n{3}".format(
-                    name, dst_namespace, self.COOL_OFF_MINUTES, import_response))
-                sleep(self.COOL_OFF_MINUTES * 60)
-                import_response = self.attempt_import(
-                    filename, name, path, dst_namespace, override_params, members)
             # Use until group import status endpoint is available
-            elif "404 Namespace Not Found" in str(import_response):
+            if "404 Namespace Not Found" in str(import_response):
                 timeout = 0
                 wait_time = self.config.importexport_wait
                 while self.namespaces_api.get_namespace_by_full_path(dst_namespace, self.config.destination_host, self.config.destination_token).status_code != 200:
@@ -434,82 +425,78 @@ class ImportExportClient(BaseClass):
         wait_time = self.config.importexport_wait
         import_response = json.loads(import_response)
         while True:
-            try:
-                # There is a small chance that the re-import exceeds the rate limit
-                if any(err_msg in str(import_response) for err_msg in self.ERR_MSGS):
+            total = 0
+            # Wait until rate limit is resolved or project deleted
+            while self.RATE_LIMIT_MSG in str(import_response) or any(del_err_msg in str(import_response) for del_err_msg in self.DEL_ERR_MSGS):
+                if self.RATE_LIMIT_MSG in str(import_response):
                     self.log.warning("Re-importing project {0} to {1}, waiting {2} minutes due to:\n{3}".format(
                         name, dst_namespace, self.COOL_OFF_MINUTES, import_response))
                     sleep(self.COOL_OFF_MINUTES * 60)
-                    import_response = self.attempt_import(
-                        filename, name, path, dst_namespace, override_params, members)
-                    import_response = json.loads(import_response)
-                    timeout = 0
-                import_id = import_response.get("id", None)
-                if import_id:
-                    status = self.projects_api.get_project_import_status(
-                        self.config.destination_host, self.config.destination_token, import_id)
-                    if status.status_code == 200:
-                        status_json = status.json()
-                        if status_json.get("import_status", None) == "finished":
-                            self.log.info(
-                                "Project {0} successfully imported to {1}, with import status:\n{2}".format(name, dst_namespace, json_pretty(status_json)))
-                            break
-                        elif status_json.get("import_status", None) == "failed":
-                            self.log.error("Project {0} import to {1} failed, with import status{2}:\n{3}".format(
-                                name, dst_namespace, " (re-importing)" if retry else "", json_pretty(status_json)))
-                            # Delete and re-import once if the project import status failed, otherwise just delete
-                            if retry:
-                                self.log.info("Deleting project {0} from {1} after import status failed (re-importing)".format(
-                                    name, dst_namespace))
-                                self.projects_api.delete_project(
-                                    self.config.destination_host, self.config.destination_token, import_id)
-                                import_response = self.attempt_import(
-                                    filename, name, path, dst_namespace, override_params, members)
-                                total = 0
-                                while any(del_err_msg in str(import_response) for del_err_msg in self.DEL_ERR_MSGS):
-                                    self.log.info(
-                                        "Waiting {0} seconds for project {1} to delete from {2} before re-importing".format(wait_time, name, dst_namespace))
-                                    total += wait_time
-                                    sleep(wait_time)
-                                    import_response = self.attempt_import(
-                                        filename, name, path, dst_namespace, override_params, members)
-                                    if total > self.config.max_export_wait_time:
-                                        self.log.error("Time limit exceeded waiting for project {0} to delete from {1}, with response:\n{2}".format(
-                                            name, dst_namespace, import_response))
-                                        return None
-                                import_response = json.loads(import_response)
-                                retry = False
-                                timeout = 0
-                            else:
-                                self.log.info("Deleting project {0} from {1} after re-import status failed".format(
-                                    name, dst_namespace))
-                                self.projects_api.delete_project(
-                                    self.config.destination_host, self.config.destination_token, import_id)
-                                return None
-                        # For any other import status (started, scheduled, etc.) wait for it to update
-                        elif timeout < self.config.max_export_wait_time:
-                            self.log.info(
-                                "Checking project {0} ({1}) import status in {2} seconds".format(name, dst_namespace, wait_time))
-                            timeout += wait_time
-                            sleep(wait_time)
-                        # In case of timeout delete
+                # Assuming Default deletion adjourned period (Admin -> Settings -> General -> Visibility and access controls) is 0
+                elif any(del_err_msg in str(import_response) for del_err_msg in self.DEL_ERR_MSGS) and not is_dot_com(self.config.destination_host):
+                    if total > self.config.max_export_wait_time:
+                        self.log.error("Time limit exceeded waiting for project {0} to delete from {1}, with response:\n{2}".format(
+                            name, dst_namespace, import_response))
+                        return None
+                    self.log.info(
+                        "Waiting {0} seconds for project {1} to delete from {2} before re-importing".format(wait_time, name, dst_namespace))
+                    total += wait_time
+                    sleep(wait_time)
+                import_response = self.attempt_import(
+                    filename, name, path, dst_namespace, override_params, members)
+                import_response = json.loads(import_response)
+                timeout = 0
+            import_id = import_response.get("id", None)
+            if import_id:
+                status = self.projects_api.get_project_import_status(
+                    self.config.destination_host, self.config.destination_token, import_id)
+                if status.status_code == 200:
+                    status_json = status.json()
+                    if status_json.get("import_status", None) == "finished":
+                        self.log.info(
+                            "Project {0} successfully imported to {1}, with import status:\n{2}".format(name, dst_namespace, json_pretty(status_json)))
+                        break
+                    elif status_json.get("import_status", None) == "failed":
+                        self.log.error("Project {0} import to {1} failed, with import status{2}:\n{3}".format(
+                            name, dst_namespace, " (re-importing)" if retry else "", json_pretty(status_json)))
+                        # Delete and re-import once if the project import status failed, otherwise just delete
+                        # Assuming Default deletion adjourned period (Admin -> Settings -> General -> Visibility and access controls) is 0
+                        if retry and not is_dot_com(self.config.destination_host):
+                            self.log.info("Deleting project {0} from {1} after import status failed (re-importing)".format(
+                                name, dst_namespace))
+                            self.projects_api.delete_project(
+                                self.config.destination_host, self.config.destination_token, import_id)
+                            import_response = self.attempt_import(
+                                filename, name, path, dst_namespace, override_params, members)
+                            import_response = json.loads(import_response)
+                            retry = False
+                            timeout = 0
                         else:
-                            self.log.error("Time limit exceeded waiting for project {0} ({1}) import status (deleting):\n{2}".format(
-                                name, dst_namespace, json_pretty(status_json)))
+                            self.log.info("Deleting project {0} from {1} after re-import status failed".format(
+                                name, dst_namespace))
                             self.projects_api.delete_project(
                                 self.config.destination_host, self.config.destination_token, import_id)
                             return None
+                    # For any other import status (started, scheduled, etc.) wait for it to update
+                    elif timeout < self.config.max_export_wait_time:
+                        self.log.info(
+                            "Checking project {0} ({1}) import status in {2} seconds".format(name, dst_namespace, wait_time))
+                        timeout += wait_time
+                        sleep(wait_time)
+                    # In case of timeout delete
                     else:
-                        self.log.error(
-                            "Project {0} ({1}) import attempt failed, with status:\n{2}".format(name, dst_namespace, status))
+                        self.log.error("Time limit exceeded waiting for project {0} ({1}) import status (deleting):\n{2}".format(
+                            name, dst_namespace, json_pretty(status_json)))
+                        self.projects_api.delete_project(
+                            self.config.destination_host, self.config.destination_token, import_id)
                         return None
                 else:
-                    self.log.error("Project {0} ({1}) failed to import, with response:\n{2}".format(
-                        name, dst_namespace, import_response))
+                    self.log.error(
+                        "Project {0} ({1}) import attempt failed, with status:\n{2}".format(name, dst_namespace, status))
                     return None
-            except RequestException as re:
-                self.log.error(
-                    "Project {0} ({1}) import status ({2}) check failed, with error:\n{3}".format(name, dst_namespace, status, re))
+            else:
+                self.log.error("Project {0} ({1}) failed to import, with response:\n{2}".format(
+                    name, dst_namespace, import_response))
                 return None
         return import_id
 

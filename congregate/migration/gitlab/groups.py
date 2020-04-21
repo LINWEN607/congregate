@@ -115,7 +115,7 @@ class GroupsClient(BaseClass):
     def traverse_staging(self, gid, group_dict, staged_groups):
         if group_dict.get(gid, None) is not None:
             g = group_dict[gid]
-            if g["parent_id"] is None:
+            if not g.get("parent_id", None):
                 self.log.info(
                     "Staging top level group {0} (ID: {1})".format(g["full_path"], g["id"]))
             else:
