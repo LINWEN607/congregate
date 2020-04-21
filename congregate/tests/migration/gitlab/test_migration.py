@@ -26,7 +26,8 @@ class MigrationEndToEndTest(unittest.TestCase):
         rollback_diff()
 
     def test_user_migration_diff(self):
-        user_diff = UserDiffClient("/data/user_migration_results.json")
+        user_diff = UserDiffClient(
+            "/data/user_migration_results.json")
         diff_report = user_diff.generate_diff_report()
         user_diff.generate_html_report(
             diff_report, "/data/user_migration_results.html")
@@ -34,7 +35,8 @@ class MigrationEndToEndTest(unittest.TestCase):
             diff_report["user_migration_results"]["overall_accuracy"], 0.90)
 
     def test_group_migration_diff(self):
-        group_diff = GroupDiffClient("/data/group_migration_results.json")
+        group_diff = GroupDiffClient(
+            "/data/group_migration_results.json")
         diff_report = group_diff.generate_diff_report()
         group_diff.generate_html_report(
             diff_report, "/data/group_migration_results.html")

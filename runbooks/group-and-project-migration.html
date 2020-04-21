@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <title><customer name> Migration Wave <insert-number-here></title>
+        
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/Microsoft/vscode/extensions/markdown-language-features/media/markdown.css">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/Microsoft/vscode/extensions/markdown-language-features/media/highlight.css">
+        
+        <style>
+.task-list-item { list-style-type: none; } .task-list-item-checkbox { margin-left: -20px; vertical-align: middle; }
+</style>
+        <style>
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe WPC', 'Segoe UI', 'Ubuntu', 'Droid Sans', sans-serif;
+                font-size: 14px;
+                line-height: 1.6;
+            }
+        </style>
+        
+        
+    </head>
+    <body class="vscode-light">
+        <!-- 
+    Copy the contents of this runbook into an issue when running through a migration wave.
+    Post the link to the issue on the slack channel dedicated to this migration. 
+-->
+<h1 id="customer-name-migration-wave-insert-number-here"><customer name> Migration Wave <insert-number-here></h1>
+<p>This runbook covers the process of migrating a wave of <strong>groups and projects</strong> from a source GitLab instance to a destination GitLab instance. This is assuming all users have already been migrated.</p>
+<h2 id="migration-blackout-period">Migration Blackout Period</h2>
+<!--
+    Specify the date and time of this migration wave. For example
+
+    3:00PM 4/13/20 - 3:00AM 4/14/20
+-->
+<h2 id="slack-channel-for-communication">Slack channel for communication</h2>
+<!--
+    Provide the name and link of the slack channel dedicated to communicating the status and events of the migration
+-->
+<h2 id="points-of-contact">Points of contact</h2>
+<!--
+    Provide the gitlab handles for the various people involved in this migration wave and their specific role in the migration. 
+    
+    For example:
+
+    @leopardm: PSE conducting the migration
+    @lyle: Support Manager with Rails Console access
+    @pharrison: Security Manager in the loop in case anything goes wrong
+-->
+<h2 id="groups-to-migrate">Groups to migrate</h2>
+<!-- 
+
+Copy the following data and add subsequent columns for wave migration or nested group migration
+
+| Completed | Group Name | Total Projects   | Group Size   |
+| --------- | ---------- | ---------------- | ------------ |
+| :x:       | [name]     | [total-projects] | [group-size] |
+
+Copy the following data and add subsequent columns for single group migration
+
+| Completed | Project Path | Repo Size        |
+| --------- | ------------ | ---------------- |
+| :x:       | [name]       | [total-projects] |
+
+-->
+<sub>
+<p><strong>Key</strong></p>
+<ul>
+<li>:x: = not started</li>
+<li>:heavy_minus_sign: = in progress</li>
+<li>:white_check_mark: = finished</li>
+</ul>
+</sub>
+<h2 id="professional-services-steps-to-complete-migration-wave">Professional Services Steps to Complete Migration Wave</h2>
+<h3 id="preparation">Preparation</h3>
+<ul class="contains-task-list">
+<li class="task-list-item"><input class="task-list-item-checkbox" disabled="" type="checkbox"> Review migration schedule (see customer migration schedule)</li>
+<li class="task-list-item"><input class="task-list-item-checkbox" disabled="" type="checkbox"> Check the status of the destination instance
+<ul>
+<li>In the case of <a href="http://gitlab.com">gitlab.com</a>, check <a href="https://status.gitlab.com/">https://status.gitlab.com/</a></li>
+<li>A manual spot check of the instance
+<ul class="contains-task-list">
+<li class="task-list-item"><input class="task-list-item-checkbox" disabled="" type="checkbox"> Confirm you can reach the UI of the instance</li>
+<li class="task-list-item"><input class="task-list-item-checkbox" disabled="" type="checkbox"> Confirm you can reach the API through cURL or a REST client</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="task-list-item"><input class="task-list-item-checkbox" disabled="" type="checkbox"> Run <code>congregate list</code> at the beginning of the migration blackout period</li>
+<li class="task-list-item"><input class="task-list-item-checkbox" disabled="" type="checkbox"> Stage projects based on the wave schedule in the UI</li>
+<li class="task-list-item"><input class="task-list-item-checkbox" disabled="" type="checkbox"> Stage groups based on the wave schedule in the UI</li>
+<li class="task-list-item"><input class="task-list-item-checkbox" disabled="" type="checkbox"> Create a directory called &quot;waves&quot; in <code>/opt/congregate/data</code> in the container if it doesn't already exist</li>
+<li class="task-list-item"><input class="task-list-item-checkbox" disabled="" type="checkbox"> Create a directory called <code>wave_&lt;insert_wave_number&gt;</code> in <code>/opt/congregate/data/waves</code> if it doesn't already exist</li>
+<li class="task-list-item"><input class="task-list-item-checkbox" disabled="" type="checkbox"> Copy all staged data to <code>/opt/congregate/data/waves/wave_&lt;insert_wave_number&gt;/</code></li>
+<li class="task-list-item"><input class="task-list-item-checkbox" disabled="" type="checkbox"> Notify in the internal slack channel dedicated to this migration you have completed preparation for the wave</li>
+</ul>
+<h3 id="dry-run">Dry run</h3>
+<ul class="contains-task-list">
+<li class="task-list-item"><input class="task-list-item-checkbox" disabled="" type="checkbox"> Run the following command: <code>nohup ./congregate.sh migrate --skip-users &gt; data/waves/wave_&lt;insert_wave_number&gt;/wave_&lt;insert_wave_number&gt;_dry_run.log 2&gt;&amp;1 &amp;</code></li>
+<li class="task-list-item"><input class="task-list-item-checkbox" disabled="" type="checkbox"> Confirm everything looks correct and move on to the next step in the runbook
+<ul>
+<li>Specifically, review the API requests and make sure the paths look correct. For example, make sure any parent IDs or namespaces are matching the parent ID and parent namespaces we have specified in the congregate config.</li>
+<li>If anything looks wrong in the dry run, make a note of it in the issue and reach out to @pprokic or @leopardm for review. Do not proceed with the migration if the dry run data looks incorrect. If this is incorrect, the data we send will be incorrect.</li>
+</ul>
+</li>
+<li class="task-list-item"><input class="task-list-item-checkbox" disabled="" type="checkbox"> Attach the dry run logs (<code>data/dry_run_*_migration.json</code>) to this issue</li>
+<li class="task-list-item"><input class="task-list-item-checkbox" disabled="" type="checkbox"> Copy the dry run logs to <code>/opt/congregate/data/waves/wave_&lt;insert_wave_number&gt;/</code></li>
+<li class="task-list-item"><input class="task-list-item-checkbox" disabled="" type="checkbox"> Notify in the internal slack channel dedicated to this migration you have completed preparation for the wave</li>
+</ul>
+<h3 id="migration">Migration</h3>
+<ul class="contains-task-list">
+<li class="task-list-item"><input class="task-list-item-checkbox" disabled="" type="checkbox"> Notify in the internal slack channel dedicated to this migration you are starting the migration wave</li>
+<li class="task-list-item"><input class="task-list-item-checkbox" disabled="" type="checkbox"> Notify the customer in the customer-facing slack channel you are starting the migration wave</li>
+<li>If migrating to <code>gitlab.com</code>:
+<ul class="contains-task-list">
+<li class="task-list-item"><input class="task-list-item-checkbox" disabled="" type="checkbox"> Export only by running the following command: <code>nohup ./congregate.sh migrate --skip-users --skip-group-import --skip-project-import --commit &gt; data/waves/wave_&lt;insert_wave_number&gt;/wave&lt;insert-wave-here&gt;.log 2&gt;&amp;1 &amp;</code></li>
+<li class="task-list-item"><input class="task-list-item-checkbox" disabled="" type="checkbox"> Import only with single (1) process by running the following command: <code>nohup ./congregate.sh migrate --processes=1 --skip-users --skip-group-export --skip-project-export --commit &gt;&gt; data/waves/wave_&lt;insert_wave_number&gt;/wave&lt;insert-wave-here&gt;.log 2&gt;&amp;1 &amp;</code></li>
+</ul>
+</li>
+<li>If migrating to self-managed:
+<ul class="contains-task-list">
+<li class="task-list-item"><input class="task-list-item-checkbox" disabled="" type="checkbox"> Run the following command <code>nohup ./congregate.sh migrate --skip-users --commit &gt; data/waves/wave_&lt;insert_wave_number&gt;/wave&lt;insert-wave-here&gt;.log 2&gt;&amp;1 &amp;</code></li>
+</ul>
+</li>
+<li class="task-list-item"><input class="task-list-item-checkbox" disabled="" type="checkbox"> Monitor the wave periodically by running <code>tail -f data/waves/wave_&lt;insert_wave_number&gt;/wave&lt;insert-wave-here&gt;.log</code></li>
+<li class="task-list-item"><input class="task-list-item-checkbox" disabled="" type="checkbox"> Attach <code>data/congregate.log</code>, <code>data/audit.log</code>, and <code>data/waves/wave_&lt;insert_wave_number&gt;/wave&lt;insert-wave-here&gt;.log</code> to this issue</li>
+<li class="task-list-item"><input class="task-list-item-checkbox" disabled="" type="checkbox"> Copy <code>data/congregate.log</code>, <code>data/audit.log</code>, and <code>data/waves/wave_&lt;insert_wave_number&gt;/wave&lt;insert-wave-here&gt;.log</code> to <code>/opt/congregate/data/waves/wave_&lt;insert_wave_number&gt;/</code></li>
+</ul>
+<h3 id="post-migration">Post Migration</h3>
+<ul class="contains-task-list">
+<li class="task-list-item"><input class="task-list-item-checkbox" disabled="" type="checkbox"> Notify in the internal slack channel dedicated to this migration you are running the diff report</li>
+<li class="task-list-item"><input class="task-list-item-checkbox" disabled="" type="checkbox"> Run <code>nohup ./congregate.sh generate-diff --staged &gt; data/waves/wave_&lt;insert_wave_number&gt;/diff&lt;insert-wave-here&gt;.log 2&gt;&amp;1 &amp;</code> to generate the various diff reports</li>
+<li class="task-list-item"><input class="task-list-item-checkbox" disabled="" type="checkbox"> Reach out the whoever has rails console access to the destination instance and have them run the following script where <code>group_paths</code> is a list of all expected full_paths for this migration wave:</li>
+</ul>
+<pre><code class="language-ruby"><div>group_paths = [<span class="hljs-string">'root_group/group-1'</span>, <span class="hljs-string">'root_group/group-2'</span>, <span class="hljs-string">'...'</span>]
+
+groups = group_paths.map { <span class="hljs-params">|path|</span> Group.find_by_full_path(path) }
+projects = groups.map(&amp;<span class="hljs-symbol">:projects</span>).flatten
+
+import_failures = projects.map(&amp;<span class="hljs-symbol">:import_failures</span>).flatten
+import_failures_count = import_failures.count
+mr_import_failures = import_failures.select { <span class="hljs-params">|failure|</span> failure.relation_key == <span class="hljs-string">'merge_requests'</span> }
+services_import_failures = import_failures.select { <span class="hljs-params">|failure|</span> failure.relation_key == <span class="hljs-string">'services'</span> }
+protected_branches_import_failures = import_failures.select { <span class="hljs-params">|failure|</span> failure.relation_key == <span class="hljs-string">'protected_branches'</span> }
+
+p <span class="hljs-string">"Total number of import failures: <span class="hljs-subst">#{import_failures_count}</span>"</span>
+p <span class="hljs-string">"Number of Merge Request import failures: <span class="hljs-subst">#{mr_import_failures.count}</span> (this figure might not be actual amount of missing MRs)"</span>
+p <span class="hljs-string">"Number of Services import failures: <span class="hljs-subst">#{services_import_failures.count}</span>"</span>
+p <span class="hljs-string">"Number of Protected Branches import failures: <span class="hljs-subst">#{protected_branches_import_failures.count}</span>"</span>
+</div></code></pre>
+<ul class="contains-task-list">
+<li class="task-list-item"><input class="task-list-item-checkbox" disabled="" type="checkbox"> Review the diff reports (<code>data/*_results.html</code>) once they are finished generating
+<ul>
+<li>Review the following:
+<ul>
+<li>Overall accuracy of groups and projects</li>
+<li>Individual accuracy of each group and project</li>
+<li>Confirm correct group and project members are present.</li>
+<li>Confirm nothing has an accuracy of 0. If an asset is missing (one of the causes of an accuracy of 0), take note of the missing asset in this issue and plan to restage it for another, smaller run of this wave</li>
+<li>If the namespaces are incorrect, meaning a project or a group has been migrated to the wrong location, do the following:
+<ul>
+<li>For projects:
+<ul>
+<li>If the project is in an incorrect namespace within the parent group, move the project to the correct group</li>
+<li>If the project is in a completely incorrect, random location on the destination, confirm the spread of the leaked data, and refer to the <a href="#Rollback">rollback instructions</a></li>
+</ul>
+</li>
+<li>For groups:
+<ul>
+<li>If the group is not within the expected parent group, make a note of the incorrectly migrated group in this issue, delete the group, and refer to the <a href="#Rollback">rollback instructions</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>If random users are present in a group or project, refer to the <a href="#Rollback">rollback instructions</a>.
+<ul>
+<li>Confirm these users are actually incorrect, look up the user through the API (<code>/api/v4/users/:id</code>)</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="task-list-item"><input class="task-list-item-checkbox" disabled="" type="checkbox"> Post a comment in this issue containing the following information:
+<ul>
+<li>Projects: <code>&lt;insert-overall-accuracy&gt;</code></li>
+<li>Groups: <code>&lt;insert-overall-accuracy&gt;</code></li>
+<li>Users: <code>&lt;insert-overall-accuracy&gt;</code></li>
+</ul>
+</li>
+<li class="task-list-item"><input class="task-list-item-checkbox" disabled="" type="checkbox"> If accuracy is greater than 90%, mark this migration as a success</li>
+<li class="task-list-item"><input class="task-list-item-checkbox" disabled="" type="checkbox"> If accuracy is lower than 90%, review the diff reports again and see if any projects or groups are missing</li>
+<li class="task-list-item"><input class="task-list-item-checkbox" disabled="" type="checkbox"> Attach <code>data/*_results.*</code> and <code>data/*_diff.json</code> to this issue</li>
+<li class="task-list-item"><input class="task-list-item-checkbox" disabled="" type="checkbox"> Copy <code>data/*_results.*</code> and <code>data/*_diff.json</code> to <code>/opt/congregate/data/waves/wave_&lt;insert_wave_number&gt;/</code></li>
+<li class="task-list-item"><input class="task-list-item-checkbox" disabled="" type="checkbox"> Notify in the internal slack channel dedicated to this migration the diff report is finished generating with a link to the comment you just posted. If you need to run another small subset of this migration, mention that in the slack message as well.</li>
+<li class="task-list-item"><input class="task-list-item-checkbox" disabled="" type="checkbox"> Notify the customer in the customer-facing slack channel the migration wave has finished</li>
+</ul>
+<h3 id="post-migration-with-missing-groups-and-projects">Post Migration with Missing Groups and Projects</h3>
+<ul class="contains-task-list">
+<li class="task-list-item"><input class="task-list-item-checkbox" disabled="" type="checkbox"> If projects or groups are missing, confirm the projects and groups have successfully exported and confirm they don't actually exist on the destination instance
+<ul>
+<li>To confirm the exports have successfully exported, review the contents of <code>/opt/congregate/downloads</code> or the S3 bucket defined in the configuration. Make sure no export archive has a size of 42 bytes. That means the export archive is invalid.</li>
+<li>To confirm the projects or groups don't actually exist on the destination instance, compare the results of the diff report and manually check where the project or group should be located.</li>
+<li>To confirm the projects or groups don't actually exist on the destination instance, you may also <code>dry-run</code> a wave.
+<ul>
+<li>You can also search for the project with an API request to <code>/projects?search=&lt;project-name&gt;</code></li>
+<li>You can also search for the groups with an API request to <code>/groups?search=&lt;group-name&gt;</code> or <code>/groups/&lt;url-encoded-full-path&gt;</code></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="task-list-item"><input class="task-list-item-checkbox" disabled="" type="checkbox"> Stage <em>only</em> those groups and projects and go through this runbook again, this time with the following command for the migration stage: <code>nohup ./congregate.sh migrate --skip-users --skip-group-export --skip-project-export --processes=1 --commit &gt; data/waves/wave_&lt;insert_wave_number&gt;/wave&lt;insert-wave-here&gt;_attempt&lt;insert-attempt&gt;.log 2&gt;&amp;1 &amp;</code></li>
+<li class="task-list-item"><input class="task-list-item-checkbox" disabled="" type="checkbox"> Monitor the wave periodically by running <code>tail -f data/waves/wave_&lt;insert_wave_number&gt;/wave&lt;insert-wave-here&gt;_attempt&lt;insert-attempt&gt;.log</code></li>
+<li class="task-list-item"><input class="task-list-item-checkbox" disabled="" type="checkbox"> Notify in the internal slack channel dedicated to this migration the migration has finished</li>
+<li class="task-list-item"><input class="task-list-item-checkbox" disabled="" type="checkbox"> Notify the customer in the customer-facing slack channel the migration wave has finished</li>
+<li class="task-list-item"><input class="task-list-item-checkbox" disabled="" type="checkbox"> Attach <code>data/congregate.log</code>, <code>data/audit.log</code>, and <code>data/waves/wave_&lt;insert_wave_number&gt;/wave&lt;insert-wave-here&gt;_attempt&lt;insert-attempt&gt;.log</code> to this issue</li>
+<li class="task-list-item"><input class="task-list-item-checkbox" disabled="" type="checkbox"> Copy <code>data/congregate.log</code>, <code>data/audit.log</code>, and <code>data/waves/wave_&lt;insert_wave_number&gt;/wave&lt;insert-wave-here&gt;_attempt&lt;insert-attempt&gt;.log</code> to <code>/opt/congregate/data/waves/wave_&lt;insert_wave_number&gt;/</code></li>
+</ul>
+<h3 id="rollback">Rollback</h3>
+<p>If <strong>any</strong> data was migrated incorrectly (i.e to the wrong namespace) to a random location, you <strong>must</strong> rollback the migration wave <strong>completely</strong></p>
+<ul class="contains-task-list">
+<li class="task-list-item"><input class="task-list-item-checkbox" disabled="" type="checkbox"> Notify in the internal slack channel dedicated to this migration you are running a rollback due an issue with the migration</li>
+<li class="task-list-item"><input class="task-list-item-checkbox" disabled="" type="checkbox"> Run <code>nohup ./congregate.sh rollback --skip-users --commit &gt; data/waves/wave_&lt;insert_wave_number&gt;/rollback.log 2&gt;&amp;1 &amp;</code></li>
+<li class="task-list-item"><input class="task-list-item-checkbox" disabled="" type="checkbox"> Copy the rollback log and <code>data/audit.log</code> to <code>/opt/congregate/data/waves/wave_&lt;insert_wave_number&gt;/</code></li>
+<li class="task-list-item"><input class="task-list-item-checkbox" disabled="" type="checkbox"> Post a comment describing the reason for the rollback and attach the rollback log and <code>data/audit.log</code></li>
+<li class="task-list-item"><input class="task-list-item-checkbox" disabled="" type="checkbox"> Follow these <a href="https://about.gitlab.com/handbook/engineering/security/#engaging-the-security-on-call">instructions in the handbook</a> and link to this issue.</li>
+</ul>
+<p>/confidential</p>
+
+    </body>
+    </html>

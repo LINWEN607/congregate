@@ -21,7 +21,7 @@ b = BaseClass()
 def stage_projects(projects_to_stage, dry_run=True):
     """
         Stage all the projects from the source instance
- 
+
         :param: projects_to_stage: (dict) the staged projects objects
         :param: dry_run (bool) If true, it will only build the staging data lists
     """
@@ -34,7 +34,7 @@ def stage_projects(projects_to_stage, dry_run=True):
 def build_staging_data(projects_to_stage, dry_run=True):
     """
         Stage all the data including project, groups and users from the source instance
- 
+
         :param: projects_to_stage: (dict) the staged projects objects
         :param: dry_run (bool) dry_run (bool) If true, it will only build the staging data lists.
     """
@@ -81,9 +81,11 @@ def build_staging_data(projects_to_stage, dry_run=True):
                 #     group_to_stage = projects[i]["namespace"]["id"]
                 #     staged_groups.append(rewritten_groups[group_to_stage])
 
-                for group in groups:
-                    if group["parent_id"] is None:
-                        staged_groups.append(group)
+                for g in groups:
+                    if not g.get("parent_id", None):
+                        b.log.info("Staging top level group {0} (ID: {1})".format(
+                            g["full_path"], g["id"]))
+                        staged_groups.append(g)
 
                 obj["members"] = members
                 staging.append(obj)
@@ -213,7 +215,7 @@ def open_users_file():
         Open users.json file to read, turning JSON encoded data to users object.
 
         :return: users object
-    """    
+    """
     with open("%s/data/users.json" % b.app_path, "r") as f:
         users = json.load(f)
     return users
