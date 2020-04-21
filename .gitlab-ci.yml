@@ -22,11 +22,11 @@ default:
 workflow:
   rules:
     # For merge requests, create a pipeline.
-    - if: '$CI_MERGE_REQUEST_IID'
+    - if: "$CI_MERGE_REQUEST_IID"
     # For `master` branch, create a pipeline (this includes on schedules, pushes, merges, etc.).
-    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
     # For tags, create a pipeline.
-    - if: '$CI_COMMIT_TAG'
+    - if: "$CI_COMMIT_TAG"
 
 .use-docker-in-docker:
   image: docker:${DOCKER_VERSION}
@@ -57,8 +57,8 @@ build:
     - docker push "$TEST_IMAGE_NAME"
   rules:
     - changes:
-      - .gitlab-ci.yml
-      - docker/test/Dockerfile
+        - .gitlab-ci.yml
+        - docker/test/Dockerfile
 
 .test-job:
   stage: test
@@ -69,17 +69,16 @@ build:
     - poetry install
   rules:
     - changes:
-      - .gitlab-ci.yml
-      - congregate/**/*
-      - docker/test/Dockerfile
-      - congregate.sh
-      - SAST.gitlab-ci.yml
-      - code_quality.html
+        - congregate/**/*
+        - docker/test/Dockerfile
+        - congregate.sh
+        - SAST.gitlab-ci.yml
+        - code_quality.html
 
 test:pylint:
   extends: .test-job
   rules:
-    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
   script:
     - ./pylint.sh
   artifacts:
@@ -125,7 +124,7 @@ rolling release:
   extends: .use-docker-in-docker
   stage: release
   rules:
-    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
   variables:
     RELEASE_IMAGE_NAME: "$CI_REGISTRY_IMAGE/$CI_COMMIT_REF_NAME:$CI_COMMIT_SHA"
     LATEST: "$CI_REGISTRY_IMAGE/$CI_COMMIT_REF_NAME:latest"
@@ -141,7 +140,7 @@ rolling release:
 release-tag:
   extends: .use-docker-in-docker
   rules:
-    - if: '$CI_COMMIT_TAG'
+    - if: "$CI_COMMIT_TAG"
   stage: release
   variables:
     RELEASE_IMAGE_NAME: "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME"
@@ -158,7 +157,7 @@ release-tag:
 pages:
   stage: deploy
   rules:
-    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
   dependencies:
     - code_quality
   script:
