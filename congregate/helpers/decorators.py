@@ -1,4 +1,4 @@
-import traceback
+from traceback import print_exc
 
 from time import sleep
 from functools import wraps
@@ -23,7 +23,7 @@ def stable_retry(function, ExceptionType=Exception, delay=5, backoff=1.20):
             except ExceptionType as e:
                 log.error(
                     "{0}, Api connecion failed Retrying in {1} seconds...".format(e, mdelay))
-                log.error(traceback.print_exc)
+                log.error(print_exc())
                 sleep(mdelay)
                 mretries -= 1
                 mdelay *= backoff
@@ -48,6 +48,6 @@ def configurable_stable_retry(ExceptionType=Exception, retries=3, delay=5, backo
                     mdelay *= backoff
             log.error("Failed to connect to API within {0} retr{1}".format(
                 retries, "y" if retries else "ies"))
-            log.error(traceback.print_exc)
+            log.error(print_exc())
         return f_retry
     return stable_retry
