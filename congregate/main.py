@@ -40,7 +40,7 @@ Usage:
     congregate validate-staged-groups-schema
     congregate validate-staged-projects-schema
     congregate map-users [--commit]
-    congregate generate-diff [--staged]
+    congregate generate-diff [--processes=<n>] [--staged]
     congregate clean [--commit]
     congregate obfuscate
     congregate -h | --help
@@ -147,8 +147,10 @@ config = conf.Config()
 
 if __name__ == '__main__':
     arguments = docopt(__doc__)
-    DRY_RUN = True if not arguments["--commit"] else False
+    DRY_RUN = False if arguments["--commit"] else True
     STAGED = True if arguments["--staged"] else False
+    PROCESSES = arguments["--processes"] if arguments["--processes"] else None
+
     if arguments["configure"]:
         generate_config()
     else:
@@ -177,10 +179,7 @@ if __name__ == '__main__':
             from congregate.cli import list_projects, stage_projects, do_all
         if config.external_source_url is not None:
             if arguments["migrate"]:
-                if arguments["--processes"]:
-                    migrate.migrate(processes=arguments["--processes"])
-                else:
-                    migrate.migrate()
+                migrate.migrate(processes=PROCESSES)
             elif arguments["ui"]:
                 # os.environ["FLASK_APP"] = "%s/congregate/ui:app" % app_path
                 os.chdir(app_path + "/congregate")
@@ -208,14 +207,13 @@ if __name__ == '__main__':
                 stage_projects.stage_projects(
                     arguments['<projects>'], dry_run=DRY_RUN)
             if arguments["migrate"]:
-                processes = arguments["--processes"] if arguments["--processes"] else None
                 skip_users = True if arguments["--skip-users"] else False
                 skip_group_export = True if arguments["--skip-group-export"] else False
                 skip_group_import = True if arguments["--skip-group-import"] else False
                 skip_project_import = True if arguments["--skip-project-import"] else False
                 skip_project_export = True if arguments["--skip-project-export"] else False
                 migrate.migrate(
-                    processes=processes,
+                    processes=PROCESSES,
                     dry_run=DRY_RUN,
                     skip_users=skip_users,
                     skip_group_export=skip_group_export,
@@ -332,15 +330,15 @@ if __name__ == '__main__':
                 clean_data(dry_run=DRY_RUN)
             if arguments["generate-diff"]:
                 user_diff = UserDiffClient(
-                    "/data/user_migration_results.json", staged=STAGED)
+                    "/data/user_migration_results.json", staged=STAGED, processes=PROCESSES)
                 user_diff.generate_html_report(
                     user_diff.generate_diff_report(), "/data/user_migration_results.html")
                 group_diff = GroupDiffClient(
-                    "/data/group_migration_results.json", staged=STAGED)
+                    "/data/group_migration_results.json", staged=STAGED, processes=PROCESSES)
                 group_diff.generate_html_report(
                     group_diff.generate_diff_report(), "/data/group_migration_results.html")
                 project_diff = ProjectDiffClient(
-                    "/data/project_migration_results.json", staged=STAGED)
+                    "/data/project_migration_results.json", staged=STAGED, processes=PROCESSES)
                 project_diff.generate_html_report(
                     project_diff.generate_diff_report(), "/data/project_migration_results.html")
             if arguments["obfuscate"]:

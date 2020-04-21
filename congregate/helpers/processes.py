@@ -1,6 +1,7 @@
+from traceback import print_exc
 from multiprocessing import Pool, cpu_count
-from congregate.helpers.base_class import BaseClass
 from congregate.helpers.misc_utils import json_pretty
+from congregate.helpers.base_class import BaseClass
 
 b = BaseClass()
 _func = None
@@ -40,6 +41,7 @@ def handle_multi_process_write_to_file_and_return_results(function, results_func
             print("Found None ({}). Stopping write to file".format(te))
         except Exception as e:
             b.log.error("Migration processes failed with error:\n{}".format(e))
+            b.log.error(print_exc())
         else:
             f.write("\n]")
         finally:

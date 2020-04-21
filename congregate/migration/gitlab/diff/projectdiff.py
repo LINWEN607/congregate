@@ -4,6 +4,7 @@ from congregate.migration.gitlab.api.issues import IssuesApi
 from congregate.migration.gitlab.api.merge_requests import MergeRequestsApi
 from congregate.migration.gitlab.api.project_repository import ProjectRepositoryApi
 from congregate.helpers.misc_utils import rewrite_json_list_into_dict, get_rollback_log
+from congregate.helpers.migrate_utils import get_dst_path_with_namespace
 from congregate.helpers.processes import handle_multi_process_write_to_file_and_return_results
 
 
@@ -12,7 +13,7 @@ class ProjectDiffClient(BaseDiffClient):
         Extension of BaseDiffClient focused on finding the differences between migrated projects
     '''
 
-    def __init__(self, results_path, staged=False, rollback=False):
+    def __init__(self, results_path, staged=False, rollback=False, processes=None):
         super(ProjectDiffClient, self).__init__()
         self.projects_api = ProjectsApi()
         self.issues_api = IssuesApi()
@@ -21,6 +22,7 @@ class ProjectDiffClient(BaseDiffClient):
         self.rollback = rollback
         self.results = rewrite_json_list_into_dict(
             self.load_json_data("{0}{1}".format(self.app_path, results_path)))
+        self.processes = processes
         self.keys_to_ignore = [
             "id",
             "_links",
@@ -34,14 +36,12 @@ class ProjectDiffClient(BaseDiffClient):
             "forking_access_level",
             "container_expiration_policy"
         ]
-
         if staged:
             self.source_data = self.load_json_data(
                 "%s/data/stage.json" % self.app_path)
         else:
             self.source_data = self.load_json_data(
                 "%s/data/project_json.json" % self.app_path)
-
         self.source_data = [i for i in self.source_data if i]
 
     def generate_diff_report(self):
@@ -49,7 +49,7 @@ class ProjectDiffClient(BaseDiffClient):
         self.log.info("{}Generating Project Diff Report".format(
             get_rollback_log(self.rollback)))
         results = handle_multi_process_write_to_file_and_return_results(
-            self.generate_single_diff_report, self.return_only_accuracies, self.source_data, "%s/data/project_diff.json" % self.app_path)
+            self.generate_single_diff_report, self.return_only_accuracies, self.source_data, "%s/data/project_diff.json" % self.app_path, processes=self.processes)
 
         for result in results:
             diff_report.update(result)
@@ -60,18 +60,26 @@ class ProjectDiffClient(BaseDiffClient):
 
     def generate_single_diff_report(self, project):
         diff_report = {}
-        project_path = project["path_with_namespace"]
-        if self.results.get(project_path):
-            if self.asset_exists(self.projects_api.get_project, self.results[project_path].get("id")):
-                project_diff = self.handle_endpoints(project)
-                diff_report[project_path] = project_diff
-                try:
-                    diff_report[project_path]["overall_accuracy"] = self.calculate_overall_accuracy(
-                        diff_report[project_path])
-                    return diff_report
-                except Exception:
-                    self.log.info("Failed to generate diff for %s" %
-                                  project_path)
+        project_path = get_dst_path_with_namespace(project)
+        if isinstance(self.results.get(project_path), int) and self.results.get(project_path):
+            return {
+                project_path: {
+                    "info": "project already migrated",
+                    "overall_accuracy": {
+                        "accuracy": 1,
+                        "result": "uknown"
+                    }
+                }
+            }
+        elif self.results.get(project_path) and self.asset_exists(self.projects_api.get_project, self.results[project_path].get("id")):
+            project_diff = self.handle_endpoints(project)
+            diff_report[project_path] = project_diff
+            try:
+                diff_report[project_path]["overall_accuracy"] = self.calculate_overall_accuracy(
+                    diff_report[project_path])
+                return diff_report
+            except Exception:
+                self.log.info("Failed to generate diff for %s" % project_path)
         return {
             project_path: {
                 "error": "project missing",
@@ -102,32 +110,20 @@ class ProjectDiffClient(BaseDiffClient):
                 project, self.projects_api.get_all_project_environments)
             project_diff["/projects/:id/protected_environments"] = self.generate_project_diff(
                 project, self.projects_api.get_all_project_protected_environments)
-            project_diff["/projects/:id/jobs"] = self.generate_project_diff(
-                project, self.projects_api.get_all_project_jobs)
 
             # Membership
             project_diff["/projects/:id/members"] = self.generate_project_diff(
                 project, self.projects_api.get_members)
-            project_diff["/projects/:id/members/all"] = self.generate_project_diff(
-                project, self.projects_api.get_all_project_members_incl_inherited)
-            project_diff["/projects/:id/users"] = self.generate_project_diff(
-                project, self.projects_api.get_all_project_users)
 
             # Repository
             project_diff["/projects/:id/repository/tree"] = self.generate_project_diff(
                 project, self.repository_api.get_all_project_repository_tree)
             project_diff["/projects/:id/repository/contributors"] = self.generate_project_diff(
                 project, self.repository_api.get_all_project_repository_contributors)
-            project_diff["/projects/:id/repository/tags"] = self.generate_project_diff(
-                project, self.repository_api.get_all_project_repository_tags)
-            project_diff["/projects/:id/repository/commits"] = self.generate_project_diff(
-                project, self.repository_api.get_all_project_repository_commits)
             project_diff["/projects/:id/protected_tags"] = self.generate_project_diff(
                 project, self.projects_api.get_all_project_protected_tags)
 
             # Merge request approvers
-            project_diff["/projects/:id/merge_requests"] = self.generate_project_diff(
-                project, self.mr_api.get_all_project_merge_requests)
             project_diff["/projects/:id/approvals"] = self.generate_project_diff(
                 project, self.projects_api.get_project_level_mr_approval_configuration)
             project_diff["/projects/:id/approval_rules"] = self.generate_project_diff(
@@ -136,8 +132,6 @@ class ProjectDiffClient(BaseDiffClient):
             # Repository
             project_diff["/projects/:id/forks"] = self.generate_project_diff(
                 project, self.projects_api.get_all_project_forks)
-            project_diff["/projects/:id/repository/branches"] = self.generate_project_diff(
-                project, self.repository_api.get_all_project_repository_branches)
             project_diff["/projects/:id/protected_branches"] = self.generate_project_diff(
                 project, self.projects_api.get_all_project_protected_branches)
             project_diff["/projects/:id/push_rule"] = self.generate_project_diff(
@@ -166,8 +160,6 @@ class ProjectDiffClient(BaseDiffClient):
                 project, self.projects_api.get_all_project_custom_attributes)
             project_diff["/projects/:id/registry/repositories"] = self.generate_project_diff(
                 project, self.projects_api.get_all_project_registry_repositories)
-            project_diff["/projects/:id/events"] = self.generate_project_diff(
-                project, self.projects_api.get_all_project_events)
             project_diff["/projects/:id/hooks"] = self.generate_project_diff(
                 project, self.projects_api.get_all_project_hooks)
             project_diff["/projects/:id/snippets"] = self.generate_project_diff(
@@ -178,4 +170,4 @@ class ProjectDiffClient(BaseDiffClient):
         return project_diff
 
     def generate_project_diff(self, project, endpoint, **kwargs):
-        return self.generate_diff(project, "path_with_namespace", endpoint, **kwargs)
+        return self.generate_diff(project, "path_with_namespace", endpoint, parent_group=self.config.parent_group_path, **kwargs)
