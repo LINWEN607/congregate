@@ -1,6 +1,5 @@
 import json
 import base64
-from traceback import print_exc
 from types import GeneratorType
 from bs4 import BeautifulSoup as bs
 from json2html import json2html
@@ -69,15 +68,18 @@ class BaseDiffClient(BaseClass):
                 if isinstance(source_data, list):
                     if obfuscate:
                         for i, _ in enumerate(source_data):
-                            source_data[i] = self.obfuscate_values(source_data[i])
+                            source_data[i] = self.obfuscate_values(
+                                source_data[i])
                         for i, _ in enumerate(destination_data):
                             destination_data[i] = self.obfuscate_values(
                                 destination_data[i])
-                    diff = engine._compare_arrays(source_data, destination_data)
+                    diff = engine._compare_arrays(
+                        source_data, destination_data)
                 else:
                     if obfuscate:
                         source_data = self.obfuscate_values(source_data)
-                        destination_data = self.obfuscate_values(destination_data)
+                        destination_data = self.obfuscate_values(
+                            destination_data)
                     diff = engine.compare_dicts(source_data, destination_data)
                 if source_data:
                     accuracy = 0
@@ -88,7 +90,8 @@ class BaseDiffClient(BaseClass):
                                     accuracy += self.calculate_individual_accuracy(
                                         diff[i], source_data[i], critical_key, parent_group=parent_group)
                             if accuracy != 0:
-                                accuracy = float(accuracy) / float(len(source_data))
+                                accuracy = float(accuracy) / \
+                                    float(len(source_data))
                         else:
                             accuracy = 1.0
                     else:
@@ -105,13 +108,12 @@ class BaseDiffClient(BaseClass):
             "accuracy": accuracy
         }
 
-    def generate_diff(self, asset, key, endpoint, critical_key=None, obfuscate=False, **kwargs):
+    def generate_diff(self, asset, key, endpoint, critical_key=None, obfuscate=False, parent_group=None, **kwargs):
         source_data = self.generate_cleaned_instance_data(
             endpoint(asset["id"], self.config.source_host, self.config.source_token, **kwargs))
         if source_data:
-            identifier = asset[key]
-            if self.results.get(identifier.lower()) is not None:
-                identifier = identifier.lower()
+            identifier = "{0}/{1}".format(parent_group,
+                                          asset[key]) if parent_group else asset[key]
             if self.results.get(identifier) is not None:
                 if isinstance(self.results[identifier], dict):
                     destination_id = self.results[identifier]["id"]
@@ -124,7 +126,7 @@ class BaseDiffClient(BaseClass):
             else:
                 destination_data = self.generate_empty_data(
                     source_data)
-            return self.diff(source_data, destination_data, critical_key=critical_key, obfuscate=obfuscate)
+            return self.diff(source_data, destination_data, critical_key=critical_key, obfuscate=obfuscate, parent_group=parent_group)
 
         return self.empty_diff()
 
@@ -136,10 +138,7 @@ class BaseDiffClient(BaseClass):
         if critical_key in diff:
             diff_minus = diff[critical_key]['---']
             diff_plus = diff[critical_key]['+++']
-            if parent_group:
-                if parent_group not in diff_plus:
-                    return 0
-            elif diff_minus.lower() != diff_plus.lower():
+            if (parent_group and parent_group not in diff_plus) or diff_minus.lower() != diff_plus.lower():
                 return 0
         return original_accuracy
 
@@ -305,7 +304,8 @@ class BaseDiffClient(BaseClass):
 
     def asset_exists(self, endpoint, identifier):
         if identifier:
-            resp = endpoint(identifier, self.config.destination_host, self.config.destination_token)
+            resp = endpoint(identifier, self.config.destination_host,
+                            self.config.destination_token)
             if not is_error_message_present(resp):
                 return True
         return False
