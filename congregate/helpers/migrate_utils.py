@@ -72,9 +72,13 @@ def get_project_namespace(p):
         :param p: The JSON object representing a GitLab project
         :return: Destination group project namespace
     """
-    if b.config.parent_id is not None and p["project_type"] != "user":
-        return "{0}/{1}".format(b.config.parent_group_path, p["namespace"])
-    return p["namespace"]
+    p_type = p["project_type"] if p.get(
+        "project_type", None) else p["namespace"]["kind"]
+    p_namespace = p["namespace"]["full_path"] if isinstance(
+        p.get("namespace", None), dict) else p["namespace"]
+    if b.config.parent_id is not None and p_type != "user":
+        return "{0}/{1}".format(b.config.parent_group_path, p_namespace)
+    return p_namespace
 
 
 def get_full_path_with_parent_namespace(full_path):
@@ -96,7 +100,9 @@ def is_user_project(p):
         :param p: The JSON object representing a GitLab project
         :return: True if a user project, else False
     """
-    return p.get("project_type", None) is not None and p["project_type"] == "user"
+    p_type = p["project_type"] if p.get(
+        "project_type", None) else p["namespace"]["kind"]
+    return p_type == "user"
 
 
 def get_user_project_namespace(p):
@@ -107,13 +113,15 @@ def get_user_project_namespace(p):
         :param: namespace:
         :return: Destination user project namespace
     """
-    if is_dot_com(b.config.destination_host) or p["namespace"] == "root":
+    p_namespace = p["namespace"]["full_path"] if isinstance(
+        p.get("namespace", None), dict) else p["namespace"]
+    if is_dot_com(b.config.destination_host) or p_namespace == "root":
         b.log.info("User project {0} is assigned to import user id (ID: {1})".format(
             p["path_with_namespace"], b.config.import_user_id))
         return users_api.get_user(
             b.config.import_user_id, b.config.destination_host, b.config.destination_token).json()["username"]
     else:
-        return p["namespace"]
+        return p_namespace
 
 
 def get_dst_path_with_namespace(p):
