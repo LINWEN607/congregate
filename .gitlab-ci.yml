@@ -1,12 +1,44 @@
+stages:
+  - build
+  - test
+  - release
+  - deploy
+
 include:
   - template: SAST.gitlab-ci.yml
   - template: Code-Quality.gitlab-ci.yml
 
 variables:
-  DOCKER_DRIVER: overlay2
+  DOCKER_VERSION: "19.03.1"
   TEST_IMAGE_NAME: "$CI_REGISTRY_IMAGE/test:latest"
   SAST_DISABLE_DIND: "true"
   SAST_DEFAULT_ANALYZERS: "bandit,secrets"
+
+default:
+  image: "$TEST_IMAGE_NAME"
+  tags:
+    - gitlab-org
+
+workflow:
+  rules:
+    # For merge requests, create a pipeline.
+    - if: "$CI_MERGE_REQUEST_IID"
+    # For `master` branch, create a pipeline (this includes on schedules, pushes, merges, etc.).
+    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
+    # For tags, create a pipeline.
+    - if: "$CI_COMMIT_TAG"
+
+.use-docker-in-docker:
+  image: docker:${DOCKER_VERSION}
+  services:
+    - docker:${DOCKER_VERSION}-dind
+  variables:
+    DOCKER_DRIVER: overlay2
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_TLS_CERTDIR: ""
+  tags:
+    # See https://gitlab.com/gitlab-com/www-gitlab-com/-/issues/7019 for tag descriptions
+    - gitlab-org-docker
 
 code_quality:
   artifacts:
@@ -16,62 +48,57 @@ sast:
   artifacts:
     paths: [gl-sast-report.json]
 
-stages:
-  - build
-  - test
-  - release
-  - deploy
-
 build:
-  image: docker:19.03.1
-  services:
-    - docker:19.03.1-dind
+  extends: .use-docker-in-docker
   stage: build
   script:
     - docker login ${CI_REGISTRY} -u gitlab-ci-token -p $CI_BUILD_TOKEN
     - docker build --tag "$TEST_IMAGE_NAME" docker/test
     - docker push "$TEST_IMAGE_NAME"
-  only:
-    changes:
-      - docker/test/Dockerfile
+  rules:
+    - changes:
+        - .gitlab-ci.yml
+        - docker/test/Dockerfile
 
-.test-job: &test-job
+.test-job:
   stage: test
-  image: "$TEST_IMAGE_NAME"
   before_script:
     - mkdir data
     - echo ${Dummy_config} > $CONGREGATE_PATH/data/congregate.conf
     - pip install poetry
     - poetry install
-  only:
-    changes:
-      - congregate/**/*
-      - docker/test/Dockerfile
-      - congregate.sh
-      - SAST.gitlab-ci.yml
-      - code_quality.html
+  rules:
+    - changes:
+        - congregate/**/*
+        - docker/test/Dockerfile
+        - congregate.sh
+        - SAST.gitlab-ci.yml
+        - code_quality.html
 
 test:pylint:
-  <<: *test-job
+  extends: .test-job
+  rules:
+    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
   script:
     - ./pylint.sh
-  only:
-    - /^master$/
   artifacts:
     paths:
       - pylint.txt
 
 test:unit:
-  <<: *test-job
+  extends: .test-job
   script:
     - poetry run pytest -m 'not e2e and not e2e_setup' --cov-config=.coveragerc --cov=congregate congregate/tests/
 
 test:end-to-end:
+  extends:
+    - .test-job
+    - .use-docker-in-docker
+  image: "${TEST_IMAGE_NAME}"
   services:
-    - name: docker:19.03.1-dind
+    - name: docker:${DOCKER_VERSION}-dind
     - name: gitlab/gitlab-ee:nightly
       alias: gitlab_destination
-  <<: *test-job
   tags:
     - congregate-auto-scale-runner
   script:
@@ -94,13 +121,13 @@ test:end-to-end:
       - data/audit.log
 
 rolling release:
+  extends: .use-docker-in-docker
   stage: release
-  image: docker:stable
+  rules:
+    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
   variables:
     RELEASE_IMAGE_NAME: "$CI_REGISTRY_IMAGE/$CI_COMMIT_REF_NAME:$CI_COMMIT_SHA"
     LATEST: "$CI_REGISTRY_IMAGE/$CI_COMMIT_REF_NAME:latest"
-  services:
-    - docker:19.03.1-dind
   before_script:
     - docker login ${CI_REGISTRY} -u gitlab-ci-token -p $CI_BUILD_TOKEN
   script:
@@ -109,17 +136,15 @@ rolling release:
     - docker image tag $RELEASE_IMAGE_NAME $LATEST
     - docker push "$RELEASE_IMAGE_NAME"
     - docker push "$LATEST"
-  only:
-    - /^master$/
 
 release-tag:
+  extends: .use-docker-in-docker
+  rules:
+    - if: "$CI_COMMIT_TAG"
   stage: release
-  image: docker:stable
   variables:
     RELEASE_IMAGE_NAME: "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME"
     LATEST: "$CI_REGISTRY_IMAGE:latest"
-  services:
-    - docker:19.03.1-dind
   before_script:
     - docker login ${CI_REGISTRY} -u gitlab-ci-token -p $CI_BUILD_TOKEN
   script:
@@ -128,12 +153,11 @@ release-tag:
     - docker image tag $RELEASE_IMAGE_NAME $LATEST
     - docker push "$RELEASE_IMAGE_NAME"
     - docker push "$LATEST"
-  only:
-    - tags
 
 pages:
   stage: deploy
-  image: "$TEST_IMAGE_NAME"
+  rules:
+    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
   dependencies:
     - code_quality
   script:
@@ -148,5 +172,3 @@ pages:
   artifacts:
     paths:
       - public
-  only:
-    - master
