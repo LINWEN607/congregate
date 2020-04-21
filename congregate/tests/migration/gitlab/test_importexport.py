@@ -73,9 +73,9 @@ class ImportExportClientTests(unittest.TestCase):
                 "expires_at": "2012-10-22T14:13:35Z",
                 "access_level": 30,
                 "group_saml_identity": {
-                "extern_uid":"ABC-1234567890",
-                "provider": "group_saml",
-                "saml_provider_id": 10
+                    "extern_uid": "ABC-1234567890",
+                    "provider": "group_saml",
+                    "saml_provider_id": 10
                 }
             }
         ]
@@ -157,11 +157,13 @@ class ImportExportClientTests(unittest.TestCase):
                                                         self.original_project_path, self.original_namespace_path, self.original_project_override_params, [])
         self.assertEqual(import_id, 12345)
 
+    @mock.patch('congregate.helpers.conf.Config.destination_host', new_callable=mock.PropertyMock)
     @mock.patch('congregate.helpers.conf.Config.importexport_wait', new_callable=mock.PropertyMock)
     @mock.patch('congregate.migration.gitlab.importexport.ImportExportClient.attempt_import')
     @mock.patch.object(ProjectsApi, "get_project_import_status", side_effect=import_status_failed)
     @mock.patch.object(ProjectsApi, "get_project")
-    def test_get_import_id_from_response_failed_retry(self, get_project, mock_status, mock_import_response, wait):
+    def test_get_import_id_from_response_failed_retry(self, get_project, mock_status, mock_import_response, wait, dstn_host):
+        dstn_host.return_value = "https://gitlab.com"
         nok_get_project = mock.MagicMock()
         type(nok_get_project).status_code = mock.PropertyMock(return_value=404)
         get_project.return_value = nok_get_project

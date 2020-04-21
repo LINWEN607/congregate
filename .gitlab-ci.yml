@@ -34,7 +34,6 @@ workflow:
     - docker:${DOCKER_VERSION}-dind
   variables:
     DOCKER_DRIVER: overlay2
-    DOCKER_HOST: tcp://docker:2375
     DOCKER_TLS_CERTDIR: ""
   tags:
     # See https://gitlab.com/gitlab-com/www-gitlab-com/-/issues/7019 for tag descriptions
@@ -72,8 +71,6 @@ build:
         - congregate/**/*
         - docker/test/Dockerfile
         - congregate.sh
-        - SAST.gitlab-ci.yml
-        - code_quality.html
 
 test:pylint:
   extends: .test-job
