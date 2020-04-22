@@ -57,7 +57,7 @@ class MigrationEndToEndTestSetup(unittest.TestCase):
             "False",  # keep_blocked_users
             "True",  # password reset email
             "False",  # randomized password
-            "10"  # import wait time
+            "5"  # import wait time
         ]
         print json.dumps(values)
         tokens = [
@@ -67,6 +67,7 @@ class MigrationEndToEndTestSetup(unittest.TestCase):
 
         g = input_generator(values)
         t = input_generator(tokens)
-        with mock.patch('__builtin__.raw_input', lambda x: next(g)):
-            with mock.patch('congregate.cli.config.obfuscate', lambda x: base64.b64encode(next(t))):
-                config.generate_config()
+        with mock.patch('congregate.cli.config.test_registries', lambda x, y, z: None):
+            with mock.patch('__builtin__.raw_input', lambda x: next(g)):
+                with mock.patch('congregate.cli.config.obfuscate', lambda x: base64.b64encode(next(t))):
+                    config.generate_config()

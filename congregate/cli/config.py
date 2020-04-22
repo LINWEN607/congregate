@@ -1,16 +1,20 @@
 from os import getcwd, path, mkdir, makedirs
 from ConfigParser import SafeConfigParser as ConfigParser, NoOptionError
+from docker import from_env
+from docker.errors import APIError, TLSParameterError
 
 from congregate.helpers.misc_utils import get_congregate_path, obfuscate, deobfuscate
 from congregate.helpers.configuration_validator import ConfigurationValidator
 from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.api.groups import GroupsApi
+from congregate.migration.gitlab.registries import RegistryClient
 from congregate.aws import AwsClient
 
 
 users = UsersApi()
 groups = GroupsApi()
 aws = AwsClient()
+reg_client = RegistryClient()
 app_path = get_congregate_path()
 config_path = "{}/data/congregate.conf".format(app_path)
 
@@ -75,6 +79,8 @@ def generate_config():
             "Source instance GitLab access token  (Settings -> Access tokens): "))
         config.set("SOURCE", "src_registry_url", raw_input(
             "Source instance Container Registry URL: "))
+        test_registries(deobfuscate(config.get("SOURCE", "src_access_token")), config.get(
+            "SOURCE", "src_registry_url"), migration_user)
         max_export_wait_time = raw_input(
             "Max wait time (in seconds) for project export status (default: 3600): ")
         config.set("SOURCE", "max_export_wait_time",
@@ -83,6 +89,8 @@ def generate_config():
         # Non-external destination instance settings
         config.set("DESTINATION", "dstn_registry_url", raw_input(
             "Destination instance Container Registry URL: "))
+        test_registries(deobfuscate(config.get("DESTINATION", "dstn_access_token")), config.get(
+            "DESTINATION", "dstn_registry_url"), migration_user)
         config.set("DESTINATION", "parent_group_id",
                    raw_input("Migrating to a parent group (e.g. gitlab.com)? Parent group ID (Group -> Settings -> General): "))
 
@@ -196,6 +204,21 @@ def write_to_file(config):
     with open(config_path, "w") as f:
         print("Writing configuration to file ({})...".format(config_path))
         config.write(f)
+
+
+def test_registries(token, registry, user):
+    try:
+        client = from_env()
+        client.login(username=user.get("username", None),
+                     password=token, registry=registry)
+    except (APIError, TLSParameterError) as err:
+        print("Failed to login to docker registry {0}, with error:\n{1}".format(
+            registry, err))
+        exit()
+    except Exception as e:
+        print("Login attempt to docker registry {0} failed, with error:\n{1}".format(
+            registry, e))
+        exit()
 
 
 def update_config(data):
