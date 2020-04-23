@@ -7,6 +7,7 @@ Copyright (c) 2020 - GitLab
 import json
 import re
 from congregate.helpers.misc_utils import get_dry_log, remove_dupes
+from congregate.helpers.migrate_utils import is_top_level_group
 from congregate.helpers.base_class import BaseClass
 from congregate.migration.gitlab.api.projects import ProjectsApi
 
@@ -82,10 +83,13 @@ def build_staging_data(projects_to_stage, dry_run=True):
                 #     staged_groups.append(rewritten_groups[group_to_stage])
 
                 for g in groups:
-                    if not g.get("parent_id", None):
-                        b.log.info("Staging top level group {0} (ID: {1})".format(
+                    if is_top_level_group(g):
+                        b.log.info("Staging top-level group {0} (ID: {1})".format(
                             g["full_path"], g["id"]))
-                        staged_groups.append(g)
+                    else:
+                        b.log.info(
+                            "Staging sub-group {0} (ID: {1})".format(g["full_path"], g["id"]))
+                    staged_groups.append(g)
 
                 obj["members"] = members
                 staging.append(obj)

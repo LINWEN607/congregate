@@ -17,7 +17,6 @@ class MigrationEndToEndTestSetup(unittest.TestCase):
         self.t = token_generator()
         self.generate_default_config_with_tokens()
         self.s = SeedDataGenerator()
-        # self.s.generate_seed_data(dry_run=False)
 
     def test_seed_data(self):
         self.s.generate_seed_data(dry_run=False)

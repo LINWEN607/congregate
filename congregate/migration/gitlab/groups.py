@@ -117,7 +117,7 @@ class GroupsClient(BaseClass):
             g = group_dict[gid]
             if is_top_level_group(g):
                 self.log.info(
-                    "Staging top level group {0} (ID: {1})".format(g["full_path"], g["id"]))
+                    "Staging top-level group {0} (ID: {1})".format(g["full_path"], g["id"]))
             else:
                 self.log.info(
                     "Staging sub-group {0} (ID: {1})".format(g["full_path"], g["id"]))
