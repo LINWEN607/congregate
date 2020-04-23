@@ -3,7 +3,7 @@ from requests.exceptions import RequestException
 
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.misc_utils import remove_dupes, get_timedelta, json_pretty
-from congregate.helpers.migrate_utils import get_full_path_with_parent_namespace
+from congregate.helpers.migrate_utils import get_full_path_with_parent_namespace, is_top_level_group
 from congregate.migration.gitlab.variables import VariablesClient
 from congregate.migration.gitlab.badges import BadgesClient
 from congregate.migration.gitlab.api.groups import GroupsApi
@@ -115,14 +115,12 @@ class GroupsClient(BaseClass):
     def traverse_staging(self, gid, group_dict, staged_groups):
         if group_dict.get(gid, None) is not None:
             g = group_dict[gid]
-            if not g.get("parent_id", None):
+            if is_top_level_group(g):
                 self.log.info(
                     "Staging top level group {0} (ID: {1})".format(g["full_path"], g["id"]))
             else:
-                # TODO: Refactor to re-introduce staging sub-groups
                 self.log.info(
-                    "SKIP: Staging sub-group {0} (ID: {1})".format(g["full_path"], g["id"]))
-                return
+                    "Staging sub-group {0} (ID: {1})".format(g["full_path"], g["id"]))
             staged_groups.append(g)
 
     def is_group_non_empty(self, group):

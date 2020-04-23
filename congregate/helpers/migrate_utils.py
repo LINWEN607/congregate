@@ -98,7 +98,7 @@ def is_user_project(p):
     Determine if a passed staged_project object (json) is a user project or not
 
         :param p: The JSON object representing a GitLab project
-        :return: True if a user project, else False
+        :return: True if user project, else False
     """
     p_type = p["project_type"] if p.get(
         "project_type", None) else p["namespace"]["kind"]
@@ -145,3 +145,14 @@ def get_results(res):
         "Total": len(res),
         "Successful": len(res) - Counter(v for r in res for k, v in r.items() if not v).get(False, 0)
     }
+
+
+# TODO: Add OR case for migrating from a parent group (future src_parent_id)
+def is_top_level_group(g):
+    """
+    Determine if group is a top level or sub group.
+
+        :param g: The JSON object representing a GitLab group
+        :return: True if top-level-group, else False
+    """
+    return not g.get("parent_id", None)

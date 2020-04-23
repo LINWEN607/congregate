@@ -4,7 +4,7 @@ from congregate.migration.gitlab.api.issues import IssuesApi
 from congregate.migration.gitlab.api.merge_requests import MergeRequestsApi
 from congregate.migration.gitlab.groups import GroupsClient
 from congregate.helpers.misc_utils import rewrite_json_list_into_dict, get_rollback_log
-from congregate.helpers.migrate_utils import get_full_path_with_parent_namespace
+from congregate.helpers.migrate_utils import get_full_path_with_parent_namespace, is_top_level_group
 from congregate.helpers.processes import handle_multi_process_write_to_file_and_return_results
 
 
@@ -36,9 +36,9 @@ class GroupDiffClient(BaseDiffClient):
         else:
             self.source_data = self.load_json_data(
                 "%s/data/groups.json" % self.app_path)
-            # Keep only top level groups
-            self.source_data = [
-                d for d in self.source_data if not d.get("parent_id", None)]
+        # Keep only top level groups
+        self.source_data = [
+            d for d in self.source_data if is_top_level_group(d)]
 
     def generate_diff_report(self):
         diff_report = {}

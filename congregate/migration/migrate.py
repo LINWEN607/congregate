@@ -94,26 +94,27 @@ def migrate(
             users.migrate_user_info(dry_run=_DRY_RUN, processes=_PROCESSES)
 
         # Migrate groups
-        migrate_group_info(skip_group_export, skip_group_import)
+        migrate_group_info(start, skip_group_export, skip_group_import)
 
         # Migrate projects
-        migrate_project_info(skip_project_export, skip_project_import)
+        migrate_project_info(start, skip_project_export, skip_project_import)
 
         # Migrate system hooks (except to gitlab.com)
         if is_dot_com(b.config.destination_host):
             hooks.migrate_system_hooks(dry_run=_DRY_RUN)
 
         # Remove import user from parent group to avoid inheritance (self-managed only)
-        if b.config.parent_id and not _DRY_RUN and not is_dot_com(b.config.destination_host):
+        if not _DRY_RUN and b.config.parent_id and not is_dot_com(b.config.destination_host):
             groups.remove_import_user(b.config.parent_id)
 
     add_post_migration_stats(start)
 
 
-def are_results(results, var, stage):
+def are_results(results, var, stage, start):
     if not results:
         b.log.warning(
             "Results from {0} {1} returned as empty. Aborting.".format(var, stage))
+        add_post_migration_stats(start)
         exit()
 
 
@@ -123,8 +124,9 @@ def is_loc_supported(loc):
         exit()
 
 
-def migrate_group_info(skip_group_export=False, skip_group_import=False):
-    staged_groups = groups.get_staged_groups()
+def migrate_group_info(start, skip_group_export=False, skip_group_import=False):
+    staged_groups = [g for g in groups.get_staged_groups(
+    ) if migrate_utils.is_top_level_group(g)]
     dry_log = get_dry_log(_DRY_RUN)
     if staged_groups:
         if not skip_group_export:
@@ -132,7 +134,7 @@ def migrate_group_info(skip_group_export=False, skip_group_import=False):
             export_results = start_multi_process(
                 handle_exporting_groups, staged_groups, processes=_PROCESSES)
 
-            are_results(export_results, "group", "export")
+            are_results(export_results, "group", "export", start)
 
             # Create list of groups that failed export
             failed = migrate_utils.get_failed_export_from_results(
@@ -155,7 +157,7 @@ def migrate_group_info(skip_group_export=False, skip_group_import=False):
             import_results = start_multi_process(
                 handle_importing_groups, staged_groups, processes=_PROCESSES)
 
-            are_results(import_results, "group", "import")
+            are_results(import_results, "group", "import", start)
 
             # append Total : Successful count of groups imports
             import_results.append(migrate_utils.get_results(import_results))
@@ -163,6 +165,13 @@ def migrate_group_info(skip_group_export=False, skip_group_import=False):
                        .format(dry_log, json_pretty(import_results)))
             write_results_to_file(
                 import_results, result_type="group", log=b.log)
+
+            # Migrate sub-group info
+            staged_subgroups = [g for g in groups.get_staged_groups(
+            ) if not migrate_utils.is_top_level_group(g)]
+            if staged_subgroups:
+                start_multi_process(migrate_subgroup_info,
+                                    staged_subgroups, processes=_PROCESSES)
         else:
             b.log.info("SKIP: Assuming staged groups will be later imported")
     else:
@@ -249,7 +258,39 @@ def handle_importing_groups(group):
     return result
 
 
-def migrate_project_info(skip_project_export=False, skip_project_import=False):
+def migrate_subgroup_info(subgroup):
+    full_path = subgroup["full_path"]
+    src_gid = subgroup["id"]
+    full_path_with_parent_namespace = migrate_utils.get_full_path_with_parent_namespace(
+        full_path)
+    try:
+        if isinstance(subgroup, str):
+            subgroup = json.loads(subgroup)
+        b.log.info("Searching on destination for sub-group {}".format(
+            full_path_with_parent_namespace))
+        dst_gid = groups.find_group_by_path(
+            b.config.destination_host, b.config.destination_token, full_path_with_parent_namespace)
+        if dst_gid:
+            b.log.info("{0}Sub-group {1} (ID: {2}) found on destination".format(
+                get_dry_log(_DRY_RUN), full_path, dst_gid))
+            if not _DRY_RUN:
+                # Migrate CI/CD Variables
+                variables.migrate_variables(
+                    dst_gid, src_gid, "group", full_path)
+                # Remove import user
+                groups.remove_import_user(dst_gid)
+        else:
+            b.log.info("{0}Sub-group {1} NOT found on destination".format(
+                get_dry_log(_DRY_RUN), full_path_with_parent_namespace))
+    except (RequestException, KeyError, OverflowError) as oe:
+        b.log.error(
+            "Failed to migrate sub-group {0} (ID: {1}) info with error:\n{2}".format(full_path, src_gid, oe))
+    except Exception as e:
+        b.log.error(e)
+        b.log.error(print_exc())
+
+
+def migrate_project_info(start, skip_project_export=False, skip_project_import=False):
     staged_projects = projects.get_staged_projects()
     dry_log = get_dry_log(_DRY_RUN)
     if staged_projects:
@@ -258,7 +299,7 @@ def migrate_project_info(skip_project_export=False, skip_project_import=False):
             export_results = start_multi_process(
                 handle_exporting_projects, staged_projects, processes=_PROCESSES)
 
-            are_results(export_results, "project", "export")
+            are_results(export_results, "project", "export", start)
 
             # Create list of projects that failed export
             failed = migrate_utils.get_failed_export_from_results(
@@ -282,7 +323,7 @@ def migrate_project_info(skip_project_export=False, skip_project_import=False):
             import_results = start_multi_process(
                 handle_importing_projects, staged_projects, processes=_PROCESSES)
 
-            are_results(import_results, "project", "import")
+            are_results(import_results, "project", "import", start)
 
             # append Total : Successful count of project imports
             import_results.append(migrate_utils.get_results(import_results))

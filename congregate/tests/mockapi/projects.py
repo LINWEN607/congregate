@@ -396,3 +396,133 @@ class MockProjectsApi():
             "reset_approvals_on_push": True,
             "disable_overriding_approvers_per_merge_request": False
         }
+
+    def get_staged_group_project(self):
+        return {
+            "snippets_access_level": "enabled",
+            "description": "",
+            "default_branch": "patch-01",
+            "visibility": "public",
+            "http_url_to_repo": "https://pse.tanuki.cloud/pmm-demo/spring-app-secure-2.git",
+            "shared_runners_enabled": False,
+            "project_type": "group",
+            "path": "spring-app-secure-2",
+            "id": 287,
+            "merge_requests_access_level": "enabled",
+            "repository_access_level": "enabled",
+            "builds_access_level": "enabled",
+            "archived": False,
+            "name": "spring-app-secure-2",
+            "wiki_access_level": "enabled",
+            "namespace": "pmm-demo",
+            "members": [],
+            "issues_access_level": "enabled",
+            "path_with_namespace": "pmm-demo/spring-app-secure-2"
+        }
+
+    def get_staged_user_project(self):
+        return {
+            "snippets_access_level": "enabled",
+            "description": "",
+            "default_branch": "patch-01",
+            "visibility": "public",
+            "http_url_to_repo": "https://pse.tanuki.cloud/pmm-demo/spring-app-secure-2.git",
+            "shared_runners_enabled": False,
+            "project_type": "user",
+            "path": "spring-app-secure-2",
+            "id": 287,
+            "merge_requests_access_level": "enabled",
+            "repository_access_level": "enabled",
+            "builds_access_level": "enabled",
+            "archived": False,
+            "name": "spring-app-secure-2",
+            "wiki_access_level": "enabled",
+            "namespace": "pmm-demo",
+            "members": [],
+            "issues_access_level": "enabled",
+            "path_with_namespace": "pmm-demo/spring-app-secure-2"
+        }
+
+    def get_staged_root_project(self):
+        return {
+            "snippets_access_level": "enabled",
+            "description": "",
+            "default_branch": "patch-01",
+            "visibility": "public",
+            "http_url_to_repo": "https://pse.tanuki.cloud/pmm-demo/spring-app-secure-2.git",
+            "shared_runners_enabled": False,
+            "project_type": "user",
+            "path": "spring-app-secure-2",
+            "id": 287,
+            "merge_requests_access_level": "enabled",
+            "repository_access_level": "enabled",
+            "builds_access_level": "enabled",
+            "archived": False,
+            "name": "spring-app-secure-2",
+            "wiki_access_level": "enabled",
+            "namespace": "root",
+            "members": [],
+            "issues_access_level": "enabled",
+            "path_with_namespace": "pmm-demo/spring-app-secure-2"
+        }
+
+    def get_staged_projects(self):
+        return [
+            {
+                "archived": False,
+                "builds_access_level": "enabled",
+                "default_branch": "master",
+                "description": "",
+                "http_url_to_repo": "https://dictionary.githost.io/dictionary-web/darci.git",
+                "id": 132,
+                "issues_access_level": "enabled",
+                "members": [],
+                "merge_requests_access_level": "enabled",
+                "name": "darci1",
+                "namespace": "dictionary-web",
+                "project_type": "group",
+                "repository_access_level": "enabled",
+                "shared_runners_enabled": False,
+                "snippets_access_level": "disabled",
+                "visibility": "private",
+                "wiki_access_level": "enabled"
+            },
+            {
+                "archived": False,
+                "builds_access_level": "enabled",
+                "default_branch": "master",
+                "description": "",
+                "http_url_to_repo": "https://dictionary.githost.io/dictionary-web/darci.git",
+                "id": 133,
+                "issues_access_level": "enabled",
+                "members": [],
+                "merge_requests_access_level": "enabled",
+                "name": "darci2",
+                "namespace": "dictionary-web",
+                "project_type": "group",
+                "repository_access_level": "enabled",
+                "shared_runners_enabled": False,
+                "snippets_access_level": "disabled",
+                "visibility": "private",
+                "wiki_access_level": "enabled"
+            },
+            {
+                "archived": True,
+                "builds_access_level": "enabled",
+                "default_branch": "master",
+                "description": "",
+                "http_url_to_repo": "https://dictionary.githost.io/dictionary-web/darci.git",
+                "id": 134,
+                "issues_access_level": "enabled",
+                "members": [],
+                "merge_requests_access_level": "enabled",
+                "name": "darci3",
+                "namespace": "dictionary-web",
+                "project_type": "group",
+                "repository_access_level": "enabled",
+                "shared_runners_enabled": False,
+                "snippets_access_level": "disabled",
+                "visibility": "private",
+                "wiki_access_level": "enabled"
+            }
+        ]

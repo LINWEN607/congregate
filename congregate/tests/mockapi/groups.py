@@ -153,6 +153,26 @@ class MockGroupsApi():
             ]
         }
 
+    def get_subgroup(self):
+        return {
+            "id": 4,
+            "name": "Twitter",
+            "path": "twitter",
+            "description": "Aliquid qui quis dignissimos distinctio ut commodi voluptas est.",
+            "visibility": "public",
+            "avatar_url": None,
+            "web_url": "https://gitlab.example.com/groups/twitter",
+            "request_access_enabled": False,
+            "full_name": "Twitter",
+            "full_path": "twitter",
+            "file_template_project_id": 1,
+            "parent_id": 1,
+            "shared_runners_minutes_limit": 133,
+            "extra_shared_runners_minutes_limit": 133,
+            "projects": [],
+            "shared_projects": []
+        }
+
     def get_all_groups_generator(self):
         groups_list = [
             {
@@ -440,5 +460,60 @@ class MockGroupsApi():
                 "state": "active",
                 "avatar_url": "https://secure.gravatar.com/avatar/77b6da6e1b9aa2527600bc7727f5bad8?s=80&d=identicon",
                 "id": 286
+            }
+        ]
+
+    def get_staged_groups(self):
+        return [
+            {
+                "lfs_enabled": True,
+                "request_access_enabled": False,
+                "project_creation_level": "developer",
+                "subgroup_creation_level": "owner",
+                "path": "pmm-demo-1",
+                "id": 129,
+                "parent_id": 814,
+                "share_with_group_lock": False,
+                "description": "PMM Demos",
+                "two_factor_grace_period": 48,
+                "visibility": "public",
+                "members": [],
+                "name": "pmm-demo-1",
+                "require_two_factor_authentication": False,
+                "full_path": "pmm-demo-1"
+            },
+            {
+                "lfs_enabled": True,
+                "request_access_enabled": False,
+                "project_creation_level": "developer",
+                "subgroup_creation_level": "owner",
+                "path": "pmm-demo-2",
+                "id": 129,
+                "parent_id": 814,
+                "share_with_group_lock": False,
+                "description": "PMM Demos",
+                "two_factor_grace_period": 48,
+                "visibility": "public",
+                "members": [],
+                "name": "pmm-demo-2",
+                "require_two_factor_authentication": False,
+                "full_path": "pmm-demo-2"
+            },
+            {
+                "lfs_enabled": True,
+                "request_access_enabled": False,
+                "project_creation_level": "developer",
+                "subgroup_creation_level": "owner",
+                "path": "pmm-demo-3",
+                "id": 129,
+                "parent_id": 814,
+                "share_with_group_lock": False,
+                "description": "PMM Demos",
+                "two_factor_grace_period": 48,
+                "visibility": "public",
+                "members": [],
+                "name": "pmm-demo-3",
+                "require_two_factor_authentication": False,
+                "full_path": "pmm-demo-3"
             }
         ]
