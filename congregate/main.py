@@ -244,7 +244,7 @@ if __name__ == '__main__':
                 run_ui = "gunicorn -k gevent -w 4 ui:app --bind=0.0.0.0:8000"
                 subprocess.call(run_ui.split(" "))
             if arguments["update-staged-user-info"]:
-                users.update_staged_user_info(dry_run=DRY_RUN)
+                users.search_for_staged_users(dry_run=DRY_RUN)
             if arguments["add-users-to-parent-group"]:
                 users.add_users_to_parent_group(dry_run=DRY_RUN)
             if arguments["update-aws-creds"]:

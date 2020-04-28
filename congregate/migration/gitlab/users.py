@@ -388,7 +388,7 @@ class UsersClient(BaseClass):
         with open("%s/data/newer_users.json" % self.app_path, "wb") as f:
             json.dump(newer_users, f, indent=4)
 
-    def update_staged_user_info(self, dry_run=True):
+    def search_for_staged_users(self, dry_run=True):
         """
         Read the information in staged_users.json and dump to new_users.json and users_not_found.json. Does the
         search based on the email address and *not* username
@@ -462,7 +462,7 @@ class UsersClient(BaseClass):
         """
             Remove FOUND users from staged users.
             Remove users NOT found from staged users, groups and projects.
-            Users NOT found input comes from update_staged_user_info.
+            Users NOT found input comes from search_for_staged_users.
             :return: Staged users
         """
         with open("{0}/data/{1}.json".format(self.app_path, data), "r") as f:
