@@ -3,6 +3,7 @@ import os
 import errno
 import json
 
+from glob import glob
 from shutil import copy
 from time import time
 from getpass import getpass
@@ -366,3 +367,17 @@ def write_results_to_file(import_results, result_type="project", log=None):
     write_json_to_file(file_path, import_results, log=log)
     copy(file_path, "%s/data/%s_migration_results.json" %
          (get_congregate_path(), result_type))
+
+def stitch_json_results(result_type="project", steps=0, log=None):
+    files = glob("%s/data/%s_results_*" % (get_congregate_path(), result_type))
+    files.sort(key=lambda f: f.split("results_")[1].replace(".json", ""), reverse=True)
+    files = files[:steps]
+    results = []
+    for result in files:
+        with open(result, "r") as f:
+            data = json.load(f)
+            results.append([r for r in data if r[next(iter(r))] != False])
+
+    file_path = "%s/data/%s_migration_results.json" % (
+        get_congregate_path(), result_type)
+    write_json_to_file(file_path, results, log=log)

@@ -221,3 +221,7 @@ def test_get_timedelta_exactly_twenty_four_hours():
 def test_validate_name():
     assert misc.validate_name(
         ":: This.is-how/WE do\n&it") == "This is how WE do it"
+
+
+def test_stitch_json():
+    pass
