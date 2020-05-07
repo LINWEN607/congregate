@@ -3,7 +3,7 @@ import os
 import errno
 import json
 
-from glob import glob
+import glob
 from shutil import copy
 from time import time
 from getpass import getpass
@@ -178,6 +178,9 @@ def write_json_to_file(path, data, log=None):
     with open(path, "w") as f:
         json.dump(data, f, indent=4)
 
+def read_json_file_into_object(path):
+    with open(path, "r") as f:
+        return json.load(f)
 
 def obfuscate(prompt):
     return base64.b64encode(getpass(prompt))
@@ -369,15 +372,12 @@ def write_results_to_file(import_results, result_type="project", log=None):
          (get_congregate_path(), result_type))
 
 def stitch_json_results(result_type="project", steps=0, log=None):
-    files = glob("%s/data/%s_results_*" % (get_congregate_path(), result_type))
+    files = glob.glob("%s/data/%s_results_*" % (get_congregate_path(), result_type))
     files.sort(key=lambda f: f.split("results_")[1].replace(".json", ""), reverse=True)
     files = files[:steps]
     results = []
     for result in files:
-        with open(result, "r") as f:
-            data = json.load(f)
-            results.append([r for r in data if r[next(iter(r))] != False])
+        data = read_json_file_into_object(result)
+        results += ([r for r in data if r[next(iter(r))] != False])
+    return results
 
-    file_path = "%s/data/%s_migration_results.json" % (
-        get_congregate_path(), result_type)
-    write_json_to_file(file_path, results, log=log)
