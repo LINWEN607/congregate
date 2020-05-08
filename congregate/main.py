@@ -42,6 +42,7 @@ Usage:
     congregate map-users [--commit]
     congregate generate-diff [--processes=<n>] [--staged]
     congregate clean [--commit]
+    congregate stitch-results [--result-type=<project|group|user>] [--steps=<n>]
     congregate obfuscate
     congregate -h | --help
 
@@ -104,6 +105,7 @@ Commands:
     validate-staged-groups-schema           Check staged_groups.json for missing group data.
     validate-staged-projects-schema         Check stage.json for missing project data.
     clean                                   Delete all retrieved and staged data
+    stitch-results                          Stitches together migration results from multiple migration runs
     generate-diff                           Generates HTML files containing the diff results of the migration
     map-users                               Maps staged user emails to emails defined in the user-provided user_map.csv
     obfuscate                               Obfuscate a secret or password that you want to manually update in the config.
@@ -123,12 +125,12 @@ if __name__ == '__main__':
         from congregate.helpers import conf
         from congregate.helpers.logger import myLogger
         from congregate.cli.config import generate_config
-        from congregate.helpers.misc_utils import get_congregate_path, clean_data, obfuscate
+        from congregate.helpers.misc_utils import get_congregate_path, clean_data, obfuscate, stitch_json_results, write_results_to_file
         from congregate.helpers.user_util import map_users
     else:
         from .helpers import conf
         from .helpers.logger import myLogger
-        from .helpers.misc_utils import get_congregate_path, clean_data, obfuscate
+        from .helpers.misc_utils import get_congregate_path, clean_data, obfuscate, stitch_json_results, write_results_to_file
         from .helpers.user_util import map_users
 else:
     import sys
@@ -137,7 +139,7 @@ else:
     from congregate.cli.config import generate_config
     from congregate.helpers import conf
     from congregate.helpers.logger import myLogger
-    from congregate.helpers.misc_utils import get_congregate_path
+    from congregate.helpers.misc_utils import get_congregate_path, clean_data, obfuscate, stitch_json_results, write_results_to_file
 
 app_path = get_congregate_path()
 
@@ -341,5 +343,10 @@ if __name__ == '__main__':
                     "/data/project_migration_results.json", staged=STAGED, processes=PROCESSES)
                 project_diff.generate_html_report(
                     project_diff.generate_diff_report(), "/data/project_migration_results.html")
+            if arguments["stitch-results"]:
+                result_type = arguments["--result-type"].replace("s", "") if arguments["--result-type"] else "project"
+                steps = int(arguments["--steps"]) if arguments["--steps"] else 0
+                new_results = stitch_json_results(result_type=result_type, steps=steps)
+                write_results_to_file(new_results, result_type, log=log)
             if arguments["obfuscate"]:
                 print obfuscate("Secret:")

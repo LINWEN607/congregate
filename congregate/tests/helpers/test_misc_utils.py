@@ -241,7 +241,31 @@ def test_stitch_json(glob, json):
     ]
 
     expected = results.get_completely_successful_results()
-    actual = misc.stitch_json_results(steps=3)
+    actual = misc.stitch_json_results(steps=2)
 
     assert expected == actual
 
+@mock.patch("congregate.helpers.misc_utils.read_json_file_into_object")
+@mock.patch("glob.glob")
+def test_stitch_json_too_many_steps(glob, json):
+    results = MockProjectResults()
+    glob.return_value = [
+        'project_migration_results_2020-05-05_22:17:45.335715.json', 
+        'project_migration_results_2020-05-05_21:38:04.565534.json', 
+        'project_migration_results_2020-05-05_21:17:42.719402.json', 
+        'project_migration_results_2020-05-05_19:26:18.616265.json', 
+        'project_migration_results_2020-04-28_23:06:02.139918.json'
+    ]
+
+    json.side_effect = [
+        results.get_completely_failed_results(),
+        results.get_partially_successful_results(),
+        results.get_successful_results_subset(),
+        [],
+        []
+    ]
+
+    expected = results.get_completely_successful_results()
+    actual = misc.stitch_json_results(steps=6)
+
+    assert expected == actual

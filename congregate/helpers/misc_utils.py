@@ -371,13 +371,23 @@ def write_results_to_file(import_results, result_type="project", log=None):
     copy(file_path, "%s/data/%s_migration_results.json" %
          (get_congregate_path(), result_type))
 
-def stitch_json_results(result_type="project", steps=0, log=None):
-    files = glob.glob("%s/data/%s_results_*" % (get_congregate_path(), result_type))
+
+def stitch_json_results(result_type="project", steps=0):
+    """
+    Stitch together multiple JSON results files into a single file.
+
+        :param result_type: (str) The specific result type file you want to stitch. (Default: project)
+        :param steps: (int) How many files back you want to go for the stitching. (Default: 0)
+        :return: list containing the newly stitched results
+    """
+    steps += 1
+    files = glob.glob("%s/data/%s_migration_results_*" % (get_congregate_path(), result_type))
     files.sort(key=lambda f: f.split("results_")[1].replace(".json", ""), reverse=True)
+    if steps > len(files):
+        steps = len(files)
     files = files[:steps]
     results = []
     for result in files:
         data = read_json_file_into_object(result)
         results += ([r for r in data if r[next(iter(r))] != False])
     return results
-
