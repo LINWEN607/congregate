@@ -153,6 +153,18 @@ if __name__ == '__main__':
     STAGED = True if arguments["--staged"] else False
     PROCESSES = arguments["--processes"] if arguments["--processes"] else None
 
+    if arguments["init"]:
+        if not os.path.exists('data'):
+            print "Creating data directory and empty log file"
+            os.makedirs('data')
+            with open("%s/data/congregate.log" % app_path, "w") as f:
+                f.write("")
+        else:
+            print "Congregate alreaday initialized"
+        log = myLogger(__name__)
+    else:
+        log = myLogger(__name__)
+
     if arguments["configure"]:
         generate_config()
     else:
@@ -203,17 +215,6 @@ if __name__ == '__main__':
             variables = VariablesClient()
             compare = CompareClient()
             branches = BranchesClient()
-            if arguments["init"]:
-                if not os.path.exists('data'):
-                    print "Creating data directory and empty log file"
-                    os.makedirs('data')
-                    with open("%s/data/congregate.log" % app_path, "w") as f:
-                        f.write("")
-                else:
-                    print "Congregate alreaday initialized"
-                log = myLogger(__name__)
-            else:
-                log = myLogger(__name__)
 
             if arguments["list"]:
                 list_projects.list_projects()
