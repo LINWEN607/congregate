@@ -389,5 +389,5 @@ def stitch_json_results(result_type="project", steps=0):
     results = []
     for result in files:
         data = read_json_file_into_object(result)
-        results += ([r for r in data if r[next(iter(r))] != False])
+        results += ([r for r in data if r[next(iter(r))]])
     return results
