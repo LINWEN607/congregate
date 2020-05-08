@@ -62,10 +62,10 @@ build:
 .test-job:
   stage: test
   before_script:
-    - ./congregate.sh init
-    - echo ${Dummy_config} > $CONGREGATE_PATH/data/congregate.conf
     - pip install poetry
     - poetry install
+    - ./congregate.sh init
+    - echo ${Dummy_config} > $CONGREGATE_PATH/data/congregate.conf
   rules:
     - changes:
         - congregate/**/*
