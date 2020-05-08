@@ -60,7 +60,10 @@ poetry run dnd install
 CONGREGATE_PATH=$(pwd)
 
 # copy congregate script to a bin directory
-cp congregate.sh /usr/local/bin
+cp congregate.sh /usr/local/bin/congregate
+
+# Initialize additional congregate directories
+congregate init
 
 echo "export CONGREGATE_PATH=$CONGREGATE_PATH" >> ~/.bash_profile
 ```
