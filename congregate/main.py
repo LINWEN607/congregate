@@ -211,7 +211,9 @@ if __name__ == '__main__':
                         f.write("")
                 else:
                     print "Congregate alreaday initialized"
-            log = myLogger(__name__)
+                log = myLogger(__name__)
+            else:
+                log = myLogger(__name__)
 
             if arguments["list"]:
                 list_projects.list_projects()
