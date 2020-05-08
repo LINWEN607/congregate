@@ -143,7 +143,7 @@ else:
 
 app_path = get_congregate_path()
 
-log = myLogger(__name__)
+
 
 config = conf.Config()
 
@@ -211,6 +211,8 @@ if __name__ == '__main__':
                         f.write("")
                 else:
                     print "Congregate alreaday initialized"
+            log = myLogger(__name__)
+
             if arguments["list"]:
                 list_projects.list_projects()
             if arguments["stage"]:
