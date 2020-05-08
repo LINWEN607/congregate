@@ -22,8 +22,12 @@ RUN cd /opt/congregate && \
     cp congregate.sh /usr/local/bin/congregate && \
     pip install poetry
 
+
 # RUN export PATH=$PATH:$HOME/.poetry/bin/poetry
 RUN poetry install
+
+# Initialize congregate directories
+RUN congregate init
 
 RUN cd /opt/congregate && \
     poetry run dnd install

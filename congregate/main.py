@@ -3,6 +3,7 @@
 Copyright (c) 2020 - GitLab
 
 Usage:
+    congregate init
     congregate list
     congregate configure
     congregate stage <projects>... [--commit]
@@ -66,6 +67,7 @@ Arguments:
 
 Commands:
     list                                    List all projects of a source instance and save it to {CONGREGATE_PATH}/data/project_json.json.
+    init                                    Creates additional directories and files required by congregate
     configure                               Configure congregate for migrating between two instances and save it to {CONGREGATE_PATH}/data/congregate.conf.
     stage                                   Stage projects to {CONGREGATE_PATH}/data/stage.json,
                                                 users to {CONGREGATE_PATH}/data/staged_users.json,
@@ -201,6 +203,14 @@ if __name__ == '__main__':
             variables = VariablesClient()
             compare = CompareClient()
             branches = BranchesClient()
+            if arguments["init"]:
+                if not os.path.exists('data'):
+                    print "Creating data directory and empty log file"
+                    os.makedirs('data')
+                    with open("%s/data/congregate.log" % app_path, "w") as f:
+                        f.write("")
+                else:
+                    print "Congregate alreaday initialized"
             if arguments["list"]:
                 list_projects.list_projects()
             if arguments["stage"]:
