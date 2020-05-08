@@ -42,7 +42,7 @@ Usage:
     congregate map-users [--commit]
     congregate generate-diff [--processes=<n>] [--staged]
     congregate clean [--commit]
-    congregate stitch-results [--result-type=<project|group|user>] [--steps=<n>]
+    congregate stitch-results [--result-type=<project|group|user>] [--no-of-files=<n>] [--head|--tail]
     congregate obfuscate
     congregate -h | --help
 
@@ -64,6 +64,10 @@ Arguments:
                                                 etc). Useful for testing export contents.
     access-level                            Update parent group level user permissions (Guest/Reporter/Developer/Maintainer/Owner).
     staged                                  Compare using staged data
+    no-of-files                             Number of files used to go back when stitching JSON results
+    result-type                             For stitching result files. Options are project, group, or user
+    head                                    Read results files in chronological order
+    tail                                    Read results files in reverse chronological order (default for stitch-results)
 
 Commands:
     list                                    List all projects of a source instance and save it to {CONGREGATE_PATH}/data/project_json.json.
@@ -345,8 +349,12 @@ if __name__ == '__main__':
                     project_diff.generate_diff_report(), "/data/project_migration_results.html")
             if arguments["stitch-results"]:
                 result_type = arguments["--result-type"].replace("s", "") if arguments["--result-type"] else "project"
-                steps = int(arguments["--steps"]) if arguments["--steps"] else 0
-                new_results = stitch_json_results(result_type=result_type, steps=steps)
+                steps = int(arguments["--no-of-files"]) if arguments["--no-of-files"] else 0
+                if arguments["--head"]:
+                    order = "head"
+                else:
+                    order = "tail"
+                new_results = stitch_json_results(result_type=result_type, steps=steps, order=order)
                 write_results_to_file(new_results, result_type, log=log)
             if arguments["obfuscate"]:
                 print obfuscate("Secret:")

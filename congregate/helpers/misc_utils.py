@@ -372,7 +372,7 @@ def write_results_to_file(import_results, result_type="project", log=None):
          (get_congregate_path(), result_type))
 
 
-def stitch_json_results(result_type="project", steps=0):
+def stitch_json_results(result_type="project", steps=0, order="tail"):
     """
     Stitch together multiple JSON results files into a single file.
 
@@ -380,9 +380,10 @@ def stitch_json_results(result_type="project", steps=0):
         :param steps: (int) How many files back you want to go for the stitching. (Default: 0)
         :return: list containing the newly stitched results
     """
+    reverse = True if order.lower() == "tail" else False
     steps += 1
     files = glob.glob("%s/data/%s_migration_results_*" % (get_congregate_path(), result_type))
-    files.sort(key=lambda f: f.split("results_")[1].replace(".json", ""), reverse=True)
+    files.sort(key=lambda f: f.split("results_")[1].replace(".json", ""), reverse=reverse)
     if steps > len(files):
         steps = len(files)
     files = files[:steps]
