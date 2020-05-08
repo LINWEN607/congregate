@@ -149,17 +149,17 @@ if __name__ == '__main__':
         if not os.path.exists('data'):
             print "Creating data directory and empty log file"
             os.makedirs('data')
-        elif not os.path.exists("%s/data/congregate.log" % app_path):
-            with open("%s/data/congregate.log" % app_path, "w") as f:
-                f.write("")
+            if not os.path.exists("%s/data/congregate.log" % app_path):
+                with open("%s/data/congregate.log" % app_path, "w") as f:
+                    f.write("")
         else:
-            print "Congregate alreaday initialized"
+            print "Congregate already initialized"
         log = myLogger(__name__)
     else:
         log = myLogger(__name__)
 
     from congregate.cli.config import generate_config
-    
+
     if arguments["configure"]:
         generate_config()
     else:
