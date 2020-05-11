@@ -95,7 +95,7 @@ Copy the following data and add subsequent columns for single group migration
 * [ ] Notify the customer in the customer-facing slack channel you are starting the migration wave
 * If migrating to `gitlab.com`:
   * [ ] Export only by running the following command: `nohup ./congregate.sh migrate --skip-users --skip-group-import --skip-project-import --commit > data/waves/wave_<insert_wave_number>/wave<insert-wave-here>.log 2>&1 &`
-  * [ ] Import only with single (1) process by running the following command: `nohup ./congregate.sh migrate --processes=1 --skip-users --skip-group-export --skip-project-export --commit > data/waves/wave_<insert_wave_number>/wave<insert-wave-here>.log 2>&1 &`
+  * [ ] Import by running the following command: `nohup ./congregate.sh migrate --skip-users --skip-group-export --skip-project-export --commit > data/waves/wave_<insert_wave_number>/wave<insert-wave-here>.log 2>&1 &`
 * If migrating to `self-managed`:
   * [ ] Run the following command `nohup ./congregate.sh migrate --skip-users --commit > data/waves/wave_<insert_wave_number>/wave<insert-wave-here>.log 2>&1 &`
 * [ ] Monitor the wave periodically by running `tail -f data/waves/wave_<insert_wave_number>/wave<insert-wave-here>.log`
