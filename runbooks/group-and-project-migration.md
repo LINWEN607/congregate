@@ -95,7 +95,7 @@ Copy the following data and add subsequent columns for single group migration
 * [ ] Notify the customer in the customer-facing slack channel you are starting the migration wave
 * If migrating to `gitlab.com`:
   * [ ] Export only by running the following command: `nohup ./congregate.sh migrate --skip-users --skip-group-import --skip-project-import --commit > data/waves/wave_<insert_wave_number>/wave<insert-wave-here>.log 2>&1 &`
-  * [ ] Import only with single (1) process by running the following command: `nohup ./congregate.sh migrate --processes=1 --skip-users --skip-group-export --skip-project-export --commit >> data/waves/wave_<insert_wave_number>/wave<insert-wave-here>.log 2>&1 &`
+  * [ ] Import only with single (1) process by running the following command: `nohup ./congregate.sh migrate --processes=1 --skip-users --skip-group-export --skip-project-export --commit > data/waves/wave_<insert_wave_number>/wave<insert-wave-here>.log 2>&1 &`
 * If migrating to `self-managed`:
   * [ ] Run the following command `nohup ./congregate.sh migrate --skip-users --commit > data/waves/wave_<insert_wave_number>/wave<insert-wave-here>.log 2>&1 &`
 * [ ] Monitor the wave periodically by running `tail -f data/waves/wave_<insert_wave_number>/wave<insert-wave-here>.log`
@@ -103,19 +103,22 @@ Copy the following data and add subsequent columns for single group migration
 * [ ] Copy `data/congregate.log`, `data/audit.log`, and `data/waves/wave_<insert_wave_number>/wave<insert-wave-here>.log` to `/opt/congregate/data/waves/wave_<insert_wave_number>/`
 
 ### Post Migration with Missing Groups and Projects
-
-* [ ] If projects or groups are missing, confirm the projects and groups have successfully exported and confirm they don't actually exist on the destination instance
-    * To confirm the exports have successfully exported, review the contents of `/opt/congregate/downloads` or the S3 bucket defined in the configuration. Make sure no export archive has a size of 42 bytes. That means the export archive is invalid.
-    * To confirm the projects or groups don't actually exist on the destination instance, compare the results of the diff report and manually check where the project or group should be located.
-    * To confirm the projects or groups don't actually exist on the destination instance, you may also `dry-run` a wave.
-        * You can also search for the project with an API request to `/projects?search=<project-name>`
-        * You can also search for the groups with an API request to `/groups?search=<group-name>` or `/groups/<url-encoded-full-path>`
-* [ ] Stage _only_ those groups and projects and go through this runbook again, this time with the following command for the migration stage: `nohup ./congregate.sh migrate --skip-users --skip-group-export --skip-project-export --processes=1 --commit > data/waves/wave_<insert_wave_number>/wave<insert-wave-here>_attempt<insert-attempt>.log 2>&1 &`
-* [ ] Monitor the wave periodically by running `tail -f data/waves/wave_<insert_wave_number>/wave<insert-wave-here>_attempt<insert-attempt>.log`
-* [ ] Notify in the internal slack channel dedicated to this migration the migration has finished
-* [ ] Notify the customer in the customer-facing slack channel the migration wave has finished
-* [ ] Attach `data/congregate.log`, `data/audit.log`, and `data/waves/wave_<insert_wave_number>/wave<insert-wave-here>_attempt<insert-attempt>.log` to this issue
-* [ ] Copy `data/congregate.log`, `data/audit.log`, and `data/waves/wave_<insert_wave_number>/wave<insert-wave-here>_attempt<insert-attempt>.log` to `/opt/congregate/data/waves/wave_<insert_wave_number>/`
+ 
+* [ ] Repearedly Check if projects or groups are missing N times. 
+    * [ ] If projects or groups are missing, confirm the projects and groups have successfully exported and confirm they don't actually exist on the destination instance
+        * To confirm the exports have successfully exported, review the contents of `/opt/congregate/downloads` or the S3 bucket defined in the configuration. Make sure no export archive has a size of 42 bytes. That means the export archive is invalid.
+        * To confirm the projects or groups don't actually exist on the destination instance, compare the results of the diff report and manually check where the project or group should be located.
+        * To confirm the projects or groups don't actually exist on the destination instance, you may also `dry-run` a wave.
+            * You can also search for the project with an API request to `/projects?search=<project-name>`
+            * You can also search for the groups with an API request to `/groups?search=<group-name>` or `/groups/<url-encoded-full-path>`
+    * [ ] Stage _only_ those groups and projects and go through this runbook again, this time with the following command for the migration stage: `nohup ./congregate.sh migrate --skip-users --skip-group-export --skip-project-export --processes=1 --commit > data/waves/wave_<insert_wave_number>/wave<insert-wave-here>_attempt<insert-attempt>.log 2>&1 &`
+    * [ ] Monitor the wave periodically by running `tail -f data/waves/wave_<insert_wave_number>/wave<insert-wave-here>_attempt<insert-attempt>.log`
+    * [ ] Notify in the internal slack channel dedicated to this migration the migration has finished
+    * [ ] Notify the customer in the customer-facing slack channel the migration wave has finished
+    * [ ] Attach `data/congregate.log`, `data/audit.log`, and `data/waves/wave_<insert_wave_number>/wave<insert-wave-here>_attempt<insert-attempt>.log` to this issue
+    * [ ] Copy `data/congregate.log`, `data/audit.log`, and `data/waves/wave_<insert_wave_number>/wave<insert-wave-here>_attempt<insert-attempt>.log` to `/opt/congregate/data/waves/wave_<insert_wave_number>/`
+* [ ] Stitch the N migrations `project_migration_results.json/group_migration_results.json` files into 1 (all but the last will be timestamped `project_migration_results_<timestamp>.json` as they are rotated per migration attempt)
+* [ ] Run the diff report
 * [ ] If a project continues to fail to import to `gitlab.com` through the API by timing out after an hour (give it a couple attempts max), you will need to reach out to the SRE on-call to get the project imported.
     * Preparation
         * [ ] Before coming to the conclusion that an SRE is needed to import the project, examine the contents of the project on the source.
