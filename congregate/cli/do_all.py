@@ -32,14 +32,6 @@ def do_all_users(dry_run=True):
         with open("{}/data/staged_users.json".format(b.app_path), "w") as su:
             json.dump(remove_dupes(json.load(u)), su, indent=4)
 
-    # NO dry run
-    if not b.config.keep_blocked_users:
-        users.remove_blocked_users(dry_run=False)
-
-    # NO dry run
-    users.handle_users_not_found(
-        "staged_users", users.search_for_staged_users(dry_run=False))
-
     migrate.migrate(
         dry_run=dry_run,
         skip_group_export=True,
@@ -61,14 +53,6 @@ def do_all_groups_and_projects(dry_run=True):
 
     # Stage ALL - NO dry run
     stage_projects.stage_projects(["all"], dry_run=False)
-
-    # NO dry run
-    if not b.config.keep_blocked_users:
-        users.remove_blocked_users(dry_run=False)
-
-    # NO dry run
-    users.handle_users_not_found(
-        "staged_users", users.search_for_staged_users(dry_run=False))
 
     migrate.migrate(dry_run=dry_run, skip_users=True)
 

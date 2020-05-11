@@ -141,7 +141,8 @@ def migrate_user_info(start):
                     formatted_users[n["email"]] = n
                 write_results_to_file(
                     formatted_users, result_type="user", log=b.log)
-            users.search_for_staged_users(_DRY_RUN)
+            # Do a dry-run after search
+            users.search_for_staged_users()
         else:
             b.log.info(
                 "DRY-RUN: Outputing various USER migration data to dry_run_user_migration.json")
