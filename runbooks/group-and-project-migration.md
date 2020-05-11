@@ -122,15 +122,14 @@ Copy the following data and add subsequent columns for single group migration
         * [ ] Take note of any environments, CI/CD variables, merge request approvers, and container registries and see if any of those are present. If they are, you will need to move that data over manually.
         * [ ] Upload the project export file to google drive and get a shareable link.
     * Creating the import issue 
-        * Per project
+      Per project
         * [ ] Create a new issue in the [infrastructure](https://gitlab.com/gitlab-com/gl-infra/infrastructure/-/issues) project using the `import` template.
         * [ ] Change `#### Import on: YYYY-MM-DD HH:MM UTC to #### Import` as soon as possible.
         * [ ] Walk through the steps on the template to provide all necessary information to the SRE on call
-        * [ ] When providing a list of user emails, you can extract the project export tar.gz and run the following command to get a list   of emails (make sure you have `jq` installed):
-        * `cat project.json | jq -r '.project_members' | jq -r '.[] | .user | .email'`
+        * [ ] When providing a list of user emails, you can extract the project export tar.gz and run the following command to get a list of emails (make sure you have `jq` installed): `cat project.json | jq -r '.project_members' | jq -r '.[] | .user | .email'`
         * [ ] Submit the issue and don't assign it to anyone. The SRE on-call will pick it up.
     * Reaching out to the SRE on-call. 
-        * Post a message in #infrastructure-lounge paging the SRE on-call. For example:
+      Post a message in #infrastructure-lounge paging the SRE on-call. For example:
         ```Ruby
         @sre-oncall I need a project imported to gitlab.com as soon as possible. Here is the issue:
         https://gitlab.com/gitlab-com/gl-infra/infrastructure/-/issues/10061
@@ -138,7 +137,7 @@ Copy the following data and add subsequent columns for single group migration
         * [ ] Make sure to check off all checkboxes listed under Support in the import issue. We are Support in this instance.
         * [ ] Once the SRE confirms the import has started, promptly delete the project from google drive.
     * Post Import
-        * The SRE will let you know when the import is complete. Once it's complete, move on to manual, post-migration steps.
+      The SRE will let you know when the import is complete. Once it's complete, move on to manual, post-migration steps.
         * [ ] Manually copy over any CI/CD variables
         * [ ] Manually copy over any environments
         * [ ] Manually copy over any merge request approvers
