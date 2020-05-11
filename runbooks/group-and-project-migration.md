@@ -109,7 +109,7 @@ Copy the following data and add subsequent columns for single group migration
         * Reach out to support to delete the failed/partially imported projects. Provide the full path to the project. provided in the project migration results
     * [ ] If migrating to `self-managed`: 
         * Delete all failed/partially imported projects listed in the project migration results.
-    * [ ] Once the projects are confirmed deleted, migrate them again.
+    * [ ] Once the projects are confirmed deleted, prepare to migrate them again.
     * [ ] If projects or groups are missing, confirm the projects and groups have successfully exported and confirm they don't actually exist on the destination instance
         * To confirm the exports have successfully exported, review the contents of `/opt/congregate/downloads` or the S3 bucket defined in the configuration. Make sure no export archive has a size of 42 bytes. That means the export archive is invalid.
         * To confirm the projects or groups don't actually exist on the destination instance, compare the results of the diff report and manually check where the project or group should be located.
