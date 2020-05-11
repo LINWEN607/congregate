@@ -243,6 +243,7 @@ Usage:
     congregate map-users [--commit]
     congregate generate-diff [--processes=<n>] [--staged]
     congregate clean [--commit]
+    congregate stitch-results [--result-type=<project|group|user>] [--no-of-files=<n>] [--head|--tail]
     congregate obfuscate
     congregate -h | --help
 
@@ -264,6 +265,10 @@ Arguments:
                                                 etc). Useful for testing export contents.
     access-level                            Update parent group level user permissions (Guest/Reporter/Developer/Maintainer/Owner).
     staged                                  Compare using staged data
+    no-of-files                             Number of files used to go back when stitching JSON results
+    result-type                             For stitching result files. Options are project, group, or user
+    head                                    Read results files in chronological order
+    tail                                    Read results files in reverse chronological order (default for stitch-results)
 
 Commands:
     list                                    List all projects of a source instance and save it to {CONGREGATE_PATH}/data/project_json.json.
@@ -306,6 +311,7 @@ Commands:
     validate-staged-groups-schema           Check staged_groups.json for missing group data.
     validate-staged-projects-schema         Check stage.json for missing project data.
     clean                                   Delete all retrieved and staged data
+    stitch-results                          Stitches together migration results from multiple migration runs
     generate-diff                           Generates HTML files containing the diff results of the migration
     map-users                               Maps staged user emails to emails defined in the user-provided user_map.csv
     obfuscate                               Obfuscate a secret or password that you want to manually update in the config.
