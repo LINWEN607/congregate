@@ -37,8 +37,8 @@ def do_all_users(dry_run=True):
         users.remove_blocked_users(dry_run=False)
 
     # NO dry run
-    users_not_found = users.search_for_staged_users(dry_run=False)
-    users.handle_users_not_found("staged_users", users_not_found)
+    users.handle_users_not_found(
+        "staged_users", users.search_for_staged_users(dry_run=False))
 
     migrate.migrate(
         dry_run=dry_run,
@@ -67,10 +67,8 @@ def do_all_groups_and_projects(dry_run=True):
         users.remove_blocked_users(dry_run=False)
 
     # NO dry run
-    users_not_found = users.search_for_staged_users(dry_run=False)
-    users.handle_users_not_found("staged_users", users_not_found, keep=False)
-    users.handle_users_not_found("staged_groups", users_not_found)
-    users.handle_users_not_found("stage", users_not_found)
+    users.handle_users_not_found(
+        "staged_users", users.search_for_staged_users(dry_run=False))
 
     migrate.migrate(dry_run=dry_run, skip_users=True)
 
