@@ -10,7 +10,6 @@ Usage:
     congregate migrate [--processes=<n>] [--skip-users] [--skip-group-export] [--skip-group-import] [--skip-project-export] [--skip-project-import] [--commit]
     congregate rollback [--hard-delete] [--skip-users] [--skip-groups] [--skip-projects] [--commit]
     congregate ui
-    congregate export-projects
     congregate do-all [--commit]
     congregate do-all-users [--commit]
     congregate do-all-groups-and-projects [--commit]
@@ -81,7 +80,6 @@ Commands:
     migrate                                 Commence migration based on configuration and staged assets.
     rollback                                Remove staged users/groups/projects on destination.
     ui                                      Deploy UI to port 8000.
-    export-projects                         Export and update source instance projects. Bulk project export without user/group info.
     do-all*                                 Configure system, retrieve all projects, users, and groups, stage all information, and commence migration.
     update-staged-user-info                 Update staged user information after migrating only users.
     update-aws-creds                        Run awscli commands based on the keys stored in the config. Useful for docker updates.
@@ -288,8 +286,6 @@ if __name__ == '__main__':
                         access_level, dry_run=DRY_RUN)
                 else:
                     log.warning("Missing access-level argument")
-            if arguments["export-projects"]:
-                migrate.migrate_project_info(skip_project_import=True)
             if arguments["get-total-count"]:
                 print migrate.get_total_migrated_count()
             if arguments["find-unimported-projects"]:
