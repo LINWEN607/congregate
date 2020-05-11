@@ -226,7 +226,7 @@ class ImportExportClientTests(unittest.TestCase):
     @mock.patch("congregate.helpers.api.generate_v4_request_url")
     @mock.patch('congregate.migration.gitlab.groups.GroupsClient.find_group_by_path')
     def test_wait_for_group_import_200(self, mock_find_group_by_path, url):
-        mock_find_group_by_path.return_value = 1
+        mock_find_group_by_path.return_value = self.mock_groups.get_group()
         url_value = "https://gitlabdestination.com/api/v4/groups/1"
         url.return_value = url_value
         # pylint: disable=no-member
