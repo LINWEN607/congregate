@@ -3,6 +3,7 @@
 Copyright (c) 2020 - GitLab
 
 Usage:
+    congregate init
     congregate list
     congregate configure
     congregate stage <projects>... [--commit]
@@ -71,6 +72,7 @@ Arguments:
 
 Commands:
     list                                    List all projects of a source instance and save it to {CONGREGATE_PATH}/data/project_json.json.
+    init                                    Creates additional directories and files required by congregate
     configure                               Configure congregate for migrating between two instances and save it to {CONGREGATE_PATH}/data/congregate.conf.
     stage                                   Stage projects to {CONGREGATE_PATH}/data/stage.json,
                                                 users to {CONGREGATE_PATH}/data/staged_users.json,
@@ -123,39 +125,46 @@ from docopt import docopt
 if __name__ == '__main__':
     if __package__ is None:
         import sys
-
         sys.path.append(os.path.dirname(
             os.path.dirname(os.path.abspath(__file__))))
         from congregate.helpers import conf
         from congregate.helpers.logger import myLogger
-        from congregate.cli.config import generate_config
-        from congregate.helpers.misc_utils import get_congregate_path, clean_data, obfuscate, stitch_json_results, write_results_to_file
-        from congregate.helpers.user_util import map_users
+        from congregate.helpers.misc_utils import get_congregate_path, clean_data, obfuscate
+        
     else:
         from .helpers import conf
         from .helpers.logger import myLogger
-        from .helpers.misc_utils import get_congregate_path, clean_data, obfuscate, stitch_json_results, write_results_to_file
-        from .helpers.user_util import map_users
+        from .helpers.misc_utils import get_congregate_path, clean_data, obfuscate
 else:
     import sys
     sys.path.append(os.path.dirname(
         os.path.dirname(os.path.abspath(__file__))))
-    from congregate.cli.config import generate_config
     from congregate.helpers import conf
     from congregate.helpers.logger import myLogger
     from congregate.helpers.misc_utils import get_congregate_path, clean_data, obfuscate, stitch_json_results, write_results_to_file
 
 app_path = get_congregate_path()
 
-log = myLogger(__name__)
-
-config = conf.Config()
-
 if __name__ == '__main__':
     arguments = docopt(__doc__)
     DRY_RUN = False if arguments["--commit"] else True
     STAGED = True if arguments["--staged"] else False
     PROCESSES = arguments["--processes"] if arguments["--processes"] else None
+
+    if arguments["init"]:
+        if not os.path.exists('data'):
+            print "Creating data directory and empty log file"
+            os.makedirs('data')
+            if not os.path.exists("%s/data/congregate.log" % app_path):
+                with open("%s/data/congregate.log" % app_path, "w") as f:
+                    f.write("")
+        else:
+            print "Congregate already initialized"
+        log = myLogger(__name__)
+    else:
+        log = myLogger(__name__)
+
+    from congregate.cli.config import generate_config
 
     if arguments["configure"]:
         generate_config()
@@ -174,6 +183,7 @@ if __name__ == '__main__':
             from congregate.migration.gitlab.diff.userdiff import UserDiffClient
             from congregate.migration.gitlab.diff.projectdiff import ProjectDiffClient
             from congregate.migration.gitlab.diff.groupdiff import GroupDiffClient
+            from congregate.helpers.user_util import map_users
         else:
             from .migration.gitlab.users import UsersClient
             from .migration.gitlab.groups import GroupsClient
@@ -183,6 +193,8 @@ if __name__ == '__main__':
             from congregate.migration import migrate
             from .migration.gitlab.branches import BranchesClient
             from congregate.cli import list_projects, stage_projects, do_all
+            from congregate.helpers.user_util import map_users
+        config = conf.Config()
         if config.external_source_url is not None:
             if arguments["migrate"]:
                 migrate.migrate(processes=PROCESSES)
@@ -207,6 +219,7 @@ if __name__ == '__main__':
             variables = VariablesClient()
             compare = CompareClient()
             branches = BranchesClient()
+
             if arguments["list"]:
                 list_projects.list_projects()
             if arguments["stage"]:

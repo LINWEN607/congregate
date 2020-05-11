@@ -60,7 +60,10 @@ poetry run dnd install
 CONGREGATE_PATH=$(pwd)
 
 # copy congregate script to a bin directory
-cp congregate.sh /usr/local/bin
+cp congregate.sh /usr/local/bin/congregate
+
+# Initialize additional congregate directories
+congregate init
 
 echo "export CONGREGATE_PATH=$CONGREGATE_PATH" >> ~/.bash_profile
 ```
@@ -200,6 +203,7 @@ This is a bit more of a permanent solution than just exporting the variable with
 
 ``` text
 Usage:
+    congregate init
     congregate list
     congregate configure
     congregate stage <projects>... [--commit]
@@ -237,7 +241,7 @@ Usage:
     congregate validate-staged-groups-schema
     congregate validate-staged-projects-schema
     congregate map-users [--commit]
-    congregate generate-diff [--staged]
+    congregate generate-diff [--processes=<n>] [--staged]
     congregate clean [--commit]
     congregate obfuscate
     congregate -h | --help
@@ -263,6 +267,7 @@ Arguments:
 
 Commands:
     list                                    List all projects of a source instance and save it to {CONGREGATE_PATH}/data/project_json.json.
+    init                                    Creates additional directories and files required by congregate
     configure                               Configure congregate for migrating between two instances and save it to {CONGREGATE_PATH}/data/congregate.conf.
     stage                                   Stage projects to {CONGREGATE_PATH}/data/stage.json,
                                                 users to {CONGREGATE_PATH}/data/staged_users.json,
