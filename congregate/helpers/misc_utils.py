@@ -3,6 +3,7 @@ import os
 import errno
 import json
 
+import glob
 from shutil import copy
 from time import time
 from getpass import getpass
@@ -177,6 +178,9 @@ def write_json_to_file(path, data, log=None):
     with open(path, "w") as f:
         json.dump(data, f, indent=4)
 
+def read_json_file_into_object(path):
+    with open(path, "r") as f:
+        return json.load(f)
 
 def obfuscate(prompt):
     return base64.b64encode(getpass(prompt))
@@ -366,3 +370,25 @@ def write_results_to_file(import_results, result_type="project", log=None):
     write_json_to_file(file_path, import_results, log=log)
     copy(file_path, "%s/data/%s_migration_results.json" %
          (get_congregate_path(), result_type))
+
+
+def stitch_json_results(result_type="project", steps=0, order="tail"):
+    """
+    Stitch together multiple JSON results files into a single file.
+
+        :param result_type: (str) The specific result type file you want to stitch. (Default: project)
+        :param steps: (int) How many files back you want to go for the stitching. (Default: 0)
+        :return: list containing the newly stitched results
+    """
+    reverse = True if order.lower() == "tail" else False
+    steps += 1
+    files = glob.glob("%s/data/%s_migration_results_*" % (get_congregate_path(), result_type))
+    files.sort(key=lambda f: f.split("results_")[1].replace(".json", ""), reverse=reverse)
+    if steps > len(files):
+        steps = len(files)
+    files = files[:steps]
+    results = []
+    for result in files:
+        data = read_json_file_into_object(result)
+        results += ([r for r in data if r[next(iter(r))]])
+    return results
