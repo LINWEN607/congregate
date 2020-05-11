@@ -116,7 +116,7 @@ Copy the following data and add subsequent columns for single group migration
 * [ ] Notify the customer in the customer-facing slack channel the migration wave has finished
 * [ ] Attach `data/congregate.log`, `data/audit.log`, and `data/waves/wave_<insert_wave_number>/wave<insert-wave-here>_attempt<insert-attempt>.log` to this issue
 * [ ] Copy `data/congregate.log`, `data/audit.log`, and `data/waves/wave_<insert_wave_number>/wave<insert-wave-here>_attempt<insert-attempt>.log` to `/opt/congregate/data/waves/wave_<insert_wave_number>/`
-* [ ] If a project continues to fail to import to gitlab.com through the API by timing out after an hour (give it a couple attempts max), you will need to reach out to the SRE on-call to get the project imported.
+* [ ] If a project continues to fail to import to **gitlab.com** through the API by timing out after an hour (give it a couple attempts max), you will need to reach out to the SRE on-call to get the project imported.
     * Preparation
         * [ ] Before coming to the conclusion that an SRE is needed to import the project, examine the contents of the project on the source.
         * [ ] Take note of any environments, CI/CD variables, merge request approvers, and container registries and see if any of those are present. If they are, you will need to move that data over manually.
