@@ -210,11 +210,10 @@ Usage:
     congregate migrate [--processes=<n>] [--skip-users] [--skip-group-export] [--skip-group-import] [--skip-project-export] [--skip-project-import] [--commit]
     congregate rollback [--hard-delete] [--skip-users] [--skip-groups] [--skip-projects] [--commit]
     congregate ui
-    congregate export-projects
     congregate do-all [--commit]
     congregate do-all-users [--commit]
     congregate do-all-groups-and-projects [--commit]
-    congregate update-staged-user-info [--commit]
+    congregate search-for-staged-users [--commit]
     congregate update-aws-creds
     congregate add-users-to-parent-group [--commit]
     congregate remove-blocked-users [--commit]
@@ -281,9 +280,8 @@ Commands:
     migrate                                 Commence migration based on configuration and staged assets.
     rollback                                Remove staged users/groups/projects on destination.
     ui                                      Deploy UI to port 8000.
-    export-projects                         Export and update source instance projects. Bulk project export without user/group info.
     do-all*                                 Configure system, retrieve all projects, users, and groups, stage all information, and commence migration.
-    update-staged-user-info                 Update staged user information after migrating only users.
+    search-for-staged-users                 Search for staged users on destination based on email and dump to new_users.json and users_not_found.json.
     update-aws-creds                        Run awscli commands based on the keys stored in the config. Useful for docker updates.
     add-users-to-parent-group               If a parent group is set, all users staged will be added to the parent group.
     remove-blocked-users                    Remove all blocked users from staged projects and groups.
@@ -334,12 +332,11 @@ To revert it add `--commit` at the end.
 Best practice is to first migrate ONLY users by running:
 
 * `congregate ui &` - Open the UI in your browser (by default `localhost:8000`), select and stage all users.
-* `congregate update-staged-user-info` - Check output for found and NOT found users on destination.
-  * Inspect `data/staged_users.json` if any of the NOT found users are blocked as, by default, they will not be migrated.
-  * To explicitly remove blocked users from staged users, groups and projects run `congregate remove-blocked-users`.
-* `congregate migrate --skip-group-export --skip-group-import --skip-project-export --skip-project-import` - Inspect the output in:
+* `congregate migrate --skip-group-export --skip-group-import --skip-project-export --skip-project-import` - Inspect the dry-run output in:
   * `data/dry_run_user_migration.json`
   * `data/congregate.log`
+  * Inspect `data/staged_users.json` if any of the NOT found users are blocked as, by default, they will not be migrated.
+  * To explicitly remove blocked users from staged users, groups and projects run `congregate remove-blocked-users`.
 * `congregate migrate --skip-group-export --skip-group-import --skip-project-export --skip-project-import --commit`
 
 ##### Migrate groups and sub-groups
@@ -348,7 +345,11 @@ Once all the users are migrated:
 
 * Go back to the UI, select and stage all groups and sub-groups
 * Only the top level groups will be staged as they comprise the entire tree structure.
-* `congregate migrate --skip-users --skip-project-export --skip-project-import` - Inspect the output in:
+* `congregate search-for-staged-users` - Check output for found and NOT found users on destination.
+  * All users should be found.
+  * Inspect `data/staged_users.json` if any of the NOT found users are blocked as, by default, they will not be migrated.
+  * To explicitly remove blocked users from staged users, groups and projects run `congregate remove-blocked-users`.
+* `congregate migrate --skip-users --skip-project-export --skip-project-import` - Inspect the dry-run output in:
   * `data/dry_run_group_migration.json`
   * `data/congregate.log`
 * `congregate migrate --skip-users --skip-project-export --skip-project-import --commit`
@@ -358,11 +359,11 @@ Once all the users are migrated:
 Once all the users and groups (w/ sub-groups) are migrated:
 
 * Go back to the UI, select and stage projects (either all, or in waves).
-* `congregate update-staged-user-info` - Check output for found and NOT found users on destination.
+* `congregate search-for-staged-users` - Check output for found and NOT found users on destination.
   * All users should be found.
   * Inspect `data/staged_users.json` if any of the NOT found users are blocked as, by default, they will not be migrated.
   * To explicitly remove blocked users from staged users, groups and projects run `congregate remove-blocked-users`.
-* `congregate migrate --skip-users --skip-group-export --skip-group-import` - Inspect the output in:
+* `congregate migrate --skip-users --skip-group-export --skip-group-import` - Inspect the dry-run output in:
   * `data/dry_run_project_migration.json`
   * `data/congregate.log`
 * `congregate migrate --skip-users --skip-group-export --skip-group-import --commit`

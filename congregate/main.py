@@ -13,7 +13,7 @@ Usage:
     congregate do-all [--commit]
     congregate do-all-users [--commit]
     congregate do-all-groups-and-projects [--commit]
-    congregate update-staged-user-info [--commit]
+    congregate search-for-staged-users [--commit]
     congregate update-aws-creds
     congregate add-users-to-parent-group [--commit]
     congregate remove-blocked-users [--commit]
@@ -81,7 +81,7 @@ Commands:
     rollback                                Remove staged users/groups/projects on destination.
     ui                                      Deploy UI to port 8000.
     do-all*                                 Configure system, retrieve all projects, users, and groups, stage all information, and commence migration.
-    update-staged-user-info                 Update staged user information after migrating only users.
+    search-for-staged-users                 Search for staged users on destination based on email and dump to new_users.json and users_not_found.json.
     update-aws-creds                        Run awscli commands based on the keys stored in the config. Useful for docker updates.
     add-users-to-parent-group               If a parent group is set, all users staged will be added to the parent group.
     remove-blocked-users                    Remove all blocked users from staged projects and groups.
@@ -128,7 +128,7 @@ if __name__ == '__main__':
         from congregate.helpers import conf
         from congregate.helpers.logger import myLogger
         from congregate.helpers.misc_utils import get_congregate_path, clean_data, obfuscate
-        
+
     else:
         from .helpers import conf
         from .helpers.logger import myLogger
@@ -260,7 +260,7 @@ if __name__ == '__main__':
                 # os.environ["PYTHONPATH"] = app_path
                 run_ui = "gunicorn -k gevent -w 4 ui:app --bind=0.0.0.0:8000"
                 subprocess.call(run_ui.split(" "))
-            if arguments["update-staged-user-info"]:
+            if arguments["search-for-staged-users"]:
                 users.search_for_staged_users(dry_run=DRY_RUN)
             if arguments["add-users-to-parent-group"]:
                 users.add_users_to_parent_group(dry_run=DRY_RUN)
@@ -357,13 +357,16 @@ if __name__ == '__main__':
                 project_diff.generate_html_report(
                     project_diff.generate_diff_report(), "/data/project_migration_results.html")
             if arguments["stitch-results"]:
-                result_type = arguments["--result-type"].replace("s", "") if arguments["--result-type"] else "project"
-                steps = int(arguments["--no-of-files"]) if arguments["--no-of-files"] else 0
+                result_type = arguments["--result-type"].replace(
+                    "s", "") if arguments["--result-type"] else "project"
+                steps = int(arguments["--no-of-files"]
+                            ) if arguments["--no-of-files"] else 0
                 if arguments["--head"]:
                     order = "head"
                 else:
                     order = "tail"
-                new_results = stitch_json_results(result_type=result_type, steps=steps, order=order)
+                new_results = stitch_json_results(
+                    result_type=result_type, steps=steps, order=order)
                 write_results_to_file(new_results, result_type, log=log)
             if arguments["obfuscate"]:
                 print obfuscate("Secret:")
