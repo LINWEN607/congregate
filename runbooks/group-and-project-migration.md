@@ -104,7 +104,7 @@ Copy the following data and add subsequent columns for single group migration
 
 ### Post Migration with Missing Groups and Projects
  
-* [ ] Repearedly Check if projects or groups are missing N times. 
+* [ ] Repeatedly Check if projects or groups are missing N times. 
     * [ ] If migrating to `.com`: 
         * Reach out to support to delete the failed/partially imported projects. Provide the full path to the project. provided in the project migration results
     * [ ] If migrating to `self-managed`: 
