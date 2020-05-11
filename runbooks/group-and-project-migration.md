@@ -105,6 +105,11 @@ Copy the following data and add subsequent columns for single group migration
 ### Post Migration with Missing Groups and Projects
  
 * [ ] Repearedly Check if projects or groups are missing N times. 
+    * [ ] If migrating to `.com`: 
+        * Reach out to support to delete the failed/partially imported projects. Provide the full path to the project. provided in the project migration results
+    * [ ] If migrating to `self-managed`: 
+        * Delete all failed/partially imported projects listed in the project migration results.
+    * [ ] Once the projects are confirmed deleted, migrate them again.
     * [ ] If projects or groups are missing, confirm the projects and groups have successfully exported and confirm they don't actually exist on the destination instance
         * To confirm the exports have successfully exported, review the contents of `/opt/congregate/downloads` or the S3 bucket defined in the configuration. Make sure no export archive has a size of 42 bytes. That means the export archive is invalid.
         * To confirm the projects or groups don't actually exist on the destination instance, compare the results of the diff report and manually check where the project or group should be located.
@@ -117,7 +122,7 @@ Copy the following data and add subsequent columns for single group migration
     * [ ] Notify the customer in the customer-facing slack channel the migration wave has finished
     * [ ] Attach `data/congregate.log`, `data/audit.log`, and `data/waves/wave_<insert_wave_number>/wave<insert-wave-here>_attempt<insert-attempt>.log` to this issue
     * [ ] Copy `data/congregate.log`, `data/audit.log`, and `data/waves/wave_<insert_wave_number>/wave<insert-wave-here>_attempt<insert-attempt>.log` to `/opt/congregate/data/waves/wave_<insert_wave_number>/`
-* [ ] Stitch the N migrations `project_migration_results.json/group_migration_results.json` files into 1 (all but the last will be timestamped `project_migration_results_<timestamp>.json` as they are rotated per migration attempt)
+* [ ] Once all projects and groups are migrated, stitch the N migrations `project_migration_results.json/group_migration_results.json` files into 1 (all but the last will be timestamped `project_migration_results_<timestamp>.json` as they are rotated per migration attempt)
 * [ ] Run the diff report
 * [ ] If a project continues to fail to import to `gitlab.com` through the API by timing out after an hour (give it a couple attempts max), you will need to reach out to the SRE on-call to get the project imported.
     * Preparation
