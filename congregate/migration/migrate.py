@@ -64,13 +64,17 @@ def migrate(
         skip_group_export=False,
         skip_group_import=False,
         skip_project_import=False,
-        skip_project_export=False):
+        skip_project_export=False,
+        only_post_migration_info=False):
 
     global _DRY_RUN
     _DRY_RUN = dry_run
 
     global _PROCESSES
     _PROCESSES = processes
+
+    global _ONLY_POST_MIGRATION_INFO
+    _ONLY_POST_MIGRATION_INFO = only_post_migration_info
 
     start = time()
 
@@ -380,11 +384,10 @@ def handle_importing_projects(project_json):
     result = {
         dst_path_with_namespace: False
     }
+    import_id = None
     try:
         if isinstance(project_json, str):
             project_json = json.loads(project_json)
-        b.log.info("Searching on destination for project {}".format(
-            dst_path_with_namespace))
         dst_pid = projects.find_project_by_path(
             b.config.destination_host, b.config.destination_token, dst_path_with_namespace)
         if dst_pid:
@@ -392,23 +395,27 @@ def handle_importing_projects(project_json):
                 b.config.destination_host, b.config.destination_token, dst_pid).json()
             b.log.info("Project {0} (ID: {1}) found on destination, with import status: {2}".format(
                 dst_path_with_namespace, dst_pid, import_status))
-            result[dst_path_with_namespace] = dst_pid
+            if _ONLY_POST_MIGRATION_INFO and not _DRY_RUN:
+                import_id = dst_pid
+            else:
+                result[dst_path_with_namespace] = dst_pid
         else:
             b.log.info("{0}Project {1} NOT found on destination, importing...".format(
                 get_dry_log(_DRY_RUN), dst_path_with_namespace))
             import_id = ie.import_project(project_json, dry_run=_DRY_RUN)
-            if import_id and not _DRY_RUN:
-                # Archived projects cannot be migrated
-                if archived:
-                    b.log.info(
-                        "Unarchiving source project {0} (ID: {1})".format(path, src_id))
-                    projects.projects_api.unarchive_project(
-                        b.config.source_host, b.config.source_token, src_id)
+                
+        if import_id and not _DRY_RUN:
+            # Archived projects cannot be migrated
+            if archived:
                 b.log.info(
-                    "Migrating source project {0} (ID: {1}) info".format(path, src_id))
-                post_import_results = migrate_single_project_info(
-                    project_json, import_id)
-                result[dst_path_with_namespace] = post_import_results
+                    "Unarchiving source project {0} (ID: {1})".format(path, src_id))
+                projects.projects_api.unarchive_project(
+                    b.config.source_host, b.config.source_token, src_id)
+            b.log.info(
+                "Migrating source project {0} (ID: {1}) info".format(path, src_id))
+            post_import_results = migrate_single_project_info(
+                project_json, import_id)
+            result[dst_path_with_namespace] = post_import_results
     except (RequestException, KeyError, OverflowError) as oe:
         b.log.error("Failed to import project {0} (ID: {1}) with error:\n{2}".format(
             path, src_id, oe))

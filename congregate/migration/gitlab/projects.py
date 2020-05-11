@@ -75,6 +75,8 @@ class ProjectsClient(BaseClass):
 
     def find_project_by_path(self, host, token, dst_path_with_namespace):
         """Returns the project ID based on search by path."""
+        self.log.info("Searching on {0} for project {1}".format(
+            host, dst_path_with_namespace))
         resp = self.projects_api.get_project_by_path_with_namespace(
             dst_path_with_namespace, host, token)
         if resp.status_code == 200:
