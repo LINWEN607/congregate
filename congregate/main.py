@@ -3,6 +3,7 @@
 Copyright (c) 2020 - GitLab
 
 Usage:
+    congregate init
     congregate list
     congregate configure
     congregate stage <projects>... [--commit]
@@ -42,6 +43,7 @@ Usage:
     congregate map-users [--commit]
     congregate generate-diff [--processes=<n>] [--staged]
     congregate clean [--commit]
+    congregate stitch-results [--result-type=<project|group|user>] [--no-of-files=<n>] [--head|--tail]
     congregate obfuscate
     congregate -h | --help
 
@@ -63,9 +65,14 @@ Arguments:
                                                 etc). Useful for testing export contents.
     access-level                            Update parent group level user permissions (Guest/Reporter/Developer/Maintainer/Owner).
     staged                                  Compare using staged data
+    no-of-files                             Number of files used to go back when stitching JSON results
+    result-type                             For stitching result files. Options are project, group, or user
+    head                                    Read results files in chronological order
+    tail                                    Read results files in reverse chronological order (default for stitch-results)
 
 Commands:
     list                                    List all projects of a source instance and save it to {CONGREGATE_PATH}/data/project_json.json.
+    init                                    Creates additional directories and files required by congregate
     configure                               Configure congregate for migrating between two instances and save it to {CONGREGATE_PATH}/data/congregate.conf.
     stage                                   Stage projects to {CONGREGATE_PATH}/data/stage.json,
                                                 users to {CONGREGATE_PATH}/data/staged_users.json,
@@ -104,6 +111,7 @@ Commands:
     validate-staged-groups-schema           Check staged_groups.json for missing group data.
     validate-staged-projects-schema         Check stage.json for missing project data.
     clean                                   Delete all retrieved and staged data
+    stitch-results                          Stitches together migration results from multiple migration runs
     generate-diff                           Generates HTML files containing the diff results of the migration
     map-users                               Maps staged user emails to emails defined in the user-provided user_map.csv
     obfuscate                               Obfuscate a secret or password that you want to manually update in the config.
@@ -117,39 +125,46 @@ from docopt import docopt
 if __name__ == '__main__':
     if __package__ is None:
         import sys
-
         sys.path.append(os.path.dirname(
             os.path.dirname(os.path.abspath(__file__))))
         from congregate.helpers import conf
         from congregate.helpers.logger import myLogger
-        from congregate.cli.config import generate_config
         from congregate.helpers.misc_utils import get_congregate_path, clean_data, obfuscate
-        from congregate.helpers.user_util import map_users
+        
     else:
         from .helpers import conf
         from .helpers.logger import myLogger
         from .helpers.misc_utils import get_congregate_path, clean_data, obfuscate
-        from .helpers.user_util import map_users
 else:
     import sys
     sys.path.append(os.path.dirname(
         os.path.dirname(os.path.abspath(__file__))))
-    from congregate.cli.config import generate_config
     from congregate.helpers import conf
     from congregate.helpers.logger import myLogger
-    from congregate.helpers.misc_utils import get_congregate_path
+    from congregate.helpers.misc_utils import get_congregate_path, clean_data, obfuscate, stitch_json_results, write_results_to_file
 
 app_path = get_congregate_path()
-
-log = myLogger(__name__)
-
-config = conf.Config()
 
 if __name__ == '__main__':
     arguments = docopt(__doc__)
     DRY_RUN = False if arguments["--commit"] else True
     STAGED = True if arguments["--staged"] else False
     PROCESSES = arguments["--processes"] if arguments["--processes"] else None
+
+    if arguments["init"]:
+        if not os.path.exists('data'):
+            print "Creating data directory and empty log file"
+            os.makedirs('data')
+            if not os.path.exists("%s/data/congregate.log" % app_path):
+                with open("%s/data/congregate.log" % app_path, "w") as f:
+                    f.write("")
+        else:
+            print "Congregate already initialized"
+        log = myLogger(__name__)
+    else:
+        log = myLogger(__name__)
+
+    from congregate.cli.config import generate_config
 
     if arguments["configure"]:
         generate_config()
@@ -168,6 +183,7 @@ if __name__ == '__main__':
             from congregate.migration.gitlab.diff.userdiff import UserDiffClient
             from congregate.migration.gitlab.diff.projectdiff import ProjectDiffClient
             from congregate.migration.gitlab.diff.groupdiff import GroupDiffClient
+            from congregate.helpers.user_util import map_users
         else:
             from .migration.gitlab.users import UsersClient
             from .migration.gitlab.groups import GroupsClient
@@ -177,6 +193,8 @@ if __name__ == '__main__':
             from congregate.migration import migrate
             from .migration.gitlab.branches import BranchesClient
             from congregate.cli import list_projects, stage_projects, do_all
+            from congregate.helpers.user_util import map_users
+        config = conf.Config()
         if config.external_source_url is not None:
             if arguments["migrate"]:
                 migrate.migrate(processes=PROCESSES)
@@ -201,6 +219,7 @@ if __name__ == '__main__':
             variables = VariablesClient()
             compare = CompareClient()
             branches = BranchesClient()
+
             if arguments["list"]:
                 list_projects.list_projects()
             if arguments["stage"]:
@@ -341,5 +360,14 @@ if __name__ == '__main__':
                     "/data/project_migration_results.json", staged=STAGED, processes=PROCESSES)
                 project_diff.generate_html_report(
                     project_diff.generate_diff_report(), "/data/project_migration_results.html")
+            if arguments["stitch-results"]:
+                result_type = arguments["--result-type"].replace("s", "") if arguments["--result-type"] else "project"
+                steps = int(arguments["--no-of-files"]) if arguments["--no-of-files"] else 0
+                if arguments["--head"]:
+                    order = "head"
+                else:
+                    order = "tail"
+                new_results = stitch_json_results(result_type=result_type, steps=steps, order=order)
+                write_results_to_file(new_results, result_type, log=log)
             if arguments["obfuscate"]:
                 print obfuscate("Secret:")
