@@ -236,9 +236,7 @@ if __name__ == '__main__':
                 if only_post_migration_info:
                     skip_users = True
                     skip_group_export = True
-                    skip_group_import = True
                     skip_project_export = True
-                    skip_project_import = True
                 migrate.migrate(
                     processes=PROCESSES,
                     dry_run=DRY_RUN,

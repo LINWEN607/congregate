@@ -259,10 +259,16 @@ class GroupsClient(BaseClass):
             if namespace is not None:
                 self.log.info("Group {} exists (namespace search)".format(
                     full_name_with_parent_namespace))
-                return namespace.get("id", None)
+                return namespace
         else:
             self.log.info("Group {} exists (group search)".format(
                 full_name_with_parent_namespace))
+            return group
+        return None
+
+    def find_group_id_by_path(self, host, token, full_name_with_parent_namespace):
+        group = self.find_group_by_path(host, token, full_name_with_parent_namespace)
+        if group is not None:
             return group.get("id", None)
         return None
 

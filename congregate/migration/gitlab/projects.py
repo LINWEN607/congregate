@@ -51,7 +51,7 @@ class ProjectsClient(BaseClass):
             for group in shared_with_groups:
                 dst_full_path = get_full_path_with_parent_namespace(
                     group["group_full_path"])
-                new_gid = self.groups.find_group_by_path(
+                new_gid = self.groups.find_group_id_by_path(
                     self.config.destination_host, self.config.destination_token, dst_full_path)
                 if new_gid is not None:
                     data = {

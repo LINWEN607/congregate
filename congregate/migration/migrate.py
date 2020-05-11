@@ -231,8 +231,9 @@ def handle_importing_groups(group):
             group = json.loads(group)
         b.log.info("Searching on destination for group {}".format(
             full_path_with_parent_namespace))
-        dst_gid = groups.find_group_by_path(
+        dst_group = groups.find_group_by_path(
             b.config.destination_host, b.config.destination_token, full_path_with_parent_namespace)
+        dst_gid = dst_group.get("id", None)
         if dst_gid:
             b.log.info("{0}Group {1} (ID: {2}) already exists on destination".format(
                 get_dry_log(_DRY_RUN), full_path, dst_gid))
@@ -272,8 +273,9 @@ def migrate_subgroup_info(subgroup):
             subgroup = json.loads(subgroup)
         b.log.info("Searching on destination for sub-group {}".format(
             full_path_with_parent_namespace))
-        dst_gid = groups.find_group_by_path(
+        dst_group = groups.find_group_by_path(
             b.config.destination_host, b.config.destination_token, full_path_with_parent_namespace)
+        dst_gid = dst_group.get("id", None)
         if dst_gid:
             b.log.info("{0}Sub-group {1} (ID: {2}) found on destination".format(
                 get_dry_log(_DRY_RUN), full_path, dst_gid))

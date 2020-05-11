@@ -123,7 +123,7 @@ class ImportExportClient(BaseClass):
         timer = 0
         wait_time = self.config.importexport_wait
         while True:
-            gid = self.groups.find_group_by_path(
+            gid = self.groups.find_group_id_by_path(
                 self.config.destination_host, self.config.destination_token, path)
             if gid:
                 group = self.groups_api.get_group(
@@ -543,7 +543,7 @@ class ImportExportClient(BaseClass):
             full_path)
         self.log.info("Searching on destination for group {}".format(
             full_path_with_parent_namespace))
-        dst_gid = self.groups.find_group_by_path(
+        dst_gid = self.groups.find_group_id_by_path(
             self.config.destination_host,
             self.config.destination_token,
             full_path_with_parent_namespace)
@@ -624,7 +624,7 @@ class ImportExportClient(BaseClass):
             full_path)
         self.log.info("Searching on destination for group {}".format(
             full_path_with_parent_namespace))
-        dst_gid = self.groups.find_group_by_path(
+        dst_gid = self.groups.find_group_id_by_path(
             self.config.destination_host,
             self.config.destination_token,
             full_path_with_parent_namespace)
