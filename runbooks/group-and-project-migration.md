@@ -104,8 +104,8 @@ Copy the following data and add subsequent columns for single group migration
 
 ### Post Migration with Failed Groups and Projects
 
-#### Repeadedly Migrate with Failed Groups and Projects
-* [ ] Repeatedly Check if projects or groups are failed during migration.
+#### Migration with Failed Groups and Projects
+* [ ] Repeatedly Check if projects or groups are failed during post migration.
     * [ ] Reach out to `Support` to delete the failed/partially imported projects. Provide the full path to the project. provided in the project migration results
     * [ ] Once the projects are confirmed deleted, prepare to migrate them again.
     * [ ] If projects or groups are missing, confirm the projects and groups have successfully exported and confirm they don't actually exist on the destination instance
