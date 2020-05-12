@@ -102,13 +102,10 @@ Copy the following data and add subsequent columns for single group migration
 * [ ] Attach `data/congregate.log`, `data/audit.log`, and `data/waves/wave_<insert_wave_number>/wave<insert-wave-here>.log` to this issue
 * [ ] Copy `data/congregate.log`, `data/audit.log`, and `data/waves/wave_<insert_wave_number>/wave<insert-wave-here>.log` to `/opt/congregate/data/waves/wave_<insert_wave_number>/`
 
-### Post Migration with Missing Groups and Projects
+### Post Migration with Failed Groups and Projects
  
-* [ ] Repeatedly Check if projects or groups are missing N times. 
-    * [ ] If migrating to `.com`: 
-        * Reach out to support to delete the failed/partially imported projects. Provide the full path to the project. provided in the project migration results
-    * [ ] If migrating to `self-managed`: 
-        * Delete all failed/partially imported projects listed in the project migration results.
+* [ ] Repeatedly Check if projects or groups are failed during migration. 
+    * [ ] Reach out to `Support` to delete the failed/partially imported projects. Provide the full path to the project. provided in the project migration results
     * [ ] Once the projects are confirmed deleted, prepare to migrate them again.
     * [ ] If projects or groups are missing, confirm the projects and groups have successfully exported and confirm they don't actually exist on the destination instance
         * To confirm the exports have successfully exported, review the contents of `/opt/congregate/downloads` or the S3 bucket defined in the configuration. Make sure no export archive has a size of 42 bytes. That means the export archive is invalid.
@@ -120,8 +117,6 @@ Copy the following data and add subsequent columns for single group migration
     * [ ] Monitor the wave periodically by running `tail -f data/waves/wave_<insert_wave_number>/wave<insert-wave-here>_attempt<insert-attempt>.log`
     * [ ] Notify in the internal slack channel dedicated to this migration the migration has finished
     * [ ] Notify the customer in the customer-facing slack channel the migration wave has finished
-    * [ ] Stitch together the various migration attempts by running `./congregate.sh stitch-results --result-type=<user|group|project> --no-of-files=<number-of-results-files-to-stitch>`
-    * [ ] Once the results have been stitched into a single JSON file, run the diff report on the newly created results file
     * [ ] Attach `data/congregate.log`, `data/audit.log`, and `data/waves/wave_<insert_wave_number>/wave<insert-wave-here>_attempt<insert-attempt>.log` to this issue
     * [ ] Copy `data/congregate.log`, `data/audit.log`, and `data/waves/wave_<insert_wave_number>/wave<insert-wave-here>_attempt<insert-attempt>.log` to `/opt/congregate/data/waves/wave_<insert_wave_number>/`
 * [ ] If a project continues to fail to import to `gitlab.com` through the API by timing out after an hour (give it a couple attempts max), you will need to reach out to the SRE on-call to get the project imported.
@@ -151,6 +146,8 @@ Copy the following data and add subsequent columns for single group migration
 
 ### Post Migration
 
+* [ ] Once all the projects/groups are migrated, stitch together the various migration attempts by running `./congregate.sh stitch-results --result-type=<user|group|project> --no-of-files=<number-of-results-files-to-stitch>`
+* [ ] Once the results have been stitched into a single JSON file, run the diff report on the newly created results file
 * [ ] Notify in the internal slack channel dedicated to this migration you are running the diff report
 * [ ] Run `nohup ./congregate.sh generate-diff --staged > data/waves/wave_<insert_wave_number>/diff<insert-wave-here>.log 2>&1 &` to generate the various diff reports
 * [ ] Reach out the whoever has rails console access to the destination instance and have them run the following script where `group_paths` is a list of all expected full_paths for this migration wave:
@@ -172,7 +169,6 @@ p "Number of Merge Request import failures: #{mr_import_failures.count} (this fi
 p "Number of Services import failures: #{services_import_failures.count}"
 p "Number of Protected Branches import failures: #{protected_branches_import_failures.count}"
 ```
-
 * [ ] Review the diff reports (`data/*_results.html`) once they are finished generating
     * Review the following:
         * Overall accuracy of groups and projects
