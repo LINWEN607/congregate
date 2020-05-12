@@ -58,7 +58,19 @@ build:
     - changes:
         - .gitlab-ci.yml
         - docker/test/Dockerfile
-
+documentation update:
+  stage: test
+  script:
+    - echo "This is a placeholder job when only documentation is changed"
+    - echo "Storing any changed runbook to artifact, it is going to expire in 1 week."
+  rules:
+    - changes:
+        - runbooks/*
+        - congregate/docs/**/*
+  artifacts:
+    paths:
+      - runbooks/*
+    expert_in: 1 week
 .test-job:
   stage: test
   before_script:
