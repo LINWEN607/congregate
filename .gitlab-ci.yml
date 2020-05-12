@@ -70,7 +70,7 @@ documentation update:
   artifacts:
     paths:
       - runbooks/*
-    expert_in: 1 week
+    expire_in: 1 week
 .test-job:
   stage: test
   before_script:
