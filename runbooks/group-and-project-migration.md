@@ -129,7 +129,7 @@ Copy the following data and add subsequent columns for single group migration
         * [ ] Upload the project export file to google drive and get a shareable link.
     * Creating the import issue **per project**
         * [ ] Create a new issue in the [infrastructure](https://gitlab.com/gitlab-com/gl-infra/infrastructure/-/issues) project using the `import` template.
-        * [ ] Change `#### Import on: YYYY-MM-DD HH:MM UTC` to #### Import as soon as possible`
+        * [ ] Change `#### Import on: YYYY-MM-DD HH:MM UTC` to `#### Import as soon as possible`
         * [ ] Walk through the steps on the template to provide all necessary information to the SRE on call
         * [ ] When providing a list of user emails, you can extract the project export tar.gz and run the following command to get a list of emails (make sure you have `jq` installed): `cat project.json | jq -r '.project_members' | jq -r '.[] | .user | .email'`
         * [ ] Submit the issue and don't assign it to anyone. The SRE on-call will pick it up.
