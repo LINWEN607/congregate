@@ -69,7 +69,7 @@ documentation update:
         - congregate/docs/**/*
   artifacts:
     paths:
-      - doc_updates
+      - runbooks/*
     expire_in: 1 week
 .test-job:
   stage: test
