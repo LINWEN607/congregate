@@ -95,15 +95,61 @@ Copy the following data and add subsequent columns for single group migration
 * [ ] Notify the customer in the customer-facing slack channel you are starting the migration wave
 * If migrating to `gitlab.com`:
   * [ ] Export only by running the following command: `nohup ./congregate.sh migrate --skip-users --skip-group-import --skip-project-import --commit > data/waves/wave_<insert_wave_number>/wave<insert-wave-here>.log 2>&1 &`
-  * [ ] Import only with single (1) process by running the following command: `nohup ./congregate.sh migrate --processes=1 --skip-users --skip-group-export --skip-project-export --commit >> data/waves/wave_<insert_wave_number>/wave<insert-wave-here>.log 2>&1 &`
-* If migrating to self-managed:
+  * [ ] Import by running the following command: `nohup ./congregate.sh migrate --skip-users --skip-group-export --skip-project-export --commit > data/waves/wave_<insert_wave_number>/wave<insert-wave-here>.log 2>&1 &`
+* If migrating to `self-managed`:
   * [ ] Run the following command `nohup ./congregate.sh migrate --skip-users --commit > data/waves/wave_<insert_wave_number>/wave<insert-wave-here>.log 2>&1 &`
 * [ ] Monitor the wave periodically by running `tail -f data/waves/wave_<insert_wave_number>/wave<insert-wave-here>.log`
 * [ ] Attach `data/congregate.log`, `data/audit.log`, and `data/waves/wave_<insert_wave_number>/wave<insert-wave-here>.log` to this issue
 * [ ] Copy `data/congregate.log`, `data/audit.log`, and `data/waves/wave_<insert_wave_number>/wave<insert-wave-here>.log` to `/opt/congregate/data/waves/wave_<insert_wave_number>/`
 
+### Post Migration with Failed Groups and Projects
+
+#### Migration with Failed Groups and Projects
+* [ ] Repeatedly Check if projects or groups are failed.
+    * [ ] Reach out to `Support` to delete the failed/partially imported projects. Provide the full path to the project. provided in the project migration results
+    * [ ] Once the projects are confirmed deleted, prepare to migrate them again.
+    * [ ] If projects or groups are missing, confirm the projects and groups have successfully exported and confirm they don't actually exist on the destination instance
+        * To confirm the exports have successfully exported, review the contents of `/opt/congregate/downloads` or the S3 bucket defined in the configuration. Make sure no export archive has a size of 42 bytes. That means the export archive is invalid.
+        * To confirm the projects or groups don't actually exist on the destination instance, compare the results of the diff report and manually check where the project or group should be located.
+        * To confirm the projects or groups don't actually exist on the destination instance, you may also `dry-run` a wave.
+            * You can also search for the project with an API request to `/projects?search=<project-name>`
+            * You can also search for the groups with an API request to `/groups?search=<group-name>` or `/groups/<url-encoded-full-path>`
+    * [ ] Stage _only_ those groups and projects and go through this runbook again, this time with the following command for the migration stage: `nohup ./congregate.sh migrate --skip-users --skip-group-export --skip-project-export --commit > data/waves/wave_<insert_wave_number>/wave<insert-wave-here>_attempt<insert-attempt>.log 2>&1 &`
+    * [ ] Monitor the wave periodically by running `tail -f data/waves/wave_<insert_wave_number>/wave<insert-wave-here>_attempt<insert-attempt>.log`
+    * [ ] Notify in the internal slack channel dedicated to this migration the migration has finished
+    * [ ] Notify the customer in the customer-facing slack channel the migration wave has finished
+    * [ ] Attach `data/congregate.log`, `data/audit.log`, and `data/waves/wave_<insert_wave_number>/wave<insert-wave-here>_attempt<insert-attempt>.log` to this issue
+    * [ ] Copy `data/congregate.log`, `data/audit.log`, and `data/waves/wave_<insert_wave_number>/wave<insert-wave-here>_attempt<insert-attempt>.log` to `/opt/congregate/data/waves/wave_<insert_wave_number>/`
+
+#### SRE Supports Needed on Migration with Failed Groups and Projects
+* [ ] If a project continues to fail to import to `gitlab.com` through the API by timing out after an hour (give it a couple attempts max), you will need to reach out to the SRE on-call to get the project imported.
+    * Preparation
+        * [ ] Before coming to the conclusion that an SRE is needed to import the project, examine the contents of the project on the source.
+        * [ ] Take note of any environments, CI/CD variables, merge request approvers, and container registries and see if any of those are present. If they are, you will need to move that data over manually.
+        * [ ] Upload the project export file to google drive and get a shareable link.
+    * Creating the import issue **per project**
+        * [ ] Create a new issue in the [infrastructure](https://gitlab.com/gitlab-com/gl-infra/infrastructure/-/issues) project using the `import` template.
+        * [ ] Change `#### Import on: YYYY-MM-DD HH:MM UTC` to `#### Import as soon as possible`
+        * [ ] Walk through the steps on the template to provide all necessary information to the SRE on call
+        * [ ] When providing a list of user emails, you can extract the project export tar.gz and run the following command to get a list of emails (make sure you have `jq` installed): `cat project.json | jq -r '.project_members' | jq -r '.[] | .user | .email'`
+        * [ ] Submit the issue and don't assign it to anyone. The SRE on-call will pick it up.
+    * Reaching out to the SRE on-call. **Post a message in #infrastructure-lounge paging the SRE on-call.** For example:
+        ```Ruby
+        @sre-oncall I need a project imported to gitlab.com as soon as possible. Here is the issue:
+        https://gitlab.com/gitlab-com/gl-infra/infrastructure/-/issues/10061
+        ```
+        * [ ] Make sure to check off all checkboxes listed under Support in the import issue. We are Support in this instance.
+        * [ ] Once the SRE confirms the import has started, promptly delete the project from google drive.
+    * Post Import . **The SRE will let you know when the import is complete. Once it's complete, move on to manual, post-migration steps.**
+        * [ ] Manually copy over any CI/CD variables
+        * [ ] Manually copy over any environments
+        * [ ] Manually copy over any merge request approvers
+        * [ ] Manually copy over any docker container registries
+
 ### Post Migration
 
+* [ ] Once all the projects/groups are migrated, stitch together the various migration attempts by running `./congregate.sh stitch-results --result-type=<user|group|project> --no-of-files=<number-of-results-files-to-stitch>`
+* [ ] Once the results have been stitched into a single JSON file, run the diff report on the newly created results file
 * [ ] Notify in the internal slack channel dedicated to this migration you are running the diff report
 * [ ] Run `nohup ./congregate.sh generate-diff --staged > data/waves/wave_<insert_wave_number>/diff<insert-wave-here>.log 2>&1 &` to generate the various diff reports
 * [ ] Reach out the whoever has rails console access to the destination instance and have them run the following script where `group_paths` is a list of all expected full_paths for this migration wave:
@@ -125,7 +171,6 @@ p "Number of Merge Request import failures: #{mr_import_failures.count} (this fi
 p "Number of Services import failures: #{services_import_failures.count}"
 p "Number of Protected Branches import failures: #{protected_branches_import_failures.count}"
 ```
-
 * [ ] Review the diff reports (`data/*_results.html`) once they are finished generating
     * Review the following:
         * Overall accuracy of groups and projects
@@ -150,23 +195,6 @@ p "Number of Protected Branches import failures: #{protected_branches_import_fai
 * [ ] Copy `data/*_results.*` and `data/*_diff.json` to `/opt/congregate/data/waves/wave_<insert_wave_number>/`
 * [ ] Notify in the internal slack channel dedicated to this migration the diff report is finished generating with a link to the comment you just posted. If you need to run another small subset of this migration, mention that in the slack message as well.
 * [ ] Notify the customer in the customer-facing slack channel the migration wave has finished
-
-### Post Migration with Missing Groups and Projects
-
-* [ ] If projects or groups are missing, confirm the projects and groups have successfully exported and confirm they don't actually exist on the destination instance
-    * To confirm the exports have successfully exported, review the contents of `/opt/congregate/downloads` or the S3 bucket defined in the configuration. Make sure no export archive has a size of 42 bytes. That means the export archive is invalid.
-    * To confirm the projects or groups don't actually exist on the destination instance, compare the results of the diff report and manually check where the project or group should be located.
-    * To confirm the projects or groups don't actually exist on the destination instance, you may also `dry-run` a wave.
-        * You can also search for the project with an API request to `/projects?search=<project-name>`
-        * You can also search for the groups with an API request to `/groups?search=<group-name>` or `/groups/<url-encoded-full-path>`
-* [ ] Stage _only_ those groups and projects and go through this runbook again, this time with the following command for the migration stage: `nohup ./congregate.sh migrate --skip-users --skip-group-export --skip-project-export --commit > data/waves/wave_<insert_wave_number>/wave<insert-wave-here>_attempt<insert-attempt>.log 2>&1 &`
-* [ ] Monitor the wave periodically by running `tail -f data/waves/wave_<insert_wave_number>/wave<insert-wave-here>_attempt<insert-attempt>.log`
-* [ ] Notify in the internal slack channel dedicated to this migration the migration has finished
-* [ ] Notify the customer in the customer-facing slack channel the migration wave has finished
-* [ ] Stitch together the various migration attempts by running `./congregate.sh stitch-results --result-type=<user|group|project> --no-of-files=<number-of-results-files-to-stitch>`
-* [ ] Once the results have been stitched into a single JSON file, run the diff report on the newly created results file
-* [ ] Attach `data/congregate.log`, `data/audit.log`, and `data/waves/wave_<insert_wave_number>/wave<insert-wave-here>_attempt<insert-attempt>.log` to this issue
-* [ ] Copy `data/congregate.log`, `data/audit.log`, and `data/waves/wave_<insert_wave_number>/wave<insert-wave-here>_attempt<insert-attempt>.log` to `/opt/congregate/data/waves/wave_<insert_wave_number>/`
 
 ### Rollback
 
