@@ -470,8 +470,9 @@ def migrate_single_project_info(project, dst_id):
         src_id, dst_id, path_with_namespace)
 
     # Container Registries
-    results["container_registry"] = registries.migrate_registries(
-        src_id, dst_id, path_with_namespace)
+    if b.config.source_registry and b.config.destination_registry:
+        results["container_registry"] = registries.migrate_registries(
+            src_id, dst_id, path_with_namespace)
 
     # Project hooks (webhooks)
     results["project_hooks"] = hooks.migrate_project_hooks(

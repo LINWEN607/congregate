@@ -15,7 +15,8 @@ class ConfigurationValidationTests(unittest.TestCase):
     def setUp(self):
         self.groups = MockGroupsApi()
         self.users = MockUsersApi()
-        self.config = ConfigurationValidator()
+        self.config = ConfigurationValidator(
+            path="congregate/tests/cli/data/test_not_ext_src_parent_group_path_no_mirror_name_aws_default.conf")
 
     @pytest.fixture(autouse=True)
     def reset_validation(self):
