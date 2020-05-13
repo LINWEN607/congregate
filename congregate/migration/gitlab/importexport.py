@@ -75,12 +75,11 @@ class ImportExportClient(BaseClass):
                 response = response.json()
                 name = response["name"]
                 status = response.get("export_status", None)
-                print("The export status: ", str(status))
                 if status == "finished":
                     self.log.info(
                         "{0} {1} has finished exporting".format(export_type, name))
                     exported = True
-                elif status == "failed":
+                elif status == "failed" or status =="none":
                     self.log.error(
                         "{0} {1} export failed".format(export_type, name))
                     break
