@@ -55,6 +55,7 @@ build:
     - docker build --tag "$TEST_IMAGE_NAME" docker/test
     - docker push "$TEST_IMAGE_NAME"
   rules:
+    - if: $CI_PIPELINE_SOURCE == 'push'
     - changes:
         - .gitlab-ci.yml
         - docker/test/Dockerfile
