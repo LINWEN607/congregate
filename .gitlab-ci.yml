@@ -58,19 +58,7 @@ build:
     - changes:
         - .gitlab-ci.yml
         - docker/test/Dockerfile
-documentation update:
-  stage: test
-  script:
-    - echo "This is a placeholder job when only documentation is changed"
-    - echo "Storing any changed runbook to artifact, it is going to expire in 1 week."
-  rules:
-    - changes:
-        - runbooks/*
-        - congregate/docs/**/*
-  artifacts:
-    paths:
-      - runbooks/*
-    expire_in: 1 week
+
 .test-job:
   stage: test
   before_script:
@@ -163,17 +151,30 @@ release-tag:
     - docker push "$RELEASE_IMAGE_NAME"
     - docker push "$LATEST"
 
+runbook update:
+  stage: test
+  script:
+    - echo "This is a placeholder job ran only when runbooks are changed"
+    - echo "Storing any changed runbook to artifacts that will expire in 1 week."
+  rules:
+    - changes:
+        - runbooks/*
+  artifacts:
+    paths:
+      - runbooks/*
+    expire_in: 1 week
+
 pages:
   stage: deploy
   rules:
     - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
-  dependencies:
-    - code_quality
+  # dependencies:
+  #   - code_quality
   script:
     - mkdir data
     - echo ${Dummy_config} > $CONGREGATE_PATH/data/congregate.conf
     - poetry install
-    - mv gl-code-quality-report.json congregate/docs/source/_static/
+    # - mv gl-code-quality-report.json congregate/docs/source/_static/
     - poetry run sphinx-apidoc -f -o congregate/docs/source/ ./
     - cd congregate/docs
     - make html
