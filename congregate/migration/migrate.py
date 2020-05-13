@@ -12,8 +12,8 @@ from time import time
 from requests.exceptions import RequestException
 
 from congregate.helpers import api, migrate_utils
-from congregate.helpers.misc_utils import get_dry_log, json_pretty, \
-    is_dot_com, clean_data, add_post_migration_stats, rotate_logs, write_results_to_file
+from congregate.helpers.misc_utils import get_dry_log, json_pretty, is_dot_com, clean_data, \
+    add_post_migration_stats, rotate_logs, write_results_to_file, migration_dry_run
 from congregate.helpers.processes import start_multi_process
 from congregate.aws import AwsClient
 from congregate.cli.stage_projects import stage_projects
@@ -91,7 +91,7 @@ def migrate(
 
         # Migrate users
         if not skip_users:
-            users.migrate_user_info(dry_run=_DRY_RUN, processes=_PROCESSES)
+            migrate_user_info(start)
 
         # Migrate groups
         migrate_group_info(start, skip_group_export, skip_group_import)
@@ -122,6 +122,32 @@ def is_loc_supported(loc):
     if loc not in ["filesystem", "aws"]:
         b.log.error("Unsupported export location: {}".format(loc))
         exit()
+
+
+def migrate_user_info(start):
+    # Search on destination and remove NOT found users from staged users
+    users.handle_users_not_found(
+        "staged_users", users.search_for_staged_users(_DRY_RUN))
+    staged = users.get_staged_users()
+    if staged:
+        b.log.info("{}Migrating user info".format(get_dry_log(_DRY_RUN)))
+        if not _DRY_RUN:
+            new_users = start_multi_process(
+                users.handle_user_creation, staged, _PROCESSES)
+            are_results(new_users, "user", "creation", start)
+            if new_users:
+                formatted_users = {}
+                for n in filter(None, new_users):
+                    formatted_users[n["email"]] = n
+                write_results_to_file(
+                    formatted_users, result_type="user", log=b.log)
+            # Do a dry-run after search
+            users.search_for_staged_users()
+        else:
+            b.log.info(
+                "DRY-RUN: Outputing various USER migration data to dry_run_user_migration.json")
+            migration_dry_run("user", list(start_multi_process(
+                users.generate_user_data, staged, _PROCESSES)))
 
 
 def migrate_group_info(start, skip_group_export=False, skip_group_import=False):

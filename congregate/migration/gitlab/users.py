@@ -4,9 +4,8 @@ from requests.exceptions import RequestException
 
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers import api
-from congregate.helpers.misc_utils import get_dry_log, json_pretty, get_timedelta, write_results_to_file
-from congregate.helpers.processes import start_multi_process
-from congregate.helpers.misc_utils import remove_dupes, migration_dry_run
+from congregate.helpers.misc_utils import get_dry_log, json_pretty, get_timedelta
+from congregate.helpers.misc_utils import remove_dupes
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.users import UsersApi
 
@@ -55,8 +54,7 @@ class UsersClient(BaseClass):
                     user and \
                     user.get("email", None) is not None and \
                     user["email"].lower() == email.lower():
-                self.log.info("Found by email {0} user:\n{1}".format(
-                    email, json_pretty(user)))
+                self.log.info("Found user by email {}".format(email))
                 return user
             else:
                 self.log.error(
@@ -388,7 +386,7 @@ class UsersClient(BaseClass):
         with open("%s/data/newer_users.json" % self.app_path, "wb") as f:
             json.dump(newer_users, f, indent=4)
 
-    def update_staged_user_info(self, dry_run=True):
+    def search_for_staged_users(self, dry_run=True):
         """
         Read the information in staged_users.json and dump to new_users.json and users_not_found.json. Does the
         search based on the email address and *not* username
@@ -462,16 +460,15 @@ class UsersClient(BaseClass):
         """
             Remove FOUND users from staged users.
             Remove users NOT found from staged users, groups and projects.
-            Users NOT found input comes from update_staged_user_info.
+            Users NOT found input comes from search_for_staged_users.
             :return: Staged users
         """
         with open("{0}/data/{1}.json".format(self.app_path, data), "r") as f:
             staged = json.load(f)
 
         if data == "staged_users":
-            self.log.info("{0} all but the NOT found users ({1}) from staged users".format(
-                "Removing" if keep else "Keeping",
-                len(users)))
+            self.log.info("{0} all except NOT found users ({1}/{2}) from staged users".format(
+                "Removing" if keep else "Keeping", len(users), len(staged)))
             if keep:
                 staged = [i for j, i in enumerate(
                     staged) if i["id"] in users.keys()]
@@ -479,7 +476,7 @@ class UsersClient(BaseClass):
                 staged = [i for j, i in enumerate(
                     staged) if i["id"] not in users.keys()]
         else:
-            self.log.info("Removing the NOT found users ({0}) from staged {1}".format(
+            self.log.info("Removing NOT found users ({0}) from staged {1}".format(
                 len(users),
                 "projects" if data == "stage" else "groups"))
             for s in staged:
@@ -525,24 +522,6 @@ class UsersClient(BaseClass):
         if not quiet:
             self.log.info(
                 "Retrieved %d users. Check users.json to see all retrieved users" % len(users))
-
-    def migrate_user_info(self, dry_run=True, processes=None):
-        staged_users = self.get_staged_users()
-        self.log.info("{}Migrating user info".format(get_dry_log(dry_run)))
-        if not dry_run:
-            new_users = list(start_multi_process(
-                self.handle_user_creation, staged_users, processes))
-            if new_users:
-                formatted_users = {}
-                for n in filter(None, new_users):
-                    formatted_users[n["email"]] = n
-                write_results_to_file(
-                    formatted_users, result_type="user", log=self.log)
-        else:
-            self.log.info(
-                "DRY-RUN: Outputing various USER migration data to dry_run_user_migration.json")
-            migration_dry_run("user", list(start_multi_process(
-                self.generate_user_data, staged_users, processes)))
 
     def generate_user_data(self, user):
         if user.get("id", None) is not None:
@@ -689,7 +668,8 @@ class UsersClient(BaseClass):
         staged_users = self.get_staged_users()
         for su in staged_users:
             email = su["email"]
-            self.log.info("Removing user {}".format(email))
+            self.log.info("{0}Removing user {1}".format(
+                get_dry_log(dry_run), email))
             user = self.find_user_by_email_comparison_without_id(email)
             if user is None:
                 self.log.info(
