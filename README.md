@@ -441,6 +441,11 @@ Add the following line to .vscode/settings.json:
 
 You may need to refresh VS Code. VS Code will also call this python interpreter PipEnv, but if you check out the virtualenv directory poetry has stored, you can compare the virtualenv folder names to double check.
 
+#### Debugging through the terminal (Python's byebug)
+
+You can import `pdb` into the class you want to debug through a terminal and add `pdb.set_trace()` around the lines you would like to debug.
+You can read more about using pdb [here](https://fuzzyblog.io/blog/python/2019/09/24/the-python-equivalent-of-byebug-is-pdb-set-trace.html)
+
 ## Migration features
 
 :white_check_mark: = supported
