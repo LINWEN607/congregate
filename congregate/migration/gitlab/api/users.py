@@ -16,7 +16,7 @@ class UsersApi():
             :return: Response object containing the response to GET /users/:id
         """
         return api.generate_get_request(host, token, "users/%d" % id)
-    
+
     def get_user_email(self, id, host, token):
         return self.get_user(id, host, token).json()["email"]
 
@@ -33,6 +33,18 @@ class UsersApi():
         """
         return api.generate_get_request(host, token, "user").json()
 
+    def get_all_users(self, host, token):
+        """
+        Get a list of users.
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/users.html#for-admins
+
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Generator returning JSON of each result from GET /users
+        """
+        return api.list_all(host, token, "users")
+
     def create_user(self, host, token, data, message=None):
         """
         Creates a new user
@@ -45,7 +57,8 @@ class UsersApi():
             :return: Response object containing the response to POST /users
         """
         if not message:
-            message = "Creating new user %s with payload %s" % (data["email"], str(data))
+            message = "Creating new user %s with payload %s" % (
+                data["email"], str(data))
         return api.generate_post_request(host, token, "users", json.dumps(data), description=message)
 
     def delete_user(self, host, token, id, hard_delete=False):

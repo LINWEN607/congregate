@@ -70,6 +70,8 @@ build:
         - congregate/**/*
         - docker/test/Dockerfile
         - congregate.sh
+        - pyproject.toml
+        - poetry.lock
 
 test:pylint:
   extends: .test-job
@@ -150,6 +152,19 @@ release-tag:
     - docker push "$RELEASE_IMAGE_NAME"
     - docker push "$LATEST"
 
+runbook update:
+  stage: test
+  script:
+    - echo "This is a placeholder job ran only when runbooks are changed"
+    - echo "Storing any changed runbook to artifacts that will expire in 1 week."
+  rules:
+    - changes:
+        - runbooks/*
+  artifacts:
+    paths:
+      - runbooks/*
+    expire_in: 1 week
+
 pages:
   stage: deploy
   rules:
@@ -157,12 +172,12 @@ pages:
     - changes:
       - runbooks/*
       - congregate/docs/**/*
-  dependencies:
-    - code_quality
+  # dependencies:
+  #   - code_quality
   script:
     - mkdir data
     - poetry install
-    - mv gl-code-quality-report.json congregate/docs/source/_static/
+    # - mv gl-code-quality-report.json congregate/docs/source/_static/
     - poetry run sphinx-apidoc -f -o congregate/docs/source/ ./
     - cd congregate/docs
     - make html

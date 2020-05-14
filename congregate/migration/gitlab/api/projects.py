@@ -58,7 +58,7 @@ class ProjectsApi():
             :yield: Generator containing JSON results from GET /projects
 
         """
-        return api.list_all(host, token, "projects{}".format("?statistics=true" if statistics else ""))
+        return api.list_all(host, token, "projects{}".format("?statistics=true" if statistics else ""), keyset=True)
 
     def get_members(self, id, host, token):
         """
@@ -187,7 +187,8 @@ class ProjectsApi():
 
         """
         if not message:
-            message = "Sharing project %d with group %d" % (pid, data["group_id"])
+            message = "Sharing project %d with group %d" % (
+                pid, data["group_id"])
         return api.generate_post_request(host, token, "projects/%d/share" % pid, json.dumps(data), description=message)
 
     def edit_project(self, host, token, pid, data=None):
@@ -736,7 +737,8 @@ class ProjectsApi():
             :yield: Generator returning JSON of each result from POST /projects/:id/approval_rules
         """
         if not message:
-            message = "Creating project level merge request approval rule with payloda %s" % str(data)
+            message = "Creating project level merge request approval rule with payloda %s" % str(
+                data)
         return api.generate_post_request(host, token, "projects/{}/approval_rules".format(pid), json.dumps(data), description=message)
 
     def get_all_project_registry_repositories(self, pid, host, token):

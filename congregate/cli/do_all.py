@@ -32,14 +32,6 @@ def do_all_users(dry_run=True):
         with open("{}/data/staged_users.json".format(b.app_path), "w") as su:
             json.dump(remove_dupes(json.load(u)), su, indent=4)
 
-    # NO dry run
-    if not b.config.keep_blocked_users:
-        users.remove_blocked_users(dry_run=False)
-
-    # NO dry run
-    users_not_found = users.update_staged_user_info(dry_run=False)
-    users.handle_users_not_found("staged_users", users_not_found)
-
     migrate.migrate(
         dry_run=dry_run,
         skip_group_export=True,
@@ -48,7 +40,7 @@ def do_all_users(dry_run=True):
         skip_project_export=True)
 
     # Lookup not found users AFTER - NO dry run
-    users.update_staged_user_info(dry_run=False)
+    users.search_for_staged_users(dry_run=False)
 
 
 def do_all_groups_and_projects(dry_run=True):
@@ -61,16 +53,6 @@ def do_all_groups_and_projects(dry_run=True):
 
     # Stage ALL - NO dry run
     stage_projects.stage_projects(["all"], dry_run=False)
-
-    # NO dry run
-    if not b.config.keep_blocked_users:
-        users.remove_blocked_users(dry_run=False)
-
-    # NO dry run
-    users_not_found = users.update_staged_user_info(dry_run=False)
-    users.handle_users_not_found("staged_users", users_not_found, keep=False)
-    users.handle_users_not_found("staged_groups", users_not_found)
-    users.handle_users_not_found("stage", users_not_found)
 
     migrate.migrate(dry_run=dry_run, skip_users=True)
 

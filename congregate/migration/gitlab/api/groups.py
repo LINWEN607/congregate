@@ -83,7 +83,8 @@ class GroupsApi():
             :return: Response object containing the response to POST /groups/:id/members
         """
         if not message:
-            message = "Adding member to %d with payload %s" % (gid, str(member))
+            message = "Adding member to %d with payload %s" % (
+                gid, str(member))
         return api.generate_post_request(host, token, "groups/%d/members" % gid, json.dumps(member), description=message)
 
     def get_all_groups(self, host, token):
@@ -110,7 +111,8 @@ class GroupsApi():
             :yield: Response object containing the response to GET /groups/:id/members
         """
         for member in api.list_all(host, token, "groups/%d/members" % gid):
-            member["email"] = self.users.get_user_email(member["id"], host, token)
+            member["email"] = self.users.get_user_email(
+                member["id"], host, token)
             yield member
 
     def update_member_access_level(self, host, token, gid, uid, level, message=None):
@@ -221,7 +223,8 @@ class GroupsApi():
             :yield: Generator returning JSON of each result from GET /groups/:id/members/all
         """
         for member in api.list_all(host, token, "groups/%d/members/all" % gid):
-            member["email"] = self.users.get_user_email(member["id"], host, token)
+            member["email"] = self.users.get_user_email(
+                member["id"], host, token)
             yield member
 
     def get_all_group_issue_boards(self, gid, host, token):

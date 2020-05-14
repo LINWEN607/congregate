@@ -1,5 +1,6 @@
 from math import ceil as math_ceil
 from time import sleep
+from re import findall
 import requests
 
 from congregate.helpers.logger import myLogger
@@ -148,7 +149,7 @@ def get_total_pages(host, token, api):
 
 
 @stable_retry
-def list_all(host, token, api, params=None, per_page=100):
+def list_all(host, token, api, params=None, per_page=100, keyset=False):
     """
         Generates a list of all projects, groups, users, etc.
 
@@ -162,10 +163,12 @@ def list_all(host, token, api, params=None, per_page=100):
     """
 
     count = get_count(host, token, api)
+    log.info("Total count for endpoint {0}: {1}".format(api, count))
 
     PER_PAGE = per_page
     start_at = 0
     end_at = count
+    last_id = ""
 
     if count is not None:
         # total_work = end_at - start_at
@@ -175,17 +178,14 @@ def list_all(host, token, api, params=None, per_page=100):
         current_page = start_page
         retried = False
         while current_page <= end_page:
-            log.info("Retrieving %d %s" % (PER_PAGE * current_page, api))
-
-            if params is not None:
-                params["page"] = current_page
-                params["per_page"] = PER_PAGE
-            else:
-                params = {
-                    "page": current_page,
-                    "per_page": PER_PAGE
-                }
-            data = generate_get_request(host, token, api, params=params)
+            data = generate_get_request(host, token, api, params=get_params(
+                params, PER_PAGE, current_page, keyset, last_id))
+            log.info("Retrieved {0} {1}".format(
+                PER_PAGE * (current_page - 1) + len(data.json()), api))
+            if keyset:
+                last_id = get_last_id(data.headers.get("Links", None))
+                if last_id is None:
+                    break
             try:
                 data = data.json()
                 for project in data:
@@ -207,19 +207,19 @@ def list_all(host, token, api, params=None, per_page=100):
         start_page = (start_at / PER_PAGE) + 1  # pages are 1-indexed
         current_page = start_page
         while True:
-            log.info("Retrieving %d %s" % (PER_PAGE * current_page, api))
-
-            params = {
-                "page": current_page,
-                "per_page": PER_PAGE
-            }
+            data = generate_get_request(
+                host, token, api, params=get_params(
+                    params, PER_PAGE, current_page, keyset, last_id))
+            log.info("Retrieved {0} {1}".format(
+                PER_PAGE * (current_page - 1) + len(data.json()), api))
+            if keyset:
+                last_id = get_last_id(data.headers.get("Links", None))
+                if last_id is None:
+                    break
             try:
-                data = generate_get_request(
-                    host, token, api, params=params).json()
-
+                data = data.json()
                 for project in data:
                     yield project
-
                 if len(data) < PER_PAGE:
                     break
                 current_page += 1
@@ -247,12 +247,37 @@ def search(host, token, api, search_query):
     return generate_get_request(host, token, api, params={
                                 'search': search_query}).json()
 
+
 def generate_audit_log_message(req_type, message, url, data=None):
     try:
         return "{0}enerating {1} request to {2}{3}".format(
-            "{} by g".format(message) if message else "G", 
+            "{} by g".format(message) if message else "G",
             req_type,
-            url, 
+            url,
             " with data: {}".format(data) if data else "")
     except TypeError as e:
         return "Message formatting ERROR. No specific message generated. Generating {0} request to {1}".format(req_type, url)
+
+
+def get_params(params, per_page, current_page, keyset, last_id):
+    if params:
+        params["page"] = current_page
+        params["per_page"] = per_page
+    else:
+        params = {
+            "pagination": "keyset",
+            "per_page": per_page,
+            "order_by": "id",
+            "sort": "asc",
+            "id_after": last_id
+        } if keyset else {
+            "page": current_page,
+            "per_page": per_page
+        }
+    return params
+
+
+# Project only keyset-based pagination - https://docs.gitlab.com/ee/api/#keyset-based-pagination
+def get_last_id(links):
+    # Get id_after value. If the Links key is missing it's done, with an empty list response
+    return findall(r"id_after=(.+?)&", links)[0] if links else None
