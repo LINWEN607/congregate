@@ -44,7 +44,7 @@ class MigrationEndToEndTestSetup(unittest.TestCase):
             "60",  # max_export_wait_time
             os.getenv("GITLAB_DEST_REG_URL"),  # destination registry url
             "",  # destination parent group id
-            # "dest_parent_group_path",  # destination parent group full path
+            # "dstn_parent_group_path",  # destination parent group full path
             # "group_sso_provider",  # SSO provider
             "",  # username suffix
             "No",  # mirror

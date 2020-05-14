@@ -41,9 +41,9 @@ class MigrateTests(unittest.TestCase):
         expected = []
         self.assertListEqual(failed_results, expected)
 
-    @mock.patch("congregate.helpers.base_module.ConfigurationValidator.dest_parent_id", new_callable=mock.PropertyMock)
+    @mock.patch("congregate.helpers.base_module.ConfigurationValidator.dstn_parent_id", new_callable=mock.PropertyMock)
     @mock.patch.object(GroupsApi, "get_group")
-    @mock.patch.object(ConfigurationValidator, "validate_dest_parent_group_id")
+    @mock.patch.object(ConfigurationValidator, "validate_dstn_parent_group_id")
     def test_get_staged_projects_without_failed_export_with_failure(self, cv, ga, pi):
         pi.return_value = 1
         ga.return_value = self.ThingWithJson({"path": "SOME_RANDOM_PATH"})
@@ -94,9 +94,9 @@ class MigrateTests(unittest.TestCase):
         self.assertListEqual(filtered_staged, expected)
         print(filtered_staged)
 
-    @mock.patch("congregate.helpers.base_module.ConfigurationValidator.dest_parent_id", new_callable=mock.PropertyMock)
+    @mock.patch("congregate.helpers.base_module.ConfigurationValidator.dstn_parent_id", new_callable=mock.PropertyMock)
     @mock.patch.object(GroupsApi, "get_group")
-    @mock.patch.object(ConfigurationValidator, "validate_dest_parent_group_id")
+    @mock.patch.object(ConfigurationValidator, "validate_dstn_parent_group_id")
     def test_get_staged_projects_without_failed_export_with_no_failure_leaves_unchanged(self, cv, ga, pi):
         ga.return_value = self.ThingWithJson({"path": "SOME_RANDOM_PATH"})
         cv.return_value = True
@@ -107,9 +107,9 @@ class MigrateTests(unittest.TestCase):
         self.assertListEqual(
             filtered_staged, self.mock_projects.get_staged_projects())
 
-    @mock.patch("congregate.helpers.base_module.ConfigurationValidator.dest_parent_id", new_callable=mock.PropertyMock)
+    @mock.patch("congregate.helpers.base_module.ConfigurationValidator.dstn_parent_id", new_callable=mock.PropertyMock)
     @mock.patch.object(GroupsApi, "get_group")
-    @mock.patch.object(ConfigurationValidator, "validate_dest_parent_group_id")
+    @mock.patch.object(ConfigurationValidator, "validate_dstn_parent_group_id")
     def test_get_staged_projects_without_failed_export_with_no_all_fail_returns_empty_group_project(self, cv, ga, pi):
         pi.return_value = 1
         ga.return_value = self.ThingWithJson({"path": "SOME_RANDOM_PATH"})
@@ -121,9 +121,9 @@ class MigrateTests(unittest.TestCase):
             self.mock_projects.get_staged_projects(), failed_results)
         self.assertListEqual(filtered_staged, [])
 
-    @mock.patch("congregate.helpers.base_module.ConfigurationValidator.dest_parent_id", new_callable=mock.PropertyMock)
+    @mock.patch("congregate.helpers.base_module.ConfigurationValidator.dstn_parent_id", new_callable=mock.PropertyMock)
     @mock.patch.object(GroupsApi, "get_group")
-    @mock.patch.object(ConfigurationValidator, "validate_dest_parent_group_id")
+    @mock.patch.object(ConfigurationValidator, "validate_dstn_parent_group_id")
     def test_get_staged_projects_without_failed_export_with_no_all_fail_returns_empty_user_project(self, cv, ga, pi):
         pi.return_value = None
         ga.return_value = self.ThingWithJson({"path": "SOME_RANDOM_PATH"})
@@ -135,9 +135,9 @@ class MigrateTests(unittest.TestCase):
             self.mock_projects.get_staged_projects(), failed_results)
         self.assertListEqual(filtered_staged, [])
 
-    @mock.patch("congregate.helpers.base_module.ConfigurationValidator.dest_parent_id", new_callable=mock.PropertyMock)
+    @mock.patch("congregate.helpers.base_module.ConfigurationValidator.dstn_parent_id", new_callable=mock.PropertyMock)
     @mock.patch.object(GroupsApi, "get_group")
-    @mock.patch.object(ConfigurationValidator, "validate_dest_parent_group_id")
+    @mock.patch.object(ConfigurationValidator, "validate_dstn_parent_group_id")
     def test_get_staged_groups_without_failed_export_with_failure(self, cv, ga, pi):
         pi.return_value = 1
         ga.return_value = self.ThingWithJson({"path": "SOME_RANDOM_PATH"})
@@ -184,9 +184,9 @@ class MigrateTests(unittest.TestCase):
         self.assertListEqual(filtered_staged, expected)
         print(filtered_staged)
 
-    @mock.patch("congregate.helpers.base_module.ConfigurationValidator.dest_parent_id", new_callable=mock.PropertyMock)
+    @mock.patch("congregate.helpers.base_module.ConfigurationValidator.dstn_parent_id", new_callable=mock.PropertyMock)
     @mock.patch.object(GroupsApi, "get_group")
-    @mock.patch.object(ConfigurationValidator, "validate_dest_parent_group_id")
+    @mock.patch.object(ConfigurationValidator, "validate_dstn_parent_group_id")
     def test_get_staged_groups_without_failed_export_with_no_failure_leaves_unchanged(self, cv, ga, pi):
         ga.return_value = self.ThingWithJson({"path": "SOME_RANDOM_PATH"})
         cv.return_value = True
@@ -197,9 +197,9 @@ class MigrateTests(unittest.TestCase):
         self.assertListEqual(
             filtered_staged, self.mock_groups.get_staged_groups())
 
-    @mock.patch("congregate.helpers.base_module.ConfigurationValidator.dest_parent_id", new_callable=mock.PropertyMock)
+    @mock.patch("congregate.helpers.base_module.ConfigurationValidator.dstn_parent_id", new_callable=mock.PropertyMock)
     @mock.patch.object(GroupsApi, "get_group")
-    @mock.patch.object(ConfigurationValidator, "validate_dest_parent_group_id")
+    @mock.patch.object(ConfigurationValidator, "validate_dstn_parent_group_id")
     def test_get_staged_groups_without_failed_export_with_no_all_fail_returns_empty_group(self, cv, ga, pi):
         pi.return_value = 1
         ga.return_value = self.ThingWithJson({"path": "SOME_RANDOM_PATH"})
@@ -225,11 +225,11 @@ class MigrateTests(unittest.TestCase):
         self.assertEqual(mutils.get_export_filename_from_namespace_and_name(
             "Test-Group/Test-SubGroup"), "test-group_test-subgroup.tar.gz")
 
-    @mock.patch.object(ConfigurationValidator, "dest_parent_group_path", new_callable=mock.PropertyMock)
-    @mock.patch.object(ConfigurationValidator, "dest_parent_id", new_callable=mock.PropertyMock)
-    def test_get_project_namespace(self, parent_id, dest_parent_group_path):
+    @mock.patch.object(ConfigurationValidator, "dstn_parent_group_path", new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, "dstn_parent_id", new_callable=mock.PropertyMock)
+    def test_get_project_namespace(self, parent_id, dstn_parent_group_path):
         parent_id.return_value = 4
-        dest_parent_group_path.return_value = "test"
+        dstn_parent_group_path.return_value = "test"
         self.assertEqual(mutils.get_project_namespace(
             self.mock_projects.get_staged_group_project()), "test/pmm-demo")
         parent_id.return_value = None
@@ -354,11 +354,11 @@ class MigrateTests(unittest.TestCase):
     @mock.patch.object(ConfigurationValidator, "import_user_id", new_callable=mock.PropertyMock)
     @mock.patch.object(ConfigurationValidator, "destination_host", new_callable=mock.PropertyMock)
     @mock.patch.object(ConfigurationValidator, "destination_token", new_callable=mock.PropertyMock)
-    @mock.patch.object(ConfigurationValidator, "dest_parent_group_path", new_callable=mock.PropertyMock)
-    @mock.patch.object(ConfigurationValidator, "dest_parent_id", new_callable=mock.PropertyMock)
-    def test_get_dst_path_with_namespace_with_parent_id(self, parent_id, dest_parent_group_path, token, host, user_id, url):
+    @mock.patch.object(ConfigurationValidator, "dstn_parent_group_path", new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, "dstn_parent_id", new_callable=mock.PropertyMock)
+    def test_get_dst_path_with_namespace_with_parent_id(self, parent_id, dstn_parent_group_path, token, host, user_id, url):
         parent_id.return_value = 1
-        dest_parent_group_path.return_value = "test-group"
+        dstn_parent_group_path.return_value = "test-group"
         token.return_value = "abc"
         host.return_value = "https://gitlab.com"
         user_id.return_value = 5
@@ -380,11 +380,11 @@ class MigrateTests(unittest.TestCase):
     @mock.patch.object(ConfigurationValidator, "import_user_id", new_callable=mock.PropertyMock)
     @mock.patch.object(ConfigurationValidator, "destination_host", new_callable=mock.PropertyMock)
     @mock.patch.object(ConfigurationValidator, "destination_token", new_callable=mock.PropertyMock)
-    @mock.patch.object(ConfigurationValidator, "dest_parent_group_path", new_callable=mock.PropertyMock)
-    @mock.patch.object(ConfigurationValidator, "dest_parent_id", new_callable=mock.PropertyMock)
-    def test_get_dst_path_with_namespace_with_parent_id_root(self, parent_id, dest_parent_group_path, token, host, user_id, url):
+    @mock.patch.object(ConfigurationValidator, "dstn_parent_group_path", new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, "dstn_parent_id", new_callable=mock.PropertyMock)
+    def test_get_dst_path_with_namespace_with_parent_id_root(self, parent_id, dstn_parent_group_path, token, host, user_id, url):
         parent_id.return_value = 1
-        dest_parent_group_path.return_value = "test-group"
+        dstn_parent_group_path.return_value = "test-group"
         token.return_value = "abc"
         host.return_value = "https://gitlab.com"
         user_id.return_value = 5
@@ -404,11 +404,11 @@ class MigrateTests(unittest.TestCase):
     @mock.patch.object(ConfigurationValidator, "import_user_id", new_callable=mock.PropertyMock)
     @mock.patch.object(ConfigurationValidator, "destination_host", new_callable=mock.PropertyMock)
     @mock.patch.object(ConfigurationValidator, "destination_token", new_callable=mock.PropertyMock)
-    @mock.patch.object(ConfigurationValidator, "dest_parent_group_path", new_callable=mock.PropertyMock)
-    @mock.patch.object(ConfigurationValidator, "dest_parent_id", new_callable=mock.PropertyMock)
-    def test_get_dst_path_with_namespace_without_parent_id(self, parent_id, dest_parent_group_path, token, host, user_id, url):
+    @mock.patch.object(ConfigurationValidator, "dstn_parent_group_path", new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, "dstn_parent_id", new_callable=mock.PropertyMock)
+    def test_get_dst_path_with_namespace_without_parent_id(self, parent_id, dstn_parent_group_path, token, host, user_id, url):
         parent_id.return_value = None
-        dest_parent_group_path.return_value = None
+        dstn_parent_group_path.return_value = None
         token.return_value = "abc"
         host.return_value = "https://gitlab.com"
         user_id.return_value = 5
@@ -430,11 +430,11 @@ class MigrateTests(unittest.TestCase):
     @mock.patch.object(ConfigurationValidator, "import_user_id", new_callable=mock.PropertyMock)
     @mock.patch.object(ConfigurationValidator, "destination_host", new_callable=mock.PropertyMock)
     @mock.patch.object(ConfigurationValidator, "destination_token", new_callable=mock.PropertyMock)
-    @mock.patch.object(ConfigurationValidator, "dest_parent_group_path", new_callable=mock.PropertyMock)
-    @mock.patch.object(ConfigurationValidator, "dest_parent_id", new_callable=mock.PropertyMock)
-    def test_get_dst_path_with_namespace_without_parent_id_root(self, parent_id, dest_parent_group_path, token, host, user_id, url):
+    @mock.patch.object(ConfigurationValidator, "dstn_parent_group_path", new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, "dstn_parent_id", new_callable=mock.PropertyMock)
+    def test_get_dst_path_with_namespace_without_parent_id_root(self, parent_id, dstn_parent_group_path, token, host, user_id, url):
         parent_id.return_value = None
-        dest_parent_group_path.return_value = None
+        dstn_parent_group_path.return_value = None
         token.return_value = "abc"
         host.return_value = "https://gitlab.com"
         user_id.return_value = 5
@@ -447,18 +447,18 @@ class MigrateTests(unittest.TestCase):
         self.assertEqual(mutils.get_dst_path_with_namespace(
             self.mock_projects.get_staged_root_project()), "root/spring-app-secure-2")
 
-    @mock.patch.object(ConfigurationValidator, "dest_parent_id", new_callable=mock.PropertyMock)
-    @mock.patch.object(ConfigurationValidator, "dest_parent_group_path", new_callable=mock.PropertyMock)
-    def test_get_full_path_with_parent_namespace_with_parent(self, dest_parent_group_path, parent_id):
-        dest_parent_group_path.return_value = "test-parent-group-path"
+    @mock.patch.object(ConfigurationValidator, "dstn_parent_id", new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, "dstn_parent_group_path", new_callable=mock.PropertyMock)
+    def test_get_full_path_with_parent_namespace_with_parent(self, dstn_parent_group_path, parent_id):
+        dstn_parent_group_path.return_value = "test-parent-group-path"
         parent_id.return_value = 1
         self.assertEqual(mutils.get_full_path_with_parent_namespace(
             "test-path"), "test-parent-group-path/test-path")
 
-    @mock.patch.object(ConfigurationValidator, "dest_parent_id", new_callable=mock.PropertyMock)
-    @mock.patch.object(ConfigurationValidator, "dest_parent_group_path", new_callable=mock.PropertyMock)
-    def test_get_full_path_with_parent_namespace(self, dest_parent_group_path, parent_id):
-        dest_parent_group_path.return_value = ""
+    @mock.patch.object(ConfigurationValidator, "dstn_parent_id", new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, "dstn_parent_group_path", new_callable=mock.PropertyMock)
+    def test_get_full_path_with_parent_namespace(self, dstn_parent_group_path, parent_id):
+        dstn_parent_group_path.return_value = ""
         parent_id.return_value = ""
         self.assertEqual(mutils.get_full_path_with_parent_namespace(
             "test-path"), "test-path")

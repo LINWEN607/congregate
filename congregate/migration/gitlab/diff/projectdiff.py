@@ -170,4 +170,4 @@ class ProjectDiffClient(BaseDiffClient):
         return project_diff
 
     def generate_project_diff(self, project, endpoint, **kwargs):
-        return self.generate_diff(project, "path_with_namespace", endpoint, parent_group=self.config.dest_parent_group_path, **kwargs)
+        return self.generate_diff(project, "path_with_namespace", endpoint, parent_group=self.config.dstn_parent_group_path, **kwargs)

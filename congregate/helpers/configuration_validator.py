@@ -12,22 +12,22 @@ class ConfigurationValidator(Config):
     def __init__(self, path=None):
         self.groups = GroupsApi()
         self.users = UsersApi()
-        self._dest_parent_id_validated_in_session = False
+        self._dstn_parent_id_validated_in_session = False
         self._import_user_id_validated_in_session = False
-        self._dest_parent_group_path_validated_in_session = False
+        self._dstn_parent_group_path_validated_in_session = False
         super(ConfigurationValidator, self).__init__(path=path)
 
     @property
-    def dest_parent_id(self):
-        dest_parent_id = self.prop_int("DESTINATION", "dest_parent_group_id")
-        if self.dest_parent_id_validated_in_session is True:
-            return dest_parent_id
+    def dstn_parent_id(self):
+        dstn_parent_id = self.prop_int("DESTINATION", "dstn_parent_group_id")
+        if self.dstn_parent_id_validated_in_session is True:
+            return dstn_parent_id
         else:
-            self.dest_parent_id_validated_in_session = self.validate_dest_parent_group_id(dest_parent_id)
-            if self.dest_parent_group_path_validated_in_session is True:
-                return dest_parent_id
-            self.dest_parent_group_path_validated_in_session = self.validate_dest_parent_group_path(self.prop("DESTINATION", "dest_parent_group_path"))
-            return dest_parent_id
+            self.dstn_parent_id_validated_in_session = self.validate_dstn_parent_group_id(dstn_parent_id)
+            if self.dstn_parent_group_path_validated_in_session is True:
+                return dstn_parent_id
+            self.dstn_parent_group_path_validated_in_session = self.validate_dstn_parent_group_path(self.prop("DESTINATION", "dstn_parent_group_path"))
+            return dstn_parent_id
 
     @property
     def import_user_id(self):
@@ -38,14 +38,14 @@ class ConfigurationValidator(Config):
         return import_user_id
 
     @property
-    def dest_parent_group_path(self):
-        dest_parent_group_path = self.prop("DESTINATION", "dest_parent_group_path")
-        if self.dest_parent_group_path_validated_in_session is True:
-            return dest_parent_group_path
-        self.dest_parent_group_path_validated_in_session = self.validate_dest_parent_group_path(dest_parent_group_path)
-        return dest_parent_group_path
+    def dstn_parent_group_path(self):
+        dstn_parent_group_path = self.prop("DESTINATION", "dstn_parent_group_path")
+        if self.dstn_parent_group_path_validated_in_session is True:
+            return dstn_parent_group_path
+        self.dstn_parent_group_path_validated_in_session = self.validate_dstn_parent_group_path(dstn_parent_group_path)
+        return dstn_parent_group_path
 
-    def validate_dest_parent_group_id(self, pgid):
+    def validate_dstn_parent_group_id(self, pgid):
         if pgid is not None:
             group_resp = self.groups.get_group(pgid, self.destination_host, self.destination_token).json()
             if is_error_message_present(group_resp):
@@ -69,38 +69,38 @@ class ConfigurationValidator(Config):
                     return True
         raise ConfigurationException("import_user_id")
 
-    def validate_dest_parent_group_path(self, dest_parent_group_path):
-        if dest_parent_group_path is not None:
+    def validate_dstn_parent_group_path(self, dstn_parent_group_path):
+        if dstn_parent_group_path is not None:
             group_resp = self.groups.get_group(
-                self.prop_int("DESTINATION", "dest_parent_group_id"),
+                self.prop_int("DESTINATION", "dstn_parent_group_id"),
                 self.destination_host,
                 self.destination_token).json()
-            if group_resp["full_path"] == dest_parent_group_path:
+            if group_resp["full_path"] == dstn_parent_group_path:
                 return True
-            raise ConfigurationException("dest_parent_group_path")
+            raise ConfigurationException("dstn_parent_group_path")
         return True
 
 
     @property
-    def dest_parent_id_validated_in_session(self):
-        return self._dest_parent_id_validated_in_session
+    def dstn_parent_id_validated_in_session(self):
+        return self._dstn_parent_id_validated_in_session
 
     @property
     def import_user_id_validated_in_session(self):
         return self._import_user_id_validated_in_session
 
     @property
-    def dest_parent_group_path_validated_in_session(self):
-        return self._dest_parent_group_path_validated_in_session
+    def dstn_parent_group_path_validated_in_session(self):
+        return self._dstn_parent_group_path_validated_in_session
 
-    @dest_parent_id_validated_in_session.setter
-    def dest_parent_id_validated_in_session(self, value):
-        self._dest_parent_id_validated_in_session = value
+    @dstn_parent_id_validated_in_session.setter
+    def dstn_parent_id_validated_in_session(self, value):
+        self._dstn_parent_id_validated_in_session = value
     
     @import_user_id_validated_in_session.setter
     def import_user_id_validated_in_session(self, value):
         self._import_user_id_validated_in_session = value
     
-    @dest_parent_group_path_validated_in_session.setter
-    def dest_parent_group_path_validated_in_session(self, value):
-        self._dest_parent_group_path_validated_in_session = value
+    @dstn_parent_group_path_validated_in_session.setter
+    def dstn_parent_group_path_validated_in_session(self, value):
+        self._dstn_parent_group_path_validated_in_session = value

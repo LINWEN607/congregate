@@ -22,7 +22,7 @@ class StageProjectsTests(unittest.TestCase):
     @mock.patch('congregate.cli.stage_projects.open_users_file')
     @mock.patch('congregate.cli.stage_projects.open_groups_file')
     @mock.patch('congregate.migration.gitlab.api.projects.ProjectsApi.get_members')
-    @mock.patch.object(ConfigurationValidator, 'dest_parent_id', new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, 'dstn_parent_id', new_callable=mock.PropertyMock)
     def test_build_stage_data(self, parent_id, mock_members, mock_groups, mock_users, mock_projects, mock_check, mock_open):
         parent_id.return_value = None
         mock_check.return_value = True
@@ -254,7 +254,7 @@ class StageProjectsTests(unittest.TestCase):
     @mock.patch('congregate.cli.stage_projects.open_users_file')
     @mock.patch('congregate.cli.stage_projects.open_groups_file')
     @mock.patch('congregate.migration.gitlab.api.projects.ProjectsApi.get_members')
-    @mock.patch.object(ConfigurationValidator, 'dest_parent_id', new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, 'dstn_parent_id', new_callable=mock.PropertyMock)
     def test_build_stage_increment_no_parent_id(self, parent_id, mock_members, mock_groups, mock_users, mock_projects, mock_check, mock_open):
         parent_id.return_value = None
         mock_check.return_value = True

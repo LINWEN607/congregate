@@ -95,20 +95,20 @@ def generate_config():
                 "Destination instance Container Registry URL: "))
             test_registries(deobfuscate(config.get("DESTINATION", "dstn_access_token")), config.get(
                 "DESTINATION", "dstn_registry_url"), migration_user)
-        config.set("DESTINATION", "dest_parent_group_id",
+        config.set("DESTINATION", "dstn_parent_group_id",
                    raw_input("Migrating to a parent group (e.g. gitlab.com)? Parent group ID (Group -> Settings -> General): "))
 
-        if config.has_option("DESTINATION", "dest_parent_group_id") and config.get("DESTINATION", "dest_parent_group_id"):
-            group = groups.get_group(config.getint("DESTINATION", "dest_parent_group_id"),
+        if config.has_option("DESTINATION", "dstn_parent_group_id") and config.get("DESTINATION", "dstn_parent_group_id"):
+            group = groups.get_group(config.getint("DESTINATION", "dstn_parent_group_id"),
                                      config.get("DESTINATION",
                                                 "dstn_hostname"),
                                      deobfuscate(config.get("DESTINATION", "dstn_access_token"))).json()
             if group.get("full_path", None) is not None:
-                config.set("DESTINATION", "dest_parent_group_path",
+                config.set("DESTINATION", "dstn_parent_group_path",
                            group["full_path"])
             else:
-                config.set("DESTINATION", "dest_parent_group_path", "")
-                print("WARNING: Destination group not found. Please enter 'dest_parent_group_id' and 'dest_parent_group_path' manually (in {})".format(
+                config.set("DESTINATION", "dstn_parent_group_path", "")
+                print("WARNING: Destination group not found. Please enter 'dstn_parent_group_id' and 'dstn_parent_group_path' manually (in {})".format(
                     config_path))
             config.set("DESTINATION", "group_sso_provider",
                        raw_input("Migrating to a group with SAML SSO enabled? Input SSO provider (auth0, adfs, etc.): "))

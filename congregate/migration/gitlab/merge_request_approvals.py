@@ -123,9 +123,9 @@ class MergeRequestApprovalsClient(BaseClass):
             if group.get("id", None) is not None:
                 group = self.groups_api.get_group(
                     group["id"], self.config.source_host, self.config.source_token).json()
-                if self.config.dest_parent_id is not None:
+                if self.config.dstn_parent_id is not None:
                     parent_group = self.groups_api.get_group(
-                        self.config.dest_parent_id, self.config.destination_host, self.config.destination_token).json()
+                        self.config.dstn_parent_id, self.config.destination_host, self.config.destination_token).json()
                     group["full_path"] = "%s/%s" % (
                         parent_group["full_path"], group["full_path"])
                 for new_group in self.groups_api.search_for_group(group["name"], self.config.destination_host, self.config.destination_token):

@@ -105,12 +105,12 @@ class Config(object):
         return self.prop_int("DESTINATION", "max_import_retries", 3)
 
     @property
-    def dest_parent_id(self):
-        return self.prop_int("DESTINATION", "dest_parent_group_id")
+    def dstn_parent_id(self):
+        return self.prop_int("DESTINATION", "dstn_parent_group_id")
 
     @property
-    def dest_parent_group_path(self):
-        return self.prop("DESTINATION", "dest_parent_group_path")
+    def dstn_parent_group_path(self):
+        return self.prop("DESTINATION", "dstn_parent_group_path")
 
     @property
     def group_sso_provider(self):

@@ -83,7 +83,7 @@ class ConfigTests(unittest.TestCase):
             "3600",  # max_export_wait_time
             "destination_registry_url",    # destination registry url
             "0",  # destination parent group id
-            # "dest_parent_group_path",  # destination parent group full path
+            # "dstn_parent_group_path",  # destination parent group full path
             "group_sso_provider",  # SSO provider
             "username_suffix",  # username suffix
             "No",   # mirror
@@ -159,7 +159,7 @@ class ConfigTests(unittest.TestCase):
             "1200",  # max_export_wait_time
             "destination_registry_url",    # destination registry url
             "0",  # destination parent group id
-            # "dest_parent_group_path",  # destination parent group full path
+            # "dstn_parent_group_path",  # destination parent group full path
             "group_sso_provider",  # SSO provider
             "_",  # username suffix
             "Yes",   # mirror
@@ -232,7 +232,7 @@ class ConfigTests(unittest.TestCase):
             "3600",  # max_export_wait_time
             "destination_registry_url",    # destination registry url
             "0",  # destination parent group id
-            # "dest_parent_group_path",  # destination parent group full path
+            # "dstn_parent_group_path",  # destination parent group full path
             "group_sso_provider",  # SSO provider
             "username_suffix",  # username suffix
             "Yes",   # mirror
@@ -291,8 +291,8 @@ class ConfigTests(unittest.TestCase):
             "project_suffix":"False",\
             "max_import_retries":"3",\
             "dstn_registry_url":"destination_registry_url",\
-            "dest_parent_group_id":"1",\
-            "dest_parent_group_path":"destination_group_full_path",\
+            "dstn_parent_group_id":"1",\
+            "dstn_parent_group_path":"destination_group_full_path",\
             "group_sso_provider":"",\
             "username_suffix":"local",\
             "mirror_username":"",\
@@ -334,8 +334,8 @@ class ConfigTests(unittest.TestCase):
             "project_suffix":"False",\
             "max_import_retries":"3",\
             "dstn_registry_url":"destination_registry_url",\
-            "dest_parent_group_id":"0",\
-            "dest_parent_group_path":"destination_group_full_path",\
+            "dstn_parent_group_id":"0",\
+            "dstn_parent_group_path":"destination_group_full_path",\
             "group_sso_provider":"group_sso_provider",\
             "username_suffix":"username_suffix",\
             "mirror_username":"",\

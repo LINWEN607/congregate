@@ -112,6 +112,6 @@ class RegistryClient(BaseClass):
                 "Failed to login to docker registry %s, with error:\n%s" % (registry, err))
 
     def generate_destination_registry_url(self, suffix):
-        if self.config.dest_parent_group_path is not None:
-            return "%s/%s/%s" % (self.config.destination_registry, self.config.dest_parent_group_path, suffix)
+        if self.config.dstn_parent_group_path is not None:
+            return "%s/%s/%s" % (self.config.destination_registry, self.config.dstn_parent_group_path, suffix)
         return "%s/%s" % (self.config.destination_registry, suffix)
