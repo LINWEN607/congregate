@@ -298,22 +298,20 @@ def migrate_subgroup_info(subgroup):
             subgroup = json.loads(subgroup)
         b.log.info("Searching on destination for sub-group {}".format(
             full_path_with_parent_namespace))
-        dst_group = groups.find_group_by_path(
+        dst_gid = groups.find_group_id_by_path(
             b.config.destination_host, b.config.destination_token, full_path_with_parent_namespace)
-        if dst_group:
-            dst_gid = dst_group.get("id", None)
-            if dst_gid:
-                b.log.info("{0}Sub-group {1} (ID: {2}) found on destination".format(
-                    get_dry_log(_DRY_RUN), full_path, dst_gid))
-                if not _DRY_RUN:
-                    # Migrate CI/CD Variables
-                    variables.migrate_variables(
-                        dst_gid, src_gid, "group", full_path)
-                    # Remove import user
-                    groups.remove_import_user(dst_gid)
-            else:
-                b.log.info("{0}Sub-group {1} NOT found on destination".format(
-                    get_dry_log(_DRY_RUN), full_path_with_parent_namespace))
+        if dst_gid:
+            b.log.info("{0}Sub-group {1} (ID: {2}) found on destination".format(
+                get_dry_log(_DRY_RUN), full_path, dst_gid))
+            if not _DRY_RUN:
+                # Migrate CI/CD Variables
+                variables.migrate_variables(
+                    dst_gid, src_gid, "group", full_path)
+                # Remove import user
+                groups.remove_import_user(dst_gid)
+        else:
+            b.log.info("{0}Sub-group {1} NOT found on destination".format(
+                get_dry_log(_DRY_RUN), full_path_with_parent_namespace))
     except (RequestException, KeyError, OverflowError) as oe:
         b.log.error(
             "Failed to migrate sub-group {0} (ID: {1}) info with error:\n{2}".format(full_path, src_gid, oe))
