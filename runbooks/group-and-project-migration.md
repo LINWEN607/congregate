@@ -143,7 +143,7 @@ Copy the following data and add subsequent columns for single group migration
     * Post Import. **The SRE will let you know when the import is complete. Once it's complete, move on to manual, post-migration steps.**
         * If any projects imported by the SRE require any post-migration data to be migrated:
             * [ ] Confirm those projects are staged
-            * [ ] Run `nohup ./congregate.sh migrate migrate --only-post-migration-info --commit > data/waves/wave_<insert_wave_number>/wave<insert-wave-here>_attempt<insert-attempt>_post_migration.log 2>&1 &` to migrate any post-migration data
+            * [ ] Run `nohup ./congregate.sh migrate --only-post-migration-info --commit > data/waves/wave_<insert_wave_number>/wave<insert-wave-here>_attempt<insert-attempt>_post_migration.log 2>&1 &` to migrate any post-migration data
 
 ### Post Migration
 
