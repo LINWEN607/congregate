@@ -71,6 +71,8 @@ build:
         - congregate/**/*
         - docker/test/Dockerfile
         - congregate.sh
+        - pyproject.toml
+        - poetry.lock
 
 test:pylint:
   extends: .test-job
