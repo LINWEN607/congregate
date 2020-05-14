@@ -175,7 +175,7 @@ pages:
   # dependencies:
   #   - code_quality
   script:
-    - mkdir data
+    - mkdir -p data
     - poetry install
     # - mv gl-code-quality-report.json congregate/docs/source/_static/
     - poetry run sphinx-apidoc -f -o congregate/docs/source/ ./
