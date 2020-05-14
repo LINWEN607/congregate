@@ -79,9 +79,13 @@ class ImportExportClient(BaseClass):
                     self.log.info(
                         "{0} {1} has finished exporting".format(export_type, name))
                     exported = True
-                elif status == "failed" or status =="none":
+                elif status == "failed":
                     self.log.error(
                         "{0} {1} export failed".format(export_type, name))
+                    break
+                elif status == "none":
+                    self.log.error(
+                        "{0} {1} export status shows none".format(export_type, name))
                     break
                 elif total_time < self.config.max_export_wait_time:
                     self.log.info("Checking {0} {1} export status in {2} seconds".format(
