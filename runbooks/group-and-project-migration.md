@@ -125,7 +125,7 @@ Copy the following data and add subsequent columns for single group migration
 * [ ] If a project continues to fail to import to `gitlab.com` through the API by timing out after an hour (give it a couple attempts max), you will need to reach out to the SRE on-call to get the project imported.
     * Preparation
         * [ ] Before coming to the conclusion that an SRE is needed to import the project, examine the contents of the project on the source.
-        * [ ] Take note of any environments, CI/CD variables, merge request approvers, and container registries and see if any of those are present. If they are, you will need to move that data over manually.
+        * [ ] Take note of any environments, CI/CD variables, merge request approvers, and container registries and see if any of those are present. If they are, you will need to run another command to get that data to the destination.
         * [ ] Upload the project export file to google drive and get a shareable link.
     * Creating the import issue **per project**
         * [ ] Create a new issue in the [infrastructure](https://gitlab.com/gitlab-com/gl-infra/infrastructure/-/issues) project using the `import` template.
@@ -140,11 +140,10 @@ Copy the following data and add subsequent columns for single group migration
         ```
         * [ ] Make sure to check off all checkboxes listed under Support in the import issue. We are Support in this instance.
         * [ ] Once the SRE confirms the import has started, promptly delete the project from google drive.
-    * Post Import . **The SRE will let you know when the import is complete. Once it's complete, move on to manual, post-migration steps.**
-        * [ ] Manually copy over any CI/CD variables
-        * [ ] Manually copy over any environments
-        * [ ] Manually copy over any merge request approvers
-        * [ ] Manually copy over any docker container registries
+    * Post Import. **The SRE will let you know when the import is complete. Once it's complete, move on to manual, post-migration steps.**
+        * If any projects imported by the SRE require any post-migration data to be migrated:
+            * [ ] Confirm those projects are staged
+            * [ ] Run `nohup ./congregate.sh migrate migrate --only-post-migration-info --commit > data/waves/wave_<insert_wave_number>/wave<insert-wave-here>_attempt<insert-attempt>_post_migration.log 2>&1 &` to migrate any post-migration data
 
 ### Post Migration
 
