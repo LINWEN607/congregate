@@ -115,8 +115,8 @@ def build_staging_data(projects_to_stage, dry_run=True):
                 if projects[0]["namespace"]["kind"] == "group":
                     group_to_stage = projects[0]["namespace"]["id"]
                     if rewritten_groups[group_to_stage]["parent_id"] is None:
-                        if b.config.parent_id is not None:
-                            rewritten_groups[group_to_stage]["parent_id"] = b.config.parent_id
+                        if b.config.dest_parent_id is not None:
+                            rewritten_groups[group_to_stage]["parent_id"] = b.config.dest_parent_id
                     else:
                         existing_parent_ids.append(
                             rewritten_groups[group_to_stage]["id"])
@@ -163,8 +163,8 @@ def build_staging_data(projects_to_stage, dry_run=True):
                 if project["namespace"]["kind"] == "group":
                     group_to_stage = project["namespace"]["id"]
                     if rewritten_groups[group_to_stage]["parent_id"] is None:
-                        if b.config.parent_id is not None:
-                            rewritten_groups[group_to_stage]["parent_id"] = b.config.parent_id
+                        if b.config.dest_parent_id is not None:
+                            rewritten_groups[group_to_stage]["parent_id"] = b.config.dest_parent_id
                     else:
                         existing_parent_ids.append(
                             rewritten_groups[group_to_stage]["id"])
@@ -235,7 +235,7 @@ def write_staging_files(staging, staged_users, staged_groups):
     """
     for group in staged_groups:
         if group["parent_id"] not in existing_parent_ids:
-            group["parent_id"] = b.config.parent_id
+            group["parent_id"] = b.config.dest_parent_id
     if (len(staging) > 0):
         with open("%s/data/stage.json" % b.app_path, "wb") as f:
             f.write(json.dumps(staging, indent=4))

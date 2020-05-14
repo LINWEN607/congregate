@@ -20,56 +20,56 @@ class ConfigurationValidationTests(unittest.TestCase):
 
     @pytest.fixture(autouse=True)
     def reset_validation(self):
-        ConfigurationValidator().parent_group_path_validated_in_session = False
-        ConfigurationValidator().parent_id_validated_in_session = False
+        ConfigurationValidator().dest_parent_group_path_validated_in_session = False
+        ConfigurationValidator().dest_parent_id_validated_in_session = False
         ConfigurationValidator().import_user_id_validated_in_session = False
 
     @responses.activate
     # pylint: enable=no-membertest_pass_import_user_id_validation
     @mock.patch("congregate.helpers.api.generate_v4_request_url")
     def test_fail_parent_id_validation(self, url):
-        self.config.parent_id_validated_in_session = False
+        self.config.dest_parent_id_validated_in_session = False
         url_value = "https://gitlab.com/api/v4/groups/1234"
         url.return_value = url_value
-        self.config.as_obj().set("DESTINATION", "parent_group_id", "1234")
+        self.config.as_obj().set("DESTINATION", "dest_parent_group_id", "1234")
         # pylint: disable=no-member
         responses.add(responses.GET, url_value,
                   json=self.groups.get_group_404(), status=404, content_type='text/json', match_querystring=True)
         # pylint: enable=no-member
-        self.assertRaises(ConfigurationException, self.config.validate_parent_group_id, 1234)
+        self.assertRaises(ConfigurationException, self.config.validate_dest_parent_group_id, 1234)
 
     @responses.activate
     # pylint: enable=no-member
     @mock.patch("congregate.helpers.api.generate_v4_request_url")
     def test_succeed_parent_id_validation(self, url):
-        self.config.parent_id_validated_in_session = False
-        print self.config.parent_id_validated_in_session
+        self.config.dest_parent_id_validated_in_session = False
+        print self.config.dest_parent_id_validated_in_session
         url_value = "https://gitlab.com/api/v4/groups/4"
         url.return_value = url_value
-        self.config.as_obj().set("DESTINATION", "parent_group_id", "1234")
-        self.config.as_obj().set("DESTINATION", "parent_group_path", "twitter")
+        self.config.as_obj().set("DESTINATION", "dest_parent_group_id", "1234")
+        self.config.as_obj().set("DESTINATION", "dest_parent_group_path", "twitter")
         # pylint: disable=no-member
         responses.add(responses.GET, url_value,
                   json=self.groups.get_group(), status=200, content_type='text/json', match_querystring=True)
         # pylint: enable=no-member
-        self.assertTrue(self.config.parent_id, 1234)
+        self.assertTrue(self.config.dest_parent_id, 1234)
 
     @responses.activate
     # pylint: enable=no-member
-    # @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.parent_group_path_validated_in_session')
+    # @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.dest_parent_group_path_validated_in_session')
     @mock.patch("congregate.helpers.api.generate_v4_request_url")
     def test_succeed_parent_id_and_path_validation(self, url):
-        self.config.parent_group_path_validated_in_session = True
-        self.config.parent_id_validated_in_session = False
+        self.config.dest_parent_group_path_validated_in_session = True
+        self.config.dest_parent_id_validated_in_session = False
         url_value = "https://gitlab.com/api/v4/groups/4"
         url.return_value = url_value
-        self.config.as_obj().set("DESTINATION", "parent_group_id", "1234")
-        self.config.as_obj().set("DESTINATION", "parent_group_path", "twitter")
+        self.config.as_obj().set("DESTINATION", "dest_parent_group_id", "1234")
+        self.config.as_obj().set("DESTINATION", "dest_parent_group_path", "twitter")
         # pylint: disable=no-member
         responses.add(responses.GET, url_value,
                     json=self.groups.get_group(), status=200, content_type='text/json', match_querystring=True)
         # pylint: enable=no-member
-        self.assertTrue(self.config.parent_id, 1234)
+        self.assertTrue(self.config.dest_parent_id, 1234)
 
     @responses.activate
     # pylint: enable=no-member
@@ -88,7 +88,7 @@ class ConfigurationValidationTests(unittest.TestCase):
         self.assertTrue(context.exception)
 
     def test_none_parent_id_validation(self):
-        self.assertTrue(self.config.validate_parent_group_id(None))
+        self.assertTrue(self.config.validate_dest_parent_group_id(None))
 
     def test_none_import_user_id_validation(self):
         self.assertRaises(ConfigurationException, self.config.validate_import_user_id, None)
@@ -144,11 +144,11 @@ class ConfigurationValidationTests(unittest.TestCase):
 
     @responses.activate
     # pylint: enable=no-member
-    @mock.patch.object(ConfigurationValidator, 'parent_id', new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, 'dest_parent_id', new_callable=mock.PropertyMock)
     @mock.patch("congregate.helpers.api.generate_v4_request_url")
     def test_succeed_parent_group_path_validation(self, url, parent_id):
         parent_id.return_value = 4
-        self.config.as_obj().set("DESTINATION", "parent_group_path", "twitter")
+        self.config.as_obj().set("DESTINATION", "dest_parent_group_path", "twitter")
         url_value = "https://gitlab.com/api/v4/groups/4"
         url.return_value = url_value
         # pylint: disable=no-member
@@ -157,15 +157,15 @@ class ConfigurationValidationTests(unittest.TestCase):
         responses.add(responses.GET, url_value,
                     json=self.groups.get_group(), status=200, content_type='text/json', match_querystring=True)
         # pylint: enable=no-member
-        self.assertTrue(self.config.parent_group_path, "twitter")
+        self.assertTrue(self.config.dest_parent_group_path, "twitter")
     
     @responses.activate
     # pylint: enable=no-member
-    @mock.patch.object(ConfigurationValidator, 'parent_id', new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, 'dest_parent_id', new_callable=mock.PropertyMock)
     @mock.patch("congregate.helpers.api.generate_v4_request_url")
     def test_fail_parent_group_path_validation(self, url, parent_id):
         parent_id.return_value = 4
-        self.config.as_obj().set("DESTINATION", "parent_group_path", "twitter")
+        self.config.as_obj().set("DESTINATION", "dest_parent_group_path", "twitter")
         url_value = "https://gitlab.com/api/v4/groups/4"
         url.return_value = url_value
         # pylint: disable=no-member
@@ -174,24 +174,24 @@ class ConfigurationValidationTests(unittest.TestCase):
         responses.add(responses.GET, url_value,
                     json=self.groups.get_group(), status=200, content_type='text/json', match_querystring=True)
         # pylint: enable=no-member
-        self.assertRaises(ConfigurationException, self.config.validate_parent_group_path, "not-twitter")
+        self.assertRaises(ConfigurationException, self.config.validate_dest_parent_group_path, "not-twitter")
 
     def test_none_parent_group_path_validation(self):
-        self.assertTrue(self.config.validate_parent_group_path(None))
+        self.assertTrue(self.config.validate_dest_parent_group_path(None))
 
-    @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.parent_group_path_validated_in_session')
+    @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.dest_parent_group_path_validated_in_session')
     def test_already_validated_parent_group_path_validation(self, validated):
         validated.return_value = True
-        self.config.as_obj().set("DESTINATION", "parent_group_path", "twitter")
-        self.config.parent_group_path_validated_in_session = True
-        self.assertEqual(self.config.parent_group_path, "twitter")
+        self.config.as_obj().set("DESTINATION", "dest_parent_group_path", "twitter")
+        self.config.dest_parent_group_path_validated_in_session = True
+        self.assertEqual(self.config.dest_parent_group_path, "twitter")
 
-    @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.parent_id_validated_in_session')
+    @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.dest_parent_id_validated_in_session')
     def test_already_validated_parent_id_validation(self, validated):
         validated.return_value = True
-        self.config.as_obj().set("DESTINATION", "parent_group_id", "5")
-        self.config.parent_id_validated_in_session = True
-        self.assertEqual(self.config.parent_id, 5)
+        self.config.as_obj().set("DESTINATION", "dest_parent_group_id", "5")
+        self.config.dest_parent_id_validated_in_session = True
+        self.assertEqual(self.config.dest_parent_id, 5)
 
     @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.import_user_id_validated_in_session')
     def test_already_validated_import_user_id_validation(self, validated):

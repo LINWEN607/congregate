@@ -135,7 +135,7 @@ class UserTests(unittest.TestCase):
     @responses.activate
     # pylint: enable=no-member
     @mock.patch('congregate.helpers.conf.Config.destination_host', new_callable=mock.PropertyMock)
-    @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.parent_id', new_callable=mock.PropertyMock)
+    @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.dest_parent_id', new_callable=mock.PropertyMock)
     @mock.patch('congregate.helpers.api.get_count')
     def test_handle_user_creation(self, count, parent_id, destination):
         count.return_value = 1
@@ -166,7 +166,7 @@ class UserTests(unittest.TestCase):
     @responses.activate
     # pylint: enable=no-member
     @mock.patch('congregate.helpers.conf.Config.destination_host', new_callable=mock.PropertyMock)
-    @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.parent_id', new_callable=mock.PropertyMock)
+    @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.dest_parent_id', new_callable=mock.PropertyMock)
     @mock.patch('congregate.helpers.api.get_count')
     def test_handle_user_creation_user_already_exists_no_parent_group(self, count, parent_id, destination):
         count.return_value = 1
@@ -197,7 +197,7 @@ class UserTests(unittest.TestCase):
     @responses.activate
     # pylint: enable=no-member
     @mock.patch('congregate.helpers.conf.Config.destination_host', new_callable=mock.PropertyMock)
-    @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.parent_id', new_callable=mock.PropertyMock)
+    @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.dest_parent_id', new_callable=mock.PropertyMock)
     @mock.patch('congregate.helpers.api.get_count')
     def test_handle_user_creation_user_already_exists_with_parent_group(self, count, parent_id, destination):
         count.return_value = 1
@@ -510,7 +510,7 @@ class UserTests(unittest.TestCase):
     @responses.activate
     # pylint: enable=no-member
     @mock.patch('congregate.helpers.conf.Config.destination_host', new_callable=mock.PropertyMock)
-    @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.parent_id', new_callable=mock.PropertyMock)
+    @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.dest_parent_id', new_callable=mock.PropertyMock)
     @mock.patch('congregate.helpers.api.get_count')
     def test_handle_user_creation_improperly_formatted_json(self, count, parent_id, destination):
         count.return_value = 1

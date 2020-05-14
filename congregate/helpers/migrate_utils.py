@@ -76,8 +76,8 @@ def get_project_namespace(p):
         "project_type", None) else p["namespace"]["kind"]
     p_namespace = p["namespace"]["full_path"] if isinstance(
         p.get("namespace", None), dict) else p["namespace"]
-    if b.config.parent_id is not None and p_type != "user":
-        return "{0}/{1}".format(b.config.parent_group_path, p_namespace)
+    if b.config.dest_parent_id is not None and p_type != "user":
+        return "{0}/{1}".format(b.config.dest_parent_group_path, p_namespace)
     return p_namespace
 
 
@@ -88,8 +88,8 @@ def get_full_path_with_parent_namespace(full_path):
         :param full_path: The full path of a group
         :return: Destination instance group full path with parent namespace
     """
-    if b.config.parent_id and b.config.parent_group_path:
-        return "{0}/{1}".format(b.config.parent_group_path, full_path)
+    if b.config.dest_parent_id and b.config.dest_parent_group_path:
+        return "{0}/{1}".format(b.config.dest_parent_group_path, full_path)
     return full_path
 
 

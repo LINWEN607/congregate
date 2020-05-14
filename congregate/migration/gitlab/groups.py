@@ -59,10 +59,10 @@ class GroupsClient(BaseClass):
             groups = list(self.groups_api.get_all_groups(
                 host, token))
         else:
-            if self.config.parent_id is not None:
-                groups = [self.groups_api.get_group(self.config.parent_id, self.config.destination_host,
+            if self.config.dest_parent_id is not None:
+                groups = [self.groups_api.get_group(self.config.dest_parent_id, self.config.destination_host,
                                                     self.config.destination_token).json()]
-                prefix += str(self.config.parent_id)
+                prefix += str(self.config.dest_parent_id)
                 print groups
             else:
                 self.log.info("No parent ID found")
@@ -180,7 +180,7 @@ class GroupsClient(BaseClass):
         groups_to_change = []
         transient_list = []
         parent_group = [self.groups_api.get_group(
-            self.config.parent_id,
+            self.config.dest_parent_id,
             self.config.destination_host,
             self.config.destination_token).json()]
         self.traverse_groups(

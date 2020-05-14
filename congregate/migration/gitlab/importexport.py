@@ -379,7 +379,7 @@ class ImportExportClient(BaseClass):
                 data = {
                     "path": path,
                     "name": validate_name(name),
-                    "parent_id": self.config.parent_id if self.config.parent_id else ""
+                    "parent_id": self.config.dest_parent_id if self.config.dest_parent_id else ""
                 }
                 files = {
                     "file": (filename, f)

@@ -163,7 +163,7 @@ class UsersClient(BaseClass):
 
     def generate_user_group_saml_post_data(self, user):
         identities = user.pop("identities")
-        user["group_id_for_saml"] = self.config.parent_id
+        user["group_id_for_saml"] = self.config.dest_parent_id
         user["extern_uid"] = self.find_extern_uid_by_provider(
             identities, self.config.group_sso_provider)
         user["provider"] = "group_saml"
@@ -231,7 +231,7 @@ class UsersClient(BaseClass):
             if not dry_run:
                 try:
                     self.groups_api.add_member_to_group(
-                        self.config.parent_id, self.config.destination_host, self.config.destination_token, data)
+                        self.config.dest_parent_id, self.config.destination_host, self.config.destination_token, data)
                 except RequestException, e:
                     self.log.error(
                         "Failed to add user {0} to parent group, with error:\n{1}".format(user, e))
@@ -239,7 +239,7 @@ class UsersClient(BaseClass):
     def remove_users_from_parent_group(self, dry_run=True):
         count = 0
         users = self.groups_api.get_all_group_members(
-            self.config.parent_id,
+            self.config.dest_parent_id,
             self.config.destination_host,
             self.config.destination_token)
         for user in users:
@@ -252,7 +252,7 @@ class UsersClient(BaseClass):
                     level))
                 if not dry_run:
                     self.groups_api.remove_member(
-                        self.config.parent_id,
+                        self.config.dest_parent_id,
                         user["id"],
                         self.config.destination_host,
                         self.config.destination_token)
@@ -272,7 +272,7 @@ class UsersClient(BaseClass):
         level = PERMISSIONS[access_level.lower()]
         try:
             users = list(self.groups_api.get_all_group_members(
-                self.config.parent_id,
+                self.config.dest_parent_id,
                 self.config.destination_host,
                 self.config.destination_token))
             for user in users:
@@ -285,7 +285,7 @@ class UsersClient(BaseClass):
                     response = self.groups_api.update_member_access_level(
                         self.config.destination_host,
                         self.config.destination_token,
-                        self.config.parent_id,
+                        self.config.dest_parent_id,
                         user["id"],
                         level)
                     if response.status_code != 200:
@@ -536,7 +536,7 @@ class UsersClient(BaseClass):
             # TODO: add config for 'password' field
             self.log.warning(
                 "If both 'reset_password' and 'force_random_password' are False, the 'password' field has to be set")
-        if self.config.parent_id is not None:
+        if self.config.dest_parent_id is not None:
             user["is_admin"] = False
         return user
 
