@@ -252,33 +252,41 @@ def handle_importing_groups(group):
     result = {
         full_path_with_parent_namespace: False
     }
+    import_id = None
     try:
         if isinstance(group, str):
             group = json.loads(group)
         b.log.info("Searching on destination for group {}".format(
             full_path_with_parent_namespace))
-        dst_gid = groups.find_group_id_by_path(
+        dst_grp = groups.find_group_by_path(
             b.config.destination_host, b.config.destination_token, full_path_with_parent_namespace)
+        dst_gid = dst_grp.get("id", None)
         if dst_gid:
             b.log.info("{0}Group {1} (ID: {2}) already exists on destination".format(
                 get_dry_log(_DRY_RUN), full_path, dst_gid))
             result[full_path_with_parent_namespace] = dst_gid
+            if _ONLY_POST_MIGRATION_INFO and not _DRY_RUN:
+                    import_id = dst_gid
+                    group = dst_grp
+            else:
+                result[full_path_with_parent_namespace] = dst_gid
         else:
             b.log.info("{0}Group {1} NOT found on destination, importing..."
                     .format(get_dry_log(_DRY_RUN), full_path_with_parent_namespace))
             ie.import_group(
                 group, full_path_with_parent_namespace, filename, dry_run=_DRY_RUN)
             # In place of checking the import status
-            if not _DRY_RUN:
-                group = ie.wait_for_group_import(
-                    full_path_with_parent_namespace)
-                if group and group.get("id", None):
-                    result[full_path_with_parent_namespace] = group
-                    # Migrate CI/CD Variables
-                    variables.migrate_variables(
-                        group["id"], src_gid, "group", full_path)
-                    # Remove import user
-                    groups.remove_import_user(group["id"])
+            group = ie.wait_for_group_import(
+                full_path_with_parent_namespace)
+            import_id = group.get("id", None)
+            
+        if import_id and not _DRY_RUN:
+            result[full_path_with_parent_namespace] = group
+            # Migrate CI/CD Variables
+            variables.migrate_variables(
+                import_id, src_gid, "group", full_path)
+            # Remove import user
+            groups.remove_import_user(import_id)
     except (RequestException, KeyError, OverflowError) as oe:
         b.log.error("Failed to import group {0} (ID: {1}) as {2} with error:\n{3}".format(
             full_path, src_gid, filename, oe))
