@@ -78,10 +78,8 @@ def generate_config():
         config.set("SOURCE", "src_access_token", obfuscate(
             "Source instance GitLab access token  (Settings -> Access tokens): "))
         migrating_registries = raw_input("Are you migrating any container registries? (Default: No)")
-        if migrating_registries is not None:
-            if migrating_registries.lower() == "yes":
-                migrating_registries = True
-        if migrating_registries:
+        if migrating_registries.lower() == "yes" or migrating_registries.lower() == "y":
+            migrating_registries = True
             config.set("SOURCE", "src_registry_url", raw_input(
                 "Source instance Container Registry URL: "))
             test_registries(deobfuscate(config.get("SOURCE", "src_access_token")), config.get(
