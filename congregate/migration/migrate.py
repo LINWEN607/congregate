@@ -260,7 +260,7 @@ def handle_importing_groups(group):
             full_path_with_parent_namespace))
         dst_grp = groups.find_group_by_path(
             b.config.destination_host, b.config.destination_token, full_path_with_parent_namespace)
-        dst_gid = dst_grp.get("id", None)
+        dst_gid = dst_grp.get("id", None) if dst_grp else None
         if dst_gid:
             b.log.info("{0}Group {1} (ID: {2}) already exists on destination".format(
                 get_dry_log(_DRY_RUN), full_path, dst_gid))
@@ -690,3 +690,4 @@ def generate_instance_map():
             import_url = sub('//.+:.+@', '//', project["import_url"])
             with open("new_repomap.txt", "ab") as f:
                 f.write("%s\t%s\n" % (import_url, project["id"]))
+
