@@ -420,6 +420,36 @@ class MockProjectsApi():
             "path_with_namespace": "pmm-demo/spring-app-secure-2"
         }
 
+    def get_staged_nested_group_project(self):
+        return {
+            "snippets_access_level": "enabled",
+            "description": "",
+            "default_branch": "patch-01",
+            "visibility": "public",
+            "http_url_to_repo": "https://pse.tanuki.cloud/pmm-demo/spring-app-secure-2.git",
+            "shared_runners_enabled": False,
+            "project_type": "group",
+            "path": "spring-app-secure-2",
+            "id": 287,
+            "merge_requests_access_level": "enabled",
+            "repository_access_level": "enabled",
+            "builds_access_level": "enabled",
+            "archived": False,
+            "name": "spring-app-secure-2",
+            "wiki_access_level": "enabled",
+            "namespace": {
+                "id": 287,
+                "name": "pmm-demo",
+                "path": "pmm-demo",
+                "kind": "group",
+                "full_path": "marketing/pmm/pmm-demo",
+                "parent_id": 1
+            },
+            "members": [],
+            "issues_access_level": "enabled",
+            "path_with_namespace": "marketing/pmm/pmm-demo/spring-app-secure-2"
+        }
+
     def get_staged_user_project(self):
         return {
             "snippets_access_level": "enabled",
