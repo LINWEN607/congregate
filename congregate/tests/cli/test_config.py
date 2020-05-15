@@ -77,6 +77,7 @@ class ConfigTests(unittest.TestCase):
             "3",  # max_import_retries,
             "gitlab",  # external_src_url
             "source_hostname",  # source host
+            "no",
             "yes", # migrating registries
             # "source_access_token", # source token
             "source_registry_url",    # source registry url
@@ -153,6 +154,7 @@ class ConfigTests(unittest.TestCase):
             "1",  # max_import_retries,
             "gitlab",  # external_src_url
             "source_hostname",  # source host
+            "no",
             "yes", # migrating registries
             # "source_access_token", # source token
             "source_registry_url",    # source registry url
@@ -226,6 +228,7 @@ class ConfigTests(unittest.TestCase):
             "3",  # max_import_retries,
             "gitlab",  # external_src_url
             "source_hostname",  # source host
+            "no",
             "yes", # migrating registries
             # "source_access_token", # source token
             "source_registry_url",    # source registry url

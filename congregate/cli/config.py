@@ -77,6 +77,15 @@ def generate_config():
                    raw_input("Source instance Host: "))
         config.set("SOURCE", "src_access_token", obfuscate(
             "Source instance GitLab access token  (Settings -> Access tokens): "))
+        source_group = raw_input("Are you migrating from a single group to a new instance? (i.e: gitlab.com to self-managed) (Default: No) ")
+        if source_group.lower() == "yes" or source_group.lower() == "y":
+            config.set("SOURCE", "src_parent_group_id", raw_input(
+                "Source group ID: "))
+            src_group = groups.get_group(config.getint("SOURCE", "src_parent_group_id"),
+                config.get("SOURCE",
+                        "src_hostname"),
+                deobfuscate(config.get("SOURCE", "src_access_token"))).json()
+            config.set("SOURCE", "src_parent_group_path", src_group["full_path"])
         migrating_registries = raw_input("Are you migrating any container registries? (Default: No)")
         if migrating_registries.lower() == "yes" or migrating_registries.lower() == "y":
             migrating_registries = True
