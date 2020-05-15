@@ -28,7 +28,7 @@ def generate_config():
         CLI for generating congregate.conf
     """
     config = ConfigParser(allow_no_value=True)
-
+    migrating_registries = False
     # Generic destination instance settings
     config.add_section("DESTINATION")
     config.set("DESTINATION", "dstn_hostname",
@@ -77,20 +77,24 @@ def generate_config():
                    raw_input("Source instance Host: "))
         config.set("SOURCE", "src_access_token", obfuscate(
             "Source instance GitLab access token  (Settings -> Access tokens): "))
-        config.set("SOURCE", "src_registry_url", raw_input(
-            "Source instance Container Registry URL: "))
-        test_registries(deobfuscate(config.get("SOURCE", "src_access_token")), config.get(
-            "SOURCE", "src_registry_url"), migration_user)
+        migrating_registries = raw_input("Are you migrating any container registries? (Default: No)")
+        if migrating_registries.lower() == "yes" or migrating_registries.lower() == "y":
+            migrating_registries = True
+            config.set("SOURCE", "src_registry_url", raw_input(
+                "Source instance Container Registry URL: "))
+            test_registries(deobfuscate(config.get("SOURCE", "src_access_token")), config.get(
+                "SOURCE", "src_registry_url"), migration_user)
         max_export_wait_time = raw_input(
             "Max wait time (in seconds) for project export status (default: 3600): ")
         config.set("SOURCE", "max_export_wait_time",
                    max_export_wait_time if max_export_wait_time else "3600")
 
         # Non-external destination instance settings
-        config.set("DESTINATION", "dstn_registry_url", raw_input(
-            "Destination instance Container Registry URL: "))
-        test_registries(deobfuscate(config.get("DESTINATION", "dstn_access_token")), config.get(
-            "DESTINATION", "dstn_registry_url"), migration_user)
+        if migrating_registries:
+            config.set("DESTINATION", "dstn_registry_url", raw_input(
+                "Destination instance Container Registry URL: "))
+            test_registries(deobfuscate(config.get("DESTINATION", "dstn_access_token")), config.get(
+                "DESTINATION", "dstn_registry_url"), migration_user)
         config.set("DESTINATION", "parent_group_id",
                    raw_input("Migrating to a parent group (e.g. gitlab.com)? Parent group ID (Group -> Settings -> General): "))
 

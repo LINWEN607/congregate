@@ -9,13 +9,13 @@ class ConfigurationValidator(Config):
     '''
     Extended config class used to validate the configuration on run
     '''
-    def __init__(self):
+    def __init__(self, path=None):
         self.groups = GroupsApi()
         self.users = UsersApi()
         self._parent_id_validated_in_session = False
         self._import_user_id_validated_in_session = False
         self._parent_group_path_validated_in_session = False
-        super(ConfigurationValidator, self).__init__()
+        super(ConfigurationValidator, self).__init__(path=path)
 
     @property
     def parent_id(self):

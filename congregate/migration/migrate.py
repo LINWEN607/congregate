@@ -64,13 +64,17 @@ def migrate(
         skip_group_export=False,
         skip_group_import=False,
         skip_project_import=False,
-        skip_project_export=False):
+        skip_project_export=False,
+        only_post_migration_info=False):
 
     global _DRY_RUN
     _DRY_RUN = dry_run
 
     global _PROCESSES
     _PROCESSES = processes
+
+    global _ONLY_POST_MIGRATION_INFO
+    _ONLY_POST_MIGRATION_INFO = only_post_migration_info
 
     start = time()
 
@@ -248,33 +252,41 @@ def handle_importing_groups(group):
     result = {
         full_path_with_parent_namespace: False
     }
+    import_id = None
     try:
         if isinstance(group, str):
             group = json.loads(group)
         b.log.info("Searching on destination for group {}".format(
             full_path_with_parent_namespace))
-        dst_gid = groups.find_group_by_path(
+        dst_grp = groups.find_group_by_path(
             b.config.destination_host, b.config.destination_token, full_path_with_parent_namespace)
+        dst_gid = dst_grp.get("id", None) if dst_grp else None
         if dst_gid:
             b.log.info("{0}Group {1} (ID: {2}) already exists on destination".format(
                 get_dry_log(_DRY_RUN), full_path, dst_gid))
             result[full_path_with_parent_namespace] = dst_gid
+            if _ONLY_POST_MIGRATION_INFO and not _DRY_RUN:
+                    import_id = dst_gid
+                    group = dst_grp
+            else:
+                result[full_path_with_parent_namespace] = dst_gid
         else:
             b.log.info("{0}Group {1} NOT found on destination, importing..."
-                       .format(get_dry_log(_DRY_RUN), full_path_with_parent_namespace))
+                    .format(get_dry_log(_DRY_RUN), full_path_with_parent_namespace))
             ie.import_group(
                 group, full_path_with_parent_namespace, filename, dry_run=_DRY_RUN)
             # In place of checking the import status
-            if not _DRY_RUN:
-                group = ie.wait_for_group_import(
-                    full_path_with_parent_namespace)
-                if group and group.get("id", None):
-                    result[full_path_with_parent_namespace] = group
-                    # Migrate CI/CD Variables
-                    variables.migrate_variables(
-                        group["id"], src_gid, "group", full_path)
-                    # Remove import user
-                    groups.remove_import_user(group["id"])
+            group = ie.wait_for_group_import(
+                full_path_with_parent_namespace)
+            import_id = group.get("id", None)
+            
+        if import_id and not _DRY_RUN:
+            result[full_path_with_parent_namespace] = group
+            # Migrate CI/CD Variables
+            variables.migrate_variables(
+                import_id, src_gid, "group", full_path)
+            # Remove import user
+            groups.remove_import_user(import_id)
     except (RequestException, KeyError, OverflowError) as oe:
         b.log.error("Failed to import group {0} (ID: {1}) as {2} with error:\n{3}".format(
             full_path, src_gid, filename, oe))
@@ -294,7 +306,7 @@ def migrate_subgroup_info(subgroup):
             subgroup = json.loads(subgroup)
         b.log.info("Searching on destination for sub-group {}".format(
             full_path_with_parent_namespace))
-        dst_gid = groups.find_group_by_path(
+        dst_gid = groups.find_group_id_by_path(
             b.config.destination_host, b.config.destination_token, full_path_with_parent_namespace)
         if dst_gid:
             b.log.info("{0}Sub-group {1} (ID: {2}) found on destination".format(
@@ -406,11 +418,10 @@ def handle_importing_projects(project_json):
     result = {
         dst_path_with_namespace: False
     }
+    import_id = None
     try:
         if isinstance(project_json, str):
             project_json = json.loads(project_json)
-        b.log.info("Searching on destination for project {}".format(
-            dst_path_with_namespace))
         dst_pid = projects.find_project_by_path(
             b.config.destination_host, b.config.destination_token, dst_path_with_namespace)
         if dst_pid:
@@ -418,23 +429,27 @@ def handle_importing_projects(project_json):
                 b.config.destination_host, b.config.destination_token, dst_pid).json()
             b.log.info("Project {0} (ID: {1}) found on destination, with import status: {2}".format(
                 dst_path_with_namespace, dst_pid, import_status))
-            result[dst_path_with_namespace] = dst_pid
+            if _ONLY_POST_MIGRATION_INFO and not _DRY_RUN:
+                import_id = dst_pid
+            else:
+                result[dst_path_with_namespace] = dst_pid
         else:
             b.log.info("{0}Project {1} NOT found on destination, importing...".format(
                 get_dry_log(_DRY_RUN), dst_path_with_namespace))
             import_id = ie.import_project(project_json, dry_run=_DRY_RUN)
-            if import_id and not _DRY_RUN:
-                # Archived projects cannot be migrated
-                if archived:
-                    b.log.info(
-                        "Unarchiving source project {0} (ID: {1})".format(path, src_id))
-                    projects.projects_api.unarchive_project(
-                        b.config.source_host, b.config.source_token, src_id)
+                
+        if import_id and not _DRY_RUN:
+            # Archived projects cannot be migrated
+            if archived:
                 b.log.info(
-                    "Migrating source project {0} (ID: {1}) info".format(path, src_id))
-                post_import_results = migrate_single_project_info(
-                    project_json, import_id)
-                result[dst_path_with_namespace] = post_import_results
+                    "Unarchiving source project {0} (ID: {1})".format(path, src_id))
+                projects.projects_api.unarchive_project(
+                    b.config.source_host, b.config.source_token, src_id)
+            b.log.info(
+                "Migrating source project {0} (ID: {1}) info".format(path, src_id))
+            post_import_results = migrate_single_project_info(
+                project_json, import_id)
+            result[dst_path_with_namespace] = post_import_results
     except (RequestException, KeyError, OverflowError) as oe:
         b.log.error("Failed to import project {0} (ID: {1}) with error:\n{2}".format(
             path, src_id, oe))
@@ -487,8 +502,9 @@ def migrate_single_project_info(project, dst_id):
         src_id, dst_id, path_with_namespace)
 
     # Container Registries
-    results["container_registry"] = registries.migrate_registries(
-        src_id, dst_id, path_with_namespace)
+    if b.config.source_registry and b.config.destination_registry:
+        results["container_registry"] = registries.migrate_registries(
+            src_id, dst_id, path_with_namespace)
 
     # Project hooks (webhooks)
     results["project_hooks"] = hooks.migrate_project_hooks(
@@ -674,3 +690,4 @@ def generate_instance_map():
             import_url = sub('//.+:.+@', '//', project["import_url"])
             with open("new_repomap.txt", "ab") as f:
                 f.write("%s\t%s\n" % (import_url, project["id"]))
+

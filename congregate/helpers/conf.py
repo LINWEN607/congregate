@@ -12,9 +12,9 @@ from congregate.helpers.misc_utils import get_congregate_path, deobfuscate
 
 
 class Config(object):
-    def __init__(self):
+    def __init__(self, path=None):
         app_path = get_congregate_path()
-        config_path = "{}/data/congregate.conf".format(app_path)
+        config_path = "{}/{}".format(app_path, path) if path else "{}/data/congregate.conf".format(app_path)
         self.config = ConfigParser()
         if not os.path.exists(config_path):
             print("WARNING: No configuration found. Configuring empty file {}".format(
@@ -22,7 +22,7 @@ class Config(object):
             with open(config_path, "w") as f:
                 self.config.write(f)
         try:
-            self.config.read('{}/data/congregate.conf'.format(app_path))
+            self.config.read(config_path)
         except ParsingError as pe:
             print("Failed to parse configuration, with error:\n{}".format(pe))
             raise SystemExit()

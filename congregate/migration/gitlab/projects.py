@@ -51,7 +51,7 @@ class ProjectsClient(BaseClass):
             for group in shared_with_groups:
                 dst_full_path = get_full_path_with_parent_namespace(
                     group["group_full_path"])
-                new_gid = self.groups.find_group_by_path(
+                new_gid = self.groups.find_group_id_by_path(
                     self.config.destination_host, self.config.destination_token, dst_full_path)
                 if new_gid is not None:
                     data = {
@@ -75,6 +75,8 @@ class ProjectsClient(BaseClass):
 
     def find_project_by_path(self, host, token, dst_path_with_namespace):
         """Returns the project ID based on search by path."""
+        self.log.info("Searching on {0} for project {1}".format(
+            host, dst_path_with_namespace))
         resp = self.projects_api.get_project_by_path_with_namespace(
             dst_path_with_namespace, host, token)
         if resp.status_code == 200:

@@ -77,6 +77,7 @@ class ConfigTests(unittest.TestCase):
             "3",  # max_import_retries,
             "gitlab",  # external_src_url
             "source_hostname",  # source host
+            "yes", # migrating registries
             # "source_access_token", # source token
             "source_registry_url",    # source registry url
             "3600",  # max_export_wait_time
@@ -152,6 +153,7 @@ class ConfigTests(unittest.TestCase):
             "1",  # max_import_retries,
             "gitlab",  # external_src_url
             "source_hostname",  # source host
+            "yes", # migrating registries
             # "source_access_token", # source token
             "source_registry_url",    # source registry url
             "1200",  # max_export_wait_time
@@ -224,6 +226,7 @@ class ConfigTests(unittest.TestCase):
             "3",  # max_import_retries,
             "gitlab",  # external_src_url
             "source_hostname",  # source host
+            "yes", # migrating registries
             # "source_access_token", # source token
             "source_registry_url",    # source registry url
             "3600",  # max_export_wait_time

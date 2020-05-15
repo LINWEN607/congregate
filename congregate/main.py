@@ -7,7 +7,7 @@ Usage:
     congregate list
     congregate configure
     congregate stage <projects>... [--commit]
-    congregate migrate [--processes=<n>] [--skip-users] [--skip-group-export] [--skip-group-import] [--skip-project-export] [--skip-project-import] [--commit]
+    congregate migrate [--processes=<n>] [--skip-users] [--skip-group-export] [--skip-group-import] [--skip-project-export] [--skip-project-import] [--only-post-migration-info] [--commit]
     congregate rollback [--hard-delete] [--skip-users] [--skip-groups] [--skip-projects] [--commit]
     congregate ui
     congregate do-all [--commit]
@@ -62,6 +62,7 @@ Arguments:
                                                 for rewrite. Currently does NOT work for exports through filesystem-aws.
     skip-project-import                     Will do all steps up to import (export, re-write exported project json,
                                                 etc). Useful for testing export contents.
+    only-post-migration-info                Skips migrating all content except for post-migration information. Use when import is handled outside of congregate
     access-level                            Update parent group level user permissions (Guest/Reporter/Developer/Maintainer/Owner).
     staged                                  Compare using staged data
     no-of-files                             Number of files used to go back when stitching JSON results
@@ -229,6 +230,11 @@ if __name__ == '__main__':
                 skip_group_import = True if arguments["--skip-group-import"] else False
                 skip_project_import = True if arguments["--skip-project-import"] else False
                 skip_project_export = True if arguments["--skip-project-export"] else False
+                only_post_migration_info = True if arguments["--only-post-migration-info"] else False
+                if only_post_migration_info:
+                    skip_users = True
+                    skip_group_export = True
+                    skip_project_export = True
                 migrate.migrate(
                     processes=PROCESSES,
                     dry_run=DRY_RUN,
@@ -236,7 +242,8 @@ if __name__ == '__main__':
                     skip_group_export=skip_group_export,
                     skip_group_import=skip_group_import,
                     skip_project_import=skip_project_import,
-                    skip_project_export=skip_project_export)
+                    skip_project_export=skip_project_export,
+                    only_post_migration_info=only_post_migration_info)
             if arguments["rollback"]:
                 skip_users = True if arguments["--skip-users"] else False
                 hard_delete = True if arguments["--hard-delete"] else False

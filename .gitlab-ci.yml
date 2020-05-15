@@ -65,7 +65,6 @@ build:
     - pip install poetry
     - poetry install
     - ./congregate.sh init
-    - echo ${Dummy_config} > $CONGREGATE_PATH/data/congregate.conf
   rules:
     - changes:
         - congregate/**/*
@@ -170,11 +169,13 @@ pages:
   stage: deploy
   rules:
     - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
+    - changes:
+      - runbooks/*
+      - congregate/docs/**/*
   # dependencies:
   #   - code_quality
   script:
-    - mkdir data
-    - echo ${Dummy_config} > $CONGREGATE_PATH/data/congregate.conf
+    - mkdir -p data
     - poetry install
     # - mv gl-code-quality-report.json congregate/docs/source/_static/
     - poetry run sphinx-apidoc -f -o congregate/docs/source/ ./

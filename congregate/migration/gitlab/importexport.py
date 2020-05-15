@@ -79,9 +79,9 @@ class ImportExportClient(BaseClass):
                     self.log.info(
                         "{0} {1} has finished exporting".format(export_type, name))
                     exported = True
-                elif status == "failed":
+                elif status == "failed" or status == "none":
                     self.log.error(
-                        "{0} {1} export failed".format(export_type, name))
+                        "{0} {1} export failed with export status:\n{2}".format(export_type, name, response))
                     break
                 elif total_time < self.config.max_export_wait_time:
                     self.log.info("Checking {0} {1} export status in {2} seconds".format(
@@ -89,7 +89,7 @@ class ImportExportClient(BaseClass):
                     total_time += wait_time
                     sleep(wait_time)
                 else:
-                    self.log.error("{0} {1} export time limit exceeded, download status:\n{2}".format(
+                    self.log.error("{0} {1} time limit exceeded with export status:\n{2}".format(
                         export_type, name, response))
                     break
             else:
@@ -123,7 +123,7 @@ class ImportExportClient(BaseClass):
         timer = 0
         wait_time = self.config.importexport_wait
         while True:
-            gid = self.groups.find_group_by_path(
+            gid = self.groups.find_group_id_by_path(
                 self.config.destination_host, self.config.destination_token, path)
             if gid:
                 group = self.groups_api.get_group(
@@ -543,7 +543,7 @@ class ImportExportClient(BaseClass):
             full_path)
         self.log.info("Searching on destination for group {}".format(
             full_path_with_parent_namespace))
-        dst_gid = self.groups.find_group_by_path(
+        dst_gid = self.groups.find_group_id_by_path(
             self.config.destination_host,
             self.config.destination_token,
             full_path_with_parent_namespace)
@@ -624,7 +624,7 @@ class ImportExportClient(BaseClass):
             full_path)
         self.log.info("Searching on destination for group {}".format(
             full_path_with_parent_namespace))
-        dst_gid = self.groups.find_group_by_path(
+        dst_gid = self.groups.find_group_id_by_path(
             self.config.destination_host,
             self.config.destination_token,
             full_path_with_parent_namespace)

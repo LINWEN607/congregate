@@ -207,7 +207,7 @@ Usage:
     congregate list
     congregate configure
     congregate stage <projects>... [--commit]
-    congregate migrate [--processes=<n>] [--skip-users] [--skip-group-export] [--skip-group-import] [--skip-project-export] [--skip-project-import] [--commit]
+    congregate migrate [--processes=<n>] [--skip-users] [--skip-group-export] [--skip-group-import] [--skip-project-export] [--skip-project-import] [--only-post-migration-info] [--commit]
     congregate rollback [--hard-delete] [--skip-users] [--skip-groups] [--skip-projects] [--commit]
     congregate ui
     congregate do-all [--commit]
@@ -262,6 +262,7 @@ Arguments:
                                                 for rewrite. Currently does NOT work for exports through filesystem-aws.
     skip-project-import                     Will do all steps up to import (export, re-write exported project json,
                                                 etc). Useful for testing export contents.
+    only-post-migration-info                Skips migrating all content except for post-migration information. Use when import is handled outside of congregate
     access-level                            Update parent group level user permissions (Guest/Reporter/Developer/Maintainer/Owner).
     staged                                  Compare using staged data
     no-of-files                             Number of files used to go back when stitching JSON results
@@ -441,6 +442,11 @@ Add the following line to .vscode/settings.json:
 ```
 
 You may need to refresh VS Code. VS Code will also call this python interpreter PipEnv, but if you check out the virtualenv directory poetry has stored, you can compare the virtualenv folder names to double check.
+
+#### Debugging through the terminal (Python's byebug)
+
+You can import `pdb` into the class you want to debug through a terminal and add `pdb.set_trace()` around the lines you would like to debug.
+You can read more about using pdb [here](https://fuzzyblog.io/blog/python/2019/09/24/the-python-equivalent-of-byebug-is-pdb-set-trace.html)
 
 ## Migration features
 
