@@ -18,10 +18,11 @@ Our guidance on some other migrations at this time:
 ## Contents
 
 * [Getting Started](static_docs/setup.md)
-* [Migration Workflow](static_docs/workflow.md)
 * [README](static_docs/readme.md)
-* [Code quality report](static_docs/code_quality.md)
-* [Migration metrics](static_docs/migration_metrics.md)
+* [Migration Prerequisites](static_docs/migration-prerequisites.md)
+* [Migration Workflow](static_docs/workflow.md)
+* [Code Quality Report](static_docs/code_quality.md)
+* [Migration Metrics](static_docs/migration_metrics.md)
 
 ## Indices and tables
 
