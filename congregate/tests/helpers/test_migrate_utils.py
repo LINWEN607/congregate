@@ -500,6 +500,18 @@ class MigrateTests(unittest.TestCase):
         self.assertEqual(mutils.get_full_path_with_parent_namespace(
             "test-path"), "test-path")
 
+    @mock.patch.object(ConfigurationValidator, "dstn_parent_id", new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, "dstn_parent_group_path", new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, "src_parent_group_path", new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, "src_parent_id", new_callable=mock.PropertyMock)
+    def test_get_full_path_with_parent_namespace_with_parent_and_src(self, src_parent_id, src_parent_group_path, dstn_parent_group_path, dstn_parent_id):
+        src_parent_id.return_value = 1
+        src_parent_group_path.return_value = "groupA/groupB"
+        dstn_parent_group_path.return_value = "test-parent-group-path"
+        dstn_parent_id.return_value = 1
+        self.assertEqual(mutils.get_full_path_with_parent_namespace(
+            "groupA/groupB"), "test-parent-group-path/groupB")
+
     def test_get_results_export_mix(self):
         results = [
             {"export1": True},
