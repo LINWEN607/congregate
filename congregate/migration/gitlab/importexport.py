@@ -79,17 +79,17 @@ class ImportExportClient(BaseClass):
                     self.log.info(
                         "{0} {1} has finished exporting".format(export_type, name))
                     exported = True
-                elif status == "failed" or status == "none":
+                elif status == "failed":
                     self.log.error(
-                        "{0} {1} export failed with export status:\n{2}".format(export_type, name, response))
+                        "{0} {1} export failed with export response:\n{2}".format(export_type, name, response))
                     break
                 elif total_time < self.config.max_export_wait_time:
-                    self.log.info("Checking {0} {1} export status in {2} seconds".format(
-                        export_type.lower(), name, wait_time))
+                    self.log.info("Checking {0} {1} export status (current: {2}) in {3} seconds".format(
+                        export_type.lower(), name, status, wait_time))
                     total_time += wait_time
                     sleep(wait_time)
                 else:
-                    self.log.error("{0} {1} time limit exceeded with export status:\n{2}".format(
+                    self.log.error("{0} {1} time limit exceeded with export response:\n{2}".format(
                         export_type, name, response))
                     break
             else:
