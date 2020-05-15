@@ -11,24 +11,29 @@ This list covers the process of preparing for migration from a source GitLab ins
 
 ### GitLab
 
-* [ ] Setup the migration VM that will host the PS migration tool’s (Congregate) Docker container.
+* [ ] Setup the migration VM that will host the Professional Services (PS) migration tool’s (Congregate) Docker container.
   * It should have minimal port and IP access. See [VM Requirements](#VM) for more detail.
-* [ ] (gitlab.com) Create a one-off Admin account and personal access token (PAT) on the destination instance for importing.
-  * Once the migration is complete revoke the Admin account for the migrating customer to retain.
-* [ ] Create on source and destination the (Admin) user PAT with an expiry date.
+* [ ] (gitlab.com) Create a one-off Admin user account with personal access token (PAT) on the destination instance.
+  * The PATs should have an expiry date of the estimated last day (wave) of the migration.
+  * (gitlab.com) Once the migration is complete revoke the Admin user account on gitlab.com for the migrating customer to retain.
+* [ ] Configure LDAP/SAML identity for the Admin user account on the destination instance.
+  * This is required for the user-group-project mapping to succeed.
+* [ ] Create a one-off PAT for the Admin user account on the source instance.
+  * The PAT should have an expiry date of the estimated last day (wave) of the migration.
+* [ ] (gitlab.com) Generate awareness in Support/SRE team and identify specific individuals (with Rails console access) to take tickets from customers during migration.
 
 ### Customer
 
 * [ ] Upgrade source and destination instance to the latest version of GitLab-EE.
 * [ ] Consolidate users (and their number) that need to be migrated.
-  * [ ] Determine whether blocked ones should be removed on source or migrated (as blocked).
-* [ ] Make sure that the migration user admin account has LDAP/SAML identity configured on the destination instance.
-  * This is required for the user-group-project mapping to succeed.
-* [ ] Create a user-group-project migration schedule (waves) per migration.
+  * Determine whether blocked ones should be removed on source or migrated (as blocked).
+* [ ] Create a user-group-project migration schedule (waves).
   * All users are migrated first.
   * Consider the option of migrating all groups (w/ sub-groups, w/o projects) next.
   * Projects are migrated in waves (with their parent groups if the previous was not done).
-* Create temporary group level (Owner) accounts on the source and destination instance.
+* [ ] Create one-off Admin user accounts on the source and destination instance (if applicable).
+* [ ] Configure LDAP/SAML identity for the Admin user account on the destination instance.
+  * This is required for the user-group-project mapping to succeed.
 
 ## VM
 

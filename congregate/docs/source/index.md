@@ -21,8 +21,8 @@ Our guidance on some other migrations at this time:
 * [README](static_docs/readme.md)
 * [Migration Prerequisites](static_docs/migration-prerequisites.md)
 * [Migration Workflow](static_docs/workflow.md)
-* [Code quality report](static_docs/code_quality.md)
-* [Migration metrics](static_docs/migration_metrics.md)
+* [Code Quality Report](static_docs/code_quality.md)
+* [Migration Metrics](static_docs/migration_metrics.md)
 
 ## Indices and tables
 
