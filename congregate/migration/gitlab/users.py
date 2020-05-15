@@ -489,7 +489,12 @@ class UsersClient(BaseClass):
         return staged
 
     def retrieve_user_info(self, host, token, quiet=False):
-        users = list(self.users_api.get_all_users(host, token))
+        if self.config.src_parent_group_path:
+            users = []
+            for user in self.groups_api.get_all_group_members(self.config.src_parent_id, host, token):
+                users.append(self.users_api.get_user(user["id"], host, token).json())
+        else:
+            users = list(self.users_api.get_all_users(host, token))
         root_index = None
         for user in users:
             # Removing root user

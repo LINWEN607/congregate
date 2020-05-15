@@ -56,8 +56,13 @@ class GroupsClient(BaseClass):
             prefix = location
 
         if not top_level_group:
-            groups = list(self.groups_api.get_all_groups(
-                host, token))
+            if self.config.src_parent_group_path:
+                groups = list(self.groups_api.get_all_subgroups(
+                    self.config.src_parent_id, host, token))
+                groups.append(self.groups_api.get_group(self.config.src_parent_id, host, token).json())
+            else:
+                groups = list(self.groups_api.get_all_groups(
+                    host, token))
         else:
             if self.config.dstn_parent_id is not None:
                 groups = [self.groups_api.get_group(self.config.dstn_parent_id, self.config.destination_host,

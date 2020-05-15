@@ -290,7 +290,7 @@ class GroupsApi():
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /groups/:id/projects
         """
-        return api.list_all(host, token, "groups/%d/projects" % gid)
+        return api.list_all(host, token, "groups/%d/projects?include_subgroups=true" % gid)
 
     def get_all_group_subgroups(self, gid, host, token):
         """
