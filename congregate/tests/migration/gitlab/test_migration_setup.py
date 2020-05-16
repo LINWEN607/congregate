@@ -66,6 +66,11 @@ class MigrationEndToEndTestSetup(unittest.TestCase):
             source_token
         ]
 
+        with open("source_token", "w") as f:
+            f.write(source_token)
+        with open("destination_token", "w") as f:
+            f.write(destination_token)
+
         g = input_generator(values)
         t = input_generator(tokens)
         with mock.patch('congregate.cli.config.test_registries', lambda x, y, z: None):
