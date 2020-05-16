@@ -85,6 +85,7 @@ def generate_config():
                 config.get("SOURCE",
                         "src_hostname"),
                 deobfuscate(config.get("SOURCE", "src_access_token"))).json()
+            print src_group
             config.set("SOURCE", "src_parent_group_path", src_group["full_path"])
         migrating_registries = raw_input("Are you migrating any container registries? (Default: No)")
         if migrating_registries.lower() == "yes" or migrating_registries.lower() == "y":
