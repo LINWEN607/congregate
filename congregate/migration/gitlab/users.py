@@ -482,9 +482,9 @@ class UsersClient(BaseClass):
             for s in staged:
                 s["members"] = [i for j, i in enumerate(
                     s["members"]) if i["id"] not in users.keys()]
-
+        self.log.info("Updating {0}.json with the following data \n: {1}".format(data, json_pretty(staged)))
         with open("{0}/data/{1}.json".format(self.app_path, data), "w") as f:
-            f.write(json_pretty(staged))
+            json.dump(staged, f, indent=4)
 
         return staged
 

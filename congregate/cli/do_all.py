@@ -6,7 +6,7 @@ from congregate.migration.gitlab.users import UsersClient
 from congregate.migration.gitlab.groups import GroupsClient
 from congregate.migration import migrate
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import is_recent_file, remove_dupes
+from congregate.helpers.misc_utils import is_recent_file, remove_dupes, json_pretty
 
 users = UsersClient()
 groups = GroupsClient()
@@ -42,7 +42,6 @@ def do_all_users(dry_run=True):
     # Lookup not found users AFTER - NO dry run
     users.search_for_staged_users(dry_run=False)
 
-
 def do_all_groups_and_projects(dry_run=True):
     """
         Stages all groups and projects and migrates them to the destination instance
@@ -53,6 +52,8 @@ def do_all_groups_and_projects(dry_run=True):
 
     # Stage ALL - NO dry run
     stage_projects.stage_projects(["all"], dry_run=False)
+
+    users.handle_users_not_found("staged_users", users.search_for_staged_users(dry_run), keep=False)
 
     migrate.migrate(dry_run=dry_run, skip_users=True)
 

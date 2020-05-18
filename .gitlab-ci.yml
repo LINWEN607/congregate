@@ -88,7 +88,7 @@ test:unit:
   script:
     - poetry run pytest -m 'not e2e and not e2e_setup and not e2e_setup_2' --cov-config=.coveragerc --cov=congregate congregate/tests/
 
-test:end-to-end:
+test:end-to-end full:
   extends:
     - .test-job
     - .use-docker-in-docker
@@ -107,25 +107,44 @@ test:end-to-end:
     - export GITLAB_DEST_REG_URL=gitlab_destination:4567
     - poetry run pytest -s -m e2e_setup congregate/tests/
     - poetry run pytest -s -m e2e --cov-config=.coveragerc --cov=congregate congregate/tests/
-    - mkdir -p data/standard_migration
-    - mv data/*.html data/standard_migration/
-    - mv data/*diff*.json data/standard_migration/
-    - mv data/*results.json data/standard_migration/
-    - mv data/audit.log data/standard_migration/
-    - poetry run pytest -s -m e2e_setup_2 congregate/tests/
-    - poetry run pytest -s -m e2e --cov-config=.coveragerc --cov=congregate congregate/tests/
-    - mkdir -p data/single_group_migration
-    - mv data/*.html data/single_group_migration/
-    - mv data/*diff*.json data/single_group_migration/
-    - mv data/*results.json data/single_group_migration/
-    - mv data/audit.log data/single_group_migration/
   after_script:
     - poetry run aws ec2 terminate-instances --instance-ids $(cat instance_id)
   artifacts:
     when: always
     paths:
-      - data/single_group_migration
-      - data/standard_migration
+      - data/*.html
+      - data/*diff*.json
+      - data/*results.json
+      - data/audit.log
+
+test:end-to-end single group:
+  extends:
+    - .test-job
+    - .use-docker-in-docker
+  image: "${TEST_IMAGE_NAME}"
+  services:
+    - name: docker:${DOCKER_VERSION}-dind
+    - name: gitlab/gitlab-ee:nightly
+      alias: gitlab_destination
+  tags:
+    - congregate-auto-scale-runner
+  script:
+    - ./spin_up_test_vm.sh
+    - export GITLAB_SRC=http://$(cat source_ip)
+    - export GITLAB_SRC_REG_URL=$(cat source_ip):4567
+    - export GITLAB_DEST=http://gitlab_destination
+    - export GITLAB_DEST_REG_URL=gitlab_destination:4567
+    - poetry run pytest -s -m e2e_setup_2 congregate/tests/
+    - poetry run pytest -s -m e2e --cov-config=.coveragerc --cov=congregate congregate/tests/
+  after_script:
+    - poetry run aws ec2 terminate-instances --instance-ids $(cat instance_id)
+  artifacts:
+    when: always
+    paths:
+      - data/*.html
+      - data/*diff*.json
+      - data/*results.json
+      - data/audit.log
 
 rolling release:
   extends: .use-docker-in-docker

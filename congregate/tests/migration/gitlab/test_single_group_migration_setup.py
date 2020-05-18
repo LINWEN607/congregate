@@ -8,23 +8,25 @@ import mock
 from congregate.helpers.misc_utils import input_generator
 from congregate.cli import config
 from congregate.helpers.seed.generate_token import token_generator
+from congregate.helpers.seed.generator import SeedDataGenerator
 
 @pytest.mark.e2e_setup_2
 class MigrationEndToEndTestSetup(unittest.TestCase):
     def setUp(self):
         self.t = token_generator()
         self.generate_single_group_config_with_tokens()
+        self.s = SeedDataGenerator()
 
-    def test_confirm_config(self):
-        return True
+    def test_seed_data(self):
+        self.s.generate_seed_data(dry_run=False)
 
     def generate_single_group_config_with_tokens(self):
-        print "Retrieving Destination Token"
-        with open("destination_token", "r") as f:
-            destination_token = f.read()
-        print "Retrieving Source Token"
-        with open("source_token", "r") as f:
-            source_token = f.read()
+        print "Generating Destination Token"
+        destination_token = self.t.generate_token("destination_token", "2020-08-27", url=os.getenv(
+            "GITLAB_DEST"), username="root", pword=uuid4().hex)  # Destination access token
+        print "Generating Source Token"
+        source_token = self.t.generate_token("source_token", "2020-08-27", url=os.getenv(
+            "GITLAB_SRC"), username="root", pword="5iveL!fe")  # source token
         print "Prepping config data"
         values = [
             os.getenv("GITLAB_DEST"),  # Destination hostname

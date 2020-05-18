@@ -17,7 +17,7 @@ class MigrationEndToEndTest(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         self.b = BaseClass()
-        do_all.do_all(dry_run=False)
+        # do_all.do_all(dry_run=False)
 
     @classmethod
     def tearDownClass(self):
@@ -26,30 +26,32 @@ class MigrationEndToEndTest(unittest.TestCase):
         rollback_diff()
 
     def test_user_migration_diff(self):
+        do_all.do_all_users(dry_run=False)
         user_diff = UserDiffClient(
-            "/data/user_migration_results.json")
+            "/data/user_migration_results.json", staged=True)
         diff_report = user_diff.generate_diff_report()
         user_diff.generate_html_report(
             diff_report, "/data/user_migration_results.html")
-        self.assertGreater(
+        self.assertGreaterEqual(
             diff_report["user_migration_results"]["overall_accuracy"], 0.90)
 
     def test_group_migration_diff(self):
+        do_all.do_all_groups_and_projects(dry_run=False)
         group_diff = GroupDiffClient(
-            "/data/group_migration_results.json")
+            "/data/group_migration_results.json", staged=True)
         diff_report = group_diff.generate_diff_report()
         group_diff.generate_html_report(
             diff_report, "/data/group_migration_results.html")
-        self.assertGreater(
-            diff_report["group_migration_results"]["overall_accuracy"], 0.90)
+        self.assertGreaterEqual(
+            diff_report["group_migration_results"]["overall_accuracy"], 0.85)
 
     def test_project_migration_diff(self):
         project_diff = ProjectDiffClient(
-            "/data/project_migration_results.json")
+            "/data/project_migration_results.json", staged=True)
         diff_report = project_diff.generate_diff_report()
         project_diff.generate_html_report(
             diff_report, "/data/project_migration_results.html")
-        self.assertGreater(
+        self.assertGreaterEqual(
             diff_report["project_migration_results"]["overall_accuracy"], 0.90)
 
 
