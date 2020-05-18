@@ -6,7 +6,7 @@ from congregate.migration.gitlab.users import UsersClient
 from congregate.migration.gitlab.groups import GroupsClient
 from congregate.migration import migrate
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import is_recent_file, remove_dupes, json_pretty
+from congregate.helpers.misc_utils import is_recent_file, remove_dupes
 
 users = UsersClient()
 groups = GroupsClient()
