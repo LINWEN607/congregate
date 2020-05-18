@@ -60,7 +60,6 @@ class MigrationEndToEndTestSetup(unittest.TestCase):
             "False",  # randomized password
             "5"  # import wait time
         ]
-        print json.dumps(values)
         tokens = [
             destination_token,
             source_token
