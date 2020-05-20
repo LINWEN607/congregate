@@ -266,20 +266,21 @@ def handle_importing_groups(group):
                 get_dry_log(_DRY_RUN), full_path, dst_gid))
             result[full_path_with_parent_namespace] = dst_gid
             if _ONLY_POST_MIGRATION_INFO and not _DRY_RUN:
-                    import_id = dst_gid
-                    group = dst_grp
+                import_id = dst_gid
+                group = dst_grp
             else:
                 result[full_path_with_parent_namespace] = dst_gid
         else:
             b.log.info("{0}Group {1} NOT found on destination, importing..."
-                    .format(get_dry_log(_DRY_RUN), full_path_with_parent_namespace))
+                       .format(get_dry_log(_DRY_RUN), full_path_with_parent_namespace))
             ie.import_group(
                 group, full_path_with_parent_namespace, filename, dry_run=_DRY_RUN)
             # In place of checking the import status
-            group = ie.wait_for_group_import(
-                full_path_with_parent_namespace)
-            import_id = group.get("id", None)
-            
+            if not _DRY_RUN:
+                group = ie.wait_for_group_import(
+                    full_path_with_parent_namespace)
+                import_id = group.get("id", None)
+
         if import_id and not _DRY_RUN:
             result[full_path_with_parent_namespace] = group
             # Migrate CI/CD Variables
@@ -437,7 +438,7 @@ def handle_importing_projects(project_json):
             b.log.info("{0}Project {1} NOT found on destination, importing...".format(
                 get_dry_log(_DRY_RUN), dst_path_with_namespace))
             import_id = ie.import_project(project_json, dry_run=_DRY_RUN)
-                
+
         if import_id and not _DRY_RUN:
             # Archived projects cannot be migrated
             if archived:
@@ -690,4 +691,3 @@ def generate_instance_map():
             import_url = sub('//.+:.+@', '//', project["import_url"])
             with open("new_repomap.txt", "ab") as f:
                 f.write("%s\t%s\n" % (import_url, project["id"]))
-

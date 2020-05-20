@@ -69,6 +69,7 @@ def build_staging_data(projects_to_stage, dry_run=True):
 
     if not projects_to_stage[0] == "":
         if projects_to_stage[0] == "all" or projects_to_stage[0] == ".":
+            # Stage ALL projects
             for i, _ in enumerate(projects):
                 obj = get_project_metadata(projects[i])
 
@@ -78,23 +79,16 @@ def build_staging_data(projects_to_stage, dry_run=True):
                     append_member_to_members_list(
                         rewritten_users, staged_users, members, member)
 
-                # if projects[i]["namespace"]["kind"] == "group":
-                #     group_to_stage = projects[i]["namespace"]["id"]
-                #     staged_groups.append(rewritten_groups[group_to_stage])
-
-                for g in groups:
-                    if is_top_level_group(g):
-                        b.log.info("Staging top-level group {0} (ID: {1})".format(
-                            g["full_path"], g["id"]))
-                    else:
-                        b.log.info(
-                            "Staging sub-group {0} (ID: {1})".format(g["full_path"], g["id"]))
-                    staged_groups.append(g)
-
                 obj["members"] = members
                 staging.append(obj)
 
-            # Stage ALL users in the instance
+            # Stage ALL groups
+            for g in groups:
+                b.log.info("Staging {0} {1} (ID: {2})".format(
+                    "top-level group" if is_top_level_group(g) else "sub-group", g["full_path"], g["id"]))
+                staged_groups.append(g)
+
+            # Stage ALL users
             for user in users:
                 staged_users.append(user)
         elif re.search(r"\d+-\d+", projects_to_stage[0]) is not None:

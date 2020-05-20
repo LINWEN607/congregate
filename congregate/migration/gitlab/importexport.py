@@ -123,13 +123,11 @@ class ImportExportClient(BaseClass):
         timer = 0
         wait_time = self.config.importexport_wait
         while True:
-            gid = self.groups.find_group_id_by_path(
+            group = self.groups.find_group_by_path(
                 self.config.destination_host, self.config.destination_token, path)
-            if gid:
-                group = self.groups_api.get_group(
-                    gid, self.config.destination_host, self.config.destination_token).json()
+            if group:
                 self.log.info(
-                    "Group {0} imported successfully with ID {1}".format(path, gid))
+                    "Group {0} imported successfully with ID {1}".format(path, group.get("id", None)))
                 break
             self.log.info(
                 "Waiting {0} seconds for group {1} to import".format(wait_time, path))
