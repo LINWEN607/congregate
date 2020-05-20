@@ -12,7 +12,6 @@ from congregate.helpers.base_class import BaseClass
 from congregate.migration.gitlab.api.projects import ProjectsApi
 
 projects_api = ProjectsApi()
-existing_parent_ids = []
 b = BaseClass()
 
 # TODO: Break down into separate staging areas
@@ -108,12 +107,6 @@ def build_staging_data(projects_to_stage, dry_run=True):
 
                 if projects[0]["namespace"]["kind"] == "group":
                     group_to_stage = projects[0]["namespace"]["id"]
-                    if rewritten_groups[group_to_stage]["parent_id"] is None:
-                        if b.config.dstn_parent_id is not None:
-                            rewritten_groups[group_to_stage]["parent_id"] = b.config.dstn_parent_id
-                    else:
-                        existing_parent_ids.append(
-                            rewritten_groups[group_to_stage]["id"])
                     staged_groups.append(rewritten_groups[group_to_stage])
                     if "child_ids" in rewritten_groups[group_to_stage]:
                         for sub in rewritten_groups[group_to_stage]["child_ids"]:
@@ -156,12 +149,6 @@ def build_staging_data(projects_to_stage, dry_run=True):
 
                 if project["namespace"]["kind"] == "group":
                     group_to_stage = project["namespace"]["id"]
-                    if rewritten_groups[group_to_stage]["parent_id"] is None:
-                        if b.config.dstn_parent_id is not None:
-                            rewritten_groups[group_to_stage]["parent_id"] = b.config.dstn_parent_id
-                    else:
-                        existing_parent_ids.append(
-                            rewritten_groups[group_to_stage]["id"])
                     staged_groups.append(rewritten_groups[group_to_stage])
                     if "child_ids" in rewritten_groups[group_to_stage]:
                         for sub in rewritten_groups[group_to_stage]["child_ids"]:
@@ -227,19 +214,12 @@ def write_staging_files(staging, staged_users, staged_groups):
         :param: staged_users:(dict) staged users
         :param: staged_groups: (dict) staged groups
     """
-    for group in staged_groups:
-        if group["parent_id"] not in existing_parent_ids:
-            group["parent_id"] = b.config.dstn_parent_id
-    if (len(staging) > 0):
-        with open("%s/data/stage.json" % b.app_path, "wb") as f:
-            f.write(json.dumps(staging, indent=4))
-        with open("%s/data/staged_users.json" % b.app_path, "wb") as f:
-            f.write(json.dumps(staged_users, indent=4))
-        with open("%s/data/staged_groups.json" % b.app_path, "wb") as f:
-            f.write(json.dumps(staged_groups, indent=4))
-    else:
-        with open("%s/data/stage.json" % b.app_path, "wb") as f:
-            f.write("[]")
+    with open("%s/data/stage.json" % b.app_path, "wb") as f:
+        f.write(json.dumps(staging, indent=4))
+    with open("%s/data/staged_users.json" % b.app_path, "wb") as f:
+        f.write(json.dumps(staged_users, indent=4))
+    with open("%s/data/staged_groups.json" % b.app_path, "wb") as f:
+        f.write(json.dumps(staged_groups, indent=4))
 
 
 def append_member_to_members_list(
