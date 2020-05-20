@@ -17,12 +17,11 @@ class MigrationEndToEndTest(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         self.b = BaseClass()
-        # do_all.do_all(dry_run=False)
 
     @classmethod
     def tearDownClass(self):
         rollback(dry_run=False, hard_delete=True)
-        sleep(self.b.config.max_export_wait_time)
+        sleep(self.b.config.importexport_wait)
         rollback_diff()
 
     def test_user_migration_diff(self):
@@ -58,14 +57,14 @@ class MigrationEndToEndTest(unittest.TestCase):
 def rollback_diff():
     diff_report = {}
     base_diff = BaseDiffClient()
-    user_diff = UserDiffClient(
-        "/data/user_migration_results.json", rollback=True)
-    diff_report["user_diff"] = user_diff.generate_diff_report()
-    group_diff = GroupDiffClient(
-        "/data/group_migration_results.json", rollback=True)
-    diff_report["group_diff"] = group_diff.generate_diff_report()
     project_diff = ProjectDiffClient(
         "/data/project_migration_results.json", rollback=True)
     diff_report["project_diff"] = project_diff.generate_diff_report()
+    group_diff = GroupDiffClient(
+        "/data/group_migration_results.json", rollback=True)
+    diff_report["group_diff"] = group_diff.generate_diff_report()
+    user_diff = UserDiffClient(
+        "/data/user_migration_results.json", rollback=True)
+    diff_report["user_diff"] = user_diff.generate_diff_report()
     base_diff.generate_html_report(
         diff_report, "/data/migration_rollback_results.html")

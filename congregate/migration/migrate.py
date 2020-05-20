@@ -529,14 +529,14 @@ def rollback(dry_run=True,
 
     # Remove groups and projects OR only empty groups
     if not skip_groups:
-        b.log.info("{0}Removing groups{1} on destination".format(
+        b.log.info("{0}Removing staged groups{1} on destination".format(
             dry_log,
             "" if skip_projects else " and projects"))
         groups.delete_groups(dry_run=dry_run, skip_projects=skip_projects)
 
     # Remove only projects
     if not skip_projects:
-        b.log.info("{}Removing projects on destination".format(dry_log))
+        b.log.info("{}Removing staged projects on destination".format(dry_log))
         projects.delete_projects(dry_run=dry_run)
 
     if not skip_users:

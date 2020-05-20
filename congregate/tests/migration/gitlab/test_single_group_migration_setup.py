@@ -2,13 +2,13 @@ import os
 import unittest
 from uuid import uuid4
 import base64
-import json
 import pytest
 import mock
 from congregate.helpers.misc_utils import input_generator
 from congregate.cli import config
 from congregate.helpers.seed.generate_token import token_generator
 from congregate.helpers.seed.generator import SeedDataGenerator
+
 
 @pytest.mark.e2e_setup_2
 class MigrationEndToEndTestSetup(unittest.TestCase):
@@ -37,9 +37,9 @@ class MigrationEndToEndTestSetup(unittest.TestCase):
             "3",  # max_import_retries,
             "gitlab",  # external_src_url
             os.getenv("GITLAB_SRC"),  # source host
-            "yes", # single group migration
-            "2", # Single group
-            "yes", # migrating registries
+            "yes",  # single group migration
+            "2",  # Single group
+            "yes",  # migrating registries
             # self.t.generate_token("source_token", "2020-08-27", url=os.getenv("GITLAB_SRC"), username="root", pword=uuid4().hex), # source token
             os.getenv("GITLAB_SRC_REG_URL"),  # source registry url
             "60",  # max_export_wait_time

@@ -2,7 +2,6 @@ import os
 import unittest
 from uuid import uuid4
 import base64
-import json
 import pytest
 import mock
 from congregate.helpers.misc_utils import input_generator
@@ -38,8 +37,8 @@ class MigrationEndToEndTestSetup(unittest.TestCase):
             "3",  # max_import_retries,
             "gitlab",  # external_src_url
             os.getenv("GITLAB_SRC"),  # source host
-            "no", # single group migration
-            "yes", # migrating registries
+            "no",  # single group migration
+            "yes",  # migrating registries
             # self.t.generate_token("source_token", "2020-08-27", url=os.getenv("GITLAB_SRC"), username="root", pword=uuid4().hex), # source token
             os.getenv("GITLAB_SRC_REG_URL"),  # source registry url
             "60",  # max_export_wait_time

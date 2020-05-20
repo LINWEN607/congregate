@@ -40,7 +40,7 @@ Usage:
     congregate validate-staged-groups-schema
     congregate validate-staged-projects-schema
     congregate map-users [--commit]
-    congregate generate-diff [--processes=<n>] [--staged]
+    congregate generate-diff [--processes=<n>] [--staged] [--rollback]
     congregate clean [--commit]
     congregate stitch-results [--result-type=<project|group|user>] [--no-of-files=<n>] [--head|--tail]
     congregate obfuscate
@@ -148,6 +148,7 @@ if __name__ == '__main__':
     arguments = docopt(__doc__)
     DRY_RUN = False if arguments["--commit"] else True
     STAGED = True if arguments["--staged"] else False
+    ROLLBACK = True if arguments["--rollback"] else False
     PROCESSES = arguments["--processes"] if arguments["--processes"] else None
 
     if arguments["init"]:
@@ -352,15 +353,15 @@ if __name__ == '__main__':
                 clean_data(dry_run=DRY_RUN)
             if arguments["generate-diff"]:
                 user_diff = UserDiffClient(
-                    "/data/user_migration_results.json", staged=STAGED, processes=PROCESSES)
+                    "/data/user_migration_results.json", staged=STAGED, processes=PROCESSES, rollback=ROLLBACK)
                 user_diff.generate_html_report(
                     user_diff.generate_diff_report(), "/data/user_migration_results.html")
                 group_diff = GroupDiffClient(
-                    "/data/group_migration_results.json", staged=STAGED, processes=PROCESSES)
+                    "/data/group_migration_results.json", staged=STAGED, processes=PROCESSES, rollback=ROLLBACK)
                 group_diff.generate_html_report(
                     group_diff.generate_diff_report(), "/data/group_migration_results.html")
                 project_diff = ProjectDiffClient(
-                    "/data/project_migration_results.json", staged=STAGED, processes=PROCESSES)
+                    "/data/project_migration_results.json", staged=STAGED, processes=PROCESSES, rollback=ROLLBACK)
                 project_diff.generate_html_report(
                     project_diff.generate_diff_report(), "/data/project_migration_results.html")
             if arguments["stitch-results"]:
