@@ -118,13 +118,16 @@ class ProjectsClient(BaseClass):
                     "Failed to GET project {} by path_with_namespace".format(path_with_namespace))
 
     def count_unarchived_projects(self):
-        unarchived_projects = []
+        unarchived_user_projects = []
+        unarchived_group_projects = []
         for project in self.projects_api.get_all_projects(self.config.source_host, self.config.source_token):
-            if project.get("archived", None) is not None:
-                if not project["archived"]:
-                    unarchived_projects.append(project["name_with_namespace"])
-        self.log.info("Unarchived projects ({0}):\n{1}".format(
-            len(unarchived_projects), "\n".join(up for up in unarchived_projects)))
+            if not project.get("archived", True):
+                unarchived_user_projects.append(project["path_with_namespace"]) if project["namespace"][
+                    "kind"] == "user" else unarchived_group_projects.append(project["path_with_namespace"])
+        self.log.info("Unarchived user projects ({0}):\n{1}".format(
+            len(unarchived_user_projects), "\n".join(up for up in unarchived_user_projects)))
+        self.log.info("Unarchived group projects ({0}):\n{1}".format(
+            len(unarchived_group_projects), "\n".join(up for up in unarchived_group_projects)))
 
     def archive_staged_projects(self, dry_run=True):
         staged_projects = self.get_staged_projects()
