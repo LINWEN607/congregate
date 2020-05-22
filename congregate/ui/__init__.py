@@ -5,8 +5,10 @@ import os
 import sys
 import logging
 from flask import Flask
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
 
 sys.path.append(
     os.path.dirname(

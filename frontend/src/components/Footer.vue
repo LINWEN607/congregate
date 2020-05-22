@@ -22,5 +22,11 @@ export default {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped lang="less">
-
+footer {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  background-color: #DDD;
+  padding-bottom: 1em;
+}
 </style>
