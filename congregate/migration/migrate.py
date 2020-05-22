@@ -276,9 +276,10 @@ def handle_importing_groups(group):
             ie.import_group(
                 group, full_path_with_parent_namespace, filename, dry_run=_DRY_RUN)
             # In place of checking the import status
-            group = ie.wait_for_group_import(
-                full_path_with_parent_namespace)
-            import_id = group.get("id", None)
+            if not _DRY_RUN:
+                group = ie.wait_for_group_import(
+                    full_path_with_parent_namespace)
+                import_id = group.get("id", None)
             
         if import_id and not _DRY_RUN:
             result[full_path_with_parent_namespace] = group

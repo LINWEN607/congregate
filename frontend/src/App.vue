@@ -1,10 +1,15 @@
 <template>
   <div id="app">
     <div id="nav">
+      <h1>Congregate</h1>
       <router-link to="/">Home</router-link> |
-      <router-link to="/about">About</router-link>
+      <router-link to="/projects">Projects</router-link>
+      <router-link to="/groups">Groups</router-link>
+      <router-link to="/users">Users</router-link>
     </div>
-    <router-view/>
+    <div id = "content">
+      <router-view/>
+    </div>
   </div>
 </template>
 
