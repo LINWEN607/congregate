@@ -482,7 +482,8 @@ class UsersClient(BaseClass):
             for s in staged:
                 s["members"] = [i for j, i in enumerate(
                     s["members"]) if i["id"] not in users.keys()]
-        self.log.info("Updating {0}.json with the following data \n: {1}".format(data, json_pretty(staged)))
+        self.log.info("Updating {0}.json with the following data \n: {1}".format(
+            data, json_pretty(staged)))
         with open("{0}/data/{1}.json".format(self.app_path, data), "w") as f:
             json.dump(staged, f, indent=4)
 
@@ -492,7 +493,8 @@ class UsersClient(BaseClass):
         if self.config.src_parent_group_path:
             users = []
             for user in self.groups_api.get_all_group_members(self.config.src_parent_id, host, token):
-                users.append(self.users_api.get_user(user["id"], host, token).json())
+                users.append(self.users_api.get_user(
+                    user["id"], host, token).json())
         else:
             users = list(self.users_api.get_all_users(host, token))
         root_index = None
@@ -670,6 +672,8 @@ class UsersClient(BaseClass):
 
     def delete_users(self, dry_run=True, hard_delete=False):
         staged_users = self.get_staged_users()
+        self.log.info("Removing the following users:\n{}".format(
+            json_pretty(staged_users)))
         for su in staged_users:
             email = su["email"]
             self.log.info("{0}Removing user {1}".format(

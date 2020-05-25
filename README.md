@@ -516,6 +516,7 @@ You can read more about using pdb [here](https://fuzzyblog.io/blog/python/2019/0
 |                | Audit Events                |                                                                                                                                                                   | :x:                | :x:                |
 |                | Deploy tokens               |                                                                                                                                                                   | :x:                | :x:                |
 |                | Remote mirrors              |                                                                                                                                                                   | :x:                | :x:                |
+|                | Feature Flags               |                                                                                                                                                                   | :x:                | :x:                |
 | **User**       |
 |                | Avatars                     |                                                                                                                                                                   | :x:                | :white_check_mark: |
 |                | Profile (API)               |                                                                                                                                                                   | :x:                | :white_check_mark: |
@@ -534,6 +535,7 @@ You can read more about using pdb [here](https://fuzzyblog.io/blog/python/2019/0
 |                | Deploy keys                 |                                                                                                                                                                   | :x:                | :x:                |
 |                | ToDos                       |                                                                                                                                                                   | :x:                | :x:                |
 |                | Snippets                    |                                                                                                                                                                   | :x:                | :x:                |
+|                | Features                    |                                                                                                                                                                   | :x:                | :x:                |
 
 ## Notes from Migration Merge
 * Unit tests won't run unless there is a config file in `data/config.json`

@@ -522,9 +522,6 @@ def rollback(dry_run=True,
              skip_groups=False,
              skip_projects=False):
     start = time()
-
-    # TODO: Add multiprocessing
-    rotate_logs()
     dry_log = get_dry_log(dry_run)
 
     # Remove groups and projects OR only empty groups
