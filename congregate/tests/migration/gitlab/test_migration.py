@@ -22,7 +22,7 @@ class MigrationEndToEndTest(unittest.TestCase):
     @classmethod
     def tearDownClass(self):
         rollback(dry_run=False, hard_delete=True)
-        sleep(self.b.config.importexport_wait)
+        sleep(self.b.config.importexport_wait * 2)
         rollback_diff()
 
     def test_user_migration_diff(self):
