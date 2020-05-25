@@ -143,8 +143,6 @@ class GroupsClient(BaseClass):
 
     def delete_groups(self, dry_run=True, skip_projects=False):
         staged_groups = self.get_staged_groups()
-        self.log.info("Removing the following groups:\n{}".format(
-            json_pretty(staged_groups)))
         for sg in staged_groups:
             # SaaS destination instances have a parent group
             dest_full_path = get_full_path_with_parent_namespace(

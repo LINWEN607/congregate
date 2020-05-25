@@ -17,6 +17,7 @@ class MigrationEndToEndTest(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         self.b = BaseClass()
+        do_all.do_all(dry_run=False)
 
     @classmethod
     def tearDownClass(self):
@@ -25,7 +26,6 @@ class MigrationEndToEndTest(unittest.TestCase):
         rollback_diff()
 
     def test_user_migration_diff(self):
-        do_all.do_all_users(dry_run=False)
         user_diff = UserDiffClient(
             "/data/user_migration_results.json", staged=True)
         diff_report = user_diff.generate_diff_report()
@@ -35,7 +35,6 @@ class MigrationEndToEndTest(unittest.TestCase):
             diff_report["user_migration_results"]["overall_accuracy"], 0.90)
 
     def test_group_migration_diff(self):
-        do_all.do_all_groups_and_projects(dry_run=False)
         group_diff = GroupDiffClient(
             "/data/group_migration_results.json", staged=True)
         diff_report = group_diff.generate_diff_report()

@@ -18,7 +18,7 @@ b = BaseClass()
 # Stage users, groups and projects
 
 
-def stage_projects(projects_to_stage, dry_run=True):
+def stage_projects(projects_to_stage, dry_run=True, skip_users=False):
     """
         Stage all the projects from the source instance
 
@@ -28,7 +28,8 @@ def stage_projects(projects_to_stage, dry_run=True):
     staged_projects, staged_users, staged_groups = build_staging_data(
         projects_to_stage, dry_run)
     if not dry_run:
-        write_staging_files(staged_projects, staged_users, staged_groups)
+        write_staging_files(staged_projects, staged_users,
+                            staged_groups, skip_users=skip_users)
 
 
 def build_staging_data(projects_to_stage, dry_run=True):
@@ -206,7 +207,7 @@ def open_users_file():
     return users
 
 
-def write_staging_files(staging, staged_users, staged_groups):
+def write_staging_files(staging, staged_users, staged_groups, skip_users=False):
     """
         Write all staged projects, users and groups objects into JSON files
 
@@ -216,10 +217,11 @@ def write_staging_files(staging, staged_users, staged_groups):
     """
     with open("%s/data/stage.json" % b.app_path, "wb") as f:
         f.write(json.dumps(staging, indent=4))
-    with open("%s/data/staged_users.json" % b.app_path, "wb") as f:
-        f.write(json.dumps(staged_users, indent=4))
     with open("%s/data/staged_groups.json" % b.app_path, "wb") as f:
         f.write(json.dumps(staged_groups, indent=4))
+    if not skip_users:
+        with open("%s/data/staged_users.json" % b.app_path, "wb") as f:
+            f.write(json.dumps(staged_users, indent=4))
 
 
 def append_member_to_members_list(

@@ -87,8 +87,6 @@ class ProjectsClient(BaseClass):
 
     def delete_projects(self, dry_run=True):
         staged_projects = self.get_staged_projects()
-        self.log.info("Removing the following projects:\n{}".format(
-            json_pretty(staged_projects)))
         for sp in staged_projects:
             # SaaS destination instances have a parent group
             path_with_namespace = get_dst_path_with_namespace(sp)

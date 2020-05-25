@@ -115,7 +115,7 @@ test:end-to-end full:
       - data/*.html
       - data/*diff*.json
       - data/*results.json
-      - data/audit.log
+      - data/audit*.log
 
 test:end-to-end single group:
   extends:
@@ -144,7 +144,7 @@ test:end-to-end single group:
       - data/*.html
       - data/*diff*.json
       - data/*results.json
-      - data/audit.log
+      - data/audit*.log
 
 rolling release:
   extends: .use-docker-in-docker
@@ -198,8 +198,8 @@ pages:
   rules:
     - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
     - changes:
-      - runbooks/*
-      - congregate/docs/**/*
+        - runbooks/*
+        - congregate/docs/**/*
   # dependencies:
   #   - code_quality
   script:

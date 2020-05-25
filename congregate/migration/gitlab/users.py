@@ -482,8 +482,6 @@ class UsersClient(BaseClass):
             for s in staged:
                 s["members"] = [i for j, i in enumerate(
                     s["members"]) if i["id"] not in users.keys()]
-        self.log.info("Updating {0}.json with the following data \n: {1}".format(
-            data, json_pretty(staged)))
         with open("{0}/data/{1}.json".format(self.app_path, data), "w") as f:
             json.dump(staged, f, indent=4)
 
@@ -672,8 +670,6 @@ class UsersClient(BaseClass):
 
     def delete_users(self, dry_run=True, hard_delete=False):
         staged_users = self.get_staged_users()
-        self.log.info("Removing the following users:\n{}".format(
-            json_pretty(staged_users)))
         for su in staged_users:
             email = su["email"]
             self.log.info("{0}Removing user {1}".format(
