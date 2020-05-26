@@ -22,6 +22,7 @@ get_ami_id () {
 }
 
 # AMI_ID=$(get_ami_id)
+# GitLab Seed Image-12.10.0-pre-f175c3a6c8a
 AMI_ID="ami-0280aa248a44ecf21"
 
 echo "Spinning up instance"

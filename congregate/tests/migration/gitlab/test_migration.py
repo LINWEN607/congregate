@@ -22,7 +22,8 @@ class MigrationEndToEndTest(unittest.TestCase):
     @classmethod
     def tearDownClass(self):
         rollback(dry_run=False, hard_delete=True)
-        sleep(self.b.config.importexport_wait * 2)
+        # Allow users/groups/projects to fully delete
+        sleep(self.b.config.importexport_wait * 5)
         rollback_diff()
 
     def test_user_migration_diff(self):
@@ -41,7 +42,7 @@ class MigrationEndToEndTest(unittest.TestCase):
         group_diff.generate_html_report(
             diff_report, "/data/group_migration_results.html")
         self.assertGreaterEqual(
-            diff_report["group_migration_results"]["overall_accuracy"], 0.85)
+            diff_report["group_migration_results"]["overall_accuracy"], 0.90)
 
     def test_project_migration_diff(self):
         project_diff = ProjectDiffClient(
@@ -57,13 +58,13 @@ def rollback_diff():
     diff_report = {}
     base_diff = BaseDiffClient()
     project_diff = ProjectDiffClient(
-        "/data/project_migration_results.json", rollback=True)
+        "/data/project_migration_results.json", staged=True, rollback=True)
     diff_report["project_diff"] = project_diff.generate_diff_report()
     group_diff = GroupDiffClient(
-        "/data/group_migration_results.json", rollback=True)
+        "/data/group_migration_results.json", staged=True, rollback=True)
     diff_report["group_diff"] = group_diff.generate_diff_report()
     user_diff = UserDiffClient(
-        "/data/user_migration_results.json", rollback=True)
+        "/data/user_migration_results.json", staged=True, rollback=True)
     diff_report["user_diff"] = user_diff.generate_diff_report()
     base_diff.generate_html_report(
         diff_report, "/data/migration_rollback_results.html")
