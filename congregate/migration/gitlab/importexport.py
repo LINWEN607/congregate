@@ -103,7 +103,7 @@ class ImportExportClient(BaseClass):
                         export_type, name, response))
                     break
             else:
-                self.log.error("SKIP: Export, source {0} {1} doesn't exist:\n{2}".format(
+                self.log.error("SKIP: Failed to trigger source {0} {1} export, due to:\n{2}".format(
                     export_type.lower(), name, response))
                 break
         return exported
