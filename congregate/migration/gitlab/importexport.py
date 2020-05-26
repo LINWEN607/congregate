@@ -498,7 +498,9 @@ class ImportExportClient(BaseClass):
                 return None
         return import_id
 
-    def export_project_thru_filesystem(self, project):
+    def export_project(self, project, dry_run=True):
+        loc = self.config.location.lower()
+        is_loc_supported(loc)
         exported = False
         name = project["name"]
         namespace = project["namespace"]
@@ -511,62 +513,43 @@ class ImportExportClient(BaseClass):
         if dst_pid:
             self.log.info("SKIP: Project {0} (ID: {1}) found on destination".format(
                 dst_path_with_namespace, dst_pid))
-        else:
+        elif not dry_run:
+            filename = get_export_filename_from_namespace_and_name(
+                namespace, name)
             self.log.info("Project {} NOT found on destination. Exporting from source...".format(
                 dst_path_with_namespace))
-            response = self.projects_api.export_project(
-                self.config.source_host, self.config.source_token, pid)
-            if response is None or response.status_code not in (200, 202):
-                self.log.error("Failed to trigger project {0} (ID: {1}) export, with response {2}"
-                               .format(pid, name, response))
-            else:
-                exported = self.wait_for_export_to_finish(pid, name)
-                if exported:
-                    url = "{0}/api/v4/projects/{1}/export/download".format(
-                        self.config.source_host, pid)
-                    download_file(
-                        url,
-                        self.config.filesystem_path,
-                        filename=get_export_filename_from_namespace_and_name(
-                            namespace, name),
-                        headers={"PRIVATE-TOKEN": self.config.source_token})
+            if loc == "filesystem":
+                response = self.projects_api.export_project(
+                    self.config.source_host, self.config.source_token, pid)
+                if response is None or response.status_code not in [200, 202]:
+                    self.log.error("Failed to trigger project {0} (ID: {1}) export, with response {2}".format(
+                        pid, name, response))
                 else:
-                    self.log.error(
-                        "Failed to export project {0} (ID: {1})".format(name, pid))
-        return exported
-
-    def export_project_thru_aws(self, project):
-        """
-        Called from migrate to kick-off an export process. This is project specific at this time. Calls export_to_aws.
-
-        :param name: Project JSON
-        """
-        exported = False
-        name = project["name"]
-        namespace = project["namespace"]
-        pid = project["id"]
-        dst_path_with_namespace = get_dst_path_with_namespace(project)
-        filename = get_export_filename_from_namespace_and_name(
-            namespace, name)
-        self.log.info("Searching on destination for project {0}".format(
-            dst_path_with_namespace))
-        dst_pid = self.projects.find_project_by_path(
-            self.config.destination_host, self.config.destination_token, dst_path_with_namespace)
-        if not dst_pid:
-            self.log.info("Project {0} NOT found on destination. Exporting from source...".format(
-                dst_path_with_namespace))
-            response = self.export_to_aws(pid, filename, True)
-            if response is not None and response.status_code == 202:
-                export_status = self.wait_for_export_to_finish(pid, name)
-                # If export status is unknown lookup the file on AWS
-                # Could be misleading, since it assumes the file is complete
-                exported = export_status or self.aws.is_export_on_aws(filename)
-            else:
-                self.log.error("Failed to export project {0} (ID: {1}), with response {2}".format(
-                    name, pid, response))
-        else:
-            self.log.info("SKIP: Project {0} (ID: {1}) found on destination".format(
-                dst_path_with_namespace, dst_pid))
+                    exported = self.wait_for_export_to_finish(pid, name)
+                    if exported:
+                        url = "{0}/api/v4/projects/{1}/export/download".format(
+                            self.config.source_host, pid)
+                        download_file(url, self.config.filesystem_path, filename, headers={
+                            "PRIVATE-TOKEN": self.config.source_token})
+                    else:
+                        self.log.error(
+                            "Failed to export project {0} (ID: {1})".format(name, pid))
+            # TODO: Refactor and sync with other scenarios (#119)
+            elif loc == "filesystem-aws":
+                self.log.error(
+                    "NOTICE: Filesystem-AWS exports are not currently supported")
+                # exported = self.export_thru_fs_aws(pid, name, namespace) if not dry_run else True
+            elif loc == "aws":
+                response = self.export_to_aws(pid, filename)
+                if response is None or response.status_code not in [200, 202]:
+                    self.log.error("Failed to trigger project {0} (ID: {1}) export, with response {2}".format(
+                        pid, name, response))
+                else:
+                    export_status = self.wait_for_export_to_finish(pid, name)
+                    # If export status is unknown lookup the file on AWS
+                    # Could be misleading, since it assumes the file is complete
+                    exported = export_status or self.aws.is_export_on_aws(
+                        filename)
         return exported
 
     def export_thru_fs_aws(self, pid, name, namespace):
@@ -607,7 +590,7 @@ class ImportExportClient(BaseClass):
 
         return success
 
-    def export_group(self, src_gid, full_path, filename):
+    def export_group(self, src_gid, full_path, filename, dry_run=True):
         loc = self.config.location.lower()
         is_loc_supported(loc)
         exported = False
@@ -622,7 +605,7 @@ class ImportExportClient(BaseClass):
         if dst_gid:
             self.log.info("SKIP: Group {0} with source ID {1} and destination ID {2} found on destination".format(
                 full_path_with_parent_namespace, src_gid, dst_gid))
-        else:
+        elif not dry_run:
             self.log.info("Group {0} (Source ID: {1}) NOT found on destination.".format(
                 full_path_with_parent_namespace, src_gid))
             if loc == "filesystem":
@@ -650,7 +633,7 @@ class ImportExportClient(BaseClass):
             elif loc == "aws":
                 self.log.error(
                     "NOTICE: AWS group exports are not currently supported")
-                # response = self.export_to_aws(src_gid, filename, False)
+                # response = self.export_to_aws(src_gid, filename, is_project=False)
                 # if response is None or response.status_code not in [200, 202]:
                 #     self.log.error("Failed to trigger group {0} (ID: {1}) export, with response '{2}'"
                 #                    .format(full_path, src_gid, response))

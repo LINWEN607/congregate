@@ -13,7 +13,7 @@ from requests.exceptions import RequestException
 
 from congregate.helpers import api
 from congregate.helpers.migrate_utils import get_export_filename_from_namespace_and_name, get_dst_path_with_namespace, get_full_path_with_parent_namespace, \
-    is_loc_supported, is_top_level_group, get_failed_export_from_results, get_results, get_staged_groups_without_failed_export, get_staged_projects_without_failed_export
+    is_top_level_group, get_failed_export_from_results, get_results, get_staged_groups_without_failed_export, get_staged_projects_without_failed_export
 from congregate.helpers.misc_utils import get_dry_log, json_pretty, is_dot_com, clean_data, \
     add_post_migration_stats, rotate_logs, write_results_to_file, migration_dry_run
 from congregate.helpers.processes import start_multi_process
@@ -217,7 +217,7 @@ def handle_exporting_groups(group):
         b.log.info("{0}Exporting group {1} (ID: {2}) as {3}"
                    .format(dry_log, full_path, gid, filename))
         result[filename] = ie.export_group(
-            gid, full_path, filename) if not _DRY_RUN else True
+            gid, full_path, filename, dry_run=_DRY_RUN)
     except (IOError, RequestException) as oe:
         b.log.error("Failed to export group {0} (ID: {1}) as {2} with error:\n{3}".format(
             full_path, gid, filename, oe))
@@ -364,9 +364,7 @@ def handle_exporting_projects(project):
     name = project["name"]
     namespace = project["namespace"]
     pid = project["id"]
-    loc = b.config.location.lower()
     dry_log = get_dry_log(_DRY_RUN)
-    is_loc_supported(loc)
     filename = get_export_filename_from_namespace_and_name(
         namespace, name)
     result = {
@@ -375,20 +373,10 @@ def handle_exporting_projects(project):
     try:
         b.log.info("{0}Exporting project {1} (ID: {2}) as {3}"
                    .format(dry_log, project["path_with_namespace"], pid, filename))
-        if loc == "filesystem":
-            result[filename] = ie.export_project_thru_filesystem(
-                project) if not _DRY_RUN else True
-        # TODO: Refactor and sync with other scenarios (#119)
-        elif loc == "filesystem-aws":
-            b.log.error(
-                "NOTICE: Filesystem-AWS exports are not currently supported")
-            # exported = ie.export_thru_fs_aws(pid, name, namespace) if not dry_run else True
-        elif loc == "aws":
-            result[filename] = ie.export_project_thru_aws(
-                project) if not _DRY_RUN else True
+        result[filename] = ie.export_project(project, dry_run=_DRY_RUN)
     except (IOError, RequestException) as oe:
-        b.log.error("Failed to export project {0} (ID: {1}) to {2} as {3} with error:\n{4}".format(
-            name, pid, loc, filename, oe))
+        b.log.error("Failed to export project {0} (ID: {1}) as {2} with error:\n{3}".format(
+            name, pid, filename, oe))
     except Exception as e:
         b.log.error(e)
         b.log.error(print_exc())
