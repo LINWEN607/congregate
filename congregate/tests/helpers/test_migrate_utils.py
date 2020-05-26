@@ -571,3 +571,11 @@ class MigrateTests(unittest.TestCase):
             self.mock_groups.get_group()))
         self.assertFalse(mutils.is_top_level_group(
             self.mock_groups.get_subgroup()))
+
+    def test_is_loc_supported_true(self):
+        self.assertIsNone(mutils.is_loc_supported("aws"))
+        self.assertIsNone(mutils.is_loc_supported("filesystem"))
+
+    def test_is_loc_supported_false(self):
+        with self.assertRaises(SystemExit):
+            mutils.is_loc_supported("not-aws-or-filesystem")

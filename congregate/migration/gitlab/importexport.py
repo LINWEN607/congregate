@@ -19,7 +19,7 @@ from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.namespaces import NamespacesApi
 from congregate.helpers.migrate_utils import get_project_namespace, is_user_project, get_user_project_namespace, \
-    get_export_filename_from_namespace_and_name, get_dst_path_with_namespace, get_full_path_with_parent_namespace
+    get_export_filename_from_namespace_and_name, get_dst_path_with_namespace, get_full_path_with_parent_namespace, is_loc_supported
 
 
 class ImportExportClient(BaseClass):
@@ -535,38 +535,38 @@ class ImportExportClient(BaseClass):
                         "Failed to export project {0} (ID: {1})".format(name, pid))
         return exported
 
-    def export_group_thru_filesystem(self, src_gid, full_path, filename):
+    def export_project_thru_aws(self, project):
+        """
+        Called from migrate to kick-off an export process. This is project specific at this time. Calls export_to_aws.
+
+        :param name: Project JSON
+        """
         exported = False
-        full_path_with_parent_namespace = get_full_path_with_parent_namespace(
-            full_path)
-        self.log.info("Searching on destination for group {}".format(
-            full_path_with_parent_namespace))
-        dst_gid = self.groups.find_group_id_by_path(
-            self.config.destination_host,
-            self.config.destination_token,
-            full_path_with_parent_namespace)
-        if dst_gid:
-            self.log.info("SKIP: Group {0} with source ID {1} and destination ID {2} found on destination".format(
-                full_path_with_parent_namespace, src_gid, dst_gid))
-        else:
-            self.log.info("Group {0} (Source ID: {1}) NOT found on destination.".format(
-                full_path_with_parent_namespace, src_gid))
-            response = self.groups_api.export_group(
-                self.config.source_host, self.config.source_token, src_gid)
-            if response is None or response.status_code not in [200, 202]:
-                self.log.error("Failed to trigger group {0} (ID: {1}) export, with response '{2}'"
-                               .format(full_path, src_gid, response))
+        name = project["name"]
+        namespace = project["namespace"]
+        pid = project["id"]
+        dst_path_with_namespace = get_dst_path_with_namespace(project)
+        filename = get_export_filename_from_namespace_and_name(
+            namespace, name)
+        self.log.info("Searching on destination for project {0}".format(
+            dst_path_with_namespace))
+        dst_pid = self.projects.find_project_by_path(
+            self.config.destination_host, self.config.destination_token, dst_path_with_namespace)
+        if not dst_pid:
+            self.log.info("Project {0} NOT found on destination. Exporting from source...".format(
+                dst_path_with_namespace))
+            response = self.export_to_aws(pid, filename, True)
+            if response is not None and response.status_code == 202:
+                export_status = self.wait_for_export_to_finish(pid, name)
+                # If export status is unknown lookup the file on AWS
+                # Could be misleading, since it assumes the file is complete
+                exported = export_status or self.aws.is_export_on_aws(filename)
             else:
-                # NOTE: Export status API endpoint not yet available
-                # exported = self.wait_for_export_to_finish(
-                #     src_gid, full_path, is_project=False) or True
-                exported = self.wait_for_group_download(src_gid)
-                url = "{0}/api/v4/groups/{1}/export/download".format(
-                    self.config.source_host, src_gid)
-                self.log.info("Downloading group {0} (source ID: {1}) as {2}".format(
-                    full_path, src_gid, filename))
-                download_file(url, self.config.filesystem_path, filename=filename, headers={
-                              "PRIVATE-TOKEN": self.config.source_token})
+                self.log.error("Failed to export project {0} (ID: {1}), with response {2}".format(
+                    name, pid, response))
+        else:
+            self.log.info("SKIP: Project {0} (ID: {1}) found on destination".format(
+                dst_path_with_namespace, dst_pid))
         return exported
 
     def export_thru_fs_aws(self, pid, name, namespace):
@@ -607,17 +607,10 @@ class ImportExportClient(BaseClass):
 
         return success
 
-    def export_group_thru_aws(self, gid, full_path, filename):
-        """
-        Called from migrate to kick-off an export process. Calls export_to_aws.
-
-        :param name: Entity name. This is the name of the group itself
-        :param namespace: Namespace where the entity lives. It's direct parent.
-        :param full_parent_namespace: Complete path of the parent namespace from source. So, if this group is group3
-                                        in the structure `group1/group2/group3`, full_parent_namespace is `group1/group2`
-        """
+    def export_group(self, src_gid, full_path, filename):
+        loc = self.config.location.lower()
+        is_loc_supported(loc)
         exported = False
-
         full_path_with_parent_namespace = get_full_path_with_parent_namespace(
             full_path)
         self.log.info("Searching on destination for group {}".format(
@@ -627,59 +620,47 @@ class ImportExportClient(BaseClass):
             self.config.destination_token,
             full_path_with_parent_namespace)
         if dst_gid:
-            self.log.info("SKIP: Group {0} with source ID {1} and destination group ID {2} found on destination".format(
-                full_path_with_parent_namespace, gid, dst_gid))
+            self.log.info("SKIP: Group {0} with source ID {1} and destination ID {2} found on destination".format(
+                full_path_with_parent_namespace, src_gid, dst_gid))
         else:
-            # Generating the presigned URL later down the line does the quote_plus work, and the AWS functions to generate
-            # expect an *un*quote_plus string (even through S3 itself returns a quote_plus style string)
-            # Also, the CLI commands expect no + and no encoding (for is_export_on_aws). So, leave the filename as the full path
-            # Do that export thing
             self.log.info("Group {0} (Source ID: {1}) NOT found on destination.".format(
-                full_path_with_parent_namespace, gid))
-            # Passing full_path_with_parent_namespace with no +, no encoding, not a quoted string
-            # NOTE: upload parameter not yet available for export
-            response = self.export_to_aws(gid, filename, False)
-            if response is not None and response.status_code == 202:
-                # TODO: We're going to need to see what the status looks like
-                # NOTE: Export status API endpoint not available yet
-                export_status = self.wait_for_export_to_finish(
-                    gid, full_path, is_project=False)
+                full_path_with_parent_namespace, src_gid))
+            if loc == "filesystem":
+                response = self.groups_api.export_group(
+                    self.config.source_host, self.config.source_token, src_gid)
+                if response is None or response.status_code not in [200, 202]:
+                    self.log.error("Failed to trigger group {0} (ID: {1}) export, with response '{2}'"
+                                   .format(full_path, src_gid, response))
+                else:
+                    # NOTE: Export status API endpoint not yet available
+                    # exported = self.wait_for_export_to_finish(
+                    #     src_gid, full_path, is_project=False) or True
+                    exported = self.wait_for_group_download(src_gid)
+                    url = "{0}/api/v4/groups/{1}/export/download".format(
+                        self.config.source_host, src_gid)
+                    self.log.info("Downloading group {0} (source ID: {1}) as {2}".format(
+                        full_path, src_gid, filename))
+                    download_file(url, self.config.filesystem_path, filename=filename, headers={
+                        "PRIVATE-TOKEN": self.config.source_token})
+            # TODO: Refactor and sync with other scenarios (#119)
+            elif loc == "filesystem-aws":
+                self.log.error(
+                    "NOTICE: Filesystem-AWS exports are not currently supported")
+            # NOTE: Group export does not yet support AWS (S3) user attributes
+            elif loc == "aws":
+                self.log.error(
+                    "NOTICE: AWS group exports are not currently supported")
+                # response = self.export_to_aws(src_gid, filename, False)
+                # if response is None or response.status_code not in [200, 202]:
+                #     self.log.error("Failed to trigger group {0} (ID: {1}) export, with response '{2}'"
+                #                    .format(full_path, src_gid, response))
+                # else:
+                #     # NOTE: Export status API endpoint not yet available
+                #     export_status = self.wait_for_export_to_finish(
+                #         src_gid, full_path, is_project=False)
 
-                # If export status is unknown lookup the file on AWS
-                # Could be misleading, since it assumes the file is complete
-                exported = export_status or self.aws.is_export_on_aws(filename)
-        return exported
-
-    def export_project_thru_aws(self, project):
-        """
-        Called from migrate to kick-off an export process. This is project specific at this time. Calls export_to_aws.
-
-        :param name: Project JSON
-        """
-        exported = False
-        name = project["name"]
-        namespace = project["namespace"]
-        pid = project["id"]
-        dst_path_with_namespace = get_dst_path_with_namespace(project)
-        filename = get_export_filename_from_namespace_and_name(
-            namespace, name)
-        self.log.info("Searching on destination for project {0}".format(
-            dst_path_with_namespace))
-        dst_pid = self.projects.find_project_by_path(
-            self.config.destination_host, self.config.destination_token, dst_path_with_namespace)
-        if not dst_pid:
-            self.log.info("Project {0} NOT found on destination. Exporting from source...".format(
-                dst_path_with_namespace))
-            response = self.export_to_aws(pid, filename, True)
-            if response is not None and response.status_code == 202:
-                export_status = self.wait_for_export_to_finish(pid, name)
-                # If export status is unknown lookup the file on AWS
-                # Could be misleading, since it assumes the file is complete
-                exported = export_status or self.aws.is_export_on_aws(filename)
-            else:
-                self.log.error("Failed to export project {0} (ID: {1}), with response {2}".format(
-                    name, pid, response))
-        else:
-            self.log.info("SKIP: Project {0} (ID: {1}) found on destination".format(
-                dst_path_with_namespace, dst_pid))
+                #     # If export status is unknown lookup the file on AWS
+                #     # Could be misleading, since it assumes the file is complete
+                #     exported = export_status or self.aws.is_export_on_aws(
+                #         filename)
         return exported

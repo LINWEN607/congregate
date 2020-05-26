@@ -76,12 +76,12 @@ def get_project_namespace(p):
         "project_type", None) else p["namespace"]["kind"]
     p_namespace = p["namespace"]["full_path"] if isinstance(
         p.get("namespace", None), dict) else p["namespace"]
-    
+
     if p_type != "user":
         if b.config.src_parent_id and b.config.src_parent_group_path:
             single_group_name = b.config.src_parent_group_path.split("/")[-1]
-            p_namespace = "{0}{1}".format(single_group_name, 
-                p_namespace.split(b.config.src_parent_group_path)[-1])
+            p_namespace = "{0}{1}".format(single_group_name,
+                                          p_namespace.split(b.config.src_parent_group_path)[-1])
 
         if b.config.dstn_parent_id is not None:
             return "{0}/{1}".format(b.config.dstn_parent_group_path, p_namespace)
@@ -165,3 +165,9 @@ def is_top_level_group(g):
         :return: True if top-level-group, else False
     """
     return not g.get("parent_id", None)
+
+
+def is_loc_supported(loc):
+    if loc not in ["filesystem", "aws"]:
+        b.log.error("Unsupported export location: {}".format(loc))
+        exit()
