@@ -64,25 +64,35 @@ class ImportExportClient(BaseClass):
     def get_group_export_status(self, src_id):
         return api.generate_get_request(self.config.source_host, self.config.source_token, "groups/%d/export" % src_id)
 
-    def wait_for_export_to_finish(self, source_id, name, is_project=True):
+    def wait_for_export_to_finish(self, src_id, name, is_project=True):
         exported = False
+        retry = True
         total_time = 0
         wait_time = self.config.importexport_wait
         export_type = check_is_project_or_group_for_logging(is_project)
-        while not exported:
-            response = self.get_export_status(source_id, is_project)
-            if response.status_code == 200:
+        while True:
+            response = self.get_export_status(src_id, is_project)
+            # Wait until rate limit is resolved
+            while self.RATE_LIMIT_MSG in str(response):
+                self.log.warning("Re-exporting {0} {1} (ID: {2}), waiting {3} minutes due to:\n{4}".format(
+                    export_type, name, src_id, self.COOL_OFF_MINUTES, response))
+                sleep(self.COOL_OFF_MINUTES * 60)
+                response = self.get_export_response(src_id, is_project)
+            if response.status_code in [200, 202]:
                 response = response.json()
-                name = response["name"]
                 status = response.get("export_status", None)
                 if status == "finished":
-                    self.log.info(
-                        "{0} {1} has finished exporting".format(export_type, name))
+                    self.log.info("{0} {1} has finished exporting, with response:\n{2}".format(
+                        export_type, name, json_pretty(response)))
                     exported = True
-                elif status == "failed":
-                    self.log.error(
-                        "{0} {1} export failed with export response:\n{2}".format(export_type, name, response))
                     break
+                elif status == "failed":
+                    self.log.error("{0} {1} export failed{2}, with response:\n{3}".format(
+                        export_type, name, " (re-exporting)" if retry else "", json_pretty(response)))
+                    if retry:
+                        self.get_export_response(src_id, is_project)
+                        retry = False
+                        total_time = 0
                 elif total_time < self.config.max_export_wait_time:
                     self.log.info("Checking {0} {1} export status (current: {2}) in {3} seconds".format(
                         export_type.lower(), name, status, wait_time))
@@ -100,19 +110,32 @@ class ImportExportClient(BaseClass):
 
     def wait_for_group_download(self, gid):
         exported = False
-        timer = 0
+        retry = True
+        total_time = 0
         wait_time = self.config.importexport_wait
         while True:
             response = self.groups_api.get_group_download_status(
                 self.config.source_host, self.config.source_token, gid)
-            if response.status_code == 200:
+            while self.RATE_LIMIT_MSG in str(response):
+                self.log.warning("Re-exporting group {0}, waiting {1} minutes due to:\n{2}".format(
+                    gid, self.COOL_OFF_MINUTES, response))
+                sleep(self.COOL_OFF_MINUTES * 60)
+                response = self.get_export_response(gid, is_project=False)
+            if response.status_code in [200, 202]:
                 exported = True
                 break
-            self.log.info(
-                "Waiting {0} seconds for group {1} to export".format(wait_time, gid))
-            sleep(wait_time)
-            timer += wait_time
-            if timer > self.config.max_export_wait_time:
+            elif retry:
+                self.log.error(
+                    "Group {0} export failed (re-exporting), with response:\n{1}".format(gid, response))
+                self.get_export_response(gid, is_project=False)
+                retry = False
+                total_time = 0
+            elif total_time < self.config.max_export_wait_time:
+                self.log.info(
+                    "Waiting {0} seconds for group {1} to export".format(wait_time, gid))
+                total_time += wait_time
+                sleep(wait_time)
+            else:
                 self.log.error(
                     "Time limit exceeded for exporting group {0}, due to:\n{1}".format(gid, response))
                 break
@@ -139,7 +162,7 @@ class ImportExportClient(BaseClass):
                 break
         return group
 
-    def get_export_response(self, source_id, data, headers, is_project):
+    def get_export_response(self, source_id, is_project, data=None, headers=None):
         """
         Gets the export response for both project and group exports
         """
@@ -173,11 +196,7 @@ class ImportExportClient(BaseClass):
         data = "&".join(upload)
         try:
             response = self.get_export_response(
-                source_id,
-                data,
-                headers,
-                is_project
-            )
+                source_id, is_project, data=data, headers=headers)
             return response
         except RequestException, e:
             self.log.error("Failed to trigger {0} (ID: {1}) export as {2} with response {3}".format(
@@ -519,21 +538,17 @@ class ImportExportClient(BaseClass):
             self.log.info("Project {} NOT found on destination. Exporting from source...".format(
                 dst_path_with_namespace))
             if loc == "filesystem":
-                response = self.projects_api.export_project(
+                self.projects_api.export_project(
                     self.config.source_host, self.config.source_token, pid)
-                if response is None or response.status_code not in [200, 202]:
-                    self.log.error("Failed to trigger project {0} (ID: {1}) export, with response {2}".format(
-                        pid, name, response))
+                exported = self.wait_for_export_to_finish(pid, name)
+                if exported:
+                    url = "{0}/api/v4/projects/{1}/export/download".format(
+                        self.config.source_host, pid)
+                    download_file(url, self.config.filesystem_path, filename, headers={
+                        "PRIVATE-TOKEN": self.config.source_token})
                 else:
-                    exported = self.wait_for_export_to_finish(pid, name)
-                    if exported:
-                        url = "{0}/api/v4/projects/{1}/export/download".format(
-                            self.config.source_host, pid)
-                        download_file(url, self.config.filesystem_path, filename, headers={
-                            "PRIVATE-TOKEN": self.config.source_token})
-                    else:
-                        self.log.error(
-                            "Failed to export project {0} (ID: {1})".format(name, pid))
+                    self.log.error(
+                        "Failed to export project {0} (ID: {1})".format(name, pid))
             # TODO: Refactor and sync with other scenarios (#119)
             elif loc == "filesystem-aws":
                 self.log.error(
@@ -550,6 +565,8 @@ class ImportExportClient(BaseClass):
                     # Could be misleading, since it assumes the file is complete
                     exported = export_status or self.aws.is_export_on_aws(
                         filename)
+        else:
+            return True
         return exported
 
     def export_thru_fs_aws(self, pid, name, namespace):
@@ -606,25 +623,21 @@ class ImportExportClient(BaseClass):
             self.log.info("SKIP: Group {0} with source ID {1} and destination ID {2} found on destination".format(
                 full_path_with_parent_namespace, src_gid, dst_gid))
         elif not dry_run:
-            self.log.info("Group {0} (Source ID: {1}) NOT found on destination.".format(
+            self.log.info("Group {0} (ID: {1}) NOT found on destination.".format(
                 full_path_with_parent_namespace, src_gid))
             if loc == "filesystem":
-                response = self.groups_api.export_group(
+                self.groups_api.export_group(
                     self.config.source_host, self.config.source_token, src_gid)
-                if response is None or response.status_code not in [200, 202]:
-                    self.log.error("Failed to trigger group {0} (ID: {1}) export, with response '{2}'"
-                                   .format(full_path, src_gid, response))
-                else:
-                    # NOTE: Export status API endpoint not yet available
-                    # exported = self.wait_for_export_to_finish(
-                    #     src_gid, full_path, is_project=False) or True
-                    exported = self.wait_for_group_download(src_gid)
-                    url = "{0}/api/v4/groups/{1}/export/download".format(
-                        self.config.source_host, src_gid)
-                    self.log.info("Downloading group {0} (source ID: {1}) as {2}".format(
-                        full_path, src_gid, filename))
-                    download_file(url, self.config.filesystem_path, filename=filename, headers={
-                        "PRIVATE-TOKEN": self.config.source_token})
+                # NOTE: Export status API endpoint not yet available
+                # exported = self.wait_for_export_to_finish(
+                #     src_gid, full_path, is_project=False) or True
+                exported = self.wait_for_group_download(src_gid)
+                url = "{0}/api/v4/groups/{1}/export/download".format(
+                    self.config.source_host, src_gid)
+                self.log.info("Downloading group {0} (ID: {1}) as {2}".format(
+                    full_path, src_gid, filename))
+                download_file(url, self.config.filesystem_path, filename=filename, headers={
+                    "PRIVATE-TOKEN": self.config.source_token})
             # TODO: Refactor and sync with other scenarios (#119)
             elif loc == "filesystem-aws":
                 self.log.error(
@@ -646,4 +659,6 @@ class ImportExportClient(BaseClass):
                 #     # Could be misleading, since it assumes the file is complete
                 #     exported = export_status or self.aws.is_export_on_aws(
                 #         filename)
+        else:
+            return True
         return exported
