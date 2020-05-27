@@ -64,88 +64,93 @@ class ImportExportClient(BaseClass):
     def get_group_export_status(self, src_id):
         return api.generate_get_request(self.config.source_host, self.config.source_token, "groups/%d/export" % src_id)
 
-    def wait_for_export_to_finish(self, src_id, name, is_project=True):
+    def wait_for_export_to_finish(self, src_id, name, is_project=True, retry=True):
         exported = False
-        retry = True
         total_time = 0
         wait_time = self.config.importexport_wait
         export_type = check_is_project_or_group_for_logging(is_project)
-        response = json.loads(
-            self.get_export_response(src_id, is_project).text)
+        response = self.get_export_response(src_id, is_project)
         while True:
             # Wait until rate limit is resolved
-            while self.RATE_LIMIT_MSG in str(response):
+            while self.RATE_LIMIT_MSG in str(json.loads(response.text)):
                 self.log.warning("Re-exporting {0} {1} (ID: {2}), waiting {3} minutes due to:\n{4}".format(
-                    export_type.lower(), name, src_id, self.COOL_OFF_MINUTES, response))
+                    export_type.lower(), name, src_id, self.COOL_OFF_MINUTES, str(json.loads(response.text))))
                 sleep(self.COOL_OFF_MINUTES * 60)
-                response = json.loads(
-                    self.get_export_response(src_id, is_project).text)
-            status = self.get_export_status(src_id, is_project)
-            if status.status_code in [200, 202]:
-                status_json = status.json()
-                if status_json.get("export_status", None) == "finished":
-                    self.log.info("{0} {1} has finished exporting, with response:\n{2}".format(
-                        export_type, name, json_pretty(status_json)))
-                    exported = True
-                    break
-                if status_json.get("export_status", None) == "failed":
-                    self.log.error("{0} {1} export failed{2}, with response:\n{3}".format(
-                        export_type, name, " (re-exporting)" if retry else "", json_pretty(status_json)))
-                    if retry:
-                        response = json.loads(
-                            self.get_export_response(src_id, is_project).text)
-                        retry = False
-                        total_time = 0
-                elif total_time < self.config.max_export_wait_time:
-                    self.log.info("Checking {0} {1} export status (current: {2}) in {3} seconds".format(
-                        export_type.lower(), name, status_json.get("export_status", None), wait_time))
-                    total_time += wait_time
-                    sleep(wait_time)
-                else:
-                    self.log.error("{0} {1} time limit exceeded with export status:\n{2}".format(
-                        export_type, name, json_pretty(status_json)))
-                    break
+                response = self.get_export_response(src_id, is_project)
+            if response.status_code == 202:
+                status = self.get_export_status(src_id, is_project)
+                if status.status_code == 200:
+                    status_json = status.json()
+                    if status_json.get("export_status", None) == "finished":
+                        self.log.info("{0} {1} has finished exporting, with response:\n{2}".format(
+                            export_type, name, json_pretty(status_json)))
+                        exported = True
+                        break
+                    if status_json.get("export_status", None) == "failed":
+                        self.log.error("{0} {1} export failed{2}, with response:\n{3}".format(
+                            export_type, name, " (re-exporting)" if retry else "", json_pretty(status_json)))
+                        if retry:
+                            response = self.get_export_response(
+                                src_id, is_project)
+                            retry = False
+                            total_time = 0
+                    elif total_time < self.config.max_export_wait_time:
+                        self.log.info("Checking {0} {1} export status (current: {2}) in {3} seconds".format(
+                            export_type.lower(), name, status_json.get("export_status", None), wait_time))
+                        total_time += wait_time
+                        sleep(wait_time)
+                    else:
+                        self.log.error("{0} {1} time limit exceeded with export status:\n{2}".format(
+                            export_type, name, json_pretty(status_json)))
+                        break
+            elif retry:
+                self.log.error("{0} {1} export trigger failed{2}, with response:\n{3}".format(
+                    export_type, name, " (re-exporting)" if retry else "", str(json.loads(response.text))))
+                response = self.get_export_response(src_id, is_project)
+                retry = False
+                total_time = 0
             else:
                 self.log.error("SKIP: Failed to trigger source {0} {1} export, due to:\n{2}".format(
-                    export_type.lower(), name, response))
+                    export_type.lower(), name, str(json.loads(response.text))))
                 break
         return exported
 
-    def wait_for_group_download(self, gid):
+    def wait_for_group_download(self, gid, retry=True):
         exported = False
-        retry = True
         total_time = 0
         wait_time = self.config.importexport_wait
-        response = json.loads(
-            self.get_export_response(gid, is_project=False).text)
+        response = self.get_export_response(gid, is_project=False)
         while True:
             # Wait until rate limit is resolved
-            while self.RATE_LIMIT_MSG in str(response):
+            while self.RATE_LIMIT_MSG in str(json.loads(response.text)):
                 self.log.warning("Re-exporting group {0}, waiting {1} minutes due to:\n{2}".format(
-                    gid, self.COOL_OFF_MINUTES, response))
+                    gid, self.COOL_OFF_MINUTES, str(json.loads(response.text))))
                 sleep(self.COOL_OFF_MINUTES * 60)
-                response = json.loads(
-                    self.get_export_response(gid, is_project=False).text)
-            status = self.groups_api.get_group_download_status(
-                self.config.source_host, self.config.source_token, gid)
-            if status.status_code in [200, 202]:
-                exported = True
-                break
+                response = self.get_export_response(gid, is_project=False)
+            if response.status_code == 202:
+                status = self.groups_api.get_group_download_status(
+                    self.config.source_host, self.config.source_token, gid)
+                if status.status_code == 200:
+                    exported = True
+                    break
+                elif total_time < self.config.max_export_wait_time:
+                    self.log.info(
+                        "Waiting {0} seconds for group {1} to export".format(wait_time, gid))
+                    total_time += wait_time
+                    sleep(wait_time)
+                else:
+                    self.log.error(
+                        "Time limit exceeded for exporting group {0}, with status:\n{1}".format(gid, status))
+                    break
             elif retry:
                 self.log.error(
-                    "Group {0} export failed (re-exporting), with response:\n{1}".format(gid, response))
-                response = json.loads(
-                    self.get_export_response(gid, is_project=False).text)
+                    "Group {0} export failed (re-exporting), with response:\n{1}".format(gid, str(json.loads(response.text))))
+                response = self.get_export_response(gid, is_project=False)
                 retry = False
                 total_time = 0
-            elif total_time < self.config.max_export_wait_time:
-                self.log.info(
-                    "Waiting {0} seconds for group {1} to export".format(wait_time, gid))
-                total_time += wait_time
-                sleep(wait_time)
             else:
                 self.log.error(
-                    "Time limit exceeded for exporting group {0}, due to:\n{1}".format(gid, response))
+                    "SKIP: Failed to trigger source group {0} export, due to:\n{1}".format(gid, str(json.loads(response.text))))
                 break
         return exported
 
