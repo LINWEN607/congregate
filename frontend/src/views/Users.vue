@@ -60,19 +60,38 @@ export default {
   methods: {
     getData: function () {
       axios.get('http://localhost:8000/data/users').then(response => {
-        console.log(response.data)
         this.rows = response.data
+        this.getStagedData()
+      }).catch(function (error) {
+        console.log(error)
+      })
+    },
+    getStagedData: function () {
+      axios.get('http://localhost:8000/data/staged_users').then(response => {
+        var ids = []
+        response.data.forEach(element => {
+          ids.push(element.id)
+        })
+        console.log(ids)
+        const table = this.$refs['users-table']
+        this.$refs['users-table'].rows.forEach((element, ind) => {
+          if (ids.includes(element.id)) {
+            table.$set(table.rows[ind], 'vgtSelected', true)
+          }
+        })
       }).catch(function (error) {
         console.log(error)
       })
     },
     stageData: function () {
       if (this.$refs['users-table'].selectedRows) {
-        const ids = []
+        const usernames = []
         this.$refs['users-table'].selectedRows.forEach(element => {
-          ids.push(element.id)
+          usernames.push(element.username)
         })
-        console.log(ids)
+        axios.post('http://localhost:8000/append_users', String(usernames)).then(response => {
+          console.log(response)
+        })
       }
     }
   }

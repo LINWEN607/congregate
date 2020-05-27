@@ -69,8 +69,24 @@ export default {
   methods: {
     getData: function () {
       axios.get('http://localhost:8000/data/project_json').then(response => {
-        console.log(response.data)
         this.rows = response.data
+        this.getStagedData()
+      }).catch(function (error) {
+        console.log(error)
+      })
+    },
+    getStagedData: function () {
+      axios.get('http://localhost:8000/data/stage').then(response => {
+        var ids = []
+        response.data.forEach(element => {
+          ids.push(element.id)
+        })
+        const table = this.$refs['projects-table']
+        this.$refs['projects-table'].rows.forEach((element, ind) => {
+          if (ids.includes(element.id)) {
+            table.$set(table.rows[ind], 'vgtSelected', true)
+          }
+        })
       }).catch(function (error) {
         console.log(error)
       })
@@ -81,7 +97,9 @@ export default {
         this.$refs['projects-table'].selectedRows.forEach(element => {
           ids.push(element.id)
         })
-        console.log(ids)
+        axios.post('http://localhost:8000/stage', String(ids)).then(response => {
+          console.log(response)
+        })
       }
     }
   }

@@ -100,4 +100,22 @@ body {
 .table {
   padding: 1em;
 }
+
+.summary-list {
+  li {
+    list-style: none;
+    text-align: left;
+    padding: 1em;
+    background: #ccc;
+    border-top: 1px solid #000;
+  }
+  table {
+    border-spacing: 1px;
+    border-collapse: separate;
+    td, th {
+      padding: 1em;
+      border: 1px solid #000;
+    }
+  }
+}
 </style>

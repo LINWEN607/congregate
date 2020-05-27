@@ -68,11 +68,16 @@ export default {
     },
     getStagedData: function () {
       axios.get('http://localhost:8000/data/staged_groups').then(response => {
-        console.log(response.data)
-
-        // response.data.forEach(element => {
-
-        // })
+        var ids = []
+        response.data.forEach(element => {
+          ids.push(element.id)
+        })
+        const table = this.$refs['groups-table']
+        this.$refs['groups-table'].rows.forEach((element, ind) => {
+          if (ids.includes(element.id)) {
+            table.$set(table.rows[ind], 'vgtSelected', true)
+          }
+        })
       }).catch(function (error) {
         console.log(error)
       })
@@ -83,7 +88,9 @@ export default {
         this.$refs['groups-table'].selectedRows.forEach(element => {
           ids.push(element.id)
         })
-        console.log(ids)
+        axios.post('http://localhost:8000/append_groups', String(ids)).then(response => {
+          console.log(response)
+        })
       }
     }
   }
