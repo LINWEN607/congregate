@@ -6,5 +6,6 @@ module.exports = {
         "@": path.resolve(__dirname, 'frontend/src/')
       }
     }
-  }
+  },
+  assetsDir: 'static'
 }

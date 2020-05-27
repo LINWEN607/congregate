@@ -199,6 +199,10 @@ if __name__ == '__main__':
                 migrate.migrate(processes=PROCESSES)
             elif arguments["ui"]:
                 # os.environ["FLASK_APP"] = "%s/congregate/ui:app" % app_path
+                if not os.path.exists(app_path + "/dist"):
+                    print "UI not built. Building it before deploying"
+                    build_ui = "npm run build"
+                    subprocess.call(build_ui.split(" "))
                 os.chdir(app_path + "/congregate")
                 # os.environ["PYTHONPATH"] = app_path
                 run_ui = "gunicorn -k gevent -w 4 ui:app --bind=0.0.0.0:8000"
@@ -263,6 +267,10 @@ if __name__ == '__main__':
                 do_all.do_all_groups_and_projects(dry_run=DRY_RUN)
             if arguments["ui"]:
                 # os.environ["FLASK_APP"] = "%s/congregate/ui" % app_path
+                if not os.path.exists(app_path + "/dist"):
+                    print "UI not built. Building it before deploying"
+                    build_ui = "npm run build"
+                    subprocess.call(build_ui.split(" "))
                 os.chdir(app_path + "/congregate")
                 # os.environ["PYTHONPATH"] = app_path
                 run_ui = "gunicorn -k gevent -w 4 ui:app --bind=0.0.0.0:8000"
