@@ -3,14 +3,16 @@ from requests.exceptions import RequestException
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.misc_utils import is_error_message_present
 from congregate.migration.gitlab.api.projects import ProjectsApi
+from congregate.migration.gitlab.api.users import UsersApi
 
 
-class DeployKeysClient(BaseClass):
+class KeysClient(BaseClass):
     def __init__(self):
         self.projects_api = ProjectsApi()
-        super(DeployKeysClient, self).__init__()
+        self.users_api = UsersApi()
+        super(KeysClient, self).__init__()
 
-    def migrate_deploy_keys(self, old_id, new_id, name):
+    def migrate_project_deploy_keys(self, old_id, new_id, name):
         try:
             resp = self.projects_api.get_all_project_deploy_keys(
                 old_id, self.config.source_host, self.config.source_token)
@@ -35,3 +37,9 @@ class DeployKeysClient(BaseClass):
             self.log.error(
                 "Failed to migrate deploy keys for project {0}, with error:\n{1}".format(name, re))
             return False
+
+    def migrate_user_ssh_keys(self):
+        pass
+
+    def migrate_user_gpg_keys(self):
+        pass

@@ -393,7 +393,7 @@ class UsersClient(BaseClass):
         :return:
         """
         staged_users = self.get_staged_users()
-        new_users = []
+        new_users = {}
         users_not_found = {}
         for user in staged_users:
             self.log.info("Searching for user email {}".format(user["email"]))
@@ -415,7 +415,7 @@ class UsersClient(BaseClass):
                 if new_user[0].get("email", None) is None:
                     new_user[0]["email"] = user["email"]
                 # Add to new_users
-                new_users.append(new_user[0])
+                new_users[new_user[0]["id"]] = new_user[0]["email"]
             else:
                 self.log.warning(
                     "Could not find user by email {0}. User should have been already migrated"
@@ -435,7 +435,7 @@ class UsersClient(BaseClass):
             self.log.info("Searching for user {} (ID)".format(other_id))
             new_user = self.users_api.get_user(
                 other_id, self.config.destination_host, self.config.destination_token).json()
-            new_users.append(new_user)
+            new_users[new_user["id"]] = new_user["email"]
 
         if not dry_run:
             # Dump everything found in new_users (email from staged or ids.txt)
@@ -448,7 +448,7 @@ class UsersClient(BaseClass):
         self.log.info("{0}Users found ({1}):\n{2}".format(
             get_dry_log(dry_run),
             len(new_users),
-            "\n".join(u["email"] for u in new_users)))
+            json_pretty(new_users)))
         self.log.info("{0}Users NOT found ({1}):\n{2}".format(
             get_dry_log(dry_run),
             len(users_not_found),
