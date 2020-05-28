@@ -92,6 +92,10 @@ class UserDiffClient(BaseDiffClient):
                 user, self.users_api.get_all_user_contribution_events)
             user_diff["/users/:id/custom_attributes"] = self.generate_user_diff(
                 user, self.users_api.get_all_user_custom_attributes)
+            user_diff["/users/:id/keys"] = self.generate_user_diff(
+                user, self.users_api.get_all_user_ssh_keys)
+            user_diff["/users/:id/gpg_keys"] = self.generate_user_diff(
+                user, self.users_api.get_all_user_gpg_keys)
 
         return user_diff
 
