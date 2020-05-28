@@ -129,36 +129,31 @@ def is_loc_supported(loc):
 
 
 def migrate_user_info(start):
-    # Search on destination and remove NOT found users from staged users
-    users.handle_users_not_found(
-        "staged_users", users.search_for_staged_users(_DRY_RUN))
-    staged = users.get_staged_users()
     b.log.info("{}Migrating user info".format(get_dry_log(_DRY_RUN)))
     if not _DRY_RUN:
+        new_users = []
         if not _ONLY_POST_MIGRATION_INFO:
+            users.handle_users_not_found(
+                "staged_users", users.search_for_staged_users()[0])
             new_users = filter(None, start_multi_process(
-                users.handle_user_creation, staged, _PROCESSES))
+                users.handle_user_creation, users.get_staged_users(), _PROCESSES))
             are_results(new_users, "user", "creation", start)
             formatted_users = {}
             for nu in new_users:
                 formatted_users[nu["email"]] = nu
             write_results_to_file(
                 formatted_users, result_type="user", log=b.log)
-
-            # Do a dry-run after search
-            users.search_for_staged_users()
-
         # Migrate SSH keys
         start_multi_process(keys.migrate_user_ssh_keys,
-                            new_users if new_users else staged, _PROCESSES)
+                            new_users if new_users else users.search_for_staged_users()[1], _PROCESSES)
         # Migrate GPG keys
         start_multi_process(keys.migrate_user_gpg_keys,
-                            new_users if new_users else staged, _PROCESSES)
+                            new_users if new_users else users.search_for_staged_users()[1], _PROCESSES)
     else:
         b.log.info(
             "DRY-RUN: Outputing various USER migration data to dry_run_user_migration.json")
         migration_dry_run("user", list(start_multi_process(
-            users.generate_user_data, staged, _PROCESSES)))
+            users.generate_user_data, users.get_staged_users(), _PROCESSES)))
 
 
 def migrate_group_info(start, skip_group_export=False, skip_group_import=False):

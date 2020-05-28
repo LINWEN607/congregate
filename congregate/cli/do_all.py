@@ -40,7 +40,7 @@ def do_all_users(dry_run=True):
         skip_project_export=True)
 
     # Lookup not found users AFTER - NO dry run
-    users.search_for_staged_users(dry_run=False)
+    users.search_for_staged_users()
 
 
 def do_all_groups_and_projects(dry_run=True):

@@ -4,12 +4,14 @@ from congregate.helpers.base_class import BaseClass
 from congregate.helpers.misc_utils import is_error_message_present
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.users import UsersApi
+from congregate.migration.gitlab.users import UsersClient
 
 
 class KeysClient(BaseClass):
     def __init__(self):
         self.projects_api = ProjectsApi()
         self.users_api = UsersApi()
+        self.users = UsersClient()
         super(KeysClient, self).__init__()
 
     def migrate_project_deploy_keys(self, old_id, new_id, name):
@@ -23,7 +25,7 @@ class KeysClient(BaseClass):
                     self.log.error(
                         "Failed to fetch deploy keys ({0}) for project {1}".format(key, name))
                     return False
-                # Remove unused key-value before posting key
+                # Remove unused key-values before posting key
                 key.pop("id", None)
                 key.pop("created_at", None)
                 self.projects_api.create_new_project_deploy_key(
@@ -38,8 +40,58 @@ class KeysClient(BaseClass):
                 "Failed to migrate deploy keys for project {0}, with error:\n{1}".format(name, re))
             return False
 
-    def migrate_user_ssh_keys(self):
-        pass
+    def migrate_user_ssh_keys(self, user):
+        try:
+            email = user["email"]
+            old_id = next(i for i in self.users.get_staged_users()
+                          if i["email"] == email)["id"]
+            resp = self.users_api.get_all_user_ssh_keys(
+                old_id, self.config.source_host, self.config.source_token)
+            ssh_keys = iter(resp.json())
+            self.log.info("Migrating user {} SSH keys".format(email))
+            for k in ssh_keys:
+                if is_error_message_present(k) or not k:
+                    self.log.error(
+                        "Failed to fetch SSH keys ({0}) for user {1}".format(k, email))
+                    return False
+                # Remove unused key-values before posting key
+                k.pop("id", None)
+                k.pop("created_at", None)
+                self.users_api.create_user_ssh_key(
+                    self.config.destination_host, self.config.destination_token, user["id"], k)
+            return True
+        except TypeError as te:
+            self.log.error("User {0} SSH keys {1} {2}".format(email, resp, te))
+            return False
+        except RequestException as re:
+            self.log.error(
+                "Failed to migrate SSH keys for user {0}, with error:\n{1}".format(email, re))
+            return False
 
-    def migrate_user_gpg_keys(self):
-        pass
+    def migrate_user_gpg_keys(self, user):
+        try:
+            email = user["email"]
+            old_id = next(i for i in self.users.get_staged_users()
+                          if i["email"] == email)["id"]
+            resp = self.users_api.get_all_user_gpg_keys(
+                old_id, self.config.source_host, self.config.source_token)
+            ssh_keys = iter(resp.json())
+            self.log.info("Migrating user {} GPG keys".format(email))
+            for k in ssh_keys:
+                if is_error_message_present(k) or not k:
+                    self.log.error(
+                        "Failed to fetch GPG keys ({0}) for user {1}".format(k, email))
+                    return False
+                # Remove unused key-values before posting key
+                k.pop("id", None)
+                k.pop("created_at", None)
+                self.users_api.create_user_gpg_key(
+                    self.config.destination_host, self.config.destination_token, user["id"], k)
+            return True
+        except TypeError as te:
+            self.log.error("User {0} GPG keys {1} {2}".format(email, resp, te))
+            return False
+        except RequestException as re:
+            self.log.error(
+                "Failed to migrate GPG keys for user {0}, with error:\n{1}".format(email, re))
+            return False

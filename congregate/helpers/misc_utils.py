@@ -178,9 +178,11 @@ def write_json_to_file(path, data, log=None):
     with open(path, "w") as f:
         json.dump(data, f, indent=4)
 
+
 def read_json_file_into_object(path):
     with open(path, "r") as f:
         return json.load(f)
+
 
 def obfuscate(prompt):
     return base64.b64encode(getpass(prompt))
@@ -199,7 +201,6 @@ def clean_data(dry_run=True, files=None):
         "project_json.json",
         "users.json",
         "groups.json",
-        "users_not_found.json",
         "user_migration_results.json",
         "user_migration_results.html",
         "user_diff.json",
@@ -210,7 +211,6 @@ def clean_data(dry_run=True, files=None):
         "project_migration_results.html",
         "project_diff.json",
         "migration_rollback_results.html",
-        "new_users.json",
         "newer_users.json",
         "unknown_users.json",
         "groups_audit.json",
@@ -382,8 +382,10 @@ def stitch_json_results(result_type="project", steps=0, order="tail"):
     """
     reverse = True if order.lower() == "tail" else False
     steps += 1
-    files = glob.glob("%s/data/%s_migration_results_*" % (get_congregate_path(), result_type))
-    files.sort(key=lambda f: f.split("results_")[1].replace(".json", ""), reverse=reverse)
+    files = glob.glob("%s/data/%s_migration_results_*" %
+                      (get_congregate_path(), result_type))
+    files.sort(key=lambda f: f.split("results_")[
+               1].replace(".json", ""), reverse=reverse)
     if steps > len(files):
         steps = len(files)
     files = files[:steps]

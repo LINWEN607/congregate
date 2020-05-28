@@ -343,57 +343,14 @@ class UsersClient(BaseClass):
 
         return staged
 
-    # TODO: Re-use or remove (does not show users to be removed)
-    def remove_blocked_users_dry_run(self):
-        # create a 'newer_users.json' file with only non-blocked users
-        count = 0
-        with open("%s/data/new_users.json" % self.app_path, "r") as f:
-            new_users = json.load(f)
-        with open("%s/data/users.json" % self.app_path, "r") as f:
-            users = json.load(f)
-
-        newer_users = []
-
-        rewritten_users = {}
-        for i in range(len(users)):
-            new_obj = users[i]
-            id_num = users[i]["username"]
-            rewritten_users[id_num] = new_obj
-
-        rewritten_users_by_name = {}
-        for i in range(len(users)):
-            new_obj = users[i]
-            id_num = users[i]["name"]
-            rewritten_users_by_name[id_num] = new_obj
-
-        for new_user in new_users:
-            key = new_user["username"]
-            if rewritten_users.get(key, None) is not None:
-                if rewritten_users[key]["state"] == "blocked":
-                    count += 1
-                else:
-                    newer_users.append(new_user)
-            else:
-                key = new_user["name"]
-                if rewritten_users_by_name.get(key, None) is not None:
-                    if rewritten_users_by_name[key]["state"] == "blocked":
-                        count += 1
-                    else:
-                        newer_users.append(new_user)
-        self.log.info("Newer user count after blocking ({0}). {1} to remove".format(
-            len(newer_users), count))
-
-        with open("%s/data/newer_users.json" % self.app_path, "wb") as f:
-            json.dump(newer_users, f, indent=4)
-
-    def search_for_staged_users(self, dry_run=True):
+    def search_for_staged_users(self):
         """
         Read the information in staged_users.json and dump to new_users.json and users_not_found.json. Does the
         search based on the email address and *not* username
         :return:
         """
         staged_users = self.get_staged_users()
-        new_users = {}
+        new_users = []
         users_not_found = {}
         for user in staged_users:
             self.log.info("Searching for user email {}".format(user["email"]))
@@ -415,7 +372,10 @@ class UsersClient(BaseClass):
                 if new_user[0].get("email", None) is None:
                     new_user[0]["email"] = user["email"]
                 # Add to new_users
-                new_users[new_user[0]["id"]] = new_user[0]["email"]
+                new_users.append({
+                    "id": new_user[0]["id"],
+                    "email": new_user[0]["email"]
+                })
             else:
                 self.log.warning(
                     "Could not find user by email {0}. User should have been already migrated"
@@ -437,28 +397,16 @@ class UsersClient(BaseClass):
                 other_id, self.config.destination_host, self.config.destination_token).json()
             new_users[new_user["id"]] = new_user["email"]
 
-        if not dry_run:
-            # Dump everything found in new_users (email from staged or ids.txt)
-            with open("%s/data/new_users.json" % self.app_path, "w") as f:
-                json.dump(new_users, f, indent=4)
-            # Users not found will only include those not found by the email search
-            with open("%s/data/users_not_found.json" % self.app_path, "w") as f:
-                json.dump(users_not_found, f, indent=4)
+        self.log.info("Users found ({0}):\n{1}".format(
+            len(new_users), "\n".join(json_pretty(u) for u in new_users)))
+        self.log.info("Users NOT found ({0}):\n{1}".format(
+            len(users_not_found), json_pretty(users_not_found)))
 
-        self.log.info("{0}Users found ({1}):\n{2}".format(
-            get_dry_log(dry_run),
-            len(new_users),
-            json_pretty(new_users)))
-        self.log.info("{0}Users NOT found ({1}):\n{2}".format(
-            get_dry_log(dry_run),
-            len(users_not_found),
-            json_pretty(users_not_found)))
-
-        return users_not_found
+        return users_not_found, new_users
 
     def handle_users_not_found(self, data, users, keep=True):
         """
-            Remove FOUND users from staged users.
+            Remove only FOUND (or NOT FOUND) users from staged users.
             Remove users NOT found from staged users, groups and projects.
             Users NOT found input comes from search_for_staged_users.
             :return: Staged users
@@ -467,8 +415,8 @@ class UsersClient(BaseClass):
             staged = json.load(f)
 
         if data == "staged_users":
-            self.log.info("{0} all except NOT found users ({1}/{2}) from staged users".format(
-                "Removing" if keep else "Keeping", len(users), len(staged)))
+            self.log.info("{0} only NOT found users ({1}/{2}) in staged users".format(
+                "Keeping" if keep else "Removing", len(users), len(staged)))
             if keep:
                 staged = [i for j, i in enumerate(
                     staged) if i["id"] in users.keys()]
