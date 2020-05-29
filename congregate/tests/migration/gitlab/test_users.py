@@ -3,10 +3,12 @@ import json
 import mock
 import responses
 
+from congregate.migration.migrate import handle_user_creation
 from congregate.tests.mockapi.users import MockUsersApi
 from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.users import UsersClient
 from congregate.migration.gitlab.groups import GroupsApi
+from congregate.migration.gitlab.keys import KeysClient
 
 
 class UserTests(unittest.TestCase):
@@ -137,12 +139,16 @@ class UserTests(unittest.TestCase):
     @mock.patch('congregate.helpers.conf.Config.destination_host', new_callable=mock.PropertyMock)
     @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.dstn_parent_id', new_callable=mock.PropertyMock)
     @mock.patch('congregate.helpers.api.get_count')
-    def test_handle_user_creation(self, count, parent_id, destination):
+    @mock.patch.object(KeysClient, "migrate_user_ssh_keys")
+    @mock.patch.object(KeysClient, "migrate_user_gpg_keys")
+    @mock.patch('congregate.migration.migrate._DRY_RUN', False)
+    def test_handle_user_creation(self, get_gpg, get_ssh, count, parent_id, destination):
+        get_ssh.return_value = True
+        get_gpg.return_value = True
         count.return_value = 1
         parent_id.return_value = None
         destination.return_value = "https://gitlabdestination.com"
         new_user = self.mock_users.get_dummy_user()
-        new_user.pop("id")
 
         url_value = "https://gitlabdestination.com/api/v4/users"
         # pylint: disable=no-member
@@ -160,7 +166,7 @@ class UserTests(unittest.TestCase):
             "id": 27,
             "email": "jdoe@email.com"
         }
-        self.assertEqual(self.users.handle_user_creation(new_user), expected)
+        self.assertEqual(handle_user_creation(new_user), expected)
 
     # pylint: disable=no-member
     @responses.activate
@@ -168,12 +174,16 @@ class UserTests(unittest.TestCase):
     @mock.patch('congregate.helpers.conf.Config.destination_host', new_callable=mock.PropertyMock)
     @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.dstn_parent_id', new_callable=mock.PropertyMock)
     @mock.patch('congregate.helpers.api.get_count')
-    def test_handle_user_creation_user_already_exists_no_parent_group(self, count, parent_id, destination):
+    @mock.patch.object(KeysClient, "migrate_user_ssh_keys")
+    @mock.patch.object(KeysClient, "migrate_user_gpg_keys")
+    @mock.patch('congregate.migration.migrate._DRY_RUN', False)
+    def test_handle_user_creation_user_already_exists_no_parent_group(self, get_gpg, get_ssh, count, parent_id, destination):
+        get_ssh.return_value = True
+        get_gpg.return_value = True
         count.return_value = 1
         parent_id.return_value = None
         destination.return_value = "https://gitlabdestination.com"
         new_user = self.mock_users.get_dummy_user()
-        new_user.pop("id")
 
         url_value = "https://gitlabdestination.com/api/v4/users"
         # pylint: disable=no-member
@@ -191,7 +201,7 @@ class UserTests(unittest.TestCase):
             "id": 27,
             "email": "jdoe@email.com"
         }
-        self.assertEqual(self.users.handle_user_creation(new_user), expected)
+        self.assertEqual(handle_user_creation(new_user), expected)
 
     # pylint: disable=no-member
     @responses.activate
@@ -199,12 +209,16 @@ class UserTests(unittest.TestCase):
     @mock.patch('congregate.helpers.conf.Config.destination_host', new_callable=mock.PropertyMock)
     @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.dstn_parent_id', new_callable=mock.PropertyMock)
     @mock.patch('congregate.helpers.api.get_count')
-    def test_handle_user_creation_user_already_exists_with_parent_group(self, count, parent_id, destination):
+    @mock.patch.object(KeysClient, "migrate_user_ssh_keys")
+    @mock.patch.object(KeysClient, "migrate_user_gpg_keys")
+    @mock.patch('congregate.migration.migrate._DRY_RUN', False)
+    def test_handle_user_creation_user_already_exists_with_parent_group(self, get_gpg, get_ssh, count, parent_id, destination):
+        get_ssh.return_value = True
+        get_gpg.return_value = True
         count.return_value = 1
         parent_id.return_value = 10
         destination.return_value = "https://gitlabdestination.com"
         new_user = self.mock_users.get_dummy_user()
-        new_user.pop("id")
 
         url_value = "https://gitlabdestination.com/api/v4/users"
         # pylint: disable=no-member
@@ -222,7 +236,7 @@ class UserTests(unittest.TestCase):
             "id": 27,
             "email": "jdoe@email.com"
         }
-        self.assertEqual(self.users.handle_user_creation(new_user), expected)
+        self.assertEqual(handle_user_creation(new_user), expected)
 
     # pylint: disable=no-member
     @responses.activate
@@ -512,12 +526,16 @@ class UserTests(unittest.TestCase):
     @mock.patch('congregate.helpers.conf.Config.destination_host', new_callable=mock.PropertyMock)
     @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.dstn_parent_id', new_callable=mock.PropertyMock)
     @mock.patch('congregate.helpers.api.get_count')
-    def test_handle_user_creation_improperly_formatted_json(self, count, parent_id, destination):
+    @mock.patch.object(KeysClient, "migrate_user_ssh_keys")
+    @mock.patch.object(KeysClient, "migrate_user_gpg_keys")
+    @mock.patch('congregate.migration.migrate._DRY_RUN', False)
+    def test_handle_user_creation_improperly_formatted_json(self, get_gpg, get_ssh, count, parent_id, destination):
+        get_ssh.return_value = True
+        get_gpg.return_value = True
         count.return_value = 1
         parent_id.return_value = None
         destination.return_value = "https://gitlabdestination.com"
         new_user = self.mock_users.get_dummy_user()
-        new_user.pop("id")
 
         url_value = "https://gitlabdestination.com/api/v4/users"
         # pylint: disable=no-member
@@ -535,4 +553,4 @@ class UserTests(unittest.TestCase):
             "id": None,
             "email": "jdoe@email.com"
         }
-        self.assertEqual(self.users.handle_user_creation(new_user), expected)
+        self.assertEqual(handle_user_creation(new_user), expected)

@@ -40,13 +40,11 @@ class KeysClient(BaseClass):
                 "Failed to migrate deploy keys for project {0}, with error:\n{1}".format(name, re))
             return False
 
-    def migrate_user_ssh_keys(self, user):
+    def migrate_user_ssh_keys(self, old_user, new_user):
         try:
-            email = user["email"]
-            old_id = next(i for i in self.users.get_staged_users()
-                          if i["email"] == email)["id"]
-            resp = self.users_api.get_all_user_ssh_keys(
-                old_id, self.config.source_host, self.config.source_token)
+            email = old_user.get("email", None)
+            resp = self.users_api.get_all_user_ssh_keys(old_user.get(
+                "id", None), self.config.source_host, self.config.source_token)
             ssh_keys = iter(resp.json())
             self.log.info("Migrating user {} SSH keys".format(email))
             for k in ssh_keys:
@@ -58,7 +56,7 @@ class KeysClient(BaseClass):
                 k.pop("id", None)
                 k.pop("created_at", None)
                 self.users_api.create_user_ssh_key(
-                    self.config.destination_host, self.config.destination_token, user["id"], k)
+                    self.config.destination_host, self.config.destination_token, new_user.get("id", None), k)
             return True
         except TypeError as te:
             self.log.error("User {0} SSH keys {1} {2}".format(email, resp, te))
@@ -68,13 +66,11 @@ class KeysClient(BaseClass):
                 "Failed to migrate SSH keys for user {0}, with error:\n{1}".format(email, re))
             return False
 
-    def migrate_user_gpg_keys(self, user):
+    def migrate_user_gpg_keys(self, old_user, new_user):
         try:
-            email = user["email"]
-            old_id = next(i for i in self.users.get_staged_users()
-                          if i["email"] == email)["id"]
-            resp = self.users_api.get_all_user_gpg_keys(
-                old_id, self.config.source_host, self.config.source_token)
+            email = old_user.get("email", None)
+            resp = self.users_api.get_all_user_gpg_keys(old_user.get(
+                "id", None), self.config.source_host, self.config.source_token)
             ssh_keys = iter(resp.json())
             self.log.info("Migrating user {} GPG keys".format(email))
             for k in ssh_keys:
@@ -86,7 +82,7 @@ class KeysClient(BaseClass):
                 k.pop("id", None)
                 k.pop("created_at", None)
                 self.users_api.create_user_gpg_key(
-                    self.config.destination_host, self.config.destination_token, user["id"], k)
+                    self.config.destination_host, self.config.destination_token, new_user.get("id", None), k)
             return True
         except TypeError as te:
             self.log.error("User {0} GPG keys {1} {2}".format(email, resp, te))
