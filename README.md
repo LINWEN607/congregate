@@ -23,6 +23,7 @@ Come together, right now
 * Python 2.7
 * [AWS CLI](https://aws.amazon.com/cli/)
 * [Poetry](https://python-poetry.org/)
+* [Node v11.13.0](https://www.npmjs.com/)
 
 ## Setup
 
@@ -53,8 +54,12 @@ poetry --version
 # install python dependencies
 poetry install
 
+# install NVM for Node Version Management
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.35.3/install.sh | bash
+nvm use 11.13.0
+
 # install UI dependencies
-poetry run dnd install
+npm install
 
 # create congregate path
 CONGREGATE_PATH=$(pwd)
@@ -111,7 +116,7 @@ poetry shell
 
 # Install ui dependencies
 cd <path_to_congregate>
-poetry run dnd install
+npm install
 ```
 
 ### Installing and configuring Congregate (end-user)
