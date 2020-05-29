@@ -1,6 +1,6 @@
 import json
 import unittest
-import mock
+from mock import MagicMock, PropertyMock, patch
 import responses
 from congregate.migration.gitlab.importexport import ImportExportClient
 from congregate.migration.gitlab.api.groups import GroupsApi
@@ -81,8 +81,8 @@ class ImportExportClientTests(unittest.TestCase):
         ]
 
     def import_status_failed(self, *args, **kwargs):
-        nok_status_mock = mock.MagicMock()
-        type(nok_status_mock).status_code = mock.PropertyMock(return_value=200)
+        nok_status_mock = MagicMock()
+        type(nok_status_mock).status_code = PropertyMock(return_value=200)
         nok_status_mock.json.return_value = {
             "id": 222,
             "import_status": "failed"
@@ -90,23 +90,30 @@ class ImportExportClientTests(unittest.TestCase):
         return nok_status_mock
 
     def import_status_finished(self, *args, **kwargs):
-        ok_status_mock = mock.MagicMock()
-        type(ok_status_mock).status_code = mock.PropertyMock(return_value=200)
+        ok_status_mock = MagicMock()
+        type(ok_status_mock).status_code = PropertyMock(return_value=200)
         ok_status_mock.json.return_value = {
             "id": 111,
             "import_status": "finished"
         }
         return ok_status_mock
 
+    def export_group_404(self, *args, **kwargs):
+        nok_export_mock = MagicMock()
+        type(nok_export_mock).status_code = PropertyMock(return_value=404)
+        type(nok_export_mock).text = PropertyMock(
+            return_value='{"message": "404 Not Found"}')
+        return nok_export_mock
+
     def test_create_override_name(self):
         original_name = "some_project"
         self.assertEqual(self.ie.create_override_name(
             original_name), "some_project_1")
 
-    @mock.patch.object(ProjectsApi, "get_project_import_status")
+    @patch.object(ProjectsApi, "get_project_import_status")
     def test_get_import_id_from_response_finished(self, mock_status):
-        ok_response_mock = mock.MagicMock()
-        type(ok_response_mock).status_code = mock.PropertyMock(return_value=200)
+        ok_response_mock = MagicMock()
+        type(ok_response_mock).status_code = PropertyMock(return_value=200)
         ok_response_mock.json.return_value = {
             "id": 111,
             "import_status": "finished"
@@ -124,25 +131,25 @@ class ImportExportClientTests(unittest.TestCase):
                                                         self.original_project_path, self.original_namespace_path, self.original_project_override_params, self.members)
         self.assertEqual(import_id, None)
 
-    @mock.patch.object(ProjectsApi, "get_project_import_status")
+    @patch.object(ProjectsApi, "get_project_import_status")
     def test_get_import_id_from_response_status_code_400(self, mock_status):
-        nok_status_mock = mock.MagicMock()
-        type(nok_status_mock).status_code = mock.PropertyMock(return_value=404)
+        nok_status_mock = MagicMock()
+        type(nok_status_mock).status_code = PropertyMock(return_value=404)
         mock_status.return_value = nok_status_mock
         import_id = self.ie.get_import_id_from_response(self.import_response, self.original_project_filename, self.original_project_name,
                                                         self.original_project_path, self.original_namespace_path, self.original_project_override_params, self.members)
         self.assertEqual(import_id, None)
 
-    @mock.patch('congregate.helpers.conf.Config.importexport_wait', new_callable=mock.PropertyMock)
-    @mock.patch('congregate.migration.gitlab.importexport.ImportExportClient.attempt_import')
-    @mock.patch.object(ProjectsApi, "get_project_import_status", side_effect=import_status_finished)
-    @mock.patch.object(ProjectsApi, "get_project")
+    @patch('congregate.helpers.conf.Config.importexport_wait', new_callable=PropertyMock)
+    @patch('congregate.migration.gitlab.importexport.ImportExportClient.attempt_import')
+    @patch.object(ProjectsApi, "get_project_import_status", side_effect=import_status_finished)
+    @patch.object(ProjectsApi, "get_project")
     def test_get_import_id_from_response_finished_retry(self, get_project, mock_status, mock_import_response, wait):
-        nok_get_project = mock.MagicMock()
-        type(nok_get_project).status_code = mock.PropertyMock(return_value=404)
+        nok_get_project = MagicMock()
+        type(nok_get_project).status_code = PropertyMock(return_value=404)
         get_project.return_value = nok_get_project
-        nok_status_mock = mock.MagicMock()
-        type(nok_status_mock).status_code = mock.PropertyMock(return_value=200)
+        nok_status_mock = MagicMock()
+        type(nok_status_mock).status_code = PropertyMock(return_value=200)
         nok_status_mock.json.return_value = {
             "id": 222,
             "import_status": "failed"
@@ -157,18 +164,18 @@ class ImportExportClientTests(unittest.TestCase):
                                                         self.original_project_path, self.original_namespace_path, self.original_project_override_params, [])
         self.assertEqual(import_id, 12345)
 
-    @mock.patch('congregate.helpers.conf.Config.destination_host', new_callable=mock.PropertyMock)
-    @mock.patch('congregate.helpers.conf.Config.importexport_wait', new_callable=mock.PropertyMock)
-    @mock.patch('congregate.migration.gitlab.importexport.ImportExportClient.attempt_import')
-    @mock.patch.object(ProjectsApi, "get_project_import_status", side_effect=import_status_failed)
-    @mock.patch.object(ProjectsApi, "get_project")
+    @patch('congregate.helpers.conf.Config.destination_host', new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.importexport_wait', new_callable=PropertyMock)
+    @patch('congregate.migration.gitlab.importexport.ImportExportClient.attempt_import')
+    @patch.object(ProjectsApi, "get_project_import_status", side_effect=import_status_failed)
+    @patch.object(ProjectsApi, "get_project")
     def test_get_import_id_from_response_failed_retry(self, get_project, mock_status, mock_import_response, wait, dstn_host):
         dstn_host.return_value = "https://gitlab.com"
-        nok_get_project = mock.MagicMock()
-        type(nok_get_project).status_code = mock.PropertyMock(return_value=404)
+        nok_get_project = MagicMock()
+        type(nok_get_project).status_code = PropertyMock(return_value=404)
         get_project.return_value = nok_get_project
-        nok_status_mock = mock.MagicMock()
-        type(nok_status_mock).status_code = mock.PropertyMock(return_value=200)
+        nok_status_mock = MagicMock()
+        type(nok_status_mock).status_code = PropertyMock(return_value=200)
         nok_status_mock.json.return_value = {
             "id": 222,
             "import_status": "failed"
@@ -183,14 +190,14 @@ class ImportExportClientTests(unittest.TestCase):
                                                         self.original_project_path, self.original_namespace_path, self.original_project_override_params, self.members)
         self.assertEqual(import_id, None)
 
-    @mock.patch('congregate.helpers.conf.Config.importexport_wait', new_callable=mock.PropertyMock)
-    @mock.patch('congregate.helpers.conf.Config.max_export_wait_time', new_callable=mock.PropertyMock)
-    @mock.patch.object(ProjectsApi, "get_project_import_status")
+    @patch('congregate.helpers.conf.Config.importexport_wait', new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.max_export_wait_time', new_callable=PropertyMock)
+    @patch.object(ProjectsApi, "get_project_import_status")
     def test_get_import_id_from_response_timeout(self, mock_status, max_wait, wait):
         wait.return_value = 0.01
         max_wait.return_value = 0.1
-        ok_status_mock = mock.MagicMock()
-        type(ok_status_mock).status_code = mock.PropertyMock(return_value=200)
+        ok_status_mock = MagicMock()
+        type(ok_status_mock).status_code = PropertyMock(return_value=200)
         ok_status_mock.json.return_value = {
             "id": 333,
             "import_status": "scheduled"
@@ -200,31 +207,103 @@ class ImportExportClientTests(unittest.TestCase):
                                                         self.original_project_path, self.original_namespace_path, self.original_project_override_params, self.members)
         self.assertEqual(import_id, None)
 
-    @mock.patch.object(GroupsApi, "get_group_download_status")
-    def test_wait_for_group_download_200(self, mock_get_group_download_status):
-        ok_response_mock = mock.MagicMock()
-        type(ok_response_mock).status_code = mock.PropertyMock(
+    @patch.object(ProjectsApi, "export_project")
+    @patch.object(ProjectsApi, "get_project_export_status")
+    def test_wait_for_export_to_finish_project_202_200_finished(self, mock_get_project_export_status, mock_export_project):
+        ok_export_mock = MagicMock()
+        type(ok_export_mock).status_code = PropertyMock(
+            return_value=202)
+        type(ok_export_mock).text = PropertyMock(
+            return_value='{"message": "202 Accepted"}')
+        mock_export_project.return_value = ok_export_mock
+        ok_status_mock = MagicMock()
+        type(ok_status_mock).status_code = PropertyMock(
             return_value=200)
-        mock_get_group_download_status.return_value = ok_response_mock
+        ok_status_mock.json.return_value = {"export_status": "finished"}
+        mock_get_project_export_status.return_value = ok_status_mock
+        self.assertTrue(self.ie.wait_for_export_to_finish(1, "test"))
+
+    @patch('congregate.helpers.conf.Config.importexport_wait', new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.max_export_wait_time', new_callable=PropertyMock)
+    @patch.object(ProjectsApi, "export_project")
+    @patch.object(ProjectsApi, "get_project_export_status")
+    def test_wait_for_export_to_finish_project_202_200_none_timeout(self, mock_get_project_export_status, mock_export_project, max_wait, wait):
+        wait.return_value = 0.01
+        max_wait.return_value = 0.1
+        ok_export_mock = MagicMock()
+        type(ok_export_mock).status_code = PropertyMock(
+            return_value=202)
+        type(ok_export_mock).text = PropertyMock(
+            return_value='{"message": "202 Accepted"}')
+        mock_export_project.return_value = ok_export_mock
+        ok_status_mock = MagicMock()
+        type(ok_status_mock).status_code = PropertyMock(
+            return_value=200)
+        ok_status_mock.json.return_value = {"export_status": "none"}
+        mock_get_project_export_status.return_value = ok_status_mock
+        self.assertFalse(self.ie.wait_for_export_to_finish(1, "test"))
+
+    @patch.object(ProjectsApi, "export_project")
+    def test_wait_for_export_to_finish_project_404(self, mock_export_project):
+        ok_export_mock = MagicMock()
+        type(ok_export_mock).status_code = PropertyMock(
+            return_value=404)
+        type(ok_export_mock).text = PropertyMock(
+            return_value='{"message": "404 Not Found"}')
+        mock_export_project.return_value = ok_export_mock
+        self.assertFalse(self.ie.wait_for_export_to_finish(
+            1, "test", retry=False))
+
+    @patch.object(GroupsApi, "export_group")
+    @patch.object(GroupsApi, "get_group_download_status")
+    def test_wait_for_group_download_202_200(self, mock_get_group_download_status, mock_export_group):
+        ok_export_mock = MagicMock()
+        type(ok_export_mock).status_code = PropertyMock(
+            return_value=202)
+        type(ok_export_mock).text = PropertyMock(
+            return_value='{"message": "202 Accepted"}')
+        mock_export_group.return_value = ok_export_mock
+        ok_status_mock = MagicMock()
+        type(ok_status_mock).status_code = PropertyMock(
+            return_value=200)
+        mock_get_group_download_status.return_value = ok_status_mock
         self.assertTrue(self.ie.wait_for_group_download(1))
 
-    @mock.patch.object(GroupsApi, "get_group_download_status")
-    @mock.patch('congregate.helpers.conf.Config.importexport_wait', new_callable=mock.PropertyMock)
-    @mock.patch('congregate.helpers.conf.Config.max_export_wait_time', new_callable=mock.PropertyMock)
-    def test_wait_for_group_download_404(self, max_wait, wait, mock_get_group_download_status):
-        max_wait.return_value = 0.1
+    @patch('congregate.helpers.conf.Config.importexport_wait', new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.max_export_wait_time', new_callable=PropertyMock)
+    @patch.object(GroupsApi, "export_group")
+    @patch.object(GroupsApi, "get_group_download_status")
+    def test_wait_for_group_download_202_404_timeout(self, mock_get_group_download_status, mock_export_group, max_wait, wait):
         wait.return_value = 0.01
-        nok_response_mock = mock.MagicMock()
-        type(nok_response_mock).status_code = mock.PropertyMock(
+        max_wait.return_value = 0.1
+        ok_export_mock = MagicMock()
+        type(ok_export_mock).status_code = PropertyMock(
+            return_value=202)
+        type(ok_export_mock).text = PropertyMock(
+            return_value='{"message": "202 Accepted"}')
+        mock_export_group.return_value = ok_export_mock
+        nok_status_mock = MagicMock()
+        type(nok_status_mock).status_code = PropertyMock(
             return_value=404)
-        mock_get_group_download_status.return_value = nok_response_mock
+        mock_get_group_download_status.return_value = nok_status_mock
         self.assertFalse(self.ie.wait_for_group_download(1))
+
+    @patch.object(GroupsApi, "export_group")
+    @patch.object(GroupsApi, "get_group_download_status")
+    def test_wait_for_group_download_404(self, mock_get_group_download_status, mock_export_group):
+        ok_export_mock = MagicMock()
+        type(ok_export_mock).status_code = PropertyMock(
+            return_value=404)
+        type(ok_export_mock).text = PropertyMock(
+            return_value='{"message": "404 Not Found"}')
+        mock_export_group.return_value = ok_export_mock
+        self.assertFalse(self.ie.wait_for_group_download(1, retry=False))
 
     # pylint: disable=no-member
     @responses.activate
     # pylint: enable=no-member
-    @mock.patch("congregate.helpers.api.generate_v4_request_url")
-    @mock.patch('congregate.migration.gitlab.groups.GroupsClient.find_group_by_path')
+    @patch("congregate.helpers.api.generate_v4_request_url")
+    @patch('congregate.migration.gitlab.groups.GroupsClient.find_group_by_path')
     def test_wait_for_group_import_200(self, mock_find_group_by_path, url):
         mock_find_group_by_path.return_value = self.mock_groups.get_group()
         url_value = "https://gitlabdestination.com/api/v4/groups/1"
@@ -235,9 +314,9 @@ class ImportExportClientTests(unittest.TestCase):
         # pylint: enable=no-member
         self.assertTrue(self.ie.wait_for_group_import("mock"))
 
-    @mock.patch('congregate.migration.gitlab.groups.GroupsClient.find_group_by_path')
-    @mock.patch('congregate.helpers.conf.Config.importexport_wait', new_callable=mock.PropertyMock)
-    @mock.patch('congregate.helpers.conf.Config.max_export_wait_time', new_callable=mock.PropertyMock)
+    @patch('congregate.migration.gitlab.groups.GroupsClient.find_group_by_path')
+    @patch('congregate.helpers.conf.Config.importexport_wait', new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.max_export_wait_time', new_callable=PropertyMock)
     def test_wait_for_group_import_404(self, max_wait, wait, mock_find_group_by_path):
         max_wait.return_value = 0.1
         wait.return_value = 0.01
