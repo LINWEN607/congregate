@@ -19,7 +19,7 @@ from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.namespaces import NamespacesApi
 from congregate.helpers.migrate_utils import get_project_namespace, is_user_project, get_user_project_namespace, \
-    get_export_filename_from_namespace_and_name, get_dst_path_with_namespace, get_full_path_with_parent_namespace
+    get_export_filename_from_namespace_and_name, get_dst_path_with_namespace, get_full_path_with_parent_namespace, is_loc_supported
 
 
 class ImportExportClient(BaseClass):
@@ -64,57 +64,93 @@ class ImportExportClient(BaseClass):
     def get_group_export_status(self, src_id):
         return api.generate_get_request(self.config.source_host, self.config.source_token, "groups/%d/export" % src_id)
 
-    def wait_for_export_to_finish(self, source_id, name, is_project=True):
+    def wait_for_export_to_finish(self, src_id, name, is_project=True, retry=True):
         exported = False
         total_time = 0
         wait_time = self.config.importexport_wait
         export_type = check_is_project_or_group_for_logging(is_project)
-        while not exported:
-            response = self.get_export_status(source_id, is_project)
-            if response.status_code == 200:
-                response = response.json()
-                name = response["name"]
-                status = response.get("export_status", None)
-                if status == "finished":
-                    self.log.info(
-                        "{0} {1} has finished exporting".format(export_type, name))
-                    exported = True
-                elif status == "failed":
-                    self.log.error(
-                        "{0} {1} export failed with export response:\n{2}".format(export_type, name, response))
-                    break
-                elif total_time < self.config.max_export_wait_time:
-                    self.log.info("Checking {0} {1} export status (current: {2}) in {3} seconds".format(
-                        export_type.lower(), name, status, wait_time))
-                    total_time += wait_time
-                    sleep(wait_time)
-                else:
-                    self.log.error("{0} {1} time limit exceeded with export response:\n{2}".format(
-                        export_type, name, response))
-                    break
+        response = self.get_export_response(src_id, is_project)
+        while True:
+            # Wait until rate limit is resolved
+            while self.RATE_LIMIT_MSG in str(json.loads(response.text)):
+                self.log.warning("Re-exporting {0} {1} (ID: {2}), waiting {3} minutes due to:\n{4}".format(
+                    export_type.lower(), name, src_id, self.COOL_OFF_MINUTES, str(json.loads(response.text))))
+                sleep(self.COOL_OFF_MINUTES * 60)
+                response = self.get_export_response(src_id, is_project)
+            if response.status_code == 202:
+                status = self.get_export_status(src_id, is_project)
+                if status.status_code == 200:
+                    status_json = status.json()
+                    if status_json.get("export_status", None) == "finished":
+                        self.log.info("{0} {1} has finished exporting, with response:\n{2}".format(
+                            export_type, name, json_pretty(status_json)))
+                        exported = True
+                        break
+                    if status_json.get("export_status", None) == "failed":
+                        self.log.error("{0} {1} export failed{2}, with response:\n{3}".format(
+                            export_type, name, " (re-exporting)" if retry else "", json_pretty(status_json)))
+                        if retry:
+                            response = self.get_export_response(
+                                src_id, is_project)
+                            retry = False
+                            total_time = 0
+                    elif total_time < self.config.max_export_wait_time:
+                        self.log.info("Checking {0} {1} export status (current: {2}) in {3} seconds".format(
+                            export_type.lower(), name, status_json.get("export_status", None), wait_time))
+                        total_time += wait_time
+                        sleep(wait_time)
+                    else:
+                        self.log.error("{0} {1} time limit exceeded with export status:\n{2}".format(
+                            export_type, name, json_pretty(status_json)))
+                        break
+            elif retry:
+                self.log.error("{0} {1} export trigger failed{2}, with response:\n{3}".format(
+                    export_type, name, " (re-exporting)" if retry else "", str(json.loads(response.text))))
+                response = self.get_export_response(src_id, is_project)
+                retry = False
+                total_time = 0
             else:
-                self.log.error("SKIP: Export, source {0} {1} doesn't exist:\n{2}".format(
-                    export_type.lower(), name, response))
+                self.log.error("SKIP: Failed to trigger source {0} {1} export, due to:\n{2}".format(
+                    export_type.lower(), name, str(json.loads(response.text))))
                 break
         return exported
 
-    def wait_for_group_download(self, gid):
+    def wait_for_group_download(self, gid, retry=True):
         exported = False
-        timer = 0
+        total_time = 0
         wait_time = self.config.importexport_wait
+        response = self.get_export_response(gid, is_project=False)
         while True:
-            response = self.groups_api.get_group_download_status(
-                self.config.source_host, self.config.source_token, gid)
-            if response.status_code == 200:
-                exported = True
-                break
-            self.log.info(
-                "Waiting {0} seconds for group {1} to export".format(wait_time, gid))
-            sleep(wait_time)
-            timer += wait_time
-            if timer > self.config.max_export_wait_time:
+            # Wait until rate limit is resolved
+            while self.RATE_LIMIT_MSG in str(json.loads(response.text)):
+                self.log.warning("Re-exporting group {0}, waiting {1} minutes due to:\n{2}".format(
+                    gid, self.COOL_OFF_MINUTES, str(json.loads(response.text))))
+                sleep(self.COOL_OFF_MINUTES * 60)
+                response = self.get_export_response(gid, is_project=False)
+            if response.status_code == 202:
+                status = self.groups_api.get_group_download_status(
+                    self.config.source_host, self.config.source_token, gid)
+                if status.status_code == 200:
+                    exported = True
+                    break
+                elif total_time < self.config.max_export_wait_time:
+                    self.log.info(
+                        "Waiting {0} seconds for group {1} to export".format(wait_time, gid))
+                    total_time += wait_time
+                    sleep(wait_time)
+                else:
+                    self.log.error(
+                        "Time limit exceeded for exporting group {0}, with status:\n{1}".format(gid, status))
+                    break
+            elif retry:
                 self.log.error(
-                    "Time limit exceeded for exporting group {0}, due to:\n{1}".format(gid, response))
+                    "Group {0} export failed (re-exporting), with response:\n{1}".format(gid, str(json.loads(response.text))))
+                response = self.get_export_response(gid, is_project=False)
+                retry = False
+                total_time = 0
+            else:
+                self.log.error(
+                    "SKIP: Failed to trigger source group {0} export, due to:\n{1}".format(gid, str(json.loads(response.text))))
                 break
         return exported
 
@@ -123,13 +159,11 @@ class ImportExportClient(BaseClass):
         timer = 0
         wait_time = self.config.importexport_wait
         while True:
-            gid = self.groups.find_group_id_by_path(
+            group = self.groups.find_group_by_path(
                 self.config.destination_host, self.config.destination_token, path)
-            if gid:
-                group = self.groups_api.get_group(
-                    gid, self.config.destination_host, self.config.destination_token).json()
+            if group:
                 self.log.info(
-                    "Group {0} imported successfully with ID {1}".format(path, gid))
+                    "Group {0} imported successfully with ID {1}".format(path, group.get("id", None)))
                 break
             self.log.info(
                 "Waiting {0} seconds for group {1} to import".format(wait_time, path))
@@ -141,7 +175,7 @@ class ImportExportClient(BaseClass):
                 break
         return group
 
-    def get_export_response(self, source_id, data, headers, is_project):
+    def get_export_response(self, source_id, is_project, data=None, headers=None):
         """
         Gets the export response for both project and group exports
         """
@@ -175,11 +209,7 @@ class ImportExportClient(BaseClass):
         data = "&".join(upload)
         try:
             response = self.get_export_response(
-                source_id,
-                data,
-                headers,
-                is_project
-            )
+                source_id, is_project, data=data, headers=headers)
             return response
         except RequestException, e:
             self.log.error("Failed to trigger {0} (ID: {1}) export as {2} with response {3}".format(
@@ -379,7 +409,7 @@ class ImportExportClient(BaseClass):
                 data = {
                     "path": path,
                     "name": validate_name(name),
-                    "parent_id": self.config.parent_id if self.config.parent_id else ""
+                    "parent_id": self.config.dstn_parent_id if self.config.dstn_parent_id else ""
                 }
                 files = {
                     "file": (filename, f)
@@ -500,7 +530,9 @@ class ImportExportClient(BaseClass):
                 return None
         return import_id
 
-    def export_project_thru_filesystem(self, project):
+    def export_project(self, project, dry_run=True):
+        loc = self.config.location.lower()
+        is_loc_supported(loc)
         exported = False
         name = project["name"]
         namespace = project["namespace"]
@@ -513,62 +545,38 @@ class ImportExportClient(BaseClass):
         if dst_pid:
             self.log.info("SKIP: Project {0} (ID: {1}) found on destination".format(
                 dst_path_with_namespace, dst_pid))
-        else:
+        elif not dry_run:
+            filename = get_export_filename_from_namespace_and_name(
+                namespace, name)
             self.log.info("Project {} NOT found on destination. Exporting from source...".format(
                 dst_path_with_namespace))
-            response = self.projects_api.export_project(
-                self.config.source_host, self.config.source_token, pid)
-            if response is None or response.status_code not in (200, 202):
-                self.log.error("Failed to trigger project {0} (ID: {1}) export, with response {2}"
-                               .format(pid, name, response))
-            else:
+            if loc == "filesystem":
                 exported = self.wait_for_export_to_finish(pid, name)
                 if exported:
                     url = "{0}/api/v4/projects/{1}/export/download".format(
                         self.config.source_host, pid)
-                    download_file(
-                        url,
-                        self.config.filesystem_path,
-                        filename=get_export_filename_from_namespace_and_name(
-                            namespace, name),
-                        headers={"PRIVATE-TOKEN": self.config.source_token})
+                    self.log.info("Downloading project {0} (ID: {1}) as {2}".format(
+                        name, pid, filename))
+                    download_file(url, self.config.filesystem_path, filename, headers={
+                        "PRIVATE-TOKEN": self.config.source_token})
+            # TODO: Refactor and sync with other scenarios (#119)
+            elif loc == "filesystem-aws":
+                self.log.error(
+                    "NOTICE: Filesystem-AWS exports are not currently supported")
+                # exported = self.export_thru_fs_aws(pid, name, namespace) if not dry_run else True
+            elif loc == "aws":
+                response = self.export_to_aws(pid, filename)
+                if response is None or response.status_code not in [200, 202]:
+                    self.log.error("Failed to trigger project {0} (ID: {1}) export, with response {2}".format(
+                        pid, name, response))
                 else:
-                    self.log.error(
-                        "Failed to export project {0} (ID: {1})".format(name, pid))
-        return exported
-
-    def export_group_thru_filesystem(self, src_gid, full_path, filename):
-        exported = False
-        full_path_with_parent_namespace = get_full_path_with_parent_namespace(
-            full_path)
-        self.log.info("Searching on destination for group {}".format(
-            full_path_with_parent_namespace))
-        dst_gid = self.groups.find_group_id_by_path(
-            self.config.destination_host,
-            self.config.destination_token,
-            full_path_with_parent_namespace)
-        if dst_gid:
-            self.log.info("SKIP: Group {0} with source ID {1} and destination ID {2} found on destination".format(
-                full_path_with_parent_namespace, src_gid, dst_gid))
+                    export_status = self.wait_for_export_to_finish(pid, name)
+                    # If export status is unknown lookup the file on AWS
+                    # Could be misleading, since it assumes the file is complete
+                    exported = export_status or self.aws.is_export_on_aws(
+                        filename)
         else:
-            self.log.info("Group {0} (Source ID: {1}) NOT found on destination.".format(
-                full_path_with_parent_namespace, src_gid))
-            response = self.groups_api.export_group(
-                self.config.source_host, self.config.source_token, src_gid)
-            if response is None or response.status_code not in [200, 202]:
-                self.log.error("Failed to trigger group {0} (ID: {1}) export, with response '{2}'"
-                               .format(full_path, src_gid, response))
-            else:
-                # NOTE: Export status API endpoint not yet available
-                # exported = self.wait_for_export_to_finish(
-                #     src_gid, full_path, is_project=False) or True
-                exported = self.wait_for_group_download(src_gid)
-                url = "{0}/api/v4/groups/{1}/export/download".format(
-                    self.config.source_host, src_gid)
-                self.log.info("Downloading group {0} (source ID: {1}) as {2}".format(
-                    full_path, src_gid, filename))
-                download_file(url, self.config.filesystem_path, filename=filename, headers={
-                              "PRIVATE-TOKEN": self.config.source_token})
+            return True
         return exported
 
     def export_thru_fs_aws(self, pid, name, namespace):
@@ -609,17 +617,10 @@ class ImportExportClient(BaseClass):
 
         return success
 
-    def export_group_thru_aws(self, gid, full_path, filename):
-        """
-        Called from migrate to kick-off an export process. Calls export_to_aws.
-
-        :param name: Entity name. This is the name of the group itself
-        :param namespace: Namespace where the entity lives. It's direct parent.
-        :param full_parent_namespace: Complete path of the parent namespace from source. So, if this group is group3
-                                        in the structure `group1/group2/group3`, full_parent_namespace is `group1/group2`
-        """
+    def export_group(self, src_gid, full_path, filename, dry_run=True):
+        loc = self.config.location.lower()
+        is_loc_supported(loc)
         exported = False
-
         full_path_with_parent_namespace = get_full_path_with_parent_namespace(
             full_path)
         self.log.info("Searching on destination for group {}".format(
@@ -629,59 +630,44 @@ class ImportExportClient(BaseClass):
             self.config.destination_token,
             full_path_with_parent_namespace)
         if dst_gid:
-            self.log.info("SKIP: Group {0} with source ID {1} and destination group ID {2} found on destination".format(
-                full_path_with_parent_namespace, gid, dst_gid))
+            self.log.info("SKIP: Group {0} with source ID {1} and destination ID {2} found on destination".format(
+                full_path_with_parent_namespace, src_gid, dst_gid))
+        elif not dry_run:
+            self.log.info("Group {0} (ID: {1}) NOT found on destination.".format(
+                full_path_with_parent_namespace, src_gid))
+            if loc == "filesystem":
+                # NOTE: Export status API endpoint not yet available
+                # exported = self.wait_for_export_to_finish(
+                #     src_gid, full_path, is_project=False) or True
+                exported = self.wait_for_group_download(src_gid)
+                if exported:
+                    url = "{0}/api/v4/groups/{1}/export/download".format(
+                        self.config.source_host, src_gid)
+                    self.log.info("Downloading group {0} (ID: {1}) as {2}".format(
+                        full_path, src_gid, filename))
+                    download_file(url, self.config.filesystem_path, filename=filename, headers={
+                        "PRIVATE-TOKEN": self.config.source_token})
+            # TODO: Refactor and sync with other scenarios (#119)
+            elif loc == "filesystem-aws":
+                self.log.error(
+                    "NOTICE: Filesystem-AWS exports are not currently supported")
+            # NOTE: Group export does not yet support AWS (S3) user attributes
+            elif loc == "aws":
+                self.log.error(
+                    "NOTICE: AWS group exports are not currently supported")
+                # response = self.export_to_aws(src_gid, filename, is_project=False)
+                # if response is None or response.status_code not in [200, 202]:
+                #     self.log.error("Failed to trigger group {0} (ID: {1}) export, with response '{2}'"
+                #                    .format(full_path, src_gid, response))
+                # else:
+                #     # NOTE: Export status API endpoint not yet available
+                #     export_status = self.wait_for_export_to_finish(
+                #         src_gid, full_path, is_project=False)
+
+                #     # If export status is unknown lookup the file on AWS
+                #     # Could be misleading, since it assumes the file is complete
+                #     exported = export_status or self.aws.is_export_on_aws(
+                #         filename)
         else:
-            # Generating the presigned URL later down the line does the quote_plus work, and the AWS functions to generate
-            # expect an *un*quote_plus string (even through S3 itself returns a quote_plus style string)
-            # Also, the CLI commands expect no + and no encoding (for is_export_on_aws). So, leave the filename as the full path
-            # Do that export thing
-            self.log.info("Group {0} (Source ID: {1}) NOT found on destination.".format(
-                full_path_with_parent_namespace, gid))
-            # Passing full_path_with_parent_namespace with no +, no encoding, not a quoted string
-            # NOTE: upload parameter not yet available for export
-            response = self.export_to_aws(gid, filename, False)
-            if response is not None and response.status_code == 202:
-                # TODO: We're going to need to see what the status looks like
-                # NOTE: Export status API endpoint not available yet
-                export_status = self.wait_for_export_to_finish(
-                    gid, full_path, is_project=False)
-
-                # If export status is unknown lookup the file on AWS
-                # Could be misleading, since it assumes the file is complete
-                exported = export_status or self.aws.is_export_on_aws(filename)
-        return exported
-
-    def export_project_thru_aws(self, project):
-        """
-        Called from migrate to kick-off an export process. This is project specific at this time. Calls export_to_aws.
-
-        :param name: Project JSON
-        """
-        exported = False
-        name = project["name"]
-        namespace = project["namespace"]
-        pid = project["id"]
-        dst_path_with_namespace = get_dst_path_with_namespace(project)
-        filename = get_export_filename_from_namespace_and_name(
-            namespace, name)
-        self.log.info("Searching on destination for project {0}".format(
-            dst_path_with_namespace))
-        dst_pid = self.projects.find_project_by_path(
-            self.config.destination_host, self.config.destination_token, dst_path_with_namespace)
-        if not dst_pid:
-            self.log.info("Project {0} NOT found on destination. Exporting from source...".format(
-                dst_path_with_namespace))
-            response = self.export_to_aws(pid, filename, True)
-            if response is not None and response.status_code == 202:
-                export_status = self.wait_for_export_to_finish(pid, name)
-                # If export status is unknown lookup the file on AWS
-                # Could be misleading, since it assumes the file is complete
-                exported = export_status or self.aws.is_export_on_aws(filename)
-            else:
-                self.log.error("Failed to export project {0} (ID: {1}), with response {2}".format(
-                    name, pid, response))
-        else:
-            self.log.info("SKIP: Project {0} (ID: {1}) found on destination".format(
-                dst_path_with_namespace, dst_pid))
+            return True
         return exported

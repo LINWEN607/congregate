@@ -77,8 +77,17 @@ def generate_config():
                    raw_input("Source instance Host: "))
         config.set("SOURCE", "src_access_token", obfuscate(
             "Source instance GitLab access token  (Settings -> Access tokens): "))
+        source_group = raw_input("Are you migrating from a single group to a new instance? (e.g. gitlab.com to self-managed) (Default: No) ")
+        if source_group.lower() in ["yes","y"]:
+            config.set("SOURCE", "src_parent_group_id", raw_input(
+                "Source group ID: "))
+            src_group = groups.get_group(config.getint("SOURCE", "src_parent_group_id"),
+                config.get("SOURCE",
+                        "src_hostname"),
+                deobfuscate(config.get("SOURCE", "src_access_token"))).json()
+            config.set("SOURCE", "src_parent_group_path", src_group["full_path"])
         migrating_registries = raw_input("Are you migrating any container registries? (Default: No)")
-        if migrating_registries.lower() == "yes" or migrating_registries.lower() == "y":
+        if migrating_registries.lower() in ["yes","y"]:
             migrating_registries = True
             config.set("SOURCE", "src_registry_url", raw_input(
                 "Source instance Container Registry URL: "))
@@ -95,20 +104,20 @@ def generate_config():
                 "Destination instance Container Registry URL: "))
             test_registries(deobfuscate(config.get("DESTINATION", "dstn_access_token")), config.get(
                 "DESTINATION", "dstn_registry_url"), migration_user)
-        config.set("DESTINATION", "parent_group_id",
+        config.set("DESTINATION", "dstn_parent_group_id",
                    raw_input("Migrating to a parent group (e.g. gitlab.com)? Parent group ID (Group -> Settings -> General): "))
 
-        if config.has_option("DESTINATION", "parent_group_id") and config.get("DESTINATION", "parent_group_id"):
-            group = groups.get_group(config.getint("DESTINATION", "parent_group_id"),
+        if config.has_option("DESTINATION", "dstn_parent_group_id") and config.get("DESTINATION", "dstn_parent_group_id"):
+            group = groups.get_group(config.getint("DESTINATION", "dstn_parent_group_id"),
                                      config.get("DESTINATION",
                                                 "dstn_hostname"),
                                      deobfuscate(config.get("DESTINATION", "dstn_access_token"))).json()
             if group.get("full_path", None) is not None:
-                config.set("DESTINATION", "parent_group_path",
+                config.set("DESTINATION", "dstn_parent_group_path",
                            group["full_path"])
             else:
-                config.set("DESTINATION", "parent_group_path", "")
-                print("WARNING: Destination group not found. Please enter 'parent_group_id' and 'parent_group_path' manually (in {})".format(
+                config.set("DESTINATION", "dstn_parent_group_path", "")
+                print("WARNING: Destination group not found. Please enter 'dstn_parent_group_id' and 'dstn_parent_group_path' manually (in {})".format(
                     config_path))
             config.set("DESTINATION", "group_sso_provider",
                        raw_input("Migrating to a group with SAML SSO enabled? Input SSO provider (auth0, adfs, etc.): "))

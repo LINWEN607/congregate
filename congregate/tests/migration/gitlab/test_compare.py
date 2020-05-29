@@ -11,7 +11,7 @@ groups = MockGroupsApi()
 users = MockUsersApi()
 
 @mock.patch.object(CompareClient, "load_group_data")
-@mock.patch.object(ConfigurationValidator, 'parent_id', new_callable=mock.PropertyMock)
+@mock.patch.object(ConfigurationValidator, 'dstn_parent_id', new_callable=mock.PropertyMock)
 def test_compare_groups(parent_id, group_data):
     parent_id.return_value = None
     source_groups = groups.get_all_groups_list()
@@ -117,7 +117,7 @@ def test_generate_matching_diff():
 #     actual = compare.compare_groups(rewritten_source_groups, rewritten_destination_groups)
 #     assert sorted(expected) == sorted(actual)
 
-@mock.patch.object(ConfigurationValidator, 'parent_id', new_callable=mock.PropertyMock)
+@mock.patch.object(ConfigurationValidator, 'dstn_parent_id', new_callable=mock.PropertyMock)
 def test_compare_members_different_usernames_same_ids(parent_id):
     parent_id.return_value = None
     source_groups = groups.get_all_groups_list()

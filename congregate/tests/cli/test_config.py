@@ -77,13 +77,14 @@ class ConfigTests(unittest.TestCase):
             "3",  # max_import_retries,
             "gitlab",  # external_src_url
             "source_hostname",  # source host
+            "no",
             "yes", # migrating registries
             # "source_access_token", # source token
             "source_registry_url",    # source registry url
             "3600",  # max_export_wait_time
             "destination_registry_url",    # destination registry url
             "0",  # destination parent group id
-            # "parent_group_path",  # destination parent group full path
+            # "dstn_parent_group_path",  # destination parent group full path
             "group_sso_provider",  # SSO provider
             "username_suffix",  # username suffix
             "No",   # mirror
@@ -153,13 +154,14 @@ class ConfigTests(unittest.TestCase):
             "1",  # max_import_retries,
             "gitlab",  # external_src_url
             "source_hostname",  # source host
+            "no",
             "yes", # migrating registries
             # "source_access_token", # source token
             "source_registry_url",    # source registry url
             "1200",  # max_export_wait_time
             "destination_registry_url",    # destination registry url
             "0",  # destination parent group id
-            # "parent_group_path",  # destination parent group full path
+            # "dstn_parent_group_path",  # destination parent group full path
             "group_sso_provider",  # SSO provider
             "_",  # username suffix
             "Yes",   # mirror
@@ -226,13 +228,14 @@ class ConfigTests(unittest.TestCase):
             "3",  # max_import_retries,
             "gitlab",  # external_src_url
             "source_hostname",  # source host
+            "no",
             "yes", # migrating registries
             # "source_access_token", # source token
             "source_registry_url",    # source registry url
             "3600",  # max_export_wait_time
             "destination_registry_url",    # destination registry url
             "0",  # destination parent group id
-            # "parent_group_path",  # destination parent group full path
+            # "dstn_parent_group_path",  # destination parent group full path
             "group_sso_provider",  # SSO provider
             "username_suffix",  # username suffix
             "Yes",   # mirror
@@ -291,8 +294,8 @@ class ConfigTests(unittest.TestCase):
             "project_suffix":"False",\
             "max_import_retries":"3",\
             "dstn_registry_url":"destination_registry_url",\
-            "parent_group_id":"1",\
-            "parent_group_path":"destination_group_full_path",\
+            "dstn_parent_group_id":"1",\
+            "dstn_parent_group_path":"destination_group_full_path",\
             "group_sso_provider":"",\
             "username_suffix":"local",\
             "mirror_username":"",\
@@ -334,8 +337,8 @@ class ConfigTests(unittest.TestCase):
             "project_suffix":"False",\
             "max_import_retries":"3",\
             "dstn_registry_url":"destination_registry_url",\
-            "parent_group_id":"0",\
-            "parent_group_path":"destination_group_full_path",\
+            "dstn_parent_group_id":"0",\
+            "dstn_parent_group_path":"destination_group_full_path",\
             "group_sso_provider":"group_sso_provider",\
             "username_suffix":"username_suffix",\
             "mirror_username":"",\

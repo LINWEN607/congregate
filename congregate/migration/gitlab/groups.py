@@ -56,13 +56,19 @@ class GroupsClient(BaseClass):
             prefix = location
 
         if not top_level_group:
-            groups = list(self.groups_api.get_all_groups(
-                host, token))
+            if self.config.src_parent_group_path:
+                groups = list(self.groups_api.get_all_subgroups(
+                    self.config.src_parent_id, host, token))
+                groups.append(self.groups_api.get_group(
+                    self.config.src_parent_id, host, token).json())
+            else:
+                groups = list(self.groups_api.get_all_groups(
+                    host, token))
         else:
-            if self.config.parent_id is not None:
-                groups = [self.groups_api.get_group(self.config.parent_id, self.config.destination_host,
+            if self.config.dstn_parent_id is not None:
+                groups = [self.groups_api.get_group(self.config.dstn_parent_id, self.config.destination_host,
                                                     self.config.destination_token).json()]
-                prefix += str(self.config.parent_id)
+                prefix += str(self.config.dstn_parent_id)
                 print groups
             else:
                 self.log.info("No parent ID found")
@@ -113,14 +119,10 @@ class GroupsClient(BaseClass):
             json.dump(remove_dupes(staged_groups), f, indent=4)
 
     def traverse_staging(self, gid, group_dict, staged_groups):
-        if group_dict.get(gid, None) is not None:
+        if group_dict.get(gid, None):
             g = group_dict[gid]
-            if is_top_level_group(g):
-                self.log.info(
-                    "Staging top-level group {0} (ID: {1})".format(g["full_path"], g["id"]))
-            else:
-                self.log.info(
-                    "Staging sub-group {0} (ID: {1})".format(g["full_path"], g["id"]))
+            self.log.info("Staging {0} {1} (ID: {2})".format(
+                "top-level group" if is_top_level_group(g) else "sub-group", g["full_path"], g["id"]))
             staged_groups.append(g)
 
     def is_group_non_empty(self, group):
@@ -180,7 +182,7 @@ class GroupsClient(BaseClass):
         groups_to_change = []
         transient_list = []
         parent_group = [self.groups_api.get_group(
-            self.config.parent_id,
+            self.config.dstn_parent_id,
             self.config.destination_host,
             self.config.destination_token).json()]
         self.traverse_groups(
@@ -267,7 +269,8 @@ class GroupsClient(BaseClass):
         return None
 
     def find_group_id_by_path(self, host, token, full_name_with_parent_namespace):
-        group = self.find_group_by_path(host, token, full_name_with_parent_namespace)
+        group = self.find_group_by_path(
+            host, token, full_name_with_parent_namespace)
         if group is not None:
             return group.get("id", None)
         return None

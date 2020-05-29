@@ -10,17 +10,17 @@ from congregate.helpers.seed.generate_token import token_generator
 from congregate.helpers.seed.generator import SeedDataGenerator
 
 
-@pytest.mark.e2e_setup
+@pytest.mark.e2e_setup_2
 class MigrationEndToEndTestSetup(unittest.TestCase):
     def setUp(self):
         self.t = token_generator()
-        self.generate_default_config_with_tokens()
+        self.generate_single_group_config_with_tokens()
         self.s = SeedDataGenerator()
 
     def test_seed_data(self):
         self.s.generate_seed_data(dry_run=False)
 
-    def generate_default_config_with_tokens(self):
+    def generate_single_group_config_with_tokens(self):
         print "Generating Destination Token"
         destination_token = self.t.generate_token("destination_token", "2020-08-27", url=os.getenv(
             "GITLAB_DEST"), username="root", pword=uuid4().hex)  # Destination access token
@@ -37,7 +37,8 @@ class MigrationEndToEndTestSetup(unittest.TestCase):
             "3",  # max_import_retries,
             "gitlab",  # external_src_url
             os.getenv("GITLAB_SRC"),  # source host
-            "no",  # single group migration
+            "yes",  # single group migration
+            "2",  # Single group
             "yes",  # migrating registries
             # self.t.generate_token("source_token", "2020-08-27", url=os.getenv("GITLAB_SRC"), username="root", pword=uuid4().hex), # source token
             os.getenv("GITLAB_SRC_REG_URL"),  # source registry url

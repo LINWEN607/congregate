@@ -120,4 +120,4 @@ class GroupDiffClient(BaseDiffClient):
         return group_diff
 
     def generate_group_diff(self, group, endpoint, **kwargs):
-        return self.generate_diff(group, "full_path", endpoint, parent_group=self.config.parent_group_path, **kwargs)
+        return self.generate_diff(group, "full_path", endpoint, parent_group=self.config.dstn_parent_group_path, **kwargs)

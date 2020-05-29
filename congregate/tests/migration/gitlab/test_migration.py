@@ -22,48 +22,49 @@ class MigrationEndToEndTest(unittest.TestCase):
     @classmethod
     def tearDownClass(self):
         rollback(dry_run=False, hard_delete=True)
-        sleep(self.b.config.max_export_wait_time)
+        # Allow users/groups/projects to fully delete
+        sleep(self.b.config.importexport_wait * 5)
         rollback_diff()
 
     def test_user_migration_diff(self):
         user_diff = UserDiffClient(
-            "/data/user_migration_results.json")
+            "/data/user_migration_results.json", staged=True)
         diff_report = user_diff.generate_diff_report()
         user_diff.generate_html_report(
             diff_report, "/data/user_migration_results.html")
-        self.assertGreater(
+        self.assertGreaterEqual(
             diff_report["user_migration_results"]["overall_accuracy"], 0.90)
 
     def test_group_migration_diff(self):
         group_diff = GroupDiffClient(
-            "/data/group_migration_results.json")
+            "/data/group_migration_results.json", staged=True)
         diff_report = group_diff.generate_diff_report()
         group_diff.generate_html_report(
             diff_report, "/data/group_migration_results.html")
-        self.assertGreater(
+        self.assertGreaterEqual(
             diff_report["group_migration_results"]["overall_accuracy"], 0.90)
 
     def test_project_migration_diff(self):
         project_diff = ProjectDiffClient(
-            "/data/project_migration_results.json")
+            "/data/project_migration_results.json", staged=True)
         diff_report = project_diff.generate_diff_report()
         project_diff.generate_html_report(
             diff_report, "/data/project_migration_results.html")
-        self.assertGreater(
+        self.assertGreaterEqual(
             diff_report["project_migration_results"]["overall_accuracy"], 0.90)
 
 
 def rollback_diff():
     diff_report = {}
     base_diff = BaseDiffClient()
-    user_diff = UserDiffClient(
-        "/data/user_migration_results.json", rollback=True)
-    diff_report["user_diff"] = user_diff.generate_diff_report()
-    group_diff = GroupDiffClient(
-        "/data/group_migration_results.json", rollback=True)
-    diff_report["group_diff"] = group_diff.generate_diff_report()
     project_diff = ProjectDiffClient(
-        "/data/project_migration_results.json", rollback=True)
+        "/data/project_migration_results.json", staged=True, rollback=True)
     diff_report["project_diff"] = project_diff.generate_diff_report()
+    group_diff = GroupDiffClient(
+        "/data/group_migration_results.json", staged=True, rollback=True)
+    diff_report["group_diff"] = group_diff.generate_diff_report()
+    user_diff = UserDiffClient(
+        "/data/user_migration_results.json", staged=True, rollback=True)
+    diff_report["user_diff"] = user_diff.generate_diff_report()
     base_diff.generate_html_report(
         diff_report, "/data/migration_rollback_results.html")

@@ -12,14 +12,13 @@ from congregate.helpers.base_class import BaseClass
 from congregate.migration.gitlab.api.projects import ProjectsApi
 
 projects_api = ProjectsApi()
-existing_parent_ids = []
 b = BaseClass()
 
 # TODO: Break down into separate staging areas
 # Stage users, groups and projects
 
 
-def stage_projects(projects_to_stage, dry_run=True):
+def stage_projects(projects_to_stage, dry_run=True, skip_users=False):
     """
         Stage all the projects from the source instance
 
@@ -29,7 +28,8 @@ def stage_projects(projects_to_stage, dry_run=True):
     staged_projects, staged_users, staged_groups = build_staging_data(
         projects_to_stage, dry_run)
     if not dry_run:
-        write_staging_files(staged_projects, staged_users, staged_groups)
+        write_staging_files(staged_projects, staged_users,
+                            staged_groups, skip_users=skip_users)
 
 
 def build_staging_data(projects_to_stage, dry_run=True):
@@ -69,6 +69,7 @@ def build_staging_data(projects_to_stage, dry_run=True):
 
     if not projects_to_stage[0] == "":
         if projects_to_stage[0] == "all" or projects_to_stage[0] == ".":
+            # Stage ALL projects
             for i, _ in enumerate(projects):
                 obj = get_project_metadata(projects[i])
 
@@ -78,23 +79,16 @@ def build_staging_data(projects_to_stage, dry_run=True):
                     append_member_to_members_list(
                         rewritten_users, staged_users, members, member)
 
-                # if projects[i]["namespace"]["kind"] == "group":
-                #     group_to_stage = projects[i]["namespace"]["id"]
-                #     staged_groups.append(rewritten_groups[group_to_stage])
-
-                for g in groups:
-                    if is_top_level_group(g):
-                        b.log.info("Staging top-level group {0} (ID: {1})".format(
-                            g["full_path"], g["id"]))
-                    else:
-                        b.log.info(
-                            "Staging sub-group {0} (ID: {1})".format(g["full_path"], g["id"]))
-                    staged_groups.append(g)
-
                 obj["members"] = members
                 staging.append(obj)
 
-            # Stage ALL users in the instance
+            # Stage ALL groups
+            for g in groups:
+                b.log.info("Staging {0} {1} (ID: {2})".format(
+                    "top-level group" if is_top_level_group(g) else "sub-group", g["full_path"], g["id"]))
+                staged_groups.append(g)
+
+            # Stage ALL users
             for user in users:
                 staged_users.append(user)
         elif re.search(r"\d+-\d+", projects_to_stage[0]) is not None:
@@ -114,12 +108,6 @@ def build_staging_data(projects_to_stage, dry_run=True):
 
                 if projects[0]["namespace"]["kind"] == "group":
                     group_to_stage = projects[0]["namespace"]["id"]
-                    if rewritten_groups[group_to_stage]["parent_id"] is None:
-                        if b.config.parent_id is not None:
-                            rewritten_groups[group_to_stage]["parent_id"] = b.config.parent_id
-                    else:
-                        existing_parent_ids.append(
-                            rewritten_groups[group_to_stage]["id"])
                     staged_groups.append(rewritten_groups[group_to_stage])
                     if "child_ids" in rewritten_groups[group_to_stage]:
                         for sub in rewritten_groups[group_to_stage]["child_ids"]:
@@ -162,12 +150,6 @@ def build_staging_data(projects_to_stage, dry_run=True):
 
                 if project["namespace"]["kind"] == "group":
                     group_to_stage = project["namespace"]["id"]
-                    if rewritten_groups[group_to_stage]["parent_id"] is None:
-                        if b.config.parent_id is not None:
-                            rewritten_groups[group_to_stage]["parent_id"] = b.config.parent_id
-                    else:
-                        existing_parent_ids.append(
-                            rewritten_groups[group_to_stage]["id"])
                     staged_groups.append(rewritten_groups[group_to_stage])
                     if "child_ids" in rewritten_groups[group_to_stage]:
                         for sub in rewritten_groups[group_to_stage]["child_ids"]:
@@ -225,7 +207,7 @@ def open_users_file():
     return users
 
 
-def write_staging_files(staging, staged_users, staged_groups):
+def write_staging_files(staging, staged_users, staged_groups, skip_users=False):
     """
         Write all staged projects, users and groups objects into JSON files
 
@@ -233,19 +215,13 @@ def write_staging_files(staging, staged_users, staged_groups):
         :param: staged_users:(dict) staged users
         :param: staged_groups: (dict) staged groups
     """
-    for group in staged_groups:
-        if group["parent_id"] not in existing_parent_ids:
-            group["parent_id"] = b.config.parent_id
-    if (len(staging) > 0):
-        with open("%s/data/stage.json" % b.app_path, "wb") as f:
-            f.write(json.dumps(staging, indent=4))
+    with open("%s/data/stage.json" % b.app_path, "wb") as f:
+        f.write(json.dumps(staging, indent=4))
+    with open("%s/data/staged_groups.json" % b.app_path, "wb") as f:
+        f.write(json.dumps(staged_groups, indent=4))
+    if not skip_users:
         with open("%s/data/staged_users.json" % b.app_path, "wb") as f:
             f.write(json.dumps(staged_users, indent=4))
-        with open("%s/data/staged_groups.json" % b.app_path, "wb") as f:
-            f.write(json.dumps(staged_groups, indent=4))
-    else:
-        with open("%s/data/stage.json" % b.app_path, "wb") as f:
-            f.write("[]")
 
 
 def append_member_to_members_list(

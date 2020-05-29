@@ -21,7 +21,9 @@ get_ami_id () {
     poetry run aws ec2 describe-images --filters "Name=name,Values=GitLab Seed Image-$(get_latest_version)" | jq -r '.Images[0].ImageId'
 }
 
-AMI_ID=$(get_ami_id)
+# AMI_ID=$(get_ami_id)
+# GitLab Seed Image-12.10.0-pre-f175c3a6c8a
+AMI_ID="ami-0280aa248a44ecf21"
 
 echo "Spinning up instance"
 INSTANCE_ID=$(spin_up_instance | jq '.Instances[0].InstanceId' | tr -d '\n' | sed -e 's/^"//' -e 's/"$//')

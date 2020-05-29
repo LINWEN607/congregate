@@ -13,7 +13,7 @@ def test_enabled(enabled):
     assert reg.are_enabled(1, 2) == (False, True)
     assert reg.are_enabled(1, 2) == (False, False)
 
-@mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.parent_group_path', new_callable=mock.PropertyMock)
+@mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.dstn_parent_group_path', new_callable=mock.PropertyMock)
 @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.destination_registry', new_callable=mock.PropertyMock)
 def test_new_registry_url(registry, path):
     registry.return_value = "registry.test.com"
@@ -21,7 +21,7 @@ def test_new_registry_url(registry, path):
     suffix = "test_project"
     assert reg.generate_destination_registry_url(suffix).lower() == "registry.test.com/test_project"
 
-@mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.parent_group_path', new_callable=mock.PropertyMock)
+@mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.dstn_parent_group_path', new_callable=mock.PropertyMock)
 @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.destination_registry', new_callable=mock.PropertyMock)
 def test_new_registry_url_with_path(registry, path):
     registry.return_value = "registry.test.com"
@@ -29,7 +29,7 @@ def test_new_registry_url_with_path(registry, path):
     suffix = "test_project"
     assert reg.generate_destination_registry_url(suffix).lower() == "registry.test.com/organization/test_project"
 
-@mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.parent_group_path', new_callable=mock.PropertyMock)
+@mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.dstn_parent_group_path', new_callable=mock.PropertyMock)
 @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.destination_registry', new_callable=mock.PropertyMock)
 def test_new_registry_url_with_path_uppercase(registry, path):
     registry.return_value = "registry.test.com"
