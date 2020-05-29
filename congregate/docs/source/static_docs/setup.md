@@ -28,7 +28,7 @@ poetry --version
 poetry install
 
 # install UI dependencies
-poetry run dnd install
+npm install
 
 # create congregate path
 CONGREGATE_PATH=$(pwd)
@@ -76,7 +76,7 @@ poetry shell
 
 # install ui dependencies
 cd /path/to/congregate
-poetry run dnd install
+npm install
 ```
 
 ### Installing Congregate (end-user)

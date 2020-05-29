@@ -8,7 +8,7 @@ WORKDIR /opt/congregate
 # Copy supervisor configuration
 ADD congregate congregate
 ADD frontend frontend
-COPY congregate.sh pyproject.toml poetry.lock README.md package.json vue.config.js ./
+COPY congregate.sh pyproject.toml poetry.lock README.md package.json vue.config.js babel.config.js ./
 
 # Installing some basic utilities and updating apt
 RUN apt-get update && \
