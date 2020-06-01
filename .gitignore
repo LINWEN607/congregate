@@ -24,3 +24,5 @@ congregate/tests/cli/data/congregate.conf
 congregate.egg-info/*
 dist/*
 runbooks/*.html
+node_modules
+docker/bitbucket/bitbucket.properties-populated
