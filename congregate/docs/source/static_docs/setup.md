@@ -32,6 +32,7 @@ poetry install
 
 # install NVM for Node Version Management
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.35.3/install.sh | bash
+nvm install 11.13.0
 nvm use 11.13.0
 
 # install UI dependencies
@@ -92,6 +93,7 @@ poetry shell
 
 # Install NVM for managing node versions
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.35.3/install.sh | bash
+nvm install 11.13.0
 nvm use 11.13.0
 
 # Install ui dependencies
