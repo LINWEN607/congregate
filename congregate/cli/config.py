@@ -77,17 +77,20 @@ def generate_config():
                    raw_input("Source instance Host: "))
         config.set("SOURCE", "src_access_token", obfuscate(
             "Source instance GitLab access token  (Settings -> Access tokens): "))
-        source_group = raw_input("Are you migrating from a single group to a new instance? (e.g. gitlab.com to self-managed) (Default: No) ")
-        if source_group.lower() in ["yes","y"]:
+        source_group = raw_input(
+            "Are you migrating from a single group to a new instance? (e.g. gitlab.com to self-managed) (Default: No) ")
+        if source_group.lower() in ["yes", "y"]:
             config.set("SOURCE", "src_parent_group_id", raw_input(
                 "Source group ID: "))
             src_group = groups.get_group(config.getint("SOURCE", "src_parent_group_id"),
-                config.get("SOURCE",
-                        "src_hostname"),
-                deobfuscate(config.get("SOURCE", "src_access_token"))).json()
-            config.set("SOURCE", "src_parent_group_path", src_group["full_path"])
-        migrating_registries = raw_input("Are you migrating any container registries? (Default: No)")
-        if migrating_registries.lower() in ["yes","y"]:
+                                         config.get("SOURCE",
+                                                    "src_hostname"),
+                                         deobfuscate(config.get("SOURCE", "src_access_token"))).json()
+            config.set("SOURCE", "src_parent_group_path",
+                       src_group["full_path"])
+        migrating_registries = raw_input(
+            "Are you migrating any container registries? (Default: No)")
+        if migrating_registries.lower() in ["yes", "y"]:
             migrating_registries = True
             config.set("SOURCE", "src_registry_url", raw_input(
                 "Source instance Container Registry URL: "))
@@ -194,6 +197,8 @@ def generate_config():
         "Wait time (in seconds) for project export/import status (default: 10): ")
     config.set("APP", "export_import_wait_time",
                export_import_wait_time if export_import_wait_time else "10")
+    config.set("APP", "slack_url", raw_input(
+        "Slack URL for sending alerts (optional): "))
 
     write_to_file(config)
 

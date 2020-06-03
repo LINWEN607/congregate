@@ -58,7 +58,8 @@ class MigrationEndToEndTestSetup(unittest.TestCase):
             "False",  # keep_blocked_users
             "True",  # password reset email
             "False",  # randomized password
-            "5"  # import wait time
+            "5",  # import wait time
+            ""  # slack_url
         ]
         tokens = [
             destination_token,

@@ -36,7 +36,8 @@ class ConfigTests(unittest.TestCase):
             "False",    # keep_blocked_users
             "True",  # password reset email
             "False",    # randomized password
-            "30"   # import wait time
+            "30",   # import wait time
+            "https://slack.url"   # slack_url
         ]
 
         g = input_generator(values)
@@ -78,7 +79,7 @@ class ConfigTests(unittest.TestCase):
             "gitlab",  # external_src_url
             "source_hostname",  # source host
             "no",
-            "yes", # migrating registries
+            "yes",  # migrating registries
             # "source_access_token", # source token
             "source_registry_url",    # source registry url
             "3600",  # max_export_wait_time
@@ -98,7 +99,8 @@ class ConfigTests(unittest.TestCase):
             "False",    # keep_blocked_users
             "True",  # password reset email
             "False",    # randomized password
-            "30"   # import wait time
+            "30",   # import wait time
+            "https://slack.url"   # slack_url
         ]
 
         g = input_generator(values)
@@ -155,7 +157,7 @@ class ConfigTests(unittest.TestCase):
             "gitlab",  # external_src_url
             "source_hostname",  # source host
             "no",
-            "yes", # migrating registries
+            "yes",  # migrating registries
             # "source_access_token", # source token
             "source_registry_url",    # source registry url
             "1200",  # max_export_wait_time
@@ -175,7 +177,8 @@ class ConfigTests(unittest.TestCase):
             "True",    # keep_blocked_users
             "False",  # password reset email
             "True",    # randomized password
-            "60"   # import wait time
+            "60",   # import wait time
+            "https://slack.url"   # slack_url
         ]
 
         g = input_generator(values)
@@ -229,7 +232,7 @@ class ConfigTests(unittest.TestCase):
             "gitlab",  # external_src_url
             "source_hostname",  # source host
             "no",
-            "yes", # migrating registries
+            "yes",  # migrating registries
             # "source_access_token", # source token
             "source_registry_url",    # source registry url
             "3600",  # max_export_wait_time
@@ -249,7 +252,8 @@ class ConfigTests(unittest.TestCase):
             "False",    # keep_blocked_users
             "True",  # password reset email
             "False",    # randomized password
-            "30"   # import wait time
+            "30",   # import wait time
+            "https://slack.url"   # slack_url
         ]
 
         g = input_generator(values)
@@ -312,7 +316,8 @@ class ConfigTests(unittest.TestCase):
             "keep_blocked_users":"False",\
             "reset_pwd":"False",\
             "force_rand_pwd":"True",\
-            "export_import_wait_time":"30"\
+            "export_import_wait_time":"30",\
+            "slack_url":"https://slack.url"\
         }'
 
         with mock.patch('congregate.cli.config.write_to_file', mock_file):
@@ -355,7 +360,8 @@ class ConfigTests(unittest.TestCase):
             "keep_blocked_users":"False",\
             "reset_pwd":"True",\
             "force_rand_pwd":"False",\
-            "export_import_wait_time":"30"\
+            "export_import_wait_time":"30",\
+            "slack_url":"https://slack.url"\
         }'
 
         with mock.patch('congregate.cli.config.write_to_file', mock_file):
