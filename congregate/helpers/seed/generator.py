@@ -15,8 +15,8 @@ from congregate.migration.gitlab.pushrules import PushRulesClient
 from congregate.migration.gitlab.branches import BranchesClient
 from congregate.migration.gitlab.merge_request_approvals import MergeRequestApprovalsClient
 from congregate.migration.gitlab.registries import RegistryClient
+from congregate.migration.gitlab.keys import KeysClient
 from congregate.migration.mirror import MirrorClient
-from congregate.migration.gitlab.deploy_keys import DeployKeysClient
 
 
 class SeedDataGenerator(BaseClass):
@@ -33,7 +33,7 @@ class SeedDataGenerator(BaseClass):
         self.branches = BranchesClient()
         self.mra = MergeRequestApprovalsClient()
         self.registries = RegistryClient()
-        self.deploy_keys = DeployKeysClient()
+        self.keys = KeysClient()
         super(SeedDataGenerator, self).__init__()
 
     def generate_seed_data(self, dry_run=True):

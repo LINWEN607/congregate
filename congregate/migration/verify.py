@@ -7,7 +7,7 @@ import time
 
 class Verification:
     def __init__(self, project):
-        self.config = conf.ig()
+        self.config = conf.Config()
         self.l = log.myLogger(__name__)
         self.gl = gitlab_repo()
         self.bb = project
@@ -18,7 +18,8 @@ class Verification:
         # assuming initially generated json
         for project_name, project_data in projects.iteritems():
             self.l.logger.info("Comparing data for %s" % project_name)
-            verification_map["results"][project_name] = self.compare_repositories(project_data["metadata"])
+            verification_map["results"][project_name] = self.compare_repositories(
+                project_data["metadata"])
         verification_map["errors"] = self.errors
         return verification_map
 
@@ -70,8 +71,10 @@ class Verification:
                                     gl_time = datetime.datetime.strptime(
                                         matching_bitbucket_sha["committed_date"], "%Y-%m-%dT%H:%M:%S.000Z")
                                 except ValueError, e:
-                                    rewritten_timestamp = matching_bitbucket_sha["committed_date"].replace(" ", "T")
-                                    rewritten_timestamp = sub(r"-\d{2}:\d{2}", "Z", rewritten_timestamp)
+                                    rewritten_timestamp = matching_bitbucket_sha["committed_date"].replace(
+                                        " ", "T")
+                                    rewritten_timestamp = sub(
+                                        r"-\d{2}:\d{2}", "Z", rewritten_timestamp)
                                     gl_time = datetime.datetime.strptime(
                                         rewritten_timestamp, "%Y-%m-%dT%H:%M:%S.000Z")
 
@@ -80,13 +83,15 @@ class Verification:
                                         "GitLab is ahead of Bitbucket on the %s branch" % branch["name"])
                                     verified = True
                                 elif gl_time <= bb_time:
-                                    self.errors.append("GitLab is behind Bitbucket on the %s branch" % branch["name"])
+                                    self.errors.append(
+                                        "GitLab is behind Bitbucket on the %s branch" % branch["name"])
                                     self.l.logger.error(
                                         "GitLab is behind Bitbucket on the %s branch" % branch["name"])
                                     verified = False
                                     break
                             else:
-                                self.errors.append("Cannot find %s/%s/%s in the GitLab repo. The git history may have diverged. Please sync your git history." % (name, branch['name'], sha))
+                                self.errors.append(
+                                    "Cannot find %s/%s/%s in the GitLab repo. The git history may have diverged. Please sync your git history." % (name, branch['name'], sha))
                                 self.l.logger.error(
                                     "Cannot find %s/%s/%s in the GitLab repo. The git history may have diverged. Please sync your git history." % (name, branch['name'], sha))
                                 verified = False
@@ -95,7 +100,8 @@ class Verification:
                             verified = True
 
                 else:
-                    self.errors.append("%s/%s has not yet been migrated" % (name, branch["name"]))
+                    self.errors.append(
+                        "%s/%s has not yet been migrated" % (name, branch["name"]))
                     self.l.logger.error(
                         "%s/%s has not yet been migrated" % (name, branch["name"]))
                     verified = False

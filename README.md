@@ -227,7 +227,7 @@ Usage:
     congregate do-all [--commit]
     congregate do-all-users [--commit]
     congregate do-all-groups-and-projects [--commit]
-    congregate search-for-staged-users [--commit]
+    congregate search-for-staged-users
     congregate update-aws-creds
     congregate add-users-to-parent-group [--commit]
     congregate remove-blocked-users [--commit]
@@ -254,7 +254,7 @@ Usage:
     congregate validate-staged-groups-schema
     congregate validate-staged-projects-schema
     congregate map-users [--commit]
-    congregate generate-diff [--processes=<n>] [--staged]
+    congregate generate-diff [--processes=<n>] [--staged] [--rollback]
     congregate clean [--commit]
     congregate stitch-results [--result-type=<project|group|user>] [--no-of-files=<n>] [--head|--tail]
     congregate obfuscate
@@ -296,7 +296,7 @@ Commands:
     rollback                                Remove staged users/groups/projects on destination.
     ui                                      Deploy UI to port 8000.
     do-all*                                 Configure system, retrieve all projects, users, and groups, stage all information, and commence migration.
-    search-for-staged-users                 Search for staged users on destination based on email and dump to new_users.json and users_not_found.json.
+    search-for-staged-users                 Search for staged users on destination based on email
     update-aws-creds                        Run awscli commands based on the keys stored in the config. Useful for docker updates.
     add-users-to-parent-group               If a parent group is set, all users staged will be added to the parent group.
     remove-blocked-users                    Remove all blocked users from staged projects and groups.
@@ -541,9 +541,9 @@ reach out to a maintainer or create an issue pinging @leopardm or @pprokic
 |                | Avatars                     |                                                                                                                                                                   | :x:                | :white_check_mark: |
 |                | Profile (API)               |                                                                                                                                                                   | :x:                | :white_check_mark: |
 |                | Preferences (API)           |                                                                                                                                                                   | :x:                | :white_check_mark: |
+|                | SSH keys                    |                                                                                                                                                                   | :x:                | :white_check_mark: |
+|                | GPG keys                    |                                                                                                                                                                   | :x:                | :white_check_mark: |
 |                | Secondary emails            |                                                                                                                                                                   | :x:                | :heavy_minus_sign: |
-|                | SSH keys                    |                                                                                                                                                                   | :x:                | :heavy_minus_sign: |
-|                | GPG keys                    |                                                                                                                                                                   | :x:                | :heavy_minus_sign: |
 |                | Account settings            |                                                                                                                                                                   | :x:                | :x:                |
 |                | Applications                |                                                                                                                                                                   | :x:                | :x:                |
 |                | Access Tokens               |                                                                                                                                                                   | :x:                | :x:                |

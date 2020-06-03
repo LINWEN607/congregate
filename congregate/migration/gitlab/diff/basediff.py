@@ -82,7 +82,6 @@ class BaseDiffClient(BaseClass):
                             destination_data)
                     diff = engine.compare_dicts(source_data, destination_data)
                 if source_data:
-                    accuracy = 0
                     if isinstance(source_data, list):
                         if diff:
                             for i, _ in enumerate(source_data):
@@ -97,12 +96,8 @@ class BaseDiffClient(BaseClass):
                     else:
                         accuracy = self.calculate_individual_accuracy(
                             diff, source_data, critical_key, parent_group=parent_group)
-                else:
-                    accuracy = 0
-
                 if bool(list(nested_find("error", diff))) or bool(list(nested_find("message", diff))):
                     accuracy = 0
-
         return {
             "diff": diff,
             "accuracy": accuracy

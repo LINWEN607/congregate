@@ -24,6 +24,7 @@ from congregate.migration.gitlab.importexport import ImportExportClient
 from congregate.migration.gitlab.badges import BadgesClient
 from congregate.migration.gitlab.variables import VariablesClient
 from congregate.migration.gitlab.users import UsersClient
+from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.groups import GroupsClient
 from congregate.migration.gitlab.projects import ProjectsClient
 from congregate.migration.gitlab.api.projects import ProjectsApi
@@ -32,7 +33,7 @@ from congregate.migration.gitlab.branches import BranchesClient
 from congregate.migration.gitlab.merge_request_approvals import MergeRequestApprovalsClient
 from congregate.migration.gitlab.registries import RegistryClient
 from congregate.migration.mirror import MirrorClient
-from congregate.migration.gitlab.deploy_keys import DeployKeysClient
+from congregate.migration.gitlab.keys import KeysClient
 from congregate.migration.gitlab.hooks import HooksClient
 from congregate.migration.gitlab.environments import EnvironmentsClient
 from congregate.migration.bitbucket import client as bitbucket
@@ -44,6 +45,7 @@ mirror = MirrorClient()
 variables = VariablesClient()
 badges = BadgesClient()
 users = UsersClient()
+users_api = UsersApi()
 groups = GroupsClient()
 projects = ProjectsClient()
 projects_api = ProjectsApi()
@@ -51,12 +53,13 @@ pushrules = PushRulesClient()
 branches = BranchesClient()
 mr_approvals = MergeRequestApprovalsClient()
 registries = RegistryClient()
-deploy_keys = DeployKeysClient()
+keys = KeysClient()
 hooks = HooksClient()
 environments = EnvironmentsClient()
 
 _DRY_RUN = True
 _PROCESSES = None
+_ONLY_POST_MIGRATION_INFO = False
 
 
 def migrate(
@@ -96,8 +99,7 @@ def migrate(
         rotate_logs()
 
         # Migrate users
-        if not skip_users:
-            migrate_user_info(start)
+        migrate_user_info(start, skip_users)
 
         # Migrate groups
         migrate_group_info(start, skip_group_export, skip_group_import)
@@ -124,30 +126,79 @@ def are_results(results, var, stage, start):
         exit()
 
 
-def migrate_user_info(start):
-    # Search on destination and remove NOT found users from staged users
-    users.handle_users_not_found(
-        "staged_users", users.search_for_staged_users(_DRY_RUN))
-    staged = users.get_staged_users()
-    if staged:
-        b.log.info("{}Migrating user info".format(get_dry_log(_DRY_RUN)))
-        if not _DRY_RUN:
-            new_users = start_multi_process(
-                users.handle_user_creation, staged, _PROCESSES)
+def migrate_user_info(start, skip_users=False):
+    staged_users = users.get_staged_users()
+    if staged_users:
+        if not skip_users:
+            b.log.info("{}Migrating user info".format(get_dry_log(_DRY_RUN)))
+            staged = users.handle_users_not_found(
+                "staged_users", users.search_for_staged_users()[0], keep=False if _ONLY_POST_MIGRATION_INFO else True)
+            new_users = filter(None, start_multi_process(
+                handle_user_creation, staged, _PROCESSES))
             are_results(new_users, "user", "creation", start)
-            if new_users:
-                formatted_users = {}
-                for n in filter(None, new_users):
-                    formatted_users[n["email"]] = n
-                write_results_to_file(
-                    formatted_users, result_type="user", log=b.log)
-            # Do a dry-run after search
-            users.search_for_staged_users()
+            formatted_users = {}
+            for nu in new_users:
+                formatted_users[nu["email"]] = nu
+            write_results_to_file(
+                formatted_users, result_type="user", log=b.log)
+            if _DRY_RUN:
+                b.log.info(
+                    "DRY-RUN: Outputing various USER migration data to dry_run_user_migration.json")
+                migration_dry_run("user", list(start_multi_process(
+                    users.generate_user_data, staged_users, _PROCESSES)))
         else:
-            b.log.info(
-                "DRY-RUN: Outputing various USER migration data to dry_run_user_migration.json")
-            migration_dry_run("user", list(start_multi_process(
-                users.generate_user_data, staged, _PROCESSES)))
+            b.log.info("SKIP: Assuming staged users are already migrated")
+    else:
+        b.log.info("SKIP: No users to migrate")
+
+
+def handle_user_creation(user):
+    """
+        This is called when importing staged_users.json.
+        Blocked users will be skipped if we do NOT 'keep_blocked_users'.
+
+        :param user: Each iterable called is a user from the staged_users.json file
+        :return:
+    """
+    response = None
+    new_user = None
+    state = user.get("state", None).lower()
+    email = user.get("email", None)
+    old_user = {
+        "email": email,
+        "id": user["id"]
+    }
+    try:
+        if not _ONLY_POST_MIGRATION_INFO:
+            if state == "active" or (state == "blocked" and b.config.keep_blocked_users):
+                user_data = users.generate_user_data(user)
+                b.log.info("{0}Attempting to create user {1}".format(
+                    get_dry_log(_DRY_RUN), email))
+                response = users_api.create_user(
+                    b.config.destination_host, b.config.destination_token, user_data) if not _DRY_RUN else None
+            else:
+                b.log.info("SKIP: Not migrating {0} user:\n{1}".format(
+                    state, json_pretty(user)))
+            if response is not None:
+                # NOTE: Persist 'blocked' user state regardless of domain and creation status.
+                if user_data.get("state", None).lower() == "blocked":
+                    users.block_user(user_data)
+                new_user = users.handle_user_creation_status(
+                    response, user_data)
+        if not _DRY_RUN:
+            # Migrate SSH keys
+            keys.migrate_user_ssh_keys(
+                old_user, new_user if new_user else users.find_user_by_email_comparison_without_id(email))
+            # Migrate GPG keys
+            keys.migrate_user_gpg_keys(
+                old_user, new_user if new_user else users.find_user_by_email_comparison_without_id(email))
+    except RequestException as e:
+        b.log.error(
+            "Failed to create user {0}, with error:\n{1}".format(user_data, e))
+    except Exception as e:
+        b.log.error(
+            "Could not get response text/JSON. Error was {0}".format(e))
+    return new_user
 
 
 def migrate_group_info(start, skip_group_export=False, skip_group_import=False):
@@ -470,8 +521,8 @@ def migrate_single_project_info(project, dst_id):
     results["project_level_mr_approvals"] = mr_approvals.migrate_project_level_mr_approvals(
         src_id, dst_id, path_with_namespace)
 
-    # Deploy Keys (project only)
-    results["deploy_keys"] = deploy_keys.migrate_deploy_keys(
+    # Deploy Keys
+    results["deploy_keys"] = keys.migrate_project_deploy_keys(
         src_id, dst_id, path_with_namespace)
 
     # Container Registries
