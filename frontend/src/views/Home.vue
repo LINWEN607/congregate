@@ -1,17 +1,17 @@
 <template>
   <div class="home">
     <ul class = "summary-list">
-      <li v-on:click="showHideProjects()">Total Projects: {{ projectSummary }}</li>
+      <li class = "summary-title" v-on:click="showHideProjects()">Total Projects: {{ projectSummary }}</li>
       <li v-show="showStagedProjects"><SummaryTable
             v-bind:headers="['id', 'name', 'path']"
             v-bind:data="stagedProjects"
         /></li>
-      <li v-on:click="showHideGroups()">Total Groups: {{ groupSummary }}</li>
+      <li class = "summary-title" v-on:click="showHideGroups()">Total Groups: {{ groupSummary }}</li>
       <li v-show="showStagedGroups"><SummaryTable
             v-bind:headers="['id', 'name', 'path']"
             v-bind:data="stagedGroups"
         /></li>
-      <li v-on:click="showHideUsers()">Total Users: {{ userSummary }}</li>
+      <li class = "summary-title" v-on:click="showHideUsers()">Total Users: {{ userSummary }}</li>
       <li v-show="showStagedUsers"><SummaryTable
             v-bind:headers="['id', 'username', 'email']"
             v-bind:data="stagedUsers"
@@ -81,3 +81,8 @@ export default {
   }
 }
 </script>
+<style scoped lang="less">
+.summary-title {
+  cursor: pointer;
+}
+</style>

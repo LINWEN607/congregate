@@ -48,6 +48,9 @@ yum install python-pip
 # Install with pip
 pip install poetry
 
+# If pip install poetry doesn't work
+curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python
+
 source $HOME/.poetry/env
 poetry --version
 
@@ -91,7 +94,7 @@ The following method may be supported in the future ([issue](https://gitlab.com/
 * **filesystem-aws** - export and download data locally, copy it to an S3 bucket for storage, then delete the data locally. Copy the data back from S3, import it and then delete the local data again.
   * This is used to help work with company policies like restricting presigned URLs or in case any of the source instances involved in the migration cannot connect to an S3 bucket while the destination instance can.
 
-### Install & Use Poetry (required for end-user and development setups)
+### Install & Use Poetry and Node (required for end-user and development setups)
 
 ```bash
 
@@ -113,6 +116,10 @@ poetry install
 # Start-up python virtualenv
 cd <path_to_congregate>
 poetry shell
+
+# Install NVM for managing node versions
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.35.3/install.sh | bash
+nvm use 11.13.0
 
 # Install ui dependencies
 cd <path_to_congregate>
@@ -452,6 +459,12 @@ You may need to refresh VS Code. VS Code will also call this python interpreter 
 
 You can import `pdb` into the class you want to debug through a terminal and add `pdb.set_trace()` around the lines you would like to debug.
 You can read more about using pdb [here](https://fuzzyblog.io/blog/python/2019/09/24/the-python-equivalent-of-byebug-is-pdb-set-trace.html)
+
+#### Issues with installing node dependencies
+
+You can delete the `node_modules` folder and re-run `npm install` if you are experiencing issues with frontend dependencies. 
+If you are still having issues with getting the UI to build correctly after re-installing the dependencies and you don't have any linting issues,
+reach out to a maintainer or create an issue pinging @leopardm or @pprokic
 
 ## Migration features
 

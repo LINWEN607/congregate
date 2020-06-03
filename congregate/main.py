@@ -128,19 +128,19 @@ if __name__ == '__main__':
             os.path.dirname(os.path.abspath(__file__))))
         from congregate.helpers import conf
         from congregate.helpers.logger import myLogger
-        from congregate.helpers.misc_utils import get_congregate_path, clean_data, obfuscate
+        from congregate.helpers.misc_utils import get_congregate_path, clean_data, obfuscate, build_ui
 
     else:
         from .helpers import conf
         from .helpers.logger import myLogger
-        from .helpers.misc_utils import get_congregate_path, clean_data, obfuscate
+        from .helpers.misc_utils import get_congregate_path, clean_data, obfuscate, build_ui
 else:
     import sys
     sys.path.append(os.path.dirname(
         os.path.dirname(os.path.abspath(__file__))))
     from congregate.helpers import conf
     from congregate.helpers.logger import myLogger
-    from congregate.helpers.misc_utils import get_congregate_path, clean_data, obfuscate, stitch_json_results, write_results_to_file
+    from congregate.helpers.misc_utils import get_congregate_path, clean_data, obfuscate, stitch_json_results, write_results_to_file, build_ui
 
 app_path = get_congregate_path()
 
@@ -199,15 +199,7 @@ if __name__ == '__main__':
             if arguments["migrate"]:
                 migrate.migrate(processes=PROCESSES)
             elif arguments["ui"]:
-                # os.environ["FLASK_APP"] = "%s/congregate/ui:app" % app_path
-                if not os.path.exists(app_path + "/dist"):
-                    print "UI not built. Building it before deploying"
-                    build_ui = "npm run build"
-                    subprocess.call(build_ui.split(" "))
-                os.chdir(app_path + "/congregate")
-                # os.environ["PYTHONPATH"] = app_path
-                run_ui = "gunicorn -k gevent -w 4 ui:app --bind=0.0.0.0:8000"
-                subprocess.call(run_ui.split(" "))
+                build_ui(app_path)
             elif arguments["enable-mirroring"]:
                 mirror = MirrorClient()
                 mirror.enable_mirroring(dry_run=DRY_RUN)
@@ -267,15 +259,7 @@ if __name__ == '__main__':
             if arguments["do-all-groups-and-projects"]:
                 do_all.do_all_groups_and_projects(dry_run=DRY_RUN)
             if arguments["ui"]:
-                # os.environ["FLASK_APP"] = "%s/congregate/ui" % app_path
-                if not os.path.exists(app_path + "/dist"):
-                    print "UI not built. Building it before deploying"
-                    build_ui = "npm run build"
-                    subprocess.call(build_ui.split(" "))
-                os.chdir(app_path + "/congregate")
-                # os.environ["PYTHONPATH"] = app_path
-                run_ui = "gunicorn -k gevent -w 4 ui:app --bind=0.0.0.0:8000"
-                subprocess.call(run_ui.split(" "))
+                build_ui(app_path)
             if arguments["search-for-staged-users"]:
                 users.search_for_staged_users(dry_run=DRY_RUN)
             if arguments["add-users-to-parent-group"]:

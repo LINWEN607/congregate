@@ -1,7 +1,5 @@
-from flask import render_template, send_from_directory
+from flask import render_template
 
-from congregate.ui.models import get_data, get_counts
-# from congregate.ui.models import get_config
 from . import app
 
 
