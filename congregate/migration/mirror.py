@@ -10,7 +10,7 @@ from congregate.migration.gitlab.projects import ProjectsApi
 class MirrorClient(BaseClass):
 
     def __init__(self):
-        # self.config = conf.ig()
+        # self.config = conf.Config()
         super(MirrorClient, self).__init__()
         self.logger = log.myLogger(__name__)
         self.projects_api = ProjectsApi()
@@ -172,21 +172,26 @@ class MirrorClient(BaseClass):
                 encoded_name = project["name"].encode('ascii', 'replace')
                 import_status = project.get("import_status", None)
                 if import_status == "failed":
-                    self.log.info("{0}Enabling mirroring for project {1}".format("DRY-RUN: " if dry_run else "", encoded_name))
+                    self.log.info("{0}Enabling mirroring for project {1}".format(
+                        "DRY-RUN: " if dry_run else "", encoded_name))
                     if not dry_run:
                         try:
                             resp = self.projects_api.start_pull_mirror(
                                 self.config.destination_host,
                                 self.config.destination_token,
                                 project["id"])
-                            self.log.info("Mirrored project {0} ({1})".format(encoded_name, resp))
+                            self.log.info(
+                                "Mirrored project {0} ({1})".format(encoded_name, resp))
                         except RequestException, e:
-                            self.log.error("Failed to mirror project {0} ({1}), with error:\n{2}".format(encoded_name, resp, e))
+                            self.log.error("Failed to mirror project {0} ({1}), with error:\n{2}".format(
+                                encoded_name, resp, e))
                 else:
                     if project.get("name", None) is not None:
-                        self.log.warning("SKIP: Mirroring project {0} (import status: {1})".format(encoded_name, import_status))
+                        self.log.warning("SKIP: Mirroring project {0} (import status: {1})".format(
+                            encoded_name, import_status))
             else:
-                self.log.warning("SKIP: Mirroring project (not a dict) {}".format(project))
+                self.log.warning(
+                    "SKIP: Mirroring project (not a dict) {}".format(project))
 
     @stable_retry
     def enable_mirror_by_id(self, id):
@@ -236,7 +241,7 @@ class MirrorClient(BaseClass):
         # Create a restriction for the supplied branch or set of branches to be
         # applied to the given repository.
         api_url = url + "/rest/branch-permissions/2.0/projects/" + \
-                  project_key + "/repos/" + repository_slug + "/restrictions/"
+            project_key + "/repos/" + repository_slug + "/restrictions/"
         payload = {"type": "read-only", "matcher": {"id": "*",
                                                     "type": {"id": "PATTERN", "name": "Pattern"}}, "users": "",
                    "groups": ""}

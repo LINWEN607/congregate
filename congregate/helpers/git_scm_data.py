@@ -36,7 +36,7 @@ class SCMVerifier:
         # Take care of any args that are not defined
         for key in kwargs:
             setattr(self, key, kwargs[key])
-        self.config = conf.ig()
+        self.config = conf.Config()
         # Make sure we have credentials via env_vars or command line
         # I'm not sure of any security ramifications by making it a instance
         # variable
@@ -49,7 +49,7 @@ class SCMVerifier:
             "{}://{}:{}".format(protocol, host, port), 'projects')
         # The following isn't DRY, need to find better ways to handle this
         self.projects = {}
-        self.conf = conf.ig()
+        self.config = conf.Config()
         #print("Our self.conf looks like:\n{}\n".format(self.conf))
         self.build_data_structure(self.project)
         if repo is not None:
@@ -58,7 +58,6 @@ class SCMVerifier:
             self.get_all_repos(self.project, self.credentials)
         self.get_all_branches(self.project, self.credentials)
         self.get_all_commits(self.project, self.credentials)
-            
 
     def get_all_repos(self, project, credentials):
         # need to fix the URL, so we aren't setting the global var for every
@@ -85,10 +84,10 @@ class SCMVerifier:
                 self.projects[project]['repos'][value['name']] = {
                     'branches': [],
                     'metadata': self.constructJSONObject(value)
-                    }
+                }
             repo_count += 1
         self.projects[project]['repo_count'] = repos['size']
-    
+
     def get_single_repo(self, project, credentials, repo=None):
         # need to fix the URL, so we aren't setting the global var for every
         # one.
@@ -111,7 +110,7 @@ class SCMVerifier:
             self.projects[project]['repos'][repo['name']] = {
                 'branches': [],
                 'metadata': self.constructJSONObject(repo)
-                }
+            }
         self.projects[project]['repo_count'] = 1
 
     def get_all_branches(self, project, credentials):
@@ -119,7 +118,8 @@ class SCMVerifier:
         This function should get all details for a given repository
         '''
         for repo, data in self.projects[project]['repos'].iteritems():
-            branch_url = '{}/{}/repos/{}/branches'.format(self.url, project, repo)
+            branch_url = '{}/{}/repos/{}/branches'.format(
+                self.url, project, repo)
             branches = self.get_json_from_endpoint(
                 branch_url, credentials['user'], credentials['password'])
             # Assign the size, this is probably unique to bit bucket
@@ -229,10 +229,12 @@ class SCMVerifier:
             try:
                 json_body = r.json()
             except:
-                print('\nERROR: Could not decode json.\nHTTP Response was {}\n\nBody Text: {}\n'.format(r.status_code, r.text))
+                print('\nERROR: Could not decode json.\nHTTP Response was {}\n\nBody Text: {}\n'.format(
+                    r.status_code, r.text))
             if r.status_code != 200:
                 if r.status_code == 404 or r.status_code == 500:
-                    print('\nERROR: HTTP Response was {}\n\nBody Text: {}\n'.format(r.status_code, r.text))
+                    print('\nERROR: HTTP Response was {}\n\nBody Text: {}\n'.format(
+                        r.status_code, r.text))
                     return False  # While this is technically an error, in this case, means no records were found for the given resource
                 raise ValueError('ERROR HTTP Response was NOT 200, which implies something wrong. The actual return code was {}\n{}\n'.format(
                     r.status_code, r.text))
@@ -295,7 +297,8 @@ class SCMVerifier:
             if URLItem["name"].lower() == "ssh".lower():
                 repoObject["ssh_repo_url"] = URLItem["href"]
             if URLItem["name"].lower() == "http".lower():
-                repoObject["web_repo_url"] = self.format_web_repo_url(URLItem["href"])
+                repoObject["web_repo_url"] = self.format_web_repo_url(
+                    URLItem["href"])
         return repoObject
 
     def get_project_type(self, project_key):
@@ -318,12 +321,12 @@ class SCMVerifier:
     # Gets the repo level users of the bitbucket repo from the rest API and
     # returns them
 
-
     def get_repo_users(self, repo):
         credentials = self.format_credentials('bitbucket')
         project_key = repo["project"]["key"]
         repo_slug = repo['slug']
-        url = "{}/{}/repos/{}/permissions/users".format(self.url, project_key, repo_slug)
+        url = "{}/{}/repos/{}/permissions/users".format(
+            self.url, project_key, repo_slug)
         repo_user_json = self.get_json_from_endpoint(
             url, credentials['user'], credentials['password'])
         users = []
@@ -331,7 +334,6 @@ class SCMVerifier:
             for user in repo_user_json["values"]:
                 users.append(self.cleanupUsers(user))
         return users
-
 
     def cleanupUsers(self, user):
         u = user["user"]

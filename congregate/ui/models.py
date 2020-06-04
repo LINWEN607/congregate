@@ -29,19 +29,22 @@ def get_data(file_name, sort_by=None):
 #     config = ConfigurationValidator()
 #     return config.as_obj()
 
-
+@app.route("/data/summary")
 def get_counts():
     total_projects = len(get_data("project_json"))
-    staged_projects = len(get_data("stage"))
+    staged_projects = get_data("stage")
     total_users = len(get_data("users"))
-    staged_users = len(get_data("staged_users"))
+    staged_users = get_data("staged_users")
     total_groups = len(get_data("groups"))
-    staged_groups = len(get_data("staged_groups"))
-    return {
-        "Staged Projects": "%s/%s" % (staged_projects, total_projects),
-        "Staged Groups": "%s/%s" % (staged_groups, total_groups),
-        "Staged Users": "%s/%s" % (staged_users, total_users)
-    }
+    staged_groups = get_data("staged_groups")
+    return jsonify({
+        "Total Staged Projects": "%s/%s" % (len(staged_projects), total_projects),
+        "Staged Projects": staged_projects,
+        "Total Staged Groups": "%s/%s" % (len(staged_groups), total_groups),
+        "Staged Groups": staged_groups,
+        "Total Staged Users": "%s/%s" % (len(staged_users), total_users),
+        "Staged Users": staged_users,
+    })
 
 
 @app.route("/data/<name>")

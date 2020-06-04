@@ -3,7 +3,7 @@
 function get_latest_master_tag() { git ls-remote git@gitlab.com:gitlab-com/customer-success/tools/congregate.git | grep refs/heads/master | cut -f 1; }
 
 alias penv='poetry install'
-alias ui='poetry run dnd install'
+alias ui='npm install'
 alias sh='poetry shell'
 alias upd='poetry run python congregate/update-readme.py'
 alias pt='poetry run pytest \

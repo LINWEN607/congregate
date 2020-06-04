@@ -11,7 +11,6 @@ autopep8 = "^1.5" # not found in any files, but assume tests are using it.
 awscli = "^1.17.17"
 boto3 = "^1.11.17"
 bs4 = "^0.0.1"
-danger-noodle = "0.1.7"
 docker = "^4.2.0"
 docopt = "^0.6.2"
 flask = "^1.1.1"

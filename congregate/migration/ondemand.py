@@ -19,7 +19,7 @@ import re
 
 class OnDemand:
     def __init__(self):
-        self.config = conf.ig()
+        self.config = conf.Config()
         self.l = log.myLogger(__name__)
         self.v = None
         self.bb_json = None

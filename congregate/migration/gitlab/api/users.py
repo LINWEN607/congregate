@@ -185,6 +185,64 @@ class UsersApi():
         """
         return api.generate_get_request(host, token, "users/%d/status" % id)
 
+    def get_all_user_ssh_keys(self, uid, host, token):
+        """
+        Get a list of a specified user SSH keys.
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/users.html#list-ssh-keys-for-user
+
+            :param: uid: (int) GitLab user ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :return: Response object containing the response to GET /users/:id_or_username/keys
+        """
+        return api.generate_get_request(host, token, "users/{}/keys".format(uid))
+
+    def create_user_ssh_key(self, host, token, uid, data, message=None):
+        """
+        Create new key owned by specified user. Available only for admin
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/users.html#add-ssh-key-for-user
+
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :param: uid: (int) GitLab user ID
+            :param: data: (dict) Object containing the necessary data for creating an SSH key. Refer to the link above for specific examples
+            :return: Response object containing the response to POST /users/:id/keys
+        """
+        if not message:
+            message = "Creating SSH key for {}".format(uid)
+        return api.generate_post_request(host, token, "users/{}/keys".format(uid), json.dumps(data), description=message)
+
+    def get_all_user_gpg_keys(self, uid, host, token):
+        """
+        Get a list of a specified user GPG keys. Available only for admins.
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/users.html#list-all-gpg-keys-for-given-user
+
+            :param: uid: (int) GitLab user ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :return: Response object containing the response to GET /users/:id/gpg_keys
+        """
+        return api.generate_get_request(host, token, "users/{}/gpg_keys".format(uid))
+
+    def create_user_gpg_key(self, host, token, uid, data, message=None):
+        """
+        Create new GPG key owned by the specified user. Available only for admins.
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/users.html#add-a-gpg-key-for-a-given-user
+
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :param: uid: (int) GitLab user ID
+            :param: data: (dict) Object containing the necessary data for creating a GPG key. Refer to the link above for specific examples
+            :return: Response object containing the response to POST /users/:id/gpg_keys
+        """
+        if not message:
+            message = "Creating GPG key for {}".format(uid)
+        return api.generate_post_request(host, token, "users/{}/gpg_keys".format(uid), json.dumps(data), description=message)
+
     def get_all_user_projects(self, id, host, token):
         """
         Get a list of visible projects owned by the given user

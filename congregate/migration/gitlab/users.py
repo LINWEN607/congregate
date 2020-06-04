@@ -1,5 +1,5 @@
-from os import path
 import json
+
 from requests.exceptions import RequestException
 
 from congregate.helpers.base_class import BaseClass
@@ -50,10 +50,7 @@ class UsersClient(BaseClass):
             email)
         # Will searching for an explicit email actually return more than one? Probably is just an array of 1
         for user in users:
-            if user is not None and \
-                    user and \
-                    user.get("email", None) is not None and \
-                    user["email"].lower() == email.lower():
+            if user and user.get("email", None) and user["email"].lower() == email.lower():
                 self.log.info("Found user by email {}".format(email))
                 return user
             else:
@@ -343,122 +340,35 @@ class UsersClient(BaseClass):
 
         return staged
 
-    # TODO: Re-use or remove (does not show users to be removed)
-    def remove_blocked_users_dry_run(self):
-        # create a 'newer_users.json' file with only non-blocked users
-        count = 0
-        with open("%s/data/new_users.json" % self.app_path, "r") as f:
-            new_users = json.load(f)
-        with open("%s/data/users.json" % self.app_path, "r") as f:
-            users = json.load(f)
-
-        newer_users = []
-
-        rewritten_users = {}
-        for i in range(len(users)):
-            new_obj = users[i]
-            id_num = users[i]["username"]
-            rewritten_users[id_num] = new_obj
-
-        rewritten_users_by_name = {}
-        for i in range(len(users)):
-            new_obj = users[i]
-            id_num = users[i]["name"]
-            rewritten_users_by_name[id_num] = new_obj
-
-        for new_user in new_users:
-            key = new_user["username"]
-            if rewritten_users.get(key, None) is not None:
-                if rewritten_users[key]["state"] == "blocked":
-                    count += 1
-                else:
-                    newer_users.append(new_user)
-            else:
-                key = new_user["name"]
-                if rewritten_users_by_name.get(key, None) is not None:
-                    if rewritten_users_by_name[key]["state"] == "blocked":
-                        count += 1
-                    else:
-                        newer_users.append(new_user)
-        self.log.info("Newer user count after blocking ({0}). {1} to remove".format(
-            len(newer_users), count))
-
-        with open("%s/data/newer_users.json" % self.app_path, "wb") as f:
-            json.dump(newer_users, f, indent=4)
-
-    def search_for_staged_users(self, dry_run=True):
+    def search_for_staged_users(self):
         """
         Read the information in staged_users.json and dump to new_users.json and users_not_found.json. Does the
         search based on the email address and *not* username
         :return:
         """
-        staged_users = self.get_staged_users()
         new_users = []
         users_not_found = {}
-        for user in staged_users:
-            self.log.info("Searching for user email {}".format(user["email"]))
-            # Try to find a user in the destination system by email
-            new_user = api.search(
-                self.config.destination_host,
-                self.config.destination_token,
-                'users',
-                user['email']
-            )
-
-            # If we find the user by email, but didn't get the email field back (will happen if you are not using
-            # an admin token for search) set the email field
-            if len(new_user) > 1:
-                self.log.error(
-                    "Too many users found for email search using email {0}".format(user["email"]))
-                users_not_found[user["id"]] = user["email"]
-            elif len(new_user) > 0:
-                if new_user[0].get("email", None) is None:
-                    new_user[0]["email"] = user["email"]
-                # Add to new_users
-                new_users.append(new_user[0])
+        for user in self.get_staged_users():
+            email = user.get("email", None)
+            new_user = self.find_user_by_email_comparison_without_id(email)
+            if new_user:
+                new_users.append({
+                    "id": new_user.get("id", None),
+                    "email": new_user.get("email", None)
+                })
             else:
                 self.log.warning(
-                    "Could not find user by email {0}. User should have been already migrated"
-                    .format(user["email"])
-                )
-                users_not_found[user["id"]] = user["email"]
-
-        # Add extra IDs based on manually created file data/ids.txt
-        other_ids = []
-        if path.isfile("%s/data/ids.txt" % self.app_path):
-            with open("%s/data/ids.txt" % self.app_path, "r") as f:
-                for line in f.readlines():
-                    other_ids.append(int(line))
-
-        # Search for users by ID. If you find those, also add them to new_users
-        for other_id in other_ids:
-            self.log.info("Searching for user {} (ID)".format(other_id))
-            new_user = self.users_api.get_user(
-                other_id, self.config.destination_host, self.config.destination_token).json()
-            new_users.append(new_user)
-
-        if not dry_run:
-            # Dump everything found in new_users (email from staged or ids.txt)
-            with open("%s/data/new_users.json" % self.app_path, "w") as f:
-                json.dump(new_users, f, indent=4)
-            # Users not found will only include those not found by the email search
-            with open("%s/data/users_not_found.json" % self.app_path, "w") as f:
-                json.dump(users_not_found, f, indent=4)
-
-        self.log.info("{0}Users found ({1}):\n{2}".format(
-            get_dry_log(dry_run),
-            len(new_users),
-            "\n".join(u["email"] for u in new_users)))
-        self.log.info("{0}Users NOT found ({1}):\n{2}".format(
-            get_dry_log(dry_run),
-            len(users_not_found),
-            json_pretty(users_not_found)))
-
-        return users_not_found
+                    "Could not find user by email {0}. User should have been already migrated".format(email))
+                users_not_found[user.get("id", None)] = email
+        self.log.info("Users found ({0}):\n{1}".format(
+            len(new_users), "\n".join(json_pretty(u) for u in new_users)))
+        self.log.info("Users NOT found ({0}):\n{1}".format(
+            len(users_not_found), json_pretty(users_not_found)))
+        return users_not_found, new_users
 
     def handle_users_not_found(self, data, users, keep=True):
         """
-            Remove FOUND users from staged users.
+            Remove only FOUND (or NOT FOUND) users from staged users.
             Remove users NOT found from staged users, groups and projects.
             Users NOT found input comes from search_for_staged_users.
             :return: Staged users
@@ -467,8 +377,8 @@ class UsersClient(BaseClass):
             staged = json.load(f)
 
         if data == "staged_users":
-            self.log.info("{0} all except NOT found users ({1}/{2}) from staged users".format(
-                "Removing" if keep else "Keeping", len(users), len(staged)))
+            self.log.info("{0} only NOT found users ({1}/{2}) in staged users".format(
+                "Keeping" if keep else "Removing", len(users), len(staged)))
             if keep:
                 staged = [i for j, i in enumerate(
                     staged) if i["id"] in users.keys()]
@@ -544,55 +454,6 @@ class UsersClient(BaseClass):
         if self.config.dstn_parent_id is not None:
             user["is_admin"] = False
         return user
-
-    def handle_user_creation(self, user):
-        """
-            This is called when importing staged_users.json.
-            Blocked users will be skipped if we do NOT 'keep_blocked_users'.
-
-            :param user: Each iterable called is a user from the staged_users.json file
-            :return:
-        """
-        response = None
-        try:
-            if user.get("state", None):
-                if str(user["state"]).lower() == "active" or (str(user["state"]).lower() == "blocked" and self.config.keep_blocked_users):
-                    user_data = self.generate_user_data(user)
-                    self.log.info(
-                        "Attempting to create user:\n{}".format(json_pretty(user)))
-                    response = self.users_api.create_user(
-                        self.config.destination_host,
-                        self.config.destination_token,
-                        user_data)
-                else:
-                    self.log.info(
-                        "SKIP: Not migrating {0} user:\n{1}".format(user["state"], json_pretty(user)))
-            else:
-                self.log.info(
-                    "No state found for user:\n{}".format(json_pretty(user)))
-        except RequestException, e:
-            self.log.error(
-                "Failed to create user {0}, with error:\n{1}".format(user_data, e))
-
-        if response is not None:
-            try:
-                self.log.info(
-                    "User creation response text was {}".format(response.text))
-            except Exception as e:
-                self.log.error(
-                    "Could not get response text. Error was {0}".format(e))
-            try:
-                self.log.info("User creation response JSON was:\n{}".format(
-                    json_pretty(response.json())))
-            except Exception as e:
-                self.log.error(
-                    "Could not get response JSON. Error was {0}".format(e))
-
-            # NOTE: Persist 'blocked' user state regardless of domain and creation status.
-            if user_data.get("state", None) and str(user_data["state"]).lower() == "blocked":
-                self.block_user(user_data)
-            return self.handle_user_creation_status(response, user_data)
-        return None
 
     def block_user(self, user_data):
         try:

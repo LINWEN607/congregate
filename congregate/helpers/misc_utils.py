@@ -2,6 +2,7 @@ import base64
 import os
 import errno
 import json
+import subprocess
 
 import glob
 from shutil import copy
@@ -178,9 +179,11 @@ def write_json_to_file(path, data, log=None):
     with open(path, "w") as f:
         json.dump(data, f, indent=4)
 
+
 def read_json_file_into_object(path):
     with open(path, "r") as f:
         return json.load(f)
+
 
 def obfuscate(prompt):
     return base64.b64encode(getpass(prompt))
@@ -199,7 +202,6 @@ def clean_data(dry_run=True, files=None):
         "project_json.json",
         "users.json",
         "groups.json",
-        "users_not_found.json",
         "user_migration_results.json",
         "user_migration_results.html",
         "user_diff.json",
@@ -210,7 +212,6 @@ def clean_data(dry_run=True, files=None):
         "project_migration_results.html",
         "project_diff.json",
         "migration_rollback_results.html",
-        "new_users.json",
         "newer_users.json",
         "unknown_users.json",
         "groups_audit.json",
@@ -382,8 +383,10 @@ def stitch_json_results(result_type="project", steps=0, order="tail"):
     """
     reverse = True if order.lower() == "tail" else False
     steps += 1
-    files = glob.glob("%s/data/%s_migration_results_*" % (get_congregate_path(), result_type))
-    files.sort(key=lambda f: f.split("results_")[1].replace(".json", ""), reverse=reverse)
+    files = glob.glob("%s/data/%s_migration_results_*" %
+                      (get_congregate_path(), result_type))
+    files.sort(key=lambda f: f.split("results_")[
+               1].replace(".json", ""), reverse=reverse)
     if steps > len(files):
         steps = len(files)
     files = files[:steps]
@@ -392,3 +395,16 @@ def stitch_json_results(result_type="project", steps=0, order="tail"):
         data = read_json_file_into_object(result)
         results += ([r for r in data if r[next(iter(r))]])
     return results
+
+def build_ui(app_path):
+    if not os.path.exists(app_path + "node_modules"):
+        print "No node_modules found. Running npm install"
+        install_deps = "npm install"
+        subprocess.call(install_deps.split(" "))
+    if not os.path.exists(app_path + "/dist"):
+        print "UI not built. Building it before deploying"
+        build_command = "npm run build"
+        subprocess.call(build_command.split(" "))
+    os.chdir(app_path + "/congregate")
+    run_ui = "gunicorn -k gevent -w 4 ui:app --bind=0.0.0.0:8000"
+    subprocess.call(run_ui.split(" "))

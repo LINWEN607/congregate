@@ -23,6 +23,7 @@ Come together, right now
 * Python 2.7
 * [AWS CLI](https://aws.amazon.com/cli/)
 * [Poetry](https://python-poetry.org/)
+* [Node v11.13.0](https://www.npmjs.com/)
 
 ## Setup
 
@@ -47,14 +48,22 @@ yum install python-pip
 # Install with pip
 pip install poetry
 
+# If pip install poetry doesn't work
+curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python
+
 source $HOME/.poetry/env
 poetry --version
 
 # install python dependencies
 poetry install
 
+# install NVM for Node Version Management
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.35.3/install.sh | bash
+nvm install 11.13.0
+nvm use 11.13.0
+
 # install UI dependencies
-poetry run dnd install
+npm install
 
 # create congregate path
 CONGREGATE_PATH=$(pwd)
@@ -86,7 +95,7 @@ The following method may be supported in the future ([issue](https://gitlab.com/
 * **filesystem-aws** - export and download data locally, copy it to an S3 bucket for storage, then delete the data locally. Copy the data back from S3, import it and then delete the local data again.
   * This is used to help work with company policies like restricting presigned URLs or in case any of the source instances involved in the migration cannot connect to an S3 bucket while the destination instance can.
 
-### Install & Use Poetry (required for end-user and development setups)
+### Install & Use Poetry and Node (required for end-user and development setups)
 
 ```bash
 
@@ -109,9 +118,14 @@ poetry install
 cd <path_to_congregate>
 poetry shell
 
+# Install NVM for managing node versions
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.35.3/install.sh | bash
+nvm install 11.13.0
+nvm use 11.13.0
+
 # Install ui dependencies
 cd <path_to_congregate>
-poetry run dnd install
+npm install
 ```
 
 ### Installing and configuring Congregate (end-user)
@@ -213,7 +227,7 @@ Usage:
     congregate do-all [--commit]
     congregate do-all-users [--commit]
     congregate do-all-groups-and-projects [--commit]
-    congregate search-for-staged-users [--commit]
+    congregate search-for-staged-users
     congregate update-aws-creds
     congregate add-users-to-parent-group [--commit]
     congregate remove-blocked-users [--commit]
@@ -240,7 +254,7 @@ Usage:
     congregate validate-staged-groups-schema
     congregate validate-staged-projects-schema
     congregate map-users [--commit]
-    congregate generate-diff [--processes=<n>] [--staged]
+    congregate generate-diff [--processes=<n>] [--staged] [--rollback]
     congregate clean [--commit]
     congregate stitch-results [--result-type=<project|group|user>] [--no-of-files=<n>] [--head|--tail]
     congregate obfuscate
@@ -282,7 +296,7 @@ Commands:
     rollback                                Remove staged users/groups/projects on destination.
     ui                                      Deploy UI to port 8000.
     do-all*                                 Configure system, retrieve all projects, users, and groups, stage all information, and commence migration.
-    search-for-staged-users                 Search for staged users on destination based on email and dump to new_users.json and users_not_found.json.
+    search-for-staged-users                 Search for staged users on destination based on email
     update-aws-creds                        Run awscli commands based on the keys stored in the config. Useful for docker updates.
     add-users-to-parent-group               If a parent group is set, all users staged will be added to the parent group.
     remove-blocked-users                    Remove all blocked users from staged projects and groups.
@@ -452,6 +466,12 @@ You can read more about using pdb [here](https://fuzzyblog.io/blog/python/2019/0
 
 Refer to [this README](docker/bitbucket/README.md) for details on setting up a BitBucket server for local development
 
+#### Issues with installing node dependencies
+
+You can delete the `node_modules` folder and re-run `npm install` if you are experiencing issues with frontend dependencies. 
+If you are still having issues with getting the UI to build correctly after re-installing the dependencies and you don't have any linting issues,
+reach out to a maintainer or create an issue pinging @leopardm or @pprokic
+
 ## Migration features
 
 :white_check_mark: = supported
@@ -525,9 +545,9 @@ Refer to [this README](docker/bitbucket/README.md) for details on setting up a B
 |                | Avatars                     |                                                                                                                                                                   | :x:                | :white_check_mark: |
 |                | Profile (API)               |                                                                                                                                                                   | :x:                | :white_check_mark: |
 |                | Preferences (API)           |                                                                                                                                                                   | :x:                | :white_check_mark: |
+|                | SSH keys                    |                                                                                                                                                                   | :x:                | :white_check_mark: |
+|                | GPG keys                    |                                                                                                                                                                   | :x:                | :white_check_mark: |
 |                | Secondary emails            |                                                                                                                                                                   | :x:                | :heavy_minus_sign: |
-|                | SSH keys                    |                                                                                                                                                                   | :x:                | :heavy_minus_sign: |
-|                | GPG keys                    |                                                                                                                                                                   | :x:                | :heavy_minus_sign: |
 |                | Account settings            |                                                                                                                                                                   | :x:                | :x:                |
 |                | Applications                |                                                                                                                                                                   | :x:                | :x:                |
 |                | Access Tokens               |                                                                                                                                                                   | :x:                | :x:                |
