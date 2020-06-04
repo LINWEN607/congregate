@@ -448,6 +448,10 @@ You may need to refresh VS Code. VS Code will also call this python interpreter 
 You can import `pdb` into the class you want to debug through a terminal and add `pdb.set_trace()` around the lines you would like to debug.
 You can read more about using pdb [here](https://fuzzyblog.io/blog/python/2019/09/24/the-python-equivalent-of-byebug-is-pdb-set-trace.html)
 
+#### Setting up bitbucket server for development
+
+Refer to [this README](docker/bitbucket/README.md) for details on setting up a BitBucket server for local development
+
 ## Migration features
 
 :white_check_mark: = supported
