@@ -217,7 +217,7 @@ if __name__ == '__main__':
             branches = BranchesClient()
 
             if arguments["list"]:
-                list_projects.list_projects()
+                list_projects.list_data()
             if arguments["stage"]:
                 stage_projects.stage_projects(
                     arguments['<projects>'], dry_run=DRY_RUN)

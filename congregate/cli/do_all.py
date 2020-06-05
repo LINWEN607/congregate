@@ -1,7 +1,7 @@
 import json
 
 from congregate.cli import stage_projects
-from congregate.cli.list_projects import list_projects
+from congregate.cli.list_projects import list_data
 from congregate.migration.gitlab.users import UsersClient
 from congregate.migration.gitlab.groups import GroupsClient
 from congregate.migration import migrate
@@ -76,4 +76,4 @@ def list_all():
     # List ALL source instance users/groups/projects if empty or not recent
     if not is_recent_file(
             "{}/data/project_json.json".format(b.app_path), age=3600):
-        list_projects()
+        list_data()

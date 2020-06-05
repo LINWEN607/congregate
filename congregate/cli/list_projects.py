@@ -1,23 +1,26 @@
 import json
 import os
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import is_error_message_present
+from congregate.helpers.misc_utils import is_error_message_present, write_json_yield_to_file
 from congregate.migration.gitlab.groups import GroupsClient
 from congregate.migration.gitlab.users import UsersClient
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.groups import GroupsApi
+from congregate.migration.bitbucket.api.repos import ReposApi
+from congregate.migration.bitbucket.api.users import UsersApi as BitBucketUsersApi
+from congregate.migration.bitbucket.api.projects import ProjectsApi as BitBucketProjectsApi
 
-groups = GroupsClient()
-users = UsersClient()
-projects_api = ProjectsApi()
-groups_api = GroupsApi()
+
 b = BaseClass()
 
-
-def list_projects():
+def list_gitlab_data():
     """
         List the projects information, and Retrieve user info, group info from source instance.
     """
+    groups = GroupsClient()
+    users = UsersClient()
+    projects_api = ProjectsApi()
+    groups_api = GroupsApi()
     b.log.info("Listing projects from source {}:".format(b.config.source_host))
 
     projects = []
@@ -45,12 +48,32 @@ def list_projects():
     users.retrieve_user_info(b.config.source_host,
                              b.config.source_token, quiet=True)
 
-    staged_files = ["stage", "staged_groups", "staged_users"]
+def list_bitbucket_data():
+    users = BitBucketUsersApi()
+    projects = BitBucketProjectsApi()
+    repos = ReposApi()
 
-    for filename in staged_files:
-        write_empty_file(filename)
+    write_json_yield_to_file(
+        "%s/data/project_json.json" % b.app_path, 
+        repos.get_all_repos, 
+        b.config.source_host, 
+        b.config.source_token
+    )
 
+    write_json_yield_to_file(
+        "%s/data/users.json" % b.app_path, 
+        users.get_all_users, 
+        b.config.source_host, 
+        b.config.source_token
+    )
 
+    write_json_yield_to_file(
+        "%s/data/groups.json" % b.app_path, 
+        projects.get_all_projects, 
+        b.config.source_host, 
+        b.config.source_token
+    )
+    
 def write_empty_file(filename):
     """
         Write an empty json file containing an empty list, it's used to make sure a file is present in the filesystem
@@ -61,6 +84,18 @@ def write_empty_file(filename):
         with open("%s/data/%s.json" % (b.app_path, filename), "w") as f:
             f.write("[]")
 
+def list_data():
+    source = "gitlab"
+    if source == "gitlab":
+        list_gitlab_data()
+    else:
+        list_bitbucket_data()
+
+    staged_files = ["stage", "staged_groups", "staged_users"]
+
+    for filename in staged_files:
+        write_empty_file(filename)
+
 
 if __name__ == "__main__":
-    list_projects()
+    list_data()

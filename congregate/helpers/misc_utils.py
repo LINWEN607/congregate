@@ -419,3 +419,10 @@ def generate_audit_log_message(req_type, message, url, data=None):
             " with data: {}".format(data) if data else "")
     except TypeError as e:
         return "Message formatting ERROR. No specific message generated. Generating {0} request to {1}".format(req_type, url)
+
+def write_json_yield_to_file(file_path, generator_function, *args):
+    with open(file_path, "wb") as f:
+        f.write("[\n")
+        for data in generator_function(*args):
+            f.write(json_pretty(data))
+        f.write("\n]")
