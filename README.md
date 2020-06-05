@@ -202,16 +202,17 @@ Apart from the `/etc/gitlab/gitlab.rb` file you may lookup the hostname on an em
 Run the following commands to configure Congregate and retrieve info from the source instance:
 
 ```bash
-congregate configure
-congregate list
+./congregate.sh configure
+./congregate.sh list
 ```
+
+To enable Slack alerting (via [Incoming Webhooks](https://api.slack.com/messaging/webhooks)) configure the `slack_url`. This way the `ERROR` and `WARNING` logs will be also sent to a dedicated Slack channel.
 
 All secrets (PATs, S3 keys) are obfuscated in your `congregate.conf` configuration file.
 
 With Congregate configured and projects, groups, and users retrieved, you should be ready to use the tool or test your changes.
 
-**N.B.** Instead of exporting an environment variable within your shell session, you can also add `CONGREGATE_PATH` to `bash_profile` or an `init.d` script.
-This is a bit more of a permanent solution than just exporting the variable within the session.
+**N.B.** Instead of exporting an environment variable within your shell session, you can also add `CONGREGATE_PATH` to `bash_profile` or an `init.d` script. This is a bit more of a permanent solution than just exporting the variable within the session.
 
 ### Usage
 

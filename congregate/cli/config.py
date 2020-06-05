@@ -205,9 +205,11 @@ def generate_config():
         "Wait time (in seconds) for project export/import status (Default: 10): ")
     config.set("APP", "export_import_wait_time",
                export_import_wait_time if export_import_wait_time else "10")
-    slack = raw_input("Sending alerts (logs) to a Slack? (Default: No): ")
+    slack = raw_input(
+        "Sending alerts (logs) to Slack (via Incoming WebHooks)? (Default: No): ")
     if slack.lower() in ["yes", "y"]:
-        config.set("APP", "slack_url", raw_input("Slack URL: "))
+        config.set("APP", "slack_url", raw_input(
+            "Slack Incoming WebHooks URL: "))
         test_slack(config.get("APP", "slack_url"))
 
     write_to_file(config)
