@@ -37,7 +37,7 @@ class ConfigTests(unittest.TestCase):
             "True",  # password reset email
             "False",    # randomized password
             "30",   # import wait time
-            "https://slack.url"   # slack_url
+            "no"   # slack
         ]
 
         g = input_generator(values)
@@ -62,6 +62,78 @@ class ConfigTests(unittest.TestCase):
 
     @mock.patch.object(GroupsApi, "get_group")
     @mock.patch.object(UsersApi, "get_current_user")
+    def test_not_ext_src_src_parent_group_path_mirror_name_filesystem_skeleton(self, mock_get_current_user, mock_get_group):
+        """
+            Not external source
+            source parent group
+            mirror
+            filesystem
+        """
+        values = [
+            "hostname",  # Destination hostname
+            # "token", # Destination access token
+            # "0",  # Destination import user id
+            "True",   # shared runners enabled
+            "False",  # append project suffix (retry)
+            "3",  # max_import_retries,
+            "gitlab",  # external_src_url
+            "source_hostname",  # source host
+            # "source_access_token", # source token
+            "yes",  # source parent group
+            "0",   # source parent group ID
+            # "source_group_full_path",   # source parent group path
+            "yes",  # migrating registries
+            "source_registry_url",    # source registry url
+            "3600",  # max_export_wait_time
+            "destination_registry_url",    # destination registry url
+            "no",  # destination parent group
+            "username_suffix",  # username suffix
+            "Yes",   # mirror
+            # "mirror_username",  # mirror username
+            "filesystem",  # export location
+            "absolute_path",    # file system path
+            "False",    # keep_blocked_users
+            "True",  # password reset email
+            "False",    # randomized password
+            "30",   # import wait time
+            "yes",   # slack
+            "https://slack.url"   # slack_url
+        ]
+
+        g = input_generator(values)
+
+        mock_get_current_user.return_value = {
+            "id": 123, "username": "username"}
+
+        class GroupHack(object):
+            def __init__(self):
+                self._json = {"full_path": "source_group_full_path"}
+
+            def json(self):
+                return self._json
+
+        mock_get_group.return_value = GroupHack()
+        with mock.patch('congregate.cli.config.write_to_file', mock_file):
+            with mock.patch('congregate.cli.config.getcwd', lambda: "."):
+                with mock.patch('congregate.cli.config.get_congregate_path', lambda: "."):
+                    with mock.patch('congregate.cli.config.obfuscate', lambda x: "obfuscated==="):
+                        with mock.patch('congregate.cli.config.test_registries', lambda x, y, z: None):
+                            with mock.patch('congregate.cli.config.deobfuscate', lambda x: "deobfuscated==="):
+                                with mock.patch('__builtin__.raw_input', lambda x: next(g)):
+                                    config.generate_config()
+
+        # load the file that was just written
+        with open("{0}congregate.conf".format(test_dir_prefix), "r") as f:
+            generated = f.readlines()
+
+        # load the reference file
+        with open("{0}test_not_ext_src_src_parent_group_path_mirror_name_filesystem_skeleton.conf".format(test_dir_prefix), "r") as f:
+            reference = f.readlines()
+
+        self.assertListEqual(generated, reference)
+
+    @mock.patch.object(GroupsApi, "get_group")
+    @mock.patch.object(UsersApi, "get_current_user")
     def test_not_ext_src_parent_group_path_no_mirror_name_aws_default(self, mock_get, mock_get_group):
         """
             Not external source
@@ -78,12 +150,14 @@ class ConfigTests(unittest.TestCase):
             "3",  # max_import_retries,
             "gitlab",  # external_src_url
             "source_hostname",  # source host
-            "no",
+            # "source_access_token", # source token
+            "no",  # source parent group
             "yes",  # migrating registries
             # "source_access_token", # source token
             "source_registry_url",    # source registry url
             "3600",  # max_export_wait_time
             "destination_registry_url",    # destination registry url
+            "yes",  # destination parent group
             "0",  # destination parent group id
             # "dstn_parent_group_path",  # destination parent group full path
             "group_sso_provider",  # SSO provider
@@ -100,6 +174,7 @@ class ConfigTests(unittest.TestCase):
             "True",  # password reset email
             "False",    # randomized password
             "30",   # import wait time
+            "yes",   # slack
             "https://slack.url"   # slack_url
         ]
 
@@ -107,14 +182,14 @@ class ConfigTests(unittest.TestCase):
 
         mock_get.return_value = self.users_api.get_current_user()
 
-        class Hack(object):
+        class GroupHack(object):
             def __init__(self):
                 self._json = {"full_path": "destination_group_full_path"}
 
             def json(self):
                 return self._json
 
-        mock_get_group.return_value = Hack()
+        mock_get_group.return_value = GroupHack()
         with mock.patch('congregate.cli.config.write_to_file', mock_file):
             with mock.patch('congregate.cli.config.getcwd', lambda: "."):
                 with mock.patch('congregate.cli.config.get_congregate_path', lambda: "."):
@@ -156,12 +231,13 @@ class ConfigTests(unittest.TestCase):
             "1",  # max_import_retries,
             "gitlab",  # external_src_url
             "source_hostname",  # source host
-            "no",
+            "no",  # source parent group
             "yes",  # migrating registries
             # "source_access_token", # source token
             "source_registry_url",    # source registry url
             "1200",  # max_export_wait_time
             "destination_registry_url",    # destination registry url
+            "yes",  # destination parent group
             "0",  # destination parent group id
             # "dstn_parent_group_path",  # destination parent group full path
             "group_sso_provider",  # SSO provider
@@ -178,21 +254,21 @@ class ConfigTests(unittest.TestCase):
             "False",  # password reset email
             "True",    # randomized password
             "60",   # import wait time
-            "https://slack.url"   # slack_url
+            "no"   # slack
         ]
 
         g = input_generator(values)
 
         mock_get.return_value = {"id": None, "username": None}
 
-        class Hack(object):
+        class GroupHack(object):
             def __init__(self):
                 self._json = {"full_path": "destination_group_full_path"}
 
             def json(self):
                 return self._json
 
-        mock_get_group.return_value = Hack()
+        mock_get_group.return_value = GroupHack()
         with mock.patch('congregate.cli.config.write_to_file', mock_file):
             with mock.patch('congregate.cli.config.get_congregate_path', lambda: "."):
                 with mock.patch('congregate.cli.config.aws.set_access_key_id', lambda x: "access_key_id"):
@@ -231,28 +307,23 @@ class ConfigTests(unittest.TestCase):
             "3",  # max_import_retries,
             "gitlab",  # external_src_url
             "source_hostname",  # source host
-            "no",
-            "yes",  # migrating registries
             # "source_access_token", # source token
+            "no",  # source parent group
+            "yes",  # migrating registries
             "source_registry_url",    # source registry url
             "3600",  # max_export_wait_time
             "destination_registry_url",    # destination registry url
-            "0",  # destination parent group id
-            # "dstn_parent_group_path",  # destination parent group full path
-            "group_sso_provider",  # SSO provider
+            "no",  # destination parent group
             "username_suffix",  # username suffix
             "Yes",   # mirror
             # "mirror_username",  # mirror username
             "filesystem",  # export location
-            # "s3_name",  # bucket name
-            # "us-east-1",    # bucket region
-            # "access key",   # access key
-            # "secret key",   # secret key
             "absolute_path",    # file system path
             "False",    # keep_blocked_users
             "True",  # password reset email
             "False",    # randomized password
             "30",   # import wait time
+            "yes",   # slack
             "https://slack.url"   # slack_url
         ]
 
@@ -298,13 +369,12 @@ class ConfigTests(unittest.TestCase):
             "project_suffix":"False",\
             "max_import_retries":"3",\
             "dstn_registry_url":"destination_registry_url",\
-            "dstn_parent_group_id":"1",\
-            "dstn_parent_group_path":"destination_group_full_path",\
-            "group_sso_provider":"",\
             "username_suffix":"local",\
             "mirror_username":"",\
             "src_hostname":"source_hostname",\
             "src_access_token":"obfuscated===",\
+            "src_parent_group_id":"0",\
+            "src_parent_group_path":"source_group_full_path",\
             "src_registry_url":"source_registry_url",\
             "max_export_wait_time":"3600",\
             "location":"aws",\
@@ -328,7 +398,7 @@ class ConfigTests(unittest.TestCase):
             generated = f.readlines()
 
         # load the reference file
-        with open("{0}test_not_ext_src_parent_group_path_no_mirror_name_aws_default.conf".format(test_dir_prefix), "r") as f:
+        with open("{0}test_not_ext_src_src_parent_group_path_mirror_name_filesystem_skeleton.conf".format(test_dir_prefix), "r") as f:
             reference = f.readlines()
 
         self.assertListEqual(generated, reference)
@@ -342,13 +412,12 @@ class ConfigTests(unittest.TestCase):
             "project_suffix":"False",\
             "max_import_retries":"3",\
             "dstn_registry_url":"destination_registry_url",\
-            "dstn_parent_group_id":"0",\
-            "dstn_parent_group_path":"destination_group_full_path",\
-            "group_sso_provider":"group_sso_provider",\
             "username_suffix":"username_suffix",\
             "mirror_username":"",\
             "src_hostname":"source_hostname",\
             "src_access_token":"obfuscated===",\
+            "src_parent_group_id":"0",\
+            "src_parent_group_path":"source_group_full_path",\
             "src_registry_url":"source_registry_url",\
             "max_export_wait_time":"3600",\
             "location":"aws",\
@@ -372,7 +441,7 @@ class ConfigTests(unittest.TestCase):
             generated = f.readlines()
 
         # load the reference file
-        with open("{0}test_not_ext_src_parent_group_path_no_mirror_name_aws_default.conf".format(test_dir_prefix), "r") as f:
+        with open("{0}test_not_ext_src_src_parent_group_path_mirror_name_filesystem_skeleton.conf".format(test_dir_prefix), "r") as f:
             reference = f.readlines()
 
         self.assertListEqual(generated, reference)

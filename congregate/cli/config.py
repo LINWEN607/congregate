@@ -78,16 +78,20 @@ def generate_config():
         config.set("SOURCE", "src_access_token", obfuscate(
             "Source instance GitLab access token  (Settings -> Access tokens): "))
         source_group = raw_input(
-            "Are you migrating from a single group to a new instance? (e.g. gitlab.com to self-managed) (Default: No) ")
+            "Are you migrating from a parent group to a new instance, e.g. gitlab.com to self-managed? (Default: No) ")
         if source_group.lower() in ["yes", "y"]:
             config.set("SOURCE", "src_parent_group_id", raw_input(
-                "Source group ID: "))
-            src_group = groups.get_group(config.getint("SOURCE", "src_parent_group_id"),
-                                         config.get("SOURCE",
-                                                    "src_hostname"),
-                                         deobfuscate(config.get("SOURCE", "src_access_token"))).json()
-            config.set("SOURCE", "src_parent_group_path",
-                       src_group["full_path"])
+                "Source group ID (Group -> Settings -> General): "))
+            src_group = groups.get_group(config.getint("SOURCE", "src_parent_group_id"), config.get(
+                "SOURCE", "src_hostname"), deobfuscate(config.get("SOURCE", "src_access_token"))).json()
+            if src_group.get("full_path", None) is not None:
+                config.set("SOURCE", "src_parent_group_path",
+                           src_group["full_path"])
+            else:
+                config.set("SOURCE", "src_parent_group_path", "")
+                print("WARNING: Source group not found. Please enter 'src_parent_group_id' and 'src_parent_group_path' manually (in {})".format(
+                    config_path))
+
         migrating_registries = raw_input(
             "Are you migrating any container registries? (Default: No)")
         if migrating_registries.lower() in ["yes", "y"]:
@@ -107,14 +111,14 @@ def generate_config():
                 "Destination instance Container Registry URL: "))
             test_registries(deobfuscate(config.get("DESTINATION", "dstn_access_token")), config.get(
                 "DESTINATION", "dstn_registry_url"), migration_user)
-        config.set("DESTINATION", "dstn_parent_group_id",
-                   raw_input("Migrating to a parent group (e.g. gitlab.com)? Parent group ID (Group -> Settings -> General): "))
 
-        if config.has_option("DESTINATION", "dstn_parent_group_id") and config.get("DESTINATION", "dstn_parent_group_id"):
-            group = groups.get_group(config.getint("DESTINATION", "dstn_parent_group_id"),
-                                     config.get("DESTINATION",
-                                                "dstn_hostname"),
-                                     deobfuscate(config.get("DESTINATION", "dstn_access_token"))).json()
+        dstn_group = raw_input(
+            "Are you migrating to a parent group, e.g. gitlab.com? (Default: No) ")
+        if dstn_group.lower() in ["yes", "y"]:
+            config.set("DESTINATION", "dstn_parent_group_id", raw_input(
+                "Parent group ID (Group -> Settings -> General): "))
+            group = groups.get_group(config.getint("DESTINATION", "dstn_parent_group_id"), config.get(
+                "DESTINATION", "dstn_hostname"), deobfuscate(config.get("DESTINATION", "dstn_access_token"))).json()
             if group.get("full_path", None) is not None:
                 config.set("DESTINATION", "dstn_parent_group_path",
                            group["full_path"])
@@ -130,8 +134,8 @@ def generate_config():
         config.set("DESTINATION", "username_suffix",
                    username_suffix if username_suffix != "_" else "")
         mirror = raw_input(
-            "Planning a soft cut-over migration by mirroring repos to keep both instances running? Yes or No (default): ")
-        if mirror and mirror.lower() != "no":
+            "Planning a soft cut-over migration by mirroring repos to keep both instances running? (Default: No): ")
+        if mirror.lower() in ["yes", "y"]:
             if migration_user.get("username", None) is not None:
                 config.set("DESTINATION", "mirror_username",
                            migration_user["username"])
@@ -197,8 +201,9 @@ def generate_config():
         "Wait time (in seconds) for project export/import status (default: 10): ")
     config.set("APP", "export_import_wait_time",
                export_import_wait_time if export_import_wait_time else "10")
-    config.set("APP", "slack_url", raw_input(
-        "Slack URL for sending alerts (optional): "))
+    slack = raw_input("Sending alerts (logs) to a Slack? (Default: No): ")
+    if slack.lower() in ["yes", "y"]:
+        config.set("APP", "slack_url", raw_input("Slack URL: "))
 
     write_to_file(config)
 
