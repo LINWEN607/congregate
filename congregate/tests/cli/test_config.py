@@ -27,15 +27,15 @@ class ConfigTests(unittest.TestCase):
             "hostname",  # Destination hostname
             # "token", # Destination access token
             # "0",  # Destination import user id
-            "True",   # shared runners enabled
-            "False",  # append project suffix (retry)
+            "yes",   # shared runners enabled
+            "no",  # append project suffix (retry)
             "3",  # max_import_retries,
             "some_external_source",  # external_src_url
             "username",  # ext_src_user
             "repo_path",  # ext_src_repo
-            "False",    # keep_blocked_users
-            "True",  # password reset email
-            "False",    # randomized password
+            "no",    # keep_blocked_users
+            "yes",  # password reset email
+            "no",    # randomized password
             "30",   # import wait time
             "no"   # slack
         ]
@@ -73,8 +73,8 @@ class ConfigTests(unittest.TestCase):
             "hostname",  # Destination hostname
             # "token", # Destination access token
             # "0",  # Destination import user id
-            "True",   # shared runners enabled
-            "False",  # append project suffix (retry)
+            "yes",   # shared runners enabled
+            "no",  # append project suffix (retry)
             "3",  # max_import_retries,
             "gitlab",  # external_src_url
             "source_hostname",  # source host
@@ -92,9 +92,9 @@ class ConfigTests(unittest.TestCase):
             # "mirror_username",  # mirror username
             "filesystem",  # export location
             "absolute_path",    # file system path
-            "False",    # keep_blocked_users
-            "True",  # password reset email
-            "False",    # randomized password
+            "no",    # keep_blocked_users
+            "yes",  # password reset email
+            "no",    # randomized password
             "30",   # import wait time
             "yes",   # slack
             "https://slack.url"   # slack_url
@@ -118,9 +118,10 @@ class ConfigTests(unittest.TestCase):
                 with mock.patch('congregate.cli.config.get_congregate_path', lambda: "."):
                     with mock.patch('congregate.cli.config.obfuscate', lambda x: "obfuscated==="):
                         with mock.patch('congregate.cli.config.test_registries', lambda x, y, z: None):
-                            with mock.patch('congregate.cli.config.deobfuscate', lambda x: "deobfuscated==="):
-                                with mock.patch('__builtin__.raw_input', lambda x: next(g)):
-                                    config.generate_config()
+                            with mock.patch('congregate.cli.config.test_slack', lambda x: None):
+                                with mock.patch('congregate.cli.config.deobfuscate', lambda x: "deobfuscated==="):
+                                    with mock.patch('__builtin__.raw_input', lambda x: next(g)):
+                                        config.generate_config()
 
         # load the file that was just written
         with open("{0}congregate.conf".format(test_dir_prefix), "r") as f:
@@ -145,8 +146,8 @@ class ConfigTests(unittest.TestCase):
             "hostname",  # Destination hostname
             # "token", # Destination access token
             # "0",  # Destination import user id
-            "True",   # shared runners enabled
-            "False",  # append project suffix (retry)
+            "yes",   # shared runners enabled
+            "no",  # append project suffix (retry)
             "3",  # max_import_retries,
             "gitlab",  # external_src_url
             "source_hostname",  # source host
@@ -170,9 +171,9 @@ class ConfigTests(unittest.TestCase):
             # "access key",   # access key
             # "secret key",   # secret key
             "absolute_path",    # file system path
-            "False",    # keep_blocked_users
-            "True",  # password reset email
-            "False",    # randomized password
+            "no",    # keep_blocked_users
+            "yes",  # password reset email
+            "no",    # randomized password
             "30",   # import wait time
             "yes",   # slack
             "https://slack.url"   # slack_url
@@ -197,9 +198,10 @@ class ConfigTests(unittest.TestCase):
                         with mock.patch('congregate.cli.config.aws.set_secret_access_key', lambda x: "secret_access_key"):
                             with mock.patch('congregate.cli.config.obfuscate', lambda x: "obfuscated==="):
                                 with mock.patch('congregate.cli.config.test_registries', lambda x, y, z: None):
-                                    with mock.patch('congregate.cli.config.deobfuscate', lambda x: "deobfuscated==="):
-                                        with mock.patch('__builtin__.raw_input', lambda x: next(g)):
-                                            config.generate_config()
+                                    with mock.patch('congregate.cli.config.test_slack', lambda x: None):
+                                        with mock.patch('congregate.cli.config.deobfuscate', lambda x: "deobfuscated==="):
+                                            with mock.patch('__builtin__.raw_input', lambda x: next(g)):
+                                                config.generate_config()
 
         # load the file that was just written
         with open("{0}congregate.conf".format(test_dir_prefix), "r") as f:
@@ -226,8 +228,8 @@ class ConfigTests(unittest.TestCase):
             "hostname",  # Destination hostname
             # "token", # Destination access token
             # "0",  # Destination import user id
-            "False",   # shared runners enabled
-            "True",  # append project suffix (retry)
+            "no",   # shared runners enabled
+            "yes",  # append project suffix (retry)
             "1",  # max_import_retries,
             "gitlab",  # external_src_url
             "source_hostname",  # source host
@@ -250,9 +252,9 @@ class ConfigTests(unittest.TestCase):
             # "access key",   # access key
             # "secret key",   # secret key
             "/absolute_path",    # file system path
-            "True",    # keep_blocked_users
-            "False",  # password reset email
-            "True",    # randomized password
+            "yes",    # keep_blocked_users
+            "no",  # password reset email
+            "yes",    # randomized password
             "60",   # import wait time
             "no"   # slack
         ]
@@ -302,8 +304,8 @@ class ConfigTests(unittest.TestCase):
             "hostname",  # Destination hostname
             # "token", # Destination access token
             # "0",  # Destination import user id
-            "True",   # shared runners enabled
-            "False",  # append project suffix (retry)
+            "yes",   # shared runners enabled
+            "no",  # append project suffix (retry)
             "3",  # max_import_retries,
             "gitlab",  # external_src_url
             "source_hostname",  # source host
@@ -319,9 +321,9 @@ class ConfigTests(unittest.TestCase):
             # "mirror_username",  # mirror username
             "filesystem",  # export location
             "absolute_path",    # file system path
-            "False",    # keep_blocked_users
-            "True",  # password reset email
-            "False",    # randomized password
+            "no",    # keep_blocked_users
+            "yes",  # password reset email
+            "no",    # randomized password
             "30",   # import wait time
             "yes",   # slack
             "https://slack.url"   # slack_url
@@ -346,9 +348,10 @@ class ConfigTests(unittest.TestCase):
                 with mock.patch('congregate.cli.config.get_congregate_path', lambda: "."):
                     with mock.patch('congregate.cli.config.obfuscate', lambda x: "obfuscated==="):
                         with mock.patch('congregate.cli.config.test_registries', lambda x, y, z: None):
-                            with mock.patch('congregate.cli.config.deobfuscate', lambda x: "deobfuscated==="):
-                                with mock.patch('__builtin__.raw_input', lambda x: next(g)):
-                                    config.generate_config()
+                            with mock.patch('congregate.cli.config.test_slack', lambda x: None):
+                                with mock.patch('congregate.cli.config.deobfuscate', lambda x: "deobfuscated==="):
+                                    with mock.patch('__builtin__.raw_input', lambda x: next(g)):
+                                        config.generate_config()
 
         # load the file that was just written
         with open("{0}congregate.conf".format(test_dir_prefix), "r") as f:

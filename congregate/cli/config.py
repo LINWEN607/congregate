@@ -1,5 +1,9 @@
 from os import getcwd, path, mkdir, makedirs
 from ConfigParser import SafeConfigParser as ConfigParser, NoOptionError
+
+import json
+import requests
+
 from docker import from_env
 from docker.errors import APIError, TLSParameterError
 
@@ -44,15 +48,15 @@ def generate_config():
         print("WARNING: Destination user not found. Please enter 'import_user_id' manually (in {})".format(
             config_path))
     shared_runners_enabled = raw_input(
-        "Enable shared runners on destination instance (default: True): ")
+        "Enable shared runners on destination instance? (Default: Yes): ")
     config.set("DESTINATION", "shared_runners_enabled",
-               "False" if shared_runners_enabled and shared_runners_enabled.lower() == "false" else "True")
+               "False" if shared_runners_enabled.lower() in ["no", "n"] else "True")
     project_suffix = raw_input(
-        "Append suffix to project found on destination instance (default: False): ")
+        "Append suffix to project found on destination instance? (Default: No): ")
     config.set("DESTINATION", "project_suffix",
-               "True" if project_suffix and project_suffix.lower() == "true" else "False")
+               "True" if project_suffix.lower() in ["yes", "y"] else "False")
     max_import_retries = raw_input(
-        "Max no. of project import retries (default: 3): ")
+        "Max no. of project import retries (Default: 3): ")
     config.set("DESTINATION", "max_import_retries",
                max_import_retries if max_import_retries else "3")
 
@@ -101,7 +105,7 @@ def generate_config():
             test_registries(deobfuscate(config.get("SOURCE", "src_access_token")), config.get(
                 "SOURCE", "src_registry_url"), migration_user)
         max_export_wait_time = raw_input(
-            "Max wait time (in seconds) for project export status (default: 3600): ")
+            "Max wait time (in seconds) for project export status (Default: 3600): ")
         config.set("SOURCE", "max_export_wait_time",
                    max_export_wait_time if max_export_wait_time else "3600")
 
@@ -130,7 +134,7 @@ def generate_config():
                        raw_input("Migrating to a group with SAML SSO enabled? Input SSO provider (auth0, adfs, etc.): "))
 
         username_suffix = raw_input(
-            "To avoid username collision, please input suffix to append: ")
+            "To avoid username collision, please input suffix to append to username: ")
         config.set("DESTINATION", "username_suffix",
                    username_suffix if username_suffix != "_" else "")
         mirror = raw_input(
@@ -151,11 +155,11 @@ def generate_config():
         # Project export/update settings
         config.add_section("EXPORT")
         location = raw_input(
-            "Staging location for exported projects and groups, AWS (projects only) or filesystem (default): ")
+            "Staging location for exported projects and groups, AWS (projects only) or filesystem (default)?: ")
         if location.lower() == "aws":
             config.set("EXPORT", "location", "aws")
             config.set("EXPORT", "s3_name", raw_input("AWS S3 bucket name: "))
-            region = raw_input("AWS S3 bucket region (default: us-east-1): ")
+            region = raw_input("AWS S3 bucket region (Default: us-east-1): ")
             config.set("EXPORT", "s3_region",
                        region if region else "us-east-1")
             config.set("EXPORT", "s3_access_key_id",
@@ -176,34 +180,35 @@ def generate_config():
             config.set("EXPORT", "location", "filesystem")
 
         abs_path = raw_input(
-            "ABSOLUTE path for exporting/updating projects (default: {}): ".format(getcwd()))
+            "ABSOLUTE path for exporting/updating projects? (Default: {}): ".format(getcwd()))
         config.set("EXPORT", "filesystem_path",
                    abs_path if abs_path and abs_path.startswith("/") else getcwd())
 
     # User specific settings
     config.add_section("USER")
     keep_blocker_users = raw_input(
-        "Keep blocked users in staged users/groups/projects (default: False): ")
+        "Keep blocked users in staged users/groups/projects? (Default: No): ")
     config.set("USER", "keep_blocked_users",
-               "True" if keep_blocker_users and keep_blocker_users.lower() == "true" else "False")
+               "True" if keep_blocker_users.lower() in ["yes", "y"] else "False")
     reset_pwd = raw_input(
-        "Users receive password reset emails (default: True): ")
-    config.set("USER", "reset_pwd",
-               "False" if reset_pwd and reset_pwd.lower() == "false" else "True")
+        "Should users receive password reset emails? (Default: Yes): ")
+    config.set("USER", "reset_pwd", "False" if reset_pwd.lower()
+               in ["no", "n"] else "True")
     force_rand_pwd = raw_input(
-        "Users are created with a randomized password (default: False): ")
+        "Should users be created with a randomized password? (Default: No): ")
     config.set("USER", "force_rand_pwd",
-               "True" if force_rand_pwd and force_rand_pwd.lower() == "true" else "False")
+               "True" if force_rand_pwd.lower() in ["yes", "y"] else "False")
 
     # Generic App settings
     config.add_section("APP")
     export_import_wait_time = raw_input(
-        "Wait time (in seconds) for project export/import status (default: 10): ")
+        "Wait time (in seconds) for project export/import status (Default: 10): ")
     config.set("APP", "export_import_wait_time",
                export_import_wait_time if export_import_wait_time else "10")
     slack = raw_input("Sending alerts (logs) to a Slack? (Default: No): ")
     if slack.lower() in ["yes", "y"]:
         config.set("APP", "slack_url", raw_input("Slack URL: "))
+        test_slack(config.get("APP", "slack_url"))
 
     write_to_file(config)
 
@@ -241,6 +246,19 @@ def test_registries(token, registry, user):
     except Exception as e:
         print("Login attempt to docker registry {0} failed, with error:\n{1}".format(
             registry, e))
+        exit()
+
+
+def test_slack(url):
+    try:
+        json_data = json.dumps({"text": "Congregate Slack alerting test",
+                                "username": "WebhookBot", "icon_emoji": ":ghost:"})
+        resp = requests.post(url, data=json_data.encode('ascii'),
+                             headers={'Content-Type': 'application/json'})
+        if resp.status_code not in [200, 202]:
+            raise Exception(resp)
+    except Exception as em:
+        print("EXCEPTION: " + str(em))
         exit()
 
 
