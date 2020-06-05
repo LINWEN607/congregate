@@ -408,3 +408,14 @@ def build_ui(app_path):
     os.chdir(app_path + "/congregate")
     run_ui = "gunicorn -k gevent -w 4 ui:app --bind=0.0.0.0:8000"
     subprocess.call(run_ui.split(" "))
+
+
+def generate_audit_log_message(req_type, message, url, data=None):
+    try:
+        return "{0}enerating {1} request to {2}{3}".format(
+            "{} by g".format(message) if message else "G",
+            req_type,
+            url,
+            " with data: {}".format(data) if data else "")
+    except TypeError as e:
+        return "Message formatting ERROR. No specific message generated. Generating {0} request to {1}".format(req_type, url)
