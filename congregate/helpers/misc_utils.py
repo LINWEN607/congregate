@@ -2,6 +2,7 @@ import base64
 import os
 import errno
 import json
+import subprocess
 
 import glob
 from shutil import copy
@@ -394,3 +395,16 @@ def stitch_json_results(result_type="project", steps=0, order="tail"):
         data = read_json_file_into_object(result)
         results += ([r for r in data if r[next(iter(r))]])
     return results
+
+def build_ui(app_path):
+    if not os.path.exists(app_path + "node_modules"):
+        print "No node_modules found. Running npm install"
+        install_deps = "npm install"
+        subprocess.call(install_deps.split(" "))
+    if not os.path.exists(app_path + "/dist"):
+        print "UI not built. Building it before deploying"
+        build_command = "npm run build"
+        subprocess.call(build_command.split(" "))
+    os.chdir(app_path + "/congregate")
+    run_ui = "gunicorn -k gevent -w 4 ui:app --bind=0.0.0.0:8000"
+    subprocess.call(run_ui.split(" "))

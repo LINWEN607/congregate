@@ -316,7 +316,6 @@ def handle_importing_groups(group):
                 group = ie.wait_for_group_import(
                     full_path_with_parent_namespace)
                 import_id = group.get("id", None)
-
         if import_id and not _DRY_RUN:
             result[full_path_with_parent_namespace] = group
             # Migrate CI/CD Variables

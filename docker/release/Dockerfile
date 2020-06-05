@@ -7,7 +7,8 @@ WORKDIR /opt/congregate
 
 # Copy supervisor configuration
 ADD congregate congregate
-COPY congregate.sh pyproject.toml README.md snakeskin.txt ./
+ADD frontend frontend
+COPY congregate.sh pyproject.toml poetry.lock README.md package.json vue.config.js babel.config.js ./
 
 # Installing some basic utilities and updating apt
 RUN apt-get update && \
@@ -29,8 +30,11 @@ RUN poetry install
 # Initialize congregate directories
 RUN congregate init
 
-RUN cd /opt/congregate && \
-    poetry run dnd install
+# Install Node
+RUN curl -sL https://deb.nodesource.com/setup_11.x | bash - && \
+    apt-get install -y nodejs && \
+    npm install && \
+    npm run build
 
 RUN echo "alias ll='ls -al'" >> ~/.bashrc
 
