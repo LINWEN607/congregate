@@ -1,4 +1,4 @@
-FROM atlassian/bitbucket-server:latest
+FROM atlassian/bitbucket-server:7.3
 
 ARG BITBUCKET_LICENSE
 ARG BITBUCKET_PASSWORD
@@ -6,11 +6,8 @@ ARG BITBUCKET_PASSWORD
 ENV BITBUCKET_LICENSE=$BITBUCKET_LICENSE
 ENV BITBUCKET_PASSWORD=$BITBUCKET_PASSWORD
 
-EXPOSE 7990
+ENV ELASTICSEARCH_ENABLED=false
 
-COPY docker/bitbucket/bitbucket.properties-populated ./shared/bitbucket.properties
 COPY docker/bitbucket/seed_data.sh /opt/seed_data.sh
 
-ENTRYPOINT /opt/seed_data.sh
-
-
+CMD /opt/seed_data.sh
