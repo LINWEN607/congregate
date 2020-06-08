@@ -40,6 +40,10 @@ class GroupsClient(BaseClass):
                 group_id, host, token))
             group["members"] = members
             transient_list.append(group)
+            projects = list(self.groups_api.get_all_group_projects(
+                group_id, host, token))
+            group["projects"] = projects
+            transient_list.append(group)
             if parent_group is not None:
                 parent_group["child_ids"].append(group["id"])
             for subgroup in self.groups_api.get_all_subgroups(group_id, host, token):
