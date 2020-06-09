@@ -51,6 +51,7 @@ class SeedDataGenerator(BaseClass):
                 project["id"], dry_run)
             self.generate_shared_with_group_data(
                 project["id"], groups, dry_run)
+            self.generate_dummy_project_push_rules(project["id"], dry_run)
         projects += self.generate_user_projects(users, dry_run)
 
         print "---Generated Users---"
@@ -254,6 +255,26 @@ class SeedDataGenerator(BaseClass):
             if not dry_run:
                 self.variables.set_variables(
                     pid, d, self.config.source_host, self.config.source_token)
+
+    def generate_dummy_project_push_rules(self, pid, dry_run=True):
+        data = {
+            "commit_message_regex": "",
+            "commit_message_negative_regex": "",
+            "branch_name_regex": "",
+            "deny_delete_tag": True,
+            "member_check": True,
+            "prevent_secrets": True,
+            "author_email_regex": "",
+            "file_name_regex": "testingfile",
+            "max_file_size": 1000000,
+            "commit_committer_check": True,
+            "reject_unsigned_commits": None
+        }
+
+        self.log.info("{0}Creating project {1} push rules ({2})".format(
+            get_dry_log(dry_run), pid, data))
+        self.projects_api.create_project_push_rule(
+            pid, self.config.source_host, self.config.source_token, data)
 
     def generate_dummy_group_variables(self, gid, dry_run=True):
         data = [
