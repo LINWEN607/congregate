@@ -39,6 +39,8 @@ class SeedDataGenerator(BaseClass):
     def generate_seed_data(self, dry_run=True):
         users = self.generate_users(dry_run)
         groups = self.generate_groups(dry_run)
+        for user in users:
+            self.generate_dummy_user_keys(user["id"], dry_run)
         for group in groups:
             self.generate_dummy_group_variables(group["id"], dry_run)
         self.add_group_members(users, groups, dry_run)
@@ -216,17 +218,17 @@ class SeedDataGenerator(BaseClass):
 
         return created_projects
 
-    def generate_dummy_environment(self, project_id, dry_run=True):
+    def generate_dummy_environment(self, pid, dry_run=True):
         data = {
             "name": "production",
             "external_url": "http://production-%s.site" % uuid4()
         }
         self.log.info(
-            "{0}Creating project environment ({1})".format(get_dry_log(dry_run), data))
+            "{0}Creating project {1} environment ({2})".format(get_dry_log(dry_run), pid, data))
         if not dry_run:
-            return self.projects.projects_api.create_environment(self.config.source_host, self.config.source_token, project_id, data)
+            return self.projects.projects_api.create_environment(self.config.source_host, self.config.source_token, pid, data)
 
-    def generate_dummy_project_variables(self, project_id, dry_run=True):
+    def generate_dummy_project_variables(self, pid, dry_run=True):
         data = [
             {
                 "key": "NEW_VARIABLE",
@@ -248,12 +250,12 @@ class SeedDataGenerator(BaseClass):
 
         for d in data:
             self.log.info(
-                "{0}Creating project variable ({1})".format(get_dry_log(dry_run), data))
+                "{0}Creating project {1} variable ({2})".format(get_dry_log(dry_run), pid, data))
             if not dry_run:
                 self.variables.set_variables(
-                    project_id, d, self.config.source_host, self.config.source_token)
+                    pid, d, self.config.source_host, self.config.source_token)
 
-    def generate_dummy_group_variables(self, group_id, dry_run=True):
+    def generate_dummy_group_variables(self, gid, dry_run=True):
         data = [
             {
                 "key": "NEW_VARIABLE",
@@ -273,10 +275,10 @@ class SeedDataGenerator(BaseClass):
 
         for d in data:
             self.log.info(
-                "{0}Creating group variable ({1})".format(get_dry_log(dry_run), data))
+                "{0}Creating group {1} variable ({2})".format(get_dry_log(dry_run), gid, d))
             if not dry_run:
                 self.variables.set_variables(
-                    group_id, d, self.config.source_host, self.config.source_token, var_type="group")
+                    gid, d, self.config.source_host, self.config.source_token, var_type="group")
 
     def generate_shared_with_group_data(self, pid, groups, dry_run):
         for group in groups:
@@ -286,7 +288,40 @@ class SeedDataGenerator(BaseClass):
                 "expires_at": None
             }
             self.log.info(
-                "{0}Sharing project {0} with group:\n{1}".format(get_dry_log(dry_run), data))
+                "{0}Sharing project {1} with group:\n{2}".format(get_dry_log(dry_run), pid, data))
             if not dry_run:
                 self.projects_api.add_shared_group(
                     self.config.source_host, self.config.source_token, pid, data)
+
+    def generate_dummy_user_keys(self, uid, dry_run=True):
+        ssh_data = [
+            {
+                "title": "test_ssh_key_1",
+                "key": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDg4xhni5/yedcCRfemTFdK5SgjvZtnDb3YtLNssXg+BAkdPiK9VRrtSRffG4n80HeorRv1bS0ppl3DuILvpuLaI0cXarDqAsxp/+SQGq+5aVOM+A7/lfoGWmBz68KjlxkAs6F2vS9P04DCXN0wvk4Egz1ywzZvPaB7pFQSPo7ZlyMl0BgKW9BFNQ8zRen0MwCqfiH04R6VB1Vcj3YcTPIcLoaN+OhrDRyDpvVFj3HnYnEgew318EHWJEl6I0TDkmHarjj3MvwR3f5j6KqJLwbbOHVbXSF94YCfEz3ZcVhxtcXXHS1Adp2Mra+s1UtQJtNcas16Xwtxlu2AB4m17G+qB2jO8J6DuwzvAlYseAt5gS1XVrfv6a6yqRV1yp+WfVEOIzW9CpJpGVEsORaOSVKeoa2MCfElBmi4yBcXclC2vitY8aBP8R9wblsG9MALRXFydgfLNle2jveO/YAlzG7I4Or9EzMRdVwPO551t9zoIYBSi/hW0DXj47eH03DMZxM= petarprokic@Petar-MBP.local",
+                "expires_at": "6666-06-06T00:00:00.000Z"
+            },
+            {
+                "title": "test_ssh_key_2",
+                "key": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCnNg7lEKsUynd3cARWAgSkMh9OqlggfVi7lnpUFDVtiGaOleABExMPEbeOJ8M4wXyFi1ptcYLQwO0zEh6y4ksJqHrz6jbJeeI76HEebfURNSxxF73Po21KGDZIBu5XT3yOzskimK4B/dxgx7RGuC6D5yg4VnGsSzxw0pWt5yEDEa5P1Y9UrcYuRmxTlKzdDLfQcD0VyIFRMnGdwMALBhw7uY045IeMGQziics+HfyNjLCEWkKEfVch74deXpYxGijMFwCMERVQS+E/jgAWc0ruQtoeDWCpwZRNvUiig9Q5ZryrSuh0ive/Iwl3qHfqNTSN6jzNSlvjgger/iypfUqQZwceqhY8LXjriRvqTPOu3eWlMAW+TZ0ubz/wQUdr9O6aHnTThudi7Vdyi2MVPNJRUKG3rXSsUYCzQ6Pr0eNTGys1N64kElqgoeBH6g2jcgzB/xnY3UXlBO4BrHA/COuGXHJCTM8cjJInGLXrCMrOmIMcjb59b5kACmPog4VpG3E= petarprokic@Petar-MBP.local",
+                "expires_at": "5555-05-05T00:00:00.000Z"
+            }
+        ]
+        gpg_data = [
+            {
+                "key": "-----BEGIN PGP PUBLIC KEY BLOCK-----\r\n\r\nmQENBF7P1IMBCAC0k/J3bxmRU9d/nEgDF8KqOVbBV04YtNVYJjWZbAoXCFT9An/J\r\n5828xa5MvSlqJDG8M7KY1zjmvShkBNRGyqWJgpNzC8g0AIHMzD/w3BjkRo7s8CSj\r\n7JpmN96/y3QsuKvNV2aecVE8if58Dqv71J53re9bP/LDjSYuqYWnKTFJp18DDaHc\r\nPaSZqCexPTLfa8VnRL1PiXvNWfp+yNcwnD+7r1GrZIyHLRp/xoWLHA/1aF2rcNJ/\r\nXiuBn+YrZEpr8Xlm/TpDEgvrJgOkWr3+6Fwm25VJjfTFOVglCDqYFxoD/t5gHyWh\r\nImTcRgJl79MQsNY5BfUBQbN5X96UM8dOWmVrABEBAAG0GHRlc3Q0IDx0ZXN0NEBn\r\naXRsYWIuY29tPokBVAQTAQgAPhYhBAAbmx3VMrUyI0UkmQ8Fpb3bS3luBQJez9SD\r\nAhsDBQkDwmcABQsJCAcCBhUKCQgLAgQWAgMBAh4BAheAAAoJEA8Fpb3bS3lukiAH\r\n+weqosN9YMHPLp/pPqKisyjWVxVEcB6I8ni7sNYNYQORJuO6sehQolsHEeVZ8RCX\r\nsMo8+Y9CA7TbB7q5svyTbZ0cITEVaxsYwg/1avWBB1m9uCDBm+oLN+4Y/U1ZPLek\r\ndMkZ8AMAGqHuX5wtWtwVUdoxDyirMzXegvYQxRnQKGCXyzLkN3f/BnEwIcOwB253\r\nQOb/N7cDeUZAssZSmTyvG+QKUYa6et88znDno2ybWBc9E5RBOw8QHj8xvzjFDgAv\r\n7VpcGFo+nmFj47fcC6sj2ivxfl/iaT4IfxMsIvKjjcIg1+8Y9jJOnX+aQJC3OCyI\r\nf1XNhQaEq+7GaOBoZLW1FNy5AQ0EXs/UgwEIAL4lZXfJI36G4OxU00Yv0PXDxy6m\r\nF6gOb8BG4TQ1zj5Pk4ZSK6fNNUW8aVwkeoG9EFI27RzstENQVz0QRAT3rj+v7/9y\r\nGOHTb9K09d00lPxXRQyiVkqldG3885MWgKl3MTL7Uj3aF2YZ701wiWC36L5cwnoK\r\nsaXOWlRmmRvT2X8YCPL+tWS6D/57eibONM+dzBDPjZcKfGxF5h+m8AVDr9gyIV/O\r\nCBHO00qIGX8decfEUGSy+n26cY/FE/DYJ6wgO/1Wy6L0hBTQA3mlrmzZm7atzoaR\r\njUc5Y1Teq+RO6PoZx0Q4M5nblENSFV8j/7Txf/8+oCyepvvULVz0j55MeCMAEQEA\r\nAYkBPAQYAQgAJhYhBAAbmx3VMrUyI0UkmQ8Fpb3bS3luBQJez9SDAhsMBQkDwmcA\r\nAAoJEA8Fpb3bS3lu5esIAKkOXRfHpFLXzHuJoAo3papFRBCrNjJqNBwgKpbwSrXW\r\nQI6fSVeSL7mWmGp5Tvl5XA7mvUMiOnMTG810yUkkANf8dQjgkaawf+vATxzynZdr\r\nSUMiBGAU1IUvTb4ckiCWQimSKuemza9Y4Om/dBWuktzwOdsPuzBXIRLK5qBH3zQT\r\newZQ/muig+9mI7A3f8Rr5pzhNvP14wCgMDaSAI3g05S2zQINWsPxbYarrb41V2CC\r\n9ZQAjG5vkkA1ksooP5BV7WmrUZylrxmg110aJcdOkzIPnWyfdXzcBL8IjIVYlYDW\r\nICB9n45nweWn0ypjqEVK6mkPPRpX2L++NZDJhGV3Dw4=\r\n=IS+Y\r\n-----END PGP PUBLIC KEY BLOCK-----"
+            },
+            {
+                "key": "-----BEGIN PGP PUBLIC KEY BLOCK-----\r\n\r\nmQENBF7P1SwBCACiKPkwiWATNRnAQqiyF0HX9ITqFV3iRwEZ3hc2QHHSCoijybpI\r\n6xIRJwlsSYXelFj7rt1zVra/yqze6rfCgudBj5rMf5DtmWgcj83lgSMsW6GJHsxH\r\nSvkqyODuOhFjzoJXml8Ts3ThzW5QdasfnDjOfXKO1DSVgACkKlcozjHTjv2/g0up\r\n1/7YNMzvWFhiOBIp2+2+5NLFZhD5x2py+QL32dSvYjuS0gQxJKYJaVoSAPYrHIji\r\n+shC+0QjSk8lKUF9zx/ylpVVnUFkqwrIqEp0TaN5cvGLQTphX6jFT/sUNR9un8g5\r\nxA11TvqG2qR0etxtWOmulaGM7/KcY7BMHqP9ABEBAAG0GHRlc3Q0IDx0ZXN0NEBn\r\naXRsYWIuY29tPokBVAQTAQgAPhYhBGDRW7TfZpb6AVVCbaaScvAIYq4qBQJez9Us\r\nAhsDBQkDwmcABQsJCAcCBhUKCQgLAgQWAgMBAh4BAheAAAoJEKaScvAIYq4qoQAH\r\n/01cLElZmZyQEdUBnJ7E3ImVvdsYV9I65gUs0fCKgY1LYqHi3TNWCsM4WomA5gfp\r\nrIWd9JrpOjEv+8H7JrmZj6RPn7WjgLJtWXdqeFIdyN6Jvy+Qy1QvrZ94YsCwhLp4\r\nDb/EAIcPsWDjOYpbRHrWQ8WScRdPP8xiaJR7ZdC/G8xI9he/5cKjPjNiFThpzDlO\r\n539gOaAqIfI+KNFzaBHm1AeU2eaUZeh2FZ1446a4x083WKH9LW34GwBMXHmPhQ/L\r\ndjPgB+3UwslK0ZL7pZjOcZCMmo9WywYnTsWoGz1o7DV/OFRWeJgagBGlJH8L2u4q\r\nDbuR9Rf3GGPMRu/lMJ02gj25AQ0EXs/VLAEIAMvJCrnF2jedQ9rlO/D9R8U0MQTq\r\nBS79PXLzzBw1ux9Rial62SOK87k+b9cY3FHVUumv0M63wZXzLcdWHNDFBku3egIk\r\nOobYkEC/TyhLyordAsUVKf96KVZ1H8h7yhUCv3tlZ3Nw07FTattdYAD2ps52USZN\r\nxwqlWeBeFu6bZdf9ZupCKwJvz/WvjAN++AuHAziqdvM8LkdMhgq3Zr2jT07LypcH\r\nBOWhL1vRU45VETcWTrkDqACbnrwg3rcZZXFpvdeKXly4eCBXvtX3sjOZyiZZR9mh\r\n5JNmmNwX2cw2sWOEPL3oqIks+aGrkBa0hCa9r51NvHp/3gmIBHPlp0ErmjUAEQEA\r\nAYkBPAQYAQgAJhYhBGDRW7TfZpb6AVVCbaaScvAIYq4qBQJez9UsAhsMBQkDwmcA\r\nAAoJEKaScvAIYq4qWWYH/1Px/XbnQaeNmGFK810ToKYSdrbZYaGifT/QHQDRdHJf\r\nXm4jjcYh1diB5vzUsug7OkehZLT+HsEq3qLeiY+yzvMumdgHzh3KvFiATPRg7ILr\r\njFnlBKpK3cpaJFj9V3tGVankCf31/09cK4qWIQB1APISVFhcp3//4iVyasF4nH5v\r\nApeNMZgAbgffExQLrqw4/omDzAPiuctW9qPvWkQRzX+CwH0J/SmGeWueskLv3Fgp\r\nHjVy8ZT63VtZqjtR0MTyO5GI4QMO3xiekQHkAeOu6aVpKWHrmyKcX5C7nFj0vVTo\r\nwCnE6vhr7tKo/E3YqNxeMZjWeNY+x4lPA2AVLRM1u8k=\r\n=Xnn0\r\n-----END PGP PUBLIC KEY BLOCK-----"
+            }
+        ]
+        for s in ssh_data:
+            self.log.info(
+                "{0}Creating user {1} SSH key ({2})".format(get_dry_log(dry_run), uid, s))
+            if not dry_run:
+                self.users_api.create_user_ssh_key(
+                    self.config.source_host, self.config.source_token, uid, s)
+        for g in gpg_data:
+            self.log.info(
+                "{0}Creating user {1} GPG key ({2})".format(get_dry_log(dry_run), uid, g))
+            self.users_api.create_user_gpg_key(
+                self.config.source_host, self.config.source_token, uid, g)
