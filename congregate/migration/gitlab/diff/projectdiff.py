@@ -34,7 +34,15 @@ class ProjectDiffClient(BaseDiffClient):
             "ssh_url_to_repo",
             "project",
             "forking_access_level",
-            "container_expiration_policy"
+            "container_expiration_policy",
+            "approvals_before_merge",
+            "mirror",
+            "packages_enabled",
+            "external_authorization_classification_label",
+            "service_desk_address",
+            "service_desk_enabled",
+            "marked_for_deletion_at",
+            "marked_for_deletion_on"
         ]
         if staged:
             self.source_data = self.load_json_data(
