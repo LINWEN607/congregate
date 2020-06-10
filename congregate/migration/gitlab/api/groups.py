@@ -279,6 +279,20 @@ class GroupsApi():
         """
         return api.list_all(host, token, "groups/%d/hooks" % gid)
 
+    def add_group_hook(self, host, token, gid, data, message=None):
+        """
+        Add a hook to a specified group
+
+        GitLab API doc: https://docs.gitlab.com/ee/api/groups.html#add-group-hook
+
+            :param: gid: (int) GitLab group ID
+            :param: data: (dict) Object containing the various data requried for creating a hook. Refer to the link above for specific examples
+            :return: Response object containing the response to POST /groups/:id/hooks
+        """
+        if not message:
+            message = "Adding group hook"
+        return api.generate_post_request(host, token, "groups/{}/hooks".format(gid), json.dumps(data), description=message)
+
     def get_all_group_projects(self, gid, host, token):
         """
         Get a list of projects in this group
