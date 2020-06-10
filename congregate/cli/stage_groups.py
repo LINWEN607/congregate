@@ -67,9 +67,10 @@ def build_staging_data(groups_to_stage, dry_run=True):
     rewritten_users = {}
     for i, _ in enumerate(users):
         new_obj = users[i]
-        id_num = users[i]["username"]
+        id_num = users[i]["email"]
         rewritten_users[id_num] = new_obj
-    # if the groups are not empty, stage all the projects and users
+    
+    # If there are groups selected in UI
     if not groups_to_stage[0] == "":
         if groups_to_stage[0] == "all" or groups_to_stage[0] == ".":
             print ("call stage_groups.build_staging_data(), the parameter is all\n")
@@ -97,6 +98,7 @@ def build_staging_data(groups_to_stage, dry_run=True):
             for i, _ in enumerate(groups_to_stage):
                 # Hacky check for id or project name by explicitly checking
                 # variable type
+                key = None
                 try:
                     if (isinstance(int(groups_to_stage[i]), int)):
                         key = groups_to_stage[i]
@@ -109,19 +111,29 @@ def build_staging_data(groups_to_stage, dry_run=True):
                         if groups[j]["name"] == groups_to_stage[i]:
                             group = projects[j]  
                 staged_groups.append(group)
-                # Get all the users belong to the group
+                # Get all the stage users belong to the group
                 members = []
-                for member in groups_api.get_all_group_members(
-                        int(group["id"]), b.config.source_host, b.config.source_token):
+                for member in group["members"]:
                     append_member_to_members_list(
                         rewritten_users, staged_users, members, member)
+                    if rewritten_users.get(member["email"]):
+                                staged_users.append(
+                                    rewritten_users[member["email"]])
                 # Get all the stage projects under the group
+                project_members = []
                 for project in groups_api.get_all_group_projects(
-                    int(group["id"]), b.config.source_host, b.config.source_token):
+                    int(key), b.config.source_host, b.config.source_token):
                     obj = get_project_metadata(project)
-                    obj["members"] = members
+                    # Need to get the project members from projects by call api
+                    for project_member in projects_api.get_members(
+                        int(project["id"]), b.config.source_host, b.config.source_token):
+                        append_member_to_members_list(
+                            rewritten_users, staged_users, project_members, project_member)
+                        if rewritten_users.get(project_member["email"]):
+                                staged_users.append(
+                                    rewritten_users[project_member["email"]])
+                    obj["members"] = project_members
                     staged_projects.append(obj)
-    # Groups are empty, stage all projects and users
     else:
         staged_groups = []
 
@@ -194,9 +206,9 @@ def append_member_to_members_list(
     if isinstance(member, dict):
         if member.get("username", None) is not None:
             if member["username"] != "root":
-                b.log.info("Staging user (%s)" % member["username"])
+                b.log.info("Staging user (%s)" % member["email"])
                 staged_users.append(
-                    rewritten_users[member["username"]])
+                    rewritten_users[member["email"]])
                 members_list.append(member)
     else:
         b.log.error(member)
