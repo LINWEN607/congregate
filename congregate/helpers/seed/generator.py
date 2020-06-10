@@ -240,7 +240,6 @@ class SeedDataGenerator(BaseClass):
                 "merge_requests_events": False,
                 "repository_update_events": False,
                 "enable_ssl_verification": True,
-                "project_id": pid,
                 "issues_events": False,
                 "confidential_issues_events": False,
                 "note_events": False,
@@ -257,7 +256,6 @@ class SeedDataGenerator(BaseClass):
                 "merge_requests_events": False,
                 "repository_update_events": False,
                 "enable_ssl_verification": True,
-                "project_id": pid,
                 "issues_events": False,
                 "confidential_issues_events": False,
                 "note_events": False,
@@ -304,19 +302,21 @@ class SeedDataGenerator(BaseClass):
                     pid, self.config.source_host, self.config.source_token, d)
 
     def generate_dummy_project_push_rules(self, pid, dry_run=True):
-        data = {
-            "commit_message_regex": "",
-            "commit_message_negative_regex": "",
-            "branch_name_regex": "",
-            "deny_delete_tag": True,
-            "member_check": True,
-            "prevent_secrets": True,
-            "author_email_regex": "",
-            "file_name_regex": "testingfile",
-            "max_file_size": 1000000,
-            "commit_committer_check": True,
-            "reject_unsigned_commits": None
-        }
+        data = [
+            {
+                "commit_message_regex": "",
+                "commit_message_negative_regex": "",
+                "branch_name_regex": "",
+                "deny_delete_tag": True,
+                "member_check": True,
+                "prevent_secrets": True,
+                "author_email_regex": "",
+                "file_name_regex": "testingfile",
+                "max_file_size": 1000000,
+                "commit_committer_check": True,
+                "reject_unsigned_commits": None
+            }
+        ]
 
         self.log.info("{0}Creating project {1} push rules ({2})".format(
             get_dry_log(dry_run), pid, data))
@@ -357,7 +357,6 @@ class SeedDataGenerator(BaseClass):
                 "merge_requests_events": True,
                 "repository_update_events": False,
                 "enable_ssl_verification": False,
-                "group_id": gid,
                 "issues_events": False,
                 "confidential_issues_events": False,
                 "note_events": True,
@@ -373,7 +372,6 @@ class SeedDataGenerator(BaseClass):
                 "merge_requests_events": False,
                 "repository_update_events": False,
                 "enable_ssl_verification": True,
-                "group_id": gid,
                 "issues_events": False,
                 "confidential_issues_events": True,
                 "note_events": False,

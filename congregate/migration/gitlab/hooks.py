@@ -58,7 +58,7 @@ class HooksClient(BaseClass):
                     return False
                 h.pop("id", None)
                 h.pop("created_at", None)
-                h["project_id"] = new_id
+                h.pop("project_id", None)
                 # hook does not include secret token
                 self.projects_api.add_project_hook(
                     self.config.destination_host, self.config.destination_token, new_id, h)
@@ -86,7 +86,7 @@ class HooksClient(BaseClass):
                     return False
                 h.pop("id", None)
                 h.pop("created_at", None)
-                h["group_id"] = new_id
+                h.pop("group_id", None)
                 # hook does not include secret token
                 self.groups_api.add_group_hook(
                     self.config.destination_host, self.config.destination_token, new_id, h)
