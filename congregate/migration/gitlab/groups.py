@@ -39,7 +39,6 @@ class GroupsClient(BaseClass):
             members = list(self.groups_api.get_all_group_members(
                 group_id, host, token))
             group["members"] = members
-            transient_list.append(group)
             projects = list(self.groups_api.get_all_group_projects(
                 group_id, host, token))
             group["projects"] = projects
@@ -73,7 +72,6 @@ class GroupsClient(BaseClass):
                 groups = [self.groups_api.get_group(self.config.dstn_parent_id, self.config.destination_host,
                                                     self.config.destination_token).json()]
                 prefix += str(self.config.dstn_parent_id)
-                print groups
             else:
                 self.log.info("No parent ID found")
                 return None
