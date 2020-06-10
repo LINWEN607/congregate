@@ -28,7 +28,8 @@ class GroupDiffClient(BaseDiffClient):
             "projects",
             "runners_token",
             "web_url",
-            "created_at"
+            "created_at",
+            "marked_for_deletion_on"
         ]
         if staged:
             self.source_data = self.load_json_data(
