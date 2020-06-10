@@ -178,7 +178,7 @@ if __name__ == '__main__':
             from congregate.migration.mirror import MirrorClient
             from congregate.migration import migrate
             from congregate.migration.gitlab.branches import BranchesClient
-            from congregate.cli import list_projects, stage_projects, do_all, stage_groups
+            from congregate.cli import list_projects, stage_projects, do_all
             from congregate.helpers.seed.generator import SeedDataGenerator
             from congregate.migration.gitlab.diff.userdiff import UserDiffClient
             from congregate.migration.gitlab.diff.projectdiff import ProjectDiffClient
@@ -192,7 +192,7 @@ if __name__ == '__main__':
             from .migration.mirror import MirrorClient
             from congregate.migration import migrate
             from .migration.gitlab.branches import BranchesClient
-            from congregate.cli import list_projects, stage_projects, do_all, stage_groups
+            from congregate.cli import list_projects, stage_projects, do_all
             from congregate.helpers.user_util import map_users
         config = conf.Config()
         if config.external_source_url is not None:
@@ -219,9 +219,7 @@ if __name__ == '__main__':
             if arguments["list"]:
                 list_projects.list_projects()
             if arguments["stage"]:
-                # stage_projects.stage_projects(
-                #    arguments['<projects>'], dry_run=DRY_RUN)
-                stage_groups.stage_groups(
+                stage_projects.stage_projects(
                     arguments['<projects>'], dry_run=DRY_RUN)
             if arguments["migrate"]:
                 skip_users = True if arguments["--skip-users"] else False
