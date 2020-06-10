@@ -23,7 +23,7 @@ class MigrationEndToEndTest(unittest.TestCase):
     def tearDownClass(self):
         rollback(dry_run=False, hard_delete=True)
         # Allow users/groups/projects to fully delete
-        sleep(self.b.config.importexport_wait * 5)
+        sleep(self.b.config.importexport_wait * 6)
         rollback_diff()
 
     def test_user_migration_diff(self):
