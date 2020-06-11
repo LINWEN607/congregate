@@ -29,7 +29,8 @@ class GroupDiffClient(BaseDiffClient):
             "runners_token",
             "web_url",
             "created_at",
-            "marked_for_deletion_on"
+            "marked_for_deletion_on",
+            "shared_with_groups"   # Temporarily, until we add shared_with_groups feature
         ]
         if staged:
             self.source_data = self.load_json_data(

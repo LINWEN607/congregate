@@ -14,7 +14,8 @@ from congregate.helpers.misc_utils import get_congregate_path, deobfuscate
 class Config(object):
     def __init__(self, path=None):
         app_path = get_congregate_path()
-        config_path = "{}/{}".format(app_path, path) if path else "{}/data/congregate.conf".format(app_path)
+        config_path = "{}/{}".format(
+            app_path, path) if path else "{}/data/congregate.conf".format(app_path)
         self.config = ConfigParser()
         if not os.path.exists(config_path):
             print("WARNING: No configuration found. Configuring empty file {}".format(
@@ -240,6 +241,14 @@ class Config(object):
         :return: The set config value or 10 (seconds) as default.
         """
         return self.prop_int("APP", "export_import_wait_time", 10)
+
+    @property
+    def slack_url(self):
+        """
+        Presents the Slack Incoming Webhooks URL for sending alerts (logs) to a dedicated GitLab internal private channel.
+        Optionally used during customer migrations, mainly to gitlab.com, but also an option for migrations to self-managed.
+        """
+        return self.prop("APP", "slack_url")
 
 
 # HIDDEN PROPERTIES

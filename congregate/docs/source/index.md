@@ -20,6 +20,7 @@ Our guidance on some other migrations at this time:
 * [Getting Started](static_docs/setup.md)
 * [README](static_docs/readme.md)
 * [Migration Prerequisites](static_docs/migration-prerequisites.md)
+* [Development Environment Setup Tips](static_docs/local-development.md)
 * [Migration Workflow](static_docs/workflow.md)
 * [Code Quality Report](static_docs/code_quality.md)
 * [Migration Metrics](static_docs/migration_metrics.md)
