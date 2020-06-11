@@ -64,7 +64,7 @@ def build_staging_data(projects_to_stage, dry_run=True):
     rewritten_users = {}
     for i, _ in enumerate(users):
         new_obj = users[i]
-        id_num = users[i]["email"]
+        id_num = users[i]["username"]
         rewritten_users[id_num] = new_obj
     
     # If there are some projects selected in UI
@@ -115,9 +115,9 @@ def build_staging_data(projects_to_stage, dry_run=True):
                             staged_groups.append(rewritten_groups[sub])
                     if len(rewritten_groups[group_to_stage]["members"]) > 0:
                         for member in rewritten_groups[group_to_stage]["members"]:
-                            if rewritten_users.get(member["email"]):
+                            if rewritten_users.get(member["username"]):
                                 staged_users.append(
-                                    rewritten_users[member["email"]])
+                                    rewritten_users[member["uername"]])
 
                 obj["members"] = members
                 b.log.info("{0}Staging project ({1}) [{2}/{3}]".format(
@@ -157,9 +157,9 @@ def build_staging_data(projects_to_stage, dry_run=True):
                             staged_groups.append(rewritten_groups[sub])
                     if len(rewritten_groups[group_to_stage]["members"]) > 0:
                         for member in rewritten_groups[group_to_stage]["members"]:
-                            if rewritten_users.get(member["email"]):
+                            if rewritten_users.get(member["username"]):
                                 staged_users.append(
-                                    rewritten_users[member["email"]])
+                                    rewritten_users[member["uername"]])
 
                 obj["members"] = members
                 b.log.info("{0}Staging project ({1}) [{2}/{3}]".format(
@@ -238,9 +238,9 @@ def append_member_to_members_list(
     if isinstance(member, dict):
         if member.get("username", None) is not None:
             if member["username"] != "root":
-                b.log.info("Staging user (%s)" % member["email"])
+                b.log.info("Staging user (%s)" % member["username"])
                 staged_users.append(
-                    rewritten_users[member["email"]])
+                    rewritten_users[member["username"]])
                 members_list.append(member)
     else:
         b.log.error(member)
