@@ -13,6 +13,7 @@ class PushRulesClient(BaseClass):
     def add_push_rules(self, new_id, host, token, data):
         data.pop("id", None)
         data.pop("project_id", None)
+        data.pop("created_at", None)
         self.projects_api.create_project_push_rule(new_id, host, token, data)
 
     def migrate_push_rules(self, old_id, new_id, name):

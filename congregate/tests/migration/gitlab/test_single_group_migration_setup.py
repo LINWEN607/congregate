@@ -32,8 +32,8 @@ class MigrationEndToEndTestSetup(unittest.TestCase):
             os.getenv("GITLAB_DEST"),  # Destination hostname
             # self.t.generate_token("destination_token", "2020-08-27", url=os.getenv("GITLAB_DEST"), username="root", pword=uuid4().hex), # Destination access token
             # "0",  # Destination import user id
-            "True",  # shared runners enabled
-            "False",  # append project suffix (retry)
+            "yes",  # shared runners enabled
+            "no",  # append project suffix (retry)
             "3",  # max_import_retries,
             "gitlab",  # external_src_url
             os.getenv("GITLAB_SRC"),  # source host
@@ -55,10 +55,11 @@ class MigrationEndToEndTestSetup(unittest.TestCase):
             # "access key",   # access key
             # "secret key",   # secret key
             "",  # file system path
-            "False",  # keep_blocked_users
-            "True",  # password reset email
-            "False",  # randomized password
-            "5"  # import wait time
+            "no",  # keep_blocked_users
+            "yes",  # password reset email
+            "no",  # randomized password
+            "5",  # import wait time
+            ""  # slack_url
         ]
         tokens = [
             destination_token,
