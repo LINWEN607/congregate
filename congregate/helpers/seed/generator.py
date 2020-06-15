@@ -43,15 +43,17 @@ class SeedDataGenerator(BaseClass):
             self.generate_dummy_user_keys(user["id"], dry_run)
         for group in groups:
             self.generate_dummy_group_variables(group["id"], dry_run)
+            self.generate_dummy_group_hooks(group["id"], dry_run)
         self.add_group_members(users, groups, dry_run)
         projects = self.generate_group_projects(groups, dry_run)
         for project in projects:
             self.generate_dummy_environment(project["id"], dry_run)
+            self.generate_dummy_project_hooks(project["id"], dry_run)
+            self.generate_dummy_project_push_rules(project["id"], dry_run)
             self.generate_dummy_project_variables(
                 project["id"], dry_run)
             self.generate_shared_with_group_data(
                 project["id"], groups, dry_run)
-            self.generate_dummy_project_push_rules(project["id"], dry_run)
         projects += self.generate_user_projects(users, dry_run)
 
         print "---Generated Users---"
@@ -229,6 +231,49 @@ class SeedDataGenerator(BaseClass):
         if not dry_run:
             return self.projects.projects_api.create_environment(self.config.source_host, self.config.source_token, pid, data)
 
+    def generate_dummy_project_hooks(self, pid, dry_run=True):
+        data = [
+            {
+                "url": "http://example.com",
+                "push_events": True,
+                "tag_push_events": False,
+                "merge_requests_events": False,
+                "repository_update_events": False,
+                "enable_ssl_verification": True,
+                "issues_events": False,
+                "confidential_issues_events": False,
+                "note_events": False,
+                "confidential_note_events": False,
+                "pipeline_events": False,
+                "wiki_page_events": False,
+                "job_events": False,
+                "push_events_branch_filter": ""
+            },
+            {
+                "url": "http://example2.com",
+                "push_events": True,
+                "tag_push_events": False,
+                "merge_requests_events": False,
+                "repository_update_events": False,
+                "enable_ssl_verification": True,
+                "issues_events": False,
+                "confidential_issues_events": False,
+                "note_events": False,
+                "confidential_note_events": False,
+                "pipeline_events": False,
+                "wiki_page_events": False,
+                "job_events": False,
+                "push_events_branch_filter": ""
+            }
+        ]
+
+        for d in data:
+            self.log.info(
+                "{0}Creating project {1} hook ({2})".format(get_dry_log(dry_run), pid, d))
+            if not dry_run:
+                self.projects_api.add_project_hook(
+                    self.config.source_host, self.config.source_token, pid, d)
+
     def generate_dummy_project_variables(self, pid, dry_run=True):
         data = [
             {
@@ -253,23 +298,25 @@ class SeedDataGenerator(BaseClass):
             self.log.info(
                 "{0}Creating project {1} variable ({2})".format(get_dry_log(dry_run), pid, data))
             if not dry_run:
-                self.variables.set_variables(
-                    pid, d, self.config.source_host, self.config.source_token)
+                self.projects_api.create_project_variable(
+                    pid, self.config.source_host, self.config.source_token, d)
 
     def generate_dummy_project_push_rules(self, pid, dry_run=True):
-        data = {
-            "commit_message_regex": "",
-            "commit_message_negative_regex": "",
-            "branch_name_regex": "",
-            "deny_delete_tag": True,
-            "member_check": True,
-            "prevent_secrets": True,
-            "author_email_regex": "",
-            "file_name_regex": "testingfile",
-            "max_file_size": 1000000,
-            "commit_committer_check": True,
-            "reject_unsigned_commits": None
-        }
+        data = [
+            {
+                "commit_message_regex": "",
+                "commit_message_negative_regex": "",
+                "branch_name_regex": "",
+                "deny_delete_tag": True,
+                "member_check": True,
+                "prevent_secrets": True,
+                "author_email_regex": "",
+                "file_name_regex": "testingfile",
+                "max_file_size": 1000000,
+                "commit_committer_check": True,
+                "reject_unsigned_commits": None
+            }
+        ]
 
         self.log.info("{0}Creating project {1} push rules ({2})".format(
             get_dry_log(dry_run), pid, data))
@@ -298,8 +345,49 @@ class SeedDataGenerator(BaseClass):
             self.log.info(
                 "{0}Creating group {1} variable ({2})".format(get_dry_log(dry_run), gid, d))
             if not dry_run:
-                self.variables.set_variables(
-                    gid, d, self.config.source_host, self.config.source_token, var_type="group")
+                self.groups.create_group_variable(
+                    gid, self.config.source_host, self.config.source_token, d)
+
+    def generate_dummy_group_hooks(self, gid, dry_run=True):
+        data = [
+            {
+                "url": "http://example.com",
+                "push_events": True,
+                "tag_push_events": False,
+                "merge_requests_events": True,
+                "repository_update_events": False,
+                "enable_ssl_verification": False,
+                "issues_events": False,
+                "confidential_issues_events": False,
+                "note_events": True,
+                "confidential_note_events": None,
+                "pipeline_events": False,
+                "wiki_page_events": False,
+                "job_events": False
+            },
+            {
+                "url": "http://example2.com",
+                "push_events": True,
+                "tag_push_events": False,
+                "merge_requests_events": False,
+                "repository_update_events": False,
+                "enable_ssl_verification": True,
+                "issues_events": False,
+                "confidential_issues_events": True,
+                "note_events": False,
+                "confidential_note_events": None,
+                "pipeline_events": False,
+                "wiki_page_events": False,
+                "job_events": False
+            }
+        ]
+
+        for d in data:
+            self.log.info(
+                "{0}Creating group {1} hook ({2})".format(get_dry_log(dry_run), gid, d))
+            if not dry_run:
+                self.groups.add_group_hook(
+                    self.config.source_host, self.config.source_token, gid, d)
 
     def generate_shared_with_group_data(self, pid, groups, dry_run):
         for group in groups:

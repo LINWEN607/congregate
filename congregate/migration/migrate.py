@@ -139,6 +139,9 @@ def migrate_user_info(start, skip_users=False):
             formatted_users = {}
             for nu in new_users:
                 formatted_users[nu["email"]] = nu
+            new_users.append(get_results(new_users))
+            b.log.info("### {0}User creation results ###\n{1}"
+                       .format(get_dry_log(_DRY_RUN), json_pretty(new_users)))
             write_results_to_file(
                 formatted_users, result_type="user", log=b.log)
             if _DRY_RUN:
@@ -161,12 +164,15 @@ def handle_user_creation(user):
         :return:
     """
     response = None
-    new_user = None
+    new_user = {
+        "email": False,
+        "id": False
+    }
     state = user.get("state", None).lower()
     email = user.get("email", None)
     old_user = {
         "email": email,
-        "id": user["id"]
+        "id": user.get("id", None)
     }
     try:
         if not _ONLY_POST_MIGRATION_INFO:
@@ -187,11 +193,11 @@ def handle_user_creation(user):
                     response, user_data)
         if not _DRY_RUN:
             # Migrate SSH keys
-            keys.migrate_user_ssh_keys(
-                old_user, new_user if new_user else users.find_user_by_email_comparison_without_id(email))
+            keys.migrate_user_ssh_keys(old_user, new_user if new_user.get(
+                "id", None) else users.find_user_by_email_comparison_without_id(email))
             # Migrate GPG keys
-            keys.migrate_user_gpg_keys(
-                old_user, new_user if new_user else users.find_user_by_email_comparison_without_id(email))
+            keys.migrate_user_gpg_keys(old_user, new_user if new_user.get(
+                "id", None) else users.find_user_by_email_comparison_without_id(email))
     except RequestException as e:
         b.log.error(
             "Failed to create user {0}, with error:\n{1}".format(user_data, e))
@@ -318,11 +324,7 @@ def handle_importing_groups(group):
                 import_id = group.get("id", None)
         if import_id and not _DRY_RUN:
             result[full_path_with_parent_namespace] = group
-            # Migrate CI/CD Variables
-            variables.migrate_variables(
-                import_id, src_gid, "group", full_path)
-            # Remove import user
-            groups.remove_import_user(import_id)
+            migrate_single_group_features(src_gid, import_id, full_path)
     except (RequestException, KeyError, OverflowError) as oe:
         b.log.error("Failed to import group {0} (ID: {1}) as {2} with error:\n{3}".format(
             full_path, src_gid, filename, oe))
@@ -348,11 +350,7 @@ def migrate_subgroup_info(subgroup):
             b.log.info("{0}Sub-group {1} (ID: {2}) found on destination".format(
                 get_dry_log(_DRY_RUN), full_path, dst_gid))
             if not _DRY_RUN:
-                # Migrate CI/CD Variables
-                variables.migrate_variables(
-                    dst_gid, src_gid, "group", full_path)
-                # Remove import user
-                groups.remove_import_user(dst_gid)
+                migrate_single_group_features(src_gid, dst_gid, full_path)
         else:
             b.log.info("{0}Sub-group {1} NOT found on destination".format(
                 get_dry_log(_DRY_RUN), full_path_with_parent_namespace))
@@ -362,6 +360,18 @@ def migrate_subgroup_info(subgroup):
     except Exception as e:
         b.log.error(e)
         b.log.error(print_exc())
+
+
+def migrate_single_group_features(src_gid, dst_gid, full_path):
+    # CI/CD Variables
+    variables.migrate_variables(
+        dst_gid, src_gid, "group", full_path)
+
+    # Hooks (Webhooks)
+    hooks.migrate_group_hooks(src_gid, dst_gid, full_path)
+
+    # Remove import user
+    groups.remove_import_user(dst_gid)
 
 
 def migrate_project_info(start, skip_project_export=False, skip_project_import=False):
@@ -471,7 +481,7 @@ def handle_importing_projects(project_json):
                     b.config.source_host, b.config.source_token, src_id)
             b.log.info(
                 "Migrating source project {0} (ID: {1}) info".format(path, src_id))
-            post_import_results = migrate_single_project_info(
+            post_import_results = migrate_single_project_features(
                 project_json, import_id)
             result[dst_path_with_namespace] = post_import_results
     except (RequestException, KeyError, OverflowError) as oe:
@@ -489,7 +499,7 @@ def handle_importing_projects(project_json):
     return result
 
 
-def migrate_single_project_info(project, dst_id):
+def migrate_single_project_features(project, dst_id):
     """
         Subsequent function to update project info AFTER import
     """
@@ -530,7 +540,7 @@ def migrate_single_project_info(project, dst_id):
         results["container_registry"] = registries.migrate_registries(
             src_id, dst_id, path_with_namespace)
 
-    # Project hooks (webhooks)
+    # Hooks (Webhooks)
     results["project_hooks"] = hooks.migrate_project_hooks(
         src_id, dst_id, path_with_namespace)
 
