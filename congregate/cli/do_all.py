@@ -1,7 +1,7 @@
 import json
 
 from congregate.cli import stage_projects
-from congregate.cli.list_projects import list_data
+from congregate.cli.list_source import list_data
 from congregate.migration.gitlab.users import UsersClient
 from congregate.migration.gitlab.groups import GroupsClient
 from congregate.migration import migrate

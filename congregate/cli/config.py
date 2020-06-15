@@ -63,7 +63,7 @@ def generate_config():
     # External source instance settings
     ext_src_url = raw_input(
         "Migrating from an external (non-GitLab) instance? Input external source URL: ")
-    if ext_src_url and not "gitlab" in ext_src_url.lower():
+    if ext_src_url and "gitlab" not in ext_src_url.lower():
         config.add_section("EXT_SRC")
         config.set("EXT_SRC", "url", ext_src_url)
         print("NOTE: External source migration is currently limited to mirroring through http/https. A master username and password is required to set up mirroring in each shell project.")

@@ -13,6 +13,7 @@ from congregate.migration.bitbucket.api.projects import ProjectsApi as BitBucket
 
 b = BaseClass()
 
+
 def list_gitlab_data():
     """
         List the projects information, and Retrieve user info, group info from source instance.
@@ -21,7 +22,7 @@ def list_gitlab_data():
     users = UsersClient()
     projects_api = ProjectsApi()
     groups_api = GroupsApi()
-    b.log.info("Listing projects from source {}:".format(b.config.source_host))
+    b.log.info("Listing projects from source {}".format(b.config.source_host))
 
     projects = []
 
@@ -48,32 +49,34 @@ def list_gitlab_data():
     users.retrieve_user_info(b.config.source_host,
                              b.config.source_token, quiet=True)
 
+
 def list_bitbucket_data():
     users = BitBucketUsersApi()
     projects = BitBucketProjectsApi()
     repos = ReposApi()
 
     write_json_yield_to_file(
-        "%s/data/project_json.json" % b.app_path, 
-        repos.get_all_repos, 
-        b.config.source_host, 
+        "%s/data/project_json.json" % b.app_path,
+        repos.get_all_repos,
+        b.config.source_host,
         b.config.source_token
     )
 
     write_json_yield_to_file(
-        "%s/data/users.json" % b.app_path, 
-        users.get_all_users, 
-        b.config.source_host, 
+        "%s/data/users.json" % b.app_path,
+        users.get_all_users,
+        b.config.source_host,
         b.config.source_token
     )
 
     write_json_yield_to_file(
-        "%s/data/groups.json" % b.app_path, 
-        projects.get_all_projects, 
-        b.config.source_host, 
+        "%s/data/groups.json" % b.app_path,
+        projects.get_all_projects,
+        b.config.source_host,
         b.config.source_token
     )
-    
+
+
 def write_empty_file(filename):
     """
         Write an empty json file containing an empty list, it's used to make sure a file is present in the filesystem
@@ -84,12 +87,18 @@ def write_empty_file(filename):
         with open("%s/data/%s.json" % (b.app_path, filename), "w") as f:
             f.write("[]")
 
+
 def list_data():
-    source = "gitlab"
-    if source == "gitlab":
+    ext_src = b.config.external_source_url
+    src = b.config.source_host
+    if ext_src and "gitlab" not in ext_src.lower():
+        list_bitbucket_data()
+    elif src:
         list_gitlab_data()
     else:
-        list_bitbucket_data()
+        b.log.warning(
+            "Cannot list from source (External: {0}, GitLab: {1})".format(ext_src, src))
+        exit()
 
     staged_files = ["stage", "staged_groups", "staged_users"]
 
