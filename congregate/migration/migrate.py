@@ -172,7 +172,7 @@ def handle_user_creation(user):
     email = user.get("email", None)
     old_user = {
         "email": email,
-        "id": user["id"]
+        "id": user.get("id", None)
     }
     try:
         if not _ONLY_POST_MIGRATION_INFO:
@@ -193,11 +193,11 @@ def handle_user_creation(user):
                     response, user_data)
         if not _DRY_RUN:
             # Migrate SSH keys
-            keys.migrate_user_ssh_keys(
-                old_user, new_user if new_user["id"] else users.find_user_by_email_comparison_without_id(email))
+            keys.migrate_user_ssh_keys(old_user, new_user if new_user.get(
+                "id", None) else users.find_user_by_email_comparison_without_id(email))
             # Migrate GPG keys
-            keys.migrate_user_gpg_keys(
-                old_user, new_user if new_user["id"] else users.find_user_by_email_comparison_without_id(email))
+            keys.migrate_user_gpg_keys(old_user, new_user if new_user.get(
+                "id", None) else users.find_user_by_email_comparison_without_id(email))
     except RequestException as e:
         b.log.error(
             "Failed to create user {0}, with error:\n{1}".format(user_data, e))
