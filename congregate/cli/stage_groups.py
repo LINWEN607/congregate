@@ -73,7 +73,6 @@ def build_staging_data(groups_to_stage, dry_run=True):
     # If there are groups selected in UI
     if not groups_to_stage[0] == "":
         if groups_to_stage[0] == "all" or groups_to_stage[0] == ".":
-            print ("call stage_groups.build_staging_data(), the parameter is all\n")
             # Stage ALL groups
             for g in groups:
                 # get_all_group_members
@@ -102,17 +101,15 @@ def build_staging_data(groups_to_stage, dry_run=True):
                 try:
                     if (isinstance(int(groups_to_stage[i]), int)):
                         key = groups_to_stage[i]
-                        print ('the value of key: '+ (key))
                         # Retrieve object from better formatted object
                         group = rewritten_groups[int(key)]
                 except ValueError:
-                    # Iterate over original project_json.json file
-                    for j, _ in enumerate(projects):
+                    # Iterate over original group.json file
+                    for j, _ in enumerate(groups):
                         if groups[j]["name"] == groups_to_stage[i]:
-                            group = projects[j]  
+                            group = groups[j]  
                 staged_groups.append(group)
                 # Get all the stage users belong to the group
-                members = []
                 for member in group["members"]:
                     append_member_to_members_list(
                         rewritten_users, staged_users, members, member)
@@ -122,7 +119,7 @@ def build_staging_data(groups_to_stage, dry_run=True):
                 # Get all the stage projects under the group
                 project_members = []
                 for project in groups_api.get_all_group_projects(
-                    int(key), b.config.source_host, b.config.source_token):
+                    group["id"], b.config.source_host, b.config.source_token):
                     obj = get_project_metadata(project)
                     # Need to get the project members from projects by call api
                     for project_member in projects_api.get_members(
