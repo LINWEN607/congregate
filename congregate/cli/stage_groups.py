@@ -92,6 +92,39 @@ def build_staging_data(groups_to_stage, dry_run=True):
             # Stage ALL users
             for user in users:
                 staged_users.append(user)    
+        elif re.search(r"\d+-\d+", groups_to_stage[0]) is not None:
+            match = (re.search(r"\d+-\d+", groups_to_stage[0])).group(0)
+            start = int(match.split("-")[0])
+            if start != 0:
+                start -= 1
+            end = int(match.split("-")[1])
+            for i in range(start, end):
+                key = groups_to_stage[i]
+                # Retrieve object from better formatted object
+                group = rewritten_groups[int(key)]
+                staged_groups.append(group)
+                # Get all the stage users belong to the group
+                for member in group["members"]:
+                    append_member_to_members_list(
+                        rewritten_users, staged_users, members, member)
+                    if rewritten_users.get(member["username"]):
+                                staged_users.append(
+                                    rewritten_users[member["username"]])
+                # Get all the stage projects under the group
+                project_members = []
+                for project in groups_api.get_all_group_projects(
+                    group["id"], b.config.source_host, b.config.source_token):
+                    obj = get_project_metadata(project)
+                    # Need to get the project members from projects by call api
+                    for project_member in projects_api.get_members(
+                        int(project["id"]), b.config.source_host, b.config.source_token):
+                        append_member_to_members_list(
+                            rewritten_users, staged_users, project_members, project_member)
+                        if rewritten_users.get(project_member["username"]):
+                                staged_users.append(
+                                    rewritten_users[project_member["username"]])
+                    obj["members"] = project_members
+                    staged_projects.append(obj)        
         # Based on ID name 
         else:
             for i, _ in enumerate(groups_to_stage):
