@@ -224,7 +224,7 @@ def append_member_to_members_list(
     if isinstance(member, dict):
         if member.get("username", None) is not None:
             if member.get("id", None) is not None and member["username"] != "root":
-                b.log.info("Staging user (%s)" % member["email"])
+                b.log.info("Staging user (%s)" % member["username"])
                 staged_users.append(
                     rewritten_users[member["id"]])
                 members_list.append(member)
