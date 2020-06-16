@@ -36,12 +36,10 @@ class GroupsClient(BaseClass):
                 self.log.error(
                     "Failed to pop group keys 'ldap_cn' and/or 'ldap_access', with error:\n{}".format(ke))
             group_id = group["id"]
-            members = list(self.groups_api.get_all_group_members(
+            group["members"] = list(self.groups_api.get_all_group_members(
+                group_id, host, token))       
+            group["projects"] = list(self.groups_api.get_all_group_projects(
                 group_id, host, token))
-            group["members"] = members
-            projects = list(self.groups_api.get_all_group_projects(
-                group_id, host, token))
-            group["projects"] = projects
             transient_list.append(group)
             if parent_group is not None:
                 parent_group["child_ids"].append(group["id"])
