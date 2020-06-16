@@ -30,6 +30,10 @@ class ConfigTests(unittest.TestCase):
             "yes",   # shared runners enabled
             "no",  # append project suffix (retry)
             "3",  # max_import_retries,
+            "no",  # destination parent group
+            "username_suffix",  # username suffix
+            "No",   # mirror
+            # "mirror_username",  # mirror username
             "some_external_source",  # external_src_url
             "username",  # ext_src_user
             # "password",  # ext_src_pwd
@@ -78,6 +82,10 @@ class ConfigTests(unittest.TestCase):
             "yes",   # shared runners enabled
             "no",  # append project suffix (retry)
             "3",  # max_import_retries,
+            "no",  # destination parent group
+            "username_suffix",  # username suffix
+            "Yes",   # mirror
+            # "mirror_username",  # mirror username
             "gitlab",  # external_src_url
             "source_hostname",  # source host
             # "source_access_token", # source token
@@ -86,12 +94,8 @@ class ConfigTests(unittest.TestCase):
             # "source_group_full_path",   # source parent group path
             "yes",  # migrating registries
             "source_registry_url",    # source registry url
-            "3600",  # max_export_wait_time
             "destination_registry_url",    # destination registry url
-            "no",  # destination parent group
-            "username_suffix",  # username suffix
-            "Yes",   # mirror
-            # "mirror_username",  # mirror username
+            "3600",  # max_export_wait_time
             "filesystem",  # export location
             "absolute_path",    # file system path
             "no",    # keep_blocked_users
@@ -151,15 +155,6 @@ class ConfigTests(unittest.TestCase):
             "yes",   # shared runners enabled
             "no",  # append project suffix (retry)
             "3",  # max_import_retries,
-            "gitlab",  # external_src_url
-            "source_hostname",  # source host
-            # "source_access_token", # source token
-            "no",  # source parent group
-            "yes",  # migrating registries
-            # "source_access_token", # source token
-            "source_registry_url",    # source registry url
-            "3600",  # max_export_wait_time
-            "destination_registry_url",    # destination registry url
             "yes",  # destination parent group
             "0",  # destination parent group id
             # "dstn_parent_group_path",  # destination parent group full path
@@ -167,6 +162,15 @@ class ConfigTests(unittest.TestCase):
             "username_suffix",  # username suffix
             "No",   # mirror
             # "mirror_username",  # mirror username
+            "gitlab",  # external_src_url
+            "source_hostname",  # source host
+            # "source_access_token", # source token
+            "no",  # source parent group
+            "yes",  # migrating registries
+            # "source_access_token", # source token
+            "source_registry_url",    # source registry url
+            "destination_registry_url",    # destination registry url
+            "3600",  # max_export_wait_time
             "aws",  # export location
             "s3_name",  # bucket name
             "us-east-1",    # bucket region
@@ -233,14 +237,6 @@ class ConfigTests(unittest.TestCase):
             "no",   # shared runners enabled
             "yes",  # append project suffix (retry)
             "1",  # max_import_retries,
-            "gitlab",  # external_src_url
-            "source_hostname",  # source host
-            "no",  # source parent group
-            "yes",  # migrating registries
-            # "source_access_token", # source token
-            "source_registry_url",    # source registry url
-            "1200",  # max_export_wait_time
-            "destination_registry_url",    # destination registry url
             "yes",  # destination parent group
             "0",  # destination parent group id
             # "dstn_parent_group_path",  # destination parent group full path
@@ -248,6 +244,14 @@ class ConfigTests(unittest.TestCase):
             "_",  # username suffix
             "Yes",   # mirror
             # "mirror_username",  # mirror username
+            "gitlab",  # external_src_url
+            "source_hostname",  # source host
+            "no",  # source parent group
+            "yes",  # migrating registries
+            # "source_access_token", # source token
+            "source_registry_url",    # source registry url
+            "destination_registry_url",    # destination registry url
+            "1200",  # max_export_wait_time
             "aws",  # export location
             "s3_name",  # bucket name
             "us-east-2",    # bucket region
@@ -309,18 +313,18 @@ class ConfigTests(unittest.TestCase):
             "yes",   # shared runners enabled
             "no",  # append project suffix (retry)
             "3",  # max_import_retries,
+            "no",  # destination parent group
+            "username_suffix",  # username suffix
+            "Yes",   # mirror
+            # "mirror_username",  # mirror username
             "gitlab",  # external_src_url
             "source_hostname",  # source host
             # "source_access_token", # source token
             "no",  # source parent group
             "yes",  # migrating registries
             "source_registry_url",    # source registry url
-            "3600",  # max_export_wait_time
             "destination_registry_url",    # destination registry url
-            "no",  # destination parent group
-            "username_suffix",  # username suffix
-            "Yes",   # mirror
-            # "mirror_username",  # mirror username
+            "3600",  # max_export_wait_time
             "filesystem",  # export location
             "absolute_path",    # file system path
             "no",    # keep_blocked_users
@@ -373,7 +377,6 @@ class ConfigTests(unittest.TestCase):
             "shared_runners_enabled":"False",\
             "project_suffix":"False",\
             "max_import_retries":"3",\
-            "dstn_registry_url":"destination_registry_url",\
             "username_suffix":"local",\
             "mirror_username":"",\
             "src_hostname":"source_hostname",\
@@ -381,6 +384,7 @@ class ConfigTests(unittest.TestCase):
             "src_parent_group_id":"0",\
             "src_parent_group_path":"source_group_full_path",\
             "src_registry_url":"source_registry_url",\
+            "dstn_registry_url":"destination_registry_url",\
             "max_export_wait_time":"3600",\
             "location":"aws",\
             "s3_name":"s3_name",\
@@ -416,7 +420,6 @@ class ConfigTests(unittest.TestCase):
             "shared_runners_enabled":"True",\
             "project_suffix":"False",\
             "max_import_retries":"3",\
-            "dstn_registry_url":"destination_registry_url",\
             "username_suffix":"username_suffix",\
             "mirror_username":"",\
             "src_hostname":"source_hostname",\
@@ -424,6 +427,7 @@ class ConfigTests(unittest.TestCase):
             "src_parent_group_id":"0",\
             "src_parent_group_path":"source_group_full_path",\
             "src_registry_url":"source_registry_url",\
+            "dstn_registry_url":"destination_registry_url",\
             "max_export_wait_time":"3600",\
             "location":"aws",\
             "s3_name":"s3_name",\

@@ -35,19 +35,17 @@ class MigrationEndToEndTestSetup(unittest.TestCase):
             "yes",  # shared runners enabled
             "no",  # append project suffix (retry)
             "3",  # max_import_retries,
+            "no",  # destination parent group
+            "",  # username suffix
+            "no",  # mirror
             "gitlab",  # external_src_url
             os.getenv("GITLAB_SRC"),  # source host
             "no",  # single group migration
             "yes",  # migrating registries
             # self.t.generate_token("source_token", "2020-08-27", url=os.getenv("GITLAB_SRC"), username="root", pword=uuid4().hex), # source token
             os.getenv("GITLAB_SRC_REG_URL"),  # source registry url
-            "60",  # max_export_wait_time
             os.getenv("GITLAB_DEST_REG_URL"),  # destination registry url
-            "",  # destination parent group id
-            # "dstn_parent_group_path",  # destination parent group full path
-            # "group_sso_provider",  # SSO provider
-            "",  # username suffix
-            "No",  # mirror
+            "60",  # max_export_wait_time
             "filesystem",  # export location
             # "s3_name",  # bucket name
             # "us-east-1",    # bucket region

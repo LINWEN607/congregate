@@ -33,7 +33,6 @@ def generate_config():
         CLI for generating congregate.conf
     """
     config = ConfigParser(allow_no_value=True)
-    migrating_registries = False
     # Generic destination instance settings
     config.add_section("DESTINATION")
     config.set("DESTINATION", "dstn_hostname",
@@ -60,6 +59,42 @@ def generate_config():
         "Max no. of project import retries (Default: 3): ")
     config.set("DESTINATION", "max_import_retries",
                max_import_retries if max_import_retries else "3")
+
+    dstn_group = raw_input(
+        "Are you migrating to a parent group, e.g. gitlab.com? (Default: No) ")
+    if dstn_group.lower() in ["yes", "y"]:
+        config.set("DESTINATION", "dstn_parent_group_id", raw_input(
+            "Parent group ID (Group -> Settings -> General): "))
+        group = groups.get_group(config.getint("DESTINATION", "dstn_parent_group_id"), config.get(
+            "DESTINATION", "dstn_hostname"), deobfuscate(config.get("DESTINATION", "dstn_access_token"))).json()
+        if group.get("full_path", None) is not None:
+            config.set("DESTINATION", "dstn_parent_group_path",
+                       group["full_path"])
+        else:
+            config.set("DESTINATION", "dstn_parent_group_path", "")
+            print("WARNING: Destination group not found. Please enter 'dstn_parent_group_id' and 'dstn_parent_group_path' manually (in {})".format(
+                config_path))
+        config.set("DESTINATION", "group_sso_provider",
+                   raw_input("Migrating to a group with SAML SSO enabled? Input SSO provider (auth0, adfs, etc.): "))
+
+    username_suffix = raw_input(
+        "To avoid username collision, please input suffix to append to username: ")
+    config.set("DESTINATION", "username_suffix",
+               username_suffix if username_suffix != "_" else "")
+    mirror = raw_input(
+        "Planning a soft cut-over migration by mirroring repos to keep both instances running? (Default: No): ")
+    if mirror.lower() in ["yes", "y"]:
+        if migration_user.get("username", None) is not None:
+            config.set("DESTINATION", "mirror_username",
+                       migration_user["username"])
+        else:
+            config.set("DESTINATION", "mirror_username", "")
+            print("WARNING: Destination (mirror) user not found. Please enter 'mirror_username' manually (in {})".format(
+                config_path))
+    else:
+        config.set("DESTINATION", "mirror_username", "")
+
+    config.set("DESTINATION", "max_asset_expiration_time", "24")
 
     # External source instance settings
     ext_src_url = raw_input(
@@ -103,58 +138,18 @@ def generate_config():
         migrating_registries = raw_input(
             "Are you migrating any container registries? (Default: No)")
         if migrating_registries.lower() in ["yes", "y"]:
-            migrating_registries = True
             config.set("SOURCE", "src_registry_url", raw_input(
                 "Source instance Container Registry URL: "))
             test_registries(deobfuscate(config.get("SOURCE", "src_access_token")), config.get(
                 "SOURCE", "src_registry_url"), migration_user)
-        max_export_wait_time = raw_input(
-            "Max wait time (in seconds) for project export status (Default: 3600): ")
-        config.set("SOURCE", "max_export_wait_time",
-                   max_export_wait_time if max_export_wait_time else "3600")
-
-        # Non-external destination instance settings
-        if migrating_registries:
             config.set("DESTINATION", "dstn_registry_url", raw_input(
                 "Destination instance Container Registry URL: "))
             test_registries(deobfuscate(config.get("DESTINATION", "dstn_access_token")), config.get(
                 "DESTINATION", "dstn_registry_url"), migration_user)
-
-        dstn_group = raw_input(
-            "Are you migrating to a parent group, e.g. gitlab.com? (Default: No) ")
-        if dstn_group.lower() in ["yes", "y"]:
-            config.set("DESTINATION", "dstn_parent_group_id", raw_input(
-                "Parent group ID (Group -> Settings -> General): "))
-            group = groups.get_group(config.getint("DESTINATION", "dstn_parent_group_id"), config.get(
-                "DESTINATION", "dstn_hostname"), deobfuscate(config.get("DESTINATION", "dstn_access_token"))).json()
-            if group.get("full_path", None) is not None:
-                config.set("DESTINATION", "dstn_parent_group_path",
-                           group["full_path"])
-            else:
-                config.set("DESTINATION", "dstn_parent_group_path", "")
-                print("WARNING: Destination group not found. Please enter 'dstn_parent_group_id' and 'dstn_parent_group_path' manually (in {})".format(
-                    config_path))
-            config.set("DESTINATION", "group_sso_provider",
-                       raw_input("Migrating to a group with SAML SSO enabled? Input SSO provider (auth0, adfs, etc.): "))
-
-        username_suffix = raw_input(
-            "To avoid username collision, please input suffix to append to username: ")
-        config.set("DESTINATION", "username_suffix",
-                   username_suffix if username_suffix != "_" else "")
-        mirror = raw_input(
-            "Planning a soft cut-over migration by mirroring repos to keep both instances running? (Default: No): ")
-        if mirror.lower() in ["yes", "y"]:
-            if migration_user.get("username", None) is not None:
-                config.set("DESTINATION", "mirror_username",
-                           migration_user["username"])
-            else:
-                config.set("DESTINATION", "mirror_username", "")
-                print("WARNING: Destination (mirror) user not found. Please enter 'mirror_username' manually (in {})".format(
-                    config_path))
-        else:
-            config.set("DESTINATION", "mirror_username", "")
-
-        config.set("DESTINATION", "max_asset_expiration_time", "24")
+        max_export_wait_time = raw_input(
+            "Max wait time (in seconds) for project export status (Default: 3600): ")
+        config.set("SOURCE", "max_export_wait_time",
+                   max_export_wait_time if max_export_wait_time else "3600")
 
         # Project export/update settings
         config.add_section("EXPORT")
