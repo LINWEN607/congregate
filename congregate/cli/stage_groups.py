@@ -137,13 +137,13 @@ def build_staging_data(groups_to_stage, dry_run=True):
                             group = groups[j]  
                 staged_groups.append(group)
                 # Get all the stage users belong to the group
+                members = []
                 for member in group["members"]:
                     append_member_to_members_list(
                         rewritten_users, staged_users, members, member)
                 # Get all the stage projects under the group
                 project_members = []
-                for project in groups["projects"](
-                    group["id"], b.config.source_host, b.config.source_token):
+                for project in group["projects"]:
                     obj = get_project_metadata(project)
                     # Need to get the project members from projects by call api
                     for project_member in projects_api.get_members(
