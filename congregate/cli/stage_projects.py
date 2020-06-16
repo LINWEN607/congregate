@@ -236,8 +236,7 @@ def append_member_to_members_list(
         params: rewritten_users: object containing the specific member to be added to the group or project
     """
     if isinstance(member, dict):
-        if member.get("id", None) is not None:
-            if member["id"] != "root":
+        if member.get("id", None) is not None and member["username"] != "root":
                 b.log.info("Staging user (%s)" % member["email"])
                 staged_users.append(
                     rewritten_users[member["id"]])
