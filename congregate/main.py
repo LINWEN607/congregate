@@ -203,6 +203,8 @@ if __name__ == '__main__':
             elif arguments["enable-mirroring"]:
                 mirror = MirrorClient()
                 mirror.enable_mirroring(dry_run=DRY_RUN)
+            elif arguments["list"]:
+                list_source.list_data()
             # elif arguments["gather_metrics"]:
             #     other.gather_metrics()
             else:
@@ -367,5 +369,5 @@ if __name__ == '__main__':
                 new_results = stitch_json_results(
                     result_type=result_type, steps=steps, order=order)
                 write_results_to_file(new_results, result_type, log=log)
-            if arguments["obfuscate"]:
-                print obfuscate("Secret:")
+        if arguments["obfuscate"]:
+            print obfuscate("Secret:")

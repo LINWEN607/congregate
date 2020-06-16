@@ -32,6 +32,8 @@ class ConfigTests(unittest.TestCase):
             "3",  # max_import_retries,
             "some_external_source",  # external_src_url
             "username",  # ext_src_user
+            # "password",  # ext_src_pwd
+            # "token",  # ext_src_token
             "repo_path",  # ext_src_repo
             "no",    # keep_blocked_users
             "yes",  # password reset email

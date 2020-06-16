@@ -1,3 +1,4 @@
+from base64 import b64encode
 from os import getcwd, path, mkdir, makedirs
 from ConfigParser import SafeConfigParser as ConfigParser, NoOptionError
 
@@ -69,6 +70,9 @@ def generate_config():
         print("NOTE: External source migration is currently limited to mirroring through http/https. A master username and password is required to set up mirroring in each shell project.")
         config.set("EXT_SRC", "username", raw_input("Username: "))
         config.set("EXT_SRC", "password", obfuscate("Password: "))
+        print("Creating Authorization token based on username:password string (base64 encoded)")
+        config.set("EXT_SRC", "token", b64encode(config.get(
+            "EXT_SRC", "username") + ":" + deobfuscate(config.get("EXT_SRC", "password"))))
         repo_path = raw_input(
             "Absolute path to JSON file containing repo information: ")
         config.set("EXT_SRC", "repo_path", "{0}{1}"

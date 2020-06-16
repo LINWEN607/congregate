@@ -177,6 +177,10 @@ class Config(object):
         return self.prop("EXT_SRC", "password", None, True)
 
     @property
+    def external_user_token(self):
+        return self.prop("EXT_SRC", "token")
+
+    @property
     def repo_list(self):
         return self.prop("EXT_SRC", "repo_path")
 

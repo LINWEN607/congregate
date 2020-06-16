@@ -58,22 +58,22 @@ def list_bitbucket_data():
     write_json_yield_to_file(
         "%s/data/project_json.json" % b.app_path,
         repos.get_all_repos,
-        b.config.source_host,
-        b.config.source_token
+        b.config.external_source_url,
+        b.config.external_user_token
     )
 
     write_json_yield_to_file(
         "%s/data/users.json" % b.app_path,
         users.get_all_users,
-        b.config.source_host,
-        b.config.source_token
+        b.config.external_source_url,
+        b.config.external_user_token
     )
 
     write_json_yield_to_file(
         "%s/data/groups.json" % b.app_path,
         projects.get_all_projects,
-        b.config.source_host,
-        b.config.source_token
+        b.config.external_source_url,
+        b.config.external_user_token
     )
 
 

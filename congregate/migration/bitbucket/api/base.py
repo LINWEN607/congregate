@@ -104,9 +104,11 @@ def generate_delete_request(host, token, api, description=None):
 
     return requests.delete(url, headers=headers)
 
+
 def list_all(host, token, api, params=None, limit=1000):
     isLastPage = False
     start = 0
+    log.info("Listing endpoint: {}".format(api))
     while isLastPage is False:
         if not params:
             params = {
@@ -119,6 +121,7 @@ def list_all(host, token, api, params=None, limit=1000):
         r = generate_get_request(host, token, api, params=params)
         try:
             data = r.json()
+            log.info("Retrieved {0} {1}".format(data.get("size", None), api))
             if r.status_code != 200:
                 if r.status_code == 404 or r.status_code == 500:
                     log.error('\nERROR: HTTP Response was {}\n\nBody Text: {}\n'.format(
@@ -141,4 +144,3 @@ def list_all(host, token, api, params=None, limit=1000):
             # until it succeeds
             log.info("Attempting to retry after 3 seconds")
             sleep(3)
-

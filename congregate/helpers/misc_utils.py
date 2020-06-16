@@ -1,10 +1,10 @@
-import base64
 import os
 import errno
 import json
 import subprocess
 
 import glob
+from base64 import b64encode, b64decode
 from shutil import copy
 from time import time
 from getpass import getpass
@@ -186,11 +186,11 @@ def read_json_file_into_object(path):
 
 
 def obfuscate(prompt):
-    return base64.b64encode(getpass(prompt))
+    return b64encode(getpass(prompt))
 
 
 def deobfuscate(secret):
-    return base64.b64decode(secret)
+    return b64decode(secret)
 
 
 def clean_data(dry_run=True, files=None):
@@ -396,6 +396,7 @@ def stitch_json_results(result_type="project", steps=0, order="tail"):
         results += ([r for r in data if r[next(iter(r))]])
     return results
 
+
 def build_ui(app_path):
     if not os.path.exists(app_path + "node_modules"):
         print "No node_modules found. Running npm install"
@@ -420,9 +421,10 @@ def generate_audit_log_message(req_type, message, url, data=None):
     except TypeError as e:
         return "Message formatting ERROR. No specific message generated. Generating {0} request to {1}".format(req_type, url)
 
+
 def write_json_yield_to_file(file_path, generator_function, *args):
     with open(file_path, "wb") as f:
-        f.write("[\n")
+        output = []
         for data in generator_function(*args):
-            f.write(json_pretty(data))
-        f.write("\n]")
+            output.append(data)
+        f.write(json_pretty(output))
