@@ -61,3 +61,12 @@ You can read more about using pdb [here](https://fuzzyblog.io/blog/python/2019/0
 #### Setting up bitbucket server for development
 
 Refer to [this README](./bitbucket-development-setup.md) for details on setting up a BitBucket server for local development
+
+### Style guide
+
+Congregate uses the `autopep8` tool to automatically format Python code conform the PEP 8 style guide.
+If you are using VS Code as your IDE please enable `autopep8` with the following settings:
+
+- *Python > Formatting: Autopep8 Args* - Add item `--max-line-length=79` (this length and setting applies to any other IDE you may be using)
+- *Python > Formatting: Autopep8 Path* - `autopep8`
+- *Python > Formatting: Provider* - `autopep8`
