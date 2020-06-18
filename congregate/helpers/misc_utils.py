@@ -196,7 +196,7 @@ def deobfuscate(secret):
 def clean_data(dry_run=True, files=None):
     app_path = get_congregate_path()
     files_to_delete = [
-        "stage.json",
+        "staged_projects.json",
         "staged_users.json",
         "staged_groups.json",
         "project_json.json",
@@ -396,8 +396,9 @@ def stitch_json_results(result_type="project", steps=0, order="tail"):
         results += ([r for r in data if r[next(iter(r))]])
     return results
 
+
 def build_ui(app_path):
-    if not os.path.exists(app_path + "node_modules"):
+    if not os.path.exists(app_path + "/node_modules"):
         print "No node_modules found. Running npm install"
         install_deps = "npm install"
         subprocess.call(install_deps.split(" "))

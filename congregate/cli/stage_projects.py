@@ -7,29 +7,27 @@ Copyright (c) 2020 - GitLab
 import json
 import re
 from congregate.helpers.misc_utils import get_dry_log, remove_dupes
-from congregate.helpers.migrate_utils import is_top_level_group
 from congregate.helpers.base_class import BaseClass
 from congregate.migration.gitlab.api.projects import ProjectsApi
 
 projects_api = ProjectsApi()
 b = BaseClass()
 
-# TODO: Break down into separate staging areas
-# Stage users, groups and projects
+staged_users, staged_groups, staged_projects = [], [], []
+rewritten_users, rewritten_groups, rewritten_projects = {}, {}, {}
 
 
 def stage_projects(projects_to_stage, dry_run=True, skip_users=False):
     """
-        Stage all the projects from the source instance
+        Stage all projects from the source instance
 
-        :param: projects_to_stage: (dict) the staged projects objects
+        :param: projects_to_stage: (dict) the staged projects object
         :param: dry_run (bool) If true, it will only build the staging data lists
+        :param: skip_users (bool) If true will skip writing staged users to file
     """
-    staged_projects, staged_users, staged_groups = build_staging_data(
-        projects_to_stage, dry_run)
+    build_staging_data(projects_to_stage, dry_run)
     if not dry_run:
-        write_staging_files(staged_projects, staged_users,
-                            staged_groups, skip_users=skip_users)
+        write_staging_files(skip_users=skip_users)
 
 
 def build_staging_data(projects_to_stage, dry_run=True):
@@ -39,59 +37,44 @@ def build_staging_data(projects_to_stage, dry_run=True):
         :param: projects_to_stage: (dict) the staged projects objects
         :param: dry_run (bool) dry_run (bool) If true, it will only build the staging data lists.
     """
-    staging = []
-    staged_users = []
-    staged_groups = []
-
+    b.log.info(staged_groups)
     # Loading projects information
     projects = open_projects_file()
     groups = open_groups_file()
     users = open_users_file()
 
     # Rewriting projects to retrieve objects by ID more efficiently
-    rewritten_projects = {}
     for i, _ in enumerate(projects):
-        new_obj = projects[i]
-        id_num = projects[i]["id"]
-        rewritten_projects[id_num] = new_obj
+        rewritten_projects[projects[i]["id"]] = projects[i]
 
-    rewritten_groups = {}
     for i, _ in enumerate(groups):
-        new_obj = groups[i]
-        group_id = groups[i]["id"]
-        rewritten_groups[group_id] = new_obj
+        rewritten_groups[groups[i]["id"]] = groups[i]
 
-    rewritten_users = {}
     for i, _ in enumerate(users):
-        new_obj = users[i]
-        id_num = users[i]["id"]
-        rewritten_users[id_num] = new_obj
-    
+        rewritten_users[users[i]["id"]] = users[i]
+
     # If there are some projects selected in UI
     if not projects_to_stage[0] == "":
-        if projects_to_stage[0] == "all" or projects_to_stage[0] == ".":
-            # Stage ALL projects
+        # Stage ALL
+        if projects_to_stage[0] == "all" or len(projects_to_stage) == len(projects):
             for i, _ in enumerate(projects):
                 obj = get_project_metadata(projects[i])
-
                 members = []
                 for member in projects_api.get_members(
                         int(projects[i]["id"]), b.config.source_host, b.config.source_token):
-                    append_member_to_members_list(
-                        rewritten_users, staged_users, members, member)
-
+                    append_member_to_members_list(members, member, dry_run)
                 obj["members"] = members
-                staging.append(obj)
+                staged_projects.append(obj)
 
-            # Stage ALL groups
             for g in groups:
-                b.log.info("Staging {0} {1} (ID: {2})".format(
-                    "top-level group" if is_top_level_group(g) else "sub-group", g["full_path"], g["id"]))
+                b.log.info("{0}Staging group {1} (ID: {2})".format(
+                    get_dry_log(dry_run), g["full_path"], g["id"]))
+                g.pop("projects", None)
                 staged_groups.append(g)
 
-            # Stage ALL users
             for user in users:
                 staged_users.append(user)
+        # CLI range input
         elif re.search(r"\d+-\d+", projects_to_stage[0]) is not None:
             match = (re.search(r"\d+-\d+", projects_to_stage[0])).group(0)
             start = int(match.split("-")[0])
@@ -99,80 +82,49 @@ def build_staging_data(projects_to_stage, dry_run=True):
                 start -= 1
             end = int(match.split("-")[1])
             for i in range(start, end):
-                obj = get_project_metadata(projects[i])
-
-                members = []
-                for member in projects_api.get_members(
-                        int(projects[i]["id"]), b.config.source_host, b.config.source_token):
-                    append_member_to_members_list(
-                        rewritten_users, staged_users, members, member)
-
-                if projects[0]["namespace"]["kind"] == "group":
-                    group_to_stage = projects[0]["namespace"]["id"]
-                    staged_groups.append(rewritten_groups[group_to_stage])
-                    if "child_ids" in rewritten_groups[group_to_stage]:
-                        for sub in rewritten_groups[group_to_stage]["child_ids"]:
-                            staged_groups.append(rewritten_groups[sub])
-                    if len(rewritten_groups[group_to_stage]["members"]) > 0:
-                        for member in rewritten_groups[group_to_stage]["members"]:
-                            if rewritten_users.get(member["id"]):
-                                staged_users.append(
-                                    rewritten_users[member["id"]])
-
-                obj["members"] = members
-                b.log.info("{0}Staging project ({1}) [{2}/{3}]".format(
-                    get_dry_log(dry_run),
-                    obj["name"],
-                    len(staging) + 1,
-                    len(range(start, end))))
-                staging.append(obj)
+                append_data(projects[i], projects_to_stage, p_range=range(
+                    start, end), dry_run=dry_run)
+        # Random selection
         else:
             for i, _ in enumerate(projects_to_stage):
                 # Hacky check for id or project name by explicitly checking
                 # variable type
                 try:
                     if (isinstance(int(projects_to_stage[i]), int)):
-                        key = projects_to_stage[i]
                         # Retrieve object from better formatted object
-                        project = rewritten_projects[int(key)]
+                        project = rewritten_projects[int(projects_to_stage[i])]
                 except ValueError:
                     # Iterate over original project_json.json file
                     for j, _ in enumerate(projects):
                         if projects[j]["name"] == projects_to_stage[i]:
                             project = projects[j]
-
-                obj = get_project_metadata(project)
-
-                members = []
-                for member in projects_api.get_members(
-                        int(project["id"]), b.config.source_host, b.config.source_token):
-                    append_member_to_members_list(
-                        rewritten_users, staged_users, members, member)
-
-                if project["namespace"]["kind"] == "group":
-                    group_to_stage = project["namespace"]["id"]
-                    staged_groups.append(rewritten_groups[group_to_stage])
-                    if "child_ids" in rewritten_groups[group_to_stage]:
-                        for sub in rewritten_groups[group_to_stage]["child_ids"]:
-                            staged_groups.append(rewritten_groups[sub])
-                    if len(rewritten_groups[group_to_stage]["members"]) > 0:
-                        for member in rewritten_groups[group_to_stage]["members"]:
-                            if rewritten_users.get(member["id"]):
-                                staged_users.append(
-                                    rewritten_users[member["id"]])
-
-                obj["members"] = members
-                b.log.info("{0}Staging project ({1}) [{2}/{3}]".format(
-                    get_dry_log(dry_run),
-                    obj["name"],
-                    len(staging),
-                    len(projects_to_stage)))
-                staging.append(obj)
-    else:
-        staging = []
-
-    return remove_dupes(staging), remove_dupes(
+                append_data(project, projects_to_stage, dry_run=dry_run)
+    return remove_dupes(staged_projects), remove_dupes(
         staged_users), remove_dupes(staged_groups)
+
+
+def append_data(project, projects_to_stage, p_range=0, dry_run=True):
+    obj = get_project_metadata(project)
+    members = []
+    for member in projects_api.get_members(
+            int(project["id"]), b.config.source_host, b.config.source_token):
+        append_member_to_members_list(members, member, dry_run)
+
+    if project["namespace"]["kind"] == "group":
+        group_to_stage = rewritten_groups[project["namespace"]["id"]]
+        b.log.info("{0}Staging group {1} (ID: {2})".format(get_dry_log(
+            dry_run), group_to_stage["full_path"], group_to_stage["id"]))
+        group_to_stage.pop("projects", None)
+        staged_groups.append(group_to_stage)
+
+        # Append all group members to staged users
+        for member in group_to_stage["members"]:
+            append_member_to_members_list([], member, dry_run)
+
+    obj["members"] = members
+    b.log.info("{0}Staging project {1} (ID: {2}) [{3}/{4}]".format(get_dry_log(
+        dry_run), obj["path_with_namespace"], obj["id"], len(staged_projects) + 1, len(p_range) if p_range else len(projects_to_stage)))
+    staged_projects.append(obj)
 
 
 def open_projects_file():
@@ -182,8 +134,7 @@ def open_projects_file():
         :return: projects object
     """
     with open('%s/data/project_json.json' % b.app_path, "r") as f:
-        projects = json.load(f)
-    return projects
+        return json.load(f)
 
 
 def open_groups_file():
@@ -193,8 +144,7 @@ def open_groups_file():
         :return: groups object
     """
     with open("%s/data/groups.json" % b.app_path, "r") as f:
-        groups = json.load(f)
-    return groups
+        return json.load(f)
 
 
 def open_users_file():
@@ -204,11 +154,10 @@ def open_users_file():
         :return: users object
     """
     with open("%s/data/users.json" % b.app_path, "r") as f:
-        users = json.load(f)
-    return users
+        return json.load(f)
 
 
-def write_staging_files(staging, staged_users, staged_groups, skip_users=False):
+def write_staging_files(skip_users=False):
     """
         Write all staged projects, users and groups objects into JSON files
 
@@ -216,17 +165,16 @@ def write_staging_files(staging, staged_users, staged_groups, skip_users=False):
         :param: staged_users:(dict) staged users
         :param: staged_groups: (dict) staged groups
     """
-    with open("%s/data/stage.json" % b.app_path, "wb") as f:
-        f.write(json.dumps(staging, indent=4))
+    with open("%s/data/staged_projects.json" % b.app_path, "wb") as f:
+        f.write(json.dumps(remove_dupes(staged_projects), indent=4))
     with open("%s/data/staged_groups.json" % b.app_path, "wb") as f:
-        f.write(json.dumps(staged_groups, indent=4))
+        f.write(json.dumps(remove_dupes(staged_groups), indent=4))
     if not skip_users:
         with open("%s/data/staged_users.json" % b.app_path, "wb") as f:
-            f.write(json.dumps(staged_users, indent=4))
+            f.write(json.dumps(remove_dupes(staged_users), indent=4))
 
 
-def append_member_to_members_list(
-        rewritten_users, staged_users, members_list, member):
+def append_member_to_members_list(members_list, member, dry_run=True):
     """
         Appends the members found in the /members endpoint to the staged asset object
 
@@ -237,10 +185,11 @@ def append_member_to_members_list(
     """
     if isinstance(member, dict):
         if member.get("id", None) is not None and member["username"] != "root":
-                b.log.info("Staging user (%s)" % member["username"])
-                staged_users.append(
-                    rewritten_users[member["id"]])
-                members_list.append(member)
+            b.log.info("{0}Staging user {1} (ID: {2})".format(
+                get_dry_log(dry_run), member["username"], member["id"]))
+            staged_users.append(
+                rewritten_users[member["id"]])
+            members_list.append(member)
     else:
         b.log.error(member)
 

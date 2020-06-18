@@ -46,7 +46,7 @@ class ProjectDiffClient(BaseDiffClient):
         ]
         if staged:
             self.source_data = self.load_json_data(
-                "%s/data/stage.json" % self.app_path)
+                "%s/data/staged_projects.json" % self.app_path)
         else:
             self.source_data = self.load_json_data(
                 "%s/data/project_json.json" % self.app_path)

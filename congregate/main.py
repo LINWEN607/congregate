@@ -74,7 +74,7 @@ Commands:
     list                                    List all projects of a source instance and save it to {CONGREGATE_PATH}/data/project_json.json.
     init                                    Creates additional directories and files required by congregate
     configure                               Configure congregate for migrating between two instances and save it to {CONGREGATE_PATH}/data/congregate.conf.
-    stage                                   Stage projects to {CONGREGATE_PATH}/data/stage.json,
+    stage                                   Stage projects to {CONGREGATE_PATH}/data/staged_projects.json,
                                                 users to {CONGREGATE_PATH}/data/staged_users.json,
                                                 groups to {CONGREGATE_PATH}/data/staged_groups.json.
                                                 All projects can be staged with a '.' or 'all'.
@@ -108,7 +108,7 @@ Commands:
     unarchive-staged-projects               Unarchive projects that are staged, not necessarily migrate.
     generate-seed-data                      Generate dummy data to test a migration.
     validate-staged-groups-schema           Check staged_groups.json for missing group data.
-    validate-staged-projects-schema         Check stage.json for missing project data.
+    validate-staged-projects-schema         Check staged_projects.json for missing project data.
     clean                                   Delete all retrieved and staged data
     stitch-results                          Stitches together migration results from multiple migration runs
     generate-diff                           Generates HTML files containing the diff results of the migration
