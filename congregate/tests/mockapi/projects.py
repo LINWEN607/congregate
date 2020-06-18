@@ -23,26 +23,26 @@ class MockProjectsApi():
                             "created_at": "2013-09-30T13:46:02Z"
                 },
                 "name": "Diaspora Client",
-                        "name_with_namespace": "Diaspora / Diaspora Client",
-                        "path": "diaspora-client",
-                        "path_with_namespace": "diaspora/diaspora-client",
-                        "issues_enabled": True,
-                        "open_issues_count": 1,
-                        "merge_requests_enabled": True,
-                        "jobs_enabled": True,
-                        "wiki_enabled": True,
-                        "snippets_enabled": False,
-                        "resolve_outdated_diff_discussions": False,
-                        "container_registry_enabled": False,
-                        "created_at": "2013-09-30T13:46:02Z",
-                        "last_activity_at": "2013-09-30T13:46:02Z",
-                        "creator_id": 3,
-                        "namespace": {
-                            "id": 3,
-                            "name": "Diaspora",
-                            "path": "diaspora",
-                            "kind": "group",
-                            "full_path": "diaspora"
+                "name_with_namespace": "Diaspora / Diaspora Client",
+                "path": "diaspora-client",
+                "path_with_namespace": "diaspora/diaspora-client",
+                "issues_enabled": True,
+                "open_issues_count": 1,
+                "merge_requests_enabled": True,
+                "jobs_enabled": True,
+                "wiki_enabled": True,
+                "snippets_enabled": False,
+                "resolve_outdated_diff_discussions": False,
+                "container_registry_enabled": False,
+                "created_at": "2013-09-30T13:46:02Z",
+                "last_activity_at": "2013-09-30T13:46:02Z",
+                "creator_id": 3,
+                "namespace": {
+                    "id": 3,
+                    "name": "Diaspora",
+                    "path": "diaspora",
+                    "kind": "group",
+                    "full_path": "diaspora"
                 },
                 "import_status": "none",
                 "archived": False,
@@ -59,15 +59,15 @@ class MockProjectsApi():
                 "merge_method": "merge",
                 "approvals_before_merge": 0,
                 "statistics": {
-                            "commit_count": 37,
-                            "storage_size": 1038090,
-                            "repository_size": 1038090,
-                            "lfs_objects_size": 0,
-                            "job_artifacts_size": 0,
-                            "packages_size": 0
+                    "commit_count": 37,
+                    "storage_size": 1038090,
+                    "repository_size": 1038090,
+                    "lfs_objects_size": 0,
+                    "job_artifacts_size": 0,
+                    "packages_size": 0
                 },
                 "_links": {
-                            "self": "http://example.com/api/v4/projects",
+                    "self": "http://example.com/api/v4/projects",
                             "issues": "http://example.com/api/v4/projects/1/issues",
                             "merge_requests": "http://example.com/api/v4/projects/1/merge_requests",
                             "repo_branches": "http://example.com/api/v4/projects/1/repository_branches",
@@ -95,38 +95,38 @@ class MockProjectsApi():
                             "created_at": "2013-09-30T13:46:02Z"
                 },
                 "name": "Puppet",
-                        "name_with_namespace": "Brightbox / Puppet",
-                        "path": "puppet",
-                        "path_with_namespace": "brightbox/puppet",
-                        "issues_enabled": True,
-                        "open_issues_count": 1,
-                        "merge_requests_enabled": True,
-                        "jobs_enabled": True,
-                        "wiki_enabled": True,
-                        "snippets_enabled": False,
-                        "resolve_outdated_diff_discussions": False,
-                        "container_registry_enabled": False,
-                        "created_at": "2013-09-30T13:46:02Z",
-                        "last_activity_at": "2013-09-30T13:46:02Z",
-                        "creator_id": 3,
-                        "namespace": {
-                            "id": 4,
-                            "name": "Brightbox",
-                            "path": "brightbox",
-                            "kind": "group",
-                            "full_path": "brightbox"
+                "name_with_namespace": "Brightbox / Puppet",
+                "path": "puppet",
+                "path_with_namespace": "brightbox/puppet",
+                "issues_enabled": True,
+                "open_issues_count": 1,
+                "merge_requests_enabled": True,
+                "jobs_enabled": True,
+                "wiki_enabled": True,
+                "snippets_enabled": False,
+                "resolve_outdated_diff_discussions": False,
+                "container_registry_enabled": False,
+                "created_at": "2013-09-30T13:46:02Z",
+                "last_activity_at": "2013-09-30T13:46:02Z",
+                "creator_id": 3,
+                "namespace": {
+                    "id": 4,
+                    "name": "Brightbox",
+                    "path": "brightbox",
+                    "kind": "group",
+                    "full_path": "brightbox"
                 },
                 "import_status": "none",
                 "import_error": None,
                 "permissions": {
-                            "project_access": {
-                                "access_level": 10,
-                                "notification_level": 3
-                            },
-                            "group_access": {
-                                "access_level": 50,
-                                "notification_level": 3
-                            }
+                    "project_access": {
+                        "access_level": 10,
+                        "notification_level": 3
+                    },
+                    "group_access": {
+                        "access_level": 50,
+                        "notification_level": 3
+                    }
                 },
                 "archived": False,
                 "avatar_url": None,
@@ -142,15 +142,15 @@ class MockProjectsApi():
                 "merge_method": "merge",
                 "approvals_before_merge": 0,
                 "statistics": {
-                            "commit_count": 12,
-                            "storage_size": 2066080,
-                            "repository_size": 2066080,
-                            "lfs_objects_size": 0,
-                            "job_artifacts_size": 0,
-                            "packages_size": 0
+                    "commit_count": 12,
+                    "storage_size": 2066080,
+                    "repository_size": 2066080,
+                    "lfs_objects_size": 0,
+                    "job_artifacts_size": 0,
+                    "packages_size": 0
                 },
                 "_links": {
-                            "self": "http://example.com/api/v4/projects",
+                    "self": "http://example.com/api/v4/projects",
                             "issues": "http://example.com/api/v4/projects/1/issues",
                             "merge_requests": "http://example.com/api/v4/projects/1/merge_requests",
                             "repo_branches": "http://example.com/api/v4/projects/1/repository_branches",
@@ -178,38 +178,38 @@ class MockProjectsApi():
                             "created_at": "2013-09-30T13:46:02Z"
                 },
                 "name": "Puppet",
-                        "name_with_namespace": "Brightbox / Puppet",
-                        "path": "puppet",
-                        "path_with_namespace": "brightbox/puppet",
-                        "issues_enabled": True,
-                        "open_issues_count": 1,
-                        "merge_requests_enabled": True,
-                        "jobs_enabled": True,
-                        "wiki_enabled": True,
-                        "snippets_enabled": False,
-                        "resolve_outdated_diff_discussions": False,
-                        "container_registry_enabled": False,
-                        "created_at": "2013-09-30T13:46:02Z",
-                        "last_activity_at": "2013-09-30T13:46:02Z",
-                        "creator_id": 3,
-                        "namespace": {
-                            "id": 4,
-                            "name": "Brightbox",
-                            "path": "brightbox",
-                            "kind": "group",
-                            "full_path": "brightbox"
+                "name_with_namespace": "Brightbox / Puppet",
+                "path": "puppet",
+                "path_with_namespace": "brightbox/puppet",
+                "issues_enabled": True,
+                "open_issues_count": 1,
+                "merge_requests_enabled": True,
+                "jobs_enabled": True,
+                "wiki_enabled": True,
+                "snippets_enabled": False,
+                "resolve_outdated_diff_discussions": False,
+                "container_registry_enabled": False,
+                "created_at": "2013-09-30T13:46:02Z",
+                "last_activity_at": "2013-09-30T13:46:02Z",
+                "creator_id": 3,
+                "namespace": {
+                    "id": 4,
+                    "name": "Brightbox",
+                    "path": "brightbox",
+                    "kind": "group",
+                    "full_path": "brightbox"
                 },
                 "import_status": "none",
                 "import_error": None,
                 "permissions": {
-                            "project_access": {
-                                "access_level": 10,
-                                "notification_level": 3
-                            },
-                            "group_access": {
-                                "access_level": 50,
-                                "notification_level": 3
-                            }
+                    "project_access": {
+                        "access_level": 10,
+                        "notification_level": 3
+                    },
+                    "group_access": {
+                        "access_level": 50,
+                        "notification_level": 3
+                    }
                 },
                 "archived": False,
                 "avatar_url": None,
@@ -225,15 +225,15 @@ class MockProjectsApi():
                 "merge_method": "merge",
                 "approvals_before_merge": 0,
                 "statistics": {
-                            "commit_count": 12,
-                            "storage_size": 2066080,
-                            "repository_size": 2066080,
-                            "lfs_objects_size": 0,
-                            "job_artifacts_size": 0,
-                            "packages_size": 0
+                    "commit_count": 12,
+                    "storage_size": 2066080,
+                    "repository_size": 2066080,
+                    "lfs_objects_size": 0,
+                    "job_artifacts_size": 0,
+                    "packages_size": 0
                 },
                 "_links": {
-                            "self": "http://example.com/api/v4/projects",
+                    "self": "http://example.com/api/v4/projects",
                             "issues": "http://example.com/api/v4/projects/1/issues",
                             "merge_requests": "http://example.com/api/v4/projects/1/merge_requests",
                             "repo_branches": "http://example.com/api/v4/projects/1/repository_branches",
