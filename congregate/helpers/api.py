@@ -6,6 +6,7 @@ import requests
 from congregate.helpers.logger import myLogger
 from congregate.helpers.audit_logger import audit_logger
 from congregate.helpers.decorators import stable_retry
+from congregate.helpers.misc_utils import generate_audit_log_message
 
 log = myLogger(__name__)
 audit = audit_logger(__name__)
@@ -246,17 +247,6 @@ def search(host, token, api, search_query):
     """
     return generate_get_request(host, token, api, params={
                                 'search': search_query}).json()
-
-
-def generate_audit_log_message(req_type, message, url, data=None):
-    try:
-        return "{0}enerating {1} request to {2}{3}".format(
-            "{} by g".format(message) if message else "G",
-            req_type,
-            url,
-            " with data: {}".format(data) if data else "")
-    except TypeError as e:
-        return "Message formatting ERROR. No specific message generated. Generating {0} request to {1}".format(req_type, url)
 
 
 def get_params(params, per_page, current_page, keyset, last_id):

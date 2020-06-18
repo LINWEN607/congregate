@@ -1,24 +1,28 @@
 import json
 import os
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import is_error_message_present, remove_dupes
+from congregate.helpers.misc_utils import is_error_message_present, remove_dupes, write_json_yield_to_file
 from congregate.migration.gitlab.groups import GroupsClient
 from congregate.migration.gitlab.users import UsersClient
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.groups import GroupsApi
+from congregate.migration.bitbucket.api.repos import ReposApi
+from congregate.migration.bitbucket.api.users import UsersApi as BitBucketUsersApi
+from congregate.migration.bitbucket.api.projects import ProjectsApi as BitBucketProjectsApi
 
-groups = GroupsClient()
-users = UsersClient()
-projects_api = ProjectsApi()
-groups_api = GroupsApi()
+
 b = BaseClass()
 
 
-def list_projects():
+def list_gitlab_data():
     """
         List the projects information, and Retrieve user info, group info from source instance.
     """
-    b.log.info("Listing projects from source {}:".format(b.config.source_host))
+    groups = GroupsClient()
+    users = UsersClient()
+    projects_api = ProjectsApi()
+    groups_api = GroupsApi()
+    b.log.info("Listing projects from source {}".format(b.config.source_host))
 
     projects = []
 
@@ -49,6 +53,33 @@ def list_projects():
         write_empty_file(filename)
 
 
+def list_bitbucket_data():
+    users = BitBucketUsersApi()
+    projects = BitBucketProjectsApi()
+    repos = ReposApi()
+
+    write_json_yield_to_file(
+        "%s/data/project_json.json" % b.app_path,
+        repos.get_all_repos,
+        b.config.external_source_url,
+        b.config.external_user_token
+    )
+
+    write_json_yield_to_file(
+        "%s/data/users.json" % b.app_path,
+        users.get_all_users,
+        b.config.external_source_url,
+        b.config.external_user_token
+    )
+
+    write_json_yield_to_file(
+        "%s/data/groups.json" % b.app_path,
+        projects.get_all_projects,
+        b.config.external_source_url,
+        b.config.external_user_token
+    )
+
+
 def write_empty_file(filename):
     """
         Write an empty json file containing an empty list, it's used to make sure a file is present in the filesystem
@@ -60,5 +91,23 @@ def write_empty_file(filename):
             f.write("[]")
 
 
+def list_data():
+    ext_src = b.config.external_source_url
+    src = b.config.source_host
+    if ext_src and "gitlab" not in ext_src.lower():
+        list_bitbucket_data()
+    elif src:
+        list_gitlab_data()
+    else:
+        b.log.warning(
+            "Cannot list from source (External: {0}, GitLab: {1})".format(ext_src, src))
+        exit()
+
+    staged_files = ["stage", "staged_groups", "staged_users"]
+
+    for filename in staged_files:
+        write_empty_file(filename)
+
+
 if __name__ == "__main__":
-    list_projects()
+    list_data()

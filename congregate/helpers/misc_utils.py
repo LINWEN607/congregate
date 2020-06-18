@@ -1,10 +1,10 @@
-import base64
 import os
 import errno
 import json
 import subprocess
 
 import glob
+from base64 import b64encode, b64decode
 from shutil import copy
 from time import time
 from getpass import getpass
@@ -186,11 +186,11 @@ def read_json_file_into_object(path):
 
 
 def obfuscate(prompt):
-    return base64.b64encode(getpass(prompt))
+    return b64encode(getpass(prompt))
 
 
 def deobfuscate(secret):
-    return base64.b64decode(secret)
+    return b64decode(secret)
 
 
 def clean_data(dry_run=True, files=None):
@@ -409,3 +409,22 @@ def build_ui(app_path):
     os.chdir(app_path + "/congregate")
     run_ui = "gunicorn -k gevent -w 4 ui:app --bind=0.0.0.0:8000"
     subprocess.call(run_ui.split(" "))
+
+
+def generate_audit_log_message(req_type, message, url, data=None):
+    try:
+        return "{0}enerating {1} request to {2}{3}".format(
+            "{} by g".format(message) if message else "G",
+            req_type,
+            url,
+            " with data: {}".format(data) if data else "")
+    except TypeError as e:
+        return "Message formatting ERROR. No specific message generated. Generating {0} request to {1}".format(req_type, url)
+
+
+def write_json_yield_to_file(file_path, generator_function, *args):
+    with open(file_path, "wb") as f:
+        output = []
+        for data in generator_function(*args):
+            output.append(data)
+        f.write(json_pretty(output))

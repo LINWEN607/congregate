@@ -178,7 +178,7 @@ if __name__ == '__main__':
             from congregate.migration.mirror import MirrorClient
             from congregate.migration import migrate
             from congregate.migration.gitlab.branches import BranchesClient
-            from congregate.cli import list_projects, stage_projects, do_all
+            from congregate.cli import list_source, stage_projects, do_all
             from congregate.helpers.seed.generator import SeedDataGenerator
             from congregate.migration.gitlab.diff.userdiff import UserDiffClient
             from congregate.migration.gitlab.diff.projectdiff import ProjectDiffClient
@@ -192,7 +192,7 @@ if __name__ == '__main__':
             from .migration.mirror import MirrorClient
             from congregate.migration import migrate
             from .migration.gitlab.branches import BranchesClient
-            from congregate.cli import list_projects, stage_projects, do_all
+            from congregate.cli import list_source, stage_projects, do_all
             from congregate.helpers.user_util import map_users
         config = conf.Config()
         if config.external_source_url is not None:
@@ -203,6 +203,8 @@ if __name__ == '__main__':
             elif arguments["enable-mirroring"]:
                 mirror = MirrorClient()
                 mirror.enable_mirroring(dry_run=DRY_RUN)
+            elif arguments["list"]:
+                list_source.list_data()
             # elif arguments["gather_metrics"]:
             #     other.gather_metrics()
             else:
@@ -217,7 +219,7 @@ if __name__ == '__main__':
             branches = BranchesClient()
 
             if arguments["list"]:
-                list_projects.list_projects()
+                list_source.list_data()
             if arguments["stage"]:
                 stage_projects.stage_projects(
                     arguments['<projects>'], dry_run=DRY_RUN)
@@ -367,5 +369,5 @@ if __name__ == '__main__':
                 new_results = stitch_json_results(
                     result_type=result_type, steps=steps, order=order)
                 write_results_to_file(new_results, result_type, log=log)
-            if arguments["obfuscate"]:
-                print obfuscate("Secret:")
+        if arguments["obfuscate"]:
+            print obfuscate("Secret:")
