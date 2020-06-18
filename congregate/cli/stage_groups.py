@@ -33,7 +33,7 @@ def stage_groups(groups_to_stage, dry_run=True, skip_users=False):
         write_staging_files(skip_users=skip_users)
 
 
-def build_staging_data(groups_to_stage, dry_run=True, skip_users=False):
+def build_staging_data(groups_to_stage, dry_run=True):
     """
         Stage all the data including project, groups and users from the source instance
 
