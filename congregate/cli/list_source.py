@@ -6,6 +6,7 @@ from congregate.migration.gitlab.groups import GroupsClient
 from congregate.migration.gitlab.users import UsersClient
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.groups import GroupsApi
+from congregate.migration.bitbucket.users import UsersClient as BitBucketUsers
 from congregate.migration.bitbucket.api.repos import ReposApi
 from congregate.migration.bitbucket.api.users import UsersApi as BitBucketUsersApi
 from congregate.migration.bitbucket.api.projects import ProjectsApi as BitBucketProjectsApi
@@ -51,7 +52,8 @@ def list_gitlab_data():
 
 
 def list_bitbucket_data():
-    users = BitBucketUsersApi()
+    users = BitBucketUsers()
+    users_api = BitBucketUsersApi()
     projects = BitBucketProjectsApi()
     repos = ReposApi()
 
@@ -61,20 +63,23 @@ def list_bitbucket_data():
         b.config.external_source_url,
         b.config.external_user_token
     )
-
-    write_json_yield_to_file(
-        "%s/data/users.json" % b.app_path,
-        users.get_all_users,
-        b.config.external_source_url,
-        b.config.external_user_token
-    )
-
     write_json_yield_to_file(
         "%s/data/groups.json" % b.app_path,
         projects.get_all_projects,
         b.config.external_source_url,
         b.config.external_user_token
     )
+    users.retrieve_user_info(b.config.external_source_url,
+                             b.config.external_user_token, quiet=True)
+"""
+    write_json_yield_to_file(
+        "%s/data/users.json" % b.app_path,
+        users_api.get_all_users,
+        b.config.external_source_url,
+        b.config.external_user_token
+    )
+"""
+
 
 
 def write_empty_file(filename):
