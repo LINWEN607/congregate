@@ -293,7 +293,7 @@ class GroupsApi():
             message = "Adding group hook"
         return api.generate_post_request(host, token, "groups/{}/hooks".format(gid), json.dumps(data), description=message)
 
-    def get_all_group_projects(self, gid, host, token):
+    def get_all_group_projects(self, gid, host, token, include_subgroups=True, with_shared=True):
         """
         Get a list of projects in this group
 
@@ -302,9 +302,11 @@ class GroupsApi():
             :param: gid: (int) GitLab group ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
+            :param: include_subgroups: (bool) Include projects in subgroups of this group. Default is false
+            :param: with_shared: (bool) Include projects shared to this group. Default is true
             :yield: Generator returning JSON of each result from GET /groups/:id/projects
         """
-        return api.list_all(host, token, "groups/%d/projects?include_subgroups=true" % gid)
+        return api.list_all(host, token, "groups/{0}/projects?include_subgroups={1}&with_shared={2}".format(gid, include_subgroups, with_shared))
 
     def get_all_group_subgroups(self, gid, host, token):
         """
@@ -376,7 +378,7 @@ class GroupsApi():
         """
         Get all custom attributes on a group
 
-        https://docs.gitlab.com/ee/api/custom_attributes.html#list-custom-attributes
+        GitLab API Doc: https://docs.gitlab.com/ee/api/custom_attributes.html#list-custom-attributes
 
             :param: gid: (int) GitLab group ID
             :param: host: (str) GitLab host URL
@@ -389,7 +391,7 @@ class GroupsApi():
         """
         Get list of a variables for the given group
 
-        https://docs.gitlab.com/ee/api/group_level_variables.html
+        GitLab API Doc: https://docs.gitlab.com/ee/api/group_level_variables.html
 
             :param: gid: (int) GitLab group ID
             :param: host: (str) GitLab host URL
@@ -418,7 +420,7 @@ class GroupsApi():
         """
         Gets a list of all badges for a given group
 
-        https://docs.gitlab.com/ee/api/group_badges.html#list-all-badges-of-a-group
+        GitLab API Doc: https://docs.gitlab.com/ee/api/group_badges.html#list-all-badges-of-a-group
 
             :param: gid: (int) GitLab group ID
             :param: host: (str) GitLab host URL
