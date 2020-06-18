@@ -1,7 +1,7 @@
 import json
 import os
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import is_error_message_present
+from congregate.helpers.misc_utils import is_error_message_present, remove_dupes
 from congregate.migration.gitlab.groups import GroupsClient
 from congregate.migration.gitlab.users import UsersClient
 from congregate.migration.gitlab.api.projects import ProjectsApi
@@ -24,13 +24,13 @@ def list_projects():
 
     if b.config.src_parent_group_path:
         projects = list(groups_api.get_all_group_projects(
-            b.config.src_parent_id, b.config.source_host, b.config.source_token))
+            b.config.src_parent_id, b.config.source_host, b.config.source_token, with_shared=False))
     else:
         projects = list(projects_api.get_all_projects(
             b.config.source_host, b.config.source_token))
 
     with open("%s/data/project_json.json" % b.app_path, "wb") as f:
-        json.dump(projects, f, indent=4)
+        json.dump(remove_dupes(projects), f, indent=4)
 
     for project in projects:
         if is_error_message_present(project):
@@ -45,9 +45,7 @@ def list_projects():
     users.retrieve_user_info(b.config.source_host,
                              b.config.source_token, quiet=True)
 
-    staged_files = ["stage", "staged_groups", "staged_users"]
-
-    for filename in staged_files:
+    for filename in ["stage", "staged_groups", "staged_users"]:
         write_empty_file(filename)
 
 

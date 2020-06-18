@@ -431,7 +431,7 @@ class UsersClient(BaseClass):
             users.pop(root_index)
 
         with open('%s/data/users.json' % self.app_path, "w") as f:
-            json.dump(users, f, indent=4)
+            json.dump(remove_dupes(users), f, indent=4)
 
         if not quiet:
             self.log.info(
