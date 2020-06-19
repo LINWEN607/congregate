@@ -47,9 +47,6 @@ class UsersClient(BaseClass):
             user["username"] = user.pop("name")
             user["name"] = user.pop("displayName")
             user["email"] = user.pop("emailAddress")
-            # obj = []
-            # obj = user.get("links").get("self")
-            # user["web_url"] = obj[0]["href"]
             user["web_url"] = user["links"]["self"][0]["href"]
             user.pop("links")
         if isroot:
@@ -60,21 +57,4 @@ class UsersClient(BaseClass):
         self.log.info(
             "Retrieved %d users. Check users.json to see all retrieved users" % len(users))
 
-    # def generate_user_data(self, user):
-    #     if user.get("id", None) is not None:
-    #         user.pop("id")
-    #     if self.config.group_sso_provider is not None:
-    #         return self.generate_user_group_saml_post_data(user)
-    #     user["username"] = self.create_valid_username(user)
-    #     user["skip_confirmation"] = True
-    #     user["reset_password"] = self.config.reset_password
-    #     # make sure the blocked user cannot do anything
-    #     user["force_random_password"] = "true" if user["state"] == "blocked" else self.config.force_random_password
-    #     if not self.config.reset_password and not self.config.force_random_password:
-    #         # TODO: add config for 'password' field
-    #         self.log.warning(
-    #             "If both 'reset_password' and 'force_random_password' are False, the 'password' field has to be set")
-    #     if self.config.dstn_parent_id is not None:
-    #         user["is_admin"] = False
-    #     return user
 
