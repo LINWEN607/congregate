@@ -196,7 +196,7 @@ def deobfuscate(secret):
 def clean_data(dry_run=True, files=None):
     app_path = get_congregate_path()
     files_to_delete = [
-        "stage.json",
+        "staged_projects.json",
         "staged_users.json",
         "staged_groups.json",
         "project_json.json",

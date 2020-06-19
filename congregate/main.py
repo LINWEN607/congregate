@@ -6,7 +6,8 @@ Usage:
     congregate init
     congregate list
     congregate configure
-    congregate stage <projects>... [--commit]
+    congregate stage-projects <projects>... [--skip-users] [--commit]
+    congregate stage-groups <groups>... [--skip-users] [--commit]
     congregate migrate [--processes=<n>] [--skip-users] [--skip-group-export] [--skip-group-import] [--skip-project-export] [--skip-project-import] [--only-post-migration-info] [--commit]
     congregate rollback [--hard-delete] [--skip-users] [--skip-groups] [--skip-projects] [--commit]
     congregate ui
@@ -52,7 +53,7 @@ Options:
 Arguments:
     processes                               Set number of processes to run in parallel.
     commit                                  Disable the dry-run and perform the full migration with all reads/writes. 
-    skip-users                              Migrate: Skip migrating users; Rollback: Remove only groups and projects.
+    skip-users                              Stage: Skip staging users; Migrate: Skip migrating users; Rollback: Remove only groups and projects.
     hard-delete                             Remove user contributions and solely owned groups.
     skip-groups                             Rollback: Remove only users and projects.
     skip-group-export                       Skip exporting groups from source instance.
@@ -74,10 +75,14 @@ Commands:
     list                                    List all projects of a source instance and save it to {CONGREGATE_PATH}/data/project_json.json.
     init                                    Creates additional directories and files required by congregate
     configure                               Configure congregate for migrating between two instances and save it to {CONGREGATE_PATH}/data/congregate.conf.
-    stage                                   Stage projects to {CONGREGATE_PATH}/data/stage.json,
-                                                users to {CONGREGATE_PATH}/data/staged_users.json,
-                                                groups to {CONGREGATE_PATH}/data/staged_groups.json.
-                                                All projects can be staged with a '.' or 'all'.
+    stage-projects                          Stage projects to {CONGREGATE_PATH}/data/staged_projects.json,
+                                                their parent groups to {CONGREGATE_PATH}/data/staged_groups.json.
+                                                all project and group members to {CONGREGATE_PATH}/data/staged_users.json,
+                                                All projects can be staged with '.' or 'all'.
+    stage-groups                            Stage groups and sub-groups to {CONGREGATE_PATH}/data/staged_groups.json,
+                                                all their projects (except shared - with_shared=False) to {CONGREGATE_PATH}/data/staged_projects.json,
+                                                all project and group members to {CONGREGATE_PATH}/data/staged_users.json,
+                                                All groups can be staged with '.' or 'all'.
     migrate                                 Commence migration based on configuration and staged assets.
     rollback                                Remove staged users/groups/projects on destination.
     ui                                      Deploy UI to port 8000.
@@ -108,7 +113,7 @@ Commands:
     unarchive-staged-projects               Unarchive projects that are staged, not necessarily migrate.
     generate-seed-data                      Generate dummy data to test a migration.
     validate-staged-groups-schema           Check staged_groups.json for missing group data.
-    validate-staged-projects-schema         Check stage.json for missing project data.
+    validate-staged-projects-schema         Check staged_projects.json for missing project data.
     clean                                   Delete all retrieved and staged data
     stitch-results                          Stitches together migration results from multiple migration runs
     generate-diff                           Generates HTML files containing the diff results of the migration
@@ -150,6 +155,7 @@ if __name__ == '__main__':
     STAGED = True if arguments["--staged"] else False
     ROLLBACK = True if arguments["--rollback"] else False
     PROCESSES = arguments["--processes"] if arguments["--processes"] else None
+    SKIP_USERS = True if arguments["--skip-users"] else False
 
     if arguments["init"]:
         if not os.path.exists('data'):
@@ -177,7 +183,7 @@ if __name__ == '__main__':
             from congregate.migration.gitlab.compare import CompareClient
             from congregate.migration import migrate
             from congregate.migration.gitlab.branches import BranchesClient
-            from congregate.cli import list_source, stage_projects, do_all
+            from congregate.cli import list_source, stage_projects, stage_groups, do_all
             from congregate.helpers.seed.generator import SeedDataGenerator
             from congregate.migration.gitlab.diff.userdiff import UserDiffClient
             from congregate.migration.gitlab.diff.projectdiff import ProjectDiffClient
@@ -190,7 +196,7 @@ if __name__ == '__main__':
             from .migration.gitlab.compare import CompareClient
             from congregate.migration import migrate
             from .migration.gitlab.branches import BranchesClient
-            from congregate.cli import list_source, stage_projects, do_all
+            from congregate.cli import list_source, stage_projects, stage_groups, do_all
             from congregate.helpers.user_util import map_users
         config = conf.Config()
         users = UsersClient()
@@ -202,11 +208,14 @@ if __name__ == '__main__':
 
         if arguments["list"]:
             list_source.list_data()
-        if arguments["stage"]:
-            stage_projects.stage_projects(
-                arguments['<projects>'], dry_run=DRY_RUN)
+        if arguments["stage-projects"]:
+            stage_projects.stage_data(
+                arguments['<projects>'], dry_run=DRY_RUN, skip_users=SKIP_USERS)
+        if arguments["stage-groups"]:
+            stage_groups.stage_data(
+                arguments['<groups>'], dry_run=DRY_RUN, skip_users=SKIP_USERS)
         if arguments["migrate"]:
-            skip_users = True if arguments["--skip-users"] else False
+            skip_users = SKIP_USERS
             skip_group_export = True if arguments["--skip-group-export"] else False
             skip_group_import = True if arguments["--skip-group-import"] else False
             skip_project_import = True if arguments["--skip-project-import"] else False
@@ -225,7 +234,7 @@ if __name__ == '__main__':
                 skip_project_export=skip_project_export,
                 only_post_migration_info=only_post_migration_info)
         if arguments["rollback"]:
-            skip_users = True if arguments["--skip-users"] else False
+            skip_users = SKIP_USERS
             hard_delete = True if arguments["--hard-delete"] else False
             skip_groups = True if arguments["--skip-groups"] else False
             skip_projects = True if arguments["--skip-projects"] else False

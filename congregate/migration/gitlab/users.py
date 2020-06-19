@@ -3,7 +3,6 @@ import json
 from requests.exceptions import RequestException
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers import api
 from congregate.helpers.misc_utils import get_dry_log, json_pretty, get_timedelta
 from congregate.helpers.misc_utils import remove_dupes
 from congregate.migration.gitlab.api.groups import GroupsApi

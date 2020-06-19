@@ -69,7 +69,7 @@ class VariablesClient(BaseClass):
             return False
 
     def migrate_variables_in_stage(self, dry_run=True):
-        with open("%s/data/stage.json" % self.app_path, "r") as f:
+        with open("%s/data/staged_projects.json" % self.app_path, "r") as f:
             files = json.load(f)
         ids = []
         project_id = None

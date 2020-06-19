@@ -26,22 +26,29 @@ class CompareClient(BaseClass):
         tlg = False
         if self.config.dstn_parent_id is not None:
             tlg = True
-            prefix = self.groups.groups_api.get_group(self.config.dstn_parent_id, self.config.destination_host, self.config.destination_token).json()["full_path"] + "/"
-            file_path = '%s/data/destination%dgroups.json' % (self.app_path, self.config.dstn_parent_id)
-        
-        destination_groups = self.load_group_data(file_path, self.config.destination_host, self.config.destination_token, location="destination", top_level_group=tlg)
-        source_groups = self.load_group_data('%s/data/groups.json' % self.app_path, self.config.source_host, self.config.source_token)
-        
+            prefix = self.groups.groups_api.get_group(
+                self.config.dstn_parent_id, self.config.destination_host, self.config.destination_token).json()["full_path"] + "/"
+            file_path = '%s/data/destination%dgroups.json' % (
+                self.app_path, self.config.dstn_parent_id)
+
+        destination_groups = self.load_group_data(
+            file_path, self.config.destination_host, self.config.destination_token, location="destination", top_level_group=tlg)
+        source_groups = self.load_group_data(
+            '%s/data/groups.json' % self.app_path, self.config.source_host, self.config.source_token)
+
         shared_key = "full_path"
-        rewritten_destination_groups = misc_utils.rewrite_list_into_dict(destination_groups, shared_key)
-        rewritten_source_groups = misc_utils.rewrite_list_into_dict(source_groups, shared_key, prefix=prefix)
+        rewritten_destination_groups = misc_utils.rewrite_list_into_dict(
+            destination_groups, shared_key)
+        rewritten_source_groups = misc_utils.rewrite_list_into_dict(
+            source_groups, shared_key, prefix=prefix)
 
         results = {
             "Total groups in source instance": len(source_groups),
             "Total groups in destination instance": len(destination_groups)
         }
 
-        results["results"] = self.compare_groups(rewritten_source_groups, rewritten_destination_groups)
+        results["results"] = self.compare_groups(
+            rewritten_source_groups, rewritten_destination_groups)
 
         return results, self.unknown_users
 
@@ -63,14 +70,16 @@ class CompareClient(BaseClass):
             comparison = {}
             if destination_groups.get(group_path, None) is not None:
                 dest_group_data = destination_groups[group_path]
-                comparison["members"] = self.compare_members(group_data["members"], dest_group_data["members"])
-                comparison["path"] = self.compare_group_location(group_data["full_path"], dest_group_data["path"])
+                comparison["members"] = self.compare_members(
+                    group_data["members"], dest_group_data["members"])
+                comparison["path"] = self.compare_group_location(
+                    group_data["full_path"], dest_group_data["path"])
                 results[group_path] = comparison
             else:
                 results[group_path] = {
                     "status": "Failed to migrate"
                 }
-            
+
         return results
 
     def compare_group_location(self, source_path, destination_path):
@@ -82,15 +91,16 @@ class CompareClient(BaseClass):
             Retruns True if locations match
         """
         if self.config.dstn_parent_id is not None:
-            tlg = self.groups.groups_api.get_group(self.config.dstn_parent_id, self.config.destination_host, self.config.destination_token).json()
+            tlg = self.groups.groups_api.get_group(
+                self.config.dstn_parent_id, self.config.destination_host, self.config.destination_token).json()
             source_path = "%s/%s" % (tlg["full_path"], source_path)
-        
+
         if source_path != destination_path:
             return {
                 "expected": source_path,
                 "actual": destination_path
             }
-        
+
         return True
 
     def compare_members(self, source_members, destination_members):
@@ -109,25 +119,30 @@ class CompareClient(BaseClass):
         else:
             results["member_counts_match"] = True
 
-        rewritten_source_members = misc_utils.rewrite_list_into_dict(source_members, "username")
-        rewritten_destination_members = misc_utils.rewrite_list_into_dict(destination_members, "username")
+        rewritten_source_members = misc_utils.rewrite_list_into_dict(
+            source_members, "username")
+        rewritten_destination_members = misc_utils.rewrite_list_into_dict(
+            destination_members, "username")
 
-        diff =  { k : rewritten_destination_members[k] for k in set(rewritten_destination_members) - set(rewritten_source_members) }
+        diff = {k: rewritten_destination_members[k] for k in set(
+            rewritten_destination_members) - set(rewritten_source_members)}
         results["unknown added members"] = diff
         for k in diff:
             self.unknown_users[k] = diff[k]
 
-        diff =  { k : rewritten_source_members[k] for k in set(rewritten_source_members) - set(rewritten_destination_members) }
+        diff = {k: rewritten_source_members[k] for k in set(
+            rewritten_source_members) - set(rewritten_destination_members)}
         results["missing members"] = diff
 
         return results
 
     def compare_staged_users(self):
-        self.log.info("Creating snapshot for each staged group and project member...")
+        self.log.info(
+            "Creating snapshot for each staged group and project member...")
         with open("%s/data/staged_groups.json" % self.app_path, "r") as f:
             groups = json.load(f)
 
-        with open("%s/data/stage.json" % self.app_path, "r") as f:
+        with open("%s/data/staged_projects.json" % self.app_path, "r") as f:
             projects = json.load(f)
 
         snapshot = {}
@@ -153,23 +168,24 @@ class CompareClient(BaseClass):
             }
 
             where: 
-            
+
             - 27 is the current ID staged for that user in the group or project. If this doesn't match destination_instance_user_id, 
                 then the staged data needs to be corrected
-            
+
             - email is the email found across both instances
-            
+
             - destination_instance_user_id is the new ID for the user on the destination instance
 
             - destination_instance_username is the new instance username for the user. If this doesn't match the old username,
                 then the staged data needs to be corrected
-            
+
             - source_username is used to reference between usernames. They should match unless a prefix or user map has been configured
         '''
         users_map = {}
         for d in data:
             for member in d["members"]:
-                user = self.users.get_user(member["id"], self.config.destination_host, self.config.destination_token).json()
+                user = self.users.get_user(
+                    member["id"], self.config.destination_host, self.config.destination_token).json()
                 if misc_utils.is_error_message_present(user):
                     users_map[member["id"]] = {
                         "message": user["message"]
@@ -182,7 +198,8 @@ class CompareClient(BaseClass):
                         "destination_instance_username": user["username"]
                     }
                     if len(user["identities"]) > 0:
-                        users_map[member["id"]]["extern_uid"] = user["identities"][0].get("extern_uid")
+                        users_map[member["id"]]["extern_uid"] = user["identities"][0].get(
+                            "extern_uid")
         return users_map
 
     def generate_diff(self, expected, actual):

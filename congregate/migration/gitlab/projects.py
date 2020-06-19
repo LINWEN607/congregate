@@ -21,7 +21,7 @@ class ProjectsClient(BaseClass):
             return json.load(f)
 
     def get_staged_projects(self):
-        with open("{}/data/stage.json".format(self.app_path), "r") as f:
+        with open("{}/data/staged_projects.json".format(self.app_path), "r") as f:
             return json.load(f)
 
     def root_user_present(self, members):

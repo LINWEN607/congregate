@@ -24,8 +24,6 @@ class GroupsClient(BaseClass):
             return json.load(f)
 
     def traverse_groups(self, base_groups, transient_list, host, token, parent_group=None):
-        if parent_group is not None:
-            parent_group["child_ids"] = []
         for group in base_groups:
             group.pop("web_url")
             group.pop("full_name")
@@ -36,12 +34,11 @@ class GroupsClient(BaseClass):
                 self.log.error(
                     "Failed to pop group keys 'ldap_cn' and/or 'ldap_access', with error:\n{}".format(ke))
             group_id = group["id"]
-            members = list(self.groups_api.get_all_group_members(
+            group["members"] = list(self.groups_api.get_all_group_members(
                 group_id, host, token))
-            group["members"] = members
+            group["projects"] = list(self.groups_api.get_all_group_projects(
+                group_id, host, token, with_shared=False))
             transient_list.append(group)
-            if parent_group is not None:
-                parent_group["child_ids"].append(group["id"])
             for subgroup in self.groups_api.get_all_subgroups(group_id, host, token):
                 if len(subgroup) > 0:
                     parent_group = transient_list[-1]
@@ -69,7 +66,6 @@ class GroupsClient(BaseClass):
                 groups = [self.groups_api.get_group(self.config.dstn_parent_id, self.config.destination_host,
                                                     self.config.destination_token).json()]
                 prefix += str(self.config.dstn_parent_id)
-                print groups
             else:
                 self.log.info("No parent ID found")
                 return None
@@ -82,7 +78,7 @@ class GroupsClient(BaseClass):
     def create_groups_json(self, groups, prefix=""):
         file_path = '%s/data/%sgroups.json' % (self.app_path, prefix)
         with open(file_path, "w") as f:
-            json.dump(groups, f, indent=4)
+            json.dump(remove_dupes(groups), f, indent=4)
         return file_path
 
     def remove_import_user(self, gid):
