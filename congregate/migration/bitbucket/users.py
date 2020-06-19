@@ -47,9 +47,10 @@ class UsersClient(BaseClass):
             user["username"] = user.pop("name")
             user["name"] = user.pop("displayName")
             user["email"] = user.pop("emailAddress")
-            obj = []
-            obj = user.get("links").get("self")
-            user["web_url"] = obj[0]["href"]
+            # obj = []
+            # obj = user.get("links").get("self")
+            # user["web_url"] = obj[0]["href"]
+            user["web_url"] = user["links"]["self"][0]["href"]
             user.pop("links")
         if isroot:
             users.pop(root_index)
