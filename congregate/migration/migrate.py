@@ -36,7 +36,6 @@ from congregate.migration.mirror import MirrorClient
 from congregate.migration.gitlab.keys import KeysClient
 from congregate.migration.gitlab.hooks import HooksClient
 from congregate.migration.gitlab.environments import EnvironmentsClient
-from congregate.migration.bitbucket import client as bitbucket
 
 b = BaseClass()
 aws = AwsClient()
@@ -83,24 +82,18 @@ def migrate(
 
     start = time()
 
-    # TODO: Revisit and refactor accordingly
-    if b.config.external_source_url:
-        with open("%s" % b.config.repo_list, "r") as f:
-            repo_list = json.load(f)
-        start_multi_process(
-            bitbucket.handle_bitbucket_migration, repo_list, processes=_PROCESSES)
-    else:
-        # Dry-run and log cleanup
-        if _DRY_RUN:
-            clean_data(dry_run=False, files=[
-                "dry_run_user_migration.json",
-                "dry_run_group_migration.json",
-                "dry_run_project_migration.json"])
-        rotate_logs()
+    # Dry-run and log cleanup
+    if _DRY_RUN:
+        clean_data(dry_run=False, files=[
+            "dry_run_user_migration.json",
+            "dry_run_group_migration.json",
+            "dry_run_project_migration.json"])
+    rotate_logs()
 
-        # Migrate users
-        migrate_user_info(start, skip_users)
+    # Migrate users
+    migrate_user_info(start, skip_users)
 
+    if b.config.source_host:
         # Migrate groups
         migrate_group_info(start, skip_group_export, skip_group_import)
 
@@ -111,9 +104,9 @@ def migrate(
         if is_dot_com(b.config.destination_host):
             hooks.migrate_system_hooks(dry_run=_DRY_RUN)
 
-        # Remove import user from parent group to avoid inheritance (self-managed only)
-        if not _DRY_RUN and b.config.dstn_parent_id and not is_dot_com(b.config.destination_host):
-            groups.remove_import_user(b.config.dstn_parent_id)
+    # Remove import user from parent group to avoid inheritance (self-managed only)
+    if not _DRY_RUN and b.config.dstn_parent_id and not is_dot_com(b.config.destination_host):
+        groups.remove_import_user(b.config.dstn_parent_id)
 
     add_post_migration_stats(start)
 
@@ -164,12 +157,12 @@ def handle_user_creation(user):
         :return:
     """
     response = None
-    new_user = {
-        "email": False,
-        "id": False
-    }
     state = user.get("state", None).lower()
     email = user.get("email", None)
+    new_user = {
+        "email": email,
+        "id": None
+    }
     old_user = {
         "email": email,
         "id": user.get("id", None)
@@ -191,7 +184,7 @@ def handle_user_creation(user):
                     users.block_user(user_data)
                 new_user = users.handle_user_creation_status(
                     response, user_data)
-        if not _DRY_RUN:
+        if not _DRY_RUN and b.config.source_host:
             # Migrate SSH keys
             keys.migrate_user_ssh_keys(old_user, new_user if new_user.get(
                 "id", None) else users.find_user_by_email_comparison_without_id(email))
