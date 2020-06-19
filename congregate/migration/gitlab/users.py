@@ -397,45 +397,35 @@ class UsersClient(BaseClass):
 
         return staged
 
-    def retrieve_user_info(self, host, token, quiet=False):
+    def retrieve_user_info(self, host, token):
         if self.config.src_parent_group_path:
             users = []
             for user in self.groups_api.get_all_group_members(self.config.src_parent_id, host, token):
                 users.append(self.users_api.get_user(
                     user["id"], host, token).json())
         else:
-            users = list(self.users_api.get_all_users(host, token))
-        root_index = None
-        for user in users:
-            # Removing root user
-            if user["id"] == 1:
-                root_index = users.index(user)
-            else:
-                keys_to_delete = [
-                    "web_url"
-                    "last_sign_in_at",
-                    "last_activity_at",
-                    "current_sign_in_at",
-                    "created_at",
-                    "confirmed_at",
-                    "last_activity_on"
-                ]
-                # SSO causes issues with the avatar URL due to the authentication
-                if self.config.group_sso_provider:
-                    keys_to_delete.append("avatar_url")
-                for key in keys_to_delete:
-                    if key in user:
-                        user.pop(key)
+            users = self.users_api.get_all_users(host, token)
 
-        if root_index:
-            users.pop(root_index)
+        # Remove root user
+        users = [u for u in users if u["id"] != 1]
+        for user in users:
+            keys_to_delete = [
+                "web_url"
+                "last_sign_in_at",
+                "last_activity_at",
+                "current_sign_in_at",
+                "created_at",
+                "confirmed_at",
+                "last_activity_on"
+            ]
+            # SSO causes issues with the avatar URL due to the authentication
+            if self.config.group_sso_provider:
+                user.pop("avatar_url", None)
+            for key in keys_to_delete:
+                user.pop(key, None)
 
         with open('%s/data/users.json' % self.app_path, "w") as f:
-            json.dump(users, f, indent=4)
-
-        if not quiet:
-            self.log.info(
-                "Retrieved %d users. Check users.json to see all retrieved users" % len(users))
+            json.dump(remove_dupes(users), f, indent=4)
 
     def generate_user_data(self, user):
         if user.get("id", None) is not None:
@@ -525,7 +515,7 @@ class UsersClient(BaseClass):
                 if user == u["username"]:
                     staged_users.append(u)
                     self.log.info(
-                        "Staging user (%s) [%d/%d]" % (u["username"], len(staged_users), len(users)))
+                        "Staging user (%s) [%d/%d]" % (u["email"], len(staged_users), len(users)))
         with open("%s/data/staged_users.json" % self.app_path, "w") as f:
             json.dump(remove_dupes(staged_users), f, indent=4)
 

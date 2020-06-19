@@ -8,7 +8,6 @@ from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.bitbucket.users import UsersClient as BitBucketUsers
 from congregate.migration.bitbucket.api.repos import ReposApi
-from congregate.migration.bitbucket.api.users import UsersApi as BitBucketUsersApi
 from congregate.migration.bitbucket.api.projects import ProjectsApi as BitBucketProjectsApi
 
 
@@ -45,15 +44,12 @@ def list_gitlab_data():
             b.log.info(u"[ID: {0}] {1}: {2}".format(
                 project["id"], project["name"], project["description"]))
 
-    groups.retrieve_group_info(
-        b.config.source_host, b.config.source_token, quiet=True)
-    users.retrieve_user_info(b.config.source_host,
-                             b.config.source_token, quiet=True)
+    groups.retrieve_group_info(b.config.source_host, b.config.source_token)
+    users.retrieve_user_info(b.config.source_host, b.config.source_token)
 
 
 def list_bitbucket_data():
     users = BitBucketUsers()
-    users_api = BitBucketUsersApi()
     projects = BitBucketProjectsApi()
     repos = ReposApi()
 
@@ -71,8 +67,6 @@ def list_bitbucket_data():
     )
     users.retrieve_user_info(b.config.external_source_url,
                              b.config.external_user_token)
-
-
 
 
 def write_empty_file(filename):

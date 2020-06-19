@@ -50,7 +50,7 @@ class GroupsClient(BaseClass):
                         [subgroup], transient_list, host, token, parent_group)
             parent_group = None
 
-    def retrieve_group_info(self, host, token, location="source", top_level_group=False, quiet=False):
+    def retrieve_group_info(self, host, token, location="source", top_level_group=False):
         prefix = ""
         if location != "source":
             prefix = location
@@ -77,10 +77,6 @@ class GroupsClient(BaseClass):
         transient_list = []
         self.traverse_groups(groups, transient_list, host, token)
         self.create_groups_json(transient_list, prefix=prefix)
-        if not quiet:
-            self.log.info(
-                "Retrieved %d groups. Check groups.json to see all retrieved groups" % len(groups))
-
         return transient_list
 
     def create_groups_json(self, groups, prefix=""):

@@ -398,7 +398,7 @@ def stitch_json_results(result_type="project", steps=0, order="tail"):
 
 
 def build_ui(app_path):
-    if not os.path.exists(app_path + "node_modules"):
+    if not os.path.exists(app_path + "/node_modules"):
         print "No node_modules found. Running npm install"
         install_deps = "npm install"
         subprocess.call(install_deps.split(" "))
