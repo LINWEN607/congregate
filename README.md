@@ -221,7 +221,8 @@ Usage:
     congregate init
     congregate list
     congregate configure
-    congregate stage <projects>... [--commit]
+    congregate stage-projects <projects>... [--skip-users] [--commit]
+    congregate stage-groups <groups>... [--skip-users] [--commit]
     congregate migrate [--processes=<n>] [--skip-users] [--skip-group-export] [--skip-group-import] [--skip-project-export] [--skip-project-import] [--only-post-migration-info] [--commit]
     congregate rollback [--hard-delete] [--skip-users] [--skip-groups] [--skip-projects] [--commit]
     congregate ui
@@ -267,7 +268,7 @@ Options:
 Arguments:
     processes                               Set number of processes to run in parallel.
     commit                                  Disable the dry-run and perform the full migration with all reads/writes. 
-    skip-users                              Migrate: Skip migrating users; Rollback: Remove only groups and projects.
+    skip-users                              Stage: Skip staging users; Migrate: Skip migrating users; Rollback: Remove only groups and projects.
     hard-delete                             Remove user contributions and solely owned groups.
     skip-groups                             Rollback: Remove only users and projects.
     skip-group-export                       Skip exporting groups from source instance.
@@ -289,10 +290,14 @@ Commands:
     list                                    List all projects of a source instance and save it to {CONGREGATE_PATH}/data/project_json.json.
     init                                    Creates additional directories and files required by congregate
     configure                               Configure congregate for migrating between two instances and save it to {CONGREGATE_PATH}/data/congregate.conf.
-    stage                                   Stage projects to {CONGREGATE_PATH}/data/staged_projects.json,
-                                                users to {CONGREGATE_PATH}/data/staged_users.json,
-                                                groups to {CONGREGATE_PATH}/data/staged_groups.json.
-                                                All projects can be staged with a '.' or 'all'.
+    stage-projects                          Stage projects to {CONGREGATE_PATH}/data/staged_projects.json,
+                                                their parent groups to {CONGREGATE_PATH}/data/staged_groups.json.
+                                                all project and group members to {CONGREGATE_PATH}/data/staged_users.json,
+                                                All projects can be staged with '.' or 'all'.
+    stage-groups                            Stage groups and sub-groups to {CONGREGATE_PATH}/data/staged_groups.json,
+                                                all their projects (except shared - with_shared=False) to {CONGREGATE_PATH}/data/staged_projects.json,
+                                                all project and group members to {CONGREGATE_PATH}/data/staged_users.json,
+                                                All groups can be staged with '.' or 'all'.
     migrate                                 Commence migration based on configuration and staged assets.
     rollback                                Remove staged users/groups/projects on destination.
     ui                                      Deploy UI to port 8000.
