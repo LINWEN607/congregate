@@ -70,15 +70,8 @@ def list_bitbucket_data():
         b.config.external_user_token
     )
     users.retrieve_user_info(b.config.external_source_url,
-                             b.config.external_user_token, quiet=True)
-"""
-    write_json_yield_to_file(
-        "%s/data/users.json" % b.app_path,
-        users_api.get_all_users,
-        b.config.external_source_url,
-        b.config.external_user_token
-    )
-"""
+                             b.config.external_user_token)
+
 
 
 
