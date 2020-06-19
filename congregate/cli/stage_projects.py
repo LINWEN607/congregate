@@ -53,9 +53,9 @@ def build_staging_data(projects_to_stage, dry_run=True):
         rewritten_users[users[i]["id"]] = users[i]
 
     # If there are some projects selected in UI
-    if not projects_to_stage[0] == "":
+    if filter(None, projects_to_stage):
         # Stage ALL
-        if projects_to_stage[0] == "all" or projects_to_stage[0] == "." or len(projects_to_stage) == len(projects):
+        if projects_to_stage[0] in ["all", "."] or len(projects_to_stage) == len(projects):
             for i, _ in enumerate(projects):
                 obj = get_project_metadata(projects[i])
                 members = []
@@ -98,6 +98,9 @@ def build_staging_data(projects_to_stage, dry_run=True):
                         if projects[j]["name"] == projects_to_stage[i]:
                             project = projects[j]
                 append_data(project, projects_to_stage, dry_run=dry_run)
+    else:
+        b.log.info("Staging empty list")
+        return staged_users, staged_groups, staged_projects
     return remove_dupes(staged_projects), remove_dupes(
         staged_users), remove_dupes(staged_groups)
 

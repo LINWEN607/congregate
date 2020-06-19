@@ -51,7 +51,7 @@ def do_all_groups_and_projects(dry_run=True):
     list_all()
 
     # Stage ALL - NO dry run
-    stage_data(["all"], dry_run=False, skip_users=True)
+    stage_data(["all"], dry_run=False)
 
     migrate.migrate(dry_run=dry_run, skip_users=True)
 

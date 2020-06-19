@@ -544,3 +544,29 @@ class StageProjectsTests(unittest.TestCase):
             len(self.groups_api.get_all_groups_list()), len(staged_groups))
         self.assertEqual(
             len(self.users_api.get_all_users_list()), len(staged_users))
+
+    @mock.patch('__builtin__.open')
+    @mock.patch('os.path.isfile')
+    @mock.patch('congregate.cli.stage_projects.open_projects_file')
+    @mock.patch('congregate.cli.stage_projects.open_users_file')
+    @mock.patch('congregate.cli.stage_projects.open_groups_file')
+    @mock.patch('congregate.migration.gitlab.api.projects.ProjectsApi.get_members')
+    @mock.patch.object(ConfigurationValidator, 'dstn_parent_id', new_callable=mock.PropertyMock)
+    @mock.patch('congregate.cli.stage_projects.staged_users', [])
+    @mock.patch('congregate.cli.stage_projects.staged_groups', [])
+    @mock.patch('congregate.cli.stage_projects.staged_projects', [])
+    def test_build_stage_data_none(self, parent_id, mock_members, mock_groups, mock_users, mock_projects, mock_check, mock_open):
+        parent_id.return_value = None
+        mock_check.return_value = True
+        mock_projects.return_value = self.projects_api.get_all_projects()
+        mock_users.return_value = self.users_api.get_all_users_list()
+        mock_groups.return_value = self.groups_api.get_all_groups_list()
+        mock_members.return_value = self.members_api.get_members_list()
+        mock_open.return_value = {}
+
+        staged_projects, staged_users, staged_groups = stage_projects.build_staging_data([
+            ""])
+
+        self.assertEqual(len(staged_projects), 0)
+        self.assertEqual(len(staged_groups), 0)
+        self.assertEqual(len(staged_users), 0)
