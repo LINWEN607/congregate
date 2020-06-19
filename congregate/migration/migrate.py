@@ -18,7 +18,7 @@ from congregate.helpers.misc_utils import get_dry_log, json_pretty, is_dot_com, 
     add_post_migration_stats, rotate_logs, write_results_to_file, migration_dry_run
 from congregate.helpers.processes import start_multi_process
 from congregate.aws import AwsClient
-from congregate.cli.stage_projects import stage_projects
+from congregate.cli.stage_projects import stage_data
 from congregate.helpers.base_class import BaseClass
 from congregate.migration.gitlab.importexport import ImportExportClient
 from congregate.migration.gitlab.badges import BadgesClient
@@ -712,7 +712,7 @@ def stage_unimported_projects(dry_run=True):
             if rewritten_projects.get(up.split("/")[1], None) is not None:
                 ids.append(rewritten_projects.get(up.split("/")[1])["id"])
     if ids is not None and ids:
-        stage_projects(ids, dry_run)
+        stage_data(ids, dry_run)
 
 
 def generate_instance_map():

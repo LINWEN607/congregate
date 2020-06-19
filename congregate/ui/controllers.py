@@ -49,7 +49,7 @@ def message(obj, obj_type):
 @app.route("/stage", methods=['POST'])
 def stage():
     projects = request.get_data().split(",")
-    stage_projects.stage_projects(projects, dry_run=False)
+    stage_projects.stage_data(projects, dry_run=False)
     return message(projects, "project")
 
 
@@ -63,7 +63,7 @@ def add_users():
 @app.route("/append_groups", methods=['POST'])
 def add_groups():
     groups = request.get_data().split(",")
-    stage_groups.stage_groups(groups, dry_run=False)
+    stage_groups.stage_data(groups, dry_run=False)
     return message(groups, "group")
 
 

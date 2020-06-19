@@ -20,9 +20,9 @@ staged_users, staged_groups, staged_projects = [], [], []
 rewritten_users, rewritten_groups, rewritten_projects = {}, {}, {}
 
 
-def stage_groups(groups_to_stage, dry_run=True, skip_users=False):
+def stage_data(groups_to_stage, dry_run=True, skip_users=False):
     """
-        Stage all groups from the source instance
+        Stage data based on selected groups on source instance
 
         :param: groups_to_stage: (dict) the staged groups object
         :param: dry_run (bool) If true, it will only build the staging data lists
@@ -35,7 +35,7 @@ def stage_groups(groups_to_stage, dry_run=True, skip_users=False):
 
 def build_staging_data(groups_to_stage, dry_run=True):
     """
-        Stage all the data including project, groups and users from the source instance
+        Build data down from group level, including sub-groups, projects and users (members)
 
         :param: groups_to_stage: (dict) the staged groups objects
         :param: dry_run (bool) If true, it will only build the staging data lists.
@@ -58,7 +58,7 @@ def build_staging_data(groups_to_stage, dry_run=True):
     # If there are groups selected in UI
     if not groups_to_stage[0] == "":
         # Stage ALL
-        if groups_to_stage[0] == "all" or len(groups_to_stage) == len(groups):
+        if groups_to_stage[0] == "all" or groups_to_stage[0] == "." or len(groups_to_stage) == len(groups):
             for i, _ in enumerate(projects):
                 obj = get_project_metadata(projects[i])
                 members = []
@@ -173,9 +173,8 @@ def write_staging_files(skip_users=False):
         f.write(json.dumps(remove_dupes(staged_groups), indent=4))
     with open("%s/data/staged_projects.json" % b.app_path, "wb") as f:
         f.write(json.dumps(remove_dupes(staged_projects), indent=4))
-    if not skip_users:
-        with open("%s/data/staged_users.json" % b.app_path, "wb") as f:
-            f.write(json.dumps(remove_dupes(staged_users), indent=4))
+    with open("%s/data/staged_users.json" % b.app_path, "wb") as f:
+        f.write(json.dumps([] if skip_users else remove_dupes(staged_users), indent=4))
 
 
 def append_member_to_members_list(members_list, member, dry_run=True):
