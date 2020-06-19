@@ -20,7 +20,7 @@ class UsersClient(BaseClass):
         with open("{}/data/staged_users.json".format(self.app_path), "r") as f:
             return json.load(f)
 
-    def retrieve_user_info(self, host, token, quiet=False):
+    def retrieve_user_info(self, host, token):
         # Get all the users from users_api
         users = list(self.users_api.get_all_users(host, token))
         root_index = None
@@ -57,9 +57,8 @@ class UsersClient(BaseClass):
         with open('%s/data/users.json' % self.app_path, "w") as f:
             json.dump(users, f, indent=4)
 
-        if not quiet:
-            self.log.info(
-                "Retrieved %d users. Check users.json to see all retrieved users" % len(users))
+        self.log.info(
+            "Retrieved %d users. Check users.json to see all retrieved users" % len(users))
 
     # def generate_user_data(self, user):
     #     if user.get("id", None) is not None:
