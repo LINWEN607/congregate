@@ -32,7 +32,6 @@ class UsersClient(BaseClass):
                 root_index = users.index(user)
             else:
                 keys_to_delete = [
-                    "active",
                     "deletable",
                     "directoryName",
                     "lastAuthenticationTimestamp",
@@ -43,7 +42,8 @@ class UsersClient(BaseClass):
                 ]
                 for key in keys_to_delete:
                     if key in user:
-                        user.pop(key)            
+                        user.pop(key)       
+            user["state"] = user.pop("active")     
             user["username"] = user.pop("name")
             user["name"] = user.pop("displayName")
             user["email"] = user.pop("emailAddress")
