@@ -8,13 +8,18 @@ import congregate.helpers.misc_utils as misc
 
 
 def test_remove_dupes_no_dupes():
-    de_duped = misc.remove_dupes([1, 2, 3])
-    assert de_duped == [1, 2, 3]
+    L = [{'id': 1, 'name': 'john', 'age': 34}, {'id': 2, 'name': 'jack',
+                                                'age': 34}, {'id': 3, 'name': 'hanna', 'age': 30}]
+    de_duped = misc.remove_dupes(L)
+    assert de_duped == L
 
 
 def test_remove_dupes_with_dupes():
-    de_duped = misc.remove_dupes([1, 1, 2, 2, 3, 3])
-    assert de_duped == [1, 2, 3]
+    L = [{'id': 1, 'name': 'john', 'age': 34}, {'id': 1, 'name': 'john', 'age': 34}, {'id': 2, 'name': 'jack', 'age': 34}, {
+        'id': 2, 'name': 'jack', 'age': 34}, {'id': 3, 'name': 'hanna', 'age': 30}, {'id': 3, 'name': 'hanna', 'age': 30}]
+    de_duped = misc.remove_dupes(L)
+    assert de_duped == [{'id': 1, 'name': 'john', 'age': 34}, {
+        'id': 2, 'name': 'jack', 'age': 34}, {'id': 3, 'name': 'hanna', 'age': 30}]
 
 
 def test_remove_dupes_with_empty_returns_empty():
@@ -23,8 +28,10 @@ def test_remove_dupes_with_empty_returns_empty():
 
 
 def test_remove_dupes_with_all_dupes_returns_single():
-    de_duped = misc.remove_dupes([1, 1, 1])
-    assert de_duped == [1]
+    L = [{'id': 1, 'name': 'john', 'age': 34}, {
+        'id': 1, 'name': 'john', 'age': 34}, {'id': 1, 'name': 'john', 'age': 34}]
+    de_duped = misc.remove_dupes(L)
+    assert de_duped == [{'id': 1, 'name': 'john', 'age': 34}]
 
 
 @mock.patch("congregate.helpers.misc_utils.__get_filename_from_cd")

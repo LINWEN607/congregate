@@ -17,13 +17,7 @@ def remove_dupes(my_list):
     """
         Basic deduping function to remove any duplicates from a list
     """
-    if len(my_list) > 0:
-        new_list = [my_list[0]]
-        for e in my_list:
-            if e not in new_list:
-                new_list.append(e)
-        return new_list
-    return my_list
+    return {v["id"]: v for v in my_list}.values()
 
 
 def download_file(url, path, filename=None, headers=None):
