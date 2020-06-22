@@ -407,24 +407,24 @@ class UsersClient(BaseClass):
 
         # Remove root user
         users = [u for u in users if u["id"] != 1]
-        for user in users:
-            keys_to_delete = [
-                "web_url"
-                "last_sign_in_at",
-                "last_activity_at",
-                "current_sign_in_at",
-                "created_at",
-                "confirmed_at",
-                "last_activity_on"
-            ]
+        keys_to_delete = [
+            "web_url",
+            "last_sign_in_at",
+            "last_activity_at",
+            "current_sign_in_at",
+            "created_at",
+            "confirmed_at",
+            "last_activity_on",
             # SSO causes issues with the avatar URL due to the authentication
-            if self.config.group_sso_provider:
-                user.pop("avatar_url", None)
+            "avatar_url" if self.config.group_sso_provider else ""
+        ]
+        for user in users:
             for key in keys_to_delete:
                 user.pop(key, None)
 
         with open('%s/data/users.json' % self.app_path, "w") as f:
             json.dump(remove_dupes(users), f, indent=4)
+        return remove_dupes(users)
 
     def generate_user_data(self, user):
         if user.get("id", None) is not None:
