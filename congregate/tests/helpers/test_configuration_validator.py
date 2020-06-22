@@ -3,10 +3,10 @@ import mock
 import pytest
 import responses
 from congregate.helpers.configuration_validator import ConfigurationValidator
-from congregate.tests.mockapi.groups import MockGroupsApi
-from congregate.tests.mockapi.users import MockUsersApi
-from congregate.tests.mockapi.token import invalid_token
-from congregate.tests.mockapi.error import other_error
+from congregate.tests.mockapi.gitlab.groups import MockGroupsApi
+from congregate.tests.mockapi.gitlab.users import MockUsersApi
+from congregate.tests.mockapi.gitlab.token import invalid_token
+from congregate.tests.mockapi.gitlab.error import other_error
 from congregate.helpers.exceptions import ConfigurationException
 
 
@@ -25,7 +25,6 @@ class ConfigurationValidationTests(unittest.TestCase):
         ConfigurationValidator().import_user_id_validated_in_session = False
 
     @responses.activate
-    # pylint: enable=no-membertest_pass_import_user_id_validation
     @mock.patch("congregate.helpers.api.generate_v4_request_url")
     def test_fail_parent_id_validation(self, url):
         self.config.dstn_parent_id_validated_in_session = False
@@ -34,9 +33,10 @@ class ConfigurationValidationTests(unittest.TestCase):
         self.config.as_obj().set("DESTINATION", "dstn_parent_group_id", "1234")
         # pylint: disable=no-member
         responses.add(responses.GET, url_value,
-                  json=self.groups.get_group_404(), status=404, content_type='text/json', match_querystring=True)
+                      json=self.groups.get_group_404(), status=404, content_type='text/json', match_querystring=True)
         # pylint: enable=no-member
-        self.assertRaises(ConfigurationException, self.config.validate_dstn_parent_group_id, 1234)
+        self.assertRaises(ConfigurationException,
+                          self.config.validate_dstn_parent_group_id, 1234)
 
     @responses.activate
     # pylint: enable=no-member
@@ -50,7 +50,7 @@ class ConfigurationValidationTests(unittest.TestCase):
         self.config.as_obj().set("DESTINATION", "dstn_parent_group_path", "twitter")
         # pylint: disable=no-member
         responses.add(responses.GET, url_value,
-                  json=self.groups.get_group(), status=200, content_type='text/json', match_querystring=True)
+                      json=self.groups.get_group(), status=200, content_type='text/json', match_querystring=True)
         # pylint: enable=no-member
         self.assertTrue(self.config.dstn_parent_id, 1234)
 
@@ -67,7 +67,7 @@ class ConfigurationValidationTests(unittest.TestCase):
         self.config.as_obj().set("DESTINATION", "dstn_parent_group_path", "twitter")
         # pylint: disable=no-member
         responses.add(responses.GET, url_value,
-                    json=self.groups.get_group(), status=200, content_type='text/json', match_querystring=True)
+                      json=self.groups.get_group(), status=200, content_type='text/json', match_querystring=True)
         # pylint: enable=no-member
         self.assertTrue(self.config.dstn_parent_id, 1234)
 
@@ -79,7 +79,7 @@ class ConfigurationValidationTests(unittest.TestCase):
         url.return_value = url_value
         # pylint: disable=no-member
         responses.add(responses.GET, url_value,
-                  json=self.users.get_user_404(), status=404, content_type='text/json', match_querystring=True)
+                      json=self.users.get_user_404(), status=404, content_type='text/json', match_querystring=True)
         # pylint: enable=no-member
         # self.assertRaises(ConfigurationException, self.config.validate_import_user_id, 1)
         with self.assertRaises(ConfigurationException) as context:
@@ -91,7 +91,8 @@ class ConfigurationValidationTests(unittest.TestCase):
         self.assertTrue(self.config.validate_dstn_parent_group_id(None))
 
     def test_none_import_user_id_validation(self):
-        self.assertRaises(ConfigurationException, self.config.validate_import_user_id, None)
+        self.assertRaises(ConfigurationException,
+                          self.config.validate_import_user_id, None)
 
     @responses.activate
     # pylint: enable=no-member
@@ -101,9 +102,10 @@ class ConfigurationValidationTests(unittest.TestCase):
         url.return_value = url_value
         # pylint: disable=no-member
         responses.add(responses.GET, url_value,
-                  json=invalid_token(), status=404, content_type='text/json', match_querystring=True)
+                      json=invalid_token(), status=404, content_type='text/json', match_querystring=True)
         # pylint: enable=no-member
-        self.assertRaises(ConfigurationException, self.config.validate_import_user_id, 1)
+        self.assertRaises(ConfigurationException,
+                          self.config.validate_import_user_id, 1)
 
     @responses.activate
     # pylint: enable=no-member
@@ -113,7 +115,7 @@ class ConfigurationValidationTests(unittest.TestCase):
         url.return_value = url_value
         # pylint: disable=no-member
         responses.add(responses.GET, url_value,
-                  json=other_error(), status=404, content_type='text/json', match_querystring=True)
+                      json=other_error(), status=404, content_type='text/json', match_querystring=True)
         # pylint: enable=no-member
         self.assertRaises(Exception, self.config.validate_import_user_id, 1)
 
@@ -126,7 +128,7 @@ class ConfigurationValidationTests(unittest.TestCase):
         self.config.as_obj().set("DESTINATION", "import_user_id", "1")
         # pylint: disable=no-member
         responses.add(responses.GET, url_value,
-                  json=self.users.get_current_user(), status=200, content_type='text/json', match_querystring=True)
+                      json=self.users.get_current_user(), status=200, content_type='text/json', match_querystring=True)
         # pylint: enable=no-member
         self.assertTrue(self.config.import_user_id, 1)
 
@@ -138,9 +140,10 @@ class ConfigurationValidationTests(unittest.TestCase):
         url.return_value = url_value
         # pylint: disable=no-member
         responses.add(responses.GET, url_value,
-                  json=self.users.get_current_user(), status=200, content_type='text/json', match_querystring=True)
+                      json=self.users.get_current_user(), status=200, content_type='text/json', match_querystring=True)
         # pylint: enable=no-member
-        self.assertRaises(ConfigurationException, self.config.validate_import_user_id, 2)
+        self.assertRaises(ConfigurationException,
+                          self.config.validate_import_user_id, 2)
 
     @responses.activate
     # pylint: enable=no-member
@@ -153,12 +156,12 @@ class ConfigurationValidationTests(unittest.TestCase):
         url.return_value = url_value
         # pylint: disable=no-member
         responses.add(responses.GET, url_value,
-                    json=self.groups.get_group(), status=200, content_type='text/json', match_querystring=True)
+                      json=self.groups.get_group(), status=200, content_type='text/json', match_querystring=True)
         responses.add(responses.GET, url_value,
-                    json=self.groups.get_group(), status=200, content_type='text/json', match_querystring=True)
+                      json=self.groups.get_group(), status=200, content_type='text/json', match_querystring=True)
         # pylint: enable=no-member
         self.assertTrue(self.config.dstn_parent_group_path, "twitter")
-    
+
     @responses.activate
     # pylint: enable=no-member
     @mock.patch.object(ConfigurationValidator, 'dstn_parent_id', new_callable=mock.PropertyMock)
@@ -170,11 +173,12 @@ class ConfigurationValidationTests(unittest.TestCase):
         url.return_value = url_value
         # pylint: disable=no-member
         responses.add(responses.GET, url_value,
-                    json=self.groups.get_group(), status=200, content_type='text/json', match_querystring=True)
+                      json=self.groups.get_group(), status=200, content_type='text/json', match_querystring=True)
         responses.add(responses.GET, url_value,
-                    json=self.groups.get_group(), status=200, content_type='text/json', match_querystring=True)
+                      json=self.groups.get_group(), status=200, content_type='text/json', match_querystring=True)
         # pylint: enable=no-member
-        self.assertRaises(ConfigurationException, self.config.validate_dstn_parent_group_path, "not-twitter")
+        self.assertRaises(ConfigurationException,
+                          self.config.validate_dstn_parent_group_path, "not-twitter")
 
     def test_none_parent_group_path_validation(self):
         self.assertTrue(self.config.validate_dstn_parent_group_path(None))

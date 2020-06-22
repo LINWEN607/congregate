@@ -1,14 +1,15 @@
 import mock
 import responses
 from congregate.migration.gitlab.compare import CompareClient
-from congregate.tests.mockapi.groups import MockGroupsApi
-from congregate.tests.mockapi.users import MockUsersApi
-from congregate.helpers.misc_utils import rewrite_list_into_dict, deobfuscate
+from congregate.tests.mockapi.gitlab.groups import MockGroupsApi
+from congregate.tests.mockapi.gitlab.users import MockUsersApi
+from congregate.helpers.misc_utils import rewrite_list_into_dict
 from congregate.helpers.configuration_validator import ConfigurationValidator
 
 compare = CompareClient()
 groups = MockGroupsApi()
 users = MockUsersApi()
+
 
 @mock.patch.object(CompareClient, "load_group_data")
 @mock.patch.object(ConfigurationValidator, 'dstn_parent_id', new_callable=mock.PropertyMock)
@@ -59,6 +60,7 @@ def test_compare_groups(parent_id, group_data):
     assert actual_results == expected_results
     assert actual_unknown_users == {}
 
+
 def test_generate_diff():
     diff_one = "ABC"
     diff_two = "DEF"
@@ -68,6 +70,7 @@ def test_generate_diff():
     }
     actual = compare.generate_diff(diff_one, diff_two)
     assert expected == actual
+
 
 def test_generate_matching_diff():
     diff_one = "ABC"
@@ -117,14 +120,17 @@ def test_generate_matching_diff():
 #     actual = compare.compare_groups(rewritten_source_groups, rewritten_destination_groups)
 #     assert sorted(expected) == sorted(actual)
 
+
 @mock.patch.object(ConfigurationValidator, 'dstn_parent_id', new_callable=mock.PropertyMock)
 def test_compare_members_different_usernames_same_ids(parent_id):
     parent_id.return_value = None
     source_groups = groups.get_all_groups_list()
     destination_groups = mock_destination_usernames()
     shared_key = "full_path"
-    rewritten_destination_groups = rewrite_list_into_dict(destination_groups, shared_key)
-    rewritten_source_groups = rewrite_list_into_dict(source_groups, shared_key, prefix="")
+    rewritten_destination_groups = rewrite_list_into_dict(
+        destination_groups, shared_key)
+    rewritten_source_groups = rewrite_list_into_dict(
+        source_groups, shared_key, prefix="")
     expected = {
         "foo-bar-2": {
             "path": True,
@@ -283,10 +289,13 @@ def test_compare_members_different_usernames_same_ids(parent_id):
             }
         }
     }
-    actual = compare.compare_groups(rewritten_source_groups, rewritten_destination_groups)
+    actual = compare.compare_groups(
+        rewritten_source_groups, rewritten_destination_groups)
     assert expected == actual
 
 # pylint: disable=no-member
+
+
 @responses.activate
 # pylint: enable=no-member
 @mock.patch("congregate.helpers.api.generate_v4_request_url")
@@ -317,6 +326,8 @@ def test_user_snapshot(url):
     assert expected == actual
 
 # pylint: disable=no-member
+
+
 @responses.activate
 # pylint: enable=no-member
 @mock.patch("congregate.helpers.api.generate_v4_request_url")
@@ -343,12 +354,14 @@ def test_unknown_user_snapshot(url):
         actual = compare.generate_user_snapshot_map(dummy_members)
     assert expected == actual
 
+
 def mock_destination_ids():
     mock_destination = groups.get_all_groups_list()
     for group in mock_destination:
         for member in group["members"]:
             member["id"] = member.get("id") + 10
     return mock_destination
+
 
 def mock_destination_usernames():
     mock_destination = groups.get_all_groups_list()

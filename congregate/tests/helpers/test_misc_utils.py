@@ -1,7 +1,11 @@
-import mock
 from datetime import datetime, timedelta
+
+import mock
+
 from congregate.tests.helpers.mock_data.results import MockProjectResults
+
 import congregate.helpers.misc_utils as misc
+
 
 def test_remove_dupes_no_dupes():
     de_duped = misc.remove_dupes([1, 2, 3])
@@ -222,15 +226,16 @@ def test_validate_name():
     assert misc.validate_name(
         ":: This.is-how/WE do\n&it") == "This is how WE do it"
 
+
 @mock.patch("congregate.helpers.misc_utils.read_json_file_into_object")
 @mock.patch("glob.glob")
 def test_stitch_json(glob, json):
     results = MockProjectResults()
     glob.return_value = [
-        'project_migration_results_2020-05-05_22:17:45.335715.json', 
-        'project_migration_results_2020-05-05_21:38:04.565534.json', 
-        'project_migration_results_2020-05-05_21:17:42.719402.json', 
-        'project_migration_results_2020-05-05_19:26:18.616265.json', 
+        'project_migration_results_2020-05-05_22:17:45.335715.json',
+        'project_migration_results_2020-05-05_21:38:04.565534.json',
+        'project_migration_results_2020-05-05_21:17:42.719402.json',
+        'project_migration_results_2020-05-05_19:26:18.616265.json',
         'project_migration_results_2020-04-28_23:06:02.139918.json'
     ]
 
@@ -245,15 +250,16 @@ def test_stitch_json(glob, json):
 
     assert expected == actual
 
+
 @mock.patch("congregate.helpers.misc_utils.read_json_file_into_object")
 @mock.patch("glob.glob")
 def test_stitch_json_too_many_steps(glob, json):
     results = MockProjectResults()
     glob.return_value = [
-        'project_migration_results_2020-05-05_22:17:45.335715.json', 
-        'project_migration_results_2020-05-05_21:38:04.565534.json', 
-        'project_migration_results_2020-05-05_21:17:42.719402.json', 
-        'project_migration_results_2020-05-05_19:26:18.616265.json', 
+        'project_migration_results_2020-05-05_22:17:45.335715.json',
+        'project_migration_results_2020-05-05_21:38:04.565534.json',
+        'project_migration_results_2020-05-05_21:17:42.719402.json',
+        'project_migration_results_2020-05-05_19:26:18.616265.json',
         'project_migration_results_2020-04-28_23:06:02.139918.json'
     ]
 

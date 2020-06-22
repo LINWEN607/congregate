@@ -5,7 +5,7 @@ import responses
 from congregate.migration.gitlab.importexport import ImportExportClient
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
-from congregate.tests.mockapi.groups import MockGroupsApi
+from congregate.tests.mockapi.gitlab.groups import MockGroupsApi
 
 
 class ImportExportClientTests(unittest.TestCase):

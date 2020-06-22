@@ -1,8 +1,9 @@
-from congregate.tests.mockapi.environments import MockEnvironmentsApi
+from congregate.tests.mockapi.gitlab.environments import MockEnvironmentsApi
 from congregate.migration.gitlab.environments import EnvironmentsClient
 
 mock_environment = MockEnvironmentsApi()
 environment = EnvironmentsClient()
+
 
 def test_generate_environment_data():
     expected = {

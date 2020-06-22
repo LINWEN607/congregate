@@ -1,10 +1,10 @@
 import unittest
 import mock
 from congregate.cli import stage_projects
-from congregate.tests.mockapi.projects import MockProjectsApi
-from congregate.tests.mockapi.groups import MockGroupsApi
-from congregate.tests.mockapi.users import MockUsersApi
-from congregate.tests.mockapi.members import MockMembersApi
+from congregate.tests.mockapi.gitlab.projects import MockProjectsApi
+from congregate.tests.mockapi.gitlab.groups import MockGroupsApi
+from congregate.tests.mockapi.gitlab.users import MockUsersApi
+from congregate.tests.mockapi.gitlab.members import MockMembersApi
 from congregate.helpers.configuration_validator import ConfigurationValidator
 
 

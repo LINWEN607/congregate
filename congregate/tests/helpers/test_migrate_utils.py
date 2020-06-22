@@ -2,9 +2,9 @@ import unittest
 import mock
 import responses
 import congregate.helpers.migrate_utils as mutils
-from congregate.tests.mockapi.users import MockUsersApi
-from congregate.tests.mockapi.groups import MockGroupsApi
-from congregate.tests.mockapi.projects import MockProjectsApi
+from congregate.tests.mockapi.gitlab.users import MockUsersApi
+from congregate.tests.mockapi.gitlab.groups import MockGroupsApi
+from congregate.tests.mockapi.gitlab.projects import MockProjectsApi
 from congregate.helpers.configuration_validator import ConfigurationValidator
 from congregate.migration.gitlab.api.groups import GroupsApi
 

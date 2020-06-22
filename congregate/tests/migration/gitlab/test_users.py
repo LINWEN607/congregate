@@ -4,16 +4,18 @@ import mock
 import responses
 
 from congregate.migration.migrate import handle_user_creation
-from congregate.tests.mockapi.users import MockUsersApi
+from congregate.tests.mockapi.gitlab.users import MockUsersApi
+from congregate.tests.mockapi.gitlab.groups import MockGroupsApi
 from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.users import UsersClient
-from congregate.migration.gitlab.groups import GroupsApi
+from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.keys import KeysClient
 
 
 class UserTests(unittest.TestCase):
     def setUp(self):
         self.mock_users = MockUsersApi()
+        self.mock_groups = MockGroupsApi()
         self.users = UsersClient()
 
     # pylint: disable=no-member
@@ -276,12 +278,12 @@ class UserTests(unittest.TestCase):
             result, self.mock_users.get_dummy_project_active_members())
 
     def test_remove_blocked_group_members(self):
-        read_data = json.dumps(self.mock_users.get_dummy_group())
+        read_data = json.dumps(self.mock_groups.get_dummy_group())
         mock_open = mock.mock_open(read_data=read_data)
         with mock.patch('__builtin__.open', mock_open):
             result = self.users.remove("staged_groups")
         self.assertEqual(
-            result, self.mock_users.get_dummy_group_active_members())
+            result, self.mock_groups.get_dummy_group_active_members())
 
     def test_handle_users_not_found_users_keep(self):
         users_not_found = {
@@ -310,13 +312,13 @@ class UserTests(unittest.TestCase):
             87: "jdoe2@email.com",
             88: "jdoe3@email.com"
         }
-        read_data = json.dumps(self.mock_users.get_dummy_group())
+        read_data = json.dumps(self.mock_groups.get_dummy_group())
         mock_open = mock.mock_open(read_data=read_data)
         with mock.patch('__builtin__.open', mock_open):
             result = self.users.handle_users_not_found(
                 "staged_groups", users_not_found)
         self.assertEqual(
-            result, self.mock_users.get_dummy_group_active_members())
+            result, self.mock_groups.get_dummy_group_active_members())
 
     def test_handle_users_not_found_projects(self):
         users_not_found = {
@@ -554,3 +556,128 @@ class UserTests(unittest.TestCase):
             "email": "jdoe@email.com"
         }
         self.assertEqual(handle_user_creation(new_user), expected)
+
+    @mock.patch('__builtin__.raw_input')
+    @mock.patch.object(UsersApi, "get_all_users")
+    @mock.patch('congregate.helpers.conf.Config.src_parent_group_path', new_callable=mock.PropertyMock)
+    @mock.patch('congregate.helpers.conf.Config.group_sso_provider', new_callable=mock.PropertyMock)
+    def test_retrieve_user_info(self, mock_sso, mock_src_parent_group_path, mock_get_all_users, mock_open):
+        mock_sso.return_value = ""
+        mock_src_parent_group_path.return_value = ""
+        mock_get_all_users.return_value = self.mock_users.get_dummy_new_users()
+        mock_open.return_value = []
+        expected_users = [
+            {
+                "id": 28,
+                "username": "raymond_smith",
+                "name": "Raymond Smith",
+                "state": "active",
+                "avatar_url": "",
+                "bio": None,
+                "location": None,
+                "public_email": "",
+                "skype": "",
+                "linkedin": "",
+                "twitter": "",
+                "website_url": "",
+                "organization": None,
+                "email": "rsmith@email.com",
+                "theme_id": None,
+                "color_scheme_id": 5,
+                "projects_limit": 10,
+                "identities": [],
+                "can_create_group": True,
+                "can_create_project": True,
+                "two_factor_enabled": False,
+                "external": False,
+                "private_profile": None,
+                "is_admin": False,
+                "highest_role": 50,
+                "shared_runners_minutes_limit": None,
+                "extra_shared_runners_minutes_limit": None
+            },
+            {
+                "id": 27,
+                "name": "John Doe",
+                "username": "jdoe",
+                "state": "blocked",
+                "avatar_url": "",
+                "bio": None,
+                "location": None,
+                "public_email": "",
+                "skype": "",
+                "linkedin": "",
+                "twitter": "",
+                "website_url": "",
+                "organization": None,
+                "email": "jdoe@email.com",
+                "theme_id": None,
+                "color_scheme_id": 5,
+                "projects_limit": 10,
+                "identities": [],
+                "can_create_group": True,
+                "can_create_project": True,
+                "two_factor_enabled": False,
+                "external": False,
+                "private_profile": None,
+                "is_admin": False,
+                "highest_role": 50,
+                "shared_runners_minutes_limit": None,
+                "extra_shared_runners_minutes_limit": None
+            }
+        ]
+        self.assertEqual(sorted(self.users.retrieve_user_info(
+            "host", "token")), sorted(expected_users))
+
+    @mock.patch('__builtin__.raw_input')
+    @mock.patch.object(UsersApi, "get_user")
+    @mock.patch.object(GroupsApi, "get_all_group_members")
+    @mock.patch('congregate.helpers.conf.Config.src_parent_group_path', new_callable=mock.PropertyMock)
+    @mock.patch('congregate.helpers.conf.Config.src_parent_id', new_callable=mock.PropertyMock)
+    @mock.patch('congregate.helpers.conf.Config.group_sso_provider', new_callable=mock.PropertyMock)
+    def test_retrieve_user_info_src_parent_group_sso(self, mock_sso, mock_src_parent_id, mock_src_parent_group_path, mock_get_all_group_members, mock_get_user, mock_open):
+        mock_sso.return_value = "mock_sso"
+        mock_src_parent_id.return_value = 42
+        mock_src_parent_group_path.return_value = "mock_src_parent_group_path"
+        mock_get_all_group_members.return_value = self.mock_groups.get_group_members()
+        ok_get_mock = mock.MagicMock()
+        type(ok_get_mock).status_code = mock.PropertyMock(return_value=200)
+        ok_get_mock.json.side_effect = [
+            self.mock_users.get_dummy_old_users()[0],
+            self.mock_users.get_dummy_old_users()[1],
+            self.mock_users.get_dummy_old_users()[1]
+        ]
+        mock_get_user.return_value = ok_get_mock
+        mock_open.return_value = []
+        expected_users = [
+            {
+                "id": 2,
+                "name": "John Doe",
+                "username": "jdoe",
+                "state": "active",
+                "bio": None,
+                "location": None,
+                "public_email": "",
+                "skype": "",
+                "linkedin": "",
+                "twitter": "",
+                "website_url": "",
+                "organization": None,
+                "email": "jdoe@email.com",
+                "theme_id": None,
+                "color_scheme_id": 5,
+                "projects_limit": 10,
+                "identities": [],
+                "can_create_group": True,
+                "can_create_project": True,
+                "two_factor_enabled": False,
+                "external": False,
+                "private_profile": None,
+                "is_admin": False,
+                "highest_role": 50,
+                "shared_runners_minutes_limit": None,
+                "extra_shared_runners_minutes_limit": None
+            }
+        ]
+        self.assertEqual(sorted(self.users.retrieve_user_info(
+            "host", "token")), sorted(expected_users))

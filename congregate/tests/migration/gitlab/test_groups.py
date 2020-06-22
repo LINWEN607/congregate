@@ -3,7 +3,7 @@ import mock
 import responses
 
 from congregate.migration.gitlab.groups import GroupsClient
-from congregate.tests.mockapi.groups import MockGroupsApi
+from congregate.tests.mockapi.gitlab.groups import MockGroupsApi
 
 
 class GroupsUnitTest(unittest.TestCase):
