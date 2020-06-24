@@ -1,5 +1,5 @@
 import unittest
-from mock import patch
+from mock import patch, PropertyMock
 
 from congregate.tests.mockapi.bitbucket.users import MockUsersApi
 from congregate.migration.bitbucket.api.users import UsersApi
@@ -13,7 +13,11 @@ class UserTests(unittest.TestCase):
 
     @patch('__builtin__.raw_input')
     @patch.object(UsersApi, "get_all_users")
-    def test_retrieve_user_info(self, mock_get_all_users, mock_open):
+    @patch('congregate.helpers.conf.Config.external_source_url', new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.external_user_token', new_callable=PropertyMock)
+    def test_retrieve_user_info(self, mock_ext_src_url, mock_ext_user_token, mock_get_all_users, mock_open):
+        mock_ext_src_url.return_value = "http://localhost:7990"
+        mock_ext_user_token.return_value = "username:password"
         mock_get_all_users.return_value = self.mock_users.get_all_users()
         mock_open.return_value = []
         expected_users = [
@@ -34,5 +38,5 @@ class UserTests(unittest.TestCase):
                 "state": "active"
             }
         ]
-        self.assertEqual(sorted(self.users.retrieve_user_info(
-            "host", "token")), sorted(expected_users))
+        self.assertEqual(sorted(self.users.retrieve_user_info()),
+                         sorted(expected_users))
