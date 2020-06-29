@@ -29,53 +29,44 @@ Come together, right now
 
 ### TL;DR Install
 
-Copy the following code snippet to a file in the Congregate directory and run it
+This document assumes you have a working python 2.7.9 or greater installed, you know how to clone a repo in terminal, and switch to its directory.  If you do not have a working python, you will need to take appropriate OS specific steps to install it.
 
-```bash
-#!/bin/bash
+After cloning [the repo](https://gitlab.com/gitlab-com/customer-success/tools/congregate/) and changing to the directory in terminal, run the following appropriate commands to run your first UT!
 
-# Install pip for different OSs
+1. Verify your python version.  Currently congregate only works in Python 2. Your python needs to be 2.7.9 or greater. To check the version; `python --version`. If you only have python 3, this will need to be addressed, there are official python 2 docker images that can be used.
+1. Install the python poetry virtual environment manager: `pip install poetry` If pip install poetry doesn't work: \
+ `curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python`
+1. Source the poetry environment: `source $HOME/.poetry/env`
+1. Verify poetry works: `poetry --version`. If this doesn't work, add the following line to your appropriate rc file, usually `.zshrc`: \
+`export PATH=$HOME/.poetry/bin:$PATH` and retry `poetry --version`
+1. Install python dependencies `poetry install`
+1. Install NVM for Node Version Management \
+ `curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.35.3/install.sh | bash`
+1. If you are using zsh (mac default) copy this into `.zshrc`.  If not, copy into `.bashrc`.  Both of these files are generally found at `~/` \
+`export NVM_DIR="$HOME/.nvm"` \
+`[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm` \
+`[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion`
+1. Source whatever filed you copied the lines into. i.e.; `source .zshrc`
+1. Install nvm: `nvm install 11.13.0`
+1. Use specific nvm version: `nvm use 11.13.0`
+1. Install UI dependencies: `npm install`
+1. Create congregate path: `CONGREGATE_PATH=$(pwd)`
+1. Copy congregate script to a bin directory: `cp congregate.sh /usr/local/bin/congregate`
+1. Initialize additional congregate directories \
+`congregate init` \
+`echo "export CONGREGATE_PATH=$CONGREGATE_PATH" >> ~/.bash_profile`
 
-# mac os x
-brew install pip
+#### Congratulations!
+If we made it this far without errors, we are done with the basic install for development!  The next command will run the UT and verify your installation is working.
 
-# debian/ubuntu
-apt install python-pip
-
-# rhel/centos
-yum install python-pip
-
-# Install with pip
-pip install poetry
-
-# If pip install poetry doesn't work
-curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python
-
-source $HOME/.poetry/env
-poetry --version
-
-# install python dependencies
-poetry install
-
-# install NVM for Node Version Management
-curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.35.3/install.sh | bash
-nvm install 11.13.0
-nvm use 11.13.0
-
-# install UI dependencies
-npm install
-
-# create congregate path
-CONGREGATE_PATH=$(pwd)
-
-# copy congregate script to a bin directory
-cp congregate.sh /usr/local/bin/congregate
-
-# Initialize additional congregate directories
-congregate init
-
-echo "export CONGREGATE_PATH=$CONGREGATE_PATH" >> ~/.bash_profile
 ```
+poetry run pytest -m "not e2e and not e2e_setup and not e2e_setup_2" --cov-config=.coveragerc --cov=congregate congregate/tests/
+```
+
+Success looks like;
+![SUCCESS](img/ut_success.png)
+
+## Configuring Congregate
 
 Once all of the dependencies are installed, run `congregate configure` to set up the Congregate config.
 
