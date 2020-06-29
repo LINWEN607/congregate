@@ -9,11 +9,7 @@ import re
 
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.misc_utils import get_dry_log, remove_dupes
-from congregate.migration.gitlab.api.groups import GroupsApi
-from congregate.migration.gitlab.api.projects import ProjectsApi
 
-projects_api = ProjectsApi()
-groups_api = GroupsApi()
 b = BaseClass()
 
 staged_users, staged_groups, staged_projects = [], [], []
@@ -60,13 +56,9 @@ def build_staging_data(groups_to_stage, dry_run=True):
         # Stage ALL
         if groups_to_stage[0] in ["all", "."] or len(groups_to_stage) == len(groups):
             for i, _ in enumerate(projects):
-                obj = get_project_metadata(projects[i])
-                members = []
-                for member in projects_api.get_members(
-                        int(projects[i]["id"]), b.config.source_host, b.config.source_token):
-                    append_member_to_members_list(members, member, dry_run)
-                obj["members"] = members
-                staged_projects.append(obj)
+                b.log.info("{0}Staging project {1} (ID: {2})".format(get_dry_log(
+                    dry_run), projects[i]["path_with_namespace"], projects[i]["id"]))
+                staged_projects.append(get_project_metadata(projects[i]))
 
             for g in groups:
                 b.log.info("{0}Staging group {1} (ID: {2})".format(
@@ -74,8 +66,10 @@ def build_staging_data(groups_to_stage, dry_run=True):
                 g.pop("projects", None)
                 staged_groups.append(g)
 
-            for user in users:
-                staged_users.append(user)
+            for u in users:
+                b.log.info("{0}Staging user {1} (ID: {2})".format(
+                    get_dry_log(dry_run), u["username"], u["id"]))
+                staged_users.append(u)
         # CLI range input
         elif re.search(r"\d+-\d+", groups_to_stage[0]) is not None:
             match = (re.search(r"\d+-\d+", groups_to_stage[0])).group(0)
@@ -112,14 +106,10 @@ def build_staging_data(groups_to_stage, dry_run=True):
 def append_data(group, groups_to_stage, p_range=0, dry_run=True):
     # Append all group projects to staged projects
     for project in group["projects"]:
-        project_members = []
         obj = get_project_metadata(project)
         # Append all project members to staged users
-        for project_member in projects_api.get_members(
-                int(project["id"]), b.config.source_host, b.config.source_token):
-            append_member_to_members_list(
-                project_members, project_member, dry_run)
-        obj["members"] = project_members
+        for project_member in obj["members"]:
+            append_member_to_members_list([], project_member, dry_run)
         b.log.info("{0}Staging project {1} (ID: {2})".format(
             get_dry_log(dry_run), obj["path_with_namespace"], obj["id"]))
         staged_projects.append(obj)
@@ -213,27 +203,14 @@ def get_project_metadata(project):
         "namespace": project["namespace"]["full_path"],
         "path": project["path"],
         "path_with_namespace": project["path_with_namespace"],
-        # "visibility": project["visibility"],
-        # "http_url_to_repo": project["http_url_to_repo"],
-        # "project_type": project["namespace"]["kind"],
-        # "description": project["description"],
-        # "shared_runners_enabled": project["shared_runners_enabled"],
-        # "archived": project["archived"],
-        # "shared_with_groups": project["shared_with_groups"],
-        # "wiki_access_level": project["wiki_access_level"],
-        # "issues_access_level": project["issues_access_level"],
-        # "merge_requests_access_level": project["merge_requests_access_level"],
-        # "builds_access_level": project["builds_access_level"],
-        # "snippets_access_level": project["snippets_access_level"],
-        # "repository_access_level": project["repository_access_level"],
-        # "forking_access_level": project["forking_access_level"],
-        # "pages_access_level": project["pages_access_level"]
+        "visibility": project["visibility"],
+        "description": project["description"],
+        "project_type": project["namespace"]["kind"],
+        # Project members are not listed when listing group projects
+        "members": project["members"] if project.get("members", None) else rewritten_projects[project["id"]]["members"]
     }
     if b.config.source_host:
-        obj["visibility"] = project["visibility"]
         obj["http_url_to_repo"] = project["http_url_to_repo"]
-        obj["project_type"] = project["namespace"]["kind"]
-        obj["description"] = project["description"]
         obj["shared_runners_enabled"] = project["shared_runners_enabled"]
         obj["archived"] = project["archived"]
         obj["shared_with_groups"] = project["shared_with_groups"]

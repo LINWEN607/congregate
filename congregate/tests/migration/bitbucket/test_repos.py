@@ -56,7 +56,9 @@ class RepoTests(unittest.TestCase):
                 ],
                 "path": "android",
                 "path_with_namespace": "TGP/android",
-                "id": 6
+                "id": 6,
+                "visibility": "private",
+                "description": ""
             },
             {
                 "name": "Another-Test-Repo",
@@ -90,7 +92,9 @@ class RepoTests(unittest.TestCase):
                 ],
                 "path": "another-test-repo",
                 "path_with_namespace": "ATP/another-test-repo",
-                "id": 13
+                "id": 13,
+                "visibility": "private",
+                "description": "Just another test repo"
             }
         ]
         self.assertEqual(sorted(self.repos.retrieve_repo_info()),

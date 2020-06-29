@@ -4,7 +4,6 @@ from congregate.cli import stage_groups
 from congregate.tests.mockapi.gitlab.projects import MockProjectsApi
 from congregate.tests.mockapi.gitlab.groups import MockGroupsApi
 from congregate.tests.mockapi.gitlab.users import MockUsersApi
-from congregate.tests.mockapi.gitlab.members import MockMembersApi
 from congregate.helpers.configuration_validator import ConfigurationValidator
 
 
@@ -13,7 +12,6 @@ class StageProjectsTests(unittest.TestCase):
         self.projects_api = MockProjectsApi()
         self.groups_api = MockGroupsApi()
         self.users_api = MockUsersApi()
-        self.members_api = MockMembersApi()
         self.mock = mock.MagicMock()
 
     @mock.patch('__builtin__.raw_input')
@@ -21,20 +19,18 @@ class StageProjectsTests(unittest.TestCase):
     @mock.patch('congregate.cli.stage_groups.open_projects_file')
     @mock.patch('congregate.cli.stage_groups.open_users_file')
     @mock.patch('congregate.cli.stage_groups.open_groups_file')
-    @mock.patch('congregate.migration.gitlab.api.projects.ProjectsApi.get_members')
     @mock.patch.object(ConfigurationValidator, 'dstn_parent_id', new_callable=mock.PropertyMock)
     @mock.patch.object(ConfigurationValidator, 'source_host', new_callable=mock.PropertyMock)
     @mock.patch('congregate.cli.stage_groups.staged_users', [])
     @mock.patch('congregate.cli.stage_groups.staged_groups', [])
     @mock.patch('congregate.cli.stage_groups.staged_projects', [])
-    def test_build_stage_data(self, mock_source_host, mock_parent_id, mock_members, mock_groups, mock_users, mock_projects, mock_check, mock_open):
+    def test_build_stage_data(self, mock_source_host, mock_parent_id, mock_groups, mock_users, mock_projects, mock_check, mock_open):
         mock_source_host.return_value = "http://192.168.1.8:3000"
         mock_parent_id.return_value = None
         mock_check.return_value = True
         mock_projects.return_value = self.projects_api.get_all_projects()
         mock_users.return_value = self.users_api.get_all_users_list()
         mock_groups.return_value = self.groups_api.get_all_groups_list()
-        mock_members.return_value = self.members_api.get_members_list()
         mock_open.return_value = {}
 
         staged_projects, staged_users, staged_groups = stage_groups.build_staging_data([
@@ -236,20 +232,18 @@ class StageProjectsTests(unittest.TestCase):
     @mock.patch('congregate.cli.stage_groups.open_projects_file')
     @mock.patch('congregate.cli.stage_groups.open_users_file')
     @mock.patch('congregate.cli.stage_groups.open_groups_file')
-    @mock.patch('congregate.migration.gitlab.api.projects.ProjectsApi.get_members')
     @mock.patch.object(ConfigurationValidator, 'dstn_parent_id', new_callable=mock.PropertyMock)
     @mock.patch.object(ConfigurationValidator, 'source_host', new_callable=mock.PropertyMock)
     @mock.patch('congregate.cli.stage_groups.staged_users', [])
     @mock.patch('congregate.cli.stage_groups.staged_groups', [])
     @mock.patch('congregate.cli.stage_groups.staged_projects', [])
-    def test_build_stage_increment_no_parent_id(self, mock_source_host, mock_parent_id, mock_members, mock_groups, mock_users, mock_projects, mock_check, mock_open):
+    def test_build_stage_increment_no_parent_id(self, mock_source_host, mock_parent_id, mock_groups, mock_users, mock_projects, mock_check, mock_open):
         mock_source_host.return_value = "http://192.168.1.8:3000"
         mock_parent_id.return_value = None
         mock_check.return_value = True
         mock_projects.return_value = self.projects_api.get_all_projects()
         mock_users.return_value = self.users_api.get_all_users_list()
         mock_groups.return_value = self.groups_api.get_all_groups_list()
-        mock_members.return_value = self.members_api.get_members_list()
         mock_open.return_value = {}
 
         staged_projects, staged_users, staged_groups = stage_groups.build_staging_data([
@@ -525,18 +519,16 @@ class StageProjectsTests(unittest.TestCase):
     @mock.patch('congregate.cli.stage_groups.open_projects_file')
     @mock.patch('congregate.cli.stage_groups.open_users_file')
     @mock.patch('congregate.cli.stage_groups.open_groups_file')
-    @mock.patch('congregate.migration.gitlab.api.projects.ProjectsApi.get_members')
     @mock.patch.object(ConfigurationValidator, 'dstn_parent_id', new_callable=mock.PropertyMock)
     @mock.patch('congregate.cli.stage_groups.staged_users', [])
     @mock.patch('congregate.cli.stage_groups.staged_groups', [])
     @mock.patch('congregate.cli.stage_groups.staged_projects', [])
-    def test_build_stage_data_all(self, parent_id, mock_members, mock_groups, mock_users, mock_projects, mock_check, mock_open):
+    def test_build_stage_data_all(self, parent_id, mock_groups, mock_users, mock_projects, mock_check, mock_open):
         parent_id.return_value = None
         mock_check.return_value = True
         mock_projects.return_value = self.projects_api.get_all_projects()
         mock_users.return_value = self.users_api.get_all_users_list()
         mock_groups.return_value = self.groups_api.get_all_groups_list()
-        mock_members.return_value = self.members_api.get_members_list()
         mock_open.return_value = {}
 
         staged_projects, staged_users, staged_groups = stage_groups.build_staging_data([
@@ -554,18 +546,16 @@ class StageProjectsTests(unittest.TestCase):
     @mock.patch('congregate.cli.stage_groups.open_projects_file')
     @mock.patch('congregate.cli.stage_groups.open_users_file')
     @mock.patch('congregate.cli.stage_groups.open_groups_file')
-    @mock.patch('congregate.migration.gitlab.api.projects.ProjectsApi.get_members')
     @mock.patch.object(ConfigurationValidator, 'dstn_parent_id', new_callable=mock.PropertyMock)
     @mock.patch('congregate.cli.stage_groups.staged_users', [])
     @mock.patch('congregate.cli.stage_groups.staged_groups', [])
     @mock.patch('congregate.cli.stage_groups.staged_projects', [])
-    def test_build_stage_data_none(self, parent_id, mock_members, mock_groups, mock_users, mock_projects, mock_check, mock_open):
+    def test_build_stage_data_none(self, parent_id, mock_groups, mock_users, mock_projects, mock_check, mock_open):
         parent_id.return_value = None
         mock_check.return_value = True
         mock_projects.return_value = self.projects_api.get_all_projects()
         mock_users.return_value = self.users_api.get_all_users_list()
         mock_groups.return_value = self.groups_api.get_all_groups_list()
-        mock_members.return_value = self.members_api.get_members_list()
         mock_open.return_value = {}
 
         staged_projects, staged_users, staged_groups = stage_groups.build_staging_data([

@@ -2,7 +2,7 @@ import json
 from requests.exceptions import RequestException
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import get_dry_log, get_timedelta, json_pretty
+from congregate.helpers.misc_utils import get_dry_log, get_timedelta, json_pretty, remove_dupes, is_error_message_present
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.groups import GroupsClient
@@ -42,6 +42,28 @@ class ProjectsClient(BaseClass):
         except RequestException as re:
             self.log.error(
                 "Failed to remove import user (ID: {0}) from project (ID: {1}), with error:\n{2}".format(self.config.import_user_id, pid, re))
+
+    def retrieve_project_info(self, host, token):
+        if self.config.src_parent_group_path:
+            projects = self.groups_api.get_all_group_projects(
+                self.config.src_parent_id, host, token, with_shared=False)
+        else:
+            projects = self.projects_api.get_all_projects(host, token)
+
+        data = []
+        for project in projects:
+            if is_error_message_present(project):
+                self.log.error(
+                    "Failed to list project with response: {}".format(project))
+            else:
+                self.log.info(u"[ID: {0}] {1}: {2}".format(
+                    project["id"], project["name"], project["description"]))
+                project["members"] = list(
+                    self.projects_api.get_members(project["id"], host, token))
+                data.append(project)
+
+        with open("{}/data/project_json.json".format(self.app_path), "wb") as f:
+            json.dump(remove_dupes(data), f, indent=4)
 
     def add_shared_groups(self, new_id, path, shared_with_groups):
         """Adds the list of groups we share the project with."""
