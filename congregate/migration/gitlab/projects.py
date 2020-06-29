@@ -64,6 +64,7 @@ class ProjectsClient(BaseClass):
 
         with open("{}/data/project_json.json".format(self.app_path), "wb") as f:
             json.dump(remove_dupes(data), f, indent=4)
+        return remove_dupes(data)
 
     def add_shared_groups(self, new_id, path, shared_with_groups):
         """Adds the list of groups we share the project with."""

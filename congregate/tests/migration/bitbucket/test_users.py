@@ -6,7 +6,7 @@ from congregate.migration.bitbucket.api.users import UsersApi
 from congregate.migration.bitbucket.users import UsersClient
 
 
-class UserTests(unittest.TestCase):
+class UsersTests(unittest.TestCase):
     def setUp(self):
         self.mock_users = MockUsersApi()
         self.users = UsersClient()

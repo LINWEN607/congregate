@@ -1,0 +1,55 @@
+import unittest
+import mock
+
+from congregate.tests.mockapi.gitlab.groups import MockGroupsApi
+from congregate.tests.mockapi.gitlab.projects import MockProjectsApi
+from congregate.tests.mockapi.gitlab.users import MockUsersApi
+from congregate.migration.gitlab.api.groups import GroupsApi
+from congregate.migration.gitlab.api.projects import ProjectsApi
+from congregate.migration.gitlab.projects import ProjectsClient
+
+
+class ProjectsTests(unittest.TestCase):
+    def setUp(self):
+        self.mock_groups = MockGroupsApi()
+        self.mock_projects = MockProjectsApi()
+        self.mock_users = MockUsersApi()
+        self.groups_api = GroupsApi()
+        self.projects_api = ProjectsApi()
+        self.projects = ProjectsClient()
+
+    @mock.patch('__builtin__.raw_input')
+    @mock.patch.object(ProjectsApi, "get_members")
+    @mock.patch.object(GroupsApi, "get_all_group_projects")
+    @mock.patch('congregate.helpers.conf.Config.src_parent_group_path', new_callable=mock.PropertyMock)
+    @mock.patch('congregate.helpers.conf.Config.src_parent_id', new_callable=mock.PropertyMock)
+    def test_retrieve_project_info_src_parent_group(self, mock_src_parent_id, mock_src_parent_group_path, mock_get_all_group_projects, mock_get_members, mock_open):
+        mock_src_parent_id.return_value = 42
+        mock_src_parent_group_path.return_value = "mock_src_parent_group_path"
+        mock_get_all_group_projects.return_value = self.mock_projects.get_all_projects()
+        mock_get_members.return_value = self.mock_users.get_project_members()
+        mock_open.return_value = []
+        self.assertEqual(sorted(self.projects.retrieve_project_info(
+            "host", "token")), sorted(self.mock_projects.get_all_projects()))
+
+    @mock.patch('__builtin__.raw_input')
+    @mock.patch.object(ProjectsApi, "get_members")
+    @mock.patch.object(ProjectsApi, "get_all_projects")
+    @mock.patch('congregate.helpers.conf.Config.src_parent_group_path', new_callable=mock.PropertyMock)
+    def test_retrieve_project_info(self, mock_src_parent_group_path, mock_get_all_projects, mock_get_members, mock_open):
+        mock_src_parent_group_path.return_value = None
+        mock_get_all_projects.return_value = self.mock_projects.get_all_projects()
+        mock_get_members.return_value = self.mock_users.get_project_members()
+        mock_open.return_value = []
+        self.assertEqual(sorted(self.projects.retrieve_project_info(
+            "host", "token")), sorted(self.mock_projects.get_all_projects()))
+
+    @mock.patch('__builtin__.raw_input')
+    @mock.patch.object(ProjectsApi, "get_all_projects")
+    @mock.patch('congregate.helpers.conf.Config.src_parent_group_path', new_callable=mock.PropertyMock)
+    def test_retrieve_project_info_error_message(self, mock_src_parent_group_path, mock_get_all_projects, mock_open):
+        mock_src_parent_group_path.return_value = None
+        mock_get_all_projects.return_value = [{"message": "some error"}]
+        mock_open.return_value = []
+        self.assertEqual(
+            self.projects.retrieve_project_info("host", "token"), [])

@@ -6,7 +6,7 @@ from congregate.migration.bitbucket.repos import ReposClient
 from congregate.migration.bitbucket.api.repos import ReposApi
 
 
-class RepoTests(unittest.TestCase):
+class ReposTests(unittest.TestCase):
     def setUp(self):
         self.mock_repos = MockReposApi()
         self.repos = ReposClient()
