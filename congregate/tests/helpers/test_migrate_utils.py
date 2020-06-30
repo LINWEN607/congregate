@@ -65,7 +65,9 @@ class MigrateTests(unittest.TestCase):
                 "shared_runners_enabled": False,
                 "snippets_access_level": "disabled",
                 "visibility": "private",
-                "wiki_access_level": "enabled"
+                "wiki_access_level": "enabled",
+                "forking_access_level": "enabled",
+                "pages_access_level": "private"
             },
             {
                 "archived": True,
@@ -84,7 +86,9 @@ class MigrateTests(unittest.TestCase):
                 "shared_runners_enabled": False,
                 "snippets_access_level": "disabled",
                 "visibility": "private",
-                "wiki_access_level": "enabled"
+                "wiki_access_level": "enabled",
+                "forking_access_level": "enabled",
+                "pages_access_level": "private"
             }
         ]
         failed_results = ['dictionary-web_darci1.tar.gz']
@@ -342,7 +346,9 @@ class MigrateTests(unittest.TestCase):
             "shared_runners_enabled": False,
             "snippets_access_level": "disabled",
             "visibility": "private",
-            "wiki_access_level": "enabled"
+            "wiki_access_level": "enabled",
+            "forking_access_level": "enabled",
+            "pages_access_level": "private"
         }
         self.assertEqual(mutils.get_project_filename(staged_project), "")
 
@@ -364,7 +370,9 @@ class MigrateTests(unittest.TestCase):
             "shared_runners_enabled": False,
             "snippets_access_level": "disabled",
             "visibility": "private",
-            "wiki_access_level": "enabled"
+            "wiki_access_level": "enabled",
+            "forking_access_level": "enabled",
+            "pages_access_level": "private"
         }
         self.assertEqual(mutils.get_project_filename(staged_project), "")
 

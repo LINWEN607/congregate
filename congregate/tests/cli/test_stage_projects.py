@@ -4,7 +4,6 @@ from congregate.cli import stage_projects
 from congregate.tests.mockapi.gitlab.projects import MockProjectsApi
 from congregate.tests.mockapi.gitlab.groups import MockGroupsApi
 from congregate.tests.mockapi.gitlab.users import MockUsersApi
-from congregate.tests.mockapi.gitlab.members import MockMembersApi
 from congregate.helpers.configuration_validator import ConfigurationValidator
 
 
@@ -13,7 +12,6 @@ class StageProjectsTests(unittest.TestCase):
         self.projects_api = MockProjectsApi()
         self.groups_api = MockGroupsApi()
         self.users_api = MockUsersApi()
-        self.members_api = MockMembersApi()
         self.mock = mock.MagicMock()
 
     @mock.patch('__builtin__.raw_input')
@@ -21,18 +19,18 @@ class StageProjectsTests(unittest.TestCase):
     @mock.patch('congregate.cli.stage_projects.open_projects_file')
     @mock.patch('congregate.cli.stage_projects.open_users_file')
     @mock.patch('congregate.cli.stage_projects.open_groups_file')
-    @mock.patch('congregate.migration.gitlab.api.projects.ProjectsApi.get_members')
     @mock.patch.object(ConfigurationValidator, 'dstn_parent_id', new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, 'source_host', new_callable=mock.PropertyMock)
     @mock.patch('congregate.cli.stage_projects.staged_users', [])
     @mock.patch('congregate.cli.stage_projects.staged_groups', [])
     @mock.patch('congregate.cli.stage_projects.staged_projects', [])
-    def test_build_stage_data(self, parent_id, mock_members, mock_groups, mock_users, mock_projects, mock_check, mock_open):
-        parent_id.return_value = None
+    def test_build_stage_data(self, mock_source_host, mock_parent_id, mock_groups, mock_users, mock_projects, mock_check, mock_open):
+        mock_source_host.return_value = "http://192.168.1.8:3000"
+        mock_parent_id.return_value = None
         mock_check.return_value = True
         mock_projects.return_value = self.projects_api.get_all_projects()
         mock_users.return_value = self.users_api.get_all_users_list()
         mock_groups.return_value = self.groups_api.get_all_groups_list()
-        mock_members.return_value = self.members_api.get_members_list()
         mock_open.return_value = {}
 
         staged_projects, staged_users, staged_groups = stage_projects.build_staging_data([
@@ -45,24 +43,24 @@ class StageProjectsTests(unittest.TestCase):
                 "namespace": "diaspora",
                 "members": [
                     {
+                        "id": 1,
                         "username": "raymond_smith",
-                        "access_level": 30,
+                        "name": "Raymond Smith",
                         "state": "active",
                         "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon",
                         "web_url": "http://192.168.1.8:3000/root",
-                        "name": "Raymond Smith",
-                        "id": 1,
-                        "expires_at": "2012-10-22T14:13:35Z"
+                        "expires_at": "2012-10-22T14:13:35Z",
+                        "access_level": 30
                     },
                     {
+                        "id": 2,
                         "username": "john_doe",
-                        "access_level": 30,
+                        "name": "John Doe",
                         "state": "active",
                         "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon",
                         "web_url": "http://192.168.1.8:3000/root",
-                        "name": "John Doe",
-                        "id": 2,
-                        "expires_at": "2012-10-22T14:13:35Z"
+                        "expires_at": "2012-10-22T14:13:35Z",
+                        "access_level": 30
                     }
                 ],
                 "http_url_to_repo": "http://example.com/diaspora/diaspora-client.git",
@@ -78,6 +76,8 @@ class StageProjectsTests(unittest.TestCase):
                 "builds_access_level": "enabled",
                 "snippets_access_level": "disabled",
                 "repository_access_level": "enabled",
+                "forking_access_level": "enabled",
+                "pages_access_level": "private",
                 "path_with_namespace": "diaspora/diaspora-client",
                 "archived": False,
                 "shared_with_groups": []
@@ -88,24 +88,24 @@ class StageProjectsTests(unittest.TestCase):
                 "namespace": "brightbox",
                 "members": [
                     {
+                        "id": 1,
                         "username": "raymond_smith",
-                        "access_level": 30,
+                        "name": "Raymond Smith",
                         "state": "active",
                         "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon",
                         "web_url": "http://192.168.1.8:3000/root",
-                        "name": "Raymond Smith",
-                        "id": 1,
-                        "expires_at": "2012-10-22T14:13:35Z"
+                        "expires_at": "2012-10-22T14:13:35Z",
+                        "access_level": 30
                     },
                     {
+                        "id": 2,
                         "username": "john_doe",
-                        "access_level": 30,
+                        "name": "John Doe",
                         "state": "active",
                         "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon",
                         "web_url": "http://192.168.1.8:3000/root",
-                        "name": "John Doe",
-                        "id": 2,
-                        "expires_at": "2012-10-22T14:13:35Z"
+                        "expires_at": "2012-10-22T14:13:35Z",
+                        "access_level": 30
                     }
                 ],
                 "default_branch": "master",
@@ -121,6 +121,8 @@ class StageProjectsTests(unittest.TestCase):
                 "builds_access_level": "enabled",
                 "snippets_access_level": "disabled",
                 "repository_access_level": "enabled",
+                "forking_access_level": "enabled",
+                "pages_access_level": "private",
                 "path_with_namespace": "brightbox/puppet",
                 "archived": False,
                 "shared_with_groups": []
@@ -129,24 +131,24 @@ class StageProjectsTests(unittest.TestCase):
 
         expected_users = [
             {
+                "id": 1,
                 "username": "raymond_smith",
-                "access_level": 30,
+                "name": "Raymond Smith",
                 "state": "active",
                 "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon",
                 "web_url": "http://192.168.1.8:3000/root",
-                "name": "Raymond Smith",
-                "id": 1,
-                "expires_at": "2012-10-22T14:13:35Z"
+                "expires_at": "2012-10-22T14:13:35Z",
+                "access_level": 30
             },
             {
+                "id": 2,
                 "username": "john_doe",
-                "access_level": 30,
+                "name": "John Doe",
                 "state": "active",
                 "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon",
                 "web_url": "http://192.168.1.8:3000/root",
-                "name": "John Doe",
-                "id": 2,
-                "expires_at": "2012-10-22T14:13:35Z"
+                "expires_at": "2012-10-22T14:13:35Z",
+                "access_level": 30
             },
             {
                 "username": "smart3",
@@ -275,18 +277,18 @@ class StageProjectsTests(unittest.TestCase):
     @mock.patch('congregate.cli.stage_projects.open_projects_file')
     @mock.patch('congregate.cli.stage_projects.open_users_file')
     @mock.patch('congregate.cli.stage_projects.open_groups_file')
-    @mock.patch('congregate.migration.gitlab.api.projects.ProjectsApi.get_members')
     @mock.patch.object(ConfigurationValidator, 'dstn_parent_id', new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, 'source_host', new_callable=mock.PropertyMock)
     @mock.patch('congregate.cli.stage_projects.staged_users', [])
     @mock.patch('congregate.cli.stage_projects.staged_groups', [])
     @mock.patch('congregate.cli.stage_projects.staged_projects', [])
-    def test_build_stage_increment_no_parent_id(self, parent_id, mock_members, mock_groups, mock_users, mock_projects, mock_check, mock_open):
-        parent_id.return_value = None
+    def test_build_stage_increment_no_parent_id(self, mock_source_host, mock_parent_id, mock_groups, mock_users, mock_projects, mock_check, mock_open):
+        mock_source_host.return_value = "http://192.168.1.8:3000"
+        mock_parent_id.return_value = None
         mock_check.return_value = True
         mock_projects.return_value = self.projects_api.get_all_projects()
         mock_users.return_value = self.users_api.get_all_users_list()
         mock_groups.return_value = self.groups_api.get_all_groups_list()
-        mock_members.return_value = self.members_api.get_members_list()
         mock_open.return_value = {}
 
         staged_projects, staged_users, staged_groups = stage_projects.build_staging_data([
@@ -299,24 +301,24 @@ class StageProjectsTests(unittest.TestCase):
                 "namespace": "diaspora",
                 "members": [
                     {
+                        "id": 1,
                         "username": "raymond_smith",
-                        "access_level": 30,
+                        "name": "Raymond Smith",
                         "state": "active",
                         "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon",
                         "web_url": "http://192.168.1.8:3000/root",
-                        "name": "Raymond Smith",
-                        "id": 1,
-                        "expires_at": "2012-10-22T14:13:35Z"
+                        "expires_at": "2012-10-22T14:13:35Z",
+                        "access_level": 30
                     },
                     {
+                        "id": 2,
                         "username": "john_doe",
-                        "access_level": 30,
+                        "name": "John Doe",
                         "state": "active",
                         "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon",
                         "web_url": "http://192.168.1.8:3000/root",
-                        "name": "John Doe",
-                        "id": 2,
-                        "expires_at": "2012-10-22T14:13:35Z"
+                        "expires_at": "2012-10-22T14:13:35Z",
+                        "access_level": 30
                     }
                 ],
                 "http_url_to_repo": "http://example.com/diaspora/diaspora-client.git",
@@ -332,6 +334,8 @@ class StageProjectsTests(unittest.TestCase):
                 "builds_access_level": "enabled",
                 "snippets_access_level": "disabled",
                 "repository_access_level": "enabled",
+                "forking_access_level": "enabled",
+                "pages_access_level": "private",
                 "path_with_namespace": "diaspora/diaspora-client",
                 "archived": False,
                 "shared_with_groups": []
@@ -342,24 +346,24 @@ class StageProjectsTests(unittest.TestCase):
                 "namespace": "brightbox",
                 "members": [
                     {
+                        "id": 1,
                         "username": "raymond_smith",
-                        "access_level": 30,
+                        "name": "Raymond Smith",
                         "state": "active",
                         "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon",
                         "web_url": "http://192.168.1.8:3000/root",
-                        "name": "Raymond Smith",
-                        "id": 1,
-                        "expires_at": "2012-10-22T14:13:35Z"
+                        "expires_at": "2012-10-22T14:13:35Z",
+                        "access_level": 30
                     },
                     {
+                        "id": 2,
                         "username": "john_doe",
-                        "access_level": 30,
+                        "name": "John Doe",
                         "state": "active",
                         "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon",
                         "web_url": "http://192.168.1.8:3000/root",
-                        "name": "John Doe",
-                        "id": 2,
-                        "expires_at": "2012-10-22T14:13:35Z"
+                        "expires_at": "2012-10-22T14:13:35Z",
+                        "access_level": 30
                     }
                 ],
                 "http_url_to_repo": "http://example.com/brightbox/puppet.git",
@@ -375,6 +379,8 @@ class StageProjectsTests(unittest.TestCase):
                 "builds_access_level": "enabled",
                 "snippets_access_level": "disabled",
                 "repository_access_level": "enabled",
+                "forking_access_level": "enabled",
+                "pages_access_level": "private",
                 "path_with_namespace": "brightbox/puppet",
                 "archived": False,
                 "shared_with_groups": []
@@ -383,24 +389,24 @@ class StageProjectsTests(unittest.TestCase):
 
         expected_users = [
             {
+                "id": 1,
                 "username": "raymond_smith",
-                "access_level": 30,
+                "name": "Raymond Smith",
                 "state": "active",
                 "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon",
                 "web_url": "http://192.168.1.8:3000/root",
-                "name": "Raymond Smith",
-                "id": 1,
-                "expires_at": "2012-10-22T14:13:35Z"
+                "expires_at": "2012-10-22T14:13:35Z",
+                "access_level": 30
             },
             {
+                "id": 2,
                 "username": "john_doe",
-                "access_level": 30,
+                "name": "John Doe",
                 "state": "active",
                 "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon",
                 "web_url": "http://192.168.1.8:3000/root",
-                "name": "John Doe",
-                "id": 2,
-                "expires_at": "2012-10-22T14:13:35Z"
+                "expires_at": "2012-10-22T14:13:35Z",
+                "access_level": 30
             },
             {
                 "username": "smart3",
@@ -521,18 +527,16 @@ class StageProjectsTests(unittest.TestCase):
     @mock.patch('congregate.cli.stage_projects.open_projects_file')
     @mock.patch('congregate.cli.stage_projects.open_users_file')
     @mock.patch('congregate.cli.stage_projects.open_groups_file')
-    @mock.patch('congregate.migration.gitlab.api.projects.ProjectsApi.get_members')
     @mock.patch.object(ConfigurationValidator, 'dstn_parent_id', new_callable=mock.PropertyMock)
     @mock.patch('congregate.cli.stage_projects.staged_users', [])
     @mock.patch('congregate.cli.stage_projects.staged_groups', [])
     @mock.patch('congregate.cli.stage_projects.staged_projects', [])
-    def test_build_stage_data_all(self, parent_id, mock_members, mock_groups, mock_users, mock_projects, mock_check, mock_open):
+    def test_build_stage_data_all(self, parent_id, mock_groups, mock_users, mock_projects, mock_check, mock_open):
         parent_id.return_value = None
         mock_check.return_value = True
         mock_projects.return_value = self.projects_api.get_all_projects()
         mock_users.return_value = self.users_api.get_all_users_list()
         mock_groups.return_value = self.groups_api.get_all_groups_list()
-        mock_members.return_value = self.members_api.get_members_list()
         mock_open.return_value = {}
 
         staged_projects, staged_users, staged_groups = stage_projects.build_staging_data([
@@ -550,18 +554,16 @@ class StageProjectsTests(unittest.TestCase):
     @mock.patch('congregate.cli.stage_projects.open_projects_file')
     @mock.patch('congregate.cli.stage_projects.open_users_file')
     @mock.patch('congregate.cli.stage_projects.open_groups_file')
-    @mock.patch('congregate.migration.gitlab.api.projects.ProjectsApi.get_members')
     @mock.patch.object(ConfigurationValidator, 'dstn_parent_id', new_callable=mock.PropertyMock)
     @mock.patch('congregate.cli.stage_projects.staged_users', [])
     @mock.patch('congregate.cli.stage_projects.staged_groups', [])
     @mock.patch('congregate.cli.stage_projects.staged_projects', [])
-    def test_build_stage_data_none(self, parent_id, mock_members, mock_groups, mock_users, mock_projects, mock_check, mock_open):
+    def test_build_stage_data_none(self, parent_id, mock_groups, mock_users, mock_projects, mock_check, mock_open):
         parent_id.return_value = None
         mock_check.return_value = True
         mock_projects.return_value = self.projects_api.get_all_projects()
         mock_users.return_value = self.users_api.get_all_users_list()
         mock_groups.return_value = self.groups_api.get_all_groups_list()
-        mock_members.return_value = self.members_api.get_members_list()
         mock_open.return_value = {}
 
         staged_projects, staged_users, staged_groups = stage_projects.build_staging_data([

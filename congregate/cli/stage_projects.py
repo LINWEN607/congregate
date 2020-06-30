@@ -6,11 +6,10 @@ Copyright (c) 2020 - GitLab
 
 import json
 import re
+
 from congregate.helpers.misc_utils import get_dry_log, remove_dupes
 from congregate.helpers.base_class import BaseClass
-from congregate.migration.gitlab.api.projects import ProjectsApi
 
-projects_api = ProjectsApi()
 b = BaseClass()
 
 staged_users, staged_groups, staged_projects = [], [], []
@@ -57,22 +56,21 @@ def build_staging_data(projects_to_stage, dry_run=True):
         # Stage ALL
         if projects_to_stage[0] in ["all", "."] or len(projects_to_stage) == len(projects):
             for i, _ in enumerate(projects):
-                obj = get_project_metadata(projects[i])
-                members = []
-                for member in projects_api.get_members(
-                        int(projects[i]["id"]), b.config.source_host, b.config.source_token):
-                    append_member_to_members_list(members, member, dry_run)
-                obj["members"] = members
-                staged_projects.append(obj)
+                b.log.info("{0}Staging project {1} (ID: {2})".format(get_dry_log(
+                    dry_run), projects[i]["path_with_namespace"], projects[i]["id"]))
+                staged_projects.append(get_project_metadata(projects[i]))
 
             for g in groups:
                 b.log.info("{0}Staging group {1} (ID: {2})".format(
                     get_dry_log(dry_run), g["full_path"], g["id"]))
+                # Decrease size of staged_groups.json
                 g.pop("projects", None)
                 staged_groups.append(g)
 
-            for user in users:
-                staged_users.append(user)
+            for u in users:
+                b.log.info("{0}Staging user {1} (ID: {2})".format(
+                    get_dry_log(dry_run), u["username"], u["id"]))
+                staged_users.append(u)
         # CLI range input
         elif re.search(r"\d+-\d+", projects_to_stage[0]) is not None:
             match = (re.search(r"\d+-\d+", projects_to_stage[0])).group(0)
@@ -107,12 +105,10 @@ def build_staging_data(projects_to_stage, dry_run=True):
 
 def append_data(project, projects_to_stage, p_range=0, dry_run=True):
     obj = get_project_metadata(project)
-    members = []
-    for member in projects_api.get_members(
-            int(project["id"]), b.config.source_host, b.config.source_token):
-        append_member_to_members_list(members, member, dry_run)
+    for member in obj["members"]:
+        append_member_to_members_list([], member, dry_run)
 
-    if project["namespace"]["kind"] == "group":
+    if obj["project_type"] == "group":
         group_to_stage = rewritten_groups[project["namespace"]["id"]]
         b.log.info("{0}Staging group {1} (ID: {2})".format(get_dry_log(
             dry_run), group_to_stage["full_path"], group_to_stage["id"]))
@@ -123,7 +119,6 @@ def append_data(project, projects_to_stage, p_range=0, dry_run=True):
         for member in group_to_stage["members"]:
             append_member_to_members_list([], member, dry_run)
 
-    obj["members"] = members
     b.log.info("{0}Staging project {1} (ID: {2}) [{3}/{4}]".format(get_dry_log(
         dry_run), obj["path_with_namespace"], obj["id"], len(staged_projects) + 1, len(p_range) if p_range else len(projects_to_stage)))
     staged_projects.append(obj)
@@ -206,26 +201,28 @@ def get_project_metadata(project):
         "id": project["id"],
         "name": project["name"],
         "namespace": project["namespace"]["full_path"],
-        "visibility": project["visibility"],
-        "http_url_to_repo": project["http_url_to_repo"],
-        "project_type": project["namespace"]["kind"],
-        "description": project["description"],
-        "shared_runners_enabled": project["shared_runners_enabled"],
-        "archived": project["archived"],
-        "path_with_namespace": project["path_with_namespace"],
         "path": project["path"],
-        "shared_with_groups": project["shared_with_groups"]
+        "path_with_namespace": project["path_with_namespace"],
+        "visibility": project["visibility"],
+        "description": project["description"],
+        "project_type": project["namespace"]["kind"],
+        "members": project["members"]
     }
+    if b.config.source_host:
+        obj["http_url_to_repo"] = project["http_url_to_repo"]
+        obj["shared_runners_enabled"] = project["shared_runners_enabled"]
+        obj["archived"] = project["archived"]
+        obj["shared_with_groups"] = project["shared_with_groups"]
+        obj["wiki_access_level"] = project["wiki_access_level"]
+        obj["issues_access_level"] = project["issues_access_level"]
+        obj["merge_requests_access_level"] = project["merge_requests_access_level"]
+        obj["builds_access_level"] = project["builds_access_level"]
+        obj["snippets_access_level"] = project["snippets_access_level"]
+        obj["repository_access_level"] = project["repository_access_level"]
+        obj["forking_access_level"] = project["forking_access_level"]
+        obj["pages_access_level"] = project["pages_access_level"]
 
-    # In case of projects without repos (e.g. Wiki)
-    if "default_branch" in project:
-        obj["default_branch"] = project["default_branch"]
-    # *_access_level in favor of the deprecated *_enabled keys. Only for version >= 12
-    obj["wiki_access_level"] = "enabled" if project["wiki_enabled"] else "disabled"
-    obj["issues_access_level"] = "enabled" if project["issues_enabled"] else "disabled"
-    obj["merge_requests_access_level"] = "enabled" if project["merge_requests_enabled"] else "disabled"
-    obj["builds_access_level"] = "enabled" if project["jobs_enabled"] else "disabled"
-    obj["snippets_access_level"] = "enabled" if project["snippets_enabled"] else "disabled"
-    obj["repository_access_level"] = "enabled" if project["issues_enabled"] and project["merge_requests_enabled"] else "disabled"
-
+        # In case of projects without repos (e.g. Wiki)
+        if "default_branch" in project:
+            obj["default_branch"] = project["default_branch"]
     return obj

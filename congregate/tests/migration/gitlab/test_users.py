@@ -12,7 +12,7 @@ from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.keys import KeysClient
 
 
-class UserTests(unittest.TestCase):
+class UsersTests(unittest.TestCase):
     def setUp(self):
         self.mock_users = MockUsersApi()
         self.mock_groups = MockGroupsApi()

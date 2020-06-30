@@ -437,6 +437,8 @@ class ImportExportClient(BaseClass):
             "builds_access_level": project["builds_access_level"],
             "snippets_access_level": project["snippets_access_level"],
             "repository_access_level": project["repository_access_level"],
+            "forking_access_level": project["forking_access_level"],
+            "pages_access_level": project["pages_access_level"],
             "archived": project["archived"]
         }
 

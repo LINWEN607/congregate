@@ -1,13 +1,12 @@
-import json
 import os
+
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import is_error_message_present, remove_dupes, write_json_yield_to_file
+from congregate.helpers.misc_utils import write_json_yield_to_file
 from congregate.migration.gitlab.groups import GroupsClient
 from congregate.migration.gitlab.users import UsersClient
-from congregate.migration.gitlab.api.projects import ProjectsApi
-from congregate.migration.gitlab.api.groups import GroupsApi
+from congregate.migration.gitlab.projects import ProjectsClient
 from congregate.migration.bitbucket.users import UsersClient as BitBucketUsers
-from congregate.migration.bitbucket.api.repos import ReposApi
+from congregate.migration.bitbucket.repos import ReposClient as BitBucketRepos
 from congregate.migration.bitbucket.api.projects import ProjectsApi as BitBucketProjectsApi
 
 
@@ -20,30 +19,10 @@ def list_gitlab_data():
     """
     groups = GroupsClient()
     users = UsersClient()
-    projects_api = ProjectsApi()
-    groups_api = GroupsApi()
-    b.log.info("Listing projects from source {}".format(b.config.source_host))
+    projects = ProjectsClient()
 
-    projects = []
-
-    if b.config.src_parent_group_path:
-        projects = list(groups_api.get_all_group_projects(
-            b.config.src_parent_id, b.config.source_host, b.config.source_token, with_shared=False))
-    else:
-        projects = list(projects_api.get_all_projects(
-            b.config.source_host, b.config.source_token))
-
-    with open("%s/data/project_json.json" % b.app_path, "wb") as f:
-        json.dump(remove_dupes(projects), f, indent=4)
-
-    for project in projects:
-        if is_error_message_present(project):
-            b.log.error(
-                "Failed to list project with response: {}".format(project))
-        else:
-            b.log.info(u"[ID: {0}] {1}: {2}".format(
-                project["id"], project["name"], project["description"]))
-
+    b.log.info("Listing data from source {}".format(b.config.source_host))
+    projects.retrieve_project_info(b.config.source_host, b.config.source_token)
     groups.retrieve_group_info(b.config.source_host, b.config.source_token)
     users.retrieve_user_info(b.config.source_host, b.config.source_token)
 
@@ -54,22 +33,16 @@ def list_gitlab_data():
 def list_bitbucket_data():
     users = BitBucketUsers()
     projects = BitBucketProjectsApi()
-    repos = ReposApi()
+    repos = BitBucketRepos()
 
-    write_json_yield_to_file(
-        "%s/data/project_json.json" % b.app_path,
-        repos.get_all_repos,
-        b.config.external_source_url,
-        b.config.external_user_token
-    )
+    repos.retrieve_repo_info()
     write_json_yield_to_file(
         "%s/data/groups.json" % b.app_path,
         projects.get_all_projects,
         b.config.external_source_url,
         b.config.external_user_token
     )
-    users.retrieve_user_info(b.config.external_source_url,
-                             b.config.external_user_token)
+    users.retrieve_user_info()
 
 
 def write_empty_file(filename):

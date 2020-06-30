@@ -26,12 +26,15 @@ class MockProjectsApi():
                 "name_with_namespace": "Diaspora / Diaspora Client",
                 "path": "diaspora-client",
                 "path_with_namespace": "diaspora/diaspora-client",
-                "issues_enabled": True,
+                "issues_access_level": "enabled",
+                "builds_access_level": "enabled",
+                "repository_access_level": "enabled",
                 "open_issues_count": 1,
-                "merge_requests_enabled": True,
-                "jobs_enabled": True,
-                "wiki_enabled": True,
-                "snippets_enabled": False,
+                "merge_requests_access_level": "enabled",
+                "wiki_access_level": "enabled",
+                "snippets_access_level": "disabled",
+                "forking_access_level": "enabled",
+                "pages_access_level": "private",
                 "resolve_outdated_diff_discussions": False,
                 "container_registry_enabled": False,
                 "created_at": "2013-09-30T13:46:02Z",
@@ -75,6 +78,28 @@ class MockProjectsApi():
                             "events": "http://example.com/api/v4/projects/1/events",
                             "members": "http://example.com/api/v4/projects/1/members"
                 },
+                "members": [
+                    {
+                        "id": 1,
+                        "username": "raymond_smith",
+                        "name": "Raymond Smith",
+                        "state": "active",
+                        "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon",
+                        "web_url": "http://192.168.1.8:3000/root",
+                        "expires_at": "2012-10-22T14:13:35Z",
+                        "access_level": 30
+                    },
+                    {
+                        "id": 2,
+                        "username": "john_doe",
+                        "name": "John Doe",
+                        "state": "active",
+                        "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon",
+                        "web_url": "http://192.168.1.8:3000/root",
+                        "expires_at": "2012-10-22T14:13:35Z",
+                        "access_level": 30
+                    }
+                ]
             },
             {
                 "id": 6,
@@ -98,12 +123,15 @@ class MockProjectsApi():
                 "name_with_namespace": "Brightbox / Puppet",
                 "path": "puppet",
                 "path_with_namespace": "brightbox/puppet",
-                "issues_enabled": True,
+                "issues_access_level": "enabled",
+                "builds_access_level": "enabled",
+                "repository_access_level": "enabled",
                 "open_issues_count": 1,
-                "merge_requests_enabled": True,
-                "jobs_enabled": True,
-                "wiki_enabled": True,
-                "snippets_enabled": False,
+                "merge_requests_access_level": "enabled",
+                "wiki_access_level": "enabled",
+                "snippets_access_level": "disabled",
+                "forking_access_level": "enabled",
+                "pages_access_level": "private",
                 "resolve_outdated_diff_discussions": False,
                 "container_registry_enabled": False,
                 "created_at": "2013-09-30T13:46:02Z",
@@ -157,7 +185,29 @@ class MockProjectsApi():
                             "labels": "http://example.com/api/v4/projects/1/labels",
                             "events": "http://example.com/api/v4/projects/1/events",
                             "members": "http://example.com/api/v4/projects/1/members"
-                }
+                },
+                "members": [
+                    {
+                        "id": 1,
+                        "username": "raymond_smith",
+                        "name": "Raymond Smith",
+                        "state": "active",
+                        "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon",
+                        "web_url": "http://192.168.1.8:3000/root",
+                        "expires_at": "2012-10-22T14:13:35Z",
+                        "access_level": 30
+                    },
+                    {
+                        "id": 2,
+                        "username": "john_doe",
+                        "name": "John Doe",
+                        "state": "active",
+                        "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon",
+                        "web_url": "http://192.168.1.8:3000/root",
+                        "expires_at": "2012-10-22T14:13:35Z",
+                        "access_level": 30
+                    }
+                ]
             },
             {
                 "id": 80,
@@ -181,12 +231,15 @@ class MockProjectsApi():
                 "name_with_namespace": "Brightbox / Puppet",
                 "path": "puppet",
                 "path_with_namespace": "brightbox/puppet",
-                "issues_enabled": True,
+                "issues_access_level": "enabled",
+                "builds_access_level": "enabled",
+                "repository_access_level": "enabled",
                 "open_issues_count": 1,
-                "merge_requests_enabled": True,
-                "jobs_enabled": True,
-                "wiki_enabled": True,
-                "snippets_enabled": False,
+                "merge_requests_access_level": "enabled",
+                "wiki_access_level": "enabled",
+                "snippets_access_level": "disabled",
+                "forking_access_level": "enabled",
+                "pages_access_level": "private",
                 "resolve_outdated_diff_discussions": False,
                 "container_registry_enabled": False,
                 "created_at": "2013-09-30T13:46:02Z",
@@ -240,7 +293,29 @@ class MockProjectsApi():
                             "labels": "http://example.com/api/v4/projects/1/labels",
                             "events": "http://example.com/api/v4/projects/1/events",
                             "members": "http://example.com/api/v4/projects/1/members"
-                }
+                },
+                "members": [
+                    {
+                        "id": 1,
+                        "username": "raymond_smith",
+                        "name": "Raymond Smith",
+                        "state": "active",
+                        "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon",
+                        "web_url": "http://192.168.1.8:3000/root",
+                        "expires_at": "2012-10-22T14:13:35Z",
+                        "access_level": 30
+                    },
+                    {
+                        "id": 2,
+                        "username": "john_doe",
+                        "name": "John Doe",
+                        "state": "active",
+                        "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon",
+                        "web_url": "http://192.168.1.8:3000/root",
+                        "expires_at": "2012-10-22T14:13:35Z",
+                        "access_level": 30
+                    }
+                ]
             }
         ]
 
@@ -270,12 +345,15 @@ class MockProjectsApi():
             "name_with_namespace": "Diaspora / Diaspora Project Site",
             "path": "diaspora-project-site",
             "path_with_namespace": "diaspora/diaspora-project-site",
-            "issues_enabled": True,
+            "issues_access_level": "enabled",
+            "builds_access_level": "enabled",
+            "repository_access_level": "enabled",
             "open_issues_count": 1,
-            "merge_requests_enabled": True,
-            "jobs_enabled": True,
-            "wiki_enabled": True,
-            "snippets_enabled": False,
+            "merge_requests_access_level": "enabled",
+            "wiki_access_level": "enabled",
+            "snippets_access_level": "disabled",
+            "forking_access_level": "enabled",
+            "pages_access_level": "private",
             "resolve_outdated_diff_discussions": False,
             "container_registry_enabled": False,
             "created_at": "2013-09-30T13:46:02Z",
@@ -354,7 +432,29 @@ class MockProjectsApi():
                 "labels": "http://example.com/api/v4/projects/1/labels",
                 "events": "http://example.com/api/v4/projects/1/events",
                 "members": "http://example.com/api/v4/projects/1/members"
-            }
+            },
+            "members": [
+                {
+                    "id": 1,
+                    "username": "raymond_smith",
+                    "name": "Raymond Smith",
+                    "state": "active",
+                    "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon",
+                    "web_url": "http://192.168.1.8:3000/root",
+                    "expires_at": "2012-10-22T14:13:35Z",
+                    "access_level": 30
+                },
+                {
+                    "id": 2,
+                    "username": "john_doe",
+                    "name": "John Doe",
+                    "state": "active",
+                    "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon",
+                    "web_url": "http://192.168.1.8:3000/root",
+                    "expires_at": "2012-10-22T14:13:35Z",
+                    "access_level": 30
+                }
+            ]
         }
 
     def get_mr_approval_configuration(self):
@@ -414,6 +514,8 @@ class MockProjectsApi():
             "archived": False,
             "name": "spring-app-secure-2",
             "wiki_access_level": "enabled",
+            "forking_access_level": "enabled",
+            "pages_access_level": "private",
             "namespace": "pmm-demo",
             "members": [],
             "issues_access_level": "enabled",
@@ -437,6 +539,8 @@ class MockProjectsApi():
             "archived": False,
             "name": "spring-app-secure-2",
             "wiki_access_level": "enabled",
+            "forking_access_level": "enabled",
+            "pages_access_level": "private",
             "namespace": {
                 "id": 287,
                 "name": "pmm-demo",
@@ -467,6 +571,8 @@ class MockProjectsApi():
             "archived": False,
             "name": "spring-app-secure-2",
             "wiki_access_level": "enabled",
+            "forking_access_level": "enabled",
+            "pages_access_level": "private",
             "namespace": "pmm-demo",
             "members": [],
             "issues_access_level": "enabled",
@@ -490,6 +596,8 @@ class MockProjectsApi():
             "archived": False,
             "name": "spring-app-secure-2",
             "wiki_access_level": "enabled",
+            "forking_access_level": "enabled",
+            "pages_access_level": "private",
             "namespace": "root",
             "members": [],
             "issues_access_level": "enabled",
@@ -515,7 +623,9 @@ class MockProjectsApi():
                 "shared_runners_enabled": False,
                 "snippets_access_level": "disabled",
                 "visibility": "private",
-                "wiki_access_level": "enabled"
+                "wiki_access_level": "enabled",
+                "forking_access_level": "enabled",
+                "pages_access_level": "private"
             },
             {
                 "archived": False,
@@ -534,7 +644,9 @@ class MockProjectsApi():
                 "shared_runners_enabled": False,
                 "snippets_access_level": "disabled",
                 "visibility": "private",
-                "wiki_access_level": "enabled"
+                "wiki_access_level": "enabled",
+                "forking_access_level": "enabled",
+                "pages_access_level": "private"
             },
             {
                 "archived": True,
@@ -553,6 +665,8 @@ class MockProjectsApi():
                 "shared_runners_enabled": False,
                 "snippets_access_level": "disabled",
                 "visibility": "private",
-                "wiki_access_level": "enabled"
+                "wiki_access_level": "enabled",
+                "forking_access_level": "enabled",
+                "pages_access_level": "private"
             }
         ]
