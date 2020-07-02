@@ -200,7 +200,7 @@ pages:
     - changes:
         - runbooks/*
         - congregate/docs/**/*
-        - README.md
+        - ./**/*.md
   # dependencies:
   #   - code_quality
   script:
