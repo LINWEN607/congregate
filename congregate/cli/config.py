@@ -1,7 +1,9 @@
-from base64 import b64encode
+from base64 import b64encode, b64decode
+import getpass
 from os import getcwd, path, mkdir, makedirs
 from ConfigParser import SafeConfigParser as ConfigParser, NoOptionError
 
+import binascii
 import json
 import requests
 
@@ -96,24 +98,34 @@ def generate_config():
 
     config.set("DESTINATION", "max_asset_expiration_time", "24")
 
-    # External source instance settings
-    ext_src_url = raw_input(
-        "Migrating from an external (non-GitLab) instance? Input external source URL: ")
-    if ext_src_url and "gitlab" not in ext_src_url.lower():
+    ext_src = raw_input(
+        "Migrating from an external (non-GitLab) instance? (Default: No) ")
+    if ext_src.lower() in ["yes", "y"]:
+        # External source instance settings
         config.add_section("EXT_SRC")
-        config.set("EXT_SRC", "url", ext_src_url)
-        print("NOTE: External source migration is currently limited to mirroring through http/https. A master username and password is required to set up mirroring in each shell project.")
-        config.set("EXT_SRC", "username", raw_input("Username: "))
-        config.set("EXT_SRC", "password", obfuscate("Password: "))
-        print("Creating Authorization token based on username:password string (base64 encoded)")
-        config.set("EXT_SRC", "token", b64encode(config.get(
-            "EXT_SRC", "username") + ":" + deobfuscate(config.get("EXT_SRC", "password"))))
-        repo_path = raw_input(
-            "Absolute path to JSON file containing repo information: ")
-        config.set("EXT_SRC", "repo_path", "{0}{1}"
-                   .format("" if repo_path.startswith("/") else path.join(app_path, ""), repo_path))
-
-    if not config.has_section("EXT_SRC"):
+        src = raw_input(
+            "Source (1. Bitbucket Server, 2. GitHub, 3. Bitbucket Cloud, 4. Subversion)? ")
+        if src.lower() in ["1", "1.", "bitbucket server"]:
+            config.set("EXT_SRC", "source", "Bitbucket Server")
+            config.set("EXT_SRC", "url", raw_input("URL: "))
+            config.set("EXT_SRC", "username", raw_input("Username: "))
+            pwd = getpass.getpass("Password/Personal Access Token: ")
+            try:
+                # Is it valid base64, not bulletproof
+                b64decode(pwd)
+                config.set("EXT_SRC", "token", pwd)
+            except binascii.Error:
+                print(
+                    "Creating Personal Access Token (PAT) based on 'username:password' string (base64 encoded)")
+                config.set("EXT_SRC", "token", b64encode(
+                    config.get("EXT_SRC", "username") + ":" + pwd))
+            repo_path = raw_input(
+                "Absolute path to JSON file containing repo information: ")
+            config.set("EXT_SRC", "repo_path", "{0}{1}"
+                       .format("" if repo_path.startswith("/") else path.join(app_path, ""), repo_path))
+        else:
+            print("Source type {} is currently not supported".format(src))
+    else:
         # Non-external source instance settings
         config.add_section("SOURCE")
         config.set("SOURCE", "src_hostname",

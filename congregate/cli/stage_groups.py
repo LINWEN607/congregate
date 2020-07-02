@@ -180,7 +180,7 @@ def append_member_to_members_list(members_list, member, dry_run=True):
         params: rewritten_users: object containing the specific member to be added to the group or project
     """
     if isinstance(member, dict):
-        if member.get("id", None) is not None and member["username"] != "root":
+        if member.get("id", None) is not None:
             b.log.info("{0}Staging user {1} (ID: {2})".format(
                 get_dry_log(dry_run), member["username"], member["id"]))
             staged_users.append(

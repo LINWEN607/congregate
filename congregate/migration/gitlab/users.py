@@ -345,9 +345,13 @@ class UsersClient(BaseClass):
         search based on the email address and *not* username
         :return:
         """
+        staged_users = self.get_staged_users()
         new_users = []
         users_not_found = {}
-        for user in self.get_staged_users():
+        # Duplicate emails
+        duplicate_users = [u for u in staged_users if [s["email"]
+                                                       for s in staged_users].count(u["email"]) > 1]
+        for user in staged_users:
             email = user.get("email", None)
             new_user = self.find_user_by_email_comparison_without_id(email)
             if new_user:
@@ -363,6 +367,8 @@ class UsersClient(BaseClass):
             len(new_users), "\n".join(json_pretty(u) for u in new_users)))
         self.log.info("Users NOT found ({0}):\n{1}".format(
             len(users_not_found), json_pretty(users_not_found)))
+        self.log.info("Duplicate users ({0}):\n{1}".format(
+            len(duplicate_users), json_pretty(duplicate_users)))
         return users_not_found, new_users
 
     def handle_users_not_found(self, data, users, keep=True):

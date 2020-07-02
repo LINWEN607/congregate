@@ -14,7 +14,7 @@ class StageProjectsTests(unittest.TestCase):
         self.users_api = MockUsersApi()
         self.mock = mock.MagicMock()
 
-    @mock.patch('__builtin__.raw_input')
+    @mock.patch('__builtin__.open')
     @mock.patch('os.path.isfile')
     @mock.patch('congregate.cli.stage_groups.open_projects_file')
     @mock.patch('congregate.cli.stage_groups.open_users_file')
@@ -42,16 +42,6 @@ class StageProjectsTests(unittest.TestCase):
                 "path": "diaspora-client",
                 "namespace": "diaspora",
                 "members": [
-                    {
-                        "username": "raymond_smith",
-                        "access_level": 30,
-                        "state": "active",
-                        "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon",
-                        "web_url": "http://192.168.1.8:3000/root",
-                        "name": "Raymond Smith",
-                        "id": 1,
-                        "expires_at": "2012-10-22T14:13:35Z"
-                    },
                     {
                         "username": "john_doe",
                         "access_level": 30,
@@ -85,16 +75,6 @@ class StageProjectsTests(unittest.TestCase):
         ]
 
         expected_users = [
-            {
-                "username": "raymond_smith",
-                "access_level": 30,
-                "state": "active",
-                "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon",
-                "web_url": "http://192.168.1.8:3000/root",
-                "name": "Raymond Smith",
-                "id": 1,
-                "expires_at": "2012-10-22T14:13:35Z"
-            },
             {
                 "username": "john_doe",
                 "access_level": 30,
@@ -256,16 +236,6 @@ class StageProjectsTests(unittest.TestCase):
                 "namespace": "diaspora",
                 "members": [
                     {
-                        "username": "raymond_smith",
-                        "access_level": 30,
-                        "state": "active",
-                        "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon",
-                        "web_url": "http://192.168.1.8:3000/root",
-                        "name": "Raymond Smith",
-                        "id": 1,
-                        "expires_at": "2012-10-22T14:13:35Z"
-                    },
-                    {
                         "username": "john_doe",
                         "access_level": 30,
                         "state": "active",
@@ -301,16 +271,6 @@ class StageProjectsTests(unittest.TestCase):
                 "namespace": "brightbox",
                 "members": [
                     {
-                        "username": "raymond_smith",
-                        "access_level": 30,
-                        "state": "active",
-                        "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon",
-                        "web_url": "http://192.168.1.8:3000/root",
-                        "name": "Raymond Smith",
-                        "id": 1,
-                        "expires_at": "2012-10-22T14:13:35Z"
-                    },
-                    {
                         "username": "john_doe",
                         "access_level": 30,
                         "state": "active",
@@ -343,16 +303,6 @@ class StageProjectsTests(unittest.TestCase):
         ]
 
         expected_users = [
-            {
-                "username": "raymond_smith",
-                "access_level": 30,
-                "state": "active",
-                "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon",
-                "web_url": "http://192.168.1.8:3000/root",
-                "name": "Raymond Smith",
-                "id": 1,
-                "expires_at": "2012-10-22T14:13:35Z"
-            },
             {
                 "username": "john_doe",
                 "access_level": 30,

@@ -11,18 +11,19 @@ class ReposTests(unittest.TestCase):
         self.mock_repos = MockReposApi()
         self.repos = ReposClient()
 
-    @patch('__builtin__.raw_input')
+    @patch("__builtin__.file")
+    @patch('__builtin__.open')
     @patch.object(ReposApi, "get_all_repos")
     @patch.object(ReposApi, "get_all_repo_users")
     @patch('congregate.helpers.conf.Config.external_source_url', new_callable=PropertyMock)
     @patch('congregate.helpers.conf.Config.external_user_token', new_callable=PropertyMock)
-    def test_retrieve_repo_info(self, mock_ext_user_token, mock_ext_src_url, mock_get_all_repo_users, mock_get_all_repos, mock_open):
+    def test_retrieve_repo_info(self, mock_ext_user_token, mock_ext_src_url, mock_get_all_repo_users, mock_get_all_repos, mock_open, mock_file):
         mock_ext_src_url.return_value = "http://localhost:7990"
         mock_ext_user_token.return_value = "username:password"
         mock_get_all_repo_users.side_effect = [
             self.mock_repos.get_all_repo_users(), self.mock_repos.get_all_repo_users()]
         mock_get_all_repos.return_value = self.mock_repos.get_all_repos()
-        mock_open.return_value = []
+        mock_open.return_value = mock_file
         expected_repos = [
             {
                 "name": "android",
@@ -32,7 +33,7 @@ class ReposTests(unittest.TestCase):
                     "web_url": "http://localhost:7990/projects/TGP",
                     "path": "TGP",
                     "id": 1,
-                    "full_path": "test-group"
+                    "full_path": "TGP"
                 },
                 "members": [
                     {
@@ -68,7 +69,7 @@ class ReposTests(unittest.TestCase):
                     "web_url": "http://localhost:7990/projects/ATP",
                     "path": "ATP",
                     "id": 22,
-                    "full_path": "Another-Test-Project"
+                    "full_path": "ATP"
                 },
                 "members": [
                     {

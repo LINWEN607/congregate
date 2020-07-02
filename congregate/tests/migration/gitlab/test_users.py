@@ -557,15 +557,16 @@ class UsersTests(unittest.TestCase):
         }
         self.assertEqual(handle_user_creation(new_user), expected)
 
-    @mock.patch('__builtin__.raw_input')
+    @mock.patch("__builtin__.file")
+    @mock.patch('__builtin__.open')
     @mock.patch.object(UsersApi, "get_all_users")
     @mock.patch('congregate.helpers.conf.Config.src_parent_group_path', new_callable=mock.PropertyMock)
     @mock.patch('congregate.helpers.conf.Config.group_sso_provider', new_callable=mock.PropertyMock)
-    def test_retrieve_user_info(self, mock_sso, mock_src_parent_group_path, mock_get_all_users, mock_open):
+    def test_retrieve_user_info(self, mock_sso, mock_src_parent_group_path, mock_get_all_users, mock_open, mock_file):
         mock_sso.return_value = ""
         mock_src_parent_group_path.return_value = ""
         mock_get_all_users.return_value = self.mock_users.get_dummy_new_users()
-        mock_open.return_value = []
+        mock_open.return_value = mock_file
         expected_users = [
             {
                 "id": 28,
@@ -629,13 +630,14 @@ class UsersTests(unittest.TestCase):
         self.assertEqual(sorted(self.users.retrieve_user_info(
             "host", "token")), sorted(expected_users))
 
-    @mock.patch('__builtin__.raw_input')
+    @mock.patch("__builtin__.file")
+    @mock.patch('__builtin__.open')
     @mock.patch.object(UsersApi, "get_user")
     @mock.patch.object(GroupsApi, "get_all_group_members")
     @mock.patch('congregate.helpers.conf.Config.src_parent_group_path', new_callable=mock.PropertyMock)
     @mock.patch('congregate.helpers.conf.Config.src_parent_id', new_callable=mock.PropertyMock)
     @mock.patch('congregate.helpers.conf.Config.group_sso_provider', new_callable=mock.PropertyMock)
-    def test_retrieve_user_info_src_parent_group_sso(self, mock_sso, mock_src_parent_id, mock_src_parent_group_path, mock_get_all_group_members, mock_get_user, mock_open):
+    def test_retrieve_user_info_src_parent_group_sso(self, mock_sso, mock_src_parent_id, mock_src_parent_group_path, mock_get_all_group_members, mock_get_user, mock_open, mock_file):
         mock_sso.return_value = "mock_sso"
         mock_src_parent_id.return_value = 42
         mock_src_parent_group_path.return_value = "mock_src_parent_group_path"
@@ -648,8 +650,36 @@ class UsersTests(unittest.TestCase):
             self.mock_users.get_dummy_old_users()[1]
         ]
         mock_get_user.return_value = ok_get_mock
-        mock_open.return_value = []
+        mock_open.return_value = mock_file
         expected_users = [
+            {
+                "id": 3,
+                "username": "raymond_smith",
+                "name": "Raymond Smith",
+                "state": "active",
+                "bio": None,
+                "location": None,
+                "public_email": "",
+                "skype": "",
+                "linkedin": "",
+                "twitter": "",
+                "website_url": "",
+                "organization": None,
+                "email": "rsmith@email.com",
+                "theme_id": None,
+                "color_scheme_id": 5,
+                "projects_limit": 10,
+                "identities": [],
+                "can_create_group": True,
+                "can_create_project": True,
+                "two_factor_enabled": False,
+                "external": False,
+                "private_profile": None,
+                "is_admin": False,
+                "highest_role": 50,
+                "shared_runners_minutes_limit": None,
+                "extra_shared_runners_minutes_limit": None
+            },
             {
                 "id": 2,
                 "name": "John Doe",

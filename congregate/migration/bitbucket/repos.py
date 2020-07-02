@@ -28,7 +28,7 @@ class ReposClient(BaseClass):
                     "path": repo["project"]["key"],
                     "name": repo["project"]["name"],
                     "kind": "group",
-                    "full_path": repo["project"]["name"],
+                    "full_path": repo["project"]["key"],
                     "web_url": repo["project"]["links"]["self"][0]["href"]
                 },
                 "path_with_namespace": repo["project"]["key"] + "/" + repo["slug"],

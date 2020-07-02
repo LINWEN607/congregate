@@ -173,10 +173,6 @@ class Config(object):
         return self.prop("EXT_SRC", "username")
 
     @property
-    def external_user_password(self):
-        return self.prop("EXT_SRC", "password", None, True)
-
-    @property
     def external_user_token(self):
         return self.prop("EXT_SRC", "token")
 
@@ -257,6 +253,7 @@ class Config(object):
 
 # HIDDEN PROPERTIES
     # Used only by "map-users" command
+
     @property
     def user_map(self):
         return self.prop("USER", "user_map_csv")

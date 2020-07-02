@@ -42,16 +42,6 @@ class MockUsersApi():
     def get_all_users_list(self):
         return [
             {
-                "id": 1,
-                "username": "raymond_smith",
-                "name": "Raymond Smith",
-                "state": "active",
-                "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon",
-                "web_url": "http://192.168.1.8:3000/root",
-                "expires_at": "2012-10-22T14:13:35Z",
-                "access_level": 30
-            },
-            {
                 "id": 2,
                 "username": "john_doe",
                 "name": "John Doe",
@@ -85,16 +75,6 @@ class MockUsersApi():
 
     def get_project_members(self):
         return [
-            {
-                "id": 1,
-                "username": "raymond_smith",
-                "name": "Raymond Smith",
-                "state": "active",
-                "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon",
-                "web_url": "http://192.168.1.8:3000/root",
-                "expires_at": "2012-10-22T14:13:35Z",
-                "access_level": 30
-            },
             {
                 "id": 2,
                 "username": "john_doe",
@@ -184,7 +164,7 @@ class MockUsersApi():
     def get_dummy_old_users(self):
         return [
             {
-                "id": 1,
+                "id": 3,
                 "username": "raymond_smith",
                 "name": "Raymond Smith",
                 "state": "active",

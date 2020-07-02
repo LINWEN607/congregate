@@ -5,9 +5,10 @@ from congregate.helpers.misc_utils import write_json_yield_to_file
 from congregate.migration.gitlab.groups import GroupsClient
 from congregate.migration.gitlab.users import UsersClient
 from congregate.migration.gitlab.projects import ProjectsClient
+
+from congregate.migration.bitbucket.projects import ProjectsClient as BitBucketProjects
 from congregate.migration.bitbucket.users import UsersClient as BitBucketUsers
 from congregate.migration.bitbucket.repos import ReposClient as BitBucketRepos
-from congregate.migration.bitbucket.api.projects import ProjectsApi as BitBucketProjectsApi
 
 
 b = BaseClass()
@@ -32,16 +33,11 @@ def list_gitlab_data():
 
 def list_bitbucket_data():
     users = BitBucketUsers()
-    projects = BitBucketProjectsApi()
+    projects = BitBucketProjects()
     repos = BitBucketRepos()
-
+    
+    projects.retrieve_project_info()
     repos.retrieve_repo_info()
-    write_json_yield_to_file(
-        "%s/data/groups.json" % b.app_path,
-        projects.get_all_projects,
-        b.config.external_source_url,
-        b.config.external_user_token
-    )
     users.retrieve_user_info()
 
 

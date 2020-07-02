@@ -1,13 +1,13 @@
 import os
 import errno
 import json
+import getpass
 import subprocess
 
 import glob
 from base64 import b64encode, b64decode
 from shutil import copy
 from time import time
-from getpass import getpass
 from re import sub, findall
 from datetime import timedelta, date, datetime
 from requests import get, head, Response
@@ -180,7 +180,7 @@ def read_json_file_into_object(path):
 
 
 def obfuscate(prompt):
-    return b64encode(getpass(prompt))
+    return b64encode(getpass.getpass(prompt))
 
 
 def deobfuscate(secret):
