@@ -53,7 +53,7 @@ Once you confirm this is your problem, ssh into the postgres container (can be d
 sql -c 'UPDATE DATABASECHANGELOGLOCK SET LOCKED=false, LOCKGRANTED=null, LO
 CKEDBY=null where ID=1;' --dbname=bitbucket --username=db_user -W
 ```
-with the Password is `db_password`
+where the Password is `db_password`
 
 Once you do this, you should see the logs of the bitbucket container unstick.
 
