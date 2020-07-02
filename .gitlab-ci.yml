@@ -77,7 +77,9 @@ build bitbucket seed image:
   rules:
     - changes:
         - .gitlab-ci.yml
-        - docker/bitbucket/*
+        - docker/bitbucket/Dockerfile
+        - docker/bitbucket/entrypoint.py
+        - docker/bitbucket/seed_data.sh
 
 .test-job:
   stage: test

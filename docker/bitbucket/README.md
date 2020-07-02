@@ -48,4 +48,4 @@ If you are having trouble building the docker image, you can replace `bitbucket-
 registry.gitlab.com/gitlab-com/customer-success/tools/congregate/bitbucket-seed:latest
 ```
 
-This will require you to login to the GitLab container registry before spinning up the containers
+This will require you to login to the GitLab container registry (`docker login registry.gitlab.com`) before spinning up the containers
