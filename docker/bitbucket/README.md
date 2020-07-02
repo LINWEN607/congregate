@@ -38,7 +38,7 @@ Once the instance is up, navigate to localhost:7990 to see the BitBucket instanc
 
 To login use `admin` as username and the previously mentioned password. For more details see ***congregate/docker/butbucket/docker-compose.yml***.
 
-## Troubhleshooting
+## Troubleshooting
 ### Stuck on Migrating Home Directory
 If bitbucket is getting stuck on the "Migrating Home Directory" stage when you navigate to http://localhost:7990, then you might have a situation where the postgreSQL database is locked. To verify this, look at the postgreSQL container log to see `ERROR: function aurora_version() does not exist at character 8`. Accompanying this error in the bitbucket server container, you will see lots of
 
