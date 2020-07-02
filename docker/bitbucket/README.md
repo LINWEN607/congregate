@@ -37,3 +37,15 @@ This will take around 10 minutes for the first time to get the service up and al
 Once the instance is up, navigate to localhost:7990 to see the BitBucket instance running.
 
 To login use `admin` as username and the previously mentioned password. For more details see ***congregate/docker/butbucket/docker-compose.yml***.
+
+## Troubleshooting
+
+### Docker image won't build
+
+If you are having trouble building the docker image, you can replace `bitbucket-seed:latest` in `docker-compose.yml` with the bitbucket seed image stored in the container registry:
+
+```
+registry.gitlab.com/gitlab-com/customer-success/tools/congregate/bitbucket-seed:latest
+```
+
+This will require you to login to the GitLab container registry before spinning up the containers
