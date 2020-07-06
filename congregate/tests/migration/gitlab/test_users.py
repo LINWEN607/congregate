@@ -273,7 +273,7 @@ class UsersTests(unittest.TestCase):
         read_data = json.dumps(self.mock_users.get_dummy_project())
         mock_open = mock.mock_open(read_data=read_data)
         with mock.patch('__builtin__.open', mock_open):
-            result = self.users.remove("stage")
+            result = self.users.remove("staged_projects")
         self.assertEqual(
             result, self.mock_users.get_dummy_project_active_members())
 
@@ -329,7 +329,7 @@ class UsersTests(unittest.TestCase):
         mock_open = mock.mock_open(read_data=read_data)
         with mock.patch('__builtin__.open', mock_open):
             result = self.users.handle_users_not_found(
-                "stage", users_not_found)
+                "staged_projects", users_not_found)
         self.assertEqual(
             result, self.mock_users.get_dummy_project_active_members())
 

@@ -38,7 +38,7 @@ class MigrationEndToEndTestSetup(unittest.TestCase):
             "no",  # destination parent group
             "",  # username suffix
             "no",  # mirror
-            "gitlab",  # external_src_url
+            "no",  # external_src_url
             os.getenv("GITLAB_SRC"),  # source host
             "no",  # single group migration
             "yes",  # migrating registries

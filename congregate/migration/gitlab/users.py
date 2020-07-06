@@ -308,7 +308,7 @@ class UsersClient(BaseClass):
         # From staged groups
         self.remove("staged_groups", dry_run)
         # From staged projects
-        self.remove("stage", dry_run)
+        self.remove("stage_projects", dry_run)
 
     def remove(self, data, dry_run=True):
         with open("{0}/data/{1}.json".format(self.app_path, data), "r") as f:
@@ -393,7 +393,7 @@ class UsersClient(BaseClass):
         else:
             self.log.info("Removing NOT found users ({0}) from staged {1}".format(
                 len(users),
-                "projects" if data == "stage" else "groups"))
+                "projects" if data == "staged_projects" else "groups"))
             for s in staged:
                 s["members"] = [i for j, i in enumerate(
                     s["members"]) if i["id"] not in users.keys()]

@@ -76,7 +76,7 @@ export default {
       })
     },
     getStagedData: function () {
-      axios.get('http://localhost:8000/data/stage').then(response => {
+      axios.get('http://localhost:8000/data/staged_projects').then(response => {
         var ids = []
         response.data.forEach(element => {
           ids.push(element.id)

@@ -12,5 +12,5 @@ class ProjectsApi():
     def get_all_project_repos(self, key, host, token):
         return api.list_all(host, token, "projects/{}/repos".format(key))
 
-    def get_all_project_members(self, key, host, token):
+    def get_all_project_users(self, key, host, token):
         return api.list_all(host, token, "projects/{}/permissions/users".format(key))

@@ -1,7 +1,6 @@
 import os
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import write_json_yield_to_file
 from congregate.migration.gitlab.groups import GroupsClient
 from congregate.migration.gitlab.users import UsersClient
 from congregate.migration.gitlab.projects import ProjectsClient
@@ -27,7 +26,7 @@ def list_gitlab_data():
     groups.retrieve_group_info(b.config.source_host, b.config.source_token)
     users.retrieve_user_info(b.config.source_host, b.config.source_token)
 
-    for filename in ["stage", "staged_groups", "staged_users"]:
+    for filename in ["staged_projects", "staged_groups", "staged_users"]:
         write_empty_file(filename)
 
 
@@ -35,7 +34,7 @@ def list_bitbucket_data():
     users = BitBucketUsers()
     projects = BitBucketProjects()
     repos = BitBucketRepos()
-    
+
     projects.retrieve_project_info()
     repos.retrieve_repo_info()
     users.retrieve_user_info()
@@ -64,7 +63,7 @@ def list_data():
             "Cannot list from source (External: {0}, GitLab: {1})".format(ext_src, src))
         exit()
 
-    staged_files = ["stage", "staged_groups", "staged_users"]
+    staged_files = ["staged_projects", "staged_groups", "staged_users"]
 
     for filename in staged_files:
         write_empty_file(filename)

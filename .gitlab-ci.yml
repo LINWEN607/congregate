@@ -39,7 +39,7 @@ workflow:
   tags:
     # See https://gitlab.com/gitlab-com/www-gitlab-com/-/issues/7019 for tag descriptions
     - gitlab-org-docker
-  
+
 .docker-login:
   before_script:
     - docker login ${CI_REGISTRY} -u gitlab-ci-token -p $CI_BUILD_TOKEN
@@ -53,7 +53,7 @@ sast:
     paths: [gl-sast-report.json]
 
 build:
-  extends: 
+  extends:
     - .use-docker-in-docker
     - .docker-login
   stage: build
@@ -66,7 +66,7 @@ build:
         - docker/test/Dockerfile
 
 build bitbucket seed image:
-  extends: 
+  extends:
     - .use-docker-in-docker
     - .docker-login
   stage: build
@@ -169,7 +169,7 @@ test:end-to-end single group:
       - data/audit*.log
 
 rolling release:
-  extends: 
+  extends:
     - .use-docker-in-docker
     - .docker-login
   stage: release
@@ -186,7 +186,7 @@ rolling release:
     - docker push "$LATEST"
 
 release-tag:
-  extends: 
+  extends:
     - .use-docker-in-docker
     - .docker-login
   rules:

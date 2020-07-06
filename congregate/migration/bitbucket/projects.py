@@ -27,13 +27,12 @@ class ProjectsClient(BaseClass):
                 "name": project["name"],
                 "id": project["id"],
                 "path": project["key"],
+                "full_path": project["key"],
                 "visibility": "public" if project["public"] else "private",
                 "description": project.get("description", ""),
-                "full_path": project["key"],
                 "members": self.add_project_users([], project["key"]),
                 "projects": self.add_project_repos([], project["key"]),
             })
-
         with open('%s/data/groups.json' % self.app_path, "w") as f:
             json.dump(remove_dupes(obj), f, indent=4)
         return remove_dupes(obj)
@@ -44,7 +43,7 @@ class ProjectsClient(BaseClass):
             "PROJECT_WRITE": 30,  # Developer
             "PROJECT_READ": 20  # Reporter
         }
-        for user in self.projects_api.get_all_project_members(
+        for user in self.projects_api.get_all_project_users(
                 project_key, self.config.external_source_url, self.config.external_user_token):
             m = user["user"]
             m["permission"] = bitbucket_permission_map[user["permission"]]

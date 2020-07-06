@@ -58,7 +58,7 @@ class ProjectsApi():
             :yield: Generator containing JSON results from GET /projects
 
         """
-        return api.list_all(host, token, "projects{}".format("?statistics=true" if statistics else ""), keyset=True)
+        return api.list_all(host, token, "projects{}".format("?statistics=true" if statistics else ""), keyset=False)
 
     def get_members(self, id, host, token):
         """
