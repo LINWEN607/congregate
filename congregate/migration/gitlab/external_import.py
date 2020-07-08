@@ -15,6 +15,6 @@ class ImportClient(BaseClass):
             "bitbucket_server_repo": repo
         }
         if self.config.dstn_parent_group_path:
-            data["targer_namespace"] = self.config.dstn_parent_group_path
+            data["target_namespace"] = self.config.dstn_parent_group_path
         
         return self.ext_import.import_from_bitbucket_server(self.config.destination_host, self.config.destination_token, data)
