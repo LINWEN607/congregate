@@ -16,7 +16,7 @@ class ReposTests(unittest.TestCase):
     @patch.object(ReposApi, "get_all_repos")
     @patch.object(ReposApi, "get_all_repo_users")
     @patch('congregate.helpers.conf.Config.external_source_url', new_callable=PropertyMock)
-    @patch('congregate.helpers.conf.Config.external_user_token', new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.external_access_token', new_callable=PropertyMock)
     def test_retrieve_repo_info(self, mock_ext_user_token, mock_ext_src_url, mock_get_all_repo_users, mock_get_all_repos, mock_open, mock_file):
         mock_ext_src_url.return_value = "http://localhost:7990"
         mock_ext_user_token.return_value = "username:password"

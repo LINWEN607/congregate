@@ -17,7 +17,7 @@ class ProjectsTests(unittest.TestCase):
     @patch.object(ProjectsApi, "get_all_project_repos")
     @patch.object(ProjectsApi, "get_all_projects")
     @patch('congregate.helpers.conf.Config.external_source_url', new_callable=PropertyMock)
-    @patch('congregate.helpers.conf.Config.external_user_token', new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.external_access_token', new_callable=PropertyMock)
     def test_retrieve_project_info(self, mock_ext_user_token, mock_ext_src_url, mock_get_all_projects, mock_get_all_project_repos, mock_get_all_project_users, mock_open, mock_file):
         mock_ext_src_url.return_value = "http://localhost:7990"
         mock_ext_user_token.return_value = "username:password"

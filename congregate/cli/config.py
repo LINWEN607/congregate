@@ -117,7 +117,7 @@ def generate_config():
             except binascii.Error:
                 print(
                     "Creating Personal Access Token (PAT) based on 'username:password' string (base64 encoded)")
-                config.set("EXT_SRC", "token", b64encode(
+                config.set("EXT_SRC", "basic_token", b64encode(
                     config.get("EXT_SRC", "username") + ":" + pwd))
             repo_path = raw_input(
                 "Absolute path to JSON file containing repo information: ")

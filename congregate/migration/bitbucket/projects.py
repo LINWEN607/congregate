@@ -21,7 +21,7 @@ class ProjectsClient(BaseClass):
     def retrieve_project_info(self):
         obj = []
         projects = self.projects_api.get_all_projects(
-            self.config.external_source_url, self.config.external_user_token)
+            self.config.external_source_url)
         for project in projects:
             obj.append({
                 "name": project["name"],
@@ -44,7 +44,7 @@ class ProjectsClient(BaseClass):
             "PROJECT_READ": 20  # Reporter
         }
         for user in self.projects_api.get_all_project_users(
-                project_key, self.config.external_source_url, self.config.external_user_token):
+                project_key, self.config.external_source_url):
             m = user["user"]
             m["permission"] = bitbucket_permission_map[user["permission"]]
             users.append(m)
@@ -53,7 +53,7 @@ class ProjectsClient(BaseClass):
     def add_project_repos(self, repos, project_key):
         repos = []
         for repo in self.projects_api.get_all_project_repos(
-                project_key, self.config.external_source_url, self.config.external_user_token):
+                project_key, self.config.external_source_url):
             repos.append({
                 "id": repo["id"],
                 "path": repo["slug"],

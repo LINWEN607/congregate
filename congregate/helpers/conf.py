@@ -173,8 +173,12 @@ class Config(object):
         return self.prop("EXT_SRC", "username")
 
     @property
-    def external_user_token(self):
+    def external_access_token(self):
         return self.prop("EXT_SRC", "token")
+
+    @property
+    def external_basic_token(self):
+        return self.prop("EXT_SRC", "basic_token")
 
     @property
     def repo_list(self):

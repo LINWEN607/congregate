@@ -1,27 +1,34 @@
 from time import sleep
 import requests
+from requests.auth import HTTPBasicAuth
 
-from congregate.helpers.logger import myLogger
-from congregate.helpers.audit_logger import audit_logger
+from congregate.helpers.misc_utils import deobfuscate
+from congregate.helpers.base_class import BaseClass
 from congregate.helpers.decorators import stable_retry
 
-log = myLogger(__name__)
-audit = audit_logger(__name__)
+import pdb
 
+b = BaseClass()
 
 def generate_bb_v1_request_url(host, api):
     return "%s/rest/api/1.0/%s" % (host, api)
 
-
-def generate_v4_request_header(token):
+def generate_v4_request_headers():
     return {
-        'Authorization': 'Basic {}'.format(token),
         'Content-Type': 'application/json'
     }
 
+def get_authorization():
+    if b.config.external_access_token:
+        return HTTPBasicAuth(b.config.external_user_name, b.config.external_access_token)
+    elif b.config.external_basic_token:
+        return HTTPBasicAuth(b.config.external_user_name, decode_password())
+
+def decode_password():
+    return deobfuscate(b.config.external_basic_token).split(":")[-1]
 
 @stable_retry
-def generate_get_request(host, token, api, url=None, params=None):
+def generate_get_request(host, api, url=None, params=None):
     """
     Generates GET request to BitBucket API.
     You will need to provide the BB host, access token, and specific api url.
@@ -38,18 +45,20 @@ def generate_get_request(host, token, api, url=None, params=None):
     if url is None:
         url = generate_bb_v1_request_url(host, api)
 
-    headers = generate_v4_request_header(token)
+    headers = generate_v4_request_headers()
 
     if params is None:
         params = {}
+    
+    auth = get_authorization()
+    # pdb.set_trace()
+    return requests.get(url, params=params, headers=headers, auth=auth)
 
-    return requests.get(url, params=params, headers=headers)
 
-
-def list_all(host, token, api, params=None, limit=1000):
+def list_all(host, api, params=None, limit=1000):
     isLastPage = False
     start = 0
-    log.info("Listing endpoint: {}".format(api))
+    b.log.info("Listing endpoint: {}".format(api))
     while isLastPage is False:
         if not params:
             params = {
@@ -59,13 +68,13 @@ def list_all(host, token, api, params=None, limit=1000):
         else:
             params["start"] = start
             params["limit"] = limit
-        r = generate_get_request(host, token, api, params=params)
+        r = generate_get_request(host, api, params=params)
         try:
             data = r.json()
-            log.info("Retrieved {0} {1}".format(data.get("size", None), api))
+            b.log.info("Retrieved {0} {1}".format(data.get("size", None), api))
             if r.status_code != 200:
                 if r.status_code == 404 or r.status_code == 500:
-                    log.error('\nERROR: HTTP Response was {}\n\nBody Text: {}\n'.format(
+                    b.log.error('\nERROR: HTTP Response was {}\n\nBody Text: {}\n'.format(
                         r.status_code, r.text))
                     break
                 raise ValueError('ERROR HTTP Response was NOT 200, which implies something wrong. The actual return code was {}\n{}\n'.format(
@@ -79,9 +88,9 @@ def list_all(host, token, api, params=None, limit=1000):
             else:
                 isLastPage = True
         except ValueError as e:
-            log.error(e)
-            log.error("API Request didn't return JSON")
+            b.log.error(e)
+            b.log.error("API Request didn't return JSON")
             # Retry interval is smaller here because it will just retry
             # until it succeeds
-            log.info("Attempting to retry after 3 seconds")
+            b.log.info("Attempting to retry after 3 seconds")
             sleep(3)

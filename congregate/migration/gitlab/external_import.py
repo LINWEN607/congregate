@@ -10,7 +10,7 @@ class ImportClient(BaseClass):
         data = {
             "bitbucket_server_url": self.config.external_source_url,
             "bitbucket_server_username": self.config.external_user_name,
-            "personal_access_token": self.config.external_user_token,
+            "personal_access_token": self.config.external_access_token,
             "bitbucket_server_project": project,
             "bitbucket_server_repo": repo
         }

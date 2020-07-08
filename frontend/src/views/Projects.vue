@@ -68,7 +68,7 @@ export default {
   },
   methods: {
     getData: function () {
-      axios.get('http://localhost:8000/data/project_json').then(response => {
+      axios.get(`${process.env.VUE_APP_API_URL}/data/project_json`).then(response => {
         this.rows = response.data
         this.getStagedData()
       }).catch(function (error) {
@@ -76,7 +76,7 @@ export default {
       })
     },
     getStagedData: function () {
-      axios.get('http://localhost:8000/data/staged_projects').then(response => {
+      axios.get(`${process.env.VUE_APP_API_URL}/data/staged_projects`).then(response => {
         var ids = []
         response.data.forEach(element => {
           ids.push(element.id)
@@ -97,7 +97,7 @@ export default {
         this.$refs['projects-table'].selectedRows.forEach(element => {
           ids.push(element.id)
         })
-        axios.post('http://localhost:8000/stage', String(ids)).then(response => {
+        axios.post(`${process.env.VUE_APP_API_URL}/stage`, String(ids)).then(response => {
           console.log(response)
         })
       }
