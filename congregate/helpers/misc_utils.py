@@ -3,7 +3,6 @@ import errno
 import json
 import getpass
 import subprocess
-import netifaces
 
 import glob
 from base64 import b64encode, b64decode
@@ -393,6 +392,7 @@ def stitch_json_results(result_type="project", steps=0, order="tail"):
 
 
 def build_ui(app_path):
+    port = 8000
     if not os.path.exists(app_path + "/node_modules"):
         print "No node_modules found. Running npm install"
         install_deps = "npm install"
@@ -401,20 +401,9 @@ def build_ui(app_path):
         print "UI not built. Building it before deploying"
         build_command = "npm run build"
         subprocess.call(build_command.split(" "))
-    if not os.path.exists(app_path + "/.env"):
-        with open(app_path + "/.env", "w") as f:
-            f.write("# Overwrite this value if the IP automatically detected is not valid\n")
-            f.write("VUE_APP_API_URL=" + get_machine_ip())
     os.chdir(app_path + "/congregate")
-    run_ui = "gunicorn -k gevent -w 4 ui:app --bind=0.0.0.0:8000"
+    run_ui = "gunicorn -k gevent -w 4 ui:app --bind=0.0.0.0:" + str(port)
     subprocess.call(run_ui.split(" "))
-
-def get_machine_ip():
-    for iface in netifaces.interfaces():
-        inet_iface = netifaces.ifaddresses(iface).get(netifaces.AF_INET)
-        if inet_iface:
-            if "192" in inet_iface[0].get("addr"):
-                return inet_iface[0].get("addr")
 
 def generate_audit_log_message(req_type, message, url, data=None):
     try:

@@ -59,7 +59,7 @@ export default {
   },
   methods: {
     getData: function () {
-      axios.get(`${process.env.VUE_APP_API_URL}/data/users`).then(response => {
+      axios.get('/data/users').then(response => {
         this.rows = response.data
         this.getStagedData()
       }).catch(function (error) {
@@ -67,7 +67,7 @@ export default {
       })
     },
     getStagedData: function () {
-      axios.get(`${process.env.VUE_APP_API_URL}/data/staged_users`).then(response => {
+      axios.get('/data/staged_users').then(response => {
         var ids = []
         response.data.forEach(element => {
           ids.push(element.id)
@@ -89,7 +89,7 @@ export default {
         this.$refs['users-table'].selectedRows.forEach(element => {
           usernames.push(element.username)
         })
-        axios.post(`${process.env.VUE_APP_API_URL}/append_users`, String(usernames)).then(response => {
+        axios.post('/append_users', String(usernames)).then(response => {
           console.log(response)
         })
       }
