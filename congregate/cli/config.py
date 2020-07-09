@@ -106,7 +106,8 @@ def generate_config():
         src = raw_input(
             "Source (1. Bitbucket Server, 2. GitHub, 3. Bitbucket Cloud, 4. Subversion)? ")
         if src.lower() in ["1", "1.", "bitbucket server"]:
-            config.set("EXT_SRC", "source", "Bitbucket Server")
+            config.add_section("SOURCE")
+            config.set("SOURCE", "src_type", "Bitbucket Server")
             config.set("EXT_SRC", "url", raw_input("URL: "))
             config.set("EXT_SRC", "username", raw_input("Username: "))
             pwd = getpass.getpass("Password/Personal Access Token: ")
@@ -128,6 +129,7 @@ def generate_config():
     else:
         # Non-external source instance settings
         config.add_section("SOURCE")
+        config.set("SOURCE", "src_type", "gitlab")
         config.set("SOURCE", "src_hostname",
                    raw_input("Source instance Host: "))
         config.set("SOURCE", "src_access_token", obfuscate(
