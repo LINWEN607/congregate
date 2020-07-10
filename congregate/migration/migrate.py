@@ -103,6 +103,10 @@ def migrate(
     global _ONLY_POST_MIGRATION_INFO
     _ONLY_POST_MIGRATION_INFO = only_post_migration_info
 
+    global _SOURCE_TYPE
+    _SOURCE_TYPE = b.config.source_type
+    # _SOURCE_TYPE = "gitlab"
+
     # Dry-run and log cleanup
     if _DRY_RUN:
         clean_data(dry_run=False, files=[
@@ -110,9 +114,9 @@ def migrate(
             "dry_run_group_migration.json",
             "dry_run_project_migration.json"])
     rotate_logs()
-    if b.config.source_type.lower() == "gitlab":
+    if _SOURCE_TYPE.lower() == "gitlab":
         migrate_from_gitlab()
-    elif b.config.source_type.lower() == "bitbucket server":
+    elif _SOURCE_TYPE.lower() == "bitbucket server":
         migrate_from_bitbucket_server()
     add_post_migration_stats(_START)
 
