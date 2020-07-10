@@ -438,6 +438,8 @@ class UsersClient(BaseClass):
     def generate_user_data(self, user):
         if user.get("id", None) is not None:
             user.pop("id")
+        if user.get("bio", None) is not None:
+            user.pop("bio")
         if self.config.group_sso_provider is not None:
             return self.generate_user_group_saml_post_data(user)
         user["username"] = self.create_valid_username(user)
@@ -495,7 +497,9 @@ class UsersClient(BaseClass):
                 "id": None
             }
         else:
+            self.log.info(response.status_code)
             resp = response.json()
+            self.log.info(resp)
             return {
                 "email": resp["email"],
                 "id": resp["id"]
