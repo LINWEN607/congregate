@@ -353,16 +353,19 @@ class UsersClient(BaseClass):
                                                        for s in staged_users].count(u["email"]) > 1]
         for user in staged_users:
             email = user.get("email", None)
+            state = user.get("state", None)
             new_user = self.find_user_by_email_comparison_without_id(email)
             if new_user:
                 new_users.append({
                     "id": new_user.get("id", None),
-                    "email": new_user.get("email", None)
+                    "email": new_user.get("email", None),
+                    "state": new_user.get("state", None)
                 })
             else:
                 self.log.warning(
                     "Could not find user by email {0}. User should have been already migrated".format(email))
-                users_not_found[user.get("id", None)] = email
+                users_not_found[user.get("id", None)] = {
+                    "email": email, "state": state}
         self.log.info("Users found ({0}):\n{1}".format(
             len(new_users), "\n".join(json_pretty(u) for u in new_users)))
         self.log.info("Users NOT found ({0}):\n{1}".format(

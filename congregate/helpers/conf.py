@@ -147,6 +147,10 @@ class Config(object):
         return self.prop("SOURCE", "src_hostname")
 
     @property
+    def source_type(self):
+        return self.prop("SOURCE", "src_type")
+
+    @property
     def source_token(self):
         return self.prop("SOURCE", "src_access_token", None, True)
 
