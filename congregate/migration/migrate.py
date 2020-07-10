@@ -38,6 +38,7 @@ from congregate.migration.mirror import MirrorClient
 from congregate.migration.gitlab.keys import KeysClient
 from congregate.migration.gitlab.hooks import HooksClient
 from congregate.migration.gitlab.environments import EnvironmentsClient
+from congregate.migration.gitlab.external_import import ImportClient
 
 b = BaseClass()
 aws = AwsClient()
@@ -57,6 +58,7 @@ registries = RegistryClient()
 keys = KeysClient()
 hooks = HooksClient()
 environments = EnvironmentsClient()
+ext_import = ImportClient()
 
 _DRY_RUN = True
 _PROCESSES = None
@@ -101,10 +103,6 @@ def migrate(
     global _ONLY_POST_MIGRATION_INFO
     _ONLY_POST_MIGRATION_INFO = only_post_migration_info
 
-    global _SOURCE_TYPE
-    _SOURCE_TYPE = b.config.source_type
-    # _SOURCE_TYPE = "gitlab"
-
     # Dry-run and log cleanup
     if _DRY_RUN:
         clean_data(dry_run=False, files=[
@@ -112,8 +110,10 @@ def migrate(
             "dry_run_group_migration.json",
             "dry_run_project_migration.json"])
     rotate_logs()
-    if _SOURCE_TYPE.lower() == "gitlab":
+    if b.config.source_type.lower() == "gitlab":
         migrate_from_gitlab()
+    elif b.config.source_type.lower() == "bitbucket server":
+        migrate_from_bitbucket_server()
     add_post_migration_stats(_START)
 
 
@@ -136,8 +136,38 @@ def migrate_from_gitlab():
     if not _DRY_RUN and b.config.dstn_parent_id and not is_dot_com(b.config.destination_host):
         groups.remove_import_user(b.config.dstn_parent_id)
 
-    add_post_migration_stats(_START)
+def migrate_from_bitbucket_server():
+    # Migrate users
+    migrate_user_info()
 
+    # Migrate BB repos to projects
+    staged_projects = projects.get_staged_projects()
+    dry_log = get_dry_log(_DRY_RUN)
+    if staged_projects:
+        b.log.info("Importing projects from BitBucket Server")
+        import_results = start_multi_process(
+            import_bitbucket_project, staged_projects, processes=_PROCESSES)
+
+        are_results(import_results, "project", "import")
+
+        # append Total : Successful count of project imports
+        import_results.append(get_results(import_results))
+        b.log.info("### {0}Project import results ###\n{1}"
+                    .format(dry_log, json_pretty(import_results)))
+        write_results_to_file(import_results, log=b.log)
+    else:
+        b.log.info("SKIP: No projects to migrate")
+
+
+def import_bitbucket_project(project):
+    members = project.pop("members")
+    result = ext_import.trigger_import_from_bb_server(project)
+    if result.get("id", None):
+        for member in members:
+            member["user_id"] = users.find_user_by_email_comparison_without_id(member["email"])["id"]
+            if member.get("user_id"):
+                projects_api.add_member(result.get("id"), b.config.destination_host, b.config.destination_token, member)
+    return result
 
 def are_results(results, var, stage):
     if not results:

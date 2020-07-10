@@ -33,4 +33,4 @@ class ImportApi(BaseClass):
         """
         if not message:
             message = "Triggering import from BitBucket Server"
-        return api.generate_post_request(host, token, "import/bitbucket_server" % id, dumps(data), description=message).json()
+        return api.generate_post_request(host, token, "import/bitbucket_server", dumps(data), description=message).json()
