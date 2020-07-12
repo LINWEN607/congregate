@@ -711,3 +711,22 @@ class UsersTests(unittest.TestCase):
         ]
         self.assertEqual(sorted(self.users.retrieve_user_info(
             "host", "token")), sorted(expected_users))
+
+    @mock.patch('congregate.helpers.conf.Config.group_sso_provider_pattern', new_callable=mock.PropertyMock)
+    def test_generate_extern_uid(self, pattern):
+        pattern.return_value = "email"
+        mock_user = self.mock_users.get_dummy_user()
+        expected = "jdoe@email.com"
+        actual = self.users.generate_extern_uid(mock_user, None)
+
+        self.assertEqual(expected, actual)
+
+    @mock.patch('congregate.helpers.conf.Config.group_sso_provider', new_callable=mock.PropertyMock)
+    def test_generate_extern_uid_no_pattern(self, provider):
+        provider.return_value = "okta"
+        mock_user = self.mock_users.get_dummy_user()
+        mock_identity = mock_user.pop("identities")
+        expected = "jdoe|someCompany|okta"
+        actual = self.users.generate_extern_uid(mock_user, mock_identity)
+
+        self.assertEqual(expected, actual)

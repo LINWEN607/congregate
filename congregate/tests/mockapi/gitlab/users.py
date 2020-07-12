@@ -112,7 +112,13 @@ class MockUsersApi():
             "color_scheme_id": 5,
             "projects_limit": 10,
             "current_sign_in_at": "2019-07-17T16:49:12.936Z",
-            "identities": [],
+            "identities": [
+                {
+                    "provider": "okta",
+                    "extern_uid": "jdoe|someCompany|okta",
+                    "saml_provider_id": 1111
+                }
+            ],
             "can_create_group": True,
             "can_create_project": True,
             "two_factor_enabled": False,

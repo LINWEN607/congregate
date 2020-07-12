@@ -179,7 +179,7 @@ class UsersClient(BaseClass):
         if self.config.group_sso_provider_pattern == "email":
             return user.get("email")
         else:
-            self.find_extern_uid_by_provider(identities, self.config.group_sso_provider)
+            return self.find_extern_uid_by_provider(identities, self.config.group_sso_provider)
 
     def find_extern_uid_by_provider(self, identities, provider):
         for identity in identities:
