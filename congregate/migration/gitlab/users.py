@@ -160,8 +160,8 @@ class UsersClient(BaseClass):
     def generate_user_group_saml_post_data(self, user):
         identities = user.pop("identities")
         user["group_id_for_saml"] = self.config.dstn_parent_id
-        user["extern_uid"] = self.find_extern_uid_by_provider(
-            identities, self.config.group_sso_provider)
+        user["extern_uid"] = self.generate_extern_uid(
+            user, identities)
         user["provider"] = "group_saml"
         user["reset_password"] = self.config.reset_password
         # make sure the blocked user cannot do anything
@@ -174,6 +174,12 @@ class UsersClient(BaseClass):
         user["username"] = self.create_valid_username(user)
 
         return user
+
+    def generate_extern_uid(self, user, identities):
+        if self.config.group_sso_provider_pattern == "email":
+            return user.get("email")
+        else:
+            self.find_extern_uid_by_provider(identities, self.config.group_sso_provider)
 
     def find_extern_uid_by_provider(self, identities, provider):
         for identity in identities:

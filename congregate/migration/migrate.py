@@ -259,6 +259,7 @@ def handle_user_creation(user):
     except Exception as e:
         b.log.error(
             "Could not get response text/JSON. Error was {0}".format(e))
+        b.log.error(print_exc(e))
     return new_user
 
 

@@ -162,6 +162,7 @@ class ConfigTests(unittest.TestCase):
             "0",  # destination parent group id
             # "dstn_parent_group_path",  # destination parent group full path
             "group_sso_provider",  # SSO provider
+            "1", # SSO provider pattern
             "username_suffix",  # username suffix
             "No",   # mirror
             # "mirror_username",  # mirror username
@@ -244,6 +245,7 @@ class ConfigTests(unittest.TestCase):
             "0",  # destination parent group id
             # "dstn_parent_group_path",  # destination parent group full path
             "group_sso_provider",  # SSO provider
+            "1", # SSO provider pattern
             "_",  # username suffix
             "yes",   # mirror
             # "mirror_username",  # mirror username

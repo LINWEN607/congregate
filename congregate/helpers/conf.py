@@ -126,6 +126,10 @@ class Config(object):
         return self.prop("DESTINATION", "group_sso_provider")
 
     @property
+    def group_sso_provider_pattern(self):
+        return self.prop("DESTINATION", "group_sso_provider_pattern")
+
+    @property
     def username_suffix(self):
         return self.prop("DESTINATION", "username_suffix")
 

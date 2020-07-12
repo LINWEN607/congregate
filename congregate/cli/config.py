@@ -77,7 +77,29 @@ def generate_config():
             print("WARNING: Destination group not found. Please enter 'dstn_parent_group_id' and 'dstn_parent_group_path' manually (in {})".format(
                 config_path))
         config.set("DESTINATION", "group_sso_provider",
-                   raw_input("Migrating to a group with SAML SSO enabled? Input SSO provider (auth0, adfs, etc.): "))
+                    raw_input("Migrating to a group with SAML SSO enabled? Input SSO provider (auth0, adfs, etc.): "))
+        if config.get("DESTINATION", "group_sso_provider"):
+            options = {
+                1: "email",
+                2: "hash",
+                3: "custom"
+            }
+            while True:
+                try:
+                    sso_provider_pattern_option = raw_input("Select SSO provider pattern type (1. Email, 2. Hash, 3. Custom")
+                    if int(sso_provider_pattern_option) == 1:
+                        config.set("DESTINATION", "group_sso_provider_pattern", options.get(1))
+                        break
+                    elif int(sso_provider_pattern_option) == 2:
+                        print "Hashes are currently not easily migrateable. We will input a placeholder, but support will need to correct this after the migration."
+                        break
+                    elif int(sso_provider_pattern_option) == 3:
+                        print "Not implemented yet"
+                        break
+                    else:
+                        print "Choose a valid option"
+                except ValueError, e:
+                    print "Please input a number for your option"
 
     username_suffix = raw_input(
         "To avoid username collision, please input suffix to append to username: ")
