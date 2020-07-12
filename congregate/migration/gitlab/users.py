@@ -159,19 +159,21 @@ class UsersClient(BaseClass):
 
     def generate_user_group_saml_post_data(self, user):
         identities = user.pop("identities")
-        user["group_id_for_saml"] = self.config.dstn_parent_id
-        user["extern_uid"] = self.generate_extern_uid(
+        extern_uid = self.generate_extern_uid(
             user, identities)
-        user["provider"] = "group_saml"
-        user["reset_password"] = self.config.reset_password
-        # make sure the blocked user cannot do anything
-        user["force_random_password"] = "true" if user["state"] == "blocked" else self.config.force_random_password
-        if not self.config.reset_password and not self.config.force_random_password:
-            # TODO: add config for 'password' field
-            self.log.warning(
-                "If both 'reset_password' and 'force_random_password' are False, the 'password' field has to be set")
-        user["skip_confirmation"] = True
-        user["username"] = self.create_valid_username(user)
+        if extern_uid:
+            user["extern_uid"] = extern_uid
+            user["group_id_for_saml"] = self.config.dstn_parent_id
+            user["provider"] = "group_saml"
+            user["reset_password"] = self.config.reset_password
+            # make sure the blocked user cannot do anything
+            user["force_random_password"] = "true" if user["state"] == "blocked" else self.config.force_random_password
+            if not self.config.reset_password and not self.config.force_random_password:
+                # TODO: add config for 'password' field
+                self.log.warning(
+                    "If both 'reset_password' and 'force_random_password' are False, the 'password' field has to be set")
+            user["skip_confirmation"] = True
+            user["username"] = self.create_valid_username(user)
 
         return user
 
@@ -182,9 +184,10 @@ class UsersClient(BaseClass):
             return self.find_extern_uid_by_provider(identities, self.config.group_sso_provider)
 
     def find_extern_uid_by_provider(self, identities, provider):
-        for identity in identities:
-            if provider == identity["provider"]:
-                return identity["extern_uid"]
+        if identities:
+            for identity in identities:
+                if provider == identity["provider"]:
+                    return identity["extern_uid"]
 
     def create_valid_username(self, user):
         username = user["username"]

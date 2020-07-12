@@ -448,3 +448,36 @@ class MockUsersApi():
                 ]
             }
         }
+
+    def get_dummy_staged_user(self):
+        return {
+            "two_factor_enabled": False, 
+            "can_create_project": True, 
+            "twitter": "", 
+            "shared_runners_minutes_limit": None, 
+            "linkedin": "", 
+            "color_scheme_id": 1, 
+            "skype": "", 
+            "is_admin": False, 
+            "identities": [], 
+            "id": 2, 
+            "projects_limit": 100000, 
+            "note": None, 
+            "state": "active", 
+            "location": None, 
+            "email": "iwdewfsfdyyazqnpkwga@examplegitlab.com", 
+            "website_url": "", 
+            "job_title": "", 
+            "username": "RzKciDiyEzvtSqEicsvW", 
+            "bio": None, 
+            "work_information": None, 
+            "private_profile": False, 
+            "external": False, 
+            "organization": None, 
+            "public_email": "", 
+            "extra_shared_runners_minutes_limit": None, 
+            "name": "FrhUbyTGMoXQUTeaMgFW", 
+            "can_create_group": True, 
+            "avatar_url": "https://www.gravatar.com/avatar/a0290f87758efba7e7be1ed96b2e5ac1?s=80&d=identicon", 
+            "theme_id": 1
+        }
