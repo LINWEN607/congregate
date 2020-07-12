@@ -296,34 +296,34 @@ def test_compare_members_different_usernames_same_ids(parent_id):
 # pylint: disable=no-member
 
 
-@responses.activate
-# pylint: enable=no-member
-@mock.patch("congregate.helpers.api.generate_v4_request_url")
-def test_user_snapshot(url):
-    dummy_members = [{
-        "members": [
-            users.get_dummy_user()
-        ]
-    }]
-    fake_new_user = users.get_dummy_user()
-    fake_new_user["id"] = 1234
-    url_value = "https://gitlab.com/api/v4/users/1"
-    url.return_value = url_value
-    # pylint: disable=no-member
-    responses.add(responses.GET, url_value,
-                  json=fake_new_user, status=200)
-    # pylint: enable=no-member
-    expected = {
-        27: {
-            'email': 'jdoe@email.com',
-            'destination_instance_user_id': 1234,
-            'destination_instance_username': 'jdoe',
-            'source_instance_username': 'jdoe'
-        }
-    }
-    with mock.patch('congregate.helpers.conf.deobfuscate', lambda x: ""):
-        actual = compare.generate_user_snapshot_map(dummy_members)
-    assert expected == actual
+# @responses.activate
+# # pylint: enable=no-member
+# @mock.patch("congregate.helpers.api.generate_v4_request_url")
+# def test_user_snapshot(url):
+#     dummy_members = [{
+#         "members": [
+#             users.get_dummy_user()
+#         ]
+#     }]
+#     fake_new_user = users.get_dummy_user()
+#     fake_new_user["id"] = 1234
+#     url_value = "https://gitlab.com/api/v4/users/1"
+#     url.return_value = url_value
+#     # pylint: disable=no-member
+#     responses.add(responses.GET, url_value,
+#                   json=fake_new_user, status=200)
+#     # pylint: enable=no-member
+#     expected = {
+#         27: {
+#             'email': 'jdoe@email.com',
+#             'destination_instance_user_id': 1234,
+#             'destination_instance_username': 'jdoe',
+#             'source_instance_username': 'jdoe'
+#         }
+#     }
+#     with mock.patch('congregate.helpers.conf.deobfuscate', lambda x: ""):
+#         actual = compare.generate_user_snapshot_map(dummy_members)
+#     assert expected == actual
 
 # pylint: disable=no-member
 
