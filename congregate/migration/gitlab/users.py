@@ -1,5 +1,6 @@
 import json
 
+from os import path
 from requests.exceptions import RequestException
 
 from congregate.helpers.base_class import BaseClass
@@ -212,25 +213,31 @@ class UsersClient(BaseClass):
             return "{0}_".format(username)
 
     def add_users_to_parent_group(self, dry_run=True):
-        with open("%s/data/newer_users.json" % self.app_path, "r") as f:
-            new_users = json.load(f)
+        user_results_path = "%s/data/user_migration_results.json" % self.app_path
+        if path.exists(user_results_path):
+            with open(user_results_path, "r") as f:
+                new_users = json.load(f)
+            for user in new_users:
+                if new_users[user].get("id"):
+                    data = {
+                        "user_id": new_users[user]["id"],
+                        "access_level": 10
+                    }
+                    self.log.info("{0}Adding user {1} to parent group {3} (data: {2})".format(
+                        get_dry_log(dry_run),
+                        new_users[user]["email"],
+                        data,
+                        self.config.dstn_parent_id))
 
-        for user in new_users:
-            data = {
-                "user_id": user["id"],
-                "access_level": 10
-            }
-            self.log.info("{0}Adding user {1} to parent group (data: {2})".format(
-                get_dry_log(dry_run),
-                user["email"],
-                data))
-            if not dry_run:
-                try:
-                    self.groups_api.add_member_to_group(
-                        self.config.dstn_parent_id, self.config.destination_host, self.config.destination_token, data)
-                except RequestException, e:
-                    self.log.error(
-                        "Failed to add user {0} to parent group, with error:\n{1}".format(user, e))
+                    if not dry_run:
+                        try:
+                            self.groups_api.add_member_to_group(
+                                self.config.dstn_parent_id, self.config.destination_host, self.config.destination_token, data)
+                        except RequestException, e:
+                            self.log.error(
+                                "Failed to add user {0} to parent group, with error:\n{1}".format(user, e))
+        else:
+            self.log.error("%s not found" % user_results_path)
 
     def remove_users_from_parent_group(self, dry_run=True):
         count = 0
