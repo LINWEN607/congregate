@@ -165,7 +165,7 @@ def migrate_from_bitbucket_server():
 
 def import_bitbucket_project(project):
     members = project.pop("members")
-    result = ext_import.trigger_import_from_bb_server(project)
+    result = ext_import.trigger_import_from_bb_server(project, dry_run=_DRY_RUN)
     if result.get("id", None):
         for member in members:
             member["user_id"] = users.find_user_by_email_comparison_without_id(member["email"])["id"]
