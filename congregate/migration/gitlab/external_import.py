@@ -1,5 +1,5 @@
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import migration_dry_run
+from congregate.helpers.misc_utils import migration_dry_run, obfuscate
 from congregate.migration.gitlab.api.external_import import ImportApi
 
 class ImportClient(BaseClass):
@@ -24,6 +24,7 @@ class ImportClient(BaseClass):
         if not dry_run:
             return self.ext_import.import_from_bitbucket_server(self.config.destination_host, self.config.destination_token, data)
 
+        data["personal_access_token"] = obfuscate(data["personal_access_token"])
         migration_dry_run("project", data)
         return {
             "id": None,
