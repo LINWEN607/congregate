@@ -181,13 +181,13 @@ def list_all(host, token, api, params=None, per_page=100, keyset=False):
         while current_page <= end_page:
             data = generate_get_request(host, token, api, params=get_params(
                 params, PER_PAGE, current_page, keyset, last_id))
-            log.info("Retrieved {0} {1}".format(
-                PER_PAGE * (current_page - 1) + len(data.json()), api))
-            if keyset:
-                last_id = get_last_id(data.headers.get("Link", None))
-                if last_id is None:
-                    break
             try:
+                log.info("Retrieved {0} {1}".format(
+                    PER_PAGE * (current_page - 1) + len(data.json()), api))
+                if keyset:
+                    last_id = get_last_id(data.headers.get("Link", None))
+                    if last_id is None:
+                        break
                 data = data.json()
                 for project in data:
                     yield project
@@ -211,13 +211,13 @@ def list_all(host, token, api, params=None, per_page=100, keyset=False):
             data = generate_get_request(
                 host, token, api, params=get_params(
                     params, PER_PAGE, current_page, keyset, last_id))
-            log.info("Retrieved {0} {1}".format(
-                PER_PAGE * (current_page - 1) + len(data.json()), api))
-            if keyset:
-                last_id = get_last_id(data.headers.get("Link", None))
-                if last_id is None:
-                    break
             try:
+                log.info("Retrieved {0} {1}".format(
+                    PER_PAGE * (current_page - 1) + len(data.json()), api))
+                if keyset:
+                    last_id = get_last_id(data.headers.get("Link", None))
+                    if last_id is None:
+                        break
                 data = data.json()
                 for project in data:
                     yield project

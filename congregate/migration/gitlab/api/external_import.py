@@ -12,7 +12,7 @@ class ImportApi(BaseClass):
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
             :param: data: (str) Relevant data for the export (see docs above)
-            :return: Response object containing the response to POST /projects/:id/unarchive
+            :return: Response object containing the response to POST /import/github
 
         """
         if not message:
@@ -28,7 +28,7 @@ class ImportApi(BaseClass):
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
             :param: data: (str) Relevant data for the export (see docs above)
-            :return: Response object containing the response to POST /projects/:id/unarchive
+            :return: Response object containing the response to POST /import/bitbucket_server
 
         """
         if not message:

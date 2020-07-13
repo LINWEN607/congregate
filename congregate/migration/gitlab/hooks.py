@@ -1,7 +1,7 @@
 from requests.exceptions import RequestException
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import get_dry_log, is_error_message_present
+from congregate.helpers.misc_utils import get_dry_log, is_error_message_present, is_dot_com
 from congregate.migration.gitlab.api.system import SystemApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.groups import GroupsApi
@@ -15,34 +15,35 @@ class HooksClient(BaseClass):
         super(HooksClient, self).__init__()
 
     def migrate_system_hooks(self, dry_run=True):
-        try:
-            resp = self.system_api.get_all_system_hooks(
-                self.config.source_host, self.config.source_token)
-            s_hooks_src = iter(resp)
-            # used to check if hook already exists
-            s_hooks_dstn = list(self.system_api.get_all_system_hooks(
-                self.config.destination_host, self.config.destination_token))
-            for shd in s_hooks_dstn:
-                shd.pop("id", None)
-                shd.pop("created_at", None)
-            for shc in s_hooks_src:
-                if is_error_message_present(shc) or not shc:
-                    self.log.error(
-                        "Failed to fetch source instance system hooks ({})".format(shc))
-                    break
-                self.log.info("{0}Migrating system hook {1} (ID: {2})".format(
-                    get_dry_log(dry_run), shc["url"], shc["id"]))
-                shc.pop("id", None)
-                shc.pop("created_at", None)
-                if not dry_run and not shc in s_hooks_dstn:
-                    # hook does not include secret token
-                    self.system_api.create_system_hook(
-                        self.config.destination_host, self.config.destination_token, shc)
-        except TypeError as te:
-            self.log.error("System hooks {0} {1}".format(resp, te))
-        except RequestException as re:
-            self.log.error(
-                "Failed to migrate system hooks, with error:\n{}".format(re))
+        if not is_dot_com(self.config.source_host) or not is_dot_com(self.config.destination_host):
+            try:
+                resp = self.system_api.get_all_system_hooks(
+                    self.config.source_host, self.config.source_token)
+                s_hooks_src = iter(resp)
+                # used to check if hook already exists
+                s_hooks_dstn = list(self.system_api.get_all_system_hooks(
+                    self.config.destination_host, self.config.destination_token))
+                for shd in s_hooks_dstn:
+                    shd.pop("id", None)
+                    shd.pop("created_at", None)
+                for shc in s_hooks_src:
+                    if is_error_message_present(shc) or not shc:
+                        self.log.error(
+                            "Failed to fetch source instance system hooks ({})".format(shc))
+                        break
+                    self.log.info("{0}Migrating system hook {1} (ID: {2})".format(
+                        get_dry_log(dry_run), shc["url"], shc["id"]))
+                    shc.pop("id", None)
+                    shc.pop("created_at", None)
+                    if not dry_run and not shc in s_hooks_dstn:
+                        # hook does not include secret token
+                        self.system_api.create_system_hook(
+                            self.config.destination_host, self.config.destination_token, shc)
+            except TypeError as te:
+                self.log.error("System hooks {0} {1}".format(resp, te))
+            except RequestException as re:
+                self.log.error(
+                    "Failed to migrate system hooks, with error:\n{}".format(re))
 
     def migrate_project_hooks(self, old_id, new_id, name):
         try:
