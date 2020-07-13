@@ -208,12 +208,15 @@ if __name__ == '__main__':
 
         if arguments["list"]:
             list_source.list_data()
+
         if arguments["stage-projects"]:
             stage_projects.stage_data(
                 arguments['<projects>'], dry_run=DRY_RUN, skip_users=SKIP_USERS)
+
         if arguments["stage-groups"]:
             stage_groups.stage_data(
                 arguments['<groups>'], dry_run=DRY_RUN, skip_users=SKIP_USERS)
+
         if arguments["migrate"]:
             skip_users = SKIP_USERS
             skip_group_export = True if arguments["--skip-group-export"] else False
@@ -233,6 +236,7 @@ if __name__ == '__main__':
                 skip_project_import=skip_project_import,
                 skip_project_export=skip_project_export,
                 only_post_migration_info=only_post_migration_info)
+
         if arguments["rollback"]:
             skip_users = SKIP_USERS
             hard_delete = True if arguments["--hard-delete"] else False
@@ -244,10 +248,13 @@ if __name__ == '__main__':
                 hard_delete=hard_delete,
                 skip_groups=skip_groups,
                 skip_projects=skip_projects)
+
         if arguments["do-all"]:
             do_all.do_all(dry_run=DRY_RUN)
+
         if arguments["do-all-users"]:
             do_all.do_all_users(dry_run=DRY_RUN)
+
         if arguments["do-all-groups-and-projects"]:
             do_all.do_all_groups_and_projects(dry_run=DRY_RUN)
         if arguments["ui"]:

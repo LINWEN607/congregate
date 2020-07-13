@@ -37,3 +37,34 @@ This will take around 10 minutes for the first time to get the service up and al
 Once the instance is up, navigate to localhost:7990 to see the BitBucket instance running.
 
 To login use `admin` as username and the previously mentioned password. For more details see ***congregate/docker/butbucket/docker-compose.yml***.
+
+## Troubleshooting
+
+### Docker image won't build
+
+If you are having trouble building the docker image, you can replace `bitbucket-seed:latest` in `docker-compose.yml` with the bitbucket seed image stored in the container registry:
+
+`registry.gitlab.com/gitlab-com/customer-success/tools/congregate/bitbucket-seed:latest`
+
+This will require you to login to the GitLab container registry (`docker login registry.gitlab.com`) before spinning up the containers
+
+### Stuck on Migrating Home Directory
+
+If bitbucket is getting stuck on the "Migrating Home Directory" stage when you navigate to `http://localhost:7990`, then you might have a situation where the postgreSQL database is locked. To verify this, look at the postgreSQL container log to see `ERROR: function aurora_version() does not exist at character 8`. Accompanying this error in the bitbucket server container, you will see lots of
+
+```bash
+Waiting for BitBucket to start
+Waiting for BitBucket to start
+Waiting for BitBucket to start
+```
+
+Once you confirm this is your problem, ssh into the postgres container (can be done easily through docker desktop UI) and run the following command:
+
+```bash
+sql -c 'UPDATE DATABASECHANGELOGLOCK SET LOCKED=false, LOCKGRANTED=null, LO
+CKEDBY=null where ID=1;' --dbname=bitbucket --username=db_user -W
+```
+
+where the Password is `db_password`
+
+Once you do this, you should see the logs of the bitbucket container unstick. [Reference](https://community.atlassian.com/t5/Bitbucket-questions/starting-bitbucket-hangs-on-quot-migrating-home-directory-quot/qaq-p/785834)

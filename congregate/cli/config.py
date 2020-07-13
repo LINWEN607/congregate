@@ -1,7 +1,9 @@
-from base64 import b64encode
+from base64 import b64encode, b64decode
+import getpass
 from os import getcwd, path, mkdir, makedirs
 from ConfigParser import SafeConfigParser as ConfigParser, NoOptionError
 
+import binascii
 import json
 import requests
 
@@ -75,7 +77,29 @@ def generate_config():
             print("WARNING: Destination group not found. Please enter 'dstn_parent_group_id' and 'dstn_parent_group_path' manually (in {})".format(
                 config_path))
         config.set("DESTINATION", "group_sso_provider",
-                   raw_input("Migrating to a group with SAML SSO enabled? Input SSO provider (auth0, adfs, etc.): "))
+                    raw_input("Migrating to a group with SAML SSO enabled? Input SSO provider (auth0, adfs, etc.): "))
+        if config.get("DESTINATION", "group_sso_provider"):
+            options = {
+                1: "email",
+                2: "hash",
+                3: "custom"
+            }
+            while True:
+                try:
+                    sso_provider_pattern_option = raw_input("Select SSO provider pattern type (1. Email, 2. Hash, 3. Custom")
+                    if int(sso_provider_pattern_option) == 1:
+                        config.set("DESTINATION", "group_sso_provider_pattern", options.get(1))
+                        break
+                    elif int(sso_provider_pattern_option) == 2:
+                        print "Hashes are currently not easily migrateable. We will input a placeholder, but support will need to correct this after the migration."
+                        break
+                    elif int(sso_provider_pattern_option) == 3:
+                        print "Not implemented yet"
+                        break
+                    else:
+                        print "Choose a valid option"
+                except ValueError, e:
+                    print "Please input a number for your option"
 
     username_suffix = raw_input(
         "To avoid username collision, please input suffix to append to username: ")
@@ -96,26 +120,38 @@ def generate_config():
 
     config.set("DESTINATION", "max_asset_expiration_time", "24")
 
-    # External source instance settings
-    ext_src_url = raw_input(
-        "Migrating from an external (non-GitLab) instance? Input external source URL: ")
-    if ext_src_url and "gitlab" not in ext_src_url.lower():
+    ext_src = raw_input(
+        "Migrating from an external (non-GitLab) instance? (Default: No) ")
+    if ext_src.lower() in ["yes", "y"]:
+        # External source instance settings
         config.add_section("EXT_SRC")
-        config.set("EXT_SRC", "url", ext_src_url)
-        print("NOTE: External source migration is currently limited to mirroring through http/https. A master username and password is required to set up mirroring in each shell project.")
-        config.set("EXT_SRC", "username", raw_input("Username: "))
-        config.set("EXT_SRC", "password", obfuscate("Password: "))
-        print("Creating Authorization token based on username:password string (base64 encoded)")
-        config.set("EXT_SRC", "token", b64encode(config.get(
-            "EXT_SRC", "username") + ":" + deobfuscate(config.get("EXT_SRC", "password"))))
-        repo_path = raw_input(
-            "Absolute path to JSON file containing repo information: ")
-        config.set("EXT_SRC", "repo_path", "{0}{1}"
-                   .format("" if repo_path.startswith("/") else path.join(app_path, ""), repo_path))
-
-    if not config.has_section("EXT_SRC"):
+        src = raw_input(
+            "Source (1. Bitbucket Server, 2. GitHub, 3. Bitbucket Cloud, 4. Subversion)? ")
+        if src.lower() in ["1", "1.", "bitbucket server"]:
+            config.add_section("SOURCE")
+            config.set("SOURCE", "src_type", "Bitbucket Server")
+            config.set("EXT_SRC", "url", raw_input("URL: "))
+            config.set("EXT_SRC", "username", raw_input("Username: "))
+            pwd = getpass.getpass("Password/Personal Access Token: ")
+            try:
+                # Is it valid base64, not bulletproof
+                b64decode(pwd)
+                config.set("EXT_SRC", "token", pwd)
+            except binascii.Error:
+                print(
+                    "Creating Personal Access Token (PAT) based on 'username:password' string (base64 encoded)")
+                config.set("EXT_SRC", "basic_token", b64encode(
+                    config.get("EXT_SRC", "username") + ":" + pwd))
+            repo_path = raw_input(
+                "Absolute path to JSON file containing repo information: ")
+            config.set("EXT_SRC", "repo_path", "{0}{1}"
+                       .format("" if repo_path.startswith("/") else path.join(app_path, ""), repo_path))
+        else:
+            print("Source type {} is currently not supported".format(src))
+    else:
         # Non-external source instance settings
         config.add_section("SOURCE")
+        config.set("SOURCE", "src_type", "gitlab")
         config.set("SOURCE", "src_hostname",
                    raw_input("Source instance Host: "))
         config.set("SOURCE", "src_access_token", obfuscate(

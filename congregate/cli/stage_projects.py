@@ -51,14 +51,14 @@ def build_staging_data(projects_to_stage, dry_run=True):
     for i, _ in enumerate(users):
         rewritten_users[users[i]["id"]] = users[i]
 
-    # If there are some projects selected in UI
+    # If there is CLI or UI input
     if filter(None, projects_to_stage):
         # Stage ALL
         if projects_to_stage[0] in ["all", "."] or len(projects_to_stage) == len(projects):
-            for i, _ in enumerate(projects):
-                b.log.info("{0}Staging project {1} (ID: {2})".format(get_dry_log(
-                    dry_run), projects[i]["path_with_namespace"], projects[i]["id"]))
-                staged_projects.append(get_project_metadata(projects[i]))
+            for p in projects:
+                b.log.info("{0}Staging project {1} (ID: {2})".format(
+                    get_dry_log(dry_run), p["path_with_namespace"], p["id"]))
+                staged_projects.append(get_project_metadata(p))
 
             for g in groups:
                 b.log.info("{0}Staging group {1} (ID: {2})".format(
@@ -180,7 +180,7 @@ def append_member_to_members_list(members_list, member, dry_run=True):
         params: rewritten_users: object containing the specific member to be added to the group or project
     """
     if isinstance(member, dict):
-        if member.get("id", None) is not None and member["username"] != "root":
+        if member.get("id", None) is not None:
             b.log.info("{0}Staging user {1} (ID: {2})".format(
                 get_dry_log(dry_run), member["username"], member["id"]))
             staged_users.append(

@@ -1,13 +1,13 @@
 import os
 import errno
 import json
+import getpass
 import subprocess
 
 import glob
 from base64 import b64encode, b64decode
 from shutil import copy
 from time import time
-from getpass import getpass
 from re import sub, findall
 from datetime import timedelta, date, datetime
 from requests import get, head, Response
@@ -180,7 +180,7 @@ def read_json_file_into_object(path):
 
 
 def obfuscate(prompt):
-    return b64encode(getpass(prompt))
+    return b64encode(getpass.getpass(prompt))
 
 
 def deobfuscate(secret):
@@ -392,6 +392,7 @@ def stitch_json_results(result_type="project", steps=0, order="tail"):
 
 
 def build_ui(app_path):
+    port = 8000
     if not os.path.exists(app_path + "/node_modules"):
         print "No node_modules found. Running npm install"
         install_deps = "npm install"
@@ -401,9 +402,8 @@ def build_ui(app_path):
         build_command = "npm run build"
         subprocess.call(build_command.split(" "))
     os.chdir(app_path + "/congregate")
-    run_ui = "gunicorn -k gevent -w 4 ui:app --bind=0.0.0.0:8000"
+    run_ui = "gunicorn -k gevent -w 4 ui:app --bind=0.0.0.0:" + str(port)
     subprocess.call(run_ui.split(" "))
-
 
 def generate_audit_log_message(req_type, message, url, data=None):
     try:

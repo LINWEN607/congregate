@@ -160,26 +160,35 @@ class UsersClient(BaseClass):
 
     def generate_user_group_saml_post_data(self, user):
         identities = user.pop("identities")
-        user["group_id_for_saml"] = self.config.dstn_parent_id
-        user["extern_uid"] = self.find_extern_uid_by_provider(
-            identities, self.config.group_sso_provider)
-        user["provider"] = "group_saml"
-        user["reset_password"] = self.config.reset_password
-        # make sure the blocked user cannot do anything
-        user["force_random_password"] = "true" if user["state"] == "blocked" else self.config.force_random_password
-        if not self.config.reset_password and not self.config.force_random_password:
-            # TODO: add config for 'password' field
-            self.log.warning(
-                "If both 'reset_password' and 'force_random_password' are False, the 'password' field has to be set")
-        user["skip_confirmation"] = True
-        user["username"] = self.create_valid_username(user)
+        extern_uid = self.generate_extern_uid(
+            user, identities)
+        if extern_uid:
+            user["extern_uid"] = extern_uid
+            user["group_id_for_saml"] = self.config.dstn_parent_id
+            user["provider"] = "group_saml"
+            user["reset_password"] = self.config.reset_password
+            # make sure the blocked user cannot do anything
+            user["force_random_password"] = "true" if user["state"] == "blocked" else self.config.force_random_password
+            if not self.config.reset_password and not self.config.force_random_password:
+                # TODO: add config for 'password' field
+                self.log.warning(
+                    "If both 'reset_password' and 'force_random_password' are False, the 'password' field has to be set")
+            user["skip_confirmation"] = True
+            user["username"] = self.create_valid_username(user)
 
         return user
 
+    def generate_extern_uid(self, user, identities):
+        if self.config.group_sso_provider_pattern == "email":
+            return user.get("email")
+        else:
+            return self.find_extern_uid_by_provider(identities, self.config.group_sso_provider)
+
     def find_extern_uid_by_provider(self, identities, provider):
-        for identity in identities:
-            if provider == identity["provider"]:
-                return identity["extern_uid"]
+        if identities:
+            for identity in identities:
+                if provider == identity["provider"]:
+                    return identity["extern_uid"]
 
     def create_valid_username(self, user):
         username = user["username"]
@@ -315,7 +324,7 @@ class UsersClient(BaseClass):
         # From staged groups
         self.remove("staged_groups", dry_run)
         # From staged projects
-        self.remove("stage", dry_run)
+        self.remove("stage_projects", dry_run)
 
     def remove(self, data, dry_run=True):
         with open("{0}/data/{1}.json".format(self.app_path, data), "r") as f:
@@ -352,24 +361,33 @@ class UsersClient(BaseClass):
         search based on the email address and *not* username
         :return:
         """
+        staged_users = self.get_staged_users()
         new_users = []
         users_not_found = {}
-        for user in self.get_staged_users():
+        # Duplicate emails
+        duplicate_users = [u for u in staged_users if [s["email"]
+                                                       for s in staged_users].count(u["email"]) > 1]
+        for user in staged_users:
             email = user.get("email", None)
+            state = user.get("state", None)
             new_user = self.find_user_by_email_comparison_without_id(email)
             if new_user:
                 new_users.append({
                     "id": new_user.get("id", None),
-                    "email": new_user.get("email", None)
+                    "email": new_user.get("email", None),
+                    "state": new_user.get("state", None)
                 })
             else:
                 self.log.warning(
                     "Could not find user by email {0}. User should have been already migrated".format(email))
-                users_not_found[user.get("id", None)] = email
+                users_not_found[user.get("id", None)] = {
+                    "email": email, "state": state}
         self.log.info("Users found ({0}):\n{1}".format(
             len(new_users), "\n".join(json_pretty(u) for u in new_users)))
         self.log.info("Users NOT found ({0}):\n{1}".format(
             len(users_not_found), json_pretty(users_not_found)))
+        self.log.info("Duplicate users ({0}):\n{1}".format(
+            len(duplicate_users), json_pretty(duplicate_users)))
         return users_not_found, new_users
 
     def handle_users_not_found(self, data, users, keep=True):
@@ -394,7 +412,7 @@ class UsersClient(BaseClass):
         else:
             self.log.info("Removing NOT found users ({0}) from staged {1}".format(
                 len(users),
-                "projects" if data == "stage" else "groups"))
+                "projects" if data == "staged_projects" else "groups"))
             for s in staged:
                 s["members"] = [i for j, i in enumerate(
                     s["members"]) if i["id"] not in users.keys()]
@@ -436,6 +454,7 @@ class UsersClient(BaseClass):
     def generate_user_data(self, user):
         if user.get("id", None) is not None:
             user.pop("id")
+        user.pop("bio")
         if self.config.group_sso_provider is not None:
             return self.generate_user_group_saml_post_data(user)
         user["username"] = self.create_valid_username(user)
@@ -493,7 +512,9 @@ class UsersClient(BaseClass):
                 "id": None
             }
         else:
+            self.log.info(response.status_code)
             resp = response.json()
+            self.log.info(resp)
             return {
                 "email": resp["email"],
                 "id": resp["id"]

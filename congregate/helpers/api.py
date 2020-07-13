@@ -169,7 +169,7 @@ def list_all(host, token, api, params=None, per_page=100, keyset=False):
     PER_PAGE = per_page
     start_at = 0
     end_at = count
-    last_id = ""
+    last_id = 0
 
     if count is not None:
         # total_work = end_at - start_at
@@ -184,7 +184,7 @@ def list_all(host, token, api, params=None, per_page=100, keyset=False):
             log.info("Retrieved {0} {1}".format(
                 PER_PAGE * (current_page - 1) + len(data.json()), api))
             if keyset:
-                last_id = get_last_id(data.headers.get("Links", None))
+                last_id = get_last_id(data.headers.get("Link", None))
                 if last_id is None:
                     break
             try:
@@ -214,7 +214,7 @@ def list_all(host, token, api, params=None, per_page=100, keyset=False):
             log.info("Retrieved {0} {1}".format(
                 PER_PAGE * (current_page - 1) + len(data.json()), api))
             if keyset:
-                last_id = get_last_id(data.headers.get("Links", None))
+                last_id = get_last_id(data.headers.get("Link", None))
                 if last_id is None:
                     break
             try:
@@ -268,6 +268,6 @@ def get_params(params, per_page, current_page, keyset, last_id):
 
 
 # Project only keyset-based pagination - https://docs.gitlab.com/ee/api/#keyset-based-pagination
-def get_last_id(links):
-    # Get id_after value. If the Links key is missing it's done, with an empty list response
-    return findall(r"id_after=(.+?)&", links)[0] if links else None
+def get_last_id(link):
+    # Get id_after value. If the Link key is missing it's done, with an empty list response
+    return findall(r"id_after=(.+?)&", link)[0] if link else None

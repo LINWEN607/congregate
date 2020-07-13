@@ -273,7 +273,7 @@ class UsersTests(unittest.TestCase):
         read_data = json.dumps(self.mock_users.get_dummy_project())
         mock_open = mock.mock_open(read_data=read_data)
         with mock.patch('__builtin__.open', mock_open):
-            result = self.users.remove("stage")
+            result = self.users.remove("staged_projects")
         self.assertEqual(
             result, self.mock_users.get_dummy_project_active_members())
 
@@ -329,7 +329,7 @@ class UsersTests(unittest.TestCase):
         mock_open = mock.mock_open(read_data=read_data)
         with mock.patch('__builtin__.open', mock_open):
             result = self.users.handle_users_not_found(
-                "stage", users_not_found)
+                "staged_projects", users_not_found)
         self.assertEqual(
             result, self.mock_users.get_dummy_project_active_members())
 
@@ -557,15 +557,16 @@ class UsersTests(unittest.TestCase):
         }
         self.assertEqual(handle_user_creation(new_user), expected)
 
-    @mock.patch('__builtin__.raw_input')
+    @mock.patch("__builtin__.file")
+    @mock.patch('__builtin__.open')
     @mock.patch.object(UsersApi, "get_all_users")
     @mock.patch('congregate.helpers.conf.Config.src_parent_group_path', new_callable=mock.PropertyMock)
     @mock.patch('congregate.helpers.conf.Config.group_sso_provider', new_callable=mock.PropertyMock)
-    def test_retrieve_user_info(self, mock_sso, mock_src_parent_group_path, mock_get_all_users, mock_open):
+    def test_retrieve_user_info(self, mock_sso, mock_src_parent_group_path, mock_get_all_users, mock_open, mock_file):
         mock_sso.return_value = ""
         mock_src_parent_group_path.return_value = ""
         mock_get_all_users.return_value = self.mock_users.get_dummy_new_users()
-        mock_open.return_value = []
+        mock_open.return_value = mock_file
         expected_users = [
             {
                 "id": 28,
@@ -629,13 +630,14 @@ class UsersTests(unittest.TestCase):
         self.assertEqual(sorted(self.users.retrieve_user_info(
             "host", "token")), sorted(expected_users))
 
-    @mock.patch('__builtin__.raw_input')
+    @mock.patch("__builtin__.file")
+    @mock.patch('__builtin__.open')
     @mock.patch.object(UsersApi, "get_user")
     @mock.patch.object(GroupsApi, "get_all_group_members")
     @mock.patch('congregate.helpers.conf.Config.src_parent_group_path', new_callable=mock.PropertyMock)
     @mock.patch('congregate.helpers.conf.Config.src_parent_id', new_callable=mock.PropertyMock)
     @mock.patch('congregate.helpers.conf.Config.group_sso_provider', new_callable=mock.PropertyMock)
-    def test_retrieve_user_info_src_parent_group_sso(self, mock_sso, mock_src_parent_id, mock_src_parent_group_path, mock_get_all_group_members, mock_get_user, mock_open):
+    def test_retrieve_user_info_src_parent_group_sso(self, mock_sso, mock_src_parent_id, mock_src_parent_group_path, mock_get_all_group_members, mock_get_user, mock_open, mock_file):
         mock_sso.return_value = "mock_sso"
         mock_src_parent_id.return_value = 42
         mock_src_parent_group_path.return_value = "mock_src_parent_group_path"
@@ -648,8 +650,36 @@ class UsersTests(unittest.TestCase):
             self.mock_users.get_dummy_old_users()[1]
         ]
         mock_get_user.return_value = ok_get_mock
-        mock_open.return_value = []
+        mock_open.return_value = mock_file
         expected_users = [
+            {
+                "id": 3,
+                "username": "raymond_smith",
+                "name": "Raymond Smith",
+                "state": "active",
+                "bio": None,
+                "location": None,
+                "public_email": "",
+                "skype": "",
+                "linkedin": "",
+                "twitter": "",
+                "website_url": "",
+                "organization": None,
+                "email": "rsmith@email.com",
+                "theme_id": None,
+                "color_scheme_id": 5,
+                "projects_limit": 10,
+                "identities": [],
+                "can_create_group": True,
+                "can_create_project": True,
+                "two_factor_enabled": False,
+                "external": False,
+                "private_profile": None,
+                "is_admin": False,
+                "highest_role": 50,
+                "shared_runners_minutes_limit": None,
+                "extra_shared_runners_minutes_limit": None
+            },
             {
                 "id": 2,
                 "name": "John Doe",
@@ -681,3 +711,84 @@ class UsersTests(unittest.TestCase):
         ]
         self.assertEqual(sorted(self.users.retrieve_user_info(
             "host", "token")), sorted(expected_users))
+
+    @mock.patch('congregate.helpers.conf.Config.group_sso_provider_pattern', new_callable=mock.PropertyMock)
+    def test_generate_extern_uid(self, pattern):
+        pattern.return_value = "email"
+        mock_user = self.mock_users.get_dummy_user()
+        expected = "jdoe@email.com"
+        actual = self.users.generate_extern_uid(mock_user, None)
+
+        self.assertEqual(expected, actual)
+
+    @mock.patch('congregate.helpers.conf.Config.group_sso_provider', new_callable=mock.PropertyMock)
+    def test_generate_extern_uid_no_pattern(self, provider):
+        provider.return_value = "okta"
+        mock_user = self.mock_users.get_dummy_user()
+        mock_identity = mock_user.pop("identities")
+        expected = "jdoe|someCompany|okta"
+        actual = self.users.generate_extern_uid(mock_user, mock_identity)
+
+        self.assertEqual(expected, actual)
+
+    @mock.patch('congregate.helpers.conf.Config.group_sso_provider', new_callable=mock.PropertyMock)
+    def test_generate_extern_uid_no_pattern_no_ids(self, provider):
+        provider.return_value = "okta"
+        mock_user = self.mock_users.get_dummy_user()
+        expected = None
+        actual = self.users.generate_extern_uid(mock_user, None)
+
+        self.assertEqual(expected, actual)
+
+    @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.dstn_parent_id', new_callable=mock.PropertyMock)
+    @mock.patch('congregate.helpers.conf.Config.reset_password', new_callable=mock.PropertyMock)
+    @mock.patch('congregate.helpers.conf.Config.force_random_password', new_callable=mock.PropertyMock)
+    @mock.patch('congregate.migration.gitlab.users.UsersClient.generate_extern_uid')
+    @mock.patch('congregate.migration.gitlab.users.UsersClient.create_valid_username')
+    def test_generate_user_group_saml_post_data(self, valid_username, extern_uid, rand_pass, reset_pass, parent_id):
+        mock_user = self.mock_users.get_dummy_staged_user()
+        valid_username.return_value = mock_user.get("username")
+        extern_uid.return_value = mock_user.get("email")
+        rand_pass.return_value = False
+        reset_pass.return_value = True
+        parent_id.return_value = 1234
+
+        expected = {
+            "two_factor_enabled": False, 
+            "can_create_project": True, 
+            "twitter": "", 
+            "shared_runners_minutes_limit": None, 
+            "extern_uid": 'iwdewfsfdyyazqnpkwga@examplegitlab.com',
+            "force_random_password": False,
+            "group_id_for_saml": 1234,
+            "linkedin": "", 
+            "color_scheme_id": 1, 
+            "skype": "", 
+            "is_admin": False, 
+            "id": 2, 
+            "projects_limit": 100000, 
+            "provider": "group_saml",
+            "note": None, 
+            "state": "active", 
+            "reset_password": True,
+            "location": None, 
+            "email": "iwdewfsfdyyazqnpkwga@examplegitlab.com", 
+            "website_url": "", 
+            "job_title": "", 
+            "username": "RzKciDiyEzvtSqEicsvW", 
+            "bio": None, 
+            "work_information": None, 
+            "private_profile": False, 
+            "external": False, 
+            "skip_confirmation": True,
+            "organization": None, 
+            "public_email": "", 
+            "extra_shared_runners_minutes_limit": None, 
+            "name": "FrhUbyTGMoXQUTeaMgFW", 
+            "can_create_group": True, 
+            "avatar_url": "https://www.gravatar.com/avatar/a0290f87758efba7e7be1ed96b2e5ac1?s=80&d=identicon", 
+            "theme_id": 1
+        }
+        actual = self.users.generate_user_group_saml_post_data(mock_user)
+
+        self.assertDictEqual(expected, actual)

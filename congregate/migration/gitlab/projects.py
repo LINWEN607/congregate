@@ -58,8 +58,8 @@ class ProjectsClient(BaseClass):
             else:
                 self.log.info(u"[ID: {0}] {1}: {2}".format(
                     project["id"], project["name"], project["description"]))
-                project["members"] = list(
-                    self.projects_api.get_members(project["id"], host, token))
+                project["members"] = [m for m in self.projects_api.get_members(
+                    project["id"], host, token) if m["id"] != 1]
                 data.append(project)
 
         with open("{}/data/project_json.json".format(self.app_path), "wb") as f:

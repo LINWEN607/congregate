@@ -11,6 +11,7 @@ include:
 variables:
   DOCKER_VERSION: "19.03.1"
   TEST_IMAGE_NAME: "$CI_REGISTRY_IMAGE/test:latest"
+  BB_SERVER_SEED_IMAGE_NAME: "$CI_REGISTRY_IMAGE/bitbucket-seed:latest"
   SAST_DISABLE_DIND: "true"
   SAST_DEFAULT_ANALYZERS: "bandit,secrets"
 
@@ -39,6 +40,10 @@ workflow:
     # See https://gitlab.com/gitlab-com/www-gitlab-com/-/issues/7019 for tag descriptions
     - gitlab-org-docker
 
+.docker-login:
+  before_script:
+    - docker login ${CI_REGISTRY} -u gitlab-ci-token -p $CI_BUILD_TOKEN
+
 code_quality:
   artifacts:
     paths: [gl-code-quality-report.json]
@@ -48,16 +53,33 @@ sast:
     paths: [gl-sast-report.json]
 
 build:
-  extends: .use-docker-in-docker
+  extends:
+    - .use-docker-in-docker
+    - .docker-login
   stage: build
   script:
-    - docker login ${CI_REGISTRY} -u gitlab-ci-token -p $CI_BUILD_TOKEN
     - docker build --tag "$TEST_IMAGE_NAME" docker/test
     - docker push "$TEST_IMAGE_NAME"
   rules:
     - changes:
         - .gitlab-ci.yml
         - docker/test/Dockerfile
+
+build bitbucket seed image:
+  extends:
+    - .use-docker-in-docker
+    - .docker-login
+  stage: build
+  script:
+    - cp docker/bitbucket/Dockerfile ./
+    - docker build -t $BB_SERVER_SEED_IMAGE_NAME . --build-arg BITBUCKET_LICENSE=$BITBUCKET_LICENSE --build-arg BITBUCKET_PASSWORD=$BITBUCKET_PASSWORD
+    - docker push "$BB_SERVER_SEED_IMAGE_NAME"
+  rules:
+    - changes:
+        - .gitlab-ci.yml
+        - docker/bitbucket/Dockerfile
+        - docker/bitbucket/entrypoint.py
+        - docker/bitbucket/seed_data.sh
 
 .test-job:
   stage: test
@@ -147,15 +169,15 @@ test:end-to-end single group:
       - data/audit*.log
 
 rolling release:
-  extends: .use-docker-in-docker
+  extends:
+    - .use-docker-in-docker
+    - .docker-login
   stage: release
   rules:
     - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
   variables:
     RELEASE_IMAGE_NAME: "$CI_REGISTRY_IMAGE/$CI_COMMIT_REF_NAME:$CI_COMMIT_SHA"
     LATEST: "$CI_REGISTRY_IMAGE/$CI_COMMIT_REF_NAME:latest"
-  before_script:
-    - docker login ${CI_REGISTRY} -u gitlab-ci-token -p $CI_BUILD_TOKEN
   script:
     - cp docker/release/Dockerfile ./
     - docker build --tag "$RELEASE_IMAGE_NAME" .
@@ -164,15 +186,15 @@ rolling release:
     - docker push "$LATEST"
 
 release-tag:
-  extends: .use-docker-in-docker
+  extends:
+    - .use-docker-in-docker
+    - .docker-login
   rules:
     - if: "$CI_COMMIT_TAG"
   stage: release
   variables:
     RELEASE_IMAGE_NAME: "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME"
     LATEST: "$CI_REGISTRY_IMAGE:latest"
-  before_script:
-    - docker login ${CI_REGISTRY} -u gitlab-ci-token -p $CI_BUILD_TOKEN
   script:
     - cp docker/release/Dockerfile ./
     - docker build --tag "$RELEASE_IMAGE_NAME" .
@@ -200,7 +222,7 @@ pages:
     - changes:
         - runbooks/*
         - congregate/docs/**/*
-        - README.md
+        - ./**/*.md
   # dependencies:
   #   - code_quality
   script:

@@ -14,34 +14,25 @@ class UsersClient(BaseClass):
 
     def retrieve_user_info(self):
         # List and reformat all Bitbucket Server user to GitLab metadata
-        users = [u for u in self.users_api.get_all_users(
-            self.config.external_source_url, self.config.external_user_token) if u["id"] != 1]
-        self.format_users(users)
+        users = self.users_api.get_all_users(
+            self.config.external_source_url)
+        data = remove_dupes(self.format_users(users))
         with open('%s/data/users.json' % self.app_path, "w") as f:
-            json.dump(remove_dupes(users), f, indent=4)
-        return remove_dupes(users)
+            json.dump(data, f, indent=4)
+        return data
 
     def format_users(self, users):
-        keys_to_delete = [
-            "active",
-            "deletable",
-            "directoryName",
-            "lastAuthenticationTimestamp",
-            "mutableDetails",
-            "mutableGroups",
-            "slug",
-            "type",
-            "links"
-        ]
-        for user in users:
-            user["username"] = user.pop("name")
-            user["name"] = user.pop("displayName")
-            user["email"] = user.pop("emailAddress")
-            user["web_url"] = user["links"]["self"][0]["href"]
-            user["state"] = "active"
+        data = []
+        for user in [u for u in users if u["id"] != 1]:
+            data.append({
+                "id": user["id"],
+                "username": user["slug"],
+                "name": user["displayName"],
+                "email": user["emailAddress"],
+                "web_url": user["links"]["self"][0]["href"],
+                "state": "active"
+            })
             # When formatting project and repo users
             if user.get("permission", None):
-                user["access_level"] = user.pop("permission")
-            for key in keys_to_delete:
-                user.pop(key, None)
-        return users
+                data[-1]["access_level"] = user["permission"]
+        return data

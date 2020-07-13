@@ -20,6 +20,8 @@ from congregate.helpers.processes import start_multi_process
 from congregate.aws import AwsClient
 from congregate.cli.stage_projects import stage_data
 from congregate.helpers.base_class import BaseClass
+# from congregate.migration.bitbucket.api.users import UsersClient
+# from congregate.migration.bitbucket.api.projects import ProjectsClient
 from congregate.migration.gitlab.importexport import ImportExportClient
 from congregate.migration.gitlab.badges import BadgesClient
 from congregate.migration.gitlab.variables import VariablesClient
@@ -36,6 +38,7 @@ from congregate.migration.mirror import MirrorClient
 from congregate.migration.gitlab.keys import KeysClient
 from congregate.migration.gitlab.hooks import HooksClient
 from congregate.migration.gitlab.environments import EnvironmentsClient
+from congregate.migration.gitlab.external_import import ImportClient
 
 b = BaseClass()
 aws = AwsClient()
@@ -55,10 +58,12 @@ registries = RegistryClient()
 keys = KeysClient()
 hooks = HooksClient()
 environments = EnvironmentsClient()
+ext_import = ImportClient()
 
 _DRY_RUN = True
 _PROCESSES = None
 _ONLY_POST_MIGRATION_INFO = False
+_START = None
 
 
 def migrate(
@@ -71,6 +76,24 @@ def migrate(
         skip_project_export=False,
         only_post_migration_info=False):
 
+    global _START
+    _START = time()
+
+    global _SKIP_USERS
+    _SKIP_USERS = skip_users
+
+    global _SKIP_GROUP_EXPORT
+    _SKIP_GROUP_EXPORT = skip_group_export
+
+    global _SKIP_GROUP_IMPORT
+    _SKIP_GROUP_IMPORT = skip_group_import
+
+    global _SKIP_PROJECT_EXPORT
+    _SKIP_PROJECT_EXPORT = skip_project_export
+
+    global _SKIP_PROJECT_IMPORT
+    _SKIP_PROJECT_IMPORT = skip_project_import
+
     global _DRY_RUN
     _DRY_RUN = dry_run
 
@@ -80,7 +103,9 @@ def migrate(
     global _ONLY_POST_MIGRATION_INFO
     _ONLY_POST_MIGRATION_INFO = only_post_migration_info
 
-    start = time()
+    global _SOURCE_TYPE
+    _SOURCE_TYPE = b.config.source_type
+    # _SOURCE_TYPE = "gitlab"
 
     # Dry-run and log cleanup
     if _DRY_RUN:
@@ -89,16 +114,23 @@ def migrate(
             "dry_run_group_migration.json",
             "dry_run_project_migration.json"])
     rotate_logs()
+    if _SOURCE_TYPE.lower() == "gitlab":
+        migrate_from_gitlab()
+    elif _SOURCE_TYPE.lower() == "bitbucket server":
+        migrate_from_bitbucket_server()
+    add_post_migration_stats(_START)
 
+
+def migrate_from_gitlab():
     # Migrate users
-    migrate_user_info(start, skip_users)
+    migrate_user_info()
 
     if b.config.source_host:
         # Migrate groups
-        migrate_group_info(start, skip_group_export, skip_group_import)
+        migrate_group_info()
 
         # Migrate projects
-        migrate_project_info(start, skip_project_export, skip_project_import)
+        migrate_project_info()
 
         # Migrate system hooks (except to gitlab.com)
         if is_dot_com(b.config.destination_host):
@@ -108,27 +140,57 @@ def migrate(
     if not _DRY_RUN and b.config.dstn_parent_id and not is_dot_com(b.config.destination_host):
         groups.remove_import_user(b.config.dstn_parent_id)
 
-    add_post_migration_stats(start)
+def migrate_from_bitbucket_server():
+    # Migrate users
+    migrate_user_info()
+
+    # Migrate BB repos to projects
+    staged_projects = projects.get_staged_projects()
+    dry_log = get_dry_log(_DRY_RUN)
+    if staged_projects:
+        b.log.info("Importing projects from BitBucket Server")
+        import_results = start_multi_process(
+            import_bitbucket_project, staged_projects, processes=_PROCESSES)
+
+        are_results(import_results, "project", "import")
+
+        # append Total : Successful count of project imports
+        import_results.append(get_results(import_results))
+        b.log.info("### {0}Project import results ###\n{1}"
+                    .format(dry_log, json_pretty(import_results)))
+        write_results_to_file(import_results, log=b.log)
+    else:
+        b.log.info("SKIP: No projects to migrate")
 
 
-def are_results(results, var, stage, start):
+def import_bitbucket_project(project):
+    members = project.pop("members")
+    result = ext_import.trigger_import_from_bb_server(project)
+    if result.get("id", None):
+        for member in members:
+            member["user_id"] = users.find_user_by_email_comparison_without_id(member["email"])["id"]
+            if member.get("user_id"):
+                projects_api.add_member(result.get("id"), b.config.destination_host, b.config.destination_token, member)
+    return result
+
+def are_results(results, var, stage):
     if not results:
         b.log.warning(
             "Results from {0} {1} returned as empty. Aborting.".format(var, stage))
-        add_post_migration_stats(start)
+        add_post_migration_stats(_START)
         exit()
 
 
-def migrate_user_info(start, skip_users=False):
+def migrate_user_info():
     staged_users = users.get_staged_users()
     if staged_users:
-        if not skip_users:
+        if not _SKIP_USERS:
             b.log.info("{}Migrating user info".format(get_dry_log(_DRY_RUN)))
             staged = users.handle_users_not_found(
                 "staged_users", users.search_for_staged_users()[0], keep=False if _ONLY_POST_MIGRATION_INFO else True)
             new_users = filter(None, start_multi_process(
                 handle_user_creation, staged, _PROCESSES))
-            are_results(new_users, "user", "creation", start)
+            are_results(new_users, "user", "creation")
             formatted_users = {}
             for nu in new_users:
                 formatted_users[nu["email"]] = nu
@@ -197,10 +259,11 @@ def handle_user_creation(user):
     except Exception as e:
         b.log.error(
             "Could not get response text/JSON. Error was {0}".format(e))
+        b.log.error(print_exc(e))
     return new_user
 
 
-def migrate_group_info(start, skip_group_export=False, skip_group_import=False):
+def migrate_group_info(skip_group_export=False, skip_group_import=False):
     staged_groups = [g for g in groups.get_staged_groups(
     ) if is_top_level_group(g)]
     dry_log = get_dry_log(_DRY_RUN)
@@ -210,7 +273,7 @@ def migrate_group_info(start, skip_group_export=False, skip_group_import=False):
             export_results = start_multi_process(
                 handle_exporting_groups, staged_groups, processes=_PROCESSES)
 
-            are_results(export_results, "group", "export", start)
+            are_results(export_results, "group", "export")
 
             # Create list of groups that failed export
             failed = get_failed_export_from_results(
@@ -233,7 +296,7 @@ def migrate_group_info(start, skip_group_export=False, skip_group_import=False):
             import_results = start_multi_process(
                 handle_importing_groups, staged_groups, processes=_PROCESSES)
 
-            are_results(import_results, "group", "import", start)
+            are_results(import_results, "group", "import")
 
             # append Total : Successful count of groups imports
             import_results.append(get_results(import_results))
@@ -367,17 +430,16 @@ def migrate_single_group_features(src_gid, dst_gid, full_path):
     groups.remove_import_user(dst_gid)
 
 
-def migrate_project_info(start, skip_project_export=False, skip_project_import=False):
+def migrate_project_info():
     staged_projects = projects.get_staged_projects()
     dry_log = get_dry_log(_DRY_RUN)
     if staged_projects:
-        if not skip_project_export:
+        if not _SKIP_PROJECT_EXPORT:
             b.log.info("{}Exporting projects".format(dry_log))
             export_results = start_multi_process(
                 handle_exporting_projects, staged_projects, processes=_PROCESSES)
 
-            are_results(export_results, "project", "export", start)
-
+            are_results(export_results, "project", "export")
             # Create list of projects that failed export
             failed = get_failed_export_from_results(
                 export_results)
@@ -395,12 +457,12 @@ def migrate_project_info(start, skip_project_export=False, skip_project_import=F
         else:
             b.log.info("SKIP: Assuming staged projects are already exported")
 
-        if not skip_project_import:
+        if not _SKIP_PROJECT_IMPORT:
             b.log.info("{}Importing projects".format(dry_log))
             import_results = start_multi_process(
                 handle_importing_projects, staged_projects, processes=_PROCESSES)
 
-            are_results(import_results, "project", "import", start)
+            are_results(import_results, "project", "import")
 
             # append Total : Successful count of project imports
             import_results.append(get_results(import_results))

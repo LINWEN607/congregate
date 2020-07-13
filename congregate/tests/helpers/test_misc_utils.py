@@ -130,10 +130,10 @@ def test_get_rollback_log():
     assert misc.get_rollback_log("whatever") == "Rollback: "
 
 
-# @mock.patch("getpass.getpass")
-# def test_obfuscate(secret):
-#     secret.return_value = "test"
-#     assert misc.obfuscate("Enter secret: ") == "dGVzdA=="
+@mock.patch("getpass.getpass")
+def test_obfuscate(secret):
+    secret.return_value = "test"
+    assert misc.obfuscate("Enter secret: ") == "dGVzdA=="
 
 
 def test_deobfuscate():

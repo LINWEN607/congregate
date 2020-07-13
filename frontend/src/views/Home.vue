@@ -44,7 +44,7 @@ export default {
     }
   },
   mounted: function () {
-    axios.get('http://localhost:8000/data/summary').then(response => {
+    axios.get('/data/summary').then(response => {
       this.projectSummary = response.data['Total Staged Projects']
       this.groupSummary = response.data['Total Staged Groups']
       this.userSummary = response.data['Total Staged Users']

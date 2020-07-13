@@ -59,7 +59,7 @@ export default {
   },
   methods: {
     getData: function () {
-      axios.get('http://localhost:8000/data/groups').then(response => {
+      axios.get('/data/groups').then(response => {
         this.rows = response.data
         this.getStagedData()
       }).catch(function (error) {
@@ -67,7 +67,7 @@ export default {
       })
     },
     getStagedData: function () {
-      axios.get('http://localhost:8000/data/staged_groups').then(response => {
+      axios.get('/data/staged_groups').then(response => {
         var ids = []
         response.data.forEach(element => {
           ids.push(element.id)
@@ -88,7 +88,7 @@ export default {
         this.$refs['groups-table'].selectedRows.forEach(element => {
           ids.push(element.id)
         })
-        axios.post('http://localhost:8000/append_groups', String(ids)).then(response => {
+        axios.post('/append_groups', String(ids)).then(response => {
           console.log(response)
         })
       }

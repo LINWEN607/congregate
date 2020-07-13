@@ -126,6 +126,10 @@ class Config(object):
         return self.prop("DESTINATION", "group_sso_provider")
 
     @property
+    def group_sso_provider_pattern(self):
+        return self.prop("DESTINATION", "group_sso_provider_pattern")
+
+    @property
     def username_suffix(self):
         return self.prop("DESTINATION", "username_suffix")
 
@@ -145,6 +149,10 @@ class Config(object):
     @property
     def source_host(self):
         return self.prop("SOURCE", "src_hostname")
+
+    @property
+    def source_type(self):
+        return self.prop("SOURCE", "src_type")
 
     @property
     def source_token(self):
@@ -173,12 +181,12 @@ class Config(object):
         return self.prop("EXT_SRC", "username")
 
     @property
-    def external_user_password(self):
-        return self.prop("EXT_SRC", "password", None, True)
+    def external_access_token(self):
+        return self.prop("EXT_SRC", "token")
 
     @property
-    def external_user_token(self):
-        return self.prop("EXT_SRC", "token")
+    def external_basic_token(self):
+        return self.prop("EXT_SRC", "basic_token")
 
     @property
     def repo_list(self):
@@ -257,6 +265,7 @@ class Config(object):
 
 # HIDDEN PROPERTIES
     # Used only by "map-users" command
+
     @property
     def user_map(self):
         return self.prop("USER", "user_map_csv")

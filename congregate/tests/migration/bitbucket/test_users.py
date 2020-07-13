@@ -11,15 +11,16 @@ class UsersTests(unittest.TestCase):
         self.mock_users = MockUsersApi()
         self.users = UsersClient()
 
-    @patch('__builtin__.raw_input')
+    @patch("__builtin__.file")
+    @patch('__builtin__.open')
     @patch.object(UsersApi, "get_all_users")
     @patch('congregate.helpers.conf.Config.external_source_url', new_callable=PropertyMock)
-    @patch('congregate.helpers.conf.Config.external_user_token', new_callable=PropertyMock)
-    def test_retrieve_user_info(self, mock_ext_src_url, mock_ext_user_token, mock_get_all_users, mock_open):
+    @patch('congregate.helpers.conf.Config.external_access_token', new_callable=PropertyMock)
+    def test_retrieve_user_info(self, mock_ext_src_url, mock_ext_user_token, mock_get_all_users, mock_open, mock_file):
         mock_ext_src_url.return_value = "http://localhost:7990"
         mock_ext_user_token.return_value = "username:password"
         mock_get_all_users.return_value = self.mock_users.get_all_users()
-        mock_open.return_value = []
+        mock_open.return_value = mock_file
         expected_users = [
             {
                 "username": "user1",

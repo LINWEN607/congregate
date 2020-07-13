@@ -42,16 +42,6 @@ class MockUsersApi():
     def get_all_users_list(self):
         return [
             {
-                "id": 1,
-                "username": "raymond_smith",
-                "name": "Raymond Smith",
-                "state": "active",
-                "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon",
-                "web_url": "http://192.168.1.8:3000/root",
-                "expires_at": "2012-10-22T14:13:35Z",
-                "access_level": 30
-            },
-            {
                 "id": 2,
                 "username": "john_doe",
                 "name": "John Doe",
@@ -85,16 +75,6 @@ class MockUsersApi():
 
     def get_project_members(self):
         return [
-            {
-                "id": 1,
-                "username": "raymond_smith",
-                "name": "Raymond Smith",
-                "state": "active",
-                "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon",
-                "web_url": "http://192.168.1.8:3000/root",
-                "expires_at": "2012-10-22T14:13:35Z",
-                "access_level": 30
-            },
             {
                 "id": 2,
                 "username": "john_doe",
@@ -132,7 +112,13 @@ class MockUsersApi():
             "color_scheme_id": 5,
             "projects_limit": 10,
             "current_sign_in_at": "2019-07-17T16:49:12.936Z",
-            "identities": [],
+            "identities": [
+                {
+                    "provider": "okta",
+                    "extern_uid": "jdoe|someCompany|okta",
+                    "saml_provider_id": 1111
+                }
+            ],
             "can_create_group": True,
             "can_create_project": True,
             "two_factor_enabled": False,
@@ -184,7 +170,7 @@ class MockUsersApi():
     def get_dummy_old_users(self):
         return [
             {
-                "id": 1,
+                "id": 3,
                 "username": "raymond_smith",
                 "name": "Raymond Smith",
                 "state": "active",
@@ -461,4 +447,37 @@ class MockUsersApi():
                     "can't be blank"
                 ]
             }
+        }
+
+    def get_dummy_staged_user(self):
+        return {
+            "two_factor_enabled": False, 
+            "can_create_project": True, 
+            "twitter": "", 
+            "shared_runners_minutes_limit": None, 
+            "linkedin": "", 
+            "color_scheme_id": 1, 
+            "skype": "", 
+            "is_admin": False, 
+            "identities": [], 
+            "id": 2, 
+            "projects_limit": 100000, 
+            "note": None, 
+            "state": "active", 
+            "location": None, 
+            "email": "iwdewfsfdyyazqnpkwga@examplegitlab.com", 
+            "website_url": "", 
+            "job_title": "", 
+            "username": "RzKciDiyEzvtSqEicsvW", 
+            "bio": None, 
+            "work_information": None, 
+            "private_profile": False, 
+            "external": False, 
+            "organization": None, 
+            "public_email": "", 
+            "extra_shared_runners_minutes_limit": None, 
+            "name": "FrhUbyTGMoXQUTeaMgFW", 
+            "can_create_group": True, 
+            "avatar_url": "https://www.gravatar.com/avatar/a0290f87758efba7e7be1ed96b2e5ac1?s=80&d=identicon", 
+            "theme_id": 1
         }

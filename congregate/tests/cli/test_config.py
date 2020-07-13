@@ -18,7 +18,7 @@ class ConfigTests(unittest.TestCase):
         self.maxDiff = None
 
     @mock.patch.object(UsersApi, "get_current_user")
-    def test_full_ext_src_skeleton(self, mock_get):
+    def test_full_ext_src_skeleton_bitbucket_server(self, mock_get):
         """
             Generates a full skeleton outline of the configuration using empty strings and default values
             Compares that against the last known-good skeleton
@@ -34,6 +34,8 @@ class ConfigTests(unittest.TestCase):
             "username_suffix",  # username suffix
             "No",   # mirror
             # "mirror_username",  # mirror username
+            "yes",  # external source
+            "bitbucket server",  # source
             "some_external_source",  # external_src_url
             "username",  # ext_src_user
             # "password",  # ext_src_pwd
@@ -53,15 +55,16 @@ class ConfigTests(unittest.TestCase):
             with mock.patch('congregate.cli.config.app_path', "."):
                 with mock.patch('congregate.cli.config.obfuscate', lambda x: "obfuscated==="):
                     with mock.patch('congregate.cli.config.deobfuscate', lambda x: "deobfuscated==="):
-                        with mock.patch('__builtin__.raw_input', lambda x: next(g)):
-                            config.generate_config()
+                        with mock.patch('getpass.getpass', lambda x: "password"):
+                            with mock.patch('__builtin__.raw_input', lambda x: next(g)):
+                                config.generate_config()
 
         # load the file that was just written
         with open("{0}congregate.conf".format(test_dir_prefix), "r") as f:
             generated = f.readlines()
 
         # load the reference file
-        with open("{0}test_full_ext_src_skeleton.conf".format(test_dir_prefix), "r") as f:
+        with open("{0}test_full_ext_src_skeleton_bitbucket_server.conf".format(test_dir_prefix), "r") as f:
             reference = f.readlines()
 
         self.assertListEqual(generated, reference)
@@ -86,7 +89,7 @@ class ConfigTests(unittest.TestCase):
             "username_suffix",  # username suffix
             "Yes",   # mirror
             # "mirror_username",  # mirror username
-            "gitlab",  # external_src_url
+            "no",  # external_src_url
             "source_hostname",  # source host
             # "source_access_token", # source token
             "yes",  # source parent group
@@ -159,10 +162,11 @@ class ConfigTests(unittest.TestCase):
             "0",  # destination parent group id
             # "dstn_parent_group_path",  # destination parent group full path
             "group_sso_provider",  # SSO provider
+            "1", # SSO provider pattern
             "username_suffix",  # username suffix
             "No",   # mirror
             # "mirror_username",  # mirror username
-            "gitlab",  # external_src_url
+            "no",  # external_src_url
             "source_hostname",  # source host
             # "source_access_token", # source token
             "no",  # source parent group
@@ -241,10 +245,11 @@ class ConfigTests(unittest.TestCase):
             "0",  # destination parent group id
             # "dstn_parent_group_path",  # destination parent group full path
             "group_sso_provider",  # SSO provider
+            "1", # SSO provider pattern
             "_",  # username suffix
-            "Yes",   # mirror
+            "yes",   # mirror
             # "mirror_username",  # mirror username
-            "gitlab",  # external_src_url
+            "no",  # external_src_url
             "source_hostname",  # source host
             "no",  # source parent group
             "yes",  # migrating registries
@@ -317,7 +322,7 @@ class ConfigTests(unittest.TestCase):
             "username_suffix",  # username suffix
             "Yes",   # mirror
             # "mirror_username",  # mirror username
-            "gitlab",  # external_src_url
+            "no",  # external_src_url
             "source_hostname",  # source host
             # "source_access_token", # source token
             "no",  # source parent group
