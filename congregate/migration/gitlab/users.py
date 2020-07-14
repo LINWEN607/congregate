@@ -441,6 +441,8 @@ class UsersClient(BaseClass):
             "created_at",
             "confirmed_at",
             "last_activity_on",
+            "bio",
+            "bio_html",
             # SSO causes issues with the avatar URL due to the authentication
             "avatar_url" if self.config.group_sso_provider else ""
         ]
@@ -455,7 +457,6 @@ class UsersClient(BaseClass):
     def generate_user_data(self, user):
         if user.get("id", None) is not None:
             user.pop("id")
-        user.pop("bio")
         if self.config.group_sso_provider is not None:
             return self.generate_user_group_saml_post_data(user)
         user["username"] = self.create_valid_username(user)
