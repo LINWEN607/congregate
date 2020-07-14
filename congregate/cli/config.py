@@ -112,8 +112,7 @@ def generate_config():
             config.set("SOURCE", "src_type", "Bitbucket Server")
             config.set("EXT_SRC", "url", raw_input("URL: "))
             config.set("EXT_SRC", "username", raw_input("Username: "))
-            pwd = getpass.getpass("Password/Personal Access Token: ")
-            config.set("EXT_SRC", "token", b64encode(pwd))
+            config.set("EXT_SRC", "token", obfuscate("Password/Personal Access Token: "))
             repo_path = raw_input(
                 "Absolute path to JSON file containing repo information: ")
             config.set("EXT_SRC", "repo_path", "{0}{1}"
