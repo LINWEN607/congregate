@@ -89,7 +89,7 @@ Commands:
     do-all*                                 Configure system, retrieve all projects, users, and groups, stage all information, and commence migration.
     search-for-staged-users                 Search for staged users on destination based on email
     update-aws-creds                        Run awscli commands based on the keys stored in the config. Useful for docker updates.
-    add-users-to-parent-group               If a parent group is set, all users staged will be added to the parent group.
+    add-users-to-parent-group               If a parent group is set, all staged users will be added to the parent group with guest permissions.
     remove-blocked-users                    Remove all blocked users from staged projects and groups.
     update-user-permissions                 Update parent group member access level. Mainly for lowering to Guest/Reporter.
     get-total-count                         Get total count of migrated projects. Used to compare exported projects to imported projects.

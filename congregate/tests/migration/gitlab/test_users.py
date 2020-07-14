@@ -740,6 +740,32 @@ class UsersTests(unittest.TestCase):
 
         self.assertEqual(expected, actual)
 
+    def test_find_extern_uid_by_provider_no_identities(self):
+        self.assertIsNone(self.users.find_extern_uid_by_provider(None, None))
+
+    def test_find_extern_uid_by_provider_no_provider(self):
+        identities = [
+            {
+                "provider": "okta",
+                "extern_uid": "jdoe@email.com",
+            }
+        ]
+
+        self.assertIsNone(self.users.find_extern_uid_by_provider(identities, None))
+
+    def test_find_extern_uid_by_provider_with_provider(self):
+        identities = [
+            {
+                "provider": "okta",
+                "extern_uid": "jdoe@email.com",
+            }
+        ]
+
+        expected = "jdoe@email.com"
+        actual = self.users.find_extern_uid_by_provider(identities, "okta")
+
+        self.assertEqual(expected, actual)
+
     @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.dstn_parent_id', new_callable=mock.PropertyMock)
     @mock.patch('congregate.helpers.conf.Config.reset_password', new_callable=mock.PropertyMock)
     @mock.patch('congregate.helpers.conf.Config.force_random_password', new_callable=mock.PropertyMock)

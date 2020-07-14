@@ -159,7 +159,7 @@ class UsersClient(BaseClass):
         return users_map[email]
 
     def generate_user_group_saml_post_data(self, user):
-        identities = user.pop("identities")
+        identities = user.pop("identities", None)
         extern_uid = self.generate_extern_uid(
             user, identities)
         if extern_uid:
@@ -180,7 +180,7 @@ class UsersClient(BaseClass):
 
     def generate_extern_uid(self, user, identities):
         if self.config.group_sso_provider_pattern == "email":
-            return user.get("email")
+            return user.get("email", None)
         else:
             return self.find_extern_uid_by_provider(identities, self.config.group_sso_provider)
 
@@ -189,6 +189,7 @@ class UsersClient(BaseClass):
             for identity in identities:
                 if provider == identity["provider"]:
                     return identity["extern_uid"]
+        return None
 
     def create_valid_username(self, user):
         username = user["username"]
@@ -232,7 +233,7 @@ class UsersClient(BaseClass):
                         "user_id": new_users[user]["id"],
                         "access_level": 10
                     }
-                    self.log.info("{0}Adding user {1} to parent group {3} (data: {2})".format(
+                    self.log.info("{0}Adding user {1} to parent group {3} (data: {2}) with guest permissions".format(
                         get_dry_log(dry_run),
                         new_users[user]["email"],
                         data,
@@ -505,20 +506,24 @@ class UsersClient(BaseClass):
                 self.log.error(
                     "Failed to retrieve user {0} status, due to:\n{1}".format(user, e))
         elif response.status_code == 400:
-            self.log.error(
-                "Unable to create user due to improperly formatted request:\n{}".format(response.text))
-            return {
-                "email": user["email"],
-                "id": None
-            }
+            return self.log_and_return_failed_user_creation(
+                "Unable to create user due to improperly formatted request:\n{}".format(response.text), user["email"])
+        elif response.status_code == 500:
+            return self.log_and_return_failed_user_creation(
+                "Unable to create user due to internal server error:\n{}".format(response.text), user["email"])
         else:
-            self.log.info(response.status_code)
             resp = response.json()
-            self.log.info(resp)
             return {
                 "email": resp["email"],
                 "id": resp["id"]
             }
+    
+    def log_and_return_failed_user_creation(self, message, email):
+        self.log.error(message)
+        return {
+            "email": email,
+            "id": None
+        } 
 
     def get_user_creation_id_and_email(self, response):
         if response is not None and response:

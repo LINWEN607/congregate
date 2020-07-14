@@ -185,10 +185,6 @@ class Config(object):
         return self.prop("EXT_SRC", "token")
 
     @property
-    def external_basic_token(self):
-        return self.prop("EXT_SRC", "basic_token")
-
-    @property
     def repo_list(self):
         return self.prop("EXT_SRC", "repo_path")
 

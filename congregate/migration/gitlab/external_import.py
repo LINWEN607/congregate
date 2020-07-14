@@ -17,7 +17,7 @@ class ImportClient(BaseClass):
             "bitbucket_server_repo": repo
         }
         if self.config.dstn_parent_group_path:
-            data["target_namespace"] = "#{self.config.dstn_parent_group_path}/#{project_key}"
+            data["target_namespace"] = "{0}/{1}".format(self.config.dstn_parent_group_path, project_key)
         else:
             data["target_namespace"] = project_key
         

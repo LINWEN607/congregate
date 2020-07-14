@@ -79,27 +79,7 @@ def generate_config():
         config.set("DESTINATION", "group_sso_provider",
                     raw_input("Migrating to a group with SAML SSO enabled? Input SSO provider (auth0, adfs, etc.): "))
         if config.get("DESTINATION", "group_sso_provider"):
-            options = {
-                1: "email",
-                2: "hash",
-                3: "custom"
-            }
-            while True:
-                try:
-                    sso_provider_pattern_option = raw_input("Select SSO provider pattern type (1. Email, 2. Hash, 3. Custom")
-                    if int(sso_provider_pattern_option) == 1:
-                        config.set("DESTINATION", "group_sso_provider_pattern", options.get(1))
-                        break
-                    elif int(sso_provider_pattern_option) == 2:
-                        print "Hashes are currently not easily migrateable. We will input a placeholder, but support will need to correct this after the migration."
-                        break
-                    elif int(sso_provider_pattern_option) == 3:
-                        print "Not implemented yet"
-                        break
-                    else:
-                        print "Choose a valid option"
-                except ValueError, e:
-                    print "Please input a number for your option"
+            config.set("DESTINATION", "group_sso_provider_pattern", get_sso_provider_pattern())
 
     username_suffix = raw_input(
         "To avoid username collision, please input suffix to append to username: ")
@@ -133,15 +113,7 @@ def generate_config():
             config.set("EXT_SRC", "url", raw_input("URL: "))
             config.set("EXT_SRC", "username", raw_input("Username: "))
             pwd = getpass.getpass("Password/Personal Access Token: ")
-            try:
-                # Is it valid base64, not bulletproof
-                b64decode(pwd)
-                config.set("EXT_SRC", "token", pwd)
-            except binascii.Error:
-                print(
-                    "Creating Personal Access Token (PAT) based on 'username:password' string (base64 encoded)")
-                config.set("EXT_SRC", "basic_token", b64encode(
-                    config.get("EXT_SRC", "username") + ":" + pwd))
+            config.set("EXT_SRC", "token", b64encode(pwd))
             repo_path = raw_input(
                 "Absolute path to JSON file containing repo information: ")
             config.set("EXT_SRC", "repo_path", "{0}{1}"
@@ -298,6 +270,27 @@ def test_slack(url):
         print("EXCEPTION: " + str(em))
         exit()
 
+def get_sso_provider_pattern():
+    options = {
+        1: "email",
+        2: "hash",
+        3: "custom"
+    }
+    while True:
+        try:
+            sso_provider_pattern_option = raw_input("Select SSO provider pattern type (1. Email, 2. Hash, 3. Custom")
+            if int(sso_provider_pattern_option) == 1:
+                return options.get(1)
+            elif int(sso_provider_pattern_option) == 2:
+                print "Hashes are currently not easily migrateable. We will input a placeholder, but support will need to correct this after the migration."
+                return None
+            elif int(sso_provider_pattern_option) == 3:
+                print "Not implemented yet"
+                return None
+            else:
+                print "Choose a valid option"
+        except ValueError:
+            print "Please input a number for your option"
 
 def update_config(data):
     """

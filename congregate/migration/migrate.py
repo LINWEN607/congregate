@@ -132,9 +132,8 @@ def migrate_from_gitlab():
         # Migrate projects
         migrate_project_info()
 
-        # Migrate system hooks (except to gitlab.com)
-        if is_dot_com(b.config.destination_host):
-            hooks.migrate_system_hooks(dry_run=_DRY_RUN)
+        # Migrate system hooks
+        hooks.migrate_system_hooks(dry_run=_DRY_RUN)
 
     # Remove import user from parent group to avoid inheritance (self-managed only)
     if not _DRY_RUN and b.config.dstn_parent_id and not is_dot_com(b.config.destination_host):

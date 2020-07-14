@@ -6,8 +6,6 @@ from congregate.helpers.misc_utils import deobfuscate
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.decorators import stable_retry
 
-import pdb
-
 b = BaseClass()
 
 def generate_bb_v1_request_url(host, api):
@@ -19,13 +17,7 @@ def generate_v4_request_headers():
     }
 
 def get_authorization():
-    if b.config.external_access_token:
-        return HTTPBasicAuth(b.config.external_user_name, b.config.external_access_token)
-    elif b.config.external_basic_token:
-        return HTTPBasicAuth(b.config.external_user_name, decode_password())
-
-def decode_password():
-    return deobfuscate(b.config.external_basic_token).split(":")[-1]
+    return HTTPBasicAuth(b.config.external_user_name, deobfuscate(b.config.external_access_token))
 
 @stable_retry
 def generate_get_request(host, api, url=None, params=None):
@@ -51,7 +43,6 @@ def generate_get_request(host, api, url=None, params=None):
         params = {}
     
     auth = get_authorization()
-    # pdb.set_trace()
     return requests.get(url, params=params, headers=headers, auth=auth)
 
 
