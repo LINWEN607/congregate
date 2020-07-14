@@ -165,11 +165,14 @@ def migrate_from_bitbucket_server():
 def import_bitbucket_project(project):
     members = project.pop("members")
     result = ext_import.trigger_import_from_bb_server(project, dry_run=_DRY_RUN)
-    if result.get("id", None):
-        for member in members:
-            member["user_id"] = users.find_user_by_email_comparison_without_id(member["email"])["id"]
-            if member.get("user_id"):
-                projects_api.add_member(result.get("id"), b.config.destination_host, b.config.destination_token, member)
+    if result:
+        if result.get(project["path_with_namespace"], False) is not False:
+            project_id = result[project["path_with_namespace"]]["response"].get("id")
+            for member in members:
+                member["user_id"] = users.find_user_by_email_comparison_without_id(member["email"])["id"]
+                if member.get("user_id"):
+                    projects_api.add_member(project_id, b.config.destination_host, b.config.destination_token, member)
+            projects.remove_import_user(project_id)
     return result
 
 def are_results(results, var, stage):

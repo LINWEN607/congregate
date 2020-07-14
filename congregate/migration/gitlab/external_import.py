@@ -1,5 +1,6 @@
+from base64 import b64encode
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import migration_dry_run, obfuscate
+from congregate.helpers.misc_utils import migration_dry_run, deobfuscate
 from congregate.migration.gitlab.api.external_import import ImportApi
 
 class ImportClient(BaseClass):
@@ -8,11 +9,12 @@ class ImportClient(BaseClass):
         self.ext_import = ImportApi()
 
     def trigger_import_from_bb_server(self, project, dry_run=True):
-        project_key, repo = self.get_project_repo_from_full_path(project["path_with_namespace"])
+        project_path = project["path_with_namespace"]
+        project_key, repo = self.get_project_repo_from_full_path(project_path)
         data = {
             "bitbucket_server_url": self.config.external_source_url,
             "bitbucket_server_username": self.config.external_user_name,
-            "personal_access_token": self.config.external_access_token,
+            "personal_access_token": deobfuscate(self.config.external_access_token),
             "bitbucket_server_project": project_key,
             "bitbucket_server_repo": repo
         }
@@ -22,19 +24,36 @@ class ImportClient(BaseClass):
             data["target_namespace"] = project_key
         
         if not dry_run:
-            return self.ext_import.import_from_bitbucket_server(self.config.destination_host, self.config.destination_token, data)
-
-        data["personal_access_token"] = obfuscate(data["personal_access_token"])
-        migration_dry_run("project", data)
-        return {
-            "id": None,
-            "name": repo,
-            "full_path": project["path_with_namespace"],
-            "full_name": project["path_with_namespace"]
-        }
+            try:
+                resp = self.ext_import.import_from_bitbucket_server(self.config.destination_host, self.config.destination_token, data)
+                if resp.get("message"):
+                    self.log.error(resp.get("message"))
+                    return self.get_failed_result(project)
+                return self.get_result_data(project, resp)
+            except ValueError as e:
+                self.log.error("Failed to import from bitbucket server due to %s" % e)
+                return self.get_failed_result(project)
+        else:
+            data["personal_access_token"] = b64encode(data["personal_access_token"])
+            migration_dry_run("project", data)
+            return self.get_failed_result(project)
+            
     
     def get_project_repo_from_full_path(self, full_path):
         split = full_path.split("/")
         project = split[0]
         repo = split[1]
         return project, repo
+    
+    def get_result_data(self, project, response):
+        return {
+            project["path_with_namespace"]: {
+                "repository": True if response.get("id", None) is not None else False,
+                "response": response
+            }
+        }
+    
+    def get_failed_result(self, project):
+        return {
+            project["path_with_namespace"]: False
+        }

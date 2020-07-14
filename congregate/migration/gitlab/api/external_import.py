@@ -1,4 +1,5 @@
 from json import dumps
+from base64 import b64encode
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers import api
 
@@ -32,5 +33,7 @@ class ImportApi(BaseClass):
 
         """
         if not message:
-            message = "Triggering import from BitBucket Server"
+            audit_data = data.copy()
+            audit_data["personal_access_token"] = b64encode(audit_data["personal_access_token"])
+            message = "Triggering import from BitBucket Server with payload %s" % audit_data
         return api.generate_post_request(host, token, "import/bitbucket_server", dumps(data), description=message).json()
