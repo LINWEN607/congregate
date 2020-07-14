@@ -15,7 +15,7 @@ class HooksClient(BaseClass):
         super(HooksClient, self).__init__()
 
     def migrate_system_hooks(self, dry_run=True):
-        if not is_dot_com(self.config.source_host) or not is_dot_com(self.config.destination_host):
+        if not is_dot_com(self.config.source_host) and not is_dot_com(self.config.destination_host):
             try:
                 resp = self.system_api.get_all_system_hooks(
                     self.config.source_host, self.config.source_token)
