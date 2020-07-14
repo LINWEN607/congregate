@@ -1,6 +1,6 @@
 from base64 import b64encode
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import migration_dry_run, deobfuscate
+from congregate.helpers.misc_utils import migration_dry_run, deobfuscate, is_error_message_present
 from congregate.migration.gitlab.api.external_import import ImportApi
 
 class ImportClient(BaseClass):
@@ -26,7 +26,7 @@ class ImportClient(BaseClass):
         if not dry_run:
             try:
                 resp = self.ext_import.import_from_bitbucket_server(self.config.destination_host, self.config.destination_token, data)
-                if resp.get("message"):
+                if is_error_message_present(resp):
                     self.log.error(resp.get("message"))
                     return self.get_failed_result(project)
                 return self.get_result_data(project, resp)
