@@ -87,14 +87,13 @@ def build_staging_data(projects_to_stage, dry_run=True):
                 # Hacky check for id or project name by explicitly checking
                 # variable type
                 try:
-                    if (isinstance(int(projects_to_stage[i]), int)):
-                        # Retrieve object from better formatted object
-                        project = rewritten_projects[int(projects_to_stage[i])]
-                except ValueError:
-                    # Iterate over original project_json.json file
-                    for j, _ in enumerate(projects):
-                        if projects[j]["name"] == projects_to_stage[i]:
-                            project = projects[j]
+                    # Retrieve group object from groups.json
+                    project = rewritten_projects[int(
+                        re.sub("[^0-9]", "", projects_to_stage[i]))]
+                except (ValueError, KeyError):
+                    b.log.error("Please use a space delimited list of integers (project IDs):\n{}".format(
+                        projects_to_stage))
+                    exit()
                 append_data(project, projects_to_stage, dry_run=dry_run)
     else:
         b.log.info("Staging empty list")

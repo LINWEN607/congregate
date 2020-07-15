@@ -143,7 +143,7 @@ def generate_config():
                     config_path))
 
         migrating_registries = raw_input(
-            "Are you migrating any container registries? (Default: No)")
+            "Are you migrating any container registries? (Default: No) ")
         if migrating_registries.lower() in ["yes", "y"]:
             config.set("SOURCE", "src_registry_url", raw_input(
                 "Source instance Container Registry URL: "))
