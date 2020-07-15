@@ -431,14 +431,6 @@ class ImportExportClient(BaseClass):
         return {
             "description": project["description"],
             "shared_runners_enabled": self.config.shared_runners_enabled,
-            "wiki_access_level": project["wiki_access_level"],
-            "issues_access_level": project["issues_access_level"],
-            "merge_requests_access_level": project["merge_requests_access_level"],
-            "builds_access_level": project["builds_access_level"],
-            "snippets_access_level": project["snippets_access_level"],
-            "repository_access_level": project["repository_access_level"],
-            "forking_access_level": project["forking_access_level"],
-            "pages_access_level": project["pages_access_level"],
             "archived": project["archived"],
             # Prevent any chances of pipelines triggering on project import
             "auto_devops_enabled": False

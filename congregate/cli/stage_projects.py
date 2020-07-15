@@ -212,14 +212,6 @@ def get_project_metadata(project):
         obj["shared_runners_enabled"] = project["shared_runners_enabled"]
         obj["archived"] = project["archived"]
         obj["shared_with_groups"] = project["shared_with_groups"]
-        obj["wiki_access_level"] = project["wiki_access_level"]
-        obj["issues_access_level"] = project["issues_access_level"]
-        obj["merge_requests_access_level"] = project["merge_requests_access_level"]
-        obj["builds_access_level"] = project["builds_access_level"]
-        obj["snippets_access_level"] = project["snippets_access_level"]
-        obj["repository_access_level"] = project["repository_access_level"]
-        obj["forking_access_level"] = project["forking_access_level"]
-        obj["pages_access_level"] = project["pages_access_level"]
 
         # In case of projects without repos (e.g. Wiki)
         if "default_branch" in project:
