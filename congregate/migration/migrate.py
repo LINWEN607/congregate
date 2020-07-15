@@ -271,12 +271,12 @@ def handle_user_creation(user):
     return new_user
 
 
-def migrate_group_info(skip_group_export=False, skip_group_import=False):
+def migrate_group_info():
     staged_groups = [g for g in groups.get_staged_groups(
     ) if is_top_level_group(g)]
     dry_log = get_dry_log(_DRY_RUN)
     if staged_groups:
-        if not skip_group_export:
+        if not _SKIP_GROUP_EXPORT:
             b.log.info("{}Exporting groups".format(dry_log))
             export_results = start_multi_process(
                 handle_exporting_groups, staged_groups, processes=_PROCESSES)
@@ -299,7 +299,7 @@ def migrate_group_info(skip_group_export=False, skip_group_import=False):
                 staged_groups, failed)
         else:
             b.log.info("SKIP: Assuming staged groups are already exported")
-        if not skip_group_import:
+        if not _SKIP_GROUP_IMPORT:
             b.log.info("{}Importing groups".format(dry_log))
             import_results = start_multi_process(
                 handle_importing_groups, staged_groups, processes=_PROCESSES)

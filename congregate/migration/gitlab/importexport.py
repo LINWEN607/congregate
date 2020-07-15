@@ -431,9 +431,7 @@ class ImportExportClient(BaseClass):
         return {
             "description": project["description"],
             "shared_runners_enabled": self.config.shared_runners_enabled,
-            "archived": project["archived"],
-            # Prevent any chances of pipelines triggering on project import
-            "auto_devops_enabled": False
+            "archived": project["archived"]
         }
 
     def get_full_path(self, url):
