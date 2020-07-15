@@ -439,7 +439,9 @@ class ImportExportClient(BaseClass):
             "repository_access_level": project["repository_access_level"],
             "forking_access_level": project["forking_access_level"],
             "pages_access_level": project["pages_access_level"],
-            "archived": project["archived"]
+            "archived": project["archived"],
+            # Prevent any chances of pipelines triggering on project import
+            "auto_devops_enabled": False
         }
 
     def get_full_path(self, url):

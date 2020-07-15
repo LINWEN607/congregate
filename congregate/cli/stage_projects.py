@@ -207,7 +207,7 @@ def get_project_metadata(project):
         "project_type": project["namespace"]["kind"],
         "members": project["members"]
     }
-    if b.config.source_host:
+    if b.config.source_type == "gitlab":
         obj["http_url_to_repo"] = project["http_url_to_repo"]
         obj["shared_runners_enabled"] = project["shared_runners_enabled"]
         obj["archived"] = project["archived"]
