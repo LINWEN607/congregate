@@ -8,6 +8,62 @@ Congregate consists of varying types of tests:
 - Integration tests
 - End to end tests
 
+## Quick resources
+
+#### We currently use the following libraries for our tests:
+
+- [unittest](https://docs.python.org/2/library/unittest.html)
+    - Python's built-in unit test library
+- [mock](https://docs.python.org/3/library/unittest.mock.html)
+    - Python's built-in mocking and data pathcing library
+- [response](https://pypi.org/project/responses/0.3.0/)
+    - Open source testing library used to intercept HTTP requests and overload the data returned
+- Our built-in MockApi classes contain example responses from the APIs consume. Utilize these classes for mocking a GET request or some JSON we would use
+
+#### We utilize mock through decorators. How do I mock the following:
+
+- Properties (when you need to mock our configuration getters)
+    - Ex: `@mock.patch('congregate.helpers.conf.Config.<config-getter>', new_callable=mock.PropertyMock)`
+- Method return values
+    - Ex: `@mock.patch('congregate.helpers.api.get_count')`
+- Mock class object method return values
+    - Ex: `@mock.patch.object(KeysClient, "migrate_user_ssh_keys")`
+
+#### I created multiple patches, but how do I reference them in my test?
+
+You reference the patchs as parameters in the test method (name the parameters whatever works for you), going from the bottom patch up to the top. See the example test below for the order.
+
+#### What if I need to call the same method multiple times and return different values?
+
+Utilize a [side_effect](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.side_effect)
+
+Example test utilizing a side effect:
+
+```python
+@mock.patch("congregate.helpers.misc_utils.read_json_file_into_object")
+@mock.patch("glob.glob")
+def test_stitch_json(glob, json):
+    results = MockProjectResults()
+    glob.return_value = [
+        'project_migration_results_2020-05-05_22:17:45.335715.json',
+        'project_migration_results_2020-05-05_21:38:04.565534.json',
+        'project_migration_results_2020-05-05_21:17:42.719402.json',
+        'project_migration_results_2020-05-05_19:26:18.616265.json',
+        'project_migration_results_2020-04-28_23:06:02.139918.json'
+    ]
+
+    json.side_effect = [
+        results.get_completely_failed_results(),
+        results.get_partially_successful_results(),
+        results.get_successful_results_subset()
+    ]
+
+    expected = results.get_completely_successful_results()
+    actual = misc.stitch_json_results(steps=2)
+
+    assert expected == actual
+```
+
 ### Unit tests
 
 Unit tests in congregate are any test written to confirm the expected behavior of a single method and its output. A basic unit test looks like the following:
