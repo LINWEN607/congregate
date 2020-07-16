@@ -1,4 +1,4 @@
-FROM python:2.7.15-stretch
+FROM python:3.8.4-buster
 
 RUN apt-get update && \
     apt-get upgrade -y && \

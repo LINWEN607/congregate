@@ -5,7 +5,7 @@ description = "GitLab Professional Service Migration Utility"
 authors = ["Michael Leopard <mleopard@gitlab.com>", "Petar Prokic <pprokic@gitlab.com>", "Glen Miller <gmiller@gitlab.com>"]
 
 [tool.poetry.dependencies]
-python = "^2.7"
+python = "^3.8"
 # KEEP
 autopep8 = "^1.5" # not found in any files, but assume tests are using it.
 awscli = "^1.17.17"
