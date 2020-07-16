@@ -59,21 +59,68 @@ Copy the following data and add subsequent columns for single group migration
 
 ## Professional Services Steps to Complete Migration Wave
 
-### Preparation
+### User migration
+
+#### Preparation
 
 * [ ] Review migration schedule (see customer migration schedule)
 * [ ] Check the status of **gitlab.com** (https://status.gitlab.com/)
   * [ ] Confirm you can reach the UI of the instance
   * [ ] Confirm you can reach the API through cURL or a REST client
 * [ ] Run `congregate list` at the beginning of the migration blackout period
-* [ ] Stage projects based on the wave schedule in the UI
-* [ ] Stage groups based on the wave schedule in the UI
+* [ ] Stage ALL users
+  * [ ] Make sure no groups and projects are staged
+* [ ] Create a directory called "waves" in `/opt/congregate/data` in the container if it doesn't already exist
+* [ ] Create a directory called `user_wave` in `/opt/congregate/data/waves` if it doesn't already exist
+* [ ] Copy `data/staged_users.json` to `/opt/congregate/data/waves/user_wave`
+* [ ] Lookup whether the staged users (emails) already exist on the destination by running `./congregate.sh search-for-staged-users`
+  * This will output a list of FOUND, NOT FOUND and DUPLICATE user `email`, along with their `id` and `state`
+* [ ] Determine with customer how to configure:
+  * `group_sso_provider` and `group_sso_provider_pattern`, if they are using SSO
+  * `keep_blocked_users` (`False` by default),
+  * `reset_pwd` (`True` by default),
+  * `force_rand_pwd` (`False` by default)
+* By default blocked users are skipped during user migration. To be sure they are removed from staged users, groups and projects run the following command:
+  * [ ] Dry run: `./congregate.sh remove-blocked-users`
+  * [ ] Live: `./congregate.sh remove-blocked-users --commit`
+* [ ] Notify in the internal Slack channel dedicated to this migration you have completed preparation for the user wave
+
+#### Dry run
+
+* [ ] Run the following command: `nohup ./congregate.sh migrate > data/waves/user_wave/user_wave_dry_run.log 2>&1 &`
+  * **NOTE:** The command assumes you have no groups or projects staged
+* [ ] Confirm everything looks correct and move on to the next step in the runbook
+  * Specifically, review the API requests and make sure the paths look correct.
+  * If anything looks wrong in the dry run, make a note of it in the issue and reach out to @pprokic or @leopardm for review. Do not proceed with the migration if the dry run data looks incorrect. If this is incorrect, the data we send will be incorrect.
+* [ ] Attach the dry run log (`data/dry_run_user_migration.json`) to this issue
+* [ ] Copy the dry run log to `/opt/congregate/data/waves/user_wave/`
+* [ ] Notify in the internal Slack channel dedicated to this migration you have completed dry run for the user wave
+
+#### Migration
+
+* [ ] Notify in the internal Slack channel dedicated to this migration you are starting the user migration wave
+* [ ] Notify the customer in the customer-facing Slack channel you are starting the user migration wave
+* [ ] Run the following command `nohup ./congregate.sh migrate --commit > data/waves/user_wave/user_wave.log 2>&1 &`
+* [ ] Monitor the wave periodically by running `tail -f data/waves/user_wave/user_wave.log`
+* [ ] Attach `data/congregate.log`, `data/audit.log`, and `data/waves/user_wave/user_wave.log` to this issue
+* [ ] Copy `data/congregate.log`, `data/audit.log`, and `data/waves/user_wave/user_wave.log` to `/opt/congregate/data/waves/user_wave/`
+
+### Group and project migration
+
+#### Preparation
+
+* [ ] Review migration schedule (see customer migration schedule)
+* [ ] Check the status of **gitlab.com** (https://status.gitlab.com/)
+  * [ ] Confirm you can reach the UI of the instance
+  * [ ] Confirm you can reach the API through cURL or a REST client
+* [ ] Run `congregate list` at the beginning of the migration blackout period
+* [ ] Stage groups or projects based on the wave schedule in the UI
 * [ ] Create a directory called "waves" in `/opt/congregate/data` in the container if it doesn't already exist
 * [ ] Create a directory called `wave_<insert_wave_number>` in `/opt/congregate/data/waves` if it doesn't already exist
 * [ ] Copy all staged data to `/opt/congregate/data/waves/wave_<insert_wave_number>/`
 * [ ] Notify in the internal Slack channel dedicated to this migration you have completed preparation for the wave
 
-### Dry run
+#### Dry run
 
 * [ ] Run the following command: `nohup ./congregate.sh migrate --skip-users > data/waves/wave_<insert_wave_number>/wave_<insert_wave_number>_dry_run.log 2>&1 &`
 * [ ] Confirm everything looks correct and move on to the next step in the runbook
@@ -81,9 +128,9 @@ Copy the following data and add subsequent columns for single group migration
   * If anything looks wrong in the dry run, make a note of it in the issue and reach out to @pprokic or @leopardm for review. Do not proceed with the migration if the dry run data looks incorrect. If this is incorrect, the data we send will be incorrect.
 * [ ] Attach the dry run logs (`data/dry_run_*_migration.json`) to this issue
 * [ ] Copy the dry run logs to `/opt/congregate/data/waves/wave_<insert_wave_number>/`
-* [ ] Notify in the internal Slack channel dedicated to this migration you have completed preparation for the wave
+* [ ] Notify in the internal Slack channel dedicated to this migration you have completed dry run for the wave
 
-### Migration
+#### Migration
 
 * [ ] Notify in the internal Slack channel dedicated to this migration you are starting the migration wave
 * [ ] Notify the customer in the customer-facing Slack channel you are starting the migration wave
@@ -196,9 +243,22 @@ p "Number of Protected Branches import failures: #{protected_branches_import_fai
 
 If **any** data was migrated incorrectly (i.e. to the wrong namespace), you **must** rollback the migration wave **completely**
 
-* [ ] Notify in the internal Slack channel dedicated to this migration you are running a rollback due an issue with the migration
-* [ ] Run `nohup ./congregate.sh rollback --skip-users --commit > data/waves/wave_<insert_wave_number>/rollback.log 2>&1 &`
-* [ ] Copy the rollback log and `data/audit.log` to `/opt/congregate/data/waves/wave_<insert_wave_number>/`
+#### Users
+
+* [ ] Notify in the internal Slack channel dedicated to this migration you are running a rollback due to an issue with the migration
+* [ ] Dry run `nohup ./congregate.sh rollback --hard-delete --skip-groups --skip-projects > data/waves/user_wave/rollback_dry_run.log 2>&1 &`
+  * **NOTE:** `--hard-delete` will also remove user contributions
+* [ ] Live run `nohup ./congregate.sh rollback --hard-delete --skip-groups --skip-projects --commit > data/waves/user_wave/rollback.log 2>&1 &`
+* [ ] Copy `data/congregate.log` and `data/audit.log` to `/opt/congregate/data/waves/user_wave/`
+* [ ] Post a comment describing the reason for the rollback and attach the rollback log and `data/audit.log`
+* [ ] Follow these [instructions in the handbook](https://about.gitlab.com/handbook/engineering/security/#engaging-the-security-on-call) and link to this issue.
+
+#### Groups and projects
+
+* [ ] Notify in the internal Slack channel dedicated to this migration you are running a rollback due to an issue with the migration
+* [ ] Dry run `nohup ./congregate.sh rollback --skip-users > data/waves/wave_<insert_wave_number>/rollback_dry_run.log 2>&1 &`
+* [ ] Live run `nohup ./congregate.sh rollback --skip-users --commit > data/waves/wave_<insert_wave_number>/rollback.log 2>&1 &`
+* [ ] Copy `data/congregate.log` and `data/audit.log` to `/opt/congregate/data/waves/wave_<insert_wave_number>/`
 * [ ] Post a comment describing the reason for the rollback and attach the rollback log and `data/audit.log`
 * [ ] Follow these [instructions in the handbook](https://about.gitlab.com/handbook/engineering/security/#engaging-the-security-on-call) and link to this issue.
 
