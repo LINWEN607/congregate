@@ -33,7 +33,7 @@ class ImportExportClient(BaseClass):
         "Path has already been taken"
     ]
     # Import rate limit cool-off
-    COOL_OFF_MINUTES = 5 * 1.1  # Padding
+    COOL_OFF_MINUTES = 1.1
 
     def __init__(self):
         super(ImportExportClient, self).__init__()
