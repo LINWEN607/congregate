@@ -94,7 +94,7 @@ class MirrorClient(BaseClass):
         protocol = split_url[0]
         repo_url = split_url[1]
         namespace_id = int(generic_repo["namespace_id"])
-        print namespace_id
+        print(namespace_id)
         mirror_user_id = self.config.import_user_id
         user_name = self.config.external_user_name
         user_password = self.config.external_user_password
@@ -161,7 +161,7 @@ class MirrorClient(BaseClass):
 
             return response["id"]
             # self.log.debug(put_response.json())
-        except RequestException, e:
+        except RequestException as e:
             self.log.error(e)
             return None
 
@@ -182,7 +182,7 @@ class MirrorClient(BaseClass):
                                 project["id"])
                             self.log.info(
                                 "Mirrored project {0} ({1})".format(encoded_name, resp))
-                        except RequestException, e:
+                        except RequestException as e:
                             self.log.error("Failed to mirror project {0} ({1}), with error:\n{2}".format(
                                 encoded_name, resp, e))
                 else:
@@ -197,7 +197,7 @@ class MirrorClient(BaseClass):
     def enable_mirror_by_id(self, id):
         resp = api.generate_post_request(
             self.config.destination_host, self.config.destination_token, "projects/%d/mirror/pull" % id, None)
-        print resp.status_code
+        print(resp.status_code)
 
     # TODO: This was disabled in the source repo
     # @stable_retry
@@ -221,7 +221,7 @@ class MirrorClient(BaseClass):
     #        self.l.logger.info("Total to keep %d" % self.total_to_keep)
     #        self.l.logger.info("Total to remove %d" % self.total_to_remove)
     #
-    #    except Exception, e:
+    #    except Exception as e:
     #        self.l.logger.error(e)
 
     @stable_retry

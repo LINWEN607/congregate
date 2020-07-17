@@ -163,7 +163,7 @@ class GroupsClient(BaseClass):
                             else:
                                 self.log.info("Ignoring {0}. Group existed before {1} hours".format(
                                     group["full_path"], self.config.max_asset_expiration_time))
-                    except RequestException, re:
+                    except RequestException as re:
                         self.log.error(
                             "Failed to remove group\n{0}\nwith error:\n{1}".format(json_pretty(sg), re))
             else:
@@ -185,7 +185,7 @@ class GroupsClient(BaseClass):
         count = 0
 
         for group in transient_list:
-            print "{0}, {1}".format(group["name"], group["visibility"])
+            print("{0}, {1}".format(group["name"], group["visibility"]))
             if group["visibility"] != "private":
                 self.log.info("Group {0} has {1} visibility".format(
                     group["name"], group["visibility"]))
@@ -208,12 +208,12 @@ class GroupsClient(BaseClass):
                         if "%s" % group["path"].lower() in proj["full_path"].lower():
                             # self.log.info("Migrating variables for %s" % proj["name"])
                             ids.append(proj["id"])
-                            print "%s: %s" % (
-                                proj["full_path"], proj["visibility"])
+                            print("%s: %s" %
+                                  (proj["full_path"], proj["visibility"]))
                             break
-            except IOError, e:
+            except IOError as e:
                 self.log.error(e)
-        print ids
+        print(ids)
 
     def validate_staged_groups_schema(self):
         staged_groups = self.get_staged_groups()

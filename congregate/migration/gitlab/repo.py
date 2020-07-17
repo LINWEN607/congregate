@@ -1,8 +1,7 @@
-import urllib
 import json
 import re
 
-from urllib2 import HTTPError
+from urllib.error import HTTPError
 
 from congregate.helpers import api, conf
 from congregate.helpers import logger as log

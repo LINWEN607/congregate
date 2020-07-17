@@ -23,7 +23,7 @@ A lot of improvements can be done on this script, will do that as time permits. 
 # Import Modules
 import os
 import sys
-from urlparse import urljoin
+from urlparse.parse import urljoin
 import requests
 from bs4 import BeautifulSoup
 from congregate.helpers.decorators import configurable_stable_retry
@@ -48,7 +48,7 @@ class token_generator():
     @configurable_stable_retry(retries=50, delay=10)
     def obtain_csrf_token(self):
         r = requests.get(self.__get_root_route())
-        print r.status_code
+        print(r.status_code)
         if r.status_code != 200:
             raise Exception
         token = self.find_csrf_token(r.text)

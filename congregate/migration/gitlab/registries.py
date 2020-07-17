@@ -93,7 +93,7 @@ class RegistryClient(BaseClass):
                         self.log.debug("Created tag %s" % tag_name)
             self.log.info("Migrating images to registry %s" % new_reg)
             for line in dest_client.images.push(new_reg, stream=True, decode=True):
-                print line
+                print(line)
             self.log.info("Removing locally stored source images")
             for image in images:
                 dest_client.images.remove(image.id, force=True)

@@ -56,7 +56,7 @@ class ConfigTests(unittest.TestCase):
                 with mock.patch('congregate.cli.config.obfuscate', lambda x: "obfuscated==="):
                     with mock.patch('congregate.cli.config.deobfuscate', lambda x: "deobfuscated==="):
                         with mock.patch('getpass.getpass', lambda x: "password"):
-                            with mock.patch('__builtin__.raw_input', lambda x: next(g)):
+                            with mock.patch('__builtin__.input', lambda x: next(g)):
                                 config.generate_config()
 
         # load the file that was just written
@@ -129,7 +129,7 @@ class ConfigTests(unittest.TestCase):
                         with mock.patch('congregate.cli.config.test_registries', lambda x, y, z: None):
                             with mock.patch('congregate.cli.config.test_slack', lambda x: None):
                                 with mock.patch('congregate.cli.config.deobfuscate', lambda x: "deobfuscated==="):
-                                    with mock.patch('__builtin__.raw_input', lambda x: next(g)):
+                                    with mock.patch('__builtin__.input', lambda x: next(g)):
                                         config.generate_config()
 
         # load the file that was just written
@@ -162,7 +162,7 @@ class ConfigTests(unittest.TestCase):
             "0",  # destination parent group id
             # "dstn_parent_group_path",  # destination parent group full path
             "group_sso_provider",  # SSO provider
-            "1", # SSO provider pattern
+            "1",  # SSO provider pattern
             "username_suffix",  # username suffix
             "No",   # mirror
             # "mirror_username",  # mirror username
@@ -210,7 +210,7 @@ class ConfigTests(unittest.TestCase):
                                 with mock.patch('congregate.cli.config.test_registries', lambda x, y, z: None):
                                     with mock.patch('congregate.cli.config.test_slack', lambda x: None):
                                         with mock.patch('congregate.cli.config.deobfuscate', lambda x: "deobfuscated==="):
-                                            with mock.patch('__builtin__.raw_input', lambda x: next(g)):
+                                            with mock.patch('__builtin__.input', lambda x: next(g)):
                                                 config.generate_config()
 
         # load the file that was just written
@@ -245,7 +245,7 @@ class ConfigTests(unittest.TestCase):
             "0",  # destination parent group id
             # "dstn_parent_group_path",  # destination parent group full path
             "group_sso_provider",  # SSO provider
-            "1", # SSO provider pattern
+            "1",  # SSO provider pattern
             "_",  # username suffix
             "yes",   # mirror
             # "mirror_username",  # mirror username
@@ -289,7 +289,7 @@ class ConfigTests(unittest.TestCase):
                         with mock.patch('congregate.cli.config.obfuscate', lambda x: "obfuscated==="):
                             with mock.patch('congregate.cli.config.test_registries', lambda x, y, z: None):
                                 with mock.patch('congregate.cli.config.deobfuscate', lambda x: "deobfuscated==="):
-                                    with mock.patch('__builtin__.raw_input', lambda x: next(g)):
+                                    with mock.patch('__builtin__.input', lambda x: next(g)):
                                         config.generate_config()
 
         # load the file that was just written
@@ -361,7 +361,7 @@ class ConfigTests(unittest.TestCase):
                         with mock.patch('congregate.cli.config.test_registries', lambda x, y, z: None):
                             with mock.patch('congregate.cli.config.test_slack', lambda x: None):
                                 with mock.patch('congregate.cli.config.deobfuscate', lambda x: "deobfuscated==="):
-                                    with mock.patch('__builtin__.raw_input', lambda x: next(g)):
+                                    with mock.patch('__builtin__.input', lambda x: next(g)):
                                         config.generate_config()
 
         # load the file that was just written

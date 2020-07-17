@@ -17,7 +17,7 @@ def remove_dupes(my_list):
     """
         Basic deduping function to remove any duplicates from a list
     """
-    return {v["id"]: v for v in my_list}.values()
+    return list({v["id"]: v for v in my_list}.values())
 
 
 def download_file(url, path, filename=None, headers=None):
@@ -29,7 +29,7 @@ def download_file(url, path, filename=None, headers=None):
                 r.headers.get('content-disposition'))
         file_path = "{0}/downloads/{1}".format(path, filename)
         create_local_project_export_structure(os.path.dirname(file_path))
-        with open(file_path, 'wb') as f:
+        with open(file_path, "wb") as f:
             for chunk in r.iter_content(chunk_size=1024):
                 if chunk:
                     f.write(chunk)
@@ -218,14 +218,14 @@ def clean_data(dry_run=True, files=None):
         for f in files_to_delete:
             path = "{0}/data/{1}".format(app_path, f)
             try:
-                print "{0}Removing {1}".format(get_dry_log(dry_run), path)
+                print("{0}Removing {1}".format(get_dry_log(dry_run), path))
                 if not dry_run:
                     os.remove(path)
             except OSError as e:
                 if e.errno != errno.ENOENT:
                     raise
     else:
-        print "Cannot find data directory. CONGREGATE_PATH not set or you are not running this in the Congregate directory."
+        print("Cannot find data directory. CONGREGATE_PATH not set or you are not running this in the Congregate directory.")
 
 
 def rotate_logs():
@@ -248,7 +248,7 @@ def rotate_logs():
             if e.errno != errno.ENOENT:
                 raise
     else:
-        print "Cannot find data directory. CONGREGATE_PATH not set or you are not running this in the Congregate directory."
+        print("Cannot find data directory. CONGREGATE_PATH not set or you are not running this in the Congregate directory.")
 
 
 def is_recent_file(path, age=2592000):
@@ -264,7 +264,7 @@ def find(key, dictionary):
         Nested dictionary lookup from https://gist.github.com/douglasmiranda/5127251
     """
     if isinstance(dictionary, dict):
-        for k, v in dictionary.iteritems():
+        for k, v in dictionary.items():
             if k == key:
                 yield v
             elif isinstance(v, dict):
@@ -291,7 +291,7 @@ def is_error_message_present(response):
         return True
     elif isinstance(response, dict) and response.get("message", None) is not None:
         return True
-    elif isinstance(response, unicode) and response == "message":
+    elif isinstance(response, str) and response == "message":
         return True
     return False
 
@@ -394,16 +394,17 @@ def stitch_json_results(result_type="project", steps=0, order="tail"):
 def build_ui(app_path):
     port = 8000
     if not os.path.exists(app_path + "/node_modules"):
-        print "No node_modules found. Running npm install"
+        print("No node_modules found. Running npm install")
         install_deps = "npm install"
         subprocess.call(install_deps.split(" "))
     if not os.path.exists(app_path + "/dist"):
-        print "UI not built. Building it before deploying"
+        print("UI not built. Building it before deploying")
         build_command = "npm run build"
         subprocess.call(build_command.split(" "))
     os.chdir(app_path + "/congregate")
     run_ui = "gunicorn -k gevent -w 4 ui:app --bind=0.0.0.0:" + str(port)
     subprocess.call(run_ui.split(" "))
+
 
 def generate_audit_log_message(req_type, message, url, data=None):
     try:
@@ -417,7 +418,7 @@ def generate_audit_log_message(req_type, message, url, data=None):
 
 
 def write_json_yield_to_file(file_path, generator_function, *args):
-    with open(file_path, "wb") as f:
+    with open(file_path, "w") as f:
         output = []
         for data in generator_function(*args):
             output.append(data)

@@ -117,7 +117,7 @@ class SCMVerifier:
         '''
         This function should get all details for a given repository
         '''
-        for repo, data in self.projects[project]['repos'].iteritems():
+        for repo, data in self.projects[project]['repos'].items():
             branch_url = '{}/{}/repos/{}/branches'.format(
                 self.url, project, repo)
             branches = self.get_json_from_endpoint(
@@ -138,7 +138,7 @@ class SCMVerifier:
     def get_all_commits(self, project, credentials):
         # I hate nested code like this.  Always feel like I'm doing something wrong and the people who aren't
         # faking it until they make it are going to come and get me :D
-        for repo, data in self.projects[project]['repos'].iteritems():
+        for repo, data in self.projects[project]['repos'].items():
             url = '{}/{}/repos/{}/commits'.format(self.url, project, repo)
             # print('\nOur url looks like: {}\n'.format(url))
             commits = self.get_json_from_endpoint(
@@ -250,7 +250,7 @@ class SCMVerifier:
                 results = json_body
                 isLastPage = True
             else:
-                print "No values found"
+                print("No values found")
                 isLastPage = True
             print(json_body)
 

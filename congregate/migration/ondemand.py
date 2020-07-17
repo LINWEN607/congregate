@@ -33,20 +33,20 @@ class OnDemand:
         self.l.logger.info("Migrating %s to GitLab" % clone_url)
         if len(bb_json.projects[self.project_key]["repos"]) > 2:
             data = []
-            for _, repo_data in bb_json.projects[self.project_key]["repos"].iteritems():
+            for _, repo_data in bb_json.projects[self.project_key]["repos"].items():
                 data.append(repo_data["metadata"])
             self.l.logger.debug(data)
             start_multi_process(handle_bitbucket_migration, data)
         else:
-            for _, repo_data in bb_json.projects[self.project_key]["repos"].iteritems():
+            for _, repo_data in bb_json.projects[self.project_key]["repos"].items():
                 handle_bitbucket_migration(repo_data["metadata"])
         results = self.verify()
 
         if results["Status"] == "Failure":
-            print json.dumps(results, indent=4)
+            print(json.dumps(results, indent=4))
             exit(1)
 
-        for _, repo_data in bb_json.projects[self.project_key]["repos"].iteritems():
+        for _, repo_data in bb_json.projects[self.project_key]["repos"].items():
             self.mark_as_read_only(
                 migration_type, repo_data["metadata"]["web_repo_url"], repo_data["metadata"]["name"])
 
@@ -54,7 +54,7 @@ class OnDemand:
             if "The git history may have diverged. Please sync your git history." in err or "User not authorized to mark" in err:
                 results["Status"] = "Success with warnings"
 
-        print json.dumps(results, indent=4)
+        print(json.dumps(results, indent=4))
         if results["Status"] == "Success":
             exit(0)
         elif results["Status"] == "Success with warnings":
@@ -65,7 +65,7 @@ class OnDemand:
     def verify_migration(self, migration_type, clone_url):
         self.generate_data(migration_type, clone_url)
         results = self.verify()
-        print json.dumps(results, indent=4)
+        print(json.dumps(results, indent=4))
         if results["Status"] == "Success":
             exit(0)
         elif results["Status"] == "Success with warnings":
@@ -123,8 +123,8 @@ class OnDemand:
             re_attempt = False
             verification_results = self.v.compare_multiple_repositories(
                 self.bb_json.projects[self.project_key]["repos"])
-            print verification_results
-            for k, v in verification_results["results"].iteritems():
+            print(verification_results)
+            for k, v in verification_results["results"].items():
                 if v is False:
                     verified = False
                     if attempt == 3:

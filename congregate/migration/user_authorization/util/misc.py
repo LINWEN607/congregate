@@ -7,7 +7,7 @@ import re
 
 
 def get_time_stamp():
-    now = datetime.now() #+ timedelta(hours=7)
+    now = datetime.now()  # + timedelta(hours=7)
     time_stamp = now.strftime('%m%d%y_%H%M')
     return time_stamp
 
@@ -20,7 +20,8 @@ def debug_print(var_name, var_val):
     calframe = inspect.getouterframes(curframe, 2)
     caller_function = calframe[1][3]
     file_name = caller.filename.split('/')[-1]
-    text = "In function {} in file {} at line number {}. {} = {}".format(caller_function, file_name, line_number, var_name, var_val)
+    text = "In function {} in file {} at line number {}. {} = {}".format(
+        caller_function, file_name, line_number, var_name, var_val)
     print(text)
 
 
@@ -30,7 +31,7 @@ def stable_retry(function, ExceptionType=Exception, tries=5, delay=1, backoff=1.
         while mtries > 1:
             try:
                 return function(*args, **kwargs)
-            except ExceptionType, e:
+            except ExceptionType as e:
                 time.sleep(mdelay)
                 mtries -= 1
                 mdelay *= backoff
@@ -64,16 +65,19 @@ def get_env_user_attributes():
         'build_user_id'
     ]
     user_test_attributes = [pair[0] for pair in attribute_pairs]
-    user_test_attributes_are_available = [os.getenv(user_test_attr) is not None for user_test_attr in user_test_attributes]
+    user_test_attributes_are_available = [os.getenv(
+        user_test_attr) is not None for user_test_attr in user_test_attributes]
     assert not (any(user_test_attributes_are_available) and not all(user_test_attributes_are_available)), "Some testing attributes are available but not all.\n{}".format(
-        ["{}: {}".format(pair[0], os.getenv(pair[0])) for pair in attribute_pairs]
+        ["{}: {}".format(pair[0], os.getenv(pair[0]))
+         for pair in attribute_pairs]
     )
     conditions_for_using_test_user = [
         all([os.getenv(test_attr) is not None for test_attr in user_test_attributes]),
     ]
     use_test_user = True if all(conditions_for_using_test_user) else False
     for i in range(len(attribute_pairs)):
-        env_user_attributes[env_user_attribute_keys[i]] = os.getenv(attribute_pairs[i][1]) if not use_test_user else os.getenv(attribute_pairs[i][0])
+        env_user_attributes[env_user_attribute_keys[i]] = os.getenv(
+            attribute_pairs[i][1]) if not use_test_user else os.getenv(attribute_pairs[i][0])
     # for k, v in env_user_attributes.items():
     #     print('{} {}: {}'.format('env_user_attributes', k, v))
     return env_user_attributes

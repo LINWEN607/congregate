@@ -1,10 +1,11 @@
-from urllib import quote_plus
+from urllib.parse import quote_plus
 from congregate.helpers import api
+
 
 class NamespacesApi(object):
     def __init__(self):
         pass
-    
+
     @staticmethod
     def get_namespace_by_full_path(full_path, host, token):
         """

@@ -123,7 +123,7 @@ def get_count(host, token, api):
     response = requests.head(url, headers=generate_v4_request_header(token))
 
     if response.headers.get('X-Total', None) is not None:
-        return long(response.headers['X-Total'])
+        return int(response.headers['X-Total'])
 
     return None
 
@@ -144,7 +144,7 @@ def get_total_pages(host, token, api):
     response = requests.head(url, headers=generate_v4_request_header(token))
 
     if response.headers.get('X-Total-Pages', None) is not None:
-        return long(response.headers['X-Total-Pages'])
+        return int(response.headers['X-Total-Pages'])
 
     return None
 
@@ -174,7 +174,7 @@ def list_all(host, token, api, params=None, per_page=100, keyset=False):
     if count is not None:
         # total_work = end_at - start_at
         # total_pages = total_work / PER_PAGE
-        start_page = (start_at / PER_PAGE) + 1  # pages are 1-indexed
+        start_page = (start_at // PER_PAGE) + 1  # pages are 1-indexed
         end_page = int(math_ceil(float(end_at) / float(PER_PAGE)))
         current_page = start_page
         retried = False

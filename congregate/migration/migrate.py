@@ -63,7 +63,12 @@ ext_import = ImportClient()
 _DRY_RUN = True
 _PROCESSES = None
 _ONLY_POST_MIGRATION_INFO = False
-_START = None
+_START = time()
+_SKIP_USERS = False
+_SKIP_GROUP_EXPORT = False
+_SKIP_GROUP_IMPORT = False
+_SKIP_GROUP_EXPORT = False
+_SKIP_PROJECT_IMPORT = False
 
 
 def migrate(
@@ -75,9 +80,6 @@ def migrate(
         skip_project_import=False,
         skip_project_export=False,
         only_post_migration_info=False):
-
-    global _START
-    _START = time()
 
     global _SKIP_USERS
     _SKIP_USERS = skip_users
@@ -103,10 +105,6 @@ def migrate(
     global _ONLY_POST_MIGRATION_INFO
     _ONLY_POST_MIGRATION_INFO = only_post_migration_info
 
-    global _SOURCE_TYPE
-    _SOURCE_TYPE = b.config.source_type
-    # _SOURCE_TYPE = "gitlab"
-
     # Dry-run and log cleanup
     if _DRY_RUN:
         clean_data(dry_run=False, files=[
@@ -114,10 +112,13 @@ def migrate(
             "dry_run_group_migration.json",
             "dry_run_project_migration.json"])
     rotate_logs()
-    if _SOURCE_TYPE.lower() == "gitlab":
+    if b.config.source_type == "gitlab":
         migrate_from_gitlab()
-    elif _SOURCE_TYPE.lower() == "bitbucket server":
+    elif b.config.source_type == "bitbucket server":
         migrate_from_bitbucket_server()
+    else:
+        b.log.warning(
+            "Configuration (data/congregate.conf) src_type {} not supported".format(b.config.source_type))
     add_post_migration_stats(_START)
 
 
@@ -139,6 +140,7 @@ def migrate_from_gitlab():
     if not _DRY_RUN and b.config.dstn_parent_id and not is_dot_com(b.config.destination_host):
         groups.remove_import_user(b.config.dstn_parent_id)
 
+
 def migrate_from_bitbucket_server():
     # Migrate users
     migrate_user_info()
@@ -156,7 +158,7 @@ def migrate_from_bitbucket_server():
         # append Total : Successful count of project imports
         import_results.append(get_results(import_results))
         b.log.info("### {0}Project import results ###\n{1}"
-                    .format(dry_log, json_pretty(import_results)))
+                   .format(dry_log, json_pretty(import_results)))
         write_results_to_file(import_results, log=b.log)
     else:
         b.log.info("SKIP: No projects to migrate")
@@ -164,15 +166,20 @@ def migrate_from_bitbucket_server():
 
 def import_bitbucket_project(project):
     members = project.pop("members")
-    result = ext_import.trigger_import_from_bb_server(project, dry_run=_DRY_RUN)
+    result = ext_import.trigger_import_from_bb_server(
+        project, dry_run=_DRY_RUN)
     if result.get(project["path_with_namespace"], False) is not False:
-        project_id = result[project["path_with_namespace"]]["response"].get("id")
+        project_id = result[project["path_with_namespace"]
+                            ]["response"].get("id")
         for member in members:
-            member["user_id"] = users.find_user_by_email_comparison_without_id(member["email"])["id"]
+            member["user_id"] = users.find_user_by_email_comparison_without_id(member["email"])[
+                "id"]
             if member.get("user_id"):
-                projects_api.add_member(project_id, b.config.destination_host, b.config.destination_token, member)
+                projects_api.add_member(
+                    project_id, b.config.destination_host, b.config.destination_token, member)
         projects.remove_import_user(project_id)
     return result
+
 
 def are_results(results, var, stage):
     if not results:
@@ -183,14 +190,15 @@ def are_results(results, var, stage):
 
 
 def migrate_user_info():
+    print(_DRY_RUN)
     staged_users = users.get_staged_users()
     if staged_users:
         if not _SKIP_USERS:
             b.log.info("{}Migrating user info".format(get_dry_log(_DRY_RUN)))
             staged = users.handle_users_not_found(
                 "staged_users", users.search_for_staged_users()[0], keep=False if _ONLY_POST_MIGRATION_INFO else True)
-            new_users = filter(None, start_multi_process(
-                handle_user_creation, staged, _PROCESSES))
+            new_users = start_multi_process(
+                handle_user_creation, staged, _PROCESSES)
             are_results(new_users, "user", "creation")
             formatted_users = {}
             for nu in new_users:
@@ -264,13 +272,17 @@ def handle_user_creation(user):
     return new_user
 
 
-def migrate_group_info(skip_group_export=False, skip_group_import=False):
+def migrate_group_info():
+    print(_DRY_RUN)
     staged_groups = [g for g in groups.get_staged_groups(
     ) if is_top_level_group(g)]
     dry_log = get_dry_log(_DRY_RUN)
     if staged_groups:
-        if not skip_group_export:
+        print(_DRY_RUN)
+        if not _SKIP_GROUP_EXPORT:
+            print(_DRY_RUN)
             b.log.info("{}Exporting groups".format(dry_log))
+            print(_DRY_RUN)
             export_results = start_multi_process(
                 handle_exporting_groups, staged_groups, processes=_PROCESSES)
 
@@ -292,7 +304,7 @@ def migrate_group_info(skip_group_export=False, skip_group_import=False):
                 staged_groups, failed)
         else:
             b.log.info("SKIP: Assuming staged groups are already exported")
-        if not skip_group_import:
+        if not _SKIP_GROUP_IMPORT:
             b.log.info("{}Importing groups".format(dry_log))
             import_results = start_multi_process(
                 handle_importing_groups, staged_groups, processes=_PROCESSES)
@@ -319,6 +331,7 @@ def migrate_group_info(skip_group_export=False, skip_group_import=False):
 
 
 def handle_exporting_groups(group):
+    print(_DRY_RUN)
     full_path = group["full_path"]
     gid = group["id"]
     dry_log = get_dry_log(_DRY_RUN)
@@ -706,8 +719,8 @@ def check_visibility():
                 b.config.destination_host, b.config.destination_token, "projects/%d?visibility=private" % int(
                     i),
                 data=None)
-            print change
-    print count
+            print(change)
+    print(count)
 
 
 def update_diverging_branch():
@@ -748,7 +761,7 @@ def dedupe_imports():
         unimported_projects = f.read()
     unimported_projects = unimported_projects.split("\n")
     dedupe = set(unimported_projects)
-    print len(dedupe)
+    print(len(dedupe))
 
 
 def stage_unimported_projects(dry_run=True):

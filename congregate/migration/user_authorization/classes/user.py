@@ -1,13 +1,16 @@
 import os
 import re
-import urllib
 import logging
+
+from urllib.parse import quote
 from ..util.misc import process_name
+
 
 class User(object):
     """
     A class that represents a users attributes in Bitbucket, GitLab, and the Jenkins job.
     """
+
     def __init__(self, first_name, last_name, email, build_user_id):
         attributes = [
             'first_name',
@@ -15,7 +18,8 @@ class User(object):
             'email',
             'build_user_id'
         ]
-        assert all([User.is_valid_attribute(attribute) for attribute in attributes])
+        assert all([User.is_valid_attribute(attribute)
+                    for attribute in attributes])
         self.first_name = process_name(name=first_name)
         self.last_name = process_name(name=last_name)
         self.email = email
@@ -30,7 +34,8 @@ class User(object):
         params = {
             'search': self.email
         }
-        response = gitlab_instance.api_request(request_type='get', url_extension=url_extension, params=params)
+        response = gitlab_instance.api_request(
+            request_type='get', url_extension=url_extension, params=params)
         response_json = response.json()
         try:
             user_id = response_json[0]["id"]
@@ -48,7 +53,8 @@ class User(object):
             "reset_password": "True"
         }
         url_extension = '/users'
-        response = gitlab_instance.api_request(request_type='post', url_extension=url_extension, data=data)
+        response = gitlab_instance.api_request(
+            request_type='post', url_extension=url_extension, data=data)
         response_json = response.json()
         success_status_codes = [200, 201]
         if response.status_code in success_status_codes:
@@ -57,15 +63,15 @@ class User(object):
         else:
             logging.info('Bad request in create_gitlab_user')
 
-
     def get_gitlab_username(self, gitlab_instance):
         url_extension = "/users"
         params = {
             'search': self.email
         }
-        user_search = gitlab_instance.api_request(request_type='get', url_extension=url_extension, params=params)
+        user_search = gitlab_instance.api_request(
+            request_type='get', url_extension=url_extension, params=params)
         # user_search = api.generate_get_request(conf.destination_host, conf.destination_token,
-        #                                                  "users?search=%s" % urllib.quote(user["email"]))
+        #                                                  "users?search=%s" % quote(user["email"]))
         try:
             return user_search[0]["email"].split("@")[0]
         except Exception as e:
@@ -77,7 +83,8 @@ class User(object):
         :param display_name: A string that is expected to include the users first name and last name
         :return: True if the name matches. Otherwise False
         """
-        assert display_name != None and len(display_name) > 0, "Invalid display_name input: {}".format(display_name)
+        assert display_name != None and len(
+            display_name) > 0, "Invalid display_name input: {}".format(display_name)
         processed_display_name = process_name(display_name)
         conditions_for_name_match = [
             self.first_name.lower() in processed_display_name.lower(),
@@ -94,7 +101,8 @@ class User(object):
         params = {
             'search': email
         }
-        response = gitlab_instance.api_request(request_type='get', url_extension=url_extension, params=params)
+        response = gitlab_instance.api_request(
+            request_type='get', url_extension=url_extension, params=params)
         response_json = response.json()
         try:
             user_id = response_json[0]["id"]

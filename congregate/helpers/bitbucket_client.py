@@ -1,5 +1,5 @@
 import json
-from urllib import quote
+from urllib.parse import quote
 from uuid import uuid4
 
 from congregate.helpers import api
@@ -62,29 +62,29 @@ def create_user(user_data):
 
 def create_user_by_group(user_data, group_id):
     return api.generate_post_request(
-            b.config.destination_host,
-            b.config.destination_token,
-            "users/%s/emails" % group_id,
-            json.dumps(user_data)
-        ).json()
+        b.config.destination_host,
+        b.config.destination_token,
+        "users/%s/emails" % group_id,
+        json.dumps(user_data)
+    ).json()
 
 
 def create_user_by_email_and_user_id(user_data, user_id):
     return api.generate_post_request(
-            b.config.destination_host,
-            b.config.destination_token,
-            "users/%s/emails" % user_id,
-            json.dumps(user_data)
-        ).json()
+        b.config.destination_host,
+        b.config.destination_token,
+        "users/%s/emails" % user_id,
+        json.dumps(user_data)
+    ).json()
 
 
 def create_group_from_group_data(group_data):
     return api.generate_post_request(
-            b.config.destination_host,
-            b.config.destination_token,
-            "groups",
-            json.dumps(group_data)
-        ).json()
+        b.config.destination_host,
+        b.config.destination_token,
+        "groups",
+        json.dumps(group_data)
+    ).json()
 
 
 def add_user_to_project(user_data, project_id):

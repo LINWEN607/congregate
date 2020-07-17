@@ -8,6 +8,7 @@ JsonDiff: Library for JSON DIFF - based on opslib jsondiff
 """
 
 try:
+    from congregate.helpers.misc_utils import list_to_dict
     import json
 except ImportError:
     import simplejson as json
@@ -16,8 +17,6 @@ except ImportError:
 
 import logging
 log = logging.getLogger(__name__)
-
-from congregate.helpers.misc_utils import list_to_dict
 
 
 def is_scalar(value):
@@ -78,7 +77,7 @@ class Comparator(object):
         >>> fp_new = open("new.json", "r")
         >>> engine = Comparator(fp_old, fp_new)
         >>> res = engine.compare_dicts()
-        >>> print json.dumps(res, sort_keys=True, indent=4)
+        >>> print(json.dumps(res, sort_keys=True, indent=4))
         {
             "members": {
                 "group": {
@@ -107,15 +106,15 @@ class Comparator(object):
         if fp1:
             try:
                 self.obj1 = json.load(fp1)
-            except (TypeError, OverflowError, ValueError), exc:
+            except (TypeError, OverflowError, ValueError) as exc:
                 raise json.JSONDecodeError("Cannot decode object from JSON.\n%s" %
-                                   unicode(exc))
+                                           str(exc))
         if fp2:
             try:
                 self.obj2 = json.load(fp2)
-            except (TypeError, OverflowError, ValueError), exc:
+            except (TypeError, OverflowError, ValueError) as exc:
                 raise json.JSONDecodeError("Cannot decode object from JSON\n%s" %
-                                   unicode(exc))
+                                           str(exc))
 
         self.excluded_attributes = []
         self.included_attributes = []
@@ -131,7 +130,7 @@ class Comparator(object):
         """Is this key excluded or not among included ones? If yes, it should
         be ignored."""
         key_out = ((self.included_attributes and
-                   (key not in self.included_attributes)) or
+                    (key not in self.included_attributes)) or
                    (key in self.excluded_attributes))
         value_out = True
         if isinstance(value, dict):
@@ -140,7 +139,7 @@ class Comparator(object):
                     for key in value[change_key]:
                         if ((self.included_attributes and
                              (key in self.included_attributes)) or
-                           (key not in self.excluded_attributes)):
+                                (key not in self.excluded_attributes)):
                             value_out = False
         return key_out and value_out
 
@@ -158,7 +157,7 @@ class Comparator(object):
                 if self.ignore_added and (change_type == "+++"):
                     continue
                 log.debug("result[change_type] = %s, key = %s",
-                          unicode(result[change_type]), key)
+                          str(result[change_type]), key)
                 log.debug("self._is_incex_key = %s",
                           self._is_incex_key(
                               key,

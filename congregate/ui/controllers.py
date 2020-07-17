@@ -12,6 +12,7 @@ from . import app
 
 grp = GroupsClient()
 usr = UsersClient()
+encoding = "utf-8"
 
 
 @app.route('/log')
@@ -48,21 +49,22 @@ def message(obj, obj_type):
 
 @app.route("/stage", methods=['POST'])
 def stage():
-    projects = request.get_data().split(",")
+    projects = request.get_data().decode(encoding).split(",")
     stage_projects.stage_data(projects, dry_run=False)
     return message(projects, "project")
 
 
 @app.route("/append_users", methods=['POST'])
 def add_users():
-    users = request.get_data().split(",")
+    users = request.get_data().decode(encoding).split(",")
+    print(users)
     usr.append_users(users)
     return message(users, "user")
 
 
 @app.route("/append_groups", methods=['POST'])
 def add_groups():
-    groups = request.get_data().split(",")
+    groups = request.get_data().decode(encoding).split(",")
     stage_groups.stage_data(groups, dry_run=False)
     return message(groups, "group")
 

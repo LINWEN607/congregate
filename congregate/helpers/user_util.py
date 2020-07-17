@@ -40,7 +40,7 @@ def map_users(dry_run=True):
                         name, users_dict[username]["email"], email))
                     users_dict[username]["email"] = email
                     total_matches += 1
-    for _, u in users_dict.iteritems():
+    for _, u in users_dict.items():
         rewritten_users.append(u)
     bm.log.info("{0}Found {1} users to remap:\n{2}".format(
         "DRY-RUN: " if dry_run else "",
@@ -74,5 +74,5 @@ def rm_non_ldap_users():
             #         users_dict[username]["email"] = email
             #         total_matches += 1
             if users_dict.get(username, None) is None:
-                print json.dumps(users_dict[username], indent=4)
+                print(json.dumps(users_dict[username], indent=4))
                 #api.generate_delete_request(config.destination_host, config.destination_token, "users/%d" % users_dict[username]["id"])

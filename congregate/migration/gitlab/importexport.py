@@ -1,7 +1,7 @@
 import json
 
 from re import sub
-from urllib import quote
+from urllib.parse import quote
 from time import sleep
 from os import remove
 from glob import glob
@@ -211,7 +211,7 @@ class ImportExportClient(BaseClass):
             response = self.get_export_response(
                 source_id, is_project, data=data, headers=headers)
             return response
-        except RequestException, e:
+        except RequestException as e:
             self.log.error("Failed to trigger {0} (ID: {1}) export as {2} with response {3}".format(
                 check_is_project_or_group_for_logging(is_project).lower(), source_id, filename, response))
             return None
@@ -319,7 +319,7 @@ class ImportExportClient(BaseClass):
                 "Importing project {0} from filesystem to {1}".format(name, namespace))
             try:
                 # Handle large files
-                with open("%s/downloads/%s" % (self.config.filesystem_path, filename), "rb") as f:
+                with open("%s/downloads/%s" % (self.config.filesystem_path, filename), "r") as f:
                     m = MultipartEncoder(fields={
                         "file": (filename, f),
                         "path": path,
@@ -339,7 +339,7 @@ class ImportExportClient(BaseClass):
                 self.log.error(
                     "Large file upload failed for {0}. Using standard file upload, due to:\n{1}".format(
                         filename, ae))
-                with open("%s/downloads/%s" % (self.config.filesystem_path, filename), "rb") as f:
+                with open("%s/downloads/%s" % (self.config.filesystem_path, filename), "r") as f:
                     data = {
                         "path": path,
                         "namespace": namespace,

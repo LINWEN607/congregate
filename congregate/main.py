@@ -159,13 +159,13 @@ if __name__ == '__main__':
 
     if arguments["init"]:
         if not os.path.exists('data'):
-            print "Creating data directory and empty log file"
+            print("Creating data directory and empty log file")
             os.makedirs('data')
             if not os.path.exists("%s/data/congregate.log" % app_path):
                 with open("%s/data/congregate.log" % app_path, "w") as f:
                     f.write("")
         else:
-            print "Congregate already initialized"
+            print("Congregate already initialized")
         log = myLogger(__name__)
     else:
         log = myLogger(__name__)
@@ -286,7 +286,7 @@ if __name__ == '__main__':
             else:
                 log.warning("Missing access-level argument")
         if arguments["get-total-count"]:
-            print migrate.get_total_migrated_count()
+            print(migrate.get_total_migrated_count())
         if arguments["find-unimported-projects"]:
             projects.find_unimported_projects(dry_run=DRY_RUN)
         if arguments["stage-unimported-projects"]:
@@ -368,4 +368,4 @@ if __name__ == '__main__':
                 result_type=result_type, steps=steps, order=order)
             write_results_to_file(new_results, result_type, log=log)
     if arguments["obfuscate"]:
-        print obfuscate("Secret:")
+        print(obfuscate("Secret:"))

@@ -1,5 +1,5 @@
 import json
-from urllib2 import HTTPError
+from urllib.error import HTTPError
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers import bitbucket_client as bbc
 from congregate.migration.mirror import MirrorClient

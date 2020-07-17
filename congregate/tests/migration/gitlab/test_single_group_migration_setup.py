@@ -21,13 +21,13 @@ class MigrationEndToEndTestSetup(unittest.TestCase):
         self.s.generate_seed_data(dry_run=False)
 
     def generate_single_group_config_with_tokens(self):
-        print "Generating Destination Token"
+        print("Generating Destination Token")
         destination_token = self.t.generate_token("destination_token", "2020-08-27", url=os.getenv(
             "GITLAB_DEST"), username="root", pword=uuid4().hex)  # Destination access token
-        print "Generating Source Token"
+        print("Generating Source Token")
         source_token = self.t.generate_token("source_token", "2020-08-27", url=os.getenv(
             "GITLAB_SRC"), username="root", pword="5iveL!fe")  # source token
-        print "Prepping config data"
+        print("Prepping config data")
         values = [
             os.getenv("GITLAB_DEST"),  # Destination hostname
             # self.t.generate_token("destination_token", "2020-08-27", url=os.getenv("GITLAB_DEST"), username="root", pword=uuid4().hex), # Destination access token
@@ -68,6 +68,6 @@ class MigrationEndToEndTestSetup(unittest.TestCase):
         g = input_generator(values)
         t = input_generator(tokens)
         with mock.patch('congregate.cli.config.test_registries', lambda x, y, z: None):
-            with mock.patch('__builtin__.raw_input', lambda x: next(g)):
+            with mock.patch('__builtin__.input', lambda x: next(g)):
                 with mock.patch('congregate.cli.config.obfuscate', lambda x: base64.b64encode(next(t))):
                     config.generate_config()

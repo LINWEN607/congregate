@@ -16,7 +16,7 @@ class Verification:
     def compare_multiple_repositories(self, projects):
         verification_map = {"results": {}}
         # assuming initially generated json
-        for project_name, project_data in projects.iteritems():
+        for project_name, project_data in projects.items():
             self.l.logger.info("Comparing data for %s" % project_name)
             verification_map["results"][project_name] = self.compare_repositories(
                 project_data["metadata"])
@@ -70,7 +70,7 @@ class Verification:
                                 try:
                                     gl_time = datetime.datetime.strptime(
                                         matching_bitbucket_sha["committed_date"], "%Y-%m-%dT%H:%M:%S.000Z")
-                                except ValueError, e:
+                                except ValueError as e:
                                     rewritten_timestamp = matching_bitbucket_sha["committed_date"].replace(
                                         " ", "T")
                                     rewritten_timestamp = sub(

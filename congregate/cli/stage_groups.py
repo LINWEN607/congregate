@@ -162,11 +162,11 @@ def write_staging_files(skip_users=False):
         :param: staged_users:(dict) staged users
         :param: staged_groups: (dict) staged groups
     """
-    with open("%s/data/staged_groups.json" % b.app_path, "wb") as f:
+    with open("%s/data/staged_groups.json" % b.app_path, "w") as f:
         f.write(json.dumps(remove_dupes(staged_groups), indent=4))
-    with open("%s/data/staged_projects.json" % b.app_path, "wb") as f:
+    with open("%s/data/staged_projects.json" % b.app_path, "w") as f:
         f.write(json.dumps(remove_dupes(staged_projects), indent=4))
-    with open("%s/data/staged_users.json" % b.app_path, "wb") as f:
+    with open("%s/data/staged_users.json" % b.app_path, "w") as f:
         f.write(json.dumps([] if skip_users else remove_dupes(staged_users), indent=4))
 
 
