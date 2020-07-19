@@ -265,14 +265,14 @@ class UsersTests(unittest.TestCase):
     def test_remove_blocked_users(self):
         read_data = json.dumps(self.mock_users.get_dummy_new_users())
         mock_open = mock.mock_open(read_data=read_data)
-        with mock.patch('__builtin__.open', mock_open):
+        with mock.patch('builtins.open', mock_open):
             result = self.users.remove("staged_users")
         self.assertEqual(result, self.mock_users.get_dummy_new_users_active())
 
     def test_remove_blocked_project_members(self):
         read_data = json.dumps(self.mock_users.get_dummy_project())
         mock_open = mock.mock_open(read_data=read_data)
-        with mock.patch('__builtin__.open', mock_open):
+        with mock.patch('builtins.open', mock_open):
             result = self.users.remove("staged_projects")
         self.assertEqual(
             result, self.mock_users.get_dummy_project_active_members())
@@ -280,7 +280,7 @@ class UsersTests(unittest.TestCase):
     def test_remove_blocked_group_members(self):
         read_data = json.dumps(self.mock_groups.get_dummy_group())
         mock_open = mock.mock_open(read_data=read_data)
-        with mock.patch('__builtin__.open', mock_open):
+        with mock.patch('builtins.open', mock_open):
             result = self.users.remove("staged_groups")
         self.assertEqual(
             result, self.mock_groups.get_dummy_group_active_members())
@@ -291,7 +291,7 @@ class UsersTests(unittest.TestCase):
         }
         read_data = json.dumps(self.mock_users.get_dummy_new_users())
         mock_open = mock.mock_open(read_data=read_data)
-        with mock.patch('__builtin__.open', mock_open):
+        with mock.patch('builtins.open', mock_open):
             result = self.users.handle_users_not_found(
                 "staged_users", users_not_found)
         self.assertEqual(result, self.mock_users.get_dummy_new_users_active())
@@ -302,7 +302,7 @@ class UsersTests(unittest.TestCase):
         }
         read_data = json.dumps(self.mock_users.get_dummy_new_users())
         mock_open = mock.mock_open(read_data=read_data)
-        with mock.patch('__builtin__.open', mock_open):
+        with mock.patch('builtins.open', mock_open):
             result = self.users.handle_users_not_found(
                 "staged_users", users_not_found, keep=False)
         self.assertEqual(result, self.mock_users.get_dummy_new_users_active())
@@ -314,7 +314,7 @@ class UsersTests(unittest.TestCase):
         }
         read_data = json.dumps(self.mock_groups.get_dummy_group())
         mock_open = mock.mock_open(read_data=read_data)
-        with mock.patch('__builtin__.open', mock_open):
+        with mock.patch('builtins.open', mock_open):
             result = self.users.handle_users_not_found(
                 "staged_groups", users_not_found)
         self.assertEqual(
@@ -327,7 +327,7 @@ class UsersTests(unittest.TestCase):
         }
         read_data = json.dumps(self.mock_users.get_dummy_project())
         mock_open = mock.mock_open(read_data=read_data)
-        with mock.patch('__builtin__.open', mock_open):
+        with mock.patch('builtins.open', mock_open):
             result = self.users.handle_users_not_found(
                 "staged_projects", users_not_found)
         self.assertEqual(
@@ -557,8 +557,8 @@ class UsersTests(unittest.TestCase):
         }
         self.assertEqual(handle_user_creation(new_user), expected)
 
-    @mock.patch("__builtin__.file")
-    @mock.patch('__builtin__.open')
+    @mock.patch("io.TextIOBase")
+    @mock.patch('builtins.open')
     @mock.patch.object(UsersApi, "get_all_users")
     @mock.patch('congregate.helpers.conf.Config.src_parent_group_path', new_callable=mock.PropertyMock)
     @mock.patch('congregate.helpers.conf.Config.group_sso_provider', new_callable=mock.PropertyMock)
@@ -625,11 +625,11 @@ class UsersTests(unittest.TestCase):
                 "extra_shared_runners_minutes_limit": None
             }
         ]
-        self.assertEqual(sorted(self.users.retrieve_user_info(
-            "host", "token")), sorted(expected_users))
+        self.assertEqual(self.users.retrieve_user_info("host", "token").sort(
+            key=lambda x: x["id"]), expected_users.sort(key=lambda x: x["id"]))
 
-    @mock.patch("__builtin__.file")
-    @mock.patch('__builtin__.open')
+    @mock.patch("io.TextIOBase")
+    @mock.patch('builtins.open')
     @mock.patch.object(UsersApi, "get_user")
     @mock.patch.object(GroupsApi, "get_all_group_members")
     @mock.patch('congregate.helpers.conf.Config.src_parent_group_path', new_callable=mock.PropertyMock)
@@ -705,8 +705,8 @@ class UsersTests(unittest.TestCase):
                 "extra_shared_runners_minutes_limit": None
             }
         ]
-        self.assertEqual(sorted(self.users.retrieve_user_info(
-            "host", "token")), sorted(expected_users))
+        self.assertEqual(self.users.retrieve_user_info("host", "token").sort(
+            key=lambda x: x["id"]), expected_users.sort(key=lambda x: x["id"]))
 
     @mock.patch('congregate.helpers.conf.Config.group_sso_provider_pattern', new_callable=mock.PropertyMock)
     def test_generate_extern_uid(self, pattern):
@@ -747,7 +747,8 @@ class UsersTests(unittest.TestCase):
             }
         ]
 
-        self.assertIsNone(self.users.find_extern_uid_by_provider(identities, None))
+        self.assertIsNone(
+            self.users.find_extern_uid_by_provider(identities, None))
 
     def test_find_extern_uid_by_provider_with_provider(self):
         identities = [
@@ -776,39 +777,39 @@ class UsersTests(unittest.TestCase):
         parent_id.return_value = 1234
 
         expected = {
-            "two_factor_enabled": False, 
-            "can_create_project": True, 
-            "twitter": "", 
-            "shared_runners_minutes_limit": None, 
+            "two_factor_enabled": False,
+            "can_create_project": True,
+            "twitter": "",
+            "shared_runners_minutes_limit": None,
             "extern_uid": 'iwdewfsfdyyazqnpkwga@examplegitlab.com',
             "force_random_password": False,
             "group_id_for_saml": 1234,
-            "linkedin": "", 
-            "color_scheme_id": 1, 
-            "skype": "", 
-            "is_admin": False, 
-            "id": 2, 
-            "projects_limit": 100000, 
+            "linkedin": "",
+            "color_scheme_id": 1,
+            "skype": "",
+            "is_admin": False,
+            "id": 2,
+            "projects_limit": 100000,
             "provider": "group_saml",
-            "note": None, 
-            "state": "active", 
+            "note": None,
+            "state": "active",
             "reset_password": True,
-            "location": None, 
-            "email": "iwdewfsfdyyazqnpkwga@examplegitlab.com", 
-            "website_url": "", 
-            "job_title": "", 
-            "username": "RzKciDiyEzvtSqEicsvW", 
-            "bio": None, 
-            "work_information": None, 
-            "private_profile": False, 
-            "external": False, 
+            "location": None,
+            "email": "iwdewfsfdyyazqnpkwga@examplegitlab.com",
+            "website_url": "",
+            "job_title": "",
+            "username": "RzKciDiyEzvtSqEicsvW",
+            "bio": None,
+            "work_information": None,
+            "private_profile": False,
+            "external": False,
             "skip_confirmation": True,
-            "organization": None, 
-            "public_email": "", 
-            "extra_shared_runners_minutes_limit": None, 
-            "name": "FrhUbyTGMoXQUTeaMgFW", 
-            "can_create_group": True, 
-            "avatar_url": "https://www.gravatar.com/avatar/a0290f87758efba7e7be1ed96b2e5ac1?s=80&d=identicon", 
+            "organization": None,
+            "public_email": "",
+            "extra_shared_runners_minutes_limit": None,
+            "name": "FrhUbyTGMoXQUTeaMgFW",
+            "can_create_group": True,
+            "avatar_url": "https://www.gravatar.com/avatar/a0290f87758efba7e7be1ed96b2e5ac1?s=80&d=identicon",
             "theme_id": 1
         }
         actual = self.users.generate_user_group_saml_post_data(mock_user)

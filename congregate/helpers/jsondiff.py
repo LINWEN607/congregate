@@ -220,8 +220,8 @@ class Comparator(object):
 
         We have it guaranteed that both new_arr and old_arr are of type list.
         """
-        old_arr = sorted(old_arr)
-        new_arr = sorted(new_arr)
+        old_arr = sorted(old_arr, key=lambda x: str(x))
+        new_arr = sorted(new_arr, key=lambda x: str(x))
         inters = min(len(old_arr), len(new_arr))  # this is the smaller length
 
         result = {

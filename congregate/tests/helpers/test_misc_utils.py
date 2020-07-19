@@ -36,8 +36,8 @@ def test_remove_dupes_with_all_dupes_returns_single():
 
 @mock.patch("congregate.helpers.misc_utils.__get_filename_from_cd")
 @mock.patch("congregate.helpers.misc_utils.__is_downloadable")
-@mock.patch("__builtin__.file")
-@mock.patch("__builtin__.open")
+@mock.patch("io.TextIOBase")
+@mock.patch("builtins.open")
 @mock.patch("requests.Response")
 @mock.patch("congregate.helpers.misc_utils.get")
 def test_download_file_sets_filename_from_response_headers_when_filename_none(g, resp, o, f, idl, fn):
@@ -51,8 +51,8 @@ def test_download_file_sets_filename_from_response_headers_when_filename_none(g,
 
 
 @mock.patch("congregate.helpers.misc_utils.__is_downloadable")
-@mock.patch("__builtin__.file")
-@mock.patch("__builtin__.open")
+@mock.patch("io.TextIOBase")
+@mock.patch("builtins.open")
 @mock.patch("requests.Response")
 @mock.patch("congregate.helpers.misc_utils.get")
 def test_download_file_uses_filename_from_param(g, resp, o, f, idl):

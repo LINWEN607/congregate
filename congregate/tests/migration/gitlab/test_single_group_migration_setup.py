@@ -1,7 +1,7 @@
 import os
 import unittest
 from uuid import uuid4
-import base64
+from base64 import b64encode
 import pytest
 import mock
 from congregate.helpers.misc_utils import input_generator
@@ -68,6 +68,6 @@ class MigrationEndToEndTestSetup(unittest.TestCase):
         g = input_generator(values)
         t = input_generator(tokens)
         with mock.patch('congregate.cli.config.test_registries', lambda x, y, z: None):
-            with mock.patch('__builtin__.input', lambda x: next(g)):
-                with mock.patch('congregate.cli.config.obfuscate', lambda x: base64.b64encode(next(t))):
+            with mock.patch('builtins.input', lambda x: next(g)):
+                with mock.patch('congregate.cli.config.obfuscate', lambda x: b64encode(next(t).encode("ascii")).decode("ascii")):
                     config.generate_config()

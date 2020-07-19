@@ -87,14 +87,13 @@ def build_staging_data(projects_to_stage, dry_run=True):
                 # Hacky check for id or project name by explicitly checking
                 # variable type
                 try:
-                    if (isinstance(int(projects_to_stage[i]), int)):
-                        # Retrieve object from better formatted object
-                        project = rewritten_projects[int(projects_to_stage[i])]
-                except ValueError:
-                    # Iterate over original project_json.json file
-                    for j, _ in enumerate(projects):
-                        if projects[j]["name"] == projects_to_stage[i]:
-                            project = projects[j]
+                    # Retrieve group object from groups.json
+                    project = rewritten_projects[int(
+                        re.sub("[^0-9]", "", projects_to_stage[i]))]
+                except (ValueError, KeyError):
+                    b.log.error("Please use a space delimited list of integers (project IDs):\n{}".format(
+                        projects_to_stage))
+                    exit()
                 append_data(project, projects_to_stage, dry_run=dry_run)
     else:
         b.log.info("Staging empty list")
@@ -208,19 +207,11 @@ def get_project_metadata(project):
         "project_type": project["namespace"]["kind"],
         "members": project["members"]
     }
-    if b.config.source_host:
+    if b.config.source_type == "gitlab":
         obj["http_url_to_repo"] = project["http_url_to_repo"]
         obj["shared_runners_enabled"] = project["shared_runners_enabled"]
         obj["archived"] = project["archived"]
         obj["shared_with_groups"] = project["shared_with_groups"]
-        obj["wiki_access_level"] = project["wiki_access_level"]
-        obj["issues_access_level"] = project["issues_access_level"]
-        obj["merge_requests_access_level"] = project["merge_requests_access_level"]
-        obj["builds_access_level"] = project["builds_access_level"]
-        obj["snippets_access_level"] = project["snippets_access_level"]
-        obj["repository_access_level"] = project["repository_access_level"]
-        obj["forking_access_level"] = project["forking_access_level"]
-        obj["pages_access_level"] = project["pages_access_level"]
 
         # In case of projects without repos (e.g. Wiki)
         if "default_branch" in project:

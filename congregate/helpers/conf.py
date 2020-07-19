@@ -6,7 +6,7 @@ Copyright (c) 2020 - GitLab
 
 import os
 
-from configparser import SafeConfigParser as ConfigParser, ParsingError
+from configparser import ConfigParser, ParsingError
 
 from congregate.helpers.misc_utils import get_congregate_path, deobfuscate
 

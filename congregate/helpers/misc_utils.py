@@ -131,10 +131,9 @@ def rewrite_json_list_into_dict(l):
         Note: The top level keys in the nested objects must be unique or else data will be overwritten
     """
     new_dict = {}
-    for i in xrange(len(l)):
-        key = l[i].keys()[0]
+    for i, _ in enumerate(l):
+        key = list(l[i].keys())[0]
         new_dict[key] = l[i][key]
-
     return new_dict
 
 
@@ -180,11 +179,11 @@ def read_json_file_into_object(path):
 
 
 def obfuscate(prompt):
-    return b64encode(getpass.getpass(prompt))
+    return b64encode(getpass.getpass(prompt).encode("ascii")).decode("ascii")
 
 
 def deobfuscate(secret):
-    return b64decode(secret)
+    return b64decode(secret.encode("ascii")).decode("ascii")
 
 
 def clean_data(dry_run=True, files=None):

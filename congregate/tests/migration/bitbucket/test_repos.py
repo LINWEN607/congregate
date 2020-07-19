@@ -11,8 +11,8 @@ class ReposTests(unittest.TestCase):
         self.mock_repos = MockReposApi()
         self.repos = ReposClient()
 
-    @patch("__builtin__.file")
-    @patch('__builtin__.open')
+    @patch("io.TextIOBase")
+    @patch('builtins.open')
     @patch.object(ReposApi, "get_all_repos")
     @patch.object(ReposApi, "get_all_repo_users")
     @patch('congregate.helpers.conf.Config.external_source_url', new_callable=PropertyMock)
@@ -98,5 +98,5 @@ class ReposTests(unittest.TestCase):
                 "id": 13
             }
         ]
-        self.assertEqual(sorted(self.repos.retrieve_repo_info()),
-                         sorted(expected_repos))
+        self.assertEqual(self.repos.retrieve_repo_info().sort(
+            key=lambda x: x["id"]), expected_repos.sort(key=lambda x: x["id"]))

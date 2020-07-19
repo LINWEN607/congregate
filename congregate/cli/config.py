@@ -1,7 +1,7 @@
 from base64 import b64encode, b64decode
 import getpass
 from os import getcwd, path, mkdir, makedirs
-from configparser import SafeConfigParser as ConfigParser, NoOptionError
+from configparser import ConfigParser, NoOptionError
 
 import binascii
 import json
@@ -145,7 +145,7 @@ def generate_config():
                     config_path))
 
         migrating_registries = input(
-            "Are you migrating any container registries? (Default: No)")
+            "Are you migrating any container registries? (Default: No) ")
         if migrating_registries.lower() in ["yes", "y"]:
             config.set("SOURCE", "src_registry_url", input(
                 "Source instance Container Registry URL: "))

@@ -23,7 +23,7 @@ A lot of improvements can be done on this script, will do that as time permits. 
 # Import Modules
 import os
 import sys
-from urlparse.parse import urljoin
+from urllib.parse import urljoin
 import requests
 from bs4 import BeautifulSoup
 from congregate.helpers.decorators import configurable_stable_retry

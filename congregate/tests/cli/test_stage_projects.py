@@ -14,18 +14,18 @@ class StageProjectsTests(unittest.TestCase):
         self.users_api = MockUsersApi()
         self.mock = mock.MagicMock()
 
-    @mock.patch('__builtin__.open')
+    @mock.patch('builtins.open')
     @mock.patch('os.path.isfile')
     @mock.patch('congregate.cli.stage_projects.open_projects_file')
     @mock.patch('congregate.cli.stage_projects.open_users_file')
     @mock.patch('congregate.cli.stage_projects.open_groups_file')
     @mock.patch.object(ConfigurationValidator, 'dstn_parent_id', new_callable=mock.PropertyMock)
-    @mock.patch.object(ConfigurationValidator, 'source_host', new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, 'source_type', new_callable=mock.PropertyMock)
     @mock.patch('congregate.cli.stage_projects.staged_users', [])
     @mock.patch('congregate.cli.stage_projects.staged_groups', [])
     @mock.patch('congregate.cli.stage_projects.staged_projects', [])
-    def test_build_stage_data(self, mock_source_host, mock_parent_id, mock_groups, mock_users, mock_projects, mock_check, mock_open):
-        mock_source_host.return_value = "http://192.168.1.8:3000"
+    def test_build_stage_data(self, mock_source_type, mock_parent_id, mock_groups, mock_users, mock_projects, mock_check, mock_open):
+        mock_source_type.return_value = "gitlab"
         mock_parent_id.return_value = None
         mock_check.return_value = True
         mock_projects.return_value = self.projects_api.get_all_projects()
@@ -60,14 +60,6 @@ class StageProjectsTests(unittest.TestCase):
                 "id": 4,
                 "description": "Project that does stuff",
                 "shared_runners_enabled": True,
-                "wiki_access_level": "enabled",
-                "issues_access_level": "enabled",
-                "merge_requests_access_level": "enabled",
-                "builds_access_level": "enabled",
-                "snippets_access_level": "disabled",
-                "repository_access_level": "enabled",
-                "forking_access_level": "enabled",
-                "pages_access_level": "private",
                 "path_with_namespace": "diaspora/diaspora-client",
                 "archived": False,
                 "shared_with_groups": []
@@ -95,14 +87,6 @@ class StageProjectsTests(unittest.TestCase):
                 "id": 6,
                 "description": None,
                 "shared_runners_enabled": True,
-                "wiki_access_level": "enabled",
-                "issues_access_level": "enabled",
-                "merge_requests_access_level": "enabled",
-                "builds_access_level": "enabled",
-                "snippets_access_level": "disabled",
-                "repository_access_level": "enabled",
-                "forking_access_level": "enabled",
-                "pages_access_level": "private",
                 "path_with_namespace": "brightbox/puppet",
                 "archived": False,
                 "shared_with_groups": []
@@ -224,36 +208,32 @@ class StageProjectsTests(unittest.TestCase):
         self.assertEqual(len(expected_users), len(staged_users))
 
         for i in range(len(expected_projects)):
-            self.assertDictContainsSubset(
-                expected_projects[i], staged_projects[i])
-            self.assertItemsEqual(expected_projects[i], staged_projects[i])
+            self.assertEqual(
+                expected_projects[i].items(), staged_projects[i].items())
         for i in range(len(expected_groups)):
             try:
-                self.assertDictContainsSubset(
-                    expected_groups[i], staged_groups[i])
-                self.assertItemsEqual(expected_groups[i], staged_groups[i])
+                self.assertEqual(
+                    expected_groups[i].items(), staged_groups[i].items())
             except AssertionError:
                 print("Expected: ", expected_groups[i])
                 print("Staged: ", staged_groups[i])
-                self.assertDictContainsSubset(
-                    expected_groups[i], staged_groups[i])
 
         for i in range(len(expected_users)):
-            self.assertDictContainsSubset(expected_users[i], staged_users[i])
-            self.assertItemsEqual(expected_users[i], staged_users[i])
+            self.assertEqual(
+                expected_users[i].items(), staged_users[i].items())
 
-    @mock.patch('__builtin__.open')
+    @mock.patch('builtins.open')
     @mock.patch('os.path.isfile')
     @mock.patch('congregate.cli.stage_projects.open_projects_file')
     @mock.patch('congregate.cli.stage_projects.open_users_file')
     @mock.patch('congregate.cli.stage_projects.open_groups_file')
     @mock.patch.object(ConfigurationValidator, 'dstn_parent_id', new_callable=mock.PropertyMock)
-    @mock.patch.object(ConfigurationValidator, 'source_host', new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, 'source_type', new_callable=mock.PropertyMock)
     @mock.patch('congregate.cli.stage_projects.staged_users', [])
     @mock.patch('congregate.cli.stage_projects.staged_groups', [])
     @mock.patch('congregate.cli.stage_projects.staged_projects', [])
-    def test_build_stage_increment_no_parent_id(self, mock_source_host, mock_parent_id, mock_groups, mock_users, mock_projects, mock_check, mock_open):
-        mock_source_host.return_value = "http://192.168.1.8:3000"
+    def test_build_stage_increment_no_parent_id(self, mock_source_type, mock_parent_id, mock_groups, mock_users, mock_projects, mock_check, mock_open):
+        mock_source_type.return_value = "gitlab"
         mock_parent_id.return_value = None
         mock_check.return_value = True
         mock_projects.return_value = self.projects_api.get_all_projects()
@@ -288,14 +268,6 @@ class StageProjectsTests(unittest.TestCase):
                 "default_branch": "master",
                 "description": "Project that does stuff",
                 "shared_runners_enabled": True,
-                "wiki_access_level": "enabled",
-                "issues_access_level": "enabled",
-                "merge_requests_access_level": "enabled",
-                "builds_access_level": "enabled",
-                "snippets_access_level": "disabled",
-                "repository_access_level": "enabled",
-                "forking_access_level": "enabled",
-                "pages_access_level": "private",
                 "path_with_namespace": "diaspora/diaspora-client",
                 "archived": False,
                 "shared_with_groups": []
@@ -323,14 +295,6 @@ class StageProjectsTests(unittest.TestCase):
                 "default_branch": "master",
                 "description": None,
                 "shared_runners_enabled": True,
-                "wiki_access_level": "enabled",
-                "issues_access_level": "enabled",
-                "merge_requests_access_level": "enabled",
-                "builds_access_level": "enabled",
-                "snippets_access_level": "disabled",
-                "repository_access_level": "enabled",
-                "forking_access_level": "enabled",
-                "pages_access_level": "private",
                 "path_with_namespace": "brightbox/puppet",
                 "archived": False,
                 "shared_with_groups": []
@@ -452,17 +416,16 @@ class StageProjectsTests(unittest.TestCase):
         self.assertEqual(len(expected_users), len(staged_users))
 
         for i in range(len(expected_projects)):
-            self.assertDictContainsSubset(
-                expected_projects[i], staged_projects[i])
-            self.assertItemsEqual(expected_projects[i], staged_projects[i])
+            self.assertEqual(
+                expected_projects[i].items(), staged_projects[i].items())
         for i in range(len(expected_groups)):
-            self.assertDictContainsSubset(expected_groups[i], staged_groups[i])
-            self.assertItemsEqual(expected_groups[i], staged_groups[i])
+            self.assertEqual(
+                expected_groups[i].items(), staged_groups[i].items())
         for i in range(len(expected_users)):
-            self.assertDictContainsSubset(expected_users[i], staged_users[i])
-            self.assertItemsEqual(expected_users[i], staged_users[i])
+            self.assertEqual(
+                expected_users[i].items(), staged_users[i].items())
 
-    @mock.patch('__builtin__.open')
+    @mock.patch('builtins.open')
     @mock.patch('os.path.isfile')
     @mock.patch('congregate.cli.stage_projects.open_projects_file')
     @mock.patch('congregate.cli.stage_projects.open_users_file')
@@ -489,7 +452,7 @@ class StageProjectsTests(unittest.TestCase):
         self.assertEqual(
             len(self.users_api.get_all_users_list()), len(staged_users))
 
-    @mock.patch('__builtin__.open')
+    @mock.patch('builtins.open')
     @mock.patch('os.path.isfile')
     @mock.patch('congregate.cli.stage_projects.open_projects_file')
     @mock.patch('congregate.cli.stage_projects.open_users_file')
@@ -506,9 +469,6 @@ class StageProjectsTests(unittest.TestCase):
         mock_groups.return_value = self.groups_api.get_all_groups_list()
         mock_open.return_value = {}
 
-        staged_projects, staged_users, staged_groups = stage_projects.build_staging_data([
-            ""])
-
-        self.assertEqual(len(staged_projects), 0)
-        self.assertEqual(len(staged_groups), 0)
-        self.assertEqual(len(staged_users), 0)
+        with self.assertRaises(SystemExit) as ex:
+            staged_projects, staged_users, staged_groups = stage_projects.build_staging_data([
+                ""])
