@@ -69,7 +69,7 @@ Copy the following data and add subsequent columns for single group migration
   * [ ] Confirm you can reach the API through cURL or a REST client
 * [ ] Run `congregate list` at the beginning of the migration blackout period
 * [ ] Stage ALL users
-  * [ ] Make sure no groups and projects are staged
+  * [ ] **Make sure no groups and projects are staged**
 * [ ] Create a directory called "waves" in `/opt/congregate/data` in the container if it doesn't already exist
 * [ ] Create a directory called `user_wave` in `/opt/congregate/data/waves` if it doesn't already exist
 * [ ] Copy `data/staged_users.json` to `/opt/congregate/data/waves/user_wave`
