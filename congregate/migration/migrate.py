@@ -536,6 +536,10 @@ def handle_importing_projects(project_json):
             import_id = ie.import_project(project_json, dry_run=_DRY_RUN)
 
         if import_id and not _DRY_RUN:
+            # Disable Auto DevOps
+            self.projects_api.edit_project(self.config.destination_host, self.config.destination_token, import_id, {
+                                            "auto_devops_enabled": False})
+
             # Archived projects cannot be migrated
             if archived:
                 b.log.info(
