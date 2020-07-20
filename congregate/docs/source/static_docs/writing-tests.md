@@ -16,9 +16,9 @@ Congregate consists of varying types of tests:
     - Python's built-in unit test library
 - [mock](https://docs.python.org/3/library/unittest.mock.html)
     - Python's built-in mocking and data pathcing library
-- [response](https://pypi.org/project/responses/0.3.0/)
+- [responses](https://pypi.org/project/responses/0.3.0/)
     - Open source testing library used to intercept HTTP requests and overload the data returned
-- Our built-in MockApi classes contain example responses from the APIs consume. Utilize these classes for mocking a GET request or some JSON we would use
+- Our [built-in MockApi classes](../congregate.tests.mockapi.html) contain example responses from the APIs consume. Utilize these classes for mocking a GET request or some JSON we would use
 
 #### We utilize mock through decorators. How do I mock the following:
 
