@@ -28,6 +28,7 @@ from congregate.migration.gitlab.variables import VariablesClient
 from congregate.migration.gitlab.users import UsersClient
 from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.groups import GroupsClient
+from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.projects import ProjectsClient
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.pushrules import PushRulesClient
@@ -49,6 +50,7 @@ badges = BadgesClient()
 users = UsersClient()
 users_api = UsersApi()
 groups = GroupsClient()
+groups_api = GroupsApi()
 projects = ProjectsClient()
 projects_api = ProjectsApi()
 pushrules = PushRulesClient()
@@ -140,12 +142,31 @@ def migrate_from_gitlab():
         groups.remove_import_user(b.config.dstn_parent_id)
 
 def migrate_from_bitbucket_server():
+    dry_log = get_dry_log(_DRY_RUN)
+
     # Migrate users
     migrate_user_info()
 
+    staged_groups = groups.get_staged_groups()
+
+    if staged_groups:
+        b.log.info("Migrating BitBucket projects to GitLab groups")
+        results = start_multi_process(
+            migrate_bitbucket_group, staged_groups, processes=_PROCESSES)
+        
+        are_results(results, "group", "import")
+
+        results.append(get_results(results))
+        b.log.info("### {0}Group import results ###\n{1}"
+                    .format(dry_log, json_pretty(results)))
+        write_results_to_file(
+            results, result_type="group", log=b.log)
+    else:
+        b.log.info("SKIP: No projects to migrate")
+
     # Migrate BB repos to projects
     staged_projects = projects.get_staged_projects()
-    dry_log = get_dry_log(_DRY_RUN)
+    
     if staged_projects:
         b.log.info("Importing projects from BitBucket Server")
         import_results = start_multi_process(
@@ -160,6 +181,18 @@ def migrate_from_bitbucket_server():
         write_results_to_file(import_results, log=b.log)
     else:
         b.log.info("SKIP: No projects to migrate")
+
+def migrate_bitbucket_group(group):
+    members = group.pop("members")
+    result = groups_api.create_group(b.config.destination_host, b.config.destination_token, group)
+    if result:
+        group_id = result[group["path_with_namespace"]]["response"].get("id")
+        for member in members:
+            member["user_id"] = users.find_user_by_email_comparison_without_id(member["email"])["id"]
+            if member.get("user_id"):
+                groups_api.add_member_to_group(group_id, b.config.destination_host, b.config.destination_token, member)
+        groups.remove_import_user(group_id)
+    return result
 
 
 def import_bitbucket_project(project):
