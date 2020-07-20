@@ -174,9 +174,9 @@ def list_all(host, token, api, params=None, per_page=100, keyset=False):
     if count is not None:
         # total_work = end_at - start_at
         # total_pages = total_work / PER_PAGE
-        start_page = (start_at // PER_PAGE) + 1  # pages are 1-indexed
+        start_page = (start_at / PER_PAGE) + 1  # pages are 1-indexed
         end_page = int(math_ceil(float(end_at) / float(PER_PAGE)))
-        current_page = start_page
+        current_page = int(start_page)
         retried = False
         while current_page <= end_page:
             data = generate_get_request(host, token, api, params=get_params(
@@ -206,7 +206,7 @@ def list_all(host, token, api, params=None, per_page=100, keyset=False):
                 break
     else:
         start_page = (start_at / PER_PAGE) + 1  # pages are 1-indexed
-        current_page = start_page
+        current_page = int(start_page)
         while True:
             data = generate_get_request(
                 host, token, api, params=get_params(

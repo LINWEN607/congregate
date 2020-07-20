@@ -1,5 +1,5 @@
 from congregate.migration.bitbucket.client import handle_bitbucket_migration
-from congregate.migration.migrate import start_multi_process
+from congregate.helpers.processes import start_multi_process
 from congregate.migration.mirror import MirrorClient
 from congregate.migration.verify import Verification
 from congregate.helpers import logger as log, api, conf

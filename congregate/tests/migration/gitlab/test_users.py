@@ -3,7 +3,7 @@ import json
 import mock
 import responses
 
-from congregate.migration.migrate import handle_user_creation
+from congregate.migration.migrate import MigrateClient
 from congregate.tests.mockapi.gitlab.users import MockUsersApi
 from congregate.tests.mockapi.gitlab.groups import MockGroupsApi
 from congregate.migration.gitlab.api.users import UsersApi
@@ -17,6 +17,7 @@ class UsersTests(unittest.TestCase):
         self.mock_users = MockUsersApi()
         self.mock_groups = MockGroupsApi()
         self.users = UsersClient()
+        self.migrate = MigrateClient(dry_run=False)
 
     # pylint: disable=no-member
     @responses.activate
@@ -143,7 +144,6 @@ class UsersTests(unittest.TestCase):
     @mock.patch('congregate.helpers.api.get_count')
     @mock.patch.object(KeysClient, "migrate_user_ssh_keys")
     @mock.patch.object(KeysClient, "migrate_user_gpg_keys")
-    @mock.patch('congregate.migration.migrate._DRY_RUN', False)
     def test_handle_user_creation(self, get_gpg, get_ssh, count, parent_id, destination):
         get_ssh.return_value = True
         get_gpg.return_value = True
@@ -168,7 +168,7 @@ class UsersTests(unittest.TestCase):
             "id": 27,
             "email": "jdoe@email.com"
         }
-        self.assertEqual(handle_user_creation(new_user), expected)
+        self.assertEqual(self.migrate.handle_user_creation(new_user), expected)
 
     # pylint: disable=no-member
     @responses.activate
@@ -178,7 +178,6 @@ class UsersTests(unittest.TestCase):
     @mock.patch('congregate.helpers.api.get_count')
     @mock.patch.object(KeysClient, "migrate_user_ssh_keys")
     @mock.patch.object(KeysClient, "migrate_user_gpg_keys")
-    @mock.patch('congregate.migration.migrate._DRY_RUN', False)
     def test_handle_user_creation_user_already_exists_no_parent_group(self, get_gpg, get_ssh, count, parent_id, destination):
         get_ssh.return_value = True
         get_gpg.return_value = True
@@ -203,7 +202,7 @@ class UsersTests(unittest.TestCase):
             "id": 27,
             "email": "jdoe@email.com"
         }
-        self.assertEqual(handle_user_creation(new_user), expected)
+        self.assertEqual(self.migrate.handle_user_creation(new_user), expected)
 
     # pylint: disable=no-member
     @responses.activate
@@ -213,7 +212,6 @@ class UsersTests(unittest.TestCase):
     @mock.patch('congregate.helpers.api.get_count')
     @mock.patch.object(KeysClient, "migrate_user_ssh_keys")
     @mock.patch.object(KeysClient, "migrate_user_gpg_keys")
-    @mock.patch('congregate.migration.migrate._DRY_RUN', False)
     def test_handle_user_creation_user_already_exists_with_parent_group(self, get_gpg, get_ssh, count, parent_id, destination):
         get_ssh.return_value = True
         get_gpg.return_value = True
@@ -238,7 +236,7 @@ class UsersTests(unittest.TestCase):
             "id": 27,
             "email": "jdoe@email.com"
         }
-        self.assertEqual(handle_user_creation(new_user), expected)
+        self.assertEqual(self.migrate.handle_user_creation(new_user), expected)
 
     # pylint: disable=no-member
     @responses.activate
@@ -530,7 +528,6 @@ class UsersTests(unittest.TestCase):
     @mock.patch('congregate.helpers.api.get_count')
     @mock.patch.object(KeysClient, "migrate_user_ssh_keys")
     @mock.patch.object(KeysClient, "migrate_user_gpg_keys")
-    @mock.patch('congregate.migration.migrate._DRY_RUN', False)
     def test_handle_user_creation_improperly_formatted_json(self, get_gpg, get_ssh, count, parent_id, destination):
         get_ssh.return_value = True
         get_gpg.return_value = True
@@ -555,7 +552,7 @@ class UsersTests(unittest.TestCase):
             "id": None,
             "email": "jdoe@email.com"
         }
-        self.assertEqual(handle_user_creation(new_user), expected)
+        self.assertEqual(self.migrate.handle_user_creation(new_user), expected)
 
     @mock.patch("io.TextIOBase")
     @mock.patch('builtins.open')

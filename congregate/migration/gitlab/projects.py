@@ -125,7 +125,7 @@ class ProjectsClient(BaseClass):
                 elif not dry_run:
                     try:
                         project = resp.json()
-                        if get_timedelta(project["created_at"]) < self.config.max_asset_expiration_time:
+                        if get_timedelta(project["created_at"]) < int(self.config.max_asset_expiration_time):
                             self.projects_api.delete_project(
                                 self.config.destination_host,
                                 self.config.destination_token,

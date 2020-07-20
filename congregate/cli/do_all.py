@@ -4,7 +4,7 @@ from congregate.cli.stage_groups import stage_data
 from congregate.cli.list_source import list_data
 from congregate.migration.gitlab.users import UsersClient
 from congregate.migration.gitlab.groups import GroupsClient
-from congregate.migration import migrate
+from congregate.migration.migrate import MigrateClient
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.misc_utils import is_recent_file, remove_dupes
 
@@ -31,12 +31,14 @@ def do_all_users(dry_run=True):
         with open("{}/data/staged_users.json".format(b.app_path), "w") as su:
             json.dump(remove_dupes(json.load(u)), su, indent=4)
 
-    migrate.migrate(
+    migrate = MigrateClient(
         dry_run=dry_run,
         skip_group_export=True,
         skip_group_import=True,
         skip_project_import=True,
-        skip_project_export=True)
+        skip_project_export=True
+    )
+    migrate.migrate()
 
     # Lookup not found users AFTER - NO dry run
     users.search_for_staged_users()
@@ -53,7 +55,8 @@ def do_all_groups_and_projects(dry_run=True):
     # Stage ALL - NO dry run
     stage_data(["all"], dry_run=False, skip_users=True)
 
-    migrate.migrate(dry_run=dry_run, skip_users=True)
+    migrate = MigrateClient(dry_run=dry_run, skip_users=True)
+    migrate.migrate()
 
 
 def do_all(dry_run=True):
@@ -67,7 +70,8 @@ def do_all(dry_run=True):
     # Stage ALL - NO dry run
     stage_data(["all"], dry_run=False)
 
-    migrate.migrate(dry_run=dry_run)
+    migrate = MigrateClient(dry_run=dry_run)
+    migrate.migrate()
 
 
 def list_all():

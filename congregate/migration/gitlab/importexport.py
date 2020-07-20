@@ -94,7 +94,7 @@ class ImportExportClient(BaseClass):
                                 src_id, is_project)
                             retry = False
                             total_time = 0
-                    elif total_time < self.config.max_export_wait_time:
+                    elif total_time < int(self.config.max_export_wait_time):
                         self.log.info("Checking {0} {1} export status (current: {2}) in {3} seconds".format(
                             export_type.lower(), name, status_json.get("export_status", None), wait_time))
                         total_time += wait_time
@@ -133,7 +133,7 @@ class ImportExportClient(BaseClass):
                 if status.status_code == 200:
                     exported = True
                     break
-                elif total_time < self.config.max_export_wait_time:
+                elif total_time < int(self.config.max_export_wait_time):
                     self.log.info(
                         "Waiting {0} seconds for group {1} to export".format(wait_time, gid))
                     total_time += wait_time
@@ -169,7 +169,7 @@ class ImportExportClient(BaseClass):
                 "Waiting {0} seconds for group {1} to import".format(wait_time, path))
             sleep(wait_time)
             timer += wait_time
-            if timer > self.config.max_export_wait_time:
+            if timer > int(self.config.max_export_wait_time):
                 self.log.error(
                     "Time limit exceeded for importing group {}".format(path))
                 break
@@ -319,7 +319,7 @@ class ImportExportClient(BaseClass):
                 "Importing project {0} from filesystem to {1}".format(name, namespace))
             try:
                 # Handle large files
-                with open("%s/downloads/%s" % (self.config.filesystem_path, filename), "r") as f:
+                with open("%s/downloads/%s" % (self.config.filesystem_path, filename), "rb") as f:
                     m = MultipartEncoder(fields={
                         "file": (filename, f),
                         "path": path,
@@ -339,7 +339,7 @@ class ImportExportClient(BaseClass):
                 self.log.error(
                     "Large file upload failed for {0}. Using standard file upload, due to:\n{1}".format(
                         filename, ae))
-                with open("%s/downloads/%s" % (self.config.filesystem_path, filename), "r") as f:
+                with open("%s/downloads/%s" % (self.config.filesystem_path, filename), "rb") as f:
                     data = {
                         "path": path,
                         "namespace": namespace,
@@ -458,7 +458,7 @@ class ImportExportClient(BaseClass):
                     sleep(self.COOL_OFF_MINUTES * 60)
                 # Assuming Default deletion adjourned period (Admin -> Settings -> General -> Visibility and access controls) is 0
                 elif any(del_err_msg in str(import_response) for del_err_msg in self.DEL_ERR_MSGS) and not is_dot_com(self.config.destination_host):
-                    if total > self.config.max_export_wait_time:
+                    if total > int(self.config.max_export_wait_time):
                         self.log.error("Time limit exceeded waiting for project {0} to delete from {1}, with response:\n{2}".format(
                             name, dst_namespace, import_response))
                         return None
@@ -502,7 +502,7 @@ class ImportExportClient(BaseClass):
                                 self.config.destination_host, self.config.destination_token, import_id)
                             return None
                     # For any other import status (started, scheduled, etc.) wait for it to update
-                    elif timeout < self.config.max_export_wait_time:
+                    elif timeout < int(self.config.max_export_wait_time):
                         self.log.info(
                             "Checking project {0} ({1}) import status in {2} seconds".format(name, dst_namespace, wait_time))
                         timeout += wait_time
