@@ -67,7 +67,7 @@ _START = time()
 _SKIP_USERS = False
 _SKIP_GROUP_EXPORT = False
 _SKIP_GROUP_IMPORT = False
-_SKIP_GROUP_EXPORT = False
+_SKIP_PROJECT_EXPORT = False
 _SKIP_PROJECT_IMPORT = False
 
 
@@ -537,14 +537,16 @@ def handle_importing_projects(project_json):
 
         if import_id and not _DRY_RUN:
             # Disable Auto DevOps
-            self.projects_api.edit_project(self.config.destination_host, self.config.destination_token, import_id, {
+            b.log.info("Disabling Auto DevOps on imported project {0} (ID: {1})".format(
+                dst_path_with_namespace, import_id))
+            projects_api.edit_project(b.config.destination_host, b.config.destination_token, import_id, {
                                             "auto_devops_enabled": False})
 
             # Archived projects cannot be migrated
             if archived:
                 b.log.info(
                     "Unarchiving source project {0} (ID: {1})".format(path, src_id))
-                projects.projects_api.unarchive_project(
+                projects_api.unarchive_project(
                     b.config.source_host, b.config.source_token, src_id)
             b.log.info(
                 "Migrating source project {0} (ID: {1}) info".format(path, src_id))
@@ -561,7 +563,7 @@ def handle_importing_projects(project_json):
         if archived and not _DRY_RUN:
             b.log.info(
                 "Archiving back source project {0} (ID: {1})".format(path, src_id))
-            projects.projects_api.archive_project(
+            projects_api.archive_project(
                 b.config.source_host, b.config.source_token, src_id)
     return result
 
@@ -665,7 +667,7 @@ def get_new_ids():
         for project_json in staged_projects:
             try:
                 b.log.debug("Searching for existing %s" % project_json["name"])
-                for proj in projects.projects_api.search_for_project(b.config.destination_host,
+                for proj in projects_api.search_for_project(b.config.destination_host,
                                                                      b.config.destination_token,
                                                                      project_json['name']):
                     if proj["name"] == project_json["name"]:
@@ -704,7 +706,7 @@ def check_visibility():
     else:
         ids = get_new_ids()
     for i in ids:
-        project = projects.projects_api.get_project(
+        project = projects_api.get_project(
             i, b.config.destination_host, b.config.destination_token).json()
         if project["visibility"] != "private":
             b.log.debug("Current destination path {0} visibility: {1}".format(
