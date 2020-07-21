@@ -79,10 +79,12 @@ Commands:
                                                 their parent groups to {CONGREGATE_PATH}/data/staged_groups.json.
                                                 all project and group members to {CONGREGATE_PATH}/data/staged_users.json,
                                                 All projects can be staged with '.' or 'all'.
+                                                Individual ones can be staged as a space delimited list of integers (project IDs).
     stage-groups                            Stage groups and sub-groups to {CONGREGATE_PATH}/data/staged_groups.json,
                                                 all their projects (except shared - with_shared=False) to {CONGREGATE_PATH}/data/staged_projects.json,
                                                 all project and group members to {CONGREGATE_PATH}/data/staged_users.json,
                                                 All groups can be staged with '.' or 'all'.
+                                                Individual ones can be staged as a space delimited list of integers (group IDs).
     migrate                                 Commence migration based on configuration and staged assets.
     rollback                                Remove staged users/groups/projects on destination.
     ui                                      Deploy UI to port 8000.

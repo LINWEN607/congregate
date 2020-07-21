@@ -200,7 +200,7 @@ class ProjectsApi():
             :param: id: (int) GitLab project ID
             :return: Response object containing the response to PUT /projects/:id
         """
-        return api.generate_put_request(host, token, "projects/{}".format(pid), data=data)
+        return api.generate_put_request(host, token, "projects/{}".format(pid), data=json.dumps(data))
 
     def start_pull_mirror(self, host, token, pid, data=None):
         """

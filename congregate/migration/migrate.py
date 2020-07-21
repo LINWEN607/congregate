@@ -510,11 +510,17 @@ class MigrateClient(BaseClass):
                     project_json, dry_run=self.dry_run)
 
             if import_id and not self.dry_run:
+                # Disable Auto DevOps
+                self.log.info("Disabling Auto DevOps on imported project {0} (ID: {1})".format(
+                    dst_path_with_namespace, import_id))
+                self.projects_api.edit_project(self.config.destination_host, self.config.destination_token, import_id, {
+                    "auto_devops_enabled": False})
+
                 # Archived projects cannot be migrated
                 if archived:
                     self.log.info(
                         "Unarchiving source project {0} (ID: {1})".format(path, src_id))
-                    self.projects.projects_api.unarchive_project(
+                    self.projects_api.unarchive_project(
                         self.config.source_host, self.config.source_token, src_id)
                 self.log.info(
                     "Migrating source project {0} (ID: {1}) info".format(path, src_id))
@@ -531,7 +537,7 @@ class MigrateClient(BaseClass):
             if archived and not self.dry_run:
                 self.log.info(
                     "Archiving back source project {0} (ID: {1})".format(path, src_id))
-                self.projects.projects_api.archive_project(
+                self.projects_api.archive_project(
                     self.config.source_host, self.config.source_token, src_id)
         return result
 
@@ -629,9 +635,9 @@ class MigrateClient(BaseClass):
                 try:
                     self.log.debug("Searching for existing %s" %
                                    project_json["name"])
-                    for proj in self.projects.projects_api.search_for_project(self.config.destination_host,
-                                                                              self.config.destination_token,
-                                                                              project_json['name']):
+                    for proj in self.projects_api.search_for_project(self.config.destination_host,
+                                                                     self.config.destination_token,
+                                                                     project_json['name']):
                         if proj["name"] == project_json["name"]:
 
                             if "%s" % project_json["namespace"].lower(
@@ -666,7 +672,7 @@ class MigrateClient(BaseClass):
         else:
             ids = self.get_new_ids()
         for i in ids:
-            project = self.projects.projects_api.get_project(
+            project = self.projects_api.get_project(
                 i, self.config.destination_host, self.config.destination_token).json()
             if project["visibility"] != "private":
                 self.log.debug("Current destination path {0} visibility: {1}".format(

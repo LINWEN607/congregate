@@ -65,7 +65,7 @@ class VariablesClient(BaseClass):
             return False
         except RequestException as re:
             self.log.error(
-                "Failed to migrate project {0} CI/CD variables, with error:\m{1}".format(name, re))
+                "Failed to migrate project {0} CI/CD variables, with error:\n{1}".format(name, re))
             return False
 
     def migrate_variables_in_stage(self, dry_run=True):
