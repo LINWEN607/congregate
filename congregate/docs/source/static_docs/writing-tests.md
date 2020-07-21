@@ -10,6 +10,27 @@ Congregate consists of varying types of tests:
 
 ## Quick resources
 
+#### How do I run the test suite?
+
+Unit and Integration Tests:
+
+```bash
+poetry run pytest \
+    -m "not e2e and not e2e_setup and not e2e_setup_2" \
+    --cov-config=.coveragerc \
+    --cov=congregate congregate/tests/
+```
+
+End to End Tests:
+
+NOTE: You will need to configure congregate to run an end to end test
+
+```bash
+poetry run pytest -s -m e2e congregate/tests/
+```
+
+These commands are also stored in the codebase in dev/bin/env
+
 #### We currently use the following libraries for our tests:
 
 - [unittest](https://docs.python.org/2/library/unittest.html)
@@ -62,6 +83,28 @@ def test_stitch_json(glob, json):
     actual = misc.stitch_json_results(steps=2)
 
     assert expected == actual
+```
+
+#### My tests are failing and the diff is hard to read. What do I do?
+
+Pytest allows for a more detailed output by adding a `-v` flag
+
+```bash
+poetry run pytest \
+    -m "not e2e and not e2e_setup and not e2e_setup_2" \
+    --cov-config=.coveragerc \
+    --cov=congregate congregate/tests/ -v
+```
+
+This should help to pretty print any JSON diffs in the output
+
+You can also make the output more verbose by adding more verbose flags
+
+```bash
+poetry run pytest \
+    -m "not e2e and not e2e_setup and not e2e_setup_2" \
+    --cov-config=.coveragerc \
+    --cov=congregate congregate/tests/ -vv
 ```
 
 ### Unit tests
@@ -135,15 +178,15 @@ Since Congregate orchestrates interactions between two SCM instances through a s
 There is a lot involved with writing an end to end test. The following work was done for our GitLab to GitLab e2e test:
 
 - Create a test GitLab instance with preseeded data
-- Automate building out the preseeded GitLab instance as an AMI with Packer
-- Set up a pipeline schedule to repeatedly build a new version of the GitLab seed AMI
-- Utilize a web scraper to generate new access tokens for the test source and destination instances
-- Automatically configure congregate before kicking off a full migration
-- Write a series of API diff reports testing the different responses between the same API endpoints on the different instances
-    - As a prerequisite, write out the framework for building a diff report between the instances
-- Write a script to automatically spin up the newest version of our seeded AMI in EC2
-- Write a script to automatically tear down the test AMI after the test is finished.
-- Automate this entire process in a GitLab CI/CD pipeline
+- Automate [building out](https://gitlab.com/gitlab-com/customer-success/tools/gitlab-seed-image) the preseeded GitLab instance as an AMI with Packer
+- Set up a [pipeline schedule](https://gitlab.com/gitlab-com/customer-success/tools/gitlab-seed-image/-/pipeline_schedules) to repeatedly build a new version of the GitLab seed AMI
+- Utilize a [web scraper](https://gitlab.com/gitlab-com/customer-success/tools/congregate/-/blob/master/congregate/helpers/seed/generate_token.py) to generate new access tokens for the test source and destination instances
+- Automatically [configure congregate](https://gitlab.com/gitlab-com/customer-success/tools/congregate/-/blob/master/congregate/tests/migration/gitlab/test_migration_setup.py) before kicking off a full migration
+- Write a series of [API diff reports](https://gitlab.com/gitlab-com/customer-success/tools/congregate/-/tree/master/congregate/migration/gitlab/diff) testing the different responses between the same API endpoints on the different instances
+    - As a prerequisite, write out the [framework](https://gitlab.com/gitlab-com/customer-success/tools/congregate/-/blob/master/congregate/migration/gitlab/diff/basediff.py) for building a diff report between the instances
+- Write a script to [automatically spin up](https://gitlab.com/gitlab-com/customer-success/tools/congregate/-/blob/master/spin_up_test_vm.sh) the newest version of our seeded AMI in EC2
+- Write a script to [automatically tear down](https://gitlab.com/gitlab-com/customer-success/tools/congregate/-/blob/master/.gitlab-ci.yml#L132) the test AMI after the test is finished.
+- Automate this entire process in a [GitLab CI/CD pipeline](https://gitlab.com/gitlab-com/customer-success/tools/congregate/-/blob/master/.gitlab-ci.yml#L112)
 
 The hardest part about writing out end to end tests is building out the foundation for subsequent end to end tests. For example, we first set up a full end to end test for a GitLab to GitLab migration and the development process took several weeks. Months later, we integrated a new method of GitLab to GitLab migration where we would migrate a single group to an entirely new instance. This required a new end to end test, but the level of effort for this test was much lower because all it required was a new test configuration.
 
