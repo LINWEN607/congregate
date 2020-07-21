@@ -67,7 +67,8 @@ class UserDiffClient(BaseDiffClient):
                     diff_report[user_email])
                 return diff_report
             except Exception:
-                self.log.info("Failed to generate diff for %s" % user_email)
+                self.log.info("Failed to generate diff for %s" %
+                              user_email)
         return {
             user_email: {
                 "error": "user missing",

@@ -22,7 +22,7 @@ class MigrationEndToEndTest(unittest.TestCase):
 
     @classmethod
     def tearDownClass(self):
-        self.migation.rollback()
+        self.migrate.rollback()
         # Allow users/groups/projects to fully delete
         sleep(self.b.config.importexport_wait * 6)
         rollback_diff()

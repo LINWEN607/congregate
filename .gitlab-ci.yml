@@ -10,7 +10,7 @@ include:
 
 variables:
   DOCKER_VERSION: "19.03.1"
-  TEST_IMAGE_NAME: "$CI_REGISTRY_IMAGE/test-2.7:latest"
+  TEST_IMAGE_NAME: "$CI_REGISTRY_IMAGE/test-3.8:latest"
   BB_SERVER_SEED_IMAGE_NAME: "$CI_REGISTRY_IMAGE/bitbucket-seed:latest"
   SAST_DISABLE_DIND: "true"
   SAST_DEFAULT_ANALYZERS: "bandit,secrets"
@@ -89,7 +89,7 @@ build bitbucket seed image:
   rules:
     - changes:
         - congregate/**/*
-        - docker/test/Dockerfile
+        - docker/test/*
         - congregate.sh
         - pyproject.toml
         - poetry.lock

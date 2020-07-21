@@ -1,9 +1,6 @@
-* TODO: Add build badge for at least master
-* TODO: Add coverage report link from htmlcov
-
 # Congregate
 
-[TOC]
+[[_TOC_]]
 
 ## About
 
@@ -20,7 +17,7 @@ Come together, right now
 
 ## Dependencies
 
-* Python 2.7
+* Python 3.8
 * [AWS CLI](https://aws.amazon.com/cli/)
 * [Poetry](https://python-poetry.org/)
 * [Node v11.13.0](https://www.npmjs.com/)
@@ -29,17 +26,21 @@ Come together, right now
 
 ### TL;DR Install
 
-This document assumes you have a working python 2.7.9 or greater installed, you know how to clone a repo in terminal, and switch to its directory.  If you do not have a working python, you will need to take appropriate OS specific steps to install it.
+This document assumes you have a working python 3.8.4 or greater installed, you know how to clone a repo in terminal, and switch to its directory.  If you do not have a working python, you will need to take appropriate OS specific steps to install it.
 
 After cloning [the repo](https://gitlab.com/gitlab-com/customer-success/tools/congregate/) and changing to the directory in terminal, run the following appropriate commands to run your first UT!
 
-1. Verify your python version.  Currently congregate only works in Python 2. Your python needs to be 2.7.9 or greater. To check the version; `python --version`. If you only have python 3, this will need to be addressed, there are official python 2 docker images that can be used.
+1. Verify the following:
+   1. `pip -V` (e.g. `pip 20.1.1 from /usr/local/lib/python3.8/site-packages/pip (python 3.8)`)
+   2. `poetry -V` (e.g. `Poetry version 1.0.9`)
+   3. `python -V` Currently congregate only works in Python 3. Your python needs to be `Python 3.8.4` or greater.
 1. Install the python poetry virtual environment manager: `pip install poetry` If pip install poetry doesn't work: \
  `curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python`
 1. Source the poetry environment: `source $HOME/.poetry/env`
 1. Verify poetry works: `poetry --version`. If this doesn't work, add the following line to your appropriate rc file, usually `.zshrc`: \
 `export PATH=$HOME/.poetry/bin:$PATH` and retry `poetry --version`
 1. Install python dependencies `poetry install`
+   1. To update dependencies run `poetry update`
 1. Install NVM for Node Version Management \
  `curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.35.3/install.sh | bash`
 1. If you are using zsh (mac default) copy this into `.zshrc`.  If not, copy into `.bashrc`.  Both of these files are generally found at `~/` \
@@ -56,7 +57,8 @@ After cloning [the repo](https://gitlab.com/gitlab-com/customer-success/tools/co
 `congregate init` \
 `echo "export CONGREGATE_PATH=$CONGREGATE_PATH" >> ~/.bash_profile`
 
-#### Congratulations!
+#### Congratulations
+
 If we made it this far without errors, we are done with the basic install for development!  The next command will run the UT and verify your installation is working.
 
 ```
@@ -558,386 +560,3 @@ reach out to a maintainer or create an issue pinging @leopardm or @pprokic
 |                | ToDos                       |                                                                                                                                                                   | :x:                | :x:                |
 |                | Snippets                    |                                                                                                                                                                   | :x:                | :x:                |
 |                | Runners                     |                                                                                                                                                                   | :x:                | :x:                |
-
-## Notes from Migration Merge
-* Unit tests won't run unless there is a config file in `data/config.json`
-* Use `pipenv run pytest` to run tests. `pipenv run python -m unittest discover congregate/` has issues with module relationships on import
-* Follow the instructions for setting up a local BitBucket server in Docker. Use version 4.14 of the server from `https://hub.docker.com/r/atlassian/bitbucket-server/`
-    * Create one project, two repos, two additional users (beyond the admin)
-* Run congregate.sh in the local project directory in the `pipenv shell`
-    * `./congregate.sh configure`
-    * `./congregate.sh migrate`
-* Missing items from the "simple" config found when running migrate
-    * `location`: Expecting something like 'aws'
-    * `external_source`: Code expects boolean, not string like `BitBucket`
-        * `repo_list`: If `external_source` expects `repo_list` which looks to be a file name.
-            * Not known what the file format should be
-* Command order is `config, list, stage`?
-* Coverage is installed. `pytest --cov=congregate/helpers`
-
-### Example JSONs
-#### List
-* Generated through `./congregate.sh list`
-##### users.json
-```json
-[
-    {
-        "twitter": "",
-        "shared_runners_minutes_limit": null,
-        "linkedin": "",
-        "color_scheme_id": 1,
-        "skype": "",
-        "is_admin": false,
-        "identities": [],
-        "projects_limit": 100000,
-        "state": "active",
-        "location": null,
-        "email": "migrate2@abc.com",
-        "website_url": "",
-        "username": "migrate_2",
-        "bio": null,
-        "private_profile": null,
-        "external": false,
-        "organization": null,
-        "public_email": "",
-        "extra_shared_runners_minutes_limit": null,
-        "name": "Migrate 2",
-        "can_create_group": true,
-        "reset_password": true,
-        "theme_id": 1
-    }
-]
-```
-##### groups.json
-```json
-[
-    {
-        "lfs_enabled": true,
-        "request_access_enabled": false,
-        "description": "Drupal",
-        "avatar_url": null,
-        "visibility": "public",
-        "parent_id": null,
-        "members": [
-            {
-                "username": "root",
-                "web_url": "https://pse.tanuki.cloud/root",
-                "name": "Administrator",
-                "expires_at": null,
-                "access_level": 50,
-                "state": "active",
-                "avatar_url": "https://secure.gravatar.com/avatar/e64c7d89f26bd1972efa854d13d7dd61?s=80&d=identicon",
-                "id": 1
-            }
-        ],
-        "path": "drupal",
-        "file_template_project_id": null,
-        "id": 67,
-        "full_path": "drupal",
-        "name": "Drupal"
-    }
-]
-```
-##### project_json.json
-```json
-[
-    {
-        "lfs_enabled": true,
-        "request_access_enabled": false,
-        "mirror_overwrites_diverged_branches": null,
-        "approvals_before_merge": 0,
-        "forks_count": 0,
-        "only_allow_merge_if_all_discussions_are_resolved": false,
-        "http_url_to_repo": "https://pse.tanuki.cloud/test_project_1/repo_2.git",
-        "web_url": "https://pse.tanuki.cloud/test_project_1/repo_2",
-        "mirror": true,
-        "mirror_trigger_builds": false,
-        "wiki_enabled": true,
-        "id": 100,
-        "merge_requests_enabled": true,
-        "archived": false,
-        "snippets_enabled": true,
-        "packages_enabled": true,
-        "merge_method": "merge",
-        "namespace": {
-            "kind": "group",
-            "web_url": "https://pse.tanuki.cloud/groups/test_project_1",
-            "name": "test_project_1",
-            "parent_id": null,
-            "avatar_url": null,
-            "path": "test_project_1",
-            "id": 71,
-            "full_path": "test_project_1"
-        },
-        "star_count": 0,
-        "ci_default_git_depth": 50,
-        "_links": {
-            "repo_branches": "https://pse.tanuki.cloud/api/v4/projects/100/repository/branches",
-            "merge_requests": "https://pse.tanuki.cloud/api/v4/projects/100/merge_requests",
-            "self": "https://pse.tanuki.cloud/api/v4/projects/100",
-            "labels": "https://pse.tanuki.cloud/api/v4/projects/100/labels",
-            "members": "https://pse.tanuki.cloud/api/v4/projects/100/members",
-            "events": "https://pse.tanuki.cloud/api/v4/projects/100/events",
-            "issues": "https://pse.tanuki.cloud/api/v4/projects/100/issues"
-        },
-        "resolve_outdated_diff_discussions": false,
-        "issues_enabled": true,
-        "path_with_namespace": "test_project_1/repo_2",
-        "repository_storage": "default",
-        "ci_config_path": null,
-        "shared_with_groups": [],
-        "description": null,
-        "mirror_user_id": 1,
-        "default_branch": null,
-        "visibility": "private",
-        "readme_url": null,
-        "ssh_url_to_repo": "git@pse.tanuki.cloud:test_project_1/repo_2.git",
-        "public_jobs": true,
-        "path": "repo_2",
-        "import_status": "failed",
-        "only_allow_merge_if_pipeline_succeeds": false,
-        "empty_repo": true,
-        "open_issues_count": 0,
-        "last_activity_at": "2019-07-01T17:13:05.506Z",
-        "name": "repo_2",
-        "printing_merge_request_link_enabled": true,
-        "name_with_namespace": "test_project_1 / repo_2",
-        "created_at": "2019-07-01T17:13:05.506Z",
-        "shared_runners_enabled": true,
-        "creator_id": 1,
-        "avatar_url": null,
-        "container_registry_enabled": true,
-        "only_mirror_protected_branches": null,
-        "external_authorization_classification_label": null,
-        "tag_list": [],
-        "permissions": {
-            "group_access": {
-                "notification_level": 3,
-                "access_level": 50
-            },
-            "project_access": null
-        },
-        "jobs_enabled": true
-    }
-]
-```
-#### Staging
-* Generated through `congregate.sh stage`
-##### staged_projects.json
-```json
-[
-    {
-        "members": [],
-        "http_url_to_repo": "https://pse.tanuki.cloud/test_project_1/repo_2.git",
-        "name": "repo_2",
-        "project_type": "group",
-        "default_branch": null,
-        "namespace": "test_project_1",
-        "id": 100,
-        "visibility": "private",
-        "description": null
-    }
-]
-```
-##### staged_groups.json
-```json
-[
-    {
-        "lfs_enabled": true,
-        "request_access_enabled": false,
-        "description": "",
-        "visibility": "private",
-        "parent_id": null,
-        "avatar_url": null,
-        "members": [
-            {
-                "username": "root",
-                "name": "Administrator",
-                "avatar_url": "https://secure.gravatar.com/avatar/e64c7d89f26bd1972efa854d13d7dd61?s=80&d=identicon",
-                "expires_at": null,
-                "access_level": 50,
-                "state": "active",
-                "web_url": "https://pse.tanuki.cloud/root",
-                "id": 1
-            },
-            {
-                "username": "migrate_1",
-                "name": "Migrate 1",
-                "avatar_url": "https://secure.gravatar.com/avatar/eb71b11762e9a1f7e8e417ffda6b4853?s=80&d=identicon",
-                "expires_at": null,
-                "access_level": 30,
-                "state": "active",
-                "web_url": "https://pse.tanuki.cloud/migrate_1",
-                "id": 53
-            },
-            {
-                "username": "migrate_2",
-                "name": "Migrate 2",
-                "avatar_url": "https://secure.gravatar.com/avatar/2c6b06bf40ad99d5f39600566e94ac6d?s=80&d=identicon",
-                "expires_at": null,
-                "access_level": 30,
-                "state": "active",
-                "web_url": "https://pse.tanuki.cloud/migrate_2",
-                "id": 54
-            }
-        ],
-        "path": "test_project_1",
-        "file_template_project_id": null,
-        "id": 71,
-        "full_path": "test_project_1",
-        "name": "test_project_1"
-    }
-]
-```
-##### staged_users.json
-```json
-[
-    {
-        "twitter": "",
-        "shared_runners_minutes_limit": null,
-        "linkedin": "",
-        "color_scheme_id": 1,
-        "skype": "",
-        "identities": [],
-        "projects_limit": 100000,
-        "state": "active",
-        "location": null,
-        "email": "migrate1@abc.com",
-        "website_url": "",
-        "username": "migrate_1",
-        "bio": null,
-        "private_profile": null,
-        "can_create_group": true,
-        "is_admin": false,
-        "external": false,
-        "theme_id": 1,
-        "public_email": "",
-        "extra_shared_runners_minutes_limit": null,
-        "name": "Migrate 1",
-        "reset_password": true,
-        "organization": null
-    },
-    {
-        "twitter": "",
-        "shared_runners_minutes_limit": null,
-        "linkedin": "",
-        "color_scheme_id": 1,
-        "skype": "",
-        "identities": [],
-        "projects_limit": 100000,
-        "state": "active",
-        "location": null,
-        "email": "migrate2@abc.com",
-        "website_url": "",
-        "username": "migrate_2",
-        "bio": null,
-        "private_profile": null,
-        "can_create_group": true,
-        "is_admin": false,
-        "external": false,
-        "theme_id": 1,
-        "public_email": "",
-        "extra_shared_runners_minutes_limit": null,
-        "name": "Migrate 2",
-        "reset_password": true,
-        "organization": null
-    }
-]
-```
-#### Config
-* Generated through `congregate.sh config`
-Note: Your destination and source info will be different in a true scenario. This is to show formatting.
-##### config.json
-###### Internal
-```json
-{
-    "config": {
-        "external_source": false,
-        "source_instance_token": "junktoken",
-        "number_of_threads": 2,
-        "destination_instance_host": "https://pse.tanuki.cloud",
-        "destination_instance_token": "junktoken",
-        "location": "filesystem",
-        "source_instance_host": "https://pse.tanuki.cloud",
-        "import_user_id": 1,
-        "path": "/Users/gmiller/projects/congregate"
-    }
-}
-```
-###### External
-```json
-{
-    "config": {
-        "external_source": true,
-        "destination_instance_host": "https://pse.tanuki.cloud",
-        "external_user_password": "ePb-84m7ZriB3NfbP_Z!eQFM7cE7ewp8",
-        "external_user_name": "gmiller",
-        "number_of_threads": 2,
-        "destination_instance_token": "junktoken",
-        "import_user_id": 1,
-        "location": "aws",
-        "external_source_url": "http://gmiller@bbhost:7990",
-        "repo_list_path": "data/repos.json"
-    }
-}
-```
-#### Repo Items?
-* Currently hand-generated.
-* BitBucket specific?
-##### repos.json
-```json
-[
-  {
-    "name": "repo_1",
-    "web_repo_url": "http://gmiller@bbhost:7990/scm/tp1/repo_1.git",
-    "group": "test_project_1",
-    "project_users": [
-      {
-        "displayName": "Migrate 1",
-        "name": "Migrate 1",
-        "username": "migrate_1",
-        "email": "migrate1@abc.com",
-        "permission": "PROJECT_WRITE"
-      },
-      {
-        "displayName": "Migrate 2",
-        "name": "Migrate 2",
-        "username": "migrate_2",
-        "email": "migrate2@abc.com",
-        "permission": "PROJECT_READ"
-      }],
-    "repo_users": [
-      {
-        "displayName": "Migrate 2",
-        "name": "Migrate 2",
-        "username": "migrate_2",
-        "email": "migrate2@abc.com",
-        "permission": "REPO_WRITE"
-      }
-    ]
-  },
-  {
-    "name": "repo_2",
-    "web_repo_url": "http://gmiller@bbhost:7990/scm/tp1/repo_2.git",
-    "group": "test_project_1",
-    "project_users": [
-      {
-        "displayName": "Migrate 2",
-        "name": "Migrate 2",
-        "username": "migrate_2",
-        "email": "migrate2@abc.com",
-        "permission": "PROJECT_READ"
-      }
-    ],
-    "repo_users": [
-      {
-        "displayName": "Migrate 2",
-        "name": "Migrate 2",
-        "username": "migrate_2",
-        "email": "migrate2@abc.com",
-        "permission": "REPO_READ"
-      }
-    ]
-  }
-]
-```

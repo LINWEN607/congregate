@@ -362,7 +362,8 @@ class MigrateClient(BaseClass):
                     import_id = group.get("id", None)
             if import_id and not self.dry_run:
                 result[full_path_with_parent_namespace] = group
-                migrate_single_group_features(src_gid, import_id, full_path)
+                self.migrate_single_group_features(
+                    src_gid, import_id, full_path)
         except (RequestException, KeyError, OverflowError) as oe:
             self.log.error("Failed to import group {0} (ID: {1}) as {2} with error:\n{3}".format(
                 full_path, src_gid, filename, oe))
