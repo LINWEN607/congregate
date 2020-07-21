@@ -28,7 +28,7 @@ class UsersClient(BaseClass):
                 "id": user["id"],
                 "username": user["slug"],
                 "name": user["displayName"],
-                "email": user["emailAddress"],
+                "email": user["emailAddress"].lower(),
                 "web_url": user["links"]["self"][0]["href"],
                 "state": "active"
             })
