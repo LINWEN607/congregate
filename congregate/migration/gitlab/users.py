@@ -565,7 +565,7 @@ class UsersClient(BaseClass):
                     "User {} does not exist or has already been removed".format(email))
             elif not dry_run:
                 try:
-                    if get_timedelta(user["created_at"]) < int(self.config.max_asset_expiration_time):
+                    if get_timedelta(user["created_at"]) < self.config.max_asset_expiration_time:
                         self.users_api.delete_user(
                             self.config.destination_host,
                             self.config.destination_token,

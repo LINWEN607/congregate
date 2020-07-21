@@ -155,7 +155,7 @@ class GroupsClient(BaseClass):
                     group = resp.json()
                     try:
                         if group.get("created_at", None):
-                            if get_timedelta(group["created_at"]) < int(self.config.max_asset_expiration_time):
+                            if get_timedelta(group["created_at"]) < self.config.max_asset_expiration_time:
                                 self.groups_api.delete_group(
                                     group["id"],
                                     self.config.destination_host,
