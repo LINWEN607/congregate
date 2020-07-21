@@ -155,7 +155,7 @@ class UsersTests(unittest.TestCase):
         url_value = "https://gitlabdestination.com/api/v4/users"
         # pylint: disable=no-member
         responses.add(responses.POST, url_value,
-                      json=self.mock_users.get_dummy_new_users()[1], status=200)
+                      json=self.mock_users.get_test_new_destination_users()[1], status=200)
         # pylint: enable=no-member
         url_value = "https://gitlabdestination.com/api/v4/users?search=%s&per_page=50&page=%d" % (
             new_user["email"], count.return_value)
@@ -190,7 +190,7 @@ class UsersTests(unittest.TestCase):
         url_value = "https://gitlabdestination.com/api/v4/users"
         # pylint: disable=no-member
         responses.add(responses.POST, url_value,
-                      json=self.mock_users.get_dummy_new_users()[1], status=409)
+                      json=self.mock_users.get_test_new_destination_users()[1], status=409)
         # pylint: enable=no-member
         url_value = "https://gitlabdestination.com/api/v4/users?search=%s&per_page=50&page=%d" % (
             new_user["email"], count.return_value)
@@ -225,7 +225,7 @@ class UsersTests(unittest.TestCase):
         url_value = "https://gitlabdestination.com/api/v4/users"
         # pylint: disable=no-member
         responses.add(responses.POST, url_value,
-                      json=self.mock_users.get_dummy_new_users()[1], status=409)
+                      json=self.mock_users.get_test_new_destination_users()[1], status=409)
         # pylint: enable=no-member
         url_value = "https://gitlabdestination.com/api/v4/users?search=%s&per_page=50&page=%d" % (
             new_user["email"], count.return_value)
@@ -263,7 +263,7 @@ class UsersTests(unittest.TestCase):
         self.assertEqual(self.users.block_user(new_user).status_code, 201)
 
     def test_remove_blocked_users(self):
-        read_data = json.dumps(self.mock_users.get_dummy_new_users())
+        read_data = json.dumps(self.mock_users.get_test_new_destination_users())
         mock_open = mock.mock_open(read_data=read_data)
         with mock.patch('__builtin__.open', mock_open):
             result = self.users.remove("staged_users")
@@ -289,7 +289,7 @@ class UsersTests(unittest.TestCase):
         users_not_found = {
             28: "rsmith@email.com"
         }
-        read_data = json.dumps(self.mock_users.get_dummy_new_users())
+        read_data = json.dumps(self.mock_users.get_test_new_destination_users())
         mock_open = mock.mock_open(read_data=read_data)
         with mock.patch('__builtin__.open', mock_open):
             result = self.users.handle_users_not_found(
@@ -300,7 +300,7 @@ class UsersTests(unittest.TestCase):
         users_not_found = {
             27: "jdoe@email.com"
         }
-        read_data = json.dumps(self.mock_users.get_dummy_new_users())
+        read_data = json.dumps(self.mock_users.get_test_new_destination_users())
         mock_open = mock.mock_open(read_data=read_data)
         with mock.patch('__builtin__.open', mock_open):
             result = self.users.handle_users_not_found(
@@ -565,7 +565,7 @@ class UsersTests(unittest.TestCase):
     def test_retrieve_user_info(self, mock_sso, mock_src_parent_group_path, mock_get_all_users, mock_open, mock_file):
         mock_sso.return_value = ""
         mock_src_parent_group_path.return_value = ""
-        mock_get_all_users.return_value = self.mock_users.get_dummy_new_users()
+        mock_get_all_users.return_value = self.mock_users.get_test_source_users()
         mock_open.return_value = mock_file
         expected_users = [
             {

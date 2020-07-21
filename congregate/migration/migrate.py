@@ -65,7 +65,12 @@ ext_import = ImportClient()
 _DRY_RUN = True
 _PROCESSES = None
 _ONLY_POST_MIGRATION_INFO = False
-_START = None
+_START = time()
+_SKIP_USERS = False
+_SKIP_GROUP_EXPORT = False
+_SKIP_GROUP_IMPORT = False
+_SKIP_PROJECT_EXPORT = False
+_SKIP_PROJECT_IMPORT = False
 
 
 def migrate(
@@ -77,9 +82,6 @@ def migrate(
         skip_project_import=False,
         skip_project_export=False,
         only_post_migration_info=False):
-
-    global _START
-    _START = time()
 
     global _SKIP_USERS
     _SKIP_USERS = skip_users
@@ -105,10 +107,6 @@ def migrate(
     global _ONLY_POST_MIGRATION_INFO
     _ONLY_POST_MIGRATION_INFO = only_post_migration_info
 
-    global _SOURCE_TYPE
-    _SOURCE_TYPE = b.config.source_type
-    # _SOURCE_TYPE = "gitlab"
-
     # Dry-run and log cleanup
     if _DRY_RUN:
         clean_data(dry_run=False, files=[
@@ -116,10 +114,13 @@ def migrate(
             "dry_run_group_migration.json",
             "dry_run_project_migration.json"])
     rotate_logs()
-    if _SOURCE_TYPE.lower() == "gitlab":
+    if b.config.source_type == "gitlab":
         migrate_from_gitlab()
-    elif _SOURCE_TYPE.lower() == "bitbucket server":
+    elif b.config.source_type == "bitbucket server":
         migrate_from_bitbucket_server()
+    else:
+        b.log.warning(
+            "Configuration (data/congregate.conf) src_type {} not supported".format(b.config.source_type))
     add_post_migration_stats(_START)
 
 
@@ -140,6 +141,7 @@ def migrate_from_gitlab():
     # Remove import user from parent group to avoid inheritance (self-managed only)
     if not _DRY_RUN and b.config.dstn_parent_id and not is_dot_com(b.config.destination_host):
         groups.remove_import_user(b.config.dstn_parent_id)
+
 
 def migrate_from_bitbucket_server():
     dry_log = get_dry_log(_DRY_RUN)
@@ -177,7 +179,7 @@ def migrate_from_bitbucket_server():
         # append Total : Successful count of project imports
         import_results.append(get_results(import_results))
         b.log.info("### {0}Project import results ###\n{1}"
-                    .format(dry_log, json_pretty(import_results)))
+                   .format(dry_log, json_pretty(import_results)))
         write_results_to_file(import_results, log=b.log)
     else:
         b.log.info("SKIP: No projects to migrate")
@@ -197,15 +199,20 @@ def migrate_bitbucket_group(group):
 
 def import_bitbucket_project(project):
     members = project.pop("members")
-    result = ext_import.trigger_import_from_bb_server(project, dry_run=_DRY_RUN)
+    result = ext_import.trigger_import_from_bb_server(
+        project, dry_run=_DRY_RUN)
     if result.get(project["path_with_namespace"], False) is not False:
-        project_id = result[project["path_with_namespace"]]["response"].get("id")
+        project_id = result[project["path_with_namespace"]
+                            ]["response"].get("id")
         for member in members:
-            member["user_id"] = users.find_user_by_email_comparison_without_id(member["email"])["id"]
+            member["user_id"] = users.find_user_by_email_comparison_without_id(member["email"])[
+                "id"]
             if member.get("user_id"):
-                projects_api.add_member(project_id, b.config.destination_host, b.config.destination_token, member)
+                projects_api.add_member(
+                    project_id, b.config.destination_host, b.config.destination_token, member)
         projects.remove_import_user(project_id)
     return result
+
 
 def are_results(results, var, stage):
     if not results:
@@ -297,12 +304,12 @@ def handle_user_creation(user):
     return new_user
 
 
-def migrate_group_info(skip_group_export=False, skip_group_import=False):
+def migrate_group_info():
     staged_groups = [g for g in groups.get_staged_groups(
     ) if is_top_level_group(g)]
     dry_log = get_dry_log(_DRY_RUN)
     if staged_groups:
-        if not skip_group_export:
+        if not _SKIP_GROUP_EXPORT:
             b.log.info("{}Exporting groups".format(dry_log))
             export_results = start_multi_process(
                 handle_exporting_groups, staged_groups, processes=_PROCESSES)
@@ -325,7 +332,7 @@ def migrate_group_info(skip_group_export=False, skip_group_import=False):
                 staged_groups, failed)
         else:
             b.log.info("SKIP: Assuming staged groups are already exported")
-        if not skip_group_import:
+        if not _SKIP_GROUP_IMPORT:
             b.log.info("{}Importing groups".format(dry_log))
             import_results = start_multi_process(
                 handle_importing_groups, staged_groups, processes=_PROCESSES)
@@ -562,11 +569,17 @@ def handle_importing_projects(project_json):
             import_id = ie.import_project(project_json, dry_run=_DRY_RUN)
 
         if import_id and not _DRY_RUN:
+            # Disable Auto DevOps
+            b.log.info("Disabling Auto DevOps on imported project {0} (ID: {1})".format(
+                dst_path_with_namespace, import_id))
+            projects_api.edit_project(b.config.destination_host, b.config.destination_token, import_id, {
+                                            "auto_devops_enabled": False})
+
             # Archived projects cannot be migrated
             if archived:
                 b.log.info(
                     "Unarchiving source project {0} (ID: {1})".format(path, src_id))
-                projects.projects_api.unarchive_project(
+                projects_api.unarchive_project(
                     b.config.source_host, b.config.source_token, src_id)
             b.log.info(
                 "Migrating source project {0} (ID: {1}) info".format(path, src_id))
@@ -583,7 +596,7 @@ def handle_importing_projects(project_json):
         if archived and not _DRY_RUN:
             b.log.info(
                 "Archiving back source project {0} (ID: {1})".format(path, src_id))
-            projects.projects_api.archive_project(
+            projects_api.archive_project(
                 b.config.source_host, b.config.source_token, src_id)
     return result
 
@@ -687,7 +700,7 @@ def get_new_ids():
         for project_json in staged_projects:
             try:
                 b.log.debug("Searching for existing %s" % project_json["name"])
-                for proj in projects.projects_api.search_for_project(b.config.destination_host,
+                for proj in projects_api.search_for_project(b.config.destination_host,
                                                                      b.config.destination_token,
                                                                      project_json['name']):
                     if proj["name"] == project_json["name"]:
@@ -726,7 +739,7 @@ def check_visibility():
     else:
         ids = get_new_ids()
     for i in ids:
-        project = projects.projects_api.get_project(
+        project = projects_api.get_project(
             i, b.config.destination_host, b.config.destination_token).json()
         if project["visibility"] != "private":
             b.log.debug("Current destination path {0} visibility: {1}".format(

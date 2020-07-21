@@ -10,7 +10,7 @@ include:
 
 variables:
   DOCKER_VERSION: "19.03.1"
-  TEST_IMAGE_NAME: "$CI_REGISTRY_IMAGE/test:latest"
+  TEST_IMAGE_NAME: "$CI_REGISTRY_IMAGE/test-2.7:latest"
   BB_SERVER_SEED_IMAGE_NAME: "$CI_REGISTRY_IMAGE/bitbucket-seed:latest"
   SAST_DISABLE_DIND: "true"
   SAST_DEFAULT_ANALYZERS: "bandit,secrets"
@@ -58,12 +58,11 @@ build:
     - .docker-login
   stage: build
   script:
-    - docker build --tag "$TEST_IMAGE_NAME" docker/test
-    - docker push "$TEST_IMAGE_NAME"
+    - /bin/sh build_test_image.sh
   rules:
     - changes:
         - .gitlab-ci.yml
-        - docker/test/Dockerfile
+        - docker/test/*
 
 build bitbucket seed image:
   extends:
