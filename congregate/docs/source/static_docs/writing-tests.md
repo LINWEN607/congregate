@@ -171,6 +171,69 @@ This test is also utilizing another method of mocking we use which is our MockAP
 
 There are some blurred lines between our unit tests and integration tests. The approach is very similar, but our integration tests are a bit more complex to write. We don't have a traditional approach to an integration test to actually call the endpoints we want to test, but we can still go through some of our more complicated methods utilizing multiple methods integrated together. 
 
+Our integration tests will usually utilize the responses library to mock HTTP requests. For example:
+
+```python
+
+    # pylint: disable=no-member
+    @responses.activate
+    # pylint: enable=no-member
+    @mock.patch('congregate.helpers.conf.Config.destination_host', new_callable=mock.PropertyMock)
+    @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.dstn_parent_id', new_callable=mock.PropertyMock)
+    @mock.patch('congregate.helpers.api.get_count')
+    @mock.patch.object(KeysClient, "migrate_user_ssh_keys")
+    @mock.patch.object(KeysClient, "migrate_user_gpg_keys")
+    @mock.patch('congregate.migration.migrate._DRY_RUN', False)
+    def test_handle_user_creation_improperly_formatted_json(self, get_gpg, get_ssh, count, parent_id, destination):
+        get_ssh.return_value = True
+        get_gpg.return_value = True
+        count.return_value = 1
+        parent_id.return_value = None
+        destination.return_value = "https://gitlabdestination.com"
+        new_user = self.mock_users.get_dummy_user()
+
+        url_value = "https://gitlabdestination.com/api/v4/users"
+        # pylint: disable=no-member
+        responses.add(responses.POST, url_value,
+                      json=self.mock_users.get_user_400(), status=400)
+        # pylint: enable=no-member
+        url_value = "https://gitlabdestination.com/api/v4/users?search=%s&per_page=50&page=%d" % (
+            new_user["email"], count.return_value)
+        # pylint: disable=no-member
+        responses.add(responses.GET, url_value,
+                      json=[self.mock_users.get_dummy_user()], status=200)
+        # pylint: enable=no-member
+
+        expected = {
+            "id": None,
+            "email": "jdoe@email.com"
+        }
+        self.assertEqual(handle_user_creation(new_user), expected)
+
+```
+
+Let's break this down. The first few lines activate our ability to use responses in this test. Pylint has an issue with the `@responses.activate` so it must be wrapped in the two pylint comments.
+Next, we are mocking various methods, properties, and methods like we would do with a more complex unit test.  Much of the test syntax looks like a unit test, until we get to:
+
+```python
+    url_value = "https://gitlabdestination.com/api/v4/users"
+    # pylint: disable=no-member
+    responses.add(responses.POST, url_value,
+                    json=self.mock_users.get_user_400(), status=400)
+    # pylint: enable=no-member
+```
+
+We are defining the specific API endpoint we want to intercept with responses, and we get the base URL from a few lines above when we set the `destination_host` property.
+
+Now we need to add that specific URL to responses to watch for it to be requested. Responses is expecting a POST request to `https://gitlabdestination.com/api/v4/users` and once that request is made, responses will intercept the request, return `self.mock_users.get_user_400()` and a status code of `400`
+
+Note the additional pylint comments. Every time we use responses, we need to have pylint ignore it.
+
+Finally, we repeat the same process for a GET request to `https://gitlabdestination.com/api/v4/users?search=%s&per_page=50&page=%d` and then add our test assertions.
+
+If you are testing a method making several HTTP requests, you will need to mock every request with responses.
+
+
 ### End to End Tests
 
 Since Congregate orchestrates interactions between two SCM instances through a series of REST API calls, the best way we can test to make sure our changes are completely working is to test it against a live instance of the APIs we are consuming. This is where an end to end test comes in to play.
