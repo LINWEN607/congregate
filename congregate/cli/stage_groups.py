@@ -208,7 +208,7 @@ def get_project_metadata(project):
         # Project members are not listed when listing group projects
         "members": project["members"] if project.get("members", None) else rewritten_projects[project["id"]]["members"]
     }
-    if b.config.source_type == "gitlab":
+    if b.config.source_type == "GitLab":
         obj["http_url_to_repo"] = project["http_url_to_repo"]
         obj["shared_runners_enabled"] = project["shared_runners_enabled"]
         obj["archived"] = project["archived"]

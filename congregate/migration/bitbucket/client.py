@@ -18,7 +18,7 @@ mirror = MirrorClient()
 #     "web_repo_url": "http://gmiller@localhost:7990/scm/tp1/repo_1.git"
 # }
 # {
-#     "external_source_url": "http://gmiller@localhost:7990"
+#     "source_host": "http://gmiller@localhost:7990"
 # }
 # http://gmiller@localhost:7990/scm/tp1/repo_1.git
 
@@ -33,7 +33,7 @@ def handle_bitbucket_migration(repo):
     if len(repo["name"]) > 0:
         b.log.info("Searching for project %s" % repo["name"])
         search_name = repo["web_repo_url"].split(
-            "%s/scm/" % b.config.external_source_url)[1]
+            "%s/scm/" % b.config.source_host)[1]
         search_name = search_name.split(".git")[0]
         if len(search_name.split("~")) > 1:
             search_name = search_name.split("~")[1]

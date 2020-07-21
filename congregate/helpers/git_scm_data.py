@@ -177,7 +177,7 @@ class SCMVerifier:
             envcredentials.append('BITBUCKET_USER')
             envcredentials.append('BITBUCKET_PASSWORD')
             if os.getenv(envcredentials[0]) is None:
-                os.environ[envcredentials[0]] = self.config.external_user_name
+                os.environ[envcredentials[0]] = self.config.source_username
             if os.getenv(envcredentials[1]) is None:
                 os.environ[envcredentials[1]
                            ] = self.config.external_user_password
@@ -188,7 +188,7 @@ class SCMVerifier:
         # Now that scm_type vars are sorted, lets make sure they exist, and
         # assign them
         try:
-            my_creds['user'] = self.config.external_user_name
+            my_creds['user'] = self.config.source_username
             my_creds['password'] = self.config.external_user_password
         except BaseException:
             print("For scm_type: {} we couldn't find the {} or {} envvars".format(

@@ -52,15 +52,15 @@ def write_empty_file(filename):
 
 
 def list_data():
-    ext_src = b.config.external_source_url
-    src = b.config.source_host
-    if ext_src and "gitlab" not in ext_src.lower():
+    src_type = b.config.source_type
+    if src_type == "Bitbucket Server":
         list_bitbucket_data()
-    elif src:
+    elif src_type == "GitLab":
         list_gitlab_data()
+    elif src_type == "GitHub":
+        pass
     else:
-        b.log.warning(
-            "Cannot list from source (External: {0}, GitLab: {1})".format(ext_src, src))
+        b.log.warning("Cannot list from source {}".format(src_type))
         exit()
 
     staged_files = ["staged_projects", "staged_groups", "staged_users"]

@@ -93,7 +93,7 @@ class MirrorClient(BaseClass):
         namespace_id = int(generic_repo["namespace_id"])
         print namespace_id
         mirror_user_id = self.config.import_user_id
-        user_name = self.config.external_user_name
+        user_name = self.config.source_username
         user_password = self.config.external_user_password
 
         import_url = "%s://%s:%s@%s" % (protocol,
@@ -224,7 +224,7 @@ class MirrorClient(BaseClass):
     @stable_retry
     def set_repo_read_only(self, project_key, repository_slug):
         PROXY_LIST = {'http': '', 'https': ''}
-        username = self.config.external_user_name
+        username = self.config.source_username
         password = self.config.external_user_password
         auth = (username, password)
         headers = {
@@ -234,7 +234,7 @@ class MirrorClient(BaseClass):
         # Accessing personal repositories via REST is achieved through the
         # normal project-centric REST URLs using the user's slug prefixed by
         # tilde as the project
-        url = self.config.external_source_url
+        url = self.config.source_host
         # Create a restriction for the supplied branch or set of branches to be
         # applied to the given repository.
         api_url = url + "/rest/branch-permissions/2.0/projects/" + \
