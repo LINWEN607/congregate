@@ -35,10 +35,7 @@ class MirrorClient(BaseClass):
             project_id))
         if not dry_run:
             self.projects_api.edit_project(
-                self.config.destination_host,
-                self.config.destination_token,
-                project_id,
-                json.dumps(mirror_data))
+                self.config.destination_host, self.config.destination_token, project_id, mirror_data)
 
     @stable_retry
     def mirror_repo(self, repo, import_id, dry_run=True):

@@ -20,12 +20,12 @@ class StageProjectsTests(unittest.TestCase):
     @mock.patch('congregate.cli.stage_projects.open_users_file')
     @mock.patch('congregate.cli.stage_projects.open_groups_file')
     @mock.patch.object(ConfigurationValidator, 'dstn_parent_id', new_callable=mock.PropertyMock)
-    @mock.patch.object(ConfigurationValidator, 'source_host', new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, 'source_type', new_callable=mock.PropertyMock)
     @mock.patch('congregate.cli.stage_projects.staged_users', [])
     @mock.patch('congregate.cli.stage_projects.staged_groups', [])
     @mock.patch('congregate.cli.stage_projects.staged_projects', [])
-    def test_build_stage_data(self, mock_source_host, mock_parent_id, mock_groups, mock_users, mock_projects, mock_check, mock_open):
-        mock_source_host.return_value = "http://192.168.1.8:3000"
+    def test_build_stage_data(self, mock_source_type, mock_parent_id, mock_groups, mock_users, mock_projects, mock_check, mock_open):
+        mock_source_type.return_value = "gitlab"
         mock_parent_id.return_value = None
         mock_check.return_value = True
         mock_projects.return_value = self.projects_api.get_all_projects()
@@ -60,14 +60,6 @@ class StageProjectsTests(unittest.TestCase):
                 "id": 4,
                 "description": "Project that does stuff",
                 "shared_runners_enabled": True,
-                "wiki_access_level": "enabled",
-                "issues_access_level": "enabled",
-                "merge_requests_access_level": "enabled",
-                "builds_access_level": "enabled",
-                "snippets_access_level": "disabled",
-                "repository_access_level": "enabled",
-                "forking_access_level": "enabled",
-                "pages_access_level": "private",
                 "path_with_namespace": "diaspora/diaspora-client",
                 "archived": False,
                 "shared_with_groups": []
@@ -95,14 +87,6 @@ class StageProjectsTests(unittest.TestCase):
                 "id": 6,
                 "description": None,
                 "shared_runners_enabled": True,
-                "wiki_access_level": "enabled",
-                "issues_access_level": "enabled",
-                "merge_requests_access_level": "enabled",
-                "builds_access_level": "enabled",
-                "snippets_access_level": "disabled",
-                "repository_access_level": "enabled",
-                "forking_access_level": "enabled",
-                "pages_access_level": "private",
                 "path_with_namespace": "brightbox/puppet",
                 "archived": False,
                 "shared_with_groups": []
@@ -248,12 +232,12 @@ class StageProjectsTests(unittest.TestCase):
     @mock.patch('congregate.cli.stage_projects.open_users_file')
     @mock.patch('congregate.cli.stage_projects.open_groups_file')
     @mock.patch.object(ConfigurationValidator, 'dstn_parent_id', new_callable=mock.PropertyMock)
-    @mock.patch.object(ConfigurationValidator, 'source_host', new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, 'source_type', new_callable=mock.PropertyMock)
     @mock.patch('congregate.cli.stage_projects.staged_users', [])
     @mock.patch('congregate.cli.stage_projects.staged_groups', [])
     @mock.patch('congregate.cli.stage_projects.staged_projects', [])
-    def test_build_stage_increment_no_parent_id(self, mock_source_host, mock_parent_id, mock_groups, mock_users, mock_projects, mock_check, mock_open):
-        mock_source_host.return_value = "http://192.168.1.8:3000"
+    def test_build_stage_increment_no_parent_id(self, mock_source_type, mock_parent_id, mock_groups, mock_users, mock_projects, mock_check, mock_open):
+        mock_source_type.return_value = "gitlab"
         mock_parent_id.return_value = None
         mock_check.return_value = True
         mock_projects.return_value = self.projects_api.get_all_projects()
@@ -288,14 +272,6 @@ class StageProjectsTests(unittest.TestCase):
                 "default_branch": "master",
                 "description": "Project that does stuff",
                 "shared_runners_enabled": True,
-                "wiki_access_level": "enabled",
-                "issues_access_level": "enabled",
-                "merge_requests_access_level": "enabled",
-                "builds_access_level": "enabled",
-                "snippets_access_level": "disabled",
-                "repository_access_level": "enabled",
-                "forking_access_level": "enabled",
-                "pages_access_level": "private",
                 "path_with_namespace": "diaspora/diaspora-client",
                 "archived": False,
                 "shared_with_groups": []
@@ -323,14 +299,6 @@ class StageProjectsTests(unittest.TestCase):
                 "default_branch": "master",
                 "description": None,
                 "shared_runners_enabled": True,
-                "wiki_access_level": "enabled",
-                "issues_access_level": "enabled",
-                "merge_requests_access_level": "enabled",
-                "builds_access_level": "enabled",
-                "snippets_access_level": "disabled",
-                "repository_access_level": "enabled",
-                "forking_access_level": "enabled",
-                "pages_access_level": "private",
                 "path_with_namespace": "brightbox/puppet",
                 "archived": False,
                 "shared_with_groups": []

@@ -447,6 +447,7 @@ class UsersClient(BaseClass):
             "avatar_url" if self.config.group_sso_provider else ""
         ]
         for user in users:
+            user["email"] = user["email"].lower()
             for key in keys_to_delete:
                 user.pop(key, None)
 

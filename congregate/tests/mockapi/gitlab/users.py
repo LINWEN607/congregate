@@ -240,7 +240,7 @@ class MockUsersApi():
             }
         ]
 
-    def get_dummy_new_users(self):
+    def get_test_new_destination_users(self):
         return [
             {
                 "id": 28,
@@ -481,3 +481,76 @@ class MockUsersApi():
             "avatar_url": "https://www.gravatar.com/avatar/a0290f87758efba7e7be1ed96b2e5ac1?s=80&d=identicon", 
             "theme_id": 1
         }
+
+    def get_test_source_users(self):
+        return [
+            {
+                "id": 28,
+                "username": "raymond_smith",
+                "name": "Raymond Smith",
+                "state": "active",
+                "avatar_url": "",
+                "web_url": "https://dummy.gitlab.io/jdoe",
+                "created_at": "2017-06-07T20:29:25.345Z",
+                "bio": None,
+                "location": None,
+                "public_email": "",
+                "skype": "",
+                "linkedin": "",
+                "twitter": "",
+                "website_url": "",
+                "organization": None,
+                "last_sign_in_at": "2019-06-24T19:56:28.486Z",
+                "confirmed_at": "2017-06-07T20:29:24.795Z",
+                "last_activity_on": "2019-07-17",
+                "email": "RSmith@email.com",
+                "theme_id": None,
+                "color_scheme_id": 5,
+                "projects_limit": 10,
+                "current_sign_in_at": "2019-07-17T16:49:12.936Z",
+                "identities": [],
+                "can_create_group": True,
+                "can_create_project": True,
+                "two_factor_enabled": False,
+                "external": False,
+                "private_profile": None,
+                "is_admin": False,
+                "highest_role": 50,
+                "shared_runners_minutes_limit": None,
+                "extra_shared_runners_minutes_limit": None
+            }, {
+                "id": 27,
+                "name": "John Doe",
+                "username": "jdoe",
+                "state": "blocked",
+                "avatar_url": "",
+                "web_url": "https://dummy.gitlab.io/jdoe",
+                "created_at": "2017-06-07T20:29:25.345Z",
+                "bio": None,
+                "location": None,
+                "public_email": "",
+                "skype": "",
+                "linkedin": "",
+                "twitter": "",
+                "website_url": "",
+                "organization": None,
+                "last_sign_in_at": "2019-06-24T19:56:28.486Z",
+                "confirmed_at": "2017-06-07T20:29:24.795Z",
+                "last_activity_on": "2019-07-17",
+                "email": "JDoe@email.com",
+                "theme_id": None,
+                "color_scheme_id": 5,
+                "projects_limit": 10,
+                "current_sign_in_at": "2019-07-17T16:49:12.936Z",
+                "identities": [],
+                "can_create_group": True,
+                "can_create_project": True,
+                "two_factor_enabled": False,
+                "external": False,
+                "private_profile": None,
+                "is_admin": False,
+                "highest_role": 50,
+                "shared_runners_minutes_limit": None,
+                "extra_shared_runners_minutes_limit": None
+            }
+        ]

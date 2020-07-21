@@ -3,7 +3,7 @@ class MockUsersApi():
         return [
             {
                 "name": "admin",
-                "emailAddress": "sysadmin@yourcompany.com",
+                "emailAddress": "SYsadmin@yourcompany.com",
                 "id": 1,
                 "displayName": "John Doe",
                 "active": True,
@@ -24,7 +24,7 @@ class MockUsersApi():
             },
             {
                 "name": "user1",
-                "emailAddress": "user1@example.com",
+                "emailAddress": "USer1@example.com",
                 "id": 2,
                 "displayName": "user1",
                 "active": True,
@@ -44,7 +44,7 @@ class MockUsersApi():
             },
             {
                 "name": "user2",
-                "emailAddress": "user2@example.com",
+                "emailAddress": "USer2@example.com",
                 "id": 3,
                 "displayName": "user2",
                 "active": True,
