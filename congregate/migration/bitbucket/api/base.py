@@ -8,16 +8,20 @@ from congregate.helpers.decorators import stable_retry
 
 b = BaseClass()
 
+
 def generate_bb_v1_request_url(host, api):
     return "%s/rest/api/1.0/%s" % (host, api)
+
 
 def generate_v4_request_headers():
     return {
         'Content-Type': 'application/json'
     }
 
+
 def get_authorization():
     return HTTPBasicAuth(b.config.external_user_name, deobfuscate(b.config.external_access_token))
+
 
 @stable_retry
 def generate_get_request(host, api, url=None, params=None):
@@ -41,7 +45,7 @@ def generate_get_request(host, api, url=None, params=None):
 
     if params is None:
         params = {}
-    
+
     auth = get_authorization()
     return requests.get(url, params=params, headers=headers, auth=auth)
 
