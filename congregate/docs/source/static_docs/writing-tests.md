@@ -35,7 +35,7 @@ These commands are also stored in the codebase in dev/bin/env and can also be ex
 
 - [unittest](https://docs.python.org/2/library/unittest.html)
     - Python's built-in unit test library
-- [mock](https://docs.python.org/3/library/unittest.mock.html)
+- [mock](https://cpython-test-docs.readthedocs.io/en/latest/library/unittest.mock.html)
     - Python's built-in mocking and data patching library
 - [responses](https://pypi.org/project/responses/0.3.0/)
     - Open source testing library used to intercept HTTP requests and overload the data returned
