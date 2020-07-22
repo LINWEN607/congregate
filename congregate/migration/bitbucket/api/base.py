@@ -23,6 +23,7 @@ def get_authorization():
     return HTTPBasicAuth(b.config.source_username, deobfuscate(b.config.source_token))
 
 
+
 @stable_retry
 def generate_get_request(host, api, url=None, params=None):
     """
