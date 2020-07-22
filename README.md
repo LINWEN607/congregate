@@ -34,7 +34,13 @@ After cloning [the repo](https://gitlab.com/gitlab-com/customer-success/tools/co
    1. `pip -V` (e.g. `pip 20.1.1 from /usr/local/lib/python3.8/site-packages/pip (python 3.8)`)
    2. `poetry -V` (e.g. `Poetry version 1.0.9`)
    3. `python -V` Currently congregate only works in Python 3. Your python needs to be `Python 3.8.4` or greater.
-1. Install the python poetry virtual environment manager: `pip install poetry` If pip install poetry doesn't work: \
+   4. In case of multiple poetry virtualenvs (`<HOME>/Library/Caches/pypoetry/virtualenvs/`), perform the following steps to set Python 3 as the active one:
+      1. Set your Python to point (via `~/.bashrc` alias or symlink) to Python 3
+      2. Run `poetry env use python3.8` (`python2.7` when reverting back to Python 2)
+      3. Run `poetry install -v` (resolves the `pyproject.toml` dependencies, and installs the versions specified in the `poetry.lock` file)
+
+      **NOTE:** By removing the `poetry.lock` file or running `poetry update` you are deviating from the default set versions of the dependencies. When in doubt add `--no-dev` (Do not install dev dependencies) and `--dry-run` (`poetry update` only) to avoid dev dependencies i.e. inspect new versions before updating to them.
+2. Install the python poetry virtual environment manager: `pip install poetry` If pip install poetry doesn't work: \
  `curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python`
 1. Source the poetry environment: `source $HOME/.poetry/env`
 1. Verify poetry works: `poetry --version`. If this doesn't work, add the following line to your appropriate rc file, usually `.zshrc`: \
