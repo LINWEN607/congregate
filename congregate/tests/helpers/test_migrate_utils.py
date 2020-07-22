@@ -580,6 +580,12 @@ class MigrateTests(unittest.TestCase):
         self.assertFalse(mutils.is_top_level_group(
             self.mock_groups.get_subgroup()))
 
+    @mock.patch("congregate.helpers.base_module.ConfigurationValidator.src_parent_id", new_callable=mock.PropertyMock)
+    def test_is_top_level_group_src_parent_group(self, src_parent_id):
+        src_parent_id.return_value = 4
+        self.assertTrue(mutils.is_top_level_group(
+            self.mock_groups.get_subgroup()))
+
     def test_is_loc_supported_true(self):
         self.assertIsNone(mutils.is_loc_supported("aws"))
         self.assertIsNone(mutils.is_loc_supported("filesystem"))

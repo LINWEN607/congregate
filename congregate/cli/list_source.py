@@ -9,6 +9,8 @@ from congregate.migration.bitbucket.projects import ProjectsClient as BitBucketP
 from congregate.migration.bitbucket.users import UsersClient as BitBucketUsers
 from congregate.migration.bitbucket.repos import ReposClient as BitBucketRepos
 
+from congregate.migration.github.orgs import OrgsClient as GitHubOrgs
+
 
 b = BaseClass()
 
@@ -40,6 +42,12 @@ def list_bitbucket_data():
     users.retrieve_user_info()
 
 
+def list_github_data():
+    orgs = GitHubOrgs()
+
+    orgs.retrieve_org_info()
+
+
 def write_empty_file(filename):
     """
         Write an empty json file containing an empty list, it's used to make sure a file is present in the filesystem
@@ -58,7 +66,7 @@ def list_data():
     elif src_type == "GitLab":
         list_gitlab_data()
     elif src_type == "GitHub":
-        pass
+        list_github_data()
     else:
         b.log.warning("Cannot list from source {}".format(src_type))
         exit()

@@ -8,7 +8,7 @@ log = myLogger(__name__)
 audit = audit_logger(__name__)
 
 
-class Github_EE_GraphQL():
+class GitHubApi():
     def __init__(self, host, token, query=None, api=None):
         self.host = host
         self.token = token
@@ -33,12 +33,15 @@ class Github_EE_GraphQL():
         """
         this runs all the required pieces of the class for the V3 REST API
         """
-        self.generate_v3_get_request(self, host=self.host, api=self.api)
+        self.generate_v3_get_request(host=self.host, api=self.api)
 
     def __generate_request_header(self, token):
         """ given a token return a dictionary for authorization. Works for both GraphQL and REST
         """
-        header = {"Authorization": 'Bearer {}'.format(token)}
+        header = {
+            "Content-Type": "application/json",
+            "Authorization": 'Bearer {}'.format(token)
+        }
         return header
 
     def __generate_v4_request_url(self, host):
@@ -67,7 +70,6 @@ class Github_EE_GraphQL():
             url = self.__generate_v3_request_url(host, api)
 
         headers = self.__generate_request_header(self.token)
-        print(url)
         if params is None:
             params = {'per_page': 1}
         return requests.get(url, params=params, headers=headers, verify=verify)
@@ -80,8 +82,6 @@ class Github_EE_GraphQL():
             url = self.__generate_v4_request_url(self.host)
         if not headers:
             headers = self.__generate_request_header(self.token)
-        print(headers)
-        print(url)
         return requests.post(url, json={'query': self.query}, headers=headers, verify=verify)
 
     def __replace_unwanted_characters(self, s):
@@ -113,7 +113,7 @@ class Github_EE_GraphQL():
         """ Implement pagination
         """
         isLastPage = False
-        # b.log.info("Listing endpoint: {}".format(api))
+        log.info("Listing endpoint: {}".format(api))
         url = self.__generate_v3_request_url(host, api)
         data = []
         while isLastPage is False:
@@ -123,12 +123,12 @@ class Github_EE_GraphQL():
                 }
             else:
                 params["per_page"] = limit
-            r = self.generate_v3_get_request(host, api, url, params=params, verify=verify)
+            r = self.generate_v3_get_request(
+                host, api, url, params=params, verify=verify)
 
-            # r = generate_get_request(host, api, params=params)
             if r.status_code != 200:
                 if r.status_code == 404 or r.status_code == 500 or r.status_code == 401:
-                    b.log.error('\nERROR: HTTP Response was {}\n\nBody Text: {}\n'.format(
+                    log.error('\nERROR: HTTP Response was {}\n\nBody Text: {}\n'.format(
                         r.status_code, r.text))
                     break
                 raise ValueError('ERROR HTTP Response was NOT 200, which implies something wrong. The actual return code was {}\n{}\n'.format(
@@ -136,8 +136,11 @@ class Github_EE_GraphQL():
             # try:
             if len(r.json()) > 0:
                 data.extend(r.json())
-                h = self.__create_dict_from_headers(r.headers['Link'])
-                url = h['next']
+                if r.headers.get("Link", None):
+                    h = self.__create_dict_from_headers(r.headers['Link'])
+                    url = h['next']
+                else:
+                    break
             elif len(r.json()) == 0:
                 isLastPage = True
                 return data
