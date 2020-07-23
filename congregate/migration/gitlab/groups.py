@@ -2,10 +2,11 @@ import json
 from requests.exceptions import RequestException
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import remove_dupes, get_timedelta, json_pretty
+from congregate.helpers.misc_utils import remove_dupes, get_timedelta, json_pretty, safe_json_response
 from congregate.helpers.migrate_utils import get_full_path_with_parent_namespace, is_top_level_group
 from congregate.migration.gitlab.variables import VariablesClient
 from congregate.migration.gitlab.badges import BadgesClient
+from congregate.migration.gitlab.users import UsersClient
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.namespaces import NamespacesApi
 
@@ -15,6 +16,7 @@ class GroupsClient(BaseClass):
         self.vars = VariablesClient()
         self.groups_api = GroupsApi()
         self.badges = BadgesClient()
+        self.users = UsersClient()
         self.namespaces_api = NamespacesApi()
         self.group_id_mapping = {}
         super(GroupsClient, self).__init__()
@@ -278,3 +280,14 @@ class GroupsClient(BaseClass):
         if resp.status_code == 200:
             return resp.json()
         return None
+
+    def add_members_to_destination_group(self, host, token, group_id, members):
+        result = {}
+        for member in members:
+            member["user_id"] = self.users.find_user_by_email_comparison_without_id(member["email"])["id"]
+            if member.get("user_id"):
+                result[member["email"]] = False
+                resp = safe_json_response(self.groups_api.add_member_to_group(group_id, host, token, member))
+                if resp:
+                    result[member["email"]] = True
+        return result

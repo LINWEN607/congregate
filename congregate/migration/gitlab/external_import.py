@@ -27,16 +27,17 @@ class ImportClient(BaseClass):
             try:
                 resp = self.ext_import.import_from_bitbucket_server(self.config.destination_host, self.config.destination_token, data)
                 if is_error_message_present(resp):
-                    self.log.error(resp.get("message"))
-                    return self.get_failed_result(project)
+                    message = resp.get("message")
+                    self.log.error(message)
+                    return self.get_failed_result(project, message)
                 return self.get_result_data(project, resp)
             except ValueError as e:
                 self.log.error("Failed to import from bitbucket server due to %s" % e)
-                return self.get_failed_result(project)
+                return self.get_failed_result(project, None)
         else:
             data["personal_access_token"] = b64encode(data["personal_access_token"])
             migration_dry_run("project", data)
-            return self.get_failed_result(project)
+            return self.get_failed_result(project, data)
             
     
     def get_project_repo_from_full_path(self, full_path):
@@ -53,7 +54,8 @@ class ImportClient(BaseClass):
             }
         }
     
-    def get_failed_result(self, project):
+    def get_failed_result(self, project, data):
         return {
-            project["path_with_namespace"]: False
+            project["path_with_namespace"]: False,
+            "data": data
         }
