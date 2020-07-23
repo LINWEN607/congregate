@@ -8,7 +8,7 @@ log = myLogger(__name__)
 audit = audit_logger(__name__)
 
 
-class Github_EE_GraphQL():
+class GitHubApi():
     def __init__(self, host, token, query=None, api=None):
         self.host = host
         self.token = token
@@ -123,7 +123,8 @@ class Github_EE_GraphQL():
                 }
             else:
                 params["per_page"] = limit
-            r = self.generate_v3_get_request(host, api, url, params=params, verify=verify)
+            r = self.generate_v3_get_request(
+                host, api, url, params=params, verify=verify)
 
             # r = generate_get_request(host, api, params=params)
             if r.status_code != 200:
