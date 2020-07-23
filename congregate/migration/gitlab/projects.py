@@ -2,10 +2,11 @@ import json
 from requests.exceptions import RequestException
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import get_dry_log, get_timedelta, json_pretty, remove_dupes, is_error_message_present
+from congregate.helpers.misc_utils import get_dry_log, get_timedelta, json_pretty, remove_dupes, is_error_message_present, safe_json_response
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.groups import GroupsClient
+from congregate.migration.gitlab.users import UsersClient
 from congregate.helpers.migrate_utils import get_dst_path_with_namespace, get_full_path_with_parent_namespace
 
 
@@ -14,6 +15,7 @@ class ProjectsClient(BaseClass):
         self.projects_api = ProjectsApi()
         self.groups_api = GroupsApi()
         self.groups = GroupsClient()
+        self.users = UsersClient()
         super(ProjectsClient, self).__init__()
 
     def get_projects(self):
@@ -272,3 +274,15 @@ class ProjectsClient(BaseClass):
                 self.log.warning("id is missing")
             if g.get("description", None) is None:
                 self.log.warning("description is missing")
+
+    def add_members_to_destination_project(self, host, token, project_id, members):
+        result = {}
+        for member in members:
+            user_id_req = self.users.find_user_by_email_comparison_without_id(member["email"])
+            member["user_id"] = user_id_req.get("id", None) if user_id_req else None
+            if member.get("user_id"):
+                result[member["email"]] = False
+                resp = safe_json_response(self.projects_api.add_member(project_id, host, token, member))
+                if resp:
+                    result[member["email"]] = True
+        return result

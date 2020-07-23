@@ -184,6 +184,7 @@ def migrate_from_bitbucket_server():
     else:
         b.log.info("SKIP: No projects to migrate")
 
+
 def migrate_bitbucket_group(group):
     result = False
     members = group.pop("members")
@@ -207,12 +208,7 @@ def import_bitbucket_project(project):
     if result.get(project["path_with_namespace"], False) is not False:
         project_id = result[project["path_with_namespace"]
                             ]["response"].get("id")
-        for member in members:
-            member["user_id"] = users.find_user_by_email_comparison_without_id(member["email"])[
-                "id"]
-            if member.get("user_id"):
-                projects_api.add_member(
-                    project_id, b.config.destination_host, b.config.destination_token, member)
+        result["members"] = projects.add_members_to_destination_project(b.config.destination_host, b.config.destination_token, project_id, members)
         projects.remove_import_user(project_id)
     return result
 
