@@ -1,10 +1,13 @@
-from congregate.migration.github.api.base import base as api_users
+from congregate.migration.github.api.base import GitHubApi
 
 
 class UsersApi():
-
-    def get_all_users(self, host):
-        return api_users.list_all(host, "users")
-    def get_user(self, host, slug):
-        return api_users.__generate_v3_request_url(host, "users/{}".format(slug))
+    def __init__(self, host, token):
+        self.host = host
+        self.token = token
+        self.api = GitHubApi(self.host, self.token)
+    def get_all_users(self):
+        return self.api.list_all(self.host, "users")
+    def get_user(self, slug):
+        return self.api.__generate_v3_request_url(self.host, "users/{}".format(slug))
 
