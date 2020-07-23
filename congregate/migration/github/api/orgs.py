@@ -72,9 +72,3 @@ class OrgsApi():
         GitHub API v3 Doc: https://docs.github.com/en/rest/reference/teams#list-child-teams
         """
         return self.api.list_all(self.host, "orgs/{}/teams/{}/teams".format(org, team_slug), verify=False)
-
-    def get_all_org_child_team_repos(self, org, team_slug, child_team_slug):
-        return self.api.list_all(self.host, "orgs/{}/teams/{}/teams/{}/repos".format(org, team_slug, child_team_slug), verify=False)
-
-    def get_all_org_child_team_members(self, org, team_slug, child_team_slug):
-        return self.api.list_all(self.host, "orgs/{}/teams/{}/teams/{}/members".format(org, team_slug, child_team_slug), verify=False)

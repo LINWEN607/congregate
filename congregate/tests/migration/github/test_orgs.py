@@ -20,15 +20,11 @@ class ReposTests(unittest.TestCase):
     @patch.object(OrgsApi, "get_all_org_team_repos")
     @patch.object(OrgsApi, "get_all_org_team_members")
     @patch.object(OrgsApi, "get_all_org_child_teams")
-    @patch.object(OrgsApi, "get_all_org_child_team_repos")
-    @patch.object(OrgsApi, "get_all_org_child_team_members")
     @patch("congregate.helpers.conf.Config.source_host", new_callable=PropertyMock)
     @patch("congregate.helpers.conf.Config.source_token", new_callable=PropertyMock)
     def test_retrieve_org_info(self,
                                mock_source_token,
                                mock_source_host,
-                               mock_org_child_team_members,
-                               mock_org_child_team_repos,
                                mock_org_child_teams,
                                mock_org_team_members,
                                mock_org_team_repos,
@@ -48,8 +44,6 @@ class ReposTests(unittest.TestCase):
         mock_org_team_repos.return_value = self.mock_orgs.get_all_org_team_repos()
         mock_org_team_members.return_value = self.mock_orgs.get_all_org_team_members()
         mock_org_child_teams.return_value = self.mock_orgs.get_all_org_child_teams()
-        mock_org_child_team_repos.return_value = self.mock_orgs.get_all_org_child_team_repos()
-        mock_org_child_team_members.return_value = self.mock_orgs.get_all_org_child_team_members()
         mock_open.return_value = mock_file
 
         expected_orgs = []

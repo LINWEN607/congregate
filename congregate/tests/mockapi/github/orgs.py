@@ -19,9 +19,3 @@ class MockOrgsApi():
 
     def get_all_org_child_teams(self):
         return []
-
-    def get_all_org_child_team_repos(self):
-        return []
-
-    def get_all_org_child_team_members(self):
-        return []

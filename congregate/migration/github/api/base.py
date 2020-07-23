@@ -93,7 +93,7 @@ class GitHubApi():
 
         headers = self.__generate_v3_request_header(self.token)
         if params is None:
-            params = {'per_page': 1}
+            params = {}
         return requests.get(url, params=params, headers=headers, verify=verify)
 
     @stable_retry
