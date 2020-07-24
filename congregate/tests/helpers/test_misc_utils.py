@@ -1,9 +1,6 @@
 from datetime import datetime, timedelta
-
 import mock
-
 from congregate.tests.helpers.mock_data.results import MockProjectResults
-
 import congregate.helpers.misc_utils as misc
 
 
@@ -280,5 +277,21 @@ def test_stitch_json_too_many_steps(glob, json):
 
     expected = results.get_completely_successful_results()
     actual = misc.stitch_json_results(steps=6)
+
+    assert expected == actual
+
+@mock.patch("requests.Response")
+def test_safe_json_response_with_exception(response):
+    response.json.side_effect = [ValueError]
+    expected = None
+    actual = misc.safe_json_response(response)
+
+    assert expected == actual
+
+@mock.patch("requests.Response")
+def test_safe_json_response_without_exception(response):
+    response.json.side_effect = [{"hello": "world"}]
+    expected = {"hello": "world"}
+    actual = misc.safe_json_response(response)
 
     assert expected == actual

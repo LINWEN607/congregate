@@ -1,5 +1,6 @@
 import unittest
 import mock
+from requests import Response
 
 from congregate.tests.mockapi.gitlab.groups import MockGroupsApi
 from congregate.tests.mockapi.gitlab.projects import MockProjectsApi
@@ -56,3 +57,93 @@ class ProjectsTests(unittest.TestCase):
         mock_open.return_value = mock_file
         self.assertEqual(
             self.projects.retrieve_project_info("host", "token"), [])
+
+
+    @mock.patch("requests.Response.json")
+    @mock.patch("congregate.migration.gitlab.api.projects.ProjectsApi.add_member")
+    @mock.patch("congregate.migration.gitlab.users.UsersClient.find_user_by_email_comparison_without_id")
+    @mock.patch("congregate.helpers.misc_utils.safe_json_response")
+    def test_add_members_to_destination_group(self, users, user_by_email, projects, resp):
+        user_data = [
+            {
+                "email": "johndoe@email.com",
+                "id": 1
+            },
+            {
+                "email": "janedoe@email.com",
+                "id": 2
+            }
+        ]
+        members = [
+            {
+                "email": "johndoe@email.com"
+            },
+            {
+                "email": "janedoe@email.com"
+            }
+        ]
+        user_by_email.side_effect = user_data
+        users.side_effect = [
+            {
+                "id": 1
+            },
+            {
+                "id": 2
+            }
+        ]
+
+        resp.json.side_effect = user_data
+
+        projects.side_effect = [
+            Response,
+            Response
+        ]
+
+        expected = {
+            "johndoe@email.com": True,
+            "janedoe@email.com": True
+        }
+
+        actual = self.projects.add_members_to_destination_project("", "", 000, members)
+        self.assertDictEqual(expected, actual)
+
+    @mock.patch("requests.Response.json")
+    @mock.patch("congregate.migration.gitlab.api.projects.ProjectsApi.add_member")
+    @mock.patch("congregate.migration.gitlab.users.UsersClient.find_user_by_email_comparison_without_id")
+    @mock.patch("congregate.helpers.misc_utils.safe_json_response")
+    def test_add_members_to_destination_group_missing_user(self, users, user_by_email, projects, resp):
+        user_data = [
+            {
+                "email": "johndoe@email.com",
+                "id": 1
+            },
+            None
+        ]
+        members = [
+            {
+                "email": "johndoe@email.com"
+            },
+            {
+                "email": "janedoe@email.com"
+            }
+        ]
+        user_by_email.side_effect = user_data
+        users.side_effect = [
+            {
+                "id": 1
+            }
+        ]
+
+        resp.json.side_effect = user_data
+
+        projects.side_effect = [
+            Response
+        ]
+
+        expected = {
+            "johndoe@email.com": True,
+            "janedoe@email.com": False
+        }
+
+        actual = self.projects.add_members_to_destination_project("", "", 000, members)
+        self.assertDictEqual(expected, actual)

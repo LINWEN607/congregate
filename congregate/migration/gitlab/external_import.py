@@ -30,8 +30,9 @@ class ImportClient(BaseClass):
                 resp = self.ext_import.import_from_bitbucket_server(
                     self.config.destination_host, self.config.destination_token, data)
                 if is_error_message_present(resp):
-                    self.log.error(resp.get("message"))
-                    return self.get_failed_result(project)
+                    message = resp.get("message")
+                    self.log.error(message)
+                    return self.get_failed_result(project, message)
                 return self.get_result_data(project, resp)
             except ValueError as e:
                 self.log.error(
@@ -41,8 +42,9 @@ class ImportClient(BaseClass):
             data["personal_access_token"] = b64encode(
                 data["personal_access_token"])
             migration_dry_run("project", data)
-            return self.get_failed_result(project)
-
+            return self.get_failed_result(project, data)
+            
+    
     def get_project_repo_from_full_path(self, full_path):
         split = full_path.split("/")
         project = split[0]
@@ -56,8 +58,9 @@ class ImportClient(BaseClass):
                 "response": response
             }
         }
-
-    def get_failed_result(self, project):
+    
+    def get_failed_result(self, project, data=None):
         return {
-            project["path_with_namespace"]: False
+            project["path_with_namespace"]: False,
+            "data": data
         }
