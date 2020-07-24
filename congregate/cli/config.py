@@ -35,7 +35,7 @@ def generate_config():
         CLI for generating congregate.conf
     """
     config = ConfigParser(allow_no_value=True)
-    # Generic destination instance settings
+    # Generic destination instance configuration
     config.add_section("DESTINATION")
     config.set("DESTINATION", "dstn_hostname",
                raw_input("Destination instance Host: "))
@@ -62,6 +62,7 @@ def generate_config():
     config.set("DESTINATION", "max_import_retries",
                max_import_retries if max_import_retries else "3")
 
+    # Parent group destination instance configuration
     dstn_group = raw_input(
         "Are you migrating to a parent group, e.g. gitlab.com? (Default: No) ")
     if dstn_group.lower() in ["yes", "y"]:
@@ -77,10 +78,12 @@ def generate_config():
             print("WARNING: Destination group not found. Please enter 'dstn_parent_group_id' and 'dstn_parent_group_path' manually (in {})".format(
                 config_path))
         config.set("DESTINATION", "group_sso_provider",
-                    raw_input("Migrating to a group with SAML SSO enabled? Input SSO provider (auth0, adfs, etc.): "))
+                   raw_input("Migrating to a group with SAML SSO enabled? Input SSO provider (auth0, adfs, etc.): "))
         if config.get("DESTINATION", "group_sso_provider"):
-            config.set("DESTINATION", "group_sso_provider_pattern", get_sso_provider_pattern())
+            config.set("DESTINATION", "group_sso_provider_pattern",
+                       get_sso_provider_pattern())
 
+    # Misc destination instance configuration
     username_suffix = raw_input(
         "To avoid username collision, please input suffix to append to username: ")
     config.set("DESTINATION", "username_suffix",
@@ -97,36 +100,39 @@ def generate_config():
                 config_path))
     else:
         config.set("DESTINATION", "mirror_username", "")
-
     config.set("DESTINATION", "max_asset_expiration_time", "24")
 
+    # Source instance configuration
+    config.add_section("SOURCE")
     ext_src = raw_input(
         "Migrating from an external (non-GitLab) instance? (Default: No) ")
     if ext_src.lower() in ["yes", "y"]:
-        # External source instance settings
-        config.add_section("EXT_SRC")
+        # External source instance configuration
         src = raw_input(
             "Source (1. Bitbucket Server, 2. GitHub, 3. Bitbucket Cloud, 4. Subversion)? ")
         if src.lower() in ["1", "1.", "bitbucket server"]:
-            config.add_section("SOURCE")
             config.set("SOURCE", "src_type", "Bitbucket Server")
-            config.set("EXT_SRC", "url", raw_input("URL: "))
-            config.set("EXT_SRC", "username", raw_input("Username: "))
-            config.set("EXT_SRC", "token", obfuscate("Password/Personal Access Token: "))
-            repo_path = raw_input(
-                "Absolute path to JSON file containing repo information: ")
-            config.set("EXT_SRC", "repo_path", "{0}{1}"
-                       .format("" if repo_path.startswith("/") else path.join(app_path, ""), repo_path))
+            config.set("SOURCE", "username", raw_input("Username: "))
+        elif src.lower() in ["2", "2.", "github"]:
+            config.set("SOURCE", "src_type", "GitHub")
         else:
             print("Source type {} is currently not supported".format(src))
-    else:
-        # Non-external source instance settings
-        config.add_section("SOURCE")
-        config.set("SOURCE", "src_type", "gitlab")
-        config.set("SOURCE", "src_hostname",
-                   raw_input("Source instance Host: "))
+            exit()
+        config.set("SOURCE", "src_hostname", raw_input(
+            "Source instance ({}) URL: ".format(config.get("SOURCE", "src_type"))))
         config.set("SOURCE", "src_access_token", obfuscate(
-            "Source instance GitLab access token  (Settings -> Access tokens): "))
+            "Source instance ({}) Personal Access Token: ".format(config.get("SOURCE", "src_type"))))
+        repo_path = raw_input(
+            "Absolute path to JSON file containing repo information: ")
+        config.set("SOURCE", "repo_path", "{0}{1}"
+                   .format("" if repo_path.startswith("/") else path.join(app_path, ""), repo_path))
+    else:
+        # Non-external source instance configuration
+        config.set("SOURCE", "src_type", "GitLab")
+        config.set("SOURCE", "src_hostname",
+                   raw_input("Source instance URL: "))
+        config.set("SOURCE", "src_access_token", obfuscate(
+            "Source instance ({}) Personal Access Token: ").format(config.set("SOURCE", "src_type", "GitLab")))
         source_group = raw_input(
             "Are you migrating from a parent group to a new instance, e.g. gitlab.com to self-managed? (Default: No) ")
         if source_group.lower() in ["yes", "y"]:
@@ -141,7 +147,12 @@ def generate_config():
                 config.set("SOURCE", "src_parent_group_path", "")
                 print("WARNING: Source group not found. Please enter 'src_parent_group_id' and 'src_parent_group_path' manually (in {})".format(
                     config_path))
+        max_export_wait_time = raw_input(
+            "Max wait time (in seconds) for project export status (Default: 3600): ")
+        config.set("SOURCE", "max_export_wait_time",
+                   max_export_wait_time if max_export_wait_time else "3600")
 
+        # GitLab source/destination instance registry configuration
         migrating_registries = raw_input(
             "Are you migrating any container registries? (Default: No) ")
         if migrating_registries.lower() in ["yes", "y"]:
@@ -153,12 +164,8 @@ def generate_config():
                 "Destination instance Container Registry URL: "))
             test_registries(deobfuscate(config.get("DESTINATION", "dstn_access_token")), config.get(
                 "DESTINATION", "dstn_registry_url"), migration_user)
-        max_export_wait_time = raw_input(
-            "Max wait time (in seconds) for project export status (Default: 3600): ")
-        config.set("SOURCE", "max_export_wait_time",
-                   max_export_wait_time if max_export_wait_time else "3600")
 
-        # Project export/update settings
+        # GitLab project export/update configuration
         config.add_section("EXPORT")
         location = raw_input(
             "Staging location for exported projects and groups, AWS (projects only) or filesystem (default)?: ")
@@ -190,7 +197,7 @@ def generate_config():
         config.set("EXPORT", "filesystem_path",
                    abs_path if abs_path and abs_path.startswith("/") else getcwd())
 
-    # User specific settings
+    # User specific configuration
     config.add_section("USER")
     keep_blocker_users = raw_input(
         "Keep blocked users in staged users/groups/projects? (Default: No): ")
@@ -205,7 +212,7 @@ def generate_config():
     config.set("USER", "force_rand_pwd",
                "True" if force_rand_pwd.lower() in ["yes", "y"] else "False")
 
-    # Generic App settings
+    # Generic App configuration
     config.add_section("APP")
     export_import_wait_time = raw_input(
         "Wait time (in seconds) for project export/import status (Default: 10): ")
@@ -269,6 +276,7 @@ def test_slack(url):
         print("EXCEPTION: " + str(em))
         exit()
 
+
 def get_sso_provider_pattern():
     options = {
         1: "email",
@@ -277,7 +285,8 @@ def get_sso_provider_pattern():
     }
     while True:
         try:
-            sso_provider_pattern_option = raw_input("Select SSO provider pattern type (1. Email, 2. Hash, 3. Custom")
+            sso_provider_pattern_option = raw_input(
+                "Select SSO provider pattern type (1. Email, 2. Hash, 3. Custom")
             if int(sso_provider_pattern_option) == 1:
                 return options.get(1)
             elif int(sso_provider_pattern_option) == 2:
@@ -290,6 +299,7 @@ def get_sso_provider_pattern():
                 print "Choose a valid option"
         except ValueError:
             print "Please input a number for your option"
+
 
 def update_config(data):
     """

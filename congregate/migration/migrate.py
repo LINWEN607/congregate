@@ -114,9 +114,9 @@ def migrate(
             "dry_run_group_migration.json",
             "dry_run_project_migration.json"])
     rotate_logs()
-    if b.config.source_type == "gitlab":
+    if b.config.source_type == "GitLab":
         migrate_from_gitlab()
-    elif b.config.source_type.lower() == "bitbucket server":
+    elif b.config.source_type == "Bitbucket Server":
         migrate_from_bitbucket_server()
     else:
         b.log.warning(
@@ -572,7 +572,7 @@ def handle_importing_projects(project_json):
             b.log.info("Disabling Auto DevOps on imported project {0} (ID: {1})".format(
                 dst_path_with_namespace, import_id))
             projects_api.edit_project(b.config.destination_host, b.config.destination_token, import_id, {
-                                            "auto_devops_enabled": False})
+                "auto_devops_enabled": False})
 
             # Archived projects cannot be migrated
             if archived:
@@ -700,8 +700,8 @@ def get_new_ids():
             try:
                 b.log.debug("Searching for existing %s" % project_json["name"])
                 for proj in projects_api.search_for_project(b.config.destination_host,
-                                                                     b.config.destination_token,
-                                                                     project_json['name']):
+                                                            b.config.destination_token,
+                                                            project_json['name']):
                     if proj["name"] == project_json["name"]:
 
                         if "%s" % project_json["namespace"].lower(
