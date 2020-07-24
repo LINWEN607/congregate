@@ -30,9 +30,10 @@ def user_is_authorized(migration_type, **kwargs):
     """
     assert migration_type != None
     assert migration_type.lower() == 'repository' or migration_type.lower() == 'project'
-    bb_api_url_base = '%s/rest/api/1.0' % config.external_source_url
+    bb_api_url_base = '%s/rest/api/1.0' % config.source_host
     gitlab_api_url_base = "%s/api/v4/" % config.destination_host
-    bitbucket_instance = Bitbucket_Instance(bb_api_url_base, config.external_user_name, config.external_user_password)
+    bitbucket_instance = Bitbucket_Instance(
+        bb_api_url_base, config.source_username, config.external_user_password)
     gitlab_instance = Gitlab_Instance(gitlab_api_url_base)
     repo = Repo(
         https_clone_url=kwargs['https_clone_url'],
@@ -49,8 +50,10 @@ def user_is_authorized(migration_type, **kwargs):
     ops = User_And_Repo_Operations(repo, user)
     repo_level = Level("bitbucket_repo")
     project_level = Level("bitbucket_project")
-    bb_repo_permission = ops.get_bitbucket_user_permission_at_level(level=repo_level)
-    bb_project_permission = ops.get_bitbucket_user_permission_at_level(level=project_level)
+    bb_repo_permission = ops.get_bitbucket_user_permission_at_level(
+        level=repo_level)
+    bb_project_permission = ops.get_bitbucket_user_permission_at_level(
+        level=project_level)
     if bb_repo_permission is not None:
         is_repo_admin = True if bb_repo_permission.lower() == 'repo_admin' else False
     else:
@@ -99,7 +102,8 @@ def user_authorization_main(migration_type, **kwargs):
     logging.info('Allow migration: %s' % allow_migration)
     if not allow_migration:
         if migration_type.lower() == 'repository':
-            raise RuntimeError("Admin status could not be confirmed for the executor. Please confirm that you are a repository admin or project admin and try again.")
+            raise RuntimeError(
+                "Admin status could not be confirmed for the executor. Please confirm that you are a repository admin or project admin and try again.")
         elif migration_type.lower() == 'project':
             raise RuntimeError(
                 "Admin status could not be confirmed for the executor. Please confirm that you are an admin of this project and try again.")

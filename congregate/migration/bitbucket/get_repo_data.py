@@ -19,7 +19,7 @@ import sys
 from congregate.helpers import conf
 
 config = conf.Config()
-main_url = config.external_source_url
+main_url = config.source_host
 
 
 # main_url = os.getenv("bb_url")
@@ -40,7 +40,7 @@ page_size = 100
 start_index = 0
 # username = os.getenv('mirror_username')
 # password = os.getenv('mirror_password')
-username = config.external_user_name
+username = config.source_username
 password = config.external_user_password
 
 

@@ -36,8 +36,8 @@ class ConfigTests(unittest.TestCase):
             # "mirror_username",  # mirror username
             "yes",  # external source
             "bitbucket server",  # source
-            "some_external_source",  # external_src_url
             "username",  # ext_src_user
+            "some_external_source",  # external_src_url
             # "password",  # ext_src_pwd
             # "token",  # ext_src_token
             "repo_path",  # ext_src_repo
@@ -95,10 +95,10 @@ class ConfigTests(unittest.TestCase):
             "yes",  # source parent group
             "0",   # source parent group ID
             # "source_group_full_path",   # source parent group path
+            "3600",  # max_export_wait_time
             "yes",  # migrating registries
             "source_registry_url",    # source registry url
             "destination_registry_url",    # destination registry url
-            "3600",  # max_export_wait_time
             "filesystem",  # export location
             "absolute_path",    # file system path
             "no",    # keep_blocked_users
@@ -162,7 +162,7 @@ class ConfigTests(unittest.TestCase):
             "0",  # destination parent group id
             # "dstn_parent_group_path",  # destination parent group full path
             "group_sso_provider",  # SSO provider
-            "1", # SSO provider pattern
+            "1",  # SSO provider pattern
             "username_suffix",  # username suffix
             "No",   # mirror
             # "mirror_username",  # mirror username
@@ -170,11 +170,11 @@ class ConfigTests(unittest.TestCase):
             "source_hostname",  # source host
             # "source_access_token", # source token
             "no",  # source parent group
+            "3600",  # max_export_wait_time
             "yes",  # migrating registries
             # "source_access_token", # source token
             "source_registry_url",    # source registry url
             "destination_registry_url",    # destination registry url
-            "3600",  # max_export_wait_time
             "aws",  # export location
             "s3_name",  # bucket name
             "us-east-1",    # bucket region
@@ -245,18 +245,18 @@ class ConfigTests(unittest.TestCase):
             "0",  # destination parent group id
             # "dstn_parent_group_path",  # destination parent group full path
             "group_sso_provider",  # SSO provider
-            "1", # SSO provider pattern
+            "1",  # SSO provider pattern
             "_",  # username suffix
             "yes",   # mirror
             # "mirror_username",  # mirror username
             "no",  # external_src_url
             "source_hostname",  # source host
             "no",  # source parent group
+            "1200",  # max_export_wait_time
             "yes",  # migrating registries
             # "source_access_token", # source token
             "source_registry_url",    # source registry url
             "destination_registry_url",    # destination registry url
-            "1200",  # max_export_wait_time
             "aws",  # export location
             "s3_name",  # bucket name
             "us-east-2",    # bucket region
@@ -326,10 +326,10 @@ class ConfigTests(unittest.TestCase):
             "source_hostname",  # source host
             # "source_access_token", # source token
             "no",  # source parent group
+            "3600",  # max_export_wait_time
             "yes",  # migrating registries
             "source_registry_url",    # source registry url
             "destination_registry_url",    # destination registry url
-            "3600",  # max_export_wait_time
             "filesystem",  # export location
             "absolute_path",    # file system path
             "no",    # keep_blocked_users
@@ -388,9 +388,9 @@ class ConfigTests(unittest.TestCase):
             "src_access_token":"obfuscated===",\
             "src_parent_group_id":"0",\
             "src_parent_group_path":"source_group_full_path",\
+            "max_export_wait_time":"3600",\
             "src_registry_url":"source_registry_url",\
             "dstn_registry_url":"destination_registry_url",\
-            "max_export_wait_time":"3600",\
             "location":"aws",\
             "s3_name":"s3_name",\
             "s3_region":"us-east-1",\
@@ -431,9 +431,9 @@ class ConfigTests(unittest.TestCase):
             "src_access_token":"obfuscated===",\
             "src_parent_group_id":"0",\
             "src_parent_group_path":"source_group_full_path",\
+            "max_export_wait_time":"3600",\
             "src_registry_url":"source_registry_url",\
             "dstn_registry_url":"destination_registry_url",\
-            "max_export_wait_time":"3600",\
             "location":"aws",\
             "s3_name":"s3_name",\
             "s3_region":"us-east-1",\

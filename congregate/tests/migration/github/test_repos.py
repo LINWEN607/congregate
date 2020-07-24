@@ -29,7 +29,8 @@ class ReposTests(unittest.TestCase):
 
         mock_open.return_value = mock_file
 
-        expected_repos = []
+        # TODO: placeholder for GitLab formatted data
+        expected_repos = self.mock_repos.get_all_public_repos()
 
-        self.assertEqual(sorted(self.repos.get_all_public_repos()),
+        self.assertEqual(sorted(self.repos.retrieve_repo_info()),
                          sorted(expected_repos))

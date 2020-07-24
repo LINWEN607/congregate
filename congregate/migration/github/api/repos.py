@@ -30,3 +30,11 @@ class ReposApi():
         GitHub API v3 Doc: https://docs.github.com/en/rest/reference/repos#list-public-repositories
         """
         return self.api.list_all(self.host, "repositories", verify=False)
+
+    def get_all_repo_collaborators(self, owner, repo):
+        """
+        List repository collaborators
+
+        GitHub API v3 Doc: https://docs.github.com/en/rest/reference/repos#list-repository-collaborators
+        """
+        return self.api.list_all(self.host, "repos/{}/{}/collaborators".format(owner, repo), verify=False)
