@@ -15,7 +15,7 @@ from congregate.helpers import api
 from congregate.helpers.migrate_utils import get_export_filename_from_namespace_and_name, get_dst_path_with_namespace, get_full_path_with_parent_namespace, \
     is_top_level_group, get_failed_export_from_results, get_results, get_staged_groups_without_failed_export, get_staged_projects_without_failed_export
 from congregate.helpers.misc_utils import get_dry_log, json_pretty, is_dot_com, clean_data, \
-    add_post_migration_stats, rotate_logs, write_results_to_file, migration_dry_run
+    add_post_migration_stats, rotate_logs, write_results_to_file, migration_dry_run, safe_json_response
 from congregate.helpers.processes import start_multi_process
 from congregate.aws import AwsClient
 from congregate.cli.stage_projects import stage_data
@@ -28,6 +28,7 @@ from congregate.migration.gitlab.variables import VariablesClient
 from congregate.migration.gitlab.users import UsersClient
 from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.groups import GroupsClient
+from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.projects import ProjectsClient
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.pushrules import PushRulesClient
@@ -49,6 +50,7 @@ badges = BadgesClient()
 users = UsersClient()
 users_api = UsersApi()
 groups = GroupsClient()
+groups_api = GroupsApi()
 projects = ProjectsClient()
 projects_api = ProjectsApi()
 pushrules = PushRulesClient()
@@ -142,13 +144,32 @@ def migrate_from_gitlab():
 
 
 def migrate_from_bitbucket_server():
+    dry_log = get_dry_log(_DRY_RUN)
+
     # Migrate users
     migrate_user_info()
 
+    staged_groups = groups.get_staged_groups()
+
+    if staged_groups and not _SKIP_GROUP_IMPORT:
+        b.log.info("Migrating BitBucket projects to GitLab groups")
+        results = start_multi_process(
+            migrate_bitbucket_group, staged_groups, processes=_PROCESSES)
+        
+        are_results(results, "group", "import")
+
+        results.append(get_results(results))
+        b.log.info("### {0}Group import results ###\n{1}"
+                    .format(dry_log, json_pretty(results)))
+        write_results_to_file(
+            results, result_type="group", log=b.log)
+    else:
+        b.log.info("SKIP: No projects to migrate")
+
     # Migrate BB repos to projects
     staged_projects = projects.get_staged_projects()
-    dry_log = get_dry_log(_DRY_RUN)
-    if staged_projects:
+    
+    if staged_projects and not _SKIP_PROJECT_IMPORT:
         b.log.info("Importing projects from BitBucket Server")
         import_results = start_multi_process(
             import_bitbucket_project, staged_projects, processes=_PROCESSES)
@@ -164,6 +185,22 @@ def migrate_from_bitbucket_server():
         b.log.info("SKIP: No projects to migrate")
 
 
+def migrate_bitbucket_group(group):
+    result = False
+    members = group.pop("members")
+    group["full_path"] = get_full_path_with_parent_namespace(group["full_path"])
+    group["parent_id"] = b.config.dstn_parent_id
+    if not _DRY_RUN:
+        result = safe_json_response(groups_api.create_group(b.config.destination_host, b.config.destination_token, group))
+        if result:
+            group_id = result.get("id")
+            result["members"] = groups.add_members_to_destination_group(b.config.destination_host, b.config.destination_token, group_id, members)
+            groups.remove_import_user(group_id)
+    return {
+        group["full_path"]: result
+    }
+
+
 def import_bitbucket_project(project):
     members = project.pop("members")
     result = ext_import.trigger_import_from_bb_server(
@@ -171,12 +208,7 @@ def import_bitbucket_project(project):
     if result.get(project["path_with_namespace"], False) is not False:
         project_id = result[project["path_with_namespace"]
                             ]["response"].get("id")
-        for member in members:
-            member["user_id"] = users.find_user_by_email_comparison_without_id(member["email"])[
-                "id"]
-            if member.get("user_id"):
-                projects_api.add_member(
-                    project_id, b.config.destination_host, b.config.destination_token, member)
+        result["members"] = projects.add_members_to_destination_project(b.config.destination_host, b.config.destination_token, project_id, members)
         projects.remove_import_user(project_id)
     return result
 
