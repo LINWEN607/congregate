@@ -37,7 +37,7 @@ class ImportClient(BaseClass):
             except ValueError as e:
                 self.log.error(
                     "Failed to import from bitbucket server due to %s" % e)
-                return self.get_failed_result(project, None)
+                return self.get_failed_result(project)
         else:
             data["personal_access_token"] = b64encode(
                 data["personal_access_token"])
@@ -59,7 +59,7 @@ class ImportClient(BaseClass):
             }
         }
     
-    def get_failed_result(self, project, data):
+    def get_failed_result(self, project, data=None):
         return {
             project["path_with_namespace"]: False,
             "data": data
