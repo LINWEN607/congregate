@@ -2,6 +2,7 @@ import unittest
 from mock import patch, PropertyMock
 
 from congregate.tests.mockapi.github.orgs import MockOrgsApi
+from congregate.tests.mockapi.github.repos import MockReposApi
 from congregate.migration.github.orgs import OrgsClient
 from congregate.migration.github.api.orgs import OrgsApi
 
@@ -9,10 +10,12 @@ from congregate.migration.github.api.orgs import OrgsApi
 class ReposTests(unittest.TestCase):
     def setUp(self):
         self.mock_orgs = MockOrgsApi()
+        self.mock_repos = MockReposApi()
         self.orgs = OrgsClient()
 
     @patch("__builtin__.file")
     @patch("__builtin__.open")
+    @patch.object(OrgsClient, "get_formatted_repos")
     @patch.object(OrgsApi, "get_all_orgs")
     @patch.object(OrgsApi, "get_all_org_repos")
     @patch.object(OrgsApi, "get_all_org_members")
@@ -32,6 +35,7 @@ class ReposTests(unittest.TestCase):
                                mock_org_members,
                                mock_org_repos,
                                mock_orgs,
+                               mock_repos,
                                mock_open,
                                mock_file):
 
@@ -44,8 +48,10 @@ class ReposTests(unittest.TestCase):
         mock_org_team_repos.return_value = self.mock_orgs.get_all_org_team_repos()
         mock_org_team_members.return_value = self.mock_orgs.get_all_org_team_members()
         mock_org_child_teams.return_value = self.mock_orgs.get_all_org_child_teams()
+        mock_repos.return_value = self.mock_repos.get_formatted_repos()
         mock_open.return_value = mock_file
 
+        # TODO: placeholder for GitLab formatted data
         expected_orgs = []
 
         self.assertEqual(sorted(self.orgs.retrieve_org_info()),

@@ -203,3 +203,6 @@ class MockReposApi():
                 "deployments_url": "https://github.gitlab-proserv.net/api/v3/repos/org1/googleapis/deployments"
             }
         ]
+
+    def get_formatted_repos(self):
+        return []

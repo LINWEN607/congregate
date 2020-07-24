@@ -13,7 +13,7 @@ class ReposApi():
 
         GitHub API v3 Doc: https://docs.github.com/en/rest/reference/repos#get-a-repository
         """
-        return self.api.list_all(self.host, "repos/{}/{}".format(owner, repo), verify=False)
+        return self.api.generate_v3_get_request(self.host, "repos/{}/{}".format(owner, repo), verify=False)
 
     def get_repo_teams(self, owner, repo):
         """

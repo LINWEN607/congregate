@@ -12,6 +12,9 @@ class ReposClient(BaseClass):
             self.config.source_host, self.config.source_token)
 
     def retrieve_repo_info(self):
+        """
+        Get ONLY public repos.
+        """
         repos = self.repos_api.get_all_public_repos()
         with open("{}/data/project_json.json".format(self.app_path), "w") as f:
             json.dump(remove_dupes(repos), f, indent=4)

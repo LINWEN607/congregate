@@ -44,11 +44,11 @@ def list_bitbucket_data():
 
 
 def list_github_data():
-    orgs = GitHubOrgs()
     repos = GitHubRepos()
+    orgs = GitHubOrgs()
 
-    orgs.retrieve_org_info()
     repos.retrieve_repo_info()
+    orgs.retrieve_org_info()
 
 
 def write_empty_file(filename):
