@@ -164,7 +164,8 @@ class GroupsTests(unittest.TestCase):
         ]
 
         expected = {
-            "johndoe@email.com": True
+            "johndoe@email.com": True,
+            "janedoe@email.com": False
         }
 
         actual = self.groups.add_members_to_destination_group("", "", 000, members)

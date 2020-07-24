@@ -141,7 +141,8 @@ class ProjectsTests(unittest.TestCase):
         ]
 
         expected = {
-            "johndoe@email.com": True
+            "johndoe@email.com": True,
+            "janedoe@email.com": False
         }
 
         actual = self.projects.add_members_to_destination_project("", "", 000, members)
