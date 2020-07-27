@@ -4,9 +4,12 @@ Congregate is a little bit of a challenge to test in an automated fashion. A lot
 
 Congregate consists of varying types of tests:
 
-- Unit tests
+- Unit tests:
+    - Unit testing is a level of software testing where individual units/ components of a software are tested. The purpose is to validate that each unit of the software performs as designed. [(source)](http://softwaretestingfundamentals.com/unit-testing/)
 - Integration tests
+    - Integration testing is a level of software testing where individual units are combined and tested as a group. [(source)](http://softwaretestingfundamentals.com/integration-testing/)
 - End to end tests
+    - Also known as system testing, end to end testing is a level of software testing where a complete and integrated software is tested. [(source)](http://softwaretestingfundamentals.com/system-testing/)
 
 ## Quick resources
 
@@ -41,7 +44,17 @@ These commands are also stored in the codebase in dev/bin/env
     - Open source testing library used to intercept HTTP requests and overload the data returned
 - Our [built-in MockApi classes](../congregate.tests.mockapi.html) contain example responses from the APIs consume. Utilize these classes for mocking a GET request or some JSON we would use
 
-#### We utilize mock through decorators. How do I mock the following:
+#### We utilize the mock library through decorators. 
+
+##### What does that mean?
+
+The mock library allows you to use a [decorator](https://realpython.com/primer-on-python-decorators/) to override/overload default return values for specific aspects of the application we want to mock.
+
+Congregate is configuration heavy and makes a lot of HTTP requests. Instead of relying on a configuration file and it's settings, we can mock the specific configuration values we need to use when testing methods.
+
+The same applies for HTTP requests or anything that requires connecting to some external application. We mock our HTTP requests somewhat differently depending on the circumstance, but we can mock a method utilizing an HTTP request or the HTTP response itself. The latter requires utilizing the [responses](https://pypi.org/project/responses/0.3.0/) library.
+
+##### How do I mock the following:
 
 - Properties (when you need to mock our configuration getters)
     - Ex: `@mock.patch('congregate.helpers.conf.Config.<config-getter>', new_callable=mock.PropertyMock)`
@@ -145,17 +158,17 @@ def find_extern_uid_by_provider(self, identities, provider):
     return None
 ```
 
-Test:
+Test (with a line-by-line breakdown):
 
 ```python
-@mock.patch('congregate.helpers.conf.Config.group_sso_provider', new_callable=mock.PropertyMock)
-def test_generate_extern_uid_no_pattern_no_ids(self, provider):
-    provider.return_value = "okta"
-    mock_user = self.mock_users.get_dummy_user()
-    expected = None
-    actual = self.users.generate_extern_uid(mock_user, None)
+@mock.patch('congregate.helpers.conf.Config.group_sso_provider', new_callable=mock.PropertyMock)    # group_sso_provider config is declared as a mocked and callable @Property
+def test_generate_extern_uid_no_pattern_no_ids(self, provider):                                     # The provider argument will carry it's mocked return value
+    provider.return_value = "okta"                                                                  # The provider return value is initialized
+    mock_user = self.mock_users.get_dummy_user()                                                    # mock_user is initialized from our pool of mock user json responses
+    expected = None                                                                                 # The expected return from calling self.users.generate_extern_uid is None
+    actual = self.users.generate_extern_uid(mock_user, None)                                        # The actual call to self.users.generate_extern_uid is made
 
-    self.assertEqual(expected, actual)
+    self.assertEqual(expected, actual)                                                              # We assert whether the previous 2 are equal.
 ```
 
 This test is utilizing the mock library's `PropertyMock` and patching functionality. Our config class is primarily filled with various property methods, so we need to use a PropertyMock to simlulate retrieving data from that class. Once the property is patched, we overload the value of the property in the following line:
