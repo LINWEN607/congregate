@@ -32,14 +32,14 @@ NOTE: You will need to configure congregate to run an end to end test
 poetry run pytest -s -m e2e congregate/tests/
 ```
 
-These commands are also stored in the codebase in dev/bin/env
+These commands are also stored in the codebase in dev/bin/env and can also be exposed as aliases with `. dev/bin/env`
 
 #### We currently use the following libraries for our tests:
 
 - [unittest](https://docs.python.org/2/library/unittest.html)
     - Python's built-in unit test library
-- [mock](https://docs.python.org/3/library/unittest.mock.html)
-    - Python's built-in mocking and data pathcing library
+- [mock](https://cpython-test-docs.readthedocs.io/en/latest/library/unittest.mock.html)
+    - Python's built-in mocking and data patching library
 - [responses](https://pypi.org/project/responses/0.3.0/)
     - Open source testing library used to intercept HTTP requests and overload the data returned
 - Our [built-in MockApi classes](../congregate.tests.mockapi.html) contain example responses from the APIs consume. Utilize these classes for mocking a GET request or some JSON we would use
@@ -65,7 +65,7 @@ The same applies for HTTP requests or anything that requires connecting to some 
 
 #### I created multiple patches, but how do I reference them in my test?
 
-You reference the patchs as parameters in the test method (name the parameters whatever works for you), going from the bottom patch up to the top. See the example test below for the order.
+You reference the patches as parameters in the test method (name the parameters whatever works for you), going from the bottom patch up to the top. See the example test below for the order.
 
 #### What if I need to call the same method multiple times and return different values?
 
@@ -135,7 +135,7 @@ def test_get_results_export_happy(self):
                         "Total": 3, "Successful": 3})
 ```
 
-We are testing the output of a method based on some example input. This is about as basic as our tests get. We provide and input and we expect an output. These are the easiest tests to write.
+We are testing the output of a method based on some example input. This is about as basic as our tests get. We provide an input and we expect an output. These are the easiest tests to write.
 
 
 We have several methods with dependencies on other aspects of the codebase. For example, many methods need to check the configuration of congregate to get through a specific condition.
@@ -171,7 +171,7 @@ def test_generate_extern_uid_no_pattern_no_ids(self, provider):                 
     self.assertEqual(expected, actual)                                                              # We assert whether the previous 2 are equal.
 ```
 
-This test is utilizing the mock library's `PropertyMock` and patching functionality. Our config class is primarily filled with various property methods, so we need to use a PropertyMock to simlulate retrieving data from that class. Once the property is patched, we overload the value of the property in the following line:
+This test is utilizing the mock library's `PropertyMock` and patching functionality. Our config class is primarily filled with various property methods, so we need to use a PropertyMock to simulate retrieving data from that class. Once the property is patched, we overload the value of the property in the following line:
 
 `provider.return_value = "okta"`
 
@@ -268,9 +268,11 @@ The hardest part about writing out end to end tests is building out the foundati
 
 This process will vary from SCM to SCM we support. We use AWS for our GitLab seed image because our GitLab docker containers use ephemeral, external storage, so the data we seed would always be wiped out when we spin up a new container. We still use our GitLab docker containers as a service in our end to end test jobs because we don't need to worry about storing the data after the job is finished. It's better it just gets blown away.
 
+Once the infrastructure and test data can be generated automatically on command, we need to be able to automatically configure congregate to run a migration unattended. 
+
+#### TODO/In progress
+
 With our BitBucket support, it's still a little up in the air as of writing this page, but we are currently approaching a mix between docker-compose and docker in our CI pipeline to help simplify some of this process.
 
 With our upcoming GitHub Enterprise support, there is no docker container available for GHE so we will have to seed data to a persistent GHE instance during the test and delete the test data afterwards.
-
-Once the infrastructure and test data can be generated automatically on command, we need to be able to automatically configure congregate to run a migration unattended. 
 
