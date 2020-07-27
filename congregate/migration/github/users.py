@@ -15,5 +15,7 @@ class UsersClient(BaseClass):
         users = self.users_api.get_all_users()
         # List and reformat all GitHub user to GitLab metadata
         data = remove_dupes(users)
+        with open('%s/data/users.json' % self.app_path, "w") as f:
+            json.dump(data, f, indent=4)
 
         return data
