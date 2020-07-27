@@ -94,7 +94,7 @@ class OnDemand:
             project_key = clone_url.split("/")[-1].upper()
             self.bb_json = SCMVerifier(
                 project=project_key,
-                host=self.config.external_source_url.split("://")[1],
+                host=self.config.source_host.split("://")[1],
                 port='',
                 protocol='https'
             )
@@ -103,7 +103,7 @@ class OnDemand:
             repo = clone_url.split("/")[-1].replace(".git", "")
             self.bb_json = SCMVerifier(
                 project=project_key,
-                host=self.config.external_source_url.split("://")[1],
+                host=self.config.source_host.split("://")[1],
                 port='',
                 protocol='https',
                 repo=repo
@@ -170,8 +170,8 @@ class OnDemand:
         first_name = os.getenv('BUILD_USER_FIRST_NAME')
         last_name = os.getenv('BUILD_USER_LAST_NAME')
         email = os.getenv('BUILD_USER_EMAIL')
-        bbStuff = repo_url.replace("%s@" % self.config.external_user_name, "")
-        bbStuff = bbStuff.split("%s/scm" % self.config.external_source_url)[1]
+        bbStuff = repo_url.replace("%s@" % self.config.source_username, "")
+        bbStuff = bbStuff.split("%s/scm" % self.config.source_host)[1]
         project_key = bbStuff.split("/")[1].upper()
         repoSlug = bbStuff.split("/")[2]
         repo_slug = repoSlug.replace(".git", "")
@@ -202,7 +202,7 @@ class OnDemand:
             protocol = clone_url.split("://")[0]
             url = clone_url.split("://")[1]
             new_clone_url = "%s://%s:%s@%s" % (
-                protocol, self.config.external_user_name, self.config.destination_token, url)
+                protocol, self.config.source_username, self.config.destination_token, url)
             os.chdir("repos")
             subprocess.call(["git", "clone", re.sub('@onestash', ':%s@onestash' %
                                                     self.config.external_user_password, repo["metadata"]["web_repo_url"]), repo["metadata"]["name"]])
