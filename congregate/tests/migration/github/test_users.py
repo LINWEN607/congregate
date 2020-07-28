@@ -14,7 +14,6 @@ class UsersTests(unittest.TestCase):
     @patch("__builtin__.file")
     @patch("__builtin__.open")
     @patch.object(UsersApi, "get_all_users")
-
     @patch("congregate.helpers.conf.Config.source_host", new_callable=PropertyMock)
     @patch("congregate.helpers.conf.Config.source_token", new_callable=PropertyMock)
     def test_retrieve_org_info(self,
@@ -29,7 +28,7 @@ class UsersTests(unittest.TestCase):
         mock_users.return_value = self.mock_users.get_all_users()
         mock_open.return_value = mock_file
 
-        expected_users = []
+        expected_users = self.mock_users.get_all_users()
 
         self.assertEqual(sorted(self.users.retrieve_user_info()),
                          sorted(expected_users))
