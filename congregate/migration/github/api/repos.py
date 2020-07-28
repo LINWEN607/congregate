@@ -31,6 +31,14 @@ class ReposApi():
         """
         return self.api.list_all(self.host, "repositories", verify=False)
 
+    def get_all_user_repos(self, username):
+        """
+        Lists public repositories for the specified user.
+
+        GitHub API v3 Doc: https://docs.github.com/en/rest/reference/repos#list-repositories-for-a-user
+        """
+        return self.api.list_all(self.host, "users/{}/repos".format(username), verify=False)
+
     def get_all_repo_collaborators(self, owner, repo):
         """
         List repository collaborators
