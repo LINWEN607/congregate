@@ -15,7 +15,7 @@ class UsersClient(BaseClass):
     def retrieve_user_info(self):
         # List and reformat all Bitbucket Server user to GitLab metadata
         users = self.users_api.get_all_users(
-            self.config.external_source_url)
+            self.config.source_host)
         data = remove_dupes(self.format_users(users))
         with open('%s/data/users.json' % self.app_path, "w") as f:
             json.dump(data, f, indent=4)

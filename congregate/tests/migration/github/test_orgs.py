@@ -1,0 +1,58 @@
+import unittest
+from mock import patch, PropertyMock
+
+from congregate.tests.mockapi.github.orgs import MockOrgsApi
+from congregate.tests.mockapi.github.repos import MockReposApi
+from congregate.migration.github.orgs import OrgsClient
+from congregate.migration.github.api.orgs import OrgsApi
+
+
+class ReposTests(unittest.TestCase):
+    def setUp(self):
+        self.mock_orgs = MockOrgsApi()
+        self.mock_repos = MockReposApi()
+        self.orgs = OrgsClient()
+
+    @patch("io.TextIOBase")
+    @patch('builtins.open')
+    @patch.object(OrgsClient, "get_formatted_repos")
+    @patch.object(OrgsApi, "get_all_orgs")
+    @patch.object(OrgsApi, "get_all_org_repos")
+    @patch.object(OrgsApi, "get_all_org_members")
+    @patch.object(OrgsApi, "get_all_org_teams")
+    @patch.object(OrgsApi, "get_all_org_team_repos")
+    @patch.object(OrgsApi, "get_all_org_team_members")
+    @patch.object(OrgsApi, "get_all_org_child_teams")
+    @patch("congregate.helpers.conf.Config.source_host", new_callable=PropertyMock)
+    @patch("congregate.helpers.conf.Config.source_token", new_callable=PropertyMock)
+    def test_retrieve_org_info(self,
+                               mock_source_token,
+                               mock_source_host,
+                               mock_org_child_teams,
+                               mock_org_team_members,
+                               mock_org_team_repos,
+                               mock_org_teams,
+                               mock_org_members,
+                               mock_org_repos,
+                               mock_orgs,
+                               mock_repos,
+                               mock_open,
+                               mock_file):
+
+        mock_source_token.return_value = "token"
+        mock_source_host.return_value = "https://github.com"
+        mock_orgs.return_value = self.mock_orgs.get_all_orgs()
+        mock_org_repos.return_value = self.mock_orgs.get_all_org_repos()
+        mock_org_members.return_value = self.mock_orgs.get_all_org_members()
+        mock_org_teams.return_value = self.mock_orgs.get_all_org_teams()
+        mock_org_team_repos.return_value = self.mock_orgs.get_all_org_team_repos()
+        mock_org_team_members.return_value = self.mock_orgs.get_all_org_team_members()
+        mock_org_child_teams.return_value = self.mock_orgs.get_all_org_child_teams()
+        mock_repos.return_value = self.mock_repos.get_formatted_repos()
+        mock_open.return_value = mock_file
+
+        # TODO: placeholder for GitLab formatted data
+        expected_orgs = []
+
+        self.assertEqual(self.orgs.retrieve_org_info().sort(
+            key=lambda x: x["id"]), expected_orgs.sort(key=lambda x: x["id"]))

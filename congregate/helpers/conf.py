@@ -147,16 +147,24 @@ class Config(object):
 
 # SOURCE
     @property
-    def source_host(self):
-        return self.prop("SOURCE", "src_hostname")
-
-    @property
     def source_type(self):
         return self.prop("SOURCE", "src_type")
 
     @property
+    def source_host(self):
+        return self.prop("SOURCE", "src_hostname")
+
+    @property
+    def source_username(self):
+        return self.prop("SOURCE", "username")
+
+    @property
     def source_token(self):
         return self.prop("SOURCE", "src_access_token", None, True)
+
+    @property
+    def repo_list(self):
+        return self.prop("SOURCE", "repo_path")
 
     @property
     def source_registry(self):
@@ -170,23 +178,6 @@ class Config(object):
         :return: The set config value of 3600 seconds (one hour) as default
         """
         return self.prop_int("SOURCE", "max_export_wait_time", 3600)
-
-# EXT_SRC
-    @property
-    def external_source_url(self):
-        return self.prop("EXT_SRC", "url")
-
-    @property
-    def external_user_name(self):
-        return self.prop("EXT_SRC", "username")
-
-    @property
-    def external_access_token(self):
-        return self.prop("EXT_SRC", "token")
-
-    @property
-    def repo_list(self):
-        return self.prop("EXT_SRC", "repo_path")
 
 # EXPORT
     @property

@@ -18,7 +18,7 @@ class ReposClient(BaseClass):
         # List and reformat all Bitbucket Server repo to GitLab project metadata
         repos = []
         for repo in self.repos_api.get_all_repos(
-                self.config.external_source_url):
+                self.config.source_host):
             repos.append({
                 "id": repo["id"],
                 "path": repo["slug"],
@@ -47,7 +47,7 @@ class ReposClient(BaseClass):
             "REPO_READ": 20  # Reporter
         }
         for member in self.repos_api.get_all_repo_users(
-                self.config.external_source_url, project_key, repo_slug):
+                self.config.source_host, project_key, repo_slug):
             m = member["user"]
             m["permission"] = bitbucket_permission_map[member["permission"]]
             members.append(m)

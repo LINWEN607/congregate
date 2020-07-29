@@ -1,0 +1,74 @@
+from congregate.migration.github.api.base import GitHubApi
+
+
+class OrgsApi():
+    def __init__(self, host, token):
+        self.host = host
+        self.token = token
+        self.api = GitHubApi(self.host, self.token)
+
+    def get_all_orgs(self):
+        """
+        Lists all organizations, in the order that they were created on GitHub Enterprise.
+
+        GitHub API v3 Doc: https://docs.github.com/en/rest/reference/orgs#list-organizations
+        """
+        return self.api.list_all(self.host, "organizations", verify=False)
+
+    def get_org(self, org):
+        """
+        Get an organization
+
+        GitHub API v3 Doc: https://docs.github.com/en/rest/reference/orgs#get-an-organization
+        """
+        return self.api.generate_v3_get_request(self.host, "orgs/{}".format(org), verify=False)
+
+    def get_all_org_repos(self, org):
+        """
+        Lists repositories for the specified organization.
+
+        GitHub API v3 Doc: https://docs.github.com/en/rest/reference/repos#list-organization-repositories
+        """
+        return self.api.list_all(self.host, "orgs/{}/repos".format(org), verify=False)
+
+    def get_all_org_members(self, org):
+        """
+        List all users who are members of an organization.
+        If the authenticated user is also a member of this organization then both concealed and public members will be returned.
+
+        GitHub API v3 Doc: https://docs.github.com/en/rest/reference/orgs#list-organization-members
+        """
+        return self.api.list_all(self.host, "orgs/{}/members".format(org), verify=False)
+
+    def get_all_org_teams(self, org):
+        """
+        Lists all teams in an organization that are visible to the authenticated user.
+
+        GitHub API v3 Doc: https://docs.github.com/en/rest/reference/teams#list-teams
+        """
+        return self.api.list_all(self.host, "orgs/{}/teams".format(org), verify=False)
+
+    def get_all_org_team_repos(self, org, team_slug):
+        """
+        Lists a team's repositories visible to the authenticated user.
+
+        GitHub API v3 Doc: https://docs.github.com/en/rest/reference/teams#list-team-repositories
+        """
+        return self.api.list_all(self.host, "orgs/{}/teams/{}/repos".format(org, team_slug), verify=False)
+
+    def get_all_org_team_members(self, org, team_slug):
+        """
+        Team members will include the members of child teams.
+        To list members in a team, the team must be visible to the authenticated user.
+
+        GitHub API v3 Doc: https://docs.github.com/en/rest/reference/teams#list-team-members
+        """
+        return self.api.list_all(self.host, "orgs/{}/teams/{}/members".format(org, team_slug), verify=False)
+
+    def get_all_org_child_teams(self, org, team_slug):
+        """
+        Lists the child teams of the team requested by :team_slug.
+
+        GitHub API v3 Doc: https://docs.github.com/en/rest/reference/teams#list-child-teams
+        """
+        return self.api.list_all(self.host, "orgs/{}/teams/{}/teams".format(org, team_slug), verify=False)

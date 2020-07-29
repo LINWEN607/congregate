@@ -156,7 +156,6 @@ def get_results(res):
     }
 
 
-# TODO: Add OR case for migrating from a parent group (future src_parent_id)
 def is_top_level_group(g):
     """
     Determine if group is a top level or sub group.
@@ -164,7 +163,7 @@ def is_top_level_group(g):
         :param g: The JSON object representing a GitLab group
         :return: True if top-level-group, else False
     """
-    return not g.get("parent_id", None)
+    return not g.get("parent_id", None) or g.get("id", None) == b.config.src_parent_id
 
 
 def is_loc_supported(loc):

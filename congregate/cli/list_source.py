@@ -9,6 +9,9 @@ from congregate.migration.bitbucket.projects import ProjectsClient as BitBucketP
 from congregate.migration.bitbucket.users import UsersClient as BitBucketUsers
 from congregate.migration.bitbucket.repos import ReposClient as BitBucketRepos
 
+from congregate.migration.github.repos import ReposClient as GitHubRepos
+from congregate.migration.github.orgs import OrgsClient as GitHubOrgs
+from congregate.migration.github.users import UsersClient as GitHubUsers
 
 b = BaseClass()
 
@@ -40,6 +43,16 @@ def list_bitbucket_data():
     users.retrieve_user_info()
 
 
+def list_github_data():
+    repos = GitHubRepos()
+    orgs = GitHubOrgs()
+    users = GitHubUsers()
+
+    repos.retrieve_repo_info()
+    orgs.retrieve_org_info()
+    users.retrieve_user_info()
+
+
 def write_empty_file(filename):
     """
         Write an empty json file containing an empty list, it's used to make sure a file is present in the filesystem
@@ -52,15 +65,15 @@ def write_empty_file(filename):
 
 
 def list_data():
-    ext_src = b.config.external_source_url
-    src = b.config.source_host
-    if ext_src and "gitlab" not in ext_src.lower():
+    src_type = b.config.source_type
+    if src_type == "Bitbucket Server":
         list_bitbucket_data()
-    elif src:
+    elif src_type == "GitLab":
         list_gitlab_data()
+    elif src_type == "GitHub":
+        list_github_data()
     else:
-        b.log.warning(
-            "Cannot list from source (External: {0}, GitLab: {1})".format(ext_src, src))
+        b.log.warning("Cannot list from source {}".format(src_type))
         exit()
 
     staged_files = ["staged_projects", "staged_groups", "staged_users"]

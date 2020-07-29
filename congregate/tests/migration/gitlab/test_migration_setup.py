@@ -41,11 +41,11 @@ class MigrationEndToEndTestSetup(unittest.TestCase):
             "no",  # external_src_url
             os.getenv("GITLAB_SRC"),  # source host
             "no",  # single group migration
+            "60",  # max_export_wait_time
             "yes",  # migrating registries
             # self.t.generate_token("source_token", "2020-08-27", url=os.getenv("GITLAB_SRC"), username="root", pword=uuid4().hex), # source token
             os.getenv("GITLAB_SRC_REG_URL"),  # source registry url
             os.getenv("GITLAB_DEST_REG_URL"),  # destination registry url
-            "60",  # max_export_wait_time
             "filesystem",  # export location
             # "s3_name",  # bucket name
             # "us-east-1",    # bucket region

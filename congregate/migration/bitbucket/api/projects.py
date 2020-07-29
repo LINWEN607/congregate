@@ -2,7 +2,6 @@ from congregate.migration.bitbucket.api import base as api
 
 
 class ProjectsApi():
-
     def get_project(self, key, host):
         return api.generate_get_request(host, "projects/{}".format(key))
 

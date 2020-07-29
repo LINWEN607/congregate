@@ -7,7 +7,6 @@
 import os
 import json
 from traceback import print_exc
-from re import sub
 from time import time
 from requests.exceptions import RequestException
 
@@ -15,17 +14,16 @@ from congregate.helpers import api
 from congregate.helpers.migrate_utils import get_export_filename_from_namespace_and_name, get_dst_path_with_namespace, get_full_path_with_parent_namespace, \
     is_top_level_group, get_failed_export_from_results, get_results, get_staged_groups_without_failed_export, get_staged_projects_without_failed_export
 from congregate.helpers.misc_utils import get_dry_log, json_pretty, is_dot_com, clean_data, \
-    add_post_migration_stats, rotate_logs, write_results_to_file, migration_dry_run
+    add_post_migration_stats, rotate_logs, write_results_to_file, migration_dry_run, safe_json_response
 from congregate.helpers.processes import start_multi_process
 from congregate.cli.stage_projects import stage_data
 from congregate.helpers.base_class import BaseClass
-# from congregate.migration.bitbucket.api.users import UsersClient
-# from congregate.migration.bitbucket.api.projects import ProjectsClient
 from congregate.migration.gitlab.importexport import ImportExportClient
 from congregate.migration.gitlab.variables import VariablesClient
 from congregate.migration.gitlab.users import UsersClient
 from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.groups import GroupsClient
+from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.projects import ProjectsClient
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.pushrules import PushRulesClient
@@ -60,6 +58,7 @@ class MigrateClient(BaseClass):
         self.users = UsersClient()
         self.users_api = UsersApi()
         self.groups = GroupsClient()
+        self.groups_api = GroupsApi()
         self.projects = ProjectsClient()
         self.projects_api = ProjectsApi()
         self.pushrules = PushRulesClient()
@@ -92,9 +91,9 @@ class MigrateClient(BaseClass):
                 "dry_run_group_migration.json",
                 "dry_run_project_migration.json"])
         rotate_logs()
-        if self.config.source_type == "gitlab":
+        if self.config.source_type == "GitLab":
             self.migrate_from_gitlab()
-        elif self.config.source_type == "bitbucket server":
+        elif self.config.source_type == "Bitbucket Server":
             self.migrate_from_bitbucket_server()
         else:
             self.log.warning(
@@ -119,18 +118,36 @@ class MigrateClient(BaseClass):
             self.groups.remove_import_user(self.config.dstn_parent_id)
 
     def migrate_from_bitbucket_server(self):
+        dry_log = get_dry_log(self.dry_run)
+
         # Migrate users
         self.migrate_user_info()
 
+        # Migrate BB projects to groups
+        staged_groups = self.groups.get_staged_groups()
+        if staged_groups and not self.skip_group_import:
+            self.log.info("Migrating BitBucket projects to GitLab groups")
+            results = start_multi_process(
+                self.migrate_bitbucket_group, staged_groups, processes=self.processes)
+
+            self.are_results(results, "group", "import")
+
+            results.append(get_results(results))
+            self.log.info("### {0}Group import results ###\n{1}"
+                          .format(dry_log, json_pretty(results)))
+            write_results_to_file(
+                results, result_type="group", log=self.log)
+        else:
+            self.log.info("SKIP: No projects to migrate")
+
         # Migrate BB repos to projects
         staged_projects = self.projects.get_staged_projects()
-        dry_log = get_dry_log(self.dry_run)
-        if staged_projects:
+        if staged_projects and not self.skip_project_import:
             self.log.info("Importing projects from BitBucket Server")
             import_results = start_multi_process(
                 self.import_bitbucket_project, staged_projects, processes=self.processes)
 
-            are_results(import_results, "project", "import")
+            self.are_results(import_results, "project", "import")
 
             # append Total : Successful count of project imports
             import_results.append(get_results(import_results))
@@ -140,6 +157,24 @@ class MigrateClient(BaseClass):
         else:
             self.log.info("SKIP: No projects to migrate")
 
+    def migrate_bitbucket_group(self, group):
+        result = False
+        members = group.pop("members")
+        group["full_path"] = get_full_path_with_parent_namespace(
+            group["full_path"])
+        group["parent_id"] = self.config.dstn_parent_id
+        if not self.dry_run:
+            result = safe_json_response(self.groups_api.create_group(
+                self.config.destination_host, self.config.destination_token, group))
+            if result:
+                group_id = result.get("id")
+                result["members"] = self.groups.add_members_to_destination_group(
+                    self.config.destination_host, self.config.destination_token, group_id, members)
+                self.groups.remove_import_user(group_id)
+        return {
+            group["full_path"]: result
+        }
+
     def import_bitbucket_project(self, project):
         members = project.pop("members")
         result = self.ext_import.trigger_import_from_bb_server(
@@ -147,12 +182,8 @@ class MigrateClient(BaseClass):
         if result.get(project["path_with_namespace"], False) is not False:
             project_id = result[project["path_with_namespace"]
                                 ]["response"].get("id")
-            for member in members:
-                member["user_id"] = self.users.find_user_by_email_comparison_without_id(member["email"])[
-                    "id"]
-                if member.get("user_id"):
-                    self.projects_api.add_member(
-                        project_id, self.config.destination_host, self.config.destination_token, member)
+            result["members"] = self.projects.add_members_to_destination_project(
+                self.config.destination_host, self.config.destination_token, project_id, members)
             self.projects.remove_import_user(project_id)
         return result
 
@@ -160,7 +191,7 @@ class MigrateClient(BaseClass):
         if not results:
             self.log.warning(
                 "Results from {0} {1} returned as empty. Aborting.".format(var, stage))
-            add_post_migration_stats(self.start)
+            add_post_migration_stats(self.dry_run)
             exit()
 
     def migrate_user_info(self):

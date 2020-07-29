@@ -14,8 +14,8 @@ class UsersTests(unittest.TestCase):
     @patch("io.TextIOBase")
     @patch('builtins.open')
     @patch.object(UsersApi, "get_all_users")
-    @patch('congregate.helpers.conf.Config.external_source_url', new_callable=PropertyMock)
-    @patch('congregate.helpers.conf.Config.external_access_token', new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.source_host', new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.source_token', new_callable=PropertyMock)
     def test_retrieve_user_info(self, mock_ext_src_url, mock_ext_user_token, mock_get_all_users, mock_open, mock_file):
         mock_ext_src_url.return_value = "http://localhost:7990"
         mock_ext_user_token.return_value = "username:password"

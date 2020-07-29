@@ -244,7 +244,7 @@ Usage:
     congregate make-all-internal-groups-private # TODO: Refactor or rename, as it does not make any changes
     congregate check-projects-visibility # TODO: Refactor or rename, as it's not a check but does an update. Add dry-run
     congregate set-default-branch [--commit]
-    congregate enable-mirroring [--commit]
+    congregate enable-mirroring [--commit] # TODO: Find a use for it or remove
     congregate count-unarchived-projects
     congregate archive-staged-projects [--commit]
     congregate unarchive-staged-projects [--commit]
@@ -276,7 +276,7 @@ Arguments:
     skip-project-export                     Skips the project export and assumes that the project file is already ready
                                                 for rewrite. Currently does NOT work for exports through filesystem-aws.
     skip-project-import                     Will do all steps up to import (export, re-write exported project json,
-                                                etc). Useful for testing export contents.
+                                                etc). Useful for testing export contents. Will also skip any external source imports
     only-post-migration-info                Skips migrating all content except for post-migration information. Use when import is handled outside of congregate
     access-level                            Update parent group level user permissions (Guest/Reporter/Developer/Maintainer/Owner).
     staged                                  Compare using staged data
@@ -293,17 +293,19 @@ Commands:
                                                 their parent groups to {CONGREGATE_PATH}/data/staged_groups.json.
                                                 all project and group members to {CONGREGATE_PATH}/data/staged_users.json,
                                                 All projects can be staged with '.' or 'all'.
+                                                Individual ones can be staged as a space delimited list of integers (project IDs).
     stage-groups                            Stage groups and sub-groups to {CONGREGATE_PATH}/data/staged_groups.json,
                                                 all their projects (except shared - with_shared=False) to {CONGREGATE_PATH}/data/staged_projects.json,
                                                 all project and group members to {CONGREGATE_PATH}/data/staged_users.json,
                                                 All groups can be staged with '.' or 'all'.
+                                                Individual ones can be staged as a space delimited list of integers (group IDs).
     migrate                                 Commence migration based on configuration and staged assets.
     rollback                                Remove staged users/groups/projects on destination.
     ui                                      Deploy UI to port 8000.
     do-all*                                 Configure system, retrieve all projects, users, and groups, stage all information, and commence migration.
     search-for-staged-users                 Search for staged users on destination based on email
     update-aws-creds                        Run awscli commands based on the keys stored in the config. Useful for docker updates.
-    add-users-to-parent-group               If a parent group is set, all users staged will be added to the parent group.
+    add-users-to-parent-group               If a parent group is set, all staged users will be added to the parent group with guest permissions.
     remove-blocked-users                    Remove all blocked users from staged projects and groups.
     update-user-permissions                 Update parent group member access level. Mainly for lowering to Guest/Reporter.
     get-total-count                         Get total count of migrated projects. Used to compare exported projects to imported projects.

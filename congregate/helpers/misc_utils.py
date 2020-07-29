@@ -422,3 +422,12 @@ def write_json_yield_to_file(file_path, generator_function, *args):
         for data in generator_function(*args):
             output.append(data)
         f.write(json_pretty(output))
+
+def safe_json_response(response):
+    """
+        Helper method to handle getting valid JSON safely. If valid JSON cannot be returned, it returns none.
+    """
+    try:
+        return response.json()
+    except ValueError:
+        return None
