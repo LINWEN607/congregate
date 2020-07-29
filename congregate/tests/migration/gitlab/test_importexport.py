@@ -187,22 +187,22 @@ class ImportExportClientTests(unittest.TestCase):
                                                         self.original_project_path, self.original_namespace_path, self.original_project_override_params, self.members)
         self.assertEqual(import_id, None)
 
-    # @patch('congregate.helpers.conf.Config.importexport_wait', new_callable=PropertyMock)
-    # @patch('congregate.helpers.conf.Config.max_export_wait_time', new_callable=PropertyMock)
-    # @patch.object(ProjectsApi, "get_project_import_status")
-    # def test_get_import_id_from_response_timeout(self, mock_status, max_wait, wait):
-    #     wait.return_value = 0.01
-    #     max_wait.return_value = 0.1
-    #     ok_status_mock = MagicMock()
-    #     type(ok_status_mock).status_code = PropertyMock(return_value=200)
-    #     ok_status_mock.json.return_value = {
-    #         "id": 333,
-    #         "import_status": "scheduled"
-    #     }
-    #     mock_status.return_value = ok_status_mock
-    #     import_id = self.ie.get_import_id_from_response(self.import_response, self.original_project_filename, self.original_project_name,
-    #                                                     self.original_project_path, self.original_namespace_path, self.original_project_override_params, self.members)
-    #     self.assertEqual(import_id, None)
+    @patch('congregate.helpers.conf.Config.importexport_wait', new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.max_export_wait_time', new_callable=PropertyMock)
+    @patch.object(ProjectsApi, "get_project_import_status")
+    def test_get_import_id_from_response_timeout(self, mock_status, max_wait, wait):
+        wait.return_value = 0.01
+        max_wait.return_value = 0.1
+        ok_status_mock = MagicMock()
+        type(ok_status_mock).status_code = PropertyMock(return_value=200)
+        ok_status_mock.json.return_value = {
+            "id": 333,
+            "import_status": "scheduled"
+        }
+        mock_status.return_value = ok_status_mock
+        import_id = self.ie.get_import_id_from_response(self.import_response, self.original_project_filename, self.original_project_name,
+                                                        self.original_project_path, self.original_namespace_path, self.original_project_override_params, self.members)
+        self.assertEqual(import_id, None)
 
     @patch.object(ProjectsApi, "export_project")
     @patch.object(ProjectsApi, "get_project_export_status")
