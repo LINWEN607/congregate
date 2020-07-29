@@ -227,7 +227,6 @@ class MockGroupsApi():
                 "visibility": "public",
                 "lfs_enabled": True,
                 "avatar_url": "http://localhost:3000/uploads/group/avatar/1/foo.jpg",
-                "web_url": "http://localhost:3000/groups/foo-bar",
                 "request_access_enabled": False,
                 "full_name": "Foobar Group",
                 "full_path": "foo-bar",
@@ -236,7 +235,6 @@ class MockGroupsApi():
                 "members": [
                     {
                         "username": "smart3",
-                        "web_url": "http://demo.tanuki.cloud/smart3",
                         "name": "User smart3",
                         "expires_at": None,
                         "access_level": 50,
@@ -246,7 +244,6 @@ class MockGroupsApi():
                     },
                     {
                         "username": "smart4",
-                        "web_url": "http://demo.tanuki.cloud/smart4",
                         "name": "User smart4",
                         "expires_at": None,
                         "access_level": 30,
@@ -265,7 +262,6 @@ class MockGroupsApi():
                 "visibility": "public",
                 "lfs_enabled": True,
                 "avatar_url": "http://localhost:3000/uploads/group/avatar/1/foo.jpg",
-                "web_url": "http://localhost:3000/groups/foo-bar-2",
                 "request_access_enabled": False,
                 "full_name": "Foobar Group 2",
                 "full_path": "foo-bar-2",
@@ -274,7 +270,6 @@ class MockGroupsApi():
                 "members": [
                     {
                         "username": "smart3",
-                        "web_url": "http://demo.tanuki.cloud/smart3",
                         "name": "User smart3",
                         "expires_at": None,
                         "access_level": 50,
@@ -284,7 +279,6 @@ class MockGroupsApi():
                     },
                     {
                         "username": "smart4",
-                        "web_url": "http://demo.tanuki.cloud/smart4",
                         "name": "User smart4",
                         "expires_at": None,
                         "access_level": 30,
@@ -303,7 +297,6 @@ class MockGroupsApi():
                 "visibility": "public",
                 "lfs_enabled": True,
                 "avatar_url": "http://localhost:3000/uploads/group/avatar/1/foo.jpg",
-                "web_url": "http://localhost:3000/groups/foo-bar-2",
                 "request_access_enabled": False,
                 "full_name": "Foobar Group 3",
                 "full_path": "foo-bar-3",
@@ -312,7 +305,6 @@ class MockGroupsApi():
                 "members": [
                     {
                         "username": "smart3",
-                        "web_url": "http://demo.tanuki.cloud/smart3",
                         "name": "User smart3",
                         "expires_at": None,
                         "access_level": 50,
@@ -322,7 +314,6 @@ class MockGroupsApi():
                     },
                     {
                         "username": "smart4",
-                        "web_url": "http://demo.tanuki.cloud/smart4",
                         "name": "User smart4",
                         "expires_at": None,
                         "access_level": 30,
@@ -339,7 +330,6 @@ class MockGroupsApi():
                         "visibility": "private",
                         "ssh_url_to_repo": "git@example.com:diaspora/diaspora-client.git",
                         "http_url_to_repo": "http://example.com/diaspora/diaspora-client.git",
-                        "web_url": "http://example.com/diaspora/diaspora-client",
                         "readme_url": "http://example.com/diaspora/diaspora-client/blob/master/README.md",
                         "tag_list": [
                             "example",
@@ -417,7 +407,6 @@ class MockGroupsApi():
                 "visibility": "public",
                 "lfs_enabled": True,
                 "avatar_url": "http://localhost:3000/uploads/group/avatar/1/foo.jpg",
-                "web_url": "http://localhost:3000/groups/foo-bar-2",
                 "request_access_enabled": False,
                 "full_name": "Foobar Group 3",
                 "full_path": "foo-bar-3",
@@ -426,7 +415,6 @@ class MockGroupsApi():
                 "members": [
                     {
                         "username": "smart3",
-                        "web_url": "http://demo.tanuki.cloud/smart3",
                         "name": "User smart3",
                         "expires_at": None,
                         "access_level": 50,
@@ -436,7 +424,6 @@ class MockGroupsApi():
                     },
                     {
                         "username": "smart4",
-                        "web_url": "http://demo.tanuki.cloud/smart4",
                         "name": "User smart4",
                         "expires_at": None,
                         "access_level": 30,
@@ -453,7 +440,6 @@ class MockGroupsApi():
                         "visibility": "private",
                         "ssh_url_to_repo": "git@example.com:brightbox/puppet.git",
                         "http_url_to_repo": "http://example.com/brightbox/puppet.git",
-                        "web_url": "http://example.com/brightbox/puppet",
                         "readme_url": "http://example.com/brightbox/puppet/blob/master/README.md",
                         "tag_list": [
                             "example",
@@ -609,7 +595,6 @@ class MockGroupsApi():
         return [
             {
                 "username": "smart1",
-                "web_url": "http://demo.tanuki.cloud/smart1",
                 "name": "User smart1",
                 "expires_at": None,
                 "access_level": 30,
@@ -619,7 +604,6 @@ class MockGroupsApi():
             },
             {
                 "username": "smart2",
-                "web_url": "http://demo.tanuki.cloud/smart2",
                 "name": "User smart2",
                 "expires_at": None,
                 "access_level": 40,
@@ -629,7 +613,6 @@ class MockGroupsApi():
             },
             {
                 "username": "smart3",
-                "web_url": "http://demo.tanuki.cloud/smart3",
                 "name": "User smart3",
                 "expires_at": None,
                 "access_level": 50,
