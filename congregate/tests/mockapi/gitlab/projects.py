@@ -11,7 +11,6 @@ class MockProjectsApi():
                 "visibility": "private",
                 "ssh_url_to_repo": "git@example.com:diaspora/diaspora-client.git",
                 "http_url_to_repo": "http://example.com/diaspora/diaspora-client.git",
-                "web_url": "http://example.com/diaspora/diaspora-client",
                 "readme_url": "http://example.com/diaspora/diaspora-client/blob/master/README.md",
                 "tag_list": [
                     "example",
@@ -85,7 +84,6 @@ class MockProjectsApi():
                         "name": "John Doe",
                         "state": "active",
                         "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon",
-                        "web_url": "http://192.168.1.8:3000/root",
                         "expires_at": "2012-10-22T14:13:35Z",
                         "access_level": 30
                     }
@@ -98,7 +96,6 @@ class MockProjectsApi():
                 "visibility": "private",
                 "ssh_url_to_repo": "git@example.com:brightbox/puppet.git",
                 "http_url_to_repo": "http://example.com/brightbox/puppet.git",
-                "web_url": "http://example.com/brightbox/puppet",
                 "readme_url": "http://example.com/brightbox/puppet/blob/master/README.md",
                 "tag_list": [
                     "example",
@@ -183,7 +180,6 @@ class MockProjectsApi():
                         "name": "John Doe",
                         "state": "active",
                         "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon",
-                        "web_url": "http://192.168.1.8:3000/root",
                         "expires_at": "2012-10-22T14:13:35Z",
                         "access_level": 30
                     }
@@ -196,7 +192,6 @@ class MockProjectsApi():
                 "visibility": "private",
                 "ssh_url_to_repo": "git@example.com:brightbox/puppet.git",
                 "http_url_to_repo": "http://example.com/brightbox/puppet.git",
-                "web_url": "http://example.com/brightbox/puppet",
                 "readme_url": "http://example.com/brightbox/puppet/blob/master/README.md",
                 "tag_list": [
                     "example",
@@ -281,7 +276,6 @@ class MockProjectsApi():
                         "name": "John Doe",
                         "state": "active",
                         "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon",
-                        "web_url": "http://192.168.1.8:3000/root",
                         "expires_at": "2012-10-22T14:13:35Z",
                         "access_level": 30
                     }
@@ -300,7 +294,6 @@ class MockProjectsApi():
             "visibility": "private",
             "ssh_url_to_repo": "git@example.com:diaspora/diaspora-project-site.git",
             "http_url_to_repo": "http://example.com/diaspora/diaspora-project-site.git",
-            "web_url": "http://example.com/diaspora/diaspora-project-site",
             "readme_url": "http://example.com/diaspora/diaspora-project-site/blob/master/README.md",
             "tag_list": [
                 "example",
@@ -336,7 +329,6 @@ class MockProjectsApi():
                     "kind": "group",
                     "full_path": "diaspora",
                     "avatar_url": "http://localhost:3000/uploads/group/avatar/3/foo.jpg",
-                    "web_url": "http://localhost:3000/groups/diaspora"
             },
             "import_status": "none",
             "import_error": None,
@@ -410,7 +402,6 @@ class MockProjectsApi():
                     "name": "John Doe",
                     "state": "active",
                     "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon",
-                    "web_url": "http://192.168.1.8:3000/root",
                     "expires_at": "2012-10-22T14:13:35Z",
                     "access_level": 30
                 }
@@ -428,7 +419,8 @@ class MockProjectsApi():
                         "id": 5,
                         "name": "John Doe6",
                         "username": "user5",
-                        "state": "active", "avatar_url": "https://www.gravatar.com/avatar/4aea8cf834ed91844a2da4ff7ae6b491?s=80\u0026d=identicon", "web_url": "http://localhost/user5"
+                        "state": "active", 
+                        "avatar_url": "https://www.gravatar.com/avatar/4aea8cf834ed91844a2da4ff7ae6b491?s=80\u0026d=identicon"
                     }
                 }
             ],
@@ -442,7 +434,6 @@ class MockProjectsApi():
                         "visibility": "public",
                         "lfs_enabled": False,
                         "avatar_url": None,
-                        "web_url": "http://localhost/groups/group1",
                         "request_access_enabled": False,
                         "full_name": "group1",
                         "full_path": "group1",
