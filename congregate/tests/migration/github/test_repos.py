@@ -29,8 +29,56 @@ class ReposTests(unittest.TestCase):
 
         mock_open.return_value = mock_file
 
-        # TODO: placeholder for GitLab formatted data
-        expected_repos = self.mock_repos.get_all_public_repos()
+        expected_repos = [
+            {
+                "name": "website",
+                "members": [],
+                "path": "website",
+                "path_with_namespace": "gitlab/website",
+                "namespace": {
+                    "path": "gitlab",
+                    "kind": "user",
+                    "id": 3,
+                    "full_path": "gitlab",
+                    "name": "gitlab"
+                },
+                "id": 1,
+                "visibility": "public",
+                "description": None
+            },
+            {
+                "name": "asdf",
+                "members": [],
+                "path": "asdf",
+                "path_with_namespace": "bmay/asdf",
+                "namespace": {
+                    "path": "bmay",
+                    "kind": "user",
+                    "id": 5,
+                    "full_path": "bmay",
+                    "name": "bmay"
+                },
+                "id": 2,
+                "visibility": "public",
+                "description": None
+            },
+            {
+                "name": "googleapis",
+                "members": [],
+                "path": "googleapis",
+                "path_with_namespace": "org1/googleapis",
+                "namespace": {
+                    "path": "org1",
+                    "kind": "group",
+                    "id": 8,
+                    "full_path": "org1",
+                    "name": "org1"
+                },
+                "id": 5,
+                "visibility": "public",
+                "description": None
+            }
+        ]
 
         self.assertEqual(sorted(self.repos.retrieve_repo_info()),
                          sorted(expected_repos))
