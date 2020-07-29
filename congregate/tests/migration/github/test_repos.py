@@ -11,7 +11,6 @@ class ReposTests(unittest.TestCase):
     def setUp(self):
         self.mock_repos = MockReposApi()
         self.repos = ReposClient()
-        self.maxDiff = None
 
     @patch("__builtin__.file")
     @patch("__builtin__.open")

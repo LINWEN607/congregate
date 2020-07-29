@@ -226,7 +226,6 @@ class StageProjectsTests(unittest.TestCase):
     @mock.patch('congregate.cli.stage_projects.staged_groups', [])
     @mock.patch('congregate.cli.stage_projects.staged_projects', [])
     def test_build_stage_increment_no_parent_id(self, mock_source_type, mock_parent_id, mock_groups, mock_users, mock_projects, mock_check, mock_open):
-        self.maxDiff = None
         mock_source_type.return_value = "GitLab"
         mock_parent_id.return_value = None
         mock_check.return_value = True
