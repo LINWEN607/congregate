@@ -100,7 +100,7 @@ to inject in to the actual return string
 """
 @mock.patch('congregate.helpers.bitbucket_client.api.generate_get_request')
 def test_user_search_by_email_or_name(api_get):
-    user_return_string = '[{"id": 1,"username": "john_smith","name": "John Smith","state": "active","avatar_url": "http://localhost:3000/uploads/user/avatar/1/cd8.jpeg","web_url": "http://localhost:3000/john_smith"}]'
+    user_return_string = '[{"id": 1,"username": "john_smith","name": "John Smith","state": "active","avatar_url": "http://localhost:3000/uploads/user/avatar/1/cd8.jpeg"}]'
     user_return_dict = json.loads(user_return_string)[0]
     api_get.return_value = MockApiReturn(user_return_string)
     return_value = json.loads(bbc.user_search_by_email_or_name('junk'))
@@ -111,7 +111,7 @@ def test_user_search_by_email_or_name(api_get):
 
 @mock.patch('congregate.helpers.bitbucket_client.api.generate_get_request')
 def test_group_search_by_name(api_get):
-    groups_return_string = '[{"id": 1,"name": "Foobar Group","path": "foo-bar","description": "An interesting group","visibility": "public","lfs_enabled": true,"avatar_url": "http://localhost:3000/uploads/group/avatar/1/foo.jpg","web_url": "http://localhost:3000/groups/foo-bar","request_access_enabled": false,"full_name": "Foobar Group","full_path": "foo-bar","file_template_project_id": 1,"parent_id": null}]'
+    groups_return_string = '[{"id": 1,"name": "Foobar Group","path": "foo-bar","description": "An interesting group","visibility": "public","lfs_enabled": true,"avatar_url": "http://localhost:3000/uploads/group/avatar/1/foo.jpg","request_access_enabled": false,"full_name": "Foobar Group","full_path": "foo-bar","file_template_project_id": 1,"parent_id": null}]'
     groups_return_dict = json.loads(groups_return_string)[0]
     api_get.return_value = MockApiReturn(groups_return_string)
     return_value = json.loads(bbc.group_search_by_name('group_name'))

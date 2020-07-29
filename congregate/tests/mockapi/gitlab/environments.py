@@ -23,7 +23,6 @@ class MockEnvironmentsApi():
                 "state": "active",
                 "username": "root",
                 "avatar_url": "http://www.gravatar.com/avatar/e64c7d89f26bd1972efa854d13d7dd61?s=80&d=identicon",
-                "web_url": "http://localhost:3000/root"
                 },
                 "deployable": {
                 "id": 710,
@@ -43,7 +42,6 @@ class MockEnvironmentsApi():
                     "username": "root",
                     "state": "active",
                     "avatar_url": "http://www.gravatar.com/avatar/e64c7d89f26bd1972efa854d13d7dd61?s=80&d=identicon",
-                    "web_url": "http://gitlab.dev/root",
                     "created_at": "2015-12-21T13:14:24.077Z",
                     "bio": None,
                     "location": None,
@@ -75,9 +73,7 @@ class MockEnvironmentsApi():
                     "sha": "416d8ea11849050d3d1f5104cf8cf51053e790ab",
                     "ref": "fdroid",
                     "status": "success",
-                    "web_url": "http://localhost:3000/Commit451/lab-coat/pipelines/34"
                 },
-                "web_url": "http://localhost:3000/Commit451/lab-coat/-/jobs/710",
                 "artifacts": [
                     {
                     "file_type": "trace",

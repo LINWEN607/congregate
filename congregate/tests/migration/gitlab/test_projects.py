@@ -26,6 +26,7 @@ class ProjectsTests(unittest.TestCase):
     @mock.patch('congregate.helpers.conf.Config.src_parent_group_path', new_callable=mock.PropertyMock)
     @mock.patch('congregate.helpers.conf.Config.src_parent_id', new_callable=mock.PropertyMock)
     def test_retrieve_project_info_src_parent_group(self, mock_src_parent_id, mock_src_parent_group_path, mock_get_all_group_projects, mock_get_members, mock_open, mock_file):
+        self.maxDiff = None
         mock_src_parent_id.return_value = 42
         mock_src_parent_group_path.return_value = "mock_src_parent_group_path"
         mock_get_all_group_projects.return_value = self.mock_projects.get_all_projects()

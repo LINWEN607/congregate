@@ -29,7 +29,6 @@ class UsersClient(BaseClass):
                 "username": user["slug"],
                 "name": user["displayName"],
                 "email": user["emailAddress"].lower(),
-                "web_url": user["links"]["self"][0]["href"],
                 "state": "active"
             })
             # When formatting project and repo users

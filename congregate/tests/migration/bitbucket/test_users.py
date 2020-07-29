@@ -27,7 +27,6 @@ class UsersTests(unittest.TestCase):
                 "email": "user1@example.com",
                 "id": 2,
                 "name": "user1",
-                "web_url": "http://localhost:7990/users/user1",
                 "state": "active"
             },
             {
@@ -35,7 +34,6 @@ class UsersTests(unittest.TestCase):
                 "email": "user2@example.com",
                 "id": 3,
                 "name": "user2",
-                "web_url": "http://localhost:7990/users/user2",
                 "state": "active"
             }
         ]
