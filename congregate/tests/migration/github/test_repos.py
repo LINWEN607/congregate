@@ -7,6 +7,7 @@ from congregate.migration.github.api.repos import ReposApi
 
 
 class ReposTests(unittest.TestCase):
+    
     def setUp(self):
         self.mock_repos = MockReposApi()
         self.repos = ReposClient()
