@@ -295,3 +295,31 @@ def test_safe_json_response_without_exception(response):
     actual = misc.safe_json_response(response)
 
     assert expected == actual
+
+@mock.patch("congregate.helpers.misc_utils.open", new=mock.mock_open(read_data="abc123"))
+@mock.patch("congregate.helpers.misc_utils.get_hash_of_dirs")
+def test_is_ui_out_of_date_false(mock_hash):
+    mock_hash.return_value = "abc123"
+    expected = False
+    actual = misc.is_ui_out_of_date("")
+
+    assert expected == actual
+
+@mock.patch("congregate.helpers.misc_utils.open", new=mock.mock_open(read_data="def456"))
+@mock.patch("congregate.helpers.misc_utils.get_hash_of_dirs")
+def test_is_ui_out_of_date_true(mock_hash):
+    mock_hash.return_value = "abc123"
+    expected = True
+    actual = misc.is_ui_out_of_date("")
+
+    assert expected == actual
+
+@mock.patch("congregate.helpers.misc_utils.open")
+@mock.patch("congregate.helpers.misc_utils.get_hash_of_dirs")
+def test_is_ui_out_of_date_true_with_exception(mock_hash, mock_open):
+    mock_open.side_effect = [IOError]
+    mock_hash.return_value = "abc123"
+    expected = True
+    actual = misc.is_ui_out_of_date("")
+
+    assert expected == actual
