@@ -473,6 +473,7 @@ def get_hash_of_dirs(directory, verbose=0):
         if verbose == 1:
           print 'Hashing', names
         filepath = os.path.join(root,names)
+        f1 = None
         try:
           f1 = open(filepath, 'rb')
         except:
