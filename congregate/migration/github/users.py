@@ -1,5 +1,4 @@
 import json
-import requests
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.misc_utils import remove_dupes
 from congregate.migration.github.api.users import UsersApi
@@ -22,16 +21,20 @@ class UsersClient(BaseClass):
 
     def format_users(self, users):
         data = []
-        for user in users:
-            single_user=self.users_api.get_user(user["login"]).json()
+        for single_user in users:
+            user=self.users_api.get_user(single_user["login"]).json()
             data.append({
-                   "id": user["id"],
-                    "username": user["login"],
-                    "name": single_user["name"],
-                    # "email": single_user["email"],
-                    "web_url": user["html_url"],
-                    "avatar_url": single_user["avatar_url"],
-                    #"state": "blocked" if single_user["suspended_at"] else "active",
-                    #"two_factor_enabled": single_user["two_factor_authentication"] 
+                   "id": single_user["id"],
+                    "username": single_user["login"],
+                    #"name": user["name"],
+                    # "email": user["email"],
+                    "state": "blocked" if user["suspended_at"] else "active",
             })
+            if user.get("name", None):
+                data[-1]["name"] = user["name"] 
+            if user.get("email", None):
+                data[-1]["email"] = user["email"] 
+            # When formatting project and repo users
+            if single_user.get("permission", None):
+                data[-1]["access_level"] = user["permission"]
         return data
