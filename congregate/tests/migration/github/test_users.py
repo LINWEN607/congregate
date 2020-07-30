@@ -28,7 +28,23 @@ class UsersTests(unittest.TestCase):
         mock_users.return_value = self.mock_users.get_all_users()
         mock_open.return_value = mock_file
 
-        expected_users = self.mock_users.get_all_users()
+        expected_users = [
+            {
+                "username": "ghost", 
+                "state": "active", 
+                "id": 1
+            }, 
+            {
+                "username": "github-enterprise", 
+                "state": "active", 
+                "id": 2
+            }, 
+            {
+                "username": "gitlab", 
+                "state": "active", 
+                "id": 3
+            }
+        ]
 
         self.assertEqual(sorted(self.users.retrieve_user_info()),
                          sorted(expected_users))
