@@ -394,25 +394,38 @@ def stitch_json_results(result_type="project", steps=0, order="tail"):
 
 
 def build_ui(app_path):
-    port = 8000
+    build_command = "npm run build"
+    subprocess.call(build_command.split(" "))
+    if not os.path.exists(app_path + "/ui_checksum"):
+        with open(app_path + "/ui-checksum", "w") as f:
+            f.write(get_hash_of_dirs("dist"))
+
+def spin_up_ui(app_path, port):
     if not os.path.exists(app_path + "/node_modules"):
         print "No node_modules found. Running npm install"
         install_deps = "npm install"
         subprocess.call(install_deps.split(" "))
     if not os.path.exists(app_path + "/dist"):
         print "UI not built. Building it before deploying"
-        build_command = "npm run build"
-        subprocess.call(build_command.split(" "))
-    current_hash = get_hash_of_dirs("dist")
-    with open(app_path + "/ui-checksum", "r") as f:
-        existing_hash = f.read()
-    if current_hash != existing_hash:
+        build_ui(app_path)
+    if is_ui_out_of_date(app_path):
         print "UI is out of date. Rebuilding UI"
-        build_command = "npm run build"
-        subprocess.call(build_command.split(" "))
+        build_ui(app_path)
     os.chdir(app_path + "/congregate")
     run_ui = "gunicorn -k gevent -w 4 ui:app --bind=0.0.0.0:" + str(port)
     subprocess.call(run_ui.split(" "))
+
+def is_ui_out_of_date(app_path):
+    current_hash = get_hash_of_dirs(app_path + "/dist")
+    try:
+        with open(app_path + "/ui-checksum", "r") as f:
+            existing_hash = f.read()
+        if current_hash != existing_hash:
+            return True
+    except IOError:
+        print "UI Checksum not found"
+        return True
+    return False
 
 def generate_audit_log_message(req_type, message, url, data=None):
     try:

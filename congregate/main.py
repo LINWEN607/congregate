@@ -135,19 +135,19 @@ if __name__ == '__main__':
             os.path.dirname(os.path.abspath(__file__))))
         from congregate.helpers import conf
         from congregate.helpers.logger import myLogger
-        from congregate.helpers.misc_utils import get_congregate_path, clean_data, obfuscate, build_ui, get_hash_of_dirs
+        from congregate.helpers.misc_utils import get_congregate_path, clean_data, obfuscate, spin_up_ui
 
     else:
         from .helpers import conf
         from .helpers.logger import myLogger
-        from .helpers.misc_utils import get_congregate_path, clean_data, obfuscate, build_ui, get_hash_of_dirs
+        from .helpers.misc_utils import get_congregate_path, clean_data, obfuscate, spin_up_ui
 else:
     import sys
     sys.path.append(os.path.dirname(
         os.path.dirname(os.path.abspath(__file__))))
     from congregate.helpers import conf
     from congregate.helpers.logger import myLogger
-    from congregate.helpers.misc_utils import get_congregate_path, clean_data, obfuscate, stitch_json_results, write_results_to_file, build_ui, get_hash_of_dirs
+    from congregate.helpers.misc_utils import get_congregate_path, clean_data, obfuscate, stitch_json_results, write_results_to_file, spin_up_ui
 
 app_path = get_congregate_path()
 
@@ -260,7 +260,7 @@ if __name__ == '__main__':
         if arguments["do-all-groups-and-projects"]:
             do_all.do_all_groups_and_projects(dry_run=DRY_RUN)
         if arguments["ui"]:
-            build_ui(app_path)
+            spin_up_ui(app_path, config.ui_port)
         if arguments["search-for-staged-users"]:
             users.search_for_staged_users()
         if arguments["add-users-to-parent-group"]:
