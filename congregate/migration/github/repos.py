@@ -3,6 +3,7 @@ import json
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.misc_utils import remove_dupes
 from congregate.migration.github.api.repos import ReposApi
+from congregate.migration.github.users import UsersClient
 
 
 class ReposClient(BaseClass):
@@ -10,13 +11,20 @@ class ReposClient(BaseClass):
         super(ReposClient, self).__init__()
         self.repos_api = ReposApi(
             self.config.source_host, self.config.source_token)
+        self.users = UsersClient()
 
     def retrieve_repo_info(self):
         """
-        List and reformat all GitHub public repos to GitLab project metadata
+        List and transform all GitHub public repos to GitLab project metadata
         """
         repos = []
-        for repo in self.repos_api.get_all_public_repos():
+        self.format_repos(repos, self.repos_api.get_all_public_repos())
+        with open('%s/data/project_json.json' % self.app_path, "w") as f:
+            json.dump(remove_dupes(repos), f, indent=4)
+        return remove_dupes(repos)
+
+    def format_repos(self, repos, listed_repos):
+        for repo in listed_repos:
             repos.append({
                 "id": repo["id"],
                 "path": repo["name"],
@@ -34,9 +42,7 @@ class ReposClient(BaseClass):
                 # self.add_repo_collaborators([], repo["owner"]["login"], repo["name"])
                 "members": []
             })
-        with open('%s/data/project_json.json' % self.app_path, "w") as f:
-            json.dump(remove_dupes(repos), f, indent=4)
-        return remove_dupes(repos)
+        return repos
 
     def add_repo_collaborators(self, colabs, owner, repo):
         github_permissions_map = {
