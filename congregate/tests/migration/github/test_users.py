@@ -14,18 +14,21 @@ class UsersTests(unittest.TestCase):
     @patch("__builtin__.file")
     @patch("__builtin__.open")
     @patch.object(UsersApi, "get_all_users")
+    @patch.object(UsersApi, "get_user")
     @patch("congregate.helpers.conf.Config.source_host", new_callable=PropertyMock)
     @patch("congregate.helpers.conf.Config.source_token", new_callable=PropertyMock)
     def test_retrieve_org_info(self,
                                mock_source_token,
                                mock_source_host,
                                mock_users,
+                               mock_single_user,
                                mock_open,
                                mock_file):
 
         mock_source_token.return_value = "token"
         mock_source_host.return_value = "https://github.com"
         mock_users.return_value = self.mock_users.get_all_users()
+        mock_single_user.return_value = self.mock_users.get_user()
         mock_open.return_value = mock_file
 
         expected_users = [
