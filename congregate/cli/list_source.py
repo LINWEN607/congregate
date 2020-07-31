@@ -9,8 +9,9 @@ from congregate.migration.bitbucket.projects import ProjectsClient as BitBucketP
 from congregate.migration.bitbucket.users import UsersClient as BitBucketUsers
 from congregate.migration.bitbucket.repos import ReposClient as BitBucketRepos
 
+from congregate.migration.github.repos import ReposClient as GitHubRepos
 from congregate.migration.github.orgs import OrgsClient as GitHubOrgs
-
+from congregate.migration.github.users import UsersClient as GitHubUsers
 
 b = BaseClass()
 
@@ -43,9 +44,13 @@ def list_bitbucket_data():
 
 
 def list_github_data():
+    repos = GitHubRepos()
     orgs = GitHubOrgs()
+    users = GitHubUsers()
 
+    repos.retrieve_repo_info()
     orgs.retrieve_org_info()
+    users.retrieve_user_info()
 
 
 def write_empty_file(filename):

@@ -38,7 +38,6 @@ class ProjectsTests(unittest.TestCase):
                         "id": 53,
                         "email": "user2@example.com",
                         "state": "active",
-                        "web_url": "http://localhost:7990/users/user2"
                     }
                 ],
                 "path": "ATP",
@@ -50,7 +49,6 @@ class ProjectsTests(unittest.TestCase):
                         "namespace": {
                             "kind": "group",
                             "name": "test-group",
-                            "web_url": "http://localhost:7990/projects/TGP",
                             "path": "TGP",
                             "id": 1,
                             "full_path": "TGP"
@@ -66,7 +64,6 @@ class ProjectsTests(unittest.TestCase):
                         "namespace": {
                             "kind": "group",
                             "name": "test-group",
-                            "web_url": "http://localhost:7990/projects/TGP",
                             "path": "TGP",
                             "id": 1,
                             "full_path": "TGP"
@@ -91,7 +88,6 @@ class ProjectsTests(unittest.TestCase):
                         "id": 53,
                         "email": "user2@example.com",
                         "state": "active",
-                        "web_url": "http://localhost:7990/users/user2"
                     }
                 ],
                 "path": "TGP",
@@ -103,7 +99,6 @@ class ProjectsTests(unittest.TestCase):
                         "namespace": {
                             "kind": "group",
                             "name": "test-group",
-                            "web_url": "http://localhost:7990/projects/TGP",
                             "path": "TGP",
                             "id": 1,
                             "full_path": "TGP"
@@ -119,7 +114,6 @@ class ProjectsTests(unittest.TestCase):
                         "namespace": {
                             "kind": "group",
                             "name": "test-group",
-                            "web_url": "http://localhost:7990/projects/TGP",
                             "path": "TGP",
                             "id": 1,
                             "full_path": "TGP"
