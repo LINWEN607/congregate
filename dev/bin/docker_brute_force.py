@@ -13,4 +13,6 @@
 # for src, dest in repos:
 #     command = "sudo -E ./manually_move_images.sh {0} {1}".format(src, dest)
 #     subprocess.call(command.split(" "))
+
+# Comment out the line below if you want to have the script stop when it finishes migrating a single repo to check. Otherwise, leave the raw_input commented out
 #     raw_input("\n{0} to {1} is complete. Would you like to proceed?".format(src, dest))
