@@ -286,7 +286,7 @@ def check_is_project_or_group_for_logging(is_project):
 
 def is_error_message_present(response):
     if isinstance(response, Response):
-        response = response.json()
+        safe_json_response(response)
     if isinstance(response, list) and response and response[0] == "message":
         return True
     elif isinstance(response, dict) and response.get("message", None) is not None:
@@ -405,6 +405,7 @@ def build_ui(app_path):
     run_ui = "gunicorn -k gevent -w 4 ui:app --bind=0.0.0.0:" + str(port)
     subprocess.call(run_ui.split(" "))
 
+
 def generate_audit_log_message(req_type, message, url, data=None):
     try:
         return "{0}enerating {1} request to {2}{3}".format(
@@ -422,6 +423,7 @@ def write_json_yield_to_file(file_path, generator_function, *args):
         for data in generator_function(*args):
             output.append(data)
         f.write(json_pretty(output))
+
 
 def safe_json_response(response):
     """
