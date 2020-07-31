@@ -22,6 +22,7 @@ Our guidance on some other migrations at this time:
 * [Migration Prerequisites](static_docs/migration-prerequisites.md)
 * [Migration Metrics](static_docs/migration-metrics.md)
 * [Development Environment Setup Tips](static_docs/local-development.md)
+* [Writing Tests in Congregate](static_docs/writing-tests.md)
 * [Bitbucket Development Setup](static_docs/bitbucket-development-setup.md)
 * [Migration Workflow](static_docs/workflow.md)
 * [Code Quality Report](static_docs/code-quality.md)
