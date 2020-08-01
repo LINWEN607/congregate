@@ -1,5 +1,6 @@
-import mock
-
+import responses
+from mock import patch, PropertyMock
+from congregate.tests.mockapi.github.headers import MockHeaders
 from congregate.migration.github.api.base import GitHubApi as GitHubApi
 
 
@@ -50,18 +51,21 @@ def test_create_v4_query():
 
 
 def test_create_dict_from_headers():
-    r = "https://github.gitlab-proserv.net/api/v3/organizations?since=10"
-    link_headers = '<https://github.gitlab-proserv.net/api/v3/organizations?since=10>; rel="next", <https://github.gitlab-proserv.net/api/v3/organizations{?since}>; rel="first"'
+    r = "https://github.gitlab-proserv.net/api/v3/organizations?since=12"
+    test_headers = MockHeaders().get_headers()
     ut = GitHubApi("HOST", "TOKEN")
-    resp = ut.create_dict_from_headers(link_headers)
+    resp = ut.create_dict_from_headers(test_headers.get("Link"))
     assert resp['next'] == r
 
-# # pylint: disable=no-member
+# pylint: disable=no-member
 # @responses.activate
-# @mock.patch("congregate.helpers.api.generate_get_request")
-# def test_list_all():
-#     r = None
-#     ut = GitHubApi("HOST", "TOKEN")
+@patch("congregate.migration.github.api.base.GitHubApi.generate_v3_get_request", new_callable=PropertyMock)
+def test_list_all(header_test):
+    r = MockHeaders()
+    header_test.return_value = r.get_headers()
+    ut = GitHubApi("HOST", "TOKEN")
+    # ut.list_all("HOST")
+    assert header_test.get("Link") == "who knows"
 
 
 
@@ -87,8 +91,8 @@ def test_create_dict_from_headers():
 
 
 def test_generate_v3_get_request():
-    with mock.patch("congregate.migration.github.api.base.requests.Response") as mock_resp:
-        with mock.patch("congregate.migration.github.api.base.requests.get") as mock_get:
+    with patch("congregate.migration.github.api.base.requests.Response") as mock_resp:
+        with patch("congregate.migration.github.api.base.requests.get") as mock_get:
             t = GitHubApi("HOST", "TOKEN")
             mock_get.return_value = mock_resp
             resp = t.generate_v3_get_request("HOST", "TOKEN", "API")
