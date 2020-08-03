@@ -62,6 +62,3 @@ class MockHeaders():
             "avatar_url": "https://github.gitlab-proserv.net/avatars/u/8?",
             "description": None
         }]
-        # return {
-        #     u'issues_url': u'https://github.gitlab-proserv.net/api/v3/orgs/org1/issues', u'members_url': u'https://github.gitlab-proserv.net/api/v3/orgs/org1/members{/member}', u'description': None, u'public_members_url': u'https://github.gitlab-proserv.net/api/v3/orgs/org1/public_members{/member}', u'url': u'https://github.gitlab-proserv.net/api/v3/orgs/org1', u'events_url': u'https://github.gitlab-proserv.net/api/v3/orgs/org1/events', u'avatar_url': u'https://github.gitlab-proserv.net/avatars/u/8?', u'node_id': u'MDEyOk9yZ2FuaXphdGlvbjg=', u'repos_url': u'https://github.gitlab-proserv.net/api/v3/orgs/org1/repos', u'login': u'org1', u'id': 8, u'hooks_url': u'https://github.gitlab-proserv.net/api/v3/orgs/org1/hooks'
-        #     }
