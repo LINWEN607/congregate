@@ -103,5 +103,3 @@ def test_list_all_bad_status_code():
     actual = ut.list_all("http://host", "organizations", verify=False)
     expected = None
     assert expected == actual
-
-# Add Multi Page Test
