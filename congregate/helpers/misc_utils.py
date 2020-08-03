@@ -402,28 +402,25 @@ def build_ui(app_path):
 
 def spin_up_ui(app_path, port):
     if not os.path.exists(app_path + "/node_modules"):
-        print "No node_modules found. Running npm install"
+        print("No node_modules found. Running npm install")
         install_deps = "npm install"
         subprocess.call(install_deps.split(" "))
     if not os.path.exists(app_path + "/dist"):
-        print "UI not built. Building it before deploying"
+        print("UI not built. Building it before deploying")
         build_ui(app_path)
     if is_ui_out_of_date(app_path):
-        print "UI is out of date. Rebuilding UI"
+        print("UI is out of date. Rebuilding UI")
         build_ui(app_path)
     os.chdir(app_path + "/congregate")
     run_ui = "gunicorn -k gevent -w 4 ui:app --bind=0.0.0.0:" + str(port)
     subprocess.call(run_ui.split(" "))
 
 def is_ui_out_of_date(app_path):
-    current_hash = get_hash_of_dirs(app_path + "/dist")
     try:
         with open(app_path + "/ui-checksum", "r") as f:
-            existing_hash = f.read()
-        if current_hash != existing_hash:
-            return True
+            return get_hash_of_dirs(app_path + "/dist") != f.read()
     except IOError:
-        print "UI Checksum not found"
+        print("UI Checksum not found")
         return True
     return False
 
@@ -471,7 +468,7 @@ def get_hash_of_dirs(directory, verbose=0):
     for root, _, files in os.walk(directory):
       for names in files:
         if verbose == 1:
-          print 'Hashing', names
+          print('Hashing', names)
         filepath = os.path.join(root,names)
         f1 = None
         try:
