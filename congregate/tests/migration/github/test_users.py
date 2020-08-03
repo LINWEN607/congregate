@@ -1,4 +1,6 @@
 import unittest
+import json
+import responses
 from mock import patch, PropertyMock
 
 from congregate.tests.mockapi.github.users import MockUsersApi
@@ -17,7 +19,8 @@ class UsersTests(unittest.TestCase):
     @patch.object(UsersApi, "get_user")
     @patch("congregate.helpers.conf.Config.source_host", new_callable=PropertyMock)
     @patch("congregate.helpers.conf.Config.source_token", new_callable=PropertyMock)
-    def test_retrieve_org_info(self,
+    @patch("congregate.helpers.misc_utils.safe_json_response")
+    def test_retrieve_user_info(self,
                                mock_source_token,
                                mock_source_host,
                                mock_users,

@@ -1,8 +1,7 @@
 import json
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import remove_dupes
 from congregate.migration.github.api.users import UsersApi
-
+from congregate.helpers.misc_utils import remove_dupes, safe_json_response
 
 class UsersClient(BaseClass):
     def __init__(self):
@@ -22,7 +21,7 @@ class UsersClient(BaseClass):
     def format_users(self, users):
         data = []
         for single_user in users:
-            user=self.users_api.get_user(single_user["login"]).json()
+            user= safe_json_response(self.users_api.get_user(single_user["login"]))
             data.append({
                    "id": single_user["id"],
                     "username": single_user["login"],
