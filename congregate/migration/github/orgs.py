@@ -1,7 +1,7 @@
 import json
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import remove_dupes, safe_json_response, is_error_message_present
+from congregate.helpers.misc_utils import remove_dupes, safe_json_response, is_error_message_present, json_pretty
 from congregate.migration.github.api.orgs import OrgsApi
 from congregate.migration.github.repos import ReposClient
 from congregate.migration.github.users import UsersClient
@@ -29,24 +29,32 @@ class OrgsClient(BaseClass):
         """
         projects = self.get_formatted_repos()
         groups = []
+
+        # Create tree structure {"GROUP": {"PROJECTS": [], "SUB-GROUPS": [{"FULL_PATH": "", "PROJECTS": []}]}}
+        tree = {}
         for org in self.orgs_api.get_all_orgs():
-            self.add_org_as_group(groups, org["login"], projects)
+            tree.update({org["login"]: {"PROJECTS": [], "SUB-GROUPS": []}})
+            self.add_org_as_group(groups, org["login"], projects, tree=tree)
             for team in self.orgs_api.get_all_org_teams(org["login"]):
                 self.add_team_as_subgroup(
-                    groups, org["login"], team, projects)
+                    groups, org["login"], team, projects, tree=tree)
         with open("{}/data/groups.json".format(self.app_path), "w") as f:
             json.dump(remove_dupes(groups), f, indent=4)
         with open("{}/data/project_json.json".format(self.app_path), "w") as f:
             json.dump(remove_dupes(projects), f, indent=4)
+        self.log.info("Group tree structure:\n{}".format(json_pretty(tree)))
         return remove_dupes(groups)
 
-    def add_org_as_group(self, groups, org_name, projects):
+    def add_org_as_group(self, groups, org_name, projects, tree=None):
         org = safe_json_response(self.orgs_api.get_org(org_name))
         if groups is None or is_error_message_present(org):
             self.log.error(
                 "Failed to append org {} ({}) to list {}".format(org_name, org, groups))
         else:
             org_repos = self.orgs_api.get_all_org_repos(org_name)
+            if tree:
+                tree[org_name]["PROJECTS"] = [r["full_name"]
+                                              for r in org_repos]
             self.repos.format_repos(projects, org_repos)
             groups.append({
                 "name": org["login"],
@@ -63,19 +71,23 @@ class OrgsClient(BaseClass):
             })
         return groups, projects
 
-    def add_team_as_subgroup(self, groups, org_name, team, projects):
+    def add_team_as_subgroup(self, groups, org_name, team, projects, tree=None):
         if groups is None or is_error_message_present(team):
             self.log.error(
                 "Failed to append team ({}) to list {}".format(team, groups))
         else:
+            full_path = self.get_team_full_path(org_name, team)
             team_repos = self.orgs_api.get_all_org_team_repos(
                 org_name, team["slug"])
+            if tree:
+                tree[org_name]["SUB-GROUPS"].append({"FULL_PATH": full_path, "PROJECTS": [
+                                                    r["full_name"] for r in team_repos]})
             self.repos.format_repos(projects, team_repos)
             groups.append({
                 "name": team["name"],
                 "id": team["id"],
                 "path": team["slug"],
-                "full_path": self.get_team_full_path(org_name, team),
+                "full_path": full_path,
                 "description": team.get("description", ""),
                 "visibility": "private" if team["privacy"] == "secret" else "public",
                 # parent group
