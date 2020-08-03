@@ -24,6 +24,7 @@ Our guidance on some other migrations at this time:
 * [Development Environment Setup Tips](static_docs/local-development.md)
 * [Writing Tests in Congregate](static_docs/writing-tests.md)
 * [Bitbucket Development Setup](static_docs/bitbucket-development-setup.md)
+* [GitHub Development Setup](static_docs/github-development-setup.md)
 * [Migration Workflow](static_docs/workflow.md)
 * [Code Quality Report](static_docs/code-quality.md)
 * [Congregate Wiki](https://gitlab.com/gitlab-com/customer-success/tools/congregate/-/wikis/home)
