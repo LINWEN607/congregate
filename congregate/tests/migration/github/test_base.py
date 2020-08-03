@@ -26,6 +26,13 @@ def test_generate_v3_request_url():
     resp = ut.generate_v3_request_url("HOST/", "ORGANIZATION")
     assert resp == r
 
+def test_generate_v3_get_request():
+    with patch("congregate.migration.github.api.base.requests.Response") as mock_resp:
+        with patch("congregate.migration.github.api.base.requests.get") as mock_get:
+            t = GitHubApi("HOST", "TOKEN")
+            mock_get.return_value = mock_resp
+            resp = t.generate_v3_get_request("HOST", "TOKEN", "API")
+            assert mock_resp is resp
 
 def test_generate_v4_request_url():
     r = "HOST/api/graphql"
@@ -52,48 +59,49 @@ def test_create_v4_query():
 
 def test_create_dict_from_headers():
     r = "https://github.gitlab-proserv.net/api/v3/organizations?since=12"
-    test_headers = MockHeaders().get_headers()
+    test_headers = MockHeaders().get_linked_headers()
     ut = GitHubApi("HOST", "TOKEN")
     resp = ut.create_dict_from_headers(test_headers.get("Link"))
     assert resp['next'] == r
 
 # pylint: disable=no-member
-# @responses.activate
-@patch("congregate.migration.github.api.base.GitHubApi.generate_v3_get_request", new_callable=PropertyMock)
-def test_list_all(header_test):
+@responses.activate
+def test_list_all_single_page():
     r = MockHeaders()
-    header_test.return_value = r.get_headers()
-    ut = GitHubApi("HOST", "TOKEN")
-    # ut.list_all("HOST")
-    assert header_test.get("Link") == "who knows"
+    responses.add(
+        responses.GET,
+        "http://host/api/v3/organizations?per_page=1000",
+        headers=r.get_linkless_headers(),
+        status=200,
+        json=r.get_data(),
+        content_type='text/json',
+        match_querystring=False)
 
+    ut = GitHubApi("http://host", "TOKEN")
+    actual = ut.list_all("http://host", "organizations", verify=False)
+    expected = r.get_data()
+    assert expected == actual
 
+@responses.activate
+def test_list_all_multipage():
+    pass
 
-    # # pylint: disable=no-member
-    # @responses.activate
-    # @mock.patch("congregate.helpers.api.list_all")
-    # @mock.patch("congregate.helpers.api.generate_get_request")
-    # def test_is_group_non_empty_true_subgroups(self, mock_get_api, mock_list_all):
-    #     url_value = "https://gitlab.com/api/v4/groups"
-    #     mock_list_all.return_value = self.mock_groups.get_all_subgroups_list()
-    #     responses.add(
-    #         responses.GET,
-    #         url_value,
-    #         json=self.mock_groups.get_group(),
-    #         status=200,
-    #         content_type='text/json',
-    #         match_querystring=True)
-    #     group = self.mock_groups.get_group()
-    #     group["projects"] = []
-    #     self.assertTrue(self.groups.is_group_non_empty(group))
+# pylint: disable=no-member
+@responses.activate
+def test_list_all_bad_status_code():
+    r = MockHeaders()
+    responses.add(
+        responses.GET,
+        "http://host/api/v3/organizations?per_page=1000",
+        headers=r.get_linkless_headers(),
+        status=500,
+        json=r.get_data(),
+        content_type='text/json',
+        match_querystring=False)
 
+    ut = GitHubApi("http://host", "TOKEN")
+    actual = ut.list_all("http://host", "organizations", verify=False)
+    expected = None
+    assert expected == actual
 
-
-
-def test_generate_v3_get_request():
-    with patch("congregate.migration.github.api.base.requests.Response") as mock_resp:
-        with patch("congregate.migration.github.api.base.requests.get") as mock_get:
-            t = GitHubApi("HOST", "TOKEN")
-            mock_get.return_value = mock_resp
-            resp = t.generate_v3_get_request("HOST", "TOKEN", "API")
-            assert mock_resp is resp
+# Add Multi Page Test
