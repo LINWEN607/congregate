@@ -74,13 +74,13 @@ class UsersTests(unittest.TestCase):
         self.assertEqual(self.users.retrieve_user_info().sort(
             key=lambda x: x["id"]), expected_users.sort(key=lambda x: x["id"]))
 
-    @patch("__builtin__.file")
-    @patch("__builtin__.open")
     @patch.object(UsersApi, "get_user")
+    @patch("congregate.helpers.conf.Config.source_host", new_callable=PropertyMock)
     def test_format_users_with_permissions(self,
-                                           mock_single_user,
-                                           mock_open,
-                                           mock_file):
+                                           mock_source_host,
+                                           mock_single_user):
+        mock_source_host.return_value = "https://github.com"
+
         mock_user1 = MagicMock()
         type(mock_user1).status_code = PropertyMock(return_value=200)
         mock_user1.json.return_value = self.mock_users.get_user()[0]
@@ -91,8 +91,6 @@ class UsersTests(unittest.TestCase):
         type(mock_user3).status_code = PropertyMock(return_value=200)
         mock_user3.json.return_value = self.mock_users.get_user()[2]
         mock_single_user.side_effect = [mock_user1, mock_user2, mock_user3]
-
-        mock_open.return_value = mock_file
 
         actual_users = [
             {"login": "ghost", "permissions": 40},
