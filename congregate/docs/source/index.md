@@ -8,10 +8,11 @@ Congregate is an internal tool for GitLab professional services to handle migrat
 Our guidance on some other migrations at this time:
 
 * Bitbucket
-  * While there is some code in congregate for a BitBucket migration, we would suggest customers use the internal BitBucket importer for the time being. We are actively working to scale up our BitBucket Server migrations, but it is not fully implemented.
-  * If scale is a concern for customers, please reach out to professional services for a consulting services quote.
+  * We support migrating BitBucket Server to GitLab as of GitLab 13.1 with the recent addition of the BitBucket Server import API
+  * BitBucket cloud is not slated to be supported in congregate due to a lack of an API to consume and its requirement to authenticate through OAuth
 * GitHub
-  * We have a [built-in importer](https://docs.gitlab.com/ee/user/project/import/github.html) for importing from GitHub
+  * We are actively developing support for GitHub to GitLab migrations with an MVC of the support to be available by October 1st, 2020
+  * In the meantime, we have a [built-in importer](https://docs.gitlab.com/ee/user/project/import/github.html) for importing from GitHub
 * SVN
   * We have some [documentation](https://docs.gitlab.com/ee/user/project/import/svn.html) on gitlab.com discussing migrating from SVN
 
