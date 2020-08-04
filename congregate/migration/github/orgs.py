@@ -116,3 +116,12 @@ class OrgsClient(BaseClass):
                     "Failed to get full_path for team ({})".format(team))
                 return None
         return "/".join(full_path)
+        
+    def add_org_members(self, org_name):
+        members = self.orgs_api.get_all_org_members(org_name)
+        return self.users.format_users(members)
+    
+    def add_org_repos(self, org_name):
+        projects = []
+        org_repos = self.orgs_api.get_all_org_repos(org_name)
+        return self.repos.format_repos(projects, org_repos)
