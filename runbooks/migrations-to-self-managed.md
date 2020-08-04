@@ -163,12 +163,12 @@ For each migration attempt check if any project or group imports failed or have 
 
 In the event container registries fail to migrate, there is a bash script built in to the container you can use as a backup.
 
-The script is located at `/path/to/congregate/dev/bin/manually_move_images.sh` (in the case of the container `/opt/congregate/dev/bin/manually_move_images.sh`)
+The script is located at `<path_to_congregate>/dev/bin/manually_move_images.sh` (in the case of the container `/opt/congregate/dev/bin/manually_move_images.sh`)
 
 The script usage is in the script, but here is a quick example of using the script:
 
 ```bash
-sudo -E /opt/congregate/dev/bin/manually_move_images.sh registry.src-gitlab.io/path/to/source/registry/repo registry.dest-gitlab.io/path/to/dest/registry/repo
+sudo -E /opt/congregate/dev/bin/manually_move_images.sh registry.gitlab.com/gitlab-com/customer-success/tools/congregate registry.dest-gitlab.io/path/to/dest/registry/repo
 ```
 
 This will migrate all containers from a single registry repository to another registry repository.
@@ -179,7 +179,7 @@ In that script, you prepopulate all source and destination registry repositories
 * Optional checklist
   * [ ] Confirm container registries failed to migrate and make a comment in this issue describing the failure
   * [ ] (Optional) Prep `docker_brute_force.py` to migrate several registry repositories
-  * [ ] Execute the docker migration through on of the following commands:
+  * [ ] Execute the docker migration through one of the following commands:
       * `nohup sudo ./dev/bin/manually_move_images.sh <source-repo> <destination-repo> > data/waves/wave_<insert_wave_number>/wave<insert-wave-here>_attempt<insert-attempt>_manual_docker_migration.log 2>&1 &`
       * `nohup sudo ./dev/bin/docker_brute_force.py > data/waves/wave_<insert_wave_number>/wave<insert-wave-here>_attempt<insert-attempt>_manual_docker_migration.log 2>&1 &`
   * [ ] Monitor the logs as it runs
