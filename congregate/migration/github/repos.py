@@ -24,16 +24,18 @@ class ReposClient(BaseClass):
         """
         List and transform all GitHub public repos to GitLab project metadata
         """
-        repos = []
-        self.format_repos(repos, self.repos_api.get_all_public_repos())
+        projects = []
+        self.format_repos(projects, self.repos_api.get_all_public_repos())
         with open('%s/data/project_json.json' % self.app_path, "w") as f:
-            json.dump(remove_dupes(repos), f, indent=4)
-        return remove_dupes(repos)
+            json.dump(remove_dupes(projects), f, indent=4)
+        return remove_dupes(projects)
 
-    def format_repos(self, repos, listed_repos):
-        for repo in listed_repos:
-            if repos is not None:
-                repos.append({
+    def format_repos(self, projects, listed_repos):
+        if projects is None:
+            self.log.error("Failed to format repos {}".format(projects))
+        else:
+            for repo in listed_repos:
+                projects.append({
                     "id": repo["id"],
                     "path": repo["name"],
                     "name": repo["name"],
@@ -49,4 +51,4 @@ class ReposClient(BaseClass):
                     "description": repo.get("description", ""),
                     "members": []
                 })
-        return repos
+        return projects

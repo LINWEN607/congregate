@@ -134,75 +134,41 @@ class MockReposApi():
                 "labels_url": "https://github.gitlab-proserv.net/api/v3/repos/bmay/asdf/labels{/name}",
                 "releases_url": "https://github.gitlab-proserv.net/api/v3/repos/bmay/asdf/releases{/id}",
                 "deployments_url": "https://github.gitlab-proserv.net/api/v3/repos/bmay/asdf/deployments"
-            },
-            {
-                "id": 5,
-                "node_id": "MDEwOlJlcG9zaXRvcnk1",
-                "name": "googleapis",
-                "full_name": "org1/googleapis",
-                "private": False,
-                "owner": {
-                    "login": "org1",
-                    "id": 8,
-                    "node_id": "MDEyOk9yZ2FuaXphdGlvbjg=",
-                    "avatar_url": "https://github.gitlab-proserv.net/avatars/u/8?",
-                    "gravatar_id": "",
-                    "url": "https://github.gitlab-proserv.net/api/v3/users/org1",
-                    "html_url": "https://github.gitlab-proserv.net/org1",
-                    "followers_url": "https://github.gitlab-proserv.net/api/v3/users/org1/followers",
-                    "following_url": "https://github.gitlab-proserv.net/api/v3/users/org1/following{/other_user}",
-                    "gists_url": "https://github.gitlab-proserv.net/api/v3/users/org1/gists{/gist_id}",
-                    "starred_url": "https://github.gitlab-proserv.net/api/v3/users/org1/starred{/owner}{/repo}",
-                    "subscriptions_url": "https://github.gitlab-proserv.net/api/v3/users/org1/subscriptions",
-                    "organizations_url": "https://github.gitlab-proserv.net/api/v3/users/org1/orgs",
-                    "repos_url": "https://github.gitlab-proserv.net/api/v3/users/org1/repos",
-                    "events_url": "https://github.gitlab-proserv.net/api/v3/users/org1/events{/privacy}",
-                    "received_events_url": "https://github.gitlab-proserv.net/api/v3/users/org1/received_events",
-                    "type": "Organization",
-                    "site_admin": False
-                },
-                "html_url": "https://github.gitlab-proserv.net/org1/googleapis",
-                "description": None,
-                "fork": False,
-                "url": "https://github.gitlab-proserv.net/api/v3/repos/org1/googleapis",
-                "forks_url": "https://github.gitlab-proserv.net/api/v3/repos/org1/googleapis/forks",
-                "keys_url": "https://github.gitlab-proserv.net/api/v3/repos/org1/googleapis/keys{/key_id}",
-                "collaborators_url": "https://github.gitlab-proserv.net/api/v3/repos/org1/googleapis/collaborators{/collaborator}",
-                "teams_url": "https://github.gitlab-proserv.net/api/v3/repos/org1/googleapis/teams",
-                "hooks_url": "https://github.gitlab-proserv.net/api/v3/repos/org1/googleapis/hooks",
-                "issue_events_url": "https://github.gitlab-proserv.net/api/v3/repos/org1/googleapis/issues/events{/number}",
-                "events_url": "https://github.gitlab-proserv.net/api/v3/repos/org1/googleapis/events",
-                "assignees_url": "https://github.gitlab-proserv.net/api/v3/repos/org1/googleapis/assignees{/user}",
-                "branches_url": "https://github.gitlab-proserv.net/api/v3/repos/org1/googleapis/branches{/branch}",
-                "tags_url": "https://github.gitlab-proserv.net/api/v3/repos/org1/googleapis/tags",
-                "blobs_url": "https://github.gitlab-proserv.net/api/v3/repos/org1/googleapis/git/blobs{/sha}",
-                "git_tags_url": "https://github.gitlab-proserv.net/api/v3/repos/org1/googleapis/git/tags{/sha}",
-                "git_refs_url": "https://github.gitlab-proserv.net/api/v3/repos/org1/googleapis/git/refs{/sha}",
-                "trees_url": "https://github.gitlab-proserv.net/api/v3/repos/org1/googleapis/git/trees{/sha}",
-                "statuses_url": "https://github.gitlab-proserv.net/api/v3/repos/org1/googleapis/statuses/{sha}",
-                "languages_url": "https://github.gitlab-proserv.net/api/v3/repos/org1/googleapis/languages",
-                "stargazers_url": "https://github.gitlab-proserv.net/api/v3/repos/org1/googleapis/stargazers",
-                "contributors_url": "https://github.gitlab-proserv.net/api/v3/repos/org1/googleapis/contributors",
-                "subscribers_url": "https://github.gitlab-proserv.net/api/v3/repos/org1/googleapis/subscribers",
-                "subscription_url": "https://github.gitlab-proserv.net/api/v3/repos/org1/googleapis/subscription",
-                "commits_url": "https://github.gitlab-proserv.net/api/v3/repos/org1/googleapis/commits{/sha}",
-                "git_commits_url": "https://github.gitlab-proserv.net/api/v3/repos/org1/googleapis/git/commits{/sha}",
-                "comments_url": "https://github.gitlab-proserv.net/api/v3/repos/org1/googleapis/comments{/number}",
-                "issue_comment_url": "https://github.gitlab-proserv.net/api/v3/repos/org1/googleapis/issues/comments{/number}",
-                "contents_url": "https://github.gitlab-proserv.net/api/v3/repos/org1/googleapis/contents/{+path}",
-                "compare_url": "https://github.gitlab-proserv.net/api/v3/repos/org1/googleapis/compare/{base}...{head}",
-                "merges_url": "https://github.gitlab-proserv.net/api/v3/repos/org1/googleapis/merges",
-                "archive_url": "https://github.gitlab-proserv.net/api/v3/repos/org1/googleapis/{archive_format}{/ref}",
-                "downloads_url": "https://github.gitlab-proserv.net/api/v3/repos/org1/googleapis/downloads",
-                "issues_url": "https://github.gitlab-proserv.net/api/v3/repos/org1/googleapis/issues{/number}",
-                "pulls_url": "https://github.gitlab-proserv.net/api/v3/repos/org1/googleapis/pulls{/number}",
-                "milestones_url": "https://github.gitlab-proserv.net/api/v3/repos/org1/googleapis/milestones{/number}",
-                "notifications_url": "https://github.gitlab-proserv.net/api/v3/repos/org1/googleapis/notifications{?since,all,participating}",
-                "labels_url": "https://github.gitlab-proserv.net/api/v3/repos/org1/googleapis/labels{/name}",
-                "releases_url": "https://github.gitlab-proserv.net/api/v3/repos/org1/googleapis/releases{/id}",
-                "deployments_url": "https://github.gitlab-proserv.net/api/v3/repos/org1/googleapis/deployments"
             }
         ]
 
     def get_formatted_repos(self):
-        return []
+        return [
+            {
+                "name": "website",
+                "members": [],
+                "path": "website",
+                "path_with_namespace": "gitlab/website",
+                "namespace": {
+                    "path": "gitlab",
+                    "kind": "user",
+                    "id": 3,
+                    "full_path": "gitlab",
+                    "name": "gitlab"
+                },
+                "id": 1,
+                "visibility": "public",
+                "description": None
+            },
+            {
+                "name": "asdf",
+                "members": [],
+                "path": "asdf",
+                "path_with_namespace": "bmay/asdf",
+                "namespace": {
+                    "path": "bmay",
+                    "kind": "user",
+                    "id": 5,
+                    "full_path": "bmay",
+                    "name": "bmay"
+                },
+                "id": 2,
+                "visibility": "public",
+                "description": None
+            }
+        ]
