@@ -65,8 +65,8 @@ class OrgsClient(BaseClass):
                 "visibility": "private",   # No mapping field
                 "parent_id": None,   # top-level group
                 "auto_devops_enabled": False,
-                # self.users.format_users(self.orgs_api.get_all_org_members(org_name)),
                 "members": [],
+                # TODO: "members": self.users.format_users(self.orgs_api.get_all_org_members(org_name)),
                 "projects": self.repos.format_repos([], org_repos)
             })
         return groups, projects
@@ -93,8 +93,8 @@ class OrgsClient(BaseClass):
                 # parent group
                 "parent_id": team["parent"]["id"] if team.get("parent", None) else None,
                 "auto_devops_enabled": False,
-                # self.users.format_users(self.orgs_api.get_all_org_team_members(org_name, team["slug"])),
                 "members": [],
+                # TODO: "members": self.users.format_users(self.orgs_api.get_all_org_team_members(org_name, team["slug"])),
                 "projects": self.repos.format_repos([], team_repos)
             })
         return groups, projects

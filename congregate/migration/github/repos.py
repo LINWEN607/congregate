@@ -1,9 +1,10 @@
 import json
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import remove_dupes
+from congregate.helpers.misc_utils import remove_dupes, safe_json_response
 from congregate.migration.github.api.repos import ReposApi
 from congregate.migration.github.users import UsersClient
+from congregate.migration.github.api.users import UsersApi
 
 
 class ReposClient(BaseClass):
@@ -19,10 +20,12 @@ class ReposClient(BaseClass):
         self.repos_api = ReposApi(
             self.config.source_host, self.config.source_token)
         self.users = UsersClient()
+        self.users_api = UsersApi(
+            self.config.source_host, self.config.source_token)
 
     def retrieve_repo_info(self):
         """
-        List and transform all GitHub public repos to GitLab project metadata
+        List and transform all GitHub public repo to GitLab project metadata
         """
         projects = []
         self.format_repos(projects, self.repos_api.get_all_public_repos())
@@ -43,12 +46,29 @@ class ReposClient(BaseClass):
                         "id": repo["owner"]["id"],
                         "path": repo["owner"]["login"],
                         "name": repo["owner"]["login"],
-                        "kind": "group" if repo["owner"]["type"] == "Organization" else "user",
+                        "kind": "group" if repo["owner"]["type"] in ["Organization", "Enterprise"] else "user",
                         "full_path": repo["owner"]["login"]
                     },
                     "path_with_namespace": repo["full_name"],
                     "visibility": "private" if repo["private"] else "public",
                     "description": repo.get("description", ""),
                     "members": []
+                    # TODO: "members": self.add_members(repo["owner"]["type"], repo["owner"]["login"], repo["name"])
                 })
         return projects
+
+    def add_members(self, kind, owner, repo):
+        """
+        User repos have a single owner and collaborators (requires a collaborator PAT).
+        Org and team repos have members.
+        """
+        if kind in ["Organization", "Enterprise"]:
+            # TODO: retrieve member permissions
+            members = []
+        elif kind == "User":
+            members = [{"login": owner}]
+            user_repo = safe_json_response(
+                self.repos_api.get_repo(owner, repo))
+            members[0]["permissions"] = self.GITHUB_PERMISSIONS_MAP[tuple(user_repo.get(
+                "permissions", None).items())]
+        return self.users.format_users(members)

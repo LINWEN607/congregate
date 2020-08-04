@@ -28,12 +28,14 @@ class ReposTests(unittest.TestCase):
                               # mock_org_members,
                               mock_org_repos,
                               mock_org_response):
+        mock_source_token.return_value = "token"
+        mock_source_host.return_value = "https://github.com"
+
         mock_org = MagicMock()
         type(mock_org).status_code = PropertyMock(return_value=200)
         mock_org.json.return_value = self.mock_orgs.get_org()
         mock_org_response.return_value = mock_org
-        mock_source_token.return_value = "token"
-        mock_source_host.return_value = "https://github.com"
+
         # mock_org_members.return_value = self.mock_orgs.get_all_org_members()
         mock_org_team_repos.return_value = self.mock_orgs.get_all_org_team_repos()
         # mock_org_team_members.return_value = self.mock_orgs.get_all_org_team_members()
@@ -104,6 +106,9 @@ class ReposTests(unittest.TestCase):
                                     mock_source_token,
                                     mock_source_host,
                                     mock_org_response):
+        mock_source_token.return_value = "token"
+        mock_source_host.return_value = "https://github.com"
+
         mock_org = MagicMock()
         type(mock_org).status_code = PropertyMock(return_value=404)
         mock_org.json.return_value = {
@@ -111,8 +116,6 @@ class ReposTests(unittest.TestCase):
             "documentation_url": "https://developer.github.com/enterprise/2.21/v3"
         }
         mock_org_response.return_value = mock_org
-        mock_source_token.return_value = "token"
-        mock_source_host.return_value = "https://github.com"
 
         expected_groups, expected_projects = [], []
 
@@ -164,6 +167,7 @@ class ReposTests(unittest.TestCase):
 
         mock_source_token.return_value = "token"
         mock_source_host.return_value = "https://github.com"
+
         mock_team = MagicMock()
         type(mock_team).status_code = PropertyMock(return_value=200)
         mock_team.json.return_value = self.mock_orgs.get_org_team()
@@ -174,6 +178,7 @@ class ReposTests(unittest.TestCase):
             "documentation_url": "https://developer.github.com/enterprise/2.21/v3"
         }
         mock_org_team.side_effect = [mock_team, mock_team_error]
+
         # mock_org_team_members.return_value = self.mock_orgs.get_all_org_team_members()
         mock_org_team_repos.return_value = self.mock_orgs.get_all_org_team_repos()
 
@@ -249,6 +254,7 @@ class ReposTests(unittest.TestCase):
 
         mock_source_token.return_value = "token"
         mock_source_host.return_value = "https://github.com"
+
         mock_team = MagicMock()
         type(mock_team).status_code = PropertyMock(return_value=200)
         mock_team.json.return_value = self.mock_orgs.get_org_team()
@@ -256,6 +262,7 @@ class ReposTests(unittest.TestCase):
         type(mock_child_team).status_code = PropertyMock(return_value=200)
         mock_child_team.json.return_value = self.mock_orgs.get_org_child_team()
         mock_org_team.side_effect = [mock_child_team, mock_team]
+
         # mock_org_team_members.return_value = self.mock_orgs.get_all_org_team_members()
         mock_org_team_repos.return_value = self.mock_orgs.get_all_org_team_repos()
 

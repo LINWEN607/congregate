@@ -37,5 +37,5 @@ class UsersTests(unittest.TestCase):
                 "state": "active"
             }
         ]
-        self.assertEqual(sorted(self.users.retrieve_user_info()),
-                         sorted(expected_users))
+        self.assertEqual(self.users.retrieve_user_info().sort(key=lambda x: x["id"]), expected_users.sort(
+            key=lambda x: x["id"]))
