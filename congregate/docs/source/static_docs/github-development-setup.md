@@ -114,3 +114,16 @@ Certain resources are only avaialable to request with the authenticated user's P
 Others only exist on an organization i.e. team level, among others:
 
 - Repository teams - `/repos/{owner}/{repo}/teams`
+
+## Seeding the e2e test source instance
+
+Once we have the GHE Server source instance up and running it's time to seed it with some dummy data, mainly GitHub:
+
+- Users
+- Repositories
+- Organizations
+- Teams
+
+We have that procedure automated by running script `<command>`.
+
+<!-- TODO: Add more details. -->
