@@ -1,7 +1,7 @@
 import json
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import remove_dupes, safe_json_response
+from congregate.helpers.misc_utils import remove_dupes, safe_json_response, is_error_message_present
 from congregate.migration.github.api.repos import ReposApi
 from congregate.migration.github.users import UsersClient
 from congregate.migration.github.api.users import UsersApi
@@ -14,6 +14,8 @@ class ReposClient(BaseClass):
         ((u"admin", False), (u"push", True), (u"pull", True)): 30,  # Developer
         ((u"admin", False), (u"push", False), (u"pull", True)): 20  # Reporter
     }
+
+    GROUP_TYPE = ["Organization", "Enterprise"]
 
     def __init__(self):
         super(ReposClient, self).__init__()
@@ -46,7 +48,7 @@ class ReposClient(BaseClass):
                         "id": repo["owner"]["id"],
                         "path": repo["owner"]["login"],
                         "name": repo["owner"]["login"],
-                        "kind": "group" if repo["owner"]["type"] in ["Organization", "Enterprise"] else "user",
+                        "kind": "group" if repo["owner"]["type"] in self.GROUP_TYPE else "user",
                         "full_path": repo["owner"]["login"]
                     },
                     "path_with_namespace": repo["full_name"],
@@ -62,13 +64,18 @@ class ReposClient(BaseClass):
         User repos have a single owner and collaborators (requires a collaborator PAT).
         Org and team repos have members.
         """
-        if kind in ["Organization", "Enterprise"]:
+        if kind in self.GROUP_TYPE:
             # TODO: retrieve member permissions
             members = []
         elif kind == "User":
             members = [{"login": owner}]
             user_repo = safe_json_response(
                 self.repos_api.get_repo(owner, repo))
-            members[0]["permissions"] = self.GITHUB_PERMISSIONS_MAP[tuple(user_repo.get(
-                "permissions", None).items())]
+            if not user_repo or is_error_message_present(user_repo):
+                self.log.error("Failed to get JSON for user {} repo {} ({})".format(
+                    owner, repo, user_repo))
+                return None
+            else:
+                members[0]["permissions"] = self.GITHUB_PERMISSIONS_MAP[tuple(user_repo.get(
+                    "permissions", None).items())]
         return self.users.format_users(members)

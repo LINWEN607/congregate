@@ -1,7 +1,7 @@
 import json
 from congregate.helpers.base_class import BaseClass
 from congregate.migration.github.api.users import UsersApi
-from congregate.helpers.misc_utils import remove_dupes, safe_json_response
+from congregate.helpers.misc_utils import remove_dupes, safe_json_response, is_error_message_present
 
 
 class UsersClient(BaseClass):
@@ -25,16 +25,20 @@ class UsersClient(BaseClass):
         for user in users:
             single_user = safe_json_response(
                 self.users_api.get_user(user["login"]))
-            data.append({
-                "id": single_user["id"],
-                "username": single_user["login"],
-                "name": single_user.get("name", None),
-                "email": single_user.get("email", None),
-                "avatar_url": "" if self.config.source_host in single_user["avatar_url"] else single_user["avatar_url"],
-                "state": "blocked" if single_user["suspended_at"] else "active",
-                "is_admin": single_user["site_admin"]
-            })
-            # When formatting org, team and repo users
-            if user.get("permissions", None):
-                data[-1]["access_level"] = user["permissions"]
+            if not single_user or is_error_message_present(single_user):
+                self.log.error("Failed to get JSON for user {} ({})".format(
+                    user["login"], single_user))
+            else:
+                data.append({
+                    "id": single_user["id"],
+                    "username": single_user["login"],
+                    "name": single_user.get("name", None),
+                    "email": single_user.get("email", None),
+                    "avatar_url": "" if self.config.source_host in single_user["avatar_url"] else single_user["avatar_url"],
+                    "state": "blocked" if single_user["suspended_at"] else "active",
+                    "is_admin": single_user["site_admin"]
+                })
+                # When formatting org, team and repo users
+                if user.get("permissions", None):
+                    data[-1]["access_level"] = user["permissions"]
         return data

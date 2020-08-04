@@ -111,7 +111,7 @@ class OrgsClient(BaseClass):
             full_path.insert(1, team["parent"]["slug"])
             team = safe_json_response(self.orgs_api.get_org_team(
                 org_name, team["parent"]["slug"]))
-            if is_error_message_present(team):
+            if not team or is_error_message_present(team):
                 self.log.error(
                     "Failed to get full_path for team ({})".format(team))
                 return None
