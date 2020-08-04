@@ -17,7 +17,6 @@ from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.registries import RegistryClient
 from congregate.aws import AwsClient
 
-
 users = UsersApi()
 groups = GroupsApi()
 aws = AwsClient()

@@ -127,6 +127,9 @@ import os
 import subprocess
 from json import dump, dumps
 from docopt import docopt
+from pid.decorator import pidfile
+from pid import PidFileError
+
 
 if __name__ == '__main__':
     if __package__ is None:
@@ -151,223 +154,232 @@ else:
 
 app_path = get_congregate_path()
 
-if __name__ == '__main__':
-    arguments = docopt(__doc__)
-    DRY_RUN = False if arguments["--commit"] else True
-    STAGED = True if arguments["--staged"] else False
-    ROLLBACK = True if arguments["--rollback"] else False
-    PROCESSES = arguments["--processes"] if arguments["--processes"] else None
-    SKIP_USERS = True if arguments["--skip-users"] else False
 
-    if arguments["init"]:
-        if not os.path.exists('data'):
-            print("Creating data directory and empty log file")
-            os.makedirs('data')
-            if not os.path.exists("%s/data/congregate.log" % app_path):
-                with open("%s/data/congregate.log" % app_path, "w") as f:
-                    f.write("")
+@pidfile()
+def main():
+    if __name__ == '__main__':
+        arguments = docopt(__doc__)
+        DRY_RUN = False if arguments["--commit"] else True
+        STAGED = True if arguments["--staged"] else False
+        ROLLBACK = True if arguments["--rollback"] else False
+        PROCESSES = arguments["--processes"] if arguments["--processes"] else None
+        SKIP_USERS = True if arguments["--skip-users"] else False
+
+        if arguments["init"]:
+            if not os.path.exists('data'):
+                print "Creating data directory and empty log file"
+                os.makedirs('data')
+                if not os.path.exists("%s/data/congregate.log" % app_path):
+                    with open("%s/data/congregate.log" % app_path, "w") as f:
+                        f.write("")
+            else:
+                print "Congregate already initialized"
+            log = myLogger(__name__)
         else:
-            print("Congregate already initialized")
-        log = myLogger(__name__)
-    else:
-        log = myLogger(__name__)
+            log = myLogger(__name__)
 
-    from congregate.cli.config import generate_config
+        from congregate.cli.config import generate_config
 
-    if arguments["configure"]:
-        generate_config()
-    else:
-        if __package__ is None:
-            from congregate.migration.gitlab.users import UsersClient
-            from congregate.migration.gitlab.groups import GroupsClient
-            from congregate.migration.gitlab.projects import ProjectsClient
-            from congregate.migration.gitlab.variables import VariablesClient
-            from congregate.migration.gitlab.compare import CompareClient
-            from congregate.migration import migrate
-            from congregate.migration.gitlab.branches import BranchesClient
-            from congregate.cli import list_source, stage_projects, stage_groups, do_all
-            from congregate.helpers.seed.generator import SeedDataGenerator
-            from congregate.migration.gitlab.diff.userdiff import UserDiffClient
-            from congregate.migration.gitlab.diff.projectdiff import ProjectDiffClient
-            from congregate.migration.gitlab.diff.groupdiff import GroupDiffClient
-            from congregate.helpers.user_util import map_users
+        if arguments["configure"]:
+            generate_config()
         else:
-            from .migration.gitlab.users import UsersClient
-            from .migration.gitlab.groups import GroupsClient
-            from .migration.gitlab.projects import ProjectsClient
-            from .migration.gitlab.compare import CompareClient
-            from congregate.migration import migrate
-            from .migration.gitlab.branches import BranchesClient
-            from congregate.cli import list_source, stage_projects, stage_groups, do_all
-            from congregate.helpers.user_util import map_users
-        config = conf.Config()
-        users = UsersClient()
-        groups = GroupsClient()
-        projects = ProjectsClient()
-        variables = VariablesClient()
-        compare = CompareClient()
-        branches = BranchesClient()
-
-        if arguments["list"]:
-            list_source.list_data()
-
-        if arguments["stage-projects"]:
-            stage_projects.stage_data(
-                arguments['<projects>'], dry_run=DRY_RUN, skip_users=SKIP_USERS)
-
-        if arguments["stage-groups"]:
-            stage_groups.stage_data(
-                arguments['<groups>'], dry_run=DRY_RUN, skip_users=SKIP_USERS)
-
-        if arguments["migrate"]:
-            skip_users = SKIP_USERS
-            skip_group_export = True if arguments["--skip-group-export"] else False
-            skip_group_import = True if arguments["--skip-group-import"] else False
-            skip_project_import = True if arguments["--skip-project-import"] else False
-            skip_project_export = True if arguments["--skip-project-export"] else False
-            only_post_migration_info = True if arguments["--only-post-migration-info"] else False
-            if only_post_migration_info:
-                skip_group_export = True
-                skip_project_export = True
-            migrate.migrate(
-                processes=PROCESSES,
-                dry_run=DRY_RUN,
-                skip_users=skip_users,
-                skip_group_export=skip_group_export,
-                skip_group_import=skip_group_import,
-                skip_project_import=skip_project_import,
-                skip_project_export=skip_project_export,
-                only_post_migration_info=only_post_migration_info)
-
-        if arguments["rollback"]:
-            skip_users = SKIP_USERS
-            hard_delete = True if arguments["--hard-delete"] else False
-            skip_groups = True if arguments["--skip-groups"] else False
-            skip_projects = True if arguments["--skip-projects"] else False
-            migrate.rollback(
-                dry_run=DRY_RUN,
-                skip_users=skip_users,
-                hard_delete=hard_delete,
-                skip_groups=skip_groups,
-                skip_projects=skip_projects)
-
-        if arguments["do-all"]:
-            do_all.do_all(dry_run=DRY_RUN)
-
-        if arguments["do-all-users"]:
-            do_all.do_all_users(dry_run=DRY_RUN)
-
-        if arguments["do-all-groups-and-projects"]:
-            do_all.do_all_groups_and_projects(dry_run=DRY_RUN)
-        if arguments["ui"]:
-            spin_up_ui(app_path, config.ui_port)
-        if arguments["search-for-staged-users"]:
-            users.search_for_staged_users()
-        if arguments["add-users-to-parent-group"]:
-            users.add_users_to_parent_group(dry_run=DRY_RUN)
-        if arguments["update-aws-creds"]:
-            if config.s3_access_key and config.s3_secret_key:
-                command = "aws configure set aws_access_key_id {}".format(
-                    config.s3_access_key)
-                subprocess.call(command.split(" "))
-                command = "aws configure set aws_secret_access_key {}".format(
-                    config.s3_secret_key)
-                subprocess.call(command.split(" "))
-                log.info(
-                    "Configured local AWS access and secret keys (~/.aws/credentials)")
+            if __package__ is None:
+                from congregate.migration.gitlab.users import UsersClient
+                from congregate.migration.gitlab.groups import GroupsClient
+                from congregate.migration.gitlab.projects import ProjectsClient
+                from congregate.migration.gitlab.variables import VariablesClient
+                from congregate.migration.gitlab.compare import CompareClient
+                from congregate.migration import migrate
+                from congregate.migration.gitlab.branches import BranchesClient
+                from congregate.cli import list_source, stage_projects, stage_groups, do_all
+                from congregate.helpers.seed.generator import SeedDataGenerator
+                from congregate.migration.gitlab.diff.userdiff import UserDiffClient
+                from congregate.migration.gitlab.diff.projectdiff import ProjectDiffClient
+                from congregate.migration.gitlab.diff.groupdiff import GroupDiffClient
+                from congregate.helpers.user_util import map_users
             else:
-                log.warning("No AWS configuration. Export location: {}".format(
-                    config.location))
-        if arguments["remove-blocked-users"]:
-            users.remove_blocked_users(dry_run=DRY_RUN)
-        if arguments["update-user-permissions"]:
-            access_level = arguments["--access-level"]
-            if access_level:
-                users.update_user_permissions(
-                    access_level, dry_run=DRY_RUN)
-            else:
-                log.warning("Missing access-level argument")
-        if arguments["get-total-count"]:
-            print(migrate.get_total_migrated_count())
-        if arguments["find-unimported-projects"]:
-            projects.find_unimported_projects(dry_run=DRY_RUN)
-        if arguments["stage-unimported-projects"]:
-            migrate.stage_unimported_projects(dry_run=DRY_RUN)
-        if arguments["remove-users-from-parent-group"]:
-            users.remove_users_from_parent_group(dry_run=DRY_RUN)
-        if arguments["migrate-variables-in-stage"]:
-            variables.migrate_variables_in_stage(dry_run=DRY_RUN)
-        if arguments["remove-all-mirrors"]:
-            migrate.remove_all_mirrors(dry_run=DRY_RUN)
-        if arguments["find-all-non-private-groups"]:
-            groups.find_all_non_private_groups()
-        if arguments["make-all-internal-groups-private"]:
-            groups.make_all_internal_groups_private()
-        if arguments["check-projects-visibility"]:
-            migrate.check_visibility()
-        if arguments["mirror-staged-projects"]:
-            migrate.mirror_staged_projects(dry_run=DRY_RUN)
-        if arguments["set-default-branch"]:
-            branches.set_default_branches_to_master(dry_run=DRY_RUN)
-        if arguments["count-unarchived-projects"]:
-            projects.count_unarchived_projects()
-        if arguments["archive-staged-projects"]:
-            projects.archive_staged_projects(dry_run=DRY_RUN)
-        if arguments["unarchive-staged-projects"]:
-            projects.unarchive_staged_projects(dry_run=DRY_RUN)
-        if arguments["find-empty-repos"]:
-            projects.find_empty_repos()
-        if arguments["compare-groups"]:
-            if arguments["--staged"]:
-                results, unknown_users = compare.create_group_migration_results(
-                    staged=True)
-            else:
-                results, unknown_users = compare.create_group_migration_results()
-            with open("%s/data/groups_audit.json" % app_path, "w") as f:
-                dump(results, f, indent=4)
-            with open("%s/data/unknown_users.json" % app_path, "w") as f:
-                dump(unknown_users, f, indent=4)
-        if arguments["staged-user-list"]:
-            results = compare.compare_staged_users()
-            log.info("Staged user list:\n{}".format(
-                dumps(results, indent=4, sort_keys=True)))
-            log.info("Length: {}".format({key: len(value)
-                                          for key, value in results.items()}))
-        if arguments["generate-seed-data"]:
-            s = SeedDataGenerator()
-            s.generate_seed_data(dry_run=DRY_RUN)
-        if arguments["validate-staged-groups-schema"]:
-            groups.validate_staged_groups_schema()
-        if arguments["validate-staged-projects-schema"]:
-            projects.validate_staged_projects_schema()
-        if arguments["map-users"]:
-            map_users(dry_run=DRY_RUN)
-        if arguments["clean"]:
-            clean_data(dry_run=DRY_RUN)
-        if arguments["generate-diff"]:
-            user_diff = UserDiffClient(
-                "/data/user_migration_results.json", staged=STAGED, processes=PROCESSES, rollback=ROLLBACK)
-            user_diff.generate_html_report(
-                user_diff.generate_diff_report(), "/data/user_migration_results.html")
-            group_diff = GroupDiffClient(
-                "/data/group_migration_results.json", staged=STAGED, processes=PROCESSES, rollback=ROLLBACK)
-            group_diff.generate_html_report(
-                group_diff.generate_diff_report(), "/data/group_migration_results.html")
-            project_diff = ProjectDiffClient(
-                "/data/project_migration_results.json", staged=STAGED, processes=PROCESSES, rollback=ROLLBACK)
-            project_diff.generate_html_report(
-                project_diff.generate_diff_report(), "/data/project_migration_results.html")
-        if arguments["stitch-results"]:
-            result_type = arguments["--result-type"].replace(
-                "s", "") if arguments["--result-type"] else "project"
-            steps = int(arguments["--no-of-files"]
-                        ) if arguments["--no-of-files"] else 0
-            if arguments["--head"]:
-                order = "head"
-            else:
-                order = "tail"
-            new_results = stitch_json_results(
-                result_type=result_type, steps=steps, order=order)
-            write_results_to_file(new_results, result_type, log=log)
-    if arguments["obfuscate"]:
-        print(obfuscate("Secret:"))
+                from .migration.gitlab.users import UsersClient
+                from .migration.gitlab.groups import GroupsClient
+                from .migration.gitlab.projects import ProjectsClient
+                from .migration.gitlab.compare import CompareClient
+                from congregate.migration import migrate
+                from .migration.gitlab.branches import BranchesClient
+                from congregate.cli import list_source, stage_projects, stage_groups, do_all
+                from congregate.helpers.user_util import map_users
+            config = conf.Config()
+            users = UsersClient()
+            groups = GroupsClient()
+            projects = ProjectsClient()
+            variables = VariablesClient()
+            compare = CompareClient()
+            branches = BranchesClient()
+
+            if arguments["list"]:
+                list_source.list_data()
+
+            if arguments["stage-projects"]:
+                stage_projects.stage_data(
+                    arguments['<projects>'], dry_run=DRY_RUN, skip_users=SKIP_USERS)
+
+            if arguments["stage-groups"]:
+                stage_groups.stage_data(
+                    arguments['<groups>'], dry_run=DRY_RUN, skip_users=SKIP_USERS)
+
+            if arguments["migrate"]:
+                skip_users = SKIP_USERS
+                skip_group_export = True if arguments["--skip-group-export"] else False
+                skip_group_import = True if arguments["--skip-group-import"] else False
+                skip_project_import = True if arguments["--skip-project-import"] else False
+                skip_project_export = True if arguments["--skip-project-export"] else False
+                only_post_migration_info = True if arguments["--only-post-migration-info"] else False
+                if only_post_migration_info:
+                    skip_group_export = True
+                    skip_project_export = True
+                migrate.migrate(
+                    processes=PROCESSES,
+                    dry_run=DRY_RUN,
+                    skip_users=skip_users,
+                    skip_group_export=skip_group_export,
+                    skip_group_import=skip_group_import,
+                    skip_project_import=skip_project_import,
+                    skip_project_export=skip_project_export,
+                    only_post_migration_info=only_post_migration_info)
+
+            if arguments["rollback"]:
+                skip_users = SKIP_USERS
+                hard_delete = True if arguments["--hard-delete"] else False
+                skip_groups = True if arguments["--skip-groups"] else False
+                skip_projects = True if arguments["--skip-projects"] else False
+                migrate.rollback(
+                    dry_run=DRY_RUN,
+                    skip_users=skip_users,
+                    hard_delete=hard_delete,
+                    skip_groups=skip_groups,
+                    skip_projects=skip_projects)
+
+            if arguments["do-all"]:
+                do_all.do_all(dry_run=DRY_RUN)
+
+            if arguments["do-all-users"]:
+                do_all.do_all_users(dry_run=DRY_RUN)
+
+            if arguments["do-all-groups-and-projects"]:
+                do_all.do_all_groups_and_projects(dry_run=DRY_RUN)
+            if arguments["ui"]:
+                spin_up_ui(app_path, config.ui_port)
+            if arguments["search-for-staged-users"]:
+                users.search_for_staged_users()
+            if arguments["add-users-to-parent-group"]:
+                users.add_users_to_parent_group(dry_run=DRY_RUN)
+            if arguments["update-aws-creds"]:
+                if config.s3_access_key and config.s3_secret_key:
+                    command = "aws configure set aws_access_key_id {}".format(
+                        config.s3_access_key)
+                    subprocess.call(command.split(" "))
+                    command = "aws configure set aws_secret_access_key {}".format(
+                        config.s3_secret_key)
+                    subprocess.call(command.split(" "))
+                    log.info(
+                        "Configured local AWS access and secret keys (~/.aws/credentials)")
+                else:
+                    log.warning("No AWS configuration. Export location: {}".format(
+                        config.location))
+            if arguments["remove-blocked-users"]:
+                users.remove_blocked_users(dry_run=DRY_RUN)
+            if arguments["update-user-permissions"]:
+                access_level = arguments["--access-level"]
+                if access_level:
+                    users.update_user_permissions(
+                        access_level, dry_run=DRY_RUN)
+                else:
+                    log.warning("Missing access-level argument")
+            if arguments["get-total-count"]:
+                print migrate.get_total_migrated_count()
+            if arguments["find-unimported-projects"]:
+                projects.find_unimported_projects(dry_run=DRY_RUN)
+            if arguments["stage-unimported-projects"]:
+                migrate.stage_unimported_projects(dry_run=DRY_RUN)
+            if arguments["remove-users-from-parent-group"]:
+                users.remove_users_from_parent_group(dry_run=DRY_RUN)
+            if arguments["migrate-variables-in-stage"]:
+                variables.migrate_variables_in_stage(dry_run=DRY_RUN)
+            if arguments["remove-all-mirrors"]:
+                migrate.remove_all_mirrors(dry_run=DRY_RUN)
+            if arguments["find-all-non-private-groups"]:
+                groups.find_all_non_private_groups()
+            if arguments["make-all-internal-groups-private"]:
+                groups.make_all_internal_groups_private()
+            if arguments["check-projects-visibility"]:
+                migrate.check_visibility()
+            if arguments["mirror-staged-projects"]:
+                migrate.mirror_staged_projects(dry_run=DRY_RUN)
+            if arguments["set-default-branch"]:
+                branches.set_default_branches_to_master(dry_run=DRY_RUN)
+            if arguments["count-unarchived-projects"]:
+                projects.count_unarchived_projects()
+            if arguments["archive-staged-projects"]:
+                projects.archive_staged_projects(dry_run=DRY_RUN)
+            if arguments["unarchive-staged-projects"]:
+                projects.unarchive_staged_projects(dry_run=DRY_RUN)
+            if arguments["find-empty-repos"]:
+                projects.find_empty_repos()
+            if arguments["compare-groups"]:
+                if arguments["--staged"]:
+                    results, unknown_users = compare.create_group_migration_results(
+                        staged=True)
+                else:
+                    results, unknown_users = compare.create_group_migration_results()
+                with open("%s/data/groups_audit.json" % app_path, "w") as f:
+                    dump(results, f, indent=4)
+                with open("%s/data/unknown_users.json" % app_path, "w") as f:
+                    dump(unknown_users, f, indent=4)
+            if arguments["staged-user-list"]:
+                results = compare.compare_staged_users()
+                log.info("Staged user list:\n{}".format(
+                    dumps(results, indent=4, sort_keys=True)))
+                log.info("Length: {}".format({key: len(value)
+                                            for key, value in results.items()}))
+            if arguments["generate-seed-data"]:
+                s = SeedDataGenerator()
+                s.generate_seed_data(dry_run=DRY_RUN)
+            if arguments["validate-staged-groups-schema"]:
+                groups.validate_staged_groups_schema()
+            if arguments["validate-staged-projects-schema"]:
+                projects.validate_staged_projects_schema()
+            if arguments["map-users"]:
+                map_users(dry_run=DRY_RUN)
+            if arguments["clean"]:
+                clean_data(dry_run=DRY_RUN)
+            if arguments["generate-diff"]:
+                user_diff = UserDiffClient(
+                    "/data/user_migration_results.json", staged=STAGED, processes=PROCESSES, rollback=ROLLBACK)
+                user_diff.generate_html_report(
+                    user_diff.generate_diff_report(), "/data/user_migration_results.html")
+                group_diff = GroupDiffClient(
+                    "/data/group_migration_results.json", staged=STAGED, processes=PROCESSES, rollback=ROLLBACK)
+                group_diff.generate_html_report(
+                    group_diff.generate_diff_report(), "/data/group_migration_results.html")
+                project_diff = ProjectDiffClient(
+                    "/data/project_migration_results.json", staged=STAGED, processes=PROCESSES, rollback=ROLLBACK)
+                project_diff.generate_html_report(
+                    project_diff.generate_diff_report(), "/data/project_migration_results.html")
+            if arguments["stitch-results"]:
+                result_type = arguments["--result-type"].replace(
+                    "s", "") if arguments["--result-type"] else "project"
+                steps = int(arguments["--no-of-files"]
+                            ) if arguments["--no-of-files"] else 0
+                if arguments["--head"]:
+                    order = "head"
+                else:
+                    order = "tail"
+                new_results = stitch_json_results(
+                    result_type=result_type, steps=steps, order=order)
+                write_results_to_file(new_results, result_type, log=log)
+        if arguments["obfuscate"]:
+            print obfuscate("Secret:")
+
+
+try:
+    main()
+except PidFileError:
+    raise PidFileError("ERROR: Congregate is already in use!")
