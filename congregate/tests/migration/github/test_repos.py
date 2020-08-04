@@ -17,12 +17,12 @@ class ReposTests(unittest.TestCase):
     @patch.object(ReposApi, "get_all_public_repos")
     @patch("congregate.helpers.conf.Config.source_host", new_callable=PropertyMock)
     @patch("congregate.helpers.conf.Config.source_token", new_callable=PropertyMock)
-    def test_retrieve_org_info(self,
-                               mock_source_token,
-                               mock_source_host,
-                               mock_public_repos,
-                               mock_open,
-                               mock_file):
+    def test_retrieve_repo_info(self,
+                                mock_source_token,
+                                mock_source_host,
+                                mock_public_repos,
+                                mock_open,
+                                mock_file):
 
         mock_source_token.return_value = "token"
         mock_source_host.return_value = "https://github.com"
