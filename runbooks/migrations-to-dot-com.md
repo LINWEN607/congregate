@@ -188,6 +188,32 @@ If a project or group import continues to fail (2 retries max), you will need to
   * [ ] Confirm those projects are staged
   * [ ] Run `nohup ./congregate.sh migrate --only-post-migration-info --commit > data/waves/wave_<insert_wave_number>/wave<insert-wave-here>_attempt<insert-attempt>_post_migration.log 2>&1 &` to migrate any post-migration data
 
+#### Fallback if no container registry migrate
+
+In the event container registries fail to migrate, there is a bash script built in to the container you can use as a backup.
+
+The script is located at `<path_to_congregate>/dev/bin/manually_move_images.sh` (in the case of the container `/opt/congregate/dev/bin/manually_move_images.sh`)
+
+The script usage is in the script, but here is a quick example of using the script:
+
+```bash
+sudo -E /opt/congregate/dev/bin/manually_move_images.sh registry.gitlab.com/gitlab-com/customer-success/tools/congregate registry.dest-gitlab.io/path/to/dest/registry/repo
+```
+
+This will migrate all containers from a single registry repository to another registry repository.
+
+If you need to move several registry repositories, you can follow the usage of another script in `/dev/bin` called `docker_brute_force.py`.
+In that script, you prepopulate all source and destination registry repositories in a list of tuples. It's hacky, but still faster than manually pulling and pushing all docker containers.
+
+* Optional checklist
+  * [ ] Confirm container registries failed to migrate and make a comment in this issue describing the failure
+  * [ ] (Optional) Prep `docker_brute_force.py` to migrate several registry repositories
+  * [ ] Execute the docker migration through one of the following commands:
+      * `nohup sudo ./dev/bin/manually_move_images.sh <source-repo> <destination-repo> > data/waves/wave_<insert_wave_number>/wave<insert-wave-here>_attempt<insert-attempt>_manual_docker_migration.log 2>&1 &`
+      * `nohup sudo ./dev/bin/docker_brute_force.py > data/waves/wave_<insert_wave_number>/wave<insert-wave-here>_attempt<insert-attempt>_manual_docker_migration.log 2>&1 &`
+  * [ ] Monitor the logs as it runs
+  * [ ] Once it finishes, attach the logs to this issue
+
 ### Post Migration
 
 * [ ] Once all the projects/groups are migrated, stitch together the various migration attempts by running `./congregate.sh stitch-results --result-type=<user|group|project> --no-of-files=<number-of-results-files-to-stitch>`

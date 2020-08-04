@@ -223,6 +223,8 @@ def generate_config():
         config.set("APP", "slack_url", raw_input(
             "Slack Incoming WebHooks URL: "))
         test_slack(config.get("APP", "slack_url"))
+    
+    config.set("APP", "ui_port", "8000")
 
     write_to_file(config)
 
