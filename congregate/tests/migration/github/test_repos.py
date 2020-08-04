@@ -7,7 +7,7 @@ from congregate.migration.github.api.repos import ReposApi
 
 
 class ReposTests(unittest.TestCase):
-    
+
     def setUp(self):
         self.mock_repos = MockReposApi()
         self.repos = ReposClient()
@@ -17,12 +17,12 @@ class ReposTests(unittest.TestCase):
     @patch.object(ReposApi, "get_all_public_repos")
     @patch("congregate.helpers.conf.Config.source_host", new_callable=PropertyMock)
     @patch("congregate.helpers.conf.Config.source_token", new_callable=PropertyMock)
-    def test_retrieve_org_info(self,
-                               mock_source_token,
-                               mock_source_host,
-                               mock_public_repos,
-                               mock_open,
-                               mock_file):
+    def test_retrieve_repo_info(self,
+                                mock_source_token,
+                                mock_source_host,
+                                mock_public_repos,
+                                mock_open,
+                                mock_file):
 
         mock_source_token.return_value = "token"
         mock_source_host.return_value = "https://github.com"
@@ -62,24 +62,8 @@ class ReposTests(unittest.TestCase):
                 "id": 2,
                 "visibility": "public",
                 "description": None
-            },
-            {
-                "name": "googleapis",
-                "members": [],
-                "path": "googleapis",
-                "path_with_namespace": "org1/googleapis",
-                "namespace": {
-                    "path": "org1",
-                    "kind": "group",
-                    "id": 8,
-                    "full_path": "org1",
-                    "name": "org1"
-                },
-                "id": 5,
-                "visibility": "public",
-                "description": None
             }
         ]
 
-        self.assertEqual(sorted(self.repos.retrieve_repo_info()),
-                         sorted(expected_repos))
+        self.assertEqual(self.repos.retrieve_repo_info().sort(
+            key=lambda x: x["id"]), expected_repos.sort(key=lambda x: x["id"]))

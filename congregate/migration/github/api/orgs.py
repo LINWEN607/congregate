@@ -48,6 +48,14 @@ class OrgsApi():
         """
         return self.api.list_all(self.host, "orgs/{}/teams".format(org), verify=False)
 
+    def get_org_team(self, org, team_slug):
+        """
+        Gets a team using the team's slug. GitHub generates the slug from the team name.
+
+        GitHub API v3 Doc: https://docs.github.com/en/rest/reference/teams#get-a-team-by-name
+        """
+        return self.api.generate_v3_get_request(self.host, "orgs/{}/teams/{}".format(org, team_slug), verify=False)
+
     def get_all_org_team_repos(self, org, team_slug):
         """
         Lists a team's repositories visible to the authenticated user.
