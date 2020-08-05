@@ -65,7 +65,7 @@ class VariablesClient(BaseClass):
             return False
         except RequestException as re:
             self.log.error(
-                "Failed to migrate project {0} CI/CD variables, with error:\m{1}".format(name, re))
+                "Failed to migrate project {0} CI/CD variables, with error:\n{1}".format(name, re))
             return False
 
     def migrate_variables_in_stage(self, dry_run=True):
@@ -94,7 +94,7 @@ class VariablesClient(BaseClass):
                     if project_id is not None and not dry_run:
                         self.migrate_variables(
                             project_id, project_json["id"], "project", project_json["path_with_namespace"])
-                except IOError, e:
+                except IOError as e:
                     self.log.error(
                         "Failed to migrate variables in stage, with error:\n{}".format(e))
             self.log.info("{0}Writing {1} IDs to data/ids_variable.txt:\n{2}"

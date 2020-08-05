@@ -1,4 +1,4 @@
-"""Congregate - GitLab instance migration utility 
+"""Congregate - GitLab instance migration utility
 
 Copyright (c) 2020 - GitLab
 
@@ -20,15 +20,18 @@ Usage:
     congregate remove-blocked-users [--commit]
     congregate update-user-permissions [--access-level=<level>] [--commit]
     congregate get-total-count
-    congregate find-unimported-projects [--commit] # TODO: Refactor, project name matching does not seem correct
+    # TODO: Refactor, project name matching does not seem correct
+    congregate find-unimported-projects [--commit]
     congregate stage-unimported-projects [--commit] # TODO: Refactor, broken
     congregate remove-users-from-parent-group [--commit]
     congregate migrate-variables-in-stage [--commit]
     congregate mirror-staged-projects [--commit]
     congregate remove-all-mirrors [--commit]
     congregate find-all-non-private-groups
-    congregate make-all-internal-groups-private # TODO: Refactor or rename, as it does not make any changes
-    congregate check-projects-visibility # TODO: Refactor or rename, as it's not a check but does an update. Add dry-run
+    # TODO: Refactor or rename, as it does not make any changes
+    congregate make-all-internal-groups-private
+    # TODO: Refactor or rename, as it's not a check but does an update. Add dry-run
+    congregate check-projects-visibility
     congregate set-default-branch [--commit]
     congregate enable-mirroring [--commit] # TODO: Find a use for it or remove
     congregate count-unarchived-projects
@@ -52,7 +55,7 @@ Options:
 
 Arguments:
     processes                               Set number of processes to run in parallel.
-    commit                                  Disable the dry-run and perform the full migration with all reads/writes. 
+    commit                                  Disable the dry-run and perform the full migration with all reads/writes.
     skip-users                              Stage: Skip staging users; Migrate: Skip migrating users; Rollback: Remove only groups and projects.
     hard-delete                             Remove user contributions and solely owned groups.
     skip-groups                             Rollback: Remove only users and projects.
@@ -155,7 +158,7 @@ else:
 app_path = get_congregate_path()
 
 
-@pidfile()
+# @pidfile()
 def main():
     if __name__ == '__main__':
         arguments = docopt(__doc__)
@@ -164,16 +167,17 @@ def main():
         ROLLBACK = True if arguments["--rollback"] else False
         PROCESSES = arguments["--processes"] if arguments["--processes"] else None
         SKIP_USERS = True if arguments["--skip-users"] else False
+        ONLY_POST_MIGRATION_INFO = True if arguments["--only-post-migration-info"] else False
 
         if arguments["init"]:
             if not os.path.exists('data'):
-                print "Creating data directory and empty log file"
+                print("Creating data directory and empty log file")
                 os.makedirs('data')
                 if not os.path.exists("%s/data/congregate.log" % app_path):
                     with open("%s/data/congregate.log" % app_path, "w") as f:
                         f.write("")
             else:
-                print "Congregate already initialized"
+                print("Congregate already initialized")
             log = myLogger(__name__)
         else:
             log = myLogger(__name__)
@@ -189,7 +193,7 @@ def main():
                 from congregate.migration.gitlab.projects import ProjectsClient
                 from congregate.migration.gitlab.variables import VariablesClient
                 from congregate.migration.gitlab.compare import CompareClient
-                from congregate.migration import migrate
+                from congregate.migration.migrate import MigrateClient
                 from congregate.migration.gitlab.branches import BranchesClient
                 from congregate.cli import list_source, stage_projects, stage_groups, do_all
                 from congregate.helpers.seed.generator import SeedDataGenerator
@@ -202,7 +206,7 @@ def main():
                 from .migration.gitlab.groups import GroupsClient
                 from .migration.gitlab.projects import ProjectsClient
                 from .migration.gitlab.compare import CompareClient
-                from congregate.migration import migrate
+                from congregate.migration.migrate import MigrateClient
                 from .migration.gitlab.branches import BranchesClient
                 from congregate.cli import list_source, stage_projects, stage_groups, do_all
                 from congregate.helpers.user_util import map_users
@@ -226,42 +230,33 @@ def main():
                     arguments['<groups>'], dry_run=DRY_RUN, skip_users=SKIP_USERS)
 
             if arguments["migrate"]:
-                skip_users = SKIP_USERS
-                skip_group_export = True if arguments["--skip-group-export"] else False
-                skip_group_import = True if arguments["--skip-group-import"] else False
-                skip_project_import = True if arguments["--skip-project-import"] else False
-                skip_project_export = True if arguments["--skip-project-export"] else False
-                only_post_migration_info = True if arguments["--only-post-migration-info"] else False
-                if only_post_migration_info:
-                    skip_group_export = True
-                    skip_project_export = True
-                migrate.migrate(
+                migrate = MigrateClient(
                     processes=PROCESSES,
                     dry_run=DRY_RUN,
-                    skip_users=skip_users,
-                    skip_group_export=skip_group_export,
-                    skip_group_import=skip_group_import,
-                    skip_project_import=skip_project_import,
-                    skip_project_export=skip_project_export,
-                    only_post_migration_info=only_post_migration_info)
+                    skip_users=SKIP_USERS,
+                    skip_group_export=True if arguments["--skip-group-export"] or ONLY_POST_MIGRATION_INFO else False,
+                    skip_group_import=True if arguments["--skip-group-import"] else False,
+                    skip_project_export=True if arguments["--skip-project-export"] or ONLY_POST_MIGRATION_INFO else False,
+                    skip_project_import=True if arguments["--skip-project-import"] else False,
+                    only_post_migration_info=ONLY_POST_MIGRATION_INFO
+                )
+                migrate.migrate()
 
             if arguments["rollback"]:
-                skip_users = SKIP_USERS
-                hard_delete = True if arguments["--hard-delete"] else False
-                skip_groups = True if arguments["--skip-groups"] else False
-                skip_projects = True if arguments["--skip-projects"] else False
-                migrate.rollback(
+                migrate = MigrateClient(
                     dry_run=DRY_RUN,
-                    skip_users=skip_users,
-                    hard_delete=hard_delete,
-                    skip_groups=skip_groups,
-                    skip_projects=skip_projects)
+                    skip_users=SKIP_USERS,
+                    hard_delete=True if arguments["--hard-delete"] else False,
+                    skip_groups=True if arguments["--skip-groups"] else False,
+                    skip_projects=True if arguments["--skip-projects"] else False
+                )
+                migrate.rollback()
 
-            if arguments["do-all"]:
-                do_all.do_all(dry_run=DRY_RUN)
+                if arguments["do-all"]:
+                    do_all.do_all(dry_run=DRY_RUN)
 
-            if arguments["do-all-users"]:
-                do_all.do_all_users(dry_run=DRY_RUN)
+                if arguments["do-all-users"]:
+                    do_all.do_all_users(dry_run=DRY_RUN)
 
             if arguments["do-all-groups-and-projects"]:
                 do_all.do_all_groups_and_projects(dry_run=DRY_RUN)
@@ -294,25 +289,30 @@ def main():
                 else:
                     log.warning("Missing access-level argument")
             if arguments["get-total-count"]:
-                print migrate.get_total_migrated_count()
+                migrate = MigrateClient()
+                migrate.get_total_migrated_count()
             if arguments["find-unimported-projects"]:
                 projects.find_unimported_projects(dry_run=DRY_RUN)
             if arguments["stage-unimported-projects"]:
-                migrate.stage_unimported_projects(dry_run=DRY_RUN)
+                migrate = MigrateClient(dry_run=DRY_RUN)
+                migrate.stage_unimported_projects()
             if arguments["remove-users-from-parent-group"]:
                 users.remove_users_from_parent_group(dry_run=DRY_RUN)
             if arguments["migrate-variables-in-stage"]:
                 variables.migrate_variables_in_stage(dry_run=DRY_RUN)
             if arguments["remove-all-mirrors"]:
-                migrate.remove_all_mirrors(dry_run=DRY_RUN)
+                migrate = MigrateClient(dry_run=DRY_RUN)
+                migrate.remove_all_mirrors()
             if arguments["find-all-non-private-groups"]:
                 groups.find_all_non_private_groups()
             if arguments["make-all-internal-groups-private"]:
                 groups.make_all_internal_groups_private()
             if arguments["check-projects-visibility"]:
+                migrate = MigrateClient()
                 migrate.check_visibility()
             if arguments["mirror-staged-projects"]:
-                migrate.mirror_staged_projects(dry_run=DRY_RUN)
+                migrate = MigrateClient(dry_run=DRY_RUN)
+                migrate.mirror_staged_projects()
             if arguments["set-default-branch"]:
                 branches.set_default_branches_to_master(dry_run=DRY_RUN)
             if arguments["count-unarchived-projects"]:
@@ -338,7 +338,7 @@ def main():
                 log.info("Staged user list:\n{}".format(
                     dumps(results, indent=4, sort_keys=True)))
                 log.info("Length: {}".format({key: len(value)
-                                            for key, value in results.items()}))
+                                              for key, value in results.items()}))
             if arguments["generate-seed-data"]:
                 s = SeedDataGenerator()
                 s.generate_seed_data(dry_run=DRY_RUN)
@@ -376,7 +376,7 @@ def main():
                     result_type=result_type, steps=steps, order=order)
                 write_results_to_file(new_results, result_type, log=log)
         if arguments["obfuscate"]:
-            print obfuscate("Secret:")
+            print(obfuscate("Secret:"))
 
 
 try:

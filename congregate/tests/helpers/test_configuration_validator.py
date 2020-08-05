@@ -43,7 +43,7 @@ class ConfigurationValidationTests(unittest.TestCase):
     @mock.patch("congregate.helpers.api.generate_v4_request_url")
     def test_succeed_parent_id_validation(self, url):
         self.config.dstn_parent_id_validated_in_session = False
-        print self.config.dstn_parent_id_validated_in_session
+        print(self.config.dstn_parent_id_validated_in_session)
         url_value = "https://gitlab.com/api/v4/groups/4"
         url.return_value = url_value
         self.config.as_obj().set("DESTINATION", "dstn_parent_group_id", "1234")

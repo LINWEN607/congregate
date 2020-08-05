@@ -66,7 +66,7 @@ class CompareClient(BaseClass):
             Returns dict containing the results of the comparison
         """
         results = {}
-        for group_path, group_data in source_groups.iteritems():
+        for group_path, group_data in source_groups.items():
             comparison = {}
             if destination_groups.get(group_path, None) is not None:
                 dest_group_data = destination_groups[group_path]

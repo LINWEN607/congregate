@@ -243,7 +243,7 @@ class UsersClient(BaseClass):
                         try:
                             self.groups_api.add_member_to_group(
                                 self.config.dstn_parent_id, self.config.destination_host, self.config.destination_token, data)
-                        except RequestException, e:
+                        except RequestException as e:
                             self.log.error(
                                 "Failed to add user {0} to parent group, with error:\n{1}".format(user, e))
         else:
@@ -310,7 +310,7 @@ class UsersClient(BaseClass):
                             user["username"],
                             access_level,
                             level))
-        except RequestException, e:
+        except RequestException as e:
             self.log.error(
                 "Failed to update user's parent access level, with error:\n{}".format(e))
 
@@ -325,7 +325,7 @@ class UsersClient(BaseClass):
         # From staged groups
         self.remove("staged_groups", dry_run)
         # From staged projects
-        self.remove("stage_projects", dry_run)
+        self.remove("staged_projects", dry_run)
 
     def remove(self, data, dry_run=True):
         with open("{0}/data/{1}.json".format(self.app_path, data), "r") as f:
@@ -486,7 +486,7 @@ class UsersClient(BaseClass):
                 self.log.info("Blocking user {0} email {1} (status: {2})"
                               .format(user_data["username"], user_data["email"], block_response))
                 return block_response
-        except RequestException, e:
+        except RequestException as e:
             self.log.error(
                 "Failed to block user {0}, with error:\n{1}".format(user_data, e))
 
@@ -504,7 +504,7 @@ class UsersClient(BaseClass):
                 response = self.find_user_by_email_comparison_without_id(
                     user["email"])
                 return self.get_user_creation_id_and_email(response)
-            except RequestException, e:
+            except RequestException as e:
                 self.log.error(
                     "Failed to retrieve user {0} status, due to:\n{1}".format(user, e))
         elif response.status_code == 400:
@@ -519,13 +519,13 @@ class UsersClient(BaseClass):
                 "email": resp["email"],
                 "id": resp["id"]
             }
-    
+
     def log_and_return_failed_user_creation(self, message, email):
         self.log.error(message)
         return {
             "email": email,
             "id": None
-        } 
+        }
 
     def get_user_creation_id_and_email(self, response):
         if response is not None and response:

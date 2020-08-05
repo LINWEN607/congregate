@@ -7,8 +7,8 @@ from congregate.migration.gitlab.diff.basediff import BaseDiffClient
 from congregate.migration.gitlab.diff.userdiff import UserDiffClient
 from congregate.migration.gitlab.diff.groupdiff import GroupDiffClient
 from congregate.migration.gitlab.diff.projectdiff import ProjectDiffClient
+from congregate.migration.migrate import MigrateClient
 from congregate.helpers.base_class import BaseClass
-from congregate.migration.migrate import rollback
 
 
 @pytest.mark.e2e
@@ -17,11 +17,12 @@ class MigrationEndToEndTest(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         self.b = BaseClass()
+        self.migrate = MigrateClient(dry_run=False, hard_delete=True)
         do_all.do_all(dry_run=False)
 
     @classmethod
     def tearDownClass(self):
-        rollback(dry_run=False, hard_delete=True)
+        self.migrate.rollback()
         # Allow users/groups/projects to fully delete
         sleep(self.b.config.importexport_wait * 6)
         rollback_diff()

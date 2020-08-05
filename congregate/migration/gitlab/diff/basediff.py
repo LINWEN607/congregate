@@ -41,11 +41,11 @@ class BaseDiffClient(BaseClass):
             font-size: 15px;
             transition: 0.4s;
         }
-        
+
         .active, .accordion:hover {
-            background-color: #ccc; 
+            background-color: #ccc;
         }
-        
+
         .accordion-content {
             padding: 0 18px;
             display: none;
@@ -201,14 +201,14 @@ class BaseDiffClient(BaseClass):
         if data is not None:
             if isinstance(data, list):
                 for i, _ in enumerate(data):
-                    if isinstance(data[i], str) or isinstance(data[i], unicode):
+                    if isinstance(data[i], str):
                         return data
                     data[i] = self.ignore_keys(data[i])
             else:
                 for key in self.keys_to_ignore:
                     if key in data:
                         data.pop(key)
-            return data
+            return sorted(data, key=lambda x: str(x))
         return {}
 
     def obfuscate_values(self, obj):
@@ -239,25 +239,25 @@ class BaseDiffClient(BaseClass):
 
     def return_only_accuracies(self, obj):
         accuracies = {}
-        for o in obj.keys():
-            accuracies[o] = {i: obj[o][i] for i in obj[o] if i != 'diff'}
+        if isinstance(obj, dict):
+            for o in obj.keys():
+                accuracies[o] = {i: obj[o][i] for i in obj[o] if i != 'diff'}
         return accuracies
 
     def generate_cleaned_instance_data(self, instance_data):
-        if instance_data is not None:
-            if isinstance(instance_data, GeneratorType):
-                try:
+        try:
+            if instance_data is not None:
+                if isinstance(instance_data, GeneratorType):
                     instance_data = self.ignore_keys(list(instance_data))
-                    instance_data.sort()
-                except TypeError:
-                    self.log.error(
-                        "Unable to generate cleaned instance data. Returning empty list")
-                    return []
-            elif isinstance(instance_data, list):
-                instance_data = sorted(self.ignore_keys(instance_data))
-            else:
-                instance_data = sorted(self.ignore_keys(instance_data.json()))
-        return instance_data
+                elif isinstance(instance_data, list):
+                    instance_data = self.ignore_keys(instance_data)
+                else:
+                    instance_data = self.ignore_keys(instance_data.json())
+            return instance_data
+        except TypeError as te:
+            self.log.error(
+                "Unable to generate cleaned instance data. Returning empty list, with error:\n{}".format(te))
+            return []
 
     def generate_empty_data(self, source):
         if isinstance(source, list):
@@ -294,8 +294,8 @@ class BaseDiffClient(BaseClass):
         head.append(script)
         head.append(style)
         soup.html.append(head)
-        with open(filepath, "w") as f:
-            f.write(soup.prettify(encoding="UTF-8"))
+        with open(filepath, "wb") as f:
+            f.write(soup.prettify().encode())
 
     def asset_exists(self, endpoint, identifier):
         if identifier:

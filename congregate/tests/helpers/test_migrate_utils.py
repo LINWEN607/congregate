@@ -40,7 +40,7 @@ class MigrateTests(unittest.TestCase):
         expected = []
         self.assertListEqual(failed_results, expected)
 
-    @mock.patch("congregate.helpers.base_module.ConfigurationValidator.dstn_parent_id", new_callable=mock.PropertyMock)
+    @mock.patch("congregate.helpers.base_class.ConfigurationValidator.dstn_parent_id", new_callable=mock.PropertyMock)
     @mock.patch.object(GroupsApi, "get_group")
     @mock.patch.object(ConfigurationValidator, "validate_dstn_parent_group_id")
     def test_get_staged_projects_without_failed_export_with_failure(self, cv, ga, pi):
@@ -97,7 +97,7 @@ class MigrateTests(unittest.TestCase):
         self.assertListEqual(filtered_staged, expected)
         print(filtered_staged)
 
-    @mock.patch("congregate.helpers.base_module.ConfigurationValidator.dstn_parent_id", new_callable=mock.PropertyMock)
+    @mock.patch("congregate.helpers.base_class.ConfigurationValidator.dstn_parent_id", new_callable=mock.PropertyMock)
     @mock.patch.object(GroupsApi, "get_group")
     @mock.patch.object(ConfigurationValidator, "validate_dstn_parent_group_id")
     def test_get_staged_projects_without_failed_export_with_no_failure_leaves_unchanged(self, cv, ga, pi):
@@ -110,7 +110,7 @@ class MigrateTests(unittest.TestCase):
         self.assertListEqual(
             filtered_staged, self.mock_projects.get_staged_projects())
 
-    @mock.patch("congregate.helpers.base_module.ConfigurationValidator.dstn_parent_id", new_callable=mock.PropertyMock)
+    @mock.patch("congregate.helpers.base_class.ConfigurationValidator.dstn_parent_id", new_callable=mock.PropertyMock)
     @mock.patch.object(GroupsApi, "get_group")
     @mock.patch.object(ConfigurationValidator, "validate_dstn_parent_group_id")
     def test_get_staged_projects_without_failed_export_with_no_all_fail_returns_empty_group_project(self, cv, ga, pi):
@@ -124,7 +124,7 @@ class MigrateTests(unittest.TestCase):
             self.mock_projects.get_staged_projects(), failed_results)
         self.assertListEqual(filtered_staged, [])
 
-    @mock.patch("congregate.helpers.base_module.ConfigurationValidator.dstn_parent_id", new_callable=mock.PropertyMock)
+    @mock.patch("congregate.helpers.base_class.ConfigurationValidator.dstn_parent_id", new_callable=mock.PropertyMock)
     @mock.patch.object(GroupsApi, "get_group")
     @mock.patch.object(ConfigurationValidator, "validate_dstn_parent_group_id")
     def test_get_staged_projects_without_failed_export_with_no_all_fail_returns_empty_user_project(self, cv, ga, pi):
@@ -138,7 +138,7 @@ class MigrateTests(unittest.TestCase):
             self.mock_projects.get_staged_projects(), failed_results)
         self.assertListEqual(filtered_staged, [])
 
-    @mock.patch("congregate.helpers.base_module.ConfigurationValidator.dstn_parent_id", new_callable=mock.PropertyMock)
+    @mock.patch("congregate.helpers.base_class.ConfigurationValidator.dstn_parent_id", new_callable=mock.PropertyMock)
     @mock.patch.object(GroupsApi, "get_group")
     @mock.patch.object(ConfigurationValidator, "validate_dstn_parent_group_id")
     def test_get_staged_groups_without_failed_export_with_failure(self, cv, ga, pi):
@@ -187,7 +187,7 @@ class MigrateTests(unittest.TestCase):
         self.assertListEqual(filtered_staged, expected)
         print(filtered_staged)
 
-    @mock.patch("congregate.helpers.base_module.ConfigurationValidator.dstn_parent_id", new_callable=mock.PropertyMock)
+    @mock.patch("congregate.helpers.base_class.ConfigurationValidator.dstn_parent_id", new_callable=mock.PropertyMock)
     @mock.patch.object(GroupsApi, "get_group")
     @mock.patch.object(ConfigurationValidator, "validate_dstn_parent_group_id")
     def test_get_staged_groups_without_failed_export_with_no_failure_leaves_unchanged(self, cv, ga, pi):
@@ -200,7 +200,7 @@ class MigrateTests(unittest.TestCase):
         self.assertListEqual(
             filtered_staged, self.mock_groups.get_staged_groups())
 
-    @mock.patch("congregate.helpers.base_module.ConfigurationValidator.dstn_parent_id", new_callable=mock.PropertyMock)
+    @mock.patch("congregate.helpers.base_class.ConfigurationValidator.dstn_parent_id", new_callable=mock.PropertyMock)
     @mock.patch.object(GroupsApi, "get_group")
     @mock.patch.object(ConfigurationValidator, "validate_dstn_parent_group_id")
     def test_get_staged_groups_without_failed_export_with_no_all_fail_returns_empty_group(self, cv, ga, pi):
@@ -580,7 +580,7 @@ class MigrateTests(unittest.TestCase):
         self.assertFalse(mutils.is_top_level_group(
             self.mock_groups.get_subgroup()))
 
-    @mock.patch("congregate.helpers.base_module.ConfigurationValidator.src_parent_id", new_callable=mock.PropertyMock)
+    @mock.patch("congregate.helpers.base_class.ConfigurationValidator.src_parent_id", new_callable=mock.PropertyMock)
     def test_is_top_level_group_src_parent_group(self, src_parent_id):
         src_parent_id.return_value = 4
         self.assertTrue(mutils.is_top_level_group(

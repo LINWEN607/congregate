@@ -6,7 +6,7 @@ Copyright (c) 2020 - GitLab
 
 import os
 
-from ConfigParser import SafeConfigParser as ConfigParser, ParsingError
+from configparser import ConfigParser, ParsingError
 
 from congregate.helpers.misc_utils import get_congregate_path, deobfuscate
 
@@ -143,7 +143,7 @@ class Config(object):
         The maximum number of hours to rollback users, groups, and projects
         :return: The set config value or 24 hours as default
         """
-        return self.prop("DESTINATION", "max_asset_expiration_time", 24)
+        return self.prop_int("DESTINATION", "max_asset_expiration_time", 24)
 
 # SOURCE
     @property

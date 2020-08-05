@@ -29,6 +29,6 @@ class BranchesClient(BaseClass):
                             "master")
                         self.log.info(
                             "Project {0} default branch set to master ({1})".format(path, resp))
-                    except RequestException, e:
+                    except RequestException as e:
                         self.log.error(
                             "Failed to set project {0} default branch to master, with error:\n{1}".format(path, e))

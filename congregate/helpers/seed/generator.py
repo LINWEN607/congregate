@@ -56,12 +56,12 @@ class SeedDataGenerator(BaseClass):
                 project["id"], groups, dry_run)
         projects += self.generate_user_projects(users, dry_run)
 
-        print "---Generated Users---"
-        print json.dumps(users, indent=4)
-        print "---Generated Groups---"
-        print json.dumps(groups, indent=4)
-        print "---Generated Projects---"
-        print json.dumps(projects, indent=4)
+        print("---Generated Users---")
+        print(json.dumps(users, indent=4))
+        print("---Generated Groups---")
+        print(json.dumps(groups, indent=4))
+        print("---Generated Projects---")
+        print(json.dumps(projects, indent=4))
 
     def generate_users(self, dry_run=True):
         dummy_users = [
