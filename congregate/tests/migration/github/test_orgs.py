@@ -15,17 +15,17 @@ class ReposTests(unittest.TestCase):
 
     @patch.object(OrgsApi, "get_org")
     @patch.object(OrgsApi, "get_all_org_repos")
-    # @patch.object(OrgsApi, "get_all_org_members")
+    @patch.object(OrgsApi, "get_all_org_members")
     @patch.object(OrgsApi, "get_all_org_team_repos")
-    # @patch.object(OrgsApi, "get_all_org_team_members")
+    @patch.object(OrgsApi, "get_all_org_team_members")
     @patch("congregate.helpers.conf.Config.source_host", new_callable=PropertyMock)
     @patch("congregate.helpers.conf.Config.source_token", new_callable=PropertyMock)
     def test_add_org_as_group(self,
                               mock_source_token,
                               mock_source_host,
-                              # mock_org_team_members,
+                              mock_org_team_members,
                               mock_org_team_repos,
-                              # mock_org_members,
+                              mock_org_members,
                               mock_org_repos,
                               mock_org_response):
         mock_source_token.return_value = "token"
@@ -36,9 +36,9 @@ class ReposTests(unittest.TestCase):
         mock_org.json.return_value = self.mock_orgs.get_org()
         mock_org_response.return_value = mock_org
 
-        # mock_org_members.return_value = self.mock_orgs.get_all_org_members()
+        mock_org_members.return_value = self.mock_orgs.get_all_org_members()
         mock_org_team_repos.return_value = self.mock_orgs.get_all_org_team_repos()
-        # mock_org_team_members.return_value = self.mock_orgs.get_all_org_team_members()
+        mock_org_team_members.return_value = self.mock_orgs.get_all_org_team_members()
         mock_org_repos.return_value = self.mock_orgs.get_all_org_repos()
 
         expected_projects = [
@@ -78,7 +78,44 @@ class ReposTests(unittest.TestCase):
 
         expected_groups = [
             {
-                "members": [],
+                "members": [
+                    {
+                        "username": "bmay",
+                        "name": None,
+                        "id": 5,
+                        "state": "active",
+                        "avatar_url": "",
+                        "is_admin": False,
+                        "email": None
+                    },
+                    {
+                        "username": "gitlab",
+                        "name": None,
+                        "id": 3,
+                        "state": "active",
+                        "avatar_url": "",
+                        "is_admin": True,
+                        "email": None
+                    },
+                    {
+                        "username": "mlindsay",
+                        "name": None,
+                        "id": 4,
+                        "state": "active",
+                        "avatar_url": "",
+                        "is_admin": True,
+                        "email": None
+                    },
+                    {
+                        "username": "nperic",
+                        "name": "Nicki Peric",
+                        "id": 7,
+                        "state": "active",
+                        "avatar_url": "",
+                        "is_admin": True,
+                        "email": None
+                    }
+                ],
                 "parent_id": None,
                 "visibility": "private",
                 "name": "org1",
@@ -154,7 +191,7 @@ class ReposTests(unittest.TestCase):
         self.assertEqual(actual[1], expected_projects)
 
     @patch.object(OrgsApi, "get_all_org_team_repos")
-    # @patch.object(OrgsApi, "get_all_org_team_members")
+    @patch.object(OrgsApi, "get_all_org_team_members")
     @patch.object(OrgsApi, "get_org_team")
     @patch("congregate.helpers.conf.Config.source_host", new_callable=PropertyMock)
     @patch("congregate.helpers.conf.Config.source_token", new_callable=PropertyMock)
@@ -162,7 +199,7 @@ class ReposTests(unittest.TestCase):
                                              mock_source_token,
                                              mock_source_host,
                                              mock_org_team,
-                                             #    mock_org_team_members,
+                                             mock_org_team_members,
                                              mock_org_team_repos):
 
         mock_source_token.return_value = "token"
@@ -179,7 +216,7 @@ class ReposTests(unittest.TestCase):
         }
         mock_org_team.side_effect = [mock_team, mock_team_error]
 
-        # mock_org_team_members.return_value = self.mock_orgs.get_all_org_team_members()
+        mock_org_team_members.return_value = self.mock_orgs.get_all_org_team_members()
         mock_org_team_repos.return_value = self.mock_orgs.get_all_org_team_repos()
 
         expected_projects = [
@@ -241,7 +278,7 @@ class ReposTests(unittest.TestCase):
                          expected_projects.sort(key=lambda x: x["id"]))
 
     @patch.object(OrgsApi, "get_all_org_team_repos")
-    # @patch.object(OrgsApi, "get_all_org_team_members")
+    @patch.object(OrgsApi, "get_all_org_team_members")
     @patch.object(OrgsApi, "get_org_team")
     @patch("congregate.helpers.conf.Config.source_host", new_callable=PropertyMock)
     @patch("congregate.helpers.conf.Config.source_token", new_callable=PropertyMock)
@@ -249,7 +286,7 @@ class ReposTests(unittest.TestCase):
                                   mock_source_token,
                                   mock_source_host,
                                   mock_org_team,
-                                  #    mock_org_team_members,
+                                  mock_org_team_members,
                                   mock_org_team_repos):
 
         mock_source_token.return_value = "token"
@@ -263,7 +300,7 @@ class ReposTests(unittest.TestCase):
         mock_child_team.json.return_value = self.mock_orgs.get_org_child_team()
         mock_org_team.side_effect = [mock_child_team, mock_team]
 
-        # mock_org_team_members.return_value = self.mock_orgs.get_all_org_team_members()
+        mock_org_team_members.return_value = self.mock_orgs.get_all_org_team_members()
         mock_org_team_repos.return_value = self.mock_orgs.get_all_org_team_repos()
 
         expected_projects = [
@@ -303,7 +340,17 @@ class ReposTests(unittest.TestCase):
 
         expected_groups = [
             {
-                "members": [],
+                "members": [
+                    {
+                        "username": "gitlab",
+                        "name": None,
+                        "id": 3,
+                        "state": "active",
+                        "avatar_url": "",
+                        "is_admin": True,
+                        "email": None
+                    }
+                ],
                 "parent_id": None,
                 "visibility": "private",
                 "name": "org2",
