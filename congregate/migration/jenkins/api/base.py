@@ -2,11 +2,11 @@ import jenkins
 
 
 class JenkinsApi():
-    def __init__(self):
-        self.host = 'http://jenkins.host.url'
+    def __init__(self, host, token, user):
+        self.host = host
         # Jenkins API token generated within Jenkins instance by going to User Profile -> Configure -> API Token
-        self.token = 'jenkins_api_token'
-        self.user = 'jenkins_username'
+        self.token = token
+        self.user = user
 
         # Connect to server
         self.server = jenkins.Jenkins(self.host, username=self.user, password=self.token)
@@ -19,12 +19,12 @@ class JenkinsApi():
         view_name - Name of a Jenkins view for which to retrieve jobs, str. By default, the job list is not limited to a specific view.
         Returns:	list of jobs, [{str: str, str: str, str: str, str: str}]
         '''
-        jobs = self.server.get_jobs()
-        print(jobs)
+        return self.server.get_jobs()
 
     def get_all_jobs(self):
         # https://python-jenkins.readthedocs.io/en/latest/api.html#jenkins.Jenkins.get_all_jobs
-        jobs_list = self.server.run_script("""
+        # returns dictionary with list of jobs
+        return self.server.run_script("""
             import groovy.json.JsonBuilder;
 
             // get all projects excluding matrix configuration
@@ -51,10 +51,9 @@ class JenkinsApi():
             println json.toString()
         """)
 
-        print(jobs_list)
-
     def list_all_scm(self):
         # Get all SCM Git urls listed, uses https://python-jenkins.readthedocs.io/en/latest/api.html#jenkins.Jenkins.run_script
+        # returns list of all scm found in jobs (includes duplicates)
         scmallinfo = self.server.run_script("""
             Jenkins.instance.getAllItems(hudson.model.AbstractProject.class).each
             {
@@ -67,7 +66,9 @@ class JenkinsApi():
             }
         """)
 
-        print(scmallinfo)
+        scmallinfo_list = scmallinfo.split('\n')
+
+        return(scmallinfo_list)
 
     def get_job_config(self, job_name):
         '''
@@ -75,8 +76,7 @@ class JenkinsApi():
         Parameters:	name - Name of Jenkins job, str
         Returns:    job configuration (XML format)
         '''
-        my_job = self.server.get_job_config(job_name)
-        print(my_job)
+        return self.server.get_job_config(job_name)
 
     def get_job_info(self, job_name):
         '''
@@ -87,8 +87,7 @@ class JenkinsApi():
         This comes at the expense of an additional API call which may return significant amounts of data. bool
         Returns:    dictionary of job information
         '''
-        my_job = self.server.get_job_info(job_name, 4)
-        print(my_job)
+        return self.server.get_job_info(job_name, 4)
 
     def get_info(self):
         '''
@@ -98,21 +97,11 @@ class JenkinsApi():
         query - xpath to extract information about on this Master
         Returns:	dictionary of information about Master or item, dict
         '''
-        data = self.server.get_info()
-        print(data)
+        return self.server.get_info()
 
     def get_scm_by_job(self, job_name):
-        scminfo = self.server.run_script(f"""
+        # returns a string of scm from specified job
+        return self.server.run_script(f"""
         item = Jenkins.instance.getItemByFullName("{ job_name }")
         println item.getScm().getUserRemoteConfigs()[0].getUrl()
         """)
-        print(scminfo)
-
-
-def main():
-    # Call functions with JenkinsApi().list_jobs()
-    pass
-
-
-if __name__ == "__main__":
-    main()
