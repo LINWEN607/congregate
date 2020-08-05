@@ -2,29 +2,7 @@ import jenkins
 
 
 class JenkinsApi():
-    def __init__(self, host, token, user):
-        self.host = host
-        # Jenkins API token generated within Jenkins instance by going to User Profile -> Configure -> API Token
-        self.token = token
-        self.user = user
-
-        # Connect to server
-        self.server = jenkins.Jenkins(self.host, username=self.user, password=self.token)
-
-    def list_jobs(self):
-        '''
-        https://python-jenkins.readthedocs.io/en/latest/api.html#jenkins.Jenkins.get_jobs
-        Parameters:
-        folder_depth - Number of levels to search, int. By default 0, which will limit search to toplevel. None disables the limit.
-        view_name - Name of a Jenkins view for which to retrieve jobs, str. By default, the job list is not limited to a specific view.
-        Returns:	list of jobs, [{str: str, str: str, str: str, str: str}]
-        '''
-        return self.server.get_jobs()
-
-    def get_all_jobs(self):
-        # https://python-jenkins.readthedocs.io/en/latest/api.html#jenkins.Jenkins.get_all_jobs
-        # returns dictionary with list of jobs
-        return self.server.run_script("""
+    GET_ALL_JOBS = """
             import groovy.json.JsonBuilder;
 
             // get all projects excluding matrix configuration
@@ -49,12 +27,9 @@ class JenkinsApi():
 
             // use json.toPrettyString() if viewing
             println json.toString()
-        """)
+        """
 
-    def list_all_scm(self):
-        # Get all SCM Git urls listed, uses https://python-jenkins.readthedocs.io/en/latest/api.html#jenkins.Jenkins.run_script
-        # returns list of all scm found in jobs (includes duplicates)
-        scmallinfo = self.server.run_script("""
+    GET_ALL_SCM = """
             Jenkins.instance.getAllItems(hudson.model.AbstractProject.class).each
             {
                 it ->
@@ -64,7 +39,36 @@ class JenkinsApi():
                     println scm.getUserRemoteConfigs()[0].getUrl()
                 }
             }
-        """)
+        """
+
+    def __init__(self, host, token, user):
+        self.host = host
+        # Jenkins API token generated within Jenkins instance by going to User Profile -> Configure -> API Token
+        self.token = token
+        self.user = user
+
+        # Connect to server
+        self.server = jenkins.Jenkins(self.host, username=self.user, password=self.token)
+
+    def list_jobs(self):
+        '''
+        https://python-jenkins.readthedocs.io/en/latest/api.html#jenkins.Jenkins.get_jobs
+        Parameters:
+        folder_depth - Number of levels to search, int. By default 0, which will limit search to toplevel. None disables the limit.
+        view_name - Name of a Jenkins view for which to retrieve jobs, str. By default, the job list is not limited to a specific view.
+        Returns:	list of jobs, [{str: str, str: str, str: str, str: str}]
+        '''
+        return self.server.get_jobs()
+
+    def get_all_jobs(self):
+        # https://python-jenkins.readthedocs.io/en/latest/api.html#jenkins.Jenkins.get_all_jobs
+        # returns dictionary with list of jobs
+        return self.server.run_script(self.GET_ALL_JOBS)
+
+    def list_all_scm(self):
+        # Get all SCM Git urls listed, uses https://python-jenkins.readthedocs.io/en/latest/api.html#jenkins.Jenkins.run_script
+        # returns list of all scm found in jobs (includes duplicates)
+        scmallinfo = self.server.run_script(self.GET_ALL_SCM)
 
         scmallinfo_list = scmallinfo.split('\n')
 
