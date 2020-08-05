@@ -348,6 +348,46 @@ class MockOrgsApi():
                 "received_events_url": "https://github.gitlab-proserv.net/api/v3/users/pprokic/received_events",
                 "type": "User",
                 "site_admin": False
+            },
+            {
+                "login": "mlindsay",
+                "id": 4,
+                "node_id": "MDQ6VXNlcjQ=",
+                "avatar_url": "https://github.gitlab-proserv.net/avatars/u/4?",
+                "gravatar_id": "",
+                "url": "https://github.gitlab-proserv.net/api/v3/users/mlindsay",
+                "html_url": "https://github.gitlab-proserv.net/mlindsay",
+                "followers_url": "https://github.gitlab-proserv.net/api/v3/users/mlindsay/followers",
+                "following_url": "https://github.gitlab-proserv.net/api/v3/users/mlindsay/following{/other_user}",
+                "gists_url": "https://github.gitlab-proserv.net/api/v3/users/mlindsay/gists{/gist_id}",
+                "starred_url": "https://github.gitlab-proserv.net/api/v3/users/mlindsay/starred{/owner}{/repo}",
+                "subscriptions_url": "https://github.gitlab-proserv.net/api/v3/users/mlindsay/subscriptions",
+                "organizations_url": "https://github.gitlab-proserv.net/api/v3/users/mlindsay/orgs",
+                "repos_url": "https://github.gitlab-proserv.net/api/v3/users/mlindsay/repos",
+                "events_url": "https://github.gitlab-proserv.net/api/v3/users/mlindsay/events{/privacy}",
+                "received_events_url": "https://github.gitlab-proserv.net/api/v3/users/mlindsay/received_events",
+                "type": "User",
+                "site_admin": True
+            },
+            {
+                "login": "nperic",
+                "id": 7,
+                "node_id": "MDQ6VXNlcjc=",
+                "avatar_url": "https://github.gitlab-proserv.net/avatars/u/7?",
+                "gravatar_id": "",
+                "url": "https://github.gitlab-proserv.net/api/v3/users/nperic",
+                "html_url": "https://github.gitlab-proserv.net/nperic",
+                "followers_url": "https://github.gitlab-proserv.net/api/v3/users/nperic/followers",
+                "following_url": "https://github.gitlab-proserv.net/api/v3/users/nperic/following{/other_user}",
+                "gists_url": "https://github.gitlab-proserv.net/api/v3/users/nperic/gists{/gist_id}",
+                "starred_url": "https://github.gitlab-proserv.net/api/v3/users/nperic/starred{/owner}{/repo}",
+                "subscriptions_url": "https://github.gitlab-proserv.net/api/v3/users/nperic/subscriptions",
+                "organizations_url": "https://github.gitlab-proserv.net/api/v3/users/nperic/orgs",
+                "repos_url": "https://github.gitlab-proserv.net/api/v3/users/nperic/repos",
+                "events_url": "https://github.gitlab-proserv.net/api/v3/users/nperic/events{/privacy}",
+                "received_events_url": "https://github.gitlab-proserv.net/api/v3/users/nperic/received_events",
+                "type": "User",
+                "site_admin": True
             }
         ]
 
