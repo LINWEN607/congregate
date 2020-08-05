@@ -34,10 +34,7 @@ class OrgsClient(BaseClass):
         tree = {}
         for org in self.orgs_api.get_all_orgs():
             tree.update({org["login"]: {"PROJECTS": [], "SUB-GROUPS": []}})
-            
             self.add_org_as_group(groups, org["login"], projects, tree=tree)
-
-
             for team in self.orgs_api.get_all_org_teams(org["login"]):
                 self.add_team_as_subgroup(
                     groups, org["login"], team, projects, tree=tree)
@@ -95,7 +92,7 @@ class OrgsClient(BaseClass):
                 # parent group
                 "parent_id": team["parent"]["id"] if team.get("parent", None) else None,
                 "auto_devops_enabled": False,
-                "members": [],
+                #"members": [],
                 "members": self.users.format_users(self.orgs_api.get_all_org_team_members(org_name, team["slug"])),
                 "projects": self.repos.format_repos([], team_repos)
             })
