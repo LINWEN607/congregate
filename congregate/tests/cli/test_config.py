@@ -15,7 +15,6 @@ class ConfigTests(unittest.TestCase):
     def setUp(self):
         self.users_api = MockUsersApi()
         self.groups_api = MockGroupsApi()
-        self.maxDiff = None
 
     @mock.patch.object(UsersApi, "get_current_user")
     def test_full_ext_src_skeleton_bitbucket_server(self, mock_get):

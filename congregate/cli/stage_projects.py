@@ -52,7 +52,7 @@ def build_staging_data(projects_to_stage, dry_run=True):
         rewritten_users[users[i]["id"]] = users[i]
 
     # If there is CLI or UI input
-    if filter(None, projects_to_stage):
+    if list(filter(None, projects_to_stage)):
         # Stage ALL
         if projects_to_stage[0] in ["all", "."] or len(projects_to_stage) == len(projects):
             for p in projects:

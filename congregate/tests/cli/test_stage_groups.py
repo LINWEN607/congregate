@@ -47,7 +47,6 @@ class StageProjectsTests(unittest.TestCase):
                         "access_level": 30,
                         "state": "active",
                         "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon",
-                        "web_url": "http://192.168.1.8:3000/root",
                         "name": "John Doe",
                         "id": 2,
                         "expires_at": "2012-10-22T14:13:35Z"
@@ -69,7 +68,6 @@ class StageProjectsTests(unittest.TestCase):
         expected_users = [
             {
                 "username": "smart3",
-                "web_url": "http://demo.tanuki.cloud/smart3",
                 "name": "User smart3",
                 "expires_at": None,
                 "access_level": 50,
@@ -79,7 +77,6 @@ class StageProjectsTests(unittest.TestCase):
             },
             {
                 "username": "smart4",
-                "web_url": "http://demo.tanuki.cloud/smart4",
                 "name": "User smart4",
                 "expires_at": None,
                 "access_level": 30,
@@ -89,13 +86,12 @@ class StageProjectsTests(unittest.TestCase):
             },
             {
                 "username": "john_doe",
+                "name": "John Doe",
+                "expires_at": "2012-10-22T14:13:35Z",
                 "access_level": 30,
                 "state": "active",
                 "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon",
-                "web_url": "http://192.168.1.8:3000/root",
-                "name": "John Doe",
-                "id": 2,
-                "expires_at": "2012-10-22T14:13:35Z"
+                "id": 2
             }
         ]
 
@@ -105,7 +101,6 @@ class StageProjectsTests(unittest.TestCase):
                 "request_access_enabled": False,
                 "description": "An interesting group as well",
                 "visibility": "public",
-                "web_url": "http://localhost:3000/groups/foo-bar-2",
                 "full_name": "Foobar Group 2",
                 "path": "foo-bar-2",
                 "id": 2,
@@ -113,7 +108,6 @@ class StageProjectsTests(unittest.TestCase):
                 "members": [
                     {
                         "username": "smart3",
-                        "web_url": "http://demo.tanuki.cloud/smart3",
                         "name": "User smart3",
                         "expires_at": None,
                         "access_level": 50,
@@ -123,7 +117,6 @@ class StageProjectsTests(unittest.TestCase):
                     },
                     {
                         "username": "smart4",
-                        "web_url": "http://demo.tanuki.cloud/smart4",
                         "name": "User smart4",
                         "expires_at": None,
                         "access_level": 30,
@@ -142,7 +135,6 @@ class StageProjectsTests(unittest.TestCase):
                 "request_access_enabled": False,
                 "description": "An interesting group as well",
                 "visibility": "public",
-                "web_url": "http://localhost:3000/groups/foo-bar-2",
                 "full_name": "Foobar Group 3",
                 "path": "foo-bar-3",
                 "id": 3,
@@ -152,7 +144,6 @@ class StageProjectsTests(unittest.TestCase):
                         "username": "smart3",
                         "access_level": 50,
                         "state": "active",
-                        "web_url": "http://demo.tanuki.cloud/smart3",
                         "name": "User smart3",
                         "avatar_url": "https://secure.gravatar.com/avatar/d549ee47080f3512a835905895c46545?s=80&d=identicon",
                         "id": 285,
@@ -162,7 +153,6 @@ class StageProjectsTests(unittest.TestCase):
                         "username": "smart4",
                         "access_level": 30,
                         "state": "active",
-                        "web_url": "http://demo.tanuki.cloud/smart4",
                         "name": "User smart4",
                         "avatar_url": "https://secure.gravatar.com/avatar/77b6da6e1b9aa2527600bc7727f5bad8?s=80&d=identicon",
                         "id": 286,
@@ -228,7 +218,6 @@ class StageProjectsTests(unittest.TestCase):
                         "access_level": 30,
                         "state": "active",
                         "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon",
-                        "web_url": "http://192.168.1.8:3000/root",
                         "name": "John Doe",
                         "id": 2,
                         "expires_at": "2012-10-22T14:13:35Z"
@@ -255,7 +244,6 @@ class StageProjectsTests(unittest.TestCase):
                         "access_level": 30,
                         "state": "active",
                         "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon",
-                        "web_url": "http://192.168.1.8:3000/root",
                         "name": "John Doe",
                         "id": 2,
                         "expires_at": "2012-10-22T14:13:35Z"
@@ -277,7 +265,6 @@ class StageProjectsTests(unittest.TestCase):
         expected_users = [
             {
                 "username": "smart3",
-                "web_url": "http://demo.tanuki.cloud/smart3",
                 "name": "User smart3",
                 "expires_at": None,
                 "access_level": 50,
@@ -287,7 +274,6 @@ class StageProjectsTests(unittest.TestCase):
             },
             {
                 "username": "smart4",
-                "web_url": "http://demo.tanuki.cloud/smart4",
                 "name": "User smart4",
                 "expires_at": None,
                 "access_level": 30,
@@ -297,13 +283,12 @@ class StageProjectsTests(unittest.TestCase):
             },
             {
                 "username": "john_doe",
+                "name": "John Doe",
+                "expires_at": "2012-10-22T14:13:35Z",
                 "access_level": 30,
                 "state": "active",
                 "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon",
-                "web_url": "http://192.168.1.8:3000/root",
-                "name": "John Doe",
-                "id": 2,
-                "expires_at": "2012-10-22T14:13:35Z"
+                "id": 2
             }
         ]
 
@@ -313,7 +298,6 @@ class StageProjectsTests(unittest.TestCase):
                 "request_access_enabled": False,
                 "description": "An interesting group as well",
                 "visibility": "public",
-                "web_url": "http://localhost:3000/groups/foo-bar-2",
                 "full_name": "Foobar Group 2",
                 "path": "foo-bar-2",
                 "id": 2,
@@ -321,7 +305,6 @@ class StageProjectsTests(unittest.TestCase):
                 "members": [
                     {
                         "username": "smart3",
-                        "web_url": "http://demo.tanuki.cloud/smart3",
                         "name": "User smart3",
                         "expires_at": None,
                         "access_level": 50,
@@ -331,7 +314,6 @@ class StageProjectsTests(unittest.TestCase):
                     },
                     {
                         "username": "smart4",
-                        "web_url": "http://demo.tanuki.cloud/smart4",
                         "name": "User smart4",
                         "expires_at": None,
                         "access_level": 30,
@@ -350,7 +332,6 @@ class StageProjectsTests(unittest.TestCase):
                 "request_access_enabled": False,
                 "description": "An interesting group as well",
                 "visibility": "public",
-                "web_url": "http://localhost:3000/groups/foo-bar-2",
                 "full_name": "Foobar Group 3",
                 "path": "foo-bar-3",
                 "id": 3,
@@ -360,7 +341,6 @@ class StageProjectsTests(unittest.TestCase):
                         "username": "smart3",
                         "access_level": 50,
                         "state": "active",
-                        "web_url": "http://demo.tanuki.cloud/smart3",
                         "name": "User smart3",
                         "avatar_url": "https://secure.gravatar.com/avatar/d549ee47080f3512a835905895c46545?s=80&d=identicon",
                         "id": 285,
@@ -370,7 +350,6 @@ class StageProjectsTests(unittest.TestCase):
                         "username": "smart4",
                         "access_level": 30,
                         "state": "active",
-                        "web_url": "http://demo.tanuki.cloud/smart4",
                         "name": "User smart4",
                         "avatar_url": "https://secure.gravatar.com/avatar/77b6da6e1b9aa2527600bc7727f5bad8?s=80&d=identicon",
                         "id": 286,
@@ -387,7 +366,6 @@ class StageProjectsTests(unittest.TestCase):
                 "request_access_enabled": False,
                 "description": "An interesting group as well",
                 "visibility": "public",
-                "web_url": "http://localhost:3000/groups/foo-bar-2",
                 "full_name": "Foobar Group 3",
                 "path": "foo-bar-3",
                 "id": 4,
@@ -397,7 +375,6 @@ class StageProjectsTests(unittest.TestCase):
                         "username": "smart3",
                         "access_level": 50,
                         "state": "active",
-                        "web_url": "http://demo.tanuki.cloud/smart3",
                         "name": "User smart3",
                         "avatar_url": "https://secure.gravatar.com/avatar/d549ee47080f3512a835905895c46545?s=80&d=identicon",
                         "id": 285,
@@ -407,7 +384,6 @@ class StageProjectsTests(unittest.TestCase):
                         "username": "smart4",
                         "access_level": 30,
                         "state": "active",
-                        "web_url": "http://demo.tanuki.cloud/smart4",
                         "name": "User smart4",
                         "avatar_url": "https://secure.gravatar.com/avatar/77b6da6e1b9aa2527600bc7727f5bad8?s=80&d=identicon",
                         "id": 286,
@@ -481,4 +457,4 @@ class StageProjectsTests(unittest.TestCase):
 
         with self.assertRaises(SystemExit) as ex:
             staged_projects, staged_users, staged_groups = stage_groups.build_staging_data([
-                                                                                           ""])
+                                                                                           "bogus"])

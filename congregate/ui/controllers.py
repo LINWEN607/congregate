@@ -57,7 +57,6 @@ def stage():
 @app.route("/append_users", methods=['POST'])
 def add_users():
     users = request.get_data().decode(encoding).split(",")
-    print(users)
     usr.append_users(users)
     return message(users, "user")
 

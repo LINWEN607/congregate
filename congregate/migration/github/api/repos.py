@@ -17,7 +17,8 @@ class ReposApi():
 
     def get_repo_teams(self, owner, repo):
         """
-        List repository teams
+        List repository teams.
+        Available only for org repos, otherwise returns 404.
 
         GitHub API v3 Doc: https://docs.github.com/en/rest/reference/repos#list-repository-teams
         """
@@ -41,7 +42,8 @@ class ReposApi():
 
     def get_all_repo_collaborators(self, owner, repo):
         """
-        List repository collaborators
+        List repository collaborators.
+        Requires a collaborator PAT.
 
         GitHub API v3 Doc: https://docs.github.com/en/rest/reference/repos#list-repository-collaborators
         """

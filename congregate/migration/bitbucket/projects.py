@@ -63,8 +63,7 @@ class ProjectsClient(BaseClass):
                     "name": repo["project"]["name"],
                     "path": repo["project"]["key"],
                     "kind": "group",
-                    "full_path": repo["project"]["key"],
-                    "web_url": repo["project"]["links"]["self"][0]["href"]
+                    "full_path": repo["project"]["key"]
                 },
                 "path_with_namespace": repo["project"]["key"] + "/" + repo["slug"],
                 "visibility": "public" if repo["public"] else "private",

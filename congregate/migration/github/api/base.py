@@ -40,7 +40,7 @@ class GitHubApi():
         """
         self.generate_v3_get_request(host=self.host, api=self.api)
 
-    def __generate_v3_request_header(self, token):
+    def generate_v3_request_header(self, token):
         """
         Given a token return a dictionary for authorization. Works for REST
 
@@ -52,7 +52,7 @@ class GitHubApi():
         }
         return header
 
-    def __generate_v4_request_header(self, token):
+    def generate_v4_request_header(self, token):
         """
         Given a token return a dictionary for authorization. Works for GraphQL
 
@@ -63,7 +63,7 @@ class GitHubApi():
         }
         return header
 
-    def __generate_v4_request_url(self, host):
+    def generate_v4_request_url(self, host):
         """
         Given a host return a formatted url string for GraphQL
         """
@@ -71,7 +71,7 @@ class GitHubApi():
             host = host.rstrip("/")
         return "{}/api/graphql".format(host)
 
-    def __generate_v3_request_url(self, host, api):
+    def generate_v3_request_url(self, host, api):
         "Create the REST URL for a given host and api end point."
         if host[-1] == "/":
             host = host.rstrip("/")
@@ -89,9 +89,9 @@ class GitHubApi():
         Generate a REST request object
         """
         if url is None:
-            url = self.__generate_v3_request_url(host, api)
+            url = self.generate_v3_request_url(host, api)
 
-        headers = self.__generate_v3_request_header(self.token)
+        headers = self.generate_v3_request_header(self.token)
         if params is None:
             params = {}
         return requests.get(url, params=params, headers=headers, verify=verify)
@@ -101,12 +101,12 @@ class GitHubApi():
         """
         """
         if not url:
-            url = self.__generate_v4_request_url(self.host)
+            url = self.generate_v4_request_url(self.host)
         if not headers:
-            headers = self.__generate_v4_request_header(self.token)
+            headers = self.generate_v4_request_header(self.token)
         return requests.post(url, json={'query': self.query}, headers=headers, verify=verify)
 
-    def __replace_unwanted_characters(self, s):
+    def replace_unwanted_characters(self, s):
         """
         Given string s, remove undesirable characters from it
         """
@@ -115,7 +115,7 @@ class GitHubApi():
             s = s.replace(character, "")
         return s
 
-    def __create_dict_from_headers(self, headers):
+    def create_dict_from_headers(self, headers):
         """
         Given a "Link" kv, return it as a cleaned up dictionary.
         """
@@ -124,7 +124,7 @@ class GitHubApi():
 
         for r in range(0, len(urls)):
             # get rid of superflous characters
-            urls[r] = self.__replace_unwanted_characters(urls[r])
+            urls[r] = self.replace_unwanted_characters(urls[r])
             # split the strings even further
             kvp = urls[r].split(";")
             # get rid of the rel="next" to just be next
@@ -139,7 +139,7 @@ class GitHubApi():
         """
         isLastPage = False
         log.info("Listing endpoint: {}".format(api))
-        url = self.__generate_v3_request_url(host, api)
+        url = self.generate_v3_request_url(host, api)
         data = []
         while isLastPage is False:
             if not params:
@@ -161,7 +161,7 @@ class GitHubApi():
             # try:
             if r.json() and r.headers.get("Link", None):
                 data.extend(r.json())
-                h = self.__create_dict_from_headers(r.headers['Link'])
+                h = self.create_dict_from_headers(r.headers['Link'])
                 url = h['next']
             else:
                 data.extend(r.json())

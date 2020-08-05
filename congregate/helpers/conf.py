@@ -249,6 +249,13 @@ class Config(object):
         """
         return self.prop("APP", "slack_url")
 
+    @property
+    def ui_port(self):
+        """
+        The port used to serve up the flask/VueJS UI. Defaults to 8000
+        """
+        return self.prop_int("APP", "ui_port", 8000)
+
 
 # HIDDEN PROPERTIES
     # Used only by "map-users" command

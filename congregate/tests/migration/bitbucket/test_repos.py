@@ -30,7 +30,6 @@ class ReposTests(unittest.TestCase):
                 "namespace": {
                     "kind": "group",
                     "name": "test-group",
-                    "web_url": "http://localhost:7990/projects/TGP",
                     "path": "TGP",
                     "id": 1,
                     "full_path": "TGP"
@@ -38,7 +37,6 @@ class ReposTests(unittest.TestCase):
                 "members": [
                     {
                         "username": "user2",
-                        "web_url": "http://localhost:7990/users/user2",
                         "id": 3,
                         "name": "user2",
                         "access_level": 20,
@@ -47,7 +45,6 @@ class ReposTests(unittest.TestCase):
                     },
                     {
                         "username": "user4",
-                        "web_url": "http://localhost:7990/users/user4",
                         "id": 5,
                         "name": "user4",
                         "access_level": 20,
@@ -66,7 +63,6 @@ class ReposTests(unittest.TestCase):
                 "namespace": {
                     "kind": "group",
                     "name": "Another-Test-Project",
-                    "web_url": "http://localhost:7990/projects/ATP",
                     "path": "ATP",
                     "id": 22,
                     "full_path": "ATP"
@@ -74,7 +70,6 @@ class ReposTests(unittest.TestCase):
                 "members": [
                     {
                         "username": "user2",
-                        "web_url": "http://localhost:7990/users/user2",
                         "id": 3,
                         "name": "user2",
                         "access_level": 20,
@@ -83,7 +78,6 @@ class ReposTests(unittest.TestCase):
                     },
                     {
                         "username": "user4",
-                        "web_url": "http://localhost:7990/users/user4",
                         "id": 5,
                         "name": "user4",
                         "access_level": 20,

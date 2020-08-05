@@ -32,7 +32,8 @@ class UserDiffClient(BaseDiffClient):
             "project_id",
             "target_id",
             "bio",
-            "bio_html"
+            "bio_html",
+            "sign_in_count"
         ]
         if staged:
             self.source_data = self.load_json_data(

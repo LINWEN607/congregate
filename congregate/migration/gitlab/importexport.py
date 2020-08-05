@@ -32,6 +32,9 @@ class ImportExportClient(BaseClass):
         "Name has already been taken",
         "Path has already been taken"
     ]
+
+    SERVER_ERROR = "500 Internal Server Error"
+
     # Import rate limit cool-off
     COOL_OFF_MINUTES = 1.1
 
@@ -451,7 +454,7 @@ class ImportExportClient(BaseClass):
         while True:
             total = 0
             # Wait until rate limit is resolved or project deleted
-            while self.RATE_LIMIT_MSG in str(import_response) or any(del_err_msg in str(import_response) for del_err_msg in self.DEL_ERR_MSGS):
+            while self.SERVER_ERROR in str(import_response) or self.RATE_LIMIT_MSG in str(import_response) or any(del_err_msg in str(import_response) for del_err_msg in self.DEL_ERR_MSGS):
                 if self.RATE_LIMIT_MSG in str(import_response):
                     self.log.warning("Re-importing project {0} to {1}, waiting {2} minutes due to:\n{3}".format(
                         name, dst_namespace, self.COOL_OFF_MINUTES, import_response))
@@ -465,6 +468,14 @@ class ImportExportClient(BaseClass):
                     self.log.info(
                         "Waiting {0} seconds for project {1} to delete from {2} before re-importing".format(wait_time, name, dst_namespace))
                     total += wait_time
+                    sleep(wait_time)
+                elif self.SERVER_ERROR in str(import_response):
+                    self.log.warning(
+                        "Re-importing project {0} to {1} due to:\n{2}".format(name, dst_namespace, import_response))
+                    self.log.info(
+                        "Attempting to delete project {0} from {1} after 500".format(name, dst_namespace))
+                    self.projects_api.delete_project(
+                        self.config.destination_host, self.config.destination_token, quote_plus(dst_namespace + "/" + path))
                     sleep(wait_time)
                 import_response = self.attempt_import(
                     filename, name, path, dst_namespace, override_params, members)

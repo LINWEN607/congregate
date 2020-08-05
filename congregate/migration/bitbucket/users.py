@@ -13,7 +13,9 @@ class UsersClient(BaseClass):
         super(UsersClient, self).__init__()
 
     def retrieve_user_info(self):
-        # List and reformat all Bitbucket Server user to GitLab metadata
+        """
+        List and transform all Bitbucket Server user to GitLab user metadata
+        """
         users = self.users_api.get_all_users(
             self.config.source_host)
         data = remove_dupes(self.format_users(users))
@@ -29,7 +31,6 @@ class UsersClient(BaseClass):
                 "username": user["slug"],
                 "name": user["displayName"],
                 "email": user["emailAddress"].lower(),
-                "web_url": user["links"]["self"][0]["href"],
                 "state": "active"
             })
             # When formatting project and repo users

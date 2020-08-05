@@ -10,7 +10,6 @@ class MockUsersApi():
             "name": "John Smith",
             "state": "active",
             "avatar_url": "http://localhost:3000/uploads/user/avatar/1/cd8.jpeg",
-            "web_url": "http://localhost:3000/john_smith"
         }
 
     def get_user_404(self):
@@ -26,7 +25,6 @@ class MockUsersApi():
                 "name": "John Smith",
                 "state": "active",
                 "avatar_url": "http://localhost:3000/uploads/user/avatar/1/cd8.jpeg",
-                "web_url": "http://localhost:3000/john_smith"
             },
             {
                 "id": 2,
@@ -34,7 +32,6 @@ class MockUsersApi():
                 "name": "Jack Smith",
                 "state": "blocked",
                 "avatar_url": "http://gravatar.com/../e32131cd8.jpeg",
-                "web_url": "http://localhost:3000/jack_smith"
             }
         ]
         yield users
@@ -47,13 +44,11 @@ class MockUsersApi():
                 "name": "John Doe",
                 "state": "active",
                 "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon",
-                "web_url": "http://192.168.1.8:3000/root",
                 "expires_at": "2012-10-22T14:13:35Z",
                 "access_level": 30
             },
             {
                 "username": "smart3",
-                "web_url": "http://demo.tanuki.cloud/smart3",
                 "name": "User smart3",
                 "expires_at": None,
                 "access_level": 50,
@@ -63,7 +58,6 @@ class MockUsersApi():
             },
             {
                 "username": "smart4",
-                "web_url": "http://demo.tanuki.cloud/smart4",
                 "name": "User smart4",
                 "expires_at": None,
                 "access_level": 30,
@@ -81,7 +75,6 @@ class MockUsersApi():
                 "name": "John Doe",
                 "state": "active",
                 "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon",
-                "web_url": "http://192.168.1.8:3000/root",
                 "expires_at": "2012-10-22T14:13:35Z",
                 "access_level": 30
             }
