@@ -34,7 +34,10 @@ class OrgsClient(BaseClass):
         tree = {}
         for org in self.orgs_api.get_all_orgs():
             tree.update({org["login"]: {"PROJECTS": [], "SUB-GROUPS": []}})
+            
             self.add_org_as_group(groups, org["login"], projects, tree=tree)
+
+
             for team in self.orgs_api.get_all_org_teams(org["login"]):
                 self.add_team_as_subgroup(
                     groups, org["login"], team, projects, tree=tree)
@@ -65,8 +68,7 @@ class OrgsClient(BaseClass):
                 "visibility": "private",   # No mapping field
                 "parent_id": None,   # top-level group
                 "auto_devops_enabled": False,
-                "members": [],
-                # TODO: "members": self.users.format_users(self.orgs_api.get_all_org_members(org_name)),
+                "members": self.users.format_users(self.orgs_api.get_all_org_members(org_name)),
                 "projects": self.repos.format_repos([], org_repos)
             })
         return groups, projects
@@ -94,7 +96,7 @@ class OrgsClient(BaseClass):
                 "parent_id": team["parent"]["id"] if team.get("parent", None) else None,
                 "auto_devops_enabled": False,
                 "members": [],
-                # TODO: "members": self.users.format_users(self.orgs_api.get_all_org_team_members(org_name, team["slug"])),
+                "members": self.users.format_users(self.orgs_api.get_all_org_team_members(org_name, team["slug"])),
                 "projects": self.repos.format_repos([], team_repos)
             })
         return groups, projects
@@ -117,11 +119,3 @@ class OrgsClient(BaseClass):
                 return None
         return "/".join(full_path)
         
-    def add_org_members(self, org_name):
-        members = self.orgs_api.get_all_org_members(org_name)
-        return self.users.format_users(members)
-    
-    def add_org_repos(self, org_name):
-        projects = []
-        org_repos = self.orgs_api.get_all_org_repos(org_name)
-        return self.repos.format_repos(projects, org_repos)
