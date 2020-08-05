@@ -33,8 +33,8 @@ def test_remove_dupes_with_all_dupes_returns_single():
 
 @mock.patch("congregate.helpers.misc_utils.__get_filename_from_cd")
 @mock.patch("congregate.helpers.misc_utils.__is_downloadable")
-@mock.patch("__builtin__.file")
-@mock.patch("__builtin__.open")
+@mock.patch("io.TextIOBase")
+@mock.patch("builtins.open")
 @mock.patch("requests.Response")
 @mock.patch("congregate.helpers.misc_utils.get")
 def test_download_file_sets_filename_from_response_headers_when_filename_none(g, resp, o, f, idl, fn):
@@ -48,8 +48,8 @@ def test_download_file_sets_filename_from_response_headers_when_filename_none(g,
 
 
 @mock.patch("congregate.helpers.misc_utils.__is_downloadable")
-@mock.patch("__builtin__.file")
-@mock.patch("__builtin__.open")
+@mock.patch("io.TextIOBase")
+@mock.patch("builtins.open")
 @mock.patch("requests.Response")
 @mock.patch("congregate.helpers.misc_utils.get")
 def test_download_file_uses_filename_from_param(g, resp, o, f, idl):
@@ -280,6 +280,7 @@ def test_stitch_json_too_many_steps(glob, json):
 
     assert expected == actual
 
+
 @mock.patch("requests.Response")
 def test_safe_json_response_with_exception(response):
     response.json.side_effect = [ValueError]
@@ -287,6 +288,7 @@ def test_safe_json_response_with_exception(response):
     actual = misc.safe_json_response(response)
 
     assert expected == actual
+
 
 @mock.patch("requests.Response")
 def test_safe_json_response_without_exception(response):
@@ -296,33 +298,37 @@ def test_safe_json_response_without_exception(response):
 
     assert expected == actual
 
-@mock.patch("congregate.helpers.misc_utils.open", new=mock.mock_open(read_data="abc123"))
+
+@mock.patch("congregate.helpers.misc_utils.open", new=mock.mock_open(read_data=b"abc123"))
 @mock.patch("congregate.helpers.misc_utils.get_hash_of_dirs")
 def test_is_ui_out_of_date_false(mock_hash):
-    mock_hash.return_value = "abc123"
+    mock_hash.return_value = b"abc123"
     expected = False
     actual = misc.is_ui_out_of_date("")
 
     assert expected == actual
 
-@mock.patch("congregate.helpers.misc_utils.open", new=mock.mock_open(read_data="def456"))
+
+@mock.patch("congregate.helpers.misc_utils.open", new=mock.mock_open(read_data=b"def456"))
 @mock.patch("congregate.helpers.misc_utils.get_hash_of_dirs")
 def test_is_ui_out_of_date_true(mock_hash):
-    mock_hash.return_value = "abc123"
+    mock_hash.return_value = b"abc123"
     expected = True
     actual = misc.is_ui_out_of_date("")
 
     assert expected == actual
+
 
 @mock.patch("congregate.helpers.misc_utils.open")
 @mock.patch("congregate.helpers.misc_utils.get_hash_of_dirs")
 def test_is_ui_out_of_date_true_with_exception(mock_hash, mock_open):
     mock_open.side_effect = [IOError]
-    mock_hash.return_value = "abc123"
+    mock_hash.return_value = b"abc123"
     expected = True
     actual = misc.is_ui_out_of_date("")
 
     assert expected == actual
+
 
 @mock.patch("os.path.exists")
 def test_get_hash_of_dirs_no_dir(path):
@@ -331,6 +337,7 @@ def test_get_hash_of_dirs_no_dir(path):
     actual = misc.get_hash_of_dirs("")
 
     assert expected == actual
+
 
 @mock.patch("os.path.exists")
 @mock.patch("os.walk")
@@ -342,7 +349,8 @@ def test_get_hash_of_dirs_with_exception(walk, path):
 
     assert expected == actual
 
-@mock.patch("congregate.helpers.misc_utils.open", new=mock.mock_open(read_data="def456"))
+
+@mock.patch("congregate.helpers.misc_utils.open", new=mock.mock_open(read_data=b"def456"))
 @mock.patch("os.path.exists")
 @mock.patch("os.walk")
 def test_get_hash_of_dirs_with_dir(walk, path):
@@ -355,6 +363,7 @@ def test_get_hash_of_dirs_with_dir(walk, path):
     actual = misc.get_hash_of_dirs("")
 
     assert expected == actual
+
 
 @mock.patch("congregate.helpers.misc_utils.open")
 @mock.patch("os.path.exists")

@@ -11,8 +11,8 @@ class ProjectsTests(unittest.TestCase):
         self.mock_projects = MockProjectsApi()
         self.projects = ProjectsClient()
 
-    @patch("__builtin__.file")
-    @patch('__builtin__.open')
+    @patch("io.TextIOBase")
+    @patch('builtins.open')
     @patch.object(ProjectsApi, "get_all_project_users")
     @patch.object(ProjectsApi, "get_all_project_repos")
     @patch.object(ProjectsApi, "get_all_projects")
@@ -129,5 +129,5 @@ class ProjectsTests(unittest.TestCase):
                 "description": "test"
             }
         ]
-        self.assertEqual(
-            sorted(self.projects.retrieve_project_info()), sorted(expected_projects))
+        self.assertEqual(self.projects.retrieve_project_info().sort(
+            key=lambda x: x["id"]), expected_projects.sort(key=lambda x: x["id"]))

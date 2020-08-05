@@ -138,10 +138,10 @@ def test_generate_delete_request_calls_generate_v4_request_header(d, r, h):
 def test_get_total_pages(head):
     import requests
     resp = requests.Response()
-    resp.headers["X-Total-Pages"] = 10l
+    resp.headers["X-Total-Pages"] = 10
     head.return_value = resp
     return_resp = api.get_total_pages("HOST", "TOKEN", "API")
-    assert return_resp == 10l
+    assert return_resp == 10
 
 
 @mock.patch("requests.head")
@@ -157,10 +157,10 @@ def test_get_total_pages_on_return_none(head):
 def test_get_count(head):
     import requests
     resp = requests.Response()
-    resp.headers["X-Total"] = 10l
+    resp.headers["X-Total"] = 10
     head.return_value = resp
     return_resp = api.get_count("HOST", "TOKEN", "API")
-    assert return_resp == 10l
+    assert return_resp == 10
 
 
 @mock.patch("requests.head")

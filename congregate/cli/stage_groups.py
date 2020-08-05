@@ -52,7 +52,7 @@ def build_staging_data(groups_to_stage, dry_run=True):
         rewritten_users[users[i]["id"]] = users[i]
 
     # If there is CLI or UI input
-    if filter(None, groups_to_stage):
+    if list(filter(None, groups_to_stage)):
         # Stage ALL
         if groups_to_stage[0] in ["all", "."] or len(groups_to_stage) == len(groups):
             for p in projects:
@@ -161,11 +161,11 @@ def write_staging_files(skip_users=False):
         :param: staged_users:(dict) staged users
         :param: staged_groups: (dict) staged groups
     """
-    with open("%s/data/staged_groups.json" % b.app_path, "wb") as f:
+    with open("%s/data/staged_groups.json" % b.app_path, "w") as f:
         f.write(json.dumps(remove_dupes(staged_groups), indent=4))
-    with open("%s/data/staged_projects.json" % b.app_path, "wb") as f:
+    with open("%s/data/staged_projects.json" % b.app_path, "w") as f:
         f.write(json.dumps(remove_dupes(staged_projects), indent=4))
-    with open("%s/data/staged_users.json" % b.app_path, "wb") as f:
+    with open("%s/data/staged_users.json" % b.app_path, "w") as f:
         f.write(json.dumps([] if skip_users else remove_dupes(staged_users), indent=4))
 
 

@@ -38,7 +38,7 @@ def traverse_file(base_obj, level, string=None):
 
 def traverse_obj(obj):
     final = ""
-    for k,v in obj.items():
+    for k, v in obj.items():
         if k != "raw":
             final += k
         if "Usage" in k:
@@ -78,6 +78,7 @@ data = {
     "content": updated_md
 }
 
-r = requests.put('https://gitlab.com/api/v4/projects/%s/repository/files/README.md' % project_id, data=data, headers=headers)
+r = requests.put('https://gitlab.com/api/v4/projects/%s/repository/files/README.md' %
+                 project_id, data=data, headers=headers)
 
-print r.text
+print(r.text)

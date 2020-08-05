@@ -11,8 +11,8 @@ class UsersTests(unittest.TestCase):
         self.mock_users = MockUsersApi()
         self.users = UsersClient()
 
-    @patch("__builtin__.file")
-    @patch('__builtin__.open')
+    @patch("io.TextIOBase")
+    @patch('builtins.open')
     @patch.object(UsersApi, "get_all_users")
     @patch('congregate.helpers.conf.Config.source_host', new_callable=PropertyMock)
     @patch('congregate.helpers.conf.Config.source_token', new_callable=PropertyMock)
@@ -37,5 +37,5 @@ class UsersTests(unittest.TestCase):
                 "state": "active"
             }
         ]
-        self.assertEqual(self.users.retrieve_user_info().sort(key=lambda x: x["id"]), expected_users.sort(
-            key=lambda x: x["id"]))
+        self.assertEqual(self.users.retrieve_user_info().sort(
+            key=lambda x: x["id"]), expected_users.sort(key=lambda x: x["id"]))

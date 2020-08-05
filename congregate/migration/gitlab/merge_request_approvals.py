@@ -97,13 +97,13 @@ class MergeRequestApprovalsClient(BaseClass):
                 if new_user_id:
                     user_ids.append(new_user_id)
                 else:
-                    self.log.warn(
+                    self.log.warning(
                         "Could not retrieve user id from {0}".format(new_user_dict))
             else:
-                self.log.warn(
+                self.log.warning(
                     "Could not retrieve user dictionary from {0}".format(new_user[0]))
         else:
-            self.log.warn("Could not find merge request approver email {0} in destination system. {1}".format(
+            self.log.warning("Could not find merge request approver email {0} in destination system. {1}".format(
                 user['email'], new_user))
         return user_ids
 

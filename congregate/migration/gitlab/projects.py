@@ -64,7 +64,7 @@ class ProjectsClient(BaseClass):
                     project["id"], host, token) if m["id"] != 1]
                 data.append(project)
 
-        with open("{}/data/project_json.json".format(self.app_path), "wb") as f:
+        with open("{}/data/project_json.json".format(self.app_path), "w") as f:
             json.dump(remove_dupes(data), f, indent=4)
         return remove_dupes(data)
 

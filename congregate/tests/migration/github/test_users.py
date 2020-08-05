@@ -11,8 +11,8 @@ class UsersTests(unittest.TestCase):
         self.mock_users = MockUsersApi()
         self.users = UsersClient()
 
-    @patch("__builtin__.file")
-    @patch("__builtin__.open")
+    @patch("io.TextIOBase")
+    @patch('builtins.open')
     @patch.object(UsersApi, "get_all_users")
     @patch.object(UsersApi, "get_user")
     @patch("congregate.helpers.conf.Config.source_host", new_callable=PropertyMock)

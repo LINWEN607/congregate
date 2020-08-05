@@ -52,10 +52,10 @@ class ConfigTests(unittest.TestCase):
         mock_get.return_value = self.users_api.get_current_user()
         with mock.patch('congregate.cli.config.write_to_file', mock_file):
             with mock.patch('congregate.cli.config.app_path', "."):
-                with mock.patch('congregate.cli.config.obfuscate', lambda x: "obfuscated==="):
-                    with mock.patch('congregate.cli.config.deobfuscate', lambda x: "deobfuscated==="):
+                with mock.patch('congregate.cli.config.obfuscate', lambda x: "dGVzdA=="):
+                    with mock.patch('congregate.cli.config.deobfuscate', lambda x: "dGVzdA=="):
                         with mock.patch('getpass.getpass', lambda x: "password"):
-                            with mock.patch('__builtin__.raw_input', lambda x: next(g)):
+                            with mock.patch('builtins.input', lambda x: next(g)):
                                 config.generate_config()
 
         # load the file that was just written
@@ -124,11 +124,11 @@ class ConfigTests(unittest.TestCase):
         with mock.patch('congregate.cli.config.write_to_file', mock_file):
             with mock.patch('congregate.cli.config.getcwd', lambda: "."):
                 with mock.patch('congregate.cli.config.get_congregate_path', lambda: "."):
-                    with mock.patch('congregate.cli.config.obfuscate', lambda x: "obfuscated==="):
+                    with mock.patch('congregate.cli.config.obfuscate', lambda x: "dGVzdA=="):
                         with mock.patch('congregate.cli.config.test_registries', lambda x, y, z: None):
                             with mock.patch('congregate.cli.config.test_slack', lambda x: None):
-                                with mock.patch('congregate.cli.config.deobfuscate', lambda x: "deobfuscated==="):
-                                    with mock.patch('__builtin__.raw_input', lambda x: next(g)):
+                                with mock.patch('congregate.cli.config.deobfuscate', lambda x: "dGVzdA=="):
+                                    with mock.patch('builtins.input', lambda x: next(g)):
                                         config.generate_config()
 
         # load the file that was just written
@@ -205,11 +205,11 @@ class ConfigTests(unittest.TestCase):
                 with mock.patch('congregate.cli.config.get_congregate_path', lambda: "."):
                     with mock.patch('congregate.cli.config.aws.set_access_key_id', lambda x: "access_key_id"):
                         with mock.patch('congregate.cli.config.aws.set_secret_access_key', lambda x: "secret_access_key"):
-                            with mock.patch('congregate.cli.config.obfuscate', lambda x: "obfuscated==="):
+                            with mock.patch('congregate.cli.config.obfuscate', lambda x: "dGVzdA=="):
                                 with mock.patch('congregate.cli.config.test_registries', lambda x, y, z: None):
                                     with mock.patch('congregate.cli.config.test_slack', lambda x: None):
-                                        with mock.patch('congregate.cli.config.deobfuscate', lambda x: "deobfuscated==="):
-                                            with mock.patch('__builtin__.raw_input', lambda x: next(g)):
+                                        with mock.patch('congregate.cli.config.deobfuscate', lambda x: "dGVzdA=="):
+                                            with mock.patch('builtins.input', lambda x: next(g)):
                                                 config.generate_config()
 
         # load the file that was just written
@@ -285,10 +285,10 @@ class ConfigTests(unittest.TestCase):
             with mock.patch('congregate.cli.config.get_congregate_path', lambda: "."):
                 with mock.patch('congregate.cli.config.aws.set_access_key_id', lambda x: "access_key_id"):
                     with mock.patch('congregate.cli.config.aws.set_secret_access_key', lambda x: "secret_access_key"):
-                        with mock.patch('congregate.cli.config.obfuscate', lambda x: "obfuscated==="):
+                        with mock.patch('congregate.cli.config.obfuscate', lambda x: "dGVzdA=="):
                             with mock.patch('congregate.cli.config.test_registries', lambda x, y, z: None):
-                                with mock.patch('congregate.cli.config.deobfuscate', lambda x: "deobfuscated==="):
-                                    with mock.patch('__builtin__.raw_input', lambda x: next(g)):
+                                with mock.patch('congregate.cli.config.deobfuscate', lambda x: "dGVzdA=="):
+                                    with mock.patch('builtins.input', lambda x: next(g)):
                                         config.generate_config()
 
         # load the file that was just written
@@ -356,11 +356,11 @@ class ConfigTests(unittest.TestCase):
         with mock.patch('congregate.cli.config.write_to_file', mock_file):
             with mock.patch('congregate.cli.config.getcwd', lambda: "."):
                 with mock.patch('congregate.cli.config.get_congregate_path', lambda: "."):
-                    with mock.patch('congregate.cli.config.obfuscate', lambda x: "obfuscated==="):
+                    with mock.patch('congregate.cli.config.obfuscate', lambda x: "dGVzdA=="):
                         with mock.patch('congregate.cli.config.test_registries', lambda x, y, z: None):
                             with mock.patch('congregate.cli.config.test_slack', lambda x: None):
-                                with mock.patch('congregate.cli.config.deobfuscate', lambda x: "deobfuscated==="):
-                                    with mock.patch('__builtin__.raw_input', lambda x: next(g)):
+                                with mock.patch('congregate.cli.config.deobfuscate', lambda x: "dGVzdA=="):
+                                    with mock.patch('builtins.input', lambda x: next(g)):
                                         config.generate_config()
 
         # load the file that was just written
@@ -376,7 +376,7 @@ class ConfigTests(unittest.TestCase):
     def test_update_config_with_changes(self):
         data = '{\
             "dstn_hostname":"hostname",\
-            "dstn_access_token":"obfuscated===",\
+            "dstn_access_token":"dGVzdA==",\
             "import_user_id":"1",\
             "shared_runners_enabled":"False",\
             "project_suffix":"False",\
@@ -384,7 +384,7 @@ class ConfigTests(unittest.TestCase):
             "username_suffix":"local",\
             "mirror_username":"",\
             "src_hostname":"source_hostname",\
-            "src_access_token":"obfuscated===",\
+            "src_access_token":"dGVzdA==",\
             "src_parent_group_id":"0",\
             "src_parent_group_path":"source_group_full_path",\
             "max_export_wait_time":"3600",\
@@ -393,8 +393,8 @@ class ConfigTests(unittest.TestCase):
             "location":"aws",\
             "s3_name":"s3_name",\
             "s3_region":"us-east-1",\
-            "s3_access_key_id":"obfuscated===",\
-            "s3_secret_access_key":"obfuscated===",\
+            "s3_access_key_id":"dGVzdA==",\
+            "s3_secret_access_key":"dGVzdA==",\
             "filesystem_path":".",\
             "keep_blocked_users":"False",\
             "reset_pwd":"False",\
@@ -419,7 +419,7 @@ class ConfigTests(unittest.TestCase):
     def test_update_config_no_changes(self):
         data = '{\
             "dstn_hostname":"hostname",\
-            "dstn_access_token":"obfuscated===",\
+            "dstn_access_token":"dGVzdA==",\
             "import_user_id":"1",\
             "shared_runners_enabled":"True",\
             "project_suffix":"False",\
@@ -427,7 +427,7 @@ class ConfigTests(unittest.TestCase):
             "username_suffix":"username_suffix",\
             "mirror_username":"",\
             "src_hostname":"source_hostname",\
-            "src_access_token":"obfuscated===",\
+            "src_access_token":"dGVzdA==",\
             "src_parent_group_id":"0",\
             "src_parent_group_path":"source_group_full_path",\
             "max_export_wait_time":"3600",\
@@ -436,8 +436,8 @@ class ConfigTests(unittest.TestCase):
             "location":"aws",\
             "s3_name":"s3_name",\
             "s3_region":"us-east-1",\
-            "s3_access_key_id":"obfuscated===",\
-            "s3_secret_access_key":"obfuscated===",\
+            "s3_access_key_id":"dGVzdA==",\
+            "s3_secret_access_key":"dGVzdA==",\
             "filesystem_path":".",\
             "keep_blocked_users":"False",\
             "reset_pwd":"True",\

@@ -1,7 +1,7 @@
 from base64 import b64encode, b64decode
 import getpass
 from os import getcwd, path, mkdir, makedirs
-from ConfigParser import SafeConfigParser as ConfigParser, NoOptionError
+from configparser import ConfigParser, NoOptionError
 
 import binascii
 import json
@@ -37,7 +37,7 @@ def generate_config():
     # Generic destination instance configuration
     config.add_section("DESTINATION")
     config.set("DESTINATION", "dstn_hostname",
-               raw_input("Destination instance Host: "))
+               input("Destination instance Host: "))
     config.set("DESTINATION", "dstn_access_token",
                obfuscate("Destination instance GitLab access token (Settings -> Access Tokens): "))
     migration_user = users.get_current_user(config.get("DESTINATION", "dstn_hostname"),
@@ -48,24 +48,24 @@ def generate_config():
         config.set("DESTINATION", "import_user_id", "")
         print("WARNING: Destination user not found. Please enter 'import_user_id' manually (in {})".format(
             config_path))
-    shared_runners_enabled = raw_input(
+    shared_runners_enabled = input(
         "Enable shared runners on destination instance? (Default: Yes): ")
     config.set("DESTINATION", "shared_runners_enabled",
                "False" if shared_runners_enabled.lower() in ["no", "n"] else "True")
-    project_suffix = raw_input(
+    project_suffix = input(
         "Append suffix to project found on destination instance? (Default: No): ")
     config.set("DESTINATION", "project_suffix",
                "True" if project_suffix.lower() in ["yes", "y"] else "False")
-    max_import_retries = raw_input(
+    max_import_retries = input(
         "Max no. of project import retries (Default: 3): ")
     config.set("DESTINATION", "max_import_retries",
                max_import_retries if max_import_retries else "3")
 
     # Parent group destination instance configuration
-    dstn_group = raw_input(
+    dstn_group = input(
         "Are you migrating to a parent group, e.g. gitlab.com? (Default: No) ")
     if dstn_group.lower() in ["yes", "y"]:
-        config.set("DESTINATION", "dstn_parent_group_id", raw_input(
+        config.set("DESTINATION", "dstn_parent_group_id", input(
             "Parent group ID (Group -> Settings -> General): "))
         group = groups.get_group(config.getint("DESTINATION", "dstn_parent_group_id"), config.get(
             "DESTINATION", "dstn_hostname"), deobfuscate(config.get("DESTINATION", "dstn_access_token"))).json()
@@ -77,17 +77,17 @@ def generate_config():
             print("WARNING: Destination group not found. Please enter 'dstn_parent_group_id' and 'dstn_parent_group_path' manually (in {})".format(
                 config_path))
         config.set("DESTINATION", "group_sso_provider",
-                   raw_input("Migrating to a group with SAML SSO enabled? Input SSO provider (auth0, adfs, etc.): "))
+                   input("Migrating to a group with SAML SSO enabled? Input SSO provider (auth0, adfs, etc.): "))
         if config.get("DESTINATION", "group_sso_provider"):
             config.set("DESTINATION", "group_sso_provider_pattern",
                        get_sso_provider_pattern())
 
     # Misc destination instance configuration
-    username_suffix = raw_input(
+    username_suffix = input(
         "To avoid username collision, please input suffix to append to username: ")
     config.set("DESTINATION", "username_suffix",
                username_suffix if username_suffix != "_" else "")
-    mirror = raw_input(
+    mirror = input(
         "Planning a soft cut-over migration by mirroring repos to keep both instances running? (Default: No): ")
     if mirror.lower() in ["yes", "y"]:
         if migration_user.get("username", None) is not None:
@@ -103,39 +103,37 @@ def generate_config():
 
     # Source instance configuration
     config.add_section("SOURCE")
-    ext_src = raw_input(
+    ext_src = input(
         "Migrating from an external (non-GitLab) instance? (Default: No) ")
     if ext_src.lower() in ["yes", "y"]:
-        # External source instance configuration
-        src = raw_input(
+        src = input(
             "Source (1. Bitbucket Server, 2. GitHub, 3. Bitbucket Cloud, 4. Subversion)? ")
         if src.lower() in ["1", "1.", "bitbucket server"]:
             config.set("SOURCE", "src_type", "Bitbucket Server")
-            config.set("SOURCE", "username", raw_input("Username: "))
+            config.set("SOURCE", "username", input("Username: "))
         elif src.lower() in ["2", "2.", "github"]:
             config.set("SOURCE", "src_type", "GitHub")
         else:
             print("Source type {} is currently not supported".format(src))
             exit()
-        config.set("SOURCE", "src_hostname", raw_input(
+        config.set("SOURCE", "src_hostname", input(
             "Source instance ({}) URL: ".format(config.get("SOURCE", "src_type"))))
         config.set("SOURCE", "src_access_token", obfuscate(
             "Source instance ({}) Personal Access Token: ".format(config.get("SOURCE", "src_type"))))
-        repo_path = raw_input(
+        repo_path = input(
             "Absolute path to JSON file containing repo information: ")
         config.set("SOURCE", "repo_path", "{0}{1}"
                    .format("" if repo_path.startswith("/") else path.join(app_path, ""), repo_path))
     else:
         # Non-external source instance configuration
         config.set("SOURCE", "src_type", "GitLab")
-        config.set("SOURCE", "src_hostname",
-                   raw_input("Source instance URL: "))
+        config.set("SOURCE", "src_hostname", input("Source instance URL: "))
         config.set("SOURCE", "src_access_token", obfuscate(
             "Source instance ({}) Personal Access Token: ").format(config.set("SOURCE", "src_type", "GitLab")))
-        source_group = raw_input(
+        source_group = input(
             "Are you migrating from a parent group to a new instance, e.g. gitlab.com to self-managed? (Default: No) ")
         if source_group.lower() in ["yes", "y"]:
-            config.set("SOURCE", "src_parent_group_id", raw_input(
+            config.set("SOURCE", "src_parent_group_id", input(
                 "Source group ID (Group -> Settings -> General): "))
             src_group = groups.get_group(config.getint("SOURCE", "src_parent_group_id"), config.get(
                 "SOURCE", "src_hostname"), deobfuscate(config.get("SOURCE", "src_access_token"))).json()
@@ -146,32 +144,32 @@ def generate_config():
                 config.set("SOURCE", "src_parent_group_path", "")
                 print("WARNING: Source group not found. Please enter 'src_parent_group_id' and 'src_parent_group_path' manually (in {})".format(
                     config_path))
-        max_export_wait_time = raw_input(
+        max_export_wait_time = input(
             "Max wait time (in seconds) for project export status (Default: 3600): ")
         config.set("SOURCE", "max_export_wait_time",
                    max_export_wait_time if max_export_wait_time else "3600")
 
         # GitLab source/destination instance registry configuration
-        migrating_registries = raw_input(
+        migrating_registries = input(
             "Are you migrating any container registries? (Default: No) ")
         if migrating_registries.lower() in ["yes", "y"]:
-            config.set("SOURCE", "src_registry_url", raw_input(
+            config.set("SOURCE", "src_registry_url", input(
                 "Source instance Container Registry URL: "))
             test_registries(deobfuscate(config.get("SOURCE", "src_access_token")), config.get(
                 "SOURCE", "src_registry_url"), migration_user)
-            config.set("DESTINATION", "dstn_registry_url", raw_input(
+            config.set("DESTINATION", "dstn_registry_url", input(
                 "Destination instance Container Registry URL: "))
             test_registries(deobfuscate(config.get("DESTINATION", "dstn_access_token")), config.get(
                 "DESTINATION", "dstn_registry_url"), migration_user)
 
         # GitLab project export/update configuration
         config.add_section("EXPORT")
-        location = raw_input(
+        location = input(
             "Staging location for exported projects and groups, AWS (projects only) or filesystem (default)?: ")
         if location.lower() == "aws":
             config.set("EXPORT", "location", "aws")
-            config.set("EXPORT", "s3_name", raw_input("AWS S3 bucket name: "))
-            region = raw_input("AWS S3 bucket region (Default: us-east-1): ")
+            config.set("EXPORT", "s3_name", input("AWS S3 bucket name: "))
+            region = input("AWS S3 bucket region (Default: us-east-1): ")
             config.set("EXPORT", "s3_region",
                        region if region else "us-east-1")
             config.set("EXPORT", "s3_access_key_id",
@@ -184,43 +182,43 @@ def generate_config():
                     config.get("EXPORT", "s3_access_key_id")))
                 aws.set_secret_access_key(deobfuscate(
                     config.get("EXPORT", "s3_secret_access_key")))
-            except NoOptionError, noe:
+            except NoOptionError as noe:
                 print("Failed to get AWS S3 key, with error:\n{}".format(noe))
-            except Exception, e:
+            except Exception as e:
                 print("Failed to set AWS S3 key, with error:\n{}".format(e))
         else:
             config.set("EXPORT", "location", "filesystem")
 
-        abs_path = raw_input(
+        abs_path = input(
             "ABSOLUTE path for exporting/updating projects? (Default: {}): ".format(getcwd()))
         config.set("EXPORT", "filesystem_path",
                    abs_path if abs_path and abs_path.startswith("/") else getcwd())
 
     # User specific configuration
     config.add_section("USER")
-    keep_blocker_users = raw_input(
+    keep_blocker_users = input(
         "Keep blocked users in staged users/groups/projects? (Default: No): ")
     config.set("USER", "keep_blocked_users",
                "True" if keep_blocker_users.lower() in ["yes", "y"] else "False")
-    reset_pwd = raw_input(
+    reset_pwd = input(
         "Should users receive password reset emails? (Default: Yes): ")
     config.set("USER", "reset_pwd", "False" if reset_pwd.lower()
                in ["no", "n"] else "True")
-    force_rand_pwd = raw_input(
+    force_rand_pwd = input(
         "Should users be created with a randomized password? (Default: No): ")
     config.set("USER", "force_rand_pwd",
                "True" if force_rand_pwd.lower() in ["yes", "y"] else "False")
 
     # Generic App configuration
     config.add_section("APP")
-    export_import_wait_time = raw_input(
+    export_import_wait_time = input(
         "Wait time (in seconds) for project export/import status (Default: 10): ")
     config.set("APP", "export_import_wait_time",
                export_import_wait_time if export_import_wait_time else "10")
-    slack = raw_input(
+    slack = input(
         "Sending alerts (logs) to Slack (via Incoming WebHooks)? (Default: No): ")
     if slack.lower() in ["yes", "y"]:
-        config.set("APP", "slack_url", raw_input(
+        config.set("APP", "slack_url", input(
             "Slack Incoming WebHooks URL: "))
         test_slack(config.get("APP", "slack_url"))
     
@@ -286,20 +284,20 @@ def get_sso_provider_pattern():
     }
     while True:
         try:
-            sso_provider_pattern_option = raw_input(
+            sso_provider_pattern_option = input(
                 "Select SSO provider pattern type (1. Email, 2. Hash, 3. Custom")
             if int(sso_provider_pattern_option) == 1:
                 return options.get(1)
             elif int(sso_provider_pattern_option) == 2:
-                print "Hashes are currently not easily migrateable. We will input a placeholder, but support will need to correct this after the migration."
+                print("Hashes are currently not easily migrateable. We will input a placeholder, but support will need to correct this after the migration.")
                 return None
             elif int(sso_provider_pattern_option) == 3:
-                print "Not implemented yet"
+                print("Not implemented yet")
                 return None
             else:
-                print "Choose a valid option"
+                print("Choose a valid option")
         except ValueError:
-            print "Please input a number for your option"
+            print("Please input a number for your option")
 
 
 def update_config(data):

@@ -50,34 +50,39 @@ class AwsClient(BaseClass):
                             for k, v in override_params.items():
                                 data["override_params[{}]".format(k)] = v
 
-                            r = requests.post(url, headers=headers, data=data, files=files)
+                            r = requests.post(
+                                url, headers=headers, data=data, files=files)
                             if r is not None:
                                 if r.status_code == 200 or r.status_code == 201:
                                     return r.text
                                 elif r.status_code == 400 and str("Name has already been taken") in r.content:
-                                    self.log.warn("Project {} already exists".format(name))
+                                    self.log.warning(
+                                        "Project {} already exists".format(name))
                                     return None
                                 elif r.status_code == 429:
-                                    self.log.warn(
+                                    self.log.warning(
                                         "Too many requests. Getting 429s. Sleeping 30 seconds longer for project: {0}"
                                             .format(name)
                                     )
                                     # Add an additional 30 seconds to the sleep on 429
                                     sleep_time = sleep_time + 30
                                 else:
-                                    self.log.warn("Project file {0} import post status code was {1} with content {2}".format(
+                                    self.log.warning("Project file {0} import post status code was {1} with content {2}".format(
                                         filename,
                                         r.status_code,
                                         r.content)
                                     )
                             else:
-                                self.log.warn("Project file {} import post status code was None".format(filename))
+                                self.log.warning(
+                                    "Project file {} import post status code was None".format(filename))
             except requests.exceptions.Timeout:
                 self.log.error("Project {} import timed out".format(name))
             except requests.exceptions.TooManyRedirects:
-                self.log.error("The presigned URL ({}) was bad, please try a different one".format(presigned_url))
+                self.log.error(
+                    "The presigned URL ({}) was bad, please try a different one".format(presigned_url))
             except requests.exceptions.RequestException as e:
-                self.log.error("Something went terribly wrong, with error:\n{}".format(e))
+                self.log.error(
+                    "Something went terribly wrong, with error:\n{}".format(e))
 
             # All paths should fall-thru to here
             sleep(sleep_time)
@@ -96,7 +101,8 @@ class AwsClient(BaseClass):
         file_path = "%s/downloads/%s" % (self.config.filesystem_path, filename)
         # copy from S3 to local machine if it doesn't exist
         if not path.isfile(file_path):
-            self.log.info("Copying project file {} from S3 to local machine".format(filename))
+            self.log.info(
+                "Copying project file {} from S3 to local machine".format(filename))
             cmd = "aws+--region+{0}+s3+cp+s3://{1}/{2}+{3}".format(
                 self.config.s3_region,
                 self.config.bucket_name,
@@ -124,20 +130,22 @@ class AwsClient(BaseClass):
         while True and retry_count <= self.config.max_import_retries:
             with open(file_path, 'r') as f:
                 self.log.info("Importing project {} from S3".format(name))
-                r = requests.post(url, headers=headers, data=data, files={ "file": (filename, f) })
+                r = requests.post(url, headers=headers, data=data, files={
+                                  "file": (filename, f)})
 
             if r is not None:
                 if r.status_code == 200:
                     remove(file_path)
                     return r.text
                 else:
-                    self.log.warn("Project file {0} import post status code was {1} with content {2}".format(
+                    self.log.warning("Project file {0} import post status code was {1} with content {2}".format(
                         filename,
                         r.status_code,
                         r.content)
                     )
             else:
-                self.log.warn("Import post status code was None {0}".format(file_path))
+                self.log.warning(
+                    "Import post status code was None {0}".format(file_path))
 
             sleep(15)
             retry_count += 1
@@ -182,7 +190,7 @@ class AwsClient(BaseClass):
         page_iterator = paginator.paginate(Bucket=bucket)
         page_count = 1
         for page in page_iterator:
-            # print "page: %d" % page_count
+            # print("page: %d" % page_count)
             for obj in page['Contents']:
                 cleaned_key = sub(
                     r'\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{3}_',
@@ -198,9 +206,9 @@ class AwsClient(BaseClass):
             self.config.bucket_name,
             filename)
 
-        self.log.info("Export status unknown. Looking for file on AWS in region %s location s3://%s/%s", 
-                      self.config.s3_region, 
-                      self.config.bucket_name, 
+        self.log.info("Export status unknown. Looking for file on AWS in region %s location s3://%s/%s",
+                      self.config.s3_region,
+                      self.config.bucket_name,
                       filename)
         r = Popen(cmd.split("+"), stdout=PIPE)
         return filename in r.stdout.read()

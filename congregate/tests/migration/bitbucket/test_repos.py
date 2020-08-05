@@ -11,8 +11,8 @@ class ReposTests(unittest.TestCase):
         self.mock_repos = MockReposApi()
         self.repos = ReposClient()
 
-    @patch("__builtin__.file")
-    @patch('__builtin__.open')
+    @patch("io.TextIOBase")
+    @patch('builtins.open')
     @patch.object(ReposApi, "get_all_repos")
     @patch.object(ReposApi, "get_all_repo_users")
     @patch('congregate.helpers.conf.Config.source_host', new_callable=PropertyMock)

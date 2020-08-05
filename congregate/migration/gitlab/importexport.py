@@ -1,7 +1,7 @@
 import json
 
 from re import sub
-from urllib import quote, quote_plus
+from urllib.parse import quote
 from time import sleep
 from os import remove
 from glob import glob
@@ -214,7 +214,7 @@ class ImportExportClient(BaseClass):
             response = self.get_export_response(
                 source_id, is_project, data=data, headers=headers)
             return response
-        except RequestException, e:
+        except RequestException as e:
             self.log.error("Failed to trigger {0} (ID: {1}) export as {2} with response {3}".format(
                 check_is_project_or_group_for_logging(is_project).lower(), source_id, filename, response))
             return None

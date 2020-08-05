@@ -1,5 +1,5 @@
 import json
-from urllib import quote_plus
+from urllib.parse import quote_plus
 from congregate.helpers import api
 from congregate.migration.gitlab.api.users import UsersApi
 

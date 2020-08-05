@@ -19,7 +19,7 @@ def remove_dupes(my_list):
     """
         Basic deduping function to remove any duplicates from a list
     """
-    return {v["id"]: v for v in my_list}.values()
+    return list({v["id"]: v for v in my_list}.values())
 
 
 def download_file(url, path, filename=None, headers=None):
@@ -31,7 +31,7 @@ def download_file(url, path, filename=None, headers=None):
                 r.headers.get('content-disposition'))
         file_path = "{0}/downloads/{1}".format(path, filename)
         create_local_project_export_structure(os.path.dirname(file_path))
-        with open(file_path, 'wb') as f:
+        with open(file_path, "wb") as f:
             for chunk in r.iter_content(chunk_size=1024):
                 if chunk:
                     f.write(chunk)
@@ -133,10 +133,9 @@ def rewrite_json_list_into_dict(l):
         Note: The top level keys in the nested objects must be unique or else data will be overwritten
     """
     new_dict = {}
-    for i in xrange(len(l)):
-        key = l[i].keys()[0]
+    for i, _ in enumerate(l):
+        key = list(l[i].keys())[0]
         new_dict[key] = l[i][key]
-
     return new_dict
 
 
@@ -182,11 +181,11 @@ def read_json_file_into_object(path):
 
 
 def obfuscate(prompt):
-    return b64encode(getpass.getpass(prompt))
+    return b64encode(getpass.getpass(prompt).encode("ascii")).decode("ascii")
 
 
 def deobfuscate(secret):
-    return b64decode(secret)
+    return b64decode(secret.encode("ascii")).decode("ascii")
 
 
 def clean_data(dry_run=True, files=None):
@@ -220,14 +219,14 @@ def clean_data(dry_run=True, files=None):
         for f in files_to_delete:
             path = "{0}/data/{1}".format(app_path, f)
             try:
-                print "{0}Removing {1}".format(get_dry_log(dry_run), path)
+                print("{0}Removing {1}".format(get_dry_log(dry_run), path))
                 if not dry_run:
                     os.remove(path)
             except OSError as e:
                 if e.errno != errno.ENOENT:
                     raise
     else:
-        print "Cannot find data directory. CONGREGATE_PATH not set or you are not running this in the Congregate directory."
+        print("Cannot find data directory. CONGREGATE_PATH not set or you are not running this in the Congregate directory.")
 
 
 def rotate_logs():
@@ -250,7 +249,7 @@ def rotate_logs():
             if e.errno != errno.ENOENT:
                 raise
     else:
-        print "Cannot find data directory. CONGREGATE_PATH not set or you are not running this in the Congregate directory."
+        print("Cannot find data directory. CONGREGATE_PATH not set or you are not running this in the Congregate directory.")
 
 
 def is_recent_file(path, age=2592000):
@@ -266,7 +265,7 @@ def find(key, dictionary):
         Nested dictionary lookup from https://gist.github.com/douglasmiranda/5127251
     """
     if isinstance(dictionary, dict):
-        for k, v in dictionary.iteritems():
+        for k, v in dictionary.items():
             if k == key:
                 yield v
             elif isinstance(v, dict):
@@ -293,7 +292,7 @@ def is_error_message_present(response):
         return True
     elif isinstance(response, dict) and response.get("message", None) is not None:
         return True
-    elif isinstance(response, unicode) and response == "message":
+    elif isinstance(response, str) and response == "message":
         return True
     return False
 
@@ -400,6 +399,7 @@ def build_ui(app_path):
         with open(app_path + "/ui-checksum", "w") as f:
             f.write(get_hash_of_dirs("dist"))
 
+
 def spin_up_ui(app_path, port):
     if not os.path.exists(app_path + "/node_modules"):
         print("No node_modules found. Running npm install")
@@ -415,6 +415,7 @@ def spin_up_ui(app_path, port):
     run_ui = "gunicorn -k gevent -w 4 ui:app --bind=0.0.0.0:" + str(port)
     subprocess.call(run_ui.split(" "))
 
+
 def is_ui_out_of_date(app_path):
     try:
         with open(app_path + "/ui-checksum", "r") as f:
@@ -423,6 +424,7 @@ def is_ui_out_of_date(app_path):
         print("UI Checksum not found")
         return True
     return False
+
 
 def generate_audit_log_message(req_type, message, url, data=None):
     try:
@@ -436,7 +438,7 @@ def generate_audit_log_message(req_type, message, url, data=None):
 
 
 def write_json_yield_to_file(file_path, generator_function, *args):
-    with open(file_path, "wb") as f:
+    with open(file_path, "w") as f:
         output = []
         for data in generator_function(*args):
             output.append(data)
@@ -460,35 +462,36 @@ def safe_json_response(response):
 #   -1 -> Directory does not exist
 #   -2 -> General error (see stack traceback)
 
+
 def get_hash_of_dirs(directory, verbose=0):
-  SHAhash = hashlib.sha1()
-  if not os.path.exists (directory):
-    return -1
-    
-  try:
-    for root, _, files in os.walk(directory):
-      for names in files:
-        if verbose == 1:
-          print('Hashing', names)
-        filepath = os.path.join(root,names)
-        f1 = None
-        try:
-          f1 = open(filepath, 'rb')
-        except:
-          # You can't open the file for some reason
-          f1.close()
-          continue
+    SHAhash = hashlib.sha1()
+    if not os.path.exists(directory):
+        return -1
 
-	while 1:
-	  # Read file in as little chunks
-  	  buf = f1.read(4096)
-	  if not buf : break
-	  SHAhash.update(hashlib.sha1(buf).hexdigest())
-        f1.close()
+    try:
+        for root, _, files in os.walk(directory):
+            for names in files:
+                if verbose == 1:
+                    print('Hashing', names)
+                filepath = os.path.join(root, names)
+                f1 = None
+                try:
+                    f1 = open(filepath, 'rb')
+                except:
+                    # You can't open the file for some reason
+                    f1.close()
+                    continue
 
-  except:
-    # Print the stack traceback
-    print_exc()
-    return -2
+                while 1:
+                    # Read file in as little chunks
+                    buf = f1.read(4096)
+                    if not buf:
+                        break
+                    SHAhash.update(hashlib.sha1(buf).hexdigest().encode())
+                f1.close()
+    except:
+        # Print the stack traceback
+        print_exc()
+        return -2
 
-  return SHAhash.hexdigest()
+    return SHAhash.hexdigest()
