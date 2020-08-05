@@ -44,6 +44,29 @@ workflow:
   before_script:
     - docker login ${CI_REGISTRY} -u gitlab-ci-token -p $CI_BUILD_TOKEN
 
+.gitlab-destination:
+  services:
+    - name: gitlab/gitlab-ee:13.1.4-ee.0
+      alias: gitlab_destination
+      command: ["sh", "-c", "python3 -m http.server 443 --directory /var/log/gitlab/gitlab-rails/ & :; /assets/wrapper"]
+
+.e2e-cleanup:
+  after_script:
+    - curl -O http://gitlab_destination:443/api_json.log
+    - curl -O http://gitlab_destination:443/importer.log
+    - curl -O http://gitlab_destination:443/exceptions_json.log
+    - poetry run aws ec2 terminate-instances --instance-ids $(cat instance_id)
+  artifacts:
+    when: always
+    paths:
+      - data/*.html
+      - data/*diff*.json
+      - data/*results.json
+      - data/audit*.log
+      - api_json.log
+      - importer.log
+      - exceptions_json.log
+
 code_quality:
   artifacts:
     paths: [gl-code-quality-report.json]
@@ -114,11 +137,9 @@ test:end-to-end full:
   extends:
     - .test-job
     - .use-docker-in-docker
+    - .gitlab-destination
+    - .e2e-cleanup
   image: "${TEST_IMAGE_NAME}"
-  services:
-    - name: docker:${DOCKER_VERSION}-dind
-    - name: gitlab/gitlab-ee:13.1.4-ee.0
-      alias: gitlab_destination
   tags:
     - congregate-auto-scale-runner
   script:
@@ -129,25 +150,14 @@ test:end-to-end full:
     - export GITLAB_DEST_REG_URL=gitlab_destination:4567
     - poetry run pytest -s -m e2e_setup congregate/tests/
     - poetry run pytest -s -m e2e --cov-config=.coveragerc --cov=congregate congregate/tests/
-  after_script:
-    - poetry run aws ec2 terminate-instances --instance-ids $(cat instance_id)
-  artifacts:
-    when: always
-    paths:
-      - data/*.html
-      - data/*diff*.json
-      - data/*results.json
-      - data/audit*.log
 
 test:end-to-end single group:
   extends:
     - .test-job
     - .use-docker-in-docker
+    - .gitlab-destination
+    - .e2e-cleanup
   image: "${TEST_IMAGE_NAME}"
-  services:
-    - name: docker:${DOCKER_VERSION}-dind
-    - name: gitlab/gitlab-ee:13.1.4-ee.0
-      alias: gitlab_destination
   tags:
     - congregate-auto-scale-runner
   script:
@@ -158,15 +168,6 @@ test:end-to-end single group:
     - export GITLAB_DEST_REG_URL=gitlab_destination:4567
     - poetry run pytest -s -m e2e_setup_2 congregate/tests/
     - poetry run pytest -s -m e2e --cov-config=.coveragerc --cov=congregate congregate/tests/
-  after_script:
-    - poetry run aws ec2 terminate-instances --instance-ids $(cat instance_id)
-  artifacts:
-    when: always
-    paths:
-      - data/*.html
-      - data/*diff*.json
-      - data/*results.json
-      - data/audit*.log
 
 rolling release:
   extends:
