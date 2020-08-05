@@ -295,3 +295,78 @@ def test_safe_json_response_without_exception(response):
     actual = misc.safe_json_response(response)
 
     assert expected == actual
+
+@mock.patch("congregate.helpers.misc_utils.open", new=mock.mock_open(read_data="abc123"))
+@mock.patch("congregate.helpers.misc_utils.get_hash_of_dirs")
+def test_is_ui_out_of_date_false(mock_hash):
+    mock_hash.return_value = "abc123"
+    expected = False
+    actual = misc.is_ui_out_of_date("")
+
+    assert expected == actual
+
+@mock.patch("congregate.helpers.misc_utils.open", new=mock.mock_open(read_data="def456"))
+@mock.patch("congregate.helpers.misc_utils.get_hash_of_dirs")
+def test_is_ui_out_of_date_true(mock_hash):
+    mock_hash.return_value = "abc123"
+    expected = True
+    actual = misc.is_ui_out_of_date("")
+
+    assert expected == actual
+
+@mock.patch("congregate.helpers.misc_utils.open")
+@mock.patch("congregate.helpers.misc_utils.get_hash_of_dirs")
+def test_is_ui_out_of_date_true_with_exception(mock_hash, mock_open):
+    mock_open.side_effect = [IOError]
+    mock_hash.return_value = "abc123"
+    expected = True
+    actual = misc.is_ui_out_of_date("")
+
+    assert expected == actual
+
+@mock.patch("os.path.exists")
+def test_get_hash_of_dirs_no_dir(path):
+    path.return_value = False
+    expected = -1
+    actual = misc.get_hash_of_dirs("")
+
+    assert expected == actual
+
+@mock.patch("os.path.exists")
+@mock.patch("os.walk")
+def test_get_hash_of_dirs_with_exception(walk, path):
+    path.return_value = True
+    walk.side_effect = [Exception]
+    expected = -2
+    actual = misc.get_hash_of_dirs("")
+
+    assert expected == actual
+
+@mock.patch("congregate.helpers.misc_utils.open", new=mock.mock_open(read_data="def456"))
+@mock.patch("os.path.exists")
+@mock.patch("os.walk")
+def test_get_hash_of_dirs_with_dir(walk, path):
+    path.return_value = True
+    walk.return_value = [
+        ('/foo', ('bar',), ('baz',)),
+        ('/foo/bar', (), ('spam', 'eggs')),
+    ]
+    expected = "b981b8d32b55cbddc5c192bed125dc5fe42eb922"
+    actual = misc.get_hash_of_dirs("")
+
+    assert expected == actual
+
+@mock.patch("congregate.helpers.misc_utils.open")
+@mock.patch("os.path.exists")
+@mock.patch("os.walk")
+def test_get_hash_of_dirs_with_dir_exception(walk, path, mock_open):
+    mock_open.side_effect = [IOError]
+    path.return_value = True
+    walk.return_value = [
+        ('/foo', ('bar',), ('baz',)),
+        ('/foo/bar', (), ('spam', 'eggs')),
+    ]
+    expected = -2
+    actual = misc.get_hash_of_dirs("")
+
+    assert expected == actual

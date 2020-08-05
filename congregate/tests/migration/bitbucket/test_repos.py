@@ -92,5 +92,5 @@ class ReposTests(unittest.TestCase):
                 "id": 13
             }
         ]
-        self.assertEqual(sorted(self.repos.retrieve_repo_info()),
-                         sorted(expected_repos))
+        self.assertEqual(self.repos.retrieve_repo_info().sort(
+            key=lambda x: x["id"]), expected_repos.sort(key=lambda x: x["id"]))

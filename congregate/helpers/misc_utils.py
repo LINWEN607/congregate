@@ -3,8 +3,10 @@ import errno
 import json
 import getpass
 import subprocess
+import hashlib
 
 import glob
+from traceback import print_exc
 from base64 import b64encode, b64decode
 from shutil import copy
 from time import time
@@ -286,7 +288,7 @@ def check_is_project_or_group_for_logging(is_project):
 
 def is_error_message_present(response):
     if isinstance(response, Response):
-        response = response.json()
+        safe_json_response(response)
     if isinstance(response, list) and response and response[0] == "message":
         return True
     elif isinstance(response, dict) and response.get("message", None) is not None:
@@ -392,18 +394,35 @@ def stitch_json_results(result_type="project", steps=0, order="tail"):
 
 
 def build_ui(app_path):
-    port = 8000
+    build_command = "npm run build"
+    subprocess.call(build_command.split(" "))
+    if not os.path.exists(app_path + "/ui_checksum"):
+        with open(app_path + "/ui-checksum", "w") as f:
+            f.write(get_hash_of_dirs("dist"))
+
+def spin_up_ui(app_path, port):
     if not os.path.exists(app_path + "/node_modules"):
-        print "No node_modules found. Running npm install"
+        print("No node_modules found. Running npm install")
         install_deps = "npm install"
         subprocess.call(install_deps.split(" "))
     if not os.path.exists(app_path + "/dist"):
-        print "UI not built. Building it before deploying"
-        build_command = "npm run build"
-        subprocess.call(build_command.split(" "))
+        print("UI not built. Building it before deploying")
+        build_ui(app_path)
+    if is_ui_out_of_date(app_path):
+        print("UI is out of date. Rebuilding UI")
+        build_ui(app_path)
     os.chdir(app_path + "/congregate")
     run_ui = "gunicorn -k gevent -w 4 ui:app --bind=0.0.0.0:" + str(port)
     subprocess.call(run_ui.split(" "))
+
+def is_ui_out_of_date(app_path):
+    try:
+        with open(app_path + "/ui-checksum", "r") as f:
+            return get_hash_of_dirs(app_path + "/dist") != f.read()
+    except IOError:
+        print("UI Checksum not found")
+        return True
+    return False
 
 def generate_audit_log_message(req_type, message, url, data=None):
     try:
@@ -423,6 +442,7 @@ def write_json_yield_to_file(file_path, generator_function, *args):
             output.append(data)
         f.write(json_pretty(output))
 
+
 def safe_json_response(response):
     """
         Helper method to handle getting valid JSON safely. If valid JSON cannot be returned, it returns none.
@@ -431,3 +451,44 @@ def safe_json_response(response):
         return response.json()
     except ValueError:
         return None
+
+# http://akiscode.com/articles/sha-1directoryhash.shtml
+# Copyright (c) 2009 Stephen Akiki
+# MIT License (Means you can do whatever you want with this)
+#  See http://www.opensource.org/licenses/mit-license.php
+# Error Codes:
+#   -1 -> Directory does not exist
+#   -2 -> General error (see stack traceback)
+
+def get_hash_of_dirs(directory, verbose=0):
+  SHAhash = hashlib.sha1()
+  if not os.path.exists (directory):
+    return -1
+    
+  try:
+    for root, _, files in os.walk(directory):
+      for names in files:
+        if verbose == 1:
+          print('Hashing', names)
+        filepath = os.path.join(root,names)
+        f1 = None
+        try:
+          f1 = open(filepath, 'rb')
+        except:
+          # You can't open the file for some reason
+          f1.close()
+          continue
+
+	while 1:
+	  # Read file in as little chunks
+  	  buf = f1.read(4096)
+	  if not buf : break
+	  SHAhash.update(hashlib.sha1(buf).hexdigest())
+        f1.close()
+
+  except:
+    # Print the stack traceback
+    print_exc()
+    return -2
+
+  return SHAhash.hexdigest()
