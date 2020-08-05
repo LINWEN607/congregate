@@ -5,7 +5,7 @@
 
 # <customer name> Migration Wave <insert-number-here>
 
-This runbook covers the process of migrating a wave of **groups and projects** from a source BitBucket Server instance to **gitlab.com**.
+This runbook covers the process of migrating a wave of **groups and projects** from a source BitBucket Server instance to a GitLab instance (gitlab.com or self-managed).
 
 ## Migration Blackout Period
 
@@ -33,7 +33,7 @@ This runbook covers the process of migrating a wave of **groups and projects** f
     @pharrison: Security Manager in the loop in case anything goes wrong
 -->
 
-## BitBucket Projects to migrate
+## BitBucket Projects (GitLab Groups) to migrate
 
 ### Legend
 
@@ -43,17 +43,22 @@ This runbook covers the process of migrating a wave of **groups and projects** f
 
 <!--
 
-Copy the following data and add subsequent columns for wave migration or nested group migration
+Quick reference:
 
-| Completed | Group Name | Total Projects   | Group Size   |
+BitBucket Project = GitLab Group
+BitBucket Repo = GitLab Project
+
+Copy the following data and add subsequent columns for wave migration or nested project migration
+
+| Completed | Project Name | Total Repos   | Project Size   |
 | --------- | ---------- | ---------------- | ------------ |
-| :x:       | [name]     | [total-projects] | [group-size] |
+| :x:       | [name]     | [total-Repos] | [project-size] |
 
-Copy the following data and add subsequent columns for single group migration
+Copy the following data and add subsequent columns for single project migration
 
-| Completed | Project Path | Repo Size        |
+| Completed | Repo Path | Repo Size        |
 | --------- | ------------ | ---------------- |
-| :x:       | [name]       | [total-projects] |
+| :x:       | [name]       | [total-Repos] |
 
 -->
 
@@ -106,6 +111,7 @@ Copy the following data and add subsequent columns for single group migration
 
 * [ ] Notify in the internal Slack channel dedicated to this migration you are starting the user migration wave
 * [ ] Notify the customer in the customer-facing Slack channel you are starting the user migration wave
+* **NOTE:** The command below assumes you have no groups or projects staged
 * [ ] Run the following command `nohup ./congregate.sh migrate --commit > data/waves/user_wave/user_wave.log 2>&1 &`
 * [ ] Monitor the wave periodically by running `tail -f data/waves/user_wave/user_wave.log`
 * [ ] Attach `data/congregate.log`, `data/audit.log`, and `data/waves/user_wave/user_wave.log` to this issue
@@ -166,7 +172,7 @@ For each migration attempt check if any project or group imports failed or have 
 * [ ] Attach `data/congregate.log`, `data/audit.log`, and `data/waves/wave_<insert_wave_number>/wave<insert-wave-here>_attempt<insert-attempt>.log` to this issue
 * [ ] Copy `data/congregate.log`, `data/audit.log`, and `data/waves/wave_<insert_wave_number>/wave<insert-wave-here>_attempt<insert-attempt>.log` to `/opt/congregate/data/waves/wave_<insert_wave_number>/`
 
-<!-- TO DO: No diff reports exist for BB server at this time>
+<!-- TO DO: No diff reports exist for BB server at this time
 
 ### Post Migration
 
@@ -219,7 +225,7 @@ p "Number of Protected Branches import failures: #{protected_branches_import_fai
 * [ ] Notify in the internal Slack channel dedicated to this migration the diff report is finished generating with a link to the comment you just posted. If you need to run another small subset of this migration, mention that in the Slack message as well.
 * [ ] Notify the customer in the customer-facing Slack channel the migration wave has finished
 
-<!-->
+-->
 
 ### Rollback
 
