@@ -130,9 +130,6 @@ import os
 import subprocess
 from json import dump, dumps
 from docopt import docopt
-from pid.decorator import pidfile
-from pid import PidFileError
-
 
 if __name__ == '__main__':
     if __package__ is None:
