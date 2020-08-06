@@ -158,7 +158,7 @@ else:
 app_path = get_congregate_path()
 
 
-# @pidfile()
+@pidfile()
 def main():
     if __name__ == '__main__':
         arguments = docopt(__doc__)
