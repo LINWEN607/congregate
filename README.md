@@ -30,11 +30,15 @@ This document assumes you have a working python 3.8.4 or greater installed, you 
 
 After cloning [the repo](https://gitlab.com/gitlab-com/customer-success/tools/congregate/) and changing to the directory in terminal, run the following appropriate commands to run your first UT!
 
-1. Verify the following:
-   1. `pip -V` (e.g. `pip 20.1.1 from /usr/local/lib/python3.8/site-packages/pip (python 3.8)`)
-   2. `poetry -V` (e.g. `Poetry version 1.0.9`)
-   3. `python -V` Currently congregate only works in Python 3. Your python needs to be `Python 3.8.4` or greater.
-   4. In case of multiple poetry virtualenvs (`<HOME>/Library/Caches/pypoetry/virtualenvs/`), perform the following steps to set Python 3 as the active one:
+1. For Mac users, using `brew`:
+   1. `brew update`
+   2. Upgrade to `python@3.8`: `brew upgrade python@3.8`
+   3. Restart terminal or open separate tab (shell)
+   4. `pip3 install poetry`
+   5. `pip3 -V` (e.g. `pip 20.1.1 from /usr/local/lib/python3.8/site-packages/pip (python 3.8)`)
+   6. `poetry -V` (e.g. `Poetry version 1.0.9`)
+   7. `python -V` Currently congregate only works in Python 3. Your python needs to be `Python 3.8.4` or greater.
+   8. In case of multiple poetry virtualenvs (`<HOME>/Library/Caches/pypoetry/virtualenvs/`), perform the following steps to set Python 3 as the active one:
       1. Set your Python to point (via `~/.bashrc` alias or symlink) to Python 3
       2. Run `poetry env use python3.8` (`python2.7` when reverting back to Python 2)
       3. Run `poetry install -v` (resolves the `pyproject.toml` dependencies, and installs the versions specified in the `poetry.lock` file)
@@ -65,14 +69,20 @@ After cloning [the repo](https://gitlab.com/gitlab-com/customer-success/tools/co
 
 #### Congratulations
 
-If we made it this far without errors, we are done with the basic install for development!  The next command will run the UT and verify your installation is working.
+If we made it this far without errors, we are done with the basic install for development! The next command will run the UT and verify your installation is working.
 
-```
+```bash
 poetry run pytest -m "not e2e and not e2e_setup and not e2e_setup_2" --cov-config=.coveragerc --cov=congregate congregate/tests/
 ```
 
 Success looks like;
 ![SUCCESS](img/ut_success.png)
+
+**NOTE:** Warnings should not be ignored, as they may cause the remote unit test job to fail. To easily discover and allow warnings comment out the following line in `congregate/tests/pytest.ini`:
+
+```python
+filterwarnings = error
+```
 
 ## Configuring Congregate
 
