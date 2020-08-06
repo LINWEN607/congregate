@@ -35,7 +35,7 @@ class ReposClient(BaseClass):
             json.dump(remove_dupes(projects), f, indent=4)
         return remove_dupes(projects)
 
-    def format_repos(self, projects, listed_repos):
+    def format_repos(self, projects, listed_repos, org=False):
         if projects is None:
             self.log.error("Failed to format repos {}".format(projects))
         else:
@@ -54,18 +54,22 @@ class ReposClient(BaseClass):
                     "path_with_namespace": repo["full_name"],
                     "visibility": "private" if repo["private"] else "public",
                     "description": repo.get("description", ""),
-                    "members": self.add_members(repo["owner"]["type"], repo["owner"]["login"], repo["name"])
+                    "members": self.add_members(repo["owner"]["type"], repo["owner"]["login"], repo["name"]) if not org else []
                 })
         return projects
 
     def add_members(self, kind, owner, repo):
         """
         User repos have a single owner and collaborators (requires a collaborator PAT).
-        Org and team repos have members.
+        Org and team repos have collaborators.
         """
         if kind in self.GROUP_TYPE:
-            # TODO: retrieve member permissions
+            # org/team repo members are retrieved during staging
             members = []
+            for c in self.repos_api.get_all_repo_collaborators(owner, repo):
+                c["permissions"] = self.GITHUB_PERMISSIONS_MAP[tuple(
+                    c.get("permissions", None).items())]
+                members.append(c)
         elif kind == "User":
             members = [{"login": owner}]
             user_repo = safe_json_response(
