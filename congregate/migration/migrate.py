@@ -14,7 +14,7 @@ from congregate.helpers import api
 from congregate.helpers.migrate_utils import get_export_filename_from_namespace_and_name, get_dst_path_with_namespace, get_full_path_with_parent_namespace, \
     is_top_level_group, get_failed_export_from_results, get_results, get_staged_groups_without_failed_export, get_staged_projects_without_failed_export
 from congregate.helpers.misc_utils import get_dry_log, json_pretty, is_dot_com, clean_data, \
-    add_post_migration_stats, rotate_logs, write_results_to_file, migration_dry_run, safe_json_response
+    add_post_migration_stats, rotate_logs, write_results_to_file, migration_dry_run, safe_json_response, is_error_message_present
 from congregate.helpers.processes import start_multi_process
 from congregate.cli.stage_projects import stage_data
 from congregate.helpers.base_class import BaseClass
@@ -166,11 +166,12 @@ class MigrateClient(BaseClass):
         if not self.dry_run:
             result = safe_json_response(self.groups_api.create_group(
                 self.config.destination_host, self.config.destination_token, group))
-            if result:
+            if result and not is_error_message_present:
                 group_id = result.get("id")
-                result["members"] = self.groups.add_members_to_destination_group(
-                    self.config.destination_host, self.config.destination_token, group_id, members)
-                self.groups.remove_import_user(group_id)
+                if group_id:
+                    result["members"] = self.groups.add_members_to_destination_group(
+                        self.config.destination_host, self.config.destination_token, group_id, members)
+                    self.groups.remove_import_user(group_id)
         return {
             group["full_path"]: result
         }

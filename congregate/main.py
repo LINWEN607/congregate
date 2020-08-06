@@ -158,7 +158,6 @@ else:
 app_path = get_congregate_path()
 
 
-@pidfile()
 def main():
     if __name__ == '__main__':
         arguments = docopt(__doc__)
@@ -379,7 +378,5 @@ def main():
             print(obfuscate("Secret:"))
 
 
-try:
+if __name__ == "__main__":
     main()
-except PidFileError:
-    raise PidFileError("ERROR: Congregate is already in use!")
