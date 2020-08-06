@@ -54,8 +54,7 @@ class ReposClient(BaseClass):
                     "path_with_namespace": repo["full_name"],
                     "visibility": "private" if repo["private"] else "public",
                     "description": repo.get("description", ""),
-                    "members": []
-                    # TODO: "members": self.add_members(repo["owner"]["type"], repo["owner"]["login"], repo["name"])
+                    "members": self.add_members(repo["owner"]["type"], repo["owner"]["login"], repo["name"])
                 })
         return projects
 
@@ -74,7 +73,7 @@ class ReposClient(BaseClass):
             if not user_repo or is_error_message_present(user_repo):
                 self.log.error("Failed to get JSON for user {} repo {} ({})".format(
                     owner, repo, user_repo))
-                return None
+                return []
             else:
                 members[0]["permissions"] = self.GITHUB_PERMISSIONS_MAP[tuple(user_repo.get(
                     "permissions", None).items())]
