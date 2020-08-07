@@ -1,5 +1,6 @@
-import jenkins
 import json
+import jenkins
+from congregate.helpers.misc_utils import xml_to_dict
 
 
 class JenkinsApi():
@@ -42,7 +43,7 @@ class JenkinsApi():
             }
         """
 
-    def __init__(self, host, token, user):
+    def __init__(self, host, user, token):
         self.host = host
         # Jenkins API token generated within Jenkins instance by going to User Profile -> Configure -> API Token
         self.token = token
@@ -79,9 +80,9 @@ class JenkinsApi():
         '''
         https://python-jenkins.readthedocs.io/en/latest/api.html#jenkins.Jenkins.get_job_config
         Parameters:	name - Name of Jenkins job, str
-        Returns:    string of job configuration (XML format)
+        Returns:    Ordered Dictionary of job configuration data
         '''
-        return self.server.get_job_config(job_name)
+        return xml_to_dict(self.server.get_job_config(job_name))
 
     def get_job_info(self, job_name):
         '''

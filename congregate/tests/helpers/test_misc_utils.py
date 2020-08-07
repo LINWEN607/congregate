@@ -379,3 +379,23 @@ def test_get_hash_of_dirs_with_dir_exception(walk, path, mock_open):
     actual = misc.get_hash_of_dirs("")
 
     assert expected == actual
+
+def test_xml_to_dict():
+    test_xml = """
+    <test>
+        <tag>true</tag>
+        <other-tag>a string</other-tag>
+        <another-tag>false</another-tag>
+    </test>
+    """
+    expected = {
+        "test": {
+            "tag": True,
+            "other-tag": "a string",
+            "another-tag": False
+        }
+    }
+
+    actual = misc.xml_to_dict(test_xml)
+
+    assert expected == actual
