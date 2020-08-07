@@ -8,6 +8,22 @@ from congregate.migration.github.users import UsersClient
 
 
 class OrgsClient(BaseClass):
+    ORG_PERMISSIONS_MAP = {
+        "admin": 50,  # Owner
+        "write": 30,  # Developer
+        "read": 20,  # Reporter
+        "none": 10,  # Guest
+        None: 10  # in case of no "default_repository_permission" field
+    }
+
+    # Deprecated, but used due to no current alternative
+    TEAM_PERMISSIONS_MAP = {
+        "admin": 50,  # Owner
+        "push": 30,  # Developer
+        "pull": 20,  # Reporter
+        None: 10,  # Guest, in case of no "permission" field
+    }
+
     def __init__(self):
         super(OrgsClient, self).__init__()
         self.orgs_api = OrgsApi(self.config.source_host,
@@ -65,8 +81,8 @@ class OrgsClient(BaseClass):
                 "visibility": "private",   # No mapping field
                 "parent_id": None,   # top-level group
                 "auto_devops_enabled": False,
-                "members": self.users.format_users(self.orgs_api.get_all_org_members(org_name)),
-                "projects": self.repos.format_repos([], org_repos)
+                "members": self.add_org_members([], org),
+                "projects": self.repos.format_repos([], org_repos, org=True)
             })
         return groups, projects
 
@@ -92,9 +108,8 @@ class OrgsClient(BaseClass):
                 # parent group
                 "parent_id": team["parent"]["id"] if team.get("parent", None) else None,
                 "auto_devops_enabled": False,
-                #"members": [],
-                "members": self.users.format_users(self.orgs_api.get_all_org_team_members(org_name, team["slug"])),
-                "projects": self.repos.format_repos([], team_repos)
+                "members": self.add_team_members([], org_name, team),
+                "projects": self.repos.format_repos([], team_repos, org=True)
             })
         return groups, projects
 
@@ -115,4 +130,18 @@ class OrgsClient(BaseClass):
                     "Failed to get full_path for team ({})".format(team))
                 return None
         return "/".join(full_path)
-        
+
+    def add_org_members(self, members, org):
+        permissions = self.ORG_PERMISSIONS_MAP[org.get(
+            "default_repository_permission", None)]
+        for m in self.orgs_api.get_all_org_members(org["login"]):
+            m["permissions"] = permissions
+            members.append(m)
+        return self.users.format_users(members)
+
+    def add_team_members(self, members, org_name, team):
+        permissions = self.TEAM_PERMISSIONS_MAP[team.get("permission", None)]
+        for m in self.orgs_api.get_all_org_team_members(org_name, team["slug"]):
+            m["permissions"] = permissions
+            members.append(m)
+        return self.users.format_users(members)

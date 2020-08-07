@@ -41,6 +41,8 @@ class UsersTests(unittest.TestCase):
         mock_users.return_value = self.mock_users.get_all_users()
         mock_open.return_value = mock_file
 
+        actual_users = self.users.retrieve_user_info()
+
         expected_users = [
             {
                 "username": "ghost",
@@ -71,7 +73,7 @@ class UsersTests(unittest.TestCase):
             }
         ]
 
-        self.assertEqual(self.users.retrieve_user_info().sort(
+        self.assertEqual(actual_users.sort(
             key=lambda x: x["id"]), expected_users.sort(key=lambda x: x["id"]))
 
     @patch.object(UsersApi, "get_user")
@@ -92,11 +94,11 @@ class UsersTests(unittest.TestCase):
         mock_user3.json.return_value = self.mock_users.get_user()[2]
         mock_single_user.side_effect = [mock_user1, mock_user2, mock_user3]
 
-        actual_users = [
+        actual_users = self.users.format_users([
             {"login": "ghost", "permissions": 40},
             {"login": "github-enterprise", "permissions": 30},
             {"login": "gitlab", "permissions": 20}
-        ]
+        ])
 
         expected_users = [
             {
@@ -131,7 +133,7 @@ class UsersTests(unittest.TestCase):
             }
         ]
 
-        self.assertEqual(self.users.format_users(actual_users).sort(
+        self.assertEqual(actual_users.sort(
             key=lambda x: x["id"]), expected_users.sort(key=lambda x: x["id"]))
 
     @patch.object(UsersApi, "get_user")
@@ -155,11 +157,11 @@ class UsersTests(unittest.TestCase):
         mock_user3.json.return_value = self.mock_users.get_user()[2]
         mock_single_user.side_effect = [mock_user1, mock_user2, mock_user3]
 
-        actual_users = [
+        actual_users = self.users.format_users([
             {"login": "ghost", "permissions": 40},
             {"login": "github-enterprise", "permissions": 30},
             {"login": "gitlab", "permissions": 20}
-        ]
+        ])
 
         expected_users = [
             {
@@ -184,5 +186,5 @@ class UsersTests(unittest.TestCase):
             }
         ]
 
-        self.assertEqual(self.users.format_users(actual_users).sort(
+        self.assertEqual(actual_users.sort(
             key=lambda x: x["id"]), expected_users.sort(key=lambda x: x["id"]))

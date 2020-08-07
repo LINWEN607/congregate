@@ -245,7 +245,8 @@ class ReposTests(unittest.TestCase):
             }
         ]
 
-        mock_format_users.side_effect = [formatted_users1, formatted_users2]
+        # [formatted_users1, formatted_users2]
+        mock_format_users.side_effect = [[], []]
 
         mock_repo1 = MagicMock()
         type(mock_repo1).status_code = PropertyMock(return_value=200)
@@ -275,7 +276,7 @@ class ReposTests(unittest.TestCase):
                 "path_with_namespace": "org2/arrow",
                 "visibility": "public",
                 "description": None,
-                "members": formatted_users1
+                "members": [],  # formatted_users1
             },
             {
                 "id": 16,
@@ -291,7 +292,7 @@ class ReposTests(unittest.TestCase):
                 "path_with_namespace": "org3/test-repo",
                 "visibility": "public",
                 "description": None,
-                "members": formatted_users2
+                "members": [],  # formatted_users2
             }
         ]
 

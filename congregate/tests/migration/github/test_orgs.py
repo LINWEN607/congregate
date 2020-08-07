@@ -4,6 +4,8 @@ from mock import patch, PropertyMock, MagicMock
 from congregate.tests.mockapi.github.orgs import MockOrgsApi
 from congregate.tests.mockapi.github.repos import MockReposApi
 from congregate.migration.github.orgs import OrgsClient
+from congregate.migration.github.repos import ReposClient
+from congregate.migration.github.users import UsersClient
 from congregate.migration.github.api.orgs import OrgsApi
 
 
@@ -15,36 +17,91 @@ class ReposTests(unittest.TestCase):
 
     @patch.object(OrgsApi, "get_org")
     @patch.object(OrgsApi, "get_all_org_repos")
+    @patch.object(UsersClient, "format_users")
+    @patch.object(ReposClient, "add_repo_members")
     @patch.object(OrgsApi, "get_all_org_members")
-    @patch.object(OrgsApi, "get_all_org_team_repos")
-    @patch.object(OrgsApi, "get_all_org_team_members")
-    @patch("congregate.helpers.conf.Config.source_host", new_callable=PropertyMock)
-    @patch("congregate.helpers.conf.Config.source_token", new_callable=PropertyMock)
     def test_add_org_as_group(self,
-                              mock_source_token,
-                              mock_source_host,
-                              mock_org_team_members,
-                              mock_org_team_repos,
                               mock_org_members,
+                              mock_add_repo_members,
+                              mock_format_users,
                               mock_org_repos,
                               mock_org_response):
-        mock_source_token.return_value = "token"
-        mock_source_host.return_value = "https://github.com"
-
         mock_org = MagicMock()
         type(mock_org).status_code = PropertyMock(return_value=200)
         mock_org.json.return_value = self.mock_orgs.get_org()
         mock_org_response.return_value = mock_org
 
         mock_org_members.return_value = self.mock_orgs.get_all_org_members()
-        mock_org_team_repos.return_value = self.mock_orgs.get_all_org_team_repos()
-        mock_org_team_members.return_value = self.mock_orgs.get_all_org_team_members()
         mock_org_repos.return_value = self.mock_orgs.get_all_org_repos()
+
+        repo_members = [
+            {
+                "username": "bmay",
+                "name": None,
+                "id": 5,
+                "state": "active",
+                "avatar_url": "",
+                "is_admin": False,
+                "email": None
+            },
+            {
+                "username": "gitlab",
+                "name": None,
+                "id": 3,
+                "state": "active",
+                "avatar_url": "",
+                "is_admin": True,
+                "email": None
+            }
+        ]
+
+        mock_add_repo_members.side_effect = [repo_members, repo_members]
+
+        org_members = [
+            {
+                "username": "bmay",
+                "name": None,
+                "id": 5,
+                "state": "active",
+                "avatar_url": "",
+                "is_admin": False,
+                "email": None
+            },
+            {
+                "username": "gitlab",
+                "name": None,
+                "id": 3,
+                "state": "active",
+                "avatar_url": "",
+                "is_admin": True,
+                "email": None
+            },
+            {
+                "username": "mlindsay",
+                "name": None,
+                "id": 4,
+                "state": "active",
+                "avatar_url": "",
+                "is_admin": True,
+                "email": None
+            },
+            {
+                "username": "nperic",
+                "name": "Nicki Peric",
+                "id": 7,
+                "state": "active",
+                "avatar_url": "",
+                "is_admin": True,
+                "email": None
+            }
+        ]
+
+        mock_format_users.return_value = org_members
 
         expected_projects = [
             {
                 "name": "googleapis",
-                "members": [],
+                "members": repo_members,
                 "path": "googleapis",
                 "path_with_namespace": "org1/googleapis",
                 "namespace": {
@@ -60,7 +117,7 @@ class ReposTests(unittest.TestCase):
             },
             {
                 "name": "gradio",
-                "members": [],
+                "members": repo_members,
                 "path": "gradio",
                 "path_with_namespace": "org1/gradio",
                 "namespace": {
@@ -78,50 +135,46 @@ class ReposTests(unittest.TestCase):
 
         expected_groups = [
             {
-                "members": [
-                    {
-                        "username": "bmay",
-                        "name": None,
-                        "id": 5,
-                        "state": "active",
-                        "avatar_url": "",
-                        "is_admin": False,
-                        "email": None
-                    },
-                    {
-                        "username": "gitlab",
-                        "name": None,
-                        "id": 3,
-                        "state": "active",
-                        "avatar_url": "",
-                        "is_admin": True,
-                        "email": None
-                    },
-                    {
-                        "username": "mlindsay",
-                        "name": None,
-                        "id": 4,
-                        "state": "active",
-                        "avatar_url": "",
-                        "is_admin": True,
-                        "email": None
-                    },
-                    {
-                        "username": "nperic",
-                        "name": "Nicki Peric",
-                        "id": 7,
-                        "state": "active",
-                        "avatar_url": "",
-                        "is_admin": True,
-                        "email": None
-                    }
-                ],
+                "members": org_members,
                 "parent_id": None,
                 "visibility": "private",
                 "name": "org1",
                 "auto_devops_enabled": False,
                 "path": "org1",
-                "projects": expected_projects,
+                "projects": [
+                    {
+                        "name": "googleapis",
+                        "members": [],
+                        "path": "googleapis",
+                        "path_with_namespace": "org1/googleapis",
+                        "namespace": {
+                            "path": "org1",
+                            "kind": "group",
+                            "id": 8,
+                            "full_path": "org1",
+                            "name": "org1"
+                        },
+                        "id": 5,
+                        "visibility": "public",
+                        "description": None
+                    },
+                    {
+                        "name": "gradio",
+                        "members": [],
+                        "path": "gradio",
+                        "path_with_namespace": "org1/gradio",
+                        "namespace": {
+                            "path": "org1",
+                            "kind": "group",
+                            "id": 8,
+                            "full_path": "org1",
+                            "name": "org1"
+                        },
+                        "id": 6,
+                        "visibility": "private",
+                        "description": None
+                    }
+                ],
                 "id": 8,
                 "full_path": "org1",
                 "description": None
@@ -133,19 +186,12 @@ class ReposTests(unittest.TestCase):
 
         self.assertEqual(actual[0].sort(key=lambda x: x["id"]),
                          expected_groups.sort(key=lambda x: x["id"]))
-        self.assertEqual(actual[1].sort(key=lambda x: x["id"]),
-                         expected_projects.sort(key=lambda x: x["id"]))
+        for i in range(len(expected_projects)):
+            self.assertEqual(
+                actual[1][i].items(), expected_projects[i].items())
 
     @patch.object(OrgsApi, "get_org")
-    @patch("congregate.helpers.conf.Config.source_host", new_callable=PropertyMock)
-    @patch("congregate.helpers.conf.Config.source_token", new_callable=PropertyMock)
-    def test_add_org_as_group_error(self,
-                                    mock_source_token,
-                                    mock_source_host,
-                                    mock_org_response):
-        mock_source_token.return_value = "token"
-        mock_source_host.return_value = "https://github.com"
-
+    def test_add_org_as_group_error(self, mock_org_response):
         mock_org = MagicMock()
         type(mock_org).status_code = PropertyMock(return_value=404)
         mock_org.json.return_value = {
@@ -160,6 +206,8 @@ class ReposTests(unittest.TestCase):
 
         self.assertEqual(actual[0], expected_groups)
         self.assertEqual(actual[1], expected_projects)
+        self.assertLogs(
+            "Failed to append org {} ({}) to list {}".format("org1", mock_org, []))
 
         expected_groups = None
 
@@ -167,6 +215,8 @@ class ReposTests(unittest.TestCase):
 
         self.assertEqual(actual[0], expected_groups)
         self.assertEqual(actual[1], expected_projects)
+        self.assertLogs("Failed to append org {} ({}) to list {}".format(
+            "org1", mock_org, None))
 
     def test_add_team_as_subgroup_error(self):
         mock_team = {
@@ -180,6 +230,8 @@ class ReposTests(unittest.TestCase):
 
         self.assertEqual(actual[0], expected_groups)
         self.assertEqual(actual[1], expected_projects)
+        self.assertLogs(
+            "Failed to append team ({}) to list {}".format(mock_team, []))
 
         mock_team = self.mock_orgs.get_all_org_teams()[1]
 
@@ -189,21 +241,20 @@ class ReposTests(unittest.TestCase):
 
         self.assertEqual(actual[0], expected_groups)
         self.assertEqual(actual[1], expected_projects)
+        self.assertLogs(
+            "Failed to append team ({}) to list {}".format(mock_team, None))
 
     @patch.object(OrgsApi, "get_all_org_team_repos")
     @patch.object(OrgsApi, "get_all_org_team_members")
+    @patch.object(UsersClient, "format_users")
+    @patch.object(ReposClient, "add_repo_members")
     @patch.object(OrgsApi, "get_org_team")
-    @patch("congregate.helpers.conf.Config.source_host", new_callable=PropertyMock)
-    @patch("congregate.helpers.conf.Config.source_token", new_callable=PropertyMock)
     def test_add_team_as_subgroup_team_error(self,
-                                             mock_source_token,
-                                             mock_source_host,
                                              mock_org_team,
+                                             mock_add_repo_members,
+                                             mock_format_users,
                                              mock_org_team_members,
                                              mock_org_team_repos):
-
-        mock_source_token.return_value = "token"
-        mock_source_host.return_value = "https://github.com"
 
         mock_team = MagicMock()
         type(mock_team).status_code = PropertyMock(return_value=200)
@@ -219,50 +270,109 @@ class ReposTests(unittest.TestCase):
         mock_org_team_members.return_value = self.mock_orgs.get_all_org_team_members()
         mock_org_team_repos.return_value = self.mock_orgs.get_all_org_team_repos()
 
-        expected_projects = [
+        org_team_repo_members = [
             {
-                "name": "arrow",
-                "members": [],
-                "path": "arrow",
-                "path_with_namespace": "org2/arrow",
-                "namespace": {
-                    "path": "org2",
-                    "kind": "group",
-                    "id": 9,
-                    "full_path": "org2",
-                    "name": "org2"
-                },
-                "id": 8,
-                "visibility": "public",
-                "description": None
+                "username": "gitlab",
+                "name": None,
+                "id": 3,
+                "state": "active",
+                "avatar_url": "",
+                "is_admin": True,
+                "email": None
             },
             {
-                "name": "phaser",
-                "members": [],
-                "path": "phaser",
-                "path_with_namespace": "org2/phaser",
+                "id": 6,
+                "username": "pprokic",
+                "name": "Petar Prokic",
+                "email": "pprokic@gitlab.com",
+                "avatar_url": "",
+                "state": "active",
+                "is_admin": False,
+                "access_level": 20
+            }
+        ]
+
+        mock_format_users.return_value = org_team_repo_members
+        mock_add_repo_members.side_effect = [
+            org_team_repo_members, org_team_repo_members]
+
+        expected_projects = [
+            {
+                "id": 8,
+                "path": "arrow",
+                "name": "arrow",
                 "namespace": {
-                    "path": "org2",
-                    "kind": "group",
                     "id": 9,
-                    "full_path": "org2",
-                    "name": "org2"
+                    "path": "org2",
+                    "name": "org2",
+                    "kind": "group",
+                    "full_path": "org2"
                 },
+                "path_with_namespace": "org2/arrow",
+                "visibility": "public",
+                "description": None,
+                "members": org_team_repo_members
+            },
+            {
                 "id": 9,
+                "path": "phaser",
+                "name": "phaser",
+                "namespace": {
+                    "id": 9,
+                    "path": "org2",
+                    "name": "org2",
+                    "kind": "group",
+                    "full_path": "org2"
+                },
+                "path_with_namespace": "org2/phaser",
                 "visibility": "private",
-                "description": None
+                "description": None,
+                "members": org_team_repo_members
             }
         ]
 
         expected_groups = [
             {
-                "members": [],
+                "members": org_team_repo_members,
                 "parent_id": None,
                 "visibility": "private",
-                "name": "org2",
+                "name": "qa-child",
                 "auto_devops_enabled": False,
-                "path": "org2",
-                "projects": expected_projects,
+                "path": "qa-child",
+                "projects": [
+                    {
+                        "id": 8,
+                        "path": "arrow",
+                        "name": "arrow",
+                        "namespace": {
+                            "id": 9,
+                            "path": "org2",
+                            "name": "org2",
+                            "kind": "group",
+                            "full_path": "org2"
+                        },
+                        "path_with_namespace": "org2/arrow",
+                        "visibility": "public",
+                        "description": None,
+                        "members": []
+                    },
+                    {
+                        "id": 9,
+                        "path": "phaser",
+                        "name": "phaser",
+                        "namespace": {
+                            "id": 9,
+                            "path": "org2",
+                            "name": "org2",
+                            "kind": "group",
+                            "full_path": "org2"
+                        },
+                        "path_with_namespace": "org2/phaser",
+                        "visibility": "private",
+                        "description": None,
+                        "members": []
+                    }
+                ],
                 "id": 9,
                 "full_path": None,
                 "description": None
@@ -270,27 +380,27 @@ class ReposTests(unittest.TestCase):
         ]
 
         actual = self.orgs.add_team_as_subgroup(
-            [], "org1", self.mock_orgs.get_org_child_team(), [])
+            [], "org2", self.mock_orgs.get_org_child_team(), [])
 
         self.assertEqual(actual[0].sort(key=lambda x: x["id"]),
                          expected_groups.sort(key=lambda x: x["id"]))
-        self.assertEqual(actual[1].sort(key=lambda x: x["id"]),
-                         expected_projects.sort(key=lambda x: x["id"]))
+        self.assertLogs("Failed to get full_path for team ({})".format(
+            self.mock_orgs.get_org_child_team()))
+        for i in range(len(expected_projects)):
+            self.assertEqual(
+                actual[1][i].items(), expected_projects[i].items())
 
     @patch.object(OrgsApi, "get_all_org_team_repos")
     @patch.object(OrgsApi, "get_all_org_team_members")
+    @patch.object(UsersClient, "format_users")
+    @patch.object(ReposClient, "add_repo_members")
     @patch.object(OrgsApi, "get_org_team")
-    @patch("congregate.helpers.conf.Config.source_host", new_callable=PropertyMock)
-    @patch("congregate.helpers.conf.Config.source_token", new_callable=PropertyMock)
     def test_add_team_as_subgroup(self,
-                                  mock_source_token,
-                                  mock_source_host,
                                   mock_org_team,
+                                  mock_add_repo_members,
+                                  mock_format_users,
                                   mock_org_team_members,
                                   mock_org_team_repos):
-
-        mock_source_token.return_value = "token"
-        mock_source_host.return_value = "https://github.com"
 
         mock_team = MagicMock()
         type(mock_team).status_code = PropertyMock(return_value=200)
@@ -303,60 +413,109 @@ class ReposTests(unittest.TestCase):
         mock_org_team_members.return_value = self.mock_orgs.get_all_org_team_members()
         mock_org_team_repos.return_value = self.mock_orgs.get_all_org_team_repos()
 
-        expected_projects = [
+        org_team_repo_members = [
             {
-                "name": "arrow",
-                "members": [],
-                "path": "arrow",
-                "path_with_namespace": "org2/arrow",
-                "namespace": {
-                    "path": "org2",
-                    "kind": "group",
-                    "id": 9,
-                    "full_path": "org2",
-                    "name": "org2"
-                },
-                "id": 8,
-                "visibility": "public",
-                "description": None
+                "username": "gitlab",
+                "name": None,
+                "id": 3,
+                "state": "active",
+                "avatar_url": "",
+                "is_admin": True,
+                "email": None
             },
             {
-                "name": "phaser",
-                "members": [],
-                "path": "phaser",
-                "path_with_namespace": "org2/phaser",
+                "id": 6,
+                "username": "pprokic",
+                "name": "Petar Prokic",
+                "email": "pprokic@gitlab.com",
+                "avatar_url": "",
+                "state": "active",
+                "is_admin": False,
+                "access_level": 20
+            }
+        ]
+
+        mock_format_users.return_value = org_team_repo_members
+        mock_add_repo_members.side_effect = [
+            org_team_repo_members, org_team_repo_members]
+
+        expected_projects = [
+            {
+                "id": 8,
+                "path": "arrow",
+                "name": "arrow",
                 "namespace": {
-                    "path": "org2",
-                    "kind": "group",
                     "id": 9,
-                    "full_path": "org2",
-                    "name": "org2"
+                    "path": "org2",
+                    "name": "org2",
+                    "kind": "group",
+                    "full_path": "org2"
                 },
+                "path_with_namespace": "org2/arrow",
+                "visibility": "public",
+                "description": None,
+                "members": org_team_repo_members
+            },
+            {
                 "id": 9,
+                "path": "phaser",
+                "name": "phaser",
+                "namespace": {
+                    "id": 9,
+                    "path": "org2",
+                    "name": "org2",
+                    "kind": "group",
+                    "full_path": "org2"
+                },
+                "path_with_namespace": "org2/phaser",
                 "visibility": "private",
-                "description": None
+                "description": None,
+                "members": org_team_repo_members
             }
         ]
 
         expected_groups = [
             {
-                "members": [
-                    {
-                        "username": "gitlab",
-                        "name": None,
-                        "id": 3,
-                        "state": "active",
-                        "avatar_url": "",
-                        "is_admin": True,
-                        "email": None
-                    }
-                ],
+                "members": org_team_repo_members,
                 "parent_id": None,
                 "visibility": "private",
-                "name": "org2",
+                "name": "qa-child",
                 "auto_devops_enabled": False,
-                "path": "org2",
-                "projects": expected_projects,
+                "path": "qa-child",
+                "projects": [
+                    {
+                        "id": 8,
+                        "path": "arrow",
+                        "name": "arrow",
+                        "namespace": {
+                            "id": 9,
+                            "path": "org2",
+                            "name": "org2",
+                            "kind": "group",
+                            "full_path": "org2"
+                        },
+                        "path_with_namespace": "org2/arrow",
+                        "visibility": "public",
+                        "description": None,
+                        "members": []
+                    },
+                    {
+                        "id": 9,
+                        "path": "phaser",
+                        "name": "phaser",
+                        "namespace": {
+                            "id": 9,
+                            "path": "org2",
+                            "name": "org2",
+                            "kind": "group",
+                            "full_path": "org2"
+                        },
+                        "path_with_namespace": "org2/phaser",
+                        "visibility": "private",
+                        "description": None,
+                        "members": []
+                    }
+                ],
                 "id": 9,
                 "full_path": "org2/qa/qa-child",
                 "description": None
@@ -364,9 +523,10 @@ class ReposTests(unittest.TestCase):
         ]
 
         actual = self.orgs.add_team_as_subgroup(
-            [], "org1", self.mock_orgs.get_org_child_team(), [])
+            [], "org2", self.mock_orgs.get_org_child_team(), [])
 
         self.assertEqual(actual[0].sort(key=lambda x: x["id"]),
                          expected_groups.sort(key=lambda x: x["id"]))
-        self.assertEqual(actual[1].sort(key=lambda x: x["id"]),
-                         expected_projects.sort(key=lambda x: x["id"]))
+        for i in range(len(expected_projects)):
+            self.assertEqual(
+                actual[1][i].items(), expected_projects[i].items())

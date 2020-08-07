@@ -330,26 +330,6 @@ class MockOrgsApi():
                 "site_admin": True
             },
             {
-                "login": "pprokic",
-                "id": 6,
-                "node_id": "MDQ6VXNlcjY=",
-                "avatar_url": "https://github.gitlab-proserv.net/avatars/u/6?",
-                "gravatar_id": "",
-                "url": "https://github.gitlab-proserv.net/api/v3/users/pprokic",
-                "html_url": "https://github.gitlab-proserv.net/pprokic",
-                "followers_url": "https://github.gitlab-proserv.net/api/v3/users/pprokic/followers",
-                "following_url": "https://github.gitlab-proserv.net/api/v3/users/pprokic/following{/other_user}",
-                "gists_url": "https://github.gitlab-proserv.net/api/v3/users/pprokic/gists{/gist_id}",
-                "starred_url": "https://github.gitlab-proserv.net/api/v3/users/pprokic/starred{/owner}{/repo}",
-                "subscriptions_url": "https://github.gitlab-proserv.net/api/v3/users/pprokic/subscriptions",
-                "organizations_url": "https://github.gitlab-proserv.net/api/v3/users/pprokic/orgs",
-                "repos_url": "https://github.gitlab-proserv.net/api/v3/users/pprokic/repos",
-                "events_url": "https://github.gitlab-proserv.net/api/v3/users/pprokic/events{/privacy}",
-                "received_events_url": "https://github.gitlab-proserv.net/api/v3/users/pprokic/received_events",
-                "type": "User",
-                "site_admin": False
-            },
-            {
                 "login": "mlindsay",
                 "id": 4,
                 "node_id": "MDQ6VXNlcjQ=",

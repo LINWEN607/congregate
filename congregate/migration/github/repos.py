@@ -8,8 +8,7 @@ from congregate.migration.github.api.users import UsersApi
 
 
 class ReposClient(BaseClass):
-    # Permissions placeholder
-    GITHUB_PERMISSIONS_MAP = {
+    REPO_PERMISSIONS_MAP = {
         ((u"admin", True), (u"push", True), (u"pull", True)): 40,  # Maintainer
         ((u"admin", False), (u"push", True), (u"pull", True)): 30,  # Developer
         ((u"admin", False), (u"push", False), (u"pull", True)): 20  # Reporter
@@ -36,6 +35,10 @@ class ReposClient(BaseClass):
         return remove_dupes(projects)
 
     def format_repos(self, projects, listed_repos, org=False):
+        """
+        Format public and org/team repos.
+        Leave org/team repo members empty ([]) as they are retrieved during staging.
+        """
         if projects is None:
             self.log.error("Failed to format repos {}".format(projects))
         else:
@@ -54,22 +57,22 @@ class ReposClient(BaseClass):
                     "path_with_namespace": repo["full_name"],
                     "visibility": "private" if repo["private"] else "public",
                     "description": repo.get("description", ""),
-                    "members": self.add_members(repo["owner"]["type"], repo["owner"]["login"], repo["name"]) if not org else []
+                    "members": self.add_repo_members(repo["owner"]["type"], repo["owner"]["login"], repo["name"]) if not org else []
                 })
         return projects
 
-    def add_members(self, kind, owner, repo):
+    def add_repo_members(self, kind, owner, repo):
         """
         User repos have a single owner and collaborators (requires a collaborator PAT).
-        Org and team repos have collaborators.
+        Org and team repos have collaborators (may require a collaborator PAT).
         """
         if kind in self.GROUP_TYPE:
-            # org/team repo members are retrieved during staging
             members = []
-            for c in self.repos_api.get_all_repo_collaborators(owner, repo):
-                c["permissions"] = self.GITHUB_PERMISSIONS_MAP[tuple(
-                    c.get("permissions", None).items())]
-                members.append(c)
+            # TODO: Determine single PAT for retrieving repo/org/team collaborators
+            # for c in self.repos_api.get_all_repo_collaborators(owner, repo):
+            #     c["permissions"] = self.REPO_PERMISSIONS_MAP[tuple(
+            #         c.get("permissions", None).items())]
+            #     members.append(c)
         elif kind == "User":
             members = [{"login": owner}]
             user_repo = safe_json_response(
@@ -79,6 +82,6 @@ class ReposClient(BaseClass):
                     owner, repo, user_repo))
                 return []
             else:
-                members[0]["permissions"] = self.GITHUB_PERMISSIONS_MAP[tuple(user_repo.get(
+                members[0]["permissions"] = self.REPO_PERMISSIONS_MAP[tuple(user_repo.get(
                     "permissions", None).items())]
         return self.users.format_users(members)
