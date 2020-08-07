@@ -34,6 +34,6 @@ class ImportApi(BaseClass):
         """
         if not message:
             audit_data = data.copy()
-            audit_data["personal_access_token"] = b64encode(audit_data["personal_access_token"])
+            audit_data["personal_access_token"] = str(b64encode(audit_data["personal_access_token"]))
             message = "Triggering import from BitBucket Server with payload %s" % audit_data
         return api.generate_post_request(host, token, "import/bitbucket_server", dumps(data), description=message).json()

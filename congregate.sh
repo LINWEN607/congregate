@@ -7,10 +7,28 @@
 # Master script for running congregate
 #
 
-if [[ -z ${CONGREGATE_PATH+x} ]]; then
-    echo "CONGREGATE_PATH not set. Defaulting to current directory: ($(pwd))"
-    CONGREGATE_PATH=$(pwd) poetry run python congregate/main.py $@
+
+# We are trapping ctrl+c to help clean up any dangling PIDs on a forced quit
+trap rm_pid INT TERM QUIT
+
+function rm_pid() {
+    rm -f /tmp/congregate.pid
+}
+
+if [ ! -f "/tmp/congregate.pid" ]; then
+    echo $$ > /tmp/congregate.pid
+    if [[ -z ${CONGREGATE_PATH+x} ]]; then
+        echo "CONGREGATE_PATH not set. Defaulting to current directory: ($(pwd))"
+        CONGREGATE_PATH=$(pwd) poetry run python congregate/main.py $@
+    else
+        cd ${CONGREGATE_PATH}
+        poetry run python congregate/main.py $@
+    fi
 else
-    cd ${CONGREGATE_PATH}
-    poetry run python congregate/main.py $@
+    echo "Congregate is already running at $(cat /tmp/congregate.pid). Exiting"
+    exit
+fi
+
+if [ -f "/tmp/congregate.pid" ]; then
+    rm_pid
 fi

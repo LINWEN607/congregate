@@ -1,6 +1,6 @@
 from base64 import b64encode
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import migration_dry_run, deobfuscate, is_error_message_present
+from congregate.helpers.misc_utils import migration_dry_run, is_error_message_present
 from congregate.migration.gitlab.api.external_import import ImportApi
 
 
@@ -15,7 +15,7 @@ class ImportClient(BaseClass):
         data = {
             "bitbucket_server_url": self.config.source_host,
             "bitbucket_server_username": self.config.source_username,
-            "personal_access_token": deobfuscate(self.config.source_token),
+            "personal_access_token": self.config.source_token,
             "bitbucket_server_project": project_key,
             "bitbucket_server_repo": repo
         }
@@ -39,8 +39,8 @@ class ImportClient(BaseClass):
                     "Failed to import from bitbucket server due to %s" % e)
                 return self.get_failed_result(project)
         else:
-            data["personal_access_token"] = b64encode(
-                data["personal_access_token"])
+            data["personal_access_token"] = str(b64encode(
+                data["personal_access_token"].encode()))
             migration_dry_run("project", data)
             return self.get_failed_result(project, data)
             

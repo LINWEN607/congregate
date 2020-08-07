@@ -23,6 +23,7 @@ def start_multi_process(function, iterable, processes=None):
         return p.map(worker, iterable)
     except Exception as e:
         b.log.error("Migration pool failed with error:\n{}".format(e))
+        b.log.error(print_exc())
     finally:
         p.close()
         p.join()

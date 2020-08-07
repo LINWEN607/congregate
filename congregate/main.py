@@ -130,9 +130,6 @@ import os
 import subprocess
 from json import dump, dumps
 from docopt import docopt
-from pid.decorator import pidfile
-from pid import PidFileError
-
 
 if __name__ == '__main__':
     if __package__ is None:
@@ -158,7 +155,6 @@ else:
 app_path = get_congregate_path()
 
 
-# @pidfile()
 def main():
     if __name__ == '__main__':
         arguments = docopt(__doc__)
@@ -379,7 +375,5 @@ def main():
             print(obfuscate("Secret:"))
 
 
-try:
+if __name__ == "__main__":
     main()
-except PidFileError:
-    raise PidFileError("ERROR: Congregate is already in use!")
