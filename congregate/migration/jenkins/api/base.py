@@ -1,4 +1,5 @@
 import jenkins
+import json
 
 
 class JenkinsApi():
@@ -60,10 +61,10 @@ class JenkinsApi():
         '''
         return self.server.get_jobs()
 
-    def get_all_jobs(self):
+    def list_all_jobs(self):
         # https://python-jenkins.readthedocs.io/en/latest/api.html#jenkins.Jenkins.get_all_jobs
         # returns dictionary with list of jobs
-        return self.server.run_script(self.GET_ALL_JOBS)
+        return(json.loads(self.server.run_script(self.GET_ALL_JOBS)))
 
     def list_all_scm(self):
         # Get all SCM Git urls listed, uses https://python-jenkins.readthedocs.io/en/latest/api.html#jenkins.Jenkins.run_script
@@ -78,7 +79,7 @@ class JenkinsApi():
         '''
         https://python-jenkins.readthedocs.io/en/latest/api.html#jenkins.Jenkins.get_job_config
         Parameters:	name - Name of Jenkins job, str
-        Returns:    job configuration (XML format)
+        Returns:    string of job configuration (XML format)
         '''
         return self.server.get_job_config(job_name)
 
@@ -109,3 +110,15 @@ class JenkinsApi():
         item = Jenkins.instance.getItemByFullName("{ job_name }")
         println item.getScm().getUserRemoteConfigs()[0].getUrl()
         """)
+
+    def get_job_params(self, job_name):
+        # returns a list of job params
+        job_info = self.get_job_info(job_name)
+
+        param_list = []
+
+        for action in job_info['actions']:
+            if 'parameterDefinitions' in action:
+                param_list.append(action['parameterDefinitions'])
+
+        return param_list
