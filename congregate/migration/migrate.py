@@ -166,8 +166,8 @@ class MigrateClient(BaseClass):
         if not self.dry_run:
             result = safe_json_response(self.groups_api.create_group(
                 self.config.destination_host, self.config.destination_token, group))
-            if result and not is_error_message_present:
-                group_id = result.get("id")
+            if result and not is_error_message_present(result):
+                group_id = result.get("id", None)
                 if group_id:
                     result["members"] = self.groups.add_members_to_destination_group(
                         self.config.destination_host, self.config.destination_token, group_id, members)

@@ -7,10 +7,12 @@
 # Master script for running congregate
 #
 
-trap rm_pid INT
+
+# We are trapping ctrl+c to help clean up any dangling PIDs on a forced quit
+trap rm_pid INT TERM QUIT
 
 function rm_pid() {
-    rm /tmp/congregate.pid
+    rm -f /tmp/congregate.pid
 }
 
 if [ ! -f "/tmp/congregate.pid" ]; then
