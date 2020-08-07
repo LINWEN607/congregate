@@ -1,4 +1,4 @@
-# Welcome to Congregate\'s documentation\!
+# Congregate Documentation
 
 Congregate is an internal tool for GitLab professional services to handle migrating customers to GitLab. Congregate currently supports the following migration directions:
 

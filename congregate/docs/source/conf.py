@@ -22,8 +22,8 @@ sys.path.append(os.path.join(os.path.dirname(__name__), '..'))
 # -- Project information -----------------------------------------------------
 
 project = u'Congregate'
-copyright = u'2019 GitLab Inc. Professional Services'
-author = u'Michael Leopard, Petar Prokic, Glen Miller, Ed Slatt'
+copyright = u'2020 GitLab Inc. Professional Services'
+author = u'Michael Leopard, Petar Prokic, Glen Miller, Mike Lindsay, Nicki Peric'
 
 # The short X.Y version
 version = u''
@@ -88,7 +88,9 @@ pygments_style = None
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'bizstyle'
+html_theme = 'press'
+
+# html_logo = '_static/logo.png'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -100,7 +102,7 @@ html_theme = 'bizstyle'
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
-html_extra_path = ['extra']
+# html_extra_path = ['extra']
 
 # Custom sidebar templates, must be a dictionary that maps document names
 # to template names.

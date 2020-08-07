@@ -714,6 +714,17 @@ markdown = "3.0.1"
 
 [[package]]
 category = "main"
+description = "A Sphinx-doc theme based on Vuepress"
+name = "sphinx-press-theme"
+optional = false
+python-versions = "*"
+version = "0.5.1"
+
+[package.dependencies]
+sphinx = ">=2.0.0"
+
+[[package]]
+category = "main"
 description = "sphinxcontrib-applehelp is a sphinx extension which outputs Apple help books"
 name = "sphinxcontrib-applehelp"
 optional = false
@@ -844,7 +855,7 @@ dev = ["pytest", "pytest-timeout", "coverage", "tox", "sphinx", "pallets-sphinx-
 watchdog = ["watchdog"]
 
 [metadata]
-content-hash = "f8036971eba27882e9ef5fa3c7f295cafaa0ea30c74929230c504bdfbd4eaaa9"
+content-hash = "6741077f48a9b2a22c877b06bc05dc903dbcce33adaf6cfd46c93904ff1836a9"
 python-versions = "^3.8"
 
 [metadata.files]
@@ -1273,6 +1284,9 @@ sphinx = [
 sphinx-markdown-tables = [
     {file = "sphinx-markdown-tables-0.0.12.tar.gz", hash = "sha256:08779e77832b6562b6b86e4270ae50b0b10010fdd35cf9aadcb5b8246571b933"},
     {file = "sphinx_markdown_tables-0.0.12-py3-none-any.whl", hash = "sha256:ecfc7fd2e02c339fcf12eb9cbcf59fedeb5ff54b6fe666df6e0791a03ece9b05"},
+]
+sphinx-press-theme = [
+    {file = "sphinx_press_theme-0.5.1.tar.gz", hash = "sha256:bbb8b52b7c5721114ed230efbd97dbdc78c06097d1f8b16dddc9295d7bd09618"},
 ]
 sphinxcontrib-applehelp = [
     {file = "sphinxcontrib-applehelp-1.0.2.tar.gz", hash = "sha256:a072735ec80e7675e3f432fcae8610ecf509c5f1869d17e2eecff44389cdbc58"},

@@ -28,6 +28,7 @@ responses = "^0.10.9"
 sphinx = "<=2.4.1" # not found in any files, but assume tests are using it.
 sphinxcontrib-mermaid = "^0.3.1" # not found in any files, but assume tests are using it.
 sphinx-markdown-tables = "^0.0.12" # not found in any files, but assume tests are using it.
+sphinx_press_theme = "^0.5.1"
 
 [tool.poetry.dev-dependencies]
 
