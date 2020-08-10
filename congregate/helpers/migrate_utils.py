@@ -170,3 +170,16 @@ def is_loc_supported(loc):
     if loc not in ["filesystem", "aws"]:
         b.log.error("Unsupported export location: {}".format(loc))
         exit()
+
+
+def can_migrate_users(users):
+    can = True
+    for user in users:
+        name = user.get("name", None)
+        username = user.get("username", None)
+        email = user.get("email", None)
+        if any(v is None for v in [name, username, email]):
+            b.log.error(
+                f"Required user metadata missing:\nName: {name}\nUsername: {username}\nEmail: {email}")
+            can = False
+    return can
