@@ -84,6 +84,9 @@ class MigrateClient(BaseClass):
         self.skip_project_import = skip_project_import
 
     def migrate(self):
+        self.log.info("{}Migrating data from {} ({}) to {}".format(get_dry_log(
+            self.dry_run), self.config.source_host, self.config.source_type, self.config.destination_host))
+
         # Dry-run and log cleanup
         if self.dry_run:
             clean_data(dry_run=False, files=[
@@ -95,6 +98,8 @@ class MigrateClient(BaseClass):
             self.migrate_from_gitlab()
         elif self.config.source_type == "Bitbucket Server":
             self.migrate_from_bitbucket_server()
+        elif self.config.source_type == "GitHub":
+            self.migrate_from_github()
         else:
             self.log.warning(
                 "Configuration (data/congregate.conf) src_type {} not supported".format(self.config.source_type))
@@ -116,6 +121,10 @@ class MigrateClient(BaseClass):
         # Remove import user from parent group to avoid inheritance (self-managed only)
         if not self.dry_run and self.config.dstn_parent_id and not is_dot_com(self.config.destination_host):
             self.groups.remove_import_user(self.config.dstn_parent_id)
+
+    def migrate_from_github(self):
+        # Migrate users
+        self.migrate_user_info()
 
     def migrate_from_bitbucket_server(self):
         dry_log = get_dry_log(self.dry_run)
@@ -261,7 +270,7 @@ class MigrateClient(BaseClass):
                         self.users.block_user(user_data)
                     new_user = self.users.handle_user_creation_status(
                         response, user_data)
-            if not self.dry_run and self.config.source_host:
+            if not self.dry_run and self.config.source_host == "GitLab":
                 # Migrate SSH keys
                 self.keys.migrate_user_ssh_keys(old_user, new_user if new_user.get(
                     "id", None) else self.users.find_user_by_email_comparison_without_id(email))
