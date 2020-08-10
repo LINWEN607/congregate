@@ -593,3 +593,40 @@ class MigrateTests(unittest.TestCase):
     def test_is_loc_supported_false(self):
         with self.assertRaises(SystemExit):
             mutils.is_loc_supported("not-aws-or-filesystem")
+
+    def test_can_migrate_users_true(self):
+        users = [
+            {
+                "id": 3,
+                "username": "gitlab",
+                "name": "PS GitLab",
+                "email": "proserv@gitlab.com",
+                "avatar_url": "",
+                "state": "active",
+                "is_admin": True
+            }
+        ]
+        self.assertTrue(mutils.can_migrate_users(users))
+
+    def test_can_migrate_users_false(self):
+        users = [
+            {
+                "id": 1,
+                "username": "ghost",
+                "name": "Ghost",
+                "email": None,
+                "avatar_url": "",
+                "state": "active",
+                "is_admin": False
+            },
+            {
+                "id": 3,
+                "username": "gitlab",
+                "name": "PS GitLab",
+                "email": "proserv@gitlab.com",
+                "avatar_url": "",
+                "state": "active",
+                "is_admin": True
+            }
+        ]
+        self.assertFalse(mutils.can_migrate_users(users))
