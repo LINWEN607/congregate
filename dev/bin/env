@@ -8,6 +8,8 @@ alias sh='poetry shell'
 alias upd='poetry run python congregate/update-readme.py'
 alias pt='poetry run pytest \
             -m "not e2e and not e2e_setup and not e2e_setup_2" \
+            --cov-report term-missing \
+            --cov-report html \
             --cov-config=.coveragerc \
             --cov=congregate congregate/tests/'
 alias pt_e2e='poetry run pytest -s -m e2e congregate/tests/'
