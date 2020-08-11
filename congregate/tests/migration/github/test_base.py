@@ -110,3 +110,19 @@ class BaseTests(unittest.TestCase):
             "http://host", "organizations", verify=False)
         expected = None
         self.assertEqual(expected, actual)
+
+    # pylint: disable=no-member
+
+    @ responses.activate
+    def test_list_all_raise_error(self):
+        responses.add(
+            responses.GET,
+            "http://host/api/v3/organizations?per_page=1000",
+            headers=self.mock_headers.get_linkless_headers(),
+            status=422,
+            json=self.mock_headers.get_data(),
+            content_type='text/json',
+            match_querystring=False)
+
+        with self.assertRaises(ValueError):
+            self.api.list_all("http://host", "organizations", verify=False)

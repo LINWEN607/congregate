@@ -65,12 +65,6 @@ class GitHubApi():
             host = host.rstrip("/")
         return f"{host}/api/v3/{api}"
 
-    def create_v4_query(self, query):
-        """
-        Given a query string, return a json version of it.
-        """
-        pass
-
     @stable_retry
     def generate_v3_get_request(self, host, api, url=None, params=None, verify=True):
         """
@@ -83,16 +77,6 @@ class GitHubApi():
         if params is None:
             params = {}
         return requests.get(url, params=params, headers=headers, verify=verify)
-
-    @stable_retry
-    def run_v4_query(self, url=None, headers=None, verify=True):
-        """
-        """
-        if not url:
-            url = self.generate_v4_request_url(self.host)
-        if not headers:
-            headers = self.generate_v4_request_header(self.token)
-        return requests.post(url, json={'query': self.query}, headers=headers, verify=verify)
 
     def replace_unwanted_characters(self, s):
         """
