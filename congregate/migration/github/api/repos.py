@@ -1,5 +1,5 @@
 from congregate.migration.github.api.base import GitHubApi
-
+import json
 
 class ReposApi():
     def __init__(self, host, token):
@@ -48,3 +48,36 @@ class ReposApi():
         GitHub API v3 Doc: https://docs.github.com/en/rest/reference/repos#list-repository-collaborators
         """
         return self.api.list_all(self.host, "repos/{}/{}/collaborators".format(owner, repo), verify=False)
+    
+    def create_auth_user_repo(self, data=None, message=None):
+        """
+        Creates a new repository for the authenticated user.
+
+        GitHub API v3 Doc: https://docs.github.com/en/enterprise/2.21/user/rest/reference/repos#create-a-repository-for-the-authenticated-user
+        """
+        if not message:
+            print(f"Creating a new repository for the authenticated user {data}")
+
+        return self.api.generate_v3_post_request(self.host, "user/repos", json.dumps(data), description=message, verify=False)
+
+    def create_org(self, data=None, message=None):
+        """
+        Create an organization.
+
+        GitHub API v3 Doc: https://docs.github.com/en/enterprise/2.21/user/rest/reference/enterprise-admin#create-an-organization
+        """
+        if not message:
+            print(f"Creating an organization {data}")
+
+        return self.api.generate_v3_post_request(self.host, "admin/organizations", json.dumps(data), description=message, verify=False)
+    
+    def create_org_repo(self, org_name, data=None, message=None):
+        """
+        Create an organization repository.
+
+        GitHub API v3 Doc: https://docs.github.com/en/enterprise/2.21/user/rest/reference/repos#create-an-organization-repository
+        """
+        if not message:
+            print(f"Creating an organization repository {data}")
+
+        return self.api.generate_v3_post_request(self.host, f"orgs/{org_name}/repos", json.dumps(data), description=message, verify=False)

@@ -4,7 +4,10 @@ import urllib3
 from congregate.helpers.decorators import stable_retry
 from congregate.helpers.audit_logger import audit_logger
 from congregate.helpers.logger import myLogger
+from congregate.helpers.misc_utils import generate_audit_log_message
+from congregate.helpers.base_class import BaseClass
 
+base = BaseClass()
 
 log = myLogger(__name__)
 audit = audit_logger(__name__)
@@ -18,7 +21,6 @@ class GitHubApi():
         self.host = host
         self.token = token
         self.api = api
-
         # Test Query
         self.query = """
             query {
@@ -60,7 +62,9 @@ class GitHubApi():
         return f"{host}/api/graphql"
 
     def generate_v3_request_url(self, host, api):
-        "Create the REST URL for a given host and api end point."
+        """
+        Create the REST URL for a given host and api end point.
+        """
         if host[-1] == "/":
             host = host.rstrip("/")
         return f"{host}/api/v3/{api}"
@@ -68,7 +72,7 @@ class GitHubApi():
     @stable_retry
     def generate_v3_get_request(self, host, api, url=None, params=None, verify=True):
         """
-        Generate a REST request object
+        Generates GET request to GitHub API
         """
         if url is None:
             url = self.generate_v3_request_url(host, api)
@@ -77,6 +81,17 @@ class GitHubApi():
         if params is None:
             params = {}
         return requests.get(url, params=params, headers=headers, verify=verify)
+
+    @stable_retry
+    def generate_v3_post_request(self, host, api, data, headers=None, files=None, description=None, verify=False):
+        """
+        Generates POST request to GitHub API
+        """
+        url = self.generate_v3_request_url(host, api)
+        audit.info(generate_audit_log_message("POST", description, url))
+        if headers is None:
+            headers = self.generate_v3_request_header(self.token)
+        return requests.post(url, data=data, headers=headers, files=files, verify=verify)
 
     def replace_unwanted_characters(self, s):
         """
