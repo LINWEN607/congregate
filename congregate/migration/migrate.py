@@ -84,8 +84,8 @@ class MigrateClient(BaseClass):
         self.skip_project_import = skip_project_import
 
     def migrate(self):
-        self.log.info("{}Migrating data from {} ({}) to {}".format(get_dry_log(
-            self.dry_run), self.config.source_host, self.config.source_type, self.config.destination_host))
+        self.log.info(
+            f"{get_dry_log(self.dry_run)}Migrating data from {self.config.source_host} ({self.config.source_type}) to {self.config.destination_host}")
 
         # Dry-run and log cleanup
         if self.dry_run:
@@ -102,7 +102,7 @@ class MigrateClient(BaseClass):
             self.migrate_from_github()
         else:
             self.log.warning(
-                "Configuration (data/congregate.conf) src_type {} not supported".format(self.config.source_type))
+                f"Configuration (data/congregate.conf) src_type {self.config.source_type} not supported")
         add_post_migration_stats(self.start)
 
     def migrate_from_gitlab(self):

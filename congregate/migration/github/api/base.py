@@ -28,18 +28,6 @@ class GitHubApi():
             }
             """
 
-    def do_all_graphql(self):
-        """
-        This runs all the required pieces of the class for the V4 GraphQL API
-        """
-        pass
-
-    def do_all_rest(self):
-        """
-        This runs all the required pieces of the class for the V3 REST API
-        """
-        self.generate_v3_get_request(host=self.host, api=self.api)
-
     def generate_v3_request_header(self, token):
         """
         Given a token return a dictionary for authorization. Works for REST
@@ -48,7 +36,7 @@ class GitHubApi():
         """
         header = {
             "Accept": "application/vnd.github.v3+json",
-            "Authorization": 'token {}'.format(token)
+            "Authorization": f"token {token}"
         }
         return header
 
@@ -59,7 +47,7 @@ class GitHubApi():
         Doc: https://docs.github.com/en/graphql/guides/forming-calls-with-graphql#authenticating-with-graphql
         """
         header = {
-            "Authorization": 'Bearer {}'.format(token)
+            "Authorization": f"Bearer {token}"
         }
         return header
 
@@ -69,13 +57,13 @@ class GitHubApi():
         """
         if host[-1] == "/":
             host = host.rstrip("/")
-        return "{}/api/graphql".format(host)
+        return f"{host}/api/graphql"
 
     def generate_v3_request_url(self, host, api):
         "Create the REST URL for a given host and api end point."
         if host[-1] == "/":
             host = host.rstrip("/")
-        return "{}/api/v3/{}".format(host, api)
+        return f"{host}/api/v3/{api}"
 
     def create_v4_query(self, query):
         """
@@ -138,7 +126,7 @@ class GitHubApi():
         Implement pagination
         """
         isLastPage = False
-        log.info("Listing endpoint: {}".format(api))
+        log.info(f"Listing endpoint: {api}")
         url = self.generate_v3_request_url(host, api)
         data = []
         while isLastPage is False:
@@ -148,17 +136,18 @@ class GitHubApi():
                 }
             else:
                 params["per_page"] = limit
+
             r = self.generate_v3_get_request(
                 host, api, url, params=params, verify=verify)
 
             if r.status_code != 200:
                 if r.status_code == 404 or r.status_code == 500 or r.status_code == 401:
-                    log.error('\nERROR: HTTP Response was {}\n\nBody Text: {}\n'.format(
-                        r.status_code, r.text))
+                    log.error(
+                        f"\nERROR: HTTP Response was {r.status_code}\n\nBody Text: {r.text}\n")
                     break
-                raise ValueError('ERROR HTTP Response was NOT 200, which implies something wrong. The actual return code was {}\n{}\n'.format(
-                    r.status_code, r.text))
-            # try:
+                raise ValueError(
+                    f"ERROR HTTP Response was NOT 200, which implies something wrong. The actual return code was {r.status_code}\n{r.text}\n")
+
             if r.json() and r.headers.get("Link", None):
                 data.extend(r.json())
                 h = self.create_dict_from_headers(r.headers['Link'])
