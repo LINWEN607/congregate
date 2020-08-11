@@ -107,10 +107,17 @@ class JenkinsApi():
 
     def get_scm_by_job(self, job_name):
         # returns a string of scm from specified job
-        return self.server.run_script(f"""
-        item = Jenkins.instance.getItemByFullName("{ job_name }")
-        println item.getScm().getUserRemoteConfigs()[0].getUrl()
-        """)
+        try:
+            scm_url = self.server.run_script(f"""
+            item = Jenkins.instance.getItemByFullName("{ job_name }")
+            println item.getScm().getUserRemoteConfigs()[0].getUrl()
+            """)
+        except jenkins.JenkinsException:
+            # handle no scm set
+            # jenkins.JenkinsException: groovy.lang.MissingMethodException: No signature of method: hudson.scm.NullSCM.getUserRemoteConfigs() is applicable for argument types: () values: []
+            return "no_scm"
+
+        return scm_url
 
     def get_job_params(self, job_name):
         # returns a list of job params

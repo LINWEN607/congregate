@@ -13,6 +13,8 @@ from congregate.migration.github.repos import ReposClient as GitHubRepos
 from congregate.migration.github.orgs import OrgsClient as GitHubOrgs
 from congregate.migration.github.users import UsersClient as GitHubUsers
 
+from congregate.migration.jenkins.base import JenkinsClient as JenkinsData
+
 b = BaseClass()
 
 
@@ -53,6 +55,12 @@ def list_github_data():
     users.retrieve_user_info()
 
 
+def list_jenkins_data():
+    data = JenkinsData()
+
+    data.retrieve_jobs_with_scm_info()
+
+
 def write_empty_file(filename):
     """
         Write an empty json file containing an empty list, it's used to make sure a file is present in the filesystem
@@ -72,6 +80,8 @@ def list_data():
         list_gitlab_data()
     elif src_type == "GitHub":
         list_github_data()
+    elif src_type == "Jenkins":
+        list_jenkins_data()
     else:
         b.log.warning("Cannot list from source {}".format(src_type))
         exit()
