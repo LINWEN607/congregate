@@ -151,10 +151,6 @@ class Config(object):
         return self.prop("SOURCE", "src_type")
 
     @property
-    def ci_src_type(self):
-        return self.prop("SOURCE", "ci_src_type")
-
-    @property
     def source_host(self):
         return self.prop("SOURCE", "src_hostname")
 
@@ -182,6 +178,23 @@ class Config(object):
         :return: The set config value of 3600 seconds (one hour) as default
         """
         return self.prop_int("SOURCE", "max_export_wait_time", 3600)
+
+# CI_SOURCE
+    @property
+    def ci_source_type(self):
+        return self.prop("CI_SOURCE", "ci_src_type")
+
+    @property
+    def ci_source_host(self):
+        return self.prop("CI_SOURCE", "ci_ssrc_hostname")
+
+    @property
+    def ci_source_username(self):
+        return self.prop("CI_SOURCE", "ci_susername")
+
+    @property
+    def ci_source_token(self):
+        return self.prop("CI_SOURCE", "ci_ssrc_access_token", None, True)
 
 # EXPORT
     @property
