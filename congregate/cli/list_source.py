@@ -74,7 +74,7 @@ def write_empty_file(filename):
 
 def list_data():
     src_type = b.config.source_type
-    ci_src_type = b.config.ci_src_type
+    ci_src_type = b.config.ci_source_type
     if src_type == "Bitbucket Server":
         list_bitbucket_data()
     elif src_type == "GitLab":

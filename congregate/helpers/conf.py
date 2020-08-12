@@ -186,15 +186,15 @@ class Config(object):
 
     @property
     def ci_source_host(self):
-        return self.prop("CI_SOURCE", "ci_ssrc_hostname")
+        return self.prop("CI_SOURCE", "ci_src_hostname")
 
     @property
     def ci_source_username(self):
-        return self.prop("CI_SOURCE", "ci_susername")
+        return self.prop("CI_SOURCE", "ci_username")
 
     @property
     def ci_source_token(self):
-        return self.prop("CI_SOURCE", "ci_ssrc_access_token", None, True)
+        return self.prop("CI_SOURCE", "ci_src_access_token", None, True)
 
 # EXPORT
     @property
