@@ -126,3 +126,11 @@ class BaseTests(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             self.api.list_all("http://host", "organizations", verify=False)
+
+    def test_generate_v3_post_request(self):
+        with patch("congregate.migration.github.api.base.requests.Response") as mock_resp:
+            with patch("congregate.migration.github.api.base.requests.post") as mock_post:
+                mock_post.return_value = mock_resp
+                resp = self.api.generate_v3_post_request(
+                    "HOST", "API", {"data": "data"})
+                self.assertEqual(mock_resp, resp)
