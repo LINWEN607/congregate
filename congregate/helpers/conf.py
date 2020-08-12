@@ -151,6 +151,10 @@ class Config(object):
         return self.prop("SOURCE", "src_type")
 
     @property
+    def ci_src_type(self):
+        return self.prop("SOURCE", "ci_src_type")
+
+    @property
     def source_host(self):
         return self.prop("SOURCE", "src_hostname")
 
