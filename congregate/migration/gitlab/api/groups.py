@@ -68,6 +68,8 @@ class GroupsApi():
             :param: data: (dict) Object containing the various data requried for creating a group. Refer to the link above for specific examples
             :return: Response object containing the response to POST /groups
         """
+        if not message:
+            message = f"Creating group with payload {str(data)}"
         return api.generate_post_request(host, token, "groups", json.dumps(data), description=message)
 
     def add_member_to_group(self, gid, host, token, member, message=None):

@@ -1,7 +1,7 @@
 import json
 
 from re import sub
-from urllib.parse import quote
+from urllib.parse import quote, quote_plus
 from time import sleep
 from os import remove
 from glob import glob
