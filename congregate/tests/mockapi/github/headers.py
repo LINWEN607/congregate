@@ -1,4 +1,3 @@
-import json
 class MockHeaders():
     def get_linked_headers(self):
         return {
@@ -23,7 +22,8 @@ class MockHeaders():
             'Referrer-Policy': 'origin-when-cross-origin, strict-origin-when-cross-origin',
             'Content-Type': 'application/json; charset=utf-8',
             'X-Accepted-OAuth-Scopes': ''
-            }
+        }
+
     def get_linkless_headers(self):
         return {
             'X-XSS-Protection': '1; mode=block',
@@ -46,19 +46,50 @@ class MockHeaders():
             'Referrer-Policy': 'origin-when-cross-origin, strict-origin-when-cross-origin',
             'Content-Type': 'application/json; charset=utf-8',
             'X-Accepted-OAuth-Scopes': ''
-            }
+        }
+
     def get_data(self):
-        return   [{
-            "login": "org1",
-            "id": 8,
-            "node_id": "MDEyOk9yZ2FuaXphdGlvbjg=",
-            "url": "https://github.gitlab-proserv.net/api/v3/orgs/org1",
-            "repos_url": "https://github.gitlab-proserv.net/api/v3/orgs/org1/repos",
-            "events_url": "https://github.gitlab-proserv.net/api/v3/orgs/org1/events",
-            "hooks_url": "https://github.gitlab-proserv.net/api/v3/orgs/org1/hooks",
-            "issues_url": "https://github.gitlab-proserv.net/api/v3/orgs/org1/issues",
-            "members_url": "https://github.gitlab-proserv.net/api/v3/orgs/org1/members{/member}",
-            "public_members_url": "https://github.gitlab-proserv.net/api/v3/orgs/org1/public_members{/member}",
-            "avatar_url": "https://github.gitlab-proserv.net/avatars/u/8?",
-            "description": None
-        }]
+        return [
+            {
+                "login": "org1",
+                "id": 8,
+                "node_id": "MDEyOk9yZ2FuaXphdGlvbjg=",
+                "url": "https://github.gitlab-proserv.net/api/v3/orgs/org1",
+                "repos_url": "https://github.gitlab-proserv.net/api/v3/orgs/org1/repos",
+                "events_url": "https://github.gitlab-proserv.net/api/v3/orgs/org1/events",
+                "hooks_url": "https://github.gitlab-proserv.net/api/v3/orgs/org1/hooks",
+                "issues_url": "https://github.gitlab-proserv.net/api/v3/orgs/org1/issues",
+                "members_url": "https://github.gitlab-proserv.net/api/v3/orgs/org1/members{/member}",
+                "public_members_url": "https://github.gitlab-proserv.net/api/v3/orgs/org1/public_members{/member}",
+                "avatar_url": "https://github.gitlab-proserv.net/avatars/u/8?",
+                "description": None
+            },
+            {
+                "login": "org2",
+                "id": 9,
+                "node_id": "MDEyOk9yZ2FuaXphdGlvbjg=",
+                "url": "https://github.gitlab-proserv.net/api/v3/orgs/org2",
+                "repos_url": "https://github.gitlab-proserv.net/api/v3/orgs/org2/repos",
+                "events_url": "https://github.gitlab-proserv.net/api/v3/orgs/org2/events",
+                "hooks_url": "https://github.gitlab-proserv.net/api/v3/orgs/org2/hooks",
+                "issues_url": "https://github.gitlab-proserv.net/api/v3/orgs/org2/issues",
+                "members_url": "https://github.gitlab-proserv.net/api/v3/orgs/org2/members{/member}",
+                "public_members_url": "https://github.gitlab-proserv.net/api/v3/orgs/org2/public_members{/member}",
+                "avatar_url": "https://github.gitlab-proserv.net/avatars/u/8?",
+                "description": None
+            },
+            {
+                "login": "org3",
+                "id": 10,
+                "node_id": "MDEyOk9yZ2FuaXphdGlvbjg=",
+                "url": "https://github.gitlab-proserv.net/api/v3/orgs/org3",
+                "repos_url": "https://github.gitlab-proserv.net/api/v3/orgs/org3/repos",
+                "events_url": "https://github.gitlab-proserv.net/api/v3/orgs/org3/events",
+                "hooks_url": "https://github.gitlab-proserv.net/api/v3/orgs/org3/hooks",
+                "issues_url": "https://github.gitlab-proserv.net/api/v3/orgs/org3/issues",
+                "members_url": "https://github.gitlab-proserv.net/api/v3/orgs/org3/members{/member}",
+                "public_members_url": "https://github.gitlab-proserv.net/api/v3/orgs/org3/public_members{/member}",
+                "avatar_url": "https://github.gitlab-proserv.net/avatars/u/8?",
+                "description": None
+            }
+        ]
