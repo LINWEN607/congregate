@@ -91,11 +91,12 @@ class OrgsClient(BaseClass):
             self.log.error(
                 "Failed to append team ({}) to list {}".format(team, groups))
         else:
-            full_path = self.get_team_full_path(org["login"], team)
+            org_name = org["login"]
+            full_path = self.get_team_full_path(org_name, team)
             team_repos = self.orgs_api.get_all_org_team_repos(
-                org["login"], team["slug"])
+                org_name, team["slug"])
             if tree:
-                tree[org["login"]]["SUB-GROUPS"].append({"FULL_PATH": full_path, "PROJECTS": [
+                tree[org_name]["SUB-GROUPS"].append({"FULL_PATH": full_path, "PROJECTS": [
                     r["full_name"] for r in team_repos]})
             self.repos.format_repos(projects, team_repos)
             groups.append({
@@ -109,7 +110,7 @@ class OrgsClient(BaseClass):
                 # parent group
                 "parent_id": team["parent"]["id"] if team.get("parent", None) else org["id"],
                 "auto_devops_enabled": False,
-                "members": self.add_team_members([], org["login"], team),
+                "members": self.add_team_members([], org_name, team),
                 "projects": self.repos.format_repos([], team_repos, org=True)
             })
         return groups, projects
