@@ -53,7 +53,7 @@ class OrgsClient(BaseClass):
             self.add_org_as_group(groups, org["login"], projects, tree=tree)
             for team in self.orgs_api.get_all_org_teams(org["login"]):
                 self.add_team_as_subgroup(
-                    groups, org["login"], team, projects, tree=tree)
+                    groups, org, team, projects, tree=tree)
         with open("{}/data/groups.json".format(self.app_path), "w") as f:
             json.dump(remove_dupes(groups), f, indent=4)
         with open("{}/data/project_json.json".format(self.app_path), "w") as f:
@@ -86,17 +86,18 @@ class OrgsClient(BaseClass):
             })
         return groups, projects
 
-    def add_team_as_subgroup(self, groups, org_name, team, projects, tree=None):
+    def add_team_as_subgroup(self, groups, org, team, projects, tree=None):
         if groups is None or is_error_message_present(team):
             self.log.error(
                 "Failed to append team ({}) to list {}".format(team, groups))
         else:
+            org_name = org["login"]
             full_path = self.get_team_full_path(org_name, team)
             team_repos = self.orgs_api.get_all_org_team_repos(
                 org_name, team["slug"])
             if tree:
                 tree[org_name]["SUB-GROUPS"].append({"FULL_PATH": full_path, "PROJECTS": [
-                                                    r["full_name"] for r in team_repos]})
+                    r["full_name"] for r in team_repos]})
             self.repos.format_repos(projects, team_repos)
             groups.append({
                 "name": team["name"],
@@ -104,9 +105,10 @@ class OrgsClient(BaseClass):
                 "path": team["slug"],
                 "full_path": full_path,
                 "description": team.get("description", ""),
-                "visibility": "private" if team["privacy"] == "secret" else "public",
+                # if team["privacy"] == "secret" else "public",
+                "visibility": "private",
                 # parent group
-                "parent_id": team["parent"]["id"] if team.get("parent", None) else None,
+                "parent_id": team["parent"]["id"] if team.get("parent", None) else org["id"],
                 "auto_devops_enabled": False,
                 "members": self.add_team_members([], org_name, team),
                 "projects": self.repos.format_repos([], team_repos, org=True)

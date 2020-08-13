@@ -4,7 +4,10 @@ import urllib3
 from congregate.helpers.decorators import stable_retry
 from congregate.helpers.audit_logger import audit_logger
 from congregate.helpers.logger import myLogger
+from congregate.helpers.misc_utils import generate_audit_log_message
+from congregate.helpers.base_class import BaseClass
 
+base = BaseClass()
 
 log = myLogger(__name__)
 audit = audit_logger(__name__)
@@ -18,7 +21,6 @@ class GitHubApi():
         self.host = host
         self.token = token
         self.api = api
-
         # Test Query
         self.query = """
             query {
@@ -28,18 +30,6 @@ class GitHubApi():
             }
             """
 
-    def do_all_graphql(self):
-        """
-        This runs all the required pieces of the class for the V4 GraphQL API
-        """
-        pass
-
-    def do_all_rest(self):
-        """
-        This runs all the required pieces of the class for the V3 REST API
-        """
-        self.generate_v3_get_request(host=self.host, api=self.api)
-
     def generate_v3_request_header(self, token):
         """
         Given a token return a dictionary for authorization. Works for REST
@@ -48,7 +38,7 @@ class GitHubApi():
         """
         header = {
             "Accept": "application/vnd.github.v3+json",
-            "Authorization": 'token {}'.format(token)
+            "Authorization": f"token {token}"
         }
         return header
 
@@ -59,7 +49,7 @@ class GitHubApi():
         Doc: https://docs.github.com/en/graphql/guides/forming-calls-with-graphql#authenticating-with-graphql
         """
         header = {
-            "Authorization": 'Bearer {}'.format(token)
+            "Authorization": f"Bearer {token}"
         }
         return header
 
@@ -69,24 +59,20 @@ class GitHubApi():
         """
         if host[-1] == "/":
             host = host.rstrip("/")
-        return "{}/api/graphql".format(host)
+        return f"{host}/api/graphql"
 
     def generate_v3_request_url(self, host, api):
-        "Create the REST URL for a given host and api end point."
+        """
+        Create the REST URL for a given host and api end point.
+        """
         if host[-1] == "/":
             host = host.rstrip("/")
-        return "{}/api/v3/{}".format(host, api)
-
-    def create_v4_query(self, query):
-        """
-        Given a query string, return a json version of it.
-        """
-        pass
+        return f"{host}/api/v3/{api}"
 
     @stable_retry
     def generate_v3_get_request(self, host, api, url=None, params=None, verify=True):
         """
-        Generate a REST request object
+        Generates GET request to GitHub API
         """
         if url is None:
             url = self.generate_v3_request_url(host, api)
@@ -97,14 +83,15 @@ class GitHubApi():
         return requests.get(url, params=params, headers=headers, verify=verify)
 
     @stable_retry
-    def run_v4_query(self, url=None, headers=None, verify=True):
+    def generate_v3_post_request(self, host, api, data, headers=None, files=None, description=None, verify=False):
         """
+        Generates POST request to GitHub API
         """
-        if not url:
-            url = self.generate_v4_request_url(self.host)
-        if not headers:
-            headers = self.generate_v4_request_header(self.token)
-        return requests.post(url, json={'query': self.query}, headers=headers, verify=verify)
+        url = self.generate_v3_request_url(host, api)
+        audit.info(generate_audit_log_message("POST", description, url))
+        if headers is None:
+            headers = self.generate_v3_request_header(self.token)
+        return requests.post(url, data=data, headers=headers, files=files, verify=verify)
 
     def replace_unwanted_characters(self, s):
         """
@@ -138,7 +125,7 @@ class GitHubApi():
         Implement pagination
         """
         isLastPage = False
-        log.info("Listing endpoint: {}".format(api))
+        log.info(f"Listing endpoint: {api}")
         url = self.generate_v3_request_url(host, api)
         data = []
         while isLastPage is False:
@@ -148,17 +135,18 @@ class GitHubApi():
                 }
             else:
                 params["per_page"] = limit
+
             r = self.generate_v3_get_request(
                 host, api, url, params=params, verify=verify)
 
             if r.status_code != 200:
                 if r.status_code == 404 or r.status_code == 500 or r.status_code == 401:
-                    log.error('\nERROR: HTTP Response was {}\n\nBody Text: {}\n'.format(
-                        r.status_code, r.text))
+                    log.error(
+                        f"\nERROR: HTTP Response was {r.status_code}\n\nBody Text: {r.text}\n")
                     break
-                raise ValueError('ERROR HTTP Response was NOT 200, which implies something wrong. The actual return code was {}\n{}\n'.format(
-                    r.status_code, r.text))
-            # try:
+                raise ValueError(
+                    f"ERROR HTTP Response was NOT 200, which implies something wrong. The actual return code was {r.status_code}\n{r.text}\n")
+
             if r.json() and r.headers.get("Link", None):
                 data.extend(r.json())
                 h = self.create_dict_from_headers(r.headers['Link'])

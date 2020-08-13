@@ -7,12 +7,12 @@
 import os
 import json
 from traceback import print_exc
-from time import time
+from time import time, sleep
 from requests.exceptions import RequestException
 
 from congregate.helpers import api
 from congregate.helpers.migrate_utils import get_export_filename_from_namespace_and_name, get_dst_path_with_namespace, get_full_path_with_parent_namespace, \
-    is_top_level_group, get_failed_export_from_results, get_results, get_staged_groups_without_failed_export, get_staged_projects_without_failed_export
+    is_top_level_group, get_failed_export_from_results, get_results, get_staged_groups_without_failed_export, get_staged_projects_without_failed_export, can_migrate_users
 from congregate.helpers.misc_utils import get_dry_log, json_pretty, is_dot_com, clean_data, \
     add_post_migration_stats, rotate_logs, write_results_to_file, migration_dry_run, safe_json_response, is_error_message_present
 from congregate.helpers.processes import start_multi_process
@@ -26,6 +26,7 @@ from congregate.migration.gitlab.groups import GroupsClient
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.projects import ProjectsClient
 from congregate.migration.gitlab.api.projects import ProjectsApi
+from congregate.migration.gitlab.api.namespaces import NamespacesApi
 from congregate.migration.gitlab.pushrules import PushRulesClient
 from congregate.migration.gitlab.merge_request_approvals import MergeRequestApprovalsClient
 from congregate.migration.gitlab.registries import RegistryClient
@@ -61,6 +62,7 @@ class MigrateClient(BaseClass):
         self.groups_api = GroupsApi()
         self.projects = ProjectsClient()
         self.projects_api = ProjectsApi()
+        self.namespaces_api = NamespacesApi()
         self.pushrules = PushRulesClient()
         self.mr_approvals = MergeRequestApprovalsClient()
         self.registries = RegistryClient()
@@ -84,6 +86,9 @@ class MigrateClient(BaseClass):
         self.skip_project_import = skip_project_import
 
     def migrate(self):
+        self.log.info(
+            f"{get_dry_log(self.dry_run)}Migrating data from {self.config.source_host} ({self.config.source_type}) to {self.config.destination_host}")
+
         # Dry-run and log cleanup
         if self.dry_run:
             clean_data(dry_run=False, files=[
@@ -95,9 +100,11 @@ class MigrateClient(BaseClass):
             self.migrate_from_gitlab()
         elif self.config.source_type == "Bitbucket Server":
             self.migrate_from_bitbucket_server()
+        elif self.config.source_type == "GitHub":
+            self.migrate_from_github()
         else:
             self.log.warning(
-                "Configuration (data/congregate.conf) src_type {} not supported".format(self.config.source_type))
+                f"Configuration (data/congregate.conf) src_type {self.config.source_type} not supported")
         add_post_migration_stats(self.start)
 
     def migrate_from_gitlab(self):
@@ -117,6 +124,70 @@ class MigrateClient(BaseClass):
         if not self.dry_run and self.config.dstn_parent_id and not is_dot_com(self.config.destination_host):
             self.groups.remove_import_user(self.config.dstn_parent_id)
 
+    def migrate_from_github(self):
+        dry_log = get_dry_log(self.dry_run)
+
+        # Migrate users
+        self.migrate_user_info()
+
+        # Migrate GHE orgs/teams to groups/sub-groups
+        staged_groups = self.groups.get_staged_groups()
+        if staged_groups and not self.skip_group_import:
+            self.log.info(
+                f"{dry_log}Migrating GitHub orgs/teams to GitLab groups/sub-groups")
+            results = start_multi_process(
+                self.migrate_github_group, staged_groups, processes=self.processes)
+
+            self.are_results(results, "group", "import")
+
+            results.append(get_results(results))
+            self.log.info(
+                f"### {dry_log}Group import results ###\n{json_pretty(results)}")
+            write_results_to_file(
+                results, result_type="group", log=self.log)
+        else:
+            self.log.info("SKIP: No projects to migrate")
+
+    def migrate_github_group(self, group):
+        result = False
+        members = group.pop("members")
+        group["full_path"] = get_full_path_with_parent_namespace(
+            group["full_path"])
+        name = group["name"]
+        if not self.dry_run:
+            # Wait for parent group to create
+            timeout = 0
+            wait_time = self.config.importexport_wait
+            ppath = group["full_path"].rsplit("/", 1)[0]
+            pnamespace = self.namespaces_api.get_namespace_by_full_path(
+                ppath, self.config.destination_host, self.config.destination_token)
+            while pnamespace.status_code != 200:
+                self.log.info(
+                    f"Waiting {self.config.importexport_wait} seconds to create parent group {ppath} for group {name}")
+                timeout += wait_time
+                sleep(wait_time)
+                if timeout > wait_time * 10:
+                    self.log.error(
+                        f"Time limit exceeded waiting for parent group {ppath} to create for group {name}")
+                    return {
+                        group["full_path"]: result
+                    }
+                pnamespace = self.namespaces_api.get_namespace_by_full_path(
+                    ppath, self.config.destination_host, self.config.destination_token)
+            group["parent_id"] = safe_json_response(
+                pnamespace)["id"] if group["parent_id"] else self.config.dstn_parent_id
+            result = safe_json_response(self.groups_api.create_group(
+                self.config.destination_host, self.config.destination_token, group))
+            if result and not is_error_message_present(result):
+                group_id = result.get("id", None)
+                if group_id:
+                    result["members"] = self.groups.add_members_to_destination_group(
+                        self.config.destination_host, self.config.destination_token, group_id, members)
+                    self.groups.remove_import_user(group_id)
+        return {
+            group["full_path"]: result
+        }
+
     def migrate_from_bitbucket_server(self):
         dry_log = get_dry_log(self.dry_run)
 
@@ -126,7 +197,8 @@ class MigrateClient(BaseClass):
         # Migrate BB projects to groups
         staged_groups = self.groups.get_staged_groups()
         if staged_groups and not self.skip_group_import:
-            self.log.info("Migrating BitBucket projects to GitLab groups")
+            self.log.info(
+                f"{dry_log}Migrating BitBucket projects to GitLab groups")
             results = start_multi_process(
                 self.migrate_bitbucket_group, staged_groups, processes=self.processes)
 
@@ -197,7 +269,7 @@ class MigrateClient(BaseClass):
 
     def migrate_user_info(self):
         staged_users = self.users.get_staged_users()
-        if staged_users:
+        if staged_users and can_migrate_users(staged_users):
             if not self.skip_users:
                 self.log.info("{}Migrating user info".format(
                     get_dry_log(self.dry_run)))
@@ -261,7 +333,7 @@ class MigrateClient(BaseClass):
                         self.users.block_user(user_data)
                     new_user = self.users.handle_user_creation_status(
                         response, user_data)
-            if not self.dry_run and self.config.source_host:
+            if not self.dry_run and self.config.source_host == "GitLab":
                 # Migrate SSH keys
                 self.keys.migrate_user_ssh_keys(old_user, new_user if new_user.get(
                     "id", None) else self.users.find_user_by_email_comparison_without_id(email))

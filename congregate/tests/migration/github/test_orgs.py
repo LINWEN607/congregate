@@ -223,10 +223,11 @@ class ReposTests(unittest.TestCase):
             "message": "Not Found",
             "documentation_url": "https://developer.github.com/enterprise/2.21/v3"
         }
+        mock_org = self.mock_orgs.get_all_orgs()[0]
 
         expected_groups, expected_projects = [], []
 
-        actual = self.orgs.add_team_as_subgroup([], "org1", mock_team, [])
+        actual = self.orgs.add_team_as_subgroup([], mock_org, mock_team, [])
 
         self.assertEqual(actual[0], expected_groups)
         self.assertEqual(actual[1], expected_projects)
@@ -237,7 +238,7 @@ class ReposTests(unittest.TestCase):
 
         expected_groups = None
 
-        actual = self.orgs.add_team_as_subgroup(None, "org1", mock_team, [])
+        actual = self.orgs.add_team_as_subgroup(None, mock_org, mock_team, [])
 
         self.assertEqual(actual[0], expected_groups)
         self.assertEqual(actual[1], expected_projects)
@@ -269,6 +270,7 @@ class ReposTests(unittest.TestCase):
 
         mock_org_team_members.return_value = self.mock_orgs.get_all_org_team_members()
         mock_org_team_repos.return_value = self.mock_orgs.get_all_org_team_repos()
+        mock_org = self.mock_orgs.get_all_orgs()[1]
 
         org_team_repo_members = [
             {
@@ -380,7 +382,7 @@ class ReposTests(unittest.TestCase):
         ]
 
         actual = self.orgs.add_team_as_subgroup(
-            [], "org2", self.mock_orgs.get_org_child_team(), [])
+            [], mock_org, self.mock_orgs.get_org_child_team(), [])
 
         self.assertEqual(actual[0].sort(key=lambda x: x["id"]),
                          expected_groups.sort(key=lambda x: x["id"]))
@@ -412,6 +414,7 @@ class ReposTests(unittest.TestCase):
 
         mock_org_team_members.return_value = self.mock_orgs.get_all_org_team_members()
         mock_org_team_repos.return_value = self.mock_orgs.get_all_org_team_repos()
+        mock_org = self.mock_orgs.get_all_orgs()[1]
 
         org_team_repo_members = [
             {
@@ -523,7 +526,7 @@ class ReposTests(unittest.TestCase):
         ]
 
         actual = self.orgs.add_team_as_subgroup(
-            [], "org2", self.mock_orgs.get_org_child_team(), [])
+            [], mock_org, self.mock_orgs.get_org_child_team(), [])
 
         self.assertEqual(actual[0].sort(key=lambda x: x["id"]),
                          expected_groups.sort(key=lambda x: x["id"]))

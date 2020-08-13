@@ -1,7 +1,7 @@
 from collections import Counter
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import is_dot_com
+from congregate.helpers.misc_utils import is_dot_com, is_error_message_present
 from congregate.migration.gitlab.users import UsersApi
 
 
@@ -152,7 +152,7 @@ def get_results(res):
     """
     return {
         "Total": len(res),
-        "Successful": len(res) - Counter(v for r in res for k, v in r.items() if not v).get(False, 0)
+        "Successful": len(res) - Counter(False for r in res for k, v in r.items() if not v or is_error_message_present(v)).get(False, 0)
     }
 
 
@@ -170,3 +170,16 @@ def is_loc_supported(loc):
     if loc not in ["filesystem", "aws"]:
         b.log.error("Unsupported export location: {}".format(loc))
         exit()
+
+
+def can_migrate_users(users):
+    can = True
+    for user in users:
+        name = user.get("name", None)
+        username = user.get("username", None)
+        email = user.get("email", None)
+        if any(v is None for v in [name, username, email]):
+            b.log.error(
+                f"Required user metadata missing:\nName: {name}\nUsername: {username}\nEmail: {email}")
+            can = False
+    return can

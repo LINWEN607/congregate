@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 import mock
 from congregate.tests.helpers.mock_data.results import MockProjectResults
+from congregate.tests.mockapi.jenkins.jobs import JenkinsJobsApi
 import congregate.helpers.misc_utils as misc
 
 
@@ -377,5 +378,34 @@ def test_get_hash_of_dirs_with_dir_exception(walk, path, mock_open):
     ]
     expected = -2
     actual = misc.get_hash_of_dirs("")
+
+    assert expected == actual
+
+def test_xml_to_dict_simple():
+    test_xml = """
+    <test>
+        <tag>true</tag>
+        <other-tag>a string</other-tag>
+        <another-tag>false</another-tag>
+    </test>
+    """
+    expected = {
+        "test": {
+            "tag": True,
+            "other-tag": "a string",
+            "another-tag": False
+        }
+    }
+
+    actual = misc.xml_to_dict(test_xml)
+
+    assert expected == actual
+
+def test_xml_to_dict_complex():
+    j = JenkinsJobsApi()
+    test_xml = j.get_job_config_xml()
+    expected = j.get_job_config_dict()
+
+    actual = misc.xml_to_dict(test_xml)
 
     assert expected == actual

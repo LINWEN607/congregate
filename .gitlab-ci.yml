@@ -48,7 +48,12 @@ workflow:
   services:
     - name: gitlab/gitlab-ee:13.1.4-ee.0
       alias: gitlab_destination
-      command: ["sh", "-c", "python3 -m http.server 443 --directory /var/log/gitlab/gitlab-rails/ & :; /assets/wrapper"]
+      command:
+        [
+          "sh",
+          "-c",
+          "python3 -m http.server 443 --directory /var/log/gitlab/gitlab-rails/ & :; /assets/wrapper",
+        ]
 
 .e2e-cleanup:
   after_script:
@@ -131,7 +136,10 @@ test:pylint:
 test:unit:
   extends: .test-job
   script:
-    - poetry run pytest -m 'not e2e and not e2e_setup and not e2e_setup_2' --cov-config=.coveragerc --cov=congregate congregate/tests/
+    - poetry run pytest -m 'not e2e and not e2e_setup and not e2e_setup_2' --cov-report html --cov-config=.coveragerc --cov=congregate congregate/tests/
+  artifacts:
+    paths:
+      - htmlcov/*
 
 test:end-to-end full:
   extends:
@@ -169,6 +177,18 @@ test:end-to-end single group:
     - poetry run pytest -s -m e2e_setup_2 congregate/tests/
     - poetry run pytest -s -m e2e --cov-config=.coveragerc --cov=congregate congregate/tests/
 
+test:GitHub Server end to end:
+  extends:
+    - .test-job
+  image: "${TEST_IMAGE_NAME}"  
+  tags:
+    - congregate-auto-scale-runner
+  script:
+    - curl -k $GH_TEST_INSTANCE_URL -v
+  rules:
+    - changes:
+      - .gitlab-ci.yml
+      
 rolling release:
   extends:
     - .use-docker-in-docker

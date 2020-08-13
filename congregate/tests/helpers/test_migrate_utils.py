@@ -574,6 +574,15 @@ class MigrateTests(unittest.TestCase):
         self.assertEqual(mutils.get_results(results), {
                          "Total": 3, "Successful": 0})
 
+    def test_get_results_error_message(self):
+        results = [
+            {"import1": {"key": "value"}},
+            {"import2": {"message": "Failed to import"}},
+            {"import3": {"key": 1}}
+        ]
+        self.assertEqual(mutils.get_results(results), {
+                         "Total": 3, "Successful": 2})
+
     def test_is_top_level_group(self):
         self.assertTrue(mutils.is_top_level_group(
             self.mock_groups.get_group()))
@@ -593,3 +602,40 @@ class MigrateTests(unittest.TestCase):
     def test_is_loc_supported_false(self):
         with self.assertRaises(SystemExit):
             mutils.is_loc_supported("not-aws-or-filesystem")
+
+    def test_can_migrate_users_true(self):
+        users = [
+            {
+                "id": 3,
+                "username": "gitlab",
+                "name": "PS GitLab",
+                "email": "proserv@gitlab.com",
+                "avatar_url": "",
+                "state": "active",
+                "is_admin": True
+            }
+        ]
+        self.assertTrue(mutils.can_migrate_users(users))
+
+    def test_can_migrate_users_false(self):
+        users = [
+            {
+                "id": 1,
+                "username": "ghost",
+                "name": "Ghost",
+                "email": None,
+                "avatar_url": "",
+                "state": "active",
+                "is_admin": False
+            },
+            {
+                "id": 3,
+                "username": "gitlab",
+                "name": "PS GitLab",
+                "email": "proserv@gitlab.com",
+                "avatar_url": "",
+                "state": "active",
+                "is_admin": True
+            }
+        ]
+        self.assertFalse(mutils.can_migrate_users(users))

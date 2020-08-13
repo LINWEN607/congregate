@@ -6,6 +6,7 @@ import subprocess
 import hashlib
 
 import glob
+from xmltodict import parse as xmlparse
 from traceback import print_exc
 from base64 import b64encode, b64decode
 from shutil import copy
@@ -167,6 +168,22 @@ def get_rollback_log(rollback=False):
 def json_pretty(data):
     return json.dumps(data, indent=4, sort_keys=True)
 
+def xml_to_dict(data):
+    return sanitize_booleans_in_dict(xmlparse(data))
+
+def sanitize_booleans_in_dict(d):
+    """
+        Helper method to convert string representations of boolean values to boolean type
+    """
+    for k, v in d.items():
+        if isinstance(v, dict):
+            sanitize_booleans_in_dict(v)
+        if isinstance(v, str):
+            if v.lower() == 'false':
+                d[k] = False
+            elif v.lower() == 'true':
+                d[k] = True
+    return d
 
 def write_json_to_file(path, data, log=None):
     if log:
