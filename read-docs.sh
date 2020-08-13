@@ -8,7 +8,7 @@ echo "Loading doc site"
 
 python_version=$(python --version | awk '{print $2}')
 
-if [[ "$python_version" == *"3"* ]]; then
+if [[ "$python_version" == "3."* ]]; then
     python -m http.server
 else
     python3 -m http.server
