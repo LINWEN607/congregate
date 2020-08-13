@@ -177,6 +177,18 @@ test:end-to-end single group:
     - poetry run pytest -s -m e2e_setup_2 congregate/tests/
     - poetry run pytest -s -m e2e --cov-config=.coveragerc --cov=congregate congregate/tests/
 
+test:GitHub Server end to end:
+  extends:
+    - .test-job
+  image: "${TEST_IMAGE_NAME}"  
+  tags:
+    - congregate-auto-scale-runner
+  script:
+    - curl -k $GH_TEST_INSTANCE_URL -v
+  rules:
+    - changes:
+      - .gitlab-ci.yml
+      
 rolling release:
   extends:
     - .use-docker-in-docker
