@@ -130,7 +130,7 @@ class MigrateClient(BaseClass):
         # Migrate users
         self.migrate_user_info()
 
-        # Migrate GHE orgs/teams to groups/sub-groups
+        # Migrate GH orgs/teams to groups/sub-groups
         staged_groups = self.groups.get_staged_groups()
         if staged_groups and not self.skip_group_import:
             self.log.info(
@@ -145,6 +145,23 @@ class MigrateClient(BaseClass):
                 f"### {dry_log}Group import results ###\n{json_pretty(results)}")
             write_results_to_file(
                 results, result_type="group", log=self.log)
+        else:
+            self.log.info("SKIP: No projects to migrate")
+
+        # Migrate GH repos to projects
+        staged_projects = self.projects.get_staged_projects()
+        if staged_projects and not self.skip_project_import:
+            self.log.info("Importing projects from GitHub")
+            import_results = start_multi_process(
+                self.import_github_project, staged_projects, processes=self.processes)
+
+            self.are_results(import_results, "project", "import")
+
+            # append Total : Successful count of project imports
+            import_results.append(get_results(import_results))
+            self.log.info(
+                f"### {dry_log}Project import results ###\n{json_pretty(import_results)}")
+            write_results_to_file(import_results, log=self.log)
         else:
             self.log.info("SKIP: No projects to migrate")
 
@@ -187,6 +204,18 @@ class MigrateClient(BaseClass):
         return {
             group["full_path"]: result
         }
+
+    def import_github_project(self, project):
+        members = project.pop("members")
+        result = self.ext_import.trigger_import_from_ghe(
+            project, dry_run=self.dry_run)
+        if result.get(project["path_with_namespace"], False) is not False:
+            project_id = result[project["path_with_namespace"]
+                                ]["response"].get("id")
+            result[project["path_with_namespace"]]["members"] = self.projects.add_members_to_destination_project(
+                self.config.destination_host, self.config.destination_token, project_id, members)
+            self.projects.remove_import_user(project_id)
+        return result
 
     def migrate_from_bitbucket_server(self):
         dry_log = get_dry_log(self.dry_run)

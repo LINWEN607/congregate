@@ -1,6 +1,6 @@
-from base64 import b64encode
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.misc_utils import migration_dry_run, is_error_message_present
+from congregate.helpers.migrate_utils import get_dst_path_with_namespace
 from congregate.migration.gitlab.api.external_import import ImportApi
 
 
@@ -39,12 +39,34 @@ class ImportClient(BaseClass):
                     "Failed to import from bitbucket server due to %s" % e)
                 return self.get_failed_result(project)
         else:
-            data["personal_access_token"] = str(b64encode(
-                data["personal_access_token"].encode()))
+            data.pop("personal_access_token", None)
             migration_dry_run("project", data)
             return self.get_failed_result(project, data)
-            
-    
+
+    def trigger_import_from_ghe(self, project, dry_run=True):
+        data = {
+            "personal_access_token": self.config.source_token,
+            "repo_id": project["id"],
+            "target_namespace": get_dst_path_with_namespace(project).rsplit("/", 1)[0]
+        }
+
+        if not dry_run:
+            try:
+                resp = self.ext_import.import_from_github(
+                    self.config.destination_host, self.config.destination_token, data)
+                if is_error_message_present(resp):
+                    message = resp.get("message")
+                    self.log.error(message)
+                    return self.get_failed_result(project, message)
+                return self.get_result_data(project, resp)
+            except ValueError as ve:
+                self.log.error(f"Failed to import from GitHub due to {ve}")
+                return self.get_failed_result(project)
+        else:
+            data.pop("personal_access_token", None)
+            migration_dry_run("project", data)
+            return self.get_failed_result(project, data)
+
     def get_project_repo_from_full_path(self, full_path):
         split = full_path.split("/")
         project = split[0]
@@ -58,7 +80,7 @@ class ImportClient(BaseClass):
                 "response": response
             }
         }
-    
+
     def get_failed_result(self, project, data=None):
         return {
             project["path_with_namespace"]: False,

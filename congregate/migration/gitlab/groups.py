@@ -283,12 +283,17 @@ class GroupsClient(BaseClass):
 
     def add_members_to_destination_group(self, host, token, group_id, members):
         result = {}
+        self.log.info(
+            f"Adding members to Group ID {group_id}:\n{json_pretty(members)}")
         for member in members:
-            user_id_req = self.users.find_user_by_email_comparison_without_id(member["email"])
-            member["user_id"] = user_id_req.get("id", None) if user_id_req else None
+            user_id_req = self.users.find_user_by_email_comparison_without_id(
+                member["email"])
+            member["user_id"] = user_id_req.get(
+                "id", None) if user_id_req else None
             result[member["email"]] = False
             if member.get("user_id"):
-                resp = safe_json_response(self.groups_api.add_member_to_group(group_id, host, token, member))
+                resp = safe_json_response(
+                    self.groups_api.add_member_to_group(group_id, host, token, member))
                 if resp:
                     result[member["email"]] = True
         return result
