@@ -524,8 +524,8 @@ class MigrateClient(BaseClass):
 
     def migrate_single_group_features(self, src_gid, dst_gid, full_path):
         # CI/CD Variables
-        self.variables.migrate_variables(
-            dst_gid, src_gid, "group", full_path)
+        self.variables.migrate_gitlab_cicd_variables(
+            src_gid, dst_gid, full_path, "group")
 
         # Hooks (Webhooks)
         self.hooks.migrate_group_hooks(src_gid, dst_gid, full_path)
@@ -685,8 +685,8 @@ class MigrateClient(BaseClass):
             src_id, dst_id, path_with_namespace)
 
         # CI/CD Variables
-        results["variables"] = self.variables.migrate_cicd_variables(
-            src_id, dst_id, path_with_namespace)
+        results["variables"] = self.variables.migrate_gitlab_cicd_variables(
+            src_id, dst_id, path_with_namespace, "projects")
 
         # Push Rules
         results["push_rules"] = self.pushrules.migrate_push_rules(
