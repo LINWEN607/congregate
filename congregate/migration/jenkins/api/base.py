@@ -127,6 +127,6 @@ class JenkinsApi():
 
         for action in job_info['actions']:
             if 'parameterDefinitions' in action:
-                param_list.append(action['parameterDefinitions'])
+                param_list = action['parameterDefinitions']
 
         return param_list
