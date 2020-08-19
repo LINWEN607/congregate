@@ -130,7 +130,7 @@ class MockProjectsApi():
                 "user": {
                     "name": "user2",
                     "emailAddress": "user2@example.com",
-                    "id": 53,
+                    "id": 3,
                     "displayName": "user2",
                     "active": True,
                     "slug": "user2",
@@ -163,5 +163,21 @@ class MockProjectsApi():
                     }
                 },
                 "permission": "PROJECT_READ"
+            }
+        ]
+
+    def get_all_project_groups(self):
+        return [
+            {
+                "group": {
+                    "name": "stash-users"
+                },
+                "permission": "PROJECT_READ"
+            },
+            {
+                "group": {
+                    "name": "test-group"
+                },
+                "permission": "PROJECT_WRITE"
             }
         ]

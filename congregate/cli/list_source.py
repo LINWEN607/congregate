@@ -8,6 +8,7 @@ from congregate.migration.gitlab.projects import ProjectsClient
 from congregate.migration.bitbucket.projects import ProjectsClient as BitBucketProjects
 from congregate.migration.bitbucket.users import UsersClient as BitBucketUsers
 from congregate.migration.bitbucket.repos import ReposClient as BitBucketRepos
+from congregate.migration.bitbucket.groups import GroupsClient as BitBucketGroups
 
 from congregate.migration.github.repos import ReposClient as GitHubRepos
 from congregate.migration.github.orgs import OrgsClient as GitHubOrgs
@@ -39,9 +40,12 @@ def list_bitbucket_data():
     users = BitBucketUsers()
     projects = BitBucketProjects()
     repos = BitBucketRepos()
+    groups_client = BitBucketGroups()
 
-    projects.retrieve_project_info()
-    repos.retrieve_repo_info()
+    groups = groups_client.retrieve_group_info()
+
+    projects.retrieve_project_info(groups=groups)
+    repos.retrieve_repo_info(groups=groups)
     users.retrieve_user_info()
 
 

@@ -31,6 +31,50 @@ def test_remove_dupes_with_all_dupes_returns_single():
     de_duped = misc.remove_dupes(L)
     assert de_duped == [{'id': 1, 'name': 'john', 'age': 34}]
 
+def test_remove_dupes_but_take_higher_access():
+    test = [
+        {
+            "id": 1,
+            "access_level": 10
+        },
+        {
+            "id": 1,
+            "access_level": 50
+        },
+        {
+            "id": 1,
+            "access_level": 20
+        },
+        {
+            "id": 2,
+            "access_level": 10
+        },
+        {
+            "id": 2,
+            "access_level": 40
+        },
+        {
+            "id": 3,
+            "access_level": 20
+        }
+    ]
+    expected = [
+        {
+            "id": 1,
+            "access_level": 50
+        },
+        {
+            "id": 2,
+            "access_level": 40
+        },
+        {
+            "id": 3,
+            "access_level": 20
+        }
+    ]
+    actual = misc.remove_dupes_but_take_higher_access(test)
+    assert expected == actual
+
 
 @mock.patch("congregate.helpers.misc_utils.__get_filename_from_cd")
 @mock.patch("congregate.helpers.misc_utils.__is_downloadable")

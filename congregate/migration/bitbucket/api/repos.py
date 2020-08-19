@@ -8,3 +8,6 @@ class ReposApi():
 
     def get_all_repo_users(self, host, project_key, repo_slug):
         return api.list_all(host, "projects/{0}/repos/{1}/permissions/users".format(project_key, repo_slug))
+
+    def get_all_repo_groups(self, host, project_key, repo_slug):
+        return api.list_all(host, "projects/{0}/repos/{1}/permissions/groups".format(project_key, repo_slug))

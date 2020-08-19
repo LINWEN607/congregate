@@ -131,3 +131,19 @@ class MockReposApi():
                 "permission": "REPO_READ"
             }
         ]
+
+    def get_all_repo_groups(self):
+        return [
+            {
+                "group": {
+                    "name": "stash-users"
+                },
+                "permission": "REPO_READ"
+            },
+            {
+                "group": {
+                    "name": "test-group"
+                },
+                "permission": "REPO_READ"
+            }
+        ]

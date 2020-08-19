@@ -26,14 +26,15 @@ class UsersClient(BaseClass):
     def format_users(self, users):
         data = []
         for user in [u for u in users if u["id"] != 1]:
-            data.append({
-                "id": user["id"],
-                "username": user["slug"],
-                "name": user["displayName"],
-                "email": user["emailAddress"].lower(),
-                "state": "active"
-            })
-            # When formatting project and repo users
-            if user.get("permission", None):
-                data[-1]["access_level"] = user["permission"]
+            if user.get("emailAddress", None):
+                data.append({
+                    "id": user["id"],
+                    "username": user["slug"],
+                    "name": user["displayName"],
+                    "email": user["emailAddress"].lower(),
+                    "state": "active"
+                })
+                # When formatting project and repo users
+                if user.get("permission", None):
+                    data[-1]["access_level"] = user["permission"]
         return data

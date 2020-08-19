@@ -9,6 +9,7 @@ import glob
 from xmltodict import parse as xmlparse
 from traceback import print_exc
 from base64 import b64encode, b64decode
+from copy import deepcopy
 from shutil import copy
 from time import time
 from re import sub, findall
@@ -22,7 +23,25 @@ def remove_dupes(my_list):
     """
     return list({v["id"]: v for v in my_list}.values())
 
-
+def remove_dupes_but_take_higher_access(my_list):
+    """
+        Deduping function for keeping members with higher access
+    """
+    already_found = {}
+    new_list = []
+    for d in my_list:
+        obj_id = d["id"]
+        if already_found.get(obj_id):
+            if already_found[obj_id]["access_level"] < d["access_level"]:
+                c = deepcopy(d)
+                new_list[already_found[obj_id]["index"]] = c
+                already_found[obj_id] = c
+        else:
+            already_found[obj_id] = deepcopy(d)
+            new_list.append(d)
+            already_found[obj_id]["index"] = len(new_list) - 1
+    return new_list
+    
 def download_file(url, path, filename=None, headers=None):
     # NOTE the stream=True parameter
     if __is_downloadable(url):

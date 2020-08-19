@@ -13,3 +13,6 @@ class ProjectsApi():
 
     def get_all_project_users(self, key, host):
         return api.list_all(host, "projects/{}/permissions/users".format(key))
+
+    def get_all_project_groups(self, key, host):
+        return api.list_all(host, "projects/{}/permissions/groups".format(key))

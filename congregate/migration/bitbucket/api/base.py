@@ -20,7 +20,7 @@ def generate_v4_request_headers():
 
 
 def get_authorization():
-    return HTTPBasicAuth(b.config.source_username, deobfuscate(b.config.source_token))
+    return HTTPBasicAuth(b.config.source_username, b.config.source_token)
 
 
 
