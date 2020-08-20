@@ -40,6 +40,7 @@ class ConfigTests(unittest.TestCase):
             # "password",  # ext_src_pwd
             # "token",  # ext_src_token
             "repo_path",  # ext_src_repo
+            "no",   # CI Source
             "no",    # keep_blocked_users
             "yes",  # password reset email
             "no",    # randomized password
@@ -67,6 +68,63 @@ class ConfigTests(unittest.TestCase):
             reference = f.readlines()
 
         self.assertListEqual(generated, reference)
+
+    @mock.patch.object(UsersApi, "get_current_user")
+    def test_full_ext_src_skeleton_github_server(self, mock_get):
+        """
+            Generates a full skeleton outline of the configuration using empty strings and default values
+            Compares that against the last known-good skeleton
+        """
+        values = [
+            "hostname",  # Destination hostname
+            # "token", # Destination access token
+            # "0",  # Destination import user id
+            "yes",   # shared runners enabled
+            "no",  # append project suffix (retry)
+            "3",  # max_import_retries,
+            "no",  # destination parent group
+            "username_suffix",  # username suffix
+            "No",   # mirror
+            # "mirror_username",  # mirror username
+            "yes",  # external source
+            "github",  # source
+            "some_external_source",  # external_src_url
+            # "password",  # ext_src_pwd
+            # "token",  # ext_src_token
+            "repo_path",  # ext_src_repo
+            "yes",   # CI SOURCE
+            "Jenkins", # ci_source
+            "ci_some_external_url",  # ci_ext_src_hostname
+            "ci_username",  # ci_ext_src_username
+            # "token",  # ci_ext_src_token
+            "no",    # keep_blocked_users
+            "yes",  # password reset email
+            "no",    # randomized password
+            "30",   # import wait time
+            "no"   # slack
+        ]
+
+        g = input_generator(values)
+
+        mock_get.return_value = self.users_api.get_current_user()
+        with mock.patch('congregate.cli.config.write_to_file', mock_file):
+            with mock.patch('congregate.cli.config.app_path', "."):
+                with mock.patch('congregate.cli.config.obfuscate', lambda x: "dGVzdA=="):
+                    with mock.patch('congregate.cli.config.deobfuscate', lambda x: "dGVzdA=="):
+                        with mock.patch('getpass.getpass', lambda x: "password"):
+                            with mock.patch('builtins.input', lambda x: next(g)):
+                                config.generate_config()
+
+        # load the file that was just written
+        with open("{0}congregate.conf".format(test_dir_prefix), "r") as f:
+            generated = f.readlines()
+
+        # load the reference file
+        with open("{0}test_full_ext_src_skeleton_github_server.conf".format(test_dir_prefix), "r") as f:
+            reference = f.readlines()
+
+        self.assertListEqual(generated, reference)
+
 
     @mock.patch.object(GroupsApi, "get_group")
     @mock.patch.object(UsersApi, "get_current_user")
@@ -100,6 +158,7 @@ class ConfigTests(unittest.TestCase):
             "destination_registry_url",    # destination registry url
             "filesystem",  # export location
             "absolute_path",    # file system path
+            "no",   # CI Source
             "no",    # keep_blocked_users
             "yes",  # password reset email
             "no",    # randomized password
@@ -180,6 +239,7 @@ class ConfigTests(unittest.TestCase):
             # "access key",   # access key
             # "secret key",   # secret key
             "absolute_path",    # file system path
+            "no",   # CI Source
             "no",    # keep_blocked_users
             "yes",  # password reset email
             "no",    # randomized password
@@ -262,9 +322,10 @@ class ConfigTests(unittest.TestCase):
             # "access key",   # access key
             # "secret key",   # secret key
             "/absolute_path",    # file system path
-            "yes",    # keep_blocked_users
-            "no",  # password reset email
-            "yes",    # randomized password
+            "no",   # CI Source
+            "no",    # keep_blocked_users
+            "yes",  # password reset email
+            "no",    # randomized password
             "60",   # import wait time
             "no"   # slack
         ]
@@ -331,6 +392,7 @@ class ConfigTests(unittest.TestCase):
             "destination_registry_url",    # destination registry url
             "filesystem",  # export location
             "absolute_path",    # file system path
+            "no",    # CI SOURCE
             "no",    # keep_blocked_users
             "yes",  # password reset email
             "no",    # randomized password

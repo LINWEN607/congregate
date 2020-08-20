@@ -54,6 +54,7 @@ class MigrationEndToEndTestSetup(unittest.TestCase):
             # "access key",   # access key
             # "secret key",   # secret key
             "",  # file system path
+            "no",  # CI Source
             "no",  # keep_blocked_users
             "yes",  # password reset email
             "no",  # randomized password

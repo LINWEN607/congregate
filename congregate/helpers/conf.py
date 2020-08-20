@@ -156,7 +156,7 @@ class Config(object):
 
     @property
     def source_username(self):
-        return self.prop("SOURCE", "username")
+        return self.prop("SOURCE", "src_username")
 
     @property
     def source_token(self):
@@ -190,7 +190,7 @@ class Config(object):
 
     @property
     def ci_source_username(self):
-        return self.prop("CI_SOURCE", "ci_username")
+        return self.prop("CI_SOURCE", "ci_src_username")
 
     @property
     def ci_source_token(self):
