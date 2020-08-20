@@ -36,7 +36,7 @@ class VariablesClient(BaseClass):
                 var_list = safe_json_response(self.get_gitlab_variables(
                     old_id, self.config.source_host, self.config.source_token, var_type))
                 if var_list:
-                    return self.migrate_variables(new_id, var_list, var_type, name)
+                    return self.migrate_variables(new_id, name, var_list, var_type)
                 else:
                     self.log.warning(
                         "Unable to retrieve variables from {}. Skipping variable migration".format(name))
@@ -49,7 +49,7 @@ class VariablesClient(BaseClass):
                 "Failed to migrate project {0} CI/CD variables, with error:\n{1}".format(name, e))
             return False
 
-    def migrate_variables(self, new_id, var_list, var_type, name):
+    def migrate_variables(self, new_id, name, var_list, var_type):
         try:
             variables = iter(var_list)
             self.log.info(
@@ -81,6 +81,8 @@ class VariablesClient(BaseClass):
         if len(files) > 0:
             for project_json in files:
                 try:
+                    old_id = project_json["id"]
+                    project_name = proj["path_with_namespace"]
                     self.log.info("Searching for existing project {}".format(
                         project_json["name"]))
                     for proj in self.projects_api.search_for_project(
@@ -88,7 +90,7 @@ class VariablesClient(BaseClass):
                             self.config.destination_token,
                             project_json["name"]):
                         if proj["name"] == project_json["name"]:
-                            if "%s" % project_json["namespace"].lower() in proj["path_with_namespace"].lower():
+                            if "%s" % project_json["namespace"].lower() in project_name.lower():
                                 self.log.info("{0}Migrating variables for {1}"
                                               .format(get_dry_log(dry_run), proj["name"]))
                                 project_id = proj["id"]
@@ -97,8 +99,8 @@ class VariablesClient(BaseClass):
                             else:
                                 project_id = None
                     if project_id is not None and not dry_run:
-                        self.migrate_variables(
-                            project_id, project_json["id"], "project", project_json["path_with_namespace"])
+                        self.migrate_gitlab_cicd_variables(
+                            old_id, project_id, project_name, "project")
                 except IOError as e:
                     self.log.error(
                         "Failed to migrate variables in stage, with error:\n{}".format(e))
