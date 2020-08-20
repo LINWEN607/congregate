@@ -173,26 +173,29 @@ class MigrateClient(BaseClass):
         name = group["name"]
         if not self.dry_run:
             # Wait for parent group to create
-            timeout = 0
-            wait_time = self.config.importexport_wait
-            ppath = group["full_path"].rsplit("/", 1)[0]
-            pnamespace = self.namespaces_api.get_namespace_by_full_path(
-                ppath, self.config.destination_host, self.config.destination_token)
-            while pnamespace.status_code != 200:
-                self.log.info(
-                    f"Waiting {self.config.importexport_wait} seconds to create parent group {ppath} for group {name}")
-                timeout += wait_time
-                sleep(wait_time)
-                if timeout > wait_time * 10:
-                    self.log.error(
-                        f"Time limit exceeded waiting for parent group {ppath} to create for group {name}")
-                    return {
-                        group["full_path"]: result
-                    }
+            if self.config.dstn_parent_group_path is not None:
+                timeout = 0
+                wait_time = self.config.importexport_wait
+                ppath = group["full_path"].rsplit("/", 1)[0]
                 pnamespace = self.namespaces_api.get_namespace_by_full_path(
                     ppath, self.config.destination_host, self.config.destination_token)
+                while pnamespace.status_code != 200:
+                    self.log.info(
+                        f"Waiting {self.config.importexport_wait} seconds to create parent group {ppath} for group {name}")
+                    timeout += wait_time
+                    sleep(wait_time)
+                    if timeout > wait_time * 10:
+                        self.log.error(
+                            f"Time limit exceeded waiting for parent group {ppath} to create for group {name}")
+                        return {
+                            group["full_path"]: result
+                        }
+                    pnamespace = self.namespaces_api.get_namespace_by_full_path(
+                        ppath, self.config.destination_host, self.config.destination_token)
             group["parent_id"] = safe_json_response(
                 pnamespace)["id"] if group["parent_id"] else self.config.dstn_parent_id
+            if group.get("description", None) is None:
+                group["description"] = ""
             result = safe_json_response(self.groups_api.create_group(
                 self.config.destination_host, self.config.destination_token, group))
             if result and not is_error_message_present(result):
