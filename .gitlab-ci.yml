@@ -3,7 +3,6 @@ stages:
   - test
   - release
   - deploy
-
 include:
   - template: SAST.gitlab-ci.yml
   - template: Code-Quality.gitlab-ci.yml
@@ -227,7 +226,8 @@ runbook update:
   stage: test
   script:
     - echo "This is a placeholder job ran only when runbooks are changed"
-    - echo "Storing any changed runbook to artifacts that will expire in 1 week."
+    - echo "Storing any changed runbook to artifacts that will expire in 1 week." 
+    - python runbookscript.py
   rules:
     - changes:
         - runbooks/*
@@ -257,3 +257,4 @@ pages:
   artifacts:
     paths:
       - public
+
