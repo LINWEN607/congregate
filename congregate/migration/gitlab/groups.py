@@ -1,4 +1,5 @@
 import json
+from time import sleep
 from requests.exceptions import RequestException
 
 from congregate.helpers.base_class import BaseClass
@@ -297,3 +298,23 @@ class GroupsClient(BaseClass):
                 if resp:
                     result[member["email"]] = True
         return result
+
+    def wait_for_parent_group_creation(self, group):
+        timeout = 0
+        wait_time = self.config.importexport_wait
+        ppath = group["full_path"].rsplit("/", 1)[0]
+        name = group["name"]
+        pnamespace = self.namespaces_api.get_namespace_by_full_path(
+            ppath, self.config.destination_host, self.config.destination_token)
+        while pnamespace.status_code != 200:
+            self.log.info(
+                f"Waiting {self.config.importexport_wait} seconds to create parent group {ppath} for group {name}")
+            timeout += wait_time
+            sleep(wait_time)
+            if timeout > wait_time * 10:
+                self.log.error(
+                    f"Time limit exceeded waiting for parent group {ppath} to create for group {name}")
+                return None
+            pnamespace = self.namespaces_api.get_namespace_by_full_path(
+                ppath, self.config.destination_host, self.config.destination_token)
+        return pnamespace
