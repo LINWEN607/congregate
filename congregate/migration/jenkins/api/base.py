@@ -1,5 +1,11 @@
 import json
-import jenkins
+import warnings
+# Python-jenkins is using deprecated logic as of Python 3.3
+# This warning suppression is used so tests can pass
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore")
+    import jenkins
+
 from congregate.helpers.misc_utils import xml_to_dict
 
 

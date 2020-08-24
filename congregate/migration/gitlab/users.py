@@ -4,8 +4,7 @@ from os import path
 from requests.exceptions import RequestException
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import get_dry_log, json_pretty, get_timedelta
-from congregate.helpers.misc_utils import remove_dupes
+from congregate.helpers.misc_utils import get_dry_log, json_pretty, get_timedelta, remove_dupes, rewrite_list_into_dict
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.users import UsersApi
 
@@ -15,6 +14,7 @@ class UsersClient(BaseClass):
         self.groups_api = GroupsApi()
         self.users_api = UsersApi()
         super(UsersClient, self).__init__()
+        self.sso_hash_map = self.generate_hash_map()
 
     def get_staged_users(self):
         with open("{}/data/staged_users.json".format(self.app_path), "r") as f:
@@ -181,6 +181,9 @@ class UsersClient(BaseClass):
     def generate_extern_uid(self, user, identities):
         if self.config.group_sso_provider_pattern == "email":
             return user.get("email", None)
+        elif self.config.group_sso_provider_pattern == "hash":
+            if email := user.get("email", None):
+                return self.sso_hash_map.get(email, None)
         else:
             return self.find_extern_uid_by_provider(identities, self.config.group_sso_provider)
 
@@ -577,3 +580,17 @@ class UsersClient(BaseClass):
                 except RequestException as re:
                     self.log.error(
                         "Failed to remove user\n{0}\nwith error:\n{1}".format(json_pretty(su), re))
+
+    def generate_hash_map(self):
+        if self.config.group_sso_provider_pattern == "hash":
+            if self.config.group_sso_provider_map_file:
+                try:
+                    with open(f"{self.config.group_sso_provider_map_file}", "r") as f:
+                        hmap = json.load(f)
+                    hash_map = rewrite_list_into_dict(hmap, "email")
+                    return hash_map
+                except FileNotFoundError:
+                    self.log.error(f"{self.config.group_sso_provider_map_file} not found")
+                    return None
+            self.log.warning("SSO pattern is currently set to hash, but no file is specified in congregate.conf")
+        return None
