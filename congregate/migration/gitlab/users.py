@@ -4,7 +4,7 @@ from os import path
 from requests.exceptions import RequestException
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import get_dry_log, json_pretty, get_timedelta, remove_dupes, rewrite_list_into_dict
+from congregate.helpers.misc_utils import get_dry_log, json_pretty, get_timedelta, remove_dupes, rewrite_list_into_dict, read_json_file_into_object
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.users import UsersApi
 
@@ -17,8 +17,7 @@ class UsersClient(BaseClass):
         self.sso_hash_map = self.generate_hash_map()
 
     def get_staged_users(self):
-        with open("{}/data/staged_users.json".format(self.app_path), "r") as f:
-            return json.load(f)
+        return read_json_file_into_object("{}/data/staged_users.json".format(self.app_path))
 
     def find_user_by_email_comparison_with_id(self, old_user_id):
         self.log.info("Searching for user email by ID {}".format(old_user_id))
@@ -183,7 +182,8 @@ class UsersClient(BaseClass):
             return user.get("email", None)
         elif self.config.group_sso_provider_pattern == "hash":
             if email := user.get("email", None):
-                return self.sso_hash_map.get(email, None)
+                if map_user := self.sso_hash_map.get(email, None):
+                    return map_user["externalid"]
         else:
             return self.find_extern_uid_by_provider(identities, self.config.group_sso_provider)
 
@@ -228,8 +228,7 @@ class UsersClient(BaseClass):
     def add_users_to_parent_group(self, dry_run=True):
         user_results_path = "%s/data/user_migration_results.json" % self.app_path
         if path.exists(user_results_path):
-            with open(user_results_path, "r") as f:
-                new_users = json.load(f)
+            new_users = read_json_file_into_object(user_results_path)
             for user in new_users:
                 if new_users[user].get("id"):
                     data = {
@@ -331,8 +330,7 @@ class UsersClient(BaseClass):
         self.remove("staged_projects", dry_run)
 
     def remove(self, data, dry_run=True):
-        with open("{0}/data/{1}.json".format(self.app_path, data), "r") as f:
-            staged = json.load(f)
+        staged = read_json_file_into_object("{0}/data/{1}.json".format(self.app_path, data))
 
         if data == "staged_users":
             to_pop = []
@@ -401,8 +399,7 @@ class UsersClient(BaseClass):
             Users NOT found input comes from search_for_staged_users.
             :return: Staged users
         """
-        with open("{0}/data/{1}.json".format(self.app_path, data), "r") as f:
-            staged = json.load(f)
+        staged = read_json_file_into_object("{0}/data/{1}.json".format(self.app_path, data))
 
         if data == "staged_users":
             self.log.info("{0} only NOT found users ({1}/{2}) in staged users".format(
@@ -544,8 +541,7 @@ class UsersClient(BaseClass):
                 }
 
     def append_users(self, users):
-        with open("%s/data/users.json" % self.app_path, "r") as f:
-            user_file = json.load(f)
+        user_file = read_json_file_into_object("%s/data/users.json" % self.app_path)
         staged_users = []
         for user in filter(None, users):
             for u in user_file:
@@ -585,10 +581,8 @@ class UsersClient(BaseClass):
         if self.config.group_sso_provider_pattern == "hash":
             if self.config.group_sso_provider_map_file:
                 try:
-                    with open(f"{self.config.group_sso_provider_map_file}", "r") as f:
-                        hmap = json.load(f)
-                    hash_map = rewrite_list_into_dict(hmap, "email")
-                    return hash_map
+                    hmap = read_json_file_into_object(f"{self.config.group_sso_provider_map_file}")
+                    return rewrite_list_into_dict(hmap, "email")
                 except FileNotFoundError:
                     self.log.error(f"{self.config.group_sso_provider_map_file} not found")
                     return None

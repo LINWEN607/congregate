@@ -812,3 +812,69 @@ class UsersTests(unittest.TestCase):
         actual = self.users.generate_user_group_saml_post_data(mock_user)
 
         self.assertDictEqual(expected, actual)
+
+    @mock.patch('congregate.helpers.conf.Config.group_sso_provider_pattern', new_callable=mock.PropertyMock)
+    def test_generate_hash_map_with_no_hash(self, pattern):
+        pattern.return_value = "not hash"
+        self.assertIsNone(self.users.generate_hash_map())
+
+    @mock.patch('congregate.helpers.conf.Config.group_sso_provider_pattern', new_callable=mock.PropertyMock)
+    @mock.patch('congregate.helpers.conf.Config.group_sso_provider_map_file', new_callable=mock.PropertyMock)
+    @mock.patch('congregate.helpers.misc_utils.read_json_file_into_object')
+    def test_generate_hash_map_with_invalid_file(self, read_file, map_file, pattern):
+        pattern.return_value = "hash"
+        map_file.return_file = "path/to/file"
+        read_file.side_effect = FileNotFoundError
+        self.assertIsNone(self.users.generate_hash_map())
+
+    @mock.patch('congregate.helpers.conf.Config.group_sso_provider_pattern', new_callable=mock.PropertyMock)
+    @mock.patch('congregate.helpers.conf.Config.group_sso_provider_map_file', new_callable=mock.PropertyMock)
+    def test_generate_hash_map_with_valid_file(self, map_file, pattern):
+        pattern.return_value = "hash"
+        map_file.return_value = "path/to/file"
+        data = json.dumps([
+            {
+                "email": "jdoe@email.com",
+                "externalid": "abc123"
+            },
+            {
+                "email": "mdoe@email.com",
+                "externalid": "def456"
+            }
+        ])
+        with mock.patch("builtins.open", mock.mock_open(read_data=data)) as mock_file:
+            expected = {
+                "jdoe@email.com": {
+                    "email": "jdoe@email.com",
+                    "externalid": "abc123"
+                },
+                "mdoe@email.com": {
+                    "email": "mdoe@email.com",
+                    "externalid": "def456"
+                }
+            }
+
+            actual = self.users.generate_hash_map()
+            self.assertDictEqual(expected, actual)
+    
+    @mock.patch('congregate.helpers.conf.Config.group_sso_provider_pattern', new_callable=mock.PropertyMock)
+    @mock.patch('congregate.helpers.conf.Config.group_sso_provider_map_file', new_callable=mock.PropertyMock)
+    def test_generate_extern_uid_with_hash(self, map_file, pattern):
+        pattern.return_value = "hash"
+        map_file.return_value = "path/to/file"
+        mock_user = self.mock_users.get_dummy_user()
+        self.users.sso_hash_map = {
+            "jdoe@email.com": {
+                "email": "jdoe@email.com",
+                "externalid": "abc123"
+            },
+            "mdoe@email.com": {
+                "email": "mdoe@email.com",
+                "externalid": "def456"
+            }
+        }
+
+        expected = "abc123"
+        actual = self.users.generate_extern_uid(mock_user, None)
+
+        self.assertEqual(expected, actual)
