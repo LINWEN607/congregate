@@ -582,7 +582,9 @@ class UsersClient(BaseClass):
             if self.config.group_sso_provider_map_file:
                 try:
                     hmap = read_json_file_into_object(f"{self.config.group_sso_provider_map_file}")
-                    return rewrite_list_into_dict(hmap, "email")
+                    if isinstance(hmap, list):
+                        return rewrite_list_into_dict(hmap, "email")
+                    return hmap
                 except FileNotFoundError:
                     self.log.error(f"{self.config.group_sso_provider_map_file} not found")
                     return None
