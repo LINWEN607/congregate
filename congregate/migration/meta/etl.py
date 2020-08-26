@@ -6,7 +6,7 @@ from congregate.helpers.base_class import BaseClass
 class WaveSpreadsheetHandler(BaseClass):
     def __init__(self, file_path, columns_to_use=None):
         self.file_path = file_path
-        self.columns_to_use = columns_to_use
+        self.columns_to_use = self.map_columns(columns_to_use)
         self.file_type = self.__determine_file_type()
         super(WaveSpreadsheetHandler, self).__init__()
 
@@ -29,3 +29,12 @@ class WaveSpreadsheetHandler(BaseClass):
 
     def read_file_as_json(self):
         return json.loads(self.read_file_as_dataframe().to_json(orient='records'))
+
+    def map_columns(self, columns_to_use):
+        mapping = self.config.wave_spreadsheet_column_mapping
+        if mapping:
+            for k, v in mapping.items():
+                ind = columns_to_use.index(v)
+                columns_to_use[ind] = k
+        return columns_to_use
+        

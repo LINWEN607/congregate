@@ -5,7 +5,7 @@ Copyright (c) 2020 - GitLab
 """
 
 import os
-
+import json
 from re import sub, split
 from configparser import ConfigParser, ParsingError
 
@@ -53,6 +53,11 @@ class Config(object):
     def prop_list(self, section, option, default=None):
         if self.option_exists(section, option):
             return split(r', |,', sub(r'\[|\]', '', self.config.get(section, option)))
+        return default
+    
+    def prop_dict(self, section, option, default=None):
+        if self.option_exists(section, option):
+            return json.loads(self.config.get(section, option))
         return default
 
     def as_obj(self):
@@ -292,6 +297,20 @@ class Config(object):
         A list of columns to include in the wave spreadsheet transformation
         """
         return self.prop_list("APP", "wave_spreadsheet_columns")
+
+    @property
+    def wave_spreadsheet_column_mapping(self):
+        """
+        A dictionary containing the columns in the spreadsheet mapped to the keys we need for a wave migration.
+
+        Example output:
+        {
+            "Wave name": "example column 1",
+            "Wave date": "migration name",
+            "Source URL": "company repo url"
+        }
+        """
+        return self.prop_dict("APP", "wave_spreadsheet_column_mapping")
     
 
 # HIDDEN PROPERTIES
