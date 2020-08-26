@@ -1,5 +1,6 @@
 import unittest
-from mock import patch, PropertyMock, MagicMock
+import json
+from mock import patch, PropertyMock, MagicMock, mock_open
 
 from congregate.tests.mockapi.github.repos import MockReposApi
 from congregate.migration.github.repos import ReposClient
@@ -15,9 +16,17 @@ class ReposTests(unittest.TestCase):
 
     @patch.object(ReposApi, "get_repo")
     @patch.object(UsersClient, "format_users")
+    @patch.object(ReposClient, "list_ci_sources_jenkins")
+    @patch.object(ReposClient, "list_ci_sources_teamcity")
     def test_format_user_repos(self,
+                               mock_ci_sources1,
+                               mock_ci_sources2,
                                mock_format_users,
                                mock_get_repo):
+        
+        mock_ci_sources1.return_value = []
+        mock_ci_sources2.return_value = ['test-job1', 'test-job2']
+        
         formatted_users1 = [
             {
                 "id": 3,
@@ -64,6 +73,10 @@ class ReposTests(unittest.TestCase):
                 "id": 1,
                 "path": "website",
                 "name": "website",
+                "ci_sources": {
+                    "Jenkins": ['test-job1', 'test-job2'],
+                    "TeamCity": []
+                },
                 "namespace": {
                     "id": 3,
                     "path": "gitlab",
@@ -80,6 +93,10 @@ class ReposTests(unittest.TestCase):
                 "id": 14,
                 "path": "pprokic-public-repo",
                 "name": "pprokic-public-repo",
+                "ci_sources": {
+                    "Jenkins": ['test-job1', 'test-job2'],
+                    "TeamCity": []
+                },
                 "namespace": {
                     "id": 6,
                     "path": "pprokic",
@@ -98,11 +115,20 @@ class ReposTests(unittest.TestCase):
             self.assertEqual(
                 actual_projects[i].items(), expected_projects[i].items())
 
+
     @patch.object(ReposApi, "get_repo")
     @patch.object(UsersClient, "format_users")
+    @patch.object(ReposClient, "list_ci_sources_jenkins")
+    @patch.object(ReposClient, "list_ci_sources_teamcity")
     def test_format_user_repos_with_error(self,
-                                          mock_format_users,
-                                          mock_get_repo):
+                                        mock_ci_sources1,
+                                        mock_ci_sources2,
+                                        mock_format_users,
+                                        mock_get_repo):
+        
+        mock_ci_sources1.return_value = []
+        mock_ci_sources2.return_value = ['test-job1', 'test-job2']
+
         formatted_users = [
             {
                 "id": 3,
@@ -140,6 +166,10 @@ class ReposTests(unittest.TestCase):
                 "id": 1,
                 "path": "website",
                 "name": "website",
+                "ci_sources": {
+                    "Jenkins": ['test-job1', 'test-job2'],
+                    "TeamCity": []
+                },
                 "namespace": {
                     "id": 3,
                     "path": "gitlab",
@@ -156,6 +186,10 @@ class ReposTests(unittest.TestCase):
                 "id": 14,
                 "path": "pprokic-public-repo",
                 "name": "pprokic-public-repo",
+                "ci_sources": {
+                    "Jenkins": ['test-job1', 'test-job2'],
+                    "TeamCity": []
+                },
                 "namespace": {
                     "id": 6,
                     "path": "pprokic",
@@ -186,9 +220,17 @@ class ReposTests(unittest.TestCase):
 
     @patch.object(ReposApi, "get_all_repo_collaborators")
     @patch.object(UsersClient, "format_users")
+    @patch.object(ReposClient, "list_ci_sources_jenkins")
+    @patch.object(ReposClient, "list_ci_sources_teamcity")
     def test_format_org_repos(self,
+                              mock_ci_sources1,
+                              mock_ci_sources2,
                               mock_format_users,
                               mock_get_all_repo_collaborators):
+
+        mock_ci_sources1.return_value = []
+        mock_ci_sources2.return_value = ['test-job1', 'test-job2']
+
         formatted_users1 = [
             {
                 "id": 3,
@@ -266,6 +308,10 @@ class ReposTests(unittest.TestCase):
                 "id": 8,
                 "path": "arrow",
                 "name": "arrow",
+                "ci_sources": {
+                    "Jenkins": ['test-job1', 'test-job2'],
+                    "TeamCity": []
+                },
                 "namespace": {
                     "id": 9,
                     "path": "org2",
@@ -282,6 +328,10 @@ class ReposTests(unittest.TestCase):
                 "id": 16,
                 "path": "test-repo",
                 "name": "test-repo",
+                "ci_sources": {
+                    "Jenkins": ['test-job1', 'test-job2'],
+                    "TeamCity": []
+                },
                 "namespace": {
                     "id": 12,
                     "path": "org3",
@@ -300,7 +350,16 @@ class ReposTests(unittest.TestCase):
             self.assertEqual(
                 actual_projects[i].items(), expected_projects[i].items())
 
-    def test_format_org_repos_no_members(self):
+    @patch.object(ReposClient, "list_ci_sources_jenkins")
+    @patch.object(ReposClient, "list_ci_sources_teamcity")
+    def test_format_org_repos_no_members(self,
+                                         mock_ci_sources1,
+                                         mock_ci_sources2,
+                                        ):
+        
+        mock_ci_sources1.return_value = []
+        mock_ci_sources2.return_value = ['test-job1', 'test-job2']
+        
         listed_repos = [self.mock_repos.get_listed_repos(
         )[2], self.mock_repos.get_listed_repos()[3]]
 
@@ -311,6 +370,10 @@ class ReposTests(unittest.TestCase):
                 "id": 8,
                 "path": "arrow",
                 "name": "arrow",
+                "ci_sources": {
+                    "Jenkins": ['test-job1', 'test-job2'],
+                    "TeamCity": []
+                },
                 "namespace": {
                     "id": 9,
                     "path": "org2",
@@ -327,6 +390,10 @@ class ReposTests(unittest.TestCase):
                 "id": 16,
                 "path": "test-repo",
                 "name": "test-repo",
+                "ci_sources": {
+                    "Jenkins": ['test-job1', 'test-job2'],
+                    "TeamCity": []
+                },
                 "namespace": {
                     "id": 12,
                     "path": "org3",
@@ -344,3 +411,35 @@ class ReposTests(unittest.TestCase):
         for i in range(len(expected_projects)):
             self.assertEqual(
                 actual_projects[i].items(), expected_projects[i].items())
+
+    def test_list_ci_sources_jenkins(self):
+        data = json.dumps([
+            {
+                "name": "demo-job",
+                "url": "https://github.gitlab-proserv.net/firdaus/gitlab-jenkins.git"
+            },
+            {
+                "name": "test-job1",
+                "url": "https://github.gitlab-proserv.net/gitlab/website.git"
+            },
+            {
+                "name": "test-job2",
+                "url": "https://github.gitlab-proserv.net/gitlab/website.git"
+            }   
+        ])
+
+        with patch("builtins.open", mock_open(read_data=data)) as mock_file:
+            expected = ["test-job1","test-job2"]
+            actual = self.repos.list_ci_sources_jenkins("website")
+
+            self.assertListEqual(expected, actual)
+
+    def test_list_ci_sources_teamcity(self):
+        
+        data = json.dumps([])
+
+        with patch("builtins.open", mock_open(read_data=data)) as mock_file:
+            expected = []
+            actual = self.repos.list_ci_sources_jenkins("website")
+
+            self.assertListEqual(expected, actual)

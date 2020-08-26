@@ -1,7 +1,7 @@
 import json
 from congregate.helpers.base_class import BaseClass
 from congregate.migration.jenkins.api.base import JenkinsApi
-
+from congregate.helpers.misc_utils import write_json_to_file
 
 class JenkinsClient(BaseClass):
     def __init__(self):
@@ -14,16 +14,16 @@ class JenkinsClient(BaseClass):
         """
         data = self.jenkins_api.list_all_jobs()
 
-        jobs_dict = {'jobs': []}
+        jobs_list = []
         for job in data['jobs']:
             job_name = job['fullname']
             scm_url = self.jenkins_api.get_scm_by_job(job_name)
             job_dict = {'name': job_name, 'url': scm_url}
-            jobs_dict['jobs'].append(job_dict)
-        with open('%s/data/jobs.json' % self.app_path, "w") as f:
-            json.dump(jobs_dict, f, indent=4)
+            jobs_list.append(job_dict)
 
-        return jobs_dict
+        write_json_to_file(f"{self.app_path}/data/jenkins_jobs.json", jobs_list)
+
+        return jobs_list
 
     def transform_ci_variables(self, parameter):
         """

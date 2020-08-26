@@ -1,7 +1,7 @@
 import json
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import remove_dupes, safe_json_response, is_error_message_present
+from congregate.helpers.misc_utils import remove_dupes, safe_json_response, is_error_message_present, read_json_file_into_object
 from congregate.migration.github.api.repos import ReposApi
 from congregate.migration.github.users import UsersClient
 from congregate.migration.github.api.users import UsersApi
@@ -19,11 +19,13 @@ class ReposClient(BaseClass):
     def __init__(self):
         super(ReposClient, self).__init__()
         self.repos_api = ReposApi(
-            self.config.source_host, self.config.source_token)
+                                  self.config.source_host, 
+                                  self.config.source_token)
         self.users = UsersClient()
         self.users_api = UsersApi(
-            self.config.source_host, self.config.source_token)
-
+                                  self.config.source_host, 
+                                  self.config.source_token) 
+        
     def retrieve_repo_info(self):
         """
         List and transform all GitHub public repo to GitLab project metadata
@@ -47,6 +49,10 @@ class ReposClient(BaseClass):
                     "id": repo["id"],
                     "path": repo["name"],
                     "name": repo["name"],
+                    "ci_sources": {
+                        "Jenkins": self.list_ci_sources_jenkins(repo["name"]),
+                        "TeamCity": self.list_ci_sources_teamcity(repo["name"])
+                    },
                     "namespace": {
                         "id": repo["owner"]["id"],
                         "path": repo["owner"]["login"],
@@ -85,3 +91,24 @@ class ReposClient(BaseClass):
                 members[0]["permissions"] = self.REPO_PERMISSIONS_MAP[tuple(user_repo.get(
                     "permissions", None).items())]
         return self.users.format_users(members)
+    
+    def list_ci_sources_jenkins(self, repo_name):
+        
+        list_job_names = []
+        
+        ci_sources_jobs = read_json_file_into_object(f"{self.app_path}/data/jenkins_jobs.json")
+        
+        for job in ci_sources_jobs:
+            if job["url"] is not None:
+                temp_list = job["url"].split("/")
+                if repo_name == temp_list[-1][:-4]:
+                    list_job_names.append(job["name"])
+
+        return list_job_names
+     
+    def list_ci_sources_teamcity(self, repo_name):
+        # with open("%s/data/teamcity_jobs.json" % self.app_path, "r") as f:
+        #     ci_sources_jobs = json.load(f)
+        list_job_names = []
+
+        return list_job_names
