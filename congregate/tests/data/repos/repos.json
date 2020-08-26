@@ -1,0 +1,197 @@
+{
+    "mattermost-server.git": {
+        "size": "960616",
+        "name": "mattermost-server.git",
+        "remote": "https://github.com/mattermost/mattermost-server.git"
+    },
+    "logos.git": {
+        "size": "34528",
+        "name": "logos.git",
+        "remote": "https://github.com/gilbarbara/logos.git"
+    },
+    "atom.git": {
+        "size": "693192",
+        "name": "atom.git",
+        "remote": "https://github.com/atom/atom.git"
+    },
+    "html5-boilerplate.git": {
+        "size": "36384",
+        "name": "html5-boilerplate.git",
+        "remote": "https://github.com/h5bp/html5-boilerplate.git"
+    },
+    "wget2.git": {
+        "size": "165296",
+        "name": "wget2.git",
+        "remote": "https://gitlab.com/gnuwget/wget2.git"
+    },
+    "redux.git": {
+        "size": "59720",
+        "name": "redux.git",
+        "remote": "https://github.com/reduxjs/redux.git"
+    },
+    "mostly-adequate-guide.git": {
+        "size": "20144",
+        "name": "mostly-adequate-guide.git",
+        "remote": "https://github.com/MostlyAdequate/mostly-adequate-guide.git"
+    },
+    "nuclide.git": {
+        "size": "522600",
+        "name": "nuclide.git",
+        "remote": "https://github.com/facebook/nuclide.git"
+    },
+    "runc.git": {
+        "size": "50024",
+        "name": "runc.git",
+        "remote": "https://github.com/opencontainers/runc.git"
+    },
+    "awesome-d3.git": {
+        "size": "728",
+        "name": "awesome-d3.git",
+        "remote": "https://github.com/wbkd/awesome-d3.git"
+    },
+    "reactjs_koans.git": {
+        "size": "816",
+        "name": "reactjs_koans.git",
+        "remote": "https://github.com/arkency/reactjs_koans.git"
+    },
+    "echo-chamber-js.git": {
+        "size": "8744",
+        "name": "echo-chamber-js.git",
+        "remote": "https://github.com/tessalt/echo-chamber-js.git"
+    },
+    "deepdream.git": {
+        "size": "6232",
+        "name": "deepdream.git",
+        "remote": "https://github.com/google/deepdream.git"
+    },
+    "android-topeka.git": {
+        "size": "44360",
+        "name": "android-topeka.git",
+        "remote": "https://github.com/googlesamples/android-topeka.git"
+    },
+    "datasharing.git": {
+        "size": "264",
+        "name": "datasharing.git",
+        "remote": "https://github.com/jtleek/datasharing.git"
+    },
+    "underscore.git": {
+        "size": "16472",
+        "name": "underscore.git",
+        "remote": "https://github.com/jashkenas/underscore.git"
+    },
+    "gimp.git": {
+        "size": "1242336",
+        "name": "gimp.git",
+        "remote": "https://gitlab.gnome.org/GNOME/gimp.git"
+    },
+    "typeahead.js.git": {
+        "size": "8104",
+        "name": "typeahead.js.git",
+        "remote": "https://github.com/twitter/typeahead.js.git"
+    },
+    "design.git": {
+        "size": "5360",
+        "name": "design.git",
+        "remote": "https://github.com/WebAssembly/design.git"
+    },
+    "freecodecamp.git": {
+        "size": "393648",
+        "name": "freecodecamp.git",
+        "remote": "https://github.com/FreeCodeCamp/freecodecamp.git"
+    },
+    "inkscape.git": {
+        "size": "4292704",
+        "name": "inkscape.git",
+        "remote": "https://gitlab.com/inkscape/inkscape.git"
+    },
+    "the-art-of-command-line.git": {
+        "size": "8712",
+        "name": "the-art-of-command-line.git",
+        "remote": "https://github.com/jlevy/the-art-of-command-line.git"
+    },
+    "iTerm2.git": {
+        "size": "551304",
+        "name": "iTerm2.git",
+        "remote": "https://github.com/gnachman/iTerm2.git"
+    },
+    "material-design-lite.git": {
+        "size": "147448",
+        "name": "material-design-lite.git",
+        "remote": "https://github.com/google/material-design-lite.git"
+    },
+    "ttystudio.git": {
+        "size": "14440",
+        "name": "ttystudio.git",
+        "remote": "https://github.com/chjj/ttystudio.git"
+    },
+    "gnome-mud.git": {
+        "size": "12664",
+        "name": "gnome-mud.git",
+        "remote": "https://gitlab.gnome.org/GNOME/gnome-mud.git"
+    },
+    "gitlab-test.git": {
+        "size": "26664",
+        "name": "gitlab-test.git",
+        "remote": "https://gitlab.com/gitlab-org/gitlab-test.git"
+    },
+    "purifycss.git": {
+        "size": "1960",
+        "name": "purifycss.git",
+        "remote": "https://github.com/purifycss/purifycss.git"
+    },
+    "fdroidclient.git": {
+        "size": "124784",
+        "name": "fdroidclient.git",
+        "remote": "https://gitlab.com/fdroid/fdroidclient.git"
+    },
+    "engineering-blogs.git": {
+        "size": "4912",
+        "name": "engineering-blogs.git",
+        "remote": "https://github.com/kilimchoi/engineering-blogs.git"
+    },
+    "LabCoat.git": {
+        "size": "21672",
+        "name": "LabCoat.git",
+        "remote": "https://gitlab.com/Commit451/LabCoat.git"
+    },
+    "Spoon-Knife.git": {
+        "size": "224",
+        "name": "Spoon-Knife.git",
+        "remote": "https://github.com/octocat/Spoon-Knife.git"
+    },
+    "s2n.git": {
+        "size": "106208",
+        "name": "s2n.git",
+        "remote": "https://github.com/awslabs/s2n.git"
+    },
+    "flight.git": {
+        "size": "2136",
+        "name": "flight.git",
+        "remote": "https://github.com/flightjs/flight.git"
+    },
+    "javascript.git": {
+        "size": "9768",
+        "name": "javascript.git",
+        "remote": "https://github.com/airbnb/javascript.git"
+    },
+    "linux.git": {
+        "size": "8633608",
+        "name": "linux.git",
+        "remote": "https://github.com/torvalds/linux.git"
+    },
+    "gitlab-shell.git": {
+        "size": "13368",
+        "name": "gitlab-shell.git",
+        "remote": "https://gitlab.com/gitlab-org/gitlab-shell.git"
+    },
+    "bootstrap.git": {
+        "size": "356192",
+        "name": "bootstrap.git",
+        "remote": "https://github.com/twbs/bootstrap.git"
+    },
+    "slack-wrapper.git": {
+        "size": "808",
+        "name": "slack-wrapper.git",
+        "remote": "https://github.com/reyloc/slack-wrapper.git"
+    }
+}

@@ -1,4 +1,5 @@
 from congregate.migration.github.api.base import GitHubApi
+import json
 
 
 class OrgsApi():
@@ -80,3 +81,20 @@ class OrgsApi():
         GitHub API v3 Doc: https://docs.github.com/en/rest/reference/teams#list-child-teams
         """
         return self.api.list_all(self.host, "orgs/{}/teams/{}/teams".format(org, team_slug), verify=False)
+
+    def create_org_repo(self, org_name, data=None, message=None):
+        """
+        Create an organization repository.
+
+        GitHub API v3 Doc: https://docs.github.com/en/enterprise/2.21/user/rest/reference/repos#create-an-organization-repository
+        """
+        if not message:
+            print(f"Creating an organization repository {data}")
+
+        return self.api.generate_v3_post_request(
+            self.host,
+            f"orgs/{org_name}/repos",
+            json.dumps(data),
+            description=message,
+            verify=False
+        )
