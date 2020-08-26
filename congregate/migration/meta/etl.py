@@ -4,7 +4,7 @@ import pandas as pd
 from congregate.helpers.base_class import BaseClass
 
 class WaveSpreadsheetHandler(BaseClass):
-    def __init__(self, file_path, columns_to_use):
+    def __init__(self, file_path, columns_to_use=None):
         self.file_path = file_path
         self.columns_to_use = columns_to_use
         self.file_type = self.__determine_file_type()
