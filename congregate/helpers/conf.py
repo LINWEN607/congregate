@@ -6,6 +6,7 @@ Copyright (c) 2020 - GitLab
 
 import os
 
+from re import sub, split
 from configparser import ConfigParser, ParsingError
 
 from congregate.helpers.misc_utils import get_congregate_path, deobfuscate
@@ -47,6 +48,11 @@ class Config(object):
     def prop_bool(self, section, option, default=None):
         if self.option_exists(section, option):
             return self.config.getboolean(section, option)
+        return default
+    
+    def prop_list(self, section, option, default=None):
+        if self.option_exists(section, option):
+            return split(r', |,', sub(r'\[|\]', '', self.config.get(section, option)))
         return default
 
     def as_obj(self):
@@ -273,6 +279,20 @@ class Config(object):
         """
         return self.prop_int("APP", "ui_port", 8000)
 
+    @property
+    def wave_spreadsheet_path(self):
+        """
+        The absolute path to a spreadsheet containing specific details about migration waves
+        """
+        return self.prop("APP", "wave_spreadsheet_path")
+
+    @property
+    def wave_spreadsheet_columns(self):
+        """
+        A list of columns to include in the wave spreadsheet transformation
+        """
+        return self.prop_list("APP", "wave_spreadsheet_columns")
+    
 
 # HIDDEN PROPERTIES
     # Used only by "map-users" command

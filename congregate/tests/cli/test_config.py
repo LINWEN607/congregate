@@ -45,6 +45,7 @@ class ConfigTests(unittest.TestCase):
             "yes",  # password reset email
             "no",    # randomized password
             "30",   # import wait time
+            "no",   # Wave spreadsheet
             "no"   # slack
         ]
 
@@ -101,6 +102,7 @@ class ConfigTests(unittest.TestCase):
             "yes",  # password reset email
             "no",    # randomized password
             "30",   # import wait time
+            "no",   # Wave spreadsheet
             "no"   # slack
         ]
 
@@ -163,6 +165,7 @@ class ConfigTests(unittest.TestCase):
             "yes",  # password reset email
             "no",    # randomized password
             "30",   # import wait time
+            "no",   # Wave spreadsheet
             "yes",   # slack
             "https://slack.url"   # slack_url
         ]
@@ -244,6 +247,7 @@ class ConfigTests(unittest.TestCase):
             "yes",  # password reset email
             "no",    # randomized password
             "30",   # import wait time
+            "no",   # Wave spreadsheet
             "yes",   # slack
             "https://slack.url"   # slack_url
         ]
@@ -327,6 +331,7 @@ class ConfigTests(unittest.TestCase):
             "yes",  # password reset email
             "no",    # randomized password
             "60",   # import wait time
+            "no",   # Wave spreadsheet
             "no"   # slack
         ]
 
@@ -397,6 +402,7 @@ class ConfigTests(unittest.TestCase):
             "yes",  # password reset email
             "no",    # randomized password
             "30",   # import wait time
+            "no",   # Wave spreadsheet
             "yes",   # slack
             "https://slack.url"   # slack_url
         ]
