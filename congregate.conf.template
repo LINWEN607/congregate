@@ -66,13 +66,33 @@ Copyright (c) 2020 - GitLab
 #        return d
 #
 ## DESTINATION
-## Destination configuration
-## Destination instance Host: https://destinationhosturl
-## Destination instance Access token: "Access token from destination instance created in profile settings"
-## Enable shared runners on destination instance (default: True): "True or False"
-## Append suffix to project found on destination instance(default: False): "True or False"
-## Max no. of project import retries (default: 3):
-## Migrating from an external(non-GitLab) instance? Input external source URL: "https://nongitlabinstanceurl"
+## Destination configuration for GitLab server
+## dstn_hostname = hostname
+## dstn_access_token = dGVzdA==
+## import_user_id = 
+## shared_runners_enabled = False
+## project_suffix = True
+## max_import_retries = 1
+## dstn_parent_group_id = 0
+## dstn_parent_group_path = destination_group_full_path
+## group_sso_provider = group_sso_provider
+## group_sso_provider_pattern = email
+## username_suffix = 
+## mirror_username = 
+## max_asset_expiration_time = 24
+## dstn_registry_url = destination_registry_url
+
+## Destination configuration for bitbucket/github server
+## [DESTINATION]
+## dstn_hostname = hostname
+## dstn_access_token = dGVzdA==
+## import_user_id = 1
+## shared_runners_enabled = True
+## project_suffix = False
+## max_import_retries = 3
+## username_suffix = username_suffix
+## mirror_username = 
+## max_asset_expiration_time = 24
 
 #    @property
 #    def destination_host(self):
@@ -154,6 +174,33 @@ Copyright (c) 2020 - GitLab
 #        return self.prop_int("DESTINATION", "max_asset_expiration_time", 24)
 #
 ## SOURCE
+## Source configuration for GitLab server
+## src_type = GitLab
+## src_hostname = source_hostname
+## src_access_token = dGVzdA==
+## src_parent_group_id = 0
+## src_parent_group_path = source_group_full_path
+## max_export_wait_time for external filesystem
+## max_export_wait_time = 3600
+## max_export_wait_time for AWS
+## max_export_wait_time = 1200
+## src_registry_url = source_registry_url
+ 
+##  Source configuration for bitbucket server
+## src_type = Bitbucket Server
+## src_username = username
+## src_hostname = some_external_source
+## src_access_token = dGVzdA==
+## repo_path = ./repo_path
+ 
+##  Source configuration for github server
+## src_type = GitHub
+## src_hostname = some_external_source
+## src_access_token = dGVzdA==
+## repo_path = ./repo_path
+
+
+
 #    @property
 #    def source_type(self):
 #        return self.prop("SOURCE", "src_type")
@@ -188,6 +235,13 @@ Copyright (c) 2020 - GitLab
 #        return self.prop_int("SOURCE", "max_export_wait_time", 3600)
 #
 ## CI_SOURCE
+## CI_SOURCE configuration for github server
+## ci_src_type = Jenkins
+## ci_src_hostname = ci_some_external_url
+## ci_src_username = ci_username
+## ci_src_access_token = dGVzdA==
+
+
 #    @property
 #    def ci_source_type(self):
 #        return self.prop("CI_SOURCE", "ci_src_type")
@@ -205,6 +259,19 @@ Copyright (c) 2020 - GitLab
 #        return self.prop("CI_SOURCE", "ci_src_access_token", None, True)
 #
 ## EXPORT
+## Export configuration for external filesystem
+## location = filesystem
+## filesystem_path = .
+## 
+## Export configuration for AWS filesystem
+## location = aws
+## s3_name = s3_name
+## s3_region = us-east-2
+## s3_access_key_id = dGVzdA==
+## s3_secret_access_key = dGVzdA==
+## filesystem_path = /absolute_path
+
+
 #    @property
 #    def location(self):
 #        return self.prop("EXPORT", "location")
@@ -230,6 +297,12 @@ Copyright (c) 2020 - GitLab
 #        return self.prop("EXPORT", "filesystem_path")
 #
 ## USER
+## USER configuration
+## keep_blocked_users = False
+## reset_pwd = True
+## force_rand_pwd = False
+
+
 #    @property
 #    def keep_blocked_users(self):
 #        """
@@ -256,6 +329,15 @@ Copyright (c) 2020 - GitLab
 #        return self.prop_bool("USER", "force_rand_pwd", False)
 #
 ## APP
+## APP configuration 
+## For external filesystem
+## export_import_wait_time = 30
+## For AWS
+## export_import_wait_time = 60
+## ui_port = 8000
+## slack_url = https://slack.url
+
+
 #    @property
 #    def importexport_wait(self):
 #        """
