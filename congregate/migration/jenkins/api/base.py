@@ -7,7 +7,7 @@ with warnings.catch_warnings():
     import jenkins
 
 from congregate.helpers.misc_utils import xml_to_dict
-
+from congregate.helpers.logger import myLogger
 
 class JenkinsApi():
     GET_ALL_JOBS = """
@@ -50,6 +50,7 @@ class JenkinsApi():
         """
 
     def __init__(self, host, user, token):
+        self.log = myLogger(__name__)
         self.host = host
         # Jenkins API token generated within Jenkins instance by going to User Profile -> Configure -> API Token
         self.token = token
@@ -71,6 +72,8 @@ class JenkinsApi():
     def list_all_jobs(self):
         # https://python-jenkins.readthedocs.io/en/latest/api.html#jenkins.Jenkins.get_all_jobs
         # returns dictionary with list of jobs
+        self.log.info(f"Listing endpoint: All Jenkins jobs")
+        
         return(json.loads(self.server.run_script(self.GET_ALL_JOBS)))
 
     def list_all_scm(self):

@@ -11,6 +11,7 @@ variables:
   DOCKER_VERSION: "19.03.1"
   TEST_IMAGE_NAME: "$CI_REGISTRY_IMAGE/test-3.8:latest"
   BB_SERVER_SEED_IMAGE_NAME: "$CI_REGISTRY_IMAGE/bitbucket-seed:latest"
+  JENKINS_SEED_IMAGE_NAME: "$CI_REGISTRY_IMAGE/jenkins-seed:latest"
   SAST_DISABLE_DIND: "true"
   SAST_DEFAULT_ANALYZERS: "bandit,secrets"
 
@@ -71,6 +72,11 @@ workflow:
       - importer.log
       - exceptions_json.log
 
+.jenkins-test:
+  services:
+    - name: "$JENKINS_SEED_IMAGE_NAME"
+      alias: jenkins-test
+
 code_quality:
   artifacts:
     paths: [gl-code-quality-report.json]
@@ -88,7 +94,6 @@ build:
     - /bin/sh build_test_image.sh
   rules:
     - changes:
-        - .gitlab-ci.yml
         - docker/test/*
 
 build bitbucket seed image:
@@ -102,10 +107,24 @@ build bitbucket seed image:
     - docker push "$BB_SERVER_SEED_IMAGE_NAME"
   rules:
     - changes:
-        - .gitlab-ci.yml
         - docker/bitbucket/Dockerfile
         - docker/bitbucket/entrypoint.py
         - docker/bitbucket/seed_data.sh
+
+build jenkins seed image:
+  extends:
+    - .use-docker-in-docker
+    - .docker-login
+  stage: build
+  script:
+    - cd docker/jenkins
+    - docker build -t $JENKINS_SEED_IMAGE_NAME .
+    - docker push "$JENKINS_SEED_IMAGE_NAME"
+  rules:
+    - changes:
+        - docker/jenkins/Dockerfile
+        - docker/jenkins/entrypoint.sh
+        - docker/jenkins/jenkins.py
 
 .test-job:
   stage: test
@@ -187,7 +206,16 @@ test:GitHub Server end to end:
   rules:
     - changes:
       - .gitlab-ci.yml
-      
+
+test:Spin up jenkins:
+  extends:
+    - .jenkins-test
+  image: "${TEST_IMAGE_NAME}"
+  script:
+    - while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' http://jenkins-test:8080/job/test-job/config.xml --user $JENKINS_USER:$JENKINS_PASSWORD)" != "200" ]]; do echo "Waiting for Jenkins to start"; sleep 5; done
+    - curl http://jenkins-test:8080/job/test-job/config.xml --user $JENKINS_USER:$JENKINS_PASSWORD
+    - echo "Jenkins is up and running"
+  
 rolling release:
   extends:
     - .use-docker-in-docker

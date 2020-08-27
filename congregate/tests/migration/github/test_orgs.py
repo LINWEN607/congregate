@@ -20,12 +20,20 @@ class ReposTests(unittest.TestCase):
     @patch.object(UsersClient, "format_users")
     @patch.object(ReposClient, "add_repo_members")
     @patch.object(OrgsApi, "get_all_org_members")
+    @patch.object(ReposClient, "list_ci_sources_jenkins")
+    @patch.object(ReposClient, "list_ci_sources_teamcity")
     def test_add_org_as_group(self,
+                              mock_ci_sources1,
+                              mock_ci_sources2,
                               mock_org_members,
                               mock_add_repo_members,
                               mock_format_users,
                               mock_org_repos,
                               mock_org_response):
+        
+        mock_ci_sources1.return_value = []
+        mock_ci_sources2.return_value = ['test-job1', 'test-job2']
+        
         mock_org = MagicMock()
         type(mock_org).status_code = PropertyMock(return_value=200)
         mock_org.json.return_value = self.mock_orgs.get_org()
@@ -104,6 +112,10 @@ class ReposTests(unittest.TestCase):
                 "members": repo_members,
                 "path": "googleapis",
                 "path_with_namespace": "org1/googleapis",
+                "ci_sources": {
+                    "Jenkins": ['test-job1', 'test-job2'],
+                    "TeamCity": []
+                },
                 "namespace": {
                     "path": "org1",
                     "kind": "group",
@@ -119,6 +131,10 @@ class ReposTests(unittest.TestCase):
                 "name": "gradio",
                 "members": repo_members,
                 "path": "gradio",
+                "ci_sources": {
+                    "Jenkins": ['test-job1', 'test-job2'],
+                    "TeamCity": []
+                },
                 "path_with_namespace": "org1/gradio",
                 "namespace": {
                     "path": "org1",
@@ -147,6 +163,10 @@ class ReposTests(unittest.TestCase):
                         "members": [],
                         "path": "googleapis",
                         "path_with_namespace": "org1/googleapis",
+                        "ci_sources": {
+                            "Jenkins": ['test-job1', 'test-job2'],
+                            "TeamCity": []
+                        },
                         "namespace": {
                             "path": "org1",
                             "kind": "group",
@@ -163,6 +183,10 @@ class ReposTests(unittest.TestCase):
                         "members": [],
                         "path": "gradio",
                         "path_with_namespace": "org1/gradio",
+                        "ci_sources": {
+                            "Jenkins": ['test-job1', 'test-job2'],
+                            "TeamCity": []
+                        },
                         "namespace": {
                             "path": "org1",
                             "kind": "group",
@@ -250,13 +274,20 @@ class ReposTests(unittest.TestCase):
     @patch.object(UsersClient, "format_users")
     @patch.object(ReposClient, "add_repo_members")
     @patch.object(OrgsApi, "get_org_team")
+    @patch.object(ReposClient, "list_ci_sources_jenkins")
+    @patch.object(ReposClient, "list_ci_sources_teamcity")
     def test_add_team_as_subgroup_team_error(self,
+                                             mock_ci_sources1,
+                                             mock_ci_sources2,
                                              mock_org_team,
                                              mock_add_repo_members,
                                              mock_format_users,
                                              mock_org_team_members,
                                              mock_org_team_repos):
 
+        mock_ci_sources1.return_value = []
+        mock_ci_sources2.return_value = ['test-job1', 'test-job2']
+        
         mock_team = MagicMock()
         type(mock_team).status_code = PropertyMock(return_value=200)
         mock_team.json.return_value = self.mock_orgs.get_org_team()
@@ -303,6 +334,10 @@ class ReposTests(unittest.TestCase):
                 "id": 8,
                 "path": "arrow",
                 "name": "arrow",
+                "ci_sources": {
+                    "Jenkins": ['test-job1', 'test-job2'],
+                    "TeamCity": []
+                },
                 "namespace": {
                     "id": 9,
                     "path": "org2",
@@ -319,6 +354,10 @@ class ReposTests(unittest.TestCase):
                 "id": 9,
                 "path": "phaser",
                 "name": "phaser",
+                "ci_sources": {
+                    "Jenkins": ['test-job1', 'test-job2'],
+                    "TeamCity": []
+                },
                 "namespace": {
                     "id": 9,
                     "path": "org2",
@@ -346,6 +385,10 @@ class ReposTests(unittest.TestCase):
                         "id": 8,
                         "path": "arrow",
                         "name": "arrow",
+                        "ci_sources": {
+                            "Jenkins": ['test-job1', 'test-job2'],
+                            "TeamCity": []
+                        },
                         "namespace": {
                             "id": 9,
                             "path": "org2",
@@ -362,6 +405,10 @@ class ReposTests(unittest.TestCase):
                         "id": 9,
                         "path": "phaser",
                         "name": "phaser",
+                        "ci_sources": {
+                            "Jenkins": ['test-job1', 'test-job2'],
+                            "TeamCity": []
+                        },
                         "namespace": {
                             "id": 9,
                             "path": "org2",
@@ -397,13 +444,20 @@ class ReposTests(unittest.TestCase):
     @patch.object(UsersClient, "format_users")
     @patch.object(ReposClient, "add_repo_members")
     @patch.object(OrgsApi, "get_org_team")
+    @patch.object(ReposClient, "list_ci_sources_jenkins")
+    @patch.object(ReposClient, "list_ci_sources_teamcity")    
     def test_add_team_as_subgroup(self,
+                                  mock_ci_sources1,
+                                  mock_ci_sources2,
                                   mock_org_team,
                                   mock_add_repo_members,
                                   mock_format_users,
                                   mock_org_team_members,
                                   mock_org_team_repos):
 
+        mock_ci_sources1.return_value = []
+        mock_ci_sources2.return_value = ['test-job1', 'test-job2']
+      
         mock_team = MagicMock()
         type(mock_team).status_code = PropertyMock(return_value=200)
         mock_team.json.return_value = self.mock_orgs.get_org_team()
@@ -447,6 +501,10 @@ class ReposTests(unittest.TestCase):
                 "id": 8,
                 "path": "arrow",
                 "name": "arrow",
+                "ci_sources": {
+                    "Jenkins": ['test-job1', 'test-job2'],
+                    "TeamCity": []
+                },
                 "namespace": {
                     "id": 9,
                     "path": "org2",
@@ -463,6 +521,10 @@ class ReposTests(unittest.TestCase):
                 "id": 9,
                 "path": "phaser",
                 "name": "phaser",
+                "ci_sources": {
+                    "Jenkins": ['test-job1', 'test-job2'],
+                    "TeamCity": []
+                },
                 "namespace": {
                     "id": 9,
                     "path": "org2",
@@ -490,6 +552,10 @@ class ReposTests(unittest.TestCase):
                         "id": 8,
                         "path": "arrow",
                         "name": "arrow",
+                        "ci_sources": {
+                            "Jenkins": ['test-job1', 'test-job2'],
+                            "TeamCity": []
+                        },
                         "namespace": {
                             "id": 9,
                             "path": "org2",
@@ -506,6 +572,10 @@ class ReposTests(unittest.TestCase):
                         "id": 9,
                         "path": "phaser",
                         "name": "phaser",
+                        "ci_sources": {
+                            "Jenkins": ['test-job1', 'test-job2'],
+                            "TeamCity": []
+                        },
                         "namespace": {
                             "id": 9,
                             "path": "org2",

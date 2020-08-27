@@ -79,6 +79,10 @@ def write_empty_file(filename):
 def list_data():
     src_type = b.config.source_type
     ci_src_type = b.config.ci_source_type
+
+    if ci_src_type == "Jenkins":
+        list_jenkins_data()
+        
     if src_type == "Bitbucket Server":
         list_bitbucket_data()
     elif src_type == "GitLab":
@@ -88,9 +92,6 @@ def list_data():
     else:
         b.log.warning("Cannot list from source {}".format(src_type))
         exit()
-
-    if ci_src_type == "Jenkins":
-        list_jenkins_data()
 
     staged_files = ["staged_projects", "staged_groups", "staged_users"]
 
