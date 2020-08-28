@@ -6,8 +6,7 @@
 ## Once you have installed congregate, You can run `./congregate.sh list` to display the list of commands you can use.
 ## And to to display the configuration settings, run `./congregate.sh configure`
 ## This command would let you configure your source and destination hosts and their details, export options, user details, app details etc
-##! Locally, the complete configuration file can be found at:
-##! congregate/data/congregate.conf
+##! Locally, the complete configuration file can be found at: congregate/data/congregate.conf
 
 ################################################################################
 ################################################################################
@@ -41,8 +40,15 @@
 # group_sso_provider_pattern = email
 # username_suffix = 
 # mirror_username = 
+### The maximum number of hours to rollback users, groups, and projects. Default value is 24
 # max_asset_expiration_time = 24
 # dstn_registry_url = destination_registry_url
+
+### There are few other additional configurations for Destination host which are used sometimes based on requirements received
+### append_project_suffix_on_existing_found setting determines if, in the instance of an existing project being found at the destination with the
+### same name as the source project, if we should append a value and create the project, or just fail the import.
+### The value from the append_project_suffix configuration value, or `False` by default
+# append_project_suffix_on_existing_found = False
 
 ### Consider few changes in the configuration when the source is either Bitbucket or Github server, 
 ### Rest all remains same as mentioned in General configuration
@@ -62,10 +68,9 @@
 # src_access_token = *****
 # src_parent_group_id = 0
 # src_parent_group_path = source_group_full_path
-# max_export_wait_time differs for external filesystem and AWS
-## Consider "3600" for external filesystem and "1200" for AWS
-# max_export_wait_time = 3600  ## for external filesystem
-# max_export_wait_time = 1200  ## for AWS filesystem
+### The maximum amount of time to wait for exports. It differs for external filesystem and AWS
+### Consider "3600" for external filesystem and "1200" for AWS
+# max_export_wait_time = 3600 or 1200
 # src_registry_url = source_registry_url
  
 ### Consider below changes when the source is a Bitbucket server, rest all other configuration remains same
@@ -90,6 +95,7 @@
 
 
 ###! **Configuration settings below are for EXPORT**
+
 ### Consider the below configuration when there is a need to export to an external filesystem except AWS
 # location = filesystem
 # filesystem_path = .
@@ -103,6 +109,7 @@
 # filesystem_path = /absolute_path
 
 ###! **Configuration settings below are for USER**
+
 ### Consider below configuration if you need to keep blocked users, 
 ### whether or not you should send the reset password link on user creation
 ### or to generate a random password at create
@@ -112,6 +119,7 @@
 
 
 ###! **Configuration settings below are for APP**
+
 ### export_import_wait_time concerns the import/export status wait time and differs for external filesystem and AWS
 ### Consider "30" for external filesystem and "60" for AWS
 # export_import_wait_time = 30 or 60 
@@ -122,6 +130,7 @@
 # slack_url = https://slack.url
 
 
-### HIDDEN PROPERTIES
+###! **HIDDEN PROPERTIES**
+
 ### Used only by "map-users" command
 ### Used only by disabled migration mode "filesystem-aws"
