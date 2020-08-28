@@ -65,7 +65,7 @@
 # max_export_wait_time differs for external filesystem and AWS
 ## Consider "3600" for external filesystem and "1200" for AWS
 # max_export_wait_time = 3600  ## for external filesystem
-# max_export_wait_time = 3600  ## for AWS filesystem
+# max_export_wait_time = 1200  ## for AWS filesystem
 # src_registry_url = source_registry_url
  
 ### Consider below changes when the source is a Bitbucket server, rest all other configuration remains same
