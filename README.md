@@ -8,6 +8,7 @@
 * Users are migrated using individual API endpoints.
 * Congregate leverages both the [Project](https://docs.gitlab.com/ee/api/project_import_export.html) and [Group](https://docs.gitlab.com/ee/api/group_import_export.html) export / import API to migrate projects and groups.
 * Missing project and group export / import features are migrated using individual API endpoints.
+* Congregate will not be ported into the GitLab application as-is, but certain pieces of existing Congregate functionality will be rebuilt in GitLab. To track this work, please visit the [GitLab Group Migration](https://gitlab.com/groups/gitlab-org/-/epics/2901) epic.
 
 ```text
 Come together, right now
