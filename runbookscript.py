@@ -11,7 +11,7 @@ for x in arr:
         xpath = os.path.join(path,x)
         with open(xpath, 'r') as f:
             l = f.read()
-            data = {"branch": "runbooktest", "author_email": "sfirdaus@gitlab.com", "author_name": "Syeda Firdaus", "commit_message": "Uploading runbook files", "content": str(l)}
+            data = {"branch": "master", "author_email": "sfirdaus@gitlab.com", "author_name": "Syeda Firdaus", "commit_message": "Uploading runbook files", "content": str(l)}
             payload = json.dumps(data)
             headers = {
                 'private-token': os.getenv("PS_MIGRATION_TOKEN"),
