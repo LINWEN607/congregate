@@ -28,6 +28,7 @@ config_path = "{}/data/congregate.conf".format(app_path)
     CLI for configuring congregate
 """
 
+
 def generate_config():
     """
         CLI for generating congregate.conf
@@ -192,7 +193,8 @@ def generate_config():
             "ABSOLUTE path for exporting/updating projects? (Default: {}): ".format(getcwd()))
         config.set("EXPORT", "filesystem_path",
                    abs_path if abs_path and abs_path.startswith("/") else getcwd())
-    # CI Source
+
+    # CI Source configuration
     ci_src = input("Migrating from a CI Source? (Default: No) ")
     if ci_src.lower() in ["yes", "y"]:
         config.add_section("CI_SOURCE")
@@ -202,12 +204,14 @@ def generate_config():
         elif ci_src_option.lower() in ["2", "2.", "teamcity"]:
             config.set("CI_SOURCE", "ci_src_type", "TeamCity")
         else:
-            print ("CI Source type {} is currently not supported".format(ci_src_option))
+            print("CI Source type {} is currently not supported".format(ci_src_option))
         config.set("CI_SOURCE", "ci_src_hostname", input(
             "CI Source instance ({}) URL: ".format(config.get("CI_SOURCE", "ci_src_type"))))
-        config.set("CI_SOURCE", "ci_src_username", input("CI Source Username: "))
+        config.set("CI_SOURCE", "ci_src_username",
+                   input("CI Source Username: "))
         config.set("CI_SOURCE", "ci_src_access_token", obfuscate(
             "CI Source instance ({}) Personal Access Token: ".format(config.get("CI_SOURCE", "ci_src_type"))))
+
     # User specific configuration
     config.add_section("USER")
     keep_blocker_users = input(
@@ -241,7 +245,7 @@ def generate_config():
         config.set("APP", "slack_url", input(
             "Slack Incoming WebHooks URL: "))
         test_slack(config.get("APP", "slack_url"))
-    
+
     config.set("APP", "ui_port", "8000")
 
     write_to_file(config)

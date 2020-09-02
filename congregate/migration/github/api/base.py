@@ -1,5 +1,4 @@
 import requests
-import urllib3
 
 from congregate.helpers.decorators import stable_retry
 from congregate.helpers.audit_logger import audit_logger
@@ -11,9 +10,6 @@ base = BaseClass()
 
 log = myLogger(__name__)
 audit = audit_logger(__name__)
-
-# TODO: Remove for production use, together with verify=False in api/orgs.py
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
 class GitHubApi():
@@ -145,7 +141,9 @@ class GitHubApi():
                         f"\nERROR: HTTP Response was {r.status_code}\n\nBody Text: {r.text}\n")
                     break
                 raise ValueError(
-                    f"ERROR HTTP Response was NOT 200, which implies something wrong. The actual return code was {r.status_code}\n{r.text}\n")
+                    f"ERROR HTTP Response was NOT 200, which implies something wrong."
+                    f"The actual return code was {r.status_code}\n{r.text}\n"
+                )
 
             if r.json() and r.headers.get("Link", None):
                 data.extend(r.json())

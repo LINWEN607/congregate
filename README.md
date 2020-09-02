@@ -8,6 +8,7 @@
 * Users are migrated using individual API endpoints.
 * Congregate leverages both the [Project](https://docs.gitlab.com/ee/api/project_import_export.html) and [Group](https://docs.gitlab.com/ee/api/group_import_export.html) export / import API to migrate projects and groups.
 * Missing project and group export / import features are migrated using individual API endpoints.
+* Congregate will not be ported into the GitLab application as-is, but certain pieces of existing Congregate functionality will be rebuilt in GitLab. To track this work, please visit the [GitLab Group Migration](https://gitlab.com/groups/gitlab-org/-/epics/2901) epic.
 
 ```text
 Come together, right now
@@ -26,7 +27,7 @@ Come together, right now
 
 ### TL;DR Install
 
-This document assumes you have a working python 3.8.4 or greater installed, you know how to clone a repo in terminal, and switch to its directory.  If you do not have a working python, you will need to take appropriate OS specific steps to install it.
+This document assumes you have a working python 3.8.5 or greater installed, you know how to clone a repo in terminal, and switch to its directory.  If you do not have a working python, you will need to take appropriate OS specific steps to install it.
 
 After cloning [the repo](https://gitlab.com/gitlab-com/customer-success/tools/congregate/) and changing to the directory in terminal, run the following appropriate commands to run your first UT!
 

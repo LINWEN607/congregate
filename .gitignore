@@ -26,6 +26,7 @@ dist/*
 runbooks/*.html
 docker/bitbucket/bitbucket.properties-populated
 test-data
+congregate/tests/data/repos
 
 node_modules
 /dist
