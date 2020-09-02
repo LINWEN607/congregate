@@ -30,6 +30,7 @@ class GroupDiffClient(BaseDiffClient):
             "web_url",
             "created_at",
             "marked_for_deletion_on",
+            "prevent_forking_outside_group",
             "shared_with_groups"   # Temporarily, until we add shared_with_groups feature
         ]
         if staged:

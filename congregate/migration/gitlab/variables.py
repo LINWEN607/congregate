@@ -13,10 +13,11 @@ class VariablesClient(BaseClass):
         self.groups_api = GroupsApi()
         super(VariablesClient, self).__init__()
 
-    def are_enabled(self, id):
-        project = self.projects_api.get_project(
-            id, self.config.source_host, self.config.source_token).json()
-        return project.get("jobs_enabled", False)
+    def are_enabled(self, id, var_type="projects"):
+        if var_type == "group":
+            return safe_json_response(self.groups_api.get_group(id, self.config.source_host, self.config.source_token)).get("id", None)
+        else:
+            return safe_json_response(self.projects_api.get_project(id, self.config.source_host, self.config.source_token)).get("jobs_enabled", False)
 
     def get_gitlab_variables(self, id, host, token, var_type="projects"):
         if var_type == "group":
@@ -32,21 +33,20 @@ class VariablesClient(BaseClass):
 
     def migrate_gitlab_cicd_variables(self, old_id, new_id, name, var_type):
         try:
-            if self.are_enabled(old_id):
-                var_list = safe_json_response(self.get_gitlab_variables(
-                    old_id, self.config.source_host, self.config.source_token, var_type))
+            if self.are_enabled(old_id, var_type=var_type):
+                var_list = self.get_gitlab_variables(
+                    old_id, self.config.source_host, self.config.source_token, var_type=var_type)
                 if var_list:
                     return self.migrate_variables(new_id, name, var_list, var_type)
                 else:
                     self.log.warning(
-                        "Unable to retrieve variables from {}. Skipping variable migration".format(name))
+                        f"Unable to retrieve variables from {var_type} {name}. Skipping CI/CD variable migration")
                     return False
             else:
-                self.log.warning(
-                    "CI/CD is disabled for project {}".format(name))
+                self.log.warning(f"CI/CD is disabled for {var_type} {name}")
         except Exception as e:
             self.log.error(
-                "Failed to migrate project {0} CI/CD variables, with error:\n{1}".format(name, e))
+                f"Failed to migrate {var_type} {name} CI/CD variables, with error:\n{e}")
             return False
 
     def migrate_variables(self, new_id, name, var_list, var_type):
@@ -57,12 +57,12 @@ class VariablesClient(BaseClass):
             for var in variables:
                 if is_error_message_present(var) or not var:
                     self.log.error(
-                        "Failed to fetch CI/CD variables ({0}) for project {1}".format(var, name))
+                        f"Failed to fetch CI/CD variables ({var}) for {var_type} {name}")
                     return False
-                self.log.info("Migrating {0} ID ({2}) CI/CD variables"
-                              .format(var_type, new_id))
+                self.log.info(
+                    f"Migrating {var_type} ID ({new_id}) CI/CD variables")
                 self.set_variables(
-                    new_id, var, self.config.destination_host, self.config.destination_token, var_type)
+                    new_id, var, self.config.destination_host, self.config.destination_token, var_type=var_type)
             return True
         except TypeError as te:
             self.log.error("{0} {1} variables {2}".format(
@@ -70,7 +70,7 @@ class VariablesClient(BaseClass):
             return False
         except RequestException as re:
             self.log.error(
-                "Failed to migrate project {0} CI/CD variables, with error:\n{1}".format(name, re))
+                f"Failed to migrate {var_type} {name} CI/CD variables, with error:\n{re}")
             return False
 
     def migrate_variables_in_stage(self, dry_run=True):

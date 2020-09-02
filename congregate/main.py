@@ -138,12 +138,12 @@ if __name__ == '__main__':
             os.path.dirname(os.path.abspath(__file__))))
         from congregate.helpers import conf
         from congregate.helpers.logger import myLogger
-        from congregate.helpers.misc_utils import get_congregate_path, clean_data, obfuscate, spin_up_ui
+        from congregate.helpers.misc_utils import get_congregate_path, clean_data, obfuscate, spin_up_ui, stitch_json_results, write_results_to_file
 
     else:
         from .helpers import conf
         from .helpers.logger import myLogger
-        from .helpers.misc_utils import get_congregate_path, clean_data, obfuscate, spin_up_ui
+        from .helpers.misc_utils import get_congregate_path, clean_data, obfuscate, spin_up_ui, stitch_json_results, write_results_to_file
 else:
     import sys
     sys.path.append(os.path.dirname(
@@ -360,8 +360,8 @@ def main():
                 project_diff.generate_html_report(
                     project_diff.generate_diff_report(), "/data/project_migration_results.html")
             if arguments["stitch-results"]:
-                result_type = arguments["--result-type"].replace(
-                    "s", "") if arguments["--result-type"] else "project"
+                result_type = str(
+                    arguments["--result-type"]).rstrip("s") if arguments["--result-type"] else "project"
                 steps = int(arguments["--no-of-files"]
                             ) if arguments["--no-of-files"] else 0
                 if arguments["--head"]:

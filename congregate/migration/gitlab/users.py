@@ -103,7 +103,7 @@ class UsersClient(BaseClass):
                 namespace_check_response.append(group)
             if namespace_check_response:
                 for z in namespace_check_response:
-                    if z.get("name", None) is not None and str(z["name"]).lower() == username.lower():
+                    if z.get("path", None) is not None and str(z["path"]).lower() == username.lower():
                         # We found a match, so username is group name. Return True
                         return True
             return False

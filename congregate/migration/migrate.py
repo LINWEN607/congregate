@@ -7,7 +7,7 @@
 import os
 import json
 from traceback import print_exc
-from time import time, sleep
+from time import time
 from requests.exceptions import RequestException
 
 from congregate.helpers import api
@@ -351,7 +351,7 @@ class MigrateClient(BaseClass):
                         self.users.block_user(user_data)
                     new_user = self.users.handle_user_creation_status(
                         response, user_data)
-            if not self.dry_run and self.config.source_host == "GitLab":
+            if not self.dry_run and self.config.source_type == "GitLab":
                 # Migrate SSH keys
                 self.keys.migrate_user_ssh_keys(old_user, new_user if new_user.get(
                     "id", None) else self.users.find_user_by_email_comparison_without_id(email))

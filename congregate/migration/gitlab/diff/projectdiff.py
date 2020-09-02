@@ -42,7 +42,8 @@ class ProjectDiffClient(BaseDiffClient):
             "service_desk_address",
             "service_desk_enabled",
             "marked_for_deletion_at",
-            "marked_for_deletion_on"
+            "marked_for_deletion_on",
+            "compliance_frameworks"
         ]
         if staged:
             self.source_data = self.load_json_data(
