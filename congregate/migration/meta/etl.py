@@ -5,10 +5,10 @@ from congregate.helpers.base_class import BaseClass
 
 class WaveSpreadsheetHandler(BaseClass):
     def __init__(self, file_path, columns_to_use=None):
+        super(WaveSpreadsheetHandler, self).__init__()
         self.file_path = file_path
         self.columns_to_use = self.map_columns(columns_to_use)
         self.file_type = self.__determine_file_type()
-        super(WaveSpreadsheetHandler, self).__init__()
 
     def __determine_file_type(self):
         excel_types = ['.xls', '.xlsx', '.xlsm', '.xlsb', '.odf', '.ods', '.odt']
