@@ -3,8 +3,8 @@
 #! during upgrades.
 
 
-## Once you have installed congregate, You can run `./congregate.sh list` to display the list of commands you can use.
-## And to to display the configuration settings, run `./congregate.sh configure`
+## Once you have installed congregate, You can run `./congregate.sh -h` to display the list of commands you can use.
+## And to configure congregate, run `./congregate.sh configure`
 ## This command would let you configure your source and destination hosts and their details, export options, user details, app details etc
 ##! Locally, the complete configuration file can be found at: congregate/data/congregate.conf
 
@@ -114,6 +114,7 @@
 ### whether or not you should send the reset password link on user creation
 ### or to generate a random password at create
 # keep_blocked_users = False
+### NOTE: Either reset_pwd or force_rand_password need to be set to True for users to be created
 # reset_pwd = True
 # force_rand_pwd = False
 
