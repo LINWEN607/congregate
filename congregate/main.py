@@ -191,7 +191,8 @@ def main():
                 from congregate.migration.gitlab.compare import CompareClient
                 from congregate.migration.migrate import MigrateClient
                 from congregate.migration.gitlab.branches import BranchesClient
-                from congregate.cli import list_source, stage_projects, stage_groups, do_all
+                from congregate.cli import list_source, stage_groups, do_all
+                from congregate.cli.stage_projects import ProjectStageCLI
                 from congregate.helpers.seed.generator import SeedDataGenerator
                 from congregate.migration.gitlab.diff.userdiff import UserDiffClient
                 from congregate.migration.gitlab.diff.projectdiff import ProjectDiffClient
@@ -204,7 +205,8 @@ def main():
                 from .migration.gitlab.compare import CompareClient
                 from congregate.migration.migrate import MigrateClient
                 from .migration.gitlab.branches import BranchesClient
-                from congregate.cli import list_source, stage_projects, stage_groups, do_all
+                from congregate.cli import list_source, stage_groups, do_all
+                from congregate.cli.stage_projects import ProjectStageCLI
                 from congregate.helpers.user_util import map_users
             config = conf.Config()
             users = UsersClient()
@@ -218,7 +220,8 @@ def main():
                 list_source.list_data()
 
             if arguments["stage-projects"]:
-                stage_projects.stage_data(
+                pcli = ProjectStageCLI()
+                pcli.stage_data(
                     arguments['<projects>'], dry_run=DRY_RUN, skip_users=SKIP_USERS)
 
             if arguments["stage-groups"]:

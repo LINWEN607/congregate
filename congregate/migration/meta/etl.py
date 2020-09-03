@@ -20,15 +20,21 @@ class WaveSpreadsheetHandler(BaseClass):
         else:
             raise ValueError(f"{self.file_path} is an invalid file type for extraction and transformation")
 
-    def read_file_as_dataframe(self):
+    def read_file_as_dataframe(self, df_filter=None):
         if self.file_type == "excel":
             r = pd.read_excel(self.file_path)
         elif self.file_type == "csv":
             r = pd.read_csv(self.file_path)
-        return pd.DataFrame(r, columns=self.columns_to_use)
+        df = pd.DataFrame(r, columns=self.columns_to_use)
+        if df_filter:
+            return self.filter_data(df, df_filter[0], df_filter[1])
+        return df
 
-    def read_file_as_json(self):
-        return json.loads(self.read_file_as_dataframe().to_json(orient='records'))
+    def read_file_as_json(self, df_filter=None):
+        return json.loads(self.read_file_as_dataframe(df_filter=df_filter).to_json(orient='records'))
+    
+    def filter_data(self, df, column, value):
+        return df.loc[df[column] == value]
 
     def map_columns(self, columns_to_use):
         mapping = self.config.wave_spreadsheet_column_mapping

@@ -1,6 +1,6 @@
 import unittest
 import mock
-from congregate.cli import stage_projects
+from congregate.cli.stage_projects import ProjectStageCLI
 from congregate.tests.mockapi.gitlab.projects import MockProjectsApi
 from congregate.tests.mockapi.gitlab.groups import MockGroupsApi
 from congregate.tests.mockapi.gitlab.users import MockUsersApi
@@ -13,17 +13,15 @@ class StageProjectsTests(unittest.TestCase):
         self.groups_api = MockGroupsApi()
         self.users_api = MockUsersApi()
         self.mock = mock.MagicMock()
+        self.pcli = ProjectStageCLI()
 
     @mock.patch('builtins.open')
     @mock.patch('os.path.isfile')
-    @mock.patch('congregate.cli.stage_projects.open_projects_file')
-    @mock.patch('congregate.cli.stage_projects.open_users_file')
-    @mock.patch('congregate.cli.stage_projects.open_groups_file')
+    @mock.patch.object(ProjectStageCLI, 'open_projects_file')
+    @mock.patch.object(ProjectStageCLI, 'open_users_file')
+    @mock.patch.object(ProjectStageCLI, 'open_groups_file')
     @mock.patch.object(ConfigurationValidator, 'dstn_parent_id', new_callable=mock.PropertyMock)
     @mock.patch.object(ConfigurationValidator, 'source_type', new_callable=mock.PropertyMock)
-    @mock.patch('congregate.cli.stage_projects.staged_users', [])
-    @mock.patch('congregate.cli.stage_projects.staged_groups', [])
-    @mock.patch('congregate.cli.stage_projects.staged_projects', [])
     def test_build_stage_data(self, mock_source_type, mock_parent_id, mock_groups, mock_users, mock_projects, mock_check, mock_open):
         mock_source_type.return_value = "GitLab"
         mock_parent_id.return_value = None
@@ -33,7 +31,7 @@ class StageProjectsTests(unittest.TestCase):
         mock_groups.return_value = self.groups_api.get_all_groups_list()
         mock_open.return_value = {}
 
-        staged_projects, staged_users, staged_groups = stage_projects.build_staging_data([
+        staged_projects, staged_users, staged_groups  = self.pcli.build_staging_data([
                                                                                          "4", "6"])
 
         expected_projects = [
@@ -213,14 +211,11 @@ class StageProjectsTests(unittest.TestCase):
 
     @mock.patch('builtins.open')
     @mock.patch('os.path.isfile')
-    @mock.patch('congregate.cli.stage_projects.open_projects_file')
-    @mock.patch('congregate.cli.stage_projects.open_users_file')
-    @mock.patch('congregate.cli.stage_projects.open_groups_file')
+    @mock.patch.object(ProjectStageCLI, 'open_projects_file')
+    @mock.patch.object(ProjectStageCLI, 'open_users_file')
+    @mock.patch.object(ProjectStageCLI, 'open_groups_file')
     @mock.patch.object(ConfigurationValidator, 'dstn_parent_id', new_callable=mock.PropertyMock)
     @mock.patch.object(ConfigurationValidator, 'source_type', new_callable=mock.PropertyMock)
-    @mock.patch('congregate.cli.stage_projects.staged_users', [])
-    @mock.patch('congregate.cli.stage_projects.staged_groups', [])
-    @mock.patch('congregate.cli.stage_projects.staged_projects', [])
     def test_build_stage_increment_no_parent_id(self, mock_source_type, mock_parent_id, mock_groups, mock_users, mock_projects, mock_check, mock_open):
         mock_source_type.return_value = "GitLab"
         mock_parent_id.return_value = None
@@ -230,7 +225,7 @@ class StageProjectsTests(unittest.TestCase):
         mock_groups.return_value = self.groups_api.get_all_groups_list()
         mock_open.return_value = {}
 
-        staged_projects, staged_users, staged_groups = stage_projects.build_staging_data([
+        staged_projects, staged_users, staged_groups  = self.pcli.build_staging_data([
                                                                                          "1-2"])
 
         expected_projects = [
@@ -405,13 +400,10 @@ class StageProjectsTests(unittest.TestCase):
 
     @mock.patch('builtins.open')
     @mock.patch('os.path.isfile')
-    @mock.patch('congregate.cli.stage_projects.open_projects_file')
-    @mock.patch('congregate.cli.stage_projects.open_users_file')
-    @mock.patch('congregate.cli.stage_projects.open_groups_file')
+    @mock.patch.object(ProjectStageCLI, 'open_projects_file')
+    @mock.patch.object(ProjectStageCLI, 'open_users_file')
+    @mock.patch.object(ProjectStageCLI, 'open_groups_file')
     @mock.patch.object(ConfigurationValidator, 'dstn_parent_id', new_callable=mock.PropertyMock)
-    @mock.patch('congregate.cli.stage_projects.staged_users', [])
-    @mock.patch('congregate.cli.stage_projects.staged_groups', [])
-    @mock.patch('congregate.cli.stage_projects.staged_projects', [])
     def test_build_stage_data_all(self, parent_id, mock_groups, mock_users, mock_projects, mock_check, mock_open):
         parent_id.return_value = None
         mock_check.return_value = True
@@ -420,7 +412,7 @@ class StageProjectsTests(unittest.TestCase):
         mock_groups.return_value = self.groups_api.get_all_groups_list()
         mock_open.return_value = {}
 
-        staged_projects, staged_users, staged_groups = stage_projects.build_staging_data([
+        staged_projects, staged_users, staged_groups  = self.pcli.build_staging_data([
                                                                                          "all"])
 
         self.assertEqual(
@@ -432,13 +424,10 @@ class StageProjectsTests(unittest.TestCase):
 
     @mock.patch('builtins.open')
     @mock.patch('os.path.isfile')
-    @mock.patch('congregate.cli.stage_projects.open_projects_file')
-    @mock.patch('congregate.cli.stage_projects.open_users_file')
-    @mock.patch('congregate.cli.stage_projects.open_groups_file')
+    @mock.patch.object(ProjectStageCLI, 'open_projects_file')
+    @mock.patch.object(ProjectStageCLI, 'open_users_file')
+    @mock.patch.object(ProjectStageCLI, 'open_groups_file')
     @mock.patch.object(ConfigurationValidator, 'dstn_parent_id', new_callable=mock.PropertyMock)
-    @mock.patch('congregate.cli.stage_projects.staged_users', [])
-    @mock.patch('congregate.cli.stage_projects.staged_groups', [])
-    @mock.patch('congregate.cli.stage_projects.staged_projects', [])
     def test_build_stage_data_none(self, parent_id, mock_groups, mock_users, mock_projects, mock_check, mock_open):
         parent_id.return_value = None
         mock_check.return_value = True
@@ -448,5 +437,5 @@ class StageProjectsTests(unittest.TestCase):
         mock_open.return_value = {}
 
         with self.assertRaises(SystemExit) as ex:
-            staged_projects, staged_users, staged_groups = stage_projects.build_staging_data([
+            staged_projects, staged_users, staged_groups  = self.pcli.build_staging_data([
                 "bogus"])

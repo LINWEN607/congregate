@@ -16,7 +16,7 @@ from congregate.helpers.migrate_utils import get_export_filename_from_namespace_
 from congregate.helpers.misc_utils import get_dry_log, json_pretty, is_dot_com, clean_data, \
     add_post_migration_stats, rotate_logs, write_results_to_file, migration_dry_run, safe_json_response, is_error_message_present
 from congregate.helpers.processes import start_multi_process
-from congregate.cli.stage_projects import stage_data
+from congregate.cli.stage_projects import ProjectStageCLI
 from congregate.helpers.base_class import BaseClass
 from congregate.migration.gitlab.importexport import ImportExportClient
 from congregate.migration.gitlab.variables import VariablesClient
@@ -847,4 +847,5 @@ class MigrateClient(BaseClass):
                 if rewritten_projects.get(up.split("/")[1], None) is not None:
                     ids.append(rewritten_projects.get(up.split("/")[1])["id"])
         if ids is not None and ids:
-            stage_data(ids, self.dry_run)
+            pcli = ProjectStageCLI()
+            pcli.stage_data(ids, self.dry_run)

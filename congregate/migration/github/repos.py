@@ -60,6 +60,7 @@ class ReposClient(BaseClass):
                         "kind": "group" if repo["owner"]["type"] in self.GROUP_TYPE else "user",
                         "full_path": repo["owner"]["login"]
                     },
+                    "http_url_to_repo": repo["clone_url"],
                     "path_with_namespace": repo["full_name"],
                     "visibility": "private" if repo["private"] else "public",
                     "description": repo.get("description", ""),
