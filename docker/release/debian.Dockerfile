@@ -1,4 +1,4 @@
-FROM python:3.8.4-buster
+FROM python:3.8.5-buster
 
 # Define the ENV variable
 ENV CONGREGATE_PATH /opt/congregate
