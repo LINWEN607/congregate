@@ -78,7 +78,6 @@ class ProjectStageCLI(BaseStageClass):
                     # variable type
                     try:
                         # Retrieve group object from groups.json
-                        print(json.dumps(self.rewritten_projects, indent=4))
                         project = self.rewritten_projects[int(
                             re.sub("[^0-9]", "", projects_to_stage[i]))]
                     except (ValueError, KeyError):

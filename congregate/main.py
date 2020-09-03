@@ -8,6 +8,7 @@ Usage:
     congregate configure
     congregate stage-projects <projects>... [--skip-users] [--commit]
     congregate stage-groups <groups>... [--skip-users] [--commit]
+    congregate stage-wave <wave> [--commit]
     congregate migrate [--processes=<n>] [--skip-users] [--skip-group-export] [--skip-group-import] [--skip-project-export] [--skip-project-import] [--only-post-migration-info] [--commit]
     congregate rollback [--hard-delete] [--skip-users] [--skip-groups] [--skip-projects] [--commit]
     congregate ui
@@ -139,11 +140,6 @@ if __name__ == '__main__':
         from congregate.helpers import conf
         from congregate.helpers.logger import myLogger
         from congregate.helpers.misc_utils import get_congregate_path, clean_data, obfuscate, spin_up_ui
-
-    else:
-        from .helpers import conf
-        from .helpers.logger import myLogger
-        from .helpers.misc_utils import get_congregate_path, clean_data, obfuscate, spin_up_ui
 else:
     import sys
     sys.path.append(os.path.dirname(
@@ -183,31 +179,21 @@ def main():
         if arguments["configure"]:
             generate_config()
         else:
-            if __package__ is None:
-                from congregate.migration.gitlab.users import UsersClient
-                from congregate.migration.gitlab.groups import GroupsClient
-                from congregate.migration.gitlab.projects import ProjectsClient
-                from congregate.migration.gitlab.variables import VariablesClient
-                from congregate.migration.gitlab.compare import CompareClient
-                from congregate.migration.migrate import MigrateClient
-                from congregate.migration.gitlab.branches import BranchesClient
-                from congregate.cli import list_source, stage_groups, do_all
-                from congregate.cli.stage_projects import ProjectStageCLI
-                from congregate.helpers.seed.generator import SeedDataGenerator
-                from congregate.migration.gitlab.diff.userdiff import UserDiffClient
-                from congregate.migration.gitlab.diff.projectdiff import ProjectDiffClient
-                from congregate.migration.gitlab.diff.groupdiff import GroupDiffClient
-                from congregate.helpers.user_util import map_users
-            else:
-                from .migration.gitlab.users import UsersClient
-                from .migration.gitlab.groups import GroupsClient
-                from .migration.gitlab.projects import ProjectsClient
-                from .migration.gitlab.compare import CompareClient
-                from congregate.migration.migrate import MigrateClient
-                from .migration.gitlab.branches import BranchesClient
-                from congregate.cli import list_source, stage_groups, do_all
-                from congregate.cli.stage_projects import ProjectStageCLI
-                from congregate.helpers.user_util import map_users
+            from congregate.migration.gitlab.users import UsersClient
+            from congregate.migration.gitlab.groups import GroupsClient
+            from congregate.migration.gitlab.projects import ProjectsClient
+            from congregate.migration.gitlab.variables import VariablesClient
+            from congregate.migration.gitlab.compare import CompareClient
+            from congregate.migration.migrate import MigrateClient
+            from congregate.migration.gitlab.branches import BranchesClient
+            from congregate.cli import list_source, stage_groups, do_all
+            from congregate.cli.stage_projects import ProjectStageCLI
+            from congregate.cli.stage_wave import WaveStageCLI
+            from congregate.helpers.seed.generator import SeedDataGenerator
+            from congregate.migration.gitlab.diff.userdiff import UserDiffClient
+            from congregate.migration.gitlab.diff.projectdiff import ProjectDiffClient
+            from congregate.migration.gitlab.diff.groupdiff import GroupDiffClient
+            from congregate.helpers.user_util import map_users
             config = conf.Config()
             users = UsersClient()
             groups = GroupsClient()
@@ -227,6 +213,11 @@ def main():
             if arguments["stage-groups"]:
                 stage_groups.stage_data(
                     arguments['<groups>'], dry_run=DRY_RUN, skip_users=SKIP_USERS)
+            
+            if arguments["stage-wave"]:
+                wcli = WaveStageCLI()
+                wcli.stage_wave(
+                    arguments['<wave>'], dry_run=DRY_RUN)
 
             if arguments["migrate"]:
                 migrate = MigrateClient(
