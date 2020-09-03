@@ -244,7 +244,7 @@ debian-release-tag:
     RELEASE_IMAGE_NAME: "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME-debian"
     LATEST: "$CI_REGISTRY_IMAGE:latest-debian"
   script:
-    - cp docker/release/debian.Dockerfile ./
+    - cp docker/release/debian.Dockerfile ./Dockerfile
     - docker build --tag "$RELEASE_IMAGE_NAME" .
     - docker image tag $RELEASE_IMAGE_NAME $LATEST
     - docker push "$RELEASE_IMAGE_NAME"
@@ -278,41 +278,7 @@ alpine-release-tag:
     RELEASE_IMAGE_NAME: "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME-alpine"
     LATEST: "$CI_REGISTRY_IMAGE:latest-alpine"
   script:
-    - cp docker/release/alpine.Dockerfile ./
-    - docker build --tag "$RELEASE_IMAGE_NAME" .
-    - docker image tag $RELEASE_IMAGE_NAME $LATEST
-    - docker push "$RELEASE_IMAGE_NAME"
-    - docker push "$LATEST"
-
-alpine rolling release:
-  extends:
-    - .use-docker-in-docker
-    - .docker-login
-  stage: release
-  rules:
-    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
-  variables:
-    RELEASE_IMAGE_NAME: "$CI_REGISTRY_IMAGE/$CI_COMMIT_REF_NAME:$CI_COMMIT_SHA-alpine"
-    LATEST: "$CI_REGISTRY_IMAGE/$CI_COMMIT_REF_NAME:latest-alpine"
-  script:
-    - cp docker/release/alpine.Dockerfile ./
-    - docker build --tag "$RELEASE_IMAGE_NAME" .
-    - docker image tag $RELEASE_IMAGE_NAME $LATEST
-    - docker push "$RELEASE_IMAGE_NAME"
-    - docker push "$LATEST"
-
-alpine-release-tag:
-  extends:
-    - .use-docker-in-docker
-    - .docker-login
-  rules:
-    - if: "$CI_COMMIT_TAG"
-  stage: release
-  variables:
-    RELEASE_IMAGE_NAME: "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME-alpine"
-    LATEST: "$CI_REGISTRY_IMAGE:latest-alpine"
-  script:
-    - cp docker/release/alpine.Dockerfile ./
+    - cp docker/release/alpine.Dockerfile ./Dockerfile
     - docker build --tag "$RELEASE_IMAGE_NAME" .
     - docker image tag $RELEASE_IMAGE_NAME $LATEST
     - docker push "$RELEASE_IMAGE_NAME"
