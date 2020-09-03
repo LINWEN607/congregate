@@ -85,6 +85,7 @@ class ReposTests(unittest.TestCase):
                     "full_path": "gitlab"
                 },
                 "path_with_namespace": "gitlab/website",
+                "http_url_to_repo": "https://github.gitlab-proserv.net/gitlab/website.git",
                 "visibility": "public",
                 "description": None,
                 "members": formatted_users1
@@ -105,6 +106,7 @@ class ReposTests(unittest.TestCase):
                     "full_path": "pprokic"
                 },
                 "path_with_namespace": "pprokic/pprokic-public-repo",
+                "http_url_to_repo": "https://github.gitlab-proserv.net/pprokic/pprokic-public-repo.git",
                 "visibility": "public",
                 "description": None,
                 "members": formatted_users2
@@ -177,6 +179,7 @@ class ReposTests(unittest.TestCase):
                     "kind": "user",
                     "full_path": "gitlab"
                 },
+                "http_url_to_repo": "https://github.gitlab-proserv.net/gitlab/website.git",
                 "path_with_namespace": "gitlab/website",
                 "visibility": "public",
                 "description": None,
@@ -197,6 +200,7 @@ class ReposTests(unittest.TestCase):
                     "kind": "user",
                     "full_path": "pprokic"
                 },
+                "http_url_to_repo": "https://github.gitlab-proserv.net/pprokic/pprokic-public-repo.git",
                 "path_with_namespace": "pprokic/pprokic-public-repo",
                 "visibility": "public",
                 "description": None,
@@ -320,6 +324,7 @@ class ReposTests(unittest.TestCase):
                     "full_path": "org2"
                 },
                 "path_with_namespace": "org2/arrow",
+                "http_url_to_repo": "https://github.gitlab-proserv.net/org2/arrow.git",
                 "visibility": "public",
                 "description": None,
                 "members": [],  # formatted_users1
@@ -340,6 +345,7 @@ class ReposTests(unittest.TestCase):
                     "full_path": "org3"
                 },
                 "path_with_namespace": "org3/test-repo",
+                "http_url_to_repo": "https://github.gitlab-proserv.net/org3/test-repo.git",
                 "visibility": "public",
                 "description": None,
                 "members": [],  # formatted_users2
@@ -382,6 +388,7 @@ class ReposTests(unittest.TestCase):
                     "full_path": "org2"
                 },
                 "path_with_namespace": "org2/arrow",
+                "http_url_to_repo": "https://github.gitlab-proserv.net/org2/arrow.git",
                 "visibility": "public",
                 "description": None,
                 "members": []
@@ -402,6 +409,7 @@ class ReposTests(unittest.TestCase):
                     "full_path": "org3"
                 },
                 "path_with_namespace": "org3/test-repo",
+                "http_url_to_repo": "https://github.gitlab-proserv.net/org3/test-repo.git",
                 "visibility": "public",
                 "description": None,
                 "members": []
@@ -412,7 +420,9 @@ class ReposTests(unittest.TestCase):
             self.assertEqual(
                 actual_projects[i].items(), expected_projects[i].items())
 
-    def test_list_ci_sources_jenkins(self):
+    @patch("congregate.helpers.conf.Config.ci_source_type", new_callable=PropertyMock)
+    def test_list_ci_sources_jenkins(self, source_type):
+        source_type.return_value = "Jenkins"
         data = json.dumps([
             {
                 "name": "demo-job",
