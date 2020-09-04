@@ -99,3 +99,20 @@ class OrgsApi():
             description=message,
             verify=False
         )
+
+    def create_org(self, data=None, message=None):
+        """
+        Create an organization.
+
+        GitHub API v3 Doc: https://docs.github.com/en/enterprise/2.21/user/rest/reference/enterprise-admin#create-an-organization
+        """
+        if not message:
+            print(f"Creating an organization {data}")
+
+        return self.api.generate_v3_post_request(
+            self.host,
+            "admin/organizations",
+            json.dumps(data),
+            description=message,
+            verify=False
+        )

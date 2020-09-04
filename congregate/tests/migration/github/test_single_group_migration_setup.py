@@ -9,6 +9,71 @@ from congregate.cli import config
 from congregate.helpers.seed.generate_token import token_generator
 from congregate.helpers.seed.generator import SeedDataGenerator
 
+from congregate.helpers.base_class import BaseClass
+from congregate.helpers.seed.git import Manage_Repos
+from congregate.migration.github.api.orgs import OrgsApi
+from congregate.migration.github.api.repos import ReposApi
+
+
+class Single_Group_Migration(BaseClass):
+    '''
+    Dunno what I'm doing here :D
+    '''
+
+    def __init__(self):
+        super(Single_Group_Migration, self).__init__()
+        self.orgs_api = OrgsApi(self.config.source_host, self.config.source_token)
+        self.repos_api = ReposApi(self.config.source_host, self.config.source_token)
+        self.manage_repos = Manage_Repos()
+
+        self.repos = self._get_seed_repos()
+
+    def create_org(self, org):
+        '''
+        Create an ORG in GHE
+        '''
+        orgs = self._get_remote_orgs()
+        if self._check_org_exists(org, orgs):
+            print("ERROR: Wouldn't be prudent")
+        else:
+            temp = self.orgs_api.create_org(data=org)
+            print(temp)
+
+    def _get_seed_repos(self):
+        '''
+        This should only get our list of repos.
+        '''
+        return self.manage_repos.repos
+
+    def _check_org_exists(self, org, orgs):
+        for record in orgs:
+            if org == record['login']:
+                return True
+
+    def _get_remote_orgs(self):
+        return self.orgs_api.get_all_orgs()
+
+    def check_repos_are_local(self):  # See if we already have the repos downloaded
+        pass
+
+    def clone_repos(self):  # Clone the repos
+        pass
+
+
+test = Single_Group_Migration()
+test.create_org("Mike-Test")
+
+# print(test.orgs_api.create_org(self, data=None, message=None)
+# for org in test.orgs_api.get_all_orgs():
+#     print(org['login'])
+
+
+# pull in the list of repos based off size
+# reorigin the list of repos
+# Create the Org on GHE? @leopardm
+# Create the repos on GHE
+# Push the repos to GHE
+
 
 ## PLACEHOLDER
 

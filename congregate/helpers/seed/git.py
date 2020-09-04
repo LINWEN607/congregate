@@ -37,7 +37,6 @@ class Manage_Repos():
         self.remote_name = remote_name
         self.remote_url = remote_url
         self.verify = True
-        self.__dict__.update(kwargs)
         self.set_size_limit()  # set the size_limit, defaults to small.
         self.repo_map = self.read_config()  # All the details from repos.json
         self.repos = self.create_repo_list()  # Specific repos we will work with
