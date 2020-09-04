@@ -1,4 +1,5 @@
 import requests
+import json
 from requests.auth import HTTPBasicAuth
 from congregate.helpers.misc_utils import xml_to_dict
 from congregate.helpers.decorators import stable_retry
@@ -66,11 +67,28 @@ class TeamcityApi():
         """
         return xml_to_dict(self.generate_get_request("buildTypes/%s/parameters" % jobid).text)
 
+    def list_build_params(self, jobid):
+        """
+        Returns a list of paramaters to a specific build configuration on the TeamCity server.
+        """
+        job_data = self.get_build_params(jobid)
+        param_list = []
+
+        for param in job_data["properties"]["property"]:
+            param_list.append(param)
+
+        return param_list
+
     def get_build_vcs_roots(self, jobid):
         """
         Returns a dictionary of vcs entries to a specific build configuration on the TeamCity server.
         """
-        return xml_to_dict(self.generate_get_request("buildTypes/%s/vcs-root-entries" % jobid).text)
+        job_data = self.get_build_config(jobid)
+        if "vcs-root-entry" in job_data["buildType"]["vcs-root-entries"]:
+            vcs_id = job_data["buildType"]["vcs-root-entries"]["vcs-root-entry"]["@id"]
+        else:
+            return "no_scm"
+        return xml_to_dict(self.generate_get_request("vcs-roots/%s" % vcs_id).text)
 
     def list_vcs_configs(self):
         """
