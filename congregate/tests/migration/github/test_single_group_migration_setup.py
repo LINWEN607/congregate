@@ -28,16 +28,35 @@ class Single_Group_Migration(BaseClass):
 
         self.repos = self._get_seed_repos()
 
-    def create_org(self, org):
+    def create_org(self, org, owner='mlindsay'):
         '''
         Create an ORG in GHE
         '''
         orgs = self._get_remote_orgs()
+        print(orgs)
+
         if self._check_org_exists(org, orgs):
             print("ERROR: Wouldn't be prudent")
         else:
-            temp = self.orgs_api.create_org(data=org)
+            data = {
+                # 'accept': accept,
+                'login': org,
+                'admin': owner
+            }
+            temp = self.orgs_api.create_org(data=data)
             print(temp)
+
+        # accept	string	header	
+        # Setting to application/vnd.github.v3+json is recommended
+
+        # login	string	body	
+        # Required. The organization's username.
+
+        # admin	string	body	
+        # Required. The login of the user who will manage this organization.
+
+        # profile_name	string	body	
+        # The organization's display name.
 
     def _get_seed_repos(self):
         '''
@@ -61,7 +80,8 @@ class Single_Group_Migration(BaseClass):
 
 
 test = Single_Group_Migration()
-test.create_org("Mike-Test")
+t = test.create_org("Mike-Test")
+print(type(t))
 
 # print(test.orgs_api.create_org(self, data=None, message=None)
 # for org in test.orgs_api.get_all_orgs():
