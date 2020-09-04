@@ -35,6 +35,7 @@ from congregate.migration.gitlab.keys import KeysClient
 from congregate.migration.gitlab.hooks import HooksClient
 from congregate.migration.gitlab.environments import EnvironmentsClient
 from congregate.migration.gitlab.external_import import ImportClient
+from congregate.migration.jenkins.base import JenkinsClient
 
 
 class MigrateClient(BaseClass):
@@ -84,6 +85,8 @@ class MigrateClient(BaseClass):
         self.skip_group_import = skip_group_import
         self.skip_project_export = skip_project_export
         self.skip_project_import = skip_project_import
+
+        self.jenkins = JenkinsClient() if self.config.ci_source_type and self.config.ci_source_type == "Jenkins" else None
 
     def migrate(self):
         self.log.info(
@@ -203,6 +206,9 @@ class MigrateClient(BaseClass):
                                 ]["response"].get("id")
             result[project["path_with_namespace"]]["members"] = self.projects.add_members_to_destination_project(
                 self.config.destination_host, self.config.destination_token, project_id, members)
+            if self.config.ci_source_type == "Jenkins":
+                result[project["path_with_namespace"]]["jenkins_variables"] = self.migrate_jenkins_variables(
+                    project, project_id)
             self.projects.remove_import_user(project_id)
         return result
 
@@ -712,6 +718,25 @@ class MigrateClient(BaseClass):
         self.projects.remove_import_user(dst_id)
 
         return results
+
+    def migrate_jenkins_variables(self, project, new_id):
+        result = True
+        if ci_sources := project.get("ci_sources"):
+            if self.config.ci_source_type == "Jenkins":
+                if jobs := ci_sources.get("Jenkins"):
+                    for job in jobs:
+                        params = self.jenkins.jenkins_api.get_job_params(job)
+                        for param in params:
+                            transformed_param = self.jenkins.transform_ci_variables(param)
+                            if transformed_param.get("value", None):
+                                new_var = self.variables.set_variables(new_id, transformed_param, self.config.destination_host, self.config.destination_token)
+                                if new_var.status_code != 201:
+                                    self.log.error(f"Unable to add variable {param['key']}")
+                                    result = False
+                            else:
+                                self.log.warning(f"Skipping variable {param['key']} due to no value found")
+        return result
+
 
     def rollback(self):
         rotate_logs()

@@ -46,7 +46,7 @@ def generate_get_request(host, token, api, url=None, params=None, stream=False):
     if params is None:
         params = {}
 
-    return requests.get(url, params=params, headers=headers)
+    return requests.get(url, params=params, headers=headers, verify=False)
 
 
 @stable_retry
@@ -66,7 +66,7 @@ def generate_post_request(host, token, api, data, headers=None, files=None, desc
     if headers is None:
         headers = generate_v4_request_header(token)
 
-    return requests.post(url, data=data, headers=headers, files=files)
+    return requests.post(url, data=data, headers=headers, files=files, verify=False)
 
 
 @stable_retry
@@ -86,7 +86,7 @@ def generate_put_request(host, token, api, data, headers=None, files=None, descr
     if headers is None:
         headers = generate_v4_request_header(token)
 
-    return requests.put(url, headers=headers, data=data, files=files)
+    return requests.put(url, headers=headers, data=data, files=files, verify=False)
 
 
 @stable_retry
@@ -104,7 +104,7 @@ def generate_delete_request(host, token, api, description=None):
     audit.info(generate_audit_log_message("DELETE", description, url))
     headers = generate_v4_request_header(token)
 
-    return requests.delete(url, headers=headers)
+    return requests.delete(url, headers=headers, verify=False)
 
 
 @stable_retry
@@ -120,7 +120,7 @@ def get_count(host, token, api):
     """
     url = generate_v4_request_url(host, api)
 
-    response = requests.head(url, headers=generate_v4_request_header(token))
+    response = requests.head(url, headers=generate_v4_request_header(token), verify=False)
 
     if response.headers.get('X-Total', None) is not None:
         return int(response.headers['X-Total'])

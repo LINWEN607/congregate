@@ -223,6 +223,8 @@ def obfuscate(prompt):
 def deobfuscate(secret):
     return b64decode(secret.encode("ascii")).decode("ascii")
 
+def convert_to_underscores(s):
+    return sub(r" |\/", "_", s)
 
 def clean_data(dry_run=True, files=None):
     app_path = get_congregate_path()
