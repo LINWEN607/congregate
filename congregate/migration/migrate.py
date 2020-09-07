@@ -368,14 +368,14 @@ class MigrateClient(BaseClass):
         return new_user
 
     def migrate_group_info(self):
-        staged_groups = [g for g in self.groups.get_staged_groups(
-        ) if is_top_level_group(g)]
+        staged_groups = self.groups.get_staged_groups()
+        staged_top_groups = [g for g in staged_groups if is_top_level_group(g)]
         dry_log = get_dry_log(self.dry_run)
         if staged_groups:
             if not self.skip_group_export:
                 self.log.info("{}Exporting groups".format(dry_log))
                 export_results = start_multi_process(
-                    self.handle_exporting_groups, staged_groups, processes=self.processes)
+                    self.handle_exporting_groups, staged_top_groups, processes=self.processes)
 
                 self.are_results(export_results, "group", "export")
 
@@ -391,15 +391,15 @@ class MigrateClient(BaseClass):
                               .format(dry_log, json_pretty(export_results)))
 
                 # Filter out the failed ones
-                staged_groups = get_staged_groups_without_failed_export(
-                    staged_groups, failed)
+                staged_top_groups = get_staged_groups_without_failed_export(
+                    staged_top_groups, failed)
             else:
                 self.log.info(
                     "SKIP: Assuming staged groups are already exported")
             if not self.skip_group_import:
                 self.log.info("{}Importing groups".format(dry_log))
                 import_results = start_multi_process(
-                    self.handle_importing_groups, staged_groups, processes=self.processes)
+                    self.handle_importing_groups, staged_top_groups, processes=self.processes)
 
                 self.are_results(import_results, "group", "import")
 
@@ -411,8 +411,8 @@ class MigrateClient(BaseClass):
                     import_results, result_type="group", log=self.log)
 
                 # Migrate sub-group info
-                staged_subgroups = [g for g in self.groups.get_staged_groups(
-                ) if not is_top_level_group(g)]
+                staged_subgroups = [
+                    g for g in staged_groups if not is_top_level_group(g)]
                 if staged_subgroups:
                     start_multi_process(self.migrate_subgroup_info,
                                         staged_subgroups, processes=self.processes)
@@ -636,8 +636,12 @@ class MigrateClient(BaseClass):
                 # Disable Auto DevOps
                 self.log.info("Disabling Auto DevOps on imported project {0} (ID: {1})".format(
                     dst_path_with_namespace, import_id))
-                self.projects_api.edit_project(self.config.destination_host, self.config.destination_token, import_id, {
-                    "auto_devops_enabled": False})
+                data = {"auto_devops_enabled": False}
+                # Disable shared runners
+                if not self.config.shared_runners_enabled:
+                    data["shared_runners_enabled"] = self.config.shared_runners_enabled
+                self.projects_api.edit_project(
+                    self.config.destination_host, self.config.destination_token, import_id, data)
 
                 # Archived projects cannot be migrated
                 if archived:
