@@ -137,10 +137,9 @@ if __name__ == '__main__':
         import sys
         sys.path.append(os.path.dirname(
             os.path.dirname(os.path.abspath(__file__))))
-    else:
-        from congregate.helpers import conf
-        from congregate.helpers.logger import myLogger
-        from congregate.helpers.misc_utils import get_congregate_path, clean_data, obfuscate, spin_up_ui, stitch_json_results, write_results_to_file
+    from congregate.helpers import conf
+    from congregate.helpers.logger import myLogger
+    from congregate.helpers.misc_utils import get_congregate_path, clean_data, obfuscate, spin_up_ui, stitch_json_results, write_results_to_file
 else:
     import sys
     sys.path.append(os.path.dirname(
