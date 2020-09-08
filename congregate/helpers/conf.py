@@ -307,7 +307,7 @@ class Config(object):
         {
             "Wave name": "example column 1",
             "Wave date": "migration name",
-            "Source URL": "company repo url"
+            "Source Url": "company repo url"
         }
         """
         return self.prop_dict("APP", "wave_spreadsheet_column_mapping")
