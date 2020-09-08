@@ -38,7 +38,7 @@ After cloning [the repo](https://gitlab.com/gitlab-com/customer-success/tools/co
    4. `pip3 install poetry`
    5. `pip3 -V` (e.g. `pip 20.1.1 from /usr/local/lib/python3.8/site-packages/pip (python 3.8)`)
    6. `poetry -V` (e.g. `Poetry version 1.0.9`)
-   7. `python -V` Currently congregate only works in Python 3. Your python needs to be `Python 3.8.4` or greater.
+   7. `python -V` Currently congregate only works in Python 3. Your python needs to be `Python 3.8.5` or greater.
    8. In case of multiple poetry virtualenvs (`<HOME>/Library/Caches/pypoetry/virtualenvs/`), perform the following steps to set Python 3 as the active one:
       1. Set your Python to point (via `~/.bashrc` alias or symlink) to Python 3
       2. Run `poetry env use python3.8` (`python2.7` when reverting back to Python 2)

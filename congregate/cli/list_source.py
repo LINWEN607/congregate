@@ -82,7 +82,7 @@ def list_data():
 
     if ci_src_type == "Jenkins":
         list_jenkins_data()
-        
+
     if src_type == "Bitbucket Server":
         list_bitbucket_data()
     elif src_type == "GitLab":

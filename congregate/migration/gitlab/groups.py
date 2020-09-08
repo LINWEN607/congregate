@@ -28,27 +28,27 @@ class GroupsClient(BaseClass):
 
     def traverse_groups(self, base_groups, transient_list, host, token, parent_group=None):
         for group in base_groups:
-            group.pop("web_url")
-            group.pop("full_name")
-            try:
-                group.pop("ldap_cn")
-                group.pop("ldap_access")
-            except KeyError as ke:
-                self.log.error(
-                    "Failed to pop group keys 'ldap_cn' and/or 'ldap_access', with error:\n{}".format(ke))
-            group_id = group["id"]
-            group["members"] = [m for m in self.groups_api.get_all_group_members(
-                group_id, host, token) if m["id"] != 1]
-            group["projects"] = list(self.groups_api.get_all_group_projects(
-                group_id, host, token, with_shared=False))
-            transient_list.append(group)
-            for subgroup in self.groups_api.get_all_subgroups(group_id, host, token):
-                if len(subgroup) > 0:
-                    parent_group = transient_list[-1]
-                    self.log.debug("traversing into a subgroup")
-                    self.traverse_groups(
-                        [subgroup], transient_list, host, token, parent_group)
-            parent_group = None
+            keys_to_ignore = [
+                "web_url",
+                "full_name",
+                "ldap_cn",
+                "ldap_access"
+            ]
+            for k in keys_to_ignore:
+                group.pop(k, None)
+            if group_id := group.get("id", None):
+                group["members"] = [m for m in self.groups_api.get_all_group_members(
+                    group_id, host, token) if m["id"] != 1]
+                group["projects"] = list(self.groups_api.get_all_group_projects(
+                    group_id, host, token, with_shared=False))
+                transient_list.append(group)
+                for subgroup in self.groups_api.get_all_subgroups(group_id, host, token):
+                    if len(subgroup) > 0:
+                        parent_group = transient_list[-1]
+                        self.log.debug("traversing into a subgroup")
+                        self.traverse_groups(
+                            [subgroup], transient_list, host, token, parent_group)
+                parent_group = None
 
     def retrieve_group_info(self, host, token, location="source", top_level_group=False):
         prefix = ""

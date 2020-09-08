@@ -1,9 +1,6 @@
-from base64 import b64encode, b64decode
-import getpass
 from os import getcwd, path, mkdir, makedirs
 from configparser import ConfigParser, NoOptionError
 
-import binascii
 import json
 import requests
 
