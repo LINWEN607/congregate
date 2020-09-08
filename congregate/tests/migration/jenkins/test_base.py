@@ -20,7 +20,7 @@ class BaseTests(unittest.TestCase):
 
         expected = {
             'environment_scope': 'jenkins',
-            'key': 'Boolean Parameter',
+            'key': 'Boolean_Parameter',
             'masked': False,
             'protected': False,
             'value': "True",
@@ -43,7 +43,7 @@ class BaseTests(unittest.TestCase):
 
         expected = {
             'environment_scope': 'jenkins',
-            'key': 'run parameter',
+            'key': 'run_parameter',
             'masked': False,
             'protected': False,
             'value': "No Default Value",
