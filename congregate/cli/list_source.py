@@ -32,9 +32,6 @@ def list_gitlab_data():
     groups.retrieve_group_info(b.config.source_host, b.config.source_token)
     users.retrieve_user_info(b.config.source_host, b.config.source_token)
 
-    for filename in ["staged_projects", "staged_groups", "staged_users"]:
-        write_empty_file(filename)
-
 
 def list_bitbucket_data():
     users = BitBucketUsers()
@@ -79,9 +76,11 @@ def write_empty_file(filename):
 def list_data():
     src_type = b.config.source_type
     ci_src_type = b.config.ci_source_type
+    staged_files = ["staged_projects", "staged_groups", "staged_users"]
 
     if ci_src_type == "Jenkins":
         list_jenkins_data()
+        staged_files.append("jenkins_jobs")
 
     if src_type == "Bitbucket Server":
         list_bitbucket_data()
@@ -93,10 +92,8 @@ def list_data():
         b.log.warning("Cannot list from source {}".format(src_type))
         exit()
 
-    staged_files = ["staged_projects", "staged_groups", "staged_users"]
-
-    for filename in staged_files:
-        write_empty_file(filename)
+    for f in staged_files:
+        write_empty_file(f)
 
 
 if __name__ == "__main__":
