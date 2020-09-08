@@ -731,10 +731,10 @@ class MigrateClient(BaseClass):
                             if transformed_param.get("value", None):
                                 new_var = self.variables.set_variables(new_id, transformed_param, self.config.destination_host, self.config.destination_token)
                                 if new_var.status_code != 201:
-                                    self.log.error(f"Unable to add variable {param['key']}")
+                                    self.log.error(f"Unable to add variable {transformed_param['key']}")
                                     result = False
                             else:
-                                self.log.warning(f"Skipping variable {param['key']} due to no value found")
+                                self.log.warning(f"Skipping variable {transformed_param['key']} due to no value found")
         return result
 
 

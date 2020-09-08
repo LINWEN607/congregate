@@ -7,10 +7,11 @@ from congregate.helpers.logger import myLogger
 from congregate.helpers.audit_logger import audit_logger
 from congregate.helpers.decorators import stable_retry
 from congregate.helpers.misc_utils import generate_audit_log_message
+from congregate.helpers.conf import Config
 
 log = myLogger(__name__)
 audit = audit_logger(__name__)
-
+config = Config()
 
 def generate_v4_request_url(host, api):
     return "%s/api/v4/%s" % (host, api)
@@ -46,7 +47,7 @@ def generate_get_request(host, token, api, url=None, params=None, stream=False):
     if params is None:
         params = {}
 
-    return requests.get(url, params=params, headers=headers, verify=False)
+    return requests.get(url, params=params, headers=headers, verify=config.ssl_verify)
 
 
 @stable_retry
@@ -66,7 +67,7 @@ def generate_post_request(host, token, api, data, headers=None, files=None, desc
     if headers is None:
         headers = generate_v4_request_header(token)
 
-    return requests.post(url, data=data, headers=headers, files=files, verify=False)
+    return requests.post(url, data=data, headers=headers, files=files, verify=config.ssl_verify)
 
 
 @stable_retry
@@ -86,7 +87,7 @@ def generate_put_request(host, token, api, data, headers=None, files=None, descr
     if headers is None:
         headers = generate_v4_request_header(token)
 
-    return requests.put(url, headers=headers, data=data, files=files, verify=False)
+    return requests.put(url, headers=headers, data=data, files=files, verify=config.ssl_verify)
 
 
 @stable_retry
@@ -104,7 +105,7 @@ def generate_delete_request(host, token, api, description=None):
     audit.info(generate_audit_log_message("DELETE", description, url))
     headers = generate_v4_request_header(token)
 
-    return requests.delete(url, headers=headers, verify=False)
+    return requests.delete(url, headers=headers, verify=config.ssl_verify)
 
 
 @stable_retry
@@ -120,7 +121,7 @@ def get_count(host, token, api):
     """
     url = generate_v4_request_url(host, api)
 
-    response = requests.head(url, headers=generate_v4_request_header(token), verify=False)
+    response = requests.head(url, headers=generate_v4_request_header(token), verify=config.ssl_verify)
 
     if response.headers.get('X-Total', None) is not None:
         return int(response.headers['X-Total'])

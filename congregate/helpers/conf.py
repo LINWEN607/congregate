@@ -275,7 +275,7 @@ class Config(object):
     
     @property
     def ssl_verify(self):
-        return self.prop("APP", "ssl_verify", True)
+        return self.prop_bool("APP", "ssl_verify", True)
 
 
 # HIDDEN PROPERTIES
