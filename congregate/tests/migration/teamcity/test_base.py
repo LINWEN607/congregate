@@ -5,7 +5,7 @@ from congregate.tests.mockapi.teamcity.buildconfigs import TeamcityJobsApi
 from congregate.migration.teamcity.base import TeamcityClient
 
 
-class BaseTests(unittest.TestCase):
+class TeamCityBaseTests(unittest.TestCase):
     @patch('congregate.helpers.conf.Config.ci_source_type', new_callable=PropertyMock)
     @patch('congregate.helpers.conf.Config.ci_source_host', new_callable=PropertyMock)
     @patch('congregate.helpers.conf.Config.ci_source_username', new_callable=PropertyMock)
