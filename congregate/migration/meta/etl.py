@@ -11,6 +11,11 @@ class WaveSpreadsheetHandler(BaseClass):
         self.file_type = self.__determine_file_type()
 
     def __determine_file_type(self):
+        """
+            Private method to determne if provided wave spreadsheet is a valid spreadsheet file format
+
+            Supported file types: .xls, .xlsx, .xlsm, .xlsb, .odf, .ods, .odt, .csv
+        """
         excel_types = ['.xls', '.xlsx', '.xlsm', '.xlsb', '.odf', '.ods', '.odt']
         extension = Path(self.file_path).suffix
         if extension in excel_types:
@@ -21,6 +26,11 @@ class WaveSpreadsheetHandler(BaseClass):
             raise ValueError(f"{self.file_path} is an invalid file type for extraction and transformation")
 
     def read_file_as_dataframe(self, df_filter=None):
+        """
+            Reads wave spreadsheet data into memory as a Pandas DataFrame, Pandas primary data structure
+
+            See here: https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.html for more information regarding DataFrames
+        """
         if self.file_type == "excel":
             r = pd.read_excel(self.file_path)
         elif self.file_type == "csv":
@@ -31,12 +41,25 @@ class WaveSpreadsheetHandler(BaseClass):
         return df
 
     def read_file_as_json(self, df_filter=None):
+        """
+            Reads wave spreadsheet data into memory and converts it to JSON where each object is a single column of data
+
+            See here: https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.to_json.html for more information regarding `to_json`
+        """
         return json.loads(self.read_file_as_dataframe(df_filter=df_filter).to_json(orient='records'))
     
     def filter_data(self, df, column, value):
+        """
+            Return a filtered subset of a dataframe where the filter is a specific value in a specific column
+
+            See here: https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.filter.html for more information regarding filtering
+        """
         return df.loc[df[column] == value]
 
     def map_columns(self, columns_to_use):
+        """
+            Returns a corrected list of columns to use based on the wave_spreadsheet_column_mapping
+        """
         mapping = self.config.wave_spreadsheet_column_mapping
         if mapping:
             for k, v in mapping.items():

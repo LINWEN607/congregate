@@ -41,21 +41,36 @@ class Config(object):
         return default
 
     def prop_int(self, section, option, default=None):
+        """
+            Returns configuration property string casted to an int
+        """
         if self.option_exists(section, option):
             return self.config.getint(section, option)
         return default
 
     def prop_bool(self, section, option, default=None):
+        """
+            Returns configuration property string casted to a bool
+        """
         if self.option_exists(section, option):
             return self.config.getboolean(section, option)
         return default
     
     def prop_list(self, section, option, default=None):
+        """
+            Returns configuration property string as a list.
+
+            For example, a configuration property stored as '[hello, world, how, are you]'
+            will be returned as ["hello", "world", "how", "are", "you"]
+        """
         if self.option_exists(section, option):
             return split(r', |,', sub(r'\[|\]', '', self.config.get(section, option)))
         return default
     
     def prop_dict(self, section, option, default=None):
+        """
+            Returns configuration property JSON string as a dictionary
+        """
         if self.option_exists(section, option):
             return json.loads(self.config.get(section, option))
         return default
