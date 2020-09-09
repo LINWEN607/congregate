@@ -142,7 +142,7 @@ def get_total_pages(host, token, api):
     """
     url = generate_v4_request_url(host, api)
 
-    response = requests.head(url, headers=generate_v4_request_header(token))
+    response = requests.head(url, headers=generate_v4_request_header(token), verify=config.ssl_verify)
 
     if response.headers.get('X-Total-Pages', None) is not None:
         return int(response.headers['X-Total-Pages'])

@@ -72,6 +72,7 @@ class MigrateClient(BaseClass):
         self.environments = EnvironmentsClient()
         self.ext_import = ImportClient()
         super(MigrateClient, self).__init__()
+        self.jenkins = JenkinsClient() if self.config.ci_source_type == "Jenkins" else None
 
         self.dry_run = dry_run
         self.processes = processes
@@ -85,8 +86,7 @@ class MigrateClient(BaseClass):
         self.skip_group_import = skip_group_import
         self.skip_project_export = skip_project_export
         self.skip_project_import = skip_project_import
-
-        self.jenkins = JenkinsClient() if self.config.ci_source_type and self.config.ci_source_type == "Jenkins" else None
+        
 
     def migrate(self):
         self.log.info(
@@ -721,20 +721,18 @@ class MigrateClient(BaseClass):
 
     def migrate_jenkins_variables(self, project, new_id):
         result = True
-        if ci_sources := project.get("ci_sources"):
-            if self.config.ci_source_type == "Jenkins":
-                if jobs := ci_sources.get("Jenkins"):
-                    for job in jobs:
-                        params = self.jenkins.jenkins_api.get_job_params(job)
-                        for param in params:
-                            transformed_param = self.jenkins.transform_ci_variables(param)
-                            if transformed_param.get("value", None):
-                                new_var = self.variables.set_variables(new_id, transformed_param, self.config.destination_host, self.config.destination_token)
-                                if new_var.status_code != 201:
-                                    self.log.error(f"Unable to add variable {transformed_param['key']}")
-                                    result = False
-                            else:
-                                self.log.warning(f"Skipping variable {transformed_param['key']} due to no value found")
+        if (ci_sources := project.get("ci_sources", None)) and self.config.ci_source_type == "Jenkins":
+            for job in ci_sources.get("Jenkins", []):
+                params = self.jenkins.jenkins_api.get_job_params(job)
+                for param in params:
+                    transformed_param = self.jenkins.transform_ci_variables(param)
+                    if transformed_param.get("value", None):
+                        new_var = self.variables.set_variables(new_id, transformed_param, self.config.destination_host, self.config.destination_token)
+                        if new_var.status_code != 201:
+                            self.log.error(f"Unable to add variable {transformed_param['key']}")
+                            result = False
+                    else:
+                        self.log.warning(f"Skipping variable {transformed_param['key']} due to no value found")
         return result
 
 
