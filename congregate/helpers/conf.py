@@ -283,6 +283,10 @@ class Config(object):
         The port used to serve up the flask/VueJS UI. Defaults to 8000
         """
         return self.prop_int("APP", "ui_port", 8000)
+    
+    @property
+    def ssl_verify(self):
+        return self.prop_bool("APP", "ssl_verify", True)
 
     @property
     def wave_spreadsheet_path(self):
