@@ -5,7 +5,9 @@
 
 # <customer name> Migration Wave <insert-number-here>
 
-This runbook covers the process of migrating a wave of **groups and projects** from a source GitLab instance to **gitlab.com**. This is assuming all users have already been migrated.
+This runbook covers the process of migrating a wave of **groups and projects** from a source GitLab instance to **gitlab.com**.
+
+**NOTE**: This issue **must** be created 5 days in advance of executing the migration wave
 
 ## Migration Blackout Period
 
@@ -25,12 +27,23 @@ This runbook covers the process of migrating a wave of **groups and projects** f
 
 <!--
     Provide the gitlab handles for the various people involved in this migration wave and their specific role in the migration. 
+
+    You must provide the following roles:
+    - PSE conducting the mgiration
+    - On-call security engineer working during the migration period
+    - On-call SRE working during the migration period
+
+    Optional roles to provide:
+    - Backup PSE if the migration period spans several hours
+    - .com Support Engineer with rails console access for their awareness
+    - PS manager for their awareness
     
     For example:
 
     @leopardm: PSE conducting the migration
     @lyle: Support Manager with Rails Console access
     @pharrison: Security Manager in the loop in case anything goes wrong
+    @dawsmith: SRE aware of the migration working during the migration period
 -->
 
 ## Groups to migrate
