@@ -231,7 +231,7 @@ def generate_config():
     config.set("APP", "export_import_wait_time",
                export_import_wait_time if export_import_wait_time else "10")
     wave_spreadsheet = input("(Optional) Spreadsheet containing wave information? yes or no")
-    if wave_spreadsheet in ["yes", "y"]:
+    if wave_spreadsheet.lower() in ["yes", "y"]:
         wave_spreadsheet_path = input("Absolute path to spreadsheet: ")
         config.set("APP", "wave_spreadsheet_path", wave_spreadsheet_path)
         if wave_columns_to_include := input("Provide a list of comma separate values denoting the columns you want to retain: "):
