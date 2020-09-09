@@ -3,19 +3,17 @@
     Post the link to the issue on the Slack channel dedicated to this migration. 
 -->
 
-# <customer name> Migration prerequisites
+# <customer name> Migration Pre and Post-requisites
 
-This list covers the process of preparing for migration from a source GitLab instance to a destination GitLab instance.
+This runbook covers the process of preparing and cleaninig up after a migration from a source GitLab instance to a destination GitLab instance.
 
-## Migration prerequisites
+## Migration pre-requisites
 
 ### GitLab
 
 * [ ] Setup the migration VM that will host the Professional Services (PS) migration tool’s (Congregate) Docker container.
   * It should have minimal port and IP access. See [VM Requirements](#VM) for more detail.
-* [ ] (gitlab.com) Create a one-off Admin user account with personal access token (PAT) on the destination instance.
-  * The PATs should have an expiry date of the estimated last day (wave) of the migration.
-  * (gitlab.com) Once the migration is complete revoke the Admin user account on gitlab.com for the migrating customer to retain.
+* [ ] (gitlab.com) Follow the [PS Provisioning Process](https://gitlab.com/gitlab-com/business-ops/team-member-enablement/runbooks/-/blob/master/it_operations/GitLab_com_environment_(PRD,DEV,STG)access_requests.md#provisioning-process) for GitLab.com environments Access Request.
 * [ ] Configure LDAP/SAML identity for the Admin user account on the destination instance.
   * This is required for the user-group-project mapping to succeed.
 * [ ] Create a one-off PAT for the Admin user account on the source instance.
@@ -70,3 +68,7 @@ This list covers the process of preparing for migration from a source GitLab ins
 ### Authentication (for gitlab.com)
 
 The VM should be setup with Okta ASA. In case of time constraints setup SSH key authentication.
+
+## Migration post-requisites
+
+(gitlab.com) Once the migration is complete follow the [PS Deprovisioning Process](https://gitlab.com/gitlab-com/business-ops/team-member-enablement/runbooks/-/blob/master/it_operations/GitLab_com_environment_(PRD,DEV,STG)access_requests.md#deprovisioning-process) for GitLab.com environments Access Request.

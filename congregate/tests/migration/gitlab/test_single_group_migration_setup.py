@@ -22,15 +22,15 @@ class MigrationEndToEndTestSetup(unittest.TestCase):
 
     def generate_single_group_config_with_tokens(self):
         print("Generating Destination Token")
-        destination_token = self.t.generate_token("destination_token", "2020-08-27", url=os.getenv(
+        destination_token = self.t.generate_token("destination_token", "2239-08-31", url=os.getenv(
             "GITLAB_DEST"), username="root", pword=uuid4().hex)  # Destination access token
         print("Generating Source Token")
-        source_token = self.t.generate_token("source_token", "2020-08-27", url=os.getenv(
+        source_token = self.t.generate_token("source_token", "2239-08-31", url=os.getenv(
             "GITLAB_SRC"), username="root", pword="5iveL!fe")  # source token
         print("Prepping config data")
         values = [
             os.getenv("GITLAB_DEST"),  # Destination hostname
-            # self.t.generate_token("destination_token", "2020-08-27", url=os.getenv("GITLAB_DEST"), username="root", pword=uuid4().hex), # Destination access token
+            # destination_token
             # "0",  # Destination import user id
             "yes",  # shared runners enabled
             "no",  # append project suffix (retry)
@@ -45,7 +45,7 @@ class MigrationEndToEndTestSetup(unittest.TestCase):
             # "source_group_full_path",   # source parent group path
             "300",  # max_export_wait_time
             "yes",  # migrating registries
-            # self.t.generate_token("source_token", "2020-08-27", url=os.getenv("GITLAB_SRC"), username="root", pword=uuid4().hex), # source token
+            # source_token
             os.getenv("GITLAB_SRC_REG_URL"),  # source registry url
             os.getenv("GITLAB_DEST_REG_URL"),  # destination registry url
             "filesystem",  # export location

@@ -261,7 +261,8 @@ class UsersTests(unittest.TestCase):
         self.assertEqual(self.users.block_user(new_user).status_code, 201)
 
     def test_remove_blocked_users(self):
-        read_data = json.dumps(self.mock_users.get_test_new_destination_users())
+        read_data = json.dumps(
+            self.mock_users.get_test_new_destination_users())
         mock_open = mock.mock_open(read_data=read_data)
         with mock.patch('builtins.open', mock_open):
             result = self.users.remove("staged_users")
@@ -287,7 +288,8 @@ class UsersTests(unittest.TestCase):
         users_not_found = {
             28: "rsmith@email.com"
         }
-        read_data = json.dumps(self.mock_users.get_test_new_destination_users())
+        read_data = json.dumps(
+            self.mock_users.get_test_new_destination_users())
         mock_open = mock.mock_open(read_data=read_data)
         with mock.patch('builtins.open', mock_open):
             result = self.users.handle_users_not_found(
@@ -298,7 +300,8 @@ class UsersTests(unittest.TestCase):
         users_not_found = {
             27: "jdoe@email.com"
         }
-        read_data = json.dumps(self.mock_users.get_test_new_destination_users())
+        read_data = json.dumps(
+            self.mock_users.get_test_new_destination_users())
         mock_open = mock.mock_open(read_data=read_data)
         with mock.patch('builtins.open', mock_open):
             result = self.users.handle_users_not_found(
@@ -475,20 +478,20 @@ class UsersTests(unittest.TestCase):
         self.assertIsNone(actual)
 
     @mock.patch.object(GroupsApi, "search_for_group")
-    def test_is_username_group_name_not_found(self, group_api):
-        group_api.return_value = [{"name": "xyz"}]
+    def test_is_username_group_path_not_found(self, group_api):
+        group_api.return_value = [{"path": "xyz"}]
         response = self.users.is_username_group_name({"username": "abc"})
         self.assertFalse(response)
 
     @mock.patch.object(GroupsApi, "search_for_group")
-    def test_is_username_group_name_found(self, group_api):
-        group_api.return_value = [{"name": "abc"}]
+    def test_is_username_group_path_found(self, group_api):
+        group_api.return_value = [{"path": "abc"}]
         response = self.users.is_username_group_name({"username": "abc"})
         self.assertTrue(response)
 
     @mock.patch.object(GroupsApi, "search_for_group")
-    def test_is_username_group_name_found_ignore_case(self, group_api):
-        group_api.return_value = [{"name": "ABC"}]
+    def test_is_username_group_path_found_ignore_case(self, group_api):
+        group_api.return_value = [{"path": "ABC"}]
         response = self.users.is_username_group_name({"username": "abc"})
         self.assertTrue(response)
 

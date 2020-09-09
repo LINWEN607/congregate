@@ -1,0 +1,137 @@
+# Congregate configuration settings
+#! This file is generated during initial configuration and **is not** modified
+#! during upgrades.
+
+
+## Once you have installed congregate, You can run `./congregate.sh -h` to display the list of commands you can use.
+## And to configure congregate, run `./congregate.sh configure`
+## This command would let you configure your source and destination hosts and their details, export options, user details, app details etc
+##! Locally, the complete configuration file can be found at: congregate/data/congregate.conf
+
+################################################################################
+################################################################################
+##                Congregate Configuration Settings                           ##
+################################################################################
+################################################################################
+
+################################################################################
+## congregate.conf configuration
+##! Docs: https://gitlab.com/gitlab-com/customer-success/tools/congregate/-/blob/master/README.md
+################################################################################
+
+##! In general, the values specified here should reflect what the default value of the attribute will be.
+##! There are instances where this behavior is not possible or desired. For example, when providing passwords,
+##! or connecting to third party services.
+##! In those instances, we endeavour to provide an example configuration.
+
+
+###! **Configuration settings below are for Destination host**
+
+### General configuration for GitLab server
+# dstn_hostname = hostname
+# dstn_access_token = *****
+# import_user_id = 
+# shared_runners_enabled = False
+# project_suffix = True
+# max_import_retries = 1
+# dstn_parent_group_id = 0
+# dstn_parent_group_path = destination_group_full_path
+# group_sso_provider = group_sso_provider
+# group_sso_provider_pattern = email
+# username_suffix = 
+# mirror_username = 
+### The maximum number of hours to rollback users, groups, and projects. Default value is 24
+# max_asset_expiration_time = 24
+# dstn_registry_url = destination_registry_url
+
+### There are few other additional configurations for Destination host which are used sometimes based on requirements received
+### append_project_suffix_on_existing_found setting determines if, in the instance of an existing project being found at the destination with the
+### same name as the source project, if we should append a value and create the project, or just fail the import.
+### The value from the append_project_suffix configuration value, or `False` by default
+# append_project_suffix_on_existing_found = False
+
+### Consider few changes in the configuration when the source is either Bitbucket or Github server, 
+### Rest all remains same as mentioned in General configuration
+# import_user_id = 1
+# shared_runners_enabled = True
+# project_suffix = False
+# max_import_retries = 3
+# username_suffix = username_suffix
+
+
+###! **Configuration settings below are for Source host**
+
+### General configuration for GitLab server 
+### This configuration is considered when the source is a GitLab server
+# src_type = GitLab
+# src_hostname = source_hostname
+# src_access_token = *****
+# src_parent_group_id = 0
+# src_parent_group_path = source_group_full_path
+### The maximum amount of time to wait for exports. It differs for external filesystem and AWS
+### Consider "3600" for external filesystem and "1200" for AWS
+# max_export_wait_time = 3600 or 1200
+# src_registry_url = source_registry_url
+ 
+### Consider below changes when the source is a Bitbucket server, rest all other configuration remains same
+# src_type = Bitbucket Server
+# src_username = username
+# src_hostname = some_external_source
+# src_access_token = *****
+# repo_path = ./repo_path
+ 
+### Consider below changes when the source is a GitHub server, rest all other configuration remains same
+# src_type = GitHub
+# src_hostname = some_external_source
+# src_access_token = *****
+# repo_path = ./repo_path
+
+###! **Configuration settings below are for CI Source** 
+### Consider below changes when the source is a CI server like Jenkins, rest all other configuration remains same
+# ci_src_type = Jenkins
+# ci_src_hostname = ci_some_external_url
+# ci_src_username = ci_username
+# ci_src_access_token = ****
+
+
+###! **Configuration settings below are for EXPORT**
+
+### Consider the below configuration when there is a need to export to an external filesystem except AWS
+# location = filesystem
+# filesystem_path = .
+ 
+### Consider the below configuration when there is a need to export to AWS
+# location = aws
+# s3_name = s3_name
+# s3_region = us-east-2
+# s3_access_key_id = *****
+# s3_secret_access_key = dGVzdA==
+# filesystem_path = /absolute_path
+
+###! **Configuration settings below are for USER**
+
+### Consider below configuration if you need to keep blocked users, 
+### whether or not you should send the reset password link on user creation
+### or to generate a random password at create
+# keep_blocked_users = False
+### NOTE: Either reset_pwd or force_rand_password need to be set to True for users to be created
+# reset_pwd = True
+# force_rand_pwd = False
+
+
+###! **Configuration settings below are for APP**
+
+### export_import_wait_time concerns the import/export status wait time and differs for external filesystem and AWS
+### Consider "30" for external filesystem and "60" for AWS
+# export_import_wait_time = 30 or 60 
+### The port used to serve up the flask/VueJS UI
+# ui_port = 8000
+### Presents the Slack Incoming Webhooks URL for sending alerts (logs) to a dedicated GitLab internal private channel.
+### Optionally used during customer migrations, mainly to gitlab.com, but also an option for migrations to self-managed.
+# slack_url = https://slack.url
+
+
+###! **HIDDEN PROPERTIES**
+
+### Used only by "map-users" command
+### Used only by disabled migration mode "filesystem-aws"
