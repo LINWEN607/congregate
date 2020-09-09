@@ -19,6 +19,15 @@ class WaveStageCLI(BaseStageClass):
         self.pcli.stage_data(ids_to_stage, dry_run=dry_run)
 
     def get_ids_to_stage_wave(self, wave_to_stage, dry_run=True):
+        """
+        Gets all IDs of repos from specific wave listed in wave stage spreadsheet
+
+        Relies on mapping a git repo URL in the spreadsheet to http_url_to_repo in project_json.json to get the IDs
+
+        :param wave_to_stage: The name of the wave from the spreadsheet to stage
+        :param dry_run: Optional parameter. Default True
+        :return: List of IDs cast to strings to be used by ProjectStageCLI
+        """
         projects = rewrite_list_into_dict(self.open_projects_file(), "http_url_to_repo")
         wsh = WaveSpreadsheetHandler(self.config.wave_spreadsheet_path, columns_to_use=self.config.wave_spreadsheet_columns)
         wave_data = wsh.read_file_as_json(
