@@ -118,6 +118,9 @@ class BaseDiffClient(BaseClass):
                         valid_destination_endpoint, response = self.is_endpoint_valid(endpoint(destination_id, self.config.destination_host, self.config.destination_token, **kwargs))
                         if valid_destination_endpoint:
                             destination_data = self.generate_cleaned_instance_data(response)
+                        else:
+                            destination_data = self.generate_empty_data(
+                                source_data)
                     else:
                         destination_data = {
                             "error": "asset missing"
