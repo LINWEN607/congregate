@@ -7,7 +7,7 @@ import requests
 from docker import from_env
 from docker.errors import APIError, TLSParameterError
 
-from congregate.helpers.misc_utils import get_congregate_path, obfuscate, deobfuscate
+from congregate.helpers.misc_utils import get_congregate_path, obfuscate, deobfuscate, json_pretty
 from congregate.helpers.configuration_validator import ConfigurationValidator
 from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.api.groups import GroupsApi
@@ -79,7 +79,7 @@ def generate_config():
             sso_pattern = get_sso_provider_pattern()
             config.set("DESTINATION", "group_sso_provider_pattern",
                        sso_pattern)
-            if sso_pattern == "hash":
+            if sso_pattern.lower() == "hash":
                 config.set("DESTINATION", "group_sso_provider_map_file", input("Absolute path to hash map file?")) 
 
     # Misc destination instance configuration
@@ -308,15 +308,12 @@ def get_sso_provider_pattern():
                 return options.get(1)
             elif int(sso_provider_pattern_option) == 2:
                 print("We expect to handle hashes through a JSON that looks like the following: ")
-                print("""
-                [
+                print(json_pretty([
                     {
                         "email": "user@email.com",
                         "externalid": "abc123"
-                    },
-                    ...
-                ]
-                """)
+                    }
+                ]))
                 return options.get(2)
             elif int(sso_provider_pattern_option) == 3:
                 print("Not implemented yet")
