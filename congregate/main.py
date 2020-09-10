@@ -89,6 +89,7 @@ Commands:
                                                 all project and group members to {CONGREGATE_PATH}/data/staged_users.json,
                                                 All groups can be staged with '.' or 'all'.
                                                 Individual ones can be staged as a space delimited list of integers (group IDs).
+    stage-wave                              Stage wave of projects based on migration wave spreadsheet. This only takes a single wave for input
     migrate                                 Commence migration based on configuration and staged assets.
     rollback                                Remove staged users/groups/projects on destination.
     ui                                      Deploy UI to port 8000.
