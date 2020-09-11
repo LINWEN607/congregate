@@ -187,8 +187,9 @@ def main():
             from congregate.migration.gitlab.compare import CompareClient
             from congregate.migration.migrate import MigrateClient
             from congregate.migration.gitlab.branches import BranchesClient
-            from congregate.cli import list_source, stage_groups, do_all
+            from congregate.cli import list_source, do_all
             from congregate.cli.stage_projects import ProjectStageCLI
+            from congregate.cli.stage_groups import GroupStageCLI
             from congregate.cli.stage_wave import WaveStageCLI
             from congregate.helpers.seed.generator import SeedDataGenerator
             from congregate.migration.gitlab.diff.userdiff import UserDiffClient
@@ -208,13 +209,13 @@ def main():
 
             if arguments["stage-projects"]:
                 pcli = ProjectStageCLI()
-                pcli.stage_data(
-                    arguments['<projects>'], dry_run=DRY_RUN, skip_users=SKIP_USERS)
+                pcli.stage_data(arguments['<projects>'],
+                                dry_run=DRY_RUN, skip_users=SKIP_USERS)
 
             if arguments["stage-groups"]:
-                stage_groups.stage_data(
-                    arguments['<groups>'], dry_run=DRY_RUN, skip_users=SKIP_USERS)
-            
+                gcli.stage_data(arguments['<groups>'],
+                                dry_run=DRY_RUN, skip_users=SKIP_USERS)
+
             if arguments["stage-wave"]:
                 wcli = WaveStageCLI()
                 wcli.stage_wave(

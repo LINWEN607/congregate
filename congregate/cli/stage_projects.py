@@ -5,9 +5,9 @@ Copyright (c) 2020 - GitLab
 """
 
 import re
-import json
 from congregate.helpers.misc_utils import get_dry_log, remove_dupes, rewrite_list_into_dict
 from congregate.cli.stage_base import BaseStageClass
+
 
 class ProjectStageCLI(BaseStageClass):
 
@@ -22,7 +22,6 @@ class ProjectStageCLI(BaseStageClass):
         self.build_staging_data(projects_to_stage, dry_run)
         if not dry_run:
             self.write_staging_files(skip_users=skip_users)
-
 
     def build_staging_data(self, projects_to_stage, dry_run=True):
         """
@@ -84,13 +83,13 @@ class ProjectStageCLI(BaseStageClass):
                         self.log.error("Please use a space delimited list of integers (project IDs):\n{}".format(
                             projects_to_stage))
                         exit()
-                    self.append_data(project, projects_to_stage, dry_run=dry_run)
+                    self.append_data(
+                        project, projects_to_stage, dry_run=dry_run)
         else:
             self.log.info("Staging empty list")
             return self.staged_users, self.staged_groups, self.staged_projects
         return remove_dupes(self.staged_projects), remove_dupes(
             self.staged_users), remove_dupes(self.staged_groups)
-
 
     def append_data(self, project, projects_to_stage, p_range=0, dry_run=True):
         obj = self.get_project_metadata(project)
@@ -111,5 +110,3 @@ class ProjectStageCLI(BaseStageClass):
         self.log.info("{0}Staging project {1} (ID: {2}) [{3}/{4}]".format(get_dry_log(
             dry_run), obj["path_with_namespace"], obj["id"], len(self.staged_projects) + 1, len(p_range) if p_range else len(projects_to_stage)))
         self.staged_projects.append(obj)
-
-

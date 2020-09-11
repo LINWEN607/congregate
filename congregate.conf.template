@@ -145,6 +145,9 @@
 #        "Source Url": "Source Url"
 #    }
 
+### Setting to enforce SSL Verification with our API requests. Defaults to True
+# ssl_verify = true
+
 
 ###! **HIDDEN PROPERTIES**
 
