@@ -7,7 +7,7 @@
 
 This runbook covers the process of migrating a wave of **groups and projects** from a source GitLab instance to **gitlab.com**.
 
-**NOTE**: This issue **must** be created 5 days in advance of executing the migration wave
+**NOTE**: This issue **must** be created [5 days in advance](https://about.gitlab.com/handbook/support/workflows/importing_projects.html#import-scheduled) of executing the migration wave.
 
 ## Migration Blackout Period
 
@@ -29,7 +29,7 @@ This runbook covers the process of migrating a wave of **groups and projects** f
     Provide the gitlab handles for the various people involved in this migration wave and their specific role in the migration. 
 
     You must provide the following roles:
-    - PSE conducting the mgiration
+    - PSE conducting the migration
     - On-call security engineer working during the migration period
     - On-call SRE working during the migration period
 
@@ -186,8 +186,10 @@ If a project or group import continues to fail (2 retries max), you will need to
   * [ ] Change `#### Import on: YYYY-MM-DD HH:MM UTC` to `#### Import as soon as possible`
   * [ ] Walk through the steps on the template to provide all necessary information to the SRE on call
   * [ ] When providing a list of user emails, you can extract the project export tar.gz and run the following command to get a list of emails (make sure you have `jq` installed): `cat project.json | jq -r '.project_members' | jq -r '.[] | .user | .email'`
+  * [ ] Add ~"SRE:On-call" label
+  * [ ] **Set the issue as confidential**
   * [ ] Submit the issue and don't assign it to anyone. The SRE on-call will pick it up.
-* Reache out to the SRE on-call. **Post a message in #infrastructure-lounge paging the SRE on-call.** For example:
+* Reach out to the SRE on-call. **Post a message in #infrastructure-lounge paging the SRE on-call.** For example:
 
   ```text
   @sre-oncall I need a project imported to gitlab.com as soon as possible. Here is the issue:
