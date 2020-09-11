@@ -59,6 +59,7 @@ class MigrationEndToEndTestSetup(unittest.TestCase):
             "yes",  # password reset email
             "no",  # randomized password
             "5",  # import wait time
+            "no", # wave spreadsheet
             ""  # slack_url
         ]
         tokens = [

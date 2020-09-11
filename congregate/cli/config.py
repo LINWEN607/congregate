@@ -7,7 +7,7 @@ import requests
 from docker import from_env
 from docker.errors import APIError, TLSParameterError
 
-from congregate.helpers.misc_utils import get_congregate_path, obfuscate, deobfuscate
+from congregate.helpers.misc_utils import get_congregate_path, obfuscate, deobfuscate, json_pretty
 from congregate.helpers.configuration_validator import ConfigurationValidator
 from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.api.groups import GroupsApi
@@ -76,8 +76,11 @@ def generate_config():
         config.set("DESTINATION", "group_sso_provider",
                    input("Migrating to a group with SAML SSO enabled? Input SSO provider (auth0, adfs, etc.): "))
         if config.get("DESTINATION", "group_sso_provider"):
+            sso_pattern = get_sso_provider_pattern()
             config.set("DESTINATION", "group_sso_provider_pattern",
-                       get_sso_provider_pattern())
+                       sso_pattern)
+            if sso_pattern.lower() == "hash":
+                config.set("DESTINATION", "group_sso_provider_map_file", input("Absolute path to hash map file?")) 
 
     # Misc destination instance configuration
     username_suffix = input(
@@ -230,6 +233,12 @@ def generate_config():
         "Wait time (in seconds) for project export/import status (Default: 10): ")
     config.set("APP", "export_import_wait_time",
                export_import_wait_time if export_import_wait_time else "10")
+    wave_spreadsheet = input("(Optional) Spreadsheet containing wave information? yes or no")
+    if wave_spreadsheet.lower() in ["yes", "y"]:
+        wave_spreadsheet_path = input("Absolute path to spreadsheet: ")
+        config.set("APP", "wave_spreadsheet_path", wave_spreadsheet_path)
+        if wave_columns_to_include := input("Provide a list of comma separate values denoting the columns you want to retain: "):
+            config.set("APP", "wave_spreadsheet_columns", f"[{wave_columns_to_include}]")
     slack = input(
         "Sending alerts (logs) to Slack (via Incoming WebHooks)? (Default: No): ")
     if slack.lower() in ["yes", "y"]:
@@ -304,8 +313,14 @@ def get_sso_provider_pattern():
             if int(sso_provider_pattern_option) == 1:
                 return options.get(1)
             elif int(sso_provider_pattern_option) == 2:
-                print("Hashes are currently not easily migrateable. We will input a placeholder, but support will need to correct this after the migration.")
-                return None
+                print("We expect to handle hashes through a JSON that looks like the following: ")
+                print(json_pretty([
+                    {
+                        "email": "user@email.com",
+                        "externalid": "abc123"
+                    }
+                ]))
+                return options.get(2)
             elif int(sso_provider_pattern_option) == 3:
                 print("Not implemented yet")
                 return None

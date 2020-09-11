@@ -1,7 +1,6 @@
-import json
 from congregate.helpers.base_class import BaseClass
 from congregate.migration.jenkins.api.base import JenkinsApi
-from congregate.helpers.misc_utils import write_json_to_file
+from congregate.helpers.misc_utils import write_json_to_file, convert_to_underscores
 
 class JenkinsClient(BaseClass):
     def __init__(self):
@@ -40,11 +39,11 @@ class JenkinsClient(BaseClass):
         result_dict = {"protected": False, "variable_type": "env_var", "masked": False, "environment_scope": "jenkins"}
         if parameter["defaultParameterValue"] is not None:
             if "name" in parameter["defaultParameterValue"]:
-                result_dict["key"] = parameter["defaultParameterValue"]["name"]
+                result_dict["key"] = convert_to_underscores(parameter["defaultParameterValue"]["name"])
             if "value" in parameter["defaultParameterValue"]:
                 result_dict["value"] = str(parameter["defaultParameterValue"]["value"])
         else:
-            result_dict["key"] = parameter["name"]
+            result_dict["key"] = convert_to_underscores(parameter["name"])
             result_dict["value"] = "No Default Value"
 
         return result_dict

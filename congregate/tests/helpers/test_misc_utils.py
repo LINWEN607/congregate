@@ -453,3 +453,21 @@ def test_xml_to_dict_complex():
     actual = misc.xml_to_dict(test_xml)
 
     assert expected == actual
+
+def test_convert_single_space_to_underscore():
+    expected = "hello_world"
+    actual = misc.convert_to_underscores("hello world")
+
+    assert expected == actual
+
+def test_convert_multiple_spaces_to_underscore():
+    expected = "replacing_spaces_with_underscores_in_a_sentence"
+    actual = misc.convert_to_underscores("replacing spaces with underscores in a sentence")
+
+    assert expected == actual
+
+def test_convert_multiple_slashes_to_underscore():
+    expected = "absolute_path_to_file"
+    actual = misc.convert_to_underscores("absolute/path/to/file")
+    
+    assert expected == actual

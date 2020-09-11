@@ -45,6 +45,7 @@ class ConfigTests(unittest.TestCase):
             "yes",  # password reset email
             "no",    # randomized password
             "30",   # import wait time
+            "no",   # Wave spreadsheet
             "no"   # slack
         ]
 
@@ -93,7 +94,7 @@ class ConfigTests(unittest.TestCase):
             # "token",  # ext_src_token
             "repo_path",  # ext_src_repo
             "yes",   # CI SOURCE
-            "Jenkins", # ci_source
+            "Jenkins",  # ci_source
             "ci_some_external_url",  # ci_ext_src_hostname
             "ci_username",  # ci_ext_src_username
             # "token",  # ci_ext_src_token
@@ -101,6 +102,7 @@ class ConfigTests(unittest.TestCase):
             "yes",  # password reset email
             "no",    # randomized password
             "30",   # import wait time
+            "no",   # Wave spreadsheet
             "no"   # slack
         ]
 
@@ -124,7 +126,6 @@ class ConfigTests(unittest.TestCase):
             reference = f.readlines()
 
         self.assertListEqual(generated, reference)
-
 
     @mock.patch.object(GroupsApi, "get_group")
     @mock.patch.object(UsersApi, "get_current_user")
@@ -163,6 +164,7 @@ class ConfigTests(unittest.TestCase):
             "yes",  # password reset email
             "no",    # randomized password
             "30",   # import wait time
+            "no",   # Wave spreadsheet
             "yes",   # slack
             "https://slack.url"   # slack_url
         ]
@@ -244,6 +246,7 @@ class ConfigTests(unittest.TestCase):
             "yes",  # password reset email
             "no",    # randomized password
             "30",   # import wait time
+            "no",   # Wave spreadsheet
             "yes",   # slack
             "https://slack.url"   # slack_url
         ]
@@ -278,6 +281,90 @@ class ConfigTests(unittest.TestCase):
 
         # load the reference file
         with open("{0}test_not_ext_src_parent_group_path_no_mirror_name_aws_default.conf".format(test_dir_prefix), "r") as f:
+            reference = f.readlines()
+
+        self.assertListEqual(generated, reference)
+
+    @mock.patch.object(GroupsApi, "get_group")
+    @mock.patch.object(UsersApi, "get_current_user")
+    def test_not_ext_src_parent_group_path_no_mirror_name_aws_default_hash_map_sso(self, mock_get, mock_get_group):
+        """
+            Not external source
+            parent group found (first if)
+            No mirror (default)
+            AWS (first if)
+        """
+        values = [
+            "hostname",  # Destination hostname
+            # "token", # Destination access token
+            # "0",  # Destination import user id
+            "yes",   # shared runners enabled
+            "no",  # append project suffix (retry)
+            "3",  # max_import_retries,
+            "yes",  # destination parent group
+            "0",  # destination parent group id
+            # "dstn_parent_group_path",  # destination parent group full path
+            "group_sso_provider",  # SSO provider
+            "2",  # SSO provider pattern
+            "path/to/file",
+            "username_suffix",  # username suffix
+            "No",   # mirror
+            # "mirror_username",  # mirror username
+            "no",  # external_src_url
+            "source_hostname",  # source host
+            # "source_access_token", # source token
+            "no",  # source parent group
+            "3600",  # max_export_wait_time
+            "yes",  # migrating registries
+            # "source_access_token", # source token
+            "source_registry_url",    # source registry url
+            "destination_registry_url",    # destination registry url
+            "aws",  # export location
+            "s3_name",  # bucket name
+            "us-east-1",    # bucket region
+            # "access key",   # access key
+            # "secret key",   # secret key
+            "absolute_path",    # file system path
+            "no",   # CI Source
+            "no",    # keep_blocked_users
+            "yes",  # password reset email
+            "no",    # randomized password
+            "30",   # import wait time
+            "no",   # Wave spreadsheet
+            "yes",   # slack
+            "https://slack.url"   # slack_url
+        ]
+
+        g = input_generator(values)
+
+        mock_get.return_value = self.users_api.get_current_user()
+
+        class GroupHack(object):
+            def __init__(self):
+                self._json = {"full_path": "destination_group_full_path"}
+
+            def json(self):
+                return self._json
+
+        mock_get_group.return_value = GroupHack()
+        with mock.patch('congregate.cli.config.write_to_file', mock_file):
+            with mock.patch('congregate.cli.config.getcwd', lambda: "."):
+                with mock.patch('congregate.cli.config.get_congregate_path', lambda: "."):
+                    with mock.patch('congregate.cli.config.aws.set_access_key_id', lambda x: "access_key_id"):
+                        with mock.patch('congregate.cli.config.aws.set_secret_access_key', lambda x: "secret_access_key"):
+                            with mock.patch('congregate.cli.config.obfuscate', lambda x: "dGVzdA=="):
+                                with mock.patch('congregate.cli.config.test_registries', lambda x, y, z: None):
+                                    with mock.patch('congregate.cli.config.test_slack', lambda x: None):
+                                        with mock.patch('congregate.cli.config.deobfuscate', lambda x: "dGVzdA=="):
+                                            with mock.patch('builtins.input', lambda x: next(g)):
+                                                config.generate_config()
+
+        # load the file that was just written
+        with open("{0}congregate.conf".format(test_dir_prefix), "r") as f:
+            generated = f.readlines()
+
+        # load the reference file
+        with open("{0}test_not_ext_src_parent_group_path_no_mirror_name_aws_hashed_sso.conf".format(test_dir_prefix), "r") as f:
             reference = f.readlines()
 
         self.assertListEqual(generated, reference)
@@ -327,6 +414,7 @@ class ConfigTests(unittest.TestCase):
             "yes",  # password reset email
             "no",    # randomized password
             "60",   # import wait time
+            "no",   # Wave spreadsheet
             "no"   # slack
         ]
 
@@ -397,6 +485,7 @@ class ConfigTests(unittest.TestCase):
             "yes",  # password reset email
             "no",    # randomized password
             "30",   # import wait time
+            "no",   # Wave spreadsheet
             "yes",   # slack
             "https://slack.url"   # slack_url
         ]

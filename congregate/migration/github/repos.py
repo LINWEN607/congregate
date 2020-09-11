@@ -60,6 +60,7 @@ class ReposClient(BaseClass):
                         "kind": "group" if repo["owner"]["type"] in self.GROUP_TYPE else "user",
                         "full_path": repo["owner"]["login"]
                     },
+                    "http_url_to_repo": repo["html_url"] + ".git",
                     "path_with_namespace": repo["full_name"],
                     "visibility": "private" if repo["private"] else "public",
                     "description": repo.get("description", ""),
@@ -93,16 +94,15 @@ class ReposClient(BaseClass):
         return self.users.format_users(members)
     
     def list_ci_sources_jenkins(self, repo_name):
-        
         list_job_names = []
-        
-        ci_sources_jobs = read_json_file_into_object(f"{self.app_path}/data/jenkins_jobs.json")
-        
-        for job in ci_sources_jobs:
-            if job["url"] is not None:
-                temp_list = job["url"].split("/")
-                if repo_name == temp_list[-1][:-4]:
-                    list_job_names.append(job["name"])
+
+        if self.config.ci_source_type == "Jenkins":
+            ci_sources_jobs = read_json_file_into_object(f"{self.app_path}/data/jenkins_jobs.json")
+            for job in ci_sources_jobs:
+                if job["url"] is not None:
+                    temp_list = job["url"].split("/")
+                    if repo_name == temp_list[-1][:-4]:
+                        list_job_names.append(job["name"])
 
         return list_job_names
      

@@ -115,13 +115,15 @@ def parse_query_params(params):
 
 
 def rewrite_list_into_dict(l, comparison_key, prefix=""):
-    rewritten_groups = {}
-    for i in range(len(l)):
+    rewritten_obj = {}
+    for i, _ in enumerate(l):
         new_obj = l[i]
         key = l[i][comparison_key]
-        rewritten_groups[prefix + str(key)] = new_obj
+        if prefix:
+            key = prefix + str(key)
+        rewritten_obj[key] = new_obj
 
-    return rewritten_groups
+    return rewritten_obj
 
 
 def rewrite_json_list_into_dict(l):
@@ -222,6 +224,10 @@ def obfuscate(prompt):
 
 def deobfuscate(secret):
     return b64decode(secret.encode("ascii")).decode("ascii")
+
+
+def convert_to_underscores(s):
+    return sub(r" |\/", "_", s)
 
 
 def clean_data(dry_run=True, files=None):
