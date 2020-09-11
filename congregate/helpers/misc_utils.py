@@ -6,7 +6,6 @@ import subprocess
 import hashlib
 
 import glob
-from xmltodict import parse as xmlparse
 from traceback import print_exc
 from base64 import b64encode, b64decode
 from copy import deepcopy
@@ -14,6 +13,7 @@ from shutil import copy
 from time import time
 from re import sub, findall
 from datetime import timedelta, date, datetime
+from xmltodict import parse as xmlparse
 from requests import get, head, Response
 
 
@@ -22,6 +22,7 @@ def remove_dupes(my_list):
         Basic deduping function to remove any duplicates from a list
     """
     return list({v["id"]: v for v in my_list}.values())
+
 
 def remove_dupes_but_take_higher_access(my_list):
     """
@@ -41,7 +42,8 @@ def remove_dupes_but_take_higher_access(my_list):
             new_list.append(d)
             already_found[obj_id]["index"] = len(new_list) - 1
     return new_list
-    
+
+
 def download_file(url, path, filename=None, headers=None):
     # NOTE the stream=True parameter
     if __is_downloadable(url):
@@ -189,8 +191,10 @@ def get_rollback_log(rollback=False):
 def json_pretty(data):
     return json.dumps(data, indent=4, sort_keys=True)
 
+
 def xml_to_dict(data):
     return sanitize_booleans_in_dict(xmlparse(data))
+
 
 def sanitize_booleans_in_dict(d):
     """
@@ -205,6 +209,7 @@ def sanitize_booleans_in_dict(d):
             elif v.lower() == 'true':
                 d[k] = True
     return d
+
 
 def write_json_to_file(path, data, log=None):
     if log:
