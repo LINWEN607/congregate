@@ -34,7 +34,6 @@ class Manage_Repos():
         # TODO: Fix remote in push_single_repo()
         self.__dict__.update(**kwargs)
         self.temp_dir = temp_dir
-        print(self.__dict__)
         self.remote_name = remote_name
         self.remote_url = remote_url
         self.verify = True

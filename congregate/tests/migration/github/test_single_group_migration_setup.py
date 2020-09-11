@@ -22,10 +22,10 @@ class Seed_GHE(BaseClass):
     Dunno what I'm doing here :D
     '''
     def __init__(self):
+        self.manage_repos = Manage_Repos(size='medium', clone=True, remote_name='fitall')
         super(Seed_GHE, self).__init__()
         self.orgs_api = OrgsApi(self.config.source_host, self.config.source_token)
         self.repos_api = ReposApi(self.config.source_host, self.config.source_token)
-        self.manage_repos = Manage_Repos(size='medium', clone=True)
 
         self.repos = self.manage_repos.repos
 
