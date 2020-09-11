@@ -5,7 +5,8 @@ Copyright (c) 2020 - GitLab
 """
 
 import os
-
+import json
+from re import sub, split
 from configparser import ConfigParser, ParsingError
 
 from congregate.helpers.misc_utils import get_congregate_path, deobfuscate
@@ -40,13 +41,38 @@ class Config(object):
         return default
 
     def prop_int(self, section, option, default=None):
+        """
+            Returns configuration property string casted to an int
+        """
         if self.option_exists(section, option):
             return self.config.getint(section, option)
         return default
 
     def prop_bool(self, section, option, default=None):
+        """
+            Returns configuration property string casted to a bool
+        """
         if self.option_exists(section, option):
             return self.config.getboolean(section, option)
+        return default
+    
+    def prop_list(self, section, option, default=None):
+        """
+            Returns configuration property string as a list.
+
+            For example, a configuration property stored as '[hello, world, how, are you]'
+            will be returned as ["hello", "world", "how", "are", "you"]
+        """
+        if self.option_exists(section, option):
+            return split(r', |,', sub(r'\[|\]', '', self.config.get(section, option)))
+        return default
+    
+    def prop_dict(self, section, option, default=None):
+        """
+            Returns configuration property JSON string as a dictionary
+        """
+        if self.option_exists(section, option):
+            return json.loads(self.config.get(section, option))
         return default
 
     def as_obj(self):
@@ -281,6 +307,34 @@ class Config(object):
     def ssl_verify(self):
         return self.prop_bool("APP", "ssl_verify", True)
 
+    @property
+    def wave_spreadsheet_path(self):
+        """
+        The absolute path to a spreadsheet containing specific details about migration waves
+        """
+        return self.prop("APP", "wave_spreadsheet_path")
+
+    @property
+    def wave_spreadsheet_columns(self):
+        """
+        A list of columns to include in the wave spreadsheet transformation
+        """
+        return self.prop_list("APP", "wave_spreadsheet_columns")
+
+    @property
+    def wave_spreadsheet_column_mapping(self):
+        """
+        A dictionary containing the columns in the spreadsheet mapped to the keys we need for a wave migration.
+
+        Example output:
+        {
+            "Wave name": "example column 1",
+            "Wave date": "migration name",
+            "Source Url": "company repo url"
+        }
+        """
+        return self.prop_dict("APP", "wave_spreadsheet_column_mapping")
+    
 
 # HIDDEN PROPERTIES
     # Used only by "map-users" command

@@ -1,10 +1,11 @@
 import unittest
 from mock import patch, PropertyMock
-from congregate.tests.mockapi.jenkins.parameters import ParametersApi
-from congregate.migration.jenkins.base import JenkinsClient
+from congregate.tests.mockapi.teamcity.parameters import ParametersApi
+from congregate.tests.mockapi.teamcity.buildconfigs import TeamcityJobsApi
+from congregate.migration.teamcity.base import TeamcityClient
 
 
-class JenkinsBaseTests(unittest.TestCase):
+class TeamCityBaseTests(unittest.TestCase):
     @patch('congregate.helpers.conf.Config.ci_source_type', new_callable=PropertyMock)
     @patch('congregate.helpers.conf.Config.ci_source_host', new_callable=PropertyMock)
     @patch('congregate.helpers.conf.Config.ci_source_username', new_callable=PropertyMock)
@@ -12,18 +13,18 @@ class JenkinsBaseTests(unittest.TestCase):
     def test_transform_ci_variables(self, token, username, host, source_type):
         token.return_value = 'abc123'
         username.return_value = 'abc123'
-        host.return_value = 'http://example.jenkins.com/'
+        host.return_value = 'http://example.teamcity.com/'
         source_type.return_value = 'abc123'
         params = ParametersApi()
         test_results = params.get_single_parameter()
-        client = JenkinsClient()
+        client = TeamcityClient()
 
         expected = {
-            'environment_scope': 'jenkins',
-            'key': 'Boolean_Parameter',
+            'environment_scope': 'teamcity',
+            'key': 'Checkbox_Param',
             'masked': False,
             'protected': False,
-            'value': "True",
+            'value': "true",
             'variable_type': 'env_var'}
         actual = client.transform_ci_variables(test_results)
         self.assertDictEqual(expected, actual)
@@ -35,18 +36,34 @@ class JenkinsBaseTests(unittest.TestCase):
     def test_transform_ci_variables_no_default_param(self, token, username, host, source_type):
         token.return_value = 'abc123'
         username.return_value = 'abc123'
-        host.return_value = 'http://example.jenkins.com/'
+        host.return_value = 'http://example.teamcity.com/'
         source_type.return_value = 'abc123'
         params = ParametersApi()
         test_results = params.get_single_parameter_no_default_param()
-        client = JenkinsClient()
+        client = TeamcityClient()
 
         expected = {
-            'environment_scope': 'jenkins',
-            'key': 'run_parameter',
+            'environment_scope': 'teamcity',
+            'key': 'Masked_Param',
             'masked': False,
             'protected': False,
             'value': "No Default Value",
             'variable_type': 'env_var'}
         actual = client.transform_ci_variables(test_results)
         self.assertDictEqual(expected, actual)
+
+    # @patch('congregate.helpers.conf.Config.ci_source_type', new_callable=PropertyMock)
+    # @patch('congregate.helpers.conf.Config.ci_source_host', new_callable=PropertyMock)
+    # @patch('congregate.helpers.conf.Config.ci_source_username', new_callable=PropertyMock)
+    # @patch('congregate.helpers.conf.Config.ci_source_token', new_callable=PropertyMock)
+    # def test_retrieve_jobs_with_vcs_info(self, token, username, host, source_type):
+    #     token.return_value = 'abc123'
+    #     username.return_value = 'abc123'
+    #     host.return_value = 'http://example.teamcity.com/'
+    #     source_type.return_value = 'abc123'
+    #     params = TeamcityJobsApi()
+    #     expected = params.get_job_config_dict()
+    #     client = TeamcityClient()
+
+    #     actual = client.retrieve_jobs_with_vcs_info()
+    #     self.assertDictEqual(expected, actual)

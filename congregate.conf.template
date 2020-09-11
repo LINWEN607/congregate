@@ -130,6 +130,21 @@
 ### Optionally used during customer migrations, mainly to gitlab.com, but also an option for migrations to self-managed.
 # slack_url = https://slack.url
 
+### Optional configuration if you are using a spreadsheet to keep track of migration waves
+
+### Specify an absolute path to the spreadsheet. Supports excel, openoffice, and csv spreadsheet formats
+# wave_spreadsheet_path = /absolute/path/to/waves.xls
+
+### Specify the columns for congregate to use from the spreadsheet
+# wave_spreadsheet_columns = Wave name, Wave date, Source Url
+
+### If you are using columns that do not match the expected "Wave name", "Wave date", and "Source Url", you will need to provide a map setting like the example below
+# wave_spreadsheet_column_mapping = {
+#        "Wave name": "Wave name",
+#        "Wave date": "Wave date",
+#        "Source Url": "Source Url"
+#    }
+
 
 ###! **HIDDEN PROPERTIES**
 

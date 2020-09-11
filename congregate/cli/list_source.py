@@ -15,6 +15,7 @@ from congregate.migration.github.orgs import OrgsClient as GitHubOrgs
 from congregate.migration.github.users import UsersClient as GitHubUsers
 
 from congregate.migration.jenkins.base import JenkinsClient as JenkinsData
+from congregate.migration.teamcity.base import TeamcityClient as TeamcityData
 
 b = BaseClass()
 
@@ -65,6 +66,12 @@ def list_jenkins_data():
     data.retrieve_jobs_with_scm_info()
 
 
+def list_teamcity_data():
+    data = TeamcityData()
+
+    data.retrieve_jobs_with_vcs_info()
+
+
 def write_empty_file(filename):
     """
         Write an empty json file containing an empty list, it's used to make sure a file is present in the filesystem
@@ -82,6 +89,8 @@ def list_data():
 
     if ci_src_type == "Jenkins":
         list_jenkins_data()
+    if ci_src_type == "Teamcity":
+        list_teamcity_data()
 
     if src_type == "Bitbucket Server":
         list_bitbucket_data()

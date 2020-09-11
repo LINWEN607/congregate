@@ -45,6 +45,7 @@ class ConfigTests(unittest.TestCase):
             "yes",  # password reset email
             "no",    # randomized password
             "30",   # import wait time
+            "no",   # Wave spreadsheet
             "no"   # slack
         ]
 
@@ -93,7 +94,7 @@ class ConfigTests(unittest.TestCase):
             # "token",  # ext_src_token
             "repo_path",  # ext_src_repo
             "yes",   # CI SOURCE
-            "Jenkins", # ci_source
+            "Jenkins",  # ci_source
             "ci_some_external_url",  # ci_ext_src_hostname
             "ci_username",  # ci_ext_src_username
             # "token",  # ci_ext_src_token
@@ -101,6 +102,7 @@ class ConfigTests(unittest.TestCase):
             "yes",  # password reset email
             "no",    # randomized password
             "30",   # import wait time
+            "no",   # Wave spreadsheet
             "no"   # slack
         ]
 
@@ -124,7 +126,6 @@ class ConfigTests(unittest.TestCase):
             reference = f.readlines()
 
         self.assertListEqual(generated, reference)
-
 
     @mock.patch.object(GroupsApi, "get_group")
     @mock.patch.object(UsersApi, "get_current_user")
@@ -163,6 +164,7 @@ class ConfigTests(unittest.TestCase):
             "yes",  # password reset email
             "no",    # randomized password
             "30",   # import wait time
+            "no",   # Wave spreadsheet
             "yes",   # slack
             "https://slack.url"   # slack_url
         ]
@@ -244,6 +246,7 @@ class ConfigTests(unittest.TestCase):
             "yes",  # password reset email
             "no",    # randomized password
             "30",   # import wait time
+            "no",   # Wave spreadsheet
             "yes",   # slack
             "https://slack.url"   # slack_url
         ]
@@ -327,6 +330,7 @@ class ConfigTests(unittest.TestCase):
             "yes",  # password reset email
             "no",    # randomized password
             "30",   # import wait time
+            "no",   # Wave spreadsheet
             "yes",   # slack
             "https://slack.url"   # slack_url
         ]
@@ -410,6 +414,7 @@ class ConfigTests(unittest.TestCase):
             "yes",  # password reset email
             "no",    # randomized password
             "60",   # import wait time
+            "no",   # Wave spreadsheet
             "no"   # slack
         ]
 
@@ -480,6 +485,7 @@ class ConfigTests(unittest.TestCase):
             "yes",  # password reset email
             "no",    # randomized password
             "30",   # import wait time
+            "no",   # Wave spreadsheet
             "yes",   # slack
             "https://slack.url"   # slack_url
         ]
