@@ -61,3 +61,19 @@ class ReposApi():
             print(f"Creating a new repository for the authenticated user {data}")
 
         return self.api.generate_v3_post_request(self.host, "user/repos", json.dumps(data), description=message)
+
+    def create_org_repo(self, org_name, data=None, message=None):
+        """
+        Create an organization repository.
+
+        GitHub API v3 Doc: https://docs.github.com/en/enterprise/2.21/user/rest/reference/repos#create-an-organization-repository
+        """
+        if not message:
+            print(f"Creating an organization repository {data}")
+
+        return self.api.generate_v3_post_request(
+            self.host,
+            f"orgs/{org_name}/repos",
+            data,
+            description=message
+        )

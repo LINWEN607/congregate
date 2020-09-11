@@ -32,8 +32,9 @@ class Manage_Repos():
             example: git clone https://username:password@github.com/username/repository.git
         """
         # TODO: Fix remote in push_single_repo()
-
+        self.__dict__.update(**kwargs)
         self.temp_dir = temp_dir
+        print(self.__dict__)
         self.remote_name = remote_name
         self.remote_url = remote_url
         self.verify = True
@@ -88,6 +89,7 @@ class Manage_Repos():
         small < 10780 ; medium < 1255976 ; large > 1255976 (anything left)
         '''
         if 'size' in self.__dict__:
+            print("found it")
             if self.size.lower() == 'small':  # small repos 50 megs or less
                 self.size = 10780
             elif self.size.lower() == 'medium':  # roughly 500 megs or less
