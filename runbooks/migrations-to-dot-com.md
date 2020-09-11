@@ -173,33 +173,29 @@ For each migration attempt check if any project or group imports failed or have 
 * [ ] Attach `data/congregate.log`, `data/audit.log`, and `data/waves/wave_<insert_wave_number>/wave<insert-wave-here>_attempt<insert-attempt>.log` to this issue
 * [ ] Copy `data/congregate.log`, `data/audit.log`, and `data/waves/wave_<insert_wave_number>/wave<insert-wave-here>_attempt<insert-attempt>.log` to `/opt/congregate/data/waves/wave_<insert_wave_number>/`
 
-#### SRE Support Import of Failed Groups and Projects
+#### Infra Manager Support Import of Failed Groups and Projects
 
-If a project or group import continues to fail (2 retries max), you will need to reach out to the SRE on-call to get the project imported.
+If a project or group import continues to fail (2 retries max), you'll need to create an infrastructure issue to get the project imported.
 
 * Preparation
-  * [ ] Before coming to the conclusion that an SRE is needed to import the project, examine the contents of the project on the source.
+  * [ ] Before coming to the conclusion that an infra issue is needed to import the project, examine the contents of the project on the source.
   * [ ] Take note of any environments, CI/CD variables, merge request approvers, and container registries and see if any of those are present. If they are, you will need to run another command to get that data to the destination.
   * [ ] Upload the project export file to google drive and get a shareable link.
 * Create an import issue **per project**
-  * [ ] Create a new issue in the [infrastructure](https://gitlab.com/gitlab-com/gl-infra/infrastructure/-/issues) project using the `import` template.
-  * [ ] Change `#### Import on: YYYY-MM-DD HH:MM UTC` to `#### Import as soon as possible`
-  * [ ] Walk through the steps on the template to provide all necessary information to the SRE on call
+  * [ ] Create a new issue in the [infrastructure](https://gitlab.com/gitlab-com/gl-infra/infrastructure/-/issues) project using the [Project import](https://gitlab.com/gitlab-com/gl-infra/infrastructure/-/blob/master/.gitlab/issue_templates/Project%20Import.md) template.
+  * [ ] Walk through the steps on the template to provide all necessary information
   * [ ] When providing a list of user emails, you can extract the project export tar.gz and run the following command to get a list of emails (make sure you have `jq` installed): `cat project.json | jq -r '.project_members' | jq -r '.[] | .user | .email'`
-  * [ ] Add ~"SRE:On-call" label
-  * [ ] **Set the issue as confidential**
-  * [ ] Submit the issue and don't assign it to anyone. The SRE on-call will pick it up.
-* Reach out to the SRE on-call. **Post a message in #infrastructure-lounge paging the SRE on-call.** For example:
+  * [ ] All predefined settings are at the bottom (e.g. labels, assignees, etc.) so go ahead and submit the issue
 
   ```text
-  @sre-oncall I need a project imported to gitlab.com as soon as possible. Here is the issue:
-  https://gitlab.com/gitlab-com/gl-infra/infrastructure/-/issues/10061
+  @<assignee> I need a project imported to gitlab.com. Here is the issue:
+  https://gitlab.com/gitlab-com/gl-infra/infrastructure/-/issues/11347
   ```
 
   * [ ] Make sure to check off all checkboxes listed under Support in the import issue. We are Support in this instance.
-  * [ ] Once the SRE confirms the import has started, promptly delete the project from google drive.
-* Post Import. **The SRE will let you know when the import is complete.**
-* If any projects imported by the SRE require any post-migration data to be migrated:
+  * [ ] Once the assignee confirms the import has started, promptly delete the project from google drive.
+* Post Import. **The assignee will let you know when the import is complete.**
+* If any projects imported by the assignee require any post-migration data to be migrated:
   * [ ] Confirm those projects are staged
   * [ ] Run `nohup ./congregate.sh migrate --only-post-migration-info --commit > data/waves/wave_<insert_wave_number>/wave<insert-wave-here>_attempt<insert-attempt>_post_migration.log 2>&1 &` to migrate any post-migration data
 
