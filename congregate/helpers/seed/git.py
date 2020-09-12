@@ -88,12 +88,13 @@ class Manage_Repos():
         small < 10780 ; medium < 1255976 ; large > 1255976 (anything left)
         '''
         if 'size' in self.__dict__:
-            print("found it")
             if self.size.lower() == 'small':  # small repos 50 megs or less
                 self.size = 10780
             elif self.size.lower() == 'medium':  # roughly 500 megs or less
-                self.size = 1255976
+                self.size = 106208
             elif self.size.lower() == 'large':
+                self.size = 1255976
+            elif self.size.lower() == 'plaid':
                 self.size = 80000000  # This is huge, should not be used
         else:
             self.size = 10780
