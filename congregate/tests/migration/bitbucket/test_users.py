@@ -1,4 +1,5 @@
 import unittest
+import pytest
 from mock import patch, PropertyMock
 
 from congregate.tests.mockapi.bitbucket.users import MockUsersApi
@@ -6,6 +7,7 @@ from congregate.migration.bitbucket.api.users import UsersApi
 from congregate.migration.bitbucket.users import UsersClient
 
 
+@pytest.mark.unit_test
 class UsersTests(unittest.TestCase):
     def setUp(self):
         self.mock_users = MockUsersApi()

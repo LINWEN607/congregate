@@ -1,5 +1,6 @@
 import json
 import unittest
+import pytest
 from mock import MagicMock, PropertyMock, patch
 import responses
 from congregate.migration.gitlab.importexport import ImportExportClient
@@ -8,6 +9,7 @@ from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.tests.mockapi.gitlab.groups import MockGroupsApi
 
 
+@pytest.mark.unit_test
 class ImportExportClientTests(unittest.TestCase):
 
     def setUp(self):

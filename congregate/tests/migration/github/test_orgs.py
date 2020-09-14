@@ -1,4 +1,5 @@
 import unittest
+import pytest
 from mock import patch, PropertyMock, MagicMock
 
 from congregate.tests.mockapi.github.orgs import MockOrgsApi
@@ -9,6 +10,7 @@ from congregate.migration.github.users import UsersClient
 from congregate.migration.github.api.orgs import OrgsApi
 
 
+@pytest.mark.unit_test
 class ReposTests(unittest.TestCase):
     def setUp(self):
         self.mock_orgs = MockOrgsApi()

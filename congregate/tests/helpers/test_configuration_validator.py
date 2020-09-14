@@ -10,6 +10,7 @@ from congregate.tests.mockapi.gitlab.error import other_error
 from congregate.helpers.exceptions import ConfigurationException
 
 
+@pytest.mark.unit_test
 class ConfigurationValidationTests(unittest.TestCase):
     # pylint: disable=no-member
     def setUp(self):

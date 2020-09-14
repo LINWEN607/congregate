@@ -1,4 +1,5 @@
 import unittest
+import pytest
 from mock import patch, PropertyMock
 
 from congregate.tests.mockapi.bitbucket.repos import MockReposApi
@@ -6,7 +7,7 @@ from congregate.migration.bitbucket.repos import ReposClient
 from congregate.migration.bitbucket.api.repos import ReposApi
 from congregate.tests.mockapi.bitbucket.groups import MockGroupsApi
 
-
+@pytest.mark.unit_test
 class ReposTests(unittest.TestCase):
     def setUp(self):
         self.mock_repos = MockReposApi()

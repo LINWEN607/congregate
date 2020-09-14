@@ -1,10 +1,12 @@
 import unittest
+import pytest
 from mock import patch, PropertyMock
 from congregate.tests.mockapi.jenkins.parameters import ParametersApi
 from congregate.migration.jenkins.base import JenkinsClient
 
 
 class JenkinsBaseTests(unittest.TestCase):
+    @pytest.mark.unit_test
     @patch('congregate.helpers.conf.Config.ci_source_type', new_callable=PropertyMock)
     @patch('congregate.helpers.conf.Config.ci_source_host', new_callable=PropertyMock)
     @patch('congregate.helpers.conf.Config.ci_source_username', new_callable=PropertyMock)
@@ -28,6 +30,7 @@ class JenkinsBaseTests(unittest.TestCase):
         actual = client.transform_ci_variables(test_results)
         self.assertDictEqual(expected, actual)
 
+    @pytest.mark.unit_test
     @patch('congregate.helpers.conf.Config.ci_source_type', new_callable=PropertyMock)
     @patch('congregate.helpers.conf.Config.ci_source_host', new_callable=PropertyMock)
     @patch('congregate.helpers.conf.Config.ci_source_username', new_callable=PropertyMock)

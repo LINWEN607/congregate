@@ -60,10 +60,9 @@ class WaveSpreadsheetHandler(BaseClass):
         """
             Returns a corrected list of columns to use based on the wave_spreadsheet_column_mapping
         """
-        mapping = self.config.wave_spreadsheet_column_mapping
-        if mapping:
+        if (mapping := self.config.wave_spreadsheet_column_mapping) and columns_to_use:
             for k, v in mapping.items():
-                ind = columns_to_use.index(v)
-                columns_to_use[ind] = k
+                if (ind := columns_to_use.index(v) if v in columns_to_use else None):
+                    columns_to_use[ind] = k
         return columns_to_use
         

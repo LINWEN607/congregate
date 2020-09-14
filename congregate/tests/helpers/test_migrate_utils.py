@@ -1,5 +1,6 @@
 import unittest
 import mock
+import pytest
 import responses
 import congregate.helpers.migrate_utils as mutils
 from congregate.tests.mockapi.gitlab.users import MockUsersApi
@@ -9,6 +10,7 @@ from congregate.helpers.configuration_validator import ConfigurationValidator
 from congregate.migration.gitlab.api.groups import GroupsApi
 
 
+@pytest.mark.unit_test
 class MigrateTests(unittest.TestCase):
     def setUp(self):
         self.mock_users = MockUsersApi()

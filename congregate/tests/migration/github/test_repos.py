@@ -1,5 +1,6 @@
 import unittest
 import json
+import pytest
 from mock import patch, PropertyMock, MagicMock, mock_open
 
 from congregate.tests.mockapi.github.repos import MockReposApi
@@ -8,6 +9,7 @@ from congregate.migration.github.users import UsersClient
 from congregate.migration.github.api.repos import ReposApi
 
 
+@pytest.mark.unit_test
 class ReposTests(unittest.TestCase):
 
     def setUp(self):

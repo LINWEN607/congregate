@@ -1,5 +1,6 @@
 import unittest
 import mock
+import pytest
 import responses
 
 from requests import Response
@@ -7,6 +8,7 @@ from congregate.migration.gitlab.groups import GroupsClient
 from congregate.tests.mockapi.gitlab.groups import MockGroupsApi
 
 
+@pytest.mark.unit_test
 class GroupsTests(unittest.TestCase):
 
     class MockReturn(object):

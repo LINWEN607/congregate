@@ -1,5 +1,6 @@
 import unittest
 import mock
+import pytest
 from requests import Response
 
 from congregate.tests.mockapi.gitlab.groups import MockGroupsApi
@@ -10,6 +11,7 @@ from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.projects import ProjectsClient
 
 
+@pytest.mark.unit_test
 class ProjectsTests(unittest.TestCase):
     def setUp(self):
         self.mock_groups = MockGroupsApi()

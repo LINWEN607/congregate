@@ -1,4 +1,5 @@
 import unittest
+import pytest
 from mock import patch, PropertyMock, MagicMock
 
 from congregate.tests.mockapi.github.users import MockUsersApi
@@ -6,6 +7,7 @@ from congregate.migration.github.users import UsersClient
 from congregate.migration.github.api.users import UsersApi
 
 
+@pytest.mark.unit_test
 class UsersTests(unittest.TestCase):
     def setUp(self):
         self.mock_users = MockUsersApi()
