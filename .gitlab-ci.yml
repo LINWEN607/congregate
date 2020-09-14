@@ -154,7 +154,7 @@ test:pylint:
 test:unit:
   extends: .test-job
   script:
-    - poetry run pytest -m 'not e2e and not e2e_setup and not e2e_setup_2' --cov-report html --cov-config=.coveragerc --cov=congregate congregate/tests/
+    - poetry run pytest -m 'unit_test' --cov-report html --cov-config=.coveragerc --cov=congregate congregate/tests/
   artifacts:
     paths:
       - htmlcov/*
