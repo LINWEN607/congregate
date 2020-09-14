@@ -1,6 +1,9 @@
 import json
 import http.client
 import os
+import sys
+
+project_id = sys.argv[-1]
 
 files = os.listdir('runbooks')
 path = 'runbooks/'
@@ -17,7 +20,7 @@ for x in arr:
                 'private-token': os.getenv("PS_MIGRATION_TOKEN"),
                 'content-type': "application/json"
             }
-            url = "/api/v4/projects/11750578/repository/files/.gitlab%2Fissue_templates%2F"+x+""
+            url = f"/api/v4/projects/{project_id}/repository/files/.gitlab%2Fissue_templates%2F"+x+""
             conn.request("POST", url, payload, headers)
 
             res = conn.getresponse()

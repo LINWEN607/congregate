@@ -289,7 +289,10 @@ runbook update:
   script:
     - echo "This is a placeholder job ran only when runbooks are changed"
     - echo "Storing any changed runbook to artifacts that will expire in 1 week." 
-    - python runbookscript.py
+    # To the ps-migration project
+    - python runbookscript.py 11750578
+    # To the Migration Template
+    - python runbookscript.py 21132827
   rules:
     - changes:
         - runbooks/*
