@@ -31,7 +31,7 @@ This runbook covers the process of migrating a wave of **groups and projects** f
     You must provide the following roles:
     - PSE conducting the migration
     - On-call security engineer working during the migration period
-    - On-call SRE working during the migration period
+    - Infra managers group assigning the SRE working during the migration period
 
     Optional roles to provide:
     - Backup PSE if the migration period spans several hours
@@ -41,9 +41,9 @@ This runbook covers the process of migrating a wave of **groups and projects** f
     For example:
 
     @leopardm: PSE conducting the migration
-    @lyle: Support Manager with Rails Console access
     @pharrison: Security Manager in the loop in case anything goes wrong
-    @dawsmith: SRE aware of the migration working during the migration period
+    @gitlab-com/gl-infra/managers: Infra managers that are aware of the migration and assigning the SRE during the migration period
+    @lyle: Support Manager with Rails Console access
 -->
 
 ## Groups to migrate
@@ -173,7 +173,7 @@ For each migration attempt check if any project or group imports failed or have 
 * [ ] Attach `data/congregate.log`, `data/audit.log`, and `data/waves/wave_<insert_wave_number>/wave<insert-wave-here>_attempt<insert-attempt>.log` to this issue
 * [ ] Copy `data/congregate.log`, `data/audit.log`, and `data/waves/wave_<insert_wave_number>/wave<insert-wave-here>_attempt<insert-attempt>.log` to `/opt/congregate/data/waves/wave_<insert_wave_number>/`
 
-#### Infra Manager Support Import of Failed Groups and Projects
+#### SRE Support Import of Failed Groups and Projects
 
 If a project or group import continues to fail (2 retries max), you'll need to create an infrastructure issue to get the project imported.
 
