@@ -1,6 +1,6 @@
 import json
 
-from congregate.cli.stage_groups import stage_data
+from congregate.cli.stage_groups import GroupStageCLI
 from congregate.cli.list_source import list_data
 from congregate.migration.gitlab.users import UsersClient
 from congregate.migration.gitlab.groups import GroupsClient
@@ -26,7 +26,8 @@ def do_all_users(dry_run=True):
     list_all()
 
     # Clear staged projects and groups and stage only users
-    stage_data([""], dry_run=False)
+    gcli = GroupStageCLI()
+    gcli.stage_data([""], dry_run=False)
     with open("{}/data/users.json".format(b.app_path), "r") as u:
         with open("{}/data/staged_users.json".format(b.app_path), "w") as su:
             json.dump(remove_dupes(json.load(u)), su, indent=4)
@@ -53,7 +54,8 @@ def do_all_groups_and_projects(dry_run=True):
     list_all()
 
     # Stage ALL - NO dry run
-    stage_data(["all"], dry_run=False, skip_users=True)
+    gcli = GroupStageCLI()
+    gcli.stage_data(["all"], dry_run=False, skip_users=True)
 
     migrate = MigrateClient(dry_run=dry_run, skip_users=True)
     migrate.migrate()
@@ -68,7 +70,8 @@ def do_all(dry_run=True):
     list_all()
 
     # Stage ALL - NO dry run
-    stage_data(["all"], dry_run=False)
+    gcli = GroupStageCLI()
+    gcli.stage_data(["all"], dry_run=False)
 
     migrate = MigrateClient(dry_run=dry_run)
     migrate.migrate()

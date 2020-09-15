@@ -5,6 +5,7 @@ stages:
   - deploy
 include:
   - template: SAST.gitlab-ci.yml
+  - template: Secret-Detection.gitlab-ci.yml
   - template: Code-Quality.gitlab-ci.yml
 
 variables:
@@ -13,7 +14,7 @@ variables:
   BB_SERVER_SEED_IMAGE_NAME: "$CI_REGISTRY_IMAGE/bitbucket-seed:latest"
   JENKINS_SEED_IMAGE_NAME: "$CI_REGISTRY_IMAGE/jenkins-seed:latest"
   SAST_DISABLE_DIND: "true"
-  SAST_DEFAULT_ANALYZERS: "bandit,secrets"
+  SAST_DEFAULT_ANALYZERS: "bandit"
 
 default:
   image: "$TEST_IMAGE_NAME"
@@ -198,24 +199,26 @@ test:end-to-end single group:
 test:GitHub Server end to end:
   extends:
     - .test-job
-  image: "${TEST_IMAGE_NAME}"  
+  image: "${TEST_IMAGE_NAME}"
   tags:
     - congregate-auto-scale-runner
   script:
     - curl -k $GH_TEST_INSTANCE_URL -v
   rules:
     - changes:
-      - .gitlab-ci.yml
+        - .gitlab-ci.yml
 
 test:Spin up jenkins:
   extends:
     - .jenkins-test
   image: "${TEST_IMAGE_NAME}"
+  tags:
+    - congregate-auto-scale-runner
   script:
     - while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' http://jenkins-test:8080/job/test-job/config.xml --user $JENKINS_USER:$JENKINS_PASSWORD)" != "200" ]]; do echo "Waiting for Jenkins to start"; sleep 5; done
     - curl http://jenkins-test:8080/job/test-job/config.xml --user $JENKINS_USER:$JENKINS_PASSWORD
     - echo "Jenkins is up and running"
-  
+
 debian rolling release:
   extends:
     - .use-docker-in-docker
@@ -288,9 +291,10 @@ runbook update:
   stage: test
   script:
     - echo "This is a placeholder job ran only when runbooks are changed"
-    - echo "Storing any changed runbook to artifacts that will expire in 1 week." 
+    - echo "Storing any changed runbook to artifacts that will expire in 1 week."
     - python runbookscript.py
   rules:
+    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
     - changes:
         - runbooks/*
   artifacts:
@@ -319,4 +323,3 @@ pages:
   artifacts:
     paths:
       - public
-

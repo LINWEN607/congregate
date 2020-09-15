@@ -14,7 +14,7 @@ This runbook covers the process of migrating a wave of **groups and projects** f
 <!--
     Specify the date and time of this migration wave. For example
 
-    3:00PM 4/13/20 - 3:00AM 4/14/20
+    3:00PM 2020-09-07 - 3:00AM 2020-09-08
 -->
 
 ## Slack channel for communication
@@ -184,20 +184,18 @@ If a project or group import continues to fail (2 retries max), you'll need to c
 * Create an import issue **per project**
   * [ ] Create a new issue in the [infrastructure](https://gitlab.com/gitlab-com/gl-infra/infrastructure/-/issues) project using the [Project import](https://gitlab.com/gitlab-com/gl-infra/infrastructure/-/blob/master/.gitlab/issue_templates/Project%20Import.md) template.
   * [ ] Walk through the steps on the template to provide all necessary information
-  * [ ] When providing a list of user emails, you can extract the project export tar.gz and run the following command to get a list of emails (make sure you have `jq` installed): `cat project.json | jq -r '.project_members' | jq -r '.[] | .user | .email'`
-  * [ ] All predefined settings are at the bottom (e.g. labels, assignees, etc.) so go ahead and submit the issue
-
-  ```text
-  @<assignee> I need a project imported to gitlab.com. Here is the issue:
-  https://gitlab.com/gitlab-com/gl-infra/infrastructure/-/issues/11347
-  ```
-
+  * [ ] When providing a list of user emails, you can extract the project export tar.gz and run the following command to get a list of emails (make sure you have `jq` installed):
+    * [ ] JSON: `cat project.json | jq -r '.project_members' | jq -r '.[] | .user | .email'`
+    * [ ] NDJON: `cat tree/project/project_members.ndjson | jq -r '.user | .email'`
+  * [ ] All predefined issue settings are at the bottom (e.g. labels, assignees, etc.) so go ahead and submit the issue.
+  * (**optional**) Reach out to the Infra managers on Slack in #infrastructure-lounge by mentioning the issue.
   * [ ] Make sure to check off all checkboxes listed under Support in the import issue. We are Support in this instance.
   * [ ] Once the assignee confirms the import has started, promptly delete the project from google drive.
 * Post Import. **The assignee will let you know when the import is complete.**
 * If any projects imported by the assignee require any post-migration data to be migrated:
   * [ ] Confirm those projects are staged
   * [ ] Run `nohup ./congregate.sh migrate --only-post-migration-info --commit > data/waves/wave_<insert_wave_number>/wave<insert-wave-here>_attempt<insert-attempt>_post_migration.log 2>&1 &` to migrate any post-migration data
+    * [ ] Skip users, groups (exports) and projects (exports) if needed
 
 #### Fallback if no container registry migrate
 

@@ -10,7 +10,7 @@ from requests_toolbelt.multipart.encoder import MultipartEncoder
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers import api
 from congregate.helpers.misc_utils import download_file, migration_dry_run, get_dry_log, \
-    is_error_message_present, check_is_project_or_group_for_logging, json_pretty, validate_name, is_dot_com
+    is_error_message_present, check_is_project_or_group_for_logging, json_pretty, validate_name, safe_json_response
 from congregate.aws import AwsClient
 from congregate.migration.gitlab.projects import ProjectsClient
 from congregate.migration.gitlab.groups import GroupsClient
@@ -83,7 +83,7 @@ class ImportExportClient(BaseClass):
             if response.status_code == 202:
                 status = self.get_export_status(src_id, is_project)
                 if status.status_code == 200:
-                    status_json = status.json()
+                    status_json = safe_json_response(status)
                     if status_json.get("export_status", None) == "finished":
                         self.log.info("{0} {1} has finished exporting, with response:\n{2}".format(
                             export_type, name, json_pretty(status_json)))
@@ -426,10 +426,6 @@ class ImportExportClient(BaseClass):
                     self.config.destination_host, self.config.destination_token, data=data, files=files, headers=headers, message=message)
         return resp
 
-    @staticmethod
-    def create_override_name(current_project_name):
-        return "".join([current_project_name, "_1"])
-
     def get_override_params(self, project):
         return {
             "description": project["description"],
@@ -450,6 +446,9 @@ class ImportExportClient(BaseClass):
         retry = True
         import_id = None
         wait_time = self.config.importexport_wait
+        max_wait_time = self.config.max_export_wait_time
+        host = self.config.destination_host
+        token = self.config.destination_token
         import_response = json.loads(import_response)
         while True:
             total = 0
@@ -460,8 +459,8 @@ class ImportExportClient(BaseClass):
                         name, dst_namespace, self.COOL_OFF_MINUTES, import_response))
                     sleep(self.COOL_OFF_MINUTES * 60)
                 # Assuming Default deletion adjourned period (Admin -> Settings -> General -> Visibility and access controls) is 0
-                elif any(del_err_msg in str(import_response) for del_err_msg in self.DEL_ERR_MSGS) and not is_dot_com(self.config.destination_host):
-                    if total > self.config.max_export_wait_time:
+                elif any(del_err_msg in str(import_response) for del_err_msg in self.DEL_ERR_MSGS):
+                    if total > max_wait_time:
                         self.log.error("Time limit exceeded waiting for project {0} to delete from {1}, with response:\n{2}".format(
                             name, dst_namespace, import_response))
                         return None
@@ -475,7 +474,7 @@ class ImportExportClient(BaseClass):
                     self.log.info(
                         "Attempting to delete project {0} from {1} after 500".format(name, dst_namespace))
                     self.projects_api.delete_project(
-                        self.config.destination_host, self.config.destination_token, quote_plus(dst_namespace + "/" + path))
+                        host, token, quote_plus(dst_namespace + "/" + path))
                     sleep(wait_time)
                 import_response = self.attempt_import(
                     filename, name, path, dst_namespace, override_params, members)
@@ -484,9 +483,9 @@ class ImportExportClient(BaseClass):
             import_id = import_response.get("id", None)
             if import_id:
                 status = self.projects_api.get_project_import_status(
-                    self.config.destination_host, self.config.destination_token, import_id)
+                    host, token, import_id)
                 if status.status_code == 200:
-                    status_json = status.json()
+                    status_json = safe_json_response(status)
                     if status_json.get("import_status", None) == "finished":
                         self.log.info(
                             "Project {0} successfully imported to {1}, with import status:\n{2}".format(name, dst_namespace, json_pretty(status_json)))
@@ -496,24 +495,18 @@ class ImportExportClient(BaseClass):
                             name, dst_namespace, " (re-importing)" if retry else "", json_pretty(status_json)))
                         # Delete and re-import once if the project import status failed, otherwise just delete
                         # Assuming Default deletion adjourned period (Admin -> Settings -> General -> Visibility and access controls) is 0
-                        if retry and not is_dot_com(self.config.destination_host):
+                        if retry:
                             self.log.info("Deleting project {0} from {1} after import status failed (re-importing)".format(
                                 name, dst_namespace))
                             self.projects_api.delete_project(
-                                self.config.destination_host, self.config.destination_token, import_id)
+                                host, token, import_id)
                             import_response = self.attempt_import(
                                 filename, name, path, dst_namespace, override_params, members)
                             import_response = json.loads(import_response)
                             retry = False
                             timeout = 0
-                        else:
-                            self.log.info("Deleting project {0} from {1} after re-import status failed".format(
-                                name, dst_namespace))
-                            self.projects_api.delete_project(
-                                self.config.destination_host, self.config.destination_token, import_id)
-                            return None
                     # For any other import status (started, scheduled, etc.) wait for it to update
-                    elif timeout < self.config.max_export_wait_time:
+                    elif timeout < max_wait_time:
                         self.log.info(
                             "Checking project {0} ({1}) import status in {2} seconds".format(name, dst_namespace, wait_time))
                         timeout += wait_time
@@ -523,7 +516,7 @@ class ImportExportClient(BaseClass):
                         self.log.error("Time limit exceeded waiting for project {0} ({1}) import status (deleting):\n{2}".format(
                             name, dst_namespace, json_pretty(status_json)))
                         self.projects_api.delete_project(
-                            self.config.destination_host, self.config.destination_token, import_id)
+                            host, token, import_id)
                         return None
                 else:
                     self.log.error(

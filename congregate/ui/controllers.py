@@ -2,7 +2,8 @@ import subprocess
 from flask import request, Response, stream_with_context
 
 from congregate.helpers.misc_utils import get_congregate_path
-from congregate.cli import stage_projects, stage_groups
+from congregate.cli.stage_projects import ProjectStageCLI
+from congregate.cli.stage_groups import GroupStageCLI
 # from congregate.cli.config import update_config
 from congregate.migration.gitlab.groups import GroupsClient
 from congregate.migration.gitlab.users import UsersClient
@@ -12,6 +13,8 @@ from . import app
 
 grp = GroupsClient()
 usr = UsersClient()
+pcli = ProjectStageCLI()
+gcli = GroupStageCLI()
 encoding = "utf-8"
 
 
@@ -50,7 +53,7 @@ def message(obj, obj_type):
 @app.route("/stage", methods=['POST'])
 def stage():
     projects = request.get_data().decode(encoding).split(",")
-    stage_projects.stage_data(projects, dry_run=False)
+    pcli.stage_data(projects, dry_run=False)
     return message(projects, "project")
 
 
@@ -64,7 +67,7 @@ def add_users():
 @app.route("/append_groups", methods=['POST'])
 def add_groups():
     groups = request.get_data().decode(encoding).split(",")
-    stage_groups.stage_data(groups, dry_run=False)
+    gcli.stage_data(groups, dry_run=False)
     return message(groups, "group")
 
 

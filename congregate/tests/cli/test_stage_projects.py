@@ -31,8 +31,8 @@ class StageProjectsTests(unittest.TestCase):
         mock_groups.return_value = self.groups_api.get_all_groups_list()
         mock_open.return_value = {}
 
-        staged_projects, staged_users, staged_groups  = self.pcli.build_staging_data([
-                                                                                         "4", "6"])
+        staged_projects, staged_users, staged_groups = self.pcli.build_staging_data([
+            "4", "6"])
 
         expected_projects = [
             {
@@ -225,8 +225,8 @@ class StageProjectsTests(unittest.TestCase):
         mock_groups.return_value = self.groups_api.get_all_groups_list()
         mock_open.return_value = {}
 
-        staged_projects, staged_users, staged_groups  = self.pcli.build_staging_data([
-                                                                                         "1-2"])
+        staged_projects, staged_users, staged_groups = self.pcli.build_staging_data([
+            "1-2"])
 
         expected_projects = [
             {
@@ -412,8 +412,8 @@ class StageProjectsTests(unittest.TestCase):
         mock_groups.return_value = self.groups_api.get_all_groups_list()
         mock_open.return_value = {}
 
-        staged_projects, staged_users, staged_groups  = self.pcli.build_staging_data([
-                                                                                         "all"])
+        staged_projects, staged_users, staged_groups = self.pcli.build_staging_data([
+            "all"])
 
         self.assertEqual(
             len(self.projects_api.get_all_projects()), len(staged_projects))
@@ -437,5 +437,4 @@ class StageProjectsTests(unittest.TestCase):
         mock_open.return_value = {}
 
         with self.assertRaises(SystemExit) as ex:
-            staged_projects, staged_users, staged_groups  = self.pcli.build_staging_data([
-                "bogus"])
+            self.pcli.build_staging_data(["bogus"])
