@@ -294,6 +294,7 @@ runbook update:
     # To the Migration Template
     - python runbookscript.py 21146917
   rules:
+    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
     - changes:
         - runbooks/*
   artifacts:
