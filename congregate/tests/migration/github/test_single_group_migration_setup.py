@@ -10,8 +10,10 @@ from congregate.helpers.seed.generate_token import token_generator
 from congregate.helpers.seed.generator import SeedDataGenerator
 
 import sys
+import time
 
 from congregate.helpers.base_class import BaseClass
+from congregate.helpers.processes import start_multi_process
 from congregate.helpers.seed.git import Manage_Repos
 from congregate.migration.github.api.orgs import OrgsApi
 from congregate.migration.github.api.repos import ReposApi
@@ -21,7 +23,7 @@ class Seed_GHE(BaseClass):
     '''
     Dunno what I'm doing here :D
     '''
-    def __init__(self, seeds_count=60, size_ratio=.9, organization="Mike-Test", owner="mlindsay"):
+    def __init__(self, seeds_count=950, size_ratio=.9, organization="Mike-Test", owner="mlindsay"):
         super(Seed_GHE, self).__init__()
         self.manage_repos = Manage_Repos(size='medium')
         self.orgs_api = OrgsApi(self.config.source_host, self.config.source_token)
@@ -32,6 +34,7 @@ class Seed_GHE(BaseClass):
         self.repo_map = self.manage_repos.repo_map
         self.organization = organization
         self.owner = owner
+        self.manage_repos.remote_url = self.manage_repos.remote_url + organization + '/'
 
     # TODO: Create a number of repos in github == to self.seeds_count
     # TODO: Reorigin the existing local repos
@@ -59,21 +62,33 @@ class Seed_GHE(BaseClass):
         '''
         orgs = self._get_remote_orgs()
 
-        if self._check_org_exists(org, orgs):
-            print("ERROR: Wouldn't be prudent. Org already exists")
+        if self._check_org_exists(self.organization, orgs):
+            print(f"ERROR: Wouldn't be prudent. Org '{self.organization}' already exists")
             sys.exit()
         else:
             data = {
                 'login': self.organization,
                 'admin': self.owner
             }
-            self.orgs_api.create_org(data=data)
+            r = self.orgs_api.create_org(data=data)
+            if r.status_code != 201:
+                print(
+                    f"Encountered an error creating Organization: '{self.organization}'.\nA {r.status_code}"
+                    f" was returned, with the following message;\n{r.text}\n"
+                )
+                sys.exit()
 
     def create_repo(self, repo):
         data = {
             'name': repo,
         }
-        self.repos_api.create_org_repo(org_name=self.organization, data=data)
+        r = self.repos_api.create_org_repo(org_name=self.organization, data=data)
+        if r.status_code != 201:
+            print(
+                f"Encountered an error creating Org Repo: '{repo}'.\nA {r.status_code}"
+                f" was returned, with the following message;\n{r.text}\n"
+            )
+            sys.exit()
 
     def _check_org_exists(self, org, orgs):
         for record in orgs:
@@ -89,13 +104,25 @@ class Seed_GHE(BaseClass):
     def clone_repos(self):  # Clone the repos
         pass
 
+    def do_it(self, repo):
+        self.create_repo(repo)
+        self.manage_repos.add_origin(repo)
+        self.manage_repos.push_single_repo(repo)
 
-test = Seed_GHE()
-test.define_seed_repos()
-for repo in test.repos:
-    test.create_repo(repo)
 
-print(test.repos)
+def main():
+    start_time = time.time()
+    test = Seed_GHE(organization='seed-testing')
+    test.create_org()
+    test.define_seed_repos()
+    start_multi_process(test.do_it, test.repos)
+    print(f"The script took {time.time() - start_time} second !")
+    print(f"repo_map: {test.repo_map}")
+
+
+if __name__ == "__main__":
+    main()
+
 # print(f"\n{test.repo_map}\n")
 # print(test.__dict__)
 
