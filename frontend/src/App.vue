@@ -99,7 +99,9 @@ body {
 }
 
 .table {
-  padding: 1em;
+  padding: 1em 1em 10em;
+  overflow: auto;
+  height: auto;
 }
 
 .summary-list {

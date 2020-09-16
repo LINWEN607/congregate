@@ -9,6 +9,12 @@ This runbook covers the process of preparing and cleaninig up after a migration 
 
 ## Migration pre-requisites
 
+<!--
+    Specify the migration period
+
+    3:00PM 2020-09-07 - 3:00AM 2020-09-15
+-->
+
 ### GitLab
 
 * [ ] Setup the migration VM that will host the Professional Services (PS) migration tool’s (Congregate) Docker container.
@@ -72,3 +78,5 @@ The VM should be setup with Okta ASA. In case of time constraints setup SSH key 
 ## Migration post-requisites
 
 (gitlab.com) Once the migration is complete follow the [PS Deprovisioning Process](https://gitlab.com/gitlab-com/business-ops/team-member-enablement/runbooks/-/blob/master/it_operations/GitLab_com_environment_(PRD,DEV,STG)access_requests.md#deprovisioning-process) for GitLab.com environments Access Request.
+
+/confidential
