@@ -1,5 +1,6 @@
 from collections import OrderedDict
 
+
 class JenkinsJobsApi():
     def get_job_config_xml(self):
         return """
@@ -127,3 +128,19 @@ class JenkinsJobsApi():
                                         ('builders', None),
                                         ('publishers', None),
                                         ('buildWrappers', None)])}
+
+    def get_jobs_with_scm_info(self):
+        return [
+            {
+                "name": "freestyle-job",
+                "url": "no_scm"
+            },
+            {
+                "name": "scm-info-job",
+                "url": "https://github.gitlab-proserv.net/firdaus/scm-info-repo.git"
+            },
+            {
+                "name": "test-job",
+                "url": "https://github.gitlab-proserv.net/firdaus/gitlab-jenkins.git"
+            }
+        ]
