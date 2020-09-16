@@ -496,10 +496,12 @@ def safe_json_response(response):
     """
         Helper method to handle getting valid JSON safely. If valid JSON cannot be returned, it returns none.
     """
-    try:
-        return response.json()
-    except ValueError:
-        return None
+    if response is not None:
+        try:
+            return response.json()
+        except ValueError:
+            return None
+    return None
 
 # http://akiscode.com/articles/sha-1directoryhash.shtml
 # Copyright (c) 2009 Stephen Akiki

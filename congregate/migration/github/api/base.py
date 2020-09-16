@@ -134,22 +134,22 @@ class GitHubApi():
 
             r = self.generate_v3_get_request(
                 host, api, url, params=params, verify=verify)
+            if r:
+                if r and r.status_code != 200:
+                    if r.status_code == 404 or r.status_code == 500 or r.status_code == 401:
+                        log.error(
+                            f"\nERROR: HTTP Response was {r.status_code}\n\nBody Text: {r.text}\n")
+                        break
+                    raise ValueError(
+                        f"ERROR HTTP Response was NOT 200, which implies something wrong."
+                        f"The actual return code was {r.status_code}\n{r.text}\n"
+                    )
 
-            if r.status_code != 200:
-                if r.status_code == 404 or r.status_code == 500 or r.status_code == 401:
-                    log.error(
-                        f"\nERROR: HTTP Response was {r.status_code}\n\nBody Text: {r.text}\n")
-                    break
-                raise ValueError(
-                    f"ERROR HTTP Response was NOT 200, which implies something wrong."
-                    f"The actual return code was {r.status_code}\n{r.text}\n"
-                )
-
-            if r.json() and r.headers.get("Link", None):
-                data.extend(r.json())
-                h = self.create_dict_from_headers(r.headers['Link'])
-                url = h['next']
-            else:
-                data.extend(r.json())
-                isLastPage = True
-                return data
+                if r.json() and r.headers.get("Link", None):
+                    data.extend(r.json())
+                    h = self.create_dict_from_headers(r.headers['Link'])
+                    url = h['next']
+                else:
+                    data.extend(r.json())
+                    isLastPage = True
+                    return data
