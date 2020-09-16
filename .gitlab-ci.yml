@@ -141,6 +141,7 @@ build jenkins seed image:
         - pyproject.toml
         - poetry.lock
         - spin_up_test_vm.sh
+        - package.json
 
 test:pylint:
   extends: .test-job
@@ -220,7 +221,7 @@ test:Spin up jenkins:
     - curl http://jenkins-test:8080/job/test-job/config.xml --user $JENKINS_USER:$JENKINS_PASSWORD
     - echo "Jenkins is up and running, starting pytest"
     - poetry run pytest -s -m "jenkins_it" congregate/tests/
-  
+
 debian rolling release:
   extends:
     - .use-docker-in-docker

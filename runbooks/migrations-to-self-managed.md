@@ -40,7 +40,6 @@ This runbook covers the process of migrating a wave of **groups and projects** f
 * :white_check_mark: = finished
 
 <!--
-
 Copy the following data and add subsequent columns for wave migration or nested group migration
 
 | Completed | Group Name | Total Projects   | Group Size   |
@@ -52,7 +51,6 @@ Copy the following data and add subsequent columns for single group migration
 | Completed | Project Path | Repo Size        |
 | --------- | ------------ | ---------------- |
 | :x:       | [name]       | [total-projects] |
-
 -->
 
 ## Professional Services Steps to Complete Migration Wave
