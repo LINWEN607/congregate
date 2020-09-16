@@ -9,7 +9,7 @@ alias ui='npm install'
 alias sh='poetry shell'
 alias upd='poetry run python congregate/update-readme.py'
 alias pt='poetry run pytest \
-            -m "not e2e and not e2e_setup and not e2e_setup_2" \
+            -m "not e2e and not e2e_setup and not e2e_setup_2 and not jenkins_it" \
             --cov-report term-missing \
             --cov-report html \
             --cov-config=.coveragerc \

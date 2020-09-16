@@ -155,7 +155,7 @@ test:pylint:
 test:unit:
   extends: .test-job
   script:
-    - poetry run pytest -m 'not e2e and not e2e_setup and not e2e_setup_2' --cov-report html --cov-config=.coveragerc --cov=congregate congregate/tests/
+    - poetry run pytest -m 'not e2e and not e2e_setup and not e2e_setup_2 and not jenkins_it' --cov-report html --cov-config=.coveragerc --cov=congregate congregate/tests/
   artifacts:
     paths:
       - htmlcov/*
@@ -211,14 +211,16 @@ test:GitHub Server end to end:
 test:Spin up jenkins:
   extends:
     - .jenkins-test
+    - .test-job
   image: "${TEST_IMAGE_NAME}"
   tags:
     - congregate-auto-scale-runner
   script:
     - while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' http://jenkins-test:8080/job/test-job/config.xml --user $JENKINS_USER:$JENKINS_PASSWORD)" != "200" ]]; do echo "Waiting for Jenkins to start"; sleep 5; done
     - curl http://jenkins-test:8080/job/test-job/config.xml --user $JENKINS_USER:$JENKINS_PASSWORD
-    - echo "Jenkins is up and running"
-
+    - echo "Jenkins is up and running, starting pytest"
+    - poetry run pytest -s -m "jenkins_it" congregate/tests/
+  
 debian rolling release:
   extends:
     - .use-docker-in-docker
