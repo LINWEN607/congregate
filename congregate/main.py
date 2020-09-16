@@ -213,6 +213,7 @@ def main():
                                 dry_run=DRY_RUN, skip_users=SKIP_USERS)
 
             if arguments["stage-groups"]:
+                gcli = GroupStageCLI()
                 gcli.stage_data(arguments['<groups>'],
                                 dry_run=DRY_RUN, skip_users=SKIP_USERS)
 

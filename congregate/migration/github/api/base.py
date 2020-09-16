@@ -148,7 +148,11 @@ class GitHubApi():
                 if r.json() and r.headers.get("Link", None):
                     data.extend(r.json())
                     h = self.create_dict_from_headers(r.headers['Link'])
-                    url = h['next']
+                    if h.get('next'):
+                        url = h['next']
+                    else:
+                        isLastPage = True
+                        return data
                 else:
                     data.extend(r.json())
                     isLastPage = True

@@ -84,19 +84,19 @@ def write_empty_file(filename):
 
 
 def list_data():
-    src_type = b.config.source_type
-    ci_src_type = b.config.ci_source_type
+    src_type = b.config.source_type.lower()
+    ci_src_type = b.config.ci_source_type.lower()
 
-    if ci_src_type == "Jenkins":
+    if ci_src_type == "jenkins":
         list_jenkins_data()
-    if ci_src_type == "Teamcity":
+    if ci_src_type == "teamcity":
         list_teamcity_data()
 
-    if src_type == "Bitbucket Server":
+    if src_type == "bitbucket server":
         list_bitbucket_data()
-    elif src_type == "GitLab":
+    elif src_type == "gitlab":
         list_gitlab_data()
-    elif src_type == "GitHub":
+    elif src_type == "github":
         list_github_data()
     else:
         b.log.warning("Cannot list from source {}".format(src_type))
