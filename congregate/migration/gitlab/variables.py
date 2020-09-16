@@ -31,6 +31,18 @@ class VariablesClient(BaseClass):
         else:
             return self.projects_api.create_project_variable(id, host, token, data)
 
+    def safe_add_variables(self, pid, param):
+        result = False
+        if param.get("value", None):
+            new_var = self.set_variables(pid, param, self.config.destination_host, self.config.destination_token)
+            if new_var.status_code != 201:
+                self.log.error(f"Unable to add variable {param['key']}")
+            else:
+                result = True
+        else:
+            self.log.warning(f"Skipping variable {param['key']} due to no value found")
+        return result
+
     def migrate_gitlab_cicd_variables(self, old_id, new_id, name, var_type):
         try:
             if self.are_enabled(old_id, var_type=var_type):
