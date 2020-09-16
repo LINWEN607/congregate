@@ -103,6 +103,8 @@ class BaseStageClass(BaseClass):
             # Project members are not listed when listing group projects
             "members": project["members"] if project.get("members", None) else self.rewritten_projects[project["id"]]["members"]
         }
+        if project.get("ci_sources"):
+            obj["ci_sources"] = project["ci_sources"]
         if self.config.source_type == "GitLab":
             obj["http_url_to_repo"] = project["http_url_to_repo"]
             obj["shared_runners_enabled"] = project["shared_runners_enabled"]

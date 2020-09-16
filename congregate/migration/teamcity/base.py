@@ -1,7 +1,6 @@
-import json
 from congregate.helpers.base_class import BaseClass
 from congregate.migration.teamcity.api.base import TeamcityApi
-from congregate.helpers.misc_utils import write_json_to_file
+from congregate.helpers.misc_utils import write_json_to_file, convert_to_underscores
 
 
 class TeamcityClient(BaseClass):
@@ -45,8 +44,14 @@ class TeamcityClient(BaseClass):
             "environment_scope": "*"
         }
         """
-        result_dict = {"key": parameter["@name"], "protected": False, "variable_type": "env_var", "masked": False, "environment_scope": "teamcity"}
-        if "@value" in parameter:
+        result_dict = {
+            "key": convert_to_underscores(parameter["@name"]), 
+            "protected": False, 
+            "variable_type": "env_var", 
+            "masked": False, 
+            "environment_scope": "teamcity"
+        }
+        if parameter.get("@value", None):
             result_dict["value"] = parameter["@value"]
         else:
             result_dict["value"] = "No Default Value"

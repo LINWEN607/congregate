@@ -73,8 +73,8 @@ class MigrateClient(BaseClass):
         self.environments = EnvironmentsClient()
         self.ext_import = ImportClient()
         super(MigrateClient, self).__init__()
-        self.jenkins = JenkinsClient() if self.config.ci_source_type == "Jenkins" else None
-        self.teamcity = TeamcityClient() if self.config.ci_source_type == "TeamCity" else None
+        self.jenkins = JenkinsClient() if self.config.ci_source_type.lower() == "jenkins" else None
+        self.teamcity = TeamcityClient() if self.config.ci_source_type.lower() == "teamcity" else None
 
         self.dry_run = dry_run
         self.processes = processes
@@ -208,10 +208,10 @@ class MigrateClient(BaseClass):
                                 ]["response"].get("id")
             result[project["path_with_namespace"]]["members"] = self.projects.add_members_to_destination_project(
                 self.config.destination_host, self.config.destination_token, project_id, members)
-            if self.config.ci_source_type == "Jenkins":
+            if self.config.ci_source_type.lower() == "jenkins":
                 result[project["path_with_namespace"]]["jenkins_variables"] = self.migrate_jenkins_variables(
                     project, project_id)
-            if self.config.ci_source_type == "TeamCity":
+            if self.config.ci_source_type.lower() == "teamcity":
                 result[project["path_with_namespace"]]["teamcity_variables"] = self.migrate_teamcity_variables(
                     project, project_id)
             self.projects.remove_import_user(project_id)
@@ -730,18 +730,18 @@ class MigrateClient(BaseClass):
             for job in ci_sources.get("Jenkins", []):
                 params = self.jenkins.jenkins_api.get_job_params(job)
                 for param in params:
-                    if self.variables.safe_add_variables(self.jenkins.transform_ci_variables(param), new_id) is False:
+                    if self.variables.safe_add_variables(new_id, self.jenkins.transform_ci_variables(param)) is False:
                         result = False
             return result
         return None
 
     def migrate_teamcity_variables(self, project, new_id):
-        if (ci_sources := project.get("ci_sources", None)) and self.config.ci_source_type == "TeamCity":
+        if (ci_sources := project.get("ci_sources", None)) and self.config.ci_source_type.lower() == "teamcity":
             result = True
             for job in ci_sources.get("TeamCity", []):
                 params = self.teamcity.teamcity_api.get_build_params(job)
-                for param in params:
-                    if self.variables.safe_add_variables(self.teamcity.transform_ci_variables(param), new_id) is False:
+                for param in params["properties"]["property"]:
+                    if self.variables.safe_add_variables(new_id, self.teamcity.transform_ci_variables(param)) is False:
                         result = False
             return result
         return None

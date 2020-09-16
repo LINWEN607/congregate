@@ -232,7 +232,7 @@ def deobfuscate(secret):
 
 
 def convert_to_underscores(s):
-    return sub(r" |\/", "_", s)
+    return sub(r" |\/|\.", "_", s)
 
 
 def clean_data(dry_run=True, files=None):
