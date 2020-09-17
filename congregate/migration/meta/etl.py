@@ -2,6 +2,7 @@ from pathlib import Path
 import json
 import pandas as pd
 from congregate.helpers.base_class import BaseClass
+from congregate.helpers.misc_utils import safe_list_index_lookup
 
 class WaveSpreadsheetHandler(BaseClass):
     def __init__(self, file_path, columns_to_use=None):
@@ -60,10 +61,11 @@ class WaveSpreadsheetHandler(BaseClass):
         """
             Returns a corrected list of columns to use based on the wave_spreadsheet_column_mapping
         """
-        mapping = self.config.wave_spreadsheet_column_mapping
-        if mapping:
-            for k, v in mapping.items():
-                ind = columns_to_use.index(v)
-                columns_to_use[ind] = k
+        if columns_to_use:
+            mapping = self.config.wave_spreadsheet_column_mapping
+            if mapping:
+                for k, v in mapping.items():
+                    if ind := safe_list_index_lookup(columns_to_use, v):
+                        columns_to_use[ind] = k
         return columns_to_use
         

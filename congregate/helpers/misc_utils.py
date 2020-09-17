@@ -503,6 +503,12 @@ def safe_json_response(response):
             return None
     return None
 
+def safe_list_index_lookup(l, v):
+    """
+        Helper method to safely lookup the index of a list based on a specific value
+    """
+    return l.index(v) if v in l else None
+
 # http://akiscode.com/articles/sha-1directoryhash.shtml
 # Copyright (c) 2009 Stephen Akiki
 # MIT License (Means you can do whatever you want with this)

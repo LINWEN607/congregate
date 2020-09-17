@@ -134,8 +134,8 @@ class GitHubApi():
 
             r = self.generate_v3_get_request(
                 host, api, url, params=params, verify=verify)
-            if r:
-                if r and r.status_code != 200:
+            if r is not None:
+                if r.status_code != 200:
                     if r.status_code == 404 or r.status_code == 500 or r.status_code == 401:
                         log.error(
                             f"\nERROR: HTTP Response was {r.status_code}\n\nBody Text: {r.text}\n")
