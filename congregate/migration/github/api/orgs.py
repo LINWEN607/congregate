@@ -1,12 +1,13 @@
 from congregate.migration.github.api.base import GitHubApi
 import json
-
+from congregate.helpers.conf import Config
 
 class OrgsApi():
     def __init__(self, host, token):
         self.host = host
         self.token = token
         self.api = GitHubApi(self.host, self.token)
+        self.config = Config()
 
     def get_all_orgs(self):
         """
@@ -14,7 +15,7 @@ class OrgsApi():
 
         GitHub API v3 Doc: https://docs.github.com/en/rest/reference/orgs#list-organizations
         """
-        return self.api.list_all(self.host, "organizations", verify=False)
+        return self.api.list_all(self.host, "organizations", verify=self.config.ssl_verify)
 
     def get_org(self, org):
         """
@@ -22,7 +23,7 @@ class OrgsApi():
 
         GitHub API v3 Doc: https://docs.github.com/en/rest/reference/orgs#get-an-organization
         """
-        return self.api.generate_v3_get_request(self.host, "orgs/{}".format(org), verify=False)
+        return self.api.generate_v3_get_request(self.host, "orgs/{}".format(org), verify=self.config.ssl_verify)
 
     def get_all_org_repos(self, org):
         """
@@ -30,7 +31,7 @@ class OrgsApi():
 
         GitHub API v3 Doc: https://docs.github.com/en/rest/reference/repos#list-organization-repositories
         """
-        return self.api.list_all(self.host, "orgs/{}/repos".format(org), verify=False)
+        return self.api.list_all(self.host, "orgs/{}/repos".format(org), verify=self.config.ssl_verify)
 
     def get_all_org_members(self, org):
         """
@@ -39,7 +40,7 @@ class OrgsApi():
 
         GitHub API v3 Doc: https://docs.github.com/en/rest/reference/orgs#list-organization-members
         """
-        return self.api.list_all(self.host, "orgs/{}/members".format(org), verify=False)
+        return self.api.list_all(self.host, "orgs/{}/members".format(org), verify=self.config.ssl_verify)
 
     def get_all_org_teams(self, org):
         """
@@ -47,7 +48,7 @@ class OrgsApi():
 
         GitHub API v3 Doc: https://docs.github.com/en/rest/reference/teams#list-teams
         """
-        return self.api.list_all(self.host, "orgs/{}/teams".format(org), verify=False)
+        return self.api.list_all(self.host, "orgs/{}/teams".format(org), verify=self.config.ssl_verify)
 
     def get_org_team(self, org, team_slug):
         """
@@ -55,7 +56,7 @@ class OrgsApi():
 
         GitHub API v3 Doc: https://docs.github.com/en/rest/reference/teams#get-a-team-by-name
         """
-        return self.api.generate_v3_get_request(self.host, "orgs/{}/teams/{}".format(org, team_slug), verify=False)
+        return self.api.generate_v3_get_request(self.host, "orgs/{}/teams/{}".format(org, team_slug), verify=self.config.ssl_verify)
 
     def get_all_org_team_repos(self, org, team_slug):
         """
@@ -63,7 +64,7 @@ class OrgsApi():
 
         GitHub API v3 Doc: https://docs.github.com/en/rest/reference/teams#list-team-repositories
         """
-        return self.api.list_all(self.host, "orgs/{}/teams/{}/repos".format(org, team_slug), verify=False)
+        return self.api.list_all(self.host, "orgs/{}/teams/{}/repos".format(org, team_slug))
 
     def get_all_org_team_members(self, org, team_slug):
         """
@@ -72,7 +73,7 @@ class OrgsApi():
 
         GitHub API v3 Doc: https://docs.github.com/en/rest/reference/teams#list-team-members
         """
-        return self.api.list_all(self.host, "orgs/{}/teams/{}/members".format(org, team_slug), verify=False)
+        return self.api.list_all(self.host, "orgs/{}/teams/{}/members".format(org, team_slug))
 
     def get_all_org_child_teams(self, org, team_slug):
         """
@@ -80,7 +81,7 @@ class OrgsApi():
 
         GitHub API v3 Doc: https://docs.github.com/en/rest/reference/teams#list-child-teams
         """
-        return self.api.list_all(self.host, "orgs/{}/teams/{}/teams".format(org, team_slug), verify=False)
+        return self.api.list_all(self.host, "orgs/{}/teams/{}/teams".format(org, team_slug))
 
     def create_org_repo(self, org_name, data=None, message=None):
         """

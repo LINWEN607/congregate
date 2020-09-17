@@ -222,7 +222,6 @@ def read_json_file_into_object(path):
     with open(path, "r") as f:
         return json.load(f)
 
-
 def obfuscate(prompt):
     return b64encode(getpass.getpass(prompt).encode("ascii")).decode("ascii")
 

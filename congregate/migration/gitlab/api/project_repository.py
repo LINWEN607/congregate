@@ -1,6 +1,6 @@
 from urllib.parse import quote_plus
 from congregate.helpers import api
-
+import json
 
 class ProjectRepositoryApi():
     def get_all_project_repository_tree(self, id, host, token):
@@ -168,3 +168,19 @@ class ProjectRepositoryApi():
             :yield: Generator returning JSON of each result from GET /projects/:id/repository/commits/:sha/statuses
         """
         return api.list_all(host, token, "projects/{0}/repository/commits/{1}/statuses".format(pid, sha))
+
+
+    def create_repo_file(self, host, token, pid, filepath, data, message=None):
+        """
+        Create new file in repository
+
+        https://docs.gitlab.com/ee/api/repository_files.html#create-new-file-in-repository
+            :param: pid: (int) GitLab project ID
+            :param: filepath (str) the file path with filename 
+            :param: data(str) the data including branch, content and commit message
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+        """
+        if not message:
+            message = f"Adding a {filepath} for project {pid} with {data}"
+        return api.generate_post_request(host, token, f"projects/{pid}/repository/files/{filepath}", json.dumps(data), description=message)
