@@ -11,7 +11,7 @@ from traceback import print_exc
 from time import time
 from requests.exceptions import RequestException
 
-from congregate.helpers import api 
+from congregate.helpers import api
 from congregate.helpers.migrate_utils import get_export_filename_from_namespace_and_name, get_dst_path_with_namespace, get_full_path_with_parent_namespace, \
     is_top_level_group, get_failed_export_from_results, get_results, get_staged_groups_without_failed_export, get_staged_projects_without_failed_export, can_migrate_users
 from congregate.helpers.misc_utils import get_dry_log, json_pretty, is_dot_com, clean_data, \
@@ -74,7 +74,7 @@ class MigrateClient(BaseClass):
         self.keys = KeysClient()
         self.hooks = HooksClient()
         self.environments = EnvironmentsClient()
-        self.ext_import = ImportClient()    
+        self.ext_import = ImportClient()
         super(MigrateClient, self).__init__()
         self.jenkins = JenkinsClient() if self.config.ci_source_type == "Jenkins" else None
         self.job_template = JobTemplateGenerator()
@@ -91,7 +91,7 @@ class MigrateClient(BaseClass):
         self.skip_group_import = skip_group_import
         self.skip_project_export = skip_project_export
         self.skip_project_import = skip_project_import
-        
+
     def migrate(self):
         self.log.info(
             f"{get_dry_log(self.dry_run)}Migrating data from {self.config.source_host} ({self.config.source_type}) to {self.config.destination_host}")
@@ -112,7 +112,7 @@ class MigrateClient(BaseClass):
         else:
             self.log.warning(
                 f"Configuration (data/congregate.conf) src_type {self.config.source_type} not supported")
-        add_post_migration_stats(self.start)
+        add_post_migration_stats(self.start, log=self.log)
 
     def migrate_from_gitlab(self):
         # Migrate users
@@ -217,9 +217,9 @@ class MigrateClient(BaseClass):
             self.projects.remove_import_user(project_id)
             # Added a new file in the repo
             result[project["path_with_namespace"]]["is_gh_pages"] = self.add_pipeline_for_github_pages(
-                        project_id)
+                project_id)
         return result
-    
+
     def add_pipeline_for_github_pages(self, project_id):
         '''
         GH pages utilizes a separate branch (gh-pages) for its pages feature.
@@ -233,13 +233,13 @@ class MigrateClient(BaseClass):
             "content": self.job_template.generate_plain_html_template()
         }
         branches = list(self.project_repository_api.get_all_project_repository_branches(project_id,
-                        self.config.destination_host, self.config.destination_token))
+                                                                                        self.config.destination_host, self.config.destination_token))
         for branch in branches:
             if branch["name"] == "gh-pages":
                 is_result = True
                 project = self.project_repository_api.create_repo_file(
-                        self.config.destination_host, self.config.destination_token, 
-                        project_id, ".gitlab-ci.yml", data)
+                    self.config.destination_host, self.config.destination_token,
+                    project_id, ".gitlab-ci.yml", data)
         return is_result
 
     def migrate_from_bitbucket_server(self):
@@ -318,7 +318,7 @@ class MigrateClient(BaseClass):
         if not results:
             self.log.warning(
                 "Results from {0} {1} returned as empty. Aborting.".format(var, stage))
-            add_post_migration_stats(self.dry_run)
+            add_post_migration_stats(self.dry_run, log=self.log)
             exit()
 
     def migrate_user_info(self):
@@ -759,16 +759,19 @@ class MigrateClient(BaseClass):
             for job in ci_sources.get("Jenkins", []):
                 params = self.jenkins.jenkins_api.get_job_params(job)
                 for param in params:
-                    transformed_param = self.jenkins.transform_ci_variables(param)
+                    transformed_param = self.jenkins.transform_ci_variables(
+                        param)
                     if transformed_param.get("value", None):
-                        new_var = self.variables.set_variables(new_id, transformed_param, self.config.destination_host, self.config.destination_token)
+                        new_var = self.variables.set_variables(
+                            new_id, transformed_param, self.config.destination_host, self.config.destination_token)
                         if new_var.status_code != 201:
-                            self.log.error(f"Unable to add variable {transformed_param['key']}")
+                            self.log.error(
+                                f"Unable to add variable {transformed_param['key']}")
                             result = False
                     else:
-                        self.log.warning(f"Skipping variable {transformed_param['key']} due to no value found")
+                        self.log.warning(
+                            f"Skipping variable {transformed_param['key']} due to no value found")
         return result
-
 
     def rollback(self):
         rotate_logs()
@@ -794,7 +797,7 @@ class MigrateClient(BaseClass):
             self.users.delete_users(
                 dry_run=self.dry_run, hard_delete=self.hard_delete)
 
-        add_post_migration_stats(self.start)
+        add_post_migration_stats(self.start, log=self.log)
 
     def remove_all_mirrors(self):
         # if os.path.isfile("%s/data/new_ids.txt" % self.app_path):
