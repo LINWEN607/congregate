@@ -106,7 +106,7 @@ class ProjectsClient(BaseClass):
         resp = self.projects_api.get_project_by_path_with_namespace(
             dst_path_with_namespace, host, token)
         if resp.status_code == 200:
-            project = resp.json()
+            project = safe_json_response(resp)
             if project and project.get("path_with_namespace", None) == dst_path_with_namespace:
                 return project.get("id", None)
         return None

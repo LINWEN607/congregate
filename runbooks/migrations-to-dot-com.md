@@ -12,7 +12,7 @@ This runbook covers the process of migrating a wave of **groups and projects** f
 <!--
     Specify the date and time of this migration wave. For example
 
-    3:00PM 4/13/20 - 3:00AM 4/14/20
+    3:00PM 2020-09-07 - 3:00AM 2020-09-08
 -->
 
 ## Slack channel for communication
@@ -42,7 +42,6 @@ This runbook covers the process of migrating a wave of **groups and projects** f
 * :white_check_mark: = finished
 
 <!--
-
 Copy the following data and add subsequent columns for wave migration or nested group migration
 
 | Completed | Group Name | Total Projects   | Group Size   |
@@ -54,7 +53,6 @@ Copy the following data and add subsequent columns for single group migration
 | Completed | Project Path | Repo Size        |
 | --------- | ------------ | ---------------- |
 | :x:       | [name]       | [total-projects] |
-
 -->
 
 ## Professional Services Steps to Complete Migration Wave
@@ -172,8 +170,10 @@ If a project or group import continues to fail (2 retries max), you will need to
   * [ ] Create a new issue in the [infrastructure](https://gitlab.com/gitlab-com/gl-infra/infrastructure/-/issues) project using the `import` template.
   * [ ] Change `#### Import on: YYYY-MM-DD HH:MM UTC` to `#### Import as soon as possible`
   * [ ] Walk through the steps on the template to provide all necessary information to the SRE on call
-  * [ ] When providing a list of user emails, you can extract the project export tar.gz and run the following command to get a list of emails (make sure you have `jq` installed): `cat project.json | jq -r '.project_members' | jq -r '.[] | .user | .email'`
-  * [ ] Submit the issue and don't assign it to anyone. The SRE on-call will pick it up.
+  * [ ] When providing a list of user emails, you can extract the project export tar.gz and run the following command to get a list of emails (make sure you have `jq` installed):
+    * [ ] JSON: `cat project.json | jq -r '.project_members' | jq -r '.[] | .user | .email'`
+    * [ ] NDJON: `cat tree/project/project_members.ndjson | jq -r '.user | .email'`
+  * [ ] Submit the issue (AS CONFIDENTIAL) and don't assign it to anyone. The SRE on-call will pick it up.
 * Reache out to the SRE on-call. **Post a message in #infrastructure-lounge paging the SRE on-call.** For example:
 
   ```text
@@ -187,6 +187,7 @@ If a project or group import continues to fail (2 retries max), you will need to
 * If any projects imported by the SRE require any post-migration data to be migrated:
   * [ ] Confirm those projects are staged
   * [ ] Run `nohup ./congregate.sh migrate --only-post-migration-info --commit > data/waves/wave_<insert_wave_number>/wave<insert-wave-here>_attempt<insert-attempt>_post_migration.log 2>&1 &` to migrate any post-migration data
+    * [ ] Skip users, groups (exports) and projects (exports) if needed
 
 #### Fallback if no container registry migrate
 

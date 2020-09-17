@@ -1,6 +1,8 @@
 import unittest
+import pytest
 from mock import patch, PropertyMock
 from congregate.tests.mockapi.jenkins.parameters import ParametersApi
+from congregate.tests.mockapi.jenkins.jobs import JenkinsJobsApi
 from congregate.migration.jenkins.base import JenkinsClient
 
 
@@ -50,3 +52,21 @@ class JenkinsBaseTests(unittest.TestCase):
             'variable_type': 'env_var'}
         actual = client.transform_ci_variables(test_results)
         self.assertDictEqual(expected, actual)
+
+    # Mark as integration test.
+    @patch('congregate.helpers.conf.Config.ci_source_type', new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.ci_source_host', new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.ci_source_username', new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.ci_source_token', new_callable=PropertyMock)
+    @pytest.mark.jenkins_it
+    def test_retrieve_jobs_with_scm_info(self, token, username, host, source_type):
+        token.return_value = 'password'
+        username.return_value = 'test-admin'
+        host.return_value = 'http://jenkins-test:8080'
+        source_type.return_value = 'abc123'
+        params = JenkinsJobsApi()
+        expected = params.get_jobs_with_scm_info()
+        client = JenkinsClient()
+
+        actual = client.retrieve_jobs_with_scm_info()
+        self.assertListEqual(expected, actual)
