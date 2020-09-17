@@ -1,12 +1,13 @@
 from congregate.migration.github.api.base import GitHubApi
 import json
-
+from congregate.helpers.conf import Config
 
 class ReposApi():
     def __init__(self, host, token):
         self.host = host
         self.token = token
         self.api = GitHubApi(self.host, self.token)
+        self.config = Config()
 
     def get_repo(self, owner, repo):
         """
@@ -14,7 +15,7 @@ class ReposApi():
 
         GitHub API v3 Doc: https://docs.github.com/en/rest/reference/repos#get-a-repository
         """
-        return self.api.generate_v3_get_request(self.host, "repos/{}/{}".format(owner, repo), verify=False)
+        return self.api.generate_v3_get_request(self.host, "repos/{}/{}".format(owner, repo), verify=self.config.ssl_verify)
 
     def get_repo_teams(self, owner, repo):
         """
@@ -23,7 +24,7 @@ class ReposApi():
 
         GitHub API v3 Doc: https://docs.github.com/en/rest/reference/repos#list-repository-teams
         """
-        return self.api.list_all(self.host, "repos/{}/{}/teams".format(owner, repo), verify=False)
+        return self.api.list_all(self.host, "repos/{}/{}/teams".format(owner, repo))
 
     def get_all_public_repos(self):
         """
@@ -31,7 +32,7 @@ class ReposApi():
 
         GitHub API v3 Doc: https://docs.github.com/en/rest/reference/repos#list-public-repositories
         """
-        return self.api.list_all(self.host, "repositories", verify=False)
+        return self.api.list_all(self.host, "repositories")
 
     def get_all_user_repos(self, username):
         """
@@ -39,7 +40,7 @@ class ReposApi():
 
         GitHub API v3 Doc: https://docs.github.com/en/rest/reference/repos#list-repositories-for-a-user
         """
-        return self.api.list_all(self.host, "users/{}/repos".format(username), verify=False)
+        return self.api.list_all(self.host, "users/{}/repos".format(username))
 
     def get_all_repo_collaborators(self, owner, repo):
         """
@@ -48,7 +49,7 @@ class ReposApi():
 
         GitHub API v3 Doc: https://docs.github.com/en/rest/reference/repos#list-repository-collaborators
         """
-        return self.api.list_all(self.host, "repos/{}/{}/collaborators".format(owner, repo), verify=False)
+        return self.api.list_all(self.host, "repos/{}/{}/collaborators".format(owner, repo))
     
     def create_auth_user_repo(self, data=None, message=None):
         """
@@ -59,7 +60,7 @@ class ReposApi():
         if not message:
             print(f"Creating a new repository for the authenticated user {data}")
 
-        return self.api.generate_v3_post_request(self.host, "user/repos", json.dumps(data), description=message, verify=False)
+        return self.api.generate_v3_post_request(self.host, "user/repos", json.dumps(data), description=message, verify=self.config.ssl_verify)
 
     def create_org(self, data=None, message=None):
         """
@@ -70,4 +71,4 @@ class ReposApi():
         if not message:
             print(f"Creating an organization {data}")
 
-        return self.api.generate_v3_post_request(self.host, "admin/organizations", json.dumps(data), description=message, verify=False)
+        return self.api.generate_v3_post_request(self.host, "admin/organizations", json.dumps(data), description=message, verify=self.config.ssl_verify)
