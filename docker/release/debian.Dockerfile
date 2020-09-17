@@ -9,7 +9,7 @@ WORKDIR /opt/congregate
 ADD congregate congregate
 ADD frontend frontend
 ADD dev/bin dev/bin
-COPY congregate.sh pyproject.toml poetry.lock README.md package.json vue.config.js babel.config.js ./
+COPY congregate.sh pyproject.toml poetry.lock README.md package.json package-lock.json vue.config.js babel.config.js ./
 
 # Installing some basic utilities and updating apt
 RUN apt-get update && \
@@ -32,9 +32,9 @@ RUN poetry install
 RUN congregate init
 
 # Install Node
-RUN curl -sL https://deb.nodesource.com/setup_11.x | bash - && \
+RUN curl -sL https://deb.nodesource.com/setup_12.x | bash - && \
     apt-get install -y nodejs && \
-    npm install && \
+    npm install --no-optional && \
     npm run build
 
 RUN echo "alias ll='ls -al'" >> ~/.bashrc

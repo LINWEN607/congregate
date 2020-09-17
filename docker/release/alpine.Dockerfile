@@ -9,7 +9,7 @@ WORKDIR /opt/congregate
 ADD congregate congregate
 ADD frontend frontend
 ADD dev/bin dev/bin
-COPY congregate.sh pyproject.toml poetry.lock README.md package.json vue.config.js babel.config.js ./
+COPY congregate.sh pyproject.toml poetry.lock README.md package.json package-lock.json vue.config.js babel.config.js ./
 
 # Installing required libraries
 RUN apk upgrade && \
@@ -25,7 +25,7 @@ RUN poetry install
 RUN congregate init
 
 # Install Node
-RUN npm install && \
+RUN npm install --no-optional && \
     npm run build
 
 RUN echo "alias ll='ls -al'" >> ~/.bashrc
