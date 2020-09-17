@@ -6,15 +6,17 @@
 
 import os
 import json
+from time import sleep
 from traceback import print_exc
 from time import time
 from requests.exceptions import RequestException
 
-from congregate.helpers import api
+from congregate.helpers import api 
 from congregate.helpers.migrate_utils import get_export_filename_from_namespace_and_name, get_dst_path_with_namespace, get_full_path_with_parent_namespace, \
     is_top_level_group, get_failed_export_from_results, get_results, get_staged_groups_without_failed_export, get_staged_projects_without_failed_export, can_migrate_users
 from congregate.helpers.misc_utils import get_dry_log, json_pretty, is_dot_com, clean_data, \
     add_post_migration_stats, rotate_logs, write_results_to_file, migration_dry_run, safe_json_response, is_error_message_present
+from congregate.helpers.jobtemplategenerator import JobTemplateGenerator
 from congregate.helpers.processes import start_multi_process
 from congregate.cli.stage_projects import ProjectStageCLI
 from congregate.helpers.base_class import BaseClass
@@ -26,6 +28,7 @@ from congregate.migration.gitlab.groups import GroupsClient
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.projects import ProjectsClient
 from congregate.migration.gitlab.api.projects import ProjectsApi
+from congregate.migration.gitlab.api.project_repository import ProjectRepositoryApi
 from congregate.migration.gitlab.api.namespaces import NamespacesApi
 from congregate.migration.gitlab.pushrules import PushRulesClient
 from congregate.migration.gitlab.merge_request_approvals import MergeRequestApprovalsClient
@@ -63,6 +66,7 @@ class MigrateClient(BaseClass):
         self.groups_api = GroupsApi()
         self.projects = ProjectsClient()
         self.projects_api = ProjectsApi()
+        self.project_repository_api = ProjectRepositoryApi()
         self.namespaces_api = NamespacesApi()
         self.pushrules = PushRulesClient()
         self.mr_approvals = MergeRequestApprovalsClient()
@@ -70,9 +74,10 @@ class MigrateClient(BaseClass):
         self.keys = KeysClient()
         self.hooks = HooksClient()
         self.environments = EnvironmentsClient()
-        self.ext_import = ImportClient()
+        self.ext_import = ImportClient()    
         super(MigrateClient, self).__init__()
         self.jenkins = JenkinsClient() if self.config.ci_source_type == "Jenkins" else None
+        self.job_template = JobTemplateGenerator()
 
         self.dry_run = dry_run
         self.processes = processes
@@ -87,7 +92,6 @@ class MigrateClient(BaseClass):
         self.skip_project_export = skip_project_export
         self.skip_project_import = skip_project_import
         
-
     def migrate(self):
         self.log.info(
             f"{get_dry_log(self.dry_run)}Migrating data from {self.config.source_host} ({self.config.source_type}) to {self.config.destination_host}")
@@ -201,6 +205,7 @@ class MigrateClient(BaseClass):
         members = project.pop("members")
         result = self.ext_import.trigger_import_from_ghe(
             project, dry_run=self.dry_run)
+        sleep(10)
         if result.get(project["path_with_namespace"], False) is not False:
             project_id = result[project["path_with_namespace"]
                                 ]["response"].get("id")
@@ -210,7 +215,32 @@ class MigrateClient(BaseClass):
                 result[project["path_with_namespace"]]["jenkins_variables"] = self.migrate_jenkins_variables(
                     project, project_id)
             self.projects.remove_import_user(project_id)
+            # Added a new file in the repo
+            result[project["path_with_namespace"]]["is_gh_pages"] = self.add_pipeline_for_github_pages(
+                        project_id)
         return result
+    
+    def add_pipeline_for_github_pages(self, project_id):
+        '''
+        GH pages utilizes a separate branch (gh-pages) for its pages feature.
+        We lookup the branch on destination once the project imports and add the .gitlab-ci.yml file
+        '''
+
+        is_result = False
+        data = {
+            "branch": "gh-pages",
+            "commit_message": "Adding .gitlab-ci.yml for publishing GitHub pages",
+            "content": self.job_template.generate_plain_html_template()
+        }
+        branches = list(self.project_repository_api.get_all_project_repository_branches(project_id,
+                        self.config.destination_host, self.config.destination_token))
+        for branch in branches:
+            if branch["name"] == "gh-pages":
+                is_result = True
+                project = self.project_repository_api.create_repo_file(
+                        self.config.destination_host, self.config.destination_token, 
+                        project_id, ".gitlab-ci.yml", data)
+        return is_result
 
     def migrate_from_bitbucket_server(self):
         dry_log = get_dry_log(self.dry_run)
