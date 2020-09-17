@@ -212,7 +212,7 @@ class Config(object):
 # CI_SOURCE
     @property
     def ci_source_type(self):
-        return self.prop("CI_SOURCE", "ci_src_type")
+        return self.prop("CI_SOURCE", "ci_src_type", "")
 
     @property
     def ci_source_host(self):
