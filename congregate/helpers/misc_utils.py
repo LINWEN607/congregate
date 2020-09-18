@@ -222,6 +222,7 @@ def read_json_file_into_object(path):
     with open(path, "r") as f:
         return json.load(f)
 
+
 def obfuscate(prompt):
     return b64encode(getpass.getpass(prompt).encode("ascii")).decode("ascii")
 
@@ -343,7 +344,7 @@ def is_error_message_present(response):
     return False
 
 
-def add_post_migration_stats(start):
+def add_post_migration_stats(start, log=None):
     """
         Print all POST/PUT/DELETE requests and their total number
         Assuming you've started the migration with an empty congregate.log
@@ -355,8 +356,10 @@ def add_post_migration_stats(start):
         for line in f:
             if any(req in line for req in reqs):
                 reqs_no += 1
-        print("Total number of POST/PUT/DELETE requests: {}".format(reqs_no))
-    print("Total time: {}".format(timedelta(seconds=time() - start)))
+        if log:
+            log.info(f"Total number of POST/PUT/DELETE requests: {reqs_no}")
+    if log:
+        log.info("Total time: {}".format(timedelta(seconds=time() - start)))
 
 
 def get_timedelta(timestamp):

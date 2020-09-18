@@ -69,7 +69,7 @@ This runbook covers the process of preparing and cleaninig up after a migration 
     | [local-ip] (gitlab.com) | TCP      | 22                          |
 -->
 
-* The host will require Docker to be installed and be able to pull the Congregate container from the GitLab.com container registery.
+* The host will require Docker to be installed and be able to pull the Congregate container from the GitLab.com container registry.
 * The container/VM will collect data from the source instance and push it to the destination instance via the API.
 * The VM/container must not be able to access other resources.
 

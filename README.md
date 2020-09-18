@@ -130,8 +130,8 @@ poetry shell
 
 # Install NVM for managing node versions
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.35.3/install.sh | bash
-nvm install 11.13.0
-nvm use 11.13.0
+nvm install 12.18.4
+nvm use 12.18.4
 
 # Install ui dependencies
 cd <path_to_congregate>

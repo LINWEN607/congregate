@@ -1,6 +1,7 @@
 import unittest
 import json
 import mock
+import pytest
 import responses
 
 from congregate.migration.migrate import MigrateClient
@@ -12,6 +13,7 @@ from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.keys import KeysClient
 
 
+@pytest.mark.unit_test
 class UsersTests(unittest.TestCase):
     def setUp(self):
         self.mock_users = MockUsersApi()

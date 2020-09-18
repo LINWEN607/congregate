@@ -1,4 +1,5 @@
 import unittest
+import pytest
 from mock import patch, PropertyMock
 from congregate.tests.mockapi.bitbucket.projects import MockProjectsApi
 from congregate.migration.bitbucket.projects import ProjectsClient
@@ -6,6 +7,7 @@ from congregate.migration.bitbucket.api.projects import ProjectsApi
 from congregate.tests.mockapi.bitbucket.groups import MockGroupsApi
 
 
+@pytest.mark.unit_test
 class ProjectsTests(unittest.TestCase):
     def setUp(self):
         self.maxDiff = None

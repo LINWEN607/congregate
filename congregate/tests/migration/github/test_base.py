@@ -1,10 +1,12 @@
 import unittest
+import pytest
 import responses
 from mock import patch, PropertyMock, MagicMock
 from congregate.tests.mockapi.github.headers import MockHeaders
 from congregate.migration.github.api.base import GitHubApi
 
 
+@pytest.mark.unit_test
 class BaseTests(unittest.TestCase):
 
     def setUp(self):
@@ -95,7 +97,7 @@ class BaseTests(unittest.TestCase):
 
     # pylint: disable=no-member
 
-    @ responses.activate
+    @responses.activate
     def test_list_all_bad_status_code(self):
         responses.add(
             responses.GET,
@@ -113,7 +115,7 @@ class BaseTests(unittest.TestCase):
 
     # pylint: disable=no-member
 
-    @ responses.activate
+    @responses.activate
     def test_list_all_raise_error(self):
         responses.add(
             responses.GET,

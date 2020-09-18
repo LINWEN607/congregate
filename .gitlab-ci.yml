@@ -104,7 +104,7 @@ build bitbucket seed image:
   stage: build
   script:
     - cp docker/bitbucket/Dockerfile ./
-    - docker build -t $BB_SERVER_SEED_IMAGE_NAME . --build-arg BITBUCKET_LICENSE=$BITBUCKET_LICENSE --build-arg BITBUCKET_PASSWORD=$BITBUCKET_PASSWORD
+    - DOCKER_BUILDKIT=1 docker build -t $BB_SERVER_SEED_IMAGE_NAME . --build-arg BITBUCKET_LICENSE=$BITBUCKET_LICENSE --build-arg BITBUCKET_PASSWORD=$BITBUCKET_PASSWORD
     - docker push "$BB_SERVER_SEED_IMAGE_NAME"
   rules:
     - changes:
@@ -119,7 +119,7 @@ build jenkins seed image:
   stage: build
   script:
     - cd docker/jenkins
-    - docker build -t $JENKINS_SEED_IMAGE_NAME .
+    - DOCKER_BUILDKIT=1 docker build -t $JENKINS_SEED_IMAGE_NAME .
     - docker push "$JENKINS_SEED_IMAGE_NAME"
   rules:
     - changes:
@@ -156,7 +156,7 @@ test:pylint:
 test:unit:
   extends: .test-job
   script:
-    - poetry run pytest -m 'not e2e and not e2e_setup and not e2e_setup_2 and not jenkins_it' --cov-report html --cov-config=.coveragerc --cov=congregate congregate/tests/
+    - poetry run pytest -m 'unit_test' --cov-report html --cov-config=.coveragerc --cov=congregate congregate/tests/
   artifacts:
     paths:
       - htmlcov/*
@@ -234,7 +234,7 @@ debian rolling release:
     LATEST: "$CI_REGISTRY_IMAGE/$CI_COMMIT_REF_NAME:latest-debian"
   script:
     - cp docker/release/debian.Dockerfile ./Dockerfile
-    - docker build --tag "$RELEASE_IMAGE_NAME" .
+    - DOCKER_BUILDKIT=1 docker build --tag "$RELEASE_IMAGE_NAME" .
     - docker image tag $RELEASE_IMAGE_NAME $LATEST
     - docker push "$RELEASE_IMAGE_NAME"
     - docker push "$LATEST"
@@ -251,7 +251,7 @@ debian-release-tag:
     LATEST: "$CI_REGISTRY_IMAGE:latest-debian"
   script:
     - cp docker/release/debian.Dockerfile ./Dockerfile
-    - docker build --tag "$RELEASE_IMAGE_NAME" .
+    - DOCKER_BUILDKIT=1 docker build --tag "$RELEASE_IMAGE_NAME" .
     - docker image tag $RELEASE_IMAGE_NAME $LATEST
     - docker push "$RELEASE_IMAGE_NAME"
     - docker push "$LATEST"
@@ -268,7 +268,7 @@ alpine rolling release:
     LATEST: "$CI_REGISTRY_IMAGE/$CI_COMMIT_REF_NAME:latest-alpine"
   script:
     - cp docker/release/alpine.Dockerfile ./Dockerfile
-    - docker build --tag "$RELEASE_IMAGE_NAME" .
+    - DOCKER_BUILDKIT=1 docker build --tag "$RELEASE_IMAGE_NAME" .
     - docker image tag $RELEASE_IMAGE_NAME $LATEST
     - docker push "$RELEASE_IMAGE_NAME"
     - docker push "$LATEST"
@@ -285,7 +285,7 @@ alpine-release-tag:
     LATEST: "$CI_REGISTRY_IMAGE:latest-alpine"
   script:
     - cp docker/release/alpine.Dockerfile ./Dockerfile
-    - docker build --tag "$RELEASE_IMAGE_NAME" .
+    - DOCKER_BUILDKIT=1 docker build --tag "$RELEASE_IMAGE_NAME" .
     - docker image tag $RELEASE_IMAGE_NAME $LATEST
     - docker push "$RELEASE_IMAGE_NAME"
     - docker push "$LATEST"
@@ -295,7 +295,10 @@ runbook update:
   script:
     - echo "This is a placeholder job ran only when runbooks are changed"
     - echo "Storing any changed runbook to artifacts that will expire in 1 week."
-    - python runbookscript.py
+    # To the ps-migration project
+    - python runbookscript.py 11750578
+    # To the Migration Template
+    - python runbookscript.py 21146917
   rules:
     - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
     - changes:

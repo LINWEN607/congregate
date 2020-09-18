@@ -1,5 +1,6 @@
 import unittest
 import mock
+import pytest
 from congregate.cli import config
 from congregate.helpers.misc_utils import input_generator
 from congregate.tests.mockapi.gitlab.users import MockUsersApi
@@ -7,10 +8,10 @@ from congregate.tests.mockapi.gitlab.groups import MockGroupsApi
 from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.api.groups import GroupsApi
 
-
 test_dir_prefix = "./congregate/tests/cli/data/"
 
 
+@pytest.mark.unit_test
 class ConfigTests(unittest.TestCase):
     def setUp(self):
         self.users_api = MockUsersApi()

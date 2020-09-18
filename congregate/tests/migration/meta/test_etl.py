@@ -1,8 +1,10 @@
 import unittest
+import pytest
 import pandas as pd
 from mock import patch
 from congregate.migration.meta.etl import WaveSpreadsheetHandler as wh
 
+@pytest.mark.unit_test
 class WaveSpreadsheetHandlerTests(unittest.TestCase):
     def test_handle_excel_file(self):
         expected = "excel"
@@ -185,7 +187,6 @@ class WaveSpreadsheetHandlerTests(unittest.TestCase):
             }
         )
         actual = wh("./test_csv.csv", columns_to_use=['Wave name']).read_file_as_dataframe()
-        # self.assertEqual(expected, actual)
         pd.testing.assert_frame_equal(expected, actual)
 
     @patch("pandas.read_csv")
