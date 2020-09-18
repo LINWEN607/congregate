@@ -81,8 +81,8 @@ def write_empty_file(filename):
 
 
 def list_data():
-    src_type = b.config.source_type.lower()
-    ci_src_type = b.config.ci_source_type.lower()
+    src_type = b.config.source_type
+    ci_src_type = b.config.ci_source_type
     staged_files = ["staged_projects", "staged_groups", "staged_users"]
 
     if ci_src_type == "jenkins":

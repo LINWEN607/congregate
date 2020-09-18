@@ -77,8 +77,8 @@ class MigrateClient(BaseClass):
         self.environments = EnvironmentsClient()
         self.ext_import = ImportClient()
         super(MigrateClient, self).__init__()
-        self.jenkins = JenkinsClient() if self.config.ci_source_type.lower() == "jenkins" else None
-        self.teamcity = TeamcityClient() if self.config.ci_source_type.lower() == "teamcity" else None
+        self.jenkins = JenkinsClient() if self.config.ci_source_type == "jenkins" else None
+        self.teamcity = TeamcityClient() if self.config.ci_source_type == "teamcity" else None
         self.job_template = JobTemplateGenerator()
 
         self.dry_run = dry_run
@@ -105,11 +105,11 @@ class MigrateClient(BaseClass):
                 "dry_run_group_migration.json",
                 "dry_run_project_migration.json"])
         rotate_logs()
-        if self.config.source_type == "GitLab":
+        if self.config.source_type == "gitlab":
             self.migrate_from_gitlab()
-        elif self.config.source_type == "Bitbucket Server":
+        elif self.config.source_type == "bitbucket server":
             self.migrate_from_bitbucket_server()
-        elif self.config.source_type == "GitHub":
+        elif self.config.source_type == "github":
             self.migrate_from_github()
         else:
             self.log.warning(
@@ -213,10 +213,10 @@ class MigrateClient(BaseClass):
                                 ]["response"].get("id")
             result[project["path_with_namespace"]]["members"] = self.projects.add_members_to_destination_project(
                 self.config.destination_host, self.config.destination_token, project_id, members)
-            if self.config.ci_source_type.lower() == "jenkins":
+            if self.config.ci_source_type == "jenkins":
                 result[project["path_with_namespace"]]["jenkins_variables"] = self.migrate_jenkins_variables(
                     project, project_id)
-            if self.config.ci_source_type.lower() == "teamcity":
+            if self.config.ci_source_type == "teamcity":
                 result[project["path_with_namespace"]]["teamcity_variables"] = self.migrate_teamcity_variables(
                     project, project_id)
             self.projects.remove_import_user(project_id)
@@ -392,7 +392,7 @@ class MigrateClient(BaseClass):
                         self.users.block_user(user_data)
                     new_user = self.users.handle_user_creation_status(
                         response, user_data)
-            if not self.dry_run and self.config.source_type == "GitLab":
+            if not self.dry_run and self.config.source_type == "gitlab":
                 # Migrate SSH keys
                 self.keys.migrate_user_ssh_keys(old_user, new_user if new_user.get(
                     "id", None) else self.users.find_user_by_email_comparison_without_id(email))
@@ -770,7 +770,7 @@ class MigrateClient(BaseClass):
         return None
 
     def migrate_teamcity_variables(self, project, new_id):
-        if (ci_sources := project.get("ci_sources", None)) and self.config.ci_source_type.lower() == "teamcity":
+        if (ci_sources := project.get("ci_sources", None)) and self.config.ci_source_type == "teamcity":
             result = True
             for job in ci_sources.get("TeamCity", []):
                 params = self.teamcity.teamcity_api.get_build_params(job)

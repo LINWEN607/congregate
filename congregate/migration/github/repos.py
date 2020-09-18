@@ -96,7 +96,7 @@ class ReposClient(BaseClass):
     def list_ci_sources_jenkins(self, repo_name):
         list_job_names = []
 
-        if self.config.ci_source_type.lower() == "jenkins":
+        if self.config.ci_source_type == "jenkins":
             ci_sources_jobs = read_json_file_into_object(f"{self.app_path}/data/jenkins_jobs.json")
             for job in ci_sources_jobs:
                 if job["url"] is not None:
@@ -109,7 +109,7 @@ class ReposClient(BaseClass):
     def list_ci_sources_teamcity(self, repo_name):
         list_job_names = []
 
-        if self.config.ci_source_type.lower() == "teamcity":
+        if self.config.ci_source_type == "teamcity":
             ci_sources_jobs = read_json_file_into_object(f"{self.app_path}/data/teamcity_jobs.json")
             for job in ci_sources_jobs:
                 if job["url"] is not None:

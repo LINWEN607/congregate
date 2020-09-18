@@ -345,6 +345,21 @@ class MiscUtilsTests(unittest.TestCase):
         actual = misc.safe_json_response(response)
 
         self.assertEqual(expected, actual)
+   
+
+    def test_safe_json_response_with_none(self):
+        self.assertIsNone(misc.safe_json_response(None))
+    
+    def test_safe_list_index_lookup(self):
+        test = ["hello", "world"]
+        expected = 0
+        actual = misc.safe_list_index_lookup(test, "hello")
+
+        self.assertEqual(expected, actual)
+
+    
+    def test_safe_list_index_lookup_missing_index(self):
+        self.assertIsNone(misc.safe_list_index_lookup([], "hello"))
 
 
     @mock.patch("congregate.helpers.misc_utils.open", new=mock.mock_open(read_data=b"abc123"))

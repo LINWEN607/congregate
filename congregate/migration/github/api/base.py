@@ -120,11 +120,10 @@ class GitHubApi():
         """
         Implement pagination
         """
-        isLastPage = False
         log.info(f"Listing endpoint: {api}")
         url = self.generate_v3_request_url(host, api)
         data = []
-        while isLastPage is False:
+        while True:
             if not params:
                 params = {
                     "per_page": limit
@@ -151,9 +150,7 @@ class GitHubApi():
                     if h.get('next'):
                         url = h['next']
                     else:
-                        isLastPage = True
                         return data
                 else:
                     data.extend(r.json())
-                    isLastPage = True
                     return data

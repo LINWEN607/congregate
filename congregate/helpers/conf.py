@@ -39,6 +39,11 @@ class Config(object):
                 return self.config.get(section, option)
             return deobfuscate(self.config.get(section, option))
         return default
+    
+    def prop_lower(self, section, option, default=None):
+        if self.option_exists(section, option):
+            return self.config.get(section, option).lower()
+        return default
 
     def prop_int(self, section, option, default=None):
         """
@@ -178,7 +183,7 @@ class Config(object):
 # SOURCE
     @property
     def source_type(self):
-        return self.prop("SOURCE", "src_type")
+        return self.prop_lower("SOURCE", "src_type")
 
     @property
     def source_host(self):
@@ -212,7 +217,7 @@ class Config(object):
 # CI_SOURCE
     @property
     def ci_source_type(self):
-        return self.prop("CI_SOURCE", "ci_src_type", "")
+        return self.prop_lower("CI_SOURCE", "ci_src_type")
 
     @property
     def ci_source_host(self):
