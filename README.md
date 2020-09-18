@@ -271,9 +271,11 @@ Usage:
     congregate stitch-results [--result-type=<project|group|user>] [--no-of-files=<n>] [--head|--tail]
     congregate obfuscate
     congregate -h | --help
+    congregate -v | --version
 
 Options:
     -h, --help                              Show Usage.
+    -v, --version                           Show current version of congregate.
 
 Arguments:
     processes                               Set number of processes to run in parallel.

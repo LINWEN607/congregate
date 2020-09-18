@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "congregate"
-version = "6.0"
+version = "6.3"
 description = "GitLab Professional Service Migration Utility"
 authors = ["Michael Leopard <mleopard@gitlab.com>", "Petar Prokic <pprokic@gitlab.com>", "Glen Miller <gmiller@gitlab.com>"]
 
@@ -34,6 +34,7 @@ python-jenkins = "^1.7.0"
 pandas = "^1.1.1"
 xlrd = "^1.2.0"
 odfpy = "^1.4.1"
+toml = "^0.10.1"
 
 [tool.poetry.dev-dependencies]
 
