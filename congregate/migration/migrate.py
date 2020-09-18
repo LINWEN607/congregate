@@ -759,7 +759,7 @@ class MigrateClient(BaseClass):
         return results
 
     def migrate_jenkins_variables(self, project, new_id):
-        if (ci_sources := project.get("ci_sources", None)) and self.config.ci_source_type == "Jenkins":
+        if (ci_sources := project.get("ci_sources", None)) and self.config.ci_source_type == "jenkins":
             result = True
             for job in ci_sources.get("Jenkins", []):
                 params = self.jenkins.jenkins_api.get_job_params(job)
