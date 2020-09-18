@@ -50,9 +50,11 @@ Usage:
     congregate stitch-results [--result-type=<project|group|user>] [--no-of-files=<n>] [--head|--tail]
     congregate obfuscate
     congregate -h | --help
+    congregate -v | --version
 
 Options:
     -h, --help                              Show Usage.
+    -v, --version                           Show current version of congregate.
 
 Arguments:
     processes                               Set number of processes to run in parallel.
@@ -130,6 +132,7 @@ Commands:
 
 import os
 import subprocess
+from toml import load as load_toml
 from json import dump, dumps
 from docopt import docopt
 
@@ -161,6 +164,11 @@ def main():
         PROCESSES = arguments["--processes"] if arguments["--processes"] else None
         SKIP_USERS = True if arguments["--skip-users"] else False
         ONLY_POST_MIGRATION_INFO = True if arguments["--only-post-migration-info"] else False
+
+        if arguments["--version"]:
+            with open(f"{app_path}/pyproject.toml", "r") as f:
+                print(f"Congregate {load_toml(f)['tool']['poetry']['version']}")
+            exit()
 
         if arguments["init"]:
             if not os.path.exists('data'):
