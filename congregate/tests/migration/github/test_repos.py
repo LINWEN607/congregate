@@ -424,7 +424,7 @@ class ReposTests(unittest.TestCase):
 
     @patch("congregate.helpers.conf.Config.ci_source_type", new_callable=PropertyMock)
     def test_list_ci_sources_jenkins(self, source_type):
-        source_type.return_value = "Jenkins"
+        source_type.return_value = "jenkins"
         data = json.dumps([
             {
                 "name": "demo-job",

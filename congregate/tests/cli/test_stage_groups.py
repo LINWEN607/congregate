@@ -25,7 +25,7 @@ class StageProjectsTests(unittest.TestCase):
     @mock.patch.object(ConfigurationValidator, 'dstn_parent_id', new_callable=mock.PropertyMock)
     @mock.patch.object(ConfigurationValidator, 'source_type', new_callable=mock.PropertyMock)
     def test_build_stage_data(self, mock_source_type, mock_parent_id, mock_groups, mock_users, mock_projects, mock_check, mock_open):
-        mock_source_type.return_value = "GitLab"
+        mock_source_type.return_value = "gitlab"
         mock_parent_id.return_value = None
         mock_check.return_value = True
         mock_projects.return_value = self.projects_api.get_all_projects()
@@ -193,7 +193,7 @@ class StageProjectsTests(unittest.TestCase):
     @mock.patch.object(ConfigurationValidator, 'dstn_parent_id', new_callable=mock.PropertyMock)
     @mock.patch.object(ConfigurationValidator, 'source_type', new_callable=mock.PropertyMock)
     def test_build_stage_increment_no_parent_id(self, mock_source_type, mock_parent_id, mock_groups, mock_users, mock_projects, mock_check, mock_open):
-        mock_source_type.return_value = "GitLab"
+        mock_source_type.return_value = "gitlab"
         mock_parent_id.return_value = None
         mock_check.return_value = True
         mock_projects.return_value = self.projects_api.get_all_projects()
