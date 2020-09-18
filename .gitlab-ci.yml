@@ -5,6 +5,7 @@ stages:
   - deploy
 include:
   - template: SAST.gitlab-ci.yml
+  - template: Secret-Detection.gitlab-ci.yml
   - template: Code-Quality.gitlab-ci.yml
 
 variables:
@@ -13,7 +14,7 @@ variables:
   BB_SERVER_SEED_IMAGE_NAME: "$CI_REGISTRY_IMAGE/bitbucket-seed:latest"
   JENKINS_SEED_IMAGE_NAME: "$CI_REGISTRY_IMAGE/jenkins-seed:latest"
   SAST_DISABLE_DIND: "true"
-  SAST_DEFAULT_ANALYZERS: "bandit,secrets"
+  SAST_DEFAULT_ANALYZERS: "bandit"
 
 default:
   image: "$TEST_IMAGE_NAME"
@@ -103,7 +104,7 @@ build bitbucket seed image:
   stage: build
   script:
     - cp docker/bitbucket/Dockerfile ./
-    - docker build -t $BB_SERVER_SEED_IMAGE_NAME . --build-arg BITBUCKET_LICENSE=$BITBUCKET_LICENSE --build-arg BITBUCKET_PASSWORD=$BITBUCKET_PASSWORD
+    - DOCKER_BUILDKIT=1 docker build -t $BB_SERVER_SEED_IMAGE_NAME . --build-arg BITBUCKET_LICENSE=$BITBUCKET_LICENSE --build-arg BITBUCKET_PASSWORD=$BITBUCKET_PASSWORD
     - docker push "$BB_SERVER_SEED_IMAGE_NAME"
   rules:
     - changes:
@@ -118,7 +119,7 @@ build jenkins seed image:
   stage: build
   script:
     - cd docker/jenkins
-    - docker build -t $JENKINS_SEED_IMAGE_NAME .
+    - DOCKER_BUILDKIT=1 docker build -t $JENKINS_SEED_IMAGE_NAME .
     - docker push "$JENKINS_SEED_IMAGE_NAME"
   rules:
     - changes:
@@ -140,6 +141,7 @@ build jenkins seed image:
         - pyproject.toml
         - poetry.lock
         - spin_up_test_vm.sh
+        - package.json
 
 test:pylint:
   extends: .test-job
@@ -198,24 +200,28 @@ test:end-to-end single group:
 test:GitHub Server end to end:
   extends:
     - .test-job
-  image: "${TEST_IMAGE_NAME}"  
+  image: "${TEST_IMAGE_NAME}"
   tags:
     - congregate-auto-scale-runner
   script:
     - curl -k $GH_TEST_INSTANCE_URL -v
   rules:
     - changes:
-      - .gitlab-ci.yml
+        - .gitlab-ci.yml
 
 test:Spin up jenkins:
   extends:
     - .jenkins-test
+    - .test-job
   image: "${TEST_IMAGE_NAME}"
+  tags:
+    - congregate-auto-scale-runner
   script:
     - while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' http://jenkins-test:8080/job/test-job/config.xml --user $JENKINS_USER:$JENKINS_PASSWORD)" != "200" ]]; do echo "Waiting for Jenkins to start"; sleep 5; done
     - curl http://jenkins-test:8080/job/test-job/config.xml --user $JENKINS_USER:$JENKINS_PASSWORD
-    - echo "Jenkins is up and running"
-  
+    - echo "Jenkins is up and running, starting pytest"
+    - poetry run pytest -s -m "jenkins_it" congregate/tests/
+
 debian rolling release:
   extends:
     - .use-docker-in-docker
@@ -228,7 +234,7 @@ debian rolling release:
     LATEST: "$CI_REGISTRY_IMAGE/$CI_COMMIT_REF_NAME:latest-debian"
   script:
     - cp docker/release/debian.Dockerfile ./Dockerfile
-    - docker build --tag "$RELEASE_IMAGE_NAME" .
+    - DOCKER_BUILDKIT=1 docker build --tag "$RELEASE_IMAGE_NAME" .
     - docker image tag $RELEASE_IMAGE_NAME $LATEST
     - docker push "$RELEASE_IMAGE_NAME"
     - docker push "$LATEST"
@@ -245,7 +251,7 @@ debian-release-tag:
     LATEST: "$CI_REGISTRY_IMAGE:latest-debian"
   script:
     - cp docker/release/debian.Dockerfile ./Dockerfile
-    - docker build --tag "$RELEASE_IMAGE_NAME" .
+    - DOCKER_BUILDKIT=1 docker build --tag "$RELEASE_IMAGE_NAME" .
     - docker image tag $RELEASE_IMAGE_NAME $LATEST
     - docker push "$RELEASE_IMAGE_NAME"
     - docker push "$LATEST"
@@ -262,7 +268,7 @@ alpine rolling release:
     LATEST: "$CI_REGISTRY_IMAGE/$CI_COMMIT_REF_NAME:latest-alpine"
   script:
     - cp docker/release/alpine.Dockerfile ./Dockerfile
-    - docker build --tag "$RELEASE_IMAGE_NAME" .
+    - DOCKER_BUILDKIT=1 docker build --tag "$RELEASE_IMAGE_NAME" .
     - docker image tag $RELEASE_IMAGE_NAME $LATEST
     - docker push "$RELEASE_IMAGE_NAME"
     - docker push "$LATEST"
@@ -279,7 +285,7 @@ alpine-release-tag:
     LATEST: "$CI_REGISTRY_IMAGE:latest-alpine"
   script:
     - cp docker/release/alpine.Dockerfile ./Dockerfile
-    - docker build --tag "$RELEASE_IMAGE_NAME" .
+    - DOCKER_BUILDKIT=1 docker build --tag "$RELEASE_IMAGE_NAME" .
     - docker image tag $RELEASE_IMAGE_NAME $LATEST
     - docker push "$RELEASE_IMAGE_NAME"
     - docker push "$LATEST"
@@ -288,7 +294,7 @@ runbook update:
   stage: test
   script:
     - echo "This is a placeholder job ran only when runbooks are changed"
-    - echo "Storing any changed runbook to artifacts that will expire in 1 week." 
+    - echo "Storing any changed runbook to artifacts that will expire in 1 week."
     # To the ps-migration project
     - python runbookscript.py 11750578
     # To the Migration Template
@@ -323,4 +329,3 @@ pages:
   artifacts:
     paths:
       - public
-

@@ -6,6 +6,7 @@
 
 import os
 import json
+from time import sleep
 from traceback import print_exc
 from time import time
 from requests.exceptions import RequestException
@@ -15,6 +16,7 @@ from congregate.helpers.migrate_utils import get_export_filename_from_namespace_
     is_top_level_group, get_failed_export_from_results, get_results, get_staged_groups_without_failed_export, get_staged_projects_without_failed_export, can_migrate_users
 from congregate.helpers.misc_utils import get_dry_log, json_pretty, is_dot_com, clean_data, \
     add_post_migration_stats, rotate_logs, write_results_to_file, migration_dry_run, safe_json_response, is_error_message_present
+from congregate.helpers.jobtemplategenerator import JobTemplateGenerator
 from congregate.helpers.processes import start_multi_process
 from congregate.cli.stage_projects import ProjectStageCLI
 from congregate.helpers.base_class import BaseClass
@@ -26,6 +28,7 @@ from congregate.migration.gitlab.groups import GroupsClient
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.projects import ProjectsClient
 from congregate.migration.gitlab.api.projects import ProjectsApi
+from congregate.migration.gitlab.api.project_repository import ProjectRepositoryApi
 from congregate.migration.gitlab.api.namespaces import NamespacesApi
 from congregate.migration.gitlab.pushrules import PushRulesClient
 from congregate.migration.gitlab.merge_request_approvals import MergeRequestApprovalsClient
@@ -63,6 +66,7 @@ class MigrateClient(BaseClass):
         self.groups_api = GroupsApi()
         self.projects = ProjectsClient()
         self.projects_api = ProjectsApi()
+        self.project_repository_api = ProjectRepositoryApi()
         self.namespaces_api = NamespacesApi()
         self.pushrules = PushRulesClient()
         self.mr_approvals = MergeRequestApprovalsClient()
@@ -73,6 +77,7 @@ class MigrateClient(BaseClass):
         self.ext_import = ImportClient()
         super(MigrateClient, self).__init__()
         self.jenkins = JenkinsClient() if self.config.ci_source_type == "Jenkins" else None
+        self.job_template = JobTemplateGenerator()
 
         self.dry_run = dry_run
         self.processes = processes
@@ -86,7 +91,6 @@ class MigrateClient(BaseClass):
         self.skip_group_import = skip_group_import
         self.skip_project_export = skip_project_export
         self.skip_project_import = skip_project_import
-        
 
     def migrate(self):
         self.log.info(
@@ -108,7 +112,7 @@ class MigrateClient(BaseClass):
         else:
             self.log.warning(
                 f"Configuration (data/congregate.conf) src_type {self.config.source_type} not supported")
-        add_post_migration_stats(self.start)
+        add_post_migration_stats(self.start, log=self.log)
 
     def migrate_from_gitlab(self):
         # Migrate users
@@ -201,6 +205,7 @@ class MigrateClient(BaseClass):
         members = project.pop("members")
         result = self.ext_import.trigger_import_from_ghe(
             project, dry_run=self.dry_run)
+        sleep(10)
         if result.get(project["path_with_namespace"], False) is not False:
             project_id = result[project["path_with_namespace"]
                                 ]["response"].get("id")
@@ -210,7 +215,32 @@ class MigrateClient(BaseClass):
                 result[project["path_with_namespace"]]["jenkins_variables"] = self.migrate_jenkins_variables(
                     project, project_id)
             self.projects.remove_import_user(project_id)
+            # Added a new file in the repo
+            result[project["path_with_namespace"]]["is_gh_pages"] = self.add_pipeline_for_github_pages(
+                project_id)
         return result
+
+    def add_pipeline_for_github_pages(self, project_id):
+        '''
+        GH pages utilizes a separate branch (gh-pages) for its pages feature.
+        We lookup the branch on destination once the project imports and add the .gitlab-ci.yml file
+        '''
+
+        is_result = False
+        data = {
+            "branch": "gh-pages",
+            "commit_message": "Adding .gitlab-ci.yml for publishing GitHub pages",
+            "content": self.job_template.generate_plain_html_template()
+        }
+        branches = list(self.project_repository_api.get_all_project_repository_branches(project_id,
+                                                                                        self.config.destination_host, self.config.destination_token))
+        for branch in branches:
+            if branch["name"] == "gh-pages":
+                is_result = True
+                project = self.project_repository_api.create_repo_file(
+                    self.config.destination_host, self.config.destination_token,
+                    project_id, ".gitlab-ci.yml", data)
+        return is_result
 
     def migrate_from_bitbucket_server(self):
         dry_log = get_dry_log(self.dry_run)
@@ -288,7 +318,7 @@ class MigrateClient(BaseClass):
         if not results:
             self.log.warning(
                 "Results from {0} {1} returned as empty. Aborting.".format(var, stage))
-            add_post_migration_stats(self.dry_run)
+            add_post_migration_stats(self.dry_run, log=self.log)
             exit()
 
     def migrate_user_info(self):
@@ -374,14 +404,14 @@ class MigrateClient(BaseClass):
         return new_user
 
     def migrate_group_info(self):
-        staged_groups = [g for g in self.groups.get_staged_groups(
-        ) if is_top_level_group(g)]
+        staged_groups = self.groups.get_staged_groups()
+        staged_top_groups = [g for g in staged_groups if is_top_level_group(g)]
         dry_log = get_dry_log(self.dry_run)
         if staged_groups:
             if not self.skip_group_export:
                 self.log.info("{}Exporting groups".format(dry_log))
                 export_results = start_multi_process(
-                    self.handle_exporting_groups, staged_groups, processes=self.processes)
+                    self.handle_exporting_groups, staged_top_groups, processes=self.processes)
 
                 self.are_results(export_results, "group", "export")
 
@@ -397,15 +427,15 @@ class MigrateClient(BaseClass):
                               .format(dry_log, json_pretty(export_results)))
 
                 # Filter out the failed ones
-                staged_groups = get_staged_groups_without_failed_export(
-                    staged_groups, failed)
+                staged_top_groups = get_staged_groups_without_failed_export(
+                    staged_top_groups, failed)
             else:
                 self.log.info(
                     "SKIP: Assuming staged groups are already exported")
             if not self.skip_group_import:
                 self.log.info("{}Importing groups".format(dry_log))
                 import_results = start_multi_process(
-                    self.handle_importing_groups, staged_groups, processes=self.processes)
+                    self.handle_importing_groups, staged_top_groups, processes=self.processes)
 
                 self.are_results(import_results, "group", "import")
 
@@ -417,8 +447,8 @@ class MigrateClient(BaseClass):
                     import_results, result_type="group", log=self.log)
 
                 # Migrate sub-group info
-                staged_subgroups = [g for g in self.groups.get_staged_groups(
-                ) if not is_top_level_group(g)]
+                staged_subgroups = [
+                    g for g in staged_groups if not is_top_level_group(g)]
                 if staged_subgroups:
                     start_multi_process(self.migrate_subgroup_info,
                                         staged_subgroups, processes=self.processes)
@@ -642,8 +672,12 @@ class MigrateClient(BaseClass):
                 # Disable Auto DevOps
                 self.log.info("Disabling Auto DevOps on imported project {0} (ID: {1})".format(
                     dst_path_with_namespace, import_id))
-                self.projects_api.edit_project(self.config.destination_host, self.config.destination_token, import_id, {
-                    "auto_devops_enabled": False})
+                data = {"auto_devops_enabled": False}
+                # Disable shared runners
+                if not self.config.shared_runners_enabled:
+                    data["shared_runners_enabled"] = self.config.shared_runners_enabled
+                self.projects_api.edit_project(
+                    self.config.destination_host, self.config.destination_token, import_id, data)
 
                 # Archived projects cannot be migrated
                 if archived:
@@ -725,16 +759,19 @@ class MigrateClient(BaseClass):
             for job in ci_sources.get("Jenkins", []):
                 params = self.jenkins.jenkins_api.get_job_params(job)
                 for param in params:
-                    transformed_param = self.jenkins.transform_ci_variables(param)
+                    transformed_param = self.jenkins.transform_ci_variables(
+                        param)
                     if transformed_param.get("value", None):
-                        new_var = self.variables.set_variables(new_id, transformed_param, self.config.destination_host, self.config.destination_token)
+                        new_var = self.variables.set_variables(
+                            new_id, transformed_param, self.config.destination_host, self.config.destination_token)
                         if new_var.status_code != 201:
-                            self.log.error(f"Unable to add variable {transformed_param['key']}")
+                            self.log.error(
+                                f"Unable to add variable {transformed_param['key']}")
                             result = False
                     else:
-                        self.log.warning(f"Skipping variable {transformed_param['key']} due to no value found")
+                        self.log.warning(
+                            f"Skipping variable {transformed_param['key']} due to no value found")
         return result
-
 
     def rollback(self):
         rotate_logs()
@@ -760,7 +797,7 @@ class MigrateClient(BaseClass):
             self.users.delete_users(
                 dry_run=self.dry_run, hard_delete=self.hard_delete)
 
-        add_post_migration_stats(self.start)
+        add_post_migration_stats(self.start, log=self.log)
 
     def remove_all_mirrors(self):
         # if os.path.isfile("%s/data/new_ids.txt" % self.app_path):

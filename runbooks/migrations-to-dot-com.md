@@ -5,14 +5,16 @@
 
 # <customer name> Migration Wave <insert-number-here>
 
-This runbook covers the process of migrating a wave of **groups and projects** from a source GitLab instance to **gitlab.com**. This is assuming all users have already been migrated.
+This runbook covers the process of migrating a wave of **groups and projects** from a source GitLab instance to **gitlab.com**.
+
+**NOTE**: This issue **must** be created [5 days in advance](https://about.gitlab.com/handbook/support/workflows/importing_projects.html#import-scheduled) of executing the migration wave.
 
 ## Migration Blackout Period
 
 <!--
     Specify the date and time of this migration wave. For example
 
-    3:00PM 4/13/20 - 3:00AM 4/14/20
+    3:00PM 2020-09-07 - 3:00AM 2020-09-08
 -->
 
 ## Slack channel for communication
@@ -25,12 +27,23 @@ This runbook covers the process of migrating a wave of **groups and projects** f
 
 <!--
     Provide the gitlab handles for the various people involved in this migration wave and their specific role in the migration. 
+
+    You must provide the following roles:
+    - PSE conducting the migration
+    - On-call security engineer working during the migration period
+    - Infra managers group assigning the SRE working during the migration period
+
+    Optional roles to provide:
+    - Backup PSE if the migration period spans several hours
+    - .com Support Engineer with rails console access for their awareness
+    - PS manager for their awareness
     
     For example:
 
     @leopardm: PSE conducting the migration
-    @lyle: Support Manager with Rails Console access
     @pharrison: Security Manager in the loop in case anything goes wrong
+    @gitlab-com/gl-infra/managers: Infra managers that are aware of the migration and assigning the SRE during the migration period
+    @lyle: Support Manager with Rails Console access
 -->
 
 ## Groups to migrate
@@ -42,7 +55,6 @@ This runbook covers the process of migrating a wave of **groups and projects** f
 * :white_check_mark: = finished
 
 <!--
-
 Copy the following data and add subsequent columns for wave migration or nested group migration
 
 | Completed | Group Name | Total Projects   | Group Size   |
@@ -54,7 +66,6 @@ Copy the following data and add subsequent columns for single group migration
 | Completed | Project Path | Repo Size        |
 | --------- | ------------ | ---------------- |
 | :x:       | [name]       | [total-projects] |
-
 -->
 
 ## Professional Services Steps to Complete Migration Wave
@@ -162,31 +173,27 @@ For each migration attempt check if any project or group imports failed or have 
 
 #### SRE Support Import of Failed Groups and Projects
 
-If a project or group import continues to fail (2 retries max), you will need to reach out to the SRE on-call to get the project imported.
+If a project or group import continues to fail (2 retries max), you'll need to create an infrastructure issue to get the project imported.
 
 * Preparation
-  * [ ] Before coming to the conclusion that an SRE is needed to import the project, examine the contents of the project on the source.
+  * [ ] Before coming to the conclusion that an infra issue is needed to import the project, examine the contents of the project on the source.
   * [ ] Take note of any environments, CI/CD variables, merge request approvers, and container registries and see if any of those are present. If they are, you will need to run another command to get that data to the destination.
   * [ ] Upload the project export file to google drive and get a shareable link.
 * Create an import issue **per project**
-  * [ ] Create a new issue in the [infrastructure](https://gitlab.com/gitlab-com/gl-infra/infrastructure/-/issues) project using the `import` template.
-  * [ ] Change `#### Import on: YYYY-MM-DD HH:MM UTC` to `#### Import as soon as possible`
-  * [ ] Walk through the steps on the template to provide all necessary information to the SRE on call
-  * [ ] When providing a list of user emails, you can extract the project export tar.gz and run the following command to get a list of emails (make sure you have `jq` installed): `cat project.json | jq -r '.project_members' | jq -r '.[] | .user | .email'`
-  * [ ] Submit the issue and don't assign it to anyone. The SRE on-call will pick it up.
-* Reache out to the SRE on-call. **Post a message in #infrastructure-lounge paging the SRE on-call.** For example:
-
-  ```text
-  @sre-oncall I need a project imported to gitlab.com as soon as possible. Here is the issue:
-  https://gitlab.com/gitlab-com/gl-infra/infrastructure/-/issues/10061
-  ```
-
+  * [ ] Create a new issue in the [infrastructure](https://gitlab.com/gitlab-com/gl-infra/infrastructure/-/issues) project using the [Project import](https://gitlab.com/gitlab-com/gl-infra/infrastructure/-/blob/master/.gitlab/issue_templates/Project%20Import.md) template.
+  * [ ] Walk through the steps on the template to provide all necessary information
+  * [ ] When providing a list of user emails, you can extract the project export tar.gz and run the following command to get a list of emails (make sure you have `jq` installed):
+    * [ ] JSON: `cat project.json | jq -r '.project_members' | jq -r '.[] | .user | .email'`
+    * [ ] NDJON: `cat tree/project/project_members.ndjson | jq -r '.user | .email'`
+  * [ ] All predefined issue settings are at the bottom (e.g. labels, assignees, etc.) so go ahead and submit the issue.
+  * (**optional**) Reach out to the Infra managers on Slack in #infrastructure-lounge by mentioning the issue.
   * [ ] Make sure to check off all checkboxes listed under Support in the import issue. We are Support in this instance.
-  * [ ] Once the SRE confirms the import has started, promptly delete the project from google drive.
-* Post Import. **The SRE will let you know when the import is complete.**
-* If any projects imported by the SRE require any post-migration data to be migrated:
+  * [ ] Once the assignee confirms the import has started, promptly delete the project from google drive.
+* Post Import. **The assignee will let you know when the import is complete.**
+* If any projects imported by the assignee require any post-migration data to be migrated:
   * [ ] Confirm those projects are staged
   * [ ] Run `nohup ./congregate.sh migrate --only-post-migration-info --commit > data/waves/wave_<insert_wave_number>/wave<insert-wave-here>_attempt<insert-attempt>_post_migration.log 2>&1 &` to migrate any post-migration data
+    * [ ] Skip users, groups (exports) and projects (exports) if needed
 
 #### Fallback if no container registry migrate
 

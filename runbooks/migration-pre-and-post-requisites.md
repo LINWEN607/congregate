@@ -5,9 +5,15 @@
 
 # <customer name> Migration Pre and Post-requisites
 
-This runbook covers the process of preparing and cleaninig up after a migration from a source GitLab instance to a destination GitLab instance.
+This runbook covers the process of preparing and cleaninig up after a migration from a source GitLab instance to a destination GitLab instance, requesting to have a VM created in the transient-imports GCP project.
 
 ## Migration pre-requisites
+
+<!--
+    Specify the migration period
+
+    3:00PM 2020-09-07 - 3:00AM 2020-09-15
+-->
 
 ### GitLab
 
@@ -38,9 +44,11 @@ This runbook covers the process of preparing and cleaninig up after a migration 
 <!--
     Provide the VM details
 
-    OS: Ubuntu 18.04 or similar
+    (to gitlab.com) GCP Instance
 
-    N1 Instance (for gitlab.com)
+    OS: Ubuntu 18.04
+
+    N1 Instance
 
     * 8 vCPU
     * 16GB memory (2GB/vCPU)
@@ -61,14 +69,16 @@ This runbook covers the process of preparing and cleaninig up after a migration 
     | [local-ip] (gitlab.com) | TCP      | 22                          |
 -->
 
-* The host will require Docker to be installed and be able to pull the Congregate container from the GitLab.com container registery.
-* The container/VM will collect data from the source and push it to the destiantion instance via the API.
+* The host will require Docker to be installed and be able to pull the Congregate container from the GitLab.com container registry.
+* The container/VM will collect data from the source instance and push it to the destination instance via the API.
 * The VM/container must not be able to access other resources.
 
 ### Authentication (for gitlab.com)
 
-The VM should be setup with Okta ASA. In case of time constraints setup SSH key authentication.
+The VM should be setup with Okta ASA but based on time constraints it may be necessary to do ssh key auth.
 
 ## Migration post-requisites
 
 (gitlab.com) Once the migration is complete follow the [PS Deprovisioning Process](https://gitlab.com/gitlab-com/business-ops/team-member-enablement/runbooks/-/blob/master/it_operations/GitLab_com_environment_(PRD,DEV,STG)access_requests.md#deprovisioning-process) for GitLab.com environments Access Request.
+
+/confidential
