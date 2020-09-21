@@ -15,7 +15,11 @@ class ReposApi():
 
         GitHub API v3 Doc: https://docs.github.com/en/rest/reference/repos#get-a-repository
         """
-        return self.api.generate_v3_get_request(self.host, "repos/{}/{}".format(owner, repo))
+        return self.api.generate_v3_get_request(
+            self.host,
+            f"repos/{owner}/{repo}",
+            verify=self.config.ssl_verify
+        )
 
     def get_repo_teams(self, owner, repo):
         """
@@ -24,7 +28,7 @@ class ReposApi():
 
         GitHub API v3 Doc: https://docs.github.com/en/rest/reference/repos#list-repository-teams
         """
-        return self.api.list_all(self.host, "repos/{}/{}/teams".format(owner, repo))
+        return self.api.list_all(self.host,"repos/{}/{}/teams".format(owner, repo))
 
     def get_all_public_repos(self):
         """
@@ -60,7 +64,13 @@ class ReposApi():
         if not message:
             print(f"Creating a new repository for the authenticated user {data}")
 
-        return self.api.generate_v3_post_request(self.host, "user/repos", json.dumps(data), description=message)
+        return self.api.generate_v3_post_request(
+            self.host,
+            "user/repos",
+            json.dumps(data),
+            description=message,
+            verify=self.config.ssl_verify
+        )
 
     def create_org_repo(self, org_name, data=None, message=None):
         """
@@ -75,5 +85,6 @@ class ReposApi():
             self.host,
             f"orgs/{org_name}/repos",
             data,
-            description=message
+            description=message,
+            verify=self.config.ssl_verify
         )
