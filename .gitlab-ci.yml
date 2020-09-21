@@ -315,6 +315,15 @@ runbook update:
       - runbooks/*
     expire_in: 1 week
 
+mvc:
+  stage: test
+  script:
+    - echo "Placeholder job to trigger a min. pipeline for non-code related changes"
+  rules:
+    - if: "$CI_MERGE_REQUEST_IID"
+    - changes:
+        - ./**/*.md
+
 pages:
   stage: deploy
   rules:
