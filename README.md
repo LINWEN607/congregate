@@ -128,7 +128,7 @@
 * Python 3.8
 * [AWS CLI](https://aws.amazon.com/cli/)
 * [Poetry](https://python-poetry.org/)
-* [Node v11.13.0](https://www.npmjs.com/)
+* [Node v12.18.4](https://www.npmjs.com/)
 
 ## Setup
 
