@@ -12,13 +12,7 @@
 * Missing project and group export / import features are migrated using individual API endpoints.
 * Congregate will not be ported into the GitLab application as-is, but certain pieces of existing Congregate functionality will be rebuilt in GitLab. To track this work, please visit the [GitLab Group Migration](https://gitlab.com/groups/gitlab-org/-/epics/2901) epic.
 
-```text
-Come together, right now
-
-...over me
-```
-
-### Migration features
+## Migration features
 
 :white_check_mark: = supported
 
@@ -158,7 +152,7 @@ After cloning [the repo](https://gitlab.com/gitlab-com/customer-success/tools/co
       3. Run `poetry install -v` (resolves the `pyproject.toml` dependencies, and installs the versions specified in the `poetry.lock` file)
 
       **NOTE:** By removing the `poetry.lock` file or running `poetry update` you are deviating from the default set versions of the dependencies. When in doubt add `--no-dev` (Do not install dev dependencies) and `--dry-run` (`poetry update` only) to avoid dev dependencies i.e. inspect new versions before updating to them.
-2. Install the python poetry virtual environment manager: `pip install poetry` If pip install poetry doesn't work: \
+1. Install the python poetry virtual environment manager: `pip install poetry` If pip install poetry doesn't work: \
  `curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python`
 1. Source the poetry environment: `source $HOME/.poetry/env`
 1. Verify poetry works: `poetry --version`. If this doesn't work, add the following line to your appropriate rc file, usually `.zshrc`: \
@@ -392,7 +386,7 @@ Options:
 
 Arguments:
     processes                               Set number of processes to run in parallel.
-    commit                                  Disable the dry-run and perform the full migration with all reads/writes. 
+    commit                                  Disable the dry-run and perform the full migration with all reads/writes.
     skip-users                              Stage: Skip staging users; Migrate: Skip migrating users; Rollback: Remove only groups and projects.
     hard-delete                             Remove user contributions and solely owned groups.
     skip-groups                             Rollback: Remove only users and projects.
@@ -601,6 +595,6 @@ Refer to [this README](docker/bitbucket/README.md) for details on setting up a B
 
 #### Issues with installing node dependencies
 
-You can delete the `node_modules` folder and re-run `npm install` if you are experiencing issues with frontend dependencies. 
+You can delete the `node_modules` folder and re-run `npm install` if you are experiencing issues with frontend dependencies.
 If you are still having issues with getting the UI to build correctly after re-installing the dependencies and you don't have any linting issues,
 reach out to a maintainer or create an issue pinging @leopardm or @pprokic
