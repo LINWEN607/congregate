@@ -1,7 +1,7 @@
 import json
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import remove_dupes, safe_json_response, is_error_message_present, read_json_file_into_object
+from congregate.helpers.misc_utils import remove_dupes, safe_json_response, is_error_message_present, read_json_file_into_object, stream_json_yield_to_file
 from congregate.migration.github.api.repos import ReposApi
 from congregate.migration.github.users import UsersClient
 from congregate.migration.github.api.users import UsersApi
@@ -30,11 +30,9 @@ class ReposClient(BaseClass):
         """
         List and transform all GitHub public repo to GitLab project metadata
         """
-        projects = []
-        self.format_repos(projects, self.repos_api.get_all_public_repos())
-        with open('%s/data/project_json.json' % self.app_path, "w") as f:
-            json.dump(remove_dupes(projects), f, indent=4)
-        return remove_dupes(projects)
+        for repos in self.repos_api.get_all_public_repos():
+            for repo, last_page in repos:
+                yield self.format_repo(repo), last_page
 
     def format_repos(self, projects, listed_repos, org=False):
         """
@@ -45,28 +43,35 @@ class ReposClient(BaseClass):
             self.log.error("Failed to format repos {}".format(projects))
         else:
             for repo in listed_repos:
-                projects.append({
-                    "id": repo["id"],
-                    "path": repo["name"],
-                    "name": repo["name"],
-                    "ci_sources": {
-                        "Jenkins": self.list_ci_sources_jenkins(repo["name"]),
-                        "TeamCity": self.list_ci_sources_teamcity(repo["name"])
-                    },
-                    "namespace": {
-                        "id": repo["owner"]["id"],
-                        "path": repo["owner"]["login"],
-                        "name": repo["owner"]["login"],
-                        "kind": "group" if repo["owner"]["type"] in self.GROUP_TYPE else "user",
-                        "full_path": repo["owner"]["login"]
-                    },
-                    "http_url_to_repo": repo["html_url"] + ".git",
-                    "path_with_namespace": repo["full_name"],
-                    "visibility": "private" if repo["private"] else "public",
-                    "description": repo.get("description", ""),
-                    "members": self.add_repo_members(repo["owner"]["type"], repo["owner"]["login"], repo["name"]) if not org else []
-                })
+                projects.append(self.format_repo(repo))
         return projects
+
+    def format_repo(self, repo, org=False):
+        """
+        Format public and org/team repos.
+        Leave org/team repo members empty ([]) as they are retrieved during staging.
+        """
+        return {
+                "id": repo["id"],
+                "path": repo["name"],
+                "name": repo["name"],
+                "ci_sources": {
+                    "Jenkins": self.list_ci_sources_jenkins(repo["name"]),
+                    "TeamCity": self.list_ci_sources_teamcity(repo["name"])
+                },
+                "namespace": {
+                    "id": repo["owner"]["id"],
+                    "path": repo["owner"]["login"],
+                    "name": repo["owner"]["login"],
+                    "kind": "group" if repo["owner"]["type"] in self.GROUP_TYPE else "user",
+                    "full_path": repo["owner"]["login"]
+                },
+                "http_url_to_repo": repo["html_url"] + ".git",
+                "path_with_namespace": repo["full_name"],
+                "visibility": "private" if repo["private"] else "public",
+                "description": repo.get("description", ""),
+                "members": self.add_repo_members(repo["owner"]["type"], repo["owner"]["login"], repo["name"]) if not org else []
+            }
 
     def add_repo_members(self, kind, owner, repo):
         """

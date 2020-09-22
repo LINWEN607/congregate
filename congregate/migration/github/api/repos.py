@@ -32,7 +32,7 @@ class ReposApi():
 
         GitHub API v3 Doc: https://docs.github.com/en/rest/reference/repos#list-public-repositories
         """
-        return self.api.list_all(self.host, "repositories")
+        yield self.api.list_all(self.host, "repositories")
 
     def get_all_user_repos(self, username):
         """
@@ -40,7 +40,7 @@ class ReposApi():
 
         GitHub API v3 Doc: https://docs.github.com/en/rest/reference/repos#list-repositories-for-a-user
         """
-        return self.api.list_all(self.host, "users/{}/repos".format(username))
+        yield self.api.list_all(self.host, "users/{}/repos".format(username))
 
     def get_all_repo_collaborators(self, owner, repo):
         """
@@ -49,7 +49,7 @@ class ReposApi():
 
         GitHub API v3 Doc: https://docs.github.com/en/rest/reference/repos#list-repository-collaborators
         """
-        return self.api.list_all(self.host, "repos/{}/{}/collaborators".format(owner, repo))
+        yield self.api.list_all(self.host, "repos/{}/{}/collaborators".format(owner, repo))
     
     def create_auth_user_repo(self, data=None, message=None):
         """

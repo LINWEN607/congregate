@@ -494,6 +494,24 @@ def write_json_yield_to_file(file_path, generator_function, *args):
         f.write(json_pretty(output))
 
 
+def stream_json_yield_to_file(file_path, generator_function, *args, log=None):
+    with open(file_path, 'w') as f:
+        f.write("[\n")
+        try:
+            for data, last_result in generator_function(*args):
+                f.write(json_pretty(data))
+                if last_result is not True:
+                    f.write(",")
+        except Exception as e:
+            if log:
+                log.error("Streamed write failed with error:\n{}".format(e))
+                log.error(print_exc())
+            else:
+                print_exc()
+        else:
+            f.write("\n]")
+
+
 def safe_json_response(response):
     """
         Helper method to handle getting valid JSON safely. If valid JSON cannot be returned, it returns none.

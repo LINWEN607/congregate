@@ -17,6 +17,8 @@ from congregate.migration.github.users import UsersClient as GitHubUsers
 from congregate.migration.jenkins.base import JenkinsClient as JenkinsData
 from congregate.migration.teamcity.base import TeamcityClient as TeamcityData
 
+from congregate.helpers.misc_utils import stream_json_yield_to_file
+
 b = BaseClass()
 
 
@@ -52,9 +54,11 @@ def list_github_data():
     orgs = GitHubOrgs()
     users = GitHubUsers()
 
-    repos.retrieve_repo_info()
-    orgs.retrieve_org_info()
-    users.retrieve_user_info()
+    stream_json_yield_to_file(f"{b.app_path}/data/project_json.json", 
+        repos.retrieve_repo_info)
+
+    # orgs.retrieve_org_info()
+    # users.retrieve_user_info()
 
 
 def list_jenkins_data():

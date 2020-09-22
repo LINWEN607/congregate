@@ -3,7 +3,7 @@ import requests
 from congregate.helpers.decorators import stable_retry
 from congregate.helpers.audit_logger import audit_logger
 from congregate.helpers.logger import myLogger
-from congregate.helpers.misc_utils import generate_audit_log_message
+from congregate.helpers.misc_utils import generate_audit_log_message, safe_json_response
 from congregate.helpers.base_class import BaseClass
 
 base = BaseClass()
@@ -116,14 +116,14 @@ class GitHubApi():
             kv[kvp[1]] = kvp[0]
         return kv
 
-    def list_all(self, host, api, params=None, limit=1000, verify=True):
+    def list_all(self, host, api, params=None, limit=100, verify=True):
         """
         Implement pagination
         """
         log.info(f"Listing endpoint: {api}")
         url = self.generate_v3_request_url(host, api)
-        data = []
-        while True:
+        lastPage = False
+        while lastPage is not True:
             if not params:
                 params = {
                     "per_page": limit
@@ -143,14 +143,23 @@ class GitHubApi():
                         f"ERROR HTTP Response was NOT 200, which implies something wrong."
                         f"The actual return code was {r.status_code}\n{r.text}\n"
                     )
-
-                if r.json() and r.headers.get("Link", None):
-                    data.extend(r.json())
+                resp_json = safe_json_response(r)
+                if resp_json is not None and r.headers.get("Link", None) is not None:
                     h = self.create_dict_from_headers(r.headers['Link'])
-                    if h.get('next'):
+                    if h.get('next', None) is not None:
                         url = h['next']
-                    else:
-                        return data
-                else:
-                    data.extend(r.json())
-                    return data
+                        if isinstance(resp_json, list):
+                            for data in resp_json:
+                                yield data, lastPage
+                        else:
+                            yield resp_json, lastPage
+                    resp_length = len(resp_json)
+                    if resp_length < limit:
+                        if isinstance(resp_json, list):
+                            for i, data in enumerate(resp_json):
+                                if i == resp_length - 1:
+                                    lastPage = True
+                                yield data, lastPage
+                        else:
+                            lastPage = True
+                            yield resp_json, lastPage

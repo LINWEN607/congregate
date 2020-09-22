@@ -43,7 +43,7 @@ class OrgsClient(BaseClass):
         Extend list of already formatted public repos with org and team repos.
         While traversing orgs gather repo, team and member metadata.
         """
-        projects = self.get_formatted_repos()
+        projects = list(self.get_formatted_repos())
         groups = []
 
         # Create tree structure {"GROUP": {"PROJECTS": [], "SUB-GROUPS": [{"FULL_PATH": "", "PROJECTS": []}]}}
