@@ -116,11 +116,10 @@ class GitHubApi():
             kv[kvp[1]] = kvp[0]
         return kv
 
-    def list_all(self, host, api, params=None, limit=100, verify=True):
+    def list_all(self, host, api, params=None, limit=100, verify=True, page_check=False):
         """
         Implement pagination
         """
-        log.info(f"Listing endpoint: {api}")
         url = self.generate_v3_request_url(host, api)
         lastPage = False
         while lastPage is not True:
@@ -131,9 +130,11 @@ class GitHubApi():
             else:
                 params["per_page"] = limit
 
+            log.info(f"Listing endpoint: {url}")
             r = self.generate_v3_get_request(
                 host, api, url, params=params, verify=verify)
-            if r is not None:
+            if r:
+                resp_json = safe_json_response(r)
                 if r.status_code != 200:
                     if r.status_code == 404 or r.status_code == 500 or r.status_code == 401:
                         log.error(
@@ -143,23 +144,30 @@ class GitHubApi():
                         f"ERROR HTTP Response was NOT 200, which implies something wrong."
                         f"The actual return code was {r.status_code}\n{r.text}\n"
                     )
-                resp_json = safe_json_response(r)
-                if resp_json is not None and r.headers.get("Link", None) is not None:
+                if resp_json and r.headers.get("Link", None):
                     h = self.create_dict_from_headers(r.headers['Link'])
-                    if h.get('next', None) is not None:
+                    if h.get('next', None):
                         url = h['next']
-                        if isinstance(resp_json, list):
-                            for data in resp_json:
-                                yield data, lastPage
-                        else:
-                            yield resp_json, lastPage
+                        yield from self.pageless_data(resp_json, page_check=page_check, lastPage=lastPage)
                     resp_length = len(resp_json)
                     if resp_length < limit:
                         if isinstance(resp_json, list):
                             for i, data in enumerate(resp_json):
                                 if i == resp_length - 1:
                                     lastPage = True
-                                yield data, lastPage
+                                yield (data, lastPage) if page_check else data
                         else:
                             lastPage = True
-                            yield resp_json, lastPage
+                            yield (resp_json, lastPage) if page_check else resp_json
+                else:
+                    lastPage = True
+                    yield from self.pageless_data(resp_json, page_check=page_check, lastPage=lastPage)
+
+
+    def pageless_data(self, resp_json, page_check=False, lastPage=None):
+        if isinstance(resp_json, list):
+            if resp_json:
+                for data in resp_json:
+                    yield (data, lastPage) if page_check else data
+        else:
+            yield (resp_json, lastPage) if page_check else resp_json

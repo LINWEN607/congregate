@@ -57,8 +57,8 @@ def list_github_data():
     stream_json_yield_to_file(f"{b.app_path}/data/project_json.json", 
         repos.retrieve_repo_info)
 
-    # orgs.retrieve_org_info()
-    # users.retrieve_user_info()
+    orgs.retrieve_org_info()
+    users.retrieve_user_info()
 
 
 def list_jenkins_data():

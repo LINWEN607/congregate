@@ -26,13 +26,13 @@ class ReposApi():
         """
         return self.api.list_all(self.host, "repos/{}/{}/teams".format(owner, repo))
 
-    def get_all_public_repos(self):
+    def get_all_public_repos(self, page_check=False):
         """
         Lists all public repositories in the order that they were created.
 
         GitHub API v3 Doc: https://docs.github.com/en/rest/reference/repos#list-public-repositories
         """
-        yield self.api.list_all(self.host, "repositories")
+        return self.api.list_all(self.host, "repositories", page_check=page_check)
 
     def get_all_user_repos(self, username):
         """

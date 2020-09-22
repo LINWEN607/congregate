@@ -30,9 +30,8 @@ class ReposClient(BaseClass):
         """
         List and transform all GitHub public repo to GitLab project metadata
         """
-        for repos in self.repos_api.get_all_public_repos():
-            for repo, last_page in repos:
-                yield self.format_repo(repo), last_page
+        for repo, last_page in self.repos_api.get_all_public_repos(page_check=True):
+            yield self.format_repo(repo), last_page
 
     def format_repos(self, projects, listed_repos, org=False):
         """
@@ -43,7 +42,7 @@ class ReposClient(BaseClass):
             self.log.error("Failed to format repos {}".format(projects))
         else:
             for repo in listed_repos:
-                projects.append(self.format_repo(repo))
+                projects.append(self.format_repo(repo, org=org))
         return projects
 
     def format_repo(self, repo, org=False):

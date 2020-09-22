@@ -67,7 +67,7 @@ class OrgsClient(BaseClass):
             self.log.error(
                 "Failed to append org {} ({}) to list {}".format(org_name, org, groups))
         else:
-            org_repos = self.orgs_api.get_all_org_repos(org_name)
+            org_repos = list(self.orgs_api.get_all_org_repos(org_name))
             if tree:
                 tree[org_name]["PROJECTS"] = [r["full_name"]
                                               for r in org_repos]
