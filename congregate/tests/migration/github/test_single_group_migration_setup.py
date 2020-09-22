@@ -1,14 +1,3 @@
-import os
-import unittest
-from uuid import uuid4
-from base64 import b64encode
-import pytest
-import mock
-from congregate.helpers.misc_utils import input_generator
-from congregate.cli import config
-from congregate.helpers.seed.generate_token import token_generator
-from congregate.helpers.seed.generator import SeedDataGenerator
-
 import sys
 import time
 
@@ -122,10 +111,3 @@ def main():
 if __name__ == "__main__":
     main()
 
-# print(f"\n{test.repo_map}\n")
-# print(test.__dict__)
-
-# print(test.repo_map)
-# test.create_org("Mike-Test")
-# test.create_repo("Mike-Test", "Mike-Repo-1")
-# print(type(t))
