@@ -21,7 +21,8 @@ from congregate.migration.github.api.repos import ReposApi
 
 class Seed_GHE(BaseClass):
     '''
-    Dunno what I'm doing here :D
+    Basic Seed Class, will walk through the various class pieces, and push repos up to the specified GHE.
+    Currently, it assumes you have the repos already cloned.
     '''
     def __init__(self, seeds_count=950, size_ratio=.9, organization="Mike-Test", owner="mlindsay"):
         super(Seed_GHE, self).__init__()
@@ -36,9 +37,7 @@ class Seed_GHE(BaseClass):
         self.owner = owner
         self.manage_repos.remote_url = self.manage_repos.remote_url + organization + '/'
 
-    # TODO: Create a number of repos in github == to self.seeds_count
-    # TODO: Reorigin the existing local repos
-    # TODO: Push the repos up to GHE.
+    # TODO: Clone the repos if they don't exist.
 
     def define_seed_repos(self):
         '''
