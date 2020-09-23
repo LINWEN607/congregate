@@ -835,7 +835,7 @@ class ProjectsApi():
         """
         return api.generate_get_request(host, token, f"projects/{project_id}/snippets/{snippet_id}")
 
-    def get_project_snippet_awards(self, host, token, project_id, snipped_id):
+    def get_project_snippet_awards(self, host, token, project_id, snippet_id):
         """
         Get a list of all award emoji for a specified project snippet
 
@@ -849,7 +849,7 @@ class ProjectsApi():
         """
         return api.generate_get_request(host, token, f"projects/{project_id}/snippets/{snippet_id}/award_emoji")
 
-    def create_project_snippet_award(self, host, token, project_id, snipped_id, name):
+    def create_project_snippet_award(self, host, token, project_id, snippet_id, name):
         """
         Create an award emoji on the specified project snippet
 
@@ -864,7 +864,7 @@ class ProjectsApi():
         """
         return api.generate_post_request(host, token, f"projects/{project_id}/snippets/{snippet_id}/award_emoji?name={name}", None)
 
-    def get_project_snippet_note_awards(self, host, token, project_id, snipped_id, note_id):
+    def get_project_snippet_note_awards(self, host, token, project_id, snippet_id, note_id):
         """
         Get all award emoji for an snippet note
 
@@ -879,7 +879,7 @@ class ProjectsApi():
         """
         return api.generate_get_request(host, token, f"projects/{project_id}/snippets/{snippet_id}/notes/{note_id}/award_emoji")
 
-    def create_project_snippet_note_award(self, host, token, project_id, snipped_id, note_id, name):
+    def create_project_snippet_note_award(self, host, token, project_id, snippet_id, note_id, name):
         """
         Create an award emoji on the specified project snippet note
 
@@ -895,7 +895,7 @@ class ProjectsApi():
         """
         return api.generate_post_request(host, token, f"projects/{project_id}/snippets/{snippet_id}/notes/{note_id}/award_emoji?name={name}", None)
 
-    def get_project_snippet_notes(self, host, token, project_id, snipped_id):
+    def get_project_snippet_notes(self, host, token, project_id, snippet_id):
         """
         Gets a list of all notes for a single snippet
 

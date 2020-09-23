@@ -529,6 +529,11 @@ def safe_list_index_lookup(l, v):
     """
     return l.index(v) if v in l else None
 
+
+def get_hash_of_dict(d):
+    return hash(json.dumps(d))
+
+
 # http://akiscode.com/articles/sha-1directoryhash.shtml
 # Copyright (c) 2009 Stephen Akiki
 # MIT License (Means you can do whatever you want with this)

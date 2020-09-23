@@ -3,7 +3,7 @@ from time import sleep
 from requests.exceptions import RequestException
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import remove_dupes, get_timedelta, json_pretty, safe_json_response
+from congregate.helpers.misc_utils import remove_dupes, get_timedelta, json_pretty, safe_json_response, write_json_to_file
 from congregate.helpers.migrate_utils import get_full_path_with_parent_namespace, is_top_level_group
 from congregate.migration.gitlab.variables import VariablesClient
 from congregate.migration.gitlab.badges import BadgesClient
@@ -75,14 +75,8 @@ class GroupsClient(BaseClass):
 
         transient_list = []
         self.traverse_groups(groups, transient_list, host, token)
-        self.create_groups_json(transient_list, prefix=prefix)
+        write_json_to_file(f"{self.app_path}/data/{prefix}groups.json", remove_dupes(groups), log=self.log)
         return transient_list
-
-    def create_groups_json(self, groups, prefix=""):
-        file_path = '%s/data/%sgroups.json' % (self.app_path, prefix)
-        with open(file_path, "w") as f:
-            json.dump(remove_dupes(groups), f, indent=4)
-        return file_path
 
     def remove_import_user(self, gid):
         try:
