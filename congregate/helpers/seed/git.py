@@ -32,7 +32,6 @@ class Manage_Repos():
 
             example: git clone https://username:password@github.com/username/repository.git
         """
-        # TODO: Fix remote in push_single_repo()
         self.__dict__.update(**kwargs)
         self.temp_dir = temp_dir
         self.remote_name = remote_name
@@ -112,13 +111,16 @@ class Manage_Repos():
         For a given repo, clone them to their own self.seed_path directory
         '''
         print(f"{self.colors['green']}INFO{self.colors['clear']}: Cloning the {repo} repo.")
-        path = f"{self.temp_dir}{repo}"
-        cmd = ['git', 'clone', self.repo_map[repo]['remote'], path]
+        dir_name = self.rebuild_dir(repo)
+        self.cwd = self.temp_dir
+        cmd = ['git', 'clone', self.repo_map[self.rebuild_dir(repo)]['remote'], dir_name]
         rc = self.execute_cmd(cmd)
         if rc.returncode:
             print(
                 f"{self.colors['red']}ERROR{self.colors['clear']}: There was an Error cloning the repo "
-                f"{self.colors['yellow']}{repo}{self.colors['clear']}:\n{rc.stderr}\n\n"
+                f"{self.colors['yellow']}{repo}{self.colors['clear']}:\n{rc.stderr}\n"
+                f"Here is the cmd we used: \n{cmd}\n"
+                f"Our current working directory: \n{os.getcwd()}\n"
             )
         else:
             print(f"{self.colors['green']}INFO{self.colors['clear']}: Successfully cloned the repo: {rc}")
@@ -132,7 +134,7 @@ class Manage_Repos():
             f"{self.colors['green']}INFO{self.colors['clear']}: "
             f"Attempting to push {repo} to {self.repo_map[dir_name]['remote']}"
         )
-        full_remote = f"{self.remote_url}{repo}"  # the remote should provide whatever GH ORG we should be pushing to.
+        full_remote = self.remote_url + repo  # the remote should provide whatever GH ORG we should be pushing to.
         self.cwd = self.temp_dir + dir_name
         cmd = ['git', '-c', f'http.sslVerify={self.verify}', 'push', '--all', full_remote]
         rc_push = self.execute_cmd(cmd)

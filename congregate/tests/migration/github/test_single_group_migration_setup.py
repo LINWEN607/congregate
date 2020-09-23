@@ -13,9 +13,9 @@ class Seed_GHE(BaseClass):
     Basic Seed Class, will walk through the various class pieces, and push repos up to the specified GHE.
     Currently, it assumes you have the repos already cloned.
     '''
-    def __init__(self, seeds_count=950, size_ratio=.9, organization="Mike-Test", owner="mlindsay"):
+    def __init__(self, seeds_count=20, size_ratio=.9, organization="Mike-Test", owner="mlindsay"):
         super(Seed_GHE, self).__init__()
-        self.manage_repos = Manage_Repos(size='medium')
+        self.manage_repos = Manage_Repos(size='small')
         self.orgs_api = OrgsApi(self.config.source_host, self.config.source_token)
         self.repos_api = ReposApi(self.config.source_host, self.config.source_token)
         self.seeds_count = seeds_count
@@ -94,20 +94,20 @@ class Seed_GHE(BaseClass):
 
     def do_it(self, repo):
         self.create_repo(repo)
+        self.manage_repos.clone_single_repo(repo)
         self.manage_repos.add_origin(repo)
         self.manage_repos.push_single_repo(repo)
 
 
 def main():
     start_time = time.time()
-    test = Seed_GHE(organization='seed-testing')
-    test.create_org()
-    test.define_seed_repos()
-    start_multi_process(test.do_it, test.repos)
+    seeds = Seed_GHE(organization='clone-test', seeds_count=100)
+    seeds.create_org()  # Creating the org in GHE
+    seeds.define_seed_repos()
+    print(f"Our Seed Repos in all their glory: \n{seeds.repos}\n")
+    start_multi_process(seeds.do_it, seeds.repos)
     print(f"The script took {time.time() - start_time} second !")
-    print(f"repo_map: {test.repo_map}")
 
 
 if __name__ == "__main__":
     main()
-
