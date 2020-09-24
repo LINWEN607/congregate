@@ -1,3 +1,4 @@
+import json
 import requests
 
 from congregate.helpers.decorators import stable_retry
@@ -79,7 +80,7 @@ class GitHubApi():
         return requests.get(url, params=params, headers=headers, verify=verify)
 
     @stable_retry
-    def generate_v3_post_request(self, host, api, data, headers=None, files=None, description=None, verify=False):
+    def generate_v3_post_request(self, host, api, data, headers=None, description=None, verify=True):
         """
         Generates POST request to GitHub API
         """
@@ -87,7 +88,7 @@ class GitHubApi():
         audit.info(generate_audit_log_message("POST", description, url))
         if headers is None:
             headers = self.generate_v3_request_header(self.token)
-        return requests.post(url, data=data, headers=headers, files=files, verify=verify)
+        return requests.post(url, json=data, headers=headers, verify=verify)
 
     def replace_unwanted_characters(self, s):
         """

@@ -1,76 +1,113 @@
-import os
-import unittest
-from uuid import uuid4
-from base64 import b64encode
-import pytest
-import mock
-from congregate.helpers.misc_utils import input_generator
-from congregate.cli import config
-from congregate.helpers.seed.generate_token import token_generator
-from congregate.helpers.seed.generator import SeedDataGenerator
+import sys
+import time
+
+from congregate.helpers.base_class import BaseClass
+from congregate.helpers.processes import start_multi_process
+from congregate.helpers.seed.git import Manage_Repos
+from congregate.migration.github.api.orgs import OrgsApi
+from congregate.migration.github.api.repos import ReposApi
 
 
-## PLACEHOLDER
+class Seed_GHE(BaseClass):
+    '''
+    Basic Seed Class, will walk through the various class pieces, and push repos up to the specified GHE.
+    Currently, it assumes you have the repos already cloned.
+    '''
+    def __init__(self, seeds_count=20, size_ratio=.9, organization="Mike-Test", owner="mlindsay"):
+        super(Seed_GHE, self).__init__()
+        self.manage_repos = Manage_Repos(size='small')
+        self.orgs_api = OrgsApi(self.config.source_host, self.config.source_token)
+        self.repos_api = ReposApi(self.config.source_host, self.config.source_token)
+        self.seeds_count = seeds_count
 
-# @pytest.mark.e2e_setup_2
-# class MigrationEndToEndTestSetup(unittest.TestCase):
-#     def setUp(self):
-#         self.t = token_generator()
-#         self.generate_single_group_config_with_tokens()
-#         self.s = SeedDataGenerator()
+        self.repos = self.manage_repos.repos
+        self.repo_map = self.manage_repos.repo_map
+        self.organization = organization
+        self.owner = owner
+        self.manage_repos.remote_url = self.manage_repos.remote_url + organization + '/'
 
-#     def test_seed_data(self):
-#         self.s.generate_seed_data(dry_run=False)
+    # TODO: Clone the repos if they don't exist.
 
-#     def generate_single_group_config_with_tokens(self):
-#         print("Generating Destination Token")
-#         destination_token = self.t.generate_token("destination_token", "2020-08-27", url=os.getenv(
-#             "GITLAB_DEST"), username="root", pword=uuid4().hex)  # Destination access token
-#         print("Generating Source Token")
-#         source_token = self.t.generate_token("source_token", "2020-08-27", url=os.getenv(
-#             "GITLAB_SRC"), username="root", pword="5iveL!fe")  # source token
-#         print("Prepping config data")
-#         values = [
-#             os.getenv("GITLAB_DEST"),  # Destination hostname
-#             # self.t.generate_token("destination_token", "2020-08-27", url=os.getenv("GITLAB_DEST"), username="root", pword=uuid4().hex), # Destination access token
-#             # "0",  # Destination import user id
-#             "yes",  # shared runners enabled
-#             "no",  # append project suffix (retry)
-#             "3",  # max_import_retries,
-#             "no",  # destination parent group
-#             "",  # username suffix
-#             "no",  # mirror
-#             "no",  # external_src_url
-#             os.getenv("GITLAB_SRC"),  # source host
-#             "yes",  # source parent group
-#             "2",   # source parent group ID
-#             # "source_group_full_path",   # source parent group path
-#             "300",  # max_export_wait_time
-#             "yes",  # migrating registries
-#             # self.t.generate_token("source_token", "2020-08-27", url=os.getenv("GITLAB_SRC"), username="root", pword=uuid4().hex), # source token
-#             os.getenv("GITLAB_SRC_REG_URL"),  # source registry url
-#             os.getenv("GITLAB_DEST_REG_URL"),  # destination registry url
-#             "filesystem",  # export location
-#             # "s3_name",  # bucket name
-#             # "us-east-1",    # bucket region
-#             # "access key",   # access key
-#             # "secret key",   # secret key
-#             "",  # file system path
-#             "no",  # CI Source
-#             "no",  # keep_blocked_users
-#             "yes",  # password reset email
-#             "no",  # randomized password
-#             "5",  # import wait time
-#             ""  # slack_url
-#         ]
-#         tokens = [
-#             destination_token,
-#             source_token
-#         ]
+    def define_seed_repos(self):
+        '''
+        Using our self.seeds_count, self.size_ratio, and self.repos, create unique names for each repo to fill
+        out the complete list of repos we need to work with.
+        '''
+        new_repos = []
+        no_repos = len(self.repos)
+        i = 0
+        while True:
+            cur = i - (i // no_repos) * no_repos
+            new_repos.append(f"{self.repos[cur]}-loop-{i // no_repos}")
+            i += 1
+            if i == self.seeds_count - 1:
+                break
+        self.repos = new_repos
 
-#         g = input_generator(values)
-#         t = input_generator(tokens)
-#         with mock.patch('congregate.cli.config.test_registries', lambda x, y, z: None):
-#             with mock.patch('builtins.input', lambda x: next(g)):
-#                 with mock.patch('congregate.cli.config.obfuscate', lambda x: b64encode(next(t).encode("ascii")).decode("ascii")):
-#                     config.generate_config()
+    def create_org(self):
+        '''
+        Create an ORG in GHE
+        '''
+        orgs = self._get_remote_orgs()
+
+        if self._check_org_exists(self.organization, orgs):
+            print(f"ERROR: Wouldn't be prudent. Org '{self.organization}' already exists")
+            sys.exit()
+        else:
+            data = {
+                'login': self.organization,
+                'admin': self.owner
+            }
+            r = self.orgs_api.create_org(data=data)
+            if r.status_code != 201:
+                print(
+                    f"Encountered an error creating Organization: '{self.organization}'.\nA {r.status_code}"
+                    f" was returned, with the following message;\n{r.text}\n"
+                )
+                sys.exit()
+
+    def create_repo(self, repo):
+        data = {
+            'name': repo,
+        }
+        r = self.repos_api.create_org_repo(org_name=self.organization, data=data)
+        if r.status_code != 201:
+            print(
+                f"Encountered an error creating Org Repo: '{repo}'.\nA {r.status_code}"
+                f" was returned, with the following message;\n{r.text}\n"
+            )
+            sys.exit()
+
+    def _check_org_exists(self, org, orgs):
+        for record in orgs:
+            if org == record['login']:
+                return True
+
+    def _get_remote_orgs(self):
+        return self.orgs_api.get_all_orgs()
+
+    def check_repos_are_local(self):  # See if we already have the repos downloaded
+        pass
+
+    def clone_repos(self):  # Clone the repos
+        pass
+
+    def do_it(self, repo):
+        self.create_repo(repo)
+        self.manage_repos.clone_single_repo(repo)
+        self.manage_repos.add_origin(repo)
+        self.manage_repos.push_single_repo(repo)
+
+
+def main():
+    start_time = time.time()
+    seeds = Seed_GHE(organization='clone-test', seeds_count=100)
+    seeds.create_org()  # Creating the org in GHE
+    seeds.define_seed_repos()
+    print(f"Our Seed Repos in all their glory: \n{seeds.repos}\n")
+    start_multi_process(seeds.do_it, seeds.repos)
+    print(f"The script took {time.time() - start_time} second !")
+
+
+if __name__ == "__main__":
+    main()

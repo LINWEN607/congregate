@@ -15,7 +15,8 @@ class Manage_Repos():
         self,
         remote_name='new-origin',
         temp_dir='congregate/tests/data/repos/',
-        remote_url='https://github.gitlab-proserv.net/',
+        remote_url='git@github.gitlab-proserv.net:',
+        # git@github.gitlab-proserv.net:seed-testing/purifycss.git-loop-0.git
         **kwargs
 
     ):
@@ -31,13 +32,11 @@ class Manage_Repos():
 
             example: git clone https://username:password@github.com/username/repository.git
         """
-        # TODO: Fix remote in push_single_repo()
-
+        self.__dict__.update(**kwargs)
         self.temp_dir = temp_dir
         self.remote_name = remote_name
         self.remote_url = remote_url
         self.verify = True
-        self.__dict__.update(kwargs)
         self.set_size_limit()  # set the size_limit, defaults to small.
         self.repo_map = self.read_config()  # All the details from repos.json
         self.repos = self.create_repo_list()  # Specific repos we will work with
@@ -92,8 +91,10 @@ class Manage_Repos():
             if self.size.lower() == 'small':  # small repos 50 megs or less
                 self.size = 10780
             elif self.size.lower() == 'medium':  # roughly 500 megs or less
-                self.size = 1255976
+                self.size = 106208
             elif self.size.lower() == 'large':
+                self.size = 1255976
+            elif self.size.lower() == 'plaid':
                 self.size = 80000000  # This is huge, should not be used
         else:
             self.size = 10780
@@ -110,13 +111,16 @@ class Manage_Repos():
         For a given repo, clone them to their own self.seed_path directory
         '''
         print(f"{self.colors['green']}INFO{self.colors['clear']}: Cloning the {repo} repo.")
-        path = f"{self.temp_dir}{repo}"
-        cmd = ['git', 'clone', self.repo_map[repo]['remote'], path]
+        dir_name = self.rebuild_dir(repo)
+        self.cwd = self.temp_dir
+        cmd = ['git', 'clone', self.repo_map[self.rebuild_dir(repo)]['remote'], dir_name]
         rc = self.execute_cmd(cmd)
         if rc.returncode:
             print(
                 f"{self.colors['red']}ERROR{self.colors['clear']}: There was an Error cloning the repo "
-                f"{self.colors['yellow']}{repo}{self.colors['clear']}:\n{rc.stderr}\n\n"
+                f"{self.colors['yellow']}{repo}{self.colors['clear']}:\n{rc.stderr}\n"
+                f"Here is the cmd we used: \n{cmd}\n"
+                f"Our current working directory: \n{os.getcwd()}\n"
             )
         else:
             print(f"{self.colors['green']}INFO{self.colors['clear']}: Successfully cloned the repo: {rc}")
@@ -125,26 +129,29 @@ class Manage_Repos():
         '''
         Push a repo, including branches and tags, to its new remote.
         '''
+        dir_name = self.rebuild_dir(repo)
         print(
             f"{self.colors['green']}INFO{self.colors['clear']}: "
-            f"Attempting to push {repo} to {self.repo_map[repo]['remote']}"
+            f"Attempting to push {repo} to {self.repo_map[dir_name]['remote']}"
         )
-        full_remote = f"{self.remote}/{repo}"  # the remote should provide whatever GH ORG we should be pushing to.
-        self.cwd = self.temp_dir + repo
+        full_remote = self.remote_url + repo  # the remote should provide whatever GH ORG we should be pushing to.
+        self.cwd = self.temp_dir + dir_name
         cmd = ['git', '-c', f'http.sslVerify={self.verify}', 'push', '--all', full_remote]
         rc_push = self.execute_cmd(cmd)
         cmd = ['git', '-c', f'http.sslVerify={self.verify}', 'push', '--tags', full_remote]
         rc_tags = self.execute_cmd(cmd)
         self.cwd = "."
-        if rc_push != 0:
+        if rc_push.returncode != 0:
             print(
                 f"{self.colors['red']}ERROR{self.colors['clear']}: pushing "
                 f"{self.colors['yellow']}{repo}{self.colors['clear']}:\n{rc_push.stderr}"
+                f"\nfailed push with: {rc_push}"
             )
-        if rc_tags != 0:
+        if rc_tags.returncode != 0:
             print(
                 f"{self.colors['red']}ERROR{self.colors['clear']}: pushing tags for "
                 f"{self.colors['yellow']}{repo}{self.colors['clear']}:\n{rc_tags.stderr}"
+                f"\nfailed push with: {rc_push}"
             )
 
     def rebuild_config(self):
@@ -232,7 +239,8 @@ class Manage_Repos():
         '''
         print(
             f"{self.colors['green']}INFO{self.colors['clear']}: Adding remote: "
-            f"{self.colors['yellow']}{self.remote_name}{self.colors['clear']}"
+            f"{self.colors['yellow']}{self.remote_name}{self.colors['clear']} to repo: "
+            f"{self.colors['yellow']}{repo}{self.colors['clear']}"
         )
         cmd = [
             'git',
@@ -241,7 +249,7 @@ class Manage_Repos():
             self.remote_name,
             f"{self.remote_url}{repo}.git"
         ]
-        self.cwd = self.temp_dir + repo
+        self.cwd = self.temp_dir + self.rebuild_dir(repo)
         rc_ao = self.execute_cmd(cmd)
         if rc_ao.returncode and 'fatal: remote new-origin already exists.' in str(rc_ao.stderr):
             cmd[2] = 'set-url'
@@ -252,6 +260,14 @@ class Manage_Repos():
                     f"or change the remote because;\nr{rc_so.stderr}"
                 )
         self.cwd = "."
+
+    def rebuild_dir(self, repo):
+        '''
+        Given our expaned repo names, rebuild the original name so we can find the path.
+        This is very fragile as it requires the repo names to have a '-' in them. Our
+        seed script should be doing this, but be forewarned.
+        '''
+        return '-'.join(repo.split('-')[:-2])
 
     def get_repos_from_dir(self):
         '''

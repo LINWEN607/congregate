@@ -6,8 +6,10 @@
             ref="users-table"
             :columns="columns"
             :rows="rows"
-            :search-options="{enabled: true}"
+            :search-options="{ enabled: true }"
             :select-options="{ enabled: true }"
+            :pagination-options="{ enabled: true, perPage: 25 }"
+            :line-numbers="true"
         />
     </div>
     <Footer msg="Stage" asset="stage-users"/>
