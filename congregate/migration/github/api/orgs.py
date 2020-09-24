@@ -56,7 +56,7 @@ class OrgsApi():
 
         GitHub API v3 Doc: https://docs.github.com/en/rest/reference/teams#get-a-team-by-name
         """
-        return self.api.generate_v3_get_request(self.host, "orgs/{}/teams/{}".format(org, team_slug), verify=self.config.ssl_verify)
+        return self.api.generate_v3_get_request(self.host, "orgs/{}/teams/{}".format(org, team_slug))
 
     def get_all_org_team_repos(self, org, team_slug):
         """
@@ -83,19 +83,18 @@ class OrgsApi():
         """
         return self.api.list_all(self.host, "orgs/{}/teams/{}/teams".format(org, team_slug))
 
-    def create_org_repo(self, org_name, data=None, message=None):
+    def create_org(self, data=None, message=None):
         """
-        Create an organization repository.
+        Create an organization.
 
-        GitHub API v3 Doc: https://docs.github.com/en/enterprise/2.21/user/rest/reference/repos#create-an-organization-repository
+        GitHub API v3 Doc: https://docs.github.com/en/enterprise/2.21/user/rest/reference/enterprise-admin#create-an-organization
         """
         if not message:
-            print(f"Creating an organization repository {data}")
+            print(f"Creating an organization {data}")
 
         return self.api.generate_v3_post_request(
             self.host,
-            f"orgs/{org_name}/repos",
-            json.dumps(data),
-            description=message,
-            verify=False
+            "admin/organizations",
+            data,
+            description=message
         )
