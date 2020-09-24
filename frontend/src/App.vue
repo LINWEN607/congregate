@@ -84,7 +84,7 @@ body {
 #content {
   position: relative;
   left: 10%;
-  right: 10%;
+  right: 5%;
   width: 85%;
   padding-top: 1em;
   color: #111;
@@ -100,8 +100,6 @@ body {
 
 .table {
   padding: 1em 1em 10em;
-  overflow: auto;
-  height: auto;
 }
 
 .summary-list {
