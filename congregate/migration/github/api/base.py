@@ -77,7 +77,7 @@ class GitHubApi():
         headers = self.generate_v3_request_header(self.token)
         if params is None:
             params = {}
-        return requests.get(url, params=params, headers=headers, verify=verify)
+        return requests.get(url, params=params, headers=headers, verify=ssl_verify)
 
     @stable_retry
     def generate_v3_post_request(self, host, api, data, headers=None, description=None, verify=True):
@@ -88,7 +88,7 @@ class GitHubApi():
         audit.info(generate_audit_log_message("POST", description, url))
         if headers is None:
             headers = self.generate_v3_request_header(self.token)
-        return requests.post(url, json=data, headers=headers, verify=verify)
+        return requests.post(url, json=data, headers=headers, verify=ssl_verify)
 
     def replace_unwanted_characters(self, s):
         """
@@ -133,7 +133,7 @@ class GitHubApi():
                 params["per_page"] = limit
 
             r = self.generate_v3_get_request(
-                host, api, url, params=params, verify=verify)
+                host, api, url, params=params, verify=ssl_verify)
             if r is not None:
                 if r.status_code != 200:
                     if r.status_code == 404 or r.status_code == 500 or r.status_code == 401:
