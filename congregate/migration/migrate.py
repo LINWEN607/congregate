@@ -6,9 +6,8 @@
 
 import os
 import json
-from time import sleep
+from time import sleep, time
 from traceback import print_exc
-from time import time
 from requests.exceptions import RequestException
 
 from congregate.helpers import api
@@ -43,6 +42,8 @@ from congregate.migration.teamcity.base import TeamcityClient
 
 
 class MigrateClient(BaseClass):
+    BLOCKED = ["blocked", "ldap_blocked", "deactivated"]
+
     def __init__(
         self,
         dry_run=True,
@@ -377,7 +378,7 @@ class MigrateClient(BaseClass):
         }
         try:
             if not self.only_post_migration_info:
-                if state == "active" or (state == "blocked" and self.config.keep_blocked_users):
+                if state == "active" or (state in self.BLOCKED and self.config.keep_blocked_users):
                     user_data = self.users.generate_user_data(user)
                     self.log.info("{0}Attempting to create user {1}".format(
                         get_dry_log(self.dry_run), email))
@@ -388,7 +389,7 @@ class MigrateClient(BaseClass):
                         state, json_pretty(user)))
                 if response is not None:
                     # NOTE: Persist 'blocked' user state regardless of domain and creation status.
-                    if user_data.get("state", None).lower() == "blocked":
+                    if user_data.get("state", None).lower() in self.BLOCKED:
                         self.users.block_user(user_data)
                     new_user = self.users.handle_user_creation_status(
                         response, user_data)

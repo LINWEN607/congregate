@@ -78,6 +78,10 @@ Copy the following data and add subsequent columns for single group migration
 * [ ] Check the status of **gitlab.com** (https://status.gitlab.com/)
   * [ ] Confirm you can reach the UI of the instance
   * [ ] Confirm you can reach the API through cURL or a REST client
+  * [ ] Confirm the import (Admin) user is a member of the SAML+SSO enforced group
+  * [ ] If not and late notice, as a workaround:
+    * [ ] Discuss with customer whether it's possible to disable SSO enforced during user migration OR
+    * [ ] Reach out to #support_gitlab-com to spoof adding the user to the SAML+SSO enforced group
 * [ ] Run `congregate list` at the beginning of the migration blackout period
 * [ ] Stage ALL users
   * [ ] **Make sure no groups and projects are staged**

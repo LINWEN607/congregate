@@ -247,9 +247,11 @@ class ImportExportClientTests(unittest.TestCase):
     @patch('congregate.helpers.conf.Config.source_token', new_callable=PropertyMock)
     @patch('congregate.helpers.conf.Config.importexport_wait', new_callable=PropertyMock)
     @patch('congregate.helpers.conf.Config.max_export_wait_time', new_callable=PropertyMock)
+    @patch.object(ImportExportClient, "COOL_OFF_MINUTES")
     @patch.object(GroupsApi, "export_group")
     @patch.object(GroupsApi, "get_group_download_status")
-    def test_wait_for_group_download_202_200(self, mock_get_group_download_status, mock_export_group, max_wait, wait, mock_token, mock_host):
+    def test_wait_for_group_download_202_200(self, mock_get_group_download_status, mock_export_group, mock_cool_off, max_wait, wait, mock_token, mock_host):
+        mock_cool_off.return_value = 0.01
         mock_token.return_value = "token"
         mock_host.return_value = "https//gitlab.example.com"
         wait.return_value = 0.01

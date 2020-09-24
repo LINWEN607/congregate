@@ -126,34 +126,38 @@ class ImportExportClient(BaseClass):
         while True:
             # Wait until rate limit is resolved
             while self.RATE_LIMIT_MSG in str(json.loads(response.text)):
-                self.log.warning("Re-exporting group {0}, waiting {1} minutes due to:\n{2}".format(
-                    gid, self.COOL_OFF_MINUTES, str(json.loads(response.text))))
+                self.log.warning(
+                    f"Re-exporting group {gid}, waiting {self.COOL_OFF_MINUTES} minutes due to:\n{str(json.loads(response.text))}")
                 sleep(self.COOL_OFF_MINUTES * 60)
                 response = self.get_export_response(gid, is_project=False)
             if response.status_code == 202:
                 status = self.groups_api.get_group_download_status(
                     self.config.source_host, self.config.source_token, gid)
+                # Assuming Max Group Export Download requests per minute per user = 1
                 if status.status_code == 200:
+                    self.log.warning(
+                        f"Waiting {self.COOL_OFF_MINUTES} minutes to download group {gid}")
+                    sleep(self.COOL_OFF_MINUTES * 60)
                     exported = True
                     break
                 elif total_time < self.config.max_export_wait_time:
                     self.log.info(
-                        "Waiting {0} seconds for group {1} to export".format(wait_time, gid))
+                        f"Waiting {wait_time} seconds for group {gid} to export")
                     total_time += wait_time
                     sleep(wait_time)
                 else:
                     self.log.error(
-                        "Time limit exceeded for exporting group {0}, with status:\n{1}".format(gid, status))
+                        f"Time limit exceeded for exporting group {gid}, with status:\n{status}")
                     break
             elif retry:
                 self.log.error(
-                    "Group {0} export failed (re-exporting), with response:\n{1}".format(gid, str(json.loads(response.text))))
+                    f"Group {gid} export failed (re-exporting), with response:\n{str(json.loads(response.text))}")
                 response = self.get_export_response(gid, is_project=False)
                 retry = False
                 total_time = 0
             else:
                 self.log.error(
-                    "SKIP: Failed to trigger source group {0} export, due to:\n{1}".format(gid, str(json.loads(response.text))))
+                    f"SKIP: Failed to trigger source group {gid} export, due to:\n{str(json.loads(response.text))}")
                 break
         return exported
 
