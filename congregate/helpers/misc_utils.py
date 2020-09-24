@@ -531,7 +531,9 @@ def safe_list_index_lookup(l, v):
 
 
 def get_hash_of_dict(d):
-    return hash(json.dumps(d))
+    SHAhash = hashlib.sha1()
+    SHAhash.update(bytes(json.dumps(d), encoding="UTF-8"))
+    return SHAhash.hexdigest()
 
 
 # http://akiscode.com/articles/sha-1directoryhash.shtml
