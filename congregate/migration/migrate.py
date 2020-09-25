@@ -226,7 +226,7 @@ class MigrateClient(BaseClass):
                     result[project["path_with_namespace"]]["is_gh_pages"] = self.add_pipeline_for_github_pages(
                         project_id)
                 else:
-                    result = self.ext_import.get_failed_result(project["path_with_namespace"], data={
+                    result = self.ext_import.get_failed_result(project, data={
                         "error": "Import time limit exceeded. Unable to execute post migration phase"
                     })
         return result
