@@ -1,8 +1,9 @@
 import json
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import remove_dupes, safe_json_response, is_error_message_present, json_pretty
+from congregate.helpers.misc_utils import remove_dupes, safe_json_response, is_error_message_present, json_pretty, stream_json_yield_to_file
 from congregate.migration.github.api.orgs import OrgsApi
+from congregate.migration.github.api.teams import TeamsApi
 from congregate.migration.github.repos import ReposClient
 from congregate.migration.github.users import UsersClient
 
@@ -27,6 +28,8 @@ class OrgsClient(BaseClass):
     def __init__(self):
         super(OrgsClient, self).__init__()
         self.orgs_api = OrgsApi(self.config.source_host,
+                                self.config.source_token)
+        self.teams_api = TeamsApi(self.config.source_host,
                                 self.config.source_token)
         self.repos = ReposClient()
         self.users = UsersClient()
@@ -67,7 +70,8 @@ class OrgsClient(BaseClass):
             self.log.error(
                 "Failed to append org {} ({}) to list {}".format(org_name, org, groups))
         else:
-            org_repos = list(self.orgs_api.get_all_org_repos(org_name))
+            # org_repos = list(self.orgs_api.get_all_org_repos(org_name))
+            org_repos = list(stream_json_yield_to_file(f"{self.app_path}/data/project_json.json", self.orgs_api.get_all_org_repos, org_name, page_check=True))
             if tree:
                 tree[org_name]["PROJECTS"] = [r["full_name"]
                                               for r in org_repos]
@@ -93,8 +97,7 @@ class OrgsClient(BaseClass):
         else:
             org_name = org["login"]
             full_path = self.get_team_full_path(org_name, team)
-            team_repos = self.orgs_api.get_all_org_team_repos(
-                org_name, team["slug"])
+            team_repos = list(self.teams_api.get_team_repos(team["id"]))
             if tree:
                 tree[org_name]["SUB-GROUPS"].append({"FULL_PATH": full_path, "PROJECTS": [
                     r["full_name"] for r in team_repos]})
