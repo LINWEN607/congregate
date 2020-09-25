@@ -62,6 +62,11 @@ def generate_post_request(host, token, api, data, graphql_query=False, headers=N
         :param api: (str) Specific GitLab API endpoint (ex: projects)
         :param data: (dict) Any data required for the API request
 
+        :kwarg graphql_query: (bool) Sets the URL to use the GraphQL endpoint. Default False
+        :kwarg headers: (dict) Any headers to be passed into the request. Default None
+        :kwarg files: (dict) Any file content to be passed into the request. Default None
+        :kwarg description: (str) A custom description message for the audit log. Default None
+
         :return: request object containing response
     """
     if graphql_query:
