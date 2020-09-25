@@ -10,8 +10,6 @@ from congregate.migration.gitlab.api.users import UsersApi
 
 
 class UsersClient(BaseClass):
-    BLOCKED = ["blocked", "ldap_blocked", "deactivated"]
-
     def __init__(self):
         self.groups_api = GroupsApi()
         self.users_api = UsersApi()

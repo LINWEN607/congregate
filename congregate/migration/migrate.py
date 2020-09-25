@@ -42,8 +42,6 @@ from congregate.migration.teamcity.base import TeamcityClient
 
 
 class MigrateClient(BaseClass):
-    BLOCKED = ["blocked", "ldap_blocked", "deactivated"]
-
     def __init__(
         self,
         dry_run=True,
@@ -414,8 +412,9 @@ class MigrateClient(BaseClass):
 
     def migrate_group_info(self):
         staged_groups = self.groups.get_staged_groups()
-        self.log.info("Duplicate group paths:\n{}".format(
-            get_duplicate_paths(staged_groups, are_projects=False)))
+        dupes = get_duplicate_paths(staged_groups, are_projects=False)
+        if dupes:
+            self.log.warning(f"Duplicate group paths:\n{dupes}")
         staged_top_groups = [g for g in staged_groups if is_top_level_group(g)]
         dry_log = get_dry_log(self.dry_run)
         if staged_groups:
@@ -582,8 +581,9 @@ class MigrateClient(BaseClass):
 
     def migrate_project_info(self):
         staged_projects = self.projects.get_staged_projects()
-        self.log.info("Duplicate project paths:\n{}".format(
-            get_duplicate_paths(staged_projects)))
+        dupes = get_duplicate_paths(staged_projects)
+        if dupes:
+            self.log.info(f"Duplicate project paths:\n{dupes}")
         dry_log = get_dry_log(self.dry_run)
         if staged_projects:
             if not self.skip_project_export:
