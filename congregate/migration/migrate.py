@@ -207,22 +207,28 @@ class MigrateClient(BaseClass):
         members = project.pop("members")
         result = self.ext_import.trigger_import_from_ghe(
             project, dry_run=self.dry_run)
-        sleep(10)
         if result.get(project["path_with_namespace"], False) is not False:
-            project_id = result[project["path_with_namespace"]
-                                ]["response"].get("id")
-            result[project["path_with_namespace"]]["members"] = self.projects.add_members_to_destination_project(
-                self.config.destination_host, self.config.destination_token, project_id, members)
-            if self.config.ci_source_type == "jenkins":
-                result[project["path_with_namespace"]]["jenkins_variables"] = self.migrate_jenkins_variables(
-                    project, project_id)
-            if self.config.ci_source_type == "teamcity":
-                result[project["path_with_namespace"]]["teamcity_variables"] = self.migrate_teamcity_variables(
-                    project, project_id)
-            self.projects.remove_import_user(project_id)
-            # Added a new file in the repo
-            result[project["path_with_namespace"]]["is_gh_pages"] = self.add_pipeline_for_github_pages(
-                project_id)
+            result_response = result[project["path_with_namespace"]]["response"]
+            if project_id := result_response.get("id", None):
+                full_path = result_response.get("full_path").strip("/")
+                success = self.ext_import.wait_for_project_to_import(full_path)
+                if success:
+                    result[project["path_with_namespace"]]["members"] = self.projects.add_members_to_destination_project(
+                        self.config.destination_host, self.config.destination_token, project_id, members)
+                    if self.config.ci_source_type == "jenkins":
+                        result[project["path_with_namespace"]]["jenkins_variables"] = self.migrate_jenkins_variables(
+                            project, project_id)
+                    if self.config.ci_source_type == "teamcity":
+                        result[project["path_with_namespace"]]["teamcity_variables"] = self.migrate_teamcity_variables(
+                            project, project_id)
+                    self.projects.remove_import_user(project_id)
+                    # Added a new file in the repo
+                    result[project["path_with_namespace"]]["is_gh_pages"] = self.add_pipeline_for_github_pages(
+                        project_id)
+                else:
+                    result = self.ext_import.get_failed_result(project["path_with_namespace"], data={
+                        "error": "Import time limit exceeded. Unable to execute post migration phase"
+                    })
         return result
 
     def add_pipeline_for_github_pages(self, project_id):

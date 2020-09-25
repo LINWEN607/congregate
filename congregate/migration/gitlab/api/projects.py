@@ -835,74 +835,74 @@ class ProjectsApi():
         """
         return api.generate_get_request(host, token, f"projects/{project_id}/snippets/{snippet_id}")
 
-    def get_project_snippet_awards(self, host, token, project_id, snipped_id):
+    def get_project_snippet_awards(self, host, token, project_id, snippet_id):
         """
         Get a list of all award emoji for a specified project snippet
 
         GitLab API Doc: https://docs.gitlab.com/ee/api/award_emoji.html
 
             :param: project_id: (int) GitLab group ID
-            :param: snipped_id: (int) Snipped ID
+            :param: snippet_id: (int) Snipped ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
-            :yield: Generator returning JSON of each result from GET /projects/:id/snippets/:snipped_id/award_emoji
+            :yield: Generator returning JSON of each result from GET /projects/:id/snippets/:snippet_id/award_emoji
         """
         return api.generate_get_request(host, token, f"projects/{project_id}/snippets/{snippet_id}/award_emoji")
 
-    def create_project_snippet_award(self, host, token, project_id, snipped_id, name):
+    def create_project_snippet_award(self, host, token, project_id, snippet_id, name):
         """
         Create an award emoji on the specified project snippet
 
         GitLab API Doc: https://docs.gitlab.com/ee/api/award_emoji.html#award-a-new-emoji
 
             :param: project_id: (int) GitLab project ID
-            :param: snipped_id: (int) Snipped ID
+            :param: snippet_id: (int) Snipped ID
             :param: name: (int) Name of the award
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
-            :return: Response object containing the response to POST /projects/:id/snippets/:snipped_id/award_emoji
+            :return: Response object containing the response to POST /projects/:id/snippets/:snippet_id/award_emoji
         """
         return api.generate_post_request(host, token, f"projects/{project_id}/snippets/{snippet_id}/award_emoji?name={name}", None)
 
-    def get_project_snippet_note_awards(self, host, token, project_id, snipped_id, note_id):
+    def get_project_snippet_note_awards(self, host, token, project_id, snippet_id, note_id):
         """
         Get all award emoji for an snippet note
 
         GitLab API Doc: https://docs.gitlab.com/ee/api/award_emoji.html
 
             :param: project_id: (int) GitLab group ID
-            :param: snipped_id: (int) Snipped ID
+            :param: snippet_id: (int) Snipped ID
             :param: note_id: (int) Note ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
-            :yield: Generator returning JSON of each result from GET /projects/:id/snippets/:snipped_id/notes/:note_id/award_emoji
+            :yield: Generator returning JSON of each result from GET /projects/:id/snippets/:snippet_id/notes/:note_id/award_emoji
         """
         return api.generate_get_request(host, token, f"projects/{project_id}/snippets/{snippet_id}/notes/{note_id}/award_emoji")
 
-    def create_project_snippet_note_award(self, host, token, project_id, snipped_id, note_id, name):
+    def create_project_snippet_note_award(self, host, token, project_id, snippet_id, note_id, name):
         """
         Create an award emoji on the specified project snippet note
 
         GitLab API Doc: https://docs.gitlab.com/ee/api/award_emoji.html
 
             :param: project_id: (int) GitLab project ID
-            :param: snipped_id: (int) Snipped ID
+            :param: snippet_id: (int) Snipped ID
             :param: note_id: (int) Note ID
             :param: name: (int) Name of the award
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
-            :return: Response object containing the response to POST /projects/:id/snippets/:snipped_id/notes/:note_id/award_emoji
+            :return: Response object containing the response to POST /projects/:id/snippets/:snippet_id/notes/:note_id/award_emoji
         """
         return api.generate_post_request(host, token, f"projects/{project_id}/snippets/{snippet_id}/notes/{note_id}/award_emoji?name={name}", None)
 
-    def get_project_snippet_notes(self, host, token, project_id, snipped_id):
+    def get_project_snippet_notes(self, host, token, project_id, snippet_id):
         """
         Gets a list of all notes for a single snippet
 
         GitLab API Doc: https://docs.gitlab.com/ee/api/notes.html#list-all-snippet-notes
 
             :param: project_id: (int) GitLab group ID
-            :param: snipped_id: (int) Snipped ID
+            :param: snippet_id: (int) Snipped ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /projects/:id/snippets/:snippet_id/notes
@@ -982,3 +982,22 @@ class ProjectsApi():
             :return: Response object containing a 204 (No Content) or 404 (Group not found) from DELETE /projects/:id/environments/:environment_id
         """
         return api.generate_delete_request(host, token, f"projects/{project_id}/environments/{env_id}")
+
+    def get_project_statistics(self, project_full_path, host, token):
+        query = {
+            "query": """
+                query {
+                    project(fullPath: "%s") {
+                        statistics {
+                            commitCount,
+                            repositorySize,
+                            lfsObjectsSize,
+                            storageSize
+                            }
+                        }
+                }
+            """ % project_full_path
+        }
+
+        return api.generate_post_request(host, token, None, json.dumps(query), graphql_query=True)
+

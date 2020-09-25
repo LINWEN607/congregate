@@ -1,13 +1,16 @@
+from time import sleep
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import migration_dry_run, is_error_message_present
+from congregate.helpers.misc_utils import migration_dry_run, is_error_message_present, safe_json_response
 from congregate.helpers.migrate_utils import get_dst_path_with_namespace
 from congregate.migration.gitlab.api.external_import import ImportApi
+from congregate.migration.gitlab.api.projects import ProjectsApi
 
 
 class ImportClient(BaseClass):
     def __init__(self):
         super(ImportClient, self).__init__()
         self.ext_import = ImportApi()
+        self.projects = ProjectsApi()
 
     def trigger_import_from_bb_server(self, project, dry_run=True):
         project_path = project["path_with_namespace"]
@@ -66,6 +69,31 @@ class ImportClient(BaseClass):
             data.pop("personal_access_token", None)
             migration_dry_run("project", data)
             return self.get_failed_result(project, data)
+    
+    def wait_for_project_to_import(self, full_path):
+        total_time = 0
+        wait_time = self.config.importexport_wait
+        max_wait_time = self.config.max_export_wait_time
+        while True:
+            project_statistics = safe_json_response(
+                self.projects.get_project_statistics(full_path, self.config.destination_host, self.config.destination_token))
+            if project_statistics:
+                if project_statistics.get("data", None) is not None:
+                    if project_statistics["data"].get("project", None) is not None:
+                        stats = project_statistics["data"]["project"]["statistics"]
+                        if stats["commitCount"] > 0:
+                            self.log.info(f"Git commits have been found for {full_path}. Import is complete")
+                            return True
+                        if (stats["storageSize"] > 0) or (stats['repositorySize'] > 0):
+                            self.log.info(f"Project storage is greater than 0 for {full_path}. Import is complete")
+                            return True
+            if total_time > max_wait_time:
+                self.log.error(f"Max import time exceeded for {full_path}. Skipping post-migration phase")
+                return False
+            self.log.info(f"Waiting for project {full_path} to import")
+            sleep(wait_time)
+            total_time += wait_time
+
 
     def get_project_repo_from_full_path(self, full_path):
         split = full_path.split("/")
