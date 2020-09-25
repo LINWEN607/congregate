@@ -13,8 +13,8 @@ from requests.exceptions import RequestException
 from congregate.helpers import api
 from congregate.helpers.migrate_utils import get_export_filename_from_namespace_and_name, get_dst_path_with_namespace, get_full_path_with_parent_namespace, \
     is_top_level_group, get_failed_export_from_results, get_results, get_staged_groups_without_failed_export, get_staged_projects_without_failed_export, can_migrate_users
-from congregate.helpers.misc_utils import get_dry_log, json_pretty, is_dot_com, clean_data, \
-    add_post_migration_stats, rotate_logs, write_results_to_file, migration_dry_run, safe_json_response, is_error_message_present
+from congregate.helpers.misc_utils import get_dry_log, json_pretty, is_dot_com, clean_data, add_post_migration_stats, \
+    rotate_logs, write_results_to_file, migration_dry_run, safe_json_response, is_error_message_present, get_duplicate_paths
 from congregate.helpers.jobtemplategenerator import JobTemplateGenerator
 from congregate.helpers.processes import start_multi_process
 from congregate.cli.stage_projects import ProjectStageCLI
@@ -414,6 +414,8 @@ class MigrateClient(BaseClass):
 
     def migrate_group_info(self):
         staged_groups = self.groups.get_staged_groups()
+        self.log.info("Duplicate group paths:\n{}".format(
+            get_duplicate_paths(staged_groups, are_projects=False)))
         staged_top_groups = [g for g in staged_groups if is_top_level_group(g)]
         dry_log = get_dry_log(self.dry_run)
         if staged_groups:
@@ -580,6 +582,8 @@ class MigrateClient(BaseClass):
 
     def migrate_project_info(self):
         staged_projects = self.projects.get_staged_projects()
+        self.log.info("Duplicate project paths:\n{}".format(
+            get_duplicate_paths(staged_projects)))
         dry_log = get_dry_log(self.dry_run)
         if staged_projects:
             if not self.skip_project_export:

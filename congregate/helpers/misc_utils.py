@@ -6,6 +6,7 @@ import subprocess
 import hashlib
 
 import glob
+from collections import Counter
 from traceback import print_exc
 from base64 import b64encode, b64decode
 from copy import deepcopy
@@ -505,6 +506,7 @@ def safe_json_response(response):
             return None
     return None
 
+
 def safe_list_index_lookup(l, v):
     """
         Helper method to safely lookup the index of a list based on a specific value
@@ -552,3 +554,12 @@ def get_hash_of_dirs(directory, verbose=0):
         return -2
 
     return SHAhash.hexdigest()
+
+
+def get_duplicate_paths(data, are_projects=True):
+    """
+        Legacy GL versions had case insensitive paths, which on newer GL versions are seen as duplicates
+    """
+    paths = [x.get("path_with_namespace", "").lower() if are_projects else x.get(
+        "full_path", "").lower() for x in data]
+    return [i for i, c in Counter(paths).items() if c > 1]
