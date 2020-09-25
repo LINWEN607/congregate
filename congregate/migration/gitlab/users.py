@@ -119,9 +119,8 @@ class UsersClient(BaseClass):
         index = 0
         if old_user.get("email"):
             email = old_user["email"]
-            for user in self.users_api.search_for_user_by_email(self.config.destination_host, self.config.destination_token,
-                                                                email):
-                if user["email"] == email:
+            for user in self.users_api.search_for_user_by_email(self.config.destination_host, self.config.destination_token, email):
+                if user.get("email", None) == email:
                     return True
                 elif index > 100:
                     return False

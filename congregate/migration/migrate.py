@@ -394,12 +394,15 @@ class MigrateClient(BaseClass):
                     new_user = self.users.handle_user_creation_status(
                         response, user_data)
             if not self.dry_run and self.config.source_type == "gitlab":
-                # Migrate SSH keys
-                self.keys.migrate_user_ssh_keys(old_user, new_user if new_user.get(
-                    "id", None) else self.users.find_user_by_email_comparison_without_id(email))
-                # Migrate GPG keys
-                self.keys.migrate_user_gpg_keys(old_user, new_user if new_user.get(
-                    "id", None) else self.users.find_user_by_email_comparison_without_id(email))
+                found_user = new_user if new_user.get(
+                    "id", None) is not None else self.users.find_user_by_email_comparison_without_id(email)
+                new_user["id"] = found_user.get(
+                    "id", None) if found_user else None
+                if found_user:
+                    # Migrate SSH keys
+                    self.keys.migrate_user_ssh_keys(old_user, new_user)
+                    # Migrate GPG keys
+                    self.keys.migrate_user_gpg_keys(old_user, new_user)
         except RequestException as e:
             self.log.error(
                 "Failed to create user {0}, with error:\n{1}".format(user_data, e))
