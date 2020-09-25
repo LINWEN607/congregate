@@ -74,25 +74,29 @@ class ImportClient(BaseClass):
         total_time = 0
         wait_time = self.config.importexport_wait
         max_wait_time = self.config.max_export_wait_time
+        success = False
         while True:
             project_statistics = safe_json_response(
                 self.projects.get_project_statistics(full_path, self.config.destination_host, self.config.destination_token))
-            if project_statistics:
-                if project_statistics.get("data", None) is not None:
-                    if project_statistics["data"].get("project", None) is not None:
-                        stats = project_statistics["data"]["project"]["statistics"]
-                        if stats["commitCount"] > 0:
-                            self.log.info(f"Git commits have been found for {full_path}. Import is complete")
-                            return True
-                        if (stats["storageSize"] > 0) or (stats['repositorySize'] > 0):
-                            self.log.info(f"Project storage is greater than 0 for {full_path}. Import is complete")
-                            return True
-            if total_time > max_wait_time:
+            if project_statistics and project_statistics.get("data", None) is not None:
+                if project_statistics["data"].get("project", None) is not None:
+                    stats = project_statistics["data"]["project"]["statistics"]
+                    if stats["commitCount"] > 0:
+                        self.log.info(f"Git commits have been found for {full_path}. Import is complete")
+                        success = True
+                        break
+                    if (stats["storageSize"] > 0) or (stats['repositorySize'] > 0):
+                        self.log.info(f"Project storage is greater than 0 for {full_path}. Import is complete")
+                        success = True
+                        break
+            if total_time >= max_wait_time:
                 self.log.error(f"Max import time exceeded for {full_path}. Skipping post-migration phase")
-                return False
+                break
             self.log.info(f"Waiting for project {full_path} to import")
-            sleep(wait_time)
             total_time += wait_time
+            self.log.info(f"Total time: {total_time}. Max time: {max_wait_time}")
+            sleep(wait_time)
+        return success
 
 
     def get_project_repo_from_full_path(self, full_path):
