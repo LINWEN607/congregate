@@ -19,8 +19,6 @@ from congregate.helpers.seed.generator import SeedDataGenerator
 from congregate.helpers.seed.git import Manage_Repos
 from congregate.migration.github.api.orgs import OrgsApi
 
-# test = Manage_Repos(clone=True, size='small')
-
 # Create an org if it doesn't exist
 # def check_org():
 #     github_connection = OrgsApi(host, token)

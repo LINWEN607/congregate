@@ -15,7 +15,11 @@ class ReposApi():
 
         GitHub API v3 Doc: https://docs.github.com/en/rest/reference/repos#get-a-repository
         """
-        return self.api.generate_v3_get_request(self.host, "repos/{}/{}".format(owner, repo), verify=self.config.ssl_verify)
+        return self.api.generate_v3_get_request(
+            self.host,
+            f"repos/{owner}/{repo}",
+            verify=self.config.ssl_verify
+        )
 
     def get_repo_teams(self, owner, repo):
         """
@@ -24,7 +28,7 @@ class ReposApi():
 
         GitHub API v3 Doc: https://docs.github.com/en/rest/reference/repos#list-repository-teams
         """
-        return self.api.list_all(self.host, "repos/{}/{}/teams".format(owner, repo))
+        return self.api.list_all(self.host,"repos/{}/{}/teams".format(owner, repo))
 
     def get_all_public_repos(self):
         """
@@ -50,7 +54,7 @@ class ReposApi():
         GitHub API v3 Doc: https://docs.github.com/en/rest/reference/repos#list-repository-collaborators
         """
         return self.api.list_all(self.host, "repos/{}/{}/collaborators".format(owner, repo))
-    
+
     def create_auth_user_repo(self, data=None, message=None):
         """
         Creates a new repository for the authenticated user.
@@ -60,15 +64,27 @@ class ReposApi():
         if not message:
             print(f"Creating a new repository for the authenticated user {data}")
 
-        return self.api.generate_v3_post_request(self.host, "user/repos", json.dumps(data), description=message, verify=self.config.ssl_verify)
+        return self.api.generate_v3_post_request(
+            self.host,
+            "user/repos",
+            json.dumps(data),
+            description=message,
+            verify=self.config.ssl_verify
+        )
 
-    def create_org(self, data=None, message=None):
+    def create_org_repo(self, org_name, data=None, message=None):
         """
-        Create an organization.
+        Create an organization repository.
 
-        GitHub API v3 Doc: https://docs.github.com/en/enterprise/2.21/user/rest/reference/enterprise-admin#create-an-organization
+        GitHub API v3 Doc: https://docs.github.com/en/enterprise/2.21/user/rest/reference/repos#create-an-organization-repository
         """
         if not message:
-            print(f"Creating an organization {data}")
+            print(f"Creating an organization repository {data}")
 
-        return self.api.generate_v3_post_request(self.host, "admin/organizations", json.dumps(data), description=message, verify=self.config.ssl_verify)
+        return self.api.generate_v3_post_request(
+            self.host,
+            f"orgs/{org_name}/repos",
+            data,
+            description=message,
+            verify=self.config.ssl_verify
+        )

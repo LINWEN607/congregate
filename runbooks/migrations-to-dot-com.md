@@ -78,6 +78,10 @@ Copy the following data and add subsequent columns for single group migration
 * [ ] Check the status of **gitlab.com** (https://status.gitlab.com/)
   * [ ] Confirm you can reach the UI of the instance
   * [ ] Confirm you can reach the API through cURL or a REST client
+  * [ ] Confirm the import (Admin) user is a member of the SAML+SSO enforced group
+  * [ ] If not and late notice, as a workaround:
+    * [ ] Discuss with customer whether it's possible to disable SSO enforced during user migration OR
+    * [ ] Reach out to #support_gitlab-com to spoof adding the user to the SAML+SSO enforced group
 * [ ] Run `congregate list` at the beginning of the migration blackout period
 * [ ] Stage ALL users
   * [ ] **Make sure no groups and projects are staged**
@@ -288,6 +292,10 @@ If **any** data was migrated incorrectly (i.e. to the wrong namespace), you **mu
 
 #### Groups and projects
 
+* [ ] Make sure groups and projects can be immediately deleted
+  * **Group Settings:** *Group -> Settings -> General -> Permissions*
+  * **Instance Settings:** *Admin Area -> Settings -> General -> Visibility and access controls*
+* [ ] If not, inform the Support Manager with Rails Console access in order to delete them before proceeding
 * [ ] Notify in the internal Slack channel dedicated to this migration you are running a rollback due to an issue with the migration
 * [ ] Dry run `nohup ./congregate.sh rollback --skip-users > data/waves/wave_<insert_wave_number>/rollback_dry_run.log 2>&1 &`
 * [ ] Live run `nohup ./congregate.sh rollback --skip-users --commit > data/waves/wave_<insert_wave_number>/rollback.log 2>&1 &`

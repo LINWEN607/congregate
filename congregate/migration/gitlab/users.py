@@ -117,9 +117,8 @@ class UsersClient(BaseClass):
         index = 0
         if old_user.get("email"):
             email = old_user["email"]
-            for user in self.users_api.search_for_user_by_email(self.config.destination_host, self.config.destination_token,
-                                                                email):
-                if user["email"] == email:
+            for user in self.users_api.search_for_user_by_email(self.config.destination_host, self.config.destination_token, email):
+                if user.get("email", None) == email:
                     return True
                 elif index > 100:
                     return False
@@ -167,7 +166,7 @@ class UsersClient(BaseClass):
             user["provider"] = "group_saml"
             user["reset_password"] = self.config.reset_password
             # make sure the blocked user cannot do anything
-            user["force_random_password"] = "true" if user["state"] == "blocked" else self.config.force_random_password
+            user["force_random_password"] = "true" if user["state"] in self.BLOCKED else self.config.force_random_password
             if not self.config.reset_password and not self.config.force_random_password:
                 # TODO: add config for 'password' field
                 self.log.warning(
@@ -330,12 +329,13 @@ class UsersClient(BaseClass):
         self.remove("staged_projects", dry_run)
 
     def remove(self, data, dry_run=True):
-        staged = read_json_file_into_object("{0}/data/{1}.json".format(self.app_path, data))
+        staged = read_json_file_into_object(
+            "{0}/data/{1}.json".format(self.app_path, data))
 
         if data == "staged_users":
             to_pop = []
             for user in staged:
-                if user.get("state", None) == "blocked":
+                if user.get("state", None) in self.BLOCKED:
                     to_pop.append(staged.index(user))
                     self.log.info("Removing blocked user {0} from {1}".format(
                         user["username"], data))
@@ -344,7 +344,7 @@ class UsersClient(BaseClass):
             for s in staged:
                 to_pop = []
                 for member in s["members"]:
-                    if member.get("state", None) == "blocked":
+                    if member.get("state", None) in self.BLOCKED:
                         to_pop.append(s["members"].index(member))
                         self.log.info("Removing blocked user {0} from {1} ({2})".format(
                             member["username"], data, s["name"]))
@@ -399,7 +399,8 @@ class UsersClient(BaseClass):
             Users NOT found input comes from search_for_staged_users.
             :return: Staged users
         """
-        staged = read_json_file_into_object("{0}/data/{1}.json".format(self.app_path, data))
+        staged = read_json_file_into_object(
+            "{0}/data/{1}.json".format(self.app_path, data))
 
         if data == "staged_users":
             self.log.info("{0} only NOT found users ({1}/{2}) in staged users".format(
@@ -464,7 +465,7 @@ class UsersClient(BaseClass):
         user["skip_confirmation"] = True
         user["reset_password"] = self.config.reset_password
         # make sure the blocked user cannot do anything
-        user["force_random_password"] = "true" if user["state"] == "blocked" else self.config.force_random_password
+        user["force_random_password"] = "true" if user["state"] in self.BLOCKED else self.config.force_random_password
         if not self.config.reset_password and not self.config.force_random_password:
             # TODO: add config for 'password' field
             self.log.warning(
@@ -541,7 +542,8 @@ class UsersClient(BaseClass):
                 }
 
     def append_users(self, users):
-        user_file = read_json_file_into_object("%s/data/users.json" % self.app_path)
+        user_file = read_json_file_into_object(
+            "%s/data/users.json" % self.app_path)
         staged_users = []
         for user in filter(None, users):
             for u in user_file:
@@ -581,12 +583,15 @@ class UsersClient(BaseClass):
         if self.config.group_sso_provider_pattern == "hash":
             if self.config.group_sso_provider_map_file:
                 try:
-                    hmap = read_json_file_into_object(f"{self.config.group_sso_provider_map_file}")
+                    hmap = read_json_file_into_object(
+                        f"{self.config.group_sso_provider_map_file}")
                     if isinstance(hmap, list):
                         return rewrite_list_into_dict(hmap, "email")
                     return hmap
                 except FileNotFoundError:
-                    self.log.error(f"{self.config.group_sso_provider_map_file} not found")
+                    self.log.error(
+                        f"{self.config.group_sso_provider_map_file} not found")
                     return None
-            self.log.warning("SSO pattern is currently set to hash, but no file is specified in congregate.conf")
+            self.log.warning(
+                "SSO pattern is currently set to hash, but no file is specified in congregate.conf")
         return None

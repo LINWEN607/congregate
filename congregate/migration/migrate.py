@@ -6,16 +6,15 @@
 
 import os
 import json
-from time import sleep
+from time import sleep, time
 from traceback import print_exc
-from time import time
 from requests.exceptions import RequestException
 
 from congregate.helpers import api
 from congregate.helpers.migrate_utils import get_export_filename_from_namespace_and_name, get_dst_path_with_namespace, get_full_path_with_parent_namespace, \
     is_top_level_group, get_failed_export_from_results, get_results, get_staged_groups_without_failed_export, get_staged_projects_without_failed_export, can_migrate_users
-from congregate.helpers.misc_utils import get_dry_log, json_pretty, is_dot_com, clean_data, \
-    add_post_migration_stats, rotate_logs, write_results_to_file, migration_dry_run, safe_json_response, is_error_message_present
+from congregate.helpers.misc_utils import get_dry_log, json_pretty, is_dot_com, clean_data, add_post_migration_stats, \
+    rotate_logs, write_results_to_file, migration_dry_run, safe_json_response, is_error_message_present, get_duplicate_paths
 from congregate.helpers.jobtemplategenerator import JobTemplateGenerator
 from congregate.helpers.processes import start_multi_process
 from congregate.cli.stage_projects import ProjectStageCLI
@@ -377,7 +376,7 @@ class MigrateClient(BaseClass):
         }
         try:
             if not self.only_post_migration_info:
-                if state == "active" or (state == "blocked" and self.config.keep_blocked_users):
+                if state == "active" or (state in self.BLOCKED and self.config.keep_blocked_users):
                     user_data = self.users.generate_user_data(user)
                     self.log.info("{0}Attempting to create user {1}".format(
                         get_dry_log(self.dry_run), email))
@@ -388,17 +387,20 @@ class MigrateClient(BaseClass):
                         state, json_pretty(user)))
                 if response is not None:
                     # NOTE: Persist 'blocked' user state regardless of domain and creation status.
-                    if user_data.get("state", None).lower() == "blocked":
+                    if user_data.get("state", None).lower() in self.BLOCKED:
                         self.users.block_user(user_data)
                     new_user = self.users.handle_user_creation_status(
                         response, user_data)
             if not self.dry_run and self.config.source_type == "gitlab":
-                # Migrate SSH keys
-                self.keys.migrate_user_ssh_keys(old_user, new_user if new_user.get(
-                    "id", None) else self.users.find_user_by_email_comparison_without_id(email))
-                # Migrate GPG keys
-                self.keys.migrate_user_gpg_keys(old_user, new_user if new_user.get(
-                    "id", None) else self.users.find_user_by_email_comparison_without_id(email))
+                found_user = new_user if new_user.get(
+                    "id", None) is not None else self.users.find_user_by_email_comparison_without_id(email)
+                new_user["id"] = found_user.get(
+                    "id", None) if found_user else None
+                if found_user:
+                    # Migrate SSH keys
+                    self.keys.migrate_user_ssh_keys(old_user, new_user)
+                    # Migrate GPG keys
+                    self.keys.migrate_user_gpg_keys(old_user, new_user)
         except RequestException as e:
             self.log.error(
                 "Failed to create user {0}, with error:\n{1}".format(user_data, e))
@@ -410,6 +412,9 @@ class MigrateClient(BaseClass):
 
     def migrate_group_info(self):
         staged_groups = self.groups.get_staged_groups()
+        dupes = get_duplicate_paths(staged_groups, are_projects=False)
+        if dupes:
+            self.log.warning(f"Duplicate group paths:\n{dupes}")
         staged_top_groups = [g for g in staged_groups if is_top_level_group(g)]
         dry_log = get_dry_log(self.dry_run)
         if staged_groups:
@@ -576,6 +581,9 @@ class MigrateClient(BaseClass):
 
     def migrate_project_info(self):
         staged_projects = self.projects.get_staged_projects()
+        dupes = get_duplicate_paths(staged_projects)
+        if dupes:
+            self.log.info(f"Duplicate project paths:\n{dupes}")
         dry_log = get_dry_log(self.dry_run)
         if staged_projects:
             if not self.skip_project_export:

@@ -126,34 +126,38 @@ class ImportExportClient(BaseClass):
         while True:
             # Wait until rate limit is resolved
             while self.RATE_LIMIT_MSG in str(json.loads(response.text)):
-                self.log.warning("Re-exporting group {0}, waiting {1} minutes due to:\n{2}".format(
-                    gid, self.COOL_OFF_MINUTES, str(json.loads(response.text))))
+                self.log.warning(
+                    f"Re-exporting group {gid}, waiting {self.COOL_OFF_MINUTES} minutes due to:\n{str(json.loads(response.text))}")
                 sleep(self.COOL_OFF_MINUTES * 60)
                 response = self.get_export_response(gid, is_project=False)
             if response.status_code == 202:
                 status = self.groups_api.get_group_download_status(
                     self.config.source_host, self.config.source_token, gid)
+                # Assuming Max Group Export Download requests per minute per user = 1
                 if status.status_code == 200:
+                    self.log.warning(
+                        f"Waiting {self.COOL_OFF_MINUTES} minutes to download group {gid}")
+                    sleep(self.COOL_OFF_MINUTES * 60)
                     exported = True
                     break
                 elif total_time < self.config.max_export_wait_time:
                     self.log.info(
-                        "Waiting {0} seconds for group {1} to export".format(wait_time, gid))
+                        f"Waiting {wait_time} seconds for group {gid} to export")
                     total_time += wait_time
                     sleep(wait_time)
                 else:
                     self.log.error(
-                        "Time limit exceeded for exporting group {0}, with status:\n{1}".format(gid, status))
+                        f"Time limit exceeded for exporting group {gid}, with status:\n{status}")
                     break
             elif retry:
                 self.log.error(
-                    "Group {0} export failed (re-exporting), with response:\n{1}".format(gid, str(json.loads(response.text))))
+                    f"Group {gid} export failed (re-exporting), with response:\n{str(json.loads(response.text))}")
                 response = self.get_export_response(gid, is_project=False)
                 retry = False
                 total_time = 0
             else:
                 self.log.error(
-                    "SKIP: Failed to trigger source group {0} export, due to:\n{1}".format(gid, str(json.loads(response.text))))
+                    f"SKIP: Failed to trigger source group {gid} export, due to:\n{str(json.loads(response.text))}")
                 break
         return exported
 
@@ -455,24 +459,24 @@ class ImportExportClient(BaseClass):
             # Wait until rate limit is resolved or project deleted
             while self.SERVER_ERROR in str(import_response) or self.RATE_LIMIT_MSG in str(import_response) or any(del_err_msg in str(import_response) for del_err_msg in self.DEL_ERR_MSGS):
                 if self.RATE_LIMIT_MSG in str(import_response):
-                    self.log.warning("Re-importing project {0} to {1}, waiting {2} minutes due to:\n{3}".format(
-                        name, dst_namespace, self.COOL_OFF_MINUTES, import_response))
+                    self.log.warning(
+                        f"Re-importing project {name} to {dst_namespace}, waiting {self.COOL_OFF_MINUTES} minutes due to:\n{import_response}")
                     sleep(self.COOL_OFF_MINUTES * 60)
                 # Assuming Default deletion adjourned period (Admin -> Settings -> General -> Visibility and access controls) is 0
                 elif any(del_err_msg in str(import_response) for del_err_msg in self.DEL_ERR_MSGS):
                     if total > max_wait_time:
-                        self.log.error("Time limit exceeded waiting for project {0} to delete from {1}, with response:\n{2}".format(
-                            name, dst_namespace, import_response))
+                        self.log.error(
+                            f"Time limit exceeded waiting for project {name} to delete from {dst_namespace}, with response:\n{import_response}")
                         return None
                     self.log.info(
-                        "Waiting {0} seconds for project {1} to delete from {2} before re-importing".format(wait_time, name, dst_namespace))
+                        f"Waiting {wait_time} seconds for project {name} to delete from {dst_namespace} before re-importing:\n{import_response}")
                     total += wait_time
                     sleep(wait_time)
                 elif self.SERVER_ERROR in str(import_response):
                     self.log.warning(
-                        "Re-importing project {0} to {1} due to:\n{2}".format(name, dst_namespace, import_response))
+                        f"Re-importing project {name} to {dst_namespace} due to:\n{import_response}")
                     self.log.info(
-                        "Attempting to delete project {0} from {1} after 500".format(name, dst_namespace))
+                        f"Attempting to delete project {name} from {dst_namespace} after {self.SERVER_ERROR}")
                     self.projects_api.delete_project(
                         host, token, quote_plus(dst_namespace + "/" + path))
                     sleep(wait_time)
@@ -496,8 +500,8 @@ class ImportExportClient(BaseClass):
                         # Delete and re-import once if the project import status failed, otherwise just delete
                         # Assuming Default deletion adjourned period (Admin -> Settings -> General -> Visibility and access controls) is 0
                         if retry:
-                            self.log.info("Deleting project {0} from {1} after import status failed (re-importing)".format(
-                                name, dst_namespace))
+                            self.log.info(
+                                f"Deleting project {name} from {dst_namespace} after import status failed (re-importing)")
                             self.projects_api.delete_project(
                                 host, token, import_id)
                             import_response = self.attempt_import(
@@ -508,7 +512,7 @@ class ImportExportClient(BaseClass):
                     # For any other import status (started, scheduled, etc.) wait for it to update
                     elif timeout < max_wait_time:
                         self.log.info(
-                            "Checking project {0} ({1}) import status in {2} seconds".format(name, dst_namespace, wait_time))
+                            f"Checking project {name} ({dst_namespace}) import status in {wait_time} seconds")
                         timeout += wait_time
                         sleep(wait_time)
                     # In case of timeout delete
@@ -520,11 +524,11 @@ class ImportExportClient(BaseClass):
                         return None
                 else:
                     self.log.error(
-                        "Project {0} ({1}) import attempt failed, with status:\n{2}".format(name, dst_namespace, status))
+                        f"Project {name} ({dst_namespace}) import attempt failed, with status:\n{status}")
                     return None
             else:
-                self.log.error("Project {0} ({1}) failed to import, with response:\n{2}".format(
-                    name, dst_namespace, import_response))
+                self.log.error(
+                    f"Project {name} ({dst_namespace}) failed to import, with response:\n{import_response}")
                 return None
         return import_id
 
