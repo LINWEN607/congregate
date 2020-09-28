@@ -57,14 +57,15 @@ def list_github_data():
     orgs = GitHubOrgs()
     users = GitHubUsers()
 
-    # stream_json_yield_to_file(f"{b.app_path}/data/project_json.json", 
-    #     repos.retrieve_repo_info)
-    
     for repo, _ in repos.retrieve_repo_info():
         mongo.insert_data("projects", repo)
     
     orgs.retrieve_org_info()
     users.retrieve_user_info()
+
+    mongo.dump_collection_to_file("projects", f"{b.app_path}/data/project_json.json")
+    mongo.dump_collection_to_file("groups", f"{b.app_path}/data/groups.json")
+    mongo.dump_collection_to_file("users", f"{b.app_path}/data/users.json")
 
 
 def list_jenkins_data():

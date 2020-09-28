@@ -1,5 +1,6 @@
 from pymongo import MongoClient, errors
 from congregate.helpers.base_class import BaseClass
+from congregate.helpers.misc_utils import stream_json_yield_to_file
 
 class MongoConnector(BaseClass):
     """
@@ -39,4 +40,17 @@ class MongoConnector(BaseClass):
         except errors.DuplicateKeyError:
             self.log.debug("Duplicate insert attempted. Aborting operation")
             return None
-    
+
+    def dump_collection_to_file(self, collection, path):
+        return stream_json_yield_to_file(path, self.stream_collection, collection)
+
+    def stream_collection(self, collection):
+        length = self.db[collection].count_documents({})
+        count = 1
+        for data in self.db[collection].find():
+            data.pop("_id")
+            if count < length:
+                count += 1
+                yield data, False
+            else:
+                yield data, True

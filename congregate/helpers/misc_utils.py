@@ -502,7 +502,6 @@ def stream_json_yield_to_file(file_path, generator_function, *args, log=None, **
                 f.write(json_pretty(data))
                 if last_result is not True:
                     f.write(",")
-                yield data
         except Exception as e:
             if log:
                 log.error("Streamed write failed with error:\n{}".format(e))
