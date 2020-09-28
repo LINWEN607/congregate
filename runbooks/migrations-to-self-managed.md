@@ -249,6 +249,9 @@ If **any** data was migrated incorrectly (i.e. to the wrong namespace), you **mu
 
 #### Groups and projects
 
+* [ ] Make sure groups and projects can be immediately deleted
+  * **Group Settings:** *Group -> Settings -> General -> Permissions*
+  * **Instance Settings:** *Admin Area -> Settings -> General -> Visibility and access controls*
 * [ ] Notify in the internal Slack channel dedicated to this migration you are running a rollback due to an issue with the migration
 * [ ] Dry run `nohup ./congregate.sh rollback --skip-users > data/waves/wave_<insert_wave_number>/rollback_dry_run.log 2>&1 &`
 * [ ] Live run `nohup ./congregate.sh rollback --skip-users --commit > data/waves/wave_<insert_wave_number>/rollback.log 2>&1 &`
