@@ -10,7 +10,7 @@ from requests_toolbelt.multipart.encoder import MultipartEncoder
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers import api
 from congregate.helpers.misc_utils import download_file, migration_dry_run, get_dry_log, \
-    is_error_message_present, check_is_project_or_group_for_logging, json_pretty, validate_name, safe_json_response
+    check_is_project_or_group_for_logging, json_pretty, validate_name, safe_json_response
 from congregate.aws import AwsClient
 from congregate.migration.gitlab.projects import ProjectsClient
 from congregate.migration.gitlab.groups import GroupsClient
@@ -23,8 +23,14 @@ from congregate.helpers.migrate_utils import get_project_namespace, is_user_proj
 
 
 class ImportExportClient(BaseClass):
-    # Import rate limit, 30 within 5 minutes
+    # Group or user namespace does not exist
+    NOT_FOUND_MSG = "404 Namespace Not Found"
+
+    # Default Import rate limit, 6 per minute per user
     RATE_LIMIT_MSG = "This endpoint has been requested too many times"
+
+    # Default Maximum import size, 50Mb
+    SIZE_LIMIT_MSG = "Request Entity Too Large"
 
     # Import responses for a project re-import while it's still being deleted
     DEL_ERR_MSGS = [
@@ -252,7 +258,7 @@ class ImportExportClient(BaseClass):
             import_response = self.attempt_import(
                 filename, name, path, dst_namespace, override_params, members)
             # Use until group import status endpoint is available
-            if "404 Namespace Not Found" in str(import_response):
+            if self.NOT_FOUND_MSG in str(import_response):
                 timeout = 0
                 wait_time = self.config.importexport_wait
                 while self.namespaces_api.get_namespace_by_full_path(dst_namespace, self.config.destination_host, self.config.destination_token).status_code != 200:
@@ -266,7 +272,7 @@ class ImportExportClient(BaseClass):
                         return None
                 import_response = self.attempt_import(
                     filename, name, path, dst_namespace, override_params, members)
-            elif not import_response or is_error_message_present(import_response):
+            elif self.SIZE_LIMIT_MSG in str(import_response) or not import_response:
                 self.log.error("Project {0} failed to import to {1}, due to:\n{2}".format(
                     name, dst_namespace, import_response))
                 return None
