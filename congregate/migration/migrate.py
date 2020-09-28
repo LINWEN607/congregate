@@ -583,7 +583,7 @@ class MigrateClient(BaseClass):
         staged_projects = self.projects.get_staged_projects()
         dupes = get_duplicate_paths(staged_projects)
         if dupes:
-            self.log.info(f"Duplicate project paths:\n{dupes}")
+            self.log.warning(f"Duplicate project paths:\n{dupes}")
         dry_log = get_dry_log(self.dry_run)
         if staged_projects:
             if not self.skip_project_export:
