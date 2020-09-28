@@ -307,7 +307,7 @@ def get_sso_provider_pattern():
     options = {
         1: "email",
         2: "hash",
-        3: "id",
+        3: "extern_uid",
         4: "custom"
     }
     while True:
