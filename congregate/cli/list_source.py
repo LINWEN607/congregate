@@ -18,8 +18,11 @@ from congregate.migration.jenkins.base import JenkinsClient as JenkinsData
 from congregate.migration.teamcity.base import TeamcityClient as TeamcityData
 
 from congregate.helpers.misc_utils import stream_json_yield_to_file
+from congregate.helpers.mdbc import MongoConnector
 
 b = BaseClass()
+
+mongo = MongoConnector()
 
 
 def list_gitlab_data():
@@ -54,9 +57,12 @@ def list_github_data():
     orgs = GitHubOrgs()
     users = GitHubUsers()
 
-    stream_json_yield_to_file(f"{b.app_path}/data/project_json.json", 
-        repos.retrieve_repo_info)
-
+    # stream_json_yield_to_file(f"{b.app_path}/data/project_json.json", 
+    #     repos.retrieve_repo_info)
+    
+    for repo, _ in repos.retrieve_repo_info():
+        mongo.insert_data("projects", repo)
+    
     orgs.retrieve_org_info()
     users.retrieve_user_info()
 
