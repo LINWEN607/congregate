@@ -22,9 +22,6 @@ from congregate.helpers.mdbc import MongoConnector
 
 b = BaseClass()
 
-mongo = MongoConnector()
-
-
 def list_gitlab_data():
     """
         List the projects information, and Retrieve user info, group info from source instance.
@@ -53,6 +50,7 @@ def list_bitbucket_data():
 
 
 def list_github_data():
+    mongo = MongoConnector()
     repos = GitHubRepos()
     orgs = GitHubOrgs()
     users = GitHubUsers()

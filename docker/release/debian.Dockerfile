@@ -14,16 +14,25 @@ COPY congregate.sh pyproject.toml poetry.lock README.md package.json package-loc
 # Installing some basic utilities and updating apt
 RUN apt-get update && \
     apt-get upgrade -y && \
-    apt-get install less vim jq curl -y
+    apt-get install less vim jq curl libcurl4 openssl liblzma5 -y
 
-# TODO: DB integration
+# Install mongo
+RUN mkdir /mongo-install && \
+    mkdir -p /var/lib/mongodb && \
+    mkdir -p /var/log/mongodb && \
+    mkdir -p /data/db && \
+    chown `whoami` /var/lib/mongodb && \
+    chown `whoami` /var/log/mongodb && \
+    cd /mongo-install && \
+    wget https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-debian10-4.4.1.tgz && \
+    tar -zxvf mongodb-linux-*-4.4.1.tgz && \
+    cp mongodb-linux-x86_64-debian10-4.4.1/bin/* /usr/local/bin/
 
 # Install congregate
 RUN cd /opt/congregate && \
     chmod +x congregate && \
     cp congregate.sh /usr/local/bin/congregate && \
     pip install poetry
-
 
 # RUN export PATH=$PATH:$HOME/.poetry/bin/poetry
 RUN poetry install
@@ -37,6 +46,7 @@ RUN curl -sL https://deb.nodesource.com/setup_12.x | bash - && \
     npm install --no-optional && \
     npm run build
 
+run echo 'if [ -z "$(ps aux | grep mongo | grep -v grep)" ]; then mongod --fork --logpath /var/log/mongodb/mongod.log; fi' >> ~/.bashrc
 RUN echo "alias ll='ls -al'" >> ~/.bashrc
 
 # Only need 8000 currently. May need to expose more for upcoming mongo integration
