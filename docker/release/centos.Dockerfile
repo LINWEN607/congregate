@@ -43,5 +43,4 @@ RUN curl -sL https://rpm.nodesource.com/setup_12.x | bash - && \
 
 RUN echo "alias ll='ls -al'" >> ~/.bashrc
 
-# Only need 8000 currently. May need to expose more for upcoming mongo integration
 EXPOSE 8000

@@ -297,7 +297,7 @@ alpine-release-tag:
     - docker push "$RELEASE_IMAGE_NAME"
     - docker push "$LATEST"
 
-arch rolling release:
+centos rolling release:
   extends:
     - .use-docker-in-docker
     - .docker-login
@@ -305,16 +305,16 @@ arch rolling release:
   rules:
     - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
   variables:
-    RELEASE_IMAGE_NAME: "$CI_REGISTRY_IMAGE/$CI_COMMIT_REF_NAME:$CI_COMMIT_SHA-arch"
-    LATEST: "$CI_REGISTRY_IMAGE/$CI_COMMIT_REF_NAME:latest-arch"
+    RELEASE_IMAGE_NAME: "$CI_REGISTRY_IMAGE/$CI_COMMIT_REF_NAME:$CI_COMMIT_SHA-centos"
+    LATEST: "$CI_REGISTRY_IMAGE/$CI_COMMIT_REF_NAME:latest-centos"
   script:
-    - cp docker/release/arch.Dockerfile ./Dockerfile
+    - cp docker/release/centos.Dockerfile ./Dockerfile
     - DOCKER_BUILDKIT=1 docker build --tag "$RELEASE_IMAGE_NAME" .
     - docker image tag $RELEASE_IMAGE_NAME $LATEST
     - docker push "$RELEASE_IMAGE_NAME"
     - docker push "$LATEST"
 
-arch-release-tag:
+centos-release-tag:
   extends:
     - .use-docker-in-docker
     - .docker-login
@@ -322,10 +322,10 @@ arch-release-tag:
     - if: "$CI_COMMIT_TAG"
   stage: release
   variables:
-    RELEASE_IMAGE_NAME: "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME-arch"
-    LATEST: "$CI_REGISTRY_IMAGE:latest-arch"
+    RELEASE_IMAGE_NAME: "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME-centos"
+    LATEST: "$CI_REGISTRY_IMAGE:latest-centos"
   script:
-    - cp docker/release/arch.Dockerfile ./Dockerfile
+    - cp docker/release/centos.Dockerfile ./Dockerfile
     - DOCKER_BUILDKIT=1 docker build --tag "$RELEASE_IMAGE_NAME" .
     - docker image tag $RELEASE_IMAGE_NAME $LATEST
     - docker push "$RELEASE_IMAGE_NAME"

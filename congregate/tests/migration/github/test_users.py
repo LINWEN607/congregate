@@ -1,7 +1,14 @@
 import unittest
 import pytest
 from mock import patch, PropertyMock, MagicMock
+import warnings
+# mongomock is using deprecated logic as of Python 3.3
+# This warning suppression is used so tests can pass
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore")
+    import mongomock
 
+from congregate.helpers.mdbc import MongoConnector
 from congregate.tests.mockapi.github.users import MockUsersApi
 from congregate.migration.github.users import UsersClient
 from congregate.migration.github.api.users import UsersApi
@@ -11,7 +18,12 @@ from congregate.migration.github.api.users import UsersApi
 class UsersTests(unittest.TestCase):
     def setUp(self):
         self.mock_users = MockUsersApi()
-        self.users = UsersClient()
+        self.users = self.mock_user_client()
+
+    def tearDown(self):
+        self.users.mongo.drop_collection("projects")
+        self.users.mongo.drop_collection("groups")
+        self.users.mongo.drop_collection("users")
 
     @patch("io.TextIOBase")
     @patch('builtins.open')
@@ -43,7 +55,9 @@ class UsersTests(unittest.TestCase):
         mock_users.return_value = self.mock_users.get_all_users()
         mock_open.return_value = mock_file
 
-        actual_users = self.users.retrieve_user_info()
+        self.users.retrieve_user_info()
+
+        actual_users = [d for d, _ in self.users.mongo.stream_collection("users")]
 
         expected_users = [
             {
@@ -190,3 +204,9 @@ class UsersTests(unittest.TestCase):
 
         self.assertEqual(actual_users.sort(
             key=lambda x: x["id"]), expected_users.sort(key=lambda x: x["id"]))
+
+
+    def mock_user_client(self):
+        with patch.object(UsersClient, "connect_to_mongo") as mongo_mock:
+            mongo_mock.return_value = MongoConnector(host="test-server", port=123456, client=mongomock.MongoClient)
+            return UsersClient()

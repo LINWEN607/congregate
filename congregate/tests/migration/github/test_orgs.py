@@ -1,21 +1,35 @@
 import unittest
 import pytest
 from mock import patch, PropertyMock, MagicMock
+import warnings
+# mongomock is using deprecated logic as of Python 3.3
+# This warning suppression is used so tests can pass
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore")
+    import mongomock
 
+from congregate.helpers.mdbc import MongoConnector
 from congregate.tests.mockapi.github.orgs import MockOrgsApi
 from congregate.tests.mockapi.github.repos import MockReposApi
+from congregate.tests.mockapi.github.teams import MockTeamsApi
 from congregate.migration.github.orgs import OrgsClient
 from congregate.migration.github.repos import ReposClient
 from congregate.migration.github.users import UsersClient
 from congregate.migration.github.api.orgs import OrgsApi
-
+from congregate.migration.github.api.teams import TeamsApi
 
 @pytest.mark.unit_test
 class ReposTests(unittest.TestCase):
     def setUp(self):
         self.mock_orgs = MockOrgsApi()
         self.mock_repos = MockReposApi()
-        self.orgs = OrgsClient()
+        self.mock_teams = MockTeamsApi()
+        self.orgs = self.mock_org_client()
+
+    def tearDown(self):
+        self.orgs.mongo.drop_collection("projects")
+        self.orgs.mongo.drop_collection("groups")
+        self.orgs.mongo.drop_collection("users")
 
     @patch.object(OrgsApi, "get_org")
     @patch.object(OrgsApi, "get_all_org_repos")
@@ -32,7 +46,7 @@ class ReposTests(unittest.TestCase):
                               mock_format_users,
                               mock_org_repos,
                               mock_org_response):
-        
+        self.maxDiff = None
         mock_ci_sources1.return_value = []
         mock_ci_sources2.return_value = ['test-job1', 'test-job2']
         
@@ -42,7 +56,7 @@ class ReposTests(unittest.TestCase):
         mock_org_response.return_value = mock_org
 
         mock_org_members.return_value = self.mock_orgs.get_all_org_members()
-        mock_org_repos.return_value = self.mock_orgs.get_all_org_repos()
+        mock_org_repos.return_value = [(r, True) for r in self.mock_orgs.get_all_org_repos()]
 
         repo_members = [
             {
@@ -211,14 +225,20 @@ class ReposTests(unittest.TestCase):
             }
         ]
 
-        actual = self.orgs.add_org_as_group(
+        self.orgs.add_org_as_group(
             [self.mock_orgs.get_org()], "org1", [])
+        
+        actual_groups = [d for d, _ in self.orgs.mongo.stream_collection("groups")]
+        actual_projects = [d for d, _ in self.orgs.mongo.stream_collection("projects")]
 
-        self.assertEqual(actual[0].sort(key=lambda x: x["id"]),
-                         expected_groups.sort(key=lambda x: x["id"]))
+        for i in range(len(expected_groups)):
+            self.assertDictEqual(
+                actual_groups[i], expected_groups[i]
+            )
         for i in range(len(expected_projects)):
-            self.assertEqual(
-                actual[1][i].items(), expected_projects[i].items())
+            self.assertDictEqual(
+                actual_projects[i], expected_projects[i]
+            )
 
     @patch.object(OrgsApi, "get_org")
     def test_add_org_as_group_error(self, mock_org_response):
@@ -257,25 +277,17 @@ class ReposTests(unittest.TestCase):
 
         expected_groups, expected_projects = [], []
 
-        actual = self.orgs.add_team_as_subgroup([], mock_org, mock_team, [])
+        actual_groups = [d for d, _ in self.orgs.mongo.stream_collection("groups")]
+        actual_projects = [d for d, _ in self.orgs.mongo.stream_collection("projects")]
 
-        self.assertEqual(actual[0], expected_groups)
-        self.assertEqual(actual[1], expected_projects)
+        self.orgs.add_team_as_subgroup(mock_org, mock_team, [])
+
+        self.assertEqual(actual_groups, expected_groups)
+        self.assertEqual(actual_projects, expected_projects)
         self.assertLogs(
-            "Failed to append team ({}) to list {}".format(mock_team, []))
+            "Failed to store team {}".format(mock_team))
 
-        mock_team = self.mock_orgs.get_all_org_teams()[1]
-
-        expected_groups = None
-
-        actual = self.orgs.add_team_as_subgroup(None, mock_org, mock_team, [])
-
-        self.assertEqual(actual[0], expected_groups)
-        self.assertEqual(actual[1], expected_projects)
-        self.assertLogs(
-            "Failed to append team ({}) to list {}".format(mock_team, None))
-
-    @patch.object(OrgsApi, "get_all_org_team_repos")
+    @patch.object(TeamsApi, "get_team_repos")
     @patch.object(OrgsApi, "get_all_org_team_members")
     @patch.object(UsersClient, "format_users")
     @patch.object(ReposClient, "add_repo_members")
@@ -289,7 +301,7 @@ class ReposTests(unittest.TestCase):
                                              mock_add_repo_members,
                                              mock_format_users,
                                              mock_org_team_members,
-                                             mock_org_team_repos):
+                                             mock_team_repos):
 
         mock_ci_sources1.return_value = []
         mock_ci_sources2.return_value = ['test-job1', 'test-job2']
@@ -306,7 +318,7 @@ class ReposTests(unittest.TestCase):
         mock_org_team.side_effect = [mock_team, mock_team_error]
 
         mock_org_team_members.return_value = self.mock_orgs.get_all_org_team_members()
-        mock_org_team_repos.return_value = self.mock_orgs.get_all_org_team_repos()
+        mock_team_repos.return_value = self.mock_teams.get_all_team_repos()
         mock_org = self.mock_orgs.get_all_orgs()[1]
 
         org_team_repo_members = [
@@ -438,24 +450,29 @@ class ReposTests(unittest.TestCase):
             }
         ]
 
-        actual = self.orgs.add_team_as_subgroup(
-            [], mock_org, self.mock_orgs.get_org_child_team(), [])
+        self.orgs.add_team_as_subgroup(mock_org, self.mock_orgs.get_org_child_team(), [])
 
-        self.assertEqual(actual[0].sort(key=lambda x: x["id"]),
+        actual_groups = [d for d, _ in self.orgs.mongo.stream_collection("groups")]
+        actual_projects = [d for d, _ in self.orgs.mongo.stream_collection("projects")]
+
+        self.assertEqual(actual_groups.sort(key=lambda x: x["id"]),
                          expected_groups.sort(key=lambda x: x["id"]))
+        
         self.assertLogs("Failed to get full_path for team ({})".format(
             self.mock_orgs.get_org_child_team()))
+        
         for i in range(len(expected_projects)):
-            self.assertEqual(
-                actual[1][i].items(), expected_projects[i].items())
+            self.assertDictEqual(
+                actual_projects[i], expected_projects[i]
+            )
 
-    @patch.object(OrgsApi, "get_all_org_team_repos")
+    @patch.object(TeamsApi, "get_team_repos")
     @patch.object(OrgsApi, "get_all_org_team_members")
     @patch.object(UsersClient, "format_users")
     @patch.object(ReposClient, "add_repo_members")
     @patch.object(OrgsApi, "get_org_team")
     @patch.object(ReposClient, "list_ci_sources_jenkins")
-    @patch.object(ReposClient, "list_ci_sources_teamcity")    
+    @patch.object(ReposClient, "list_ci_sources_teamcity")
     def test_add_team_as_subgroup(self,
                                   mock_ci_sources1,
                                   mock_ci_sources2,
@@ -477,7 +494,7 @@ class ReposTests(unittest.TestCase):
         mock_org_team.side_effect = [mock_child_team, mock_team]
 
         mock_org_team_members.return_value = self.mock_orgs.get_all_org_team_members()
-        mock_org_team_repos.return_value = self.mock_orgs.get_all_org_team_repos()
+        mock_org_team_repos.return_value = self.mock_teams.get_all_team_repos()
         mock_org = self.mock_orgs.get_all_orgs()[1]
 
         org_team_repo_members = [
@@ -609,11 +626,23 @@ class ReposTests(unittest.TestCase):
             }
         ]
 
-        actual = self.orgs.add_team_as_subgroup(
-            [], mock_org, self.mock_orgs.get_org_child_team(), [])
+        self.orgs.add_team_as_subgroup(
+            mock_org, self.mock_orgs.get_org_child_team(), [])
 
-        self.assertEqual(actual[0].sort(key=lambda x: x["id"]),
+        actual_groups = [d for d, _ in self.orgs.mongo.stream_collection("groups")]
+        
+        actual_projects = [d for d, _ in self.orgs.mongo.stream_collection("projects")]
+
+        self.assertEqual(actual_groups.sort(key=lambda x: x["id"]),
                          expected_groups.sort(key=lambda x: x["id"]))
         for i in range(len(expected_projects)):
             self.assertEqual(
-                actual[1][i].items(), expected_projects[i].items())
+                actual_projects[i].items(), expected_projects[i].items())
+
+
+    def mock_org_client(self):
+        with patch.object(OrgsClient, "connect_to_mongo") as mongo_mock:
+            with patch.object(UsersClient, "connect_to_mongo") as mongo_mock_2:
+                mongo_mock_2.return_value = MongoConnector(host="test-server", port=123456, client=mongomock.MongoClient)
+                mongo_mock.return_value = MongoConnector(host="test-server", port=123456, client=mongomock.MongoClient)
+                return OrgsClient()

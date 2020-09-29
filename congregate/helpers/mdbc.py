@@ -6,10 +6,10 @@ class MongoConnector(BaseClass):
     """
         Wrapper class for connecting to a mongo instance
     """
-    def __init__(self, host='localhost', port=27017):
+    def __init__(self, host='localhost', port=27017, client=None):
         super(MongoConnector, self).__init__()
         try:
-            self.client = MongoClient(port=port, host=host)
+            self.client = client(host=host, port=port) if client else MongoClient(host=host, port=port)
             self.db = self.client.congregate
             self.client.server_info()
             self.__setup_db()
@@ -40,6 +40,9 @@ class MongoConnector(BaseClass):
         except errors.DuplicateKeyError:
             self.log.debug("Duplicate insert attempted. Aborting operation")
             return None
+
+    def drop_collection(self, collection):
+        return self.db[collection].drop()
 
     def dump_collection_to_file(self, collection, path):
         return stream_json_yield_to_file(path, self.stream_collection, collection)
