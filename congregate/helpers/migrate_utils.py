@@ -114,6 +114,18 @@ def is_user_project(p):
     return p_type == "user"
 
 
+def get_staged_user_projects(staged_projects):
+    """
+    Determine if there are user projects staged for migrating to a group
+
+        :param p: The JSON object representing staged projects
+        :return: List of user projects staged for migrating to a group
+    """
+    if is_dot_com(b.config.destination_host) or b.config.dstn_parent_id:
+        return [sp["path_with_namespace"] for sp in staged_projects if is_user_project(sp)]
+    return []
+
+
 def get_user_project_namespace(p):
     """
     Determine if user project should be imported under the import_user (.com or self-managed root) or member namespace (self-managed)
