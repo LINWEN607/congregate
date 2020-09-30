@@ -570,7 +570,7 @@ class MigrateClient(BaseClass):
 
     def migrate_single_group_features(self, src_gid, dst_gid, full_path):
         # CI/CD Variables
-        self.variables.migrate_gitlab_cicd_variables(
+        self.variables.migrate_cicd_variables(
             src_gid, dst_gid, full_path, "group")
 
         # Hooks (Webhooks)
@@ -738,8 +738,12 @@ class MigrateClient(BaseClass):
             src_id, dst_id, path_with_namespace)
 
         # CI/CD Variables
-        results["variables"] = self.variables.migrate_gitlab_cicd_variables(
+        results["variables"] = self.variables.migrate_cicd_variables(
             src_id, dst_id, path_with_namespace, "projects")
+
+        # Pipeline Schedule Variables
+        results["pipeline_schedule_variables"] = self.variables.migrate_pipeline_schedule_variables(
+            src_id, dst_id, path_with_namespace)
 
         # Push Rules
         results["push_rules"] = self.pushrules.migrate_push_rules(

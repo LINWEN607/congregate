@@ -227,7 +227,7 @@ In that script, you prepopulate all source and destination registry repositories
 
 ### Post Migration of Failed User, Group and Project Info
 
-* [ ] Inspect logs (and/or Slack) for failed migrations of single user, group and project info - everything Congregate additionally migrates after a user is created i.e. group and/or project imported
+* [ ] Inspect logs (and/or Slack) for failed migrations of single user, group and project features - everything Congregate additionally migrates after a user is created i.e. group and/or project imported
 * [ ] In case of unexpected errors with the migration of post-import data (SSH keys, variables, reigistries, etc.):
   * [ ] Confirm those users/groups/projects are staged
   * [ ] Run `nohup ./congregate.sh migrate --only-post-migration-info --commit > data/waves/wave_<insert_wave_number>/wave<insert-wave-here>_attempt<insert-attempt>_post_migration.log 2>&1 &` to migrate any post-migration data
