@@ -20,12 +20,6 @@ class MongoConnector(BaseClass):
             self.log.error("ConnectionFailure: Unable to connect to mongodb at %s:%s" % (host, port))
             exit()
     
-    def get_client(self):
-        return self.client
-    
-    def get_db(self):
-        return self.db
-    
     def __setup_db(self):
         collections = ["projects", "groups", "users"]
         for collection in collections:
