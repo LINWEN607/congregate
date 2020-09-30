@@ -19,7 +19,7 @@ from congregate.migration.github.api.orgs import OrgsApi
 from congregate.migration.github.api.teams import TeamsApi
 
 @pytest.mark.unit_test
-class ReposTests(unittest.TestCase):
+class OrgsTests(unittest.TestCase):
     def setUp(self):
         self.mock_orgs = MockOrgsApi()
         self.mock_repos = MockReposApi()
@@ -288,7 +288,7 @@ class ReposTests(unittest.TestCase):
             "Failed to store team {}".format(mock_team))
 
     @patch.object(TeamsApi, "get_team_repos")
-    @patch.object(OrgsApi, "get_all_org_team_members")
+    @patch.object(TeamsApi, "get_team_members")
     @patch.object(UsersClient, "format_users")
     @patch.object(ReposClient, "add_repo_members")
     @patch.object(OrgsApi, "get_org_team")
@@ -467,7 +467,7 @@ class ReposTests(unittest.TestCase):
             )
 
     @patch.object(TeamsApi, "get_team_repos")
-    @patch.object(OrgsApi, "get_all_org_team_members")
+    @patch.object(TeamsApi, "get_team_members")
     @patch.object(UsersClient, "format_users")
     @patch.object(ReposClient, "add_repo_members")
     @patch.object(OrgsApi, "get_org_team")
