@@ -21,7 +21,8 @@ RUN yum update -y && \
     python3 get-pip.py
 
 run echo 'if [ -z "$(ps aux | grep mongo | grep -v grep)" ]; then mongod --fork --logpath /var/log/mongodb/mongod.log; fi' >> ~/.bashrc
-RUN echo "alias python='python3'" >> ~/.bashrc
+RUN echo "alias python='python3.8'" >> ~/.bashrc
+RUN echo "alias python3='python3.8'" >> ~/.bashrc
 
 # Install congregate
 RUN cd /opt/congregate && \
@@ -42,5 +43,9 @@ RUN curl -sL https://rpm.nodesource.com/setup_12.x | bash - && \
     npm run build
 
 RUN echo "alias ll='ls -al'" >> ~/.bashrc
+
+RUN rm -f /usr/bin/python3 && \
+    cd /usr/bin && \
+    ln -s python3.8 python3
 
 EXPOSE 8000

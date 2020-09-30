@@ -61,7 +61,7 @@ class OrgsClient(BaseClass):
             self.add_org_as_group(groups, org["login"], projects, tree=tree)
             for team in self.orgs_api.get_all_org_teams(org["login"]):
                 self.add_team_as_subgroup(
-                    org, team, projects, tree=tree)
+                    org, team, tree=tree)
         self.log.info("Group tree structure:\n{}".format(json_pretty(tree)))
 
     def add_org_as_group(self, groups, org_name, projects, tree=None):
@@ -83,7 +83,6 @@ class OrgsClient(BaseClass):
                     if r.get("path", None) is not None:
                         tree[org_name]["PROJECTS"].append(r["path"])
             members = self.add_org_members([], org)
-            self.log.info(members)
             self.mongo.insert_data("groups", {
                 "name": org["login"],
                 "id": org["id"],
@@ -99,37 +98,37 @@ class OrgsClient(BaseClass):
             })
         return groups, projects
 
-    def add_team_as_subgroup(self, org, team, projects, tree=None):
+    def add_team_as_subgroup(self, org, team, tree=None):
         if is_error_message_present(team):
             self.log.error(
                 "Failed to store team {}".format(team))
         else:
             org_name = org.get("login")
-            full_path = self.get_team_full_path(org_name, team)
-            team_repos = []
-            for team_repo in self.teams_api.get_team_repos(team["id"]):
-                formatted_repo = self.repos.format_repo(team_repo)
-                self.mongo.insert_data("projects", formatted_repo)
-                formatted_repo.pop("_id")
-                formatted_repo["members"] = []
-                team_repos.append(formatted_repo)
-            if tree:
-                tree[org_name]["SUB-GROUPS"].append({"FULL_PATH": full_path, "PROJECTS": [
-                    r["full_name"] for r in team_repos]})
-            self.mongo.insert_data("groups", {
-                "name": team["name"],
-                "id": team["id"],
-                "path": team["slug"],
-                "full_path": full_path,
-                "description": team.get("description", ""),
-                # if team["privacy"] == "secret" else "public",
-                "visibility": "private",
-                # parent group
-                "parent_id": team["parent"]["id"] if team.get("parent", None) else org["id"],
-                "auto_devops_enabled": False,
-                "members": self.add_team_members([], org_name, team),
-                "projects": team_repos
-            })
+            if full_path := self.get_team_full_path(org_name, team):
+                team_repos = []
+                for team_repo in self.teams_api.get_team_repos(team["id"]):
+                    formatted_repo = self.repos.format_repo(team_repo)
+                    self.mongo.insert_data("projects", formatted_repo)
+                    formatted_repo.pop("_id")
+                    formatted_repo["members"] = []
+                    team_repos.append(formatted_repo)
+                if tree:
+                    tree[org_name]["SUB-GROUPS"].append({"FULL_PATH": full_path, "PROJECTS": [
+                        r["full_name"] for r in team_repos]})
+                self.mongo.insert_data("groups", {
+                    "name": team["name"],
+                    "id": team["id"],
+                    "path": team["slug"],
+                    "full_path": full_path,
+                    "description": team.get("description", ""),
+                    # if team["privacy"] == "secret" else "public",
+                    "visibility": "private",
+                    # parent group
+                    "parent_id": team["parent"]["id"] if team.get("parent", None) else org["id"],
+                    "auto_devops_enabled": False,
+                    "members": self.add_team_members([], team),
+                    "projects": team_repos
+                })
 
     def get_team_full_path(self, org_name, team):
         """
@@ -138,16 +137,20 @@ class OrgsClient(BaseClass):
         E.g. the full path could be org1/team1/child_team1/.../child_teamN.
         Assume the parent org at the beginning and child_teamN at the end of the full path.
         """
-        full_path = [org_name, team["slug"]]
-        while team["parent"]:
-            full_path.insert(1, team["parent"]["slug"])
-            team = safe_json_response(self.orgs_api.get_org_team(
-                org_name, team["parent"]["slug"]))
-            if not team or is_error_message_present(team):
-                self.log.error(
-                    "Failed to get full_path for team ({})".format(team))
-                return None
-        return "/".join(full_path)
+        try:
+            full_path = [org_name, team["slug"]]
+            while team["parent"]:
+                full_path.insert(1, team["parent"]["slug"])
+                team = safe_json_response(self.orgs_api.get_org_team(
+                    org_name, team["parent"]["slug"]))
+                if not team or is_error_message_present(team):
+                    self.log.error(
+                        "Failed to get full_path for team ({})".format(team))
+                    return None
+            return "/".join(full_path)
+        except ValueError:
+            self.log.error("Unable to find")
+            return None
 
     def add_org_members(self, members, org):
         permissions = self.ORG_PERMISSIONS_MAP[org.get(
@@ -157,9 +160,9 @@ class OrgsClient(BaseClass):
             members.append(m)
         return self.users.format_users(members)
 
-    def add_team_members(self, members, org_name, team):
+    def add_team_members(self, members, team):
         permissions = self.TEAM_PERMISSIONS_MAP[team.get("permission", None)]
-        for m in self.orgs_api.get_all_org_team_members(org_name, team["slug"]):
+        for m in self.teams_api.get_team_members(team["id"]):
             m["permissions"] = permissions
             members.append(m)
         return self.users.format_users(members)
