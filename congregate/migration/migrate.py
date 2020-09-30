@@ -141,6 +141,9 @@ class MigrateClient(BaseClass):
         # Migrate GH orgs/teams to groups/sub-groups
         staged_groups = self.groups.get_staged_groups()
         if staged_groups and not self.skip_group_import:
+            if dupes := get_duplicate_paths(staged_groups, are_projects=False):
+                self.log.warning("Duplicate group paths:\n{}".format(
+                    "\n".join(d for d in dupes)))
             self.log.info(
                 f"{dry_log}Migrating GitHub orgs/teams to GitLab groups/sub-groups")
             results = start_multi_process(
@@ -159,6 +162,12 @@ class MigrateClient(BaseClass):
         # Migrate GH repos to projects
         staged_projects = self.projects.get_staged_projects()
         if staged_projects and not self.skip_project_import:
+            if dupes := get_duplicate_paths(staged_projects):
+                self.log.warning("Duplicate project paths:\n{}".format(
+                    "\n".join(d for d in dupes)))
+            if user_projects := get_staged_user_projects(staged_projects):
+                self.log.warning("User projects staged:\n{}".format(
+                    "\n".join(u for u in user_projects)))
             self.log.info("Importing projects from GitHub")
             import_results = start_multi_process(
                 self.import_github_project, staged_projects, processes=self.processes)
@@ -255,6 +264,9 @@ class MigrateClient(BaseClass):
         # Migrate BB projects to groups
         staged_groups = self.groups.get_staged_groups()
         if staged_groups and not self.skip_group_import:
+            if dupes := get_duplicate_paths(staged_groups, are_projects=False):
+                self.log.warning("Duplicate group paths:\n{}".format(
+                    "\n".join(d for d in dupes)))
             self.log.info(
                 f"{dry_log}Migrating BitBucket projects to GitLab groups")
             results = start_multi_process(
@@ -273,6 +285,12 @@ class MigrateClient(BaseClass):
         # Migrate BB repos to projects
         staged_projects = self.projects.get_staged_projects()
         if staged_projects and not self.skip_project_import:
+            if dupes := get_duplicate_paths(staged_projects):
+                self.log.warning("Duplicate project paths:\n{}".format(
+                    "\n".join(d for d in dupes)))
+            if user_projects := get_staged_user_projects(staged_projects):
+                self.log.warning("User projects staged:\n{}".format(
+                    "\n".join(u for u in user_projects)))
             self.log.info("Importing projects from BitBucket Server")
             import_results = start_multi_process(
                 self.import_bitbucket_project, staged_projects, processes=self.processes)
