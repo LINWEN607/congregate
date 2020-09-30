@@ -70,7 +70,7 @@ class BaseTests(unittest.TestCase):
             match_querystring=False)
 
         actual = self.api.list_all(
-            "http://host", "organizations", verify=False)
+            "http://host", "organizations")
         expected = self.mock_headers.get_data()
         self.assertEqual(expected, actual)
 
@@ -91,7 +91,7 @@ class BaseTests(unittest.TestCase):
         mock_get.side_effect = [mock_page1, mock_page2, mock_page3]
 
         actual = self.api.list_all(
-            "http://host", "organizations", verify=False)
+            "http://host", "organizations")
         expected = self.mock_headers.get_data()
         self.assertEqual(expected, actual)
 
@@ -109,7 +109,7 @@ class BaseTests(unittest.TestCase):
             match_querystring=False)
 
         actual = self.api.list_all(
-            "http://host", "organizations", verify=False)
+            "http://host", "organizations")
         expected = None
         self.assertEqual(expected, actual)
 
@@ -127,7 +127,7 @@ class BaseTests(unittest.TestCase):
             match_querystring=False)
 
         with self.assertRaises(ValueError):
-            self.api.list_all("http://host", "organizations", verify=False)
+            self.api.list_all("http://host", "organizations")
 
     def test_generate_v3_post_request(self):
         with patch("congregate.migration.github.api.base.requests.Response") as mock_resp:
