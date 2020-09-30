@@ -1,5 +1,4 @@
-import requests
-import json
+
 from requests.auth import HTTPBasicAuth
 from congregate.helpers.misc_utils import xml_to_dict
 from congregate.helpers.decorators import stable_retry

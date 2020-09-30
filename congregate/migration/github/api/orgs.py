@@ -1,5 +1,4 @@
 from congregate.migration.github.api.base import GitHubApi
-import json
 from congregate.helpers.conf import Config
 
 class OrgsApi():

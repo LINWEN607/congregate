@@ -1,4 +1,3 @@
-import json
 import requests
 
 from congregate.helpers.decorators import stable_retry
@@ -119,7 +118,7 @@ class GitHubApi():
             kv[kvp[1]] = kvp[0]
         return kv
 
-    def list_all(self, host, api, params=None, limit=1000, verify=True):
+    def list_all(self, host, api, params=None, limit=1000):
         """
         Implement pagination
         """
