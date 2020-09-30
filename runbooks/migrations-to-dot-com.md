@@ -220,10 +220,18 @@ In that script, you prepopulate all source and destination registry repositories
   * [ ] Confirm container registries failed to migrate and make a comment in this issue describing the failure
   * [ ] (Optional) Prep `docker_brute_force.py` to migrate several registry repositories
   * [ ] Execute the docker migration through one of the following commands:
-      * `nohup sudo ./dev/bin/manually_move_images.sh <source-repo> <destination-repo> > data/waves/wave_<insert_wave_number>/wave<insert-wave-here>_attempt<insert-attempt>_manual_docker_migration.log 2>&1 &`
-      * `nohup sudo ./dev/bin/docker_brute_force.py > data/waves/wave_<insert_wave_number>/wave<insert-wave-here>_attempt<insert-attempt>_manual_docker_migration.log 2>&1 &`
+    * `nohup sudo ./dev/bin/manually_move_images.sh <source-repo> <destination-repo> > data/waves/wave_<insert_wave_number>/wave<insert-wave-here>_attempt<insert-attempt>_manual_docker_migration.log 2>&1 &`
+    * `nohup sudo ./dev/bin/docker_brute_force.py > data/waves/wave_<insert_wave_number>/wave<insert-wave-here>_attempt<insert-attempt>_manual_docker_migration.log 2>&1 &`
   * [ ] Monitor the logs as it runs
   * [ ] Once it finishes, attach the logs to this issue
+
+### Post Migration of Failed User, Group and Project Info
+
+* [ ] Inspect logs (and/or Slack) for failed migrations of single user, group and project info - everything Congregate additionally migrates after a user is created i.e. group and/or project imported
+* [ ] In case of unexpected errors with the migration of post-import data (SSH keys, variables, reigistries, etc.):
+  * [ ] Confirm those users/groups/projects are staged
+  * [ ] Run `nohup ./congregate.sh migrate --only-post-migration-info --commit > data/waves/wave_<insert_wave_number>/wave<insert-wave-here>_attempt<insert-attempt>_post_migration.log 2>&1 &` to migrate any post-migration data
+    * Skip users, groups (exports) and projects (exports) if needed
 
 ### Post Migration
 

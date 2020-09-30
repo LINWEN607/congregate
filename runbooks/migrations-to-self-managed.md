@@ -183,6 +183,14 @@ In that script, you prepopulate all source and destination registry repositories
   * [ ] Monitor the logs as it runs
   * [ ] Once it finishes, attach the logs to this issue
 
+### Post Migration of Failed User, Group and Project Info
+
+* [ ] Monitor logs (and/or Slack) for failed migrations of single user, group and project info - everything Congregate additionally migrates after a user is created i.e. group and/or project imported
+* [ ] In case of unexpected errors with the migration of post-import data (SSH keys, variables, reigistries, etc.):
+  * [ ] Confirm those users/groups/projects are staged
+  * [ ] Run `nohup ./congregate.sh migrate --only-post-migration-info --commit > data/waves/wave_<insert_wave_number>/wave<insert-wave-here>_attempt<insert-attempt>_post_migration.log 2>&1 &` to migrate any post-migration data
+    * Skip users, groups (exports) and projects (exports) if needed
+
 ### Post Migration
 
 * [ ] Once all the projects/groups are migrated, stitch together the various migration attempts by running `./congregate.sh stitch-results --result-type=<user|group|project> --no-of-files=<number-of-results-files-to-stitch>`

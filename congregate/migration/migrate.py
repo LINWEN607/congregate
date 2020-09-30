@@ -594,6 +594,7 @@ class MigrateClient(BaseClass):
                     self.handle_exporting_projects, staged_projects, processes=self.processes)
 
                 self.are_results(export_results, "project", "export")
+
                 # Create list of projects that failed export
                 if failed := get_failed_export_from_results(export_results):
                     self.log.warning("SKIP: Projects that failed to export or already exist on destination:\n{}".format(
