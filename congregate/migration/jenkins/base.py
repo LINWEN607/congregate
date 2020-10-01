@@ -14,11 +14,13 @@ class JenkinsClient(BaseClass):
         data = self.jenkins_api.list_all_jobs()
 
         jobs_list = []
-        for job in data['jobs']:
-            job_name = job['fullname']
-            scm_url = self.jenkins_api.get_scm_by_job(job_name)
-            job_dict = {'name': job_name, 'url': scm_url}
-            jobs_list.append(job_dict)
+        for job in data:
+            job_path = self.jenkins_api.strip_url(job["url"]).rstrip('/')
+            # job_path = (job["url"].replace(self.config.ci_source_host, "")).strip('/')
+            scm_url_list = self.jenkins_api.get_scm(job_path)
+            for scm_url in scm_url_list:
+                job_dict = {'name': job_path, 'url': scm_url}
+                jobs_list.append(job_dict)
 
         write_json_to_file(f"{self.app_path}/data/jenkins_jobs.json", jobs_list)
 
@@ -27,6 +29,12 @@ class JenkinsClient(BaseClass):
     def transform_ci_variables(self, parameter):
         """
         Takes Jenkins param and returns it in expected format for GitLab. Will only work for standard
+        Accepts parameter provided as:
+        {
+            "name": "Jenkins Parameter",
+            "defaultValue": "value"
+        }
+        Returns:
         {
             "key": "NEW_VARIABLE",
             "value": "new value",
@@ -37,13 +45,11 @@ class JenkinsClient(BaseClass):
         }
         """
         result_dict = {"protected": False, "variable_type": "env_var", "masked": False, "environment_scope": "jenkins"}
-        if parameter["defaultParameterValue"] is not None:
-            if "name" in parameter["defaultParameterValue"]:
-                result_dict["key"] = convert_to_underscores(parameter["defaultParameterValue"]["name"])
-            if "value" in parameter["defaultParameterValue"]:
-                result_dict["value"] = str(parameter["defaultParameterValue"]["value"])
+
+        result_dict["key"] = convert_to_underscores(parameter["name"])
+        if parameter.get("defaultValue") is not None:
+            result_dict["value"] = str(parameter["defaultValue"])
         else:
-            result_dict["key"] = convert_to_underscores(parameter["name"])
             result_dict["value"] = "No Default Value"
 
         return result_dict

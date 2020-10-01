@@ -479,6 +479,19 @@ class ProjectsApi():
             message = "Setting default branch for project to %s" % branch
         return api.generate_put_request(host, token, f"projects/{pid}?default_branch={branch}", data=data, description=message)
 
+    def create_branch(self, host, token, pid, data=None, message=None):
+        """
+        Create branch in project
+
+            :param: pid: (int) GitLab project ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :return: Response object containing the response to PUT /projects/:id
+        """
+        if not message:
+            message = "Creating branch for project with payload %s" % data
+        return api.generate_post_request(host, token, f"projects/{pid}/repository/branches", data=data)
+
     def get_all_project_protected_environments(self, id, host, token):
         """
         Gets a list of protected environments from a project
