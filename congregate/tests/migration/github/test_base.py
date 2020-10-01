@@ -70,7 +70,7 @@ class BaseTests(unittest.TestCase):
             match_querystring=False)
 
         actual = list(self.api.list_all(
-            "http://host", "organizations", verify=False))
+            "http://host", "organizations"))
         expected = self.mock_headers.get_data()
         self.assertEqual(expected, actual)
 
@@ -104,7 +104,7 @@ class BaseTests(unittest.TestCase):
             match_querystring=False)
 
         actual = list(self.api.list_all(
-            "https://github.gitlab-proserv.net", "organizations", verify=False, limit=1))
+            "https://github.gitlab-proserv.net", "organizations", limit=1))
         expected = self.mock_headers.get_data()
         self.assertEqual(expected, actual)
 
@@ -122,7 +122,7 @@ class BaseTests(unittest.TestCase):
             match_querystring=False)
 
         actual = list(self.api.list_all(
-            "http://host", "organizations", verify=False))
+            "http://host", "organizations"))
         expected = []
         self.assertEqual(expected, actual)
 
