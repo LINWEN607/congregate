@@ -183,6 +183,14 @@ In that script, you prepopulate all source and destination registry repositories
   * [ ] Monitor the logs as it runs
   * [ ] Once it finishes, attach the logs to this issue
 
+### Post Migration of Failed User, Group and Project Info
+
+* [ ] Monitor logs (and/or Slack) for failed migrations of single user, group and project features - everything Congregate additionally migrates after a user is created i.e. group and/or project imported
+* [ ] In case of unexpected errors with the migration of post-import data (SSH keys, variables, reigistries, etc.):
+  * [ ] Confirm those users/groups/projects are staged
+  * [ ] Run `nohup ./congregate.sh migrate --only-post-migration-info --commit > data/waves/wave_<insert_wave_number>/wave<insert-wave-here>_attempt<insert-attempt>_post_migration.log 2>&1 &` to migrate any post-migration data
+    * Skip users, groups (exports) and projects (exports) if needed
+
 ### Post Migration
 
 * [ ] Once all the projects/groups are migrated, stitch together the various migration attempts by running `./congregate.sh stitch-results --result-type=<user|group|project> --no-of-files=<number-of-results-files-to-stitch>`
@@ -249,6 +257,9 @@ If **any** data was migrated incorrectly (i.e. to the wrong namespace), you **mu
 
 #### Groups and projects
 
+* [ ] Make sure groups and projects can be immediately deleted
+  * **Group Settings:** *Group -> Settings -> General -> Permissions*
+  * **Instance Settings:** *Admin Area -> Settings -> General -> Visibility and access controls*
 * [ ] Notify in the internal Slack channel dedicated to this migration you are running a rollback due to an issue with the migration
 * [ ] Dry run `nohup ./congregate.sh rollback --skip-users > data/waves/wave_<insert_wave_number>/rollback_dry_run.log 2>&1 &`
 * [ ] Live run `nohup ./congregate.sh rollback --skip-users --commit > data/waves/wave_<insert_wave_number>/rollback.log 2>&1 &`

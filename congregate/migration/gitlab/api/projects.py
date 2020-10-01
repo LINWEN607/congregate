@@ -91,7 +91,8 @@ class ProjectsApi():
 
         """
         if not message:
-            message = ("Adding user {0} to project {1}").format(member["user_id"], id)
+            message = ("Adding user {0} to project {1}").format(
+                member["user_id"], id)
         return api.generate_post_request(host, token, f"projects/{id}/members", json.dumps(member), description=message)
 
     def create_new_project_deploy_key(self, pid, host, token, key, message=None):
@@ -189,7 +190,7 @@ class ProjectsApi():
         if not message:
             message = "Sharing project %d with group %d" % (
                 pid, data["group_id"])
-        return api.generate_post_request(host, token, f"projects/{pid}/share" , json.dumps(data), description=message)
+        return api.generate_post_request(host, token, f"projects/{pid}/share", json.dumps(data), description=message)
 
     def edit_project(self, host, token, pid, data=None):
         """
@@ -595,7 +596,7 @@ class ProjectsApi():
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /projects/:id/pipeline_schedules/:pipeline_schedule_id
         """
-        return api.list_all(host, token, f"projects/{pid}/pipeline_schedules/{sid}")
+        return api.generate_get_request(host, token, f"projects/{pid}/pipeline_schedules/{sid}")
 
     def create_new_project_pipeline_schedule(self, host, token, pid, data, message=None):
         """

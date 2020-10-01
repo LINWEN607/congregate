@@ -1,4 +1,3 @@
-import json
 import requests
 
 from congregate.helpers.decorators import stable_retry
@@ -6,6 +5,7 @@ from congregate.helpers.audit_logger import audit_logger
 from congregate.helpers.logger import myLogger
 from congregate.helpers.misc_utils import generate_audit_log_message
 from congregate.helpers.base_class import BaseClass
+from congregate.helpers.conf import Config
 
 base = BaseClass()
 
@@ -18,6 +18,7 @@ class GitHubApi():
         self.host = host
         self.token = token
         self.api = api
+        self.config = Config()
         # Test Query
         self.query = """
             query {
@@ -67,7 +68,7 @@ class GitHubApi():
         return f"{host}/api/v3/{api}"
 
     @stable_retry
-    def generate_v3_get_request(self, host, api, url=None, params=None, verify=True):
+    def generate_v3_get_request(self, host, api, url=None, params=None):
         """
         Generates GET request to GitHub API
         """
@@ -77,10 +78,10 @@ class GitHubApi():
         headers = self.generate_v3_request_header(self.token)
         if params is None:
             params = {}
-        return requests.get(url, params=params, headers=headers, verify=verify)
+        return requests.get(url, params=params, headers=headers, verify=self.config.ssl_verify)
 
     @stable_retry
-    def generate_v3_post_request(self, host, api, data, headers=None, description=None, verify=True):
+    def generate_v3_post_request(self, host, api, data, headers=None, description=None):
         """
         Generates POST request to GitHub API
         """
@@ -88,7 +89,7 @@ class GitHubApi():
         audit.info(generate_audit_log_message("POST", description, url))
         if headers is None:
             headers = self.generate_v3_request_header(self.token)
-        return requests.post(url, json=data, headers=headers, verify=verify)
+        return requests.post(url, json=data, headers=headers, verify=self.config.ssl_verify)
 
     def replace_unwanted_characters(self, s):
         """
@@ -117,7 +118,7 @@ class GitHubApi():
             kv[kvp[1]] = kvp[0]
         return kv
 
-    def list_all(self, host, api, params=None, limit=1000, verify=True):
+    def list_all(self, host, api, params=None, limit=1000):
         """
         Implement pagination
         """
@@ -132,8 +133,7 @@ class GitHubApi():
             else:
                 params["per_page"] = limit
 
-            r = self.generate_v3_get_request(
-                host, api, url, params=params, verify=verify)
+            r = self.generate_v3_get_request(host, api, url, params=params)
             if r is not None:
                 if r.status_code != 200:
                     if r.status_code == 404 or r.status_code == 500 or r.status_code == 401:

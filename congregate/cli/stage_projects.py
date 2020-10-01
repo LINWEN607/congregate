@@ -5,6 +5,7 @@ Copyright (c) 2020 - GitLab
 """
 
 import re
+from congregate.helpers.migrate_utils import get_staged_user_projects
 from congregate.helpers.misc_utils import get_dry_log, remove_dupes, rewrite_list_into_dict
 from congregate.cli.stage_base import BaseStageClass
 
@@ -20,6 +21,9 @@ class ProjectStageCLI(BaseStageClass):
             :param: skip_users (bool) If true will skip writing staged users to file
         """
         self.build_staging_data(projects_to_stage, dry_run)
+        if user_projects := get_staged_user_projects(remove_dupes(self.staged_projects)):
+            self.log.warning("User projects staged:\n{}".format(
+                "\n".join(u for u in user_projects)))
         if not dry_run:
             self.write_staging_files(skip_users=skip_users)
 

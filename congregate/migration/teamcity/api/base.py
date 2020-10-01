@@ -1,9 +1,10 @@
 import requests
-import json
+
 from requests.auth import HTTPBasicAuth
 from congregate.helpers.misc_utils import xml_to_dict
 from congregate.helpers.decorators import stable_retry
 from congregate.helpers.logger import myLogger
+from congregate.helpers.conf import Config
 
 
 class TeamcityApi():
@@ -12,6 +13,7 @@ class TeamcityApi():
         self.host = host
         self.token = token
         self.user = user
+        self.config = Config()
 
     def generate_tc_request_url(self, host, api):
         return "%s/app/rest/%s" % (host, api)
@@ -47,7 +49,7 @@ class TeamcityApi():
             params = {}
 
         auth = self.get_authorization()
-        return requests.get(url, params=params, headers=headers, auth=auth)
+        return requests.get(url, params=params, headers=headers, auth=auth, verify=self.config.ssl_verify)
 
     def list_build_configs(self):
         """
