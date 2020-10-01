@@ -3,6 +3,7 @@ import json
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.misc_utils import safe_json_response, is_error_message_present, json_pretty
 from congregate.helpers.mdbc import MongoConnector
+from congregate.helpers.processes import start_multi_process_with_args
 from congregate.migration.github.api.orgs import OrgsApi
 from congregate.migration.github.api.teams import TeamsApi
 from congregate.migration.github.repos import ReposClient
@@ -51,20 +52,20 @@ class OrgsClient(BaseClass):
         Extend list of already formatted public repos with org and team repos.
         While traversing orgs gather repo, team and member metadata.
         """
-        projects = list(self.get_formatted_repos())
         groups = []
-
-        # Create tree structure {"GROUP": {"PROJECTS": [], "SUB-GROUPS": [{"FULL_PATH": "", "PROJECTS": []}]}}
         tree = {}
-        for org in self.orgs_api.get_all_orgs():
-            tree.update({org["login"]: {"PROJECTS": [], "SUB-GROUPS": []}})
-            self.add_org_as_group(groups, org["login"], projects, tree=tree)
-            for team in self.orgs_api.get_all_org_teams(org["login"]):
-                self.add_team_as_subgroup(
-                    org, team, tree=tree)
+        start_multi_process_with_args(self.handle_org_retrieval, self.orgs_api.get_all_orgs(), groups, tree)
+            
         self.log.info("Group tree structure:\n{}".format(json_pretty(tree)))
+    
+    def handle_org_retrieval(self, groups, tree, org):
+        # tree.update({org["login"]: {"PROJECTS": [], "SUB-GROUPS": []}})
+        self.add_org_as_group(groups, org["login"], tree=None)
+        for team in self.orgs_api.get_all_org_teams(org["login"]):
+            self.add_team_as_subgroup(
+                org, team, tree=None)
 
-    def add_org_as_group(self, groups, org_name, projects, tree=None):
+    def add_org_as_group(self, groups, org_name, tree=None):
         org = safe_json_response(self.orgs_api.get_org(org_name))
         if groups is None or is_error_message_present(org):
             self.log.error(
@@ -77,11 +78,6 @@ class OrgsClient(BaseClass):
                 formatted_repo.pop("_id")
                 formatted_repo["members"] = []
                 org_repos.append(formatted_repo)
-            if tree:
-                tree[org_name]["PROJECTS"] = []
-                for r in org_repos:
-                    if r.get("path", None) is not None:
-                        tree[org_name]["PROJECTS"].append(r["path"])
             members = self.add_org_members([], org)
             self.mongo.insert_data("groups", {
                 "name": org["login"],
@@ -96,7 +92,7 @@ class OrgsClient(BaseClass):
                 # "projects": self.repos.format_repos([], org_repos, org=True)
                 "projects": org_repos
             })
-        return groups, projects
+        return groups
 
     def add_team_as_subgroup(self, org, team, tree=None):
         if is_error_message_present(team):
@@ -114,7 +110,7 @@ class OrgsClient(BaseClass):
                     team_repos.append(formatted_repo)
                 if tree:
                     tree[org_name]["SUB-GROUPS"].append({"FULL_PATH": full_path, "PROJECTS": [
-                        r["full_name"] for r in team_repos]})
+                        r["path"] for r in team_repos]})
                 self.mongo.insert_data("groups", {
                     "name": team["name"],
                     "id": team["id"],

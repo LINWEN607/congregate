@@ -1,6 +1,7 @@
 import os
 
 from congregate.helpers.base_class import BaseClass
+from congregate.helpers.processes import start_multi_process_with_args
 from congregate.migration.gitlab.groups import GroupsClient
 from congregate.migration.gitlab.users import UsersClient
 from congregate.migration.gitlab.projects import ProjectsClient
@@ -55,11 +56,10 @@ def list_github_data():
     orgs = GitHubOrgs()
     users = GitHubUsers()
 
-    for repo, _ in repos.retrieve_repo_info():
-        mongo.insert_data("projects", repo)
-    
-    orgs.retrieve_org_info()
     users.retrieve_user_info()
+    start_multi_process_with_args(mongo.insert_data, repos.retrieve_repo_info(), "projects")
+    orgs.retrieve_org_info()
+    
 
     mongo.dump_collection_to_file("projects", f"{b.app_path}/data/project_json.json")
     mongo.dump_collection_to_file("groups", f"{b.app_path}/data/groups.json")

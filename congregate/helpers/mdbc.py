@@ -30,6 +30,8 @@ class MongoConnector(BaseClass):
     
     def insert_data(self, collection, data):
         try:
+            if isinstance(data, tuple):
+                data = data[0]
             return self.db[collection].insert_one(data).inserted_id
         except errors.DuplicateKeyError:
             self.log.debug("Duplicate insert attempted. Aborting operation")
