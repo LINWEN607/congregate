@@ -250,12 +250,8 @@ class OrgsTests(unittest.TestCase):
         }
         mock_org_response.return_value = mock_org
 
-        expected_groups, expected_projects = [], []
-
         actual = self.orgs.add_org_as_group([], "org1", [])
 
-        self.assertEqual(actual[0], expected_groups)
-        self.assertEqual(actual[1], expected_projects)
         self.assertLogs(
             "Failed to append org {} ({}) to list {}".format("org1", mock_org, []))
 
@@ -263,8 +259,6 @@ class OrgsTests(unittest.TestCase):
 
         actual = self.orgs.add_org_as_group(None, "org1", [])
 
-        self.assertEqual(actual[0], expected_groups)
-        self.assertEqual(actual[1], expected_projects)
         self.assertLogs("Failed to append org {} ({}) to list {}".format(
             "org1", mock_org, None))
 
