@@ -30,3 +30,15 @@ class SystemApi():
         if not message:
             message = "Creating system hook"
         return api.generate_post_request(host, token, "hooks", json.dumps(data), description=message)
+
+    def get_current_license(self, host, token):
+        """
+        Retrieve information about the current license
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/license.html#retrieve-information-about-the-current-license
+
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :return: Response object containing the response to GET /license
+        """
+        return api.generate_get_request(host, token, "license")

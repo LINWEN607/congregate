@@ -43,7 +43,8 @@ class ProjectDiffClient(BaseDiffClient):
             "service_desk_enabled",
             "marked_for_deletion_at",
             "marked_for_deletion_on",
-            "compliance_frameworks"
+            "compliance_frameworks",
+            "forked_from_project"   # Temporarily, until we add fork relationship feature
         ]
         if staged:
             self.source_data = self.load_json_data(

@@ -14,6 +14,7 @@ from shutil import copy
 from time import time
 from re import sub, findall
 from datetime import timedelta, date, datetime
+from types import GeneratorType
 from xmltodict import parse as xmlparse
 from requests import get, head, Response
 
@@ -335,7 +336,9 @@ def check_is_project_or_group_for_logging(is_project):
 
 def is_error_message_present(response):
     if isinstance(response, Response):
-        safe_json_response(response)
+        response = safe_json_response(response)
+    if isinstance(response, (GeneratorType, map, filter)):
+        response = list(response)
     if isinstance(response, list) and response and response[0] == "message":
         return True
     elif isinstance(response, dict) and response.get("message", None) is not None:
