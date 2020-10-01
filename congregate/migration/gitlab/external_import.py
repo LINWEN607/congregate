@@ -80,6 +80,10 @@ class ImportClient(BaseClass):
                 self.projects.get_project_statistics(full_path, self.config.destination_host, self.config.destination_token))
             if project_statistics and project_statistics.get("data", None) is not None:
                 if project_statistics["data"].get("project", None) is not None:
+                    if project_statistics["data"]["project"]["importStatus"] == "finished":
+                        self.log.info(f"Import Status is marked as finished for {full_path}. Import is complete")
+                        success = True
+                        break
                     stats = project_statistics["data"]["project"]["statistics"]
                     if stats["commitCount"] > 0:
                         self.log.info(f"Git commits have been found for {full_path}. Import is complete")

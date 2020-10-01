@@ -988,11 +988,12 @@ class ProjectsApi():
             "query": """
                 query {
                     project(fullPath: "%s") {
+                        importStatus,
                         statistics {
-                            commitCount,
-                            repositorySize,
-                            lfsObjectsSize,
-                            storageSize
+                                commitCount,
+                                repositorySize,
+                                lfsObjectsSize,
+                                storageSize
                             }
                         }
                 }
