@@ -1,9 +1,11 @@
+import requests
 
 from requests.auth import HTTPBasicAuth
 from congregate.helpers.misc_utils import xml_to_dict
 from congregate.helpers.decorators import stable_retry
 from congregate.helpers.logger import myLogger
 from congregate.helpers.conf import Config
+
 
 class TeamcityApi():
     def __init__(self, host, user, token):

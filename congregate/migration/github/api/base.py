@@ -68,7 +68,7 @@ class GitHubApi():
         return f"{host}/api/v3/{api}"
 
     @stable_retry
-    def generate_v3_get_request(self, host, api, url=None, params=None, verify=True):
+    def generate_v3_get_request(self, host, api, url=None, params=None):
         """
         Generates GET request to GitHub API
         """
@@ -81,7 +81,7 @@ class GitHubApi():
         return requests.get(url, params=params, headers=headers, verify=self.config.ssl_verify)
 
     @stable_retry
-    def generate_v3_post_request(self, host, api, data, headers=None, description=None, verify=True):
+    def generate_v3_post_request(self, host, api, data, headers=None, description=None):
         """
         Generates POST request to GitHub API
         """
@@ -133,8 +133,7 @@ class GitHubApi():
             else:
                 params["per_page"] = limit
 
-            r = self.generate_v3_get_request(
-                host, api, url, params=params, verify=self.config.ssl_verify)
+            r = self.generate_v3_get_request(host, api, url, params=params)
             if r is not None:
                 if r.status_code != 200:
                     if r.status_code == 404 or r.status_code == 500 or r.status_code == 401:
