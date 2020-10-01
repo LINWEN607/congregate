@@ -11,7 +11,7 @@ from traceback import print_exc
 from requests.exceptions import RequestException
 
 from congregate.helpers import api
-from congregate.helpers.migrate_utils import get_export_filename_from_namespace_and_name, get_dst_path_with_namespace, get_full_path_with_parent_namespace, \
+from congregate.helpers.migrate_utils import get_export_filename_from_namespace_and_name, get_dst_path_with_namespace, get_full_path_with_parent_namespace, get_staged_user_projects, \
     is_top_level_group, get_failed_export_from_results, get_results, get_staged_groups_without_failed_export, get_staged_projects_without_failed_export, can_migrate_users
 from congregate.helpers.misc_utils import get_dry_log, json_pretty, is_dot_com, clean_data, add_post_migration_stats, \
     rotate_logs, write_results_to_file, migration_dry_run, safe_json_response, is_error_message_present, get_duplicate_paths
@@ -141,6 +141,9 @@ class MigrateClient(BaseClass):
         # Migrate GH orgs/teams to groups/sub-groups
         staged_groups = self.groups.get_staged_groups()
         if staged_groups and not self.skip_group_import:
+            if dupes := get_duplicate_paths(staged_groups, are_projects=False):
+                self.log.warning("Duplicate group paths:\n{}".format(
+                    "\n".join(d for d in dupes)))
             self.log.info(
                 f"{dry_log}Migrating GitHub orgs/teams to GitLab groups/sub-groups")
             results = start_multi_process(
@@ -159,6 +162,12 @@ class MigrateClient(BaseClass):
         # Migrate GH repos to projects
         staged_projects = self.projects.get_staged_projects()
         if staged_projects and not self.skip_project_import:
+            if dupes := get_duplicate_paths(staged_projects):
+                self.log.warning("Duplicate project paths:\n{}".format(
+                    "\n".join(d for d in dupes)))
+            if user_projects := get_staged_user_projects(staged_projects):
+                self.log.warning("User projects staged:\n{}".format(
+                    "\n".join(u for u in user_projects)))
             self.log.info("Importing projects from GitHub")
             import_results = start_multi_process(
                 self.import_github_project, staged_projects, processes=self.processes)
@@ -255,6 +264,9 @@ class MigrateClient(BaseClass):
         # Migrate BB projects to groups
         staged_groups = self.groups.get_staged_groups()
         if staged_groups and not self.skip_group_import:
+            if dupes := get_duplicate_paths(staged_groups, are_projects=False):
+                self.log.warning("Duplicate group paths:\n{}".format(
+                    "\n".join(d for d in dupes)))
             self.log.info(
                 f"{dry_log}Migrating BitBucket projects to GitLab groups")
             results = start_multi_process(
@@ -273,6 +285,12 @@ class MigrateClient(BaseClass):
         # Migrate BB repos to projects
         staged_projects = self.projects.get_staged_projects()
         if staged_projects and not self.skip_project_import:
+            if dupes := get_duplicate_paths(staged_projects):
+                self.log.warning("Duplicate project paths:\n{}".format(
+                    "\n".join(d for d in dupes)))
+            if user_projects := get_staged_user_projects(staged_projects):
+                self.log.warning("User projects staged:\n{}".format(
+                    "\n".join(u for u in user_projects)))
             self.log.info("Importing projects from BitBucket Server")
             import_results = start_multi_process(
                 self.import_bitbucket_project, staged_projects, processes=self.processes)
@@ -412,12 +430,12 @@ class MigrateClient(BaseClass):
 
     def migrate_group_info(self):
         staged_groups = self.groups.get_staged_groups()
-        dupes = get_duplicate_paths(staged_groups, are_projects=False)
-        if dupes:
-            self.log.warning(f"Duplicate group paths:\n{dupes}")
         staged_top_groups = [g for g in staged_groups if is_top_level_group(g)]
         dry_log = get_dry_log(self.dry_run)
         if staged_groups:
+            if dupes := get_duplicate_paths(staged_groups, are_projects=False):
+                self.log.warning("Duplicate group paths:\n{}".format(
+                    "\n".join(d for d in dupes)))
             if not self.skip_group_export:
                 self.log.info("{}Exporting groups".format(dry_log))
                 export_results = start_multi_process(
@@ -426,10 +444,9 @@ class MigrateClient(BaseClass):
                 self.are_results(export_results, "group", "export")
 
                 # Create list of groups that failed export
-                failed = get_failed_export_from_results(
-                    export_results)
-                self.log.warning("SKIP: Groups that failed to export or already exist on destination:\n{}".format(
-                    json_pretty(failed)))
+                if failed := get_failed_export_from_results(export_results):
+                    self.log.warning("SKIP: Groups that failed to export or already exist on destination:\n{}".format(
+                        json_pretty(failed)))
 
                 # Append total count of groups exported
                 export_results.append(get_results(export_results))
@@ -570,7 +587,7 @@ class MigrateClient(BaseClass):
 
     def migrate_single_group_features(self, src_gid, dst_gid, full_path):
         # CI/CD Variables
-        self.variables.migrate_gitlab_cicd_variables(
+        self.variables.migrate_cicd_variables(
             src_gid, dst_gid, full_path, "group")
 
         # Hooks (Webhooks)
@@ -581,22 +598,25 @@ class MigrateClient(BaseClass):
 
     def migrate_project_info(self):
         staged_projects = self.projects.get_staged_projects()
-        dupes = get_duplicate_paths(staged_projects)
-        if dupes:
-            self.log.warning(f"Duplicate project paths:\n{dupes}")
         dry_log = get_dry_log(self.dry_run)
         if staged_projects:
+            if dupes := get_duplicate_paths(staged_projects):
+                self.log.warning("Duplicate project paths:\n{}".format(
+                    "\n".join(d for d in dupes)))
+            if user_projects := get_staged_user_projects(staged_projects):
+                self.log.warning("User projects staged:\n{}".format(
+                    "\n".join(u for u in user_projects)))
             if not self.skip_project_export:
                 self.log.info("{}Exporting projects".format(dry_log))
                 export_results = start_multi_process(
                     self.handle_exporting_projects, staged_projects, processes=self.processes)
 
                 self.are_results(export_results, "project", "export")
+
                 # Create list of projects that failed export
-                failed = get_failed_export_from_results(
-                    export_results)
-                self.log.warning("SKIP: Projects that failed to export or already exist on destination:\n{}".format(
-                    json_pretty(failed)))
+                if failed := get_failed_export_from_results(export_results):
+                    self.log.warning("SKIP: Projects that failed to export or already exist on destination:\n{}".format(
+                        json_pretty(failed)))
 
                 # Append total count of projects exported
                 export_results.append(get_results(export_results))
@@ -738,8 +758,12 @@ class MigrateClient(BaseClass):
             src_id, dst_id, path_with_namespace)
 
         # CI/CD Variables
-        results["variables"] = self.variables.migrate_gitlab_cicd_variables(
+        results["variables"] = self.variables.migrate_cicd_variables(
             src_id, dst_id, path_with_namespace, "projects")
+
+        # Pipeline Schedule Variables
+        results["pipeline_schedule_variables"] = self.variables.migrate_pipeline_schedule_variables(
+            src_id, dst_id, path_with_namespace)
 
         # Push Rules
         results["push_rules"] = self.pushrules.migrate_push_rules(

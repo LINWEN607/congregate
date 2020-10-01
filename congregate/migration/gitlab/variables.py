@@ -19,11 +19,11 @@ class VariablesClient(BaseClass):
         else:
             return safe_json_response(self.projects_api.get_project(id, self.config.source_host, self.config.source_token)).get("jobs_enabled", False)
 
-    def get_gitlab_variables(self, id, host, token, var_type="projects"):
+    def get_ci_variables(self, id, host, token, var_type="projects"):
         if var_type == "group":
-            return self.groups_api.get_all_group_variables(id, host, token)
+            return list(self.groups_api.get_all_group_variables(id, host, token))
         else:
-            return self.projects_api.get_all_project_variables(id, host, token)
+            return list(self.projects_api.get_all_project_variables(id, host, token))
 
     def set_variables(self, id, data, host, token, var_type="projects"):
         if var_type == "group":
@@ -34,19 +34,21 @@ class VariablesClient(BaseClass):
     def safe_add_variables(self, pid, param):
         result = False
         if param.get("value", None):
-            new_var = self.set_variables(pid, param, self.config.destination_host, self.config.destination_token)
+            new_var = self.set_variables(
+                pid, param, self.config.destination_host, self.config.destination_token)
             if new_var.status_code != 201:
                 self.log.error(f"Unable to add variable {param['key']}")
             else:
                 result = True
         else:
-            self.log.warning(f"Skipping variable {param['key']} due to no value found")
+            self.log.warning(
+                f"Skipping variable {param['key']} due to no value found")
         return result
 
-    def migrate_gitlab_cicd_variables(self, old_id, new_id, name, var_type):
+    def migrate_cicd_variables(self, old_id, new_id, name, var_type):
         try:
             if self.are_enabled(old_id, var_type=var_type):
-                var_list = self.get_gitlab_variables(
+                var_list = self.get_ci_variables(
                     old_id, self.config.source_host, self.config.source_token, var_type=var_type)
                 if var_list:
                     return self.migrate_variables(new_id, name, var_list, var_type)
@@ -59,6 +61,30 @@ class VariablesClient(BaseClass):
         except Exception as e:
             self.log.error(
                 f"Failed to migrate {var_type} {name} CI/CD variables, with error:\n{e}")
+            return False
+
+    def migrate_pipeline_schedule_variables(self, old_id, new_id, name):
+        try:
+            if self.are_enabled(old_id):
+                src_schedules = list(self.projects_api.get_all_project_pipeline_schedules(
+                    old_id, self.config.source_host, self.config.source_token))
+                if src_schedules:
+                    dst_schedules = list(self.projects_api.get_all_project_pipeline_schedules(
+                        new_id, self.config.destination_host, self.config.destination_token))
+                    for sps in src_schedules:
+                        for dps in dst_schedules:
+                            if sps["description"] == dps["description"] and sps["ref"] == dps["ref"] and sps["cron"] == dps["cron"]:
+                                self.log.info("Migrating project {} pipeline schedule ({}) variables".format(
+                                    name, sps["description"]))
+                                for v in safe_json_response(self.projects_api.get_single_project_pipeline_schedule(old_id, sps["id"], self.config.source_host, self.config.source_token)).get("variables", None):
+                                    self.projects_api.create_new_project_pipeline_schedule_variable(
+                                        new_id, dps["id"], self.config.destination_host, self.config.destination_token, v)
+                return True
+            else:
+                self.log.warning(f"CI/CD is disabled for project {name}")
+        except Exception as e:
+            self.log.error(
+                f"Failed to migrate project {name} pipeline schedule variables, with error:\n{e}")
             return False
 
     def migrate_variables(self, new_id, name, var_list, var_type):
@@ -111,7 +137,7 @@ class VariablesClient(BaseClass):
                             else:
                                 project_id = None
                     if project_id is not None and not dry_run:
-                        self.migrate_gitlab_cicd_variables(
+                        self.migrate_cicd_variables(
                             old_id, project_id, project_name, "project")
                 except IOError as e:
                     self.log.error(

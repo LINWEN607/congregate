@@ -641,3 +641,27 @@ class MigrateTests(unittest.TestCase):
             }
         ]
         self.assertFalse(mutils.can_migrate_users(users))
+
+    @mock.patch.object(ConfigurationValidator, "destination_host", new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, "dstn_parent_id", new_callable=mock.PropertyMock)
+    def test_get_staged_user_projects_empty(self, mock_parent_id, mock_host):
+        mock_host.return_value = "https://self-managed.com"
+        mock_parent_id.return_value = None
+        self.assertListEqual(mutils.get_staged_user_projects(
+            self.mock_projects.get_staged_projects()), [])
+
+    @mock.patch.object(ConfigurationValidator, "destination_host", new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, "dstn_parent_id", new_callable=mock.PropertyMock)
+    def test_get_staged_user_projects(self, mock_parent_id, mock_host):
+        staged_projects = self.mock_projects.get_mix_staged_projects()
+        user_projects = ["pmm-demo/spring-app-secure-2",
+                         "pmm-demo/spring-app-secure-3"]
+        mock_host.return_value = "https://gitlab.com"
+        mock_parent_id.return_value = None
+        self.assertListEqual(mutils.get_staged_user_projects(
+            staged_projects), user_projects)
+
+        mock_host.return_value = "https://self-managed.com"
+        mock_parent_id.return_value = 1
+        self.assertListEqual(mutils.get_staged_user_projects(
+            staged_projects), user_projects)

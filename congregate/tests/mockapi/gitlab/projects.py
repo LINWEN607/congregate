@@ -419,7 +419,7 @@ class MockProjectsApi():
                         "id": 5,
                         "name": "John Doe6",
                         "username": "user5",
-                        "state": "active", 
+                        "state": "active",
                         "avatar_url": "https://www.gravatar.com/avatar/4aea8cf834ed91844a2da4ff7ae6b491?s=80\u0026d=identicon"
                     }
                 }
@@ -619,5 +619,78 @@ class MockProjectsApi():
                 "wiki_access_level": "enabled",
                 "forking_access_level": "enabled",
                 "pages_access_level": "private"
+            }
+        ]
+
+    def get_mix_staged_projects(self):
+        return [
+            {
+                "snippets_access_level": "enabled",
+                "description": "",
+                "default_branch": "patch-01",
+                "visibility": "public",
+                "http_url_to_repo": "https://pse.tanuki.cloud/pmm-demo/spring-app-secure-1.git",
+                "shared_runners_enabled": False,
+                "project_type": "group",
+                "path": "spring-app-secure-1",
+                "id": 287,
+                "merge_requests_access_level": "enabled",
+                "repository_access_level": "enabled",
+                "builds_access_level": "enabled",
+                "archived": False,
+                "name": "spring-app-secure-1",
+                "wiki_access_level": "enabled",
+                "forking_access_level": "enabled",
+                "pages_access_level": "private",
+                "namespace": "pmm-demo",
+                "members": [],
+                "issues_access_level": "enabled",
+                "path_with_namespace": "pmm-demo/spring-app-secure-1"
+            },
+            {
+                "snippets_access_level": "enabled",
+                "description": "",
+                "default_branch": "patch-01",
+                "visibility": "public",
+                "http_url_to_repo": "https://pse.tanuki.cloud/pmm-demo/spring-app-secure-2.git",
+                "shared_runners_enabled": False,
+                "project_type": "user",
+                "path": "spring-app-secure-2",
+                "id": 287,
+                "merge_requests_access_level": "enabled",
+                "repository_access_level": "enabled",
+                "builds_access_level": "enabled",
+                "archived": False,
+                "name": "spring-app-secure-2",
+                "wiki_access_level": "enabled",
+                "forking_access_level": "enabled",
+                "pages_access_level": "private",
+                "namespace": "root",
+                "members": [],
+                "issues_access_level": "enabled",
+                "path_with_namespace": "pmm-demo/spring-app-secure-2"
+            },
+            {
+                "snippets_access_level": "enabled",
+                "description": "",
+                "default_branch": "patch-01",
+                "visibility": "public",
+                "http_url_to_repo": "https://pse.tanuki.cloud/pmm-demo/spring-app-secure-3.git",
+                "shared_runners_enabled": False,
+                "project_type": "user",
+                "path": "spring-app-secure-3",
+                "id": 287,
+                "merge_requests_access_level": "enabled",
+                "repository_access_level": "enabled",
+                "builds_access_level": "enabled",
+                "archived": False,
+                "name": "spring-app-secure-3",
+                "wiki_access_level": "enabled",
+                "forking_access_level": "enabled",
+                "pages_access_level": "private",
+                "namespace": "pmm-demo",
+                "members": [],
+                "issues_access_level": "enabled",
+                "path_with_namespace": "pmm-demo/spring-app-secure-3"
             }
         ]
