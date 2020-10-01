@@ -78,6 +78,10 @@ Copy the following data and add subsequent columns for single group migration
 * [ ] Check the status of **gitlab.com** (https://status.gitlab.com/)
   * [ ] Confirm you can reach the UI of the instance
   * [ ] Confirm you can reach the API through cURL or a REST client
+  * [ ] Confirm the import (Admin) user is a member of the SAML+SSO enforced group
+  * [ ] If not and late notice, as a workaround:
+    * [ ] Discuss with customer whether it's possible to disable SSO enforced during user migration OR
+    * [ ] Reach out to #support_gitlab-com to spoof adding the user to the SAML+SSO enforced group
 * [ ] Run `congregate list` at the beginning of the migration blackout period
 * [ ] Stage ALL users
   * [ ] **Make sure no groups and projects are staged**
@@ -216,10 +220,18 @@ In that script, you prepopulate all source and destination registry repositories
   * [ ] Confirm container registries failed to migrate and make a comment in this issue describing the failure
   * [ ] (Optional) Prep `docker_brute_force.py` to migrate several registry repositories
   * [ ] Execute the docker migration through one of the following commands:
-      * `nohup sudo ./dev/bin/manually_move_images.sh <source-repo> <destination-repo> > data/waves/wave_<insert_wave_number>/wave<insert-wave-here>_attempt<insert-attempt>_manual_docker_migration.log 2>&1 &`
-      * `nohup sudo ./dev/bin/docker_brute_force.py > data/waves/wave_<insert_wave_number>/wave<insert-wave-here>_attempt<insert-attempt>_manual_docker_migration.log 2>&1 &`
+    * `nohup sudo ./dev/bin/manually_move_images.sh <source-repo> <destination-repo> > data/waves/wave_<insert_wave_number>/wave<insert-wave-here>_attempt<insert-attempt>_manual_docker_migration.log 2>&1 &`
+    * `nohup sudo ./dev/bin/docker_brute_force.py > data/waves/wave_<insert_wave_number>/wave<insert-wave-here>_attempt<insert-attempt>_manual_docker_migration.log 2>&1 &`
   * [ ] Monitor the logs as it runs
   * [ ] Once it finishes, attach the logs to this issue
+
+### Post Migration of Failed User, Group and Project Info
+
+* [ ] Inspect logs (and/or Slack) for failed migrations of single user, group and project features - everything Congregate additionally migrates after a user is created i.e. group and/or project imported
+* [ ] In case of unexpected errors with the migration of post-import data (SSH keys, variables, reigistries, etc.):
+  * [ ] Confirm those users/groups/projects are staged
+  * [ ] Run `nohup ./congregate.sh migrate --only-post-migration-info --commit > data/waves/wave_<insert_wave_number>/wave<insert-wave-here>_attempt<insert-attempt>_post_migration.log 2>&1 &` to migrate any post-migration data
+    * Skip users, groups (exports) and projects (exports) if needed
 
 ### Post Migration
 
@@ -288,6 +300,10 @@ If **any** data was migrated incorrectly (i.e. to the wrong namespace), you **mu
 
 #### Groups and projects
 
+* [ ] Make sure groups and projects can be immediately deleted
+  * **Group Settings:** *Group -> Settings -> General -> Permissions*
+  * **Instance Settings:** *Admin Area -> Settings -> General -> Visibility and access controls*
+* [ ] If not, inform the Support Manager with Rails Console access in order to delete them before proceeding
 * [ ] Notify in the internal Slack channel dedicated to this migration you are running a rollback due to an issue with the migration
 * [ ] Dry run `nohup ./congregate.sh rollback --skip-users > data/waves/wave_<insert_wave_number>/rollback_dry_run.log 2>&1 &`
 * [ ] Live run `nohup ./congregate.sh rollback --skip-users --commit > data/waves/wave_<insert_wave_number>/rollback.log 2>&1 &`

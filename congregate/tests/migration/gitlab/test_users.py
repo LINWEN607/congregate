@@ -529,28 +529,30 @@ class UsersTests(unittest.TestCase):
     @responses.activate
     # pylint: enable=no-member
     @mock.patch('congregate.helpers.conf.Config.destination_host', new_callable=mock.PropertyMock)
+    @mock.patch('congregate.helpers.conf.Config.source_type', new_callable=mock.PropertyMock)
     @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.dstn_parent_id', new_callable=mock.PropertyMock)
     @mock.patch('congregate.helpers.api.get_count')
-    @mock.patch.object(KeysClient, "migrate_user_ssh_keys")
-    @mock.patch.object(KeysClient, "migrate_user_gpg_keys")
-    def test_handle_user_creation_improperly_formatted_json(self, get_gpg, get_ssh, count, parent_id, destination):
-        get_ssh.return_value = True
-        get_gpg.return_value = True
+    @mock.patch.object(UsersClient, "generate_user_data")
+    def test_handle_user_creation_improperly_formatted_json(self, mock_gen, count, parent_id, source_type, destination):
         count.return_value = 1
         parent_id.return_value = None
+        source_type.return_value = "gitlab"
         destination.return_value = "https://gitlabdestination.com"
+        mock_gen.return_value = self.mock_users.get_user_gen()
         new_user = self.mock_users.get_dummy_user()
 
+        # create_user
         url_value = "https://gitlabdestination.com/api/v4/users"
         # pylint: disable=no-member
         responses.add(responses.POST, url_value,
                       json=self.mock_users.get_user_400(), status=400)
         # pylint: enable=no-member
+
+        # find_user_by_email_comparison_without_id
         url_value = "https://gitlabdestination.com/api/v4/users?search=%s&per_page=50&page=%d" % (
             new_user["email"], count.return_value)
         # pylint: disable=no-member
-        responses.add(responses.GET, url_value,
-                      json=[self.mock_users.get_dummy_user()], status=200)
+        responses.add(responses.GET, url_value, json=[], status=404)
         # pylint: enable=no-member
 
         expected = {
@@ -861,7 +863,7 @@ class UsersTests(unittest.TestCase):
 
             actual = self.users.generate_hash_map()
             self.assertDictEqual(expected, actual)
-    
+
     @mock.patch('congregate.helpers.conf.Config.group_sso_provider_pattern', new_callable=mock.PropertyMock)
     @mock.patch('congregate.helpers.conf.Config.group_sso_provider_map_file', new_callable=mock.PropertyMock)
     def test_generate_extern_uid_with_hash(self, map_file, pattern):

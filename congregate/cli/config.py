@@ -46,11 +46,11 @@ def generate_config():
         print("WARNING: Destination user not found. Please enter 'import_user_id' manually (in {})".format(
             config_path))
     shared_runners_enabled = input(
-        "Enable shared runners on destination instance? (Default: Yes): ")
+        "Enable shared runners on destination instance (Default: Yes)? ")
     config.set("DESTINATION", "shared_runners_enabled",
                "False" if shared_runners_enabled.lower() in ["no", "n"] else "True")
     project_suffix = input(
-        "Append suffix to project found on destination instance? (Default: No): ")
+        "Append suffix to project found on destination instance (Default: No)? ")
     config.set("DESTINATION", "project_suffix",
                "True" if project_suffix.lower() in ["yes", "y"] else "False")
     max_import_retries = input(
@@ -60,7 +60,7 @@ def generate_config():
 
     # Parent group destination instance configuration
     dstn_group = input(
-        "Are you migrating to a parent group, e.g. gitlab.com? (Default: No) ")
+        "Are you migrating to a parent group, e.g. gitlab.com (Default: No)? ")
     if dstn_group.lower() in ["yes", "y"]:
         config.set("DESTINATION", "dstn_parent_group_id", input(
             "Parent group ID (Group -> Settings -> General): "))
@@ -80,7 +80,8 @@ def generate_config():
             config.set("DESTINATION", "group_sso_provider_pattern",
                        sso_pattern)
             if sso_pattern.lower() == "hash":
-                config.set("DESTINATION", "group_sso_provider_map_file", input("Absolute path to hash map file?")) 
+                config.set("DESTINATION", "group_sso_provider_map_file",
+                           input("Absolute path to hash map file?"))
 
     # Misc destination instance configuration
     username_suffix = input(
@@ -88,7 +89,7 @@ def generate_config():
     config.set("DESTINATION", "username_suffix",
                username_suffix if username_suffix != "_" else "")
     mirror = input(
-        "Planning a soft cut-over migration by mirroring repos to keep both instances running? (Default: No): ")
+        "Planning a soft cut-over migration by mirroring repos to keep both instances running (Default: No)? ")
     if mirror.lower() in ["yes", "y"]:
         if migration_user.get("username", None) is not None:
             config.set("DESTINATION", "mirror_username",
@@ -104,7 +105,7 @@ def generate_config():
     # Source instance configuration
     config.add_section("SOURCE")
     ext_src = input(
-        "Migrating from an external (non-GitLab) instance? (Default: No) ")
+        "Migrating from an external (non-GitLab) instance (Default: No)? ")
     if ext_src.lower() in ["yes", "y"]:
         src = input(
             "Source (1. Bitbucket Server, 2. GitHub, 3. Bitbucket Cloud, 4. Subversion)? ")
@@ -131,7 +132,7 @@ def generate_config():
         config.set("SOURCE", "src_access_token", obfuscate(
             "Source instance ({}) Personal Access Token: ").format(config.set("SOURCE", "src_type", "GitLab")))
         source_group = input(
-            "Are you migrating from a parent group to a new instance, e.g. gitlab.com to self-managed? (Default: No) ")
+            "Are you migrating from a parent group to a new instance, e.g. gitlab.com to self-managed (Default: No)? ")
         if source_group.lower() in ["yes", "y"]:
             config.set("SOURCE", "src_parent_group_id", input(
                 "Source group ID (Group -> Settings -> General): "))
@@ -151,7 +152,7 @@ def generate_config():
 
         # GitLab source/destination instance registry configuration
         migrating_registries = input(
-            "Are you migrating any container registries? (Default: No) ")
+            "Are you migrating any container registries (Default: No)? ")
         if migrating_registries.lower() in ["yes", "y"]:
             config.set("SOURCE", "src_registry_url", input(
                 "Source instance Container Registry URL: "))
@@ -190,12 +191,12 @@ def generate_config():
             config.set("EXPORT", "location", "filesystem")
 
         abs_path = input(
-            "ABSOLUTE path for exporting/updating projects? (Default: {}): ".format(getcwd()))
+            "ABSOLUTE path for exporting/updating projects (Default: {})? ".format(getcwd()))
         config.set("EXPORT", "filesystem_path",
                    abs_path if abs_path and abs_path.startswith("/") else getcwd())
 
     # CI Source configuration
-    ci_src = input("Migrating from a CI Source? (Default: No) ")
+    ci_src = input("Migrating from a CI Source (Default: No)? ")
     if ci_src.lower() in ["yes", "y"]:
         config.add_section("CI_SOURCE")
         ci_src_option = input("CI Source (1. Jenkins, 2. TeamCity)? ")
@@ -215,15 +216,15 @@ def generate_config():
     # User specific configuration
     config.add_section("USER")
     keep_blocker_users = input(
-        "Keep blocked users in staged users/groups/projects? (Default: No): ")
+        "Keep blocked users in staged users/groups/projects (Default: No)? ")
     config.set("USER", "keep_blocked_users",
                "True" if keep_blocker_users.lower() in ["yes", "y"] else "False")
     reset_pwd = input(
-        "Should users receive password reset emails? (Default: Yes): ")
+        "Should users receive password reset emails (Default: Yes)? ")
     config.set("USER", "reset_pwd", "False" if reset_pwd.lower()
                in ["no", "n"] else "True")
     force_rand_pwd = input(
-        "Should users be created with a randomized password? (Default: No): ")
+        "Should users be created with a randomized password (Default: No)? ")
     config.set("USER", "force_rand_pwd",
                "True" if force_rand_pwd.lower() in ["yes", "y"] else "False")
 
@@ -233,14 +234,16 @@ def generate_config():
         "Wait time (in seconds) for project export/import status (Default: 10): ")
     config.set("APP", "export_import_wait_time",
                export_import_wait_time if export_import_wait_time else "10")
-    wave_spreadsheet = input("(Optional) Spreadsheet containing wave information? yes or no")
+    wave_spreadsheet = input(
+        "(Optional) Spreadsheet containing wave information (yes or no): ")
     if wave_spreadsheet.lower() in ["yes", "y"]:
         wave_spreadsheet_path = input("Absolute path to spreadsheet: ")
         config.set("APP", "wave_spreadsheet_path", wave_spreadsheet_path)
         if wave_columns_to_include := input("Provide a list of comma separate values denoting the columns you want to retain: "):
-            config.set("APP", "wave_spreadsheet_columns", f"[{wave_columns_to_include}]")
+            config.set("APP", "wave_spreadsheet_columns",
+                       f"[{wave_columns_to_include}]")
     slack = input(
-        "Sending alerts (logs) to Slack (via Incoming WebHooks)? (Default: No): ")
+        "Send alerts (logs) to Slack via Incoming WebHooks (Default: No)? ")
     if slack.lower() in ["yes", "y"]:
         config.set("APP", "slack_url", input(
             "Slack Incoming WebHooks URL: "))
@@ -304,24 +307,29 @@ def get_sso_provider_pattern():
     options = {
         1: "email",
         2: "hash",
-        3: "custom"
+        3: "extern_uid",
+        4: "custom"
     }
     while True:
         try:
             sso_provider_pattern_option = input(
-                "Select SSO provider pattern type (1. Email, 2. Hash, 3. Custom")
+                "Select SSO provider pattern type (1. Email, 2. Hash, 3. UID (pass-through)): ")
             if int(sso_provider_pattern_option) == 1:
                 return options.get(1)
             elif int(sso_provider_pattern_option) == 2:
-                print("We expect to handle hashes through a JSON that looks like the following: ")
-                print(json_pretty([
-                    {
-                        "email": "user@email.com",
-                        "externalid": "abc123"
-                    }
-                ]))
+                print(
+                    "We expect to handle hashes through a JSON that looks like the following:\n{}".format(json_pretty([
+                        {
+                            "email": "user@email.com",
+                            "externalid": "abc123"
+                        }
+                    ])))
                 return options.get(2)
             elif int(sso_provider_pattern_option) == 3:
+                print(
+                    "Not fully implemented yet, assuming the same 'extern_uid' is being mapped")
+                return options.get(3)
+            elif int(sso_provider_pattern_option) == 4:
                 print("Not implemented yet")
                 return None
             else:

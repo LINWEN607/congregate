@@ -2,7 +2,7 @@
 
 function get_latest_master_tag() { git ls-remote git@gitlab.com:gitlab-com/customer-success/tools/congregate.git | grep refs/heads/master | cut -f 1; }
 
-function get_congregate_pids() { ps aux | grep "congregate" | awk '{print $2}'; }
+function get_congregate_pids() { ps aux | grep "congregate" | awk '{print $2}' | grep -v grep; }
 
 alias penv='poetry install'
 alias ui='npm install'

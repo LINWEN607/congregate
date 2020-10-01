@@ -6,6 +6,7 @@ import subprocess
 import hashlib
 
 import glob
+from collections import Counter
 from traceback import print_exc
 from base64 import b64encode, b64decode
 from copy import deepcopy
@@ -13,6 +14,7 @@ from shutil import copy
 from time import time
 from re import sub, findall
 from datetime import timedelta, date, datetime
+from types import GeneratorType
 from xmltodict import parse as xmlparse
 from requests import get, head, Response
 
@@ -334,7 +336,9 @@ def check_is_project_or_group_for_logging(is_project):
 
 def is_error_message_present(response):
     if isinstance(response, Response):
-        safe_json_response(response)
+        response = safe_json_response(response)
+    if isinstance(response, (GeneratorType, map, filter)):
+        response = list(response)
     if isinstance(response, list) and response and response[0] == "message":
         return True
     elif isinstance(response, dict) and response.get("message", None) is not None:
@@ -523,6 +527,7 @@ def safe_json_response(response):
             return None
     return None
 
+
 def safe_list_index_lookup(l, v):
     """
         Helper method to safely lookup the index of a list based on a specific value
@@ -577,3 +582,12 @@ def get_hash_of_dirs(directory, verbose=0):
         return -2
 
     return SHAhash.hexdigest()
+
+
+def get_duplicate_paths(data, are_projects=True):
+    """
+        Legacy GL versions had case insensitive paths, which on newer GL versions are seen as duplicates
+    """
+    paths = [x.get("path_with_namespace", "").lower() if are_projects else x.get(
+        "full_path", "").lower() for x in data]
+    return [i for i, c in Counter(paths).items() if c > 1]

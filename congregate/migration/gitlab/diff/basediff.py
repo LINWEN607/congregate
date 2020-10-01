@@ -3,7 +3,6 @@ import base64
 from types import GeneratorType
 from bs4 import BeautifulSoup as bs
 from json2html import json2html
-from requests import Response
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.misc_utils import find as nested_find, is_error_message_present
 from congregate.helpers.jsondiff import Comparator
@@ -111,13 +110,15 @@ class BaseDiffClient(BaseClass):
             source_data = self.generate_cleaned_instance_data(source_data)
             if source_data:
                 identifier = "{0}/{1}".format(parent_group,
-                                            asset[key]) if parent_group else asset[key]
+                                              asset[key]) if parent_group else asset[key]
                 if self.results.get(identifier) is not None:
                     if isinstance(self.results[identifier], dict):
                         destination_id = self.results[identifier]["id"]
-                        valid_destination_endpoint, response = self.is_endpoint_valid(endpoint(destination_id, self.config.destination_host, self.config.destination_token, **kwargs))
+                        valid_destination_endpoint, response = self.is_endpoint_valid(endpoint(
+                            destination_id, self.config.destination_host, self.config.destination_token, **kwargs))
                         if valid_destination_endpoint:
-                            destination_data = self.generate_cleaned_instance_data(response)
+                            destination_data = self.generate_cleaned_instance_data(
+                                response)
                         else:
                             destination_data = self.generate_empty_data(
                                 source_data)
@@ -313,7 +314,6 @@ class BaseDiffClient(BaseClass):
         return False
 
     def is_endpoint_valid(self, request):
-        if isinstance(request, Response):
-            if request.status_code == 404 or is_error_message_present(request):
-                return False, request
+        if is_error_message_present(request):
+            return False, request
         return True, request

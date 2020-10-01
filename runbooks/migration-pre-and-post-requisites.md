@@ -18,13 +18,22 @@ This runbook covers the process of preparing and cleaninig up after a migration 
 ### GitLab
 
 * [ ] Setup the migration VM that will host the Professional Services (PS) migration tool’s (Congregate) Docker container.
-  * It should have minimal port and IP access. See [VM Requirements](#VM) for more detail.
+  * [ ] It should have minimal port and IP access. See [VM Requirements](#VM) for more detail.
+  * [ ] For proper DNS mapping make sure to add the source IP/hostname to the VM and docker container `/etc/hosts` file, e.g.:
+
+  ```bash
+  127.0.0.1 localhost
+  192.168.1.1 source.instance.org
+  ```
+
 * [ ] (gitlab.com) Follow the [PS Provisioning Process](https://gitlab.com/gitlab-com/business-ops/team-member-enablement/runbooks/-/blob/master/it_operations/GitLab_com_environment_(PRD,DEV,STG)access_requests.md#provisioning-process) for GitLab.com environments Access Request.
 * [ ] Configure LDAP/SAML identity for the Admin user account on the destination instance.
   * This is required for the user-group-project mapping to succeed.
+  * (gitlab.com) Add user to SAML+SSO enforced destination parent group.
 * [ ] Create a one-off PAT for the Admin user account on the source instance.
   * The PAT should have an expiry date of the estimated last day (wave) of the migration.
-* [ ] (gitlab.com) Generate awareness in Support/SRE team and identify specific individuals (with Rails console access) to take tickets from customers during migration.
+* [ ] (gitlab.com) Generate awareness in Support/SRE/Infra teams and identify specific individuals (e.g. with Rails console access) to take tickets from customers during migration. Highlight these people/groups in the migration wave issues.
+  * **NOTE**: These issues **must** be created [5 days in advance](https://about.gitlab.com/handbook/support/workflows/importing_projects.html#import-scheduled) of executing the migration wave.
 
 ### Customer
 
@@ -38,6 +47,11 @@ This runbook covers the process of preparing and cleaninig up after a migration 
 * [ ] Create one-off Admin user accounts on the source and destination instance (if applicable).
 * [ ] Configure LDAP/SAML identity for the Admin user account on the destination instance.
   * This is required for the user-group-project mapping to succeed.
+  * (gitlab.com) Add user to SAML+SSO enforced destination parent group.
+* [ ] Configure source and destination instance (if applicable) rate limits ([configurable as of 13.2](https://docs.gitlab.com/ee/api/README.html#rate-limits))
+  * This may also be done temporarily, for the duration of the migration wave
+* [ ] Configure destination instance (if applicable) [immediate group and project deletion permissions](https://about.gitlab.com/handbook/support/workflows/hard_delete_project.html). They are required in case of a rollback scenario, where all staged groups and projects need to be removed on the destination instance.
+  * This may also be done temporarily, for the duration of the migration wave
 
 ## VM
 
@@ -75,7 +89,7 @@ This runbook covers the process of preparing and cleaninig up after a migration 
 
 ### Authentication (for gitlab.com)
 
-The VM should be setup with Okta ASA but based on time constraints it may be necessary to do ssh key auth.
+The VM should be setup with Okta ASA, but based on time constraints it may be necessary to provision only SSH key authenticaton.
 
 ## Migration post-requisites
 

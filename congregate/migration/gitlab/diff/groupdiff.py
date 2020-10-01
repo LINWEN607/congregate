@@ -3,7 +3,7 @@ from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.issues import IssuesApi
 from congregate.migration.gitlab.api.merge_requests import MergeRequestsApi
 from congregate.migration.gitlab.groups import GroupsClient
-from congregate.helpers.misc_utils import rewrite_json_list_into_dict, get_rollback_log
+from congregate.helpers.misc_utils import rewrite_json_list_into_dict, get_rollback_log, is_dot_com
 from congregate.helpers.migrate_utils import get_full_path_with_parent_namespace, is_top_level_group
 from congregate.helpers.processes import handle_multi_process_write_to_file_and_return_results
 
@@ -33,6 +33,8 @@ class GroupDiffClient(BaseDiffClient):
             "prevent_forking_outside_group",
             "shared_with_groups"   # Temporarily, until we add shared_with_groups feature
         ]
+        if is_dot_com(self.config.destination_host) or is_dot_com(self.config.source_host):
+            self.keys_to_ignore.append("ldap_group_links")
         if staged:
             self.source_data = self.load_json_data(
                 "%s/data/staged_groups.json" % self.app_path)

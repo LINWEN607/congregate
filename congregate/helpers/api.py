@@ -16,6 +16,8 @@ config = Config()
 def generate_v4_request_url(host, api):
     return "%s/api/v4/%s" % (host, api)
 
+def generate_graphql_request_url(host):
+    return f"{host}/api/graphql"
 
 def generate_v4_request_header(token):
     return {
@@ -51,7 +53,7 @@ def generate_get_request(host, token, api, url=None, params=None, stream=False):
 
 
 @stable_retry
-def generate_post_request(host, token, api, data, headers=None, files=None, description=None):
+def generate_post_request(host, token, api, data, graphql_query=False, headers=None, files=None, description=None):
     """
         Generates POST request to GitLab API.
 
@@ -60,9 +62,17 @@ def generate_post_request(host, token, api, data, headers=None, files=None, desc
         :param api: (str) Specific GitLab API endpoint (ex: projects)
         :param data: (dict) Any data required for the API request
 
+        :kwarg graphql_query: (bool) Sets the URL to use the GraphQL endpoint. Default False
+        :kwarg headers: (dict) Any headers to be passed into the request. Default None
+        :kwarg files: (dict) Any file content to be passed into the request. Default None
+        :kwarg description: (str) A custom description message for the audit log. Default None
+
         :return: request object containing response
     """
-    url = generate_v4_request_url(host, api)
+    if graphql_query:
+        url = generate_graphql_request_url(host)
+    else:
+        url = generate_v4_request_url(host, api)
     audit.info(generate_audit_log_message("POST", description, url))
     if headers is None:
         headers = generate_v4_request_header(token)

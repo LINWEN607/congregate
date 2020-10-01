@@ -3,6 +3,40 @@ class MockUsersApi():
         Simulates a /users request with no additional parameters
     '''
 
+    def get_user_gen(self):
+        return {
+            'name': 'John Doe',
+            'username': 'jdoe',
+            'state': 'active',
+            'avatar_url': '',
+            'web_url': 'https://dummy.gitlab.io/jdoe',
+            'created_at': '2017-06-07T20:29:25.345Z',
+            'bio': None,
+            'location': None,
+            'public_email': '',
+            'skype': '',
+            'linkedin': '',
+            'twitter': '',
+            'website_url': '',
+            'organization': None,
+            'email': 'jdoe@email.com',
+            'theme_id': None,
+            'color_scheme_id': 5,
+            'projects_limit': 10,
+            'can_create_group': True,
+            'can_create_project': True,
+            'two_factor_enabled': False,
+            'external': False,
+            'private_profile': None,
+            'is_admin': False,
+            'highest_role': 50,
+            'shared_runners_minutes_limit': None,
+            'extra_shared_runners_minutes_limit': None,
+            'skip_confirmation': True,
+            'reset_password': False,
+            'force_random_password': True
+        }
+
     def get_current_user(self):
         return {
             "id": 1,
@@ -10,6 +44,15 @@ class MockUsersApi():
             "name": "John Smith",
             "state": "active",
             "avatar_url": "http://localhost:3000/uploads/user/avatar/1/cd8.jpeg",
+        }
+
+    def get_user_400(self):
+        return {
+            "message": {
+                "identities.name_id": [
+                    "can't be blank"
+                ]
+            }
         }
 
     def get_user_404(self):
@@ -433,45 +476,36 @@ class MockUsersApi():
             }
         ]
 
-    def get_user_400(self):
-        return {
-            "message": {
-                "identities.name_id": [
-                    "can't be blank"
-                ]
-            }
-        }
-
     def get_dummy_staged_user(self):
         return {
-            "two_factor_enabled": False, 
-            "can_create_project": True, 
-            "twitter": "", 
-            "shared_runners_minutes_limit": None, 
-            "linkedin": "", 
-            "color_scheme_id": 1, 
-            "skype": "", 
-            "is_admin": False, 
-            "identities": [], 
-            "id": 2, 
-            "projects_limit": 100000, 
-            "note": None, 
-            "state": "active", 
-            "location": None, 
-            "email": "iwdewfsfdyyazqnpkwga@examplegitlab.com", 
-            "website_url": "", 
-            "job_title": "", 
-            "username": "RzKciDiyEzvtSqEicsvW", 
-            "bio": None, 
-            "work_information": None, 
-            "private_profile": False, 
-            "external": False, 
-            "organization": None, 
-            "public_email": "", 
-            "extra_shared_runners_minutes_limit": None, 
-            "name": "FrhUbyTGMoXQUTeaMgFW", 
-            "can_create_group": True, 
-            "avatar_url": "https://www.gravatar.com/avatar/a0290f87758efba7e7be1ed96b2e5ac1?s=80&d=identicon", 
+            "two_factor_enabled": False,
+            "can_create_project": True,
+            "twitter": "",
+            "shared_runners_minutes_limit": None,
+            "linkedin": "",
+            "color_scheme_id": 1,
+            "skype": "",
+            "is_admin": False,
+            "identities": [],
+            "id": 2,
+            "projects_limit": 100000,
+            "note": None,
+            "state": "active",
+            "location": None,
+            "email": "iwdewfsfdyyazqnpkwga@examplegitlab.com",
+            "website_url": "",
+            "job_title": "",
+            "username": "RzKciDiyEzvtSqEicsvW",
+            "bio": None,
+            "work_information": None,
+            "private_profile": False,
+            "external": False,
+            "organization": None,
+            "public_email": "",
+            "extra_shared_runners_minutes_limit": None,
+            "name": "FrhUbyTGMoXQUTeaMgFW",
+            "can_create_group": True,
+            "avatar_url": "https://www.gravatar.com/avatar/a0290f87758efba7e7be1ed96b2e5ac1?s=80&d=identicon",
             "theme_id": 1
         }
 

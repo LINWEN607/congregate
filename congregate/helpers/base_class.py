@@ -15,3 +15,4 @@ class BaseClass(object):
         self.log = myLogger(__name__)
         self.audit = audit_logger(__name__)
         self.app_path = get_congregate_path()
+        self.BLOCKED = ["blocked", "ldap_blocked", "deactivated"]
