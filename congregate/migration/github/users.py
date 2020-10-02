@@ -34,15 +34,7 @@ class UsersClient(BaseClass):
                 self.log.error("Failed to get JSON for user {} ({})".format(
                     user["login"], single_user))
             else:
-                data.append({
-                    "id": single_user["id"],
-                    "username": single_user["login"],
-                    "name": single_user.get("name", None),
-                    "email": single_user.get("email", None),
-                    "avatar_url": "" if self.config.source_host in single_user["avatar_url"] else single_user["avatar_url"],
-                    "state": "blocked" if single_user["suspended_at"] else "active",
-                    "is_admin": single_user["site_admin"]
-                })
+                data.append(self.format_user(single_user))
                 # When formatting org, team and repo users
                 if user.get("permissions", None):
                     data[-1]["access_level"] = user["permissions"]

@@ -120,7 +120,15 @@ class GitHubApi():
 
     def list_all(self, host, api, params=None, limit=100, page_check=False):
         """
-        Implement pagination
+        Generates a list of all projects, groups, users, etc.
+
+        :param host: (str) GitHub host URL
+        :param api: (str) Specific GitLab API endpoint (ex: users)
+        :param params: (str) Any query parameters needed in the request
+        :param limit: (int) Total results per request. Defaults to 100
+        :param page_check: (bool) If True, then the yield changes from a dict to a tuple of (dict, bool) where bool is True if list_all has reached the last page
+
+        :yields: Individual objects from the presumed array of data
         """
         url = self.generate_v3_request_url(host, api)
         lastPage = False
@@ -165,7 +173,16 @@ class GitHubApi():
                 yield from self.pageless_data(resp_json, page_check=page_check, lastPage=lastPage)
 
 
-    def pageless_data(self, resp_json, page_check=False, lastPage=None):
+    def pageless_data(self, resp_json, page_check=False, lastPage=False):
+        """
+        Generator helper function to yield a dictionary or tuple from list_all requests
+
+        :param resp_json: (dict) JSON response from list_all get request
+        :param page_check: (bool) If True, then the yield changes from a dict to a tuple of (dict, bool) where bool is True if list_all has reached the last page
+        :param lastPage: (bool) Denotes if the data about to be yielded is on the last page
+
+        :yields: Individual objects from resp_json
+        """
         if isinstance(resp_json, list):
             if resp_json:
                 for data in resp_json:

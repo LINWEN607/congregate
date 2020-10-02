@@ -449,7 +449,7 @@ class MiscUtilsTests(unittest.TestCase):
         
         self.assertEqual(expected, actual)
 
-    def test_get_has_of_dict(self):
+    def test_get_hash_of_dict(self):
         expected = "97abd2c1280faf011ac57adcf2bcad8a180e5a08"
         actual = misc.get_hash_of_dict({"Hello":"world"})
 

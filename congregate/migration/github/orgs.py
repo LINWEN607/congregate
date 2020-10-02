@@ -53,19 +53,15 @@ class OrgsClient(BaseClass):
         While traversing orgs gather repo, team and member metadata.
         """
         groups = []
-        tree = {}
-        start_multi_process_with_args(self.handle_org_retrieval, self.orgs_api.get_all_orgs(), groups, tree)
+        start_multi_process_with_args(self.handle_org_retrieval, self.orgs_api.get_all_orgs(), groups)
             
-        self.log.info("Group tree structure:\n{}".format(json_pretty(tree)))
-    
-    def handle_org_retrieval(self, groups, tree, org):
-        # tree.update({org["login"]: {"PROJECTS": [], "SUB-GROUPS": []}})
-        self.add_org_as_group(groups, org["login"], tree=None)
+    def handle_org_retrieval(self, groups, org):
+        self.add_org_as_group(groups, org["login"])
         for team in self.orgs_api.get_all_org_teams(org["login"]):
             self.add_team_as_subgroup(
-                org, team, tree=None)
+                org, team)
 
-    def add_org_as_group(self, groups, org_name, tree=None):
+    def add_org_as_group(self, groups, org_name):
         org = safe_json_response(self.orgs_api.get_org(org_name))
         if groups is None or is_error_message_present(org):
             self.log.error(
@@ -94,7 +90,7 @@ class OrgsClient(BaseClass):
             })
         return groups
 
-    def add_team_as_subgroup(self, org, team, tree=None):
+    def add_team_as_subgroup(self, org, team):
         if is_error_message_present(team):
             self.log.error(
                 "Failed to store team {}".format(team))
@@ -108,9 +104,6 @@ class OrgsClient(BaseClass):
                     formatted_repo.pop("_id")
                     formatted_repo["members"] = []
                     team_repos.append(formatted_repo)
-                if tree:
-                    tree[org_name]["SUB-GROUPS"].append({"FULL_PATH": full_path, "PROJECTS": [
-                        r["path"] for r in team_repos]})
                 self.mongo.insert_data("groups", {
                     "name": team["name"],
                     "id": team["id"],

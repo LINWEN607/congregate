@@ -13,7 +13,7 @@ class UsersApi():
 
         GitHub API v3 Doc: https://docs.github.com/en/rest/reference/users#list-users
         """
-        return self.api.list_all(self.host, "users", verify=self.config.ssl_verify)
+        return self.api.list_all(self.host, "users")
 
     def get_user(self, username):
         """

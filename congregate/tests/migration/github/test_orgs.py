@@ -226,7 +226,7 @@ class OrgsTests(unittest.TestCase):
         ]
 
         self.orgs.add_org_as_group(
-            [self.mock_orgs.get_org()], "org1", [])
+            [self.mock_orgs.get_org()], "org1")
         
         actual_groups = [d for d, _ in self.orgs.mongo.stream_collection("groups")]
         actual_projects = [d for d, _ in self.orgs.mongo.stream_collection("projects")]
@@ -250,14 +250,14 @@ class OrgsTests(unittest.TestCase):
         }
         mock_org_response.return_value = mock_org
 
-        actual = self.orgs.add_org_as_group([], "org1", [])
+        actual = self.orgs.add_org_as_group([], "org1")
 
         self.assertLogs(
             "Failed to append org {} ({}) to list {}".format("org1", mock_org, []))
 
         expected_groups = None
 
-        actual = self.orgs.add_org_as_group(None, "org1", [])
+        actual = self.orgs.add_org_as_group(None, "org1")
 
         self.assertLogs("Failed to append org {} ({}) to list {}".format(
             "org1", mock_org, None))
@@ -274,7 +274,7 @@ class OrgsTests(unittest.TestCase):
         actual_groups = [d for d, _ in self.orgs.mongo.stream_collection("groups")]
         actual_projects = [d for d, _ in self.orgs.mongo.stream_collection("projects")]
 
-        self.orgs.add_team_as_subgroup(mock_org, mock_team, [])
+        self.orgs.add_team_as_subgroup(mock_org, mock_team)
 
         self.assertEqual(actual_groups, expected_groups)
         self.assertEqual(actual_projects, expected_projects)
@@ -444,7 +444,7 @@ class OrgsTests(unittest.TestCase):
             }
         ]
 
-        self.orgs.add_team_as_subgroup(mock_org, self.mock_orgs.get_org_child_team(), [])
+        self.orgs.add_team_as_subgroup(mock_org, self.mock_orgs.get_org_child_team())
 
         actual_groups = [d for d, _ in self.orgs.mongo.stream_collection("groups")]
         actual_projects = [d for d, _ in self.orgs.mongo.stream_collection("projects")]
@@ -621,7 +621,7 @@ class OrgsTests(unittest.TestCase):
         ]
 
         self.orgs.add_team_as_subgroup(
-            mock_org, self.mock_orgs.get_org_child_team(), [])
+            mock_org, self.mock_orgs.get_org_child_team())
 
         actual_groups = [d for d, _ in self.orgs.mongo.stream_collection("groups")]
         

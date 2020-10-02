@@ -18,7 +18,6 @@ from congregate.migration.github.users import UsersClient as GitHubUsers
 from congregate.migration.jenkins.base import JenkinsClient as JenkinsData
 from congregate.migration.teamcity.base import TeamcityClient as TeamcityData
 
-from congregate.helpers.misc_utils import stream_json_yield_to_file
 from congregate.helpers.mdbc import MongoConnector
 
 b = BaseClass()

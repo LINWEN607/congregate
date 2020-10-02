@@ -14,10 +14,10 @@ class MongoConnector(BaseClass):
             self.client.server_info()
             self.__setup_db()
         except errors.ServerSelectionTimeoutError:
-            self.log.error("ServerSelectionTimeoutError: Unable to connect to mongodb at %s:%s" % (host, port))
+            self.log.error(f"ServerSelectionTimeoutError: Unable to connect to mongodb at {host}:{port}")
             exit()
         except errors.ConnectionFailure:
-            self.log.error("ConnectionFailure: Unable to connect to mongodb at %s:%s" % (host, port))
+            self.log.error(f"ConnectionFailure: Unable to connect to mongodb at {host}:{port}")
             exit()
     
     def __setup_db(self):
