@@ -19,8 +19,7 @@ class ReposClient(BaseClass):
     def retrieve_repo_info(self, groups=None):
         # List and reformat all Bitbucket Server repo to GitLab project metadata
         repos = []
-        for repo in self.repos_api.get_all_repos(
-                self.config.source_host):
+        for repo in self.repos_api.get_all_repos():
             repos.append({
                 "id": repo["id"],
                 "path": repo["slug"],
@@ -47,14 +46,13 @@ class ReposClient(BaseClass):
             "REPO_WRITE": 30,  # Developer
             "REPO_READ": 20  # Reporter
         }
-        for member in self.repos_api.get_all_repo_users(
-                self.config.source_host, project_key, repo_slug):
+        for member in self.repos_api.get_all_repo_users(project_key, repo_slug):
             m = member["user"]
             m["permission"] = bitbucket_permission_map[member["permission"]]
             members.append(m)
 
         if groups:
-            for group in self.repos_api.get_all_repo_groups(self.config.source_host, project_key, repo_slug):
+            for group in self.repos_api.get_all_repo_groups(project_key, repo_slug):
                 group_name = group["group"]["name"].lower()
                 permission = bitbucket_permission_map[group["permission"]]
                 if groups.get(group_name, None):
@@ -64,5 +62,5 @@ class ReposClient(BaseClass):
                         members.append(temp_user)
                 else:
                     self.log.warning(f"Unable to find group {group_name}")
-        
+
         return remove_dupes_but_take_higher_access(self.users.format_users(members))

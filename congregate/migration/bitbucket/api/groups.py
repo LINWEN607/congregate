@@ -1,9 +1,12 @@
-from congregate.migration.bitbucket.api import base as api
+from congregate.migration.bitbucket.api.base import BitBucketServerApi
+
 
 class GroupsApi():
+    def __init__(self):
+        self.api = BitBucketServerApi()
 
-    def get_all_groups(self, host):
-        return api.list_all(host, "admin/groups")
+    def get_all_groups(self):
+        return self.api.list_all("admin/groups")
 
-    def get_all_group_users(self, host, group):
-        return api.list_all(host, f"admin/groups/more-members?context={group}")
+    def get_all_group_users(self, group):
+        return self.api.list_all(f"admin/groups/more-members?context={group}")

@@ -1,13 +1,15 @@
-from congregate.migration.bitbucket.api import base as api
+from congregate.migration.bitbucket.api.base import BitBucketServerApi
 
 
 class ReposApi():
+    def __init__(self):
+        self.api = BitBucketServerApi()
 
-    def get_all_repos(self, host):
-        return api.list_all(host, "repos")
+    def get_all_repos(self):
+        return self.api.list_all("repos")
 
-    def get_all_repo_users(self, host, project_key, repo_slug):
-        return api.list_all(host, "projects/{0}/repos/{1}/permissions/users".format(project_key, repo_slug))
+    def get_all_repo_users(self, project_key, repo_slug):
+        return self.api.list_all(f"projects/{project_key}/repos/{repo_slug}/permissions/users")
 
-    def get_all_repo_groups(self, host, project_key, repo_slug):
-        return api.list_all(host, "projects/{0}/repos/{1}/permissions/groups".format(project_key, repo_slug))
+    def get_all_repo_groups(self, project_key, repo_slug):
+        return self.api.list_all(f"projects/{project_key}/repos/{repo_slug}/permissions/groups")

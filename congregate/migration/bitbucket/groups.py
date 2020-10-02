@@ -15,10 +15,11 @@ class GroupsClient(BaseClass):
         List all BitBucket group metadata to be used for flat GitLab user mapping
         """
         groups = {}
-        for group in self.groups_api.get_all_groups(self.config.source_host):
+        for group in self.groups_api.get_all_groups():
             group_name = group["name"].lower()
             if group_name not in self.GROUPS_TO_IGNORE:
-                groups[group_name] = list(self.groups_api.get_all_group_users(self.config.source_host, group["name"]))
+                groups[group_name] = list(
+                    self.groups_api.get_all_group_users(group["name"]))
         with open(f"{self.app_path}/data/bb_groups.json", "w") as f:
             json.dump(groups, f, indent=4)
         return groups
