@@ -17,8 +17,7 @@ class ReposApi():
         """
         return self.api.generate_v3_get_request(
             self.host,
-            f"repos/{owner}/{repo}",
-            verify=self.config.ssl_verify
+            f"repos/{owner}/{repo}"
         )
 
     def get_repo_teams(self, owner, repo):
@@ -68,8 +67,7 @@ class ReposApi():
             self.host,
             "user/repos",
             json.dumps(data),
-            description=message,
-            verify=self.config.ssl_verify
+            description=message
         )
 
     def create_org_repo(self, org_name, data=None, message=None):
@@ -85,6 +83,5 @@ class ReposApi():
             self.host,
             f"orgs/{org_name}/repos",
             data,
-            description=message,
-            verify=self.config.ssl_verify
+            description=message
         )

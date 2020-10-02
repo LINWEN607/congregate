@@ -2,7 +2,7 @@ from collections import OrderedDict
 
 
 class JenkinsJobsApi():
-    def get_job_config_xml(self):
+    def get_test_job_config_xml(self):
         return """
             <project>
             <actions/>
@@ -132,15 +132,19 @@ class JenkinsJobsApi():
     def get_jobs_with_scm_info(self):
         return [
             {
-                "name": "freestyle-job",
+                "name": "job/freestyle-job",
                 "url": "no_scm"
             },
             {
-                "name": "scm-info-job",
+                "name": "job/scm-info-job",
                 "url": "https://github.gitlab-proserv.net/firdaus/scm-info-repo.git"
             },
             {
-                "name": "test-job",
+                "name": "job/test-job",
                 "url": "https://github.gitlab-proserv.net/firdaus/gitlab-jenkins.git"
             }
+            # {
+            #     'name': 'job/test-folder/job/nested-demo-job',
+            #     'url': 'https://github.gitlab-proserv.net/Jenkins-Test-Org/Jenkins-Public-Repo.git'
+            # }
         ]

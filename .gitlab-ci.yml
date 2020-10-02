@@ -133,6 +133,7 @@ build jenkins seed image:
         - docker/jenkins/Dockerfile
         - docker/jenkins/entrypoint.sh
         - docker/jenkins/jenkins.py
+        - docker/jenkins/setup_and_seed.py
 
 .test-job:
   stage: test

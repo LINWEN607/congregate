@@ -423,7 +423,7 @@ class MiscUtilsTests(unittest.TestCase):
 
     def test_xml_to_dict_complex(self):
         j = JenkinsJobsApi()
-        test_xml = j.get_job_config_xml()
+        test_xml = j.get_test_job_config_xml()
         expected = j.get_job_config_dict()
 
         actual = misc.xml_to_dict(test_xml)

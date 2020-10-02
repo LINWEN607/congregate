@@ -226,6 +226,8 @@ class MigrateClient(BaseClass):
                     if self.config.ci_source_type == "jenkins":
                         result[project["path_with_namespace"]]["jenkins_variables"] = self.migrate_jenkins_variables(
                             project, project_id)
+                        result[project["path_with_namespace"]]["jenkins_config_xml"] = self.migrate_jenkins_config_xml(
+                            project, project_id)
                     if self.config.ci_source_type == "teamcity":
                         result[project["path_with_namespace"]]["teamcity_variables"] = self.migrate_teamcity_variables(
                             project, project_id)
@@ -806,6 +808,41 @@ class MigrateClient(BaseClass):
                         result = False
             return result
         return None
+
+    def migrate_jenkins_config_xml(self, project, project_id):
+        '''
+        In order to maintain configuration from old Jenkins instance,
+        we save a copy of a Jenkin's job config.xml file and commit it to the associated repoistory.
+        '''
+        if (ci_sources := project.get("ci_sources", None)) and self.config.ci_source_type == "jenkins":
+            for job in ci_sources.get("Jenkins", []):
+                is_result = False
+
+                # Create branch for config.xml
+                branch_data = {
+                    "branch": "%s-jenkins-config" % job,
+                    "ref": "master"
+                }
+                self.projects_api.create_branch(self.config.destination_host, self.config.destination_token, project_id, data=json.dumps(branch_data))
+
+                config_xml = self.jenkins.jenkins_api.get_job_config_xml(job)
+                if config_xml:
+                    config_xml = config_xml.text
+
+                data = {
+                    "branch": "%s-jenkins-config" % job,
+                    "commit_message": "Adding config.xml for Jenkins job",
+                    "content": config_xml
+                }
+
+                req = self.project_repository_api.create_repo_file(
+                    self.config.destination_host, self.config.destination_token,
+                    project_id, "config.xml", data)
+                if req.status_code == 200:
+                    is_result = True
+                else:
+                    is_result = False
+        return is_result
 
     def migrate_teamcity_variables(self, project, new_id):
         if (ci_sources := project.get("ci_sources", None)) and self.config.ci_source_type == "teamcity":

@@ -1,141 +1,144 @@
+from re import sub
 import json
-import warnings
-# Python-jenkins is using deprecated logic as of Python 3.3
-# This warning suppression is used so tests can pass
-with warnings.catch_warnings():
-    warnings.simplefilter("ignore")
-    import jenkins
-
-from congregate.helpers.misc_utils import xml_to_dict
+import xml.etree.ElementTree as ET
+import requests
+from requests.auth import HTTPBasicAuth
+from congregate.helpers.decorators import stable_retry
 from congregate.helpers.logger import myLogger
 
+
 class JenkinsApi():
-    GET_ALL_JOBS = """
-            import groovy.json.JsonBuilder;
-
-            // get all projects excluding matrix configuration
-            // as they are simply part of a matrix project.
-            // there may be better ways to get just jobs
-            items = Jenkins.instance.getAllItems(AbstractProject);
-            items.removeAll {
-                it instanceof hudson.matrix.MatrixConfiguration
-            };
-
-            def json = new JsonBuilder()
-            def root = json {
-                jobs items.collect {
-                    [
-                    name: it.name,
-                    url: Jenkins.instance.getRootUrl() + it.getUrl(),
-                    color: it.getIconColor().toString(),
-                    fullname: it.getFullName()
-                    ]
-                }
-            }
-
-            // use json.toPrettyString() if viewing
-            println json.toString()
-        """
-
-    GET_ALL_SCM = """
-            Jenkins.instance.getAllItems(hudson.model.AbstractProject.class).each
-            {
-                it ->
-                scm = it.getScm()
-                if(scm instanceof hudson.plugins.git.GitSCM)
-                {
-                    println scm.getUserRemoteConfigs()[0].getUrl()
-                }
-            }
-        """
-
     def __init__(self, host, user, token):
         self.log = myLogger(__name__)
         self.host = host
-        # Jenkins API token generated within Jenkins instance by going to User Profile -> Configure -> API Token
         self.token = token
         self.user = user
 
-        # Connect to server
-        self.server = jenkins.Jenkins(self.host, username=self.user, password=self.token)
+    def generate_jenkins_request_url(self, host, api=None, jenkins_path=None):
+        if jenkins_path is None:
+            return f"{host}/api/{api}"
+        elif api == "config.xml":
+            return f"{host}/{jenkins_path}/config.xml"
+        else:
+            return f"{host}/{jenkins_path}/api/{api}"
 
-    def list_jobs(self):
+    def generate_request_headers(self):
+        return {
+            'Content-Type': 'application/json'
+        }
+
+    def get_authorization(self):
+        return HTTPBasicAuth(self.user, self.token)
+
+    @stable_retry
+    def generate_get_request(self, api, jenkins_path=None, url=None, params=None):
+        """
+        Generates GET request to Jenkins API.
+        You will need to provide the TC host, user, access token, and specific api url.
+
+            :param host: (str) Jenkins host URL
+            :param api: (str) Specific Jenkins API endpoint (ex: buildTypes)
+            :param jenkins_path: (str) Specific Jenkins path i.e. host/job/jobname
+            :param url: (str) A URL to a location not part of the Jenkins API. Defaults to None
+            :param params:
+            :return: The response object *not* the json() or text()
+
+        """
+
+        if url is None:
+            url = self.generate_jenkins_request_url(self.host, api, jenkins_path)
+
+        headers = self.generate_request_headers()
+
+        if params is None:
+            params = {}
+
+        auth = self.get_authorization()
+        return requests.get(url, params=params, headers=headers, auth=auth)
+
+    def list_all_jobs(self, jobs_path=None, jobs_list=None, folder_list=None):
+        """
+        Returns a list of job dictionaries of all jobs found on the Jenkins server.
+        """
+        if jobs_list is None:
+            jobs_list = []
+        if folder_list is None:
+            folder_list = []
+
+        base_data = self.list_current_level_jobs(jobs_path)
+        for job in base_data["jobs"]:
+            if not job["_class"] == "com.cloudbees.hudson.plugins.folder.Folder":
+                jobs_list.append(job)
+            else:
+                folder_list.append(job)
+
+        if folder_list:
+            for folder in folder_list:
+                job_path = self.strip_url(folder["url"]).rstrip('/')
+                folder_list.remove(folder)
+                self.list_all_jobs(job_path, jobs_list, folder_list)
+
+        return jobs_list
+
+    def list_current_level_jobs(self, job_path):
+        """
+        Returns a dict of job dictionaries at provided job_path
+        """
+        return json.loads(self.generate_get_request("json", job_path, None, "pretty&tree=jobs[name,fullName,url,scm[userRemoteConfigs[url]]]").text)
+
+    def get_job_config_xml(self, job_path):
+        """
+        Returns the xml of a specific job configuration on the Jenkins server.
+        """
+        return self.safe_response(self.generate_get_request("config.xml", job_path))
+
+    def get_job_params(self, job_path):
         '''
-        https://python-jenkins.readthedocs.io/en/latest/api.html#jenkins.Jenkins.get_jobs
-        Parameters:
-        folder_depth - Number of levels to search, int. By default 0, which will limit search to toplevel. None disables the limit.
-        view_name - Name of a Jenkins view for which to retrieve jobs, str. By default, the job list is not limited to a specific view.
-        Returns:	list of jobs, [{str: str, str: str, str: str, str: str}]
+        Parameters:	job_path - Path to Jenkins job, str
+        Returns:    list of param dictionaries in following format
+            [{"name": param_name}, {"defaultValue": param_value}]
         '''
-        return self.server.get_jobs()
-
-    def list_all_jobs(self):
-        # https://python-jenkins.readthedocs.io/en/latest/api.html#jenkins.Jenkins.get_all_jobs
-        # returns dictionary with list of jobs
-        self.log.info(f"Listing endpoint: All Jenkins jobs")
-        
-        return(json.loads(self.server.run_script(self.GET_ALL_JOBS)))
-
-    def list_all_scm(self):
-        # Get all SCM Git urls listed, uses https://python-jenkins.readthedocs.io/en/latest/api.html#jenkins.Jenkins.run_script
-        # returns list of all scm found in jobs (includes duplicates)
-        scmallinfo = self.server.run_script(self.GET_ALL_SCM)
-
-        scmallinfo_list = scmallinfo.split('\n')
-
-        return(scmallinfo_list)
-
-    def get_job_config(self, job_name):
-        '''
-        https://python-jenkins.readthedocs.io/en/latest/api.html#jenkins.Jenkins.get_job_config
-        Parameters:	name - Name of Jenkins job, str
-        Returns:    Ordered Dictionary of job configuration data
-        '''
-        return xml_to_dict(self.server.get_job_config(job_name))
-
-    def get_job_info(self, job_name):
-        '''
-        https://python-jenkins.readthedocs.io/en/latest/api.html#jenkins.Jenkins.get_job_info
-        name - Job name, str
-        depth - JSON depth, int
-        fetch_all_builds - If true, all builds will be retrieved from Jenkins. Otherwise, Jenkins will only return the most recent 100 builds. 
-        This comes at the expense of an additional API call which may return significant amounts of data. bool
-        Returns:    dictionary of job information
-        '''
-        return self.server.get_job_info(job_name, 4)
-
-    def get_info(self):
-        '''
-        https://python-jenkins.readthedocs.io/en/latest/api.html#jenkins.Jenkins.get_info
-        Parameters:
-        item - item to get information about on this Master
-        query - xpath to extract information about on this Master
-        Returns:	dictionary of information about Master or item, dict
-        '''
-        return self.server.get_info()
-
-    def get_scm_by_job(self, job_name):
-        # returns a string of scm from specified job
-        try:
-            scm_url = self.server.run_script(f"""
-            item = Jenkins.instance.getItemByFullName("{ job_name }")
-            println item.getScm().getUserRemoteConfigs()[0].getUrl()
-            """)
-        except jenkins.JenkinsException:
-            # handle no scm set
-            # jenkins.JenkinsException: groovy.lang.MissingMethodException: No signature of method: hudson.scm.NullSCM.getUserRemoteConfigs() is applicable for argument types: () values: []
-            return "no_scm"
-
-        return scm_url
-
-    def get_job_params(self, job_name):
-        # returns a list of job params
-        job_info = self.get_job_info(job_name)
+        job_info = self.generate_get_request("json", job_path)
+        job_info = job_info.json()
 
         param_list = []
+        job_properties = job_info["property"]
 
-        for action in job_info['actions']:
-            if 'parameterDefinitions' in action:
-                param_list = action['parameterDefinitions']
+        for dictionary in job_properties:
+            if dictionary.get("parameterDefinitions"):
+                for param_data in dictionary["parameterDefinitions"]:
+                    if param_data.get("defaultParameterValue"):
+                        param_list.append({"name": param_data["name"], "defaultValue": param_data["defaultParameterValue"].get("value")})
+                    else:
+                        param_list.append({"name": param_data["name"], "defaultValue": None})
 
         return param_list
+
+    def get_scm(self, job_path):
+        '''
+        https://docs.python.org/2/library/xml.etree.elementtree.html
+        Parameters:	job_path - Name of Jenkins job, str
+        Returns:    list of scm urls parsed from the job's config.xml
+        '''
+        scm_url_list = []
+        if job_config := self.get_job_config_xml(job_path):
+            root = ET.fromstring(job_config.text)
+
+            for child in root.iter('scm'):
+                for scm in child.iter('url'):
+                    scm_url_list.append(scm.text)
+
+            if not scm_url_list:
+                scm_url_list.append("no_scm")
+        else:
+            self.log.error(f"Unable to find jobs for {job_path}")
+
+        return scm_url_list
+
+    def safe_response(self, resp):
+        if resp.status_code != 200:
+            return None
+        return resp
+
+    def strip_url(self, url):
+        return sub(r'http(s|):\/\/.+(\.|:)(\d+|\w+)\/', "", url)
