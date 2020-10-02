@@ -25,13 +25,13 @@ class OrgsApi():
         """
         return self.api.generate_v3_get_request(self.host, "orgs/{}".format(org))
 
-    def get_all_org_repos(self, org):
+    def get_all_org_repos(self, org, page_check=True):
         """
         Lists repositories for the specified organization.
 
         GitHub API v3 Doc: https://docs.github.com/en/rest/reference/repos#list-organization-repositories
         """
-        return self.api.list_all(self.host, "orgs/{}/repos".format(org))
+        return self.api.list_all(self.host, "orgs/{}/repos".format(org), page_check=page_check)
 
     def get_all_org_members(self, org):
         """

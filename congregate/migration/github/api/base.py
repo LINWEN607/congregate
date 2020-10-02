@@ -3,7 +3,7 @@ import requests
 from congregate.helpers.decorators import stable_retry
 from congregate.helpers.audit_logger import audit_logger
 from congregate.helpers.logger import myLogger
-from congregate.helpers.misc_utils import generate_audit_log_message
+from congregate.helpers.misc_utils import generate_audit_log_message, safe_json_response
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.conf import Config
 
@@ -118,14 +118,21 @@ class GitHubApi():
             kv[kvp[1]] = kvp[0]
         return kv
 
-    def list_all(self, host, api, params=None, limit=1000):
+    def list_all(self, host, api, params=None, limit=100, page_check=False):
         """
-        Implement pagination
+        Generates a list of all projects, groups, users, etc.
+
+        :param host: (str) GitHub host URL
+        :param api: (str) Specific GitLab API endpoint (ex: users)
+        :param params: (str) Any query parameters needed in the request
+        :param limit: (int) Total results per request. Defaults to 100
+        :param page_check: (bool) If True, then the yield changes from a dict to a tuple of (dict, bool) where bool is True if list_all has reached the last page
+
+        :yields: Individual objects from the presumed array of data
         """
-        log.info(f"Listing endpoint: {api}")
         url = self.generate_v3_request_url(host, api)
-        data = []
-        while True:
+        lastPage = False
+        while lastPage is not True:
             if not params:
                 params = {
                     "per_page": limit
@@ -133,25 +140,52 @@ class GitHubApi():
             else:
                 params["per_page"] = limit
 
-            r = self.generate_v3_get_request(host, api, url, params=params)
-            if r is not None:
-                if r.status_code != 200:
-                    if r.status_code == 404 or r.status_code == 500 or r.status_code == 401:
-                        log.error(
-                            f"\nERROR: HTTP Response was {r.status_code}\n\nBody Text: {r.text}\n")
-                        break
-                    raise ValueError(
-                        f"ERROR HTTP Response was NOT 200, which implies something wrong."
-                        f"The actual return code was {r.status_code}\n{r.text}\n"
-                    )
-
-                if r.json() and r.headers.get("Link", None):
-                    data.extend(r.json())
-                    h = self.create_dict_from_headers(r.headers['Link'])
-                    if h.get('next'):
-                        url = h['next']
+            log.info(f"Listing endpoint: {url}")
+            r = self.generate_v3_get_request(
+                host, api, url, params=params)
+            resp_json = safe_json_response(r)
+            if r.status_code != 200:
+                if r.status_code == 404 or r.status_code == 500 or r.status_code == 401:
+                    log.error(
+                        f"\nERROR: HTTP Response was {r.status_code}\n\nBody Text: {r.text}\n")
+                    break
+                yield ValueError(
+                    f"ERROR HTTP Response was NOT 200, which implies something wrong."
+                    f"The actual return code was {r.status_code}\n{r.text}\n"
+                )
+            if resp_json and r.headers.get("Link", None):
+                h = self.create_dict_from_headers(r.headers['Link'])
+                if h.get('next', None):
+                    url = h['next']
+                    yield from self.pageless_data(resp_json, page_check=page_check, lastPage=lastPage)
+                resp_length = len(resp_json)
+                if resp_length < limit:
+                    if isinstance(resp_json, list):
+                        for i, data in enumerate(resp_json):
+                            if i == resp_length - 1:
+                                lastPage = True
+                            yield (data, lastPage) if page_check else data
                     else:
-                        return data
-                else:
-                    data.extend(r.json())
-                    return data
+                        lastPage = True
+                        yield from self.pageless_data(resp_json, page_check=page_check, lastPage=lastPage)
+            else:
+                lastPage = True
+                yield from self.pageless_data(resp_json, page_check=page_check, lastPage=lastPage)
+
+
+    def pageless_data(self, resp_json, page_check=False, lastPage=False):
+        """
+        Generator helper function to yield a dictionary or tuple from list_all requests
+
+        :param resp_json: (dict) JSON response from list_all get request
+        :param page_check: (bool) If True, then the yield changes from a dict to a tuple of (dict, bool) where bool is True if list_all has reached the last page
+        :param lastPage: (bool) Denotes if the data about to be yielded is on the last page
+
+        :yields: Individual objects from resp_json
+        """
+        if isinstance(resp_json, list):
+            if resp_json:
+                for data in resp_json:
+                    yield (data, lastPage) if page_check else data
+        else:
+            yield (resp_json, lastPage) if page_check else resp_json

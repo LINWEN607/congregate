@@ -446,6 +446,12 @@ class MiscUtilsTests(unittest.TestCase):
     def test_convert_multiple_slashes_to_underscore(self):
         expected = "absolute_path_to_file"
         actual = misc.convert_to_underscores("absolute/path/to/file")
+        
+        self.assertEqual(expected, actual)
+
+    def test_get_hash_of_dict(self):
+        expected = "97abd2c1280faf011ac57adcf2bcad8a180e5a08"
+        actual = misc.get_hash_of_dict({"Hello":"world"})
 
         self.assertEqual(expected, actual)
 

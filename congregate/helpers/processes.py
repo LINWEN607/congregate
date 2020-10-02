@@ -1,5 +1,6 @@
 from traceback import print_exc
 from multiprocessing import Pool, cpu_count
+from functools import partial
 from congregate.helpers.misc_utils import json_pretty
 from congregate.helpers.base_class import BaseClass
 
@@ -28,6 +29,17 @@ def start_multi_process(function, iterable, processes=None):
         p.close()
         p.join()
 
+def start_multi_process_with_args(function, iterable, *args, processes=None):
+    p = Pool(processes=get_no_of_processes(processes),
+             initializer=worker_init, initargs=(partial(function,*args),))
+    try:
+        return p.map(worker, iterable)
+    except Exception as e:
+        b.log.error("Migration pool failed with error:\n{}".format(e))
+        b.log.error(print_exc())
+    finally:
+        p.close()
+        p.join()
 
 def handle_multi_process_write_to_file_and_return_results(function, results_function, iterable, path, processes=None):
     with open(path, 'w') as f:

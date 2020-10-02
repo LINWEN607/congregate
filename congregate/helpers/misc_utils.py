@@ -498,6 +498,24 @@ def write_json_yield_to_file(file_path, generator_function, *args):
         f.write(json_pretty(output))
 
 
+def stream_json_yield_to_file(file_path, generator_function, *args, log=None, **kwargs):
+    with open(file_path, 'w') as f:
+        f.write("[\n")
+        try:
+            for data, last_result in generator_function(*args, **kwargs):
+                f.write(json_pretty(data))
+                if not last_result:
+                    f.write(",")
+        except Exception as e:
+            if log:
+                log.error("Streamed write failed with error:\n{}".format(e))
+                log.error(print_exc())
+            else:
+                print_exc()
+        finally:
+            f.write("\n]")
+
+
 def safe_json_response(response):
     """
         Helper method to handle getting valid JSON safely. If valid JSON cannot be returned, it returns none.
@@ -515,6 +533,13 @@ def safe_list_index_lookup(l, v):
         Helper method to safely lookup the index of a list based on a specific value
     """
     return l.index(v) if v in l else None
+
+
+def get_hash_of_dict(d):
+    SHAhash = hashlib.sha1()
+    SHAhash.update(bytes(json.dumps(d), encoding="UTF-8"))
+    return SHAhash.hexdigest()
+
 
 # http://akiscode.com/articles/sha-1directoryhash.shtml
 # Copyright (c) 2009 Stephen Akiki

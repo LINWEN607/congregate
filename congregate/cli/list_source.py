@@ -1,6 +1,7 @@
 import os
 
 from congregate.helpers.base_class import BaseClass
+from congregate.helpers.processes import start_multi_process_with_args
 from congregate.migration.gitlab.groups import GroupsClient
 from congregate.migration.gitlab.users import UsersClient
 from congregate.migration.gitlab.projects import ProjectsClient
@@ -17,8 +18,9 @@ from congregate.migration.github.users import UsersClient as GitHubUsers
 from congregate.migration.jenkins.base import JenkinsClient as JenkinsData
 from congregate.migration.teamcity.base import TeamcityClient as TeamcityData
 
-b = BaseClass()
+from congregate.helpers.mdbc import MongoConnector
 
+b = BaseClass()
 
 def list_gitlab_data():
     """
@@ -48,13 +50,19 @@ def list_bitbucket_data():
 
 
 def list_github_data():
+    mongo = MongoConnector()
     repos = GitHubRepos()
     orgs = GitHubOrgs()
     users = GitHubUsers()
 
-    repos.retrieve_repo_info()
-    orgs.retrieve_org_info()
     users.retrieve_user_info()
+    start_multi_process_with_args(mongo.insert_data, repos.retrieve_repo_info(), "projects")
+    orgs.retrieve_org_info()
+    
+
+    mongo.dump_collection_to_file("projects", f"{b.app_path}/data/project_json.json")
+    mongo.dump_collection_to_file("groups", f"{b.app_path}/data/groups.json")
+    mongo.dump_collection_to_file("users", f"{b.app_path}/data/users.json")
 
 
 def list_jenkins_data():

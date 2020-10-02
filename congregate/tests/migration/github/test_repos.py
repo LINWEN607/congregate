@@ -2,7 +2,13 @@ import unittest
 import json
 import pytest
 from mock import patch, PropertyMock, MagicMock, mock_open
-
+import warnings
+# mongomock is using deprecated logic as of Python 3.3
+# This warning suppression is used so tests can pass
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore")
+    import mongomock
+from congregate.helpers.mdbc import MongoConnector
 from congregate.tests.mockapi.github.repos import MockReposApi
 from congregate.migration.github.repos import ReposClient
 from congregate.migration.github.users import UsersClient
@@ -14,7 +20,7 @@ class ReposTests(unittest.TestCase):
 
     def setUp(self):
         self.mock_repos = MockReposApi()
-        self.repos = ReposClient()
+        self.repos = self.mock_repo_client()
 
     @patch.object(ReposApi, "get_repo")
     @patch.object(UsersClient, "format_users")
@@ -455,3 +461,9 @@ class ReposTests(unittest.TestCase):
             actual = self.repos.list_ci_sources_jenkins("website")
 
             self.assertListEqual(expected, actual)
+
+
+    def mock_repo_client(self):
+        with patch.object(UsersClient, "connect_to_mongo") as mongo_mock:
+            mongo_mock.return_value = MongoConnector(host="test-server", port=123456, client=mongomock.MongoClient)
+            return ReposClient()
