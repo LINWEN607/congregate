@@ -147,3 +147,13 @@ class MockReposApi():
                 "permission": "REPO_READ"
             }
         ]
+
+    def get_repo_default_branch(self):
+        return {
+            "id": "refs/heads/develop",
+            "displayId": "develop",
+            "type": "BRANCH",
+            "latestCommit": "b371213d3d2b499f0392af2103cf45262e1042d3",
+            "latestChangeset": "b371213d3d2b499f0392af2103cf45262e1042d3",
+            "isDefault": True
+        }

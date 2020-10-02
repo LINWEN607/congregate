@@ -289,7 +289,7 @@ marker = "platform_python_implementation == \"CPython\""
 name = "greenlet"
 optional = false
 python-versions = "*"
-version = "0.4.17"
+version = "0.4.16"
 
 [[package]]
 category = "main"

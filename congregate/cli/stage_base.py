@@ -8,6 +8,7 @@ import json
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.misc_utils import get_dry_log, remove_dupes
 
+
 class BaseStageClass(BaseClass):
     def __init__(self):
         self.staged_users = []
@@ -27,7 +28,6 @@ class BaseStageClass(BaseClass):
         with open('%s/data/project_json.json' % self.app_path, "r") as f:
             return json.load(f)
 
-
     def open_groups_file(self):
         """
             Open group.json file to read, turning JSON encoded data to groups object.
@@ -37,7 +37,6 @@ class BaseStageClass(BaseClass):
         with open("%s/data/groups.json" % self.app_path, "r") as f:
             return json.load(f)
 
-
     def open_users_file(self):
         """
             Open users.json file to read, turning JSON encoded data to users object.
@@ -46,7 +45,6 @@ class BaseStageClass(BaseClass):
         """
         with open("%s/data/users.json" % self.app_path, "r") as f:
             return json.load(f)
-
 
     def write_staging_files(self, skip_users=False):
         """
@@ -61,8 +59,8 @@ class BaseStageClass(BaseClass):
         with open("%s/data/staged_projects.json" % self.app_path, "w") as f:
             f.write(json.dumps(remove_dupes(self.staged_projects), indent=4))
         with open("%s/data/staged_users.json" % self.app_path, "w") as f:
-            f.write(json.dumps([] if skip_users else remove_dupes(self.staged_users), indent=4))
-
+            f.write(json.dumps([] if skip_users else remove_dupes(
+                self.staged_users), indent=4))
 
     def append_member_to_members_list(self, members_list, member, dry_run=True):
         """
@@ -82,7 +80,6 @@ class BaseStageClass(BaseClass):
                 members_list.append(member)
         else:
             self.log.error(member)
-
 
     def get_project_metadata(self, project):
         """
@@ -111,6 +108,7 @@ class BaseStageClass(BaseClass):
             obj["archived"] = project["archived"]
             obj["shared_with_groups"] = project["shared_with_groups"]
 
+        if self.config.source_type == "gitlab" or self.config.source_type == "bitbucket server":
             # In case of projects without repos (e.g. Wiki)
             if "default_branch" in project:
                 obj["default_branch"] = project["default_branch"]

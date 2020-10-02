@@ -1,11 +1,12 @@
 import unittest
 import pytest
-from mock import patch, PropertyMock
+from mock import patch, PropertyMock, MagicMock
 
 from congregate.tests.mockapi.bitbucket.repos import MockReposApi
 from congregate.migration.bitbucket.repos import ReposClient
 from congregate.migration.bitbucket.api.repos import ReposApi
 from congregate.tests.mockapi.bitbucket.groups import MockGroupsApi
+
 
 @pytest.mark.unit_test
 class ReposTests(unittest.TestCase):
@@ -18,11 +19,19 @@ class ReposTests(unittest.TestCase):
     @patch('builtins.open')
     @patch.object(ReposApi, "get_all_repos")
     @patch.object(ReposApi, "get_all_repo_users")
+    @patch.object(ReposApi, "get_repo_default_branch")
     @patch('congregate.helpers.conf.Config.source_host', new_callable=PropertyMock)
     @patch('congregate.helpers.conf.Config.source_token', new_callable=PropertyMock)
-    def test_retrieve_repo_info(self, mock_ext_user_token, mock_ext_src_url, mock_get_all_repo_users, mock_get_all_repos, mock_open, mock_file):
+    def test_retrieve_repo_info(self, mock_ext_user_token, mock_ext_src_url, mock_branch, mock_get_all_repo_users, mock_get_all_repos, mock_open, mock_file):
         mock_ext_src_url.return_value = "http://localhost:7990"
         mock_ext_user_token.return_value = "username:password"
+        mock_branch1 = MagicMock()
+        type(mock_branch1).status_code = PropertyMock(return_value=200)
+        mock_branch1.json.return_value = self.mock_repos.get_repo_default_branch()
+        mock_branch2 = MagicMock()
+        type(mock_branch2).status_code = PropertyMock(return_value=204)
+        mock_branch2.json.return_value = None
+        mock_branch.side_effect = [mock_branch1, mock_branch2]
         mock_get_all_repo_users.side_effect = [
             self.mock_repos.get_all_repo_users(), self.mock_repos.get_all_repo_users()]
         mock_get_all_repos.return_value = self.mock_repos.get_all_repos()
@@ -55,6 +64,7 @@ class ReposTests(unittest.TestCase):
                         "email": "user4@example.com"
                     }
                 ],
+                "default_branch": "develop",
                 "path": "android",
                 "path_with_namespace": "TGP/android",
                 "visibility": "private",
@@ -88,6 +98,7 @@ class ReposTests(unittest.TestCase):
                         "email": "user4@example.com"
                     }
                 ],
+                "default_branch": "master",
                 "path": "another-test-repo",
                 "path_with_namespace": "ATP/another-test-repo",
                 "visibility": "private",
@@ -100,18 +111,24 @@ class ReposTests(unittest.TestCase):
             self.assertEqual(
                 actual_repos[i].items(), expected_repos[i].items())
 
-
-
     @patch("io.TextIOBase")
     @patch('builtins.open')
     @patch.object(ReposApi, "get_all_repos")
     @patch.object(ReposApi, "get_all_repo_users")
     @patch.object(ReposApi, "get_all_repo_groups")
+    @patch.object(ReposApi, "get_repo_default_branch")
     @patch('congregate.helpers.conf.Config.source_host', new_callable=PropertyMock)
     @patch('congregate.helpers.conf.Config.source_token', new_callable=PropertyMock)
-    def test_retrieve_repo_info_with_groups(self, mock_ext_user_token, mock_ext_src_url, mock_get_all_repo_groups, mock_get_all_repo_users, mock_get_all_repos, mock_open, mock_file):
+    def test_retrieve_repo_info_with_groups(self, mock_ext_user_token, mock_ext_src_url, mock_branch, mock_get_all_repo_groups, mock_get_all_repo_users, mock_get_all_repos, mock_open, mock_file):
         mock_ext_src_url.return_value = "http://localhost:7990"
         mock_ext_user_token.return_value = "username:password"
+        mock_branch1 = MagicMock()
+        type(mock_branch1).status_code = PropertyMock(return_value=200)
+        mock_branch1.json.return_value = self.mock_repos.get_repo_default_branch()
+        mock_branch2 = MagicMock()
+        type(mock_branch2).status_code = PropertyMock(return_value=204)
+        mock_branch2.json.return_value = None
+        mock_branch.side_effect = [mock_branch1, mock_branch2]
         mock_get_all_repo_users.side_effect = [
             self.mock_repos.get_all_repo_users(), self.mock_repos.get_all_repo_users()]
         mock_get_all_repo_groups.side_effect = [
@@ -173,6 +190,7 @@ class ReposTests(unittest.TestCase):
                         "access_level": 20
                     }
                 ],
+                "default_branch": "develop",
                 "path": "android",
                 "path_with_namespace": "TGP/android",
                 "visibility": "private",
@@ -206,6 +224,7 @@ class ReposTests(unittest.TestCase):
                         "email": "user4@example.com"
                     }
                 ],
+                "default_branch": "master",
                 "path": "another-test-repo",
                 "path_with_namespace": "ATP/another-test-repo",
                 "visibility": "private",

@@ -1,7 +1,7 @@
 import json
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import remove_dupes, remove_dupes_but_take_higher_access
+from congregate.helpers.misc_utils import remove_dupes, remove_dupes_but_take_higher_access, safe_json_response
 from congregate.migration.bitbucket.api.repos import ReposApi
 from congregate.migration.bitbucket.api.users import UsersApi
 from congregate.migration.bitbucket.users import UsersClient
@@ -34,7 +34,8 @@ class ReposClient(BaseClass):
                 "path_with_namespace": repo["project"]["key"] + "/" + repo["slug"],
                 "visibility": "public" if repo["public"] else "private",
                 "description": repo.get("description", ""),
-                "members": self.add_repo_users([], repo["project"]["key"], repo["slug"], groups)
+                "members": self.add_repo_users([], repo["project"]["key"], repo["slug"], groups),
+                "default_branch": self.get_default_branch(repo["project"]["key"], repo["slug"])
             })
         with open('%s/data/project_json.json' % self.app_path, "w") as f:
             json.dump(remove_dupes(repos), f, indent=4)
@@ -64,3 +65,8 @@ class ReposClient(BaseClass):
                     self.log.warning(f"Unable to find group {group_name}")
 
         return remove_dupes_but_take_higher_access(self.users.format_users(members))
+
+    def get_default_branch(self, project_key, repo_slug):
+        resp = safe_json_response(
+            self.repos_api.get_repo_default_branch(project_key, repo_slug))
+        return resp.get("displayId", None) if resp else "master"
