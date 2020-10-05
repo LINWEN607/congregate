@@ -179,6 +179,10 @@ class Config(object):
         :return: The set config value or 24 hours as default
         """
         return self.prop_int("DESTINATION", "max_asset_expiration_time", 24)
+    
+    @property
+    def lower_case_group_path(self):
+        return self.prop_bool("DESTINATION", "lower_case_group_path", False)
 
 # SOURCE
     @property

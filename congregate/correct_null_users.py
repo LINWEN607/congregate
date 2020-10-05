@@ -4,6 +4,7 @@ from congregate.helpers.base_class import BaseClass
 from congregate.migration.gitlab.users import UsersClient
 
 ## Usage: poetry run python congregate/correct_null_users.py <file-in-data-directory>
+## Use this in the event all users listed the user_migration_results file had no IDs
 
 path = sys.argv[1]
 

@@ -24,7 +24,7 @@ class ImportClient(BaseClass):
         }
         if self.config.dstn_parent_group_path:
             data["target_namespace"] = "{0}/{1}".format(
-                self.config.dstn_parent_group_path, project_key).lower()
+                self.config.dstn_parent_group_path, project_key)
         else:
             data["target_namespace"] = project_key
 
@@ -106,6 +106,8 @@ class ImportClient(BaseClass):
     def get_project_repo_from_full_path(self, full_path):
         split = full_path.split("/")
         project = split[0]
+        if self.config.lower_case_group_path:
+            project = project.lower()
         repo = split[1]
         return project, repo
 
