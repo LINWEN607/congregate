@@ -11,6 +11,7 @@ class UsersClient(BaseClass):
         self.projects_api = ProjectsApi()
         self.users_api = UsersApi()
         super(UsersClient, self).__init__()
+        self.users_to_ignore = self.config.users_to_ignore
 
     def retrieve_user_info(self):
         """
@@ -26,15 +27,16 @@ class UsersClient(BaseClass):
     def format_users(self, users):
         data = []
         for user in [u for u in users if u["id"] != 1]:
-            if user.get("emailAddress", None):
-                data.append({
-                    "id": user["id"],
-                    "username": user["slug"],
-                    "name": user["displayName"],
-                    "email": user["emailAddress"].lower(),
-                    "state": "active"
-                })
-                # When formatting project and repo users
-                if user.get("permission", None):
-                    data[-1]["access_level"] = user["permission"]
+            if user.get("emailAddress"):
+                if user["slug"].lower() not in self.users_to_ignore:
+                    data.append({
+                        "id": user["id"],
+                        "username": user["slug"],
+                        "name": user["displayName"],
+                        "email": user["emailAddress"].lower(),
+                        "state": "active"
+                    })
+                    # When formatting project and repo users
+                    if user.get("permission", None):
+                        data[-1]["access_level"] = user["permission"]
         return data

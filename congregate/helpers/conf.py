@@ -182,7 +182,17 @@ class Config(object):
     
     @property
     def lower_case_group_path(self):
+        """
+        If all groups need to be converted to lowercase during a migration
+        """
         return self.prop_bool("DESTINATION", "lower_case_group_path", False)
+    
+    @property
+    def users_to_ignore(self):
+        """
+        A list of users to ignore during a migration. Currently only used in BitBucket Server migrations. Defaults to empty list
+        """
+        return self.prop_list("DESTINATION", "users_to_ignore", [])
 
 # SOURCE
     @property
