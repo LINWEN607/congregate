@@ -317,17 +317,25 @@ class MigrateClient(BaseClass):
         result = False
         members = group.pop("members")
         group["full_path"] = get_full_path_with_parent_namespace(
-            group["full_path"])
+            group["full_path"]).lower()
+        if group.get("path", None) is not None:
+            group["path"] = group["path"].lower()
         group["parent_id"] = self.config.dstn_parent_id
+        group_id = None
+        if group_id := self.groups.find_group_id_by_path(
+                self.config.destination_host, self.config.destination_token, group["full_path"]):
+            self.log.info(f"{group['full_path']} ({group_id}) found. Skipping import. Adding members")
         if not self.dry_run:
-            result = safe_json_response(self.groups_api.create_group(
-                self.config.destination_host, self.config.destination_token, group))
-            if result and not is_error_message_present(result):
-                group_id = result.get("id", None)
-                if group_id:
-                    result["members"] = self.groups.add_members_to_destination_group(
-                        self.config.destination_host, self.config.destination_token, group_id, members)
-                    self.groups.remove_import_user(group_id)
+            if not group_id:
+                result = safe_json_response(self.groups_api.create_group(
+                    self.config.destination_host, self.config.destination_token, group))
+                if result and not is_error_message_present(result):
+                    group_id = result.get("id", None)
+            if group_id:
+                result = {}
+                result["members"] = self.groups.add_members_to_destination_group(
+                    self.config.destination_host, self.config.destination_token, group_id, members)
+                self.groups.remove_import_user(group_id)
         return {
             group["full_path"]: result
         }

@@ -24,7 +24,7 @@ class ImportClient(BaseClass):
         }
         if self.config.dstn_parent_group_path:
             data["target_namespace"] = "{0}/{1}".format(
-                self.config.dstn_parent_group_path, project_key)
+                self.config.dstn_parent_group_path, project_key).lower()
         else:
             data["target_namespace"] = project_key
 
