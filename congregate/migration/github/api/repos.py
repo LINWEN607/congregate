@@ -1,6 +1,8 @@
 import json
+
 from congregate.migration.github.api.base import GitHubApi
 from congregate.helpers.conf import Config
+
 
 class ReposApi():
     def __init__(self, host, token):
@@ -27,7 +29,7 @@ class ReposApi():
 
         GitHub API v3 Doc: https://docs.github.com/en/rest/reference/repos#list-repository-teams
         """
-        return self.api.list_all(self.host,"repos/{}/{}/teams".format(owner, repo))
+        return self.api.list_all(self.host, "repos/{}/{}/teams".format(owner, repo))
 
     def get_all_public_repos(self, page_check=False):
         """
@@ -61,7 +63,8 @@ class ReposApi():
         GitHub API v3 Doc: https://docs.github.com/en/enterprise/2.21/user/rest/reference/repos#create-a-repository-for-the-authenticated-user
         """
         if not message:
-            print(f"Creating a new repository for the authenticated user {data}")
+            print(
+                f"Creating a new repository for the authenticated user {data}")
 
         return self.api.generate_v3_post_request(
             self.host,

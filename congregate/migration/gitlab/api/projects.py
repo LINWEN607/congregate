@@ -476,7 +476,7 @@ class ProjectsApi():
             :return: Response object containing the response to PUT /projects/:id
         """
         if not message:
-            message = "Setting default branch for project to %s" % branch
+            message = f"Setting default branch {branch} for project {pid}"
         return api.generate_put_request(host, token, f"projects/{pid}?default_branch={branch}", data=data, description=message)
 
     def create_branch(self, host, token, pid, data=None, message=None):
@@ -1015,4 +1015,3 @@ class ProjectsApi():
         }
 
         return api.generate_post_request(host, token, None, json.dumps(query), graphql_query=True)
-

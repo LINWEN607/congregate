@@ -1,7 +1,7 @@
 import json
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import remove_dupes, remove_dupes_but_take_higher_access
+from congregate.helpers.misc_utils import remove_dupes, remove_dupes_but_take_higher_access, safe_json_response
 from congregate.migration.bitbucket.api.repos import ReposApi
 from congregate.migration.bitbucket.api.users import UsersApi
 from congregate.migration.bitbucket.users import UsersClient
@@ -19,8 +19,7 @@ class ReposClient(BaseClass):
     def retrieve_repo_info(self, groups=None):
         # List and reformat all Bitbucket Server repo to GitLab project metadata
         repos = []
-        for repo in self.repos_api.get_all_repos(
-                self.config.source_host):
+        for repo in self.repos_api.get_all_repos():
             repos.append({
                 "id": repo["id"],
                 "path": repo["slug"],
@@ -35,7 +34,8 @@ class ReposClient(BaseClass):
                 "path_with_namespace": repo["project"]["key"] + "/" + repo["slug"],
                 "visibility": "public" if repo["public"] else "private",
                 "description": repo.get("description", ""),
-                "members": self.add_repo_users([], repo["project"]["key"], repo["slug"], groups)
+                "members": self.add_repo_users([], repo["project"]["key"], repo["slug"], groups),
+                "default_branch": self.get_default_branch(repo["project"]["key"], repo["slug"])
             })
         with open('%s/data/project_json.json' % self.app_path, "w") as f:
             json.dump(remove_dupes(repos), f, indent=4)
@@ -47,14 +47,13 @@ class ReposClient(BaseClass):
             "REPO_WRITE": 30,  # Developer
             "REPO_READ": 20  # Reporter
         }
-        for member in self.repos_api.get_all_repo_users(
-                self.config.source_host, project_key, repo_slug):
+        for member in self.repos_api.get_all_repo_users(project_key, repo_slug):
             m = member["user"]
             m["permission"] = bitbucket_permission_map[member["permission"]]
             members.append(m)
 
         if groups:
-            for group in self.repos_api.get_all_repo_groups(self.config.source_host, project_key, repo_slug):
+            for group in self.repos_api.get_all_repo_groups(project_key, repo_slug):
                 group_name = group["group"]["name"].lower()
                 permission = bitbucket_permission_map[group["permission"]]
                 if groups.get(group_name, None):
@@ -64,5 +63,10 @@ class ReposClient(BaseClass):
                         members.append(temp_user)
                 else:
                     self.log.warning(f"Unable to find group {group_name}")
-        
+
         return remove_dupes_but_take_higher_access(self.users.format_users(members))
+
+    def get_default_branch(self, project_key, repo_slug):
+        resp = safe_json_response(
+            self.repos_api.get_repo_default_branch(project_key, repo_slug))
+        return resp.get("displayId", None) if resp else "master"

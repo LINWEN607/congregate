@@ -17,8 +17,7 @@ class UsersClient(BaseClass):
         """
         List and transform all Bitbucket Server user to GitLab user metadata
         """
-        users = self.users_api.get_all_users(
-            self.config.source_host)
+        users = self.users_api.get_all_users()
         data = remove_dupes(self.format_users(users))
         with open('%s/data/users.json' % self.app_path, "w") as f:
             json.dump(data, f, indent=4)

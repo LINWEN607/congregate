@@ -22,8 +22,7 @@ class ProjectsClient(BaseClass):
 
     def retrieve_project_info(self, groups=None):
         obj = []
-        projects = self.projects_api.get_all_projects(
-            self.config.source_host)
+        projects = self.projects_api.get_all_projects()
         for project in projects:
             obj.append({
                 "name": project["name"],
@@ -45,14 +44,13 @@ class ProjectsClient(BaseClass):
             "PROJECT_WRITE": 30,  # Developer
             "PROJECT_READ": 20  # Reporter
         }
-        for user in self.projects_api.get_all_project_users(
-                project_key, self.config.source_host):
+        for user in self.projects_api.get_all_project_users(project_key):
             m = user["user"]
             m["permission"] = bitbucket_permission_map[user["permission"]]
             users.append(m)
-        
+
         if groups:
-            for group in self.projects_api.get_all_project_groups(project_key, self.config.source_host):
+            for group in self.projects_api.get_all_project_groups(project_key):
                 group_name = group["group"]["name"].lower()
                 permission = bitbucket_permission_map[group["permission"]]
                 if groups.get(group_name, None):
@@ -67,8 +65,7 @@ class ProjectsClient(BaseClass):
 
     def add_project_repos(self, repos, project_key):
         repos = []
-        for repo in self.projects_api.get_all_project_repos(
-                project_key, self.config.source_host):
+        for repo in self.projects_api.get_all_project_repos(project_key):
             repos.append({
                 "id": repo["id"],
                 "path": repo["slug"],

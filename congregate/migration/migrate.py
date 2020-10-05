@@ -6,7 +6,7 @@
 
 import os
 import json
-from time import sleep, time
+from time import time
 from traceback import print_exc
 from requests.exceptions import RequestException
 
@@ -258,7 +258,7 @@ class MigrateClient(BaseClass):
         for branch in branches:
             if branch["name"] == "gh-pages":
                 is_result = True
-                project = self.project_repository_api.create_repo_file(
+                self.project_repository_api.create_repo_file(
                     self.config.destination_host, self.config.destination_token,
                     project_id, ".gitlab-ci.yml", data)
         return is_result
@@ -346,11 +346,22 @@ class MigrateClient(BaseClass):
         result = self.ext_import.trigger_import_from_bb_server(
             project, dry_run=self.dry_run)
         if result.get(project["path_with_namespace"], False) is not False:
-            project_id = result[project["path_with_namespace"]
-                                ]["response"].get("id")
-            result["members"] = self.projects.add_members_to_destination_project(
-                self.config.destination_host, self.config.destination_token, project_id, members)
-            self.projects.remove_import_user(project_id)
+            result_response = result[project["path_with_namespace"]]["response"]
+            if project_id := result_response.get("id", None):
+                full_path = result_response.get("full_path").strip("/")
+                success = self.ext_import.wait_for_project_to_import(full_path)
+                if success:
+                    result["members"] = self.projects.add_members_to_destination_project(
+                        self.config.destination_host, self.config.destination_token, project_id, members)
+                    # Set default branch
+                    self.projects_api.set_default_project_branch(
+                        project_id, self.config.destination_host, self.config.destination_token, project.get("default_branch", "master"))
+                    # Remove import user
+                    self.projects.remove_import_user(project_id)
+                else:
+                    result = self.ext_import.get_failed_result(project, data={
+                        "error": "Import time limit exceeded. Unable to execute post migration phase"
+                    })
         return result
 
     def are_results(self, results, var, stage):
@@ -832,7 +843,8 @@ class MigrateClient(BaseClass):
                     "branch": "%s-jenkins-config" % job,
                     "ref": "master"
                 }
-                self.projects_api.create_branch(self.config.destination_host, self.config.destination_token, project_id, data=json.dumps(branch_data))
+                self.projects_api.create_branch(
+                    self.config.destination_host, self.config.destination_token, project_id, data=json.dumps(branch_data))
 
                 config_xml = self.jenkins.jenkins_api.get_job_config_xml(job)
                 if config_xml:
