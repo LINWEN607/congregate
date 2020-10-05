@@ -180,20 +180,6 @@ class Config(object):
         """
         return self.prop_int("DESTINATION", "max_asset_expiration_time", 24)
     
-    @property
-    def lower_case_group_path(self):
-        """
-        If all groups need to be converted to lowercase during a migration
-        """
-        return self.prop_bool("DESTINATION", "lower_case_group_path", False)
-    
-    @property
-    def users_to_ignore(self):
-        """
-        A list of users to ignore during a migration. Currently only used in BitBucket Server migrations. Defaults to empty list
-        """
-        return self.prop_list("DESTINATION", "users_to_ignore", [])
-
 # SOURCE
     @property
     def source_type(self):
@@ -356,8 +342,8 @@ class Config(object):
     
 
 # HIDDEN PROPERTIES
+    
     # Used only by "map-users" command
-
     @property
     def user_map(self):
         return self.prop("USER", "user_map_csv")
@@ -366,3 +352,24 @@ class Config(object):
     @property
     def allow_presigned_url(self):
         return self.prop_bool("EXPORT", "allow_presigned_url", False)
+
+    @property
+    def lower_case_group_path(self):
+        """
+        If all groups need to be converted to lowercase during a migration
+        """
+        return self.prop_bool("DESTINATION", "lower_case_group_path", False)
+
+    @property
+    def lower_case_project_path(self):
+        """
+        If all projects need to be converted to lowercase during a migration
+        """
+        return self.prop_bool("DESTINATION", "lower_case_project_path", False)
+
+    @property
+    def users_to_ignore(self):
+        """
+        A list of users to ignore during a migration. Currently only used in BitBucket Server migrations. Defaults to empty list
+        """
+        return self.prop_list("DESTINATION", "users_to_ignore", [])

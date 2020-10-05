@@ -28,6 +28,9 @@ class ImportClient(BaseClass):
         else:
             data["target_namespace"] = project_key
 
+        if self.config.lower_case_project_path:
+            data["new_name"] = repo.lower()
+
         if not dry_run:
             try:
                 resp = self.ext_import.import_from_bitbucket_server(

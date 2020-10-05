@@ -331,6 +331,7 @@ class MigrateClient(BaseClass):
                     self.config.destination_host, self.config.destination_token, group))
                 if result and not is_error_message_present(result):
                     group_id = result.get("id", None)
+                else:
                     self.log.error(f"Unable to create group due to: {result}")
             if group_id:
                 result = {}

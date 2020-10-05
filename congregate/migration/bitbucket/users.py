@@ -26,7 +26,7 @@ class UsersClient(BaseClass):
     def format_users(self, users):
         data = []
         for user in [u for u in users if u["id"] != 1]:
-            if user.get("emailAddress"):
+            if user.get("emailAddress", None):
                 if user["slug"].lower() not in self.users_to_ignore:
                     data.append({
                         "id": user["id"],
