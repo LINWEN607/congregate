@@ -20,8 +20,10 @@ class UsersClient(BaseClass):
         """
         start_multi_process(self.handle_retrieving_users, self.users_api.get_all_users())
     
-    def handle_retrieving_users(self, user):
-        mongo = self.connect_to_mongo()
+    def handle_retrieving_users(self, user, mongo=None):
+        # mongo should be set to None unless this function is being used in a unit test
+        if not mongo:
+            mongo = self.connect_to_mongo()
         formatted_user = self.format_user(user)
         mongo.insert_data("users", formatted_user)
 
