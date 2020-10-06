@@ -8,7 +8,6 @@ with warnings.catch_warnings():
     warnings.simplefilter("ignore")
     import mongomock
 
-from congregate.helpers.misc_utils import json_pretty
 from congregate.helpers.mdbc import MongoConnector
 from congregate.tests.mockapi.github.users import MockUsersApi
 from congregate.migration.github.users import UsersClient

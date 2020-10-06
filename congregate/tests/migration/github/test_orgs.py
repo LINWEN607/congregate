@@ -251,17 +251,11 @@ class OrgsTests(unittest.TestCase):
         }
         mock_org_response.return_value = mock_org
 
-        actual = self.orgs.add_org_as_group([], "org1", self.mongo_mock)
+        with self.assertLogs(self.orgs.log, level="ERROR"):
+            self.orgs.add_org_as_group([], "org1", self.mongo_mock)
 
-        self.assertLogs(
-            "Failed to append org {} ({}) to list {}".format("org1", mock_org, []))
-
-        expected_groups = None
-
-        actual = self.orgs.add_org_as_group(None, "org1", self.mongo_mock)
-
-        self.assertLogs("Failed to append org {} ({}) to list {}".format(
-            "org1", mock_org, None))
+        with self.assertLogs(self.orgs.log, level="ERROR"):
+            self.orgs.add_org_as_group(None, "org1", self.mongo_mock)
 
     def test_add_team_as_subgroup_error(self):
         mock_team = {

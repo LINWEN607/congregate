@@ -1,7 +1,7 @@
 import json
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import safe_json_response, is_error_message_present, json_pretty
+from congregate.helpers.misc_utils import safe_json_response, is_error_message_present
 from congregate.helpers.mdbc import MongoConnector
 from congregate.helpers.processes import start_multi_process_with_args
 from congregate.migration.github.api.orgs import OrgsApi
