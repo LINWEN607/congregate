@@ -18,8 +18,6 @@ from congregate.migration.github.users import UsersClient as GitHubUsers
 from congregate.migration.jenkins.base import JenkinsClient as JenkinsData
 from congregate.migration.teamcity.base import TeamcityClient as TeamcityData
 
-from congregate.helpers.mdbc import MongoConnector
-
 b = BaseClass()
 
 def list_gitlab_data():
@@ -56,7 +54,7 @@ def list_github_data():
     users = GitHubUsers()
 
     users.retrieve_user_info()
-    start_multi_process_with_args(mongo.insert_data, repos.retrieve_repo_info(), "projects")
+    repos.retrieve_repo_info()
     orgs.retrieve_org_info()
     
 

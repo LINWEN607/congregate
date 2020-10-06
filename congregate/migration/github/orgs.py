@@ -35,7 +35,6 @@ class OrgsClient(BaseClass):
                                 self.config.source_token)
         self.repos = ReposClient()
         self.users = UsersClient()
-        self.mongo = self.connect_to_mongo()
 
     def connect_to_mongo(self):
         return MongoConnector()
@@ -56,12 +55,13 @@ class OrgsClient(BaseClass):
         start_multi_process_with_args(self.handle_org_retrieval, self.orgs_api.get_all_orgs(), groups)
             
     def handle_org_retrieval(self, groups, org):
-        self.add_org_as_group(groups, org["login"])
+        mongoclient = self.connect_to_mongo()
+        self.add_org_as_group(groups, org["login"], mongoclient)
         for team in self.orgs_api.get_all_org_teams(org["login"]):
             self.add_team_as_subgroup(
-                org, team)
+                org, team, mongoclient)
 
-    def add_org_as_group(self, groups, org_name):
+    def add_org_as_group(self, groups, org_name, mongo):
         org = safe_json_response(self.orgs_api.get_org(org_name))
         if groups is None or is_error_message_present(org):
             self.log.error(
@@ -70,12 +70,12 @@ class OrgsClient(BaseClass):
             org_repos = []
             for org_repo, _ in self.orgs_api.get_all_org_repos(org_name, page_check=True):
                 formatted_repo = self.repos.format_repo(org_repo)
-                self.mongo.insert_data("projects", formatted_repo)
+                mongo.insert_data("projects", formatted_repo)
                 formatted_repo.pop("_id")
                 formatted_repo["members"] = []
                 org_repos.append(formatted_repo)
             members = self.add_org_members([], org)
-            self.mongo.insert_data("groups", {
+            mongo.insert_data("groups", {
                 "name": org["login"],
                 "id": org["id"],
                 "path": org["login"],
@@ -90,7 +90,7 @@ class OrgsClient(BaseClass):
             })
         return groups
 
-    def add_team_as_subgroup(self, org, team):
+    def add_team_as_subgroup(self, org, team, mongo):
         if is_error_message_present(team):
             self.log.error(
                 "Failed to store team {}".format(team))
@@ -100,11 +100,11 @@ class OrgsClient(BaseClass):
                 team_repos = []
                 for team_repo in self.teams_api.get_team_repos(team["id"]):
                     formatted_repo = self.repos.format_repo(team_repo)
-                    self.mongo.insert_data("projects", formatted_repo)
+                    mongo.insert_data("projects", formatted_repo)
                     formatted_repo.pop("_id")
                     formatted_repo["members"] = []
                     team_repos.append(formatted_repo)
-                self.mongo.insert_data("groups", {
+                mongo.insert_data("groups", {
                     "name": team["name"],
                     "id": team["id"],
                     "path": team["slug"],
