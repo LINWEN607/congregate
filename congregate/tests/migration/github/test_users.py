@@ -1,7 +1,7 @@
 import unittest
+import warnings
 import pytest
 from mock import patch, PropertyMock, MagicMock
-import warnings
 # mongomock is using deprecated logic as of Python 3.3
 # This warning suppression is used so tests can pass
 with warnings.catch_warnings():
@@ -57,7 +57,8 @@ class UsersTests(unittest.TestCase):
 
         self.users.retrieve_user_info()
 
-        actual_users = [d for d, _ in self.users.mongo.stream_collection("users")]
+        actual_users = [
+            d for d, _ in self.users.mongo.stream_collection("users")]
 
         expected_users = [
             {
@@ -205,8 +206,8 @@ class UsersTests(unittest.TestCase):
         self.assertEqual(actual_users.sort(
             key=lambda x: x["id"]), expected_users.sort(key=lambda x: x["id"]))
 
-
     def mock_user_client(self):
         with patch.object(UsersClient, "connect_to_mongo") as mongo_mock:
-            mongo_mock.return_value = MongoConnector(host="test-server", port=123456, client=mongomock.MongoClient)
+            mongo_mock.return_value = MongoConnector(
+                host="test-server", port=123456, client=mongomock.MongoClient)
             return UsersClient()

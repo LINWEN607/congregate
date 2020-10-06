@@ -41,7 +41,7 @@ class MigrationEndToEndTestSetup(unittest.TestCase):
             "no",  # external_src_url
             os.getenv("GITLAB_SRC"),  # source host
             "yes",  # source parent group
-            "2",   # source parent group ID
+            "3",   # source parent group ID
             # "source_group_full_path",   # source parent group path
             "300",  # max_export_wait_time
             "yes",  # migrating registries
@@ -59,7 +59,7 @@ class MigrationEndToEndTestSetup(unittest.TestCase):
             "yes",  # password reset email
             "no",  # randomized password
             "5",  # import wait time
-            "no", # wave spreadsheet
+            "no",  # wave spreadsheet
             ""  # slack_url
         ]
         tokens = [

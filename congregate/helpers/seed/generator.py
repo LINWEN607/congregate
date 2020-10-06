@@ -44,7 +44,7 @@ class SeedDataGenerator(BaseClass):
         for group in groups:
             self.generate_dummy_group_variables(group["id"], dry_run)
             self.generate_dummy_group_hooks(group["id"], dry_run)
-        self.add_group_members(users, groups, dry_run)
+            self.add_group_members(users, group["id"], dry_run)
         projects = self.generate_group_projects(groups, dry_run)
         for project in projects:
             self.generate_dummy_environment(project["id"], dry_run)
@@ -54,6 +54,7 @@ class SeedDataGenerator(BaseClass):
                 project["id"], dry_run)
             self.generate_shared_with_group_data(
                 project["id"], groups, dry_run)
+            self.add_project_members(users, project["id"], dry_run)
         projects += self.generate_user_projects(users, dry_run)
 
         print("---Generated Users---")
@@ -148,20 +149,29 @@ class SeedDataGenerator(BaseClass):
 
         return created_groups
 
-    def add_group_members(self, created_users, created_groups, dry_run=True):
+    def add_group_members(self, created_users, gid, dry_run=True):
+        for user in created_users:
+            data = {
+                "user_id": user["id"],
+                "access_level": 30
+            }
+            self.log.info("{0}Adding user {1} ({2}) to group {3}".format(
+                get_dry_log(dry_run), user["email"], data, gid))
+            if not dry_run:
+                self.groups.add_member_to_group(
+                    gid, self.config.source_host, self.config.source_token, data)
+
+    def add_project_members(self, created_users, pid, dry_run=True):
         for user in created_users:
             data = {
                 "user_id": user["id"],
                 "access_level": 40
             }
-            self.log.info("{0}Adding user {1} ({2}) to group {3}".format(
-                get_dry_log(dry_run),
-                user["email"],
-                data,
-                created_groups[-1]["name"]))
+            self.log.info("{0}Adding user {1} ({2}) to project {3}".format(
+                get_dry_log(dry_run), user["email"], data, pid))
             if not dry_run:
-                self.groups.add_member_to_group(
-                    created_groups[-1]["id"], self.config.source_host, self.config.source_token, data)
+                self.projects_api.add_member(
+                    pid, self.config.source_host, self.config.source_token, data)
 
     def generate_group_projects(self, created_groups, dry_run=True):
         dummy_projects = {

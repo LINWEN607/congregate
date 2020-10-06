@@ -47,7 +47,7 @@ workflow:
 
 .gitlab-destination:
   services:
-    - name: gitlab/gitlab-ee:13.1.4-ee.0
+    - name: gitlab/gitlab-ee:nightly
       alias: gitlab_destination
       command:
         [
@@ -141,6 +141,7 @@ build jenkins seed image:
     - pip install poetry
     - poetry install
     - ./congregate.sh init
+  retry: 2
   rules:
     - changes:
         - congregate/**/*

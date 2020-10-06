@@ -59,15 +59,15 @@ class GroupsClient(BaseClass):
             if self.config.src_parent_group_path:
                 groups = list(self.groups_api.get_all_subgroups(
                     self.config.src_parent_id, host, token))
-                groups.append(self.groups_api.get_group(
-                    self.config.src_parent_id, host, token).json())
+                groups.append(safe_json_response(self.groups_api.get_group(
+                    self.config.src_parent_id, host, token)))
             else:
                 groups = list(self.groups_api.get_all_groups(
                     host, token))
         else:
             if self.config.dstn_parent_id is not None:
-                groups = [self.groups_api.get_group(self.config.dstn_parent_id, self.config.destination_host,
-                                                    self.config.destination_token).json()]
+                groups = [safe_json_response(self.groups_api.get_group(
+                    self.config.dstn_parent_id, self.config.destination_host, self.config.destination_token))]
                 prefix += str(self.config.dstn_parent_id)
             else:
                 self.log.info("No parent ID found")
@@ -75,7 +75,8 @@ class GroupsClient(BaseClass):
 
         transient_list = []
         self.traverse_groups(groups, transient_list, host, token)
-        write_json_to_file(f"{self.app_path}/data/{prefix}groups.json", remove_dupes(groups), log=self.log)
+        write_json_to_file(
+            f"{self.app_path}/data/{prefix}groups.json", remove_dupes(groups), log=self.log)
         return transient_list
 
     def remove_import_user(self, gid):
