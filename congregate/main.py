@@ -167,7 +167,8 @@ def main():
 
         if arguments["--version"]:
             with open(f"{app_path}/pyproject.toml", "r") as f:
-                print(f"Congregate {load_toml(f)['tool']['poetry']['version']}")
+                print(
+                    f"Congregate {load_toml(f)['tool']['poetry']['version']}")
             exit()
 
         if arguments["init"]:
@@ -253,12 +254,10 @@ def main():
                 )
                 migrate.rollback()
 
-                if arguments["do-all"]:
-                    do_all.do_all(dry_run=DRY_RUN)
-
-                if arguments["do-all-users"]:
-                    do_all.do_all_users(dry_run=DRY_RUN)
-
+            if arguments["do-all"]:
+                do_all.do_all(dry_run=DRY_RUN)
+            if arguments["do-all-users"]:
+                do_all.do_all_users(dry_run=DRY_RUN)
             if arguments["do-all-groups-and-projects"]:
                 do_all.do_all_groups_and_projects(dry_run=DRY_RUN)
             if arguments["ui"]:

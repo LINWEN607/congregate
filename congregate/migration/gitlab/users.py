@@ -4,7 +4,8 @@ from os import path
 from requests.exceptions import RequestException
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import get_dry_log, json_pretty, get_timedelta, remove_dupes, rewrite_list_into_dict, read_json_file_into_object
+from congregate.helpers.misc_utils import get_dry_log, json_pretty, get_timedelta, \
+    remove_dupes, rewrite_list_into_dict, read_json_file_into_object, safe_json_response
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.users import UsersApi
 
@@ -427,8 +428,8 @@ class UsersClient(BaseClass):
         if self.config.src_parent_group_path:
             users = []
             for user in self.groups_api.get_all_group_members(self.config.src_parent_id, host, token):
-                users.append(self.users_api.get_user(
-                    user["id"], host, token).json())
+                users.append(safe_json_response(
+                    self.users_api.get_user(user["id"], host, token)))
         else:
             users = self.users_api.get_all_users(host, token)
 
