@@ -5,7 +5,10 @@
 
 # <customer name> Migration Pre and Post-requisites
 
-This runbook covers the process of preparing and cleaninig up after a migration from a source GitLab instance to a destination GitLab instance, requesting to have a VM created in the transient-imports GCP project.
+This runbook covers the process of preparing and cleaninig up after a migration from a source GitLab instance to a destination GitLab instance.
+
+* (gitlab.com) requesting to have a VM created in the transient-imports GCP project.
+* (gitlab.com) [GitLab Commercial Customer Success Documentation](https://gitlab-com.gitlab.io/account-management/commercial/documentation/) on migrating to gitlab.com.
 
 ## Migration pre-requisites
 
@@ -93,6 +96,25 @@ The VM should be setup with Okta ASA, but based on time constraints it may be ne
 
 ## Migration post-requisites
 
-(gitlab.com) Once the migration is complete follow the [PS Deprovisioning Process](https://gitlab.com/gitlab-com/business-ops/team-member-enablement/runbooks/-/blob/master/it_operations/GitLab_com_environment_(PRD,DEV,STG)access_requests.md#deprovisioning-process) for GitLab.com environments Access Request.
+### VM Deprovisioning
+
+* [ ] (gitlab.com) Once the migration is complete follow the [PS Deprovisioning Process](https://gitlab.com/gitlab-com/business-ops/team-member-enablement/runbooks/-/blob/master/it_operations/GitLab_com_environment_(PRD,DEV,STG)access_requests.md#deprovisioning-process) for GitLab.com environments Access Request.
+* [ ] (Optional) backup group and project export archive files.
+
+### Instance checks
+
+Certain GitLab features are migrated but not adapted to the destination instance. These should be manually updated.
+
+* [ ] Group, sub-group and project level Runner registration
+  * Enable project-level shared runners (default: true)
+  * Disable AutoDevOps (default: true)
+* [ ] Update group and project permissions
+* [ ] Update paths (hostnames) for:
+  * project, group and system hooks
+  * badges
+  * project and group CI/CD variables (if their values are source instance specific)
+* [ ] Update project shared groups (unless the entire group structure is migrated first)
+* [ ] Update instance and group level (custom) project templates
+* [ ] Update any features that are not migrating over (based on migration features matrix)
 
 /confidential
