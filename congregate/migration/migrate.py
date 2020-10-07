@@ -39,6 +39,7 @@ from congregate.migration.gitlab.environments import EnvironmentsClient
 from congregate.migration.gitlab.external_import import ImportClient
 from congregate.migration.jenkins.base import JenkinsClient
 from congregate.migration.teamcity.base import TeamcityClient
+from congregate.migration.bitbucket.repos import ReposClient as BBSReposClient
 
 
 class MigrateClient(BaseClass):
@@ -78,6 +79,7 @@ class MigrateClient(BaseClass):
         super(MigrateClient, self).__init__()
         self.jenkins = JenkinsClient() if self.config.ci_source_type == "jenkins" else None
         self.teamcity = TeamcityClient() if self.config.ci_source_type == "teamcity" else None
+        self.bbs_repos_client = BBSReposClient()
         self.job_template = JobTemplateGenerator()
 
         self.dry_run = dry_run
@@ -324,7 +326,8 @@ class MigrateClient(BaseClass):
         group_id = None
         if group_id := self.groups.find_group_id_by_path(
                 self.config.destination_host, self.config.destination_token, group["full_path"]):
-            self.log.info(f"{group['full_path']} ({group_id}) found. Skipping import. Adding members")
+            self.log.info(
+                f"{group['full_path']} ({group_id}) found. Skipping import. Adding members")
         if not self.dry_run:
             if not group_id:
                 result = safe_json_response(self.groups_api.create_group(
@@ -357,6 +360,9 @@ class MigrateClient(BaseClass):
                     # Set default branch
                     self.projects_api.set_default_project_branch(
                         project_id, self.config.destination_host, self.config.destination_token, project.get("default_branch", "master"))
+                    # Set branch permissions
+                    self.bbs_repos_client.migrate_permissions(
+                        project, project_id)
                     # Remove import user
                     self.projects.remove_import_user(project_id)
                 else:

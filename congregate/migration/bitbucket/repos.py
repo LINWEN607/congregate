@@ -6,6 +6,7 @@ from congregate.migration.bitbucket.api.repos import ReposApi
 from congregate.migration.bitbucket.api.users import UsersApi
 from congregate.migration.bitbucket.users import UsersClient
 from congregate.migration.bitbucket.api.groups import GroupsApi
+from congregate.migration.gitlab.api.projects import ProjectsApi as GLProjectsApi
 
 
 class ReposClient(BaseClass):
@@ -14,6 +15,8 @@ class ReposClient(BaseClass):
         self.users_api = UsersApi()
         self.users = UsersClient()
         self.groups_api = GroupsApi()
+        self.gl_projects_api = GLProjectsApi()
+
         super(ReposClient, self).__init__()
 
     def retrieve_repo_info(self, groups=None):
@@ -70,3 +73,31 @@ class ReposClient(BaseClass):
         resp = safe_json_response(
             self.repos_api.get_repo_default_branch(project_key, repo_slug))
         return resp.get("displayId", None) if resp else "master"
+
+    def migrate_permissions(self, project, pid):
+        for perm in self.repos_api.get_repo_branch_permissions(project["namespace"], project["path"]):
+            self.log.info(
+                f"Migrating repo {project['path_with_namespace']} {perm['scope']['type']} permissions (ID: {perm['id']})")
+            if perm["scope"]["type"] == "PROJECT":
+                self.migrate_project_permissions(perm, pid)
+            elif perm["scope"]["type"] == "REPOSITORY":
+                self.migrate_branch_permissions(perm, pid)
+
+    def migrate_project_permissions(self, perm, pid):
+        pass
+
+    def migrate_branch_permissions(self, perm, pid):
+        PERM_MATCHER_TYPES = ["PATTERN", "BRANCH"]
+        PERM_TYPES = {
+            "read-only": ,
+            "no-deletes",
+            "fast-forward-only",
+            "pull-request-only"
+        }
+        data = {
+            # MODEL_BRANCH cannot be mapped
+            "name": perm["matcher"]["display_id"] if perm["matcher"]["type"]["id"] in PERM_MATCHER_TYPES else None,
+        }
+
+        self.gl_projects_api.protect_repository_branches(
+            pid, self.config.destination_host, self.config.destination_token, data=data)
