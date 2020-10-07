@@ -231,6 +231,8 @@ class MigrateClient(BaseClass):
                     if self.config.ci_source_type == "teamcity":
                         result[project["path_with_namespace"]]["teamcity_variables"] = self.migrate_teamcity_variables(
                             project, project_id)
+                        result[project["path_with_namespace"]]["teamcity_variables"] = self.migrate_teamcity_build_config(
+                            project, project_id)
                     self.projects.remove_import_user(project_id)
                     # Added a new file in the repo
                     result[project["path_with_namespace"]]["is_gh_pages"] = self.add_pipeline_for_github_pages(
@@ -876,6 +878,42 @@ class MigrateClient(BaseClass):
                         result = False
             return result
         return None
+
+    def migrate_teamcity_build_config(self, project, project_id):
+        '''
+        In order to maintain configuration from old TeamCity instance,
+        we save a copy of a TeamCity's job build configuration file and commit it to the associated repoistory.
+        '''
+        if (ci_sources := project.get("ci_sources", None)) and self.config.ci_source_type == "teamcity":
+            for job in ci_sources.get("TeamCity", []):
+                is_result = False
+
+                # Create branch for config.xml
+                branch_data = {
+                    "branch": "%s-teamcity-config" % job,
+                    "ref": "master"
+                }
+                self.projects_api.create_branch(
+                    self.config.destination_host, self.config.destination_token, project_id, data=json.dumps(branch_data))
+
+                build_config = self.teamcity.teamcity_api.get_build_config(job)
+                if build_config:
+                    build_config = json.dumps(build_config, indent=4)
+
+                data = {
+                    "branch": "%s-teamcity-config" % job,
+                    "commit_message": "Adding build_config.xml for TeamCity job",
+                    "content": build_config
+                }
+
+                req = self.project_repository_api.create_repo_file(
+                    self.config.destination_host, self.config.destination_token,
+                    project_id, "build_config.xml", data)
+                if req.status_code == 200:
+                    is_result = True
+                else:
+                    is_result = False
+        return is_result
 
     def rollback(self):
         rotate_logs()
