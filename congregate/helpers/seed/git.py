@@ -259,6 +259,11 @@ class Manage_Repos():
                     f"{self.colors['red']}ERROR{self.colors['clear']}: We were unable to add "
                     f"or change the remote because;\nr{rc_so.stderr}"
                 )
+        # If we made it this far, we should probably make sure all the branches are checked out as well
+        cmd = 'for remote in `git branch -r | grep -v master `; do git checkout --track $remote ; done'
+        rc_branch = subprocess.call(cmd, cwd=self.cwd, shell=True)
+        print(rc_branch)
+
         self.cwd = "."
 
     def rebuild_dir(self, repo):
