@@ -896,8 +896,7 @@ class MigrateClient(BaseClass):
                 self.projects_api.create_branch(
                     self.config.destination_host, self.config.destination_token, project_id, data=json.dumps(branch_data))
 
-                build_config = self.teamcity.teamcity_api.get_build_config(job)
-                if build_config:
+                if build_config := self.teamcity.teamcity_api.get_build_config(job)
                     build_config = json.dumps(build_config, indent=4)
 
                 data = {
