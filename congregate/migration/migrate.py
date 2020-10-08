@@ -889,7 +889,7 @@ class MigrateClient(BaseClass):
             for job in ci_sources.get("TeamCity", []):
                 is_result = False
 
-                # Create branch for config.xml
+                # Create branch for TeamCity configuration
                 branch_data = {
                     "branch": "%s-teamcity-config" % job,
                     "ref": "master"
@@ -900,7 +900,6 @@ class MigrateClient(BaseClass):
                 build_config = self.teamcity.teamcity_api.get_build_config(job)
                 if build_config:
                     dom = xml.dom.minidom.parseString(build_config.text)
-                    # build_config = build_config.text
                     build_config = dom.toprettyxml()
 
                 data = {
