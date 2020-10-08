@@ -14,11 +14,11 @@ class UsersClient(BaseClass):
     def connect_to_mongo(self):
         return MongoConnector()
 
-    def retrieve_user_info(self):
+    def retrieve_user_info(self, processes=None):
         """
         List and transform all GitHub user to GitLab user metadata
         """
-        start_multi_process(self.handle_retrieving_users, self.users_api.get_all_users())
+        start_multi_process(self.handle_retrieving_users, self.users_api.get_all_users(), processes=processes)
     
     def handle_retrieving_users(self, user, mongo=None):
         # mongo should be set to None unless this function is being used in a unit test

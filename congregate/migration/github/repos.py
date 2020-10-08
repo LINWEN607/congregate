@@ -26,11 +26,11 @@ class ReposClient(BaseClass):
                                   self.config.source_host, 
                                   self.config.source_token) 
         
-    def retrieve_repo_info(self):
+    def retrieve_repo_info(self, processes=None):
         """
         List and transform all GitHub public repo to GitLab project metadata
         """
-        start_multi_process(self.handle_retrieving_repos, self.repos_api.get_all_public_repos())
+        start_multi_process(self.handle_retrieving_repos, self.repos_api.get_all_public_repos(), processes=processes)
 
     def connect_to_mongo(self):
         return MongoConnector()

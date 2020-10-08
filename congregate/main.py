@@ -4,7 +4,7 @@ Copyright (c) 2020 - GitLab
 
 Usage:
     congregate init
-    congregate list
+    congregate list [--partial]
     congregate configure
     congregate stage-projects <projects>... [--skip-users] [--commit]
     congregate stage-groups <groups>... [--skip-users] [--commit]
@@ -76,6 +76,7 @@ Arguments:
     result-type                             For stitching result files. Options are project, group, or user
     head                                    Read results files in chronological order
     tail                                    Read results files in reverse chronological order (default for stitch-results)
+    partial                                 Option used when listing. Keeps existing data in mongo instead of dropping it before retrieving new data
 
 Commands:
     list                                    List all projects of a source instance and save it to {CONGREGATE_PATH}/data/project_json.json.
@@ -164,6 +165,7 @@ def main():
         PROCESSES = arguments["--processes"] if arguments["--processes"] else None
         SKIP_USERS = True if arguments["--skip-users"] else False
         ONLY_POST_MIGRATION_INFO = True if arguments["--only-post-migration-info"] else False
+        PARTIAL = True if arguments["--partial"] else False
 
         if arguments["--version"]:
             with open(f"{app_path}/pyproject.toml", "r") as f:
@@ -214,7 +216,7 @@ def main():
             branches = BranchesClient()
 
             if arguments["list"]:
-                list_source.list_data()
+                list_source.list_data(processes=PROCESSES, partial=PARTIAL)
 
             if arguments["stage-projects"]:
                 pcli = ProjectStageCLI()

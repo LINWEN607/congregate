@@ -49,15 +49,20 @@ def list_bitbucket_data():
     users.retrieve_user_info()
 
 
-def list_github_data():
+def list_github_data(processes=None, partial=False):
     mongo = MongoConnector()
+    if not partial:
+        b.log.info("Dropping database collections")
+        mongo.drop_collection("projects")
+        mongo.drop_collection("groups")
+        mongo.drop_collection("users")
     repos = GitHubRepos()
     orgs = GitHubOrgs()
     users = GitHubUsers()
 
-    users.retrieve_user_info()
-    repos.retrieve_repo_info()
-    orgs.retrieve_org_info()
+    users.retrieve_user_info(processes=processes)
+    repos.retrieve_repo_info(processes=processes)
+    orgs.retrieve_org_info(processes=processes)
     
 
     mongo.dump_collection_to_file("projects", f"{b.app_path}/data/project_json.json")
@@ -88,7 +93,7 @@ def write_empty_file(filename):
             f.write("[]")
 
 
-def list_data():
+def list_data(processes=None, partial=False):
     src_type = b.config.source_type
     ci_src_type = b.config.ci_source_type
     staged_files = ["staged_projects", "staged_groups", "staged_users"]
@@ -106,7 +111,7 @@ def list_data():
     elif src_type == "gitlab":
         list_gitlab_data()
     elif src_type == "github":
-        list_github_data()
+        list_github_data(processes=processes, partial=partial)
     else:
         b.log.warning("Cannot list from source {}".format(src_type))
         exit()
