@@ -79,24 +79,16 @@ class ReposClient(BaseClass):
             project["namespace"], project["path"]))
         for p in perms:
             if p["scope"]["type"] == "PROJECT":
-                self.migrate_project_permissions(p, pid)
+                self.migrate_project_permissions(
+                    p, [perm for perm in perms if perm["scope"]["type"] == "PROJECT"], pid)
             elif p["scope"]["type"] == "REPOSITORY":
                 self.filter_branch_permissions(
                     p, [perm for perm in perms if perm["scope"]["type"] == "REPOSITORY"], pid)
 
-    def migrate_project_permissions(self, perm, pid):
-        PERM_TYPES = {
-            "read-only": 0,
-            "no-deletes": 1,
-            "fast-forward-only": 2,
-            "pull-request-only": 3
-        }
-
-        data = {
-            "default_branch_protection": PERM_TYPES[perm["type"]]
-        }
-        # TODO: Add call to update group
-        pass
+    def migrate_project_permissions(self, p, perms, pid):
+        # TODO: Should take precedence over project-level branch permissions
+        self.log.warning(
+            f"Skipping group level permission {p['type']} for branch {p['matcher']['displayId']} of project {pid}")
 
     def filter_branch_permissions(self, p, perms, pid):
         branch = p["matcher"]["displayId"]
