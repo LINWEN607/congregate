@@ -45,20 +45,20 @@ class ReposClient(BaseClass):
         return remove_dupes(repos)
 
     def add_repo_users(self, members, project_key, repo_slug, groups):
-        bitbucket_permission_map = {
+        REPO_PERM_MAP = {
             "REPO_ADMIN": 40,  # Maintainer
             "REPO_WRITE": 30,  # Developer
             "REPO_READ": 20  # Reporter
         }
         for member in self.repos_api.get_all_repo_users(project_key, repo_slug):
             m = member["user"]
-            m["permission"] = bitbucket_permission_map[member["permission"]]
+            m["permission"] = REPO_PERM_MAP[member["permission"]]
             members.append(m)
 
         if groups:
             for group in self.repos_api.get_all_repo_groups(project_key, repo_slug):
                 group_name = group["group"]["name"].lower()
-                permission = bitbucket_permission_map[group["permission"]]
+                permission = REPO_PERM_MAP[group["permission"]]
                 if groups.get(group_name, None):
                     for user in groups[group_name]:
                         temp_user = user
@@ -75,29 +75,77 @@ class ReposClient(BaseClass):
         return resp.get("displayId", None) if resp else "master"
 
     def migrate_permissions(self, project, pid):
-        for perm in self.repos_api.get_repo_branch_permissions(project["namespace"], project["path"]):
-            self.log.info(
-                f"Migrating repo {project['path_with_namespace']} {perm['scope']['type']} permissions (ID: {perm['id']})")
-            if perm["scope"]["type"] == "PROJECT":
-                self.migrate_project_permissions(perm, pid)
-            elif perm["scope"]["type"] == "REPOSITORY":
-                self.migrate_branch_permissions(perm, pid)
+        perms = list(self.repos_api.get_repo_branch_permissions(
+            project["namespace"], project["path"]))
+        for p in perms:
+            if p["scope"]["type"] == "PROJECT":
+                self.migrate_project_permissions(p, pid)
+            elif p["scope"]["type"] == "REPOSITORY":
+                self.filter_branch_permissions(
+                    p, [perm for perm in perms if perm["scope"]["type"] == "REPOSITORY"], pid)
 
     def migrate_project_permissions(self, perm, pid):
+        PERM_TYPES = {
+            "read-only": 0,
+            "no-deletes": 1,
+            "fast-forward-only": 2,
+            "pull-request-only": 3
+        }
+
+        data = {
+            "default_branch_protection": PERM_TYPES[perm["type"]]
+        }
+        # TODO: Add call to update group
         pass
 
-    def migrate_branch_permissions(self, perm, pid):
+    def filter_branch_permissions(self, p, perms, pid):
+        branch = p["matcher"]["displayId"]
+        prio = ["read-only", "no-deletes",
+                "fast-forward-only", "pull-request-only"]
+        # Protect branch by highest priority and only once
+        if any(perm["type"] == prio[0] for perm in perms if perm["matcher"]["displayId"] == branch):
+            return self.migrate_branch_permissions(p, branch, pid) if p["type"] == prio[0] else None
+        elif any(perm["type"] == prio[1] for perm in perms if perm["matcher"]["displayId"] == branch):
+            return self.migrate_branch_permissions(p, branch, pid) if p["type"] == prio[1] else None
+        elif any(perm["type"] == prio[2] for perm in perms if perm["matcher"]["displayId"] == branch):
+            return self.migrate_branch_permissions(p, branch, pid) if p["type"] == prio[2] else None
+        elif any(perm["type"] == prio[3] for perm in perms if perm["matcher"]["displayId"] == branch):
+            return self.migrate_branch_permissions(p, branch, pid) if p["type"] == prio[3] else None
+
+    def migrate_branch_permissions(self, p, branch, pid):
+        """
+            0  => No access
+            30 => Developer access
+            40 => Maintainer access
+            60 => Admin access
+        """
+        # MODEL_BRANCH cannot be mapped
         PERM_MATCHER_TYPES = ["PATTERN", "BRANCH"]
         PERM_TYPES = {
-            "read-only": ,
-            "no-deletes",
-            "fast-forward-only",
-            "pull-request-only"
+            "read-only": [60, 60, 60],
+            "no-deletes": [40, 40, 60],
+            "fast-forward-only": [40, 40, 60],
+            "pull-request-only": [60, 40, 60]
         }
+        access_level = PERM_TYPES[p["type"]]
         data = {
-            # MODEL_BRANCH cannot be mapped
-            "name": perm["matcher"]["display_id"] if perm["matcher"]["type"]["id"] in PERM_MATCHER_TYPES else None,
+            "name": branch if p["matcher"]["type"]["id"] in PERM_MATCHER_TYPES else None,
+            "push_access_level": access_level[0],
+            "merge_access_level": access_level[1],
+            "unprotect_access_level": access_level[2]
         }
 
-        self.gl_projects_api.protect_repository_branches(
-            pid, self.config.destination_host, self.config.destination_token, data=data)
+        if data["name"]:
+            # Branch master is protected by default
+            if branch == "master":
+                self.gl_projects_api.unprotect_repository_branches(
+                    pid, branch, self.config.destination_host, self.config.destination_token)
+            status = self.gl_projects_api.protect_repository_branches(
+                pid, branch, self.config.destination_host, self.config.destination_token, data=data).status_code
+            if status != 201:
+                self.log.error(
+                    f"Failed to protect project {pid} branch {p['matcher']['displayId']} with status: {status}")
+        else:
+            self.log.warning(
+                f"Cannot match {p['matcher']['displayId']} ({p['matcher']['type']['id']}) for project {pid}")
+        return data

@@ -40,9 +40,10 @@ This runbook covers the process of preparing and cleaninig up after a migration 
 
 ### Customer
 
-* [ ] Upgrade source and destination instance to the latest version of GitLab-EE.
+* [ ] Upgrade and align the source and destination instances to the latest version of GitLab-EE ([notes](https://docs.gitlab.com/ee/user/project/settings/import_export.html#important-notes)).
 * [ ] Consolidate users (and their number) that need to be migrated.
-  * Determine whether blocked ones should be removed on source or migrated (as blocked).
+  * Determine whether blocked ones should be removed on source, skipped during migration or migrated and blocked on destination.
+  * (gitlab.com) Configure valid primary emails for service accounts to avoid issues with [Confirmation Emails](https://about.gitlab.com/handbook/support/workflows/confirmation_emails.html).
 * [ ] Create a user-group-project migration schedule (waves).
   * All users are migrated first.
   * Consider the option of migrating all groups (w/ sub-groups, w/o projects) next.
