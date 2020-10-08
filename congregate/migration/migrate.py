@@ -6,6 +6,7 @@
 
 import os
 import json
+import xml.dom.minidom
 from time import time
 from traceback import print_exc
 from requests.exceptions import RequestException
@@ -884,7 +885,7 @@ class MigrateClient(BaseClass):
         In order to maintain configuration from old TeamCity instance,
         we save a copy of a TeamCity's job build configuration file and commit it to the associated repoistory.
         '''
-        if (ci_sources := project.get("ci_sources", None)) and self.config.ci_source_type == "teamcity":
+        if ci_sources := project.get("ci_sources", None):
             for job in ci_sources.get("TeamCity", []):
                 is_result = False
 
@@ -898,7 +899,9 @@ class MigrateClient(BaseClass):
 
                 build_config = self.teamcity.teamcity_api.get_build_config(job)
                 if build_config:
-                    build_config = json.dumps(build_config, indent=4)
+                    dom = xml.dom.minidom.parseString(build_config.text)
+                    # build_config = build_config.text
+                    build_config = dom.toprettyxml()
 
                 data = {
                     "branch": "%s-teamcity-config" % job,

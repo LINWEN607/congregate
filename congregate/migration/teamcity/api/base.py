@@ -61,7 +61,7 @@ class TeamcityApi():
         """
         Returns a dictionary of a specific build configuration on the TeamCity server.
         """
-        return xml_to_dict(self.generate_get_request("buildTypes/%s" % jobid).text)
+        return self.generate_get_request("buildTypes/%s" % jobid)
 
     def get_build_params(self, jobid):
         """
@@ -85,7 +85,7 @@ class TeamcityApi():
         """
         Returns a dictionary of vcs entries to a specific build configuration on the TeamCity server.
         """
-        job_data = self.get_build_config(jobid)
+        job_data = xml_to_dict(self.get_build_config(jobid).text)
         if "vcs-root-entry" in job_data["buildType"]["vcs-root-entries"]:
             vcs_id = job_data["buildType"]["vcs-root-entries"]["vcs-root-entry"]["@id"]
         else:
