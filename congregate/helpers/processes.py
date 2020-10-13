@@ -22,7 +22,7 @@ def start_multi_process(function, iterable, processes=None):
     p = ctx.Pool(processes=get_no_of_processes(processes),
              initializer=worker_init, initargs=(function,))
     try:
-        return p.imap_unordered(worker, iterable)
+        return p.imap(worker, iterable)
     except Exception as e:
         b.log.error("Migration pool failed with error:\n{}".format(e))
         b.log.error(print_exc())
@@ -35,7 +35,7 @@ def start_multi_process_with_args(function, iterable, *args, processes=None):
     p = ctx.Pool(processes=get_no_of_processes(processes),
              initializer=worker_init, initargs=(partial(function,*args),))
     try:
-        return p.imap_unordered(worker, iterable)
+        return p.imap(worker, iterable)
     except Exception as e:
         b.log.error("Migration pool failed with error:\n{}".format(e))
         b.log.error(print_exc())
