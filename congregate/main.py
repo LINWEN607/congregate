@@ -215,6 +215,9 @@ def main():
             compare = CompareClient()
             branches = BranchesClient()
 
+            if not config.ssl_verify:
+                log.warning("ssl_verify is set to False. Suppressing downstream SSL warnings. Consider enforcing SSL verification in the future")
+
             if arguments["list"]:
                 list_source.list_data(processes=PROCESSES, partial=PARTIAL)
 
