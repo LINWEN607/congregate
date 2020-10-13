@@ -465,6 +465,36 @@ class ProjectsApi():
         """
         return api.generate_get_request(host, token, f"projects/{pid}/protected_branches/{quote_plus(name)}")
 
+    def protect_repository_branches(self, pid, name, host, token, data=None, message=None):
+        """
+        Protects a single repository branch or several project repository branches using a wildcard protected branch.
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/protected_branches.html#protect-repository-branches
+
+            :param: pid: (int) GitLab project ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :return: Response object containing the response to PUT /projects/:id/protected_branches
+        """
+        if not message:
+            message = f"Protecting repository branch {name} for project {pid}"
+        return api.generate_post_request(host, token, f"projects/{pid}/protected_branches", data=json.dumps(data), description=message)
+
+    def unprotect_repository_branches(self, pid, name, host, token, message=None):
+        """
+        Unprotects the given protected branch or wildcard protected branch.
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/protected_branches.html#unprotect-repository-branches
+
+            :param: pid: (int) GitLab project ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :return: Response object containing the response to PUT /projects/:id/protected_branches/:name
+        """
+        if not message:
+            message = f"Unprotecting repository branch {name} for project {pid}"
+        return api.generate_delete_request(host, token, f"projects/{pid}/protected_branches/{name}", description=message)
+
     def set_default_project_branch(self, pid, host, token, branch, data=None, message=None):
         """
         Set default branch for project
@@ -492,7 +522,7 @@ class ProjectsApi():
             message = "Creating branch for project with payload %s" % data
         return api.generate_post_request(host, token, f"projects/{pid}/repository/branches", data=data)
 
-    def get_all_project_protected_environments(self, id, host, token):
+    def get_all_project_protected_environments(self, pid, host, token):
         """
         Gets a list of protected environments from a project
 
@@ -503,9 +533,9 @@ class ProjectsApi():
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /projects/:id/protected_environments
         """
-        return api.list_all(host, token, f"projects/{id}/protected_environments")
+        return api.list_all(host, token, f"projects/{pid}/protected_environments")
 
-    def get_all_project_protected_tags(self, id, host, token):
+    def get_all_project_protected_tags(self, pid, host, token):
         """
         Gets a list of protected tags from a project
 
@@ -516,7 +546,7 @@ class ProjectsApi():
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /projects/:id/protected_tags
         """
-        return api.list_all(host, token, f"projects/{id}/protected_tags")
+        return api.list_all(host, token, f"projects/{pid}/protected_tags")
 
     def get_all_project_deploy_keys(self, pid, host, token):
         """

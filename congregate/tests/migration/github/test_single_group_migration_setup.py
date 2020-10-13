@@ -86,12 +86,6 @@ class Seed_GHE(BaseClass):
     def _get_remote_orgs(self):
         return self.orgs_api.get_all_orgs()
 
-    def check_repos_are_local(self):  # See if we already have the repos downloaded
-        pass
-
-    def clone_repos(self):  # Clone the repos
-        pass
-
     def do_it(self, repo):
         self.create_repo(repo)
         self.manage_repos.clone_single_repo(repo)
@@ -101,7 +95,7 @@ class Seed_GHE(BaseClass):
 
 def main():
     start_time = time.time()
-    seeds = Seed_GHE(organization='clone-test', seeds_count=100)
+    seeds = Seed_GHE(organization='st-branch-test', seeds_count=10)
     seeds.create_org()  # Creating the org in GHE
     seeds.define_seed_repos()
     print(f"Our Seed Repos in all their glory: \n{seeds.repos}\n")
