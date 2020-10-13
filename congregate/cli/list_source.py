@@ -1,7 +1,6 @@
 import os
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.processes import start_multi_process_with_args
 from congregate.migration.gitlab.groups import GroupsClient
 from congregate.migration.gitlab.users import UsersClient
 from congregate.migration.gitlab.projects import ProjectsClient

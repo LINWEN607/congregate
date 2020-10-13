@@ -1,6 +1,6 @@
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.mdbc import MongoConnector
-from congregate.helpers.processes import start_multi_process
+from congregate.helpers.processes import start_multi_process_stream
 from congregate.migration.github.api.users import UsersApi
 from congregate.helpers.misc_utils import safe_json_response, is_error_message_present
 
@@ -18,7 +18,7 @@ class UsersClient(BaseClass):
         """
         List and transform all GitHub user to GitLab user metadata
         """
-        start_multi_process(self.handle_retrieving_users, self.users_api.get_all_users(), processes=processes)
+        start_multi_process_stream(self.handle_retrieving_users, self.users_api.get_all_users(), processes=processes)
     
     def handle_retrieving_users(self, user, mongo=None):
         # mongo should be set to None unless this function is being used in a unit test
