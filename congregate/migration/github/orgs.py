@@ -60,6 +60,7 @@ class OrgsClient(BaseClass):
         for team in self.orgs_api.get_all_org_teams(org["login"]):
             self.add_team_as_subgroup(
                 org, team, mongoclient)
+        mongoclient.close_connection()
 
     def add_org_as_group(self, groups, org_name, mongo):
         org = safe_json_response(self.orgs_api.get_org(org_name))

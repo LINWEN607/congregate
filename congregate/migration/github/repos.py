@@ -38,6 +38,7 @@ class ReposClient(BaseClass):
     def handle_retrieving_repos(self, repo):
         mongo = self.connect_to_mongo()
         mongo.insert_data("projects", self.format_repo(repo))
+        mongo.close_connection()
 
     def format_repos(self, projects, listed_repos, org=False):
         """

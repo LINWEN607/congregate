@@ -26,6 +26,7 @@ class UsersClient(BaseClass):
             mongo = self.connect_to_mongo()
         formatted_user = self.format_user(user)
         mongo.insert_data("users", formatted_user)
+        mongo.close_connection()
 
     def format_users(self, users):
         data = []

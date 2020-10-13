@@ -4,7 +4,7 @@ Copyright (c) 2020 - GitLab
 
 Usage:
     congregate init
-    congregate list [--partial]
+    congregate list [--processes=<n>] [--partial]
     congregate configure
     congregate stage-projects <projects>... [--skip-users] [--commit]
     congregate stage-groups <groups>... [--skip-users] [--commit]

@@ -69,6 +69,8 @@ def list_github_data(processes=None, partial=False):
     mongo.dump_collection_to_file("groups", f"{b.app_path}/data/groups.json")
     mongo.dump_collection_to_file("users", f"{b.app_path}/data/users.json")
 
+    mongo.close_connection()
+
 
 def list_jenkins_data():
     data = JenkinsData()

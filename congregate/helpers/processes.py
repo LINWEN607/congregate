@@ -1,5 +1,5 @@
 from traceback import print_exc
-from multiprocessing import Pool, cpu_count
+from multiprocessing import Pool, cpu_count, get_context
 from functools import partial
 from congregate.helpers.misc_utils import json_pretty
 from congregate.helpers.base_class import BaseClass
@@ -18,10 +18,11 @@ def worker(x):
 
 
 def start_multi_process(function, iterable, processes=None):
-    p = Pool(processes=get_no_of_processes(processes),
+    ctx = get_context("spawn")
+    p = ctx.Pool(processes=get_no_of_processes(processes),
              initializer=worker_init, initargs=(function,))
     try:
-        return p.map(worker, iterable)
+        return p.imap_unordered(worker, iterable)
     except Exception as e:
         b.log.error("Migration pool failed with error:\n{}".format(e))
         b.log.error(print_exc())
@@ -30,10 +31,11 @@ def start_multi_process(function, iterable, processes=None):
         p.join()
 
 def start_multi_process_with_args(function, iterable, *args, processes=None):
-    p = Pool(processes=get_no_of_processes(processes),
+    ctx = get_context("spawn")
+    p = ctx.Pool(processes=get_no_of_processes(processes),
              initializer=worker_init, initargs=(partial(function,*args),))
     try:
-        return p.map(worker, iterable)
+        return p.imap_unordered(worker, iterable)
     except Exception as e:
         b.log.error("Migration pool failed with error:\n{}".format(e))
         b.log.error(print_exc())
