@@ -8,7 +8,9 @@ from congregate.helpers.decorators import stable_retry
 
 class BitBucketServerApi(BaseClass):
 
-    def generate_bb_v1_request_url(self, api):
+    def generate_bb_v1_request_url(self, api, branch_permissions=False):
+        if branch_permissions:
+            return f"{self.config.source_host}/rest/branch-permissions/2.0/{api}"
         return f"{self.config.source_host}/rest/api/1.0/{api}"
 
     def generate_v4_request_headers(self):
@@ -20,7 +22,7 @@ class BitBucketServerApi(BaseClass):
         return HTTPBasicAuth(self.config.source_username, self.config.source_token)
 
     @stable_retry
-    def generate_get_request(self, api, url=None, params=None):
+    def generate_get_request(self, api, url=None, params=None, branch_permissions=False):
         """
         Generates GET request to BitBucket API.
         You will need to provide the access token, and specific api url.
@@ -33,7 +35,8 @@ class BitBucketServerApi(BaseClass):
         """
 
         if url is None:
-            url = self.generate_bb_v1_request_url(api)
+            url = self.generate_bb_v1_request_url(
+                api, branch_permissions=branch_permissions)
 
         headers = self.generate_v4_request_headers()
 
@@ -43,7 +46,7 @@ class BitBucketServerApi(BaseClass):
         auth = self.get_authorization()
         return requests.get(url, params=params, headers=headers, auth=auth)
 
-    def list_all(self, api, params=None, limit=1000):
+    def list_all(self, api, params=None, limit=1000, branch_permissions=False):
         isLastPage = False
         start = 0
         self.log.info("Listing endpoint: {}".format(api))
@@ -56,7 +59,8 @@ class BitBucketServerApi(BaseClass):
             else:
                 params["start"] = start
                 params["limit"] = limit
-            r = self.generate_get_request(api, params=params)
+            r = self.generate_get_request(
+                api, params=params, branch_permissions=branch_permissions)
             try:
                 data = r.json()
                 self.log.info("Retrieved {0} {1}".format(

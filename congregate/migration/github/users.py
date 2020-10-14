@@ -1,6 +1,6 @@
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.mdbc import MongoConnector
-from congregate.helpers.processes import start_multi_process
+from congregate.helpers.processes import start_multi_process_stream
 from congregate.migration.github.api.users import UsersApi
 from congregate.helpers.misc_utils import safe_json_response, is_error_message_present
 
@@ -14,11 +14,11 @@ class UsersClient(BaseClass):
     def connect_to_mongo(self):
         return MongoConnector()
 
-    def retrieve_user_info(self):
+    def retrieve_user_info(self, processes=None):
         """
         List and transform all GitHub user to GitLab user metadata
         """
-        start_multi_process(self.handle_retrieving_users, self.users_api.get_all_users())
+        start_multi_process_stream(self.handle_retrieving_users, self.users_api.get_all_users(), processes=processes)
     
     def handle_retrieving_users(self, user, mongo=None):
         # mongo should be set to None unless this function is being used in a unit test
@@ -26,6 +26,7 @@ class UsersClient(BaseClass):
             mongo = self.connect_to_mongo()
         formatted_user = self.format_user(user)
         mongo.insert_data("users", formatted_user)
+        mongo.close_connection()
 
     def format_users(self, users):
         data = []

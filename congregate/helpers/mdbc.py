@@ -9,7 +9,7 @@ class MongoConnector(BaseClass):
     def __init__(self, host='localhost', port=27017, client=None):
         super(MongoConnector, self).__init__()
         try:
-            self.client = client(host=host, port=port) if client else MongoClient(host=host, port=port)
+            self.client = client(host=host, port=port) if client else MongoClient(host=host, port=port, maxPoolSize=None, waitQueueTimeoutMS=100)
             self.db = self.client.congregate
             self.client.server_info()
             self.__setup_db()
@@ -27,6 +27,9 @@ class MongoConnector(BaseClass):
 
     def __create_unique_index(self, collection, key):
         return self.db[collection].create_index(key, unique=True)
+    
+    def close_connection(self):
+        self.client.close()
     
     def insert_data(self, collection, data):
         try:

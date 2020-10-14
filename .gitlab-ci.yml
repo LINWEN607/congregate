@@ -344,6 +344,7 @@ pages:
     - cd congregate/docs
     - make html
     - mv build/html ../../public
+  retry: 2
   artifacts:
     paths:
       - public

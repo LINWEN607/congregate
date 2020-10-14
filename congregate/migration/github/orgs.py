@@ -3,7 +3,7 @@ import json
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.misc_utils import safe_json_response, is_error_message_present
 from congregate.helpers.mdbc import MongoConnector
-from congregate.helpers.processes import start_multi_process_with_args
+from congregate.helpers.processes import start_multi_process_stream_with_args
 from congregate.migration.github.api.orgs import OrgsApi
 from congregate.migration.github.api.teams import TeamsApi
 from congregate.migration.github.repos import ReposClient
@@ -46,13 +46,13 @@ class OrgsClient(BaseClass):
         with open("{}/data/project_json.json".format(self.app_path), "r") as f:
             return json.load(f)
 
-    def retrieve_org_info(self):
+    def retrieve_org_info(self, processes=None):
         """
         Extend list of already formatted public repos with org and team repos.
         While traversing orgs gather repo, team and member metadata.
         """
         groups = []
-        start_multi_process_with_args(self.handle_org_retrieval, self.orgs_api.get_all_orgs(), groups)
+        start_multi_process_stream_with_args(self.handle_org_retrieval, self.orgs_api.get_all_orgs(), groups, processes=processes)
             
     def handle_org_retrieval(self, groups, org):
         mongoclient = self.connect_to_mongo()
@@ -60,6 +60,7 @@ class OrgsClient(BaseClass):
         for team in self.orgs_api.get_all_org_teams(org["login"]):
             self.add_team_as_subgroup(
                 org, team, mongoclient)
+        mongoclient.close_connection()
 
     def add_org_as_group(self, groups, org_name, mongo):
         org = safe_json_response(self.orgs_api.get_org(org_name))

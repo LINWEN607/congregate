@@ -1,6 +1,6 @@
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.mdbc import MongoConnector
-from congregate.helpers.processes import start_multi_process
+from congregate.helpers.processes import start_multi_process_stream
 from congregate.helpers.misc_utils import safe_json_response, is_error_message_present, read_json_file_into_object
 from congregate.migration.github.api.repos import ReposApi
 from congregate.migration.github.users import UsersClient
@@ -26,11 +26,11 @@ class ReposClient(BaseClass):
                                   self.config.source_host, 
                                   self.config.source_token) 
         
-    def retrieve_repo_info(self):
+    def retrieve_repo_info(self, processes=None):
         """
         List and transform all GitHub public repo to GitLab project metadata
         """
-        start_multi_process(self.handle_retrieving_repos, self.repos_api.get_all_public_repos())
+        start_multi_process_stream(self.handle_retrieving_repos, self.repos_api.get_all_public_repos(), processes=processes)
 
     def connect_to_mongo(self):
         return MongoConnector()
@@ -38,6 +38,7 @@ class ReposClient(BaseClass):
     def handle_retrieving_repos(self, repo):
         mongo = self.connect_to_mongo()
         mongo.insert_data("projects", self.format_repo(repo))
+        mongo.close_connection()
 
     def format_repos(self, projects, listed_repos, org=False):
         """
