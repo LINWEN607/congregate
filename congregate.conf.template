@@ -88,10 +88,33 @@
 
 ###! **Configuration settings below are for CI Source** 
 ### Consider below changes when the source is a CI server like Jenkins, rest all other configuration remains same
-# ci_src_type = Jenkins
-# ci_src_hostname = ci_some_external_url
-# ci_src_username = ci_username
-# ci_src_access_token = ****
+#sources = {
+#     "jenkins_ci_source": [
+#         {
+#             "jenkins_ci_src_hostname": "http://52.177.135.31:8080"
+#             "jenkins_ci_src_username": "ubs-jenkins",
+#             "jenkins_ci_src_access_token": "MTFlNjBhYTY4MjEwODkzOGQ0MDdhNmQyMzcwM2RlZjdkYw==",
+#         },
+#         {
+#             "jenkins_ci_src_hostname": "http://52.177.135.31:8080",
+#             "jenkins_ci_src_username": "ubs-jenkins",
+#             "jenkins_ci_src_access_token": "<token>"
+#         },
+#         {
+#         "jenkins_ci_src_hostname": "http://52.177.135.31:8080",
+#         "jenkins_ci_src_username": "ubs-jenkins",
+#         "jenkins_ci_src_access_token": "MTFlNjBhYTY4MjEwODkzOGQ0MDdhNmQyMzcwM2RlZjdkYw=="
+#         }
+#     ],
+#     "teamcity_ci_source": [
+#             {
+#             "tc_ci_src_hostname": "http://13.92.25.192"
+#             "tc_ci_src_username": "test"
+#             "tc_ci_src_access_token": "ZXlKMGVYQWlPaUFpVkVOV01pSjkuT1RsMk1uQldjVGhIZURaelRVOVRWR3hvTmsxM2VrdzBTRmhSLllUSmtPRGc1TkRJdFpqRm1OeTAwTnpnekxXRXhNRGt0T0Roa1lUWmxNVFprT1RNMw=="
+#             }
+#         ]
+#     }
+
 
 
 ###! **Configuration settings below are for EXPORT**

@@ -79,6 +79,14 @@ class Config(object):
         if self.option_exists(section, option):
             return json.loads(self.config.get(section, option))
         return default
+    
+    def list_ci_source_config(self, ci_source_options):
+        """
+            Returns list of ci source config dictionarty including hostname, username and token
+            ci_source_options could be jenkins_ci_source or teamcity_ci_source
+        """
+        return self.prop_dict("CI_SOURCE", "sources", {}).get(ci_source_options)
+
 
     def as_obj(self):
         """
@@ -218,7 +226,7 @@ class Config(object):
     @property
     def ci_source_type(self):
         return self.prop_lower("CI_SOURCE", "ci_src_type")
-
+    
     @property
     def ci_source_host(self):
         return self.prop("CI_SOURCE", "ci_src_hostname")
@@ -230,6 +238,40 @@ class Config(object):
     @property
     def ci_source_token(self):
         return self.prop("CI_SOURCE", "ci_src_access_token", None, True)
+
+# JENKINS_CI_SOURCE    
+    @property
+    def jenkins_ci_source_type(self):
+        return self.prop_lower("JENKINS_CI_SOURCE", "jenkins_ci_src_type")
+
+    @property
+    def jenkins_ci_source_host(self):
+        return self.prop("JENKINS_CI_SOURCE", "jenkins_ci_src_hostname")
+
+    @property
+    def jenkins_ci_source_username(self):
+        return self.prop("JENKINS_CI_SOURCE", "jenkins_ci_src_username")
+
+    @property
+    def jenkins_ci_source_token(self):
+        return self.prop("JENKINS_CI_SOURCE", "jenkins_ci_src_access_token", None, True)
+
+# TEAMCITY_CI_SOURCE     
+    @property
+    def tc_ci_source_type(self):
+        return self.prop_lower("TEAMCITY_CI_SOURCE", "tc_ci_src_type")
+
+    @property
+    def tc_ci_source_host(self):
+        return self.prop("TEAMCITY_CI_SOURCE", "tc_ci_src_hostname")
+
+    @property
+    def tc_ci_source_username(self):
+        return self.prop("TEAMCITY_CI_SOURCE", "tc_ci_src_username")
+
+    @property
+    def tc_ci_source_token(self):
+        return self.prop("TEAMCITY_CI_SOURCE", "tc_ci_src_access_token", None, True)
 
 # EXPORT
     @property
