@@ -891,9 +891,9 @@ class MigrateClient(BaseClass):
         In order to maintain configuration from old TeamCity instance,
         we save a copy of a TeamCity's job build configuration file and commit it to the associated repoistory.
         '''
+        is_result = True
         if ci_sources := project.get("ci_sources", None):
             for job in ci_sources.get("TeamCity", []):
-                is_result = False
 
                 # Create branch for TeamCity configuration
                 branch_data = {
@@ -917,10 +917,24 @@ class MigrateClient(BaseClass):
                 req = self.project_repository_api.create_repo_file(
                     self.config.destination_host, self.config.destination_token,
                     project_id, "build_config.xml", data)
-                if req.status_code == 200:
-                    is_result = True
-                else:
+                
+                if req.status_code != 200:
                     is_result = False
+
+                for url in self.teamcity.teamcity_api.get_maven_settings_file_links(job):
+                    file_name, content = self.teamcity.teamcity_api.extract_maven_xml(url)
+                    data = {
+                        "branch": "%s-teamcity-config" % job,
+                        "commit_message": f"Adding {file_name} for TeamCity job",
+                        "content": content
+                    }
+                    req = self.project_repository_api.create_repo_file(
+                        self.config.destination_host, self.config.destination_token,
+                        project_id, file_name, data)
+
+                    if req.status_code != 200:
+                        is_result = False
+
         return is_result
 
     def rollback(self):

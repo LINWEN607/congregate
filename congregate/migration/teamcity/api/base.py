@@ -1,6 +1,7 @@
 import requests
 
 from requests.auth import HTTPBasicAuth
+from bs4 import BeautifulSoup as bs
 from congregate.helpers.misc_utils import xml_to_dict
 from congregate.helpers.decorators import stable_retry
 from congregate.helpers.logger import myLogger
@@ -50,6 +51,31 @@ class TeamcityApi():
 
         auth = self.get_authorization()
         return requests.get(url, params=params, headers=headers, auth=auth, verify=self.config.ssl_verify)
+    
+    def get_maven_settings_file_links(self, jobid, recursive=False):
+        t = []
+        maven_settings_request = self.generate_get_request(None, url=f"{self.host}/admin/editProject.html?projectId={jobid}&tab=mavenSettings")
+        if maven_settings_request.status_code == 200:
+            data = maven_settings_request.text
+            s = bs(data, 'html.parser')
+            if table := s.find(id='mavenSettingsTable'):
+                for f in table.findAll(class_='edit'):
+                    link = f.find('a')['onclick']
+                    if "document.location.href" in link:
+                        file_link = link.split("document.location.href = '")[-1].replace("';", "")
+                        t.append(file_link)
+        else:
+            if not recursive:
+                reattempt = self.get_maven_settings_file_links("_".join(jobid.split("_")[:-1]), recursive=True)
+                if reattempt:
+                    t += reattempt
+        return t
+
+    def extract_maven_xml(self, url):
+        self.log.info(url)
+        page = self.generate_get_request(None, url=f"{self.host}/{url}").text
+        s = bs(page, 'html.parser')
+        return url.split("&file=")[-1], s.find_all('pre')[0].text
 
     def list_build_configs(self):
         """
