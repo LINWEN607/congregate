@@ -141,3 +141,10 @@ class ReposClient(BaseClass):
             self.log.warning(
                 f"Cannot match {p['matcher']['displayId']} ({p['matcher']['type']['id']}) for project {pid}")
         return data
+
+    def correct_repo_description(self, src_repo, pid):
+        self.log.info(f"Correcting project description for {src_repo['path_with_namespace']}")
+        data = {
+            "description": src_repo.get("description", "")
+        }
+        self.gl_projects_api.edit_project(self.config.destination_host, self.config.destination_token, pid, data=data)

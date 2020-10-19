@@ -368,6 +368,8 @@ class MigrateClient(BaseClass):
                     # Set branch permissions
                     self.bbs_repos_client.migrate_permissions(
                         project, project_id)
+                    # Correcting bug where group's description is persisted to project's description
+                    self.bbs_repos_client.correct_repo_description(project, project_id)
                     # Remove import user
                     self.projects.remove_import_user(project_id)
                 else:
