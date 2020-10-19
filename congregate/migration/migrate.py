@@ -15,7 +15,7 @@ from congregate.helpers import api
 from congregate.helpers.migrate_utils import get_export_filename_from_namespace_and_name, get_dst_path_with_namespace, get_full_path_with_parent_namespace, get_staged_user_projects, \
     is_top_level_group, get_failed_export_from_results, get_results, get_staged_groups_without_failed_export, get_staged_projects_without_failed_export, can_migrate_users
 from congregate.helpers.misc_utils import get_dry_log, json_pretty, is_dot_com, clean_data, add_post_migration_stats, \
-    rotate_logs, write_results_to_file, migration_dry_run, safe_json_response, is_error_message_present, get_duplicate_paths
+    rotate_logs, write_results_to_file, migration_dry_run, safe_json_response, is_error_message_present, get_duplicate_paths, deobfuscate
 from congregate.helpers.jobtemplategenerator import JobTemplateGenerator
 from congregate.helpers.processes import start_multi_process
 from congregate.cli.stage_projects import ProjectStageCLI
@@ -78,8 +78,6 @@ class MigrateClient(BaseClass):
         self.environments = EnvironmentsClient()
         self.ext_import = ImportClient()
         super(MigrateClient, self).__init__()
-        self.jenkins = JenkinsClient() if self.config.ci_source_type == "jenkins" else None
-        self.teamcity = TeamcityClient() if self.config.ci_source_type == "teamcity" else None
         self.bbs_repos_client = BBSReposClient()
         self.job_template = JobTemplateGenerator()
 
@@ -226,16 +224,20 @@ class MigrateClient(BaseClass):
                 if success:
                     result[project["path_with_namespace"]]["members"] = self.projects.add_members_to_destination_project(
                         self.config.destination_host, self.config.destination_token, project_id, members)
-                    if self.config.ci_source_type == "jenkins":
-                        result[project["path_with_namespace"]]["jenkins_variables"] = self.migrate_jenkins_variables(
-                            project, project_id)
-                        result[project["path_with_namespace"]]["jenkins_config_xml"] = self.migrate_jenkins_config_xml(
-                            project, project_id)
-                    if self.config.ci_source_type == "teamcity":
-                        result[project["path_with_namespace"]]["teamcity_variables"] = self.migrate_teamcity_variables(
-                            project, project_id)
-                        result[project["path_with_namespace"]]["teamcity_variables"] = self.migrate_teamcity_build_config(
-                            project, project_id)
+                    if jenkins_configs := self.config.list_ci_source_config("jenkins_ci_source"):
+                        for jc in jenkins_configs:
+                            jenkins_client = JenkinsClient(jc["jenkins_ci_src_hostname"], jc["jenkins_ci_src_username"], deobfuscate(jc["jenkins_ci_src_access_token"]))
+                            result[project["path_with_namespace"]]["jenkins_variables"] = self.migrate_jenkins_variables(
+                                project, project_id, jenkins_client)
+                            result[project["path_with_namespace"]]["jenkins_config_xml"] = self.migrate_jenkins_config_xml(
+                                project, project_id, jenkins_client)
+                    if teamcity_configs := self.config.list_ci_source_config("teamcity_ci_source"):
+                        for tc in teamcity_configs:
+                            tc_client = TeamcityClient(tc["tc_ci_src_hostname"], tc["tc_ci_src_username"], deobfuscate(tc["tc_ci_src_access_token"]))
+                            result[project["path_with_namespace"]]["teamcity_variables"] = self.migrate_teamcity_variables(
+                                project, project_id, tc_client)
+                            result[project["path_with_namespace"]]["teamcity_variables"] = self.migrate_teamcity_build_config(
+                                project, project_id, tc_client)
                     self.projects.remove_import_user(project_id)
                     # Added a new file in the repo
                     result[project["path_with_namespace"]]["is_gh_pages"] = self.add_pipeline_for_github_pages(
@@ -828,26 +830,25 @@ class MigrateClient(BaseClass):
 
         return results
 
-    def migrate_jenkins_variables(self, project, new_id):
-        if (ci_sources := project.get("ci_sources", None)) and self.config.ci_source_type == "jenkins":
+    def migrate_jenkins_variables(self, project, new_id, jenkins_client):
+        if (ci_sources := project.get("ci_sources", None)):
             result = True
             for job in ci_sources.get("Jenkins", []):
-                params = self.jenkins.jenkins_api.get_job_params(job)
+                params = jenkins_client.jenkins_api.get_job_params(job)
                 for param in params:
-                    if self.variables.safe_add_variables(new_id, self.jenkins.transform_ci_variables(param)) is False:
+                    if self.variables.safe_add_variables(new_id, jenkins_client.transform_ci_variables(param)) is False:
                         result = False
             return result
         return None
 
-    def migrate_jenkins_config_xml(self, project, project_id):
+    def migrate_jenkins_config_xml(self, project, project_id, jenkins_client):
         '''
         In order to maintain configuration from old Jenkins instance,
         we save a copy of a Jenkin's job config.xml file and commit it to the associated repoistory.
         '''
-        if (ci_sources := project.get("ci_sources", None)) and self.config.ci_source_type == "jenkins":
+        if (ci_sources := project.get("ci_sources", None)):
+            is_result = False
             for job in ci_sources.get("Jenkins", []):
-                is_result = False
-
                 # Create branch for config.xml
                 branch_data = {
                     "branch": "%s-jenkins-config" % job,
@@ -856,7 +857,7 @@ class MigrateClient(BaseClass):
                 self.projects_api.create_branch(
                     self.config.destination_host, self.config.destination_token, project_id, data=json.dumps(branch_data))
 
-                config_xml = self.jenkins.jenkins_api.get_job_config_xml(job)
+                config_xml = jenkins_client.jenkins_api.get_job_config_xml(job)
                 if config_xml:
                     config_xml = config_xml.text
 
@@ -873,20 +874,21 @@ class MigrateClient(BaseClass):
                     is_result = True
                 else:
                     is_result = False
-        return is_result
+            return is_result
+        return None
 
-    def migrate_teamcity_variables(self, project, new_id):
-        if (ci_sources := project.get("ci_sources", None)) and self.config.ci_source_type == "teamcity":
+    def migrate_teamcity_variables(self, project, new_id, tc_client):
+        if (ci_sources := project.get("ci_sources", None)):
             result = True
             for job in ci_sources.get("TeamCity", []):
-                params = self.teamcity.teamcity_api.get_build_params(job)
+                params = tc_client.teamcity_api.get_build_params(job)
                 for param in params["properties"]["property"]:
-                    if self.variables.safe_add_variables(new_id, self.teamcity.transform_ci_variables(param)) is False:
+                    if self.variables.safe_add_variables(new_id, tc_client.transform_ci_variables(param)) is False:
                         result = False
             return result
         return None
 
-    def migrate_teamcity_build_config(self, project, project_id):
+    def migrate_teamcity_build_config(self, project, project_id, tc_client):
         '''
         In order to maintain configuration from old TeamCity instance,
         we save a copy of a TeamCity's job build configuration file and commit it to the associated repoistory.
@@ -903,7 +905,7 @@ class MigrateClient(BaseClass):
                 self.projects_api.create_branch(
                     self.config.destination_host, self.config.destination_token, project_id, data=json.dumps(branch_data))
 
-                build_config = self.teamcity.teamcity_api.get_build_config(job)
+                build_config = tc_client.teamcity_api.get_build_config(job)
                 if build_config:
                     dom = xml.dom.minidom.parseString(build_config.text)
                     build_config = dom.toprettyxml()
@@ -921,8 +923,8 @@ class MigrateClient(BaseClass):
                 if req.status_code != 200:
                     is_result = False
 
-                for url in self.teamcity.teamcity_api.get_maven_settings_file_links(job):
-                    file_name, content = self.teamcity.teamcity_api.extract_maven_xml(url)
+                for url in tc_client.teamcity_api.get_maven_settings_file_links(job):
+                    file_name, content = tc_client.teamcity_api.extract_maven_xml(url)
                     data = {
                         "branch": "%s-teamcity-config" % job,
                         "commit_message": f"Adding {file_name} for TeamCity job",

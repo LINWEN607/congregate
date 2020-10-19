@@ -80,12 +80,6 @@ class Config(object):
             return json.loads(self.config.get(section, option))
         return default
     
-    def list_ci_source_config(self, ci_source_options):
-        """
-            Returns list of ci source config dictionarty including hostname, username and token
-            ci_source_options could be jenkins_ci_source or teamcity_ci_source
-        """
-        return self.prop_dict("CI_SOURCE", "sources", {}).get(ci_source_options)
 
 
     def as_obj(self):
@@ -223,6 +217,13 @@ class Config(object):
         return self.prop_int("SOURCE", "max_export_wait_time", 3600)
 
 # CI_SOURCE
+    def list_ci_source_config(self, ci_source_options):
+        """
+            Returns list of ci source config dictionarty including hostname, username and token
+            ci_source_options could be jenkins_ci_source or teamcity_ci_source
+        """
+        return self.prop_dict("CI_SOURCE", "sources", {}).get(ci_source_options)
+
     @property
     def ci_source_type(self):
         return self.prop_lower("CI_SOURCE", "ci_src_type")

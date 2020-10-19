@@ -44,16 +44,18 @@ class TeamcityClient(BaseClass):
             "environment_scope": "*"
         }
         """
-        result_dict = {
-            "key": convert_to_underscores(parameter["@name"]), 
-            "protected": False, 
-            "variable_type": "env_var", 
-            "masked": False, 
-            "environment_scope": "teamcity"
-        }
-        if parameter.get("@value", None):
-            result_dict["value"] = parameter["@value"]
-        else:
-            result_dict["value"] = "No Default Value"
+        result_dict = {}
+        if isinstance(parameter, dict):
+            result_dict = {
+                "key": convert_to_underscores(parameter["@name"]), 
+                "protected": False, 
+                "variable_type": "env_var", 
+                "masked": False, 
+                "environment_scope": "teamcity"
+            }
+            if parameter.get("@value", None):
+                result_dict["value"] = parameter["@value"]
+            else:
+                result_dict["value"] = "No Default Value"
 
         return result_dict

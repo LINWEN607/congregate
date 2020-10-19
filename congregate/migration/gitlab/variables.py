@@ -42,7 +42,7 @@ class VariablesClient(BaseClass):
                 result = True
         else:
             self.log.warning(
-                f"Skipping variable {param['key']} due to no value found")
+                f"Skipping variable {param.get('key')} due to no value found")
         return result
 
     def migrate_cicd_variables(self, old_id, new_id, name, var_type):

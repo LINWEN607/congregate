@@ -19,6 +19,8 @@ from congregate.migration.teamcity.base import TeamcityClient as TeamcityData
 
 from congregate.helpers.mdbc import MongoConnector
 
+from congregate.helpers.misc_utils import deobfuscate
+
 b = BaseClass()
 
 def list_gitlab_data():
@@ -75,7 +77,7 @@ def list_jenkins_data():
     list_jenkins_ci_source = b.config.list_ci_source_config("jenkins_ci_source")
     i = 1
     for single_jenkins_ci_source in list_jenkins_ci_source:
-        data = JenkinsData(single_jenkins_ci_source.get("jenkins_ci_src_hostname"), single_jenkins_ci_source.get("jenkins_ci_src_username"), single_jenkins_ci_source.get("jenkins_ci_src_access_token"))
+        data = JenkinsData(single_jenkins_ci_source.get("jenkins_ci_src_hostname"), single_jenkins_ci_source.get("jenkins_ci_src_username"), deobfuscate(single_jenkins_ci_source.get("jenkins_ci_src_access_token")))
         data.retrieve_jobs_with_scm_info(i)
         i += 1
 
@@ -83,7 +85,7 @@ def list_teamcity_data():
     list_teamcity_ci_source = b.config.list_ci_source_config("teamcity_ci_source")
     i = 1
     for single_teamcity_ci_source in list_teamcity_ci_source:
-        data = TeamcityData(single_teamcity_ci_source.get("tc_ci_src_hostname"), single_teamcity_ci_source.get("tc_ci_src_username"), single_teamcity_ci_source.get("tc_ci_src_access_token"))
+        data = TeamcityData(single_teamcity_ci_source.get("tc_ci_src_hostname"), single_teamcity_ci_source.get("tc_ci_src_username"), deobfuscate(single_teamcity_ci_source.get("tc_ci_src_access_token")))
         data.retrieve_jobs_with_vcs_info(i)
         i += 1
 
