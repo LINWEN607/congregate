@@ -3,16 +3,16 @@ from congregate.migration.jenkins.api.base import JenkinsApi
 from congregate.helpers.misc_utils import write_json_to_file, convert_to_underscores
 
 class JenkinsClient(BaseClass):
-    def __init__(self):
+    def __init__(self, host, user, token):
         super(JenkinsClient, self).__init__()
-        self.jenkins_api = JenkinsApi(self.config.ci_source_host, self.config.ci_source_username, self.config.ci_source_token)
+        self.jenkins_api = JenkinsApi(host, user, token)
 
-    def retrieve_jobs_with_scm_info(self):
+    def retrieve_jobs_with_scm_info(self, i):
         """
         List and assigns jobs to associated SCM
         """
         data = self.jenkins_api.list_all_jobs()
-
+        self.log.info("Listing endpoint: Jenkins Jobs")
         jobs_list = []
         for job in data:
             job_path = self.jenkins_api.strip_url(job["url"]).rstrip('/')
@@ -22,7 +22,7 @@ class JenkinsClient(BaseClass):
                 job_dict = {'name': job_path, 'url': scm_url}
                 jobs_list.append(job_dict)
 
-        write_json_to_file(f"{self.app_path}/data/jenkins_jobs.json", jobs_list)
+        write_json_to_file(f"{self.app_path}/data/jenkins_jobs_{i}.json", jobs_list)
 
         return jobs_list
 

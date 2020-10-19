@@ -199,19 +199,45 @@ def generate_config():
     ci_src = input("Migrating from a CI Source (Default: No)? ")
     if ci_src.lower() in ["yes", "y"]:
         config.add_section("CI_SOURCE")
-        ci_src_option = input("CI Source (1. Jenkins, 2. TeamCity)? ")
+        ci_src_option = input("CI Source (1. Jenkins, 2. TeamCity 3. Jenkins and TeamCity)? ")
         if ci_src_option.lower() in ["1", "1.", "jenkins"]:
             config.set("CI_SOURCE", "ci_src_type", "Jenkins")
+            config.set("CI_SOURCE", "ci_src_hostname", input(
+            "CI Source instance ({}) URL: ".format(config.get("CI_SOURCE", "ci_src_type"))))
+            config.set("CI_SOURCE", "ci_src_username",
+                   input("CI Source Username: "))
+            config.set("CI_SOURCE", "ci_src_access_token", obfuscate(
+                "CI Source instance ({}) Personal Access Token: ".format(config.get("CI_SOURCE", "ci_src_type"))))
         elif ci_src_option.lower() in ["2", "2.", "teamcity"]:
             config.set("CI_SOURCE", "ci_src_type", "TeamCity")
+            config.set("CI_SOURCE", "ci_src_hostname", input(
+                "CI Source instance ({}) URL: ".format(config.get("CI_SOURCE", "ci_src_type"))))
+            config.set("CI_SOURCE", "ci_src_username",
+                   input("CI Source Username: "))
+            config.set("CI_SOURCE", "ci_src_access_token", obfuscate(
+                "CI Source instance ({}) Personal Access Token: ".format(config.get("CI_SOURCE", "ci_src_type"))))
+        elif ci_src_option.lower() in ["3", "3.", "jenkins and teamcity"]:
+            # Jenkins Config
+            config.add_section("JENKINS_CI_SOURCE")
+            config.set("JENKINS_CI_SOURCE", "jenkins_ci_src_type", "Jenkins")
+            config.set("JENKINS_CI_SOURCE", "jenkins_ci_src_hostname", input(
+                "Jenkins CI Source instance ({}) URL: ".format(config.get("JENKINS_CI_SOURCE", "jenkins_ci_src_type"))))
+            config.set("JENKINS_CI_SOURCE", "jenkins_ci_src_username",
+                input("Jenkins CI Source Username: "))
+            config.set("JENKINS_CI_SOURCE", "jenkins_ci_src_access_token", obfuscate(
+                "Jenkins CI Source instance ({}) Personal Access Token: ".format(config.get("JENKINS_CI_SOURCE", "jenkins_ci_src_type"))))           
+            # Teamcity Config
+            config.add_section("TEAMCITY_CI_SOURCE")
+            config.set("TEAMCITY_CI_SOURCE", "tc_ci_src_type", "TeamCity")
+            config.set("TEAMCITY_CI_SOURCE", "tc_ci_src_hostname", input(
+                "Teamcity CI Source instance ({}) URL: ".format(config.get("TEAMCITY_CI_SOURCE", "tc_ci_src_type"))))
+            config.set("TEAMCITY_CI_SOURCE", "tc_ci_src_username",
+                input("Teamcity CI Source Username: "))
+            config.set("TEAMCITY_CI_SOURCE", "tc_ci_src_access_token", obfuscate(
+                "Teamcity CI Source instance ({}) Personal Access Token: ".format(config.get("TEAMCITY_CI_SOURCE", "tc_ci_src_type"))))
         else:
             print("CI Source type {} is currently not supported".format(ci_src_option))
-        config.set("CI_SOURCE", "ci_src_hostname", input(
-            "CI Source instance ({}) URL: ".format(config.get("CI_SOURCE", "ci_src_type"))))
-        config.set("CI_SOURCE", "ci_src_username",
-                   input("CI Source Username: "))
-        config.set("CI_SOURCE", "ci_src_access_token", obfuscate(
-            "CI Source instance ({}) Personal Access Token: ".format(config.get("CI_SOURCE", "ci_src_type"))))
+        
 
     # User specific configuration
     config.add_section("USER")

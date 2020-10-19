@@ -72,16 +72,20 @@ def list_github_data(processes=None, partial=False):
 
 
 def list_jenkins_data():
-    data = JenkinsData()
-
-    data.retrieve_jobs_with_scm_info()
-
+    list_jenkins_ci_source = b.config.list_ci_source_config("jenkins_ci_source")
+    i = 1
+    for single_jenkins_ci_source in list_jenkins_ci_source:
+        data = JenkinsData(single_jenkins_ci_source.get("jenkins_ci_src_hostname"), single_jenkins_ci_source.get("jenkins_ci_src_username"), single_jenkins_ci_source.get("jenkins_ci_src_access_token"))
+        data.retrieve_jobs_with_scm_info(i)
+        i += 1
 
 def list_teamcity_data():
-    data = TeamcityData()
-
-    data.retrieve_jobs_with_vcs_info()
-
+    list_teamcity_ci_source = b.config.list_ci_source_config("teamcity_ci_source")
+    i = 1
+    for single_teamcity_ci_source in list_teamcity_ci_source:
+        data = TeamcityData(single_teamcity_ci_source.get("tc_ci_src_hostname"), single_teamcity_ci_source.get("tc_ci_src_username"), single_teamcity_ci_source.get("tc_ci_src_access_token"))
+        data.retrieve_jobs_with_vcs_info(i)
+        i += 1
 
 def write_empty_file(filename):
     """
@@ -98,12 +102,12 @@ def list_data(processes=None, partial=False):
     src_type = b.config.source_type
     ci_src_type = b.config.ci_source_type
     staged_files = ["staged_projects", "staged_groups", "staged_users"]
-
-    if ci_src_type == "jenkins":
+    
+    if b.config.list_ci_source_config("jenkins_ci_source") is not None:
         list_jenkins_data()
         staged_files.append("jenkins_jobs")
 
-    if ci_src_type == "teamcity":
+    if b.config.list_ci_source_config("teamcity_ci_source") is not None:
         list_teamcity_data()
         staged_files.append("teamcity_jobs")
 

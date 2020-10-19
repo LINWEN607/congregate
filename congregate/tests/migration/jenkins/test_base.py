@@ -8,10 +8,10 @@ from congregate.migration.jenkins.base import JenkinsClient
 
 class JenkinsBaseTests(unittest.TestCase):
     @pytest.mark.unit_test
-    @patch('congregate.helpers.conf.Config.ci_source_type', new_callable=PropertyMock)
-    @patch('congregate.helpers.conf.Config.ci_source_host', new_callable=PropertyMock)
-    @patch('congregate.helpers.conf.Config.ci_source_username', new_callable=PropertyMock)
-    @patch('congregate.helpers.conf.Config.ci_source_token', new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.jenkins_ci_source_type', new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.jenkins_ci_source_host', new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.jenkins_ci_source_username', new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.jenkins_ci_source_token', new_callable=PropertyMock)
     def test_transform_ci_variables(self, token, username, host, source_type):
         token.return_value = 'abc123'
         username.return_value = 'abc123'
@@ -19,7 +19,7 @@ class JenkinsBaseTests(unittest.TestCase):
         source_type.return_value = 'abc123'
         params = ParametersApi()
         test_results = params.get_single_parameter()
-        client = JenkinsClient()
+        client = JenkinsClient(host, username, token)
 
         expected = {
             'environment_scope': 'jenkins',
@@ -32,10 +32,10 @@ class JenkinsBaseTests(unittest.TestCase):
         self.assertDictEqual(expected, actual)
 
     @pytest.mark.unit_test
-    @patch('congregate.helpers.conf.Config.ci_source_type', new_callable=PropertyMock)
-    @patch('congregate.helpers.conf.Config.ci_source_host', new_callable=PropertyMock)
-    @patch('congregate.helpers.conf.Config.ci_source_username', new_callable=PropertyMock)
-    @patch('congregate.helpers.conf.Config.ci_source_token', new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.jenkins_ci_source_type', new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.jenkins_ci_source_host', new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.jenkins_ci_source_username', new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.jenkins_ci_source_token', new_callable=PropertyMock)
     def test_transform_ci_variables_no_default_param(self, token, username, host, source_type):
         token.return_value = 'abc123'
         username.return_value = 'abc123'
@@ -43,7 +43,7 @@ class JenkinsBaseTests(unittest.TestCase):
         source_type.return_value = 'abc123'
         params = ParametersApi()
         test_results = params.get_single_parameter_no_default_param()
-        client = JenkinsClient()
+        client = JenkinsClient(host, username, token)
 
         expected = {
             'environment_scope': 'jenkins',
@@ -56,19 +56,15 @@ class JenkinsBaseTests(unittest.TestCase):
         self.assertDictEqual(expected, actual)
 
     # Mark as integration test.
-    @patch('congregate.helpers.conf.Config.ci_source_type', new_callable=PropertyMock)
-    @patch('congregate.helpers.conf.Config.ci_source_host', new_callable=PropertyMock)
-    @patch('congregate.helpers.conf.Config.ci_source_username', new_callable=PropertyMock)
-    @patch('congregate.helpers.conf.Config.ci_source_token', new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.jenkins_ci_source_type', new_callable=PropertyMock)
     @pytest.mark.jenkins_it
-    def test_retrieve_jobs_with_scm_info(self, token, username, host, source_type):
-        token.return_value = 'password'
-        username.return_value = 'test-admin'
-        host.return_value = 'http://jenkins-test:8080'
+    def test_retrieve_jobs_with_scm_info(self, source_type):
+        token = 'password'
+        username = 'test-admin'
+        host = 'http://jenkins-test:8080'
         source_type.return_value = 'abc123'
         params = JenkinsJobsApi()
         expected = params.get_jobs_with_scm_info()
-        client = JenkinsClient()
-
-        actual = client.retrieve_jobs_with_scm_info()
+        client = JenkinsClient(host, username, token)
+        actual = client.retrieve_jobs_with_scm_info(1)
         self.assertListEqual(expected, actual)

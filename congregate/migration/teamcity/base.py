@@ -4,16 +4,16 @@ from congregate.helpers.misc_utils import write_json_to_file, convert_to_undersc
 
 
 class TeamcityClient(BaseClass):
-    def __init__(self):
+    def __init__(self, host, user, token):
         super(TeamcityClient, self).__init__()
-        self.teamcity_api = TeamcityApi(self.config.ci_source_host, self.config.ci_source_username, self.config.ci_source_token)
+        self.teamcity_api = TeamcityApi(host, user, token)
 
-    def retrieve_jobs_with_vcs_info(self):
+    def retrieve_jobs_with_vcs_info(self, i):
         """
         List and assigns jobs to associated VCS
         """
         data = self.teamcity_api.list_build_configs()
-
+        self.log.info("Listing endpoint: Teamcity Jobs")
         jobs_list = []
         for job in data['buildTypes']['buildType']:
             job_name = job['@id']
@@ -28,7 +28,7 @@ class TeamcityClient(BaseClass):
                 job_dict = {'name': job_name, 'url': "no_scm"}
                 jobs_list.append(job_dict)
 
-        write_json_to_file(f"{self.app_path}/data/teamcity_jobs.json", jobs_list)
+        write_json_to_file(f"{self.app_path}/data/teamcity_jobs_{i}.json", jobs_list)
 
         return data
 
