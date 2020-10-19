@@ -13,6 +13,7 @@ from congregate.tests.mockapi.github.repos import MockReposApi
 from congregate.migration.github.repos import ReposClient
 from congregate.migration.github.users import UsersClient
 from congregate.migration.github.api.repos import ReposApi
+from congregate.helpers.conf import Config
 
 
 @pytest.mark.unit_test
@@ -458,17 +459,22 @@ class ReposTests(unittest.TestCase):
 
             self.assertListEqual(expected, actual)
 
-    def test_list_ci_sources_teamcity(self):
-        
+    @patch.object(Config, "list_ci_source_config")
+    def test_list_ci_sources_teamcity(self, mock_tc_ci_sources):
+        mock_tc_ci_sources.return_value = [{
+            "tc_ci_src_hostname": "tc_hostname",
+            "tc_ci_src_username": "test",
+            "tc_ci_src_access_token": "eyJ0eXA"
+            }
+        ]
         data = json.dumps([])
 
         with patch("builtins.open", mock_open(read_data=data)) as mock_file:
             expected = []
-            actual = self.repos.list_ci_sources_jenkins("website")
+            actual = self.repos.list_ci_sources_teamcity("website")
 
             self.assertListEqual(expected, actual)
-
-
+ 
     def mock_repo_client(self):
         with patch.object(UsersClient, "connect_to_mongo") as mongo_mock:
             mongo_mock.return_value = MongoConnector(host="test-server", port=123456, client=mongomock.MongoClient)
