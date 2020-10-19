@@ -428,9 +428,15 @@ class ReposTests(unittest.TestCase):
             self.assertEqual(
                 actual_projects[i].items(), expected_projects[i].items())
 
-    @patch("congregate.helpers.conf.Config.ci_source_type", new_callable=PropertyMock)
-    def test_list_ci_sources_jenkins(self, source_type):
-        source_type.return_value = "jenkins"
+    @patch("congregate.helpers.conf.Config.list_ci_source_config")
+    def test_list_ci_sources_jenkins(self, list_ci_source_config):
+        list_ci_source_config.return_value = [
+            {
+                "jenkins_ci_src_hostname": "http://jenkins-test:8080",
+                "jenkins_ci_src_username": "jenkins-admin",
+                "jenkins_ci_src_access_token": "token"
+            }
+        ]
         data = json.dumps([
             {
                 "name": "demo-job",
