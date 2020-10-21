@@ -92,18 +92,18 @@
 #     "jenkins_ci_source": [
 #         {
 #             "jenkins_ci_src_hostname": "http://52.177.135.31:8080"
-#             "jenkins_ci_src_username": "ubs-jenkins",
+#             "jenkins_ci_src_username": "jenkins",
 #             "jenkins_ci_src_access_token": "MTFlNjBhYTY4MjEwODkzOGQ0MDdhNmQyMzcwM2RlZjdkYw==",
 #         },
 #         {
 #             "jenkins_ci_src_hostname": "http://52.177.135.31:8080",
-#             "jenkins_ci_src_username": "ubs-jenkins",
+#             "jenkins_ci_src_username": "jenkins",
 #             "jenkins_ci_src_access_token": "<token>"
 #         },
 #         {
-#         "jenkins_ci_src_hostname": "http://52.177.135.31:8080",
-#         "jenkins_ci_src_username": "ubs-jenkins",
-#         "jenkins_ci_src_access_token": "MTFlNjBhYTY4MjEwODkzOGQ0MDdhNmQyMzcwM2RlZjdkYw=="
+#             "jenkins_ci_src_hostname": "http://52.177.135.31:8080",
+#             "jenkins_ci_src_username": "jenkins",
+#             "jenkins_ci_src_access_token": "MTFlNjBhYTY4MjEwODkzOGQ0MDdhNmQyMzcwM2RlZjdkYw=="
 #         }
 #     ],
 #     "teamcity_ci_source": [
