@@ -74,20 +74,20 @@ def list_github_data(processes=None, partial=False):
 
 
 def list_jenkins_data():
-    list_jenkins_ci_source = b.config.list_ci_source_config("jenkins_ci_source")
-    i = 1
-    for single_jenkins_ci_source in list_jenkins_ci_source:
+    mongo = MongoConnector()
+    for i, single_jenkins_ci_source in enumerate(b.config.list_ci_source_config("jenkins_ci_source")):
+        collection_name = f"jenkins-{single_jenkins_ci_source.get('jenkins_ci_src_hostname').split('//')[-1]}"
         data = JenkinsData(single_jenkins_ci_source.get("jenkins_ci_src_hostname"), single_jenkins_ci_source.get("jenkins_ci_src_username"), deobfuscate(single_jenkins_ci_source.get("jenkins_ci_src_access_token")))
         data.retrieve_jobs_with_scm_info(i)
-        i += 1
+        mongo.dump_collection_to_file(collection_name, f"{b.app_path}/data/jenkins-{i}.json")
 
 def list_teamcity_data():
-    list_teamcity_ci_source = b.config.list_ci_source_config("teamcity_ci_source")
-    i = 1
-    for single_teamcity_ci_source in list_teamcity_ci_source:
+    mongo = MongoConnector()
+    for i, single_teamcity_ci_source in enumerate(b.config.list_ci_source_config("teamcity_ci_source")):
+        collection_name = f"teamcity-{single_teamcity_ci_source.get('tc_ci_src_hostname').split('//')[-1]}"
         data = TeamcityData(single_teamcity_ci_source.get("tc_ci_src_hostname"), single_teamcity_ci_source.get("tc_ci_src_username"), deobfuscate(single_teamcity_ci_source.get("tc_ci_src_access_token")))
         data.retrieve_jobs_with_vcs_info(i)
-        i += 1
+        mongo.dump_collection_to_file(collection_name, f"{b.app_path}/data/teamcity-{i}.json")
 
 def write_empty_file(filename):
     """

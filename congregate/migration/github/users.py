@@ -24,8 +24,14 @@ class UsersClient(BaseClass):
         # mongo should be set to None unless this function is being used in a unit test
         if not mongo:
             mongo = self.connect_to_mongo()
-        formatted_user = self.format_user(user)
-        mongo.insert_data("users", formatted_user)
+        single_user = safe_json_response(
+            self.users_api.get_user(user["login"]))
+        if not single_user or is_error_message_present(single_user):
+            self.log.error("Failed to get JSON for user {} ({})".format(
+                user["login"], single_user))
+        else:
+            formatted_user = self.format_user(single_user)
+            mongo.insert_data("users", formatted_user)
         mongo.close_connection()
 
     def format_users(self, users):

@@ -222,7 +222,7 @@ class Config(object):
             Returns list of ci source config dictionarty including hostname, username and token
             ci_source_options could be jenkins_ci_source or teamcity_ci_source
         """
-        return self.prop_dict("CI_SOURCE", "sources", {}).get(ci_source_options)
+        return self.prop_dict("CI_SOURCE", "sources", {}).get(ci_source_options, [])
 
     @property
     def ci_source_type(self):

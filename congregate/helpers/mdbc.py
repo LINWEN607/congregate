@@ -9,7 +9,7 @@ class MongoConnector(BaseClass):
     def __init__(self, host='localhost', port=27017, client=None):
         super(MongoConnector, self).__init__()
         try:
-            self.client = client(host=host, port=port) if client else MongoClient(host=host, port=port, maxPoolSize=None, waitQueueTimeoutMS=100)
+            self.client = client(host=host, port=port) if client else MongoClient(host=host, port=port, maxPoolSize=500)
             self.db = self.client.congregate
             self.client.server_info()
             self.__setup_db()
@@ -29,6 +29,7 @@ class MongoConnector(BaseClass):
         return self.db[collection].create_index(key, unique=True)
     
     def close_connection(self):
+        self.db = None
         self.client.close()
     
     def insert_data(self, collection, data):
@@ -56,3 +57,6 @@ class MongoConnector(BaseClass):
                 yield data, False
             else:
                 yield data, True
+    
+    def wildcard_collection_query(self, pattern):
+        return [c for c in self.db.collection_names() if pattern in c]
