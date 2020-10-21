@@ -32,7 +32,7 @@ class TeamcityClient(BaseClass):
 
         return data
 
-    def transform_ci_variables(self, parameter):
+    def transform_ci_variables(self, parameter, tc_ci_src_hostname):
         """
         Takes Teamcity param and returns it in expected format for GitLab. Will only work for standard
         {
@@ -44,6 +44,7 @@ class TeamcityClient(BaseClass):
             "environment_scope": "*"
         }
         """
+        temp_url = tc_ci_src_hostname.split("//")[-1].split(":")[0]
         result_dict = {}
         if isinstance(parameter, dict):
             result_dict = {
@@ -51,11 +52,10 @@ class TeamcityClient(BaseClass):
                 "protected": False, 
                 "variable_type": "env_var", 
                 "masked": False, 
-                "environment_scope": "teamcity"
+                "environment_scope": f"teamcity-{temp_url}"
             }
             if parameter.get("@value", None):
                 result_dict["value"] = parameter["@value"]
             else:
                 result_dict["value"] = "No Default Value"
-
         return result_dict
