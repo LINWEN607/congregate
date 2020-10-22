@@ -15,8 +15,9 @@ class JenkinsClient(BaseClass):
         """
         start_multi_process_stream(self.handle_retrieving_jenkins_jobs, self.jenkins_api.list_all_jobs(), processes=processes)
     
-    def handle_retrieving_jenkins_jobs(self, job):
-        mongo = MongoConnector()
+    def handle_retrieving_jenkins_jobs(self, job, mongo=None):
+        if mongo is None:
+            mongo = MongoConnector()
         job_path = self.jenkins_api.strip_url(job["url"]).rstrip('/')
         scm_url_list = self.jenkins_api.get_scm(job_path)
         jenkins_host = (self.jenkins_api.host).split("//")[-1]
