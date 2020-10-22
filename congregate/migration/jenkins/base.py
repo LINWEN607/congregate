@@ -25,7 +25,7 @@ class JenkinsClient(BaseClass):
             mongo.insert_data(f"jenkins-{jenkins_host}", job_dict)
         mongo.close_connection()
 
-    def transform_ci_variables(self, parameter):
+    def transform_ci_variables(self, parameter, jenkins_ci_src_hostname):
         """
         Takes Jenkins param and returns it in expected format for GitLab. Will only work for standard
         Accepts parameter provided as:
@@ -43,12 +43,16 @@ class JenkinsClient(BaseClass):
             "environment_scope": "*"
         }
         """
-        result_dict = {"protected": False, "variable_type": "env_var", "masked": False, "environment_scope": "jenkins"}
-
+        temp_url = jenkins_ci_src_hostname.split("//")[-1].split(":")[0]
+        result_dict = {
+            "protected": False, 
+            "variable_type": "env_var", 
+            "masked": False, 
+            "environment_scope": f"jenkins-{temp_url}"
+        }
         result_dict["key"] = convert_to_underscores(parameter["name"])
         if parameter.get("defaultValue") is not None:
             result_dict["value"] = str(parameter["defaultValue"])
         else:
             result_dict["value"] = "No Default Value"
-
         return result_dict

@@ -228,14 +228,14 @@ class MigrateClient(BaseClass):
                         for jc in jenkins_configs:
                             jenkins_client = JenkinsClient(jc["jenkins_ci_src_hostname"], jc["jenkins_ci_src_username"], deobfuscate(jc["jenkins_ci_src_access_token"]))
                             result[project["path_with_namespace"]]["jenkins_variables"] = self.migrate_jenkins_variables(
-                                project, project_id, jenkins_client)
+                                project, project_id, jenkins_client, jc["jenkins_ci_src_hostname"])
                             result[project["path_with_namespace"]]["jenkins_config_xml"] = self.migrate_jenkins_config_xml(
                                 project, project_id, jenkins_client)
                     if teamcity_configs := self.config.list_ci_source_config("teamcity_ci_source"):
                         for tc in teamcity_configs:
                             tc_client = TeamcityClient(tc["tc_ci_src_hostname"], tc["tc_ci_src_username"], deobfuscate(tc["tc_ci_src_access_token"]))
                             result[project["path_with_namespace"]]["teamcity_variables"] = self.migrate_teamcity_variables(
-                                project, project_id, tc_client)
+                                project, project_id, tc_client, tc["tc_ci_src_hostname"])
                             result[project["path_with_namespace"]]["teamcity_variables"] = self.migrate_teamcity_build_config(
                                 project, project_id, tc_client)
                     self.projects.remove_import_user(project_id)
@@ -830,13 +830,13 @@ class MigrateClient(BaseClass):
 
         return results
 
-    def migrate_jenkins_variables(self, project, new_id, jenkins_client):
+    def migrate_jenkins_variables(self, project, new_id, jenkins_client, jenkins_ci_src_hostname):
         if (ci_sources := project.get("ci_sources", None)):
             result = True
             for job in ci_sources.get("Jenkins", []):
                 params = jenkins_client.jenkins_api.get_job_params(job)
                 for param in params:
-                    if self.variables.safe_add_variables(new_id, jenkins_client.transform_ci_variables(param)) is False:
+                    if self.variables.safe_add_variables(new_id, jenkins_client.transform_ci_variables(param, jenkins_ci_src_hostname)) is False:
                         result = False
             return result
         return None
@@ -877,13 +877,13 @@ class MigrateClient(BaseClass):
             return is_result
         return None
 
-    def migrate_teamcity_variables(self, project, new_id, tc_client):
+    def migrate_teamcity_variables(self, project, new_id, tc_client, tc_ci_src_hostname):
         if (ci_sources := project.get("ci_sources", None)):
             result = True
             for job in ci_sources.get("TeamCity", []):
                 params = tc_client.teamcity_api.get_build_params(job)
                 for param in params["properties"]["property"]:
-                    if self.variables.safe_add_variables(new_id, tc_client.transform_ci_variables(param)) is False:
+                    if self.variables.safe_add_variables(new_id, tc_client.transform_ci_variables(param, tc_ci_src_hostname)) is False:
                         result = False
             return result
         return None

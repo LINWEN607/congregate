@@ -22,13 +22,13 @@ class JenkinsBaseTests(unittest.TestCase):
         client = JenkinsClient(host, username, token)
 
         expected = {
-            'environment_scope': 'jenkins',
+            'environment_scope': 'jenkins-0.0.0.0',
             'key': 'Boolean_Parameter',
             'masked': False,
             'protected': False,
             'value': "True",
             'variable_type': 'env_var'}
-        actual = client.transform_ci_variables(test_results)
+        actual = client.transform_ci_variables(test_results, "0.0.0.0")
         self.assertDictEqual(expected, actual)
 
     @pytest.mark.unit_test
@@ -46,13 +46,13 @@ class JenkinsBaseTests(unittest.TestCase):
         client = JenkinsClient(host, username, token)
 
         expected = {
-            'environment_scope': 'jenkins',
+            'environment_scope': 'jenkins-0.0.0.0',
             'key': 'run_parameter',
             'masked': False,
             'protected': False,
             'value': "No Default Value",
             'variable_type': 'env_var'}
-        actual = client.transform_ci_variables(test_results)
+        actual = client.transform_ci_variables(test_results, '0.0.0.0')
         self.assertDictEqual(expected, actual)
 
     # Mark as integration test.
