@@ -30,7 +30,7 @@ This runbook covers the process of migrating a wave of **groups and projects** f
 
     @leopardm: PSE conducting the migration
     @lyle: Support Manager with Rails Console access
-    @pharrison: Security Manager in the loop in case anything goes wrong
+    @kyletsmith: Security Manager (Security Incident Response Team - SIRT) in the loop in case anything goes wrong
 -->
 
 ## BitBucket Projects (GitLab Groups) to migrate
