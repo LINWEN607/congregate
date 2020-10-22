@@ -102,14 +102,13 @@ def write_empty_file(filename):
 
 def list_data(processes=None, partial=False):
     src_type = b.config.source_type
-    ci_src_type = b.config.ci_source_type
     staged_files = ["staged_projects", "staged_groups", "staged_users"]
     
-    if b.config.list_ci_source_config("jenkins_ci_source") is not None:
+    if b.config.list_ci_source_config("jenkins_ci_source"):
         list_jenkins_data()
         staged_files.append("jenkins_jobs")
 
-    if b.config.list_ci_source_config("teamcity_ci_source") is not None:
+    if b.config.list_ci_source_config("teamcity_ci_source"):
         list_teamcity_data()
         staged_files.append("teamcity_jobs")
 
