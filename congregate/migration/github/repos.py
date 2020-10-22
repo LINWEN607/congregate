@@ -32,9 +32,11 @@ class ReposClient(BaseClass):
         """
         start_multi_process_stream(self.handle_retrieving_repos, self.repos_api.get_all_public_repos(), processes=processes)
 
+    def connect_to_mongo(self):
+        return MongoConnector()
     
     def handle_retrieving_repos(self, repo):
-        mongo = MongoConnector()
+        mongo = self.connect_to_mongo()
         data = self.format_repo(repo, mongo)
         mongo.insert_data("projects", data)
         mongo.close_connection()

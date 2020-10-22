@@ -59,4 +59,4 @@ class MongoConnector(BaseClass):
                 yield data, True
     
     def wildcard_collection_query(self, pattern):
-        return [c for c in self.db.collection_names() if pattern in c]
+        return [c for c in self.db.list_collection_names() if pattern in c]

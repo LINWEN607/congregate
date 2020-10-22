@@ -70,7 +70,7 @@ class OrgsClient(BaseClass):
         else:
             org_repos = []
             for org_repo, _ in self.orgs_api.get_all_org_repos(org_name, page_check=True):
-                formatted_repo = self.repos.format_repo(org_repo)
+                formatted_repo = self.repos.format_repo(org_repo, mongo)
                 mongo.insert_data("projects", formatted_repo)
                 formatted_repo.pop("_id")
                 formatted_repo["members"] = []
@@ -100,7 +100,7 @@ class OrgsClient(BaseClass):
             if full_path := self.get_team_full_path(org_name, team):
                 team_repos = []
                 for team_repo in self.teams_api.get_team_repos(team["id"]):
-                    formatted_repo = self.repos.format_repo(team_repo)
+                    formatted_repo = self.repos.format_repo(team_repo, mongo)
                     mongo.insert_data("projects", formatted_repo)
                     formatted_repo.pop("_id")
                     formatted_repo["members"] = []

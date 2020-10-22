@@ -32,7 +32,9 @@ class UsersTests(unittest.TestCase):
     @patch.object(UsersApi, "get_user")
     @patch("congregate.helpers.conf.Config.source_host", new_callable=PropertyMock)
     @patch("congregate.helpers.conf.Config.source_token", new_callable=PropertyMock)
+    @patch.object(MongoConnector, "close_connection")
     def test_retrieve_user_info(self,
+                                close_connection,
                                 mock_source_token,
                                 mock_source_host,
                                 mock_single_user,
@@ -55,10 +57,13 @@ class UsersTests(unittest.TestCase):
         mock_users.return_value = self.mock_users.get_all_users()
         mock_open.return_value = mock_file
 
-        for user in self.users.users_api.get_all_users():
-            self.users.handle_retrieving_users(user, mongo=self.mongo_mock)
+        close_connection.return_value = None
 
-        actual_users = [d for d, _ in self.mongo_mock.stream_collection("users")]
+        mongo = MongoConnector(host="test-server", port=123456, client=mongomock.MongoClient)
+        for user in self.users.users_api.get_all_users():
+            self.users.handle_retrieving_users(user, mongo=mongo)
+
+        actual_users = [d for d, _ in mongo.stream_collection("users")]
 
         expected_users = [
             {
