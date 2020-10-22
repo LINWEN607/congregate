@@ -32,3 +32,16 @@ class MongoConnectorTests(unittest.TestCase):
         actual_number_of_documents = self.c.db.users.count_documents({})
 
         self.assertEqual(actual_number_of_documents, 1)
+    
+    def test_wildcard_collection_query(self):
+        data = {
+            "id": 1,
+            "hello": "world"
+        }
+        self.c.insert_data("test-1", data)
+        self.c.insert_data("test-2", data)
+
+        actual = self.c.wildcard_collection_query("test")
+        expected = ["test-1", "test-2"]
+
+        self.assertListEqual(expected, actual)
