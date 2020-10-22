@@ -35,8 +35,9 @@ class ReposClient(BaseClass):
     def connect_to_mongo(self):
         return MongoConnector()
     
-    def handle_retrieving_repos(self, repo):
-        mongo = self.connect_to_mongo()
+    def handle_retrieving_repos(self, repo, mongo=None):
+        if not mongo:
+            mongo = self.connect_to_mongo()
         data = self.format_repo(repo, mongo)
         mongo.insert_data("projects", data)
         mongo.close_connection()
