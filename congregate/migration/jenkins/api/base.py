@@ -4,15 +4,15 @@ import xml.etree.ElementTree as ET
 import requests
 from requests.auth import HTTPBasicAuth
 from congregate.helpers.decorators import stable_retry
-from congregate.helpers.logger import myLogger
+from congregate.helpers.base_class import BaseClass
 
 
-class JenkinsApi():
+class JenkinsApi(BaseClass):
     def __init__(self, host, user, token):
-        self.log = myLogger(__name__)
         self.host = host
         self.token = token
         self.user = user
+        super(JenkinsApi, self).__init__()
 
     def generate_jenkins_request_url(self, host, api=None, jenkins_path=None):
         if jenkins_path is None:
@@ -54,7 +54,7 @@ class JenkinsApi():
             params = {}
 
         auth = self.get_authorization()
-        return requests.get(url, params=params, headers=headers, auth=auth)
+        return requests.get(url, params=params, headers=headers, auth=auth, verify=self.config.ssl_verify)
 
     def list_all_jobs(self, jobs_path=None, jobs_list=None, folder_list=None):
         """
