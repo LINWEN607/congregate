@@ -13,11 +13,14 @@ log = myLogger(__name__)
 audit = audit_logger(__name__)
 config = Config()
 
+
 def generate_v4_request_url(host, api):
-    return "%s/api/v4/%s" % (host, api)
+    return f"{host}/api/v4/{api}"
+
 
 def generate_graphql_request_url(host):
     return f"{host}/api/graphql"
+
 
 def generate_v4_request_header(token):
     return {
@@ -53,7 +56,7 @@ def generate_get_request(host, token, api, url=None, params=None, stream=False):
 
 
 @stable_retry
-def generate_post_request(host, token, api, data, graphql_query=False, headers=None, files=None, description=None):
+def generate_post_request(host, token, api, data, url=None, graphql_query=False, headers=None, files=None, description=None):
     """
         Generates POST request to GitLab API.
 
@@ -69,14 +72,13 @@ def generate_post_request(host, token, api, data, graphql_query=False, headers=N
 
         :return: request object containing response
     """
-    if graphql_query:
+    if graphql_query and not url:
         url = generate_graphql_request_url(host)
-    else:
+    elif not url:
         url = generate_v4_request_url(host, api)
     audit.info(generate_audit_log_message("POST", description, url))
     if headers is None:
         headers = generate_v4_request_header(token)
-
     return requests.post(url, data=data, headers=headers, files=files, verify=config.ssl_verify)
 
 
@@ -175,7 +177,7 @@ def list_all(host, token, api, params=None, per_page=100, keyset=False):
     """
 
     count = get_count(host, token, api)
-    log.info("Total count for endpoint {0}: {1}".format(api, count))
+    log.info(f"Total count for endpoint {api}: {count}")
 
     PER_PAGE = per_page
     start_at = 0
@@ -193,8 +195,7 @@ def list_all(host, token, api, params=None, per_page=100, keyset=False):
             data = generate_get_request(host, token, api, params=get_params(
                 params, PER_PAGE, current_page, keyset, last_id))
             try:
-                log.info("Retrieved {0} {1}".format(
-                    PER_PAGE * (current_page - 1) + len(data.json()), api))
+                log.info(f"Retrieved {PER_PAGE * (current_page - 1) + len(data.json())} {api}")
                 if keyset:
                     last_id = get_last_id(data.headers.get("Link", None))
                     if last_id is None:
@@ -223,8 +224,7 @@ def list_all(host, token, api, params=None, per_page=100, keyset=False):
                 host, token, api, params=get_params(
                     params, PER_PAGE, current_page, keyset, last_id))
             try:
-                log.info("Retrieved {0} {1}".format(
-                    PER_PAGE * (current_page - 1) + len(data.json()), api))
+                log.info(f"Retrieved {PER_PAGE * (current_page - 1) + len(data.json())} {api}")
                 if keyset:
                     last_id = get_last_id(data.headers.get("Link", None))
                     if last_id is None:

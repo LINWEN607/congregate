@@ -12,6 +12,7 @@ from traceback import print_exc
 from requests.exceptions import RequestException
 
 from congregate.helpers import api
+from congregate.helpers.reporting import Reporting
 from congregate.helpers.migrate_utils import get_export_filename_from_namespace_and_name, get_dst_path_with_namespace, get_full_path_with_parent_namespace, get_staged_user_projects, \
     is_top_level_group, get_failed_export_from_results, get_results, get_staged_groups_without_failed_export, get_staged_projects_without_failed_export, can_migrate_users
 from congregate.helpers.misc_utils import get_dry_log, json_pretty, is_dot_com, clean_data, add_post_migration_stats, \
@@ -149,7 +150,6 @@ class MigrateClient(BaseClass):
                 f"{dry_log}Migrating GitHub orgs/teams to GitLab groups/sub-groups")
             results = start_multi_process(
                 self.migrate_github_group, staged_groups, processes=self.processes)
-
             self.are_results(results, "group", "import")
 
             results.append(get_results(results))
@@ -189,6 +189,9 @@ class MigrateClient(BaseClass):
         group["full_path"] = get_full_path_with_parent_namespace(
             group["full_path"])
         if not self.dry_run:
+            # Create our tracking issues first.  Just another check incase we fail to create groups.
+            if self.config.post_migration_issues and self.config.pmi_project_id:  # implies we have issues to create
+                Reporting(self.config.pmi_project_id, project_name=group['name'])
             # Wait for parent group to create
             if self.config.dstn_parent_group_path is not None:
                 pnamespace = self.groups.wait_for_parent_group_creation(group)

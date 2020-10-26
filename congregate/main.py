@@ -178,7 +178,7 @@ def main():
                 print("Creating data directory and empty log file")
                 os.makedirs('data')
                 if not os.path.exists("%s/data/congregate.log" % app_path):
-                    with open("%s/data/congregate.log" % app_path, "w") as f:
+                    with open(f"{app_path}/data/congregate.log", "w") as f:
                         f.write("")
             else:
                 print("Congregate already initialized")
@@ -273,17 +273,13 @@ def main():
                 users.add_users_to_parent_group(dry_run=DRY_RUN)
             if arguments["update-aws-creds"]:
                 if config.s3_access_key and config.s3_secret_key:
-                    command = "aws configure set aws_access_key_id {}".format(
-                        config.s3_access_key)
+                    command = f"aws configure set aws_access_key_id {config.s3_access_key}"
                     subprocess.call(command.split(" "))
-                    command = "aws configure set aws_secret_access_key {}".format(
-                        config.s3_secret_key)
+                    command = f"aws configure set aws_secret_access_key {config.s3_secret_key}"
                     subprocess.call(command.split(" "))
-                    log.info(
-                        "Configured local AWS access and secret keys (~/.aws/credentials)")
+                    log.info("Configured local AWS access and secret keys (~/.aws/credentials)")
                 else:
-                    log.warning("No AWS configuration. Export location: {}".format(
-                        config.location))
+                    log.warning(f"No AWS configuration. Export location: {config.location}")
             if arguments["remove-blocked-users"]:
                 users.remove_blocked_users(dry_run=DRY_RUN)
             if arguments["update-user-permissions"]:
@@ -334,14 +330,13 @@ def main():
                         staged=True)
                 else:
                     results, unknown_users = compare.create_group_migration_results()
-                with open("%s/data/groups_audit.json" % app_path, "w") as f:
+                with open(f"{app_path}/data/groups_audit.json", "w") as f:
                     dump(results, f, indent=4)
-                with open("%s/data/unknown_users.json" % app_path, "w") as f:
+                with open(f"{app_path}/data/unknown_users.json", "w") as f:
                     dump(unknown_users, f, indent=4)
             if arguments["staged-user-list"]:
                 results = compare.compare_staged_users()
-                log.info("Staged user list:\n{}".format(
-                    dumps(results, indent=4, sort_keys=True)))
+                log.info(f"Staged user list:\n{dumps(results, indent=4, sort_keys=True)}")
                 log.info("Length: {}".format({key: len(value)
                                               for key, value in results.items()}))
             if arguments["generate-seed-data"]:
