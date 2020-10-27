@@ -42,6 +42,14 @@ class OrgsApi():
         """
         return self.api.list_all(self.host, "orgs/{}/members".format(org))
 
+    def get_all_org_repos(self, org):
+        """
+        List organization repositories.
+
+        GitHub API v3 Doc: https://docs.github.com/en/free-pro-team@latest/rest/reference/repos#list-organization-repositories
+        """
+        return self.api.list_all(self.host, f"orgs/{org}/repos")
+
     def get_all_org_teams(self, org):
         """
         Lists all teams in an organization that are visible to the authenticated user.

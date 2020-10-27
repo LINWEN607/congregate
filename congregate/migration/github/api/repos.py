@@ -22,6 +22,62 @@ class ReposApi():
             f"repos/{owner}/{repo}"
         )
 
+    def get_repo_commits(self, owner, repo):
+        """
+        List repository commits.
+
+        GitHub API v3 Doc: https://docs.github.com/en/free-pro-team@latest/rest/reference/repos#list-commits
+        """
+        return self.api.list_all(self.host, f"repos/{owner}/{repo}/commits")
+
+    def get_repo_branches(self, owner, repo):
+        """
+        List repository branches.
+
+        GitHub API v3 Doc: https://docs.github.com/en/free-pro-team@latest/rest/reference/repos#list-branches
+        """
+        return self.api.list_all(self.host, f"repos/{owner}/{repo}/branches")
+
+    def get_repo_pulls(self, owner, repo):
+        """
+        List repository pull requests.
+
+        GitHub API v3 Doc: https://docs.github.com/en/free-pro-team@latest/rest/reference/pulls#list-pull-requests
+        """
+        return self.api.list_all(self.host, f"repos/{owner}/{repo}/pulls")
+
+    def get_repo_tags(self, owner, repo):
+        """
+        List repository tags.
+
+        GitHub API v3 Doc: https://docs.github.com/en/free-pro-team@latest/rest/reference/repos#list-repository-tags
+        """
+        return self.api.list_all(self.host, f"repos/{owner}/{repo}/tags")
+
+    def get_repo_milestones(self, owner, repo):
+        """
+        List repository milestones.
+
+        GitHub API v3 Doc: https://docs.github.com/en/free-pro-team@latest/rest/reference/issues#list-milestones
+        """
+        return self.api.list_all(self.host, f"repos/{owner}/{repo}/milestones")
+
+    def get_repo_releases(self, owner, repo):
+        """
+        List repository releases.
+
+        GitHub API v3 Doc: https://docs.github.com/en/free-pro-team@latest/rest/reference/repos#list-releases
+        """
+        return self.api.list_all(self.host, f"repos/{owner}/{repo}/releases")
+
+    def get_repo_pr_comments(self, owner, repo, issue):
+        """
+        List pull request comments.
+
+        GitHub API v3 Doc: https://docs.github.com/en/free-pro-team@latest/rest/reference/issues#list-issue-comments
+        """
+        return self.api.list_all(self.host, f"repos/{owner}/{repo}/issues/{issue}/comments")
+
     def get_repo_teams(self, owner, repo):
         """
         List repository teams.
