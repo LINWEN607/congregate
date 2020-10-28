@@ -22,13 +22,6 @@ This runbook covers the process of preparing and cleaning up after a migration f
 
 * [ ] Setup the migration VM that will host the Professional Services (PS) migration tool’s (Congregate) Docker container.
   * [ ] It should have minimal port and IP access. See [VM Requirements](#VM) for more detail.
-  * [ ] For proper DNS mapping make sure to add the source IP/hostname to the VM and docker container `/etc/hosts` file, e.g.:
-
-  ```bash
-  127.0.0.1 localhost
-  192.168.1.1 source.instance.org
-  ```
-
 * [ ] (gitlab.com) Follow the [PS Provisioning Process](https://gitlab.com/gitlab-com/business-ops/team-member-enablement/runbooks/-/blob/master/it_operations/GitLab_com_environment_(PRD,DEV,STG)access_requests.md#provisioning-process) for GitLab.com environments Access Request.
 * [ ] Configure LDAP/SAML (in [identity provider](https://docs.gitlab.com/ee/administration/auth/)) for the Admin user account on the destination instance (as for other users).
   * This is required for the user-group-project mapping to succeed.
@@ -106,7 +99,8 @@ The VM should be setup with Okta ASA, but based on time constraints it may be ne
 
 Certain GitLab features are migrated but not adapted to the destination instance. These should be manually updated.
 
-* [ ] Group, sub-group and project level Runner registration
+* [ ] Instance, group, sub-group and project level Runner registration
+  * Group level runners can be manually (via UI - *Settings -> CI/CD -> Runners*) enabled/disabled as of 13.5
   * Enable project-level shared runners (default: true)
   * Disable AutoDevOps (default: true)
 * [ ] Update group and project permissions

@@ -147,7 +147,15 @@ From **docker**:
 1. Pull the docker image from the container registry
     * For official versioned releases, pull from registry.gitlab.com/gitlab-com/customer-success/tools/congregate
     * For rolling releases, pull from registry.gitlab.com/gitlab-com/customer-success/tools/congregate/master
-2. Run the following command:
+2. For proper DNS mapping make sure to add the source, destination and proxy IP (or hostname) to the VM and docker container `/etc/hosts` file, e.g.:
+
+  ```bash
+  127.0.0.1 localhost
+  192.168.1.1 source.instance.org
+  ```
+  
+3. Login to the migration VM using `ssh -L 8000:localhost:8000 <vm_alias_ip_or_hostname>` to expose the Congregate UI outside of the docker container
+4. Run the following command:
 
 ```bash
 docker login registry.gitlab.com/gitlab-com/customer-success/tools/congregate -u <user name> -p <personal token>
@@ -161,6 +169,15 @@ docker run \
 ./congregate.sh configure
 ./congregate.sh list
 ```
+
+Additional settings (for private networks behind proxy):
+
+* For `docker run`:
+  * `-e http_proxy="$http_proxy" -e https_proxy="$https_proxy" -e no_proxy="$no_proxy" -e HTTP_PROXY="$http_proxy" -e HTTPS_PROXY="$https_proxy"`
+  * `-e REQUESTS_CA_BUNDLE="/etc/pki/tls/certs/ca-bundle.crt"`
+  * `-v /etc/pki/ca-trust/source/anchors/:/etc/pki/ca-trust/source/anchors/`
+  * `-v /etc/hosts:/etc/hosts`
+* Run `update-ca-trust extract` in the docker container once started to load the certificates from `anchors` into `ca-bundle.crt`
 
 To resume the container:
 

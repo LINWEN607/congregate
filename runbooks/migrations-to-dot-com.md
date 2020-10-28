@@ -55,17 +55,17 @@ This runbook covers the process of migrating a wave of **groups and projects** f
 * :white_check_mark: = finished
 
 <!--
-Copy the following data and add subsequent columns for wave migration or nested group migration
+Copy the following data and add subsequent rows for wave migration or migration of nested groups and personal projects
 
-| Completed | Group Name | Total Projects   | Group Size   |
-| --------- | ---------- | ---------------- | ------------ |
-| :x:       | [name]     | [total-projects] | [group-size] |
+| Completed | Group Name / User Username | Total Projects   | Size   |
+| --------- | -------------------------- | ---------------- | ------ |
+| :x:       | [name / username]          | [total-projects] | [size] |
 
-Copy the following data and add subsequent columns for single group migration
+Copy the following data and add subsequent rows for single group migration
 
-| Completed | Project Path | Repo Size        |
-| --------- | ------------ | ---------------- |
-| :x:       | [name]       | [total-projects] |
+| Completed | Project Path | Repo Size   |
+| --------- | ------------ | ----------- |
+| :x:       | [name]       | [repo-size] |
 -->
 
 ## Professional Services Steps to Complete Migration Wave
@@ -75,6 +75,7 @@ Copy the following data and add subsequent columns for single group migration
 #### Preparation
 
 * [ ] Review migration schedule (see customer migration schedule)
+* [ ] Login to the migration VM using `ssh -L 8000:localhost:8000 <vm_alias_ip_or_hostname>` to expose UI port `8000` outside of the docker container
 * [ ] Check the status of **gitlab.com** (https://status.gitlab.com/)
   * [ ] Confirm you can reach the UI of the instance
   * [ ] Confirm you can reach the API through cURL or a REST client
@@ -82,11 +83,11 @@ Copy the following data and add subsequent columns for single group migration
   * [ ] If not and late notice, as a workaround:
     * [ ] Discuss with customer whether it's possible to disable SSO enforced during user migration OR
     * [ ] Reach out to #support_gitlab-com to spoof adding the user to the SAML+SSO enforced group
-* [ ] Run `congregate list` at the beginning of the migration blackout period
-* [ ] Stage ALL users
-  * [ ] **Make sure no groups and projects are staged**
 * [ ] Create a directory called "waves" in `/opt/congregate/data` in the container if it doesn't already exist
 * [ ] Create a directory called `user_wave` in `/opt/congregate/data/waves` if it doesn't already exist
+* [ ] Run `nohup ./congregate.sh list > data/waves/listing.log 2>&1 &` at the beginning of the migration blackout period
+* [ ] Stage ALL users
+  * [ ] **Make sure no groups and projects are staged**
 * [ ] Copy `data/staged_users.json` to `/opt/congregate/data/waves/user_wave`
 * [ ] Lookup whether the staged users (emails) already exist on the destination by running `./congregate.sh search-for-staged-users`
   * This will output a list of FOUND, NOT FOUND and DUPLICATE user `email`, along with their `id` and `state`
@@ -128,7 +129,9 @@ Copy the following data and add subsequent columns for single group migration
 * [ ] Check the status of **gitlab.com** (https://status.gitlab.com/)
   * [ ] Confirm you can reach the UI of the instance
   * [ ] Confirm you can reach the API through cURL or a REST client
-* [ ] Run `congregate list` at the beginning of the migration blackout period
+* [ ] Create a directory called "waves" in `/opt/congregate/data` in the container if it doesn't already exist
+* [ ] Create a directory called `wave_<insert_wave_number>` in `/opt/congregate/data/waves` if it doesn't already exist
+* [ ] Run `nohup ./congregate.sh list > data/waves/listing.log 2>&1 &` at the beginning of the migration blackout period
 * [ ] Stage groups or projects based on the wave schedule in the UI
 * [ ] Create a directory called "waves" in `/opt/congregate/data` in the container if it doesn't already exist
 * [ ] Create a directory called `wave_<insert_wave_number>` in `/opt/congregate/data/waves` if it doesn't already exist

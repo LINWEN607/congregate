@@ -80,9 +80,9 @@ class GroupStageCLI(BaseStageClass):
                         # Retrieve group object from groups.json
                         group = self.rewritten_groups[int(
                             re.sub("[^0-9]", "", groups_to_stage[i]))]
-                    except (ValueError, KeyError):
-                        self.log.error("Please use a space delimited list of integers (group IDs):\n{}".format(
-                            groups_to_stage))
+                    except (ValueError, KeyError) as e:
+                        self.log.error(
+                            f"Please use a space delimited list of integers (group IDs):\n{groups_to_stage}\n{e}")
                         exit()
                     self.append_data(group, groups_to_stage, dry_run=dry_run)
         else:
