@@ -159,7 +159,7 @@ class GitHubApi():
                     url = h['next']
                     yield from self.pageless_data(resp_json, page_check=page_check, lastPage=lastPage)
                 resp_length = len(resp_json)
-                if resp_length < limit:
+                if (resp_length < limit) or all(k not in h.keys() for k in ["next", "last"]):
                     if isinstance(resp_json, list):
                         for i, data in enumerate(resp_json):
                             if i == resp_length - 1:
