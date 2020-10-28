@@ -11,7 +11,7 @@ class Reporting(BaseClass):
         self.existing_issues = self.get_project_issues()
 
         self.new_issues = []
-        for issue in self.config.post_migration_issues:
+        for issue in self.config.reporting.post_migration_issues:
             self.new_issues.append(self.read_template_file(issue))
 
         for issue in self.new_issues:

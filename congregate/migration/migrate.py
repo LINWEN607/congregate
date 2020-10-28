@@ -193,10 +193,10 @@ class MigrateClient(BaseClass):
         group["full_path"] = get_full_path_with_parent_namespace(
             group["full_path"])
         if not self.dry_run:
+            print(f"REPORTING_DEBUG: config.reporting = \n{self.config.reporting}\n")
             # Create our tracking issues first.  Just another check incase we fail to create groups.
-            if self.config.post_migration_issues and self.config.pmi_project_id:  # implies we have issues to create
-                Reporting(self.config.pmi_project_id,
-                          project_name=group['name'])
+            if self.config.reporting.post_migration_issues and self.config.reporting.pmi_project_id:  # implies we have issues to create
+                Reporting(self.config.reporting.pmi_project_id, project_name=group['name'])
             # Wait for parent group to create
             if self.config.dstn_parent_group_path is not None:
                 pnamespace = self.groups.wait_for_parent_group_creation(group)
