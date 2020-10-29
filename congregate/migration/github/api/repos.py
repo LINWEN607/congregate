@@ -85,7 +85,7 @@ class ReposApi():
 
         GitHub API v3 Doc: https://docs.github.com/en/rest/reference/repos#list-repository-teams
         """
-        return self.api.list_all(self.host, "repos/{}/{}/teams".format(owner, repo))
+        return self.api.list_all(self.host, f"repos/{owner}/{repo}/teams")
 
     def get_all_public_repos(self, page_check=False):
         """
@@ -101,7 +101,7 @@ class ReposApi():
 
         GitHub API v3 Doc: https://docs.github.com/en/rest/reference/repos#list-repositories-for-a-user
         """
-        yield self.api.list_all(self.host, "users/{}/repos".format(username))
+        yield self.api.list_all(self.host, f"users/{username}/repos")
 
     def get_all_repo_collaborators(self, owner, repo):
         """
@@ -110,7 +110,7 @@ class ReposApi():
 
         GitHub API v3 Doc: https://docs.github.com/en/rest/reference/repos#list-repository-collaborators
         """
-        return self.api.list_all(self.host, "repos/{}/{}/collaborators".format(owner, repo))
+        return self.api.list_all(self.host, f"repos/{owner}/{repo}/collaborators")
 
     def create_auth_user_repo(self, data=None, message=None):
         """
@@ -144,3 +144,20 @@ class ReposApi():
             data,
             description=message
         )
+    
+    def get_list_branches(self, owner, repo):
+        """
+        List branches.
+
+        GitHub API v3 Doc: https://docs.github.com/en/free-pro-team@latest/rest/reference/repos#list-branches
+        """
+        return self.api.list_all(self.host, f"repos/{owner}/{repo}/branches")
+
+    def get_single_project_protected_branch(self, owner, repo, branch):
+        """
+        Gets branch protection.
+
+        GitHub API v3 Doc: https://docs.github.com/en/free-pro-team@latest/rest/reference/repos#get-branch-protection
+        """
+        return self.api.generate_v3_get_request(self.host, f"repos/{owner}/{repo}/branches/{branch}/protection").json()
+
