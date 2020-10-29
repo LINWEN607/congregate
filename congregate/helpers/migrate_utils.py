@@ -2,10 +2,11 @@ from collections import Counter
 
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.misc_utils import is_dot_com, is_error_message_present
-from congregate.migration.gitlab.users import UsersApi
-
+from congregate.migration.gitlab.api.users import UsersApi
+from congregate.migration.gitlab.users import UsersClient
 
 b = BaseClass()
+users_client = UsersClient()
 users_api = UsersApi()
 
 
@@ -142,7 +143,13 @@ def get_user_project_namespace(p):
         return users_api.get_user(
             b.config.import_user_id, b.config.destination_host, b.config.destination_token).json()["username"]
     else:
-        return p_namespace
+        # Retrieve user username based on email to determine correct destination user namespace
+        if p["members"] and p["members"][0].get("email", None) is not None:
+            user = users_client.find_user_by_email_comparison_without_id(
+                p["members"][0]["email"])
+            if user:
+                return user["username"]
+    return p_namespace
 
 
 def get_dst_path_with_namespace(p):

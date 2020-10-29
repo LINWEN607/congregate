@@ -113,6 +113,7 @@ Copy the following data and add subsequent rows for single group migration
 * [ ] Create a directory called `wave_<insert_wave_number>` in `/opt/congregate/data/waves` if it doesn't already exist
 * [ ] Run `nohup ./congregate.sh list > data/waves/listing.log 2>&1 &` at the beginning of the migration blackout period
 * [ ] Stage groups or projects based on the wave schedule in the UI
+  * [ ] If staging by group make sure to stage all sub-groups as well
 * [ ] Copy all staged data to `/opt/congregate/data/waves/wave_<insert_wave_number>/`
 * [ ] Notify in the internal Slack channel dedicated to this migration you have completed preparation for the wave
 
@@ -152,6 +153,7 @@ For each migration attempt check if any project or group imports failed or have 
     * You can also search for the project with an API request to `/projects?search=<project-name>`
     * You can also search for the groups with an API request to `/groups?search=<group-name>` or `/groups/<url-encoded-full-path>`
 * [ ] Stage _only_ those groups and projects and go through this runbook again, this time with the following command for the migration stage: `nohup ./congregate.sh migrate --skip-users --skip-group-export --skip-project-export --commit > data/waves/wave_<insert_wave_number>/wave<insert-wave-here>_attempt<insert-attempt>.log 2>&1 &`
+  * [ ] If staging by group make sure to stage all sub-groups as well
 * [ ] Monitor the wave periodically by running `tail -f data/waves/wave_<insert_wave_number>/wave<insert-wave-here>_attempt<insert-attempt>.log`
 * [ ] Notify in the internal Slack channel dedicated to this migration the migration has finished
 * [ ] Notify the customer in the customer-facing Slack channel the migration wave has finished

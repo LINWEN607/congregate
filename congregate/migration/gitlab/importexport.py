@@ -82,7 +82,7 @@ class ImportExportClient(BaseClass):
         while True:
             # Wait until rate limit is resolved
             while self.RATE_LIMIT_MSG in str(json.loads(response.text)):
-                self.log.warning("Re-exporting {0} {1} (ID: {2}), waiting {3} minutes due to:\n{4}".format(
+                self.log.info("Re-exporting {0} {1} (ID: {2}), waiting {3} minutes due to:\n{4}".format(
                     export_type.lower(), name, src_id, self.COOL_OFF_MINUTES, str(json.loads(response.text))))
                 sleep(self.COOL_OFF_MINUTES * 60)
                 response = self.get_export_response(src_id, is_project)
@@ -132,7 +132,7 @@ class ImportExportClient(BaseClass):
         while True:
             # Wait until rate limit is resolved
             while self.RATE_LIMIT_MSG in str(json.loads(response.text)):
-                self.log.warning(
+                self.log.info(
                     f"Re-exporting group {gid}, waiting {self.COOL_OFF_MINUTES} minutes due to:\n{str(json.loads(response.text))}")
                 sleep(self.COOL_OFF_MINUTES * 60)
                 response = self.get_export_response(gid, is_project=False)
@@ -465,7 +465,7 @@ class ImportExportClient(BaseClass):
             # Wait until rate limit is resolved or project deleted
             while self.SERVER_ERROR in str(import_response) or self.RATE_LIMIT_MSG in str(import_response) or any(del_err_msg in str(import_response) for del_err_msg in self.DEL_ERR_MSGS):
                 if self.RATE_LIMIT_MSG in str(import_response):
-                    self.log.warning(
+                    self.log.info(
                         f"Re-importing project {name} to {dst_namespace}, waiting {self.COOL_OFF_MINUTES} minutes due to:\n{import_response}")
                     sleep(self.COOL_OFF_MINUTES * 60)
                 # Assuming Default deletion adjourned period (Admin -> Settings -> General -> Visibility and access controls) is 0
@@ -479,7 +479,7 @@ class ImportExportClient(BaseClass):
                     total += wait_time
                     sleep(wait_time)
                 elif self.SERVER_ERROR in str(import_response):
-                    self.log.warning(
+                    self.log.info(
                         f"Re-importing project {name} to {dst_namespace} due to:\n{import_response}")
                     self.log.info(
                         f"Attempting to delete project {name} from {dst_namespace} after {self.SERVER_ERROR}")
