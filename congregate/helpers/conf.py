@@ -39,7 +39,7 @@ class Config(object):
                 return self.config.get(section, option)
             return deobfuscate(self.config.get(section, option))
         return default
-    
+
     def prop_lower(self, section, option, default=None):
         if self.option_exists(section, option):
             return self.config.get(section, option).lower()
@@ -60,7 +60,7 @@ class Config(object):
         if self.option_exists(section, option):
             return self.config.getboolean(section, option)
         return default
-    
+
     def prop_list(self, section, option, default=None):
         """
             Returns configuration property string as a list.
@@ -69,9 +69,9 @@ class Config(object):
             will be returned as ["hello", "world", "how", "are", "you"]
         """
         if self.option_exists(section, option):
-            return split(r', |,', sub(r'\[|\]', '', self.config.get(section, option)))
+            return split(r', |,', sub(r'\[|\]|\"\"\"', '', self.config.get(section, option)))
         return default
-    
+
     def prop_dict(self, section, option, default=None):
         """
             Returns configuration property JSON string as a dictionary
@@ -79,7 +79,6 @@ class Config(object):
         if self.option_exists(section, option):
             return json.loads(self.config.get(section, option))
         return default
-    
 
 
     def as_obj(self):
@@ -110,6 +109,10 @@ class Config(object):
     @property
     def destination_registry(self):
         return self.prop("DESTINATION", "dstn_registry_url")
+
+    @property
+    def post_migration_issues(self):
+        return self.prop_list("DESTINATION", "post_migration_issues")
 
     @property
     def import_user_id(self):
@@ -181,7 +184,14 @@ class Config(object):
         :return: The set config value or 24 hours as default
         """
         return self.prop_int("DESTINATION", "max_asset_expiration_time", 24)
-    
+
+    @property
+    def pmi_project_id(self):
+        """
+        The project id we should write all our affirmation issues to
+        """
+        return self.prop_int("DESTINATION", "pmi_project_id")
+
 # SOURCE
     @property
     def source_type(self):
@@ -227,7 +237,7 @@ class Config(object):
     @property
     def ci_source_type(self):
         return self.prop_lower("CI_SOURCE", "ci_src_type")
-    
+
     @property
     def ci_source_host(self):
         return self.prop("CI_SOURCE", "ci_src_hostname")
@@ -350,7 +360,7 @@ class Config(object):
         The port used to serve up the flask/VueJS UI. Defaults to 8000
         """
         return self.prop_int("APP", "ui_port", 8000)
-    
+
     @property
     def ssl_verify(self):
         return self.prop_bool("APP", "ssl_verify", True)
@@ -382,10 +392,10 @@ class Config(object):
         }
         """
         return self.prop_dict("APP", "wave_spreadsheet_column_mapping")
-    
+
 
 # HIDDEN PROPERTIES
-    
+
     # Used only by "map-users" command
     @property
     def user_map(self):
@@ -413,6 +423,7 @@ class Config(object):
     @property
     def users_to_ignore(self):
         """
-        A list of users to ignore during a migration. Currently only used in BitBucket Server migrations. Defaults to empty list
+        A list of users to ignore during a migration. Currently only used in BitBucket Server migrations.
+        Defaults to empty list
         """
         return self.prop_list("DESTINATION", "users_to_ignore", [])

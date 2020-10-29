@@ -21,4 +21,4 @@ class UsersApi():
 
         GitHub API v3 Doc: https://docs.github.com/en/rest/reference/users#get-a-user
         """
-        return self.api.generate_v3_get_request(self.host, "users/{}".format(username))
+        return self.api.generate_v3_get_request(self.host, f"users/{username}")

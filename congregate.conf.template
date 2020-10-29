@@ -108,8 +108,8 @@
 #     ],
 #     "teamcity_ci_source": [
 #             {
-#             "tc_ci_src_hostname": "http://13.92.25.192"
-#             "tc_ci_src_username": "test"
+#             "tc_ci_src_hostname": "http://13.92.25.192",
+#             "tc_ci_src_username": "test",
 #             "tc_ci_src_access_token": "ZXlKMGVYQWlPaUFpVkVOV01pSjkuT1RsMk1uQldjVGhIZURaelRVOVRWR3hvTmsxM2VrdzBTRmhSLllUSmtPRGc1TkRJdFpqRm1OeTAwTnpnekxXRXhNRGt0T0Roa1lUWmxNVFprT1RNMw=="
 #             }
 #         ]

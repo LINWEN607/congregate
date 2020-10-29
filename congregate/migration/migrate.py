@@ -3,7 +3,6 @@
 
     Copyright (c) 2020 - GitLab
 """
-
 import os
 import json
 import xml.dom.minidom
@@ -12,6 +11,7 @@ from traceback import print_exc
 from requests.exceptions import RequestException
 
 from congregate.helpers import api
+from congregate.helpers.reporting import Reporting
 from congregate.helpers.migrate_utils import get_export_filename_from_namespace_and_name, get_dst_path_with_namespace, get_full_path_with_parent_namespace, get_staged_user_projects, \
     is_top_level_group, get_failed_export_from_results, get_results, get_staged_groups_without_failed_export, get_staged_projects_without_failed_export, can_migrate_users
 from congregate.helpers.misc_utils import get_dry_log, json_pretty, is_dot_com, clean_data, add_post_migration_stats, \
@@ -41,6 +41,8 @@ from congregate.migration.gitlab.external_import import ImportClient
 from congregate.migration.jenkins.base import JenkinsClient
 from congregate.migration.teamcity.base import TeamcityClient
 from congregate.migration.bitbucket.repos import ReposClient as BBSReposClient
+from congregate.migration.github.api.repos import ReposApi
+from congregate.migration.github.repos import ReposClient
 
 
 class MigrateClient(BaseClass):
@@ -80,6 +82,7 @@ class MigrateClient(BaseClass):
         super(MigrateClient, self).__init__()
         self.bbs_repos_client = BBSReposClient()
         self.job_template = JobTemplateGenerator()
+        self.gh_repos = ReposClient()
 
         self.dry_run = dry_run
         self.processes = processes
@@ -149,7 +152,6 @@ class MigrateClient(BaseClass):
                 f"{dry_log}Migrating GitHub orgs/teams to GitLab groups/sub-groups")
             results = start_multi_process(
                 self.migrate_github_group, staged_groups, processes=self.processes)
-
             self.are_results(results, "group", "import")
 
             results.append(get_results(results))
@@ -179,7 +181,7 @@ class MigrateClient(BaseClass):
             import_results.append(get_results(import_results))
             self.log.info(
                 f"### {dry_log}Project import results ###\n{json_pretty(import_results)}")
-            write_results_to_file(import_results, log=self.log)
+            write_results_to_file(import_results, log=self.log)        
         else:
             self.log.info("SKIP: No projects to migrate")
 
@@ -189,6 +191,9 @@ class MigrateClient(BaseClass):
         group["full_path"] = get_full_path_with_parent_namespace(
             group["full_path"])
         if not self.dry_run:
+            # Create our tracking issues first.  Just another check incase we fail to create groups.
+            if self.config.post_migration_issues and self.config.pmi_project_id:  # implies we have issues to create
+                Reporting(self.config.pmi_project_id, project_name=group['name'])
             # Wait for parent group to create
             if self.config.dstn_parent_group_path is not None:
                 pnamespace = self.groups.wait_for_parent_group_creation(group)
@@ -242,11 +247,18 @@ class MigrateClient(BaseClass):
                     # Added a new file in the repo
                     result[project["path_with_namespace"]]["is_gh_pages"] = self.add_pipeline_for_github_pages(
                         project_id)
+                    # Added protected branch
+                    result[project["path_with_namespace"]]["project_level_protected_branch"] = self.gh_repos.migrate_gh_project_protected_branch(
+                        project_id, project)
+                    # Added project level MR rules
+                    result[project["path_with_namespace"]]["project_level_mr_approvals"] = self.gh_repos.migrate_gh_project_level_mr_approvals(
+                       project_id, project)
                 else:
                     result = self.ext_import.get_failed_result(project, data={
                         "error": "Import time limit exceeded. Unable to execute post migration phase"
                     })
         return result
+
 
     def add_pipeline_for_github_pages(self, project_id):
         '''
@@ -762,6 +774,7 @@ class MigrateClient(BaseClass):
                         self.config.source_host, self.config.source_token, src_id)
                 self.log.info(
                     "Migrating source project {0} (ID: {1}) info".format(path, src_id))
+
                 post_import_results = self.migrate_single_project_features(
                     project_json, import_id)
                 result[dst_path_with_namespace] = post_import_results

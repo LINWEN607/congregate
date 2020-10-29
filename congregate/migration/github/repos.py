@@ -5,6 +5,7 @@ from congregate.helpers.misc_utils import safe_json_response, is_error_message_p
 from congregate.migration.github.api.repos import ReposApi
 from congregate.migration.github.users import UsersClient
 from congregate.migration.github.api.users import UsersApi
+from congregate.migration.gitlab.api.projects import ProjectsApi
 
 
 class ReposClient(BaseClass):
@@ -25,7 +26,8 @@ class ReposClient(BaseClass):
         self.users_api = UsersApi(
                                   self.config.source_host, 
                                   self.config.source_token) 
-        
+        self.gl_project_api = ProjectsApi()
+
     def retrieve_repo_info(self, processes=None):
         """
         List and transform all GitHub public repo to GitLab project metadata
@@ -108,4 +110,84 @@ class ReposClient(BaseClass):
             for r in mongo.db[c].find({"url": repo_url}):
                 data.append(r["name"])
         return data
-     
+
+    def migrate_gh_project_protected_branch(self, new_id, repo):
+        is_result = False
+        branches = self.repos_api.get_list_branches(repo["namespace"], repo["path"])
+        for branch in branches:
+            if branch["protected"]:
+                single_branch = self.format_protected_branch(new_id, branch["name"])
+                r = self.gl_project_api.protect_repository_branches(
+                    new_id, branch["name"], self.config.destination_host, self.config.destination_token, single_branch)
+                if r.status_code is not 201:
+                    # Unprotect the protected branch
+                    self.gl_project_api.unprotect_repository_branches(new_id, branch["name"], self.config.destination_host, self.config.destination_token)
+                    # Added protected branch
+                    self.gl_project_api.protect_repository_branches(
+                    new_id, branch["name"], self.config.destination_host, self.config.destination_token, single_branch)
+                is_result = True
+        return is_result
+
+
+    def format_protected_branch(self, repo_id, branch_name, user_id_pl=None, team_id_pl=None, user_id_ml=None, group_id_ml=None):
+        return {
+            "id": repo_id,
+            "name": branch_name,
+            "allowed_to_push": [{"access_level": 0}],
+            "code_owner_approval_required": False 
+        }
+
+
+    def migrate_gh_project_level_mr_approvals(self, new_id, repo):
+        is_result = False
+        default_branch = self.repos_api.get_single_project_protected_branch(repo["namespace"], repo["path"], "master")
+        # migrate configuration
+        conf = self.format_project_level_configuration(new_id, default_branch)
+        if is_error_message_present(conf) or not conf:
+                self.log.error(
+                    "Failed to fetch GitHub Pull request approval configuration ({0}) for project {1}".format(conf, repo["name"]))
+                return False
+        else:
+            self.log.info(
+                "Migrating project-level MR approval configuration for {0} (New ID: {1}) to GitLab".format(repo["name"], new_id))
+            self.gl_project_api.change_project_level_mr_approval_configuration(
+                new_id, self.config.destination_host, self.config.destination_token, conf)
+        # migrate approval rules
+        protected_branch_ids = []
+        gl_projected_branches = self.gl_project_api.get_all_project_protected_branches(new_id, self.config.destination_host, self.config.destination_token)
+        for branch in gl_projected_branches:
+            protected_branch_ids.append(branch["id"])
+
+        rule = self.format_project_level_mr_rule(new_id, protected_branch_ids)
+        if is_error_message_present(rule) or not rule:
+            self.log.error(
+                "Failed to generate MR approval rules ({0}) for project {1}".format(rule, repo["name"]))
+            return False
+        else:
+            self.gl_project_api.create_project_level_mr_approval_rule(
+                new_id, self.config.destination_host, self.config.destination_token, rule)
+            return True
+
+    def format_project_level_configuration(self, project_id, branch):
+        return {
+            "id": project_id,
+            "approvals_before_merge": 1,
+            "reset_approvals_on_push": True if branch["required_pull_request_reviews"]["dismissal_restrictions"]["users"] else False,
+            "disable_overriding_approvers_per_merge_request": False,
+            "merge_requests_author_approval": False,
+            "merge_requests_disable_committers_approval": False,
+            "require_password_to_approve": False
+        }
+    
+    def format_project_level_mr_rule(self, project_id, protected_branch_ids, user_ids=None, group_ids=None):
+        return{
+            "id": project_id,
+            "name": "gh_pr_rules",
+            "rule_type": "regular",
+            "user_ids": user_ids,
+            "group_ids": group_ids,
+            "approvals_required": 1,
+            "protected_branch_ids": protected_branch_ids
+        }
+
+
