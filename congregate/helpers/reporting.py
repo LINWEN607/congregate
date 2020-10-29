@@ -1,5 +1,6 @@
 from congregate.helpers.base_class import BaseClass
 from congregate.migration.gitlab.api.issues import IssuesApi
+import re
 
 
 class Reporting(BaseClass):
@@ -15,25 +16,33 @@ class Reporting(BaseClass):
             self.new_issues.append(self.read_template_file(issue))
 
         for issue in self.new_issues:
-            issue['description'] = self.subs_replace(issue['description'])
+            self.get_issue_keys(issue['description'])
+            issue['description'] = self.get_issue_keys(issue['description'])
             if not self.check_existing_issues(f"{project_name.upper()} | {issue['title']}"):
                 r = self.create_issue(issue, project_name)
 
-    def subs_replace(self, description):
+    def subs_replace(self, key, description):
         '''
         iterate over the details of an issue and do any variable substitution.  Return a new details.
         '''
-        for sub in self.config.reporting['subs']:
-            for key in sub:
-                if f"{{{{{key}}}}}" in description:
-                    description = description.replace(f"{{{{{key}}}}}", sub[key])
+        if key in self.config.reporting['subs']:
+            description = description.replace(f"{{{{{key}}}}}", self.config.reporting['subs'][key])
+        else:
+            try:
+                description = description.replace(f"{{{{{key}}}}}", str(eval(key)))
+            except AttributeError:
+                self.log.warn(f"Problem with VAR: '{key}', it does not exist.")
         return description
 
-    def check_sub_keyword(self, details):
+    def get_issue_keys(self, description):
         '''
-        check that all the sub keywords exist in details.
+        find all occurences of pattern and create a list of them. Then call the subs_replace function and replace the
+        pattern, then return the updated description.
         '''
-
+        occurrences = re.findall("{{(.*?)}}", description)  # One or more matches in the line
+        for key in occurrences:
+            description = self.subs_replace(key, description)
+        return description
 
     def check_existing_issues(self, new_issue):
         '''

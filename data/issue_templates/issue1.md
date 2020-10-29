@@ -12,3 +12,6 @@ Welcome to GitLab! Once your source code & other repo contents have been migrate
 Once you have verified the above items, you can close this issue by clicking the orange close button. We will be tracking the migration completeness using this indicator across all SWCs. 
 
 If you are seeing data inconsistencies in migration, please check out our FAQ page {{faq_page}} or open a support request {{jira_page}}
+
+Variable Substitution Test:
+{{self.config.destination_host}}
