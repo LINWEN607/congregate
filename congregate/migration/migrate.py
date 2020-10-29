@@ -3,7 +3,6 @@
 
     Copyright (c) 2020 - GitLab
 """
-
 import os
 import json
 import xml.dom.minidom
@@ -42,6 +41,8 @@ from congregate.migration.gitlab.external_import import ImportClient
 from congregate.migration.jenkins.base import JenkinsClient
 from congregate.migration.teamcity.base import TeamcityClient
 from congregate.migration.bitbucket.repos import ReposClient as BBSReposClient
+from congregate.migration.github.api.repos import ReposApi
+from congregate.migration.github.repos import ReposClient
 
 
 class MigrateClient(BaseClass):
@@ -81,6 +82,7 @@ class MigrateClient(BaseClass):
         super(MigrateClient, self).__init__()
         self.bbs_repos_client = BBSReposClient()
         self.job_template = JobTemplateGenerator()
+        self.gh_repos = ReposClient()
 
         self.dry_run = dry_run
         self.processes = processes
@@ -179,7 +181,7 @@ class MigrateClient(BaseClass):
             import_results.append(get_results(import_results))
             self.log.info(
                 f"### {dry_log}Project import results ###\n{json_pretty(import_results)}")
-            write_results_to_file(import_results, log=self.log)
+            write_results_to_file(import_results, log=self.log)        
         else:
             self.log.info("SKIP: No projects to migrate")
 
@@ -245,11 +247,18 @@ class MigrateClient(BaseClass):
                     # Added a new file in the repo
                     result[project["path_with_namespace"]]["is_gh_pages"] = self.add_pipeline_for_github_pages(
                         project_id)
+                    # Added protected branch
+                    result[project["path_with_namespace"]]["project_level_protected_branch"] = self.gh_repos.migrate_gh_project_protected_branch(
+                        project_id, project)
+                    # Added project level MR rules
+                    result[project["path_with_namespace"]]["project_level_mr_approvals"] = self.gh_repos.migrate_gh_project_level_mr_approvals(
+                       project_id, project)
                 else:
                     result = self.ext_import.get_failed_result(project, data={
                         "error": "Import time limit exceeded. Unable to execute post migration phase"
                     })
         return result
+
 
     def add_pipeline_for_github_pages(self, project_id):
         '''
@@ -765,6 +774,7 @@ class MigrateClient(BaseClass):
                         self.config.source_host, self.config.source_token, src_id)
                 self.log.info(
                     "Migrating source project {0} (ID: {1}) info".format(path, src_id))
+
                 post_import_results = self.migrate_single_project_features(
                     project_json, import_id)
                 result[dst_path_with_namespace] = post_import_results
