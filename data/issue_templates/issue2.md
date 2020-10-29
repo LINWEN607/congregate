@@ -10,4 +10,4 @@ Welcome to GitLab! Once you have signed off Issue 1 for this Software Component,
 
 Once you have verified the above items, you can **close this issue** by clicking the orange close button. We will be tracking the migration completeness using this indicator across all SWCs.
 
-If you are having trouble transforming your CICD Pipeline, please refer to the documentation, or open a support request here xxxx.
+If you are having trouble transforming your CICD Pipeline, please refer to [the documentation]({{faq_page}}), or open a support request here []({{jira_page}}).
