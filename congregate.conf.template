@@ -163,9 +163,10 @@
 
 ### If you are using columns that do not match the expected "Wave name", "Wave date", and "Source Url", you will need to provide a map setting like the example below
 # wave_spreadsheet_column_mapping = {
-#        "Wave name": "Wave name",
-#        "Wave date": "Wave date",
-#        "Source Url": "Source Url"
+#        "Wave name": "Migration wave",
+#        "Wave date": "Date of execution",
+#        "Source Url": "Repo URL",
+#        "Parent Path": "Group Path"
 #    }
 
 ### Setting to enforce SSL Verification with our API requests. Defaults to True

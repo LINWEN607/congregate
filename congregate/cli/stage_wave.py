@@ -37,6 +37,8 @@ class WaveStageCLI(BaseStageClass):
         for w in wave_data:
             url_key = self.config.wave_spreadsheet_column_mapping["Source Url"]
             if projects.get(w[url_key], None):
+                if parent_path := self.config.wave_spreadsheet_column_mapping.get("Parent Path"):
+                    projects[w[url_key]]["target_namespace"] = parent_path
                 ids_to_stage.append(str(projects[w[url_key]]["id"]))
         
         return ids_to_stage
