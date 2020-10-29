@@ -15,8 +15,25 @@ class Reporting(BaseClass):
             self.new_issues.append(self.read_template_file(issue))
 
         for issue in self.new_issues:
+            issue['description'] = self.subs_replace(issue['description'])
             if not self.check_existing_issues(f"{project_name.upper()} | {issue['title']}"):
                 r = self.create_issue(issue, project_name)
+
+    def subs_replace(self, description):
+        '''
+        iterate over the details of an issue and do any variable substitution.  Return a new details.
+        '''
+        for sub in self.config.reporting['subs']:
+            for key in sub:
+                if f"{{{{{key}}}}}" in description:
+                    description = description.replace(f"{{{{{key}}}}}", sub[key])
+        return description
+
+    def check_sub_keyword(self, details):
+        '''
+        check that all the sub keywords exist in details.
+        '''
+
 
     def check_existing_issues(self, new_issue):
         '''
