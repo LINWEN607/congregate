@@ -29,10 +29,12 @@ class WaveStageCLI(BaseStageClass):
         :return: List of IDs cast to strings to be used by ProjectStageCLI
         """
         projects = rewrite_list_into_dict(self.open_projects_file(), "http_url_to_repo")
-        wsh = WaveSpreadsheetHandler(self.config.wave_spreadsheet_path, columns_to_use=self.config.wave_spreadsheet_columns)
-        wave_data = wsh.read_file_as_json(
-            df_filter=(
-                self.config.wave_spreadsheet_column_mapping["Wave name"], wave_to_stage))
+        # wsh = WaveSpreadsheetHandler(self.config.wave_spreadsheet_path, columns_to_use=self.config.wave_spreadsheet_columns)
+        # wave_data = wsh.read_file_as_json(
+        #     df_filter=(
+        #         self.config.wave_spreadsheet_column_mapping["Wave name"], wave_to_stage))
+        wsh = WaveSpreadsheetHandler(self.config.wave_spreadsheet_path)
+        wave_data = wsh.read_file_as_json()
         ids_to_stage = []
         for w in wave_data:
             url_key = self.config.wave_spreadsheet_column_mapping["Source Url"]
