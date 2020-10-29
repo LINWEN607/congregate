@@ -52,12 +52,9 @@ class VariablesClient(BaseClass):
                     old_id, self.config.source_host, self.config.source_token, var_type=var_type)
                 if var_list:
                     return self.migrate_variables(new_id, name, var_list, var_type)
-                else:
-                    self.log.warning(
-                        f"Unable to retrieve variables from {var_type} {name}. Skipping CI/CD variable migration")
-                    return False
             else:
                 self.log.warning(f"CI/CD is disabled for {var_type} {name}")
+            return None
         except Exception as e:
             self.log.error(
                 f"Failed to migrate {var_type} {name} CI/CD variables, with error:\n{e}")
