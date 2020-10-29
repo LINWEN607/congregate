@@ -53,7 +53,7 @@ class ImportClient(BaseClass):
         data = {
             "personal_access_token": self.config.source_token,
             "repo_id": project["id"],
-            "target_namespace": project.get("target_namespace", None) if project.get("target_namespace", None) else get_dst_path_with_namespace(project).rsplit("/", 1)[0]
+            "target_namespace": f"{project.get('target_namespace', None)}/{project['path_with_namespace']}" if project.get("target_namespace", None) else get_dst_path_with_namespace(project).rsplit("/", 1)[0]
         }
 
         if not dry_run:
