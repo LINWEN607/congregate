@@ -119,7 +119,7 @@ class ReposClient(BaseClass):
                 single_branch = self.format_protected_branch(new_id, branch["name"])
                 r = self.gl_project_api.protect_repository_branches(
                     new_id, branch["name"], self.config.destination_host, self.config.destination_token, single_branch)
-                if r.status_code is not 201:
+                if r.status_code != 201:
                     # Unprotect the protected branch
                     self.gl_project_api.unprotect_repository_branches(new_id, branch["name"], self.config.destination_host, self.config.destination_token)
                     # Added protected branch
