@@ -66,6 +66,7 @@ class StageWaveTests(unittest.TestCase):
                 "path_with_namespace": "diaspora/diaspora-client",
                 "visibility": "private",
                 "description": "Project that does stuff",
+                "jobs_enabled": None,
                 "project_type": "group",
                 "members": [
                     {
@@ -77,7 +78,12 @@ class StageWaveTests(unittest.TestCase):
                         "expires_at": "2012-10-22T14:13:35Z",
                         "access_level": 30
                     }
-                ]
+                ],
+                'http_url_to_repo': 'http://example.com/diaspora/diaspora-client.git',
+                'shared_runners_enabled': True,
+                'archived': False,
+                'shared_with_groups': [],
+                'default_branch': 'master'
             },
             {
                 "id": 80,
@@ -87,6 +93,7 @@ class StageWaveTests(unittest.TestCase):
                 "path_with_namespace": "brightbox/puppet",
                 "visibility": "private",
                 "description": None,
+                "jobs_enabled": None,
                 "project_type": "group",
                 "members": [
                     {
@@ -98,13 +105,22 @@ class StageWaveTests(unittest.TestCase):
                         "expires_at": "2012-10-22T14:13:35Z",
                         "access_level": 30
                     }
-                ]
+                ],
+                'http_url_to_repo': 'http://example.com/brightbox/puppet.git',
+                'shared_runners_enabled': True,
+                'archived': False,
+                'shared_with_groups': [],
+                'default_branch': 'master'
             }
         ]
-   
+
         self.wcli.stage_wave("Wave1")
         actual = self.wcli.staged_projects
-        self.assertListEqual(expected, actual)
+
+        self.assertEqual(len(expected), len(actual))
+        for i in range(len(expected)):
+            self.assertEqual(
+                expected[i].items(), actual[i].items())
 
     @mock.patch.object(WaveStageCLI, 'open_users_file')
     @mock.patch.object(WaveStageCLI, 'open_groups_file')
@@ -124,7 +140,8 @@ class StageWaveTests(unittest.TestCase):
             "Source Url": "Source Url",
             "Parent Path": "Group"
         }
-        columns_to_use.return_value = ["Wave name", "Wave date", "Source Url", "Group"]
+        columns_to_use.return_value = [
+            "Wave name", "Wave date", "Source Url", "Group"]
         read_as_json.return_value = [
             {
                 "Wave name": "Wave1",
@@ -156,6 +173,7 @@ class StageWaveTests(unittest.TestCase):
                 "path_with_namespace": "diaspora/diaspora-client",
                 "visibility": "private",
                 "description": "Project that does stuff",
+                "jobs_enabled": None,
                 "project_type": "group",
                 "members": [
                     {
@@ -168,7 +186,12 @@ class StageWaveTests(unittest.TestCase):
                         "access_level": 30
                     }
                 ],
-                "target_namespace": "/path/to/group"
+                'http_url_to_repo': 'http://example.com/diaspora/diaspora-client.git',
+                'shared_runners_enabled': True,
+                'archived': False,
+                'shared_with_groups': [],
+                'default_branch': 'master',
+                'target_namespace': '/path/to/group'
             },
             {
                 "id": 80,
@@ -178,6 +201,7 @@ class StageWaveTests(unittest.TestCase):
                 "path_with_namespace": "brightbox/puppet",
                 "visibility": "private",
                 "description": None,
+                "jobs_enabled": None,
                 "project_type": "group",
                 "members": [
                     {
@@ -190,13 +214,22 @@ class StageWaveTests(unittest.TestCase):
                         "access_level": 30
                     }
                 ],
-                "target_namespace": "/path/to/group"
+                'http_url_to_repo': 'http://example.com/brightbox/puppet.git',
+                'shared_runners_enabled': True,
+                'archived': False,
+                'shared_with_groups': [],
+                'default_branch': 'master',
+                'target_namespace': '/path/to/group'
             }
         ]
-   
+
         self.wcli.stage_wave("Wave1")
         actual = self.wcli.staged_projects
-        self.assertListEqual(expected, actual)
+
+        self.assertEqual(len(expected), len(actual))
+        for i in range(len(expected)):
+            self.assertEqual(
+                expected[i].items(), actual[i].items())
 
     @mock.patch.object(WaveStageCLI, 'open_users_file')
     @mock.patch.object(WaveStageCLI, 'open_groups_file')
