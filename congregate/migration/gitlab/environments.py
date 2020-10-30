@@ -1,7 +1,7 @@
 from requests.exceptions import RequestException
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import is_error_message_present
+from congregate.helpers.misc_utils import is_error_message_present, safe_json_response
 from congregate.migration.gitlab.api.projects import ProjectsApi
 
 
@@ -10,8 +10,12 @@ class EnvironmentsClient(BaseClass):
         self.projects = ProjectsApi()
         super(EnvironmentsClient, self).__init__()
 
-    def migrate_project_environments(self, src_id, dest_id, name):
+    def migrate_project_environments(self, src_id, dest_id, name, enabled):
         try:
+            if not enabled:
+                self.log.info(
+                    f"Environments are disabled ({enabled}) for project {name}")
+                return None
             resp = self.projects.get_all_project_environments(
                 src_id, self.config.source_host, self.config.source_token)
             envs = iter(resp)

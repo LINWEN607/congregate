@@ -13,12 +13,6 @@ class VariablesClient(BaseClass):
         self.groups_api = GroupsApi()
         super(VariablesClient, self).__init__()
 
-    def are_enabled(self, id, var_type="projects"):
-        if var_type == "group":
-            return safe_json_response(self.groups_api.get_group(id, self.config.source_host, self.config.source_token)).get("id", None)
-        else:
-            return safe_json_response(self.projects_api.get_project(id, self.config.source_host, self.config.source_token)).get("jobs_enabled", False)
-
     def get_ci_variables(self, id, host, token, var_type="projects"):
         if var_type == "group":
             return list(self.groups_api.get_all_group_variables(id, host, token))
@@ -45,24 +39,26 @@ class VariablesClient(BaseClass):
                 f"Skipping variable {param.get('key')} due to no value found")
         return result
 
-    def migrate_cicd_variables(self, old_id, new_id, name, var_type):
+    def migrate_cicd_variables(self, old_id, new_id, name, var_type, enabled):
         try:
-            if self.are_enabled(old_id, var_type=var_type):
+            if enabled:
                 var_list = self.get_ci_variables(
                     old_id, self.config.source_host, self.config.source_token, var_type=var_type)
                 if var_list:
                     return self.migrate_variables(new_id, name, var_list, var_type)
+                return True
             else:
-                self.log.warning(f"CI/CD is disabled for {var_type} {name}")
-            return None
+                self.log.info(
+                    f"CI/CD is disabled ({enabled}) for {var_type} {name}")
+                return None
         except Exception as e:
             self.log.error(
                 f"Failed to migrate {var_type} {name} CI/CD variables, with error:\n{e}")
             return False
 
-    def migrate_pipeline_schedule_variables(self, old_id, new_id, name):
+    def migrate_pipeline_schedule_variables(self, old_id, new_id, name, enabled):
         try:
-            if self.are_enabled(old_id):
+            if enabled:
                 src_schedules = list(self.projects_api.get_all_project_pipeline_schedules(
                     old_id, self.config.source_host, self.config.source_token))
                 if src_schedules:
@@ -78,7 +74,9 @@ class VariablesClient(BaseClass):
                                         new_id, dps["id"], self.config.destination_host, self.config.destination_token, v)
                 return True
             else:
-                self.log.warning(f"CI/CD is disabled for project {name}")
+                self.log.info(
+                    f"CI/CD is disabled ({enabled}) for project {name}")
+                return None
         except Exception as e:
             self.log.error(
                 f"Failed to migrate project {name} pipeline schedule variables, with error:\n{e}")
@@ -87,15 +85,13 @@ class VariablesClient(BaseClass):
     def migrate_variables(self, new_id, name, var_list, var_type):
         try:
             variables = iter(var_list)
-            self.log.info(
-                "Migrating {0} {1} CI/CD variables".format(var_type, name))
             for var in variables:
                 if is_error_message_present(var) or not var:
                     self.log.error(
                         f"Failed to fetch CI/CD variables ({var}) for {var_type} {name}")
                     return False
                 self.log.info(
-                    f"Migrating {var_type} ID ({new_id}) CI/CD variables")
+                    f"Migrating {var_type} {name} (ID: {new_id}) CI/CD variables")
                 self.set_variables(
                     new_id, var, self.config.destination_host, self.config.destination_token, var_type=var_type)
             return True

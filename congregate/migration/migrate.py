@@ -181,7 +181,7 @@ class MigrateClient(BaseClass):
             import_results.append(get_results(import_results))
             self.log.info(
                 f"### {dry_log}Project import results ###\n{json_pretty(import_results)}")
-            write_results_to_file(import_results, log=self.log)        
+            write_results_to_file(import_results, log=self.log)
         else:
             self.log.info("SKIP: No projects to migrate")
 
@@ -193,7 +193,8 @@ class MigrateClient(BaseClass):
         if not self.dry_run:
             # Create our tracking issues first.  Just another check incase we fail to create groups.
             if self.config.post_migration_issues and self.config.pmi_project_id:  # implies we have issues to create
-                Reporting(self.config.pmi_project_id, project_name=group['name'])
+                Reporting(self.config.pmi_project_id,
+                          project_name=group['name'])
             # Wait for parent group to create
             if self.config.dstn_parent_group_path is not None:
                 pnamespace = self.groups.wait_for_parent_group_creation(group)
@@ -231,14 +232,16 @@ class MigrateClient(BaseClass):
                         self.config.destination_host, self.config.destination_token, project_id, members)
                     if jenkins_configs := self.config.list_ci_source_config("jenkins_ci_source"):
                         for jc in jenkins_configs:
-                            jenkins_client = JenkinsClient(jc["jenkins_ci_src_hostname"], jc["jenkins_ci_src_username"], deobfuscate(jc["jenkins_ci_src_access_token"]))
+                            jenkins_client = JenkinsClient(jc["jenkins_ci_src_hostname"], jc["jenkins_ci_src_username"], deobfuscate(
+                                jc["jenkins_ci_src_access_token"]))
                             result[project["path_with_namespace"]]["jenkins_variables"] = self.migrate_jenkins_variables(
                                 project, project_id, jenkins_client, jc["jenkins_ci_src_hostname"])
                             result[project["path_with_namespace"]]["jenkins_config_xml"] = self.migrate_jenkins_config_xml(
                                 project, project_id, jenkins_client)
                     if teamcity_configs := self.config.list_ci_source_config("teamcity_ci_source"):
                         for tc in teamcity_configs:
-                            tc_client = TeamcityClient(tc["tc_ci_src_hostname"], tc["tc_ci_src_username"], deobfuscate(tc["tc_ci_src_access_token"]))
+                            tc_client = TeamcityClient(tc["tc_ci_src_hostname"], tc["tc_ci_src_username"], deobfuscate(
+                                tc["tc_ci_src_access_token"]))
                             result[project["path_with_namespace"]]["teamcity_variables"] = self.migrate_teamcity_variables(
                                 project, project_id, tc_client, tc["tc_ci_src_hostname"])
                             result[project["path_with_namespace"]]["teamcity_variables"] = self.migrate_teamcity_build_config(
@@ -252,13 +255,12 @@ class MigrateClient(BaseClass):
                         project_id, project)
                     # Added project level MR rules
                     result[project["path_with_namespace"]]["project_level_mr_approvals"] = self.gh_repos.migrate_gh_project_level_mr_approvals(
-                       project_id, project)
+                        project_id, project)
                 else:
                     result = self.ext_import.get_failed_result(project, data={
                         "error": "Import time limit exceeded. Unable to execute post migration phase"
                     })
         return result
-
 
     def add_pipeline_for_github_pages(self, project_id):
         '''
@@ -381,7 +383,8 @@ class MigrateClient(BaseClass):
                     self.bbs_repos_client.migrate_permissions(
                         project, project_id)
                     # Correcting bug where group's description is persisted to project's description
-                    self.bbs_repos_client.correct_repo_description(project, project_id)
+                    self.bbs_repos_client.correct_repo_description(
+                        project, project_id)
                     # Remove import user
                     self.projects.remove_import_user(project_id)
                 else:
@@ -642,7 +645,7 @@ class MigrateClient(BaseClass):
     def migrate_single_group_features(self, src_gid, dst_gid, full_path):
         # CI/CD Variables
         self.variables.migrate_cicd_variables(
-            src_gid, dst_gid, full_path, "group")
+            src_gid, dst_gid, full_path, "group", src_gid)
 
         # Hooks (Webhooks)
         self.hooks.migrate_group_hooks(src_gid, dst_gid, full_path)
@@ -800,6 +803,7 @@ class MigrateClient(BaseClass):
         path_with_namespace = project["path_with_namespace"]
         shared_with_groups = project["shared_with_groups"]
         src_id = project["id"]
+        jobs_enabled = project["jobs_enabled"]
         results = {}
 
         results["id"] = dst_id
@@ -810,15 +814,15 @@ class MigrateClient(BaseClass):
 
         # Environments
         results["environments"] = self.environments.migrate_project_environments(
-            src_id, dst_id, path_with_namespace)
+            src_id, dst_id, path_with_namespace, jobs_enabled)
 
         # CI/CD Variables
         results["variables"] = self.variables.migrate_cicd_variables(
-            src_id, dst_id, path_with_namespace, "projects")
+            src_id, dst_id, path_with_namespace, "projects", jobs_enabled)
 
         # Pipeline Schedule Variables
         results["pipeline_schedule_variables"] = self.variables.migrate_pipeline_schedule_variables(
-            src_id, dst_id, path_with_namespace)
+            src_id, dst_id, path_with_namespace, jobs_enabled)
 
         # Push Rules
         results["push_rules"] = self.pushrules.migrate_push_rules(
@@ -931,12 +935,13 @@ class MigrateClient(BaseClass):
                 req = self.project_repository_api.create_repo_file(
                     self.config.destination_host, self.config.destination_token,
                     project_id, "build_config.xml", data)
-                
+
                 if req.status_code != 200:
                     is_result = False
 
                 for url in tc_client.teamcity_api.get_maven_settings_file_links(job):
-                    file_name, content = tc_client.teamcity_api.extract_maven_xml(url)
+                    file_name, content = tc_client.teamcity_api.extract_maven_xml(
+                        url)
                     data = {
                         "branch": "%s-teamcity-config" % job,
                         "commit_message": f"Adding {file_name} for TeamCity job",

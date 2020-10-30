@@ -141,7 +141,7 @@ class ImportExportClient(BaseClass):
                     self.config.source_host, self.config.source_token, gid)
                 # Assuming Max Group Export Download requests per minute per user = 1
                 if status.status_code == 200:
-                    self.log.warning(
+                    self.log.info(
                         f"Waiting {self.COOL_OFF_MINUTES} minutes to download group {gid}")
                     sleep(self.COOL_OFF_MINUTES * 60)
                     exported = True
