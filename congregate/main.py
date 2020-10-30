@@ -233,8 +233,8 @@ def main():
 
             if arguments["stage-wave"]:
                 wcli = WaveStageCLI()
-                wcli.stage_wave(
-                    arguments['<wave>'], dry_run=DRY_RUN)
+                wcli.stage_data(
+                    arguments['<wave>'], dry_run=DRY_RUN, skip_users=SKIP_USERS)
 
             if arguments["migrate"]:
                 migrate = MigrateClient(

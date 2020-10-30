@@ -1,6 +1,5 @@
 import requests
 
-from requests.auth import HTTPBasicAuth
 from bs4 import BeautifulSoup as bs
 from congregate.helpers.misc_utils import xml_to_dict
 from congregate.helpers.decorators import stable_retry
@@ -21,11 +20,9 @@ class TeamcityApi():
 
     def generate_request_headers(self):
         return {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Authentication': f"Bearer {self.token}"
         }
-
-    def get_authorization(self):
-        return HTTPBasicAuth(self.user, self.token)
 
     @stable_retry
     def generate_get_request(self, api, url=None, params=None):
@@ -49,8 +46,7 @@ class TeamcityApi():
         if params is None:
             params = {}
 
-        auth = self.get_authorization()
-        return requests.get(url, params=params, headers=headers, auth=auth, verify=self.config.ssl_verify)
+        return requests.get(url, params=params, headers=headers, verify=self.config.ssl_verify)
     
     def get_maven_settings_file_links(self, jobid, recursive=False):
         t = []

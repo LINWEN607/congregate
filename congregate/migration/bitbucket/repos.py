@@ -1,5 +1,6 @@
 import json
 
+from urllib.parse import quote_plus
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.misc_utils import remove_dupes, remove_dupes_but_take_higher_access, safe_json_response
 from congregate.migration.bitbucket.api.repos import ReposApi
@@ -109,15 +110,15 @@ class ReposClient(BaseClass):
             0  => No access
             30 => Developer access
             40 => Maintainer access
-            60 => Admin access
+            50 => Admin access
         """
         # MODEL_BRANCH cannot be mapped
         PERM_MATCHER_TYPES = ["PATTERN", "BRANCH"]
         PERM_TYPES = {
-            "read-only": [60, 60, 60],
-            "no-deletes": [40, 40, 60],
-            "fast-forward-only": [40, 40, 60],
-            "pull-request-only": [60, 40, 60]
+            "read-only": [40, 40, 40],
+            "no-deletes": [30, 30, 40],
+            "fast-forward-only": [40, 30, 40],
+            "pull-request-only": [30, 30, 40]
         }
         access_level = PERM_TYPES[p["type"]]
         data = {
@@ -129,9 +130,9 @@ class ReposClient(BaseClass):
 
         if data["name"]:
             # Branch master is protected by default
-            if branch == "master":
-                self.gl_projects_api.unprotect_repository_branches(
-                    pid, branch, self.config.destination_host, self.config.destination_token)
+            #if branch == "master":
+            self.gl_projects_api.unprotect_repository_branches(
+                pid, quote_plus(branch), self.config.destination_host, self.config.destination_token)
             status = self.gl_projects_api.protect_repository_branches(
                 pid, branch, self.config.destination_host, self.config.destination_token, data=data).status_code
             if status != 201:

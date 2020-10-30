@@ -18,7 +18,6 @@ class TeamcityClient(BaseClass):
     
     def handle_retrieving_tc_jobs(self, job):
         mongo = MongoConnector()
-        self.log.info(job)
         job_name = job['@id']
         scm_data = self.teamcity_api.get_build_vcs_roots(job_name)
         tc_host = (self.teamcity_api.host).split("//")[-1]
@@ -27,11 +26,11 @@ class TeamcityClient(BaseClass):
                 if property_node["@name"] == "url":
                     scm_url = property_node["@value"]
             job_dict = {'name': job_name, 'url': scm_url}
-            self.log.info("Inserting TC data")
+            self.log.info(f"Inserting TC job {job_name} from {tc_host} into mongo")
             mongo.insert_data(f"teamcity-{tc_host}", job_dict)
         else:
             job_dict = {'name': job_name, 'url': "no_scm"}
-            self.log.info("Inserting TC data")
+            self.log.info(f"Inserting TC job {job_name} from {tc_host} with no SCM attached into mongo")
             mongo.insert_data(f"teamcity-{tc_host}", job_dict)
         mongo.close_connection()
 

@@ -141,4 +141,4 @@ class JenkinsApi(BaseClass):
         return resp
 
     def strip_url(self, url):
-        return sub(r'http(s|):\/\/.+(\.|:)(\d+|\w+)\/', "", url)
+        return sub(r'http(s|):\/\/.+(\.|:)(\d+|\w+)(jenkins|)\/', "", url)

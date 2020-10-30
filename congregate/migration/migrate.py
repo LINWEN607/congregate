@@ -864,31 +864,28 @@ class MigrateClient(BaseClass):
         if (ci_sources := project.get("ci_sources", None)):
             is_result = False
             for job in ci_sources.get("Jenkins", []):
-                # Create branch for config.xml
-                branch_data = {
-                    "branch": "%s-jenkins-config" % job,
-                    "ref": "master"
-                }
-                self.projects_api.create_branch(
-                    self.config.destination_host, self.config.destination_token, project_id, data=json.dumps(branch_data))
+                if config_xml := jenkins_client.jenkins_api.get_job_config_xml(job):
+                    # Create branch for config.xml
+                    branch_data = {
+                        "branch": "%s-jenkins-config" % job.lstrip("/"),
+                        "ref": "master"
+                    }
+                    self.projects_api.create_branch(
+                        self.config.destination_host, self.config.destination_token, project_id, data=json.dumps(branch_data))
+                    content = config_xml.text
+                    data = {
+                        "branch": "%s-jenkins-config" % job.lstrip("/"),
+                        "commit_message": "Adding config.xml for Jenkins job",
+                        "content": content
+                    }
 
-                config_xml = jenkins_client.jenkins_api.get_job_config_xml(job)
-                if config_xml:
-                    config_xml = config_xml.text
-
-                data = {
-                    "branch": "%s-jenkins-config" % job,
-                    "commit_message": "Adding config.xml for Jenkins job",
-                    "content": config_xml
-                }
-
-                req = self.project_repository_api.create_repo_file(
-                    self.config.destination_host, self.config.destination_token,
-                    project_id, "config.xml", data)
-                if req.status_code == 200:
-                    is_result = True
-                else:
-                    is_result = False
+                    req = self.project_repository_api.create_repo_file(
+                        self.config.destination_host, self.config.destination_token,
+                        project_id, "config.xml", data)
+                    if req.status_code == 200:
+                        is_result = True
+                    else:
+                        is_result = False
             return is_result
         return None
 

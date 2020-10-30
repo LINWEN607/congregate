@@ -8,7 +8,7 @@ class WaveSpreadsheetHandler(BaseClass):
     def __init__(self, file_path, columns_to_use=None):
         super(WaveSpreadsheetHandler, self).__init__()
         self.file_path = file_path
-        self.columns_to_use = self.map_columns(columns_to_use)
+        self.columns_to_use = columns_to_use
         self.file_type = self.__determine_file_type()
 
     def __determine_file_type(self):
