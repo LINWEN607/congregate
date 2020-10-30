@@ -21,7 +21,7 @@ class TeamcityApi():
     def generate_request_headers(self):
         return {
             'Content-Type': 'application/json',
-            'Authentication': f"Bearer {self.token}"
+            'Authorization': f"Bearer {self.token}"
         }
 
     @stable_retry
