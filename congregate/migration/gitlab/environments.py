@@ -1,7 +1,7 @@
 from requests.exceptions import RequestException
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import is_error_message_present, safe_json_response
+from congregate.helpers.misc_utils import is_error_message_present
 from congregate.migration.gitlab.api.projects import ProjectsApi
 
 
