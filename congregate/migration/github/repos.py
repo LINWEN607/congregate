@@ -172,7 +172,7 @@ class ReposClient(BaseClass):
         return {
             "id": project_id,
             "approvals_before_merge": 1,
-            "reset_approvals_on_push": True if branch["required_pull_request_reviews"]["dismissal_restrictions"]["users"] else False,
+            "reset_approvals_on_push": True if branch.get("required_pull_request_reviews", None) and branch["required_pull_request_reviews"]["dismissal_restrictions"]["users"] else False,
             "disable_overriding_approvers_per_merge_request": False,
             "merge_requests_author_approval": False,
             "merge_requests_disable_committers_approval": False,
