@@ -50,10 +50,11 @@ class ImportClient(BaseClass):
             return self.get_failed_result(project, data)
 
     def trigger_import_from_ghe(self, project, dry_run=True):
+        namespace_root = get_dst_path_with_namespace(project).rsplit("/", 1)[0]
         data = {
             "personal_access_token": self.config.source_token,
             "repo_id": project["id"],
-            "target_namespace": f"{project.get('target_namespace', None)}/{project['path_with_namespace']}" if project.get("target_namespace", None) else get_dst_path_with_namespace(project).rsplit("/", 1)[0]
+            "target_namespace": f"{project.get('target_namespace', None)}/{namespace_root}" if project.get("target_namespace", None) else namespace_root
         }
 
         if not dry_run:
