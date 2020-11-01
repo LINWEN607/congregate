@@ -36,6 +36,7 @@ from congregate.migration.gitlab.registries import RegistryClient
 from congregate.migration.mirror import MirrorClient
 from congregate.migration.gitlab.keys import KeysClient
 from congregate.migration.gitlab.hooks import HooksClient
+from congregate.migration.gitlab.clusters import ClustersClient
 from congregate.migration.gitlab.environments import EnvironmentsClient
 from congregate.migration.gitlab.external_import import ImportClient
 from congregate.migration.jenkins.base import JenkinsClient
@@ -77,6 +78,7 @@ class MigrateClient(BaseClass):
         self.registries = RegistryClient()
         self.keys = KeysClient()
         self.hooks = HooksClient()
+        self.clusters = ClustersClient()
         self.environments = EnvironmentsClient()
         self.ext_import = ImportClient()
         super(MigrateClient, self).__init__()
@@ -844,6 +846,10 @@ class MigrateClient(BaseClass):
         # Hooks (Webhooks)
         results["project_hooks"] = self.hooks.migrate_project_hooks(
             src_id, dst_id, path_with_namespace)
+
+        # Clusters
+        results["clusters"] = self.clusters.migrate_project_clusters(
+            src_id, dst_id, project)
 
         self.projects.remove_import_user(dst_id)
 
