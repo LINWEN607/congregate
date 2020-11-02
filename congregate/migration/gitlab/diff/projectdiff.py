@@ -176,6 +176,8 @@ class ProjectDiffClient(BaseDiffClient):
                 project, self.projects_api.get_all_project_snippets)
             project_diff["/projects/:id/wikis"] = self.generate_project_diff(
                 project, self.projects_api.get_all_project_wikis)
+            project_diff["/projects/:id/clusters"] = self.generate_project_diff(
+                project, self.projects_api.get_all_project_clusters)
 
         return project_diff
 
