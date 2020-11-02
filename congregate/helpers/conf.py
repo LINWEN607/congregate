@@ -204,6 +204,10 @@ class Config(object):
     @property
     def source_username(self):
         return self.prop("SOURCE", "src_username")
+    
+    @property
+    def source_password(self):
+        return self.prop("SOURCE", "src_password", None, True)
 
     @property
     def source_token(self):
