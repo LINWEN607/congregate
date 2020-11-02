@@ -496,7 +496,7 @@ class MigrateClient(BaseClass):
                 self.log.warning("Duplicate group paths:\n{}".format(
                     "\n".join(d for d in dupes)))
             if not self.skip_group_export:
-                self.log.info("{}Exporting groups".format(dry_log))
+                self.log.info(f"{dry_log}Exporting groups")
                 export_results = start_multi_process(
                     self.handle_exporting_groups, staged_top_groups, processes=self.processes)
 
@@ -504,13 +504,13 @@ class MigrateClient(BaseClass):
 
                 # Create list of groups that failed export
                 if failed := get_failed_export_from_results(export_results):
-                    self.log.warning("SKIP: Groups that failed to export or already exist on destination:\n{}".format(
-                        json_pretty(failed)))
+                    self.log.warning(
+                        f"SKIP: Groups that failed to export or already exist on destination:\n{json_pretty(failed)}")
 
                 # Append total count of groups exported
                 export_results.append(get_results(export_results))
-                self.log.info("### {0}Group export results ###\n{1}"
-                              .format(dry_log, json_pretty(export_results)))
+                self.log.info(
+                    f"### {dry_log}Group export results ###\n{json_pretty(export_results)}")
 
                 # Filter out the failed ones
                 staged_top_groups = get_staged_groups_without_failed_export(
@@ -519,25 +519,25 @@ class MigrateClient(BaseClass):
                 self.log.info(
                     "SKIP: Assuming staged groups are already exported")
             if not self.skip_group_import:
-                self.log.info("{}Importing groups".format(dry_log))
+                self.log.info(f"{dry_log}Importing groups")
                 import_results = start_multi_process(
                     self.handle_importing_groups, staged_top_groups, processes=self.processes)
-
-                self.are_results(import_results, "group", "import")
-
-                # append Total : Successful count of groups imports
-                import_results.append(get_results(import_results))
-                self.log.info("### {0}Group import results ###\n{1}"
-                              .format(dry_log, json_pretty(import_results)))
-                write_results_to_file(
-                    import_results, result_type="group", log=self.log)
 
                 # Migrate sub-group info
                 staged_subgroups = [
                     g for g in staged_groups if not is_top_level_group(g)]
                 if staged_subgroups:
-                    start_multi_process(self.migrate_subgroup_info,
-                                        staged_subgroups, processes=self.processes)
+                    import_results += start_multi_process(
+                        self.migrate_subgroup_info, staged_subgroups, processes=self.processes)
+
+                self.are_results(import_results, "group", "import")
+
+                # Append Total : Successful count of group migrations
+                import_results.append(get_results(import_results))
+                self.log.info(
+                    f"### {dry_log}Group import results ###\n{json_pretty(import_results)}")
+                write_results_to_file(
+                    import_results, result_type="group", log=self.log)
             else:
                 self.log.info(
                     "SKIP: Assuming staged groups will be later imported")
@@ -605,8 +605,7 @@ class MigrateClient(BaseClass):
                         full_path_with_parent_namespace)
                     import_id = group.get("id", None)
             if import_id and not self.dry_run:
-                result[full_path_with_parent_namespace] = group
-                self.migrate_single_group_features(
+                result[full_path_with_parent_namespace] = self.migrate_single_group_features(
                     src_gid, import_id, full_path)
         except (RequestException, KeyError, OverflowError) as oe:
             self.log.error("Failed to import group {0} (ID: {1}) as {2} with error:\n{3}".format(
@@ -621,39 +620,53 @@ class MigrateClient(BaseClass):
         src_gid = subgroup["id"]
         full_path_with_parent_namespace = get_full_path_with_parent_namespace(
             full_path)
+        result = {
+            full_path_with_parent_namespace: False
+        }
         try:
             if isinstance(subgroup, str):
                 subgroup = json.loads(subgroup)
-            self.log.info("Searching on destination for sub-group {}".format(
-                full_path_with_parent_namespace))
+            self.log.info(
+                f"Searching on destination for sub-group {full_path_with_parent_namespace}")
             dst_gid = self.groups.find_group_id_by_path(
                 self.config.destination_host, self.config.destination_token, full_path_with_parent_namespace)
             if dst_gid:
-                self.log.info("{0}Sub-group {1} (ID: {2}) found on destination".format(
-                    get_dry_log(self.dry_run), full_path, dst_gid))
+                self.log.info(
+                    f"{get_dry_log(self.dry_run)}Sub-group {full_path} (ID: {dst_gid}) found on destination")
                 if not self.dry_run:
-                    self.migrate_single_group_features(
+                    result[full_path_with_parent_namespace] = self.migrate_single_group_features(
                         src_gid, dst_gid, full_path)
             else:
-                self.log.info("{0}Sub-group {1} NOT found on destination".format(
-                    get_dry_log(self.dry_run), full_path_with_parent_namespace))
+                self.log.info(
+                    f"{get_dry_log(self.dry_run)}Sub-group {full_path_with_parent_namespace} NOT found on destination")
         except (RequestException, KeyError, OverflowError) as oe:
             self.log.error(
-                "Failed to migrate sub-group {0} (ID: {1}) info with error:\n{2}".format(full_path, src_gid, oe))
+                f"Failed to migrate sub-group {full_path} (ID: {src_gid}) info with error:\n{oe}")
         except Exception as e:
             self.log.error(e)
             self.log.error(print_exc())
+        return result
 
     def migrate_single_group_features(self, src_gid, dst_gid, full_path):
+        results = {}
+        results["id"] = dst_gid
+
         # CI/CD Variables
-        self.variables.migrate_cicd_variables(
+        results["cicd_variables"] = self.variables.migrate_cicd_variables(
             src_gid, dst_gid, full_path, "group", src_gid)
 
         # Hooks (Webhooks)
-        self.hooks.migrate_group_hooks(src_gid, dst_gid, full_path)
+        results["hooks"] = self.hooks.migrate_group_hooks(
+            src_gid, dst_gid, full_path)
+
+        # Clusters
+        results["clusters"] = self.clusters.migrate_group_clusters(
+            src_gid, dst_gid, full_path)
 
         # Remove import user
         self.groups.remove_import_user(dst_gid)
+
+        return results
 
     def migrate_project_info(self):
         staged_projects = self.projects.get_staged_projects()
@@ -779,10 +792,8 @@ class MigrateClient(BaseClass):
                         self.config.source_host, self.config.source_token, src_id)
                 self.log.info(
                     "Migrating source project {0} (ID: {1}) info".format(path, src_id))
-
-                post_import_results = self.migrate_single_project_features(
+                result[dst_path_with_namespace] = self.migrate_single_project_features(
                     project_json, import_id)
-                result[dst_path_with_namespace] = post_import_results
         except (RequestException, KeyError, OverflowError) as oe:
             self.log.error("Failed to import project {0} (ID: {1}) with error:\n{2}".format(
                 path, src_id, oe))
@@ -819,7 +830,7 @@ class MigrateClient(BaseClass):
             src_id, dst_id, path_with_namespace, jobs_enabled)
 
         # CI/CD Variables
-        results["variables"] = self.variables.migrate_cicd_variables(
+        results["cicd_variables"] = self.variables.migrate_cicd_variables(
             src_id, dst_id, path_with_namespace, "projects", jobs_enabled)
 
         # Pipeline Schedule Variables

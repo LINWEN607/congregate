@@ -1067,7 +1067,7 @@ class ProjectsApi():
         """
         Adds an existing Kubernetes cluster to the project.
 
-        GitLab API Doc: https://docs.gitlab.com/ee/api/project_clusters.html
+        GitLab API Doc: https://docs.gitlab.com/ee/api/project_clusters.html#add-existing-cluster-to-project
 
             :param: pid: (int) GitLab project ID
             :param: host: (str) GitLab host URL
