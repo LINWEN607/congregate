@@ -80,7 +80,9 @@ This runbook covers the process of preparing and cleaning up after a migration f
     | [local-ip] (gitlab.com) | TCP      | 22                          |
 -->
 
-* The host will require Docker to be installed and be able to pull the Congregate container from the GitLab.com container registry.
+* The host will require `sudo` rights in order to:
+  * Install and login to `docker` for access to source and destination instance container registry
+  * Pull the Congregate container from the GitLab.com container registry
 * The container/VM will collect data from the source instance and push it to the destination instance via the API.
 
 ### Authentication (for gitlab.com)
