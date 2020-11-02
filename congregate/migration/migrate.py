@@ -849,7 +849,7 @@ class MigrateClient(BaseClass):
 
         # Clusters
         results["clusters"] = self.clusters.migrate_project_clusters(
-            src_id, dst_id, project)
+            src_id, dst_id, project, jobs_enabled)
 
         self.projects.remove_import_user(dst_id)
 

@@ -49,7 +49,7 @@ class VariablesClient(BaseClass):
                 return True
             else:
                 self.log.info(
-                    f"CI/CD is disabled ({enabled}) for {var_type} {name}")
+                    f"CI/CD variables are disabled ({enabled}) for {var_type} {name}")
                 return None
         except Exception as e:
             self.log.error(
@@ -75,7 +75,7 @@ class VariablesClient(BaseClass):
                 return True
             else:
                 self.log.info(
-                    f"CI/CD is disabled ({enabled}) for project {name}")
+                    f"Pipeline schedule variables are disabled ({enabled}) for project {name}")
                 return None
         except Exception as e:
             self.log.error(
