@@ -7,6 +7,7 @@ class UsersApi():
         self.token = token
         self.api = GitHubApi(self.host, self.token)
         self.config = Config()
+
     def get_all_users(self):
         """
         Lists all users, in the order that they signed up on GitHub. This list includes personal user accounts and organization accounts.
@@ -22,3 +23,6 @@ class UsersApi():
         GitHub API v3 Doc: https://docs.github.com/en/rest/reference/users#get-a-user
         """
         return self.api.generate_v3_get_request(self.host, f"users/{username}")
+
+    def get_import_user(self):
+        return self.api.generate_v3_get_request(self.host, "user")
