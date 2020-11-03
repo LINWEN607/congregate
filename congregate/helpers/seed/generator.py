@@ -120,22 +120,22 @@ class SeedDataGenerator(BaseClass):
     def generate_seed_data(self, dry_run=True):
         users = self.generate_users(dry_run)
         groups = self.generate_groups(dry_run)
-        for user in users:
-            self.generate_dummy_user_keys(user["id"], dry_run)
-        for group in groups:
-            self.generate_dummy_group_variables(group["id"], dry_run)
-            self.generate_dummy_group_hooks(group["id"], dry_run)
-            self.add_group_members(users, group["id"], dry_run)
+        for u in users:
+            self.generate_dummy_user_keys(u["id"], dry_run)
+        for g in groups:
+            self.add_group_members(users, g["id"], dry_run)
+            self.generate_dummy_group_variables(g["id"], dry_run)
+            self.generate_dummy_group_hooks(g["id"], dry_run)
+            self.generate_dummy_group_clusters(g["id"], dry_run)
         projects = self.generate_group_projects(groups, dry_run)
-        for project in projects:
-            self.generate_dummy_environment(project["id"], dry_run)
-            self.generate_dummy_project_hooks(project["id"], dry_run)
-            self.generate_dummy_project_push_rules(project["id"], dry_run)
-            self.generate_dummy_project_variables(
-                project["id"], dry_run)
-            self.generate_shared_with_group_data(
-                project["id"], groups, dry_run)
-            self.add_project_members(users, project["id"], dry_run)
+        for p in projects:
+            self.add_project_members(users, p["id"], dry_run)
+            self.generate_dummy_environment(p["id"], dry_run)
+            self.generate_dummy_project_hooks(p["id"], dry_run)
+            self.generate_dummy_project_push_rules(p["id"], dry_run)
+            self.generate_dummy_project_variables(p["id"], dry_run)
+            self.generate_shared_with_group_data(p["id"], groups, dry_run)
+            self.generate_dummy_project_clusters(p["id"], dry_run)
         projects += self.generate_user_projects(users, dry_run)
         self.generate_instance_clusters(dry_run)
         self.generate_instance_hooks(dry_run)
@@ -348,6 +348,14 @@ class SeedDataGenerator(BaseClass):
                 self.projects_api.add_project_hook(
                     self.config.source_host, self.config.source_token, pid, d)
 
+    def generate_dummy_project_clusters(self, pid, dry_run=True):
+        for d in self.CLUSTERS_DATA:
+            self.log.info(
+                f"{get_dry_log(dry_run)}Creating project {pid} cluster ({d})")
+            if not dry_run:
+                self.projects_api.add_project_cluster(
+                    pid, self.config.source_host, self.config.source_token, d)
+
     def generate_dummy_project_variables(self, pid, dry_run=True):
         for d in self.VARIABLES_DATA:
             self.log.info(
@@ -393,6 +401,14 @@ class SeedDataGenerator(BaseClass):
             if not dry_run:
                 self.groups.add_group_hook(
                     self.config.source_host, self.config.source_token, gid, d)
+
+    def generate_dummy_group_clusters(self, gid, dry_run=True):
+        for d in self.CLUSTERS_DATA:
+            self.log.info(
+                f"{get_dry_log(dry_run)}Creating group {gid} cluster ({d})")
+            if not dry_run:
+                self.groups.add_group_cluster(
+                    gid, self.config.source_host, self.config.source_token, d)
 
     def generate_shared_with_group_data(self, pid, groups, dry_run):
         for group in groups:
