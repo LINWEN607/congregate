@@ -1,6 +1,5 @@
 import unittest
 import mock
-import json
 import pytest
 from congregate.cli.stage_wave import WaveStageCLI
 from congregate.cli.stage_base import BaseStageClass
@@ -89,6 +88,221 @@ class StageWaveTests(unittest.TestCase):
             },
             {
                 "id": 80,
+                "name": "Puppet",
+                "namespace": "brightbox",
+                "path": "puppet",
+                "path_with_namespace": "brightbox/puppet",
+                "visibility": "private",
+                "description": None,
+                "jobs_enabled": None,
+                "project_type": "group",
+                "members": [
+                    {
+                        "id": 2,
+                        "username": "john_doe",
+                        "name": "John Doe",
+                        "state": "active",
+                        "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon",
+                        "expires_at": "2012-10-22T14:13:35Z",
+                        "access_level": 30
+                    }
+                ],
+                'http_url_to_repo': 'http://example.com/brightbox/puppet.git',
+                'shared_runners_enabled': True,
+                'archived': False,
+                'shared_with_groups': [],
+                'default_branch': 'master'
+            }
+        ]
+
+        self.wcli.stage_wave("Wave1")
+        actual = self.wcli.staged_projects
+
+        self.assertEqual(len(expected), len(actual))
+        for i in range(len(expected)):
+            self.assertEqual(
+                expected[i].items(), actual[i].items())
+
+    @mock.patch.object(WaveStageCLI, 'open_users_file')
+    @mock.patch.object(WaveStageCLI, 'open_groups_file')
+    @mock.patch('congregate.helpers.conf.Config.wave_spreadsheet_columns', new_callable=mock.PropertyMock)
+    @mock.patch('congregate.helpers.conf.Config.wave_spreadsheet_column_mapping', new_callable=mock.PropertyMock)
+    @mock.patch('congregate.helpers.conf.Config.wave_spreadsheet_path', new_callable=mock.PropertyMock)
+    @mock.patch('congregate.helpers.conf.Config.source_type', new_callable=mock.PropertyMock)
+    @mock.patch('congregate.helpers.conf.Config.source_host', new_callable=mock.PropertyMock)
+    @mock.patch.object(WaveSpreadsheetHandler, "read_file_as_json")
+    @mock.patch.object(BaseStageClass, "open_projects_file")
+    def test_stage_wave_mixed_project(self, projects, read_as_json, mock_source_host, mock_source_type, spreadsheet_path, column_mapping, columns_to_use, mock_groups, mock_users):
+        mock_source_type.return_value = "gitlab"
+        mock_users.return_value = self.users_api.get_all_users_list()
+        mock_groups.return_value = self.groups_api.get_all_groups_list()
+        projects.return_value = self.projects_api.get_all_projects()
+        mock_source_host.return_value = "http://example.com/"
+        spreadsheet_path.return_value = "test.xls"
+        column_mapping.return_value = {
+            "Wave name": "Wave name",
+            "Wave date": "Wave date",
+            "Source Url": "Source Url"
+        }
+        columns_to_use.return_value = ["Wave name", "Wave date", "Source Url"]
+        read_as_json.return_value = [
+            {
+                "Wave name": "Wave1",
+                "not needed": "asdflkasjdf",
+                "not needed_2": 123,
+                "Wave date": 1609459200000,
+                "notneeded3": -1,
+                "notneeded4": "qqq",
+                "Source Url": "http://example.com/diaspora/diaspora-client.git"
+            },
+            {
+                "Wave name": "Wave1",
+                "not needed": "asdflkasjdf",
+                "not needed_2": 124,
+                "Wave date": 1609459200000,
+                "notneeded3": 0,
+                "notneeded4": "qqq",
+                "Source Url": "http://example.com/brightbox/puppet"
+            }
+        ]
+        expected = [
+            {
+                "id": 4,
+                "name": "Diaspora Client",
+                "namespace": "diaspora",
+                "path": "diaspora-client",
+                "path_with_namespace": "diaspora/diaspora-client",
+                "visibility": "private",
+                "description": "Project that does stuff",
+                "jobs_enabled": None,
+                "project_type": "group",
+                "members": [
+                    {
+                        "id": 2,
+                        "username": "john_doe",
+                        "name": "John Doe",
+                        "state": "active",
+                        "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon",
+                        "expires_at": "2012-10-22T14:13:35Z",
+                        "access_level": 30
+                    }
+                ],
+                'http_url_to_repo': 'http://example.com/diaspora/diaspora-client.git',
+                'shared_runners_enabled': True,
+                'archived': False,
+                'shared_with_groups': [],
+                'default_branch': 'master'
+            },
+            {
+                "id": 80,
+                "name": "Puppet",
+                "namespace": "brightbox",
+                "path": "puppet",
+                "path_with_namespace": "brightbox/puppet",
+                "visibility": "private",
+                "description": None,
+                "jobs_enabled": None,
+                "project_type": "group",
+                "members": [
+                    {
+                        "id": 2,
+                        "username": "john_doe",
+                        "name": "John Doe",
+                        "state": "active",
+                        "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon",
+                        "expires_at": "2012-10-22T14:13:35Z",
+                        "access_level": 30
+                    }
+                ],
+                'http_url_to_repo': 'http://example.com/brightbox/puppet.git',
+                'shared_runners_enabled': True,
+                'archived': False,
+                'shared_with_groups': [],
+                'default_branch': 'master'
+            }
+        ]
+
+        self.wcli.stage_wave("Wave1")
+        actual = self.wcli.staged_projects
+
+        self.assertEqual(len(expected), len(actual))
+        for i in range(len(expected)):
+            self.assertEqual(
+                expected[i].items(), actual[i].items())
+
+    @mock.patch.object(WaveStageCLI, 'open_users_file')
+    @mock.patch.object(WaveStageCLI, 'open_groups_file')
+    @mock.patch('congregate.helpers.conf.Config.wave_spreadsheet_columns', new_callable=mock.PropertyMock)
+    @mock.patch('congregate.helpers.conf.Config.wave_spreadsheet_column_mapping', new_callable=mock.PropertyMock)
+    @mock.patch('congregate.helpers.conf.Config.wave_spreadsheet_path', new_callable=mock.PropertyMock)
+    @mock.patch('congregate.helpers.conf.Config.source_type', new_callable=mock.PropertyMock)
+    @mock.patch('congregate.helpers.conf.Config.source_host', new_callable=mock.PropertyMock)
+    @mock.patch.object(WaveSpreadsheetHandler, "read_file_as_json")
+    @mock.patch.object(BaseStageClass, "open_projects_file")
+    def test_stage_wave_mixed_project_and_group(self, projects, read_as_json, mock_source_host, mock_source_type, spreadsheet_path, column_mapping, columns_to_use, mock_groups, mock_users):
+        mock_source_type.return_value = "gitlab"
+        self.maxDiff = None
+        mock_users.return_value = self.users_api.get_all_users_list()
+        mock_groups.return_value = self.groups_api.get_all_groups_list()
+        projects.return_value = self.projects_api.get_all_projects()
+        mock_source_host.return_value = "http://example.com/"
+        spreadsheet_path.return_value = "test.xls"
+        column_mapping.return_value = {
+            "Wave name": "Wave name",
+            "Wave date": "Wave date",
+            "Source Url": "Source Url"
+        }
+        columns_to_use.return_value = ["Wave name", "Wave date", "Source Url"]
+        read_as_json.return_value = [
+            {
+                "Wave name": "Wave1",
+                "not needed": "asdflkasjdf",
+                "not needed_2": 123,
+                "Wave date": 1609459200000,
+                "notneeded3": -1,
+                "notneeded4": "qqq",
+                "Source Url": "http://example.com/diaspora/diaspora-client.git"
+            },
+            {
+                "Wave name": "Wave1",
+                "not needed": "asdflkasjdf",
+                "not needed_2": 124,
+                "Wave date": 1609459200000,
+                "notneeded3": 0,
+                "notneeded4": "qqq",
+                "Source Url": "http://example.com/foo-bar-3"
+            }
+        ]
+        expected = [
+            {
+                "id": 4,
+                "name": "Diaspora Client",
+                "namespace": "diaspora",
+                "path": "diaspora-client",
+                "path_with_namespace": "diaspora/diaspora-client",
+                "visibility": "private",
+                "description": "Project that does stuff",
+                "jobs_enabled": None,
+                "project_type": "group",
+                "members": [
+                    {
+                        "id": 2,
+                        "username": "john_doe",
+                        "name": "John Doe",
+                        "state": "active",
+                        "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon",
+                        "expires_at": "2012-10-22T14:13:35Z",
+                        "access_level": 30
+                    }
+                ],
+                'http_url_to_repo': 'http://example.com/diaspora/diaspora-client.git',
+                'shared_runners_enabled': True,
+                'archived': False,
+                'shared_with_groups': [],
+                'default_branch': 'master'
+            },
+            {
+                "id": 6,
                 "name": "Puppet",
                 "namespace": "brightbox",
                 "path": "puppet",
