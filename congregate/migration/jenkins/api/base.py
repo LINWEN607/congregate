@@ -56,17 +56,24 @@ class JenkinsApi(BaseClass):
         auth = self.get_authorization()
         return requests.get(url, params=params, headers=headers, auth=auth, verify=self.config.ssl_verify)
 
-    def list_all_jobs(self, jobs_path=None):
+    def list_all_jobs(self, jobs_path=None, folder_list=None):
         """
         Returns a list of job dictionaries of all jobs found on the Jenkins server.
         """
+        self.log.info(f"Listing job {jobs_path} from {self.host}")
+        folder_list = set() if not folder_list else folder_list
         if base_data := self.list_current_level_jobs(jobs_path):
             for job in base_data["jobs"]:
                 if not job["_class"] == "com.cloudbees.hudson.plugins.folder.Folder":
                     yield job
                 else:
-                    job_path = self.strip_url(job["url"]).rstrip('/')
-                    yield from self.list_all_jobs(job_path)
+                    if job_path not in folder_list:
+                        folder_list.add(job_path)
+                        job_path = self.strip_url(job["url"]).rstrip('/')
+                        yield from self.list_all_jobs(job_path)
+                    else:
+                        self.log.info("Duplicate folder found.")
+                        raise StopIteration
 
 
     def list_current_level_jobs(self, job_path):
