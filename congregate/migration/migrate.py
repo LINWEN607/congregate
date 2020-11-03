@@ -42,7 +42,6 @@ from congregate.migration.gitlab.external_import import ImportClient
 from congregate.migration.jenkins.base import JenkinsClient
 from congregate.migration.teamcity.base import TeamcityClient
 from congregate.migration.bitbucket.repos import ReposClient as BBSReposClient
-from congregate.migration.github.api.repos import ReposApi
 from congregate.migration.github.repos import ReposClient
 
 
