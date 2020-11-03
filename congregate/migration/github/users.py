@@ -28,7 +28,7 @@ class UsersClient(BaseClass):
         # mongo should be set to None unless this function is being used in a unit test
         if not mongo:
             mongo = self.connect_to_mongo()
-        github_browser = self.establish_browser_connection()
+        browser = self.establish_browser_connection()
         single_user = safe_json_response(
             self.users_api.get_user(user["login"]))
         if not single_user or is_error_message_present(single_user):
@@ -36,7 +36,7 @@ class UsersClient(BaseClass):
                 user["login"], single_user))
         else:
             if single_user.get("type") != "Organization":
-                formatted_user = self.format_user(single_user, github_browser)
+                formatted_user = self.format_user(single_user, browser)
                 mongo.insert_data("users", formatted_user)
         mongo.close_connection()
 

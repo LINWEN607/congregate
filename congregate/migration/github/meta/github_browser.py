@@ -1,37 +1,32 @@
-import mechanize
+import requests
 from bs4 import BeautifulSoup as bs
-from congregate.helpers.logger import myLogger
+from congregate.helpers.base_class import BaseClass
 
-class GitHubBrowser(mechanize.Browser):
+class GitHubBrowser(BaseClass):
     def __init__(self, host, username, password):
         super(GitHubBrowser, self).__init__()
-        self.log = myLogger(__name__)
-        self.host = host
-        # pylint: disable=no-member
-        self.set_handle_robots(False)
-        cookies = mechanize.CookieJar()
-        self.set_cookiejar(cookies)
-        self.addheaders = [('User-agent', 'Mozilla/5.0 (X11; U; Linux i686; en-US) AppleWebKit/534.7 (KHTML, like Gecko) Chrome/7.0.517.41 Safari/534.7')]
-        self.set_handle_refresh(False)
-        self.open(f"{host}/login")
-        self.select_form(nr = 0)
-        self.form['login'] = username
-        self.form['password'] = password
-        self.submit()
-        # pylint: enable=no-member
+        self.session = requests.Session()
+        res = self.session.get(host, verify=self.config.ssl_verify)
+        authenticity_token = self.find_authenticity_token(res.text)
+        cookies = dict(res.cookies)
+        payload = {
+            "login": username,
+            "password": password,
+            "commit": "Sign in",
+            "authenticity_token": authenticity_token
+        }
+        self.session.post("https://github.gitlab-proserv.net/session", cookies=cookies, data=payload, verify=self.config.ssl_verify)
+
+    def find_authenticity_token(self, text):
+        soup = bs(text, "lxml")
+        token = soup.find(attrs={"name": "authenticity_token"})
+        return token.get("value")
 
     def scrape_user_email(self, username):
-        url = f"{self.host}/stafftools/users/{username}"
-        try:
-            # pylint: disable=assignment-from-none
-            resp = self.open(url)
-            # pylint: enable=assignment-from-none
-            content = resp.read()
-            soup = bs(content, 'html.parser')
+        url = f"{self.config.source_host}/stafftools/users/{username}"
+        resp = self.session.get(url, verify=self.config.ssl_verify)
+        if resp.status_code == 200:
+            soup = bs(resp.text, 'html.parser')
             email = soup.find("ul", {"class": 'site-admin-detail-list'}).findAll('li')[1].getText().strip().split("\n")[0]
             if "@" in email:
                 return email
-        except mechanize._response.HTTPError as e:
-            self.log.error(f"{e}: {url}")
-            return None
-        
