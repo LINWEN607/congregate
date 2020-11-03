@@ -96,6 +96,8 @@ class BaseStageClass(BaseClass):
             "path_with_namespace": project["path_with_namespace"],
             "visibility": project["visibility"],
             "description": project["description"],
+            # Will be deprecated in favor of builds_access_level
+            "jobs_enabled": project.get("jobs_enabled", None),
             "project_type": project["namespace"]["kind"],
             # Project members are not listed when listing group projects
             "members": project["members"] if project.get("members", None) else self.rewritten_projects[project["id"]]["members"]

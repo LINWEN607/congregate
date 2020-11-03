@@ -1,7 +1,7 @@
 from requests.exceptions import RequestException
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import is_error_message_present
+from congregate.helpers.misc_utils import is_error_message_present, safe_json_response
 from congregate.migration.gitlab.api.projects import ProjectsApi
 
 
@@ -12,13 +12,17 @@ class PushRulesClient(BaseClass):
 
     def migrate_push_rules(self, old_id, new_id, name):
         try:
-            push_rules = self.projects_api.get_all_project_push_rules(
-                old_id, self.config.source_host, self.config.source_token).json()
-            if is_error_message_present(push_rules) or not push_rules:
+            push_rules = safe_json_response(self.projects_api.get_all_project_push_rules(
+                old_id, self.config.source_host, self.config.source_token))
+            if push_rules is None:
+                self.log.info(
+                    f"No push rules ({push_rules}) to migrate for project {name}")
+                return None
+            elif is_error_message_present(push_rules):
                 self.log.error(
-                    "Failed to fetch push rules ({0}) for project {1}".format(push_rules, name))
+                    f"Failed to fetch push rules ({push_rules}) for project {name}")
                 return False
-            self.log.info("Migrating project {} push rules".format(name))
+            self.log.info(f"Migrating project {name} push rules")
             push_rules.pop("id", None)
             push_rules.pop("created_at", None)
             push_rules.pop("project_id", None)
@@ -27,5 +31,5 @@ class PushRulesClient(BaseClass):
             return True
         except RequestException as re:
             self.log.error(
-                "Failed to migrate {0} push rules, with error:\n{1}".format(name, re))
+                f"Failed to migrate {name} push rules, with error:\n{e}")
             return False

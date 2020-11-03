@@ -36,6 +36,7 @@ from congregate.migration.gitlab.registries import RegistryClient
 from congregate.migration.mirror import MirrorClient
 from congregate.migration.gitlab.keys import KeysClient
 from congregate.migration.gitlab.hooks import HooksClient
+from congregate.migration.gitlab.clusters import ClustersClient
 from congregate.migration.gitlab.environments import EnvironmentsClient
 from congregate.migration.gitlab.external_import import ImportClient
 from congregate.migration.jenkins.base import JenkinsClient
@@ -77,6 +78,7 @@ class MigrateClient(BaseClass):
         self.registries = RegistryClient()
         self.keys = KeysClient()
         self.hooks = HooksClient()
+        self.clusters = ClustersClient()
         self.environments = EnvironmentsClient()
         self.ext_import = ImportClient()
         super(MigrateClient, self).__init__()
@@ -181,7 +183,7 @@ class MigrateClient(BaseClass):
             import_results.append(get_results(import_results))
             self.log.info(
                 f"### {dry_log}Project import results ###\n{json_pretty(import_results)}")
-            write_results_to_file(import_results, log=self.log)        
+            write_results_to_file(import_results, log=self.log)
         else:
             self.log.info("SKIP: No projects to migrate")
 
@@ -193,7 +195,8 @@ class MigrateClient(BaseClass):
         if not self.dry_run:
             # Create our tracking issues first.  Just another check incase we fail to create groups.
             if self.config.post_migration_issues and self.config.pmi_project_id:  # implies we have issues to create
-                Reporting(self.config.pmi_project_id, project_name=group['name'])
+                Reporting(self.config.pmi_project_id,
+                          project_name=group['name'])
             # Wait for parent group to create
             if self.config.dstn_parent_group_path is not None:
                 pnamespace = self.groups.wait_for_parent_group_creation(group)
@@ -231,14 +234,16 @@ class MigrateClient(BaseClass):
                         self.config.destination_host, self.config.destination_token, project_id, members)
                     if jenkins_configs := self.config.list_ci_source_config("jenkins_ci_source"):
                         for jc in jenkins_configs:
-                            jenkins_client = JenkinsClient(jc["jenkins_ci_src_hostname"], jc["jenkins_ci_src_username"], deobfuscate(jc["jenkins_ci_src_access_token"]))
+                            jenkins_client = JenkinsClient(jc["jenkins_ci_src_hostname"], jc["jenkins_ci_src_username"], deobfuscate(
+                                jc["jenkins_ci_src_access_token"]))
                             result[project["path_with_namespace"]]["jenkins_variables"] = self.migrate_jenkins_variables(
                                 project, project_id, jenkins_client, jc["jenkins_ci_src_hostname"])
                             result[project["path_with_namespace"]]["jenkins_config_xml"] = self.migrate_jenkins_config_xml(
                                 project, project_id, jenkins_client)
                     if teamcity_configs := self.config.list_ci_source_config("teamcity_ci_source"):
                         for tc in teamcity_configs:
-                            tc_client = TeamcityClient(tc["tc_ci_src_hostname"], tc["tc_ci_src_username"], deobfuscate(tc["tc_ci_src_access_token"]))
+                            tc_client = TeamcityClient(tc["tc_ci_src_hostname"], tc["tc_ci_src_username"], deobfuscate(
+                                tc["tc_ci_src_access_token"]))
                             result[project["path_with_namespace"]]["teamcity_variables"] = self.migrate_teamcity_variables(
                                 project, project_id, tc_client, tc["tc_ci_src_hostname"])
                             result[project["path_with_namespace"]]["teamcity_variables"] = self.migrate_teamcity_build_config(
@@ -252,13 +257,12 @@ class MigrateClient(BaseClass):
                         project_id, project)
                     # Added project level MR rules
                     result[project["path_with_namespace"]]["project_level_mr_approvals"] = self.gh_repos.migrate_gh_project_level_mr_approvals(
-                       project_id, project)
+                        project_id, project)
                 else:
                     result = self.ext_import.get_failed_result(project, data={
                         "error": "Import time limit exceeded. Unable to execute post migration phase"
                     })
         return result
-
 
     def add_pipeline_for_github_pages(self, project_id):
         '''
@@ -381,7 +385,8 @@ class MigrateClient(BaseClass):
                     self.bbs_repos_client.migrate_permissions(
                         project, project_id)
                     # Correcting bug where group's description is persisted to project's description
-                    self.bbs_repos_client.correct_repo_description(project, project_id)
+                    self.bbs_repos_client.correct_repo_description(
+                        project, project_id)
                     # Remove import user
                     self.projects.remove_import_user(project_id)
                 else:
@@ -491,7 +496,7 @@ class MigrateClient(BaseClass):
                 self.log.warning("Duplicate group paths:\n{}".format(
                     "\n".join(d for d in dupes)))
             if not self.skip_group_export:
-                self.log.info("{}Exporting groups".format(dry_log))
+                self.log.info(f"{dry_log}Exporting groups")
                 export_results = start_multi_process(
                     self.handle_exporting_groups, staged_top_groups, processes=self.processes)
 
@@ -499,13 +504,13 @@ class MigrateClient(BaseClass):
 
                 # Create list of groups that failed export
                 if failed := get_failed_export_from_results(export_results):
-                    self.log.warning("SKIP: Groups that failed to export or already exist on destination:\n{}".format(
-                        json_pretty(failed)))
+                    self.log.warning(
+                        f"SKIP: Groups that failed to export or already exist on destination:\n{json_pretty(failed)}")
 
                 # Append total count of groups exported
                 export_results.append(get_results(export_results))
-                self.log.info("### {0}Group export results ###\n{1}"
-                              .format(dry_log, json_pretty(export_results)))
+                self.log.info(
+                    f"### {dry_log}Group export results ###\n{json_pretty(export_results)}")
 
                 # Filter out the failed ones
                 staged_top_groups = get_staged_groups_without_failed_export(
@@ -514,25 +519,25 @@ class MigrateClient(BaseClass):
                 self.log.info(
                     "SKIP: Assuming staged groups are already exported")
             if not self.skip_group_import:
-                self.log.info("{}Importing groups".format(dry_log))
+                self.log.info(f"{dry_log}Importing groups")
                 import_results = start_multi_process(
                     self.handle_importing_groups, staged_top_groups, processes=self.processes)
-
-                self.are_results(import_results, "group", "import")
-
-                # append Total : Successful count of groups imports
-                import_results.append(get_results(import_results))
-                self.log.info("### {0}Group import results ###\n{1}"
-                              .format(dry_log, json_pretty(import_results)))
-                write_results_to_file(
-                    import_results, result_type="group", log=self.log)
 
                 # Migrate sub-group info
                 staged_subgroups = [
                     g for g in staged_groups if not is_top_level_group(g)]
                 if staged_subgroups:
-                    start_multi_process(self.migrate_subgroup_info,
-                                        staged_subgroups, processes=self.processes)
+                    import_results += start_multi_process(
+                        self.migrate_subgroup_info, staged_subgroups, processes=self.processes)
+
+                self.are_results(import_results, "group", "import")
+
+                # Append Total : Successful count of group migrations
+                import_results.append(get_results(import_results))
+                self.log.info(
+                    f"### {dry_log}Group import results ###\n{json_pretty(import_results)}")
+                write_results_to_file(
+                    import_results, result_type="group", log=self.log)
             else:
                 self.log.info(
                     "SKIP: Assuming staged groups will be later imported")
@@ -600,8 +605,7 @@ class MigrateClient(BaseClass):
                         full_path_with_parent_namespace)
                     import_id = group.get("id", None)
             if import_id and not self.dry_run:
-                result[full_path_with_parent_namespace] = group
-                self.migrate_single_group_features(
+                result[full_path_with_parent_namespace] = self.migrate_single_group_features(
                     src_gid, import_id, full_path)
         except (RequestException, KeyError, OverflowError) as oe:
             self.log.error("Failed to import group {0} (ID: {1}) as {2} with error:\n{3}".format(
@@ -616,39 +620,53 @@ class MigrateClient(BaseClass):
         src_gid = subgroup["id"]
         full_path_with_parent_namespace = get_full_path_with_parent_namespace(
             full_path)
+        result = {
+            full_path_with_parent_namespace: False
+        }
         try:
             if isinstance(subgroup, str):
                 subgroup = json.loads(subgroup)
-            self.log.info("Searching on destination for sub-group {}".format(
-                full_path_with_parent_namespace))
+            self.log.info(
+                f"Searching on destination for sub-group {full_path_with_parent_namespace}")
             dst_gid = self.groups.find_group_id_by_path(
                 self.config.destination_host, self.config.destination_token, full_path_with_parent_namespace)
             if dst_gid:
-                self.log.info("{0}Sub-group {1} (ID: {2}) found on destination".format(
-                    get_dry_log(self.dry_run), full_path, dst_gid))
+                self.log.info(
+                    f"{get_dry_log(self.dry_run)}Sub-group {full_path} (ID: {dst_gid}) found on destination")
                 if not self.dry_run:
-                    self.migrate_single_group_features(
+                    result[full_path_with_parent_namespace] = self.migrate_single_group_features(
                         src_gid, dst_gid, full_path)
             else:
-                self.log.info("{0}Sub-group {1} NOT found on destination".format(
-                    get_dry_log(self.dry_run), full_path_with_parent_namespace))
+                self.log.info(
+                    f"{get_dry_log(self.dry_run)}Sub-group {full_path_with_parent_namespace} NOT found on destination")
         except (RequestException, KeyError, OverflowError) as oe:
             self.log.error(
-                "Failed to migrate sub-group {0} (ID: {1}) info with error:\n{2}".format(full_path, src_gid, oe))
+                f"Failed to migrate sub-group {full_path} (ID: {src_gid}) info with error:\n{oe}")
         except Exception as e:
             self.log.error(e)
             self.log.error(print_exc())
+        return result
 
     def migrate_single_group_features(self, src_gid, dst_gid, full_path):
+        results = {}
+        results["id"] = dst_gid
+
         # CI/CD Variables
-        self.variables.migrate_cicd_variables(
-            src_gid, dst_gid, full_path, "group")
+        results["cicd_variables"] = self.variables.migrate_cicd_variables(
+            src_gid, dst_gid, full_path, "group", src_gid)
 
         # Hooks (Webhooks)
-        self.hooks.migrate_group_hooks(src_gid, dst_gid, full_path)
+        results["hooks"] = self.hooks.migrate_group_hooks(
+            src_gid, dst_gid, full_path)
+
+        # Clusters
+        results["clusters"] = self.clusters.migrate_group_clusters(
+            src_gid, dst_gid, full_path)
 
         # Remove import user
         self.groups.remove_import_user(dst_gid)
+
+        return results
 
     def migrate_project_info(self):
         staged_projects = self.projects.get_staged_projects()
@@ -774,10 +792,8 @@ class MigrateClient(BaseClass):
                         self.config.source_host, self.config.source_token, src_id)
                 self.log.info(
                     "Migrating source project {0} (ID: {1}) info".format(path, src_id))
-
-                post_import_results = self.migrate_single_project_features(
+                result[dst_path_with_namespace] = self.migrate_single_project_features(
                     project_json, import_id)
-                result[dst_path_with_namespace] = post_import_results
         except (RequestException, KeyError, OverflowError) as oe:
             self.log.error("Failed to import project {0} (ID: {1}) with error:\n{2}".format(
                 path, src_id, oe))
@@ -800,6 +816,7 @@ class MigrateClient(BaseClass):
         path_with_namespace = project["path_with_namespace"]
         shared_with_groups = project["shared_with_groups"]
         src_id = project["id"]
+        jobs_enabled = project["jobs_enabled"]
         results = {}
 
         results["id"] = dst_id
@@ -810,15 +827,15 @@ class MigrateClient(BaseClass):
 
         # Environments
         results["environments"] = self.environments.migrate_project_environments(
-            src_id, dst_id, path_with_namespace)
+            src_id, dst_id, path_with_namespace, jobs_enabled)
 
         # CI/CD Variables
-        results["variables"] = self.variables.migrate_cicd_variables(
-            src_id, dst_id, path_with_namespace, "projects")
+        results["cicd_variables"] = self.variables.migrate_cicd_variables(
+            src_id, dst_id, path_with_namespace, "projects", jobs_enabled)
 
         # Pipeline Schedule Variables
         results["pipeline_schedule_variables"] = self.variables.migrate_pipeline_schedule_variables(
-            src_id, dst_id, path_with_namespace)
+            src_id, dst_id, path_with_namespace, jobs_enabled)
 
         # Push Rules
         results["push_rules"] = self.pushrules.migrate_push_rules(
@@ -840,6 +857,10 @@ class MigrateClient(BaseClass):
         # Hooks (Webhooks)
         results["project_hooks"] = self.hooks.migrate_project_hooks(
             src_id, dst_id, path_with_namespace)
+
+        # Clusters
+        results["clusters"] = self.clusters.migrate_project_clusters(
+            src_id, dst_id, project, jobs_enabled)
 
         self.projects.remove_import_user(dst_id)
 
@@ -931,12 +952,13 @@ class MigrateClient(BaseClass):
                 req = self.project_repository_api.create_repo_file(
                     self.config.destination_host, self.config.destination_token,
                     project_id, "build_config.xml", data)
-                
+
                 if req.status_code != 200:
                     is_result = False
 
                 for url in tc_client.teamcity_api.get_maven_settings_file_links(job):
-                    file_name, content = tc_client.teamcity_api.extract_maven_xml(url)
+                    file_name, content = tc_client.teamcity_api.extract_maven_xml(
+                        url)
                     data = {
                         "branch": "%s-teamcity-config" % job,
                         "commit_message": f"Adding {file_name} for TeamCity job",

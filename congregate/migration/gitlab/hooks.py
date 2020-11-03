@@ -15,14 +15,18 @@ class HooksClient(BaseClass):
         super(HooksClient, self).__init__()
 
     def migrate_system_hooks(self, dry_run=True):
-        if not is_dot_com(self.config.source_host) and not is_dot_com(self.config.destination_host):
+        if not is_dot_com(self.config.source_host):
             try:
                 resp = self.system_api.get_all_system_hooks(
                     self.config.source_host, self.config.source_token)
                 s_hooks_src = iter(resp)
                 # used to check if hook already exists
-                s_hooks_dstn = list(self.system_api.get_all_system_hooks(
-                    self.config.destination_host, self.config.destination_token))
+                if is_dot_com(self.config.destination_host) and self.config.dstn_parent_id:
+                    s_hooks_dstn = list(self.groups_api.get_all_group_hooks(
+                        self.config.dstn_parent_id, self.config.destination_host, self.config.destination_token))
+                else:
+                    s_hooks_dstn = list(self.system_api.get_all_system_hooks(
+                        self.config.destination_host, self.config.destination_token))
                 for shd in s_hooks_dstn:
                     shd.pop("id", None)
                     shd.pop("created_at", None)
@@ -37,8 +41,12 @@ class HooksClient(BaseClass):
                     shc.pop("created_at", None)
                     if not dry_run and not shc in s_hooks_dstn:
                         # hook does not include secret token
-                        self.system_api.create_system_hook(
-                            self.config.destination_host, self.config.destination_token, shc)
+                        if is_dot_com(self.config.destination_host) and self.config.dstn_parent_id:
+                            self.groups_api.add_group_hook(
+                                self.config.destination_host, self.config.destination_token, self.config.dstn_parent_id, shc)
+                        else:
+                            self.system_api.create_system_hook(
+                                self.config.destination_host, self.config.destination_token, shc)
             except TypeError as te:
                 self.log.error("System hooks {0} {1}".format(resp, te))
             except RequestException as re:

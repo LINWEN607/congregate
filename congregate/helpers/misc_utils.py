@@ -388,7 +388,7 @@ def validate_name(name):
     Name can only contain letters, digits, emojis, '_', '.', dash, space.
     It must start with letter, digit, emoji or '_'.
     """
-    return " ".join(sub(r"[^a-zA-Z0-9\_ ]", " ", name).split())
+    return " ".join(sub(r"[^a-zA-Z0-9\_\- ]", " ", name.lstrip("-")).split())
 
 
 def list_to_dict(lst):

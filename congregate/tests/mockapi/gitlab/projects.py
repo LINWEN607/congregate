@@ -399,6 +399,7 @@ class MockProjectsApi():
                 {
                     "id": 2,
                     "username": "john_doe",
+                    "email": "jdoe@email.com",
                     "name": "John Doe",
                     "state": "active",
                     "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon",

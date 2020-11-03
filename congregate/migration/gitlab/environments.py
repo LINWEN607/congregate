@@ -10,8 +10,12 @@ class EnvironmentsClient(BaseClass):
         self.projects = ProjectsApi()
         super(EnvironmentsClient, self).__init__()
 
-    def migrate_project_environments(self, src_id, dest_id, name):
+    def migrate_project_environments(self, src_id, dest_id, name, enabled):
         try:
+            if not enabled:
+                self.log.info(
+                    f"Environments are disabled ({enabled}) for project {name}")
+                return None
             resp = self.projects.get_all_project_environments(
                 src_id, self.config.source_host, self.config.source_token)
             envs = iter(resp)

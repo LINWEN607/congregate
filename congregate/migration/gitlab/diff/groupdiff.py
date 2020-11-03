@@ -122,6 +122,8 @@ class GroupDiffClient(BaseDiffClient):
                 group, self.groups_api.get_all_group_registry_repositories)
             group_diff["/groups/:id/badges"] = self.generate_group_diff(
                 group, self.groups_api.get_all_group_badges)
+            group_diff["/groups/:id/clusters"] = self.generate_group_diff(
+                group, self.groups_api.get_all_group_clusters)
         return group_diff
 
     def generate_group_diff(self, group, endpoint, **kwargs):

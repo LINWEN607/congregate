@@ -446,3 +446,34 @@ class GroupsApi():
         if not message:
             message = "Adding badge to group"
         return api.generate_post_request(host, token, "groups/%d/badges" % gid, json.dumps(data), description=message)
+
+    def get_all_group_clusters(self, gid, host, token):
+        """
+        Returns a list of groups clusters.
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/group_clusters.html#list-group-clusters
+
+            :param: gid: (int) GitLab group ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :return: Response object containing the response to GET /groups/:id/clusters
+
+        """
+        return api.list_all(host, token, f"groups/{gid}/clusters")
+
+    def add_group_cluster(self, gid, host, token, data=None, message=None):
+        """
+        Adds an existing Kubernetes cluster to the group.
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/group_clusters.html#add-existing-cluster-to-group
+
+            :param: gid: (int) GitLab Group ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :param: data: (dict) Object containing the necessary data for the added cluster
+            :return: Response object containing the response to POST /groups/:id/clusters/user
+
+        """
+        if not message:
+            message = f"Adding cluster {data['name']} to group {gid}"
+        return api.generate_post_request(host, token, f"groups/{gid}/clusters/user", json.dumps(data), description=message)
