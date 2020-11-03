@@ -19,7 +19,7 @@ class ImportApi(BaseClass):
         if not message:
             audit_data = data.copy()
             audit_data.pop("personal_access_token", None)
-            message = f"Triggering import from GitHub with payload {data}"
+            message = f"Triggering import from GitHub with payload {audit_data}"
         return api.generate_post_request(host, token, "import/github", dumps(data), description=message).json()
 
     def import_from_bitbucket_server(self, host, token, data, message=None):
@@ -37,5 +37,5 @@ class ImportApi(BaseClass):
         if not message:
             audit_data = data.copy()
             audit_data.pop("personal_access_token", None)
-            message = f"Triggering import from BitBucket Server with payload {data}"
+            message = f"Triggering import from BitBucket Server with payload {audit_data}"
         return api.generate_post_request(host, token, "import/bitbucket_server", dumps(data), description=message).json()
