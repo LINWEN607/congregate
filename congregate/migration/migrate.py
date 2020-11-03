@@ -131,8 +131,11 @@ class MigrateClient(BaseClass):
         # Migrate projects
         self.migrate_project_info()
 
-        # Migrate system hooks
-        self.hooks.migrate_system_hooks(dry_run=self.dry_run)
+        # Migrate instance hooks
+        self.hooks.migrate_instance_hooks(dry_run=self.dry_run)
+
+        # Migrate instance clusters
+        self.clusters.migrate_instance_clusters(dry_run=self.dry_run)
 
         # Remove import user from parent group to avoid inheritance (self-managed only)
         if not self.dry_run and self.config.dstn_parent_id and not is_dot_com(self.config.destination_host):
