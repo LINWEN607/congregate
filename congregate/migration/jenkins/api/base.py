@@ -138,4 +138,9 @@ class JenkinsApi(BaseClass):
         return resp
 
     def strip_url(self, url):
+        """
+            Strips out jenkins host URL to return the Jenkins Job
+
+            Example: https://jenkins.example.com/job/test-job would return job/test-job
+        """
         return sub(r'http(s|):\/\/.+(\.|:)(\d+|\w+)(\/|)(jenkins|)\/', "", url)
