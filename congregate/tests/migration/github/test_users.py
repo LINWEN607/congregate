@@ -99,9 +99,6 @@ class UsersTests(unittest.TestCase):
 
         self.assertGreater(len(actual_users), 0)
 
-        print(actual_users)
-        print(expected_users)
-
         for i, _ in enumerate(expected_users):
             self.assertDictEqual(expected_users[i], actual_users[i])
 

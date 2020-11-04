@@ -8,6 +8,7 @@ from congregate.helpers.misc_utils import safe_json_response
 
 
 class JenkinsApi(BaseClass):
+    FOLDER_JOB_CLASSES = ["com.cloudbees.hudson.plugins.folder.Folder", "jenkins.branch.OrganizationFolder"]
     def __init__(self, host, user, token):
         self.host = host
         self.token = token
@@ -64,7 +65,7 @@ class JenkinsApi(BaseClass):
         folder_list = set() if not folder_list else folder_list
         if base_data := self.list_current_level_jobs(jobs_path):
             for job in base_data["jobs"]:
-                if not job["_class"] == "com.cloudbees.hudson.plugins.folder.Folder":
+                if job not in self.FOLDER_JOB_CLASSES:
                     yield job
                 else:
                     if job_path not in folder_list:
