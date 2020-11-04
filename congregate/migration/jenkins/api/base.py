@@ -142,5 +142,8 @@ class JenkinsApi(BaseClass):
             Strips out jenkins host URL to return the Jenkins Job
 
             Example: https://jenkins.example.com/job/test-job would return job/test-job
+
+            Parameters:	url - url of Jenkins job
+            Returns:    (str) containing jenkins job
         """
         return sub(r'http(s|):\/\/.+(\.|:)(\d+|\w+)(\/|)(jenkins|)\/', "", url)

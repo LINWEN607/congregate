@@ -1,6 +1,7 @@
 import unittest
 import warnings
 import pytest
+import responses
 from mock import patch, PropertyMock, MagicMock
 # mongomock is using deprecated logic as of Python 3.3
 # This warning suppression is used so tests can pass
@@ -13,6 +14,7 @@ from congregate.tests.mockapi.github.users import MockUsersApi
 from congregate.migration.github.users import UsersClient
 from congregate.migration.github.api.users import UsersApi
 from congregate.migration.github.meta.github_browser import GitHubBrowser
+from congregate.tests.mockapi.github.scrape import GitHubWebPageScrape
 
 class mock_github_browser():
     def scrape_user_email(self, x):
@@ -226,6 +228,30 @@ class UsersTests(unittest.TestCase):
 
         self.assertEqual(actual_users.sort(
             key=lambda x: x["id"]), expected_users.sort(key=lambda x: x["id"]))
+        
+    @responses.activate
+    def test_get_email_address_no_email(self):
+        scrape = GitHubWebPageScrape()
+        # pylint: disable=no-member
+        responses.add(responses.GET, "http://github.example.com",
+                      body=scrape.auth_token(), status=200, content_type='text/html', match_querystring=True)
+        responses.add(responses.POST, "http://github.example.com/session",
+                      body=None, status=200, content_type='text/html', match_querystring=True)
+        responses.add(responses.GET, "http://github.example.com/stafftools/users/jdoe",
+                      body=scrape.html_snippet(), status=200, content_type='text/html', match_querystring=True)
+        # pylint: enable=no-member
+        browser = GitHubBrowser(
+            "http://github.example.com", "admin", "password")
+        expected = "jdoe@gitlab.com"
+        u = self.mock_users.get_user()[3]
+        u["email"] = None
+        actual = self.users.get_email_address(u, browser)
+        self.assertEqual(expected, actual)
+
+    def test_get_email_address(self):
+        expected = "jdoe@gitlab.com"
+        actual = self.users.get_email_address(self.mock_users.get_user()[3], None)
+        self.assertEqual(expected, actual)
 
     def mock_user_client(self):
         with patch.object(UsersClient, "connect_to_mongo") as mongo_mock:
