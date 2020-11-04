@@ -396,6 +396,7 @@ class ImportExportClient(BaseClass):
             if import_response and import_response.status_code in [200, 202]:
                 self.log.info(
                     "Group {0} (file: {1}) successfully imported".format(full_path, filename))
+                return True
             else:
                 self.log.error("Group {0} (file: {1}) import failed, with status:\n{2}".format(
                     full_path, filename, import_response_text))
@@ -408,6 +409,7 @@ class ImportExportClient(BaseClass):
                 "path": path,
                 "full_path": full_path,
                 "group": group})
+        return False
 
     def attempt_group_import(self, filename, name, path, members):
         resp = None

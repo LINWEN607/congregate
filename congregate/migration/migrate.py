@@ -196,8 +196,10 @@ class MigrateClient(BaseClass):
             group["full_path"])
         if not self.dry_run:
             # Create our tracking issues first.  Just another check incase we fail to create groups.
-            if self.config.reporting['post_migration_issues'] and self.config.reporting['pmi_project_id']:  # implies we have issues to create
-                Reporting(self.config.reporting['pmi_project_id'], project_name=group['name'])
+            # implies we have issues to create
+            if self.config.reporting['post_migration_issues'] and self.config.reporting['pmi_project_id']:
+                Reporting(
+                    self.config.reporting['pmi_project_id'], project_name=group['name'])
             # Wait for parent group to create
             if self.config.dstn_parent_group_path is not None:
                 pnamespace = self.groups.wait_for_parent_group_creation(group)
@@ -598,10 +600,10 @@ class MigrateClient(BaseClass):
             else:
                 self.log.info("{0}Group {1} NOT found on destination, importing..."
                               .format(get_dry_log(self.dry_run), full_path_with_parent_namespace))
-                self.ie.import_group(
+                imported = self.ie.import_group(
                     group, full_path_with_parent_namespace, filename, dry_run=self.dry_run)
                 # In place of checking the import status
-                if not self.dry_run:
+                if not self.dry_run and imported:
                     group = self.ie.wait_for_group_import(
                         full_path_with_parent_namespace)
                     import_id = group.get("id", None)
