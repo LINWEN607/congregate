@@ -111,8 +111,8 @@ class Config(object):
         return self.prop("DESTINATION", "dstn_registry_url")
 
     @property
-    def post_migration_issues(self):
-        return self.prop_list("DESTINATION", "post_migration_issues")
+    def reporting(self):
+        return self.prop_dict("DESTINATION", "reporting")
 
     @property
     def import_user_id(self):

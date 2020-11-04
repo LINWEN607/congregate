@@ -1,10 +1,11 @@
 from requests.exceptions import RequestException
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import is_error_message_present, safe_json_response
+from congregate.helpers.misc_utils import is_error_message_present, safe_json_response, is_dot_com
 from congregate.helpers.migrate_utils import get_dst_path_with_namespace
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.groups import GroupsApi
+from congregate.migration.gitlab.api.instance import InstanceApi
 from congregate.migration.gitlab.projects import ProjectsClient
 
 
@@ -13,10 +14,32 @@ class ClustersClient(BaseClass):
         self.projects_api = ProjectsApi()
         self.projects = ProjectsClient()
         self.groups_api = GroupsApi()
+        self.instance_api = InstanceApi()
         super(ClustersClient, self).__init__()
 
     def migrate_instance_clusters(self, dry_run=True):
-        pass
+        if not is_dot_com(self.config.source_host):
+            try:
+                resp = self.instance_api.get_all_instance_clusters(
+                    self.config.source_host, self.config.source_token)
+                clusters = iter(resp)
+                for c in clusters:
+                    if is_error_message_present(c) or not c:
+                        self.log.error(
+                            f"Failed to fetch source instance clusters ({c})")
+                        break
+                    if not dry_run:
+                        if is_dot_com(self.config.destination_host) and self.config.dstn_parent_id:
+                            self.groups_api.add_group_cluster(
+                                self.config.dstn_parent_id, self.config.destination_host, self.config.destination_token, self.create_data(c, {}))
+                        else:
+                            self.instance_api.add_instance_cluster(
+                                self.config.destination_host, self.config.destination_token, self.create_data(c, {}))
+            except TypeError as te:
+                self.log.error("Instance clusters {0} {1}".format(resp, te))
+            except RequestException as re:
+                self.log.error(
+                    "Failed to migrate instance clusters, with error:\n{}".format(re))
 
     def migrate_group_clusters(self, old_id, new_id, full_path):
         try:

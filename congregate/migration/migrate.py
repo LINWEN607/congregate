@@ -42,7 +42,6 @@ from congregate.migration.gitlab.external_import import ImportClient
 from congregate.migration.jenkins.base import JenkinsClient
 from congregate.migration.teamcity.base import TeamcityClient
 from congregate.migration.bitbucket.repos import ReposClient as BBSReposClient
-from congregate.migration.github.api.repos import ReposApi
 from congregate.migration.github.repos import ReposClient
 
 
@@ -131,8 +130,11 @@ class MigrateClient(BaseClass):
         # Migrate projects
         self.migrate_project_info()
 
-        # Migrate system hooks
-        self.hooks.migrate_system_hooks(dry_run=self.dry_run)
+        # Migrate instance hooks
+        self.hooks.migrate_instance_hooks(dry_run=self.dry_run)
+
+        # Migrate instance clusters
+        self.clusters.migrate_instance_clusters(dry_run=self.dry_run)
 
         # Remove import user from parent group to avoid inheritance (self-managed only)
         if not self.dry_run and self.config.dstn_parent_id and not is_dot_com(self.config.destination_host):
@@ -194,9 +196,8 @@ class MigrateClient(BaseClass):
             group["full_path"])
         if not self.dry_run:
             # Create our tracking issues first.  Just another check incase we fail to create groups.
-            if self.config.post_migration_issues and self.config.pmi_project_id:  # implies we have issues to create
-                Reporting(self.config.pmi_project_id,
-                          project_name=group['name'])
+            if self.config.reporting['post_migration_issues'] and self.config.reporting['pmi_project_id']:  # implies we have issues to create
+                Reporting(self.config.reporting['pmi_project_id'], project_name=group['name'])
             # Wait for parent group to create
             if self.config.dstn_parent_group_path is not None:
                 pnamespace = self.groups.wait_for_parent_group_creation(group)
