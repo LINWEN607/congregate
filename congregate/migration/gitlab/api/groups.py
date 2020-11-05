@@ -321,7 +321,7 @@ class GroupsApi():
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /groups/:id/subgroups
         """
-        return api.list_all(host, token, "groups/%d/subgroups" % gid)
+        return api.list_all(host, token, f"groups/{gid}/subgroups")
 
     def get_all_group_audit_events(self, gid, host, token):
         """
@@ -334,20 +334,20 @@ class GroupsApi():
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /groups/:id/audit_events
         """
-        return api.list_all(host, token, "groups/%d/audit_events" % gid)
+        return api.list_all(host, token, f"groups/{gid}/audit_events")
 
-    def get_all_group_registry_repositories(self, id, host, token):
+    def get_all_group_registry_repositories(self, gid, host, token):
         """
         Get a list of registry repositories in a group
 
         GitLab API Doc: https://docs.gitlab.com/ee/api/container_registry.html#within-a-group
 
-            :param: id: (int) GitLab group ID
+            :param: gid: (int) GitLab group ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /groups/:id/registry/repositories
         """
-        return api.list_all(host, token, "groups/%d/registry/repositories" % id)
+        return api.list_all(host, token, f"groups/{gid}/registry/repositories")
 
     def get_all_group_epics(self, gid, host, token):
         """
@@ -360,7 +360,7 @@ class GroupsApi():
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /groups/:id/epics
         """
-        return api.list_all(host, token, "groups/%d/epics" % gid)
+        return api.list_all(host, token, f"groups/{gid}/epics")
 
     def get_group_epic_notes(self, gid, eid, host, token):
         """
@@ -374,7 +374,7 @@ class GroupsApi():
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /groups/:id/epics/:epic_id/notes
         """
-        return api.list_all(host, token, "groups/%d/epics/%d/notes" % (gid, eid))
+        return api.list_all(host, token, f"groups/{gid}/epics/{eid}/notes")
 
     def get_all_group_custom_attributes(self, gid, host, token):
         """
@@ -387,7 +387,7 @@ class GroupsApi():
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /groups/:id/custom_attributes
         """
-        return api.list_all(host, token, "groups/%d/custom_attributes" % gid)
+        return api.list_all(host, token, f"groups/{gid}/custom_attributes")
 
     def get_all_group_variables(self, gid, host, token):
         """
@@ -400,7 +400,7 @@ class GroupsApi():
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /groups/:id/variables
         """
-        return api.list_all(host, token, "groups/%d/variables" % gid)
+        return api.list_all(host, token, f"groups/{gid}/variables")
 
     def create_group_variable(self, gid, host, token, data, message=None):
         """
@@ -416,7 +416,7 @@ class GroupsApi():
         """
         if not message:
             message = "Creating new variable for group %d" % gid
-        return api.generate_post_request(host, token, "groups/%d/variables" % gid, json.dumps(data), description=message)
+        return api.generate_post_request(host, token, f"groups/{gid}/variables", json.dumps(data), description=message)
 
     def get_all_group_badges(self, gid, host, token):
         """
@@ -429,7 +429,7 @@ class GroupsApi():
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /groups/:id/badges
         """
-        return api.list_all(host, token, "groups/%d/badges" % gid)
+        return api.list_all(host, token, f"groups/{gid}/badges")
 
     def add_group_badge(self, gid, host, token, data, message=None):
         """
@@ -445,7 +445,7 @@ class GroupsApi():
         """
         if not message:
             message = "Adding badge to group"
-        return api.generate_post_request(host, token, "groups/%d/badges" % gid, json.dumps(data), description=message)
+        return api.generate_post_request(host, token, f"groups/{gid}/badges", json.dumps(data), description=message)
 
     def get_all_group_clusters(self, gid, host, token):
         """
