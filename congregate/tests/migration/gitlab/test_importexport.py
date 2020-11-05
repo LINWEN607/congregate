@@ -149,7 +149,8 @@ class ImportExportClientTests(unittest.TestCase):
         type(nok_response).status_code = PropertyMock(return_value=200)
         nok_response.json.return_value = {
             "id": 222,
-            "import_status": "failed"
+            "import_status": "failed",
+            "import_error": "error"
         }
         ok_response = MagicMock()
         type(ok_response).status_code = PropertyMock(return_value=200)

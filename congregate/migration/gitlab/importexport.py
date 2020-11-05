@@ -41,6 +41,8 @@ class ImportExportClient(BaseClass):
 
     SERVER_ERROR = "500 Internal Server Error"
 
+    SAML_MSG = "Validation failed: User is not linked to a SAML account"
+
     # Import rate limit cool-off
     COOL_OFF_MINUTES = 1.1
 
@@ -500,11 +502,15 @@ class ImportExportClient(BaseClass):
                     status_json = safe_json_response(status)
                     if status_json.get("import_status", None) == "finished":
                         self.log.info(
-                            "Project {0} successfully imported to {1}, with import status:\n{2}".format(name, dst_namespace, json_pretty(status_json)))
+                            f"Project {name} successfully imported to {dst_namespace}, with import status:\n{json_pretty(status_json)}")
                         break
                     elif status_json.get("import_status", None) == "failed":
-                        self.log.error("Project {0} import to {1} failed, with import status{2}:\n{3}".format(
-                            name, dst_namespace, " (re-importing)" if retry else "", json_pretty(status_json)))
+                        if self.SAML_MSG in status_json.get("import_error", None):
+                            self.log.error(
+                                f"Project {name} import to {dst_namespace} failed:\n{json_pretty(status_json)}")
+                            return None
+                        self.log.error(
+                            f"Project {name} import to {dst_namespace} failed, with import status{' (re-importing)' if retry else ''}:\n{json_pretty(status_json)}")
                         # Delete and re-import once if the project import status failed, otherwise just delete
                         # Assuming Default deletion adjourned period (Admin -> Settings -> General -> Visibility and access controls) is 0
                         if retry:
@@ -525,8 +531,8 @@ class ImportExportClient(BaseClass):
                         sleep(wait_time)
                     # In case of timeout delete
                     else:
-                        self.log.error("Time limit exceeded waiting for project {0} ({1}) import status (deleting):\n{2}".format(
-                            name, dst_namespace, json_pretty(status_json)))
+                        self.log.error(
+                            f"Time limit exceeded waiting for project {name} ({dst_namespace}) import status (deleting):\n{json_pretty(status_json)}")
                         self.projects_api.delete_project(
                             host, token, import_id)
                         return None
