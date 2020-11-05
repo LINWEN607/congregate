@@ -631,8 +631,9 @@ class MigrateClient(BaseClass):
                 subgroup = json.loads(subgroup)
             self.log.info(
                 f"Searching on destination for sub-group {full_path_with_parent_namespace}")
-            dst_gid = self.groups.find_group_id_by_path(
-                self.config.destination_host, self.config.destination_token, full_path_with_parent_namespace)
+            dst_grp = self.ie.wait_for_group_import(
+                full_path_with_parent_namespace)
+            dst_gid = dst_grp.get("id", None) if dst_grp else None
             if dst_gid:
                 self.log.info(
                     f"{get_dry_log(self.dry_run)}Sub-group {full_path} (ID: {dst_gid}) found on destination")
@@ -640,7 +641,7 @@ class MigrateClient(BaseClass):
                     result[full_path_with_parent_namespace] = self.migrate_single_group_features(
                         src_gid, dst_gid, full_path)
             else:
-                self.log.info(
+                self.log.warning(
                     f"{get_dry_log(self.dry_run)}Sub-group {full_path_with_parent_namespace} NOT found on destination")
         except (RequestException, KeyError, OverflowError) as oe:
             self.log.error(
