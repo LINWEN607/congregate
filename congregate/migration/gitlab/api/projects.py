@@ -112,29 +112,29 @@ class ProjectsApi():
             message = "Creating new deploy key"
         return api.generate_post_request(host, token, f"projects/{pid}/deploy_keys", json.dumps(key), description=message)
 
-    def remove_member(self, id, user_id, host, token, message=None):
+    def remove_member(self, pid, uid, host, token, message=None):
         """
         Removes member from project
 
         GitLab API Doc: https://docs.gitlab.com/ee/api/members.html
 
-            :param: id: (int) GitLab project ID
-            :param: user_id: (int) GitLab user ID
+            :param: pid: (int) GitLab project ID
+            :param: uid: (int) GitLab user ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
             :return: Response object containing a 202 (accepted) or 404 (Member not found) from DELETE /projects/:id/members/:user_id
         """
         if not message:
             message = "Deleting member from project"
-        return api.generate_delete_request(host, token, f"projects/{id}/members/{user_id}", description=message)
+        return api.generate_delete_request(host, token, f"projects/{pid}/members/{uid}", description=message)
 
-    def archive_project(self, host, token, id, message=None):
+    def archive_project(self, host, token, pid, message=None):
         """
         Archives the project if the user is either admin or the project owner of this project
 
         GitLab API Doc: https://docs.gitlab.com/ee/api/projects.html#archive-a-project
 
-            :param: id: (int) GitLab project ID
+            :param: pid: (int) GitLab project ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
             :return: Response object containing the response to POST /projects/:id/archive
@@ -142,7 +142,7 @@ class ProjectsApi():
         """
         if not message:
             message = "Archiving project"
-        return api.generate_post_request(host, token, f"projects/{id}/archive", {}, description=message).json()
+        return api.generate_post_request(host, token, f"projects/{pid}/archive", {}, description=message).json()
 
     def unarchive_project(self, host, token, id, message=None):
         """

@@ -16,20 +16,21 @@ class KeysClient(BaseClass):
 
     def migrate_project_deploy_keys(self, old_id, new_id, name):
         try:
-            resp = self.projects_api.get_all_project_deploy_keys(
-                old_id, self.config.source_host, self.config.source_token)
-            d_keys = iter(resp)
-            self.log.info("Migrating project {} deploy keys".format(name))
+            d_keys = iter(self.projects_api.get_all_project_deploy_keys(
+                old_id, self.config.source_host, self.config.source_token))
             for key in d_keys:
-                if is_error_message_present(key) or not key:
+                if is_error_message_present(key) or not key or key.get("id", None) is None:
                     self.log.error(
-                        "Failed to fetch deploy keys ({0}) for project {1}".format(key, name))
-                    return False
-                # Remove unused key-values before posting key
-                key.pop("id", None)
-                key.pop("created_at", None)
-                self.projects_api.create_new_project_deploy_key(
-                    new_id, self.config.destination_host, self.config.destination_token, key)
+                        f"Failed to fetch deploy key ({key}) for project {name}")
+                else:
+                    # Remove unused key-values before posting key
+                    key.pop("id", None)
+                    key.pop("created_at", None)
+                    resp = self.projects_api.create_new_project_deploy_key(
+                        new_id, self.config.destination_host, self.config.destination_token, key)
+                    if resp.status_code != 201 or is_error_message_present(resp):
+                        self.log.error(
+                            f"Failed to create deploy key {key} for project {name}, with error: {resp} - {resp.text}")
             return True
         except TypeError as te:
             self.log.error(
