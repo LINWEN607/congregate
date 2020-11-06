@@ -80,3 +80,4 @@ class JenkinsBaseTests(unittest.TestCase):
             client.handle_retrieving_jenkins_jobs(job, mongo=mongo)
         actual = [d for d, _ in mongo.stream_collection("jenkins-jenkins-test:8080")]
         self.assertListEqual(expected, actual)
+

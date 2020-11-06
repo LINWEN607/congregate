@@ -147,3 +147,4 @@ class JenkinsApi(BaseClass):
             Returns:    (str) containing jenkins job
         """
         return sub(r'http(s|):\/\/.+(\.|:)(\d+|\w+)(\/|)(jenkins|)\/', "", url)
+

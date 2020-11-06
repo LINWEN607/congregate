@@ -111,3 +111,4 @@ class WaveStageCLI(BaseStageClass):
         if parent_path := self.config.wave_spreadsheet_column_mapping.get("Parent Path"):
             group["full_path"] = self.append_parent_group_full_path(group, wave_row, parent_path)
             group["parent_id"] = self.get_parent_id(wave_row, parent_path)
+

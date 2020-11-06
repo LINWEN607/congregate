@@ -338,6 +338,7 @@ class StageWaveTests(unittest.TestCase):
             self.assertEqual(
                 expected[i].items(), actual[i].items())
 
+    @mock.patch.object(WaveStageCLI, 'get_parent_id')
     @mock.patch.object(WaveStageCLI, 'open_users_file')
     @mock.patch.object(WaveStageCLI, 'open_groups_file')
     @mock.patch('congregate.helpers.conf.Config.wave_spreadsheet_columns', new_callable=mock.PropertyMock)
@@ -346,7 +347,7 @@ class StageWaveTests(unittest.TestCase):
     @mock.patch('congregate.helpers.conf.Config.source_type', new_callable=mock.PropertyMock)
     @mock.patch.object(WaveSpreadsheetHandler, "read_file_as_json")
     @mock.patch.object(BaseStageClass, "open_projects_file")
-    def test_stage_wave_with_parent_group(self, projects, read_as_json, mock_source_type, spreadsheet_path, column_mapping, columns_to_use, mock_groups, mock_users):
+    def test_stage_wave_with_parent_group(self, projects, read_as_json, mock_source_type, spreadsheet_path, column_mapping, columns_to_use, mock_groups, mock_users, mock_parent_id):
         mock_source_type.return_value = "gitlab"
         mock_users.return_value = self.users_api.get_all_users_list()
         mock_groups.return_value = self.groups_api.get_all_groups_list()
@@ -360,6 +361,9 @@ class StageWaveTests(unittest.TestCase):
         }
         columns_to_use.return_value = [
             "Wave name", "Wave date", "Source Url", "Group"]
+
+        mock_parent_id.side_effect = [None, None]
+        
         read_as_json.return_value = [
             {
                 "Wave name": "Wave1",
