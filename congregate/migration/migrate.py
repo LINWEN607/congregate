@@ -631,9 +631,13 @@ class MigrateClient(BaseClass):
                 subgroup = json.loads(subgroup)
             self.log.info(
                 f"Searching on destination for sub-group {full_path_with_parent_namespace}")
-            dst_grp = self.ie.wait_for_group_import(
-                full_path_with_parent_namespace)
-            dst_gid = dst_grp.get("id", None) if dst_grp else None
+            if self.dry_run:
+                dst_gid = self.groups.find_group_id_by_path(
+                    self.config.destination_host, self.config.destination_token, full_path_with_parent_namespace)
+            else:
+                dst_grp = self.ie.wait_for_group_import(
+                    full_path_with_parent_namespace)
+                dst_gid = dst_grp.get("id", None) if dst_grp else None
             if dst_gid:
                 self.log.info(
                     f"{get_dry_log(self.dry_run)}Sub-group {full_path} (ID: {dst_gid}) found on destination")
