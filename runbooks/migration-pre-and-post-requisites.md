@@ -26,6 +26,16 @@ This runbook covers the process of preparing and cleaning up after a migration f
 * [ ] Configure LDAP/SAML (in [identity provider](https://docs.gitlab.com/ee/administration/auth/)) for the Admin user account on the destination instance (as for other users).
   * This is required for the user-group-project mapping to succeed.
   * (gitlab.com) Add user to SAML+SSO identity provider destination parent group.
+    * Another way to add SAML to the migration user profile, that also avoids provisioning a GitLab admin account in an external identity provider, is to spoof the SAML identity. `PUT` the following json body to `https://<hostname>/api/v4/users/<id>` to modify the Admin user:
+
+      ```json
+      {
+        "provider": "group_saml",
+        "extern_uid": "<uid>",
+        "group_id_for_saml": <group_id>
+      }
+      ```
+
 * [ ] Create a one-off PAT for the Admin user account on the source instance.
   * The PAT should have an expiry date of the estimated last day (wave) of the migration.
 * [ ] (gitlab.com) Generate awareness in Support/SRE/Infra teams and identify specific individuals (e.g. with Rails console access) to take tickets from customers during migration. Highlight these people/groups in the migration wave issues.
