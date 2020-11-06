@@ -3,7 +3,8 @@ from time import time
 from requests.exceptions import RequestException
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import get_dry_log, get_timedelta, json_pretty, remove_dupes, is_error_message_present, safe_json_response, add_post_migration_stats
+from congregate.helpers.misc_utils import get_dry_log, get_timedelta, json_pretty, remove_dupes, \
+    is_error_message_present, safe_json_response, add_post_migration_stats, rotate_logs
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.groups import GroupsClient
@@ -157,6 +158,7 @@ class ProjectsClient(BaseClass):
 
     def archive_staged_projects(self, dry_run=True):
         start = time()
+        rotate_logs()
         staged_projects = self.get_staged_projects()
         self.log.info("Project count is: {}".format(len(staged_projects)))
         try:
@@ -169,13 +171,15 @@ class ProjectsClient(BaseClass):
                         self.config.source_host,
                         self.config.source_token,
                         project["id"])
-            add_post_migration_stats(start)
         except RequestException as re:
             self.log.error(
                 "Failed to archive staged projects, with error:\n{}".format(re))
+        finally:
+            add_post_migration_stats(start, log=self.log)
 
     def unarchive_staged_projects(self, dry_run=True):
         start = time()
+        rotate_logs()
         staged_projects = self.get_staged_projects()
         self.log.info("Project count is: {}".format(len(staged_projects)))
         try:
@@ -188,10 +192,11 @@ class ProjectsClient(BaseClass):
                         self.config.source_host,
                         self.config.source_token,
                         project["id"])
-            add_post_migration_stats(start)
         except RequestException as re:
             self.log.error(
                 "Failed to unarchive staged projects, with error:\n{}".format(re))
+        finally:
+            add_post_migration_stats(start, log=self.log)
 
     def find_unimported_projects(self, dry_run=True):
         unimported_projects = []

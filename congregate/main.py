@@ -133,8 +133,9 @@ Commands:
 
 import os
 import subprocess
-from toml import load as load_toml
 from json import dump, dumps
+from time import time
+from toml import load as load_toml
 from docopt import docopt
 
 if __name__ == '__main__':
@@ -144,14 +145,16 @@ if __name__ == '__main__':
             os.path.dirname(os.path.abspath(__file__))))
     from congregate.helpers import conf
     from congregate.helpers.logger import myLogger
-    from congregate.helpers.misc_utils import get_congregate_path, clean_data, obfuscate, spin_up_ui, stitch_json_results, write_results_to_file
+    from congregate.helpers.misc_utils import get_congregate_path, clean_data, obfuscate, \
+        spin_up_ui, stitch_json_results, write_results_to_file, add_post_migration_stats, rotate_logs
 else:
     import sys
     sys.path.append(os.path.dirname(
         os.path.dirname(os.path.abspath(__file__))))
     from congregate.helpers import conf
     from congregate.helpers.logger import myLogger
-    from congregate.helpers.misc_utils import get_congregate_path, clean_data, obfuscate, stitch_json_results, write_results_to_file, spin_up_ui
+    from congregate.helpers.misc_utils import get_congregate_path, clean_data, obfuscate, \
+        stitch_json_results, write_results_to_file, spin_up_ui, add_post_migration_stats, rotate_logs
 
 app_path = get_congregate_path()
 
@@ -216,7 +219,8 @@ def main():
             branches = BranchesClient()
 
             if not config.ssl_verify:
-                log.warning("ssl_verify is set to False. Suppressing downstream SSL warnings. Consider enforcing SSL verification in the future")
+                log.warning(
+                    "ssl_verify is set to False. Suppressing downstream SSL warnings. Consider enforcing SSL verification in the future")
 
             if arguments["list"]:
                 list_source.list_data(processes=PROCESSES, partial=PARTIAL)
@@ -277,9 +281,11 @@ def main():
                     subprocess.call(command.split(" "))
                     command = f"aws configure set aws_secret_access_key {config.s3_secret_key}"
                     subprocess.call(command.split(" "))
-                    log.info("Configured local AWS access and secret keys (~/.aws/credentials)")
+                    log.info(
+                        "Configured local AWS access and secret keys (~/.aws/credentials)")
                 else:
-                    log.warning(f"No AWS configuration. Export location: {config.location}")
+                    log.warning(
+                        f"No AWS configuration. Export location: {config.location}")
             if arguments["remove-blocked-users"]:
                 users.remove_blocked_users(dry_run=DRY_RUN)
             if arguments["update-user-permissions"]:
@@ -336,7 +342,8 @@ def main():
                     dump(unknown_users, f, indent=4)
             if arguments["staged-user-list"]:
                 results = compare.compare_staged_users()
-                log.info(f"Staged user list:\n{dumps(results, indent=4, sort_keys=True)}")
+                log.info(
+                    f"Staged user list:\n{dumps(results, indent=4, sort_keys=True)}")
                 log.info("Length: {}".format({key: len(value)
                                               for key, value in results.items()}))
             if arguments["generate-seed-data"]:
@@ -351,6 +358,8 @@ def main():
             if arguments["clean"]:
                 clean_data(dry_run=DRY_RUN)
             if arguments["generate-diff"]:
+                start = time()
+                rotate_logs()
                 user_diff = UserDiffClient(
                     "/data/user_migration_results.json", staged=STAGED, processes=PROCESSES, rollback=ROLLBACK)
                 user_diff.generate_html_report(
@@ -363,6 +372,7 @@ def main():
                     "/data/project_migration_results.json", staged=STAGED, processes=PROCESSES, rollback=ROLLBACK)
                 project_diff.generate_html_report(
                     project_diff.generate_diff_report(), "/data/project_migration_results.html")
+                add_post_migration_stats(start, log=log)
             if arguments["stitch-results"]:
                 result_type = str(
                     arguments["--result-type"]).rstrip("s") if arguments["--result-type"] else "project"

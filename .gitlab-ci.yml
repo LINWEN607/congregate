@@ -141,7 +141,7 @@ build jenkins seed image:
     - pip install poetry
     - poetry install
     - ./congregate.sh init
-  retry: 2
+  retry: 3
   rules:
     - changes:
         - congregate/**/*
@@ -344,7 +344,7 @@ pages:
     - cd congregate/docs
     - make html
     - mv build/html ../../public
-  retry: 2
+  retry: 3
   artifacts:
     paths:
       - public
