@@ -391,20 +391,32 @@ class ImportExportClient(BaseClass):
         if not dry_run:
             import_response = self.attempt_group_import(
                 filename, name, path, members)
+            wait_time = self.config.importexport_wait
             try:
                 import_response_text = import_response.text
             except AttributeError as e:
                 import_response_text = ""
+            while self.SERVER_ERROR in str(import_response) or self.RATE_LIMIT_MSG in str(import_response):
+                if self.RATE_LIMIT_MSG in str(import_response):
+                    self.log.info(
+                        f"Re-importing group {full_path}, waiting {self.COOL_OFF_MINUTES} minutes due to:\n{import_response}")
+                    sleep(self.COOL_OFF_MINUTES * 60)
+                elif self.SERVER_ERROR in str(import_response):
+                    self.log.info(
+                        f"Re-importing group {full_path} in {wait_time} seconds due to:\n{import_response}")
+                    sleep(wait_time)
+                import_response = self.attempt_group_import(
+                    filename, name, path, members)
             if import_response and import_response.status_code in [200, 202]:
                 self.log.info(
-                    "Group {0} (file: {1}) successfully imported".format(full_path, filename))
+                    f"Group {full_path} (file: {filename}) successfully imported")
                 return True
             else:
-                self.log.error("Group {0} (file: {1}) import failed, with status:\n{2}".format(
-                    full_path, filename, import_response_text))
+                self.log.error(
+                    f"Group {full_path} (file: {filename}) import failed, with status:\n{import_response_text}")
         else:
-            self.log.info("DRY-RUN: Outputing group {0} (file: {1}) migration data to dry_run_group_migration.json"
-                          .format(full_path, filename))
+            self.log.info(
+                f"DRY-RUN: Outputing group {full_path} (file: {filename}) migration data to dry_run_group_migration.json")
             migration_dry_run("group", {
                 "filename": filename,
                 "name": name,
