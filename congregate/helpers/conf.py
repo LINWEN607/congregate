@@ -112,7 +112,7 @@ class Config(object):
 
     @property
     def reporting(self):
-        return self.prop_dict("DESTINATION", "reporting")
+        return self.prop_dict("DESTINATION", "reporting", {})
 
     @property
     def import_user_id(self):

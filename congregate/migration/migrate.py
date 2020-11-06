@@ -196,7 +196,7 @@ class MigrateClient(BaseClass):
             group["full_path"])
         if not self.dry_run:
             # Create our tracking issues first.  Just another check incase we fail to create groups.
-            if self.config.reporting['post_migration_issues'] and self.config.reporting['pmi_project_id']:  # implies we have issues to create
+            if self.config.reporting.get('post_migration_issues') and self.config.reporting.get('pmi_project_id'):  # implies we have issues to create
                 Reporting(self.config.reporting['pmi_project_id'], project_name=group['name'])
             # Wait for parent group to create
             if self.config.dstn_parent_group_path is not None:
