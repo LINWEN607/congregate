@@ -98,7 +98,7 @@ class WaveStageCLI(BaseStageClass):
 
     def append_parent_group_full_path(self, group, wave_row, parent_path):
         if wave_row[parent_path] not in group["full_path"]:
-            return f"{wave_row[parent_path]/group['full_path']}"
+            return f"{wave_row[parent_path]}/{group['full_path']}"
         return group["full_path"]
     
     def get_parent_id(self, wave_row, parent_path):

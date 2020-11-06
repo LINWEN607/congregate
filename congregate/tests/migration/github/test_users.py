@@ -132,7 +132,7 @@ class UsersTests(unittest.TestCase):
             {"login": "ghost", "permissions": 40},
             {"login": "github-enterprise", "permissions": 30},
             {"login": "gitlab", "permissions": 20}
-        ])
+        ], self.users.connect_to_mongo())
 
         expected_users = [
             {
@@ -201,7 +201,7 @@ class UsersTests(unittest.TestCase):
             {"login": "ghost", "permissions": 40},
             {"login": "github-enterprise", "permissions": 30},
             {"login": "gitlab", "permissions": 20}
-        ])
+        ], self.users.connect_to_mongo())
 
         expected_users = [
             {
@@ -245,12 +245,13 @@ class UsersTests(unittest.TestCase):
         expected = "jdoe@gitlab.com"
         u = self.mock_users.get_user()[3]
         u["email"] = None
-        actual = self.users.get_email_address(u, browser)
+        mock_mongo = self.users.connect_to_mongo()
+        actual = self.users.get_email_address(u, browser, mock_mongo)
         self.assertEqual(expected, actual)
 
     def test_get_email_address(self):
         expected = "jdoe@gitlab.com"
-        actual = self.users.get_email_address(self.mock_users.get_user()[3], None)
+        actual = self.users.get_email_address(self.mock_users.get_user()[3], mock_github_browser(), self.users.connect_to_mongo())
         self.assertEqual(expected, actual)
 
     def mock_user_client(self):
