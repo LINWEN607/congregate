@@ -85,6 +85,7 @@ class MigrateClient(BaseClass):
         self.job_template = JobTemplateGenerator()
         self.gh_repos = ReposClient()
 
+
         self.dry_run = dry_run
         self.processes = processes
         self.only_post_migration_info = only_post_migration_info

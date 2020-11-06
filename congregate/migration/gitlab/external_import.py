@@ -1,16 +1,20 @@
 from time import sleep
+from packaging import version
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.misc_utils import migration_dry_run, is_error_message_present, safe_json_response
 from congregate.helpers.migrate_utils import get_dst_path_with_namespace
 from congregate.migration.gitlab.api.external_import import ImportApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
-
+from congregate.migration.gitlab.api.version import VersionApi
 
 class ImportClient(BaseClass):
     def __init__(self):
         super(ImportClient, self).__init__()
         self.ext_import = ImportApi()
         self.projects = ProjectsApi()
+        self.gl_verison = VersionApi()
+        self.dest_version = safe_json_response(self.gl_verison.get_verison(
+            self.config.destination_host, self.config.destination_token))
 
     def trigger_import_from_bb_server(self, project, dry_run=True):
         project_path = project["path_with_namespace"]
@@ -54,9 +58,10 @@ class ImportClient(BaseClass):
         data = {
             "personal_access_token": self.config.source_token,
             "repo_id": project["id"],
-            "target_namespace": f"{project.get('target_namespace', None)}/{namespace_root}" if project.get("target_namespace", None) else namespace_root
+            "target_namespace": f"{project.get('target_namespace', None)}/{project['path_with_namespace']}" if project.get("target_namespace", None) else get_dst_path_with_namespace(project).rsplit("/", 1)[0]           
         }
-
+        if version.parse(self.dest_version["version"]) >= version.parse("13.6"):
+            data["github_hostname"] = self.config.source_host
         if not dry_run:
             try:
                 resp = self.ext_import.import_from_github(
