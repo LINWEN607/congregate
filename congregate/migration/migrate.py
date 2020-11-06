@@ -930,47 +930,45 @@ class MigrateClient(BaseClass):
         is_result = True
         if ci_sources := project.get("ci_sources", None):
             for job in ci_sources.get("TeamCity", []):
+                if build_config := tc_client.teamcity_api.get_build_config(job):
+                    # Create branch for TeamCity configuration
+                    branch_data = {
+                        "branch": "%s-teamcity-config" % job,
+                        "ref": "master"
+                    }
+                    self.projects_api.create_branch(
+                        self.config.destination_host, self.config.destination_token, project_id, data=json.dumps(branch_data))
 
-                # Create branch for TeamCity configuration
-                branch_data = {
-                    "branch": "%s-teamcity-config" % job,
-                    "ref": "master"
-                }
-                self.projects_api.create_branch(
-                    self.config.destination_host, self.config.destination_token, project_id, data=json.dumps(branch_data))
-
-                build_config = tc_client.teamcity_api.get_build_config(job)
-                if build_config:
                     dom = xml.dom.minidom.parseString(build_config.text)
                     build_config = dom.toprettyxml()
 
-                data = {
-                    "branch": "%s-teamcity-config" % job,
-                    "commit_message": "Adding build_config.xml for TeamCity job",
-                    "content": build_config
-                }
-
-                req = self.project_repository_api.create_repo_file(
-                    self.config.destination_host, self.config.destination_token,
-                    project_id, "build_config.xml", data)
-
-                if req.status_code != 200:
-                    is_result = False
-
-                for url in tc_client.teamcity_api.get_maven_settings_file_links(job):
-                    file_name, content = tc_client.teamcity_api.extract_maven_xml(
-                        url)
                     data = {
                         "branch": "%s-teamcity-config" % job,
-                        "commit_message": f"Adding {file_name} for TeamCity job",
-                        "content": content
+                        "commit_message": "Adding build_config.xml for TeamCity job",
+                        "content": build_config
                     }
+
                     req = self.project_repository_api.create_repo_file(
                         self.config.destination_host, self.config.destination_token,
-                        project_id, file_name, data)
+                        project_id, "build_config.xml", data)
 
                     if req.status_code != 200:
                         is_result = False
+
+                    for url in tc_client.teamcity_api.get_maven_settings_file_links(job):
+                        file_name, content = tc_client.teamcity_api.extract_maven_xml(
+                            url)
+                        data = {
+                            "branch": "%s-teamcity-config" % job,
+                            "commit_message": f"Adding {file_name} for TeamCity job",
+                            "content": content
+                        }
+                        req = self.project_repository_api.create_repo_file(
+                            self.config.destination_host, self.config.destination_token,
+                            project_id, file_name, data)
+
+                        if req.status_code != 200:
+                            is_result = False
 
         return is_result
 

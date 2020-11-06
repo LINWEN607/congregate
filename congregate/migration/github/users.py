@@ -36,11 +36,11 @@ class UsersClient(BaseClass):
                 user["login"], single_user))
         else:
             if single_user.get("type") != "Organization":
-                formatted_user = self.format_user(single_user, browser)
+                formatted_user = self.format_user(single_user, browser, mongo)
                 mongo.insert_data("users", formatted_user)
         mongo.close_connection()
 
-    def format_users(self, users):
+    def format_users(self, users, mongo):
         data = []
         for user in users:
             single_user = safe_json_response(
@@ -50,25 +50,27 @@ class UsersClient(BaseClass):
                     user["login"], single_user))
             else:
                 github_browser = self.establish_browser_connection()
-                data.append(self.format_user(single_user, github_browser))
+                data.append(self.format_user(single_user, github_browser, mongo))
                 # When formatting org, team and repo users
                 if user.get("permissions", None):
                     data[-1]["access_level"] = user["permissions"]
         return data
 
-    def format_user(self, single_user, github_browser):
+    def format_user(self, single_user, github_browser, mongo):
         return {
             "id": single_user["id"],
             "username": single_user["login"],
             "name": single_user.get("name", None),
-            "email": self.get_email_address(single_user, github_browser),
+            "email": self.get_email_address(single_user, github_browser, mongo),
             "avatar_url": "" if self.config.source_host in single_user["avatar_url"] else single_user["avatar_url"],
             "state": "blocked" if single_user.get("suspended_at", None) else "active",
             "is_admin": single_user["site_admin"]
         }
     
-    def get_email_address(self, single_user, github_browser):
+    def get_email_address(self, single_user, github_browser, mongo):
         if email := single_user.get("email", None):
+            return email
+        elif email := mongo.get_email_address(single_user["email"]):
             return email
         self.log.warning(f"User email not found. Attempting to scrape for username {single_user['login']}")
         return github_browser.scrape_user_email(single_user["login"])

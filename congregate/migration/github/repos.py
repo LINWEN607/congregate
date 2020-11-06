@@ -69,10 +69,10 @@ class ReposClient(BaseClass):
                 "path_with_namespace": repo["full_name"],
                 "visibility": "private" if repo["private"] else "public",
                 "description": repo.get("description", ""),
-                "members": self.add_repo_members(repo["owner"]["type"], repo["owner"]["login"], repo["name"]) if not org else []
+                "members": self.add_repo_members(repo["owner"]["type"], repo["owner"]["login"], repo["name"], mongo) if not org else []
             }
 
-    def add_repo_members(self, kind, owner, repo):
+    def add_repo_members(self, kind, owner, repo, mongo):
         """
         User repos have a single owner and collaborators (requires a collaborator PAT).
         Org and team repos have collaborators (may require a collaborator PAT).
@@ -95,7 +95,7 @@ class ReposClient(BaseClass):
             else:
                 members[0]["permissions"] = self.REPO_PERMISSIONS_MAP[tuple(user_repo.get(
                     "permissions", None).items())]
-        return self.users.format_users(members)
+        return self.users.format_users(members, mongo)
     
     def list_ci_sources_jenkins(self, repo_url, mongo):
         data = []

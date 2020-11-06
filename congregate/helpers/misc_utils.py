@@ -16,6 +16,7 @@ from re import sub, findall
 from datetime import timedelta, date, datetime
 from types import GeneratorType
 from xmltodict import parse as xmlparse
+from xml.parsers.expat import ExpatError
 from requests import get, head, Response
 
 
@@ -195,8 +196,13 @@ def json_pretty(data):
 
 
 def xml_to_dict(data):
-    return sanitize_booleans_in_dict(xmlparse(data))
+    return sanitize_booleans_in_dict(safe_xml_parse(data))
 
+def safe_xml_parse(data):
+    try:
+        return xmlparse(data)
+    except ExpatError:
+        return {}
 
 def sanitize_booleans_in_dict(d):
     """
