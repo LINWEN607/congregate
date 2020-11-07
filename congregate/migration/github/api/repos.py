@@ -159,5 +159,5 @@ class ReposApi():
 
         GitHub API v3 Doc: https://docs.github.com/en/free-pro-team@latest/rest/reference/repos#get-branch-protection
         """
-        return self.api.generate_v3_get_request(self.host, f"repos/{owner}/{repo}/branches/{branch}/protection").json()
+        return self.api.generate_v3_get_request(self.host, f"repos/{owner}/{repo}/branches/{branch}/protection")
 

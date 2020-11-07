@@ -259,6 +259,9 @@ class MigrateClient(BaseClass):
                         project_id, project)
                     # Added project level MR rules
                     result[project["path_with_namespace"]]["project_level_mr_approvals"] = self.gh_repos.migrate_gh_project_level_mr_approvals(
+                       project_id, project)
+                    # Migrate archive projects
+                    result[project["path_with_namespace"]]["archived"] = self.gh_repos.migrate_archive_repo(
                         project_id, project)
                 else:
                     result = self.ext_import.get_failed_result(project, data={

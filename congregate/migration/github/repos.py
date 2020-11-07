@@ -140,9 +140,13 @@ class ReposClient(BaseClass):
 
     def migrate_gh_project_level_mr_approvals(self, new_id, repo):
         is_result = False
-        default_branch = self.repos_api.get_single_project_protected_branch(repo["namespace"], repo["path"], "master")
-        # migrate configuration
-        conf = self.format_project_level_configuration(new_id, default_branch)
+        conf = {}
+        default_branch = safe_json_response(self.repos_api.get_single_project_protected_branch(repo["namespace"], repo["path"], "master"))
+        if default_branch is not None:
+            # migrate configuration
+            conf = self.format_project_level_configuration(new_id, default_branch)
+        else:
+            return False
         if is_error_message_present(conf) or not conf:
                 self.log.error(
                     "Failed to fetch GitHub Pull request approval configuration ({0}) for project {1}".format(conf, repo["name"]))
@@ -168,9 +172,9 @@ class ReposClient(BaseClass):
                 new_id, self.config.destination_host, self.config.destination_token, rule)
             return True
 
-    def format_project_level_configuration(self, project_id, branch):
+    def format_project_level_configuration(self, new_id, branch):
         return {
-            "id": project_id,
+            "id": new_id,
             "approvals_before_merge": 1,
             "reset_approvals_on_push": True if branch.get("required_pull_request_reviews", None) and branch["required_pull_request_reviews"]["dismissal_restrictions"]["users"] else False,
             "disable_overriding_approvers_per_merge_request": False,
@@ -179,9 +183,9 @@ class ReposClient(BaseClass):
             "require_password_to_approve": False
         }
     
-    def format_project_level_mr_rule(self, project_id, protected_branch_ids, user_ids=None, group_ids=None):
+    def format_project_level_mr_rule(self, new_id, protected_branch_ids, user_ids=None, group_ids=None):
         return{
-            "id": project_id,
+            "id": new_id,
             "name": "gh_pr_rules",
             "rule_type": "regular",
             "user_ids": user_ids,
@@ -190,4 +194,9 @@ class ReposClient(BaseClass):
             "protected_branch_ids": protected_branch_ids
         }
 
-
+    def migrate_archived_repo(self, new_id, repo):
+        gh_repo = safe_json_response(self.repos_api.get_repo(repo["namespace"], repo["path"]))
+        if gh_repo and gh_repo.get("archived", None):
+            self.gl_project_api.archive_project(self.config.destination_host, self.config.destination_token, new_id)
+            return True
+        return False
