@@ -1,13 +1,14 @@
 from re import sub
-import json
 import xml.etree.ElementTree as ET
 import requests
 from requests.auth import HTTPBasicAuth
 from congregate.helpers.decorators import stable_retry
 from congregate.helpers.base_class import BaseClass
+from congregate.helpers.misc_utils import safe_json_response
 
 
 class JenkinsApi(BaseClass):
+    FOLDER_JOB_CLASSES = ["com.cloudbees.hudson.plugins.folder.Folder", "jenkins.branch.OrganizationFolder"]
     def __init__(self, host, user, token):
         self.host = host
         self.token = token
@@ -56,35 +57,31 @@ class JenkinsApi(BaseClass):
         auth = self.get_authorization()
         return requests.get(url, params=params, headers=headers, auth=auth, verify=self.config.ssl_verify)
 
-    def list_all_jobs(self, jobs_path=None, jobs_list=None, folder_list=None):
+    def list_all_jobs(self, jobs_path=None, folder_list=None):
         """
         Returns a list of job dictionaries of all jobs found on the Jenkins server.
         """
-        if jobs_list is None:
-            jobs_list = []
-        if folder_list is None:
-            folder_list = []
+        self.log.info(f"Listing job {jobs_path} from {self.host}")
+        folder_list = set() if not folder_list else folder_list
+        if base_data := self.list_current_level_jobs(jobs_path):
+            for job in base_data["jobs"]:
+                if job not in self.FOLDER_JOB_CLASSES:
+                    yield job
+                else:
+                    if job_path not in folder_list:
+                        folder_list.add(job_path)
+                        job_path = self.strip_url(job["url"]).rstrip('/')
+                        yield from self.list_all_jobs(job_path)
+                    else:
+                        self.log.info("Duplicate folder found.")
+                        raise StopIteration
 
-        base_data = self.list_current_level_jobs(jobs_path)
-        for job in base_data["jobs"]:
-            if not job["_class"] == "com.cloudbees.hudson.plugins.folder.Folder":
-                jobs_list.append(job)
-            else:
-                folder_list.append(job)
-
-        if folder_list:
-            for folder in folder_list:
-                job_path = self.strip_url(folder["url"]).rstrip('/')
-                folder_list.remove(folder)
-                self.list_all_jobs(job_path, jobs_list, folder_list)
-
-        return jobs_list
 
     def list_current_level_jobs(self, job_path):
         """
         Returns a dict of job dictionaries at provided job_path
         """
-        return json.loads(self.generate_get_request("json", job_path, None, "pretty&tree=jobs[name,fullName,url,scm[userRemoteConfigs[url]]]").text)
+        return safe_json_response(self.generate_get_request("json", job_path, None, "pretty&tree=jobs[name,fullName,url,scm[userRemoteConfigs[url]]]"))
 
     def get_job_config_xml(self, job_path):
         """
@@ -141,4 +138,13 @@ class JenkinsApi(BaseClass):
         return resp
 
     def strip_url(self, url):
-        return sub(r'http(s|):\/\/.+(\.|:)(\d+|\w+)(jenkins|)\/', "", url)
+        """
+            Strips out jenkins host URL to return the Jenkins Job
+
+            Example: https://jenkins.example.com/job/test-job would return job/test-job
+
+            Parameters:	url - url of Jenkins job
+            Returns:    (str) containing jenkins job
+        """
+        return sub(r'http(s|):\/\/.+(\.|:)(\d+|\w+)(\/|)(jenkins|)\/', "", url)
+

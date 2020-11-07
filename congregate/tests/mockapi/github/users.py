@@ -166,6 +166,41 @@ class MockUsersApi():
                 "created_at": "2020-07-14T15:10:05Z",
                 "updated_at": "2020-07-30T12:38:29Z",
                 "suspended_at": None
+            },
+            {
+                "login": "jdoe",
+                "id": 4,
+                "node_id": "MDQ6VXNlcjM=",
+                "avatar_url": "https://github.gitlab-proserv.net/avatars/u/3?",
+                "gravatar_id": "",
+                "url": "https://github.gitlab-proserv.net/api/v3/users/gitlab",
+                "html_url": "https://github.gitlab-proserv.net/gitlab",
+                "followers_url": "https://github.gitlab-proserv.net/api/v3/users/gitlab/followers",
+                "following_url": "https://github.gitlab-proserv.net/api/v3/users/gitlab/following{/other_user}",
+                "gists_url": "https://github.gitlab-proserv.net/api/v3/users/gitlab/gists{/gist_id}",
+                "starred_url": "https://github.gitlab-proserv.net/api/v3/users/gitlab/starred{/owner}{/repo}",
+                "subscriptions_url": "https://github.gitlab-proserv.net/api/v3/users/gitlab/subscriptions",
+                "organizations_url": "https://github.gitlab-proserv.net/api/v3/users/gitlab/orgs",
+                "repos_url": "https://github.gitlab-proserv.net/api/v3/users/gitlab/repos",
+                "events_url": "https://github.gitlab-proserv.net/api/v3/users/gitlab/events{/privacy}",
+                "received_events_url": "https://github.gitlab-proserv.net/api/v3/users/gitlab/received_events",
+                "type": "User",
+                "site_admin": True,
+                "name": None,
+                "company": None,
+                "blog": "",
+                "location": None,
+                "email": "jdoe@gitlab.com",
+                "hireable": None,
+                "bio": None,
+                "public_repos": 1,
+                "public_gists": 0,
+                "followers": 0,
+                "following": 0,
+                "created_at": "2020-07-14T15:10:05Z",
+                "updated_at": "2020-07-30T12:38:29Z",
+                "suspended_at": None
             }
 
         ]
+

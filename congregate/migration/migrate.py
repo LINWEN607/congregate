@@ -53,6 +53,7 @@ class MigrateClient(BaseClass):
         only_post_migration_info=False,
         start=time(),
         skip_users=False,
+        skip_adding_members=False,
         hard_delete=False,
         skip_groups=False,
         skip_projects=False,
@@ -90,6 +91,7 @@ class MigrateClient(BaseClass):
         self.only_post_migration_info = only_post_migration_info
         self.start = start
         self.skip_users = skip_users
+        self.skip_adding_members = skip_adding_members
         self.hard_delete = hard_delete
         self.skip_groups = skip_groups
         self.skip_projects = skip_projects
@@ -156,8 +158,8 @@ class MigrateClient(BaseClass):
                 f"{dry_log}Migrating GitHub orgs/teams to GitLab groups/sub-groups")
             results = start_multi_process(
                 self.migrate_github_group, staged_groups, processes=self.processes)
-            self.are_results(results, "group", "import")
 
+            self.are_results(results, "group", "import")
             results.append(get_results(results))
             self.log.info(
                 f"### {dry_log}Group import results ###\n{json_pretty(results)}")
@@ -180,7 +182,6 @@ class MigrateClient(BaseClass):
                 self.import_github_project, staged_projects, processes=self.processes)
 
             self.are_results(import_results, "project", "import")
-
             # append Total : Successful count of project imports
             import_results.append(get_results(import_results))
             self.log.info(
@@ -197,9 +198,9 @@ class MigrateClient(BaseClass):
         if not self.dry_run:
             # Create our tracking issues first.  Just another check incase we fail to create groups.
             # implies we have issues to create
-            if self.config.reporting['post_migration_issues'] and self.config.reporting['pmi_project_id']:
+            if self.config.reporting and self.config.reporting.get("post_migration_issues", None) and self.config.reporting.get("pmi_project_id", None):
                 Reporting(
-                    self.config.reporting['pmi_project_id'], project_name=group['name'])
+                    self.config.reporting["pmi_project_id"], project_name=group["name"])
             # Wait for parent group to create
             if self.config.dstn_parent_group_path is not None:
                 pnamespace = self.groups.wait_for_parent_group_creation(group)
@@ -219,6 +220,12 @@ class MigrateClient(BaseClass):
                     result["members"] = self.groups.add_members_to_destination_group(
                         self.config.destination_host, self.config.destination_token, group_id, members)
                     self.groups.remove_import_user(group_id)
+                    if self.skip_adding_members:
+                        for member in members:
+                            resp = self.groups_api.remove_member(
+                                group_id, member["user_id"], self.config.destination_host, self.config.destination_token)
+                            if resp and resp.status_code == 204:
+                                result["members"][member["email"]] = "removed"
         return {
             group["full_path"]: result
         }
@@ -261,6 +268,17 @@ class MigrateClient(BaseClass):
                     # Added project level MR rules
                     result[project["path_with_namespace"]]["project_level_mr_approvals"] = self.gh_repos.migrate_gh_project_level_mr_approvals(
                         project_id, project)
+                    # Migrate archived projects
+                    result[project["path_with_namespace"]]["archived"] = self.gh_repos.migrate_archived_repo(
+                        project_id, project)
+                    # Removing members if skip_adding_members is Ture
+                    if self.skip_adding_members:
+                        for member in members:
+                            resp = self.projects_api.remove_member(
+                                project_id, member["user_id"], self.config.destination_host, self.config.destination_token)
+                            if resp and resp.status_code == 204:
+                                result[project["path_with_namespace"]
+                                       ]["members"]["email"] = "removed"
                 else:
                     result = self.ext_import.get_failed_result(project, data={
                         "error": "Import time limit exceeded. Unable to execute post migration phase"
@@ -937,47 +955,45 @@ class MigrateClient(BaseClass):
         is_result = True
         if ci_sources := project.get("ci_sources", None):
             for job in ci_sources.get("TeamCity", []):
+                if build_config := tc_client.teamcity_api.get_build_config(job):
+                    # Create branch for TeamCity configuration
+                    branch_data = {
+                        "branch": "%s-teamcity-config" % job,
+                        "ref": "master"
+                    }
+                    self.projects_api.create_branch(
+                        self.config.destination_host, self.config.destination_token, project_id, data=json.dumps(branch_data))
 
-                # Create branch for TeamCity configuration
-                branch_data = {
-                    "branch": "%s-teamcity-config" % job,
-                    "ref": "master"
-                }
-                self.projects_api.create_branch(
-                    self.config.destination_host, self.config.destination_token, project_id, data=json.dumps(branch_data))
-
-                build_config = tc_client.teamcity_api.get_build_config(job)
-                if build_config:
                     dom = xml.dom.minidom.parseString(build_config.text)
                     build_config = dom.toprettyxml()
 
-                data = {
-                    "branch": "%s-teamcity-config" % job,
-                    "commit_message": "Adding build_config.xml for TeamCity job",
-                    "content": build_config
-                }
-
-                req = self.project_repository_api.create_repo_file(
-                    self.config.destination_host, self.config.destination_token,
-                    project_id, "build_config.xml", data)
-
-                if req.status_code != 200:
-                    is_result = False
-
-                for url in tc_client.teamcity_api.get_maven_settings_file_links(job):
-                    file_name, content = tc_client.teamcity_api.extract_maven_xml(
-                        url)
                     data = {
                         "branch": "%s-teamcity-config" % job,
-                        "commit_message": f"Adding {file_name} for TeamCity job",
-                        "content": content
+                        "commit_message": "Adding build_config.xml for TeamCity job",
+                        "content": build_config
                     }
+
                     req = self.project_repository_api.create_repo_file(
                         self.config.destination_host, self.config.destination_token,
-                        project_id, file_name, data)
+                        project_id, "build_config.xml", data)
 
                     if req.status_code != 200:
                         is_result = False
+
+                    for url in tc_client.teamcity_api.get_maven_settings_file_links(job):
+                        file_name, content = tc_client.teamcity_api.extract_maven_xml(
+                            url)
+                        data = {
+                            "branch": "%s-teamcity-config" % job,
+                            "commit_message": f"Adding {file_name} for TeamCity job",
+                            "content": content
+                        }
+                        req = self.project_repository_api.create_repo_file(
+                            self.config.destination_host, self.config.destination_token,
+                            project_id, file_name, data)
+
+                        if req.status_code != 200:
+                            is_result = False
 
         return is_result
 

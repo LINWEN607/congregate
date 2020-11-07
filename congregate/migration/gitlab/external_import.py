@@ -1,9 +1,11 @@
 from time import sleep
+from packaging import version
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.misc_utils import migration_dry_run, is_error_message_present, safe_json_response
 from congregate.helpers.migrate_utils import get_dst_path_with_namespace
 from congregate.migration.gitlab.api.external_import import ImportApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
+from congregate.migration.gitlab.api.instance import InstanceApi
 
 
 class ImportClient(BaseClass):
@@ -11,6 +13,7 @@ class ImportClient(BaseClass):
         super(ImportClient, self).__init__()
         self.ext_import = ImportApi()
         self.projects = ProjectsApi()
+        self.instance = InstanceApi()
 
     def trigger_import_from_bb_server(self, project, dry_run=True):
         project_path = project["path_with_namespace"]
@@ -55,7 +58,10 @@ class ImportClient(BaseClass):
             "repo_id": project["id"],
             "target_namespace": f"{project.get('target_namespace', None)}/{project['path_with_namespace']}" if project.get("target_namespace", None) else get_dst_path_with_namespace(project).rsplit("/", 1)[0]
         }
-
+        dest_version = safe_json_response(self.instance.get_version(
+            self.config.destination_host, self.config.destination_token))
+        if dest_version and version.parse(dest_version["version"]) >= version.parse("13.6"):
+            data["github_hostname"] = self.config.source_host
         if not dry_run:
             try:
                 resp = self.ext_import.import_from_github(
@@ -72,7 +78,7 @@ class ImportClient(BaseClass):
             data.pop("personal_access_token", None)
             migration_dry_run("project", data)
             return self.get_failed_result(project, data)
-    
+
     def wait_for_project_to_import(self, full_path):
         total_time = 0
         wait_time = self.config.importexport_wait
@@ -84,27 +90,31 @@ class ImportClient(BaseClass):
             if project_statistics and project_statistics.get("data", None) is not None:
                 if project_statistics["data"].get("project", None) is not None:
                     if project_statistics["data"]["project"]["importStatus"] == "finished":
-                        self.log.info(f"Import Status is marked as finished for {full_path}. Import is complete")
+                        self.log.info(
+                            f"Import Status is marked as finished for {full_path}. Import is complete")
                         success = True
                         break
                     stats = project_statistics["data"]["project"]["statistics"]
                     if stats["commitCount"] > 0:
-                        self.log.info(f"Git commits have been found for {full_path}. Import is complete")
+                        self.log.info(
+                            f"Git commits have been found for {full_path}. Import is complete")
                         success = True
                         break
                     if (stats["storageSize"] > 0) or (stats['repositorySize'] > 0):
-                        self.log.info(f"Project storage is greater than 0 for {full_path}. Import is complete")
+                        self.log.info(
+                            f"Project storage is greater than 0 for {full_path}. Import is complete")
                         success = True
                         break
             if total_time >= max_wait_time:
-                self.log.error(f"Max import time exceeded for {full_path}. Skipping post-migration phase")
+                self.log.error(
+                    f"Max import time exceeded for {full_path}. Skipping post-migration phase")
                 break
             self.log.info(f"Waiting for project {full_path} to import")
             total_time += wait_time
-            self.log.info(f"Total time: {total_time}. Max time: {max_wait_time}")
+            self.log.info(
+                f"Total time: {total_time}. Max time: {max_wait_time}")
             sleep(wait_time)
         return success
-
 
     def get_project_repo_from_full_path(self, full_path):
         split = full_path.split("/")

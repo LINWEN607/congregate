@@ -67,3 +67,14 @@ class InstanceApi():
             :return: Response object containing the response to GET /license
         """
         return api.generate_get_request(host, token, "license")
+
+    def get_version(self, host, token):
+        """
+        Version API
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/version.html
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :return: JSON response containing version information from GET /version
+        """
+        return api.generate_get_request(host, token, "version")

@@ -23,6 +23,7 @@ class JenkinsClient(BaseClass):
         jenkins_host = (self.jenkins_api.host).split("//")[-1]
         for scm_url in scm_url_list:
             job_dict = {'name': job_path, 'url': scm_url}
+            self.log.info(f"Inserting job {job_dict} from {jenkins_host} into mongo")
             mongo.insert_data(f"jenkins-{jenkins_host}", job_dict)
         mongo.close_connection()
 

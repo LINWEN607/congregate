@@ -75,7 +75,7 @@ class OrgsClient(BaseClass):
                 formatted_repo.pop("_id")
                 formatted_repo["members"] = []
                 org_repos.append(formatted_repo)
-            members = self.add_org_members([], org)
+            members = self.add_org_members([], org, mongo)
             mongo.insert_data("groups", {
                 "name": org["login"],
                 "id": org["id"],
@@ -116,7 +116,7 @@ class OrgsClient(BaseClass):
                     # parent group
                     "parent_id": team["parent"]["id"] if team.get("parent", None) else org["id"],
                     "auto_devops_enabled": False,
-                    "members": self.add_team_members([], team),
+                    "members": self.add_team_members([], team, mongo),
                     "projects": team_repos
                 })
 
@@ -142,17 +142,17 @@ class OrgsClient(BaseClass):
             self.log.error("Unable to find")
             return None
 
-    def add_org_members(self, members, org):
+    def add_org_members(self, members, org, mongo):
         permissions = self.ORG_PERMISSIONS_MAP[org.get(
             "default_repository_permission", None)]
         for m in self.orgs_api.get_all_org_members(org["login"]):
             m["permissions"] = permissions
             members.append(m)
-        return self.users.format_users(members)
+        return self.users.format_users(members, mongo)
 
-    def add_team_members(self, members, team):
+    def add_team_members(self, members, team, mongo):
         permissions = self.TEAM_PERMISSIONS_MAP[team.get("permission", None)]
         for m in self.teams_api.get_team_members(team["id"]):
             m["permissions"] = permissions
             members.append(m)
-        return self.users.format_users(members)
+        return self.users.format_users(members, mongo)

@@ -17,7 +17,7 @@ RUN mkdir -p /data/db
 
 # Installing some basic utilities and updating apt
 RUN yum update -y && \
-    yum install -y less vim jq curl mongodb-org-4.4.1 mongodb-org-server-4.4.1 mongodb-org-shell-4.4.1 mongodb-org-mongos-4.4.1 mongodb-org-tools-4.4.1 python3.8 && \
+    yum install -y less vim jq curl git mongodb-org-4.4.1 mongodb-org-server-4.4.1 mongodb-org-shell-4.4.1 mongodb-org-mongos-4.4.1 mongodb-org-tools-4.4.1 python3.8 && \
     curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
     python3 get-pip.py
 
@@ -29,6 +29,7 @@ RUN echo "alias python3='python3.8'" >> ~/.bashrc
 RUN cd /opt/congregate && \
     chmod +x congregate && \
     cp congregate.sh /usr/local/bin/congregate && \
+    git init && \
     pip install poetry
 
 # RUN export PATH=$PATH:$HOME/.poetry/bin/poetry

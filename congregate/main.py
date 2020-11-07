@@ -9,7 +9,7 @@ Usage:
     congregate stage-projects <projects>... [--skip-users] [--commit]
     congregate stage-groups <groups>... [--skip-users] [--commit]
     congregate stage-wave <wave> [--commit]
-    congregate migrate [--processes=<n>] [--skip-users] [--skip-group-export] [--skip-group-import] [--skip-project-export] [--skip-project-import] [--only-post-migration-info] [--commit]
+    congregate migrate [--processes=<n>] [--skip-users] [--skip-adding-members] [--skip-group-export] [--skip-group-import] [--skip-project-export] [--skip-project-import] [--only-post-migration-info] [--commit]
     congregate rollback [--hard-delete] [--skip-users] [--skip-groups] [--skip-projects] [--commit]
     congregate ui
     congregate do-all [--commit]
@@ -60,6 +60,7 @@ Arguments:
     processes                               Set number of processes to run in parallel.
     commit                                  Disable the dry-run and perform the full migration with all reads/writes.
     skip-users                              Stage: Skip staging users; Migrate: Skip migrating users; Rollback: Remove only groups and projects.
+    skip-adding-members                     Skip adding members from GitHub as source instance
     hard-delete                             Remove user contributions and solely owned groups.
     skip-groups                             Rollback: Remove only users and projects.
     skip-group-export                       Skip exporting groups from source instance.
@@ -167,6 +168,7 @@ def main():
         ROLLBACK = True if arguments["--rollback"] else False
         PROCESSES = arguments["--processes"] if arguments["--processes"] else None
         SKIP_USERS = True if arguments["--skip-users"] else False
+        SKIP_ADDING_MEMBERS = arguments["--skip-adding-members"]
         ONLY_POST_MIGRATION_INFO = True if arguments["--only-post-migration-info"] else False
         PARTIAL = True if arguments["--partial"] else False
 
@@ -245,6 +247,7 @@ def main():
                     processes=PROCESSES,
                     dry_run=DRY_RUN,
                     skip_users=SKIP_USERS,
+                    skip_adding_members = SKIP_ADDING_MEMBERS,
                     skip_group_export=True if arguments["--skip-group-export"] or ONLY_POST_MIGRATION_INFO else False,
                     skip_group_import=True if arguments["--skip-group-import"] else False,
                     skip_project_export=True if arguments["--skip-project-export"] or ONLY_POST_MIGRATION_INFO else False,

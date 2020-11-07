@@ -60,3 +60,7 @@ class MongoConnector(BaseClass):
     
     def wildcard_collection_query(self, pattern):
         return [c for c in self.db.list_collection_names() if pattern in c]
+
+    def find_user_email(self, username):
+        if query := self.db.users.find_one({ "username": username }):
+            return query["email"]
