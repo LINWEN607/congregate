@@ -1,7 +1,7 @@
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.mdbc import MongoConnector
 from congregate.helpers.processes import start_multi_process_stream
-from congregate.helpers.misc_utils import safe_json_response, is_error_message_present, read_json_file_into_object
+from congregate.helpers.misc_utils import safe_json_response, is_error_message_present
 from congregate.migration.github.api.repos import ReposApi
 from congregate.migration.github.users import UsersClient
 from congregate.migration.github.api.users import UsersApi
@@ -20,23 +20,22 @@ class ReposClient(BaseClass):
     def __init__(self):
         super(ReposClient, self).__init__()
         self.repos_api = ReposApi(
-                                  self.config.source_host, 
-                                  self.config.source_token)
+            self.config.source_host, self.config.source_token)
         self.users = UsersClient()
         self.users_api = UsersApi(
-                                  self.config.source_host, 
-                                  self.config.source_token) 
+            self.config.source_host, self.config.source_token)
         self.gl_project_api = ProjectsApi()
 
     def retrieve_repo_info(self, processes=None):
         """
         List and transform all GitHub public repo to GitLab project metadata
         """
-        start_multi_process_stream(self.handle_retrieving_repos, self.repos_api.get_all_public_repos(), processes=processes)
+        start_multi_process_stream(
+            self.handle_retrieving_repos, self.repos_api.get_all_public_repos(), processes=processes)
 
     def connect_to_mongo(self):
         return MongoConnector()
-    
+
     def handle_retrieving_repos(self, repo, mongo=None):
         if not mongo:
             mongo = self.connect_to_mongo()
@@ -51,26 +50,26 @@ class ReposClient(BaseClass):
         """
         repo_url = repo["html_url"] + ".git"
         return {
-                "id": repo["id"],
-                "path": repo["name"],
-                "name": repo["name"],
-                "ci_sources": {
-                    "Jenkins": self.list_ci_sources_jenkins(repo_url, mongo),
-                    "TeamCity": self.list_ci_sources_teamcity(repo_url, mongo)
-                },
-                "namespace": {
-                    "id": repo["owner"]["id"],
-                    "path": repo["owner"]["login"],
-                    "name": repo["owner"]["login"],
-                    "kind": "group" if repo["owner"]["type"] in self.GROUP_TYPE else "user",
-                    "full_path": repo["owner"]["login"]
-                },
-                "http_url_to_repo": repo_url,
-                "path_with_namespace": repo["full_name"],
-                "visibility": "private" if repo["private"] else "public",
-                "description": repo.get("description", ""),
-                "members": self.add_repo_members(repo["owner"]["type"], repo["owner"]["login"], repo["name"], mongo) if not org else []
-            }
+            "id": repo["id"],
+            "path": repo["name"],
+            "name": repo["name"],
+            "ci_sources": {
+                "Jenkins": self.list_ci_sources_jenkins(repo_url, mongo),
+                "TeamCity": self.list_ci_sources_teamcity(repo_url, mongo)
+            },
+            "namespace": {
+                "id": repo["owner"]["id"],
+                "path": repo["owner"]["login"],
+                "name": repo["owner"]["login"],
+                "kind": "group" if repo["owner"]["type"] in self.GROUP_TYPE else "user",
+                "full_path": repo["owner"]["login"]
+            },
+            "http_url_to_repo": repo_url,
+            "path_with_namespace": repo["full_name"],
+            "visibility": "private" if repo["private"] else "public",
+            "description": repo.get("description", ""),
+            "members": self.add_repo_members(repo["owner"]["type"], repo["owner"]["login"], repo["name"], mongo) if not org else []
+        }
 
     def add_repo_members(self, kind, owner, repo, mongo):
         """
@@ -96,7 +95,7 @@ class ReposClient(BaseClass):
                 members[0]["permissions"] = self.REPO_PERMISSIONS_MAP[tuple(user_repo.get(
                     "permissions", None).items())]
         return self.users.format_users(members, mongo)
-    
+
     def list_ci_sources_jenkins(self, repo_url, mongo):
         data = []
         for c in mongo.wildcard_collection_query("jenkins"):
@@ -113,44 +112,47 @@ class ReposClient(BaseClass):
 
     def migrate_gh_project_protected_branch(self, new_id, repo):
         is_result = False
-        branches = self.repos_api.get_list_branches(repo["namespace"], repo["path"])
+        branches = self.repos_api.get_list_branches(
+            repo["namespace"], repo["path"])
         for branch in branches:
             if branch["protected"]:
-                single_branch = self.format_protected_branch(new_id, branch["name"])
+                single_branch = self.format_protected_branch(
+                    new_id, branch["name"])
                 r = self.gl_project_api.protect_repository_branches(
                     new_id, branch["name"], self.config.destination_host, self.config.destination_token, single_branch)
                 if r.status_code != 201:
                     # Unprotect the protected branch
-                    self.gl_project_api.unprotect_repository_branches(new_id, branch["name"], self.config.destination_host, self.config.destination_token)
+                    self.gl_project_api.unprotect_repository_branches(
+                        new_id, branch["name"], self.config.destination_host, self.config.destination_token)
                     # Added protected branch
                     self.gl_project_api.protect_repository_branches(
-                    new_id, branch["name"], self.config.destination_host, self.config.destination_token, single_branch)
+                        new_id, branch["name"], self.config.destination_host, self.config.destination_token, single_branch)
                 is_result = True
         return is_result
 
-
-    def format_protected_branch(self, repo_id, branch_name, user_id_pl=None, team_id_pl=None, user_id_ml=None, group_id_ml=None):
+    def format_protected_branch(self, repo_id, branch_name):
         return {
             "id": repo_id,
             "name": branch_name,
             "allowed_to_push": [{"access_level": 0}],
-            "code_owner_approval_required": False 
+            "code_owner_approval_required": False
         }
-
 
     def migrate_gh_project_level_mr_approvals(self, new_id, repo):
         is_result = False
         conf = {}
-        default_branch = safe_json_response(self.repos_api.get_single_project_protected_branch(repo["namespace"], repo["path"], "master"))
+        default_branch = safe_json_response(self.repos_api.get_single_project_protected_branch(
+            repo["namespace"], repo["path"], "master"))
         if default_branch is not None:
             # migrate configuration
-            conf = self.format_project_level_configuration(new_id, default_branch)
+            conf = self.format_project_level_configuration(
+                new_id, default_branch)
         else:
             return False
         if is_error_message_present(conf) or not conf:
-                self.log.error(
-                    "Failed to fetch GitHub Pull request approval configuration ({0}) for project {1}".format(conf, repo["name"]))
-                return False
+            self.log.error(
+                "Failed to fetch GitHub Pull request approval configuration ({0}) for project {1}".format(conf, repo["name"]))
+            return False
         else:
             self.log.info(
                 "Migrating project-level MR approval configuration for {0} (New ID: {1}) to GitLab".format(repo["name"], new_id))
@@ -158,7 +160,8 @@ class ReposClient(BaseClass):
                 new_id, self.config.destination_host, self.config.destination_token, conf)
         # migrate approval rules
         protected_branch_ids = []
-        gl_projected_branches = self.gl_project_api.get_all_project_protected_branches(new_id, self.config.destination_host, self.config.destination_token)
+        gl_projected_branches = self.gl_project_api.get_all_project_protected_branches(
+            new_id, self.config.destination_host, self.config.destination_token)
         for branch in gl_projected_branches:
             protected_branch_ids.append(branch["id"])
 
@@ -182,7 +185,7 @@ class ReposClient(BaseClass):
             "merge_requests_disable_committers_approval": False,
             "require_password_to_approve": False
         }
-    
+
     def format_project_level_mr_rule(self, new_id, protected_branch_ids, user_ids=None, group_ids=None):
         return{
             "id": new_id,
@@ -195,8 +198,10 @@ class ReposClient(BaseClass):
         }
 
     def migrate_archived_repo(self, new_id, repo):
-        gh_repo = safe_json_response(self.repos_api.get_repo(repo["namespace"], repo["path"]))
+        gh_repo = safe_json_response(
+            self.repos_api.get_repo(repo["namespace"], repo["path"]))
         if gh_repo and gh_repo.get("archived", None):
-            self.gl_project_api.archive_project(self.config.destination_host, self.config.destination_token, new_id)
+            self.gl_project_api.archive_project(
+                self.config.destination_host, self.config.destination_token, new_id)
             return True
         return False

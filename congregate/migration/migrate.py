@@ -53,6 +53,7 @@ class MigrateClient(BaseClass):
         only_post_migration_info=False,
         start=time(),
         skip_users=False,
+        skip_adding_members=False,
         hard_delete=False,
         skip_groups=False,
         skip_projects=False,
@@ -85,12 +86,12 @@ class MigrateClient(BaseClass):
         self.job_template = JobTemplateGenerator()
         self.gh_repos = ReposClient()
 
-
         self.dry_run = dry_run
         self.processes = processes
         self.only_post_migration_info = only_post_migration_info
         self.start = start
         self.skip_users = skip_users
+        self.skip_adding_members = skip_adding_members
         self.hard_delete = hard_delete
         self.skip_groups = skip_groups
         self.skip_projects = skip_projects
@@ -157,8 +158,8 @@ class MigrateClient(BaseClass):
                 f"{dry_log}Migrating GitHub orgs/teams to GitLab groups/sub-groups")
             results = start_multi_process(
                 self.migrate_github_group, staged_groups, processes=self.processes)
-            self.are_results(results, "group", "import")
 
+            self.are_results(results, "group", "import")
             results.append(get_results(results))
             self.log.info(
                 f"### {dry_log}Group import results ###\n{json_pretty(results)}")
@@ -181,7 +182,6 @@ class MigrateClient(BaseClass):
                 self.import_github_project, staged_projects, processes=self.processes)
 
             self.are_results(import_results, "project", "import")
-
             # append Total : Successful count of project imports
             import_results.append(get_results(import_results))
             self.log.info(
@@ -197,8 +197,10 @@ class MigrateClient(BaseClass):
             group["full_path"])
         if not self.dry_run:
             # Create our tracking issues first.  Just another check incase we fail to create groups.
-            if self.config.reporting.get('post_migration_issues') and self.config.reporting.get('pmi_project_id'):  # implies we have issues to create
-                Reporting(self.config.reporting['pmi_project_id'], project_name=group['name'])
+            # implies we have issues to create
+            if self.config.reporting.get('post_migration_issues') and self.config.reporting.get('pmi_project_id'):
+                Reporting(
+                    self.config.reporting['pmi_project_id'], project_name=group['name'])
             # Wait for parent group to create
             if self.config.dstn_parent_group_path is not None:
                 pnamespace = self.groups.wait_for_parent_group_creation(group)
@@ -218,6 +220,12 @@ class MigrateClient(BaseClass):
                     result["members"] = self.groups.add_members_to_destination_group(
                         self.config.destination_host, self.config.destination_token, group_id, members)
                     self.groups.remove_import_user(group_id)
+                    if self.skip_adding_members:
+                        for member in members:
+                            resp = self.groups_api.remove_member(
+                                group_id, member["user_id"], self.config.destination_host, self.config.destination_token)
+                            if resp and resp.status_code == 204:
+                                result["members"][member["email"]] = "removed"
         return {
             group["full_path"]: result
         }
@@ -259,10 +267,18 @@ class MigrateClient(BaseClass):
                         project_id, project)
                     # Added project level MR rules
                     result[project["path_with_namespace"]]["project_level_mr_approvals"] = self.gh_repos.migrate_gh_project_level_mr_approvals(
-                       project_id, project)
-                    # Migrate archive projects
-                    result[project["path_with_namespace"]]["archived"] = self.gh_repos.migrate_archive_repo(
                         project_id, project)
+                    # Migrate archived projects
+                    result[project["path_with_namespace"]]["archived"] = self.gh_repos.migrate_archived_repo(
+                        project_id, project)
+                    # Removing members if skip_adding_members is Ture
+                    if self.skip_adding_members:
+                        for member in members:
+                            resp = self.projects_api.remove_member(
+                                project_id, member["user_id"], self.config.destination_host, self.config.destination_token)
+                            if resp and resp.status_code == 204:
+                                result[project["path_with_namespace"]
+                                       ]["members"]["email"] = "removed"
                 else:
                     result = self.ext_import.get_failed_result(project, data={
                         "error": "Import time limit exceeded. Unable to execute post migration phase"
