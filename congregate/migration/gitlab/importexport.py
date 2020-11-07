@@ -23,24 +23,6 @@ from congregate.helpers.migrate_utils import get_project_namespace, is_user_proj
 
 
 class ImportExportClient(BaseClass):
-    # Group or user namespace does not exist
-    NOT_FOUND_MSG = "404 Namespace Not Found"
-
-    # Default Import rate limit, 6 per minute per user
-    RATE_LIMIT_MSG = "This endpoint has been requested too many times"
-
-    # Default Maximum import size, 50Mb
-    SIZE_LIMIT_MSG = "Request Entity Too Large"
-
-    # Import responses for a project re-import while it's still being deleted
-    DEL_ERR_MSGS = [
-        "The project is still being deleted",
-        "Name has already been taken",
-        "Path has already been taken"
-    ]
-
-    SERVER_ERROR = "500 Internal Server Error"
-
     SAML_MSG = "Validation failed: User is not linked to a SAML account"
 
     # Import rate limit cool-off
@@ -83,9 +65,9 @@ class ImportExportClient(BaseClass):
         response = self.get_export_response(src_id, is_project)
         while True:
             # Wait until rate limit is resolved
-            while self.RATE_LIMIT_MSG in str(json.loads(response.text)):
-                self.log.info("Re-exporting {0} {1} (ID: {2}), waiting {3} minutes due to:\n{4}".format(
-                    export_type.lower(), name, src_id, self.COOL_OFF_MINUTES, str(json.loads(response.text))))
+            while response.status_code == 429:
+                self.log.info(
+                    f"Re-exporting {export_type.lower()} {name} (ID: {src_id}), waiting {self.COOL_OFF_MINUTES} minutes due to:\n{response.text}")
                 sleep(self.COOL_OFF_MINUTES * 60)
                 response = self.get_export_response(src_id, is_project)
             if response.status_code == 202:
@@ -115,14 +97,14 @@ class ImportExportClient(BaseClass):
                             export_type, name, json_pretty(status_json)))
                         break
             elif retry:
-                self.log.error("{0} {1} export trigger failed{2}, with response:\n{3}".format(
-                    export_type, name, " (re-exporting)" if retry else "", str(json.loads(response.text))))
+                self.log.error(
+                    f"{export_type} {name} export trigger failed{' (re-exporting)' if retry else ''}, with response:\n{response.text}")
                 response = self.get_export_response(src_id, is_project)
                 retry = False
                 total_time = 0
             else:
-                self.log.error("SKIP: Failed to trigger source {0} {1} export, due to:\n{2}".format(
-                    export_type.lower(), name, str(json.loads(response.text))))
+                self.log.error(
+                    f"SKIP: Failed to trigger source {export_type.lower()} {name} export, due to:\n{response.text}")
                 break
         return exported
 
@@ -133,9 +115,9 @@ class ImportExportClient(BaseClass):
         response = self.get_export_response(gid, is_project=False)
         while True:
             # Wait until rate limit is resolved
-            while self.RATE_LIMIT_MSG in str(json.loads(response.text)):
+            while response.status_code == 429:
                 self.log.info(
-                    f"Re-exporting group {gid}, waiting {self.COOL_OFF_MINUTES} minutes due to:\n{str(json.loads(response.text))}")
+                    f"Re-exporting group {gid}, waiting {self.COOL_OFF_MINUTES} minutes due to:\n{response.text}")
                 sleep(self.COOL_OFF_MINUTES * 60)
                 response = self.get_export_response(gid, is_project=False)
             if response.status_code == 202:
@@ -159,13 +141,13 @@ class ImportExportClient(BaseClass):
                     break
             elif retry:
                 self.log.error(
-                    f"Group {gid} export failed (re-exporting), with response:\n{str(json.loads(response.text))}")
+                    f"Group {gid} export failed (re-exporting), with response:\n{response.text}")
                 response = self.get_export_response(gid, is_project=False)
                 retry = False
                 total_time = 0
             else:
                 self.log.error(
-                    f"SKIP: Failed to trigger source group {gid} export, due to:\n{str(json.loads(response.text))}")
+                    f"SKIP: Failed to trigger source group {gid} export, due to:\n{response.text}")
                 break
         return exported
 
@@ -260,7 +242,7 @@ class ImportExportClient(BaseClass):
             import_response = self.attempt_import(
                 filename, name, path, dst_namespace, override_params, members)
             # Use until group import status endpoint is available
-            if self.NOT_FOUND_MSG in str(import_response):
+            if import_response.status_code == 404:
                 timeout = 0
                 wait_time = self.config.importexport_wait
                 while self.namespaces_api.get_namespace_by_full_path(dst_namespace, self.config.destination_host, self.config.destination_token).status_code != 200:
@@ -274,9 +256,9 @@ class ImportExportClient(BaseClass):
                         return None
                 import_response = self.attempt_import(
                     filename, name, path, dst_namespace, override_params, members)
-            elif self.SIZE_LIMIT_MSG in str(import_response) or not import_response:
+            elif import_response.status_code == 422:
                 self.log.error("Project {0} failed to import to {1}, due to:\n{2}".format(
-                    name, dst_namespace, import_response))
+                    name, dst_namespace, import_response.text))
                 return None
             import_id = self.get_import_id_from_response(
                 import_response, filename, name, path, dst_namespace, override_params, members)
@@ -349,7 +331,6 @@ class ImportExportClient(BaseClass):
                         name, m, members)
                     resp = self.projects_api.import_project(
                         self.config.destination_host, self.config.destination_token, data=m, headers=headers, message=message)
-                    import_response = resp.text
             except AttributeError as ae:
                 self.log.error(
                     "Large file upload failed for {0}. Using standard file upload, due to:\n{1}".format(
@@ -370,8 +351,7 @@ class ImportExportClient(BaseClass):
                         name, data, members)
                     resp = self.projects_api.import_project(
                         self.config.destination_host, self.config.destination_token, data=data, files=files, headers=headers, message=message)
-                    import_response = resp.text
-        return import_response
+        return resp
 
     def import_group(self, group, full_path, filename, dry_run=True):
         """
@@ -393,27 +373,27 @@ class ImportExportClient(BaseClass):
                 filename, name, path, members)
             wait_time = self.config.importexport_wait
             try:
-                import_response_text = import_response.text
+                text = import_response.text
             except AttributeError as e:
-                import_response_text = ""
-            while self.SERVER_ERROR in str(import_response) or self.RATE_LIMIT_MSG in str(import_response):
-                if self.RATE_LIMIT_MSG in str(import_response):
+                text = ""
+            while import_response.status_code in [500, 429]:
+                if import_response.status_code == 429:
                     self.log.info(
-                        f"Re-importing group {full_path}, waiting {self.COOL_OFF_MINUTES} minutes due to:\n{import_response}")
+                        f"Re-importing group {full_path}, waiting {self.COOL_OFF_MINUTES} minutes due to:\n{import_response.text}")
                     sleep(self.COOL_OFF_MINUTES * 60)
-                elif self.SERVER_ERROR in str(import_response):
+                elif import_response.status_code == 500:
                     self.log.info(
-                        f"Re-importing group {full_path} in {wait_time} seconds due to:\n{import_response}")
+                        f"Re-importing group {full_path} in {wait_time} seconds due to:\n{import_response.text}")
                     sleep(wait_time)
                 import_response = self.attempt_group_import(
                     filename, name, path, members)
-            if import_response and import_response.status_code in [200, 202]:
+            if import_response and import_response.status_code == 202:
                 self.log.info(
                     f"Group {full_path} (file: {filename}) successfully imported")
                 return True
             else:
                 self.log.error(
-                    f"Group {full_path} (file: {filename}) import failed, with status:\n{import_response_text}")
+                    f"Group {full_path} (file: {filename}) import failed, with status:\n{text}")
         else:
             self.log.info(
                 f"DRY-RUN: Outputing group {full_path} (file: {filename}) migration data to dry_run_group_migration.json")
@@ -475,38 +455,35 @@ class ImportExportClient(BaseClass):
         max_wait_time = self.config.max_export_wait_time
         host = self.config.destination_host
         token = self.config.destination_token
-        import_response = json.loads(import_response)
         while True:
             total = 0
             # Wait until rate limit is resolved or project deleted
-            while self.SERVER_ERROR in str(import_response) or self.RATE_LIMIT_MSG in str(import_response) or any(del_err_msg in str(import_response) for del_err_msg in self.DEL_ERR_MSGS):
-                if self.RATE_LIMIT_MSG in str(import_response):
+            while import_response.status_code in [500, 429, 409]:
+                text = import_response.text
+                if import_response.status_code == 429:
                     self.log.info(
-                        f"Re-importing project {name} to {dst_namespace}, waiting {self.COOL_OFF_MINUTES} minutes due to:\n{import_response}")
+                        f"Re-importing project {name} to {dst_namespace}, waiting {self.COOL_OFF_MINUTES} minutes due to:\n{text}")
                     sleep(self.COOL_OFF_MINUTES * 60)
                 # Assuming Default deletion adjourned period (Admin -> Settings -> General -> Visibility and access controls) is 0
-                elif any(del_err_msg in str(import_response) for del_err_msg in self.DEL_ERR_MSGS):
+                elif import_response.status_code == 409:
                     if total > max_wait_time:
                         self.log.error(
-                            f"Time limit exceeded waiting for project {name} to delete from {dst_namespace}, with response:\n{import_response}")
+                            f"Time limit exceeded waiting for project {name} to delete from {dst_namespace}, with response:\n{text}")
                         return None
                     self.log.info(
-                        f"Waiting {wait_time} seconds for project {name} to delete from {dst_namespace} before re-importing:\n{import_response}")
+                        f"Waiting {wait_time} seconds for project {name} to delete from {dst_namespace} before re-importing:\n{text}")
                     total += wait_time
                     sleep(wait_time)
-                elif self.SERVER_ERROR in str(import_response):
+                elif import_response.status_code == 500:
                     self.log.info(
-                        f"Re-importing project {name} to {dst_namespace} due to:\n{import_response}")
-                    self.log.info(
-                        f"Attempting to delete project {name} from {dst_namespace} after {self.SERVER_ERROR}")
+                        f"Attempting to delete project {name} from {dst_namespace}, before re-importing, due to:\n{text}")
                     self.projects_api.delete_project(
                         host, token, quote_plus(dst_namespace + "/" + path))
                     sleep(wait_time)
                 import_response = self.attempt_import(
                     filename, name, path, dst_namespace, override_params, members)
-                import_response = json.loads(import_response)
                 timeout = 0
-            import_id = import_response.get("id", None)
+            import_id = json.loads(import_response.text).get("id", None)
             if import_id:
                 status = self.projects_api.get_project_import_status(
                     host, token, import_id)
@@ -532,7 +509,6 @@ class ImportExportClient(BaseClass):
                                 host, token, import_id)
                             import_response = self.attempt_import(
                                 filename, name, path, dst_namespace, override_params, members)
-                            import_response = json.loads(import_response)
                             retry = False
                             timeout = 0
                     # For any other import status (started, scheduled, etc.) wait for it to update
@@ -554,7 +530,7 @@ class ImportExportClient(BaseClass):
                     return None
             else:
                 self.log.error(
-                    f"Project {name} ({dst_namespace}) failed to import, with response:\n{import_response}")
+                    f"Project {name} ({dst_namespace}) failed to import, with response:\n{import_response.text}")
                 return None
         return import_id
 
@@ -594,7 +570,7 @@ class ImportExportClient(BaseClass):
                 # exported = self.export_thru_fs_aws(pid, name, namespace) if not dry_run else True
             elif loc == "aws":
                 response = self.export_to_aws(pid, filename)
-                if response is None or response.status_code not in [200, 202]:
+                if response is None or response.status_code != 202:
                     self.log.error("Failed to trigger project {0} (ID: {1}) export, with response {2}".format(
                         pid, name, response))
                 else:

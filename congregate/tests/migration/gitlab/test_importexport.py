@@ -1,8 +1,8 @@
-import json
 import unittest
 import pytest
 from mock import MagicMock, PropertyMock, patch
 import responses
+from requests.models import Response
 from congregate.migration.gitlab.importexport import ImportExportClient
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
@@ -15,31 +15,15 @@ class ImportExportClientTests(unittest.TestCase):
     def setUp(self):
         self.ie = ImportExportClient()
         self.mock_groups = MockGroupsApi()
+        self.import_response = Response()
+        self.import_response.status_code = 202
+        self.import_response._content = b'{ "id": 12345, "name": "name", "name_with_namespace": "path" }'
         self.original_project_name = "original_project_name"
         self.original_project_filename = "original_project_filename"
         self.original_project_path = "original_project_path"
         self.original_project_override_params = {
             "description": "test description"}
         self.original_namespace_path = "original_namespace_path"
-        self.import_response = json.dumps({
-            "id": 12345,
-            "name": self.original_project_name,
-            "name_with_namespace": self.original_namespace_path
-        })
-        self.search_response = [{
-            "id": 13240969,
-            "description": "",
-            "name": self.original_project_name,
-            "namespace": {
-                "id": 5345589,
-                "name": "original namespace",
-                "path": self.original_namespace_path,
-                "kind": "user",
-                "full_path": self.original_namespace_path,
-                "parent_id": None,
-                "avatar_url": "/uploads/-/system/user/avatar/4090207/avatar.png",
-            }
-        }]
         self.original_project = {
             "name": self.original_project_name,
             "namespace": self.original_namespace_path,
@@ -88,9 +72,11 @@ class ImportExportClientTests(unittest.TestCase):
         mock_token.return_value = "token"
         mock_wait.return_value = 0.01
         mock_max_wait.return_value = 0.1
-        import_response_none = json.dumps({
-            "message": "not found"
-        })
+
+        import_response_none = Response()
+        import_response_none.status_code = 404
+        import_response_none._content = b'{"message": "not found"}'
+
         import_id = self.ie.get_import_id_from_response(import_response_none, self.original_project_filename, self.original_project_name,
                                                         self.original_project_path, self.original_namespace_path, self.original_project_override_params, self.members)
         self.assertEqual(import_id, None)
@@ -105,9 +91,14 @@ class ImportExportClientTests(unittest.TestCase):
         mock_token.return_value = "token"
         mock_wait.return_value = 0.01
         mock_max_wait.return_value = 0.1
-        nok_status_mock = MagicMock()
-        type(nok_status_mock).status_code = PropertyMock(return_value=404)
-        mock_status.return_value = nok_status_mock
+        nok_response = MagicMock()
+        type(nok_response).status_code = PropertyMock(return_value=404)
+        nok_response.json.return_value = {
+            "id": 12345,
+            "import_status": "failed",
+            "import_error": "error"
+        }
+        mock_status.return_value = nok_response
         import_id = self.ie.get_import_id_from_response(self.import_response, self.original_project_filename, self.original_project_name,
                                                         self.original_project_path, self.original_namespace_path, self.original_project_override_params, self.members)
         self.assertEqual(import_id, None)
@@ -122,13 +113,13 @@ class ImportExportClientTests(unittest.TestCase):
         mock_token.return_value = "token"
         mock_wait.return_value = 0.01
         mock_max_wait.return_value = 0.1
-        ok_response_mock = MagicMock()
-        type(ok_response_mock).status_code = PropertyMock(return_value=200)
-        ok_response_mock.json.return_value = {
-            "id": 111,
+        ok_response = MagicMock()
+        type(ok_response).status_code = PropertyMock(return_value=200)
+        ok_response.json.return_value = {
+            "id": 12345,
             "import_status": "finished"
         }
-        mock_status.return_value = ok_response_mock
+        mock_status.return_value = ok_response
         import_id = self.ie.get_import_id_from_response(self.import_response, self.original_project_filename, self.original_project_name,
                                                         self.original_project_path, self.original_namespace_path, self.original_project_override_params, self.members)
         self.assertEqual(import_id, 12345)
@@ -148,14 +139,14 @@ class ImportExportClientTests(unittest.TestCase):
         nok_response = MagicMock()
         type(nok_response).status_code = PropertyMock(return_value=200)
         nok_response.json.return_value = {
-            "id": 222,
+            "id": 12345,
             "import_status": "failed",
             "import_error": "error"
         }
         ok_response = MagicMock()
         type(ok_response).status_code = PropertyMock(return_value=200)
         ok_response.json.return_value = {
-            "id": 111,
+            "id": 12345,
             "import_status": "finished"
         }
         mock_status.side_effect = [nok_response, ok_response]

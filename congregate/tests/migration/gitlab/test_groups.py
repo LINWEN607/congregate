@@ -129,7 +129,8 @@ class GroupsTests(unittest.TestCase):
             "janedoe@email.com": True
         }
 
-        actual = self.groups.add_members_to_destination_group("", "", 000, members)
+        actual = self.groups.add_members_to_destination_group(
+            "", "", 000, members)
         self.assertDictEqual(expected, actual)
 
     @mock.patch("requests.Response.json")
@@ -170,5 +171,6 @@ class GroupsTests(unittest.TestCase):
             "janedoe@email.com": False
         }
 
-        actual = self.groups.add_members_to_destination_group("", "", 000, members)
+        actual = self.groups.add_members_to_destination_group(
+            "", "", 000, members)
         self.assertDictEqual(expected, actual)
