@@ -20,7 +20,7 @@ def worker(x):
 def start_multi_process(function, iterable, processes=None):
     ctx = get_context("spawn")
     p = ctx.Pool(processes=get_no_of_processes(processes),
-             initializer=worker_init, initargs=(function,))
+                 initializer=worker_init, initargs=(function,))
     try:
         return p.map(worker, iterable)
     except Exception as e:
@@ -30,10 +30,11 @@ def start_multi_process(function, iterable, processes=None):
         p.close()
         p.join()
 
+
 def start_multi_process_stream(function, iterable, processes=None):
     ctx = get_context("spawn")
     p = ctx.Pool(processes=get_no_of_processes(processes),
-             initializer=worker_init, initargs=(function,))
+                 initializer=worker_init, initargs=(function,))
     try:
         return p.imap_unordered(worker, iterable)
     except Exception as e:
@@ -43,10 +44,11 @@ def start_multi_process_stream(function, iterable, processes=None):
         p.close()
         p.join()
 
+
 def start_multi_process_stream_with_args(function, iterable, *args, processes=None):
     ctx = get_context("spawn")
     p = ctx.Pool(processes=get_no_of_processes(processes),
-             initializer=worker_init, initargs=(partial(function,*args),))
+                 initializer=worker_init, initargs=(partial(function, *args),))
     try:
         return p.imap_unordered(worker, iterable)
     except Exception as e:
@@ -55,6 +57,7 @@ def start_multi_process_stream_with_args(function, iterable, *args, processes=No
     finally:
         p.close()
         p.join()
+
 
 def handle_multi_process_write_to_file_and_return_results(function, results_function, iterable, path, processes=None):
     with open(path, 'w') as f:

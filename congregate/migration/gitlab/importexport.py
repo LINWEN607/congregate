@@ -353,7 +353,7 @@ class ImportExportClient(BaseClass):
                         self.config.destination_host, self.config.destination_token, data=data, files=files, headers=headers, message=message)
         return resp
 
-    def import_group(self, group, full_path, filename, dry_run=True):
+    def import_group(self, group, full_path, filename, dry_run=True, subgroups_only=False):
         """
             Imports groups to destination GitLab instance.
         """
@@ -368,9 +368,20 @@ class ImportExportClient(BaseClass):
         name = group["name"]
         path = group["path"]
         members = group["members"]
+        parent_id = ""
+        if subgroups_only:
+            parent_path = full_path.rsplit("/", 1)[0]
+            found = self.groups.find_group_id_by_path(
+                self.config.destination_host, self.config.destination_token, parent_path)
+            if found:
+                parent_id = found
+            else:
+                self.log.warning(
+                    f"Parent group {parent_path} not found on destination")
+                return False
         if not dry_run:
             import_response = self.attempt_group_import(
-                filename, name, path, members)
+                filename, name, path, members, parent_id=parent_id)
             wait_time = self.config.importexport_wait
             try:
                 text = import_response.text
@@ -386,7 +397,7 @@ class ImportExportClient(BaseClass):
                         f"Re-importing group {full_path} in {wait_time} seconds due to:\n{import_response.text}")
                     sleep(wait_time)
                 import_response = self.attempt_group_import(
-                    filename, name, path, members)
+                    filename, name, path, members, parent_id=parent_id)
             if import_response and import_response.status_code == 202:
                 self.log.info(
                     f"Group {full_path} (file: {filename}) successfully imported")
@@ -405,7 +416,7 @@ class ImportExportClient(BaseClass):
                 "group": group})
         return False
 
-    def attempt_group_import(self, filename, name, path, members):
+    def attempt_group_import(self, filename, name, path, members, parent_id=""):
         resp = None
         self.log.info("Importing group {} from filesystem".format(name))
         # NOTE: Group export does not yet support (AWS/S3) user attributes
@@ -418,7 +429,7 @@ class ImportExportClient(BaseClass):
                 data = {
                     "path": path,
                     "name": validate_name(name),
-                    "parent_id": self.config.dstn_parent_id if self.config.dstn_parent_id else ""
+                    "parent_id": parent_id if parent_id else self.config.dstn_parent_id if self.config.dstn_parent_id else ""
                 }
                 files = {
                     "file": (filename, f)

@@ -60,7 +60,8 @@ class MigrateClient(BaseClass):
         skip_group_export=False,
         skip_group_import=False,
         skip_project_export=False,
-        skip_project_import=False
+        skip_project_import=False,
+        subgroups_only=False
     ):
         self.ie = ImportExportClient()
         self.mirror = MirrorClient()
@@ -99,6 +100,7 @@ class MigrateClient(BaseClass):
         self.skip_group_import = skip_group_import
         self.skip_project_export = skip_project_export
         self.skip_project_import = skip_project_import
+        self.subgroups_only = subgroups_only
 
     def migrate(self):
         self.log.info(
@@ -511,6 +513,8 @@ class MigrateClient(BaseClass):
     def migrate_group_info(self):
         staged_groups = self.groups.get_staged_groups()
         staged_top_groups = [g for g in staged_groups if is_top_level_group(g)]
+        staged_subgroups = [
+            g for g in staged_groups if not is_top_level_group(g)]
         dry_log = get_dry_log(self.dry_run)
         if staged_groups:
             if dupes := get_duplicate_paths(staged_groups, are_projects=False):
@@ -519,7 +523,7 @@ class MigrateClient(BaseClass):
             if not self.skip_group_export:
                 self.log.info(f"{dry_log}Exporting groups")
                 export_results = start_multi_process(
-                    self.handle_exporting_groups, staged_top_groups, processes=self.processes)
+                    self.handle_exporting_groups, staged_subgroups if self.subgroups_only else staged_top_groups, processes=self.processes)
 
                 self.are_results(export_results, "group", "export")
 
@@ -542,11 +546,9 @@ class MigrateClient(BaseClass):
             if not self.skip_group_import:
                 self.log.info(f"{dry_log}Importing groups")
                 import_results = start_multi_process(
-                    self.handle_importing_groups, staged_top_groups, processes=self.processes)
+                    self.handle_importing_groups, staged_subgroups if self.subgroups_only else staged_top_groups, processes=self.processes)
 
                 # Migrate sub-group info
-                staged_subgroups = [
-                    g for g in staged_groups if not is_top_level_group(g)]
                 if staged_subgroups:
                     import_results += start_multi_process(
                         self.migrate_subgroup_info, staged_subgroups, processes=self.processes)
@@ -619,7 +621,7 @@ class MigrateClient(BaseClass):
                 self.log.info("{0}Group {1} NOT found on destination, importing..."
                               .format(get_dry_log(self.dry_run), full_path_with_parent_namespace))
                 imported = self.ie.import_group(
-                    group, full_path_with_parent_namespace, filename, dry_run=self.dry_run)
+                    group, full_path_with_parent_namespace, filename, dry_run=self.dry_run, subgroups_only=self.subgroups_only)
                 # In place of checking the import status
                 if not self.dry_run and imported:
                     group = self.ie.wait_for_group_import(

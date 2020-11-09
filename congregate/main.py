@@ -9,7 +9,7 @@ Usage:
     congregate stage-projects <projects>... [--skip-users] [--commit]
     congregate stage-groups <groups>... [--skip-users] [--commit]
     congregate stage-wave <wave> [--commit]
-    congregate migrate [--processes=<n>] [--skip-users] [--skip-adding-members] [--skip-group-export] [--skip-group-import] [--skip-project-export] [--skip-project-import] [--only-post-migration-info] [--commit]
+    congregate migrate [--processes=<n>] [--skip-users] [--skip-adding-members] [--skip-group-export] [--skip-group-import] [--skip-project-export] [--skip-project-import] [--only-post-migration-info] [--subgroups-only] [--commit]
     congregate rollback [--hard-delete] [--skip-users] [--skip-groups] [--skip-projects] [--commit]
     congregate ui
     congregate do-all [--commit]
@@ -247,12 +247,13 @@ def main():
                     processes=PROCESSES,
                     dry_run=DRY_RUN,
                     skip_users=SKIP_USERS,
-                    skip_adding_members = SKIP_ADDING_MEMBERS,
+                    skip_adding_members=SKIP_ADDING_MEMBERS,
                     skip_group_export=True if arguments["--skip-group-export"] or ONLY_POST_MIGRATION_INFO else False,
                     skip_group_import=True if arguments["--skip-group-import"] else False,
                     skip_project_export=True if arguments["--skip-project-export"] or ONLY_POST_MIGRATION_INFO else False,
                     skip_project_import=True if arguments["--skip-project-import"] else False,
-                    only_post_migration_info=ONLY_POST_MIGRATION_INFO
+                    only_post_migration_info=ONLY_POST_MIGRATION_INFO,
+                    subgroups_only=True if arguments["--subgroups-only"] else False
                 )
                 migrate.migrate()
 
