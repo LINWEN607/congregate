@@ -71,6 +71,7 @@ Arguments:
     skip-project-import                     Will do all steps up to import (export, re-write exported project json,
                                                 etc). Useful for testing export contents. Will also skip any external source imports
     only-post-migration-info                Skips migrating all content except for post-migration information. Use when import is handled outside of congregate
+    subgroups-only                          Expects that only sub-groups are staged and that their parent groups already exist on destination
     access-level                            Update parent group level user permissions (Guest/Reporter/Developer/Maintainer/Owner).
     staged                                  Compare using staged data
     no-of-files                             Number of files used to go back when stitching JSON results

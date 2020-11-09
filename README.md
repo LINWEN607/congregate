@@ -248,11 +248,12 @@ With Congregate configured and projects, groups, and users retrieved, you should
 ``` text
 Usage:
     congregate init
-    congregate list
+    congregate list [--processes=<n>] [--partial]
     congregate configure
     congregate stage-projects <projects>... [--skip-users] [--commit]
     congregate stage-groups <groups>... [--skip-users] [--commit]
-    congregate migrate [--processes=<n>] [--skip-users] [--skip-group-export] [--skip-group-import] [--skip-project-export] [--skip-project-import] [--only-post-migration-info] [--commit]
+    congregate stage-wave <wave> [--commit]
+    congregate migrate [--processes=<n>] [--skip-users] [--skip-adding-members] [--skip-group-export] [--skip-group-import] [--skip-project-export] [--skip-project-import] [--only-post-migration-info] [--subgroups-only] [--commit]
     congregate rollback [--hard-delete] [--skip-users] [--skip-groups] [--skip-projects] [--commit]
     congregate ui
     congregate do-all [--commit]
@@ -264,15 +265,18 @@ Usage:
     congregate remove-blocked-users [--commit]
     congregate update-user-permissions [--access-level=<level>] [--commit]
     congregate get-total-count
-    congregate find-unimported-projects [--commit] # TODO: Refactor, project name matching does not seem correct
+    # TODO: Refactor, project name matching does not seem correct
+    congregate find-unimported-projects [--commit]
     congregate stage-unimported-projects [--commit] # TODO: Refactor, broken
     congregate remove-users-from-parent-group [--commit]
     congregate migrate-variables-in-stage [--commit]
     congregate mirror-staged-projects [--commit]
     congregate remove-all-mirrors [--commit]
     congregate find-all-non-private-groups
-    congregate make-all-internal-groups-private # TODO: Refactor or rename, as it does not make any changes
-    congregate check-projects-visibility # TODO: Refactor or rename, as it's not a check but does an update. Add dry-run
+    # TODO: Refactor or rename, as it does not make any changes
+    congregate make-all-internal-groups-private
+    # TODO: Refactor or rename, as it's not a check but does an update. Add dry-run
+    congregate check-projects-visibility
     congregate set-default-branch [--commit]
     congregate enable-mirroring [--commit] # TODO: Find a use for it or remove
     congregate count-unarchived-projects
@@ -300,6 +304,7 @@ Arguments:
     processes                               Set number of processes to run in parallel.
     commit                                  Disable the dry-run and perform the full migration with all reads/writes.
     skip-users                              Stage: Skip staging users; Migrate: Skip migrating users; Rollback: Remove only groups and projects.
+    skip-adding-members                     Skip adding members from GitHub as source instance
     hard-delete                             Remove user contributions and solely owned groups.
     skip-groups                             Rollback: Remove only users and projects.
     skip-group-export                       Skip exporting groups from source instance.
@@ -310,12 +315,14 @@ Arguments:
     skip-project-import                     Will do all steps up to import (export, re-write exported project json,
                                                 etc). Useful for testing export contents. Will also skip any external source imports
     only-post-migration-info                Skips migrating all content except for post-migration information. Use when import is handled outside of congregate
+    subgroups-only                          Expects that only sub-groups are staged and that their parent groups already exist on destination
     access-level                            Update parent group level user permissions (Guest/Reporter/Developer/Maintainer/Owner).
     staged                                  Compare using staged data
     no-of-files                             Number of files used to go back when stitching JSON results
     result-type                             For stitching result files. Options are project, group, or user
     head                                    Read results files in chronological order
     tail                                    Read results files in reverse chronological order (default for stitch-results)
+    partial                                 Option used when listing. Keeps existing data in mongo instead of dropping it before retrieving new data
 
 Commands:
     list                                    List all projects of a source instance and save it to {CONGREGATE_PATH}/data/project_json.json.
@@ -331,6 +338,7 @@ Commands:
                                                 all project and group members to {CONGREGATE_PATH}/data/staged_users.json,
                                                 All groups can be staged with '.' or 'all'.
                                                 Individual ones can be staged as a space delimited list of integers (group IDs).
+    stage-wave                              Stage wave of projects based on migration wave spreadsheet. This only takes a single wave for input
     migrate                                 Commence migration based on configuration and staged assets.
     rollback                                Remove staged users/groups/projects on destination.
     ui                                      Deploy UI to port 8000.
