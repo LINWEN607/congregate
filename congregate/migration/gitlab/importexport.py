@@ -368,7 +368,7 @@ class ImportExportClient(BaseClass):
         name = group["name"]
         path = group["path"]
         members = group["members"]
-        parent_id = ""
+        parent_id = None
         if subgroups_only:
             parent_path = full_path.rsplit("/", 1)[0]
             found = self.groups.find_group_id_by_path(
@@ -416,7 +416,7 @@ class ImportExportClient(BaseClass):
                 "group": group})
         return False
 
-    def attempt_group_import(self, filename, name, path, members, parent_id=""):
+    def attempt_group_import(self, filename, name, path, members, parent_id=None):
         resp = None
         self.log.info("Importing group {} from filesystem".format(name))
         # NOTE: Group export does not yet support (AWS/S3) user attributes
@@ -429,7 +429,7 @@ class ImportExportClient(BaseClass):
                 data = {
                     "path": path,
                     "name": validate_name(name),
-                    "parent_id": parent_id if parent_id else self.config.dstn_parent_id if self.config.dstn_parent_id else ""
+                    "parent_id": parent_id if parent_id else self.config.dstn_parent_id if self.config.dstn_parent_id else None
                 }
                 files = {
                     "file": (filename, f)
@@ -494,7 +494,7 @@ class ImportExportClient(BaseClass):
                 import_response = self.attempt_import(
                     filename, name, path, dst_namespace, override_params, members)
                 timeout = 0
-            import_id = json.loads(import_response.text).get("id", None)
+            import_id = import_response.json().get("id", None)
             if import_id:
                 status = self.projects_api.get_project_import_status(
                     host, token, import_id)
