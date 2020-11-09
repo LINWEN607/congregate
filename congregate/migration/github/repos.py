@@ -17,13 +17,11 @@ class ReposClient(BaseClass):
 
     GROUP_TYPE = ["Organization", "Enterprise"]
 
-    def __init__(self):
+    def __init__(self, host, token):
         super(ReposClient, self).__init__()
-        self.repos_api = ReposApi(
-            self.config.source_host, self.config.source_token)
-        self.users = UsersClient()
-        self.users_api = UsersApi(
-            self.config.source_host, self.config.source_token)
+        self.repos_api = ReposApi(host, token)
+        self.users = UsersClient(host, token)
+        self.users_api = UsersApi(host, token)
         self.gl_project_api = ProjectsApi()
 
     def retrieve_repo_info(self, processes=None):

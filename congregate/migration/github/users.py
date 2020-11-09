@@ -7,10 +7,9 @@ from congregate.helpers.misc_utils import safe_json_response, is_error_message_p
 
 
 class UsersClient(BaseClass):
-    def __init__(self):
+    def __init__(self, host, token):
         super(UsersClient, self).__init__()
-        self.users_api = UsersApi(self.config.source_host,
-                                  self.config.source_token)
+        self.users_api = UsersApi(host, token)
 
     def connect_to_mongo(self):
         return MongoConnector()
