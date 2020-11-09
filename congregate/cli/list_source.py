@@ -57,18 +57,19 @@ def list_github_data(processes=None, partial=False):
         mongo.drop_collection("projects")
         mongo.drop_collection("groups")
         mongo.drop_collection("users")
-    repos = GitHubRepos()
-    orgs = GitHubOrgs()
-    users = GitHubUsers()
 
-    users.retrieve_user_info(processes=processes)
-    repos.retrieve_repo_info(processes=processes)
-    orgs.retrieve_org_info(processes=processes)
-    
+    for i, single_source in enumerate(b.config.list_multiple_source_config("github_source")):
+        repos = GitHubRepos(single_source.get('src_hostname'), deobfuscate(single_source.get('src_access_token')))
+        orgs = GitHubOrgs(single_source.get('src_hostname'), deobfuscate(single_source.get('src_access_token')))
+        users = GitHubUsers(single_source.get('src_hostname'), deobfuscate(single_source.get('src_access_token')))
 
-    mongo.dump_collection_to_file("projects", f"{b.app_path}/data/project_json.json")
-    mongo.dump_collection_to_file("groups", f"{b.app_path}/data/groups.json")
-    mongo.dump_collection_to_file("users", f"{b.app_path}/data/users.json")
+        users.retrieve_user_info(processes=processes)
+        repos.retrieve_repo_info(processes=processes)
+        orgs.retrieve_org_info(processes=processes)
+
+        mongo.dump_collection_to_file("projects", f"{b.app_path}/data/project_json-{i}.json")
+        mongo.dump_collection_to_file("groups", f"{b.app_path}/data/groups-{i}.json")
+        mongo.dump_collection_to_file("users", f"{b.app_path}/data/users-{i}.json")
 
     mongo.close_connection()
 
@@ -118,6 +119,7 @@ def list_data(processes=None, partial=False):
         list_gitlab_data()
     elif src_type == "github":
         list_github_data(processes=processes, partial=partial)
+
     else:
         b.log.warning("Cannot list from source {}".format(src_type))
         exit()
