@@ -258,7 +258,7 @@ class MigrateClient(BaseClass):
                                 tc["tc_ci_src_access_token"]))
                             result[project["path_with_namespace"]]["teamcity_variables"] = self.migrate_teamcity_variables(
                                 project, project_id, tc_client, tc["tc_ci_src_hostname"])
-                            result[project["path_with_namespace"]]["teamcity_variables"] = self.migrate_teamcity_build_config(
+                            result[project["path_with_namespace"]]["teamcity_config_xml"] = self.migrate_teamcity_build_config(
                                 project, project_id, tc_client)
                     self.projects.remove_import_user(project_id)
                     # Added a new file in the repo
