@@ -4,6 +4,7 @@ from congregate.helpers.base_class import BaseClass
 from congregate.helpers.misc_utils import is_error_message_present
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.users import UsersApi
+from congregate.migration.gitlab.api.instance import InstanceApi
 from congregate.migration.gitlab.users import UsersClient
 
 
@@ -11,6 +12,7 @@ class KeysClient(BaseClass):
     def __init__(self):
         self.projects_api = ProjectsApi()
         self.users_api = UsersApi()
+        self.instance_api = InstanceApi()
         self.users = UsersClient()
         super(KeysClient, self).__init__()
 
@@ -19,18 +21,24 @@ class KeysClient(BaseClass):
             d_keys = iter(self.projects_api.get_all_project_deploy_keys(
                 old_id, self.config.source_host, self.config.source_token))
             for key in d_keys:
-                if is_error_message_present(key) or not key or key.get("id", None) is None:
+                if not key or is_error_message_present(key) or key.get("id", None) is None:
                     self.log.error(
-                        f"Failed to fetch deploy key ({key}) for project {name}")
+                        f"Failed to fetch deploy key ({key}) from project {name} (ID: {old_id})")
                 else:
                     # Remove unused key-values before posting key
                     key.pop("id", None)
                     key.pop("created_at", None)
                     resp = self.projects_api.create_new_project_deploy_key(
                         new_id, self.config.destination_host, self.config.destination_token, key)
-                    if resp.status_code != 201 or is_error_message_present(resp):
+                    # When a key being migrated already exists somewhere on the destination instance
+                    if resp.status_code == 400 and is_error_message_present(resp) and isinstance(resp.json().get("message", None), dict):
+                        for k in self.instance_api.get_all_instance_deploy_keys(self.config.destination_host, self.config.destination_token):
+                            if k and key["key"] == k["key"]:
+                                self.projects_api.enable_deploy_key(
+                                    new_id, k["id"], self.config.destination_host, self.config.destination_token)
+                    elif resp.status_code != 201:
                         self.log.error(
-                            f"Failed to create deploy key {key} for project {name}, with error: {resp} - {resp.text}")
+                            f"Failed to create deploy key {key} for project {name} (ID: {new_id}), with error:\n{resp} - {resp.text}")
             return True
         except TypeError as te:
             self.log.error(

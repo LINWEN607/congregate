@@ -60,7 +60,7 @@ class UserDiffClient(BaseDiffClient):
     def generate_single_diff_report(self, user):
         diff_report = {}
         user_email = user["email"]
-        if self.results.get(user_email) and self.asset_exists(self.users_api.get_user, self.results[user_email].get("id")):
+        if self.results and self.results.get(user_email) and self.asset_exists(self.users_api.get_user, self.results[user_email].get("id")):
             user_diff = self.handle_endpoints(user)
             diff_report[user_email] = user_diff
             try:
