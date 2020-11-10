@@ -22,4 +22,4 @@ When trying to run any Congergate command, if you get an error that says `Congre
 1. find the congregate process that is running and take note of its pid. 
 1. run `kill -9 <pid>`
 
-Once the process is killed, if you're still getting the error that congergate is still running, that means that congregate wans't shutdown propelry and there is a lock file that exists at `/tmp/congergate.pid`. Simply run a `rm -f /tmp/congregate.pid` to resolve then rerun congregate command you were trying to use. 
+Once the process is killed, if you're still getting the error that congergate is still running, that means that congregate wans't shutdown properly and there is a lock file that exists at `/tmp/congergate.pid`. Simply run a `rm -f /tmp/congregate.pid` to resolve then rerun congregate command you were trying to use. 
