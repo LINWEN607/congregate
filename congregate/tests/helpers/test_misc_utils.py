@@ -530,7 +530,7 @@ class MiscUtilsTests(unittest.TestCase):
 
         self.assertIsNone(actual)
     
-    def tets_dig_return_dict(self):
+    def test_dig_return_dict(self):
         test = {
             "nest": {
                 "hello": {
