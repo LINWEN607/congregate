@@ -502,3 +502,46 @@ class MiscUtilsTests(unittest.TestCase):
         actual = misc.get_duplicate_paths(data, are_projects=False)
 
         self.assertEqual(expected, actual)
+
+    def test_dig_found(self):
+        test = {
+            "nest": {
+                "hello": {
+                    "world": "this is nested"
+                }
+            }
+        }
+
+        expected = "this is nested"
+        actual = misc.dig(test, "nest", "hello", "world")
+
+        self.assertEqual(expected, actual)
+    
+    def test_dig_not_found(self):
+        test = {
+            "nest": {
+                "hello": {
+                    "world": "this is nested"
+                }
+            }
+        }
+
+        actual = misc.dig(test, "nest", "hello", "not found")
+
+        self.assertIsNone(actual)
+    
+    def test_dig_return_dict(self):
+        test = {
+            "nest": {
+                "hello": {
+                    "world": "this is nested"
+                }
+            }
+        }
+
+        expected = {
+            "world": "this is nested"
+        }
+        actual = misc.dig(test, "nest", "hello")
+
+        self.assertEqual(expected, actual)

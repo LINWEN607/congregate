@@ -86,6 +86,10 @@ sast:
   artifacts:
     paths: [gl-sast-report.json]
 
+secret_detection:
+  variables:
+    SECRET_DETECTION_HISTORIC_SCAN: "true"
+
 version check:
   stage: build
   script:

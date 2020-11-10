@@ -444,7 +444,7 @@ class MigrateClient(BaseClass):
                               .format(get_dry_log(self.dry_run), json_pretty(new_users)))
                 write_results_to_file(
                     formatted_users, result_type="user", log=self.log)
-                if self.dry_run:
+                if self.dry_run and not self.only_post_migration_info:
                     self.log.info(
                         "DRY-RUN: Outputing various USER migration data to dry_run_user_migration.json")
                     migration_dry_run("user", list(start_multi_process(
