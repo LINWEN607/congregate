@@ -21,24 +21,20 @@ class KeysClient(BaseClass):
             d_keys = iter(self.projects_api.get_all_project_deploy_keys(
                 old_id, self.config.source_host, self.config.source_token))
             for key in d_keys:
-                if not key or is_error_message_present(key) or key.get("id", None) is None:
+                # Remove unused key-values before posting key
+                key.pop("id", None)
+                key.pop("created_at", None)
+                resp = self.projects_api.create_new_project_deploy_key(
+                    new_id, self.config.destination_host, self.config.destination_token, key)
+                # When a key being migrated already exists somewhere on the destination instance
+                if resp.status_code == 400 and is_error_message_present(resp) and isinstance(resp.json().get("message", None), dict):
+                    for k in self.instance_api.get_all_instance_deploy_keys(self.config.destination_host, self.config.destination_token):
+                        if k and key["key"] == k["key"]:
+                            self.projects_api.enable_deploy_key(
+                                new_id, k["id"], self.config.destination_host, self.config.destination_token)
+                elif resp.status_code != 201:
                     self.log.error(
-                        f"Failed to fetch deploy key ({key}) from project {name} (ID: {old_id})")
-                else:
-                    # Remove unused key-values before posting key
-                    key.pop("id", None)
-                    key.pop("created_at", None)
-                    resp = self.projects_api.create_new_project_deploy_key(
-                        new_id, self.config.destination_host, self.config.destination_token, key)
-                    # When a key being migrated already exists somewhere on the destination instance
-                    if resp.status_code == 400 and is_error_message_present(resp) and isinstance(resp.json().get("message", None), dict):
-                        for k in self.instance_api.get_all_instance_deploy_keys(self.config.destination_host, self.config.destination_token):
-                            if k and key["key"] == k["key"]:
-                                self.projects_api.enable_deploy_key(
-                                    new_id, k["id"], self.config.destination_host, self.config.destination_token)
-                    elif resp.status_code != 201:
-                        self.log.error(
-                            f"Failed to create deploy key {key} for project {name} (ID: {new_id}), with error:\n{resp} - {resp.text}")
+                        f"Failed to create deploy key {key} for project {name} (ID: {new_id}), with error:\n{resp} - {resp.text}")
             return True
         except TypeError as te:
             self.log.error(
