@@ -10,7 +10,7 @@ WORKDIR /opt/congregate
 ADD congregate congregate
 ADD frontend frontend
 ADD dev/bin dev/bin
-COPY congregate.sh pyproject.toml poetry.lock README.md package.json package-lock.json vue.config.js babel.config.js ./
+COPY congregate.sh pyproject.toml poetry.lock README.md package.json package-lock.json vue.config.js babel.config.js .gitignore ./
 COPY docker/release/centos/mongo_repo /etc/yum.repos.d/mongodb-org-4.4.repo
 
 RUN mkdir -p /data/db
@@ -30,6 +30,10 @@ RUN cd /opt/congregate && \
     chmod +x congregate && \
     cp congregate.sh /usr/local/bin/congregate && \
     git init && \
+    git add . && \
+    git config --global user.email "migration@gitlab.com" && \
+    git config --global user.name "congregate" && \
+    git commit -m "Initial commit" && \
     pip install poetry
 
 # RUN export PATH=$PATH:$HOME/.poetry/bin/poetry

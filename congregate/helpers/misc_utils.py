@@ -331,6 +331,27 @@ def find(key, dictionary):
                     for result in find(key, d):
                         yield result
 
+def dig(dictionary, *args):
+    """
+        Recursive dictionary key lookup function
+
+        Example:
+            dig({"nest": {"hello": {"world": "this is nested"}}}, "nest", "hello")
+            >>>> {'world': 'this is nested'}
+
+        :param dictionary: (dict) dictionary to traverse
+        :param *args: (tuple) series of keys to dig through
+        :return: If the most nested key is found, the value of the key
+        
+    """
+    if not args:
+        return dictionary
+    for i, arg in enumerate(args):
+        if found := dictionary.get(arg, None):
+            if isinstance(found, dict):
+                args = args[i+1:]
+                return dig(found, *args)
+            return found
 
 def is_dot_com(host):
     return True if "gitlab.com" in host else False

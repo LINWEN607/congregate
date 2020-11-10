@@ -1079,3 +1079,20 @@ class ProjectsApi():
         if not message:
             message = f"Adding cluster {data['name']} to project {pid}"
         return api.generate_post_request(host, token, f"projects/{pid}/clusters/user", json.dumps(data), description=message)
+
+    def enable_deploy_key(self, pid, kid, host, token, message=None):
+        """
+        Enables a deploy key for a project so this can be used. Returns the enabled key, with a status code 201 when successful.
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/deploy_keys.html#enable-a-deploy-key
+
+            :param: pid: (int) GitLab project ID
+            :param: kid: (int) The ID of the deploy key
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :return: Response object containing the response to POST /projects/:pid/deploy_keys/:kid/enable
+
+        """
+        if not message:
+            message = (f"Enabling deploy key {kid} for project {pid}")
+        return api.generate_post_request(host, token, f"projects/{pid}/deploy_keys/{kid}/enable", {}, description=message)

@@ -78,3 +78,15 @@ class InstanceApi():
             :return: JSON response containing version information from GET /version
         """
         return api.generate_get_request(host, token, "version")
+
+    def get_all_instance_deploy_keys(self, host, token):
+        """
+        Get a list of all deploy keys across all projects of the GitLab instance. This endpoint requires admin access and is not available on GitLab.com.
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/deploy_keys.html#list-all-deploy-keys
+
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :return: Generator returning JSON of each result from GET /deploy_keys
+        """
+        return api.list_all(host, token, "deploy_keys")

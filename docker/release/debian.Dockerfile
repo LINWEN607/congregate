@@ -33,6 +33,11 @@ RUN mkdir /mongo-install && \
 RUN cd /opt/congregate && \
     chmod +x congregate && \
     cp congregate.sh /usr/local/bin/congregate && \
+    git init && \
+    git add . && \
+    git config --global user.email "migration@gitlab.com" && \
+    git config --global user.name "congregate" && \
+    git commit -m "Initial commit" && \
     pip install poetry
 
 # RUN export PATH=$PATH:$HOME/.poetry/bin/poetry
