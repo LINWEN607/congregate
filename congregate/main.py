@@ -4,10 +4,10 @@ Copyright (c) 2020 - GitLab
 
 Usage:
     congregate init
-    congregate list [--processes=<n>] [--partial]
+    congregate list [--processes=<n>] [--partial] [--src_instances]
     congregate configure
-    congregate stage-projects <projects>... [--skip-users] [--commit]
-    congregate stage-groups <groups>... [--skip-users] [--commit]
+    congregate stage-projects <projects>... [--skip-users] [--commit] [--scm_source=hostanme]
+    congregate stage-groups <groups>... [--skip-users] [--commit] [--scm_source=hostanme]
     congregate stage-wave <wave> [--commit]
     congregate migrate [--processes=<n>] [--skip-users] [--skip-adding-members] [--skip-group-export] [--skip-group-import] [--skip-project-export] [--skip-project-import] [--only-post-migration-info] [--subgroups-only] [--commit]
     congregate rollback [--hard-delete] [--skip-users] [--skip-groups] [--skip-projects] [--commit]
@@ -59,6 +59,8 @@ Options:
 Arguments:
     processes                               Set number of processes to run in parallel.
     commit                                  Disable the dry-run and perform the full migration with all reads/writes.
+    src_instances                           Present if there are multiple GH source instances
+    scm_source                              Specific SCM source hostname
     skip-users                              Stage: Skip staging users; Migrate: Skip migrating users; Rollback: Remove only groups and projects.
     skip-adding-members                     Skip adding members from GitHub as source instance
     hard-delete                             Remove user contributions and solely owned groups.
@@ -172,6 +174,8 @@ def main():
         SKIP_ADDING_MEMBERS = arguments["--skip-adding-members"]
         ONLY_POST_MIGRATION_INFO = True if arguments["--only-post-migration-info"] else False
         PARTIAL = True if arguments["--partial"] else False
+        SRC_INSTANCES = True if arguments["--src_instances"] else False
+        SCM_SOURCE = arguments["--scm_source"] if arguments["--scm_source"] else None
 
         if arguments["--version"]:
             with open(f"{app_path}/pyproject.toml", "r") as f:
@@ -226,17 +230,17 @@ def main():
                     "ssl_verify is set to False. Suppressing downstream SSL warnings. Consider enforcing SSL verification in the future")
 
             if arguments["list"]:
-                list_source.list_data(processes=PROCESSES, partial=PARTIAL)
+                list_source.list_data(processes=PROCESSES, partial=PARTIAL, src_instances=SRC_INSTANCES)
 
             if arguments["stage-projects"]:
                 pcli = ProjectStageCLI()
                 pcli.stage_data(arguments['<projects>'],
-                                dry_run=DRY_RUN, skip_users=SKIP_USERS)
+                                dry_run=DRY_RUN, skip_users=SKIP_USERS, scm_source=SCM_SOURCE)
 
             if arguments["stage-groups"]:
                 gcli = GroupStageCLI()
                 gcli.stage_data(arguments['<groups>'],
-                                dry_run=DRY_RUN, skip_users=SKIP_USERS)
+                                dry_run=DRY_RUN, skip_users=SKIP_USERS, scm_source=SCM_SOURCE)
 
             if arguments["stage-wave"]:
                 wcli = WaveStageCLI()
