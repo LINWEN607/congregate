@@ -4,7 +4,7 @@ Copyright (c) 2020 - GitLab
 
 Usage:
     congregate init
-    congregate list [--processes=<n>] [--partial]
+    congregate list [--processes=<n>] [--partial] [--skip-users] [--skip-groups] [--skip-projects]
     congregate configure
     congregate stage-projects <projects>... [--skip-users] [--commit]
     congregate stage-groups <groups>... [--skip-users] [--commit]
@@ -169,6 +169,8 @@ def main():
         ROLLBACK = True if arguments["--rollback"] else False
         PROCESSES = arguments["--processes"] if arguments["--processes"] else None
         SKIP_USERS = True if arguments["--skip-users"] else False
+        SKIP_GROUPS = True if arguments["--skip-groups"] else False
+        SKIP_PROJECTS = True if arguments["--skip-projects"] else False
         SKIP_ADDING_MEMBERS = arguments["--skip-adding-members"]
         ONLY_POST_MIGRATION_INFO = True if arguments["--only-post-migration-info"] else False
         PARTIAL = True if arguments["--partial"] else False
@@ -226,7 +228,16 @@ def main():
                     "ssl_verify is set to False. Suppressing downstream SSL warnings. Consider enforcing SSL verification in the future")
 
             if arguments["list"]:
-                list_source.list_data(processes=PROCESSES, partial=PARTIAL)
+                start = time()
+                rotate_logs()
+                list_source.list_data(
+                    processes=PROCESSES,
+                    partial=PARTIAL,
+                    skip_users=SKIP_USERS,
+                    skip_groups=SKIP_GROUPS,
+                    skip_projects=SKIP_PROJECTS
+                )
+                add_post_migration_stats(start, log=log)
 
             if arguments["stage-projects"]:
                 pcli = ProjectStageCLI()
@@ -263,8 +274,8 @@ def main():
                     dry_run=DRY_RUN,
                     skip_users=SKIP_USERS,
                     hard_delete=True if arguments["--hard-delete"] else False,
-                    skip_groups=True if arguments["--skip-groups"] else False,
-                    skip_projects=True if arguments["--skip-projects"] else False
+                    skip_groups=SKIP_GROUPS,
+                    skip_projects=SKIP_PROJECTS
                 )
                 migrate.rollback()
 
