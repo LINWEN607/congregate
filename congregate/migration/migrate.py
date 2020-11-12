@@ -85,7 +85,7 @@ class MigrateClient(BaseClass):
         super(MigrateClient, self).__init__()
         self.bbs_repos_client = BBSReposClient()
         self.job_template = JobTemplateGenerator()
-        self.gh_repos = ReposClient()
+        self.gh_repos = ReposClient(self.config.source_host, self.config.source_token)
 
         self.dry_run = dry_run
         self.processes = processes

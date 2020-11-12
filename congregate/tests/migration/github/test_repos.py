@@ -21,7 +21,7 @@ class ReposTests(unittest.TestCase):
 
     def setUp(self):
         self.mock_repos = MockReposApi()
-        self.repos = ReposClient()
+        self.repos = ReposClient(host="gitlab", token="123")
 
     @patch.object(ReposApi, "get_repo")
     @patch.object(UsersClient, "format_users")
