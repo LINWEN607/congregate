@@ -19,32 +19,44 @@ class BaseStageClass(BaseClass):
         self.rewritten_groups = {}
         super(BaseStageClass, self).__init__()
 
-    def open_projects_file(self):
+    def open_projects_file(self, i, scm_source=None):
         """
             Open project.json file to read, turning JSON encoded data to projects.
 
             :return: projects object
         """
-        with open('%s/data/project_json.json' % self.app_path, "r") as f:
-            return json.load(f)
+        if scm_source is not None:
+            with open(f'%s/data/project_json-{i}.json' % self.app_path, "r") as f:
+                return json.load(f)
+        else:
+            with open('%s/data/project_json.json' % self.app_path, "r") as f:
+                return json.load(f)
 
-    def open_groups_file(self):
+    def open_groups_file(self, i, scm_source=None):
         """
             Open group.json file to read, turning JSON encoded data to groups object.
 
             :return: groups object
         """
-        with open("%s/data/groups.json" % self.app_path, "r") as f:
-            return json.load(f)
+        if scm_source is not None:
+            with open(f"%s/data/groups-{i}.json" % self.app_path, "r") as f:
+                return json.load(f)
+        else:
+            with open("%s/data/groups.json" % self.app_path, "r") as f:
+                return json.load(f)
 
-    def open_users_file(self):
+    def open_users_file(self, i, scm_source=None):
         """
             Open users.json file to read, turning JSON encoded data to users object.
 
             :return: users object
         """
-        with open("%s/data/users.json" % self.app_path, "r") as f:
-            return json.load(f)
+        if scm_source is not None:
+            with open(f"%s/data/users-{i}.json" % self.app_path, "r") as f:
+                return json.load(f)
+        else:        
+            with open("%s/data/users.json" % self.app_path, "r") as f:
+                return json.load(f)
 
     def write_staging_files(self, skip_users=False):
         """
@@ -115,3 +127,8 @@ class BaseStageClass(BaseClass):
             if "default_branch" in project:
                 obj["default_branch"] = project["default_branch"]
         return obj
+
+    def the_number_of_instance(self, scm_source):
+        for i, single_source in enumerate(self.config.list_multiple_source_config("github_source")):
+            if scm_source == single_source.get("src_hostname", None):
+                return i

@@ -12,7 +12,7 @@ from congregate.cli.stage_base import BaseStageClass
 
 class ProjectStageCLI(BaseStageClass):
 
-    def stage_data(self, projects_to_stage, dry_run=True, skip_users=False):
+    def stage_data(self, projects_to_stage, dry_run=True, skip_users=False, scm_source=None):
         """
             Stage data based on selected projects on source instance
 
@@ -20,24 +20,27 @@ class ProjectStageCLI(BaseStageClass):
             :param: dry_run (bool) If true, it will only build the staging data lists
             :param: skip_users (bool) If true will skip writing staged users to file
         """
-        self.build_staging_data(projects_to_stage, dry_run)
+        self.build_staging_data(projects_to_stage, dry_run, scm_source)
         if user_projects := get_staged_user_projects(remove_dupes(self.staged_projects)):
             self.log.warning("User projects staged:\n{}".format(
                 "\n".join(u for u in user_projects)))
         if not dry_run:
             self.write_staging_files(skip_users=skip_users)
 
-    def build_staging_data(self, projects_to_stage, dry_run=True):
+    def build_staging_data(self, projects_to_stage, dry_run=True, scm_source=None):
         """
             Build data up from project level, including groups and users (members)
 
             :param: projects_to_stage: (dict) the staged projects objects
             :param: dry_run (bool) dry_run (bool) If true, it will only build the staging data lists.
         """
+        i = -1
+        if scm_source is not None:
+            i = self.the_number_of_instance(scm_source)            
         # Loading projects information
-        projects = self.open_projects_file()
-        groups = self.open_groups_file()
-        users = self.open_users_file()
+        projects = self.open_projects_file(i, scm_source)
+        groups = self.open_groups_file(i, scm_source)
+        users = self.open_users_file(i, scm_source)
 
         # Rewriting projects to retrieve objects by ID more efficiently
         self.rewritten_users = rewrite_list_into_dict(users, "id")
