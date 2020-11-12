@@ -50,26 +50,38 @@ def list_bitbucket_data():
     users.retrieve_user_info()
 
 
-def list_github_data(processes=None, partial=False):
+def list_github_data(processes=None, partial=False, src_instances=False):
     mongo = MongoConnector()
     if not partial:
         b.log.info("Dropping database collections")
         mongo.drop_collection("projects")
         mongo.drop_collection("groups")
         mongo.drop_collection("users")
-
-    for i, single_source in enumerate(b.config.list_multiple_source_config("github_source")):
-        repos = GitHubRepos(single_source.get('src_hostname'), deobfuscate(single_source.get('src_access_token')))
-        orgs = GitHubOrgs(single_source.get('src_hostname'), deobfuscate(single_source.get('src_access_token')))
-        users = GitHubUsers(single_source.get('src_hostname'), deobfuscate(single_source.get('src_access_token')))
+    if not src_instances:
+        repos = GitHubRepos(b.config.source_host, b.config.source_token)
+        orgs = GitHubOrgs(b.config.source_host, b.config.source_token)
+        users = GitHubUsers(b.config.source_host, b.config.source_token)
 
         users.retrieve_user_info(processes=processes)
         repos.retrieve_repo_info(processes=processes)
         orgs.retrieve_org_info(processes=processes)
 
-        mongo.dump_collection_to_file("projects", f"{b.app_path}/data/project_json-{i}.json")
-        mongo.dump_collection_to_file("groups", f"{b.app_path}/data/groups-{i}.json")
-        mongo.dump_collection_to_file("users", f"{b.app_path}/data/users-{i}.json")
+        mongo.dump_collection_to_file("projects", f"{b.app_path}/data/project_json.json")
+        mongo.dump_collection_to_file("groups", f"{b.app_path}/data/groups.json")
+        mongo.dump_collection_to_file("users", f"{b.app_path}/data/users.json")
+    else:        
+        for i, single_source in enumerate(b.config.list_multiple_source_config("github_source")):
+            repos = GitHubRepos(single_source.get('src_hostname'), deobfuscate(single_source.get('src_access_token')))
+            orgs = GitHubOrgs(single_source.get('src_hostname'), deobfuscate(single_source.get('src_access_token')))
+            users = GitHubUsers(single_source.get('src_hostname'), deobfuscate(single_source.get('src_access_token')))
+
+            users.retrieve_user_info(processes=processes)
+            repos.retrieve_repo_info(processes=processes)
+            orgs.retrieve_org_info(processes=processes)
+
+            mongo.dump_collection_to_file("projects", f"{b.app_path}/data/project_json-{i}.json")
+            mongo.dump_collection_to_file("groups", f"{b.app_path}/data/groups-{i}.json")
+            mongo.dump_collection_to_file("users", f"{b.app_path}/data/users-{i}.json")
 
     mongo.close_connection()
 
@@ -101,7 +113,7 @@ def write_empty_file(filename):
             f.write("[]")
 
 
-def list_data(processes=None, partial=False):
+def list_data(processes=None, partial=False, src_instances=False):
     src_type = b.config.source_type
     staged_files = ["staged_projects", "staged_groups", "staged_users"]
     
@@ -118,7 +130,7 @@ def list_data(processes=None, partial=False):
     elif src_type == "gitlab":
         list_gitlab_data()
     elif src_type == "github":
-        list_github_data(processes=processes, partial=partial)
+        list_github_data(processes=processes, partial=partial, src_instances=src_instances)
 
     else:
         b.log.warning("Cannot list from source {}".format(src_type))
