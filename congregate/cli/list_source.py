@@ -57,9 +57,12 @@ def list_github_data(processes=None, partial=False, skip_users=False, skip_group
     mongo = MongoConnector()
     if not partial:
         b.log.info("Dropping database collections")
-        mongo.drop_collection("projects")
-        mongo.drop_collection("groups")
-        mongo.drop_collection("users")
+        if not skip_projects:
+            mongo.drop_collection("projects")
+        if not skip_groups:
+            mongo.drop_collection("groups")
+        if not skip_users:
+            mongo.drop_collection("users")
     if not skip_users:
         users = GitHubUsers()
         users.retrieve_user_info(processes=processes)
@@ -110,16 +113,16 @@ def write_empty_file(filename):
             f.write("[]")
 
 
-def list_data(processes=None, partial=False, skip_users=False, skip_groups=False, skip_projects=False):
+def list_data(processes=None, partial=False, skip_users=False, skip_groups=False, skip_projects=False, skip_ci=False):
     src_type = b.config.source_type
     staged_files = ["staged_projects", "staged_groups", "staged_users"]
 
-    if b.config.list_ci_source_config("jenkins_ci_source"):
+    if b.config.list_ci_source_config("jenkins_ci_source") and not skip_ci:
         b.log.info("Listing data from Jenkins CI source")
         list_jenkins_data()
         staged_files.append("jenkins_jobs")
 
-    if b.config.list_ci_source_config("teamcity_ci_source"):
+    if b.config.list_ci_source_config("teamcity_ci_source") and not skip_ci:
         b.log.info("Listing data from TeamCity CI source")
         list_teamcity_data()
         staged_files.append("teamcity_jobs")
