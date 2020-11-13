@@ -166,15 +166,15 @@ def main():
     if __name__ == '__main__':
         arguments = docopt(__doc__)
         DRY_RUN = False if arguments["--commit"] else True
-        STAGED = True if arguments["--staged"] else False
-        ROLLBACK = True if arguments["--rollback"] else False
+        STAGED = arguments["--staged"]
+        ROLLBACK = arguments["--rollback"]
         PROCESSES = arguments["--processes"] if arguments["--processes"] else None
-        SKIP_USERS = True if arguments["--skip-users"] else False
-        SKIP_GROUPS = True if arguments["--skip-groups"] else False
-        SKIP_PROJECTS = True if arguments["--skip-projects"] else False
+        SKIP_USERS = arguments["--skip-users"]
+        SKIP_GROUPS = arguments["--skip-groups"]
+        SKIP_PROJECTS = arguments["--skip-projects"]
         SKIP_ADDING_MEMBERS = arguments["--skip-adding-members"]
-        ONLY_POST_MIGRATION_INFO = True if arguments["--only-post-migration-info"] else False
-        PARTIAL = True if arguments["--partial"] else False
+        ONLY_POST_MIGRATION_INFO = arguments["--only-post-migration-info"]
+        PARTIAL = arguments["--partial"]
 
         if arguments["--version"]:
             with open(f"{app_path}/pyproject.toml", "r") as f:
@@ -237,7 +237,7 @@ def main():
                     skip_users=SKIP_USERS,
                     skip_groups=SKIP_GROUPS,
                     skip_projects=SKIP_PROJECTS,
-                    skip_ci=True if arguments["--skip-ci"] else False
+                    skip_ci=arguments["--skip-ci"]
                 )
                 add_post_migration_stats(start, log=log)
 
@@ -263,11 +263,11 @@ def main():
                     skip_users=SKIP_USERS,
                     skip_adding_members=SKIP_ADDING_MEMBERS,
                     skip_group_export=True if arguments["--skip-group-export"] or ONLY_POST_MIGRATION_INFO else False,
-                    skip_group_import=True if arguments["--skip-group-import"] else False,
+                    skip_group_import=arguments["--skip-group-import"],
                     skip_project_export=True if arguments["--skip-project-export"] or ONLY_POST_MIGRATION_INFO else False,
-                    skip_project_import=True if arguments["--skip-project-import"] else False,
+                    skip_project_import=arguments["--skip-project-import"],
                     only_post_migration_info=ONLY_POST_MIGRATION_INFO,
-                    subgroups_only=True if arguments["--subgroups-only"] else False
+                    subgroups_only=arguments["--subgroups-only"]
                 )
                 migrate.migrate()
 
@@ -275,7 +275,7 @@ def main():
                 migrate = MigrateClient(
                     dry_run=DRY_RUN,
                     skip_users=SKIP_USERS,
-                    hard_delete=True if arguments["--hard-delete"] else False,
+                    hard_delete=arguments["--hard-delete"],
                     skip_groups=SKIP_GROUPS,
                     skip_projects=SKIP_PROJECTS
                 )
