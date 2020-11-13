@@ -119,7 +119,7 @@ class MigrateClient(BaseClass):
             self.migrate_from_gitlab()
         elif self.config.source_type == "bitbucket server":
             self.migrate_from_bitbucket_server()
-        elif self.config.source_type == "github":
+        elif self.config.source_type == "github" or self.config.list_multiple_source_config("github_source") is not None:
             self.migrate_from_github()
         else:
             self.log.warning(
@@ -147,13 +147,6 @@ class MigrateClient(BaseClass):
             self.groups.remove_import_user(self.config.dstn_parent_id)
 
     def migrate_from_github(self):
-        if self.scm_source is not None:
-           for single_source in b.config.list_multiple_source_config("github_source"):
-               if scm_source == single_source.get("src_hostname", None):
-                   self.gh_repos = ReposClient(single_source["src_hostname"], single_source["src_access_token"])
-        else:
-            self.gh_repos = ReposClient(self.config.source_host, self.config.source_token)
-
         dry_log = get_dry_log(self.dry_run)
 
         # Migrate users
@@ -242,9 +235,21 @@ class MigrateClient(BaseClass):
         }
 
     def import_github_project(self, project):
+        gh_host = None
+        gh_token = None
+        if self.scm_source is not None:
+           for single_source in self.config.list_multiple_source_config("github_source"):
+               if self.scm_source == single_source.get("src_hostname", None):
+                   self.gh_repos = ReposClient(single_source["src_hostname"], deobfuscate(single_source["src_access_token"]))
+                   gh_host = single_source["src_hostname"]
+                   gh_token = deobfuscate(single_source["src_access_token"])    
+        else:
+            self.gh_repos = ReposClient(self.config.source_host, self.config.source_token)
+            gh_host = self.config.source_host
+            gh_token = self.config.source_token
         members = project.pop("members")
         result = self.ext_import.trigger_import_from_ghe(
-            project, dry_run=self.dry_run)
+            project, gh_host, gh_token, dry_run=self.dry_run)
         if result.get(project["path_with_namespace"], False) is not False:
             result_response = result[project["path_with_namespace"]]["response"]
             if project_id := result_response.get("id", None):
