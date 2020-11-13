@@ -28,9 +28,9 @@ This runbook covers the process of migrating a wave of **groups and projects** f
     
     For example:
 
-    @leopardm: PSE conducting the migration
-    @lyle: Support Manager with Rails Console access
-    @kyletsmith: Security Manager (Security Incident Response Team - SIRT) in the loop in case anything goes wrong
+    * @leopardm: PSE conducting the migration
+    * @lyle: Support Manager with Rails Console access
+    * @kyletsmith: Security Manager (Security Incident Response Team - SIRT) in the loop in case anything goes wrong
 -->
 
 ## BitBucket Projects (GitLab Groups) to migrate
@@ -50,9 +50,10 @@ BitBucket Repo = GitLab Project
 
 Copy the following data and add subsequent columns for wave migration or nested project migration
 
-| Completed | Project Name | Total Repos   | Project Size   |
-| --------- | ------------ | ------------- | -------------- |
-| :x:       | [name]       | [total-Repos] | [project-size] |
+| Completed | Project Name   | Total Repos     | Project Size    |
+| --------- | -------------- | --------------- | --------------- |
+| :x:       | [name]         | [total-Repos]   | [project-size]  |
+| **Total** | [total-number] | [sum-of-column] | [sum-of-column] |
 
 Copy the following data and add subsequent columns for single project migration
 

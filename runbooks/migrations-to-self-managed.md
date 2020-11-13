@@ -28,7 +28,13 @@ This runbook covers the process of migrating a wave of **groups and projects** f
     
     For example:
 
-    @leopardm: PSE conducting the migration
+    ### GitLab
+
+    * @leopardm: PSE conducting the migration
+
+    ### John Doe
+
+    * @jdoe: Customer point of contact
 -->
 
 ## Groups to migrate
@@ -42,9 +48,10 @@ This runbook covers the process of migrating a wave of **groups and projects** f
 <!--
 Copy the following data and add subsequent rows for wave migration or migration of nested groups and personal projects
 
-| Completed | Group Name / User Username | Total Projects   | Size   |
-| --------- | -------------------------- | ---------------- | ------ |
-| :x:       | [name / username]          | [total-projects] | [size] |
+| Completed | Group Name / User Username | Total Projects   | Size            |
+| --------- | -------------------------- | ---------------- | --------------- |
+| :x:       | [name / username]          | [total-projects] | [size]          |
+| **Total** | [total-number]             | [sum-of-column]  | [sum-of-column] |
 
 Copy the following data and add subsequent rows for single group migration
 
@@ -91,6 +98,7 @@ Copy the following data and add subsequent rows for single group migration
 * [ ] Attach the dry run log (`data/dry_run_user_migration.json`) to this issue
 * [ ] Copy the dry run log to `/opt/congregate/data/waves/user_wave/`
 * [ ] Notify in the internal Slack channel dedicated to this migration you have completed dry run for the user wave
+* [ ] Request customer sign-off
 
 #### Migration
 
@@ -127,6 +135,7 @@ Copy the following data and add subsequent rows for single group migration
 * [ ] Attach the dry run logs (`data/dry_run_*_migration.json`) to this issue
 * [ ] Copy the dry run logs to `/opt/congregate/data/waves/wave_<insert_wave_number>/`
 * [ ] Notify in the internal Slack channel dedicated to this migration you have completed dry run for the wave
+* [ ] Request customer sign-off
 
 #### Migration
 

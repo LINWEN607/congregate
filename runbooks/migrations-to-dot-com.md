@@ -40,10 +40,10 @@ This runbook covers the process of migrating a wave of **groups and projects** f
     
     For example:
 
-    @leopardm: PSE conducting the migration
-    @kyletsmith: Security Manager (Security Incident Response Team - SIRT) in the loop in case anything goes wrong
-    @gitlab-com/gl-infra/managers: Infra managers that are aware of the migration and assigning the SRE during the migration period
-    @lyle: Support Manager with Rails Console access
+    * @leopardm: PSE conducting the migration
+    * @kyletsmith: Security Manager (Security Incident Response Team - SIRT) in the loop in case anything goes wrong
+    * @gitlab-com/gl-infra/managers: Infra managers that are aware of the migration and assigning the SRE during the migration period
+    * @lyle: Support Manager with Rails Console access
 -->
 
 ## Groups to migrate
@@ -57,9 +57,10 @@ This runbook covers the process of migrating a wave of **groups and projects** f
 <!--
 Copy the following data and add subsequent rows for wave migration or migration of nested groups and personal projects
 
-| Completed | Group Name / User Username | Total Projects   | Size   |
-| --------- | -------------------------- | ---------------- | ------ |
-| :x:       | [name / username]          | [total-projects] | [size] |
+| Completed | Group Name / User Username | Total Projects   | Size            |
+| --------- | -------------------------- | ---------------- | --------------- |
+| :x:       | [name / username]          | [total-projects] | [size]          |
+| **Total** | [total-number]             | [sum-of-column]  | [sum-of-column] |
 
 Copy the following data and add subsequent rows for single group migration
 
