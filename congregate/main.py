@@ -4,12 +4,12 @@ Copyright (c) 2020 - GitLab
 
 Usage:
     congregate init
-    congregate list [--processes=<n>] [--partial] [--src_instances]
+    congregate list [--processes=<n>] [--partial] [--src-instances]
     congregate configure
-    congregate stage-projects <projects>... [--skip-users] [--commit] [--scm_source=hostanme]
-    congregate stage-groups <groups>... [--skip-users] [--commit] [--scm_source=hostanme]
+    congregate stage-projects <projects>... [--skip-users] [--commit] [--scm-source=hostanme]
+    congregate stage-groups <groups>... [--skip-users] [--commit] [--scm-source=hostanme]
     congregate stage-wave <wave> [--commit]
-    congregate migrate [--processes=<n>] [--skip-users] [--skip-adding-members] [--skip-group-export] [--skip-group-import] [--skip-project-export] [--skip-project-import] [--only-post-migration-info] [--subgroups-only] [--commit]
+    congregate migrate [--processes=<n>] [--skip-users] [--skip-adding-members] [--skip-group-export] [--skip-group-import] [--skip-project-export] [--skip-project-import] [--only-post-migration-info] [--subgroups-only] [--scm-source=hostanme] [--commit]
     congregate rollback [--hard-delete] [--skip-users] [--skip-groups] [--skip-projects] [--commit]
     congregate ui
     congregate do-all [--commit]
@@ -174,8 +174,8 @@ def main():
         SKIP_ADDING_MEMBERS = arguments["--skip-adding-members"]
         ONLY_POST_MIGRATION_INFO = True if arguments["--only-post-migration-info"] else False
         PARTIAL = True if arguments["--partial"] else False
-        SRC_INSTANCES = True if arguments["--src_instances"] else False
-        SCM_SOURCE = arguments["--scm_source"] if arguments["--scm_source"] else None
+        SRC_INSTANCES = True if arguments["--src-instances"] else False
+        SCM_SOURCE = arguments["--scm-source"] if arguments["--scm-source"] else None
 
         if arguments["--version"]:
             with open(f"{app_path}/pyproject.toml", "r") as f:
@@ -259,7 +259,7 @@ def main():
                     skip_project_import=True if arguments["--skip-project-import"] else False,
                     only_post_migration_info=ONLY_POST_MIGRATION_INFO,
                     subgroups_only=True if arguments["--subgroups-only"] else False,
-                    scm_source=arguments["--scm_source"] if arguments["--scm_source"] else None
+                    scm_source=arguments["--scm-source"] if arguments["--scm-source"] else None
 
                 )
                 migrate.migrate()
