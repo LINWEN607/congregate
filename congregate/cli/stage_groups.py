@@ -31,9 +31,11 @@ class GroupStageCLI(BaseStageClass):
             :param: groups_to_stage: (dict) the staged groups objects
             :param: dry_run (bool) If true, it will only build the staging data lists.
         """
-        i = -1
+        i = 0
         if scm_source is not None:
-            i = self.the_number_of_instance(scm_source)     
+            i = self.the_number_of_instance(scm_source) 
+        if i == -1:
+            self.log.warning(f"Couldn't find the correct GH instance with hostname: {scm_source}")    
         # Loading projects information
         groups = self.open_groups_file(i, scm_source)
         projects = self.open_projects_file(i, scm_source)

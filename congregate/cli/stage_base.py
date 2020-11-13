@@ -132,3 +132,4 @@ class BaseStageClass(BaseClass):
         for i, single_source in enumerate(self.config.list_multiple_source_config("github_source")):
             if scm_source == single_source.get("src_hostname", None):
                 return i
+        return -1
