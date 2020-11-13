@@ -61,7 +61,8 @@ class MigrateClient(BaseClass):
         skip_group_import=False,
         skip_project_export=False,
         skip_project_import=False,
-        subgroups_only=False
+        subgroups_only=False,
+        scm_source = None
     ):
         self.ie = ImportExportClient()
         self.mirror = MirrorClient()
@@ -85,7 +86,6 @@ class MigrateClient(BaseClass):
         super(MigrateClient, self).__init__()
         self.bbs_repos_client = BBSReposClient()
         self.job_template = JobTemplateGenerator()
-        self.gh_repos = ReposClient(self.config.source_host, self.config.source_token)
 
         self.dry_run = dry_run
         self.processes = processes
@@ -101,8 +101,10 @@ class MigrateClient(BaseClass):
         self.skip_project_export = skip_project_export
         self.skip_project_import = skip_project_import
         self.subgroups_only = subgroups_only
+        self.scm_source = scm_source
 
     def migrate(self):
+        
         self.log.info(
             f"{get_dry_log(self.dry_run)}Migrating data from {self.config.source_host} ({self.config.source_type}) to {self.config.destination_host}")
 
@@ -145,6 +147,13 @@ class MigrateClient(BaseClass):
             self.groups.remove_import_user(self.config.dstn_parent_id)
 
     def migrate_from_github(self):
+        if self.scm_source is not None:
+           for single_source in b.config.list_multiple_source_config("github_source"):
+               if scm_source == single_source.get("src_hostname", None):
+                   self.gh_repos = ReposClient(single_source["src_hostname"], single_source["src_access_token"])
+        else:
+            self.gh_repos = ReposClient(self.config.source_host, self.config.source_token)
+
         dry_log = get_dry_log(self.dry_run)
 
         # Migrate users

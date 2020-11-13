@@ -258,7 +258,9 @@ def main():
                     skip_project_export=True if arguments["--skip-project-export"] or ONLY_POST_MIGRATION_INFO else False,
                     skip_project_import=True if arguments["--skip-project-import"] else False,
                     only_post_migration_info=ONLY_POST_MIGRATION_INFO,
-                    subgroups_only=True if arguments["--subgroups-only"] else False
+                    subgroups_only=True if arguments["--subgroups-only"] else False,
+                    scm_source=arguments["--scm_source"] if arguments["--scm_source"] else None
+
                 )
                 migrate.migrate()
 
