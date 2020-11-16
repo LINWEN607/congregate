@@ -90,18 +90,6 @@ def list_github_data(processes=None, partial=False, skip_users=False, skip_group
                 repos = GitHubRepos(single_source.get('src_hostname'), deobfuscate(single_source.get('src_access_token')))
                 repos.retrieve_repo_info(processes=processes)
                 mongo.dump_collection_to_file("projects", f"{b.app_path}/data/project_json-{i}.json")
-
-def list_bitbucket_data(skip_users=False, skip_groups=False, skip_projects=False):
-    if not skip_users:
-        users = BitBucketUsers()
-        users.retrieve_user_info()
-    if not skip_groups and not skip_projects:
-        projects = BitBucketProjects()
-        groups_client = BitBucketGroups()
-        repos = BitBucketRepos()
-        projects.retrieve_project_info(groups=groups)
-        groups = groups_client.retrieve_group_info()
-        repos.retrieve_repo_info(groups=groups)
     mongo.close_connection()
 
 
