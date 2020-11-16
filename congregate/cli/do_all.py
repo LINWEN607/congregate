@@ -83,5 +83,5 @@ def list_all():
     """
     # List ALL source instance users/groups/projects if empty or not recent
     if not is_recent_file(
-            "{}/data/project_json.json".format(b.app_path), age=3600):
+            "{}/data/projects.json".format(b.app_path), age=3600):
         list_data()

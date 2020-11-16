@@ -25,7 +25,7 @@ class BaseStageClass(BaseClass):
 
             :return: projects object
         """
-        with open('%s/data/project_json.json' % self.app_path, "r") as f:
+        with open('%s/data/projects.json' % self.app_path, "r") as f:
             return json.load(f)
 
     def open_groups_file(self):

@@ -32,7 +32,7 @@ class OrgsClient(BaseClass):
         self.orgs_api = OrgsApi(self.config.source_host,
                                 self.config.source_token)
         self.teams_api = TeamsApi(self.config.source_host,
-                                self.config.source_token)
+                                  self.config.source_token)
         self.repos = ReposClient()
         self.users = UsersClient()
 
@@ -43,7 +43,7 @@ class OrgsClient(BaseClass):
         """
         Get list of already formatted public repos.
         """
-        with open("{}/data/project_json.json".format(self.app_path), "r") as f:
+        with open("{}/data/projects.json".format(self.app_path), "r") as f:
             return json.load(f)
 
     def retrieve_org_info(self, processes=None):
@@ -52,8 +52,9 @@ class OrgsClient(BaseClass):
         While traversing orgs gather repo, team and member metadata.
         """
         groups = []
-        start_multi_process_stream_with_args(self.handle_org_retrieval, self.orgs_api.get_all_orgs(), groups, processes=processes)
-            
+        start_multi_process_stream_with_args(
+            self.handle_org_retrieval, self.orgs_api.get_all_orgs(), groups, processes=processes)
+
     def handle_org_retrieval(self, groups, org):
         mongoclient = self.connect_to_mongo()
         self.add_org_as_group(groups, org["login"], mongoclient)

@@ -76,7 +76,7 @@ def list_github_data(processes=None, partial=False, skip_users=False, skip_group
         repos = GitHubRepos()
         repos.retrieve_repo_info(processes=processes)
         mongo.dump_collection_to_file(
-            "projects", f"{b.app_path}/data/project_json.json")
+            "projects", f"{b.app_path}/data/projects.json")
     mongo.close_connection()
 
 

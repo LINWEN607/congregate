@@ -41,7 +41,7 @@ class ReposClient(BaseClass):
                 "members": self.add_repo_users([], repo["project"]["key"], repo["slug"], groups),
                 "default_branch": self.get_default_branch(repo["project"]["key"], repo["slug"])
             })
-        with open('%s/data/project_json.json' % self.app_path, "w") as f:
+        with open('%s/data/projects.json' % self.app_path, "w") as f:
             json.dump(remove_dupes(repos), f, indent=4)
         return remove_dupes(repos)
 
@@ -130,7 +130,7 @@ class ReposClient(BaseClass):
 
         if data["name"]:
             # Branch master is protected by default
-            #if branch == "master":
+            # if branch == "master":
             self.gl_projects_api.unprotect_repository_branches(
                 pid, quote_plus(branch), self.config.destination_host, self.config.destination_token)
             status = self.gl_projects_api.protect_repository_branches(
@@ -144,8 +144,10 @@ class ReposClient(BaseClass):
         return data
 
     def correct_repo_description(self, src_repo, pid):
-        self.log.info(f"Correcting project description for {src_repo['path_with_namespace']}")
+        self.log.info(
+            f"Correcting project description for {src_repo['path_with_namespace']}")
         data = {
             "description": src_repo.get("description", "")
         }
-        self.gl_projects_api.edit_project(self.config.destination_host, self.config.destination_token, pid, data=data)
+        self.gl_projects_api.edit_project(
+            self.config.destination_host, self.config.destination_token, pid, data=data)

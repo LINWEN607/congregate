@@ -82,7 +82,7 @@ Arguments:
     partial                                 Option used when listing. Keeps existing data in mongo instead of dropping it before retrieving new data
 
 Commands:
-    list                                    List all projects of a source instance and save it to {CONGREGATE_PATH}/data/project_json.json.
+    list                                    List all projects of a source instance and save it to {CONGREGATE_PATH}/data/projects.json.
     init                                    Creates additional directories and files required by congregate
     configure                               Configure congregate for migrating between two instances and save it to {CONGREGATE_PATH}/data/congregate.conf.
     stage-projects                          Stage projects to {CONGREGATE_PATH}/data/staged_projects.json,
