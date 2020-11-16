@@ -4,7 +4,11 @@ Copyright (c) 2020 - GitLab
 
 Usage:
     congregate init
+<<<<<<< HEAD
     congregate list [--processes=<n>] [--partial] [--src-instances]
+=======
+    congregate list [--processes=<n>] [--partial] [--skip-users] [--skip-groups] [--skip-projects] [--skip-ci]
+>>>>>>> e8c31fc33cc6377f123f89504561980cfcdc970a
     congregate configure
     congregate stage-projects <projects>... [--skip-users] [--commit] [--scm-source=hostanme]
     congregate stage-groups <groups>... [--skip-users] [--commit] [--scm-source=hostanme]
@@ -63,15 +67,16 @@ Arguments:
     scm_source                              Specific SCM source hostname
     skip-users                              Stage: Skip staging users; Migrate: Skip migrating users; Rollback: Remove only groups and projects.
     skip-adding-members                     Skip adding members from GitHub as source instance
-    hard-delete                             Remove user contributions and solely owned groups.
-    skip-groups                             Rollback: Remove only users and projects.
-    skip-group-export                       Skip exporting groups from source instance.
-    skip-group-import                       Skip importing groups to destination instance.
-    skip-projects                           Rollback: Remove only users and empty groups.
+    hard-delete                             Remove user contributions and solely owned groups
+    skip-groups                             Rollback: Remove only users and projects
+    skip-group-export                       Skip exporting groups from source instance
+    skip-group-import                       Skip importing groups to destination instance
+    skip-projects                           Rollback: Remove only users and empty groups
     skip-project-export                     Skips the project export and assumes that the project file is already ready
-                                                for rewrite. Currently does NOT work for exports through filesystem-aws.
+                                                for rewrite. Currently does NOT work for exports through filesystem-aws
     skip-project-import                     Will do all steps up to import (export, re-write exported project json,
                                                 etc). Useful for testing export contents. Will also skip any external source imports
+    skip-ci                                 Skip migrating data from CI sources
     only-post-migration-info                Skips migrating all content except for post-migration information. Use when import is handled outside of congregate
     subgroups-only                          Expects that only sub-groups are staged and that their parent groups already exist on destination
     access-level                            Update parent group level user permissions (Guest/Reporter/Developer/Maintainer/Owner).
@@ -167,15 +172,22 @@ def main():
     if __name__ == '__main__':
         arguments = docopt(__doc__)
         DRY_RUN = False if arguments["--commit"] else True
-        STAGED = True if arguments["--staged"] else False
-        ROLLBACK = True if arguments["--rollback"] else False
+        STAGED = arguments["--staged"]
+        ROLLBACK = arguments["--rollback"]
         PROCESSES = arguments["--processes"] if arguments["--processes"] else None
-        SKIP_USERS = True if arguments["--skip-users"] else False
+        SKIP_USERS = arguments["--skip-users"]
+        SKIP_GROUPS = arguments["--skip-groups"]
+        SKIP_PROJECTS = arguments["--skip-projects"]
         SKIP_ADDING_MEMBERS = arguments["--skip-adding-members"]
+<<<<<<< HEAD
         ONLY_POST_MIGRATION_INFO = True if arguments["--only-post-migration-info"] else False
         PARTIAL = True if arguments["--partial"] else False
         SRC_INSTANCES = True if arguments["--src-instances"] else False
         SCM_SOURCE = arguments["--scm-source"] if arguments["--scm-source"] else None
+=======
+        ONLY_POST_MIGRATION_INFO = arguments["--only-post-migration-info"]
+        PARTIAL = arguments["--partial"]
+>>>>>>> e8c31fc33cc6377f123f89504561980cfcdc970a
 
         if arguments["--version"]:
             with open(f"{app_path}/pyproject.toml", "r") as f:
@@ -230,7 +242,18 @@ def main():
                     "ssl_verify is set to False. Suppressing downstream SSL warnings. Consider enforcing SSL verification in the future")
 
             if arguments["list"]:
-                list_source.list_data(processes=PROCESSES, partial=PARTIAL, src_instances=SRC_INSTANCES)
+                start = time()
+                rotate_logs()
+                list_source.list_data(
+                    processes=PROCESSES,
+                    partial=PARTIAL,
+                    skip_users=SKIP_USERS,
+                    skip_groups=SKIP_GROUPS,
+                    skip_projects=SKIP_PROJECTS,
+                    skip_ci=arguments["--skip-ci"],
+                    src_instances=SRC_INSTANCES
+                )
+                add_post_migration_stats(start, log=log)
 
             if arguments["stage-projects"]:
                 pcli = ProjectStageCLI()
@@ -254,13 +277,12 @@ def main():
                     skip_users=SKIP_USERS,
                     skip_adding_members=SKIP_ADDING_MEMBERS,
                     skip_group_export=True if arguments["--skip-group-export"] or ONLY_POST_MIGRATION_INFO else False,
-                    skip_group_import=True if arguments["--skip-group-import"] else False,
+                    skip_group_import=arguments["--skip-group-import"],
                     skip_project_export=True if arguments["--skip-project-export"] or ONLY_POST_MIGRATION_INFO else False,
-                    skip_project_import=True if arguments["--skip-project-import"] else False,
+                    skip_project_import=arguments["--skip-project-import"],
                     only_post_migration_info=ONLY_POST_MIGRATION_INFO,
-                    subgroups_only=True if arguments["--subgroups-only"] else False,
-                    scm_source=arguments["--scm-source"] if arguments["--scm-source"] else None
-
+                    subgroups_only=arguments["--subgroups-only"],
+                    scm_source=arguments["--scm-source"]
                 )
                 migrate.migrate()
 
@@ -268,9 +290,9 @@ def main():
                 migrate = MigrateClient(
                     dry_run=DRY_RUN,
                     skip_users=SKIP_USERS,
-                    hard_delete=True if arguments["--hard-delete"] else False,
-                    skip_groups=True if arguments["--skip-groups"] else False,
-                    skip_projects=True if arguments["--skip-projects"] else False
+                    hard_delete=arguments["--hard-delete"],
+                    skip_groups=SKIP_GROUPS,
+                    skip_projects=SKIP_PROJECTS
                 )
                 migrate.rollback()
 

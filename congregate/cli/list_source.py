@@ -23,66 +23,85 @@ from congregate.helpers.misc_utils import deobfuscate
 
 b = BaseClass()
 
-def list_gitlab_data():
+
+def list_gitlab_data(skip_users=False, skip_groups=False, skip_projects=False):
     """
         List the projects information, and Retrieve user info, group info from source instance.
     """
-    groups = GroupsClient()
-    users = UsersClient()
-    projects = ProjectsClient()
+    if not skip_users:
+        users = UsersClient()
+        users.retrieve_user_info(b.config.source_host, b.config.source_token)
+    if not skip_groups:
+        groups = GroupsClient()
+        groups.retrieve_group_info(b.config.source_host, b.config.source_token)
+    if not skip_projects:
+        projects = ProjectsClient()
+        projects.retrieve_project_info(
+            b.config.source_host, b.config.source_token)
 
-    b.log.info("Listing data from source {}".format(b.config.source_host))
-    projects.retrieve_project_info(b.config.source_host, b.config.source_token)
-    groups.retrieve_group_info(b.config.source_host, b.config.source_token)
-    users.retrieve_user_info(b.config.source_host, b.config.source_token)
+def list_bitbucket_data(skip_users=False, skip_groups=False, skip_projects=False):
+    if not skip_users:
+        users = BitBucketUsers()
+        users.retrieve_user_info()
+    if not skip_groups and not skip_projects:
+        projects = BitBucketProjects()
+        groups_client = BitBucketGroups()
+        repos = BitBucketRepos()
+        projects.retrieve_project_info(groups=groups)
+        groups = groups_client.retrieve_group_info()
+        repos.retrieve_repo_info(groups=groups)
 
-
-def list_bitbucket_data():
-    users = BitBucketUsers()
-    projects = BitBucketProjects()
-    repos = BitBucketRepos()
-    groups_client = BitBucketGroups()
-
-    groups = groups_client.retrieve_group_info()
-
-    projects.retrieve_project_info(groups=groups)
-    repos.retrieve_repo_info(groups=groups)
-    users.retrieve_user_info()
-
-
-def list_github_data(processes=None, partial=False, src_instances=False):
+def list_github_data(processes=None, partial=False, skip_users=False, skip_groups=False, skip_projects=False, src_instances=False):
     mongo = MongoConnector()
     if not partial:
         b.log.info("Dropping database collections")
-        mongo.drop_collection("projects")
-        mongo.drop_collection("groups")
-        mongo.drop_collection("users")
+        if not skip_projects:
+            mongo.drop_collection("projects")
+        if not skip_groups:
+            mongo.drop_collection("groups")
+        if not skip_users:
+            mongo.drop_collection("users")
     if not src_instances:
-        repos = GitHubRepos(b.config.source_host, b.config.source_token)
-        orgs = GitHubOrgs(b.config.source_host, b.config.source_token)
-        users = GitHubUsers(b.config.source_host, b.config.source_token)
-
-        users.retrieve_user_info(processes=processes)
-        repos.retrieve_repo_info(processes=processes)
-        orgs.retrieve_org_info(processes=processes)
-
-        mongo.dump_collection_to_file("projects", f"{b.app_path}/data/project_json.json")
-        mongo.dump_collection_to_file("groups", f"{b.app_path}/data/groups.json")
-        mongo.dump_collection_to_file("users", f"{b.app_path}/data/users.json")
+        if not skip_users:
+            users = GitHubRepos(b.config.source_host, b.config.source_token)
+            users.retrieve_user_info(processes=processes)
+            mongo.dump_collection_to_file("users", f"{b.app_path}/data/users.json")
+        if not skip_groups:
+            orgs = GitHubOrgs(b.config.source_host, b.config.source_token)
+            orgs.retrieve_org_info(processes=processes)
+            mongo.dump_collection_to_file(
+                "groups", f"{b.app_path}/data/groups.json")
+        if not skip_projects:
+            repos = GitHubRepos(b.config.source_host, b.config.source_token)
+            repos.retrieve_repo_info(processes=processes)
+            mongo.dump_collection_to_file(
+                "projects", f"{b.app_path}/data/project_json.json")
     else:        
         for i, single_source in enumerate(b.config.list_multiple_source_config("github_source")):
-            repos = GitHubRepos(single_source.get('src_hostname'), deobfuscate(single_source.get('src_access_token')))
-            orgs = GitHubOrgs(single_source.get('src_hostname'), deobfuscate(single_source.get('src_access_token')))
-            users = GitHubUsers(single_source.get('src_hostname'), deobfuscate(single_source.get('src_access_token')))
+            if not skip_users:
+                users = GitHubUsers(single_source.get('src_hostname'), deobfuscate(single_source.get('src_access_token')))
+                users.retrieve_user_info(processes=processes)
+                mongo.dump_collection_to_file("users", f"{b.app_path}/data/users-{i}.json") 
+            if not skip_groups:    
+                orgs = GitHubOrgs(single_source.get('src_hostname'), deobfuscate(single_source.get('src_access_token')))
+                orgs.retrieve_org_info(processes=processes)
+                mongo.dump_collection_to_file("groups", f"{b.app_path}/data/groups-{i}.json")
+            if not skip_projects:    
+                repos = GitHubRepos(single_source.get('src_hostname'), deobfuscate(single_source.get('src_access_token')))
+                repos.retrieve_repo_info(processes=processes)
+                mongo.dump_collection_to_file("projects", f"{b.app_path}/data/project_json-{i}.json")
 
-            users.retrieve_user_info(processes=processes)
-            repos.retrieve_repo_info(processes=processes)
-            orgs.retrieve_org_info(processes=processes)
-
-            mongo.dump_collection_to_file("projects", f"{b.app_path}/data/project_json-{i}.json")
-            mongo.dump_collection_to_file("groups", f"{b.app_path}/data/groups-{i}.json")
-            mongo.dump_collection_to_file("users", f"{b.app_path}/data/users-{i}.json")
-
+def list_bitbucket_data(skip_users=False, skip_groups=False, skip_projects=False):
+    if not skip_users:
+        users = BitBucketUsers()
+        users.retrieve_user_info()
+    if not skip_groups and not skip_projects:
+        projects = BitBucketProjects()
+        groups_client = BitBucketGroups()
+        repos = BitBucketRepos()
+        projects.retrieve_project_info(groups=groups)
+        groups = groups_client.retrieve_group_info()
+        repos.retrieve_repo_info(groups=groups)
     mongo.close_connection()
 
 
@@ -90,17 +109,23 @@ def list_jenkins_data():
     mongo = MongoConnector()
     for i, single_jenkins_ci_source in enumerate(b.config.list_ci_source_config("jenkins_ci_source")):
         collection_name = f"jenkins-{single_jenkins_ci_source.get('jenkins_ci_src_hostname').split('//')[-1]}"
-        data = JenkinsData(single_jenkins_ci_source.get("jenkins_ci_src_hostname"), single_jenkins_ci_source.get("jenkins_ci_src_username"), deobfuscate(single_jenkins_ci_source.get("jenkins_ci_src_access_token")))
+        data = JenkinsData(single_jenkins_ci_source.get("jenkins_ci_src_hostname"), single_jenkins_ci_source.get(
+            "jenkins_ci_src_username"), deobfuscate(single_jenkins_ci_source.get("jenkins_ci_src_access_token")))
         data.retrieve_jobs_with_scm_info(i)
-        mongo.dump_collection_to_file(collection_name, f"{b.app_path}/data/jenkins-{i}.json")
+        mongo.dump_collection_to_file(
+            collection_name, f"{b.app_path}/data/jenkins-{i}.json")
+
 
 def list_teamcity_data():
     mongo = MongoConnector()
     for i, single_teamcity_ci_source in enumerate(b.config.list_ci_source_config("teamcity_ci_source")):
         collection_name = f"teamcity-{single_teamcity_ci_source.get('tc_ci_src_hostname').split('//')[-1]}"
-        data = TeamcityData(single_teamcity_ci_source.get("tc_ci_src_hostname"), single_teamcity_ci_source.get("tc_ci_src_username"), deobfuscate(single_teamcity_ci_source.get("tc_ci_src_access_token")))
+        data = TeamcityData(single_teamcity_ci_source.get("tc_ci_src_hostname"), single_teamcity_ci_source.get(
+            "tc_ci_src_username"), deobfuscate(single_teamcity_ci_source.get("tc_ci_src_access_token")))
         data.retrieve_jobs_with_vcs_info(i)
-        mongo.dump_collection_to_file(collection_name, f"{b.app_path}/data/teamcity-{i}.json")
+        mongo.dump_collection_to_file(
+            collection_name, f"{b.app_path}/data/teamcity-{i}.json")
+
 
 def write_empty_file(filename):
     """
@@ -113,25 +138,39 @@ def write_empty_file(filename):
             f.write("[]")
 
 
+<<<<<<< HEAD
 def list_data(processes=None, partial=False, src_instances=False):
+=======
+def list_data(processes=None, partial=False, skip_users=False, skip_groups=False, skip_projects=False, skip_ci=False):
+>>>>>>> e8c31fc33cc6377f123f89504561980cfcdc970a
     src_type = b.config.source_type
     staged_files = ["staged_projects", "staged_groups", "staged_users"]
-    
-    if b.config.list_ci_source_config("jenkins_ci_source"):
+
+    if b.config.list_ci_source_config("jenkins_ci_source") and not skip_ci:
+        b.log.info("Listing data from Jenkins CI source")
         list_jenkins_data()
         staged_files.append("jenkins_jobs")
 
-    if b.config.list_ci_source_config("teamcity_ci_source"):
+    if b.config.list_ci_source_config("teamcity_ci_source") and not skip_ci:
+        b.log.info("Listing data from TeamCity CI source")
         list_teamcity_data()
         staged_files.append("teamcity_jobs")
 
+    b.log.info(f"Listing data from {src_type} source")
     if src_type == "bitbucket server":
-        list_bitbucket_data()
+        list_bitbucket_data(skip_users=skip_users,
+                            skip_projects=skip_projects, skip_groups=skip_groups)
     elif src_type == "gitlab":
-        list_gitlab_data()
+        list_gitlab_data(skip_users=skip_users,
+                         skip_projects=skip_projects, skip_groups=skip_groups)
     elif src_type == "github":
+<<<<<<< HEAD
         list_github_data(processes=processes, partial=partial, src_instances=src_instances)
 
+=======
+        list_github_data(processes=processes, partial=partial, skip_users=skip_users,
+                         skip_projects=skip_projects, skip_groups=skip_groups)
+>>>>>>> e8c31fc33cc6377f123f89504561980cfcdc970a
     else:
         b.log.warning("Cannot list from source {}".format(src_type))
         exit()

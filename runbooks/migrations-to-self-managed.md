@@ -28,7 +28,13 @@ This runbook covers the process of migrating a wave of **groups and projects** f
     
     For example:
 
-    @leopardm: PSE conducting the migration
+    ### GitLab
+
+    * @leopardm: PSE conducting the migration
+
+    ### John Doe
+
+    * @jdoe: Customer point of contact
 -->
 
 ## Groups to migrate
@@ -42,9 +48,10 @@ This runbook covers the process of migrating a wave of **groups and projects** f
 <!--
 Copy the following data and add subsequent rows for wave migration or migration of nested groups and personal projects
 
-| Completed | Group Name / User Username | Total Projects   | Size   |
-| --------- | -------------------------- | ---------------- | ------ |
-| :x:       | [name / username]          | [total-projects] | [size] |
+| Completed | Group Name / User Username | Total Projects   | Size            |
+| --------- | -------------------------- | ---------------- | --------------- |
+| :x:       | [name / username]          | [total-projects] | [size]          |
+| **Total** | [total-number]             | [sum-of-column]  | [sum-of-column] |
 
 Copy the following data and add subsequent rows for single group migration
 
@@ -68,7 +75,7 @@ Copy the following data and add subsequent rows for single group migration
 * [ ] Create a directory called `user_wave` in `/opt/congregate/data/waves` if it doesn't already exist
 * [ ] Run `nohup ./congregate.sh list > data/waves/listing.log 2>&1 &` at the beginning of the migration blackout period
 * [ ] Stage ALL users
-  * [ ] **Make sure no groups and projects are staged**
+  * **NOTE:** Make sure no groups and projects are staged
 * [ ] Copy `data/staged_users.json` to `/opt/congregate/data/waves/user_wave`
 * [ ] Lookup whether the staged users (emails) already exist on the destination by running `./congregate.sh search-for-staged-users`
   * This will output a list of FOUND, NOT FOUND and DUPLICATE user `email`, along with their `id` and `state`
@@ -91,6 +98,7 @@ Copy the following data and add subsequent rows for single group migration
 * [ ] Attach the dry run log (`data/dry_run_user_migration.json`) to this issue
 * [ ] Copy the dry run log to `/opt/congregate/data/waves/user_wave/`
 * [ ] Notify in the internal Slack channel dedicated to this migration you have completed dry run for the user wave
+* [ ] Request customer sign-off
 
 #### Migration
 
@@ -120,12 +128,14 @@ Copy the following data and add subsequent rows for single group migration
 #### Dry run
 
 * [ ] Run the following command: `nohup ./congregate.sh migrate --skip-users > data/waves/wave_<insert_wave_number>/wave_<insert_wave_number>_dry_run.log 2>&1 &`
+  * [ ] If only sub-groups are staged make sure to add `--subgroups-only`
 * [ ] Confirm everything looks correct and move on to the next step in the runbook
   * Specifically, review the API requests and make sure the paths look correct. For example, make sure any parent IDs or namespaces are matching the parent ID and parent namespaces we have specified in the congregate config.
   * If anything looks wrong in the dry run, make a note of it in the issue and reach out to @pprokic or @leopardm for review. Do not proceed with the migration if the dry run data looks incorrect. If this is incorrect, the data we send will be incorrect.
 * [ ] Attach the dry run logs (`data/dry_run_*_migration.json`) to this issue
 * [ ] Copy the dry run logs to `/opt/congregate/data/waves/wave_<insert_wave_number>/`
 * [ ] Notify in the internal Slack channel dedicated to this migration you have completed dry run for the wave
+* [ ] Request customer sign-off
 
 #### Migration
 
@@ -134,6 +144,7 @@ Copy the following data and add subsequent rows for single group migration
 * [ ] On the destination instance set the `Default deletion adjourned period` (*Admin Panel -> Settings -> General -> Visibility and access controls*) to 0
   * This is required in order to have Congregate immediately delete projects that fail to import or import with a failed status
 * [ ] Run the following command `nohup ./congregate.sh migrate --skip-users --commit > data/waves/wave_<insert_wave_number>/wave<insert-wave-here>.log 2>&1 &`
+  * [ ] If only sub-groups are staged make sure to add `--subgroups-only`
 * [ ] Monitor the wave periodically by running `tail -f data/waves/wave_<insert_wave_number>/wave<insert-wave-here>.log`
 * [ ] Attach `data/congregate.log`, `data/audit.log`, and `data/waves/wave_<insert_wave_number>/wave<insert-wave-here>.log` to this issue
 * [ ] Copy `data/congregate.log`, `data/audit.log`, and `data/waves/wave_<insert_wave_number>/wave<insert-wave-here>.log` to `/opt/congregate/data/waves/wave_<insert_wave_number>/`
@@ -154,6 +165,7 @@ For each migration attempt check if any project or group imports failed or have 
     * You can also search for the groups with an API request to `/groups?search=<group-name>` or `/groups/<url-encoded-full-path>`
 * [ ] Stage _only_ those groups and projects and go through this runbook again, this time with the following command for the migration stage: `nohup ./congregate.sh migrate --skip-users --skip-group-export --skip-project-export --commit > data/waves/wave_<insert_wave_number>/wave<insert-wave-here>_attempt<insert-attempt>.log 2>&1 &`
   * [ ] If staging by group make sure to stage all sub-groups as well
+  * [ ] If only sub-groups are staged make sure to add `--subgroups-only`
 * [ ] Monitor the wave periodically by running `tail -f data/waves/wave_<insert_wave_number>/wave<insert-wave-here>_attempt<insert-attempt>.log`
 * [ ] Notify in the internal Slack channel dedicated to this migration the migration has finished
 * [ ] Notify the customer in the customer-facing Slack channel the migration wave has finished
@@ -192,7 +204,7 @@ In that script, you prepopulate all source and destination registry repositories
 * [ ] In case of unexpected errors with the migration of post-import data (SSH keys, variables, reigistries, etc.):
   * [ ] Confirm those users/groups/projects are staged
   * [ ] Run `nohup ./congregate.sh migrate --only-post-migration-info --commit > data/waves/wave_<insert_wave_number>/wave<insert-wave-here>_attempt<insert-attempt>_post_migration.log 2>&1 &` to migrate any post-migration data
-    * Skip users, groups (exports) and projects (exports) if needed
+    * **NOTE:** `--only-post-migration-info` will implicitly skip group and project exports, but not imports and user creation
 
 ### Post Migration
 
@@ -200,6 +212,7 @@ In that script, you prepopulate all source and destination registry repositories
 * [ ] Once the results have been stitched into a single JSON file, run the diff report on the newly created results file
 * [ ] Notify in the internal Slack channel dedicated to this migration you are running the diff report
 * [ ] Run `nohup ./congregate.sh generate-diff --staged > data/waves/wave_<insert_wave_number>/diff<insert-wave-here>.log 2>&1 &` to generate the various diff reports
+  * **NOTE:** Make sure to have the correct `data/staged_*` and `data/*_results.json` files present
 * [ ] Reach out the whoever has rails console access to the destination instance and have them run the following script where `group_paths` is a list of all expected full_paths for this migration wave:
 
 ```ruby
@@ -244,6 +257,13 @@ p "Number of Protected Branches import failures: #{protected_branches_import_fai
 * [ ] Copy `data/*_results.*` and `data/*_diff.json` to `/opt/congregate/data/waves/wave_<insert_wave_number>/`
 * [ ] Notify in the internal Slack channel dedicated to this migration the diff report is finished generating with a link to the comment you just posted. If you need to run another small subset of this migration, mention that in the Slack message as well.
 * [ ] Notify the customer in the customer-facing Slack channel the migration wave has finished
+
+### Archive Staged Projects
+
+* [ ] Upon successfull migration and diff report discuss with customer when to archive staged projects on source
+* [ ] Notify the customer in the customer-facing Slack channel you are archiving projects on source
+* [ ] Run `nohup ./congregate.sh archive-staged-projects --commit > data/waves/user_wave/archive.log 2>&1 &`
+  * **NOTE:** Make sure to have the correct `data/staged_projects` file present
 
 ### Rollback
 

@@ -248,7 +248,7 @@ With Congregate configured and projects, groups, and users retrieved, you should
 ``` text
 Usage:
     congregate init
-    congregate list [--processes=<n>] [--partial]
+    congregate list [--processes=<n>] [--partial] [--skip-users] [--skip-groups] [--skip-projects] [--skip-ci]
     congregate configure
     congregate stage-projects <projects>... [--skip-users] [--commit]
     congregate stage-groups <groups>... [--skip-users] [--commit]
@@ -305,15 +305,16 @@ Arguments:
     commit                                  Disable the dry-run and perform the full migration with all reads/writes.
     skip-users                              Stage: Skip staging users; Migrate: Skip migrating users; Rollback: Remove only groups and projects.
     skip-adding-members                     Skip adding members from GitHub as source instance
-    hard-delete                             Remove user contributions and solely owned groups.
-    skip-groups                             Rollback: Remove only users and projects.
-    skip-group-export                       Skip exporting groups from source instance.
-    skip-group-import                       Skip importing groups to destination instance.
-    skip-projects                           Rollback: Remove only users and empty groups.
+    hard-delete                             Remove user contributions and solely owned groups
+    skip-groups                             Rollback: Remove only users and projects
+    skip-group-export                       Skip exporting groups from source instance
+    skip-group-import                       Skip importing groups to destination instance
+    skip-projects                           Rollback: Remove only users and empty groups
     skip-project-export                     Skips the project export and assumes that the project file is already ready
-                                                for rewrite. Currently does NOT work for exports through filesystem-aws.
+                                                for rewrite. Currently does NOT work for exports through filesystem-aws
     skip-project-import                     Will do all steps up to import (export, re-write exported project json,
                                                 etc). Useful for testing export contents. Will also skip any external source imports
+    skip-ci                                 Skip migrating data from CI sources
     only-post-migration-info                Skips migrating all content except for post-migration information. Use when import is handled outside of congregate
     subgroups-only                          Expects that only sub-groups are staged and that their parent groups already exist on destination
     access-level                            Update parent group level user permissions (Guest/Reporter/Developer/Maintainer/Owner).
