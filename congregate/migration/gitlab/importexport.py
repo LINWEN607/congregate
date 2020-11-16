@@ -469,14 +469,14 @@ class ImportExportClient(BaseClass):
         while True:
             total = 0
             # Wait until rate limit is resolved or project deleted
-            while import_response.status_code in [500, 429, 409]:
+            while import_response.status_code in [500, 429, 409, 400]:
                 text = import_response.text
                 if import_response.status_code == 429:
                     self.log.info(
                         f"Re-importing project {name} to {dst_namespace}, waiting {self.COOL_OFF_MINUTES} minutes due to:\n{text}")
                     sleep(self.COOL_OFF_MINUTES * 60)
                 # Assuming Default deletion adjourned period (Admin -> Settings -> General -> Visibility and access controls) is 0
-                elif import_response.status_code == 409:
+                elif import_response.status_code in [409, 400]:
                     if total > max_wait_time:
                         self.log.error(
                             f"Time limit exceeded waiting for project {name} to delete from {dst_namespace}, with response:\n{text}")
