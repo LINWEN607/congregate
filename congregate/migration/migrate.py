@@ -125,19 +125,19 @@ class MigrateClient(BaseClass):
         add_post_migration_stats(self.start, log=self.log)
 
     def migrate_from_gitlab(self):
-        # Migrate users
+        # Users
         self.migrate_user_info()
 
-        # Migrate groups
+        # Groups
         self.migrate_group_info()
 
-        # Migrate projects
+        # Projects
         self.migrate_project_info()
 
-        # Migrate instance hooks
+        # Instance hooks
         self.hooks.migrate_instance_hooks(dry_run=self.dry_run)
 
-        # Migrate instance clusters
+        # Instance clusters
         self.clusters.migrate_instance_clusters(dry_run=self.dry_run)
 
         # Remove import user from parent group to avoid inheritance (self-managed only)
@@ -888,7 +888,7 @@ class MigrateClient(BaseClass):
 
         # Clusters
         results["clusters"] = self.clusters.migrate_project_clusters(
-            src_id, dst_id, project, jobs_enabled)
+            src_id, dst_id, path_with_namespace, jobs_enabled)
 
         self.projects.remove_import_user(dst_id)
 

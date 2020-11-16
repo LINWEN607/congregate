@@ -117,7 +117,7 @@ Commands:
     check-projects-visibility               Return list of all migrated projects' visibility.
     set-default-branch                      Set default branch to master for all projects on destination.
     enable-mirroring                        Start pull mirror process for all projects on destination.
-    count-unarchived-projects               Return total number and list of all anarchived projects on source.
+    count-unarchived-projects               Return total number and list of all unarchived projects on source.
     find-empty-repos                        Inspect project repo sizes between source and destination instance in search for empty repos.
                                                 This could be misleading as it sometimes shows 0 (zero) commits/tags/bytes for fully migrated projects.
     compare-groups                          Compare source and destination group results.

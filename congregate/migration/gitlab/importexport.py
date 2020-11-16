@@ -541,7 +541,7 @@ class ImportExportClient(BaseClass):
                     return None
             else:
                 self.log.error(
-                    f"Project {name} ({dst_namespace}) failed to import, with response:\n{import_response.text}")
+                    f"Project {name} ({dst_namespace}) failed to import, with response:\n{import_response} - {import_response.text}")
                 return None
         return import_id
 
