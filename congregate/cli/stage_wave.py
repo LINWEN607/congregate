@@ -16,12 +16,12 @@ class WaveStageCLI(BaseStageClass):
         self.groups_api = GroupsApi()
         super(WaveStageCLI, self).__init__()
 
-    def stage_data(self, wave_to_stage, dry_run=True, skip_users=False):
-        self.stage_wave(wave_to_stage)
+    def stage_data(self, wave_to_stage, dry_run=True, skip_users=False, scm_source=None):
+        self.stage_wave(wave_to_stage, scm_source)
         if not dry_run:
             self.write_staging_files(skip_users=skip_users)
 
-    def stage_wave(self, wave_to_stage):
+    def stage_wave(self, wave_to_stage, scm_source=None):
         """
         Gets all IDs of repos from specific wave listed in wave stage spreadsheet
 
@@ -31,12 +31,17 @@ class WaveStageCLI(BaseStageClass):
         :param dry_run: Optional parameter. Default True
         :return: List of IDs cast to strings to be used by ProjectStageCLI
         """
-        self.rewritten_projects = rewrite_list_into_dict(self.open_projects_file(), "id")
-        self.rewritten_users = rewrite_list_into_dict(self.open_users_file(), "id")
-        self.rewritten_groups = rewrite_list_into_dict(self.open_groups_file(), "id")
-        groups = rewrite_list_into_dict(self.open_groups_file(), "full_path")
-        projects = rewrite_list_into_dict(self.open_projects_file(), "http_url_to_repo")
-        project_paths = rewrite_list_into_dict(self.open_projects_file(), "path_with_namespace")
+        i = 0
+        if scm_source is not None:
+            i = self.the_number_of_instance(scm_source)
+        if i == -1:
+            self.log.warning(f"Couldn't find the correct GH instance with hostname: {scm_source}")
+        self.rewritten_projects = rewrite_list_into_dict(self.open_projects_file(i, scm_source), "id")
+        self.rewritten_users = rewrite_list_into_dict(self.open_users_file(i, scm_source), "id")
+        self.rewritten_groups = rewrite_list_into_dict(self.open_groups_file(i, scm_source), "id")
+        groups = rewrite_list_into_dict(self.open_groups_file(i, scm_source), "full_path")
+        projects = rewrite_list_into_dict(self.open_projects_file(i, scm_source), "http_url_to_repo")
+        project_paths = rewrite_list_into_dict(self.open_projects_file(i, scm_source), "path_with_namespace")
         wsh = WaveSpreadsheetHandler(self.config.wave_spreadsheet_path, columns_to_use=self.config.wave_spreadsheet_columns)
         wave_data = wsh.read_file_as_json(
             df_filter=(
