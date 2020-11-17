@@ -53,8 +53,6 @@ class ImportClient(BaseClass):
             return self.get_failed_result(project, data)
 
     def trigger_import_from_ghe(self, project, host, token, dry_run=True):
-        print("**********************************")
-        print(f"the GHE import token: {token}, the hostname:{host}")
         data = {
             "personal_access_token": token,
             "repo_id": project["id"],
