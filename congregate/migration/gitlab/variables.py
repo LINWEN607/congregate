@@ -110,18 +110,18 @@ class VariablesClient(BaseClass):
         ids = []
         project_id = None
         if len(files) > 0:
-            for project_json in files:
+            for project in files:
                 try:
-                    old_id = project_json["id"]
+                    old_id = project["id"]
                     project_name = proj["path_with_namespace"]
                     self.log.info("Searching for existing project {}".format(
-                        project_json["name"]))
+                        project["name"]))
                     for proj in self.projects_api.search_for_project(
                             self.config.destination_host,
                             self.config.destination_token,
-                            project_json["name"]):
-                        if proj["name"] == project_json["name"]:
-                            if "%s" % project_json["namespace"].lower() in project_name.lower():
+                            project["name"]):
+                        if proj["name"] == project["name"]:
+                            if "%s" % project["namespace"].lower() in project_name.lower():
                                 self.log.info("{0}Migrating variables for {1}"
                                               .format(get_dry_log(dry_run), proj["name"]))
                                 project_id = proj["id"]
@@ -131,7 +131,7 @@ class VariablesClient(BaseClass):
                                 project_id = None
                     if project_id is not None and not dry_run:
                         self.migrate_cicd_variables(
-                            old_id, project_id, project_name, "project")
+                            old_id, project_id, project_name, "project", project["jobs_enabled"])
                 except IOError as e:
                     self.log.error(
                         "Failed to migrate variables in stage, with error:\n{}".format(e))

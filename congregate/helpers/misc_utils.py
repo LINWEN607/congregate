@@ -15,8 +15,8 @@ from time import time
 from re import sub, findall
 from datetime import timedelta, date, datetime
 from types import GeneratorType
-from xmltodict import parse as xmlparse
 from xml.parsers.expat import ExpatError
+from xmltodict import parse as xmlparse
 from requests import get, head, Response
 
 
@@ -198,11 +198,13 @@ def json_pretty(data):
 def xml_to_dict(data):
     return sanitize_booleans_in_dict(safe_xml_parse(data))
 
+
 def safe_xml_parse(data):
     try:
         return xmlparse(data)
     except ExpatError:
         return {}
+
 
 def sanitize_booleans_in_dict(d):
     """
@@ -249,7 +251,7 @@ def clean_data(dry_run=True, files=None):
         "staged_projects.json",
         "staged_users.json",
         "staged_groups.json",
-        "project_json.json",
+        "projects.json",
         "users.json",
         "groups.json",
         "user_migration_results.json",
@@ -331,6 +333,7 @@ def find(key, dictionary):
                     for result in find(key, d):
                         yield result
 
+
 def dig(dictionary, *args):
     """
         Recursive dictionary key lookup function
@@ -342,7 +345,7 @@ def dig(dictionary, *args):
         :param dictionary: (dict) dictionary to traverse
         :param *args: (tuple) series of keys to dig through
         :return: If the most nested key is found, the value of the key
-        
+
     """
     if not args:
         return dictionary
@@ -352,6 +355,7 @@ def dig(dictionary, *args):
                 args = args[i+1:]
                 return dig(found, *args)
             return found
+
 
 def is_dot_com(host):
     return True if "gitlab.com" in host else False

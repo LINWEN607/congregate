@@ -127,19 +127,19 @@ class MigrateClient(BaseClass):
         add_post_migration_stats(self.start, log=self.log)
 
     def migrate_from_gitlab(self):
-        # Migrate users
+        # Users
         self.migrate_user_info()
 
-        # Migrate groups
+        # Groups
         self.migrate_group_info()
 
-        # Migrate projects
+        # Projects
         self.migrate_project_info()
 
-        # Migrate instance hooks
+        # Instance hooks
         self.hooks.migrate_instance_hooks(dry_run=self.dry_run)
 
-        # Migrate instance clusters
+        # Instance clusters
         self.clusters.migrate_instance_clusters(dry_run=self.dry_run)
 
         # Remove import user from parent group to avoid inheritance (self-managed only)
@@ -272,7 +272,7 @@ class MigrateClient(BaseClass):
                                 tc["tc_ci_src_access_token"]))
                             result[project["path_with_namespace"]]["teamcity_variables"] = self.migrate_teamcity_variables(
                                 project, project_id, tc_client, tc["tc_ci_src_hostname"])
-                            result[project["path_with_namespace"]]["teamcity_variables"] = self.migrate_teamcity_build_config(
+                            result[project["path_with_namespace"]]["teamcity_config_xml"] = self.migrate_teamcity_build_config(
                                 project, project_id, tc_client)
                     self.projects.remove_import_user(project_id)
                     # Added a new file in the repo
@@ -785,19 +785,19 @@ class MigrateClient(BaseClass):
             self.log.error(print_exc())
         return result
 
-    def handle_importing_projects(self, project_json):
-        src_id = project_json["id"]
-        archived = project_json["archived"]
-        path = project_json["path_with_namespace"]
+    def handle_importing_projects(self, project):
+        src_id = project["id"]
+        archived = project["archived"]
+        path = project["path_with_namespace"]
         dst_path_with_namespace = get_dst_path_with_namespace(
-            project_json)
+            project)
         result = {
             dst_path_with_namespace: False
         }
         import_id = None
         try:
-            if isinstance(project_json, str):
-                project_json = json.loads(project_json)
+            if isinstance(project, str):
+                project = json.loads(project)
             dst_pid = self.projects.find_project_by_path(
                 self.config.destination_host, self.config.destination_token, dst_path_with_namespace)
             if dst_pid:
@@ -813,7 +813,7 @@ class MigrateClient(BaseClass):
                 self.log.info("{0}Project {1} NOT found on destination, importing...".format(
                     get_dry_log(self.dry_run), dst_path_with_namespace))
                 import_id = self.ie.import_project(
-                    project_json, dry_run=self.dry_run)
+                    project, dry_run=self.dry_run)
 
             if import_id and not self.dry_run:
                 # Disable Auto DevOps
@@ -835,7 +835,7 @@ class MigrateClient(BaseClass):
                 self.log.info(
                     "Migrating source project {0} (ID: {1}) info".format(path, src_id))
                 result[dst_path_with_namespace] = self.migrate_single_project_features(
-                    project_json, import_id)
+                    project, import_id)
         except (RequestException, KeyError, OverflowError) as oe:
             self.log.error("Failed to import project {0} (ID: {1}) with error:\n{2}".format(
                 path, src_id, oe))
@@ -902,7 +902,7 @@ class MigrateClient(BaseClass):
 
         # Clusters
         results["clusters"] = self.clusters.migrate_project_clusters(
-            src_id, dst_id, project, jobs_enabled)
+            src_id, dst_id, path_with_namespace, jobs_enabled)
 
         self.projects.remove_import_user(dst_id)
 
@@ -1054,21 +1054,21 @@ class MigrateClient(BaseClass):
         ids = []
         staged_projects = self.projects.get_staged_projects()
         if staged_projects:
-            for project_json in staged_projects:
+            for project in staged_projects:
                 try:
                     self.log.debug("Searching for existing %s" %
-                                   project_json["name"])
+                                   project["name"])
                     for proj in self.projects_api.search_for_project(self.config.destination_host,
                                                                      self.config.destination_token,
-                                                                     project_json['name']):
-                        if proj["name"] == project_json["name"]:
+                                                                     project['name']):
+                        if proj["name"] == project["name"]:
 
-                            if "%s" % project_json["namespace"].lower(
+                            if "%s" % project["namespace"].lower(
                             ) in proj["path_with_namespace"].lower():
-                                if project_json["namespace"].lower(
+                                if project["namespace"].lower(
                                 ) == proj["namespace"]["name"].lower():
                                     self.log.debug("Adding {0}/{1}".format(
-                                        project_json["namespace"], project_json["name"]))
+                                        project["namespace"], project["name"]))
                                     # self.log.info("Migrating variables for %s" % proj["name"])
                                     ids.append(proj["id"])
                                     break

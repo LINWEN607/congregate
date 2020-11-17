@@ -70,7 +70,7 @@ export default {
   },
   methods: {
     getData: function () {
-      axios.get('/data/project_json').then(response => {
+      axios.get('/data/projects').then(response => {
         this.rows = response.data
         this.getStagedData()
       }).catch(function (error) {

@@ -74,12 +74,13 @@ class ImportExportClient(BaseClass):
                 status = self.get_export_status(src_id, is_project)
                 if status.status_code == 200:
                     status_json = safe_json_response(status)
-                    if status_json.get("export_status", None) == "finished":
+                    state = status_json.get("export_status", None)
+                    if state == "finished":
                         self.log.info("{0} {1} has finished exporting, with response:\n{2}".format(
                             export_type, name, json_pretty(status_json)))
                         exported = True
                         break
-                    if status_json.get("export_status", None) == "failed":
+                    if state == "failed":
                         self.log.error("{0} {1} export failed{2}, with response:\n{3}".format(
                             export_type, name, " (re-exporting)" if retry else "", json_pretty(status_json)))
                         if retry:
@@ -88,8 +89,8 @@ class ImportExportClient(BaseClass):
                             retry = False
                             total_time = 0
                     elif total_time < self.config.max_export_wait_time:
-                        self.log.info("Checking {0} {1} export status (current: {2}) in {3} seconds".format(
-                            export_type.lower(), name, status_json.get("export_status", None), wait_time))
+                        self.log.info(
+                            f"Checking {export_type.lower()} {name} export status ({state}) in {wait_time} seconds")
                         total_time += wait_time
                         sleep(wait_time)
                     else:
@@ -469,14 +470,14 @@ class ImportExportClient(BaseClass):
         while True:
             total = 0
             # Wait until rate limit is resolved or project deleted
-            while import_response.status_code in [500, 429, 409]:
+            while import_response.status_code in [500, 429, 409, 400]:
                 text = import_response.text
                 if import_response.status_code == 429:
                     self.log.info(
                         f"Re-importing project {name} to {dst_namespace}, waiting {self.COOL_OFF_MINUTES} minutes due to:\n{text}")
                     sleep(self.COOL_OFF_MINUTES * 60)
                 # Assuming Default deletion adjourned period (Admin -> Settings -> General -> Visibility and access controls) is 0
-                elif import_response.status_code == 409:
+                elif import_response.status_code in [409, 400]:
                     if total > max_wait_time:
                         self.log.error(
                             f"Time limit exceeded waiting for project {name} to delete from {dst_namespace}, with response:\n{text}")
@@ -500,11 +501,12 @@ class ImportExportClient(BaseClass):
                     host, token, import_id)
                 if status.status_code == 200:
                     status_json = safe_json_response(status)
-                    if status_json.get("import_status", None) == "finished":
+                    state = status_json.get("import_status", None)
+                    if state == "finished":
                         self.log.info(
                             f"Project {name} successfully imported to {dst_namespace}, with import status:\n{json_pretty(status_json)}")
                         break
-                    elif status_json.get("import_status", None) == "failed":
+                    elif state == "failed":
                         if self.SAML_MSG in status_json.get("import_error", None):
                             self.log.error(
                                 f"Project {name} import to {dst_namespace} failed:\n{json_pretty(status_json)}")
@@ -525,7 +527,7 @@ class ImportExportClient(BaseClass):
                     # For any other import status (started, scheduled, etc.) wait for it to update
                     elif timeout < max_wait_time:
                         self.log.info(
-                            f"Checking project {name} ({dst_namespace}) import status in {wait_time} seconds")
+                            f"Checking project {name} ({dst_namespace}) import status ({state}) in {wait_time} seconds")
                         timeout += wait_time
                         sleep(wait_time)
                     # In case of timeout delete
@@ -541,7 +543,7 @@ class ImportExportClient(BaseClass):
                     return None
             else:
                 self.log.error(
-                    f"Project {name} ({dst_namespace}) failed to import, with response:\n{import_response.text}")
+                    f"Project {name} ({dst_namespace}) failed to import, with response:\n{import_response} - {import_response.text}")
                 return None
         return import_id
 

@@ -21,7 +21,7 @@ class ProjectsClient(BaseClass):
         super(ProjectsClient, self).__init__()
 
     def get_projects(self):
-        with open("{}/data/project_json.json".format(self.app_path), "r") as f:
+        with open("{}/data/projects.json".format(self.app_path), "r") as f:
             return json.load(f)
 
     def get_staged_projects(self):
@@ -66,7 +66,7 @@ class ProjectsClient(BaseClass):
                     project["id"], host, token) if m["id"] != 1]
                 data.append(project)
 
-        with open("{}/data/project_json.json".format(self.app_path), "w") as f:
+        with open("{}/data/projects.json".format(self.app_path), "w") as f:
             json.dump(remove_dupes(data), f, indent=4)
         return remove_dupes(data)
 
@@ -202,24 +202,24 @@ class ProjectsClient(BaseClass):
         unimported_projects = []
         files = self.get_projects()
         if files is not None and files:
-            for project_json in files:
+            for project in files:
                 try:
-                    path = project_json["path_with_namespace"]
+                    path = project["path_with_namespace"]
                     self.log.info(
                         "Searching for project {} on destination".format(path))
                     project_exists = False
                     for proj in self.projects_api.search_for_project(
                             self.config.destination_host,
                             self.config.destination_token,
-                            project_json['name']):
-                        if proj["name"] == project_json["name"]:
-                            if project_json["namespace"]["full_path"].lower() == proj["path_with_namespace"].lower():
+                            project['name']):
+                        if proj["name"] == project["name"]:
+                            if project["namespace"]["full_path"].lower() == proj["path_with_namespace"].lower():
                                 project_exists = True
                                 break
                     if not project_exists:
                         self.log.info("Adding project {}".format(path))
                         unimported_projects.append(
-                            "%s/%s" % (project_json["namespace"], project_json["name"]))
+                            "%s/%s" % (project["namespace"], project["name"]))
                 except IOError as ioe:
                     self.log.error(
                         "Failed to find unimported projects, with error:\n{}".format(ioe))
@@ -260,8 +260,7 @@ class ProjectsClient(BaseClass):
             len(empty_repos), "\n".join(ep for ep in empty_repos)))
 
     def validate_staged_projects_schema(self):
-        with open("%s/data/staged_groups.json" % self.app_path, "r") as f:
-            staged_groups = json.load(f)
+        staged_groups = self.groups.get_staged_groups()
         for g in staged_groups:
             self.log.info(g)
             if g.get("name", None) is None:

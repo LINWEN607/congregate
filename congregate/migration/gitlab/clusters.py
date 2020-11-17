@@ -30,16 +30,19 @@ class ClustersClient(BaseClass):
                         break
                     if not dry_run:
                         if is_dot_com(self.config.destination_host) and self.config.dstn_parent_id:
-                            self.groups_api.add_group_cluster(
+                            resp = self.groups_api.add_group_cluster(
                                 self.config.dstn_parent_id, self.config.destination_host, self.config.destination_token, self.create_data(c, {}))
                         else:
-                            self.instance_api.add_instance_cluster(
+                            resp = self.instance_api.add_instance_cluster(
                                 self.config.destination_host, self.config.destination_token, self.create_data(c, {}))
+                        if resp.status_code != 201:
+                            self.log.error(
+                                f"Failed to create instance cluster {c}, with error:\n{resp} - {resp.text}")
             except TypeError as te:
-                self.log.error("Instance clusters {0} {1}".format(resp, te))
+                self.log.error(f"Instance clusters {resp} {te}")
             except RequestException as re:
                 self.log.error(
-                    "Failed to migrate instance clusters, with error:\n{}".format(re))
+                    f"Failed to migrate instance clusters, with error:\n{re}")
 
     def migrate_group_clusters(self, old_id, new_id, full_path):
         try:
@@ -53,8 +56,11 @@ class ClustersClient(BaseClass):
                     self.log.error(
                         f"Failed to fetch clusters ({c}) for group {full_path} (ID: {old_id})")
                     return False
-                self.groups_api.add_group_cluster(
+                resp = self.groups_api.add_group_cluster(
                     new_id, self.config.destination_host, self.config.destination_token, data=self.create_data(c, {}))
+                if resp.status_code != 201:
+                    self.log.error(
+                        f"Failed to create group {full_path} cluster {c}, with error:\n{resp} - {resp.text}")
             return True
         except TypeError as te:
             self.log.error(
@@ -65,34 +71,36 @@ class ClustersClient(BaseClass):
                 f"Failed to migrate group {full_path} (ID: {old_id}) clusters, with error:\n{re}")
             return False
 
-    def migrate_project_clusters(self, old_id, new_id, project, enabled):
+    def migrate_project_clusters(self, old_id, new_id, path, enabled):
         try:
-            name = project["name"]
             if enabled:
                 resp = self.projects_api.get_all_project_clusters(
                     old_id, self.config.source_host, self.config.source_token)
                 clusters = iter(resp)
                 self.log.info(
-                    f"Migrating project {name} (ID: {old_id}) clusters")
+                    f"Migrating project {path} (ID: {old_id}) clusters")
                 for c in clusters:
                     if is_error_message_present(c) or not c:
                         self.log.error(
-                            f"Failed to fetch clusters ({c}) for project {name} (ID: {old_id})")
+                            f"Failed to fetch project {path} (ID: {old_id}) cluster ({c})")
                         return False
-                    self.projects_api.add_project_cluster(
+                    resp = self.projects_api.add_project_cluster(
                         new_id, self.config.destination_host, self.config.destination_token, data=self.create_data(c, {}))
+                    if resp.status_code != 201:
+                        self.log.error(
+                            f"Failed to create project {path} (ID: {new_id}) cluster ({c}), with error:\n{resp} - {resp.text}")
                 return True
             else:
                 self.log.info(
-                    f"Clusters are disabled ({enabled}) for project {name}")
+                    f"Clusters are disabled ({enabled}) for project {path}")
                 return None
         except TypeError as te:
             self.log.error(
-                f"Project {name} (ID: {old_id}) clusters {resp} {te}")
+                f"Project {path} (ID: {old_id}) clusters {resp} {te}")
             return False
         except RequestException as re:
             self.log.error(
-                f"Failed to migrate project {name} (ID: {old_id}) clusters, with error:\n{re}")
+                f"Failed to migrate project {path} (ID: {old_id}) clusters, with error:\n{re}")
             return False
 
     def create_data(self, c, data):

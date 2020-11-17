@@ -31,7 +31,7 @@ def get_data(file_name, sort_by=None):
 
 @app.route("/data/summary")
 def get_counts():
-    total_projects = len(get_data("project_json"))
+    total_projects = len(get_data("projects"))
     staged_projects = get_data("staged_projects")
     total_users = len(get_data("users"))
     staged_users = get_data("staged_users")

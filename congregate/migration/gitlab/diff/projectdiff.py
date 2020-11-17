@@ -44,6 +44,7 @@ class ProjectDiffClient(BaseDiffClient):
             "marked_for_deletion_at",
             "marked_for_deletion_on",
             "compliance_frameworks",
+            "requirements_enabled",
             "forked_from_project"   # Temporarily, until we add fork relationship feature
         ]
         if staged:
@@ -51,7 +52,7 @@ class ProjectDiffClient(BaseDiffClient):
                 "%s/data/staged_projects.json" % self.app_path)
         else:
             self.source_data = self.load_json_data(
-                "%s/data/project_json.json" % self.app_path)
+                "%s/data/projects.json" % self.app_path)
         self.source_data = [i for i in self.source_data if i]
 
     def generate_diff_report(self):
