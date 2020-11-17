@@ -9,12 +9,14 @@ from congregate.migration.meta.etl import WaveSpreadsheetHandler
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.cli.stage_base import BaseStageClass
 from congregate.cli.stage_projects import ProjectStageCLI
+from congregate.helpers.logger import myLogger
 
 class WaveStageCLI(BaseStageClass):
     def __init__(self):
         self.pcli = ProjectStageCLI()
         self.groups_api = GroupsApi()
         super(WaveStageCLI, self).__init__()
+        self.log = myLogger(__name__)
 
     def stage_data(self, wave_to_stage, dry_run=True, skip_users=False, scm_source=None):
         self.stage_wave(wave_to_stage, dry_run, scm_source)
@@ -58,7 +60,8 @@ class WaveStageCLI(BaseStageClass):
                     group["full_path"] = f"{w[parent_path]}/{group['full_path']}"
                 self.handle_parent_group(w, group)
                 self.append_group_data(group, wave_data, w, dry_run=dry_run)
-    
+            else:
+                self.log.warning(f"The project {w[url_key]} doesn't exit on source instance")
     def append_project_data(self, project, projects_to_stage, wave_row, p_range=0, dry_run=True):
         for member in project["members"]:
             self.append_member_to_members_list([], member, dry_run)
