@@ -17,11 +17,11 @@ class WaveStageCLI(BaseStageClass):
         super(WaveStageCLI, self).__init__()
 
     def stage_data(self, wave_to_stage, dry_run=True, skip_users=False, scm_source=None):
-        self.stage_wave(wave_to_stage, scm_source)
+        self.stage_wave(wave_to_stage, dry_run, scm_source)
         if not dry_run:
             self.write_staging_files(skip_users=skip_users)
 
-    def stage_wave(self, wave_to_stage, scm_source=None):
+    def stage_wave(self, wave_to_stage, dry_run=True, scm_source=None):
         """
         Gets all IDs of repos from specific wave listed in wave stage spreadsheet
 
@@ -52,12 +52,12 @@ class WaveStageCLI(BaseStageClass):
                 obj = self.get_project_metadata(project)
                 if parent_path := self.config.wave_spreadsheet_column_mapping.get("Parent Path"):
                     obj["target_namespace"] = w[parent_path]
-                self.append_project_data(obj, wave_data, w)
+                self.append_project_data(obj, wave_data, w, dry_run=dry_run)
             elif group := groups.get(w[url_key].rstrip("/").split("/")[-1]):
                 if parent_path := self.config.wave_spreadsheet_column_mapping.get("Parent Path"):
                     group["full_path"] = f"{w[parent_path]}/{group['full_path']}"
                 self.handle_parent_group(w, group)
-                self.append_group_data(group, wave_data, w)
+                self.append_group_data(group, wave_data, w, dry_run=dry_run)
     
     def append_project_data(self, project, projects_to_stage, wave_row, p_range=0, dry_run=True):
         for member in project["members"]:
