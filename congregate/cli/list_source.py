@@ -126,11 +126,7 @@ def write_empty_file(filename):
             f.write("[]")
 
 
-<<<<<<< HEAD
-def list_data(processes=None, partial=False, src_instances=False):
-=======
-def list_data(processes=None, partial=False, skip_users=False, skip_groups=False, skip_projects=False, skip_ci=False):
->>>>>>> e8c31fc33cc6377f123f89504561980cfcdc970a
+def list_data(processes=None, partial=False, skip_users=False, skip_groups=False, skip_projects=False, skip_ci=False, src_instances=False):
     src_type = b.config.source_type
     staged_files = ["staged_projects", "staged_groups", "staged_users"]
 
@@ -152,13 +148,8 @@ def list_data(processes=None, partial=False, skip_users=False, skip_groups=False
         list_gitlab_data(skip_users=skip_users,
                          skip_projects=skip_projects, skip_groups=skip_groups)
     elif src_type == "github":
-<<<<<<< HEAD
-        list_github_data(processes=processes, partial=partial, src_instances=src_instances)
-
-=======
         list_github_data(processes=processes, partial=partial, skip_users=skip_users,
-                         skip_projects=skip_projects, skip_groups=skip_groups)
->>>>>>> e8c31fc33cc6377f123f89504561980cfcdc970a
+                         skip_projects=skip_projects, skip_groups=skip_groups, src_instances=src_instances)
     else:
         b.log.warning("Cannot list from source {}".format(src_type))
         exit()
