@@ -545,3 +545,12 @@ class MiscUtilsTests(unittest.TestCase):
         actual = misc.dig(test, "nest", "hello")
 
         self.assertEqual(expected, actual)
+
+    @mock.patch("os.listdir")
+    def test_find_files_in_folder(self, mock_list_dir):
+        mock_list_dir.return_value = ["projects.json", "groups.json", "teamcity-0.json", "teamcity-1.json"]
+
+        expected = ["teamcity-0.json", "teamcity-1.json"]
+        actual = misc.find_files_in_folder("teamcity")
+
+        self.assertListEqual(expected, actual)

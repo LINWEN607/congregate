@@ -390,7 +390,7 @@ class StageWaveTests(unittest.TestCase):
             {
                 "id": 4,
                 "name": "Diaspora Client",
-                "namespace": "diaspora",
+                "namespace": "path/to/group/diaspora",
                 "path": "diaspora-client",
                 "path_with_namespace": "diaspora/diaspora-client",
                 "visibility": "private",
@@ -413,12 +413,12 @@ class StageWaveTests(unittest.TestCase):
                 'archived': False,
                 'shared_with_groups': [],
                 'default_branch': 'master',
-                'target_namespace': '/path/to/group'
+                'target_namespace': 'path/to/group'
             },
             {
                 "id": 80,
                 "name": "Puppet",
-                "namespace": "brightbox",
+                "namespace": "path/to/group/brightbox",
                 "path": "puppet",
                 "path_with_namespace": "brightbox/puppet",
                 "visibility": "private",
@@ -441,7 +441,7 @@ class StageWaveTests(unittest.TestCase):
                 'archived': False,
                 'shared_with_groups': [],
                 'default_branch': 'master',
-                'target_namespace': '/path/to/group'
+                'target_namespace': 'path/to/group'
             }
         ]
 
@@ -476,3 +476,23 @@ class StageWaveTests(unittest.TestCase):
         self.wcli.stage_wave("Wave1")
         actual = self.wcli.staged_projects
         self.assertListEqual(expected, actual)
+
+    @mock.patch('congregate.helpers.conf.Config.source_host', new_callable=mock.PropertyMock)
+    def test_sanitize_project_path(self, mock_host):
+        mock_host.return_value = "http://gitlab.com"
+        url = "http://gitlab.com/path/to/repo.git"
+
+        expected = "path/to/repo.git"
+        actual = self.wcli.sanitize_project_path(url)
+
+        self.assertEqual(expected, actual)
+
+    @mock.patch('congregate.helpers.conf.Config.source_host', new_callable=mock.PropertyMock)
+    def test_sanitize_project_path_with_spaces(self, mock_host):
+        mock_host.return_value = "http://gitlab.com"
+        url = "http://gitlab.com/path/to/repo.git    "
+
+        expected = "path/to/repo.git"
+        actual = self.wcli.sanitize_project_path(url)
+
+        self.assertEqual(expected, actual)

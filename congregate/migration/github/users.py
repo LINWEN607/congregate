@@ -1,6 +1,6 @@
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.mdbc import MongoConnector
-from congregate.helpers.processes import start_multi_process_stream
+from congregate.helpers.processes import start_multi_process_stream_with_args
 from congregate.migration.github.api.users import UsersApi
 from congregate.migration.github.meta.github_browser import GitHubBrowser
 from congregate.helpers.misc_utils import safe_json_response, is_error_message_present
@@ -22,13 +22,12 @@ class UsersClient(BaseClass):
         """
         List and transform all GitHub user to GitLab user metadata
         """
-        start_multi_process_stream(self.handle_retrieving_users, self.users_api.get_all_users(), processes=processes)
+        start_multi_process_stream_with_args(self.handle_retrieving_users, self.users_api.get_all_users(), self.establish_browser_connection(), processes=processes)
     
-    def handle_retrieving_users(self, user, mongo=None):
+    def handle_retrieving_users(self, browser, user, mongo=None):
         # mongo should be set to None unless this function is being used in a unit test
         if not mongo:
             mongo = self.connect_to_mongo()
-        browser = self.establish_browser_connection()
         single_user = safe_json_response(
             self.users_api.get_user(user["login"]))
         if not single_user or is_error_message_present(single_user):
@@ -49,8 +48,7 @@ class UsersClient(BaseClass):
                 self.log.error("Failed to get JSON for user {} ({})".format(
                     user["login"], single_user))
             else:
-                github_browser = self.establish_browser_connection()
-                data.append(self.format_user(single_user, github_browser, mongo))
+                data.append(self.format_user(single_user, None, mongo))
                 # When formatting org, team and repo users
                 if user.get("permissions", None):
                     data[-1]["access_level"] = user["permissions"]
@@ -72,5 +70,6 @@ class UsersClient(BaseClass):
             return email
         elif email := mongo.find_user_email(single_user["email"]):
             return email
-        self.log.warning(f"User email not found. Attempting to scrape for username {single_user['login']}")
-        return github_browser.scrape_user_email(single_user["login"])
+        elif github_browser:
+            self.log.warning(f"User email not found. Attempting to scrape for username {single_user['login']}")
+            return github_browser.scrape_user_email(single_user["login"])

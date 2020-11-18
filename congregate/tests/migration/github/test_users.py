@@ -41,6 +41,7 @@ class UsersTests(unittest.TestCase):
     @patch("congregate.helpers.conf.Config.source_host", new_callable=PropertyMock)
     @patch("congregate.helpers.conf.Config.source_token", new_callable=PropertyMock)
     @patch.object(MongoConnector, "close_connection")
+    @responses.activate
     def test_retrieve_user_info(self,
                                 close_connection,
                                 mock_source_token,
@@ -73,8 +74,21 @@ class UsersTests(unittest.TestCase):
         close_connection.return_value = None
 
         mongo = MongoConnector(host="test-server", port=123456, client=mongomock.MongoClient)
+        scrape = GitHubWebPageScrape()
+        # pylint: disable=no-member
+        responses.add(responses.GET, "http://github.example.com",
+                      body=scrape.auth_token(), status=200, content_type='text/html', match_querystring=True)
+        responses.add(responses.POST, "http://github.example.com/session",
+                      body=None, status=200, content_type='text/html', match_querystring=True)
+        responses.add(responses.GET, "http://github.example.com/stafftools/users/jdoe",
+                      body=scrape.html_snippet(), status=200, content_type='text/html', match_querystring=True)
+        responses.add(responses.GET, "http://github.example.com/stafftools/users/admin",
+                      body=scrape.html_snippet(), status=200, content_type='text/html', match_querystring=True)
+        # pylint: enable=no-member
+        browser = GitHubBrowser(
+            "http://github.example.com", "admin", "password")
         for user in self.users.users_api.get_all_users():
-            self.users.handle_retrieving_users(user, mongo=mongo)
+            self.users.handle_retrieving_users(browser, user, mongo=mongo)
 
         actual_users = [d for d, _ in mongo.stream_collection("users")]
 
@@ -86,7 +100,7 @@ class UsersTests(unittest.TestCase):
                 "state": "active",
                 "avatar_url": "https://github.gitlab-proserv.net/avatars/u/1?",
                 "is_admin": False,
-                "email": None
+                "email": "test@email.com"
             },
             {
                 "username": "gitlab",
@@ -95,7 +109,7 @@ class UsersTests(unittest.TestCase):
                 "state": "active",
                 "avatar_url": "https://github.gitlab-proserv.net/avatars/u/3?",
                 "is_admin": True,
-                "email": None
+                "email": "test@email.com"
             }
         ]
 
@@ -238,6 +252,8 @@ class UsersTests(unittest.TestCase):
         responses.add(responses.POST, "http://github.example.com/session",
                       body=None, status=200, content_type='text/html', match_querystring=True)
         responses.add(responses.GET, "http://github.example.com/stafftools/users/jdoe",
+                      body=scrape.html_snippet(), status=200, content_type='text/html', match_querystring=True)
+        responses.add(responses.GET, "http://github.example.com/stafftools/users/admin",
                       body=scrape.html_snippet(), status=200, content_type='text/html', match_querystring=True)
         # pylint: enable=no-member
         browser = GitHubBrowser(

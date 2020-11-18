@@ -1,6 +1,7 @@
+from re import search
 from pymongo import MongoClient, errors
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import stream_json_yield_to_file
+from congregate.helpers.misc_utils import stream_json_yield_to_file, read_json_file_into_object, find_files_in_folder
 
 class MongoConnector(BaseClass):
     """
@@ -64,3 +65,16 @@ class MongoConnector(BaseClass):
     def find_user_email(self, username):
         if query := self.db.users.find_one({ "username": username }):
             return query["email"]
+
+    def ingest_json_file_into_mongo(self, file_path, collection=None):
+        if not collection:
+            collection = (search(r"(.+\/)(.+)\.json", file_path)).group(2)
+        for data in read_json_file_into_object(file_path):
+            self.insert_data(collection, data)
+
+    def re_ingest_into_mongo(self, asset_type):
+        for found_file in find_files_in_folder(asset_type):
+            if ".json" in found_file:
+                self.ingest_json_file_into_mongo(f"{self.app_path}/data/{found_file}")
+
+        
