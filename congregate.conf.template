@@ -102,7 +102,7 @@
 #sources = {
 #    "github_source": [{
 #        "src_hostname": "https://github.gitlab-proserv.net",
-#        "src_access_token": "ZjgyZTY0NzdlZDUyMGQ4ODViZTQzN2YxZWRjODQ4MGM0NTIyZjFjNw=="
+#        "src_access_token": "<base64 encoded token>"
 #        },{
 #        "src_hostname": "https://github.gitlab-proserv.net",
 #        "src_access_token": "ZjgyZTY0NzdlZDUyMGQ4ODViZTQzN2YxZWRjODQ4MGM0NTIyZjFjNw=="
