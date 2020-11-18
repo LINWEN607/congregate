@@ -52,7 +52,7 @@ class BaseStageClass(BaseClass):
             :return: users object
         """
         if scm_source is not None:
-            with open(f"%s/data/users-{i}.json" % self.app_path, "r") as f:
+            with open(f"{self.app_path}/data/users-{i}.json", "r") as f:
                 return json.load(f)
         else:        
             with open("%s/data/users.json" % self.app_path, "r") as f:
