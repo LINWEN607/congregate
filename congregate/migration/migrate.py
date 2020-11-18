@@ -206,14 +206,14 @@ class MigrateClient(BaseClass):
                 Reporting(
                     self.config.reporting["pmi_project_id"], project_name=group["name"])
             # Wait for parent group to create
-            if self.config.dstn_parent_group_path is not None:
-                pnamespace = self.groups.wait_for_parent_group_creation(group)
-                if not pnamespace:
-                    return {
-                        group["full_path"]: False
-                    }
-            group["parent_id"] = safe_json_response(
-                pnamespace)["id"] if group["parent_id"] else self.config.dstn_parent_id
+            # if self.config.dstn_parent_group_path is not None:
+            #     pnamespace = self.groups.wait_for_parent_group_creation(group)
+            #     if not pnamespace:
+            #         return {
+            #             group["full_path"]: False
+            #         }
+            # group["parent_id"] = safe_json_response(
+            #     pnamespace)["id"] if group["parent_id"] else self.config.dstn_parent_id
             if group.get("description", None) is None:
                 group["description"] = ""
             result = safe_json_response(self.groups_api.create_group(

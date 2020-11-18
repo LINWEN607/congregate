@@ -60,7 +60,7 @@ class WaveStageCLI(BaseStageClass):
                 obj = self.get_project_metadata(project)
                 if parent_path := self.config.wave_spreadsheet_column_mapping.get("Parent Path"):
                     obj["target_namespace"] = w[parent_path].strip("/")
-                    obj["namespace"] = f"{w[parent_path].strip('/')}/{obj['namespace']}"
+                    # obj["namespace"] = f"{w[parent_path].strip('/')}/{obj['namespace']}"
                 self.append_project_data(obj, wave_data, w, dry_run=dry_run)
             elif group := groups.get(w[url_key].rstrip("/").split("/")[-1]):
                 if parent_path := self.config.wave_spreadsheet_column_mapping.get("Parent Path"):

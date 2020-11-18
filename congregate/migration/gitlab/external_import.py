@@ -56,7 +56,7 @@ class ImportClient(BaseClass):
         data = {
             "personal_access_token": token,
             "repo_id": project["id"],
-            "target_namespace": f"{project.get('target_namespace', None)}/{project['path_with_namespace']}" if project.get("target_namespace", None) else get_dst_path_with_namespace(project).rsplit("/", 1)[0]
+            "target_namespace": f"{project.get('target_namespace', None)}/{project['namespace']}" if project.get("target_namespace", None) else get_dst_path_with_namespace(project).rsplit("/", 1)[0]
         }
         dest_version = safe_json_response(self.instance.get_version(
             self.config.destination_host, self.config.destination_token))
