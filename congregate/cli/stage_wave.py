@@ -56,10 +56,11 @@ class WaveStageCLI(BaseStageClass):
                 self.config.wave_spreadsheet_column_mapping["Wave name"], wave_to_stage))
         for w in wave_data:
             url_key = self.config.wave_spreadsheet_column_mapping["Source Url"]
-            if project := (projects.get(w[url_key], None) or project_paths.get(w[url_key].rstrip("/").split(self.config.source_host)[-1].lstrip("/"))):
+            if project := (projects.get(w[url_key], None) or project_paths.get(self.sanitize_project_path(w[url_key]))):
                 obj = self.get_project_metadata(project)
                 if parent_path := self.config.wave_spreadsheet_column_mapping.get("Parent Path"):
-                    obj["target_namespace"] = w[parent_path]
+                    obj["target_namespace"] = w[parent_path].strip("/")
+                    obj["namespace"] = f"{w[parent_path].strip('/')}/{obj['namespace']}"
                 self.append_project_data(obj, wave_data, w, dry_run=dry_run)
             elif group := groups.get(w[url_key].rstrip("/").split("/")[-1]):
                 if parent_path := self.config.wave_spreadsheet_column_mapping.get("Parent Path"):
@@ -127,3 +128,6 @@ class WaveStageCLI(BaseStageClass):
             group["full_path"] = self.append_parent_group_full_path(
                 group, wave_row, parent_path)
             group["parent_id"] = self.get_parent_id(wave_row, parent_path)
+
+    def sanitize_project_path(self, http_url_to_repo):
+        return http_url_to_repo.rstrip("/").split(self.config.source_host)[-1].lstrip("/").strip(" ")

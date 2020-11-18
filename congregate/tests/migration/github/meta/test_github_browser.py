@@ -16,6 +16,8 @@ class GitHubBrowserTests(unittest.TestCase):
                       body=None, status=200, content_type='text/html', match_querystring=True)
         responses.add(responses.GET, "http://github.example.com/stafftools/users/jdoe",
                       body=scrape.html_snippet(), status=200, content_type='text/html', match_querystring=True)
+        responses.add(responses.GET, "http://github.example.com/stafftools/users/admin",
+                      body=scrape.html_snippet(), status=200, content_type='text/html', match_querystring=True)
         # pylint: enable=no-member
         browser = GitHubBrowser(
             "http://github.example.com", "admin", "password")

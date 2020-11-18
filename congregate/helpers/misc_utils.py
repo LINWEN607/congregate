@@ -242,7 +242,7 @@ def deobfuscate(secret):
 
 
 def convert_to_underscores(s):
-    return sub(r" |\/|\.", "_", s)
+    return sub(r" |\/|\.|\:", "_", s)
 
 
 def clean_data(dry_run=True, files=None):
@@ -622,3 +622,6 @@ def get_duplicate_paths(data, are_projects=True):
     paths = [x.get("path_with_namespace", "").lower() if are_projects else x.get(
         "full_path", "").lower() for x in data]
     return [i for i, c in Counter(paths).items() if c > 1]
+
+def find_files_in_folder(wildcard, directory="data"):
+    return [f for f in os.listdir(f"{get_congregate_path()}/{directory}") if wildcard in f]

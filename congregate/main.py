@@ -49,6 +49,8 @@ Usage:
     congregate clean [--commit]
     congregate stitch-results [--result-type=<project|group|user>] [--no-of-files=<n>] [--head|--tail]
     congregate obfuscate
+    congregate dump-database
+    congregate reingest <assets>...
     congregate -h | --help
     congregate -v | --version
 
@@ -134,6 +136,8 @@ Commands:
     generate-diff                           Generates HTML files containing the diff results of the migration
     map-users                               Maps staged user emails to emails defined in the user-provided user_map.csv
     obfuscate                               Obfuscate a secret or password that you want to manually update in the config.
+    dump-database                           Dump all database collections to various JSON files
+    reingest                                Reingest database dumps into mongo. Specify the asset type (users, groups, projects, teamcity, jenkins)
 """
 
 import os
@@ -220,6 +224,8 @@ def main():
             from congregate.migration.gitlab.diff.projectdiff import ProjectDiffClient
             from congregate.migration.gitlab.diff.groupdiff import GroupDiffClient
             from congregate.helpers.user_util import map_users
+            from congregate.helpers.mdbc import MongoConnector
+            from congregate.helpers.misc_utils import convert_to_underscores
             config = conf.Config()
             users = UsersClient()
             groups = GroupsClient()
@@ -409,6 +415,20 @@ def main():
                 new_results = stitch_json_results(
                     result_type=result_type, steps=steps, order=order)
                 write_results_to_file(new_results, result_type, log=log)
+            if arguments["dump-database"]:
+                m = MongoConnector()
+                for collection in m.db.list_collection_names():
+                    if collection == "projects":
+                        collection = "project_json"
+                    print(f"Dumping collection {collection} to file")
+                    m.dump_collection_to_file(collection, f"{app_path}/data/{convert_to_underscores(collection)}.json")
+            if arguments["reingest"]:
+                m = MongoConnector()
+                for asset in arguments["<assets>"]:
+                    if asset == "projects":
+                        asset = "project_json"
+                    print(f"Reingesting {asset} into database")
+                    m.re_ingest_into_mongo(asset)
         if arguments["obfuscate"]:
             print(obfuscate("Secret:"))
 
