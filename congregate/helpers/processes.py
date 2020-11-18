@@ -69,6 +69,7 @@ def handle_multi_process_write_to_file_and_return_results(function, results_func
                 f.write(json_pretty(result))
                 yield results_function(result)
         except TypeError as te:
+            print_exc()
             print("Found None ({}). Stopping write to file".format(te))
         except Exception as e:
             b.log.error("Migration processes failed with error:\n{}".format(e))

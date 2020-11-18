@@ -112,7 +112,7 @@ class ReposClient(BaseClass):
 
     def migrate_gh_project_protected_branch(self, new_id, repo):
         is_result = False
-        branches = self.repos_api.get_list_branches(
+        branches = self.repos_api.get_repo_branches(
             repo["namespace"], repo["path"])
         for branch in branches:
             if branch["protected"]:
@@ -196,6 +196,169 @@ class ReposClient(BaseClass):
             "approvals_required": 1,
             "protected_branch_ids": protected_branch_ids
         }
+
+    def transform_gh_repo_commit(self, commits):
+        list_of_commits = []
+        for commit in commits:
+            list_of_commits.append(
+                {
+                    "id": commit["sha"],
+                    "message": commit["message"],
+                    "author_name": commit["commit"]["author"]["name"],
+                    "author_email": commit["commit"]["author"]["email"],
+                    "authored_date": commit["commit"]["author"]["date"],
+                    "committer_name": commit["commit"]["committer"]["name"],
+                    "committer_email": commit["commit"]["committer"]["email"],
+                    "committed_date": commit["commit"]["committer"]["date"],
+                }
+            )
+
+        return list_of_commits
+
+    def transform_gh_branches(self, branches):
+        list_of_branches = []
+        for branch in branches:
+            list_of_branches.append(
+                {
+                    "name": branch["name"],
+                    "commit": {
+                        "id": branch["commit"]["sha"],
+                    },
+                    "protected": branch["protected"],
+                }
+            )
+
+        return list_of_branches
+
+    def transform_gh_pull_requests(self, pull_requests):
+        list_of_merge_requests = []
+        for mr in pull_requests:
+            if mr["state"] == "open":
+                state = "opened"
+            assignees_list = []
+            if mr["assignees"]:
+                for assignee in mr["assignees"]:
+                    assignees_list.append(
+                        {
+                            "username": assignee["login"],
+                        }
+                    )
+            list_of_merge_requests.append(
+                {
+                    "title": mr["title"],
+                    "description": mr["head"]["repo"]["description"],
+                    "state": state,
+                    "created_at": mr["created_at"],
+                    "updated_at": mr["updated_at"],
+                    "author": {
+                        "username": mr["user"]["login"],
+                    },
+                    "assignees": assignees_list,
+                    "work_in_progress": mr["draft"],
+                    "milestone": mr["milestone"],
+                }
+            )
+
+        return list_of_merge_requests
+
+    def transform_gh_tags(self, tags):
+        list_of_tags = []
+        for tag in tags:
+            list_of_tags.append(
+                {
+                    "name": tag["name"],
+                    "commit": {
+                        "id": tag["commit"]["sha"],
+                    },
+                    "target": tag["commit"]["sha"]
+                }
+            )
+
+        return list_of_tags
+
+    def transform_gh_milestones(self, milestones):
+        list_of_milestones = []
+        for milestone in milestones:
+            if milestone["state"] == "open":
+                milestone_status = "active"
+            list_of_milestones.append(
+                {
+                    "title": milestone["title"],
+                    "description": milestone["description"],
+                    "state": milestone_status,
+                    "created_at": milestone["created_at"],
+                    "updated_at": milestone["updated_at"],
+                    "due_date": milestone["due_on"],
+                }
+            )
+
+        return list_of_milestones
+
+    def transform_gh_releases(self, releases):
+        list_of_releases = []
+        for release in releases:
+            list_of_releases.append(
+                {
+                    "name": release["name"],
+                    "tag_name": release["tag_name"],
+                    "description": release["body"],
+                    "created_at": release["created_at"],
+                    "released_at": release["published_at"],
+                    "author": {
+                        "username": release["author"]["login"],
+                    },
+                    "upcoming_release": release["prerelease"],
+                }
+            )
+
+        return list_of_releases
+
+    def transform_gh_pr_comments(self, pr_comments):
+        list_of_pr_comments = []
+        for comment in pr_comments:
+            list_of_pr_comments.append(
+                {
+                    "body": comment["body"],
+                    "author": {
+                        "username": comment["user"]["login"],
+                    },
+                    "created_at": comment["created_at"],
+                    "updated_at": comment["updated_at"],
+                }
+            )
+
+        return list_of_pr_comments
+
+    def transform_gh_issues(self, issues):
+        list_of_issues = []
+        for issue in issues:
+            labels_list = []
+            for label in issue["labels"]:
+                labels_list.append(label["name"])
+            assignees_list = []
+            for assignee in issue["assignees"]:
+                assignees_list.append(assignee["login"])
+            list_of_issues.append(
+                {
+                    "title": issue["title"],
+                    "description": issue["body"],
+                    "state": issue["state"],
+                    "created_at": issue["created_at"],
+                    "updated_at": issue["updated_at"],
+                    "closed_at": issue["closed_at"],
+                    "labels": labels_list,
+                    "milestone": issue["milestone"],
+                    "assignees": assignees_list,
+                    "author": {
+                        "username": issue["user"]["login"],
+                    },
+                    "assignee": issue["assignee"],
+                    "user_notes_count": issue["comments"],
+                    "discussion_locked": issue["locked"],
+                }
+            )
+
+        return list_of_issues
 
     def migrate_archived_repo(self, new_id, repo):
         gh_repo = safe_json_response(

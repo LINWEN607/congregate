@@ -234,9 +234,18 @@ class MigrateClient(BaseClass):
 
     def import_github_project(self, project):
         members = project.pop("members")
-        result = self.ext_import.trigger_import_from_ghe(
-            project, dry_run=self.dry_run)
-        if result.get(project["path_with_namespace"], False) is not False:
+        dst_path_with_namespace = get_dst_path_with_namespace(
+            project)
+        if dst_pid := self.projects.find_project_by_path(
+            self.config.destination_host, self.config.destination_token, dst_path_with_namespace):
+            self.log.info(f"Project '{dst_path_with_namespace}' already exists. Skipping import")
+            response = safe_json_response(self.projects_api.get_project(dst_pid, self.config.destination_host, self.config.destination_token))
+            result = self.ext_import.get_result_data(project, response)
+        else:
+            result = self.ext_import.trigger_import_from_ghe(
+                project, dry_run=self.dry_run)
+        
+        if result.get(project["path_with_namespace"], False) is not False and not self.dry_run:
             result_response = result[project["path_with_namespace"]]["response"]
             if project_id := result_response.get("id", None):
                 full_path = result_response.get("full_path").strip("/")

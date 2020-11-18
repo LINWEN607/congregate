@@ -383,6 +383,19 @@ class ProjectsApi():
         """
         return api.list_all(host, token, f"projects/{id}/milestones")
 
+    def get_all_project_issues(self, id, host, token):
+        """
+        Returns a list of project issues
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/issues.html#list-project-issues
+
+            :param: id: (int) GitLab project ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Generator returning JSON of each result from GET /projects/:id/issues
+        """
+        return api.list_all(host, token, f"projects/{id}/issues")
+
     def get_all_project_releases(self, id, host, token):
         """
         Returns a paginated list releases for a given project

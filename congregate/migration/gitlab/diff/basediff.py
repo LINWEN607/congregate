@@ -1,10 +1,11 @@
 import json
 import base64
+from collections import OrderedDict
 from types import GeneratorType
 from bs4 import BeautifulSoup as bs
 from json2html import json2html
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import find as nested_find, is_error_message_present
+from congregate.helpers.misc_utils import find as nested_find, is_error_message_present, safe_json_response, rewrite_list_into_dict, is_nested_dict
 from congregate.helpers.jsondiff import Comparator
 
 
@@ -62,8 +63,8 @@ class BaseDiffClient(BaseClass):
     def diff(self, source_data, destination_data, critical_key=None, obfuscate=False, parent_group=None):
         engine = Comparator()
         diff = None
-        accuracy = 0
-        if destination_data:
+        accuracy = 1
+        if destination_data is not None:
             if not is_error_message_present(destination_data):
                 if isinstance(source_data, list):
                     if obfuscate:
@@ -86,7 +87,7 @@ class BaseDiffClient(BaseClass):
                         if diff:
                             for i, _ in enumerate(source_data):
                                 if diff.get(i):
-                                    accuracy += self.calculate_individual_accuracy(
+                                    accuracy += self.calculate_individual_list_accuracy(
                                         diff[i], source_data[i], critical_key, parent_group=parent_group)
                             if accuracy != 0:
                                 accuracy = float(accuracy) / \
@@ -94,9 +95,9 @@ class BaseDiffClient(BaseClass):
                         else:
                             accuracy = 1.0
                     else:
-                        accuracy = self.calculate_individual_accuracy(
-                            diff, source_data, critical_key, parent_group=parent_group)
-                if bool(list(nested_find("error", diff))) or bool(list(nested_find("message", diff))):
+                        accuracy = self.calculate_individual_dict_accuracy(
+                            diff, source_data, destination_data, critical_key, parent_group=parent_group)
+                if bool(list(nested_find("error", diff))):
                     accuracy = 0
         return {
             "diff": diff,
@@ -114,6 +115,11 @@ class BaseDiffClient(BaseClass):
                 if self.results.get(identifier) is not None:
                     if isinstance(self.results[identifier], dict):
                         destination_id = self.results[identifier]["id"]
+                        # response = endpoint(
+                        #     destination_id, self.config.destination_host, self.config.destination_token, **kwargs)
+                        # if isinstance(response, GeneratorType):
+                        #     response = list(response)
+                        # valid_destination_endpoint, response = self.is_endpoint_valid(response)
                         valid_destination_endpoint, response = self.is_endpoint_valid(endpoint(
                             destination_id, self.config.destination_host, self.config.destination_token, **kwargs))
                         if valid_destination_endpoint:
@@ -133,9 +139,81 @@ class BaseDiffClient(BaseClass):
 
         return self.empty_diff()
 
-    def calculate_individual_accuracy(self, diff, source_data, critical_key, parent_group=None):
+    def generate_gh_diff(self, asset, key, sort_key, source_data, gl_endpoint, critical_key=None, obfuscate=False, parent_group=None, **kwargs):
+        identifier = "{0}/{1}".format(parent_group, asset[key]) if parent_group else asset[key]
+        if self.results.get(identifier) is not None:
+            if isinstance(self.results[identifier], dict):
+                destination_id = self.results[identifier]["response"]["id"]
+                response = gl_endpoint(destination_id, self.config.destination_host, self.config.destination_token, **kwargs)
+                destination_data = self.generate_cleaned_instance_data(
+                    response)
+            else:
+                destination_data = {
+                    "error": "asset missing"
+                }
+        else:
+            destination_data = self.generate_empty_data(
+                source_data)
+
+        if sort_key:
+            source_data = rewrite_list_into_dict(source_data, sort_key)
+            destination_data = rewrite_list_into_dict(destination_data, sort_key)
+
+        return self.diff(source_data, destination_data, critical_key=critical_key, obfuscate=obfuscate, parent_group=parent_group)
+
+    def calculate_individual_list_accuracy(self, diff, source_data, critical_key, parent_group=None):
         original_accuracy = 1 - float(len(diff)) / float(len(source_data))
         return self.critical_key_case_check(diff, critical_key, original_accuracy, parent_group=parent_group)
+
+    def calculate_individual_dict_accuracy(self, diff, source_data, destination_data, critical_key, parent_group=None):
+        if diff is not None:
+            dest_lines = self.total_number_of_lines(destination_data)
+            src_lines = self.total_number_of_lines(source_data)
+            print(f"Before any calculations \ndest: {dest_lines} \nsrc: {src_lines}")
+            if dest_lines > src_lines:
+                discrepency = dest_lines - src_lines
+                src_lines += discrepency
+                dest_lines -= discrepency
+            src_lines += self.total_number_of_differences(diff)
+            print(f"After calculations \ndest: {dest_lines} \nsrc: {src_lines}")
+            original_accuracy = dest_lines / src_lines
+        else:
+            original_accuracy = 1
+
+        return self.critical_key_case_check(diff, critical_key, original_accuracy, parent_group=parent_group)
+
+    def total_number_of_lines(self, d, keys_to_exclude=None):
+        count = 0
+        if is_nested_dict(d):
+            for k in d.keys():
+                if isinstance(d[k], dict):
+                    count += self.total_number_of_lines(d[k], keys_to_exclude=keys_to_exclude)
+        else:
+            if keys_to_exclude:
+                length = len({k for k in d if k not in keys_to_exclude})
+                count += 1 if (length == 0 and "+++" in keys_to_exclude) else length
+            else:
+                count += len(d)
+        return count
+    
+    def total_number_of_differences(self, d):
+        count = 0
+        if is_nested_dict(d):
+            for k in d.keys():
+                if isinstance(d[k], dict):
+                    count += self.total_number_of_differences(d[k])
+        else:
+            for k, v in d.items():
+                if k == "+++" or k == "---":
+                    if not isinstance(v, dict):
+                        count += 1
+        return count
+
+
+    def get_num_denom(self, a, b):
+        if self.total_number_of_lines(a) > self.total_number_of_lines(b):
+            return b, a
+        return a, b
 
     def critical_key_case_check(self, diff, critical_key, original_accuracy, parent_group=None):
         if critical_key in diff:
@@ -213,10 +291,14 @@ class BaseDiffClient(BaseClass):
                         return data
                     data[i] = self.ignore_keys(data[i])
             else:
+                for k in list(data.keys()):
+                    if isinstance(data.get(k), dict):
+                        self.ignore_keys(data[k])
                 for key in self.keys_to_ignore:
                     if key in data:
                         data.pop(key)
-            return sorted(data, key=lambda x: str(x))
+            # return sorted(data, key=lambda x: str(x))
+            return data
         return {}
 
     def obfuscate_values(self, obj):
@@ -228,7 +310,10 @@ class BaseDiffClient(BaseClass):
             ]
             for key in keys_to_obfuscate:
                 if key in obj:
-                    obj[key] = base64.b64encode(obj[key])
+                    try:
+                        obj[key] = base64.b64encode(obj[key])
+                    except TypeError:
+                        obj[key] = str(base64.b64encode(bytes(obj[key], encoding='UTF-8')))
 
         return obj
 
@@ -256,7 +341,10 @@ class BaseDiffClient(BaseClass):
         try:
             if instance_data is not None:
                 if isinstance(instance_data, GeneratorType):
-                    instance_data = self.ignore_keys(list(instance_data))
+                    new_list = []
+                    for d in instance_data:
+                        new_list.append(d)
+                    instance_data = self.ignore_keys(new_list)
                 elif isinstance(instance_data, list):
                     instance_data = self.ignore_keys(instance_data)
                 else:
@@ -316,4 +404,6 @@ class BaseDiffClient(BaseClass):
     def is_endpoint_valid(self, request):
         if is_error_message_present(request):
             return False, request
+        if isinstance(request, GeneratorType):
+            return True, list(request)
         return True, request

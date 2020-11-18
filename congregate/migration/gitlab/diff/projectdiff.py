@@ -45,7 +45,9 @@ class ProjectDiffClient(BaseDiffClient):
             "marked_for_deletion_on",
             "compliance_frameworks",
             "requirements_enabled",
-            "forked_from_project"   # Temporarily, until we add fork relationship feature
+            "forked_from_project",   # Temporarily, until we add fork relationship feature
+            "parent_id",
+            "runners_token"
         ]
         if staged:
             self.source_data = self.load_json_data(
