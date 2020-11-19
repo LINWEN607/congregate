@@ -407,7 +407,8 @@ def main():
                 elif config.source_type == "github":
                     repo_diff = RepoDiffClient(
                         "/data/project_migration_results.json", staged=STAGED, processes=PROCESSES, rollback=ROLLBACK)
-                    repo_diff.generate_diff_report()
+                    repo_diff.generate_html_report(
+                        repo_diff.generate_diff_report(), "/data/project_migration_results.html")
             if arguments["stitch-results"]:
                 result_type = str(
                     arguments["--result-type"]).rstrip("s") if arguments["--result-type"] else "project"

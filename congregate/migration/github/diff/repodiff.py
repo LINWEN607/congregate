@@ -18,7 +18,7 @@ class RepoDiffClient(BaseDiffClient):
     def __init__(self, results_path, staged=False, rollback=False, processes=None):
         super(RepoDiffClient, self).__init__()
         self.repos_api = ReposApi(self.config.source_host, self.config.source_token)
-        self.repos_client = ReposClient()
+        self.repos_client = ReposClient(self.config.source_host, self.config.source_token)
         self.gl_projects_api = ProjectsApi()
         self.issues_api = IssuesApi()
         self.gl_mr_api = MergeRequestsApi()
@@ -131,7 +131,7 @@ class RepoDiffClient(BaseDiffClient):
         # pull requests
         repo_pr_data = list(self.repos_api.get_repo_pulls(project["namespace"], project["name"]))
         transformed_data = self.repos_client.transform_gh_pull_requests(repo_pr_data)
-        repo_diff["/projects/:id/pull_requests"] = self.generate_repo_diff(
+        repo_diff["/projects/:id/merge_requests"] = self.generate_repo_diff(
             project, None, transformed_data, self.gl_mr_api.get_all_project_merge_requests, obfuscate=True)
 
         # pull requests comments

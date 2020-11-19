@@ -1,11 +1,9 @@
 import json
 import base64
-from collections import OrderedDict
 from types import GeneratorType
 from bs4 import BeautifulSoup as bs
-from json2html import json2html
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import find as nested_find, is_error_message_present, safe_json_response, rewrite_list_into_dict, is_nested_dict
+from congregate.helpers.misc_utils import find as nested_find, is_error_message_present, rewrite_list_into_dict, is_nested_dict
 from congregate.helpers.jsondiff import Comparator
 
 
@@ -30,6 +28,20 @@ class BaseDiffClient(BaseClass):
         }
     """
     STYLE = """
+        body {
+            width: 100%;
+            padding: 1em;
+            text-align: center;
+            margin: 0 auto;
+        }
+        td, th {
+            border: 1px solid #000;
+            text-align: left;
+            vertical-align: top;
+        }
+        pre {
+            display: none;
+        }
         .accordion {
             background-color: #eee;
             color: #444;
@@ -52,6 +64,11 @@ class BaseDiffClient(BaseClass):
             display: none;
             background-color: white;
             overflow: hidden;
+        }
+        table.content {
+            width: 60%;
+            text-align: center;
+            margin: 0 auto;
         }
     """
 
@@ -169,13 +186,11 @@ class BaseDiffClient(BaseClass):
         if diff is not None:
             dest_lines = self.total_number_of_lines(destination_data)
             src_lines = self.total_number_of_lines(source_data)
-            print(f"Before any calculations \ndest: {dest_lines} \nsrc: {src_lines}")
             if dest_lines > src_lines:
                 discrepency = dest_lines - src_lines
                 src_lines += discrepency
                 dest_lines -= discrepency
             src_lines += self.total_number_of_differences(diff)
-            print(f"After calculations \ndest: {dest_lines} \nsrc: {src_lines}")
             original_accuracy = dest_lines / src_lines
         else:
             original_accuracy = 1
@@ -368,20 +383,70 @@ class BaseDiffClient(BaseClass):
 
     def generate_html_report(self, diff, filepath):
         filepath = "{0}{1}".format(self.app_path, filepath)
-        html_data = json2html.convert(json=diff)
-        soup = bs(html_data, features="lxml")
+        soup = bs("<html><body><table class = 'content'></table></body></html>", features="lxml")
         style = soup.new_tag("style")
         style.content = "table tr th td { border: 1px solid #000 }"
         soup.html.append(soup.new_tag("head"))
         soup.html.head.append(style)
-        for tr in soup.html.body.table.find_all('tr', recursive=False):
-            if "results" not in tr.th.text:
-                tr.th['class'] = "accordion"
-                if tr.td:
-                    tr.td['class'] = "accordion-content"
-            new_tr = soup.new_tag("tr")
-            new_tr.append(tr.td)
-            tr.insert_after(new_tr)
+        for d, v in diff.items():
+            if "migration_results" not in d:
+                header_row = soup.new_tag("tr")
+                header_data_row = soup.new_tag("tr")
+                header_data = {
+                    "Project": d,
+                    "Accuracy": str(v["overall_accuracy"]["accuracy"]),
+                    "Result": v["overall_accuracy"]["result"]
+                }
+                for k, kv in header_data.items():
+                    cell_header = soup.new_tag("th")
+                    cell_data = soup.new_tag("td")
+                    cell_header.string = k
+                    cell_data.string = kv
+                    header_row.append(cell_header)
+                    header_data_row.append(cell_data)
+                soup.html.body.table.append(header_row)
+                soup.html.body.table.append(header_data_row)
+
+                diff_row = soup.new_tag("tr")
+                diff_row_table = soup.new_tag("table")
+                diff_headers = ["endpoint", "accuracy", "diff"]
+                diff_cell_row = soup.new_tag("tr")
+                for diff_header in diff_headers:
+                    diff_cell_header = soup.new_tag("th")
+                    diff_cell_header.string = diff_header
+                    diff_cell_row.append(diff_cell_header)
+                diff_row_table.append(diff_cell_row)
+                for endpoint in v:
+                    if "overall_accuracy" not in endpoint:
+                        diff_data_row = soup.new_tag("tr")
+                        data = [
+                            endpoint,
+                            str(v[endpoint]['accuracy']),
+                            v[endpoint]['diff']
+                        ]
+                        for da in data:
+                            cell_data = soup.new_tag("td")
+                            if isinstance(da, dict):
+                                showhide = soup.new_tag("button")
+                                showhide['id'] = f"{endpoint}-showhide"
+                                showhide['class'] = 'accordion'
+                                showhide.string = "show/hide"
+                                cell_data.append(showhide)
+                                json_block = soup.new_tag("pre")
+                                json_block['id'] = 'json'
+                                json_block['class'] = 'accordion-content'
+                                json_block.string = json.dumps(da, indent=4)
+                                cell_data.append(json_block)
+                            else:
+                                cell_data.string = da
+                            diff_data_row.append(cell_data)
+                        diff_row_table.append(diff_data_row)
+                td = soup.new_tag("td")
+                td['colspan'] = 3
+                td.append(diff_row_table)
+                diff_row.append(td)
+                soup.html.body.table.append(diff_row)
+
         head = soup.new_tag("head")
         script = soup.new_tag("script")
         script.string = self.SCRIPT

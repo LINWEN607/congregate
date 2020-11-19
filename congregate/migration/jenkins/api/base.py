@@ -1,4 +1,4 @@
-from re import sub
+from re import search
 import xml.etree.ElementTree as ET
 import requests
 from requests.auth import HTTPBasicAuth
@@ -146,5 +146,5 @@ class JenkinsApi(BaseClass):
             Parameters:	url - url of Jenkins job
             Returns:    (str) containing jenkins job
         """
-        return sub(r'http(s|):\/\/.+(\.|:)(\d+|\w+)(\/|)(jenkins|)\/', "", url)
-
+        m = search(r'http(s|):\/\/.+(\.|:)(\d+|\w+)(\/|)(jenkins|)\/(.+)', url)
+        return m.groups()[-1]
