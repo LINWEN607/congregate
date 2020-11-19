@@ -141,6 +141,7 @@ Commands:
 """
 
 import os
+from pathlib import Path
 import subprocess
 from json import dump, dumps
 from time import time
@@ -181,8 +182,8 @@ def main():
         SKIP_ADDING_MEMBERS = arguments["--skip-adding-members"]
         ONLY_POST_MIGRATION_INFO = arguments["--only-post-migration-info"]
         PARTIAL = arguments["--partial"]
-        SRC_INSTANCES = arguments["--src-instances"] 
-        SCM_SOURCE = arguments["--scm-source"] 
+        SRC_INSTANCES = arguments["--src-instances"]
+        SCM_SOURCE = arguments["--scm-source"]
 
         if arguments["--version"]:
             with open(f"{app_path}/pyproject.toml", "r") as f:
@@ -191,14 +192,11 @@ def main():
             exit()
 
         if arguments["init"]:
-            if not os.path.exists('data'):
-                print("Creating data directory and empty log file")
-                os.makedirs('data')
-                if not os.path.exists(f"{app_path}/data/logs/congregate.log"):
-                    with open(f"{app_path}/data/logs/congregate.log", "w") as f:
-                        f.write("")
-            else:
-                print("Congregate already initialized")
+            Path("data/logs").mkdir(parents=True, exist_ok=True)
+            Path("data/results").mkdir(parents=True, exist_ok=True)
+            if not os.path.exists(f"{app_path}/data/logs/congregate.log"):
+                with open(f"{app_path}/data/logs/congregate.log", "w") as f:
+                    f.write("")
             log = myLogger(__name__)
         else:
             log = myLogger(__name__)

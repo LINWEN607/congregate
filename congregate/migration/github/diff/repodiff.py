@@ -19,7 +19,8 @@ class RepoDiffClient(BaseDiffClient):
         super(RepoDiffClient, self).__init__()
         self.repos_api = ReposApi(
             self.config.source_host, self.config.source_token)
-        self.repos_client = ReposClient()
+        self.repos_client = ReposClient(
+            self.config.source_host, self.config.source_token)
         self.gl_projects_api = ProjectsApi()
         self.issues_api = IssuesApi()
         self.gl_mr_api = MergeRequestsApi()
@@ -74,7 +75,7 @@ class RepoDiffClient(BaseDiffClient):
         self.log.info("{}Generating Repo Diff Report".format(
             get_rollback_log(self.rollback)))
         results = handle_multi_process_write_to_file_and_return_results(
-            self.generate_single_diff_report, self.return_only_accuracies, self.source_data, "{self.app_path}/data/results/repos_diff.json", processes=self.processes)
+            self.generate_single_diff_report, self.return_only_accuracies, self.source_data, f"{self.app_path}/data/results/repos_diff.json", processes=self.processes)
 
         for result in results:
             diff_report.update(result)

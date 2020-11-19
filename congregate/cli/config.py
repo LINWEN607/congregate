@@ -204,7 +204,7 @@ def generate_config():
         if ci_src_option.lower() in ["1", "1.", "jenkins"]:
             config.set("CI_SOURCE", "ci_src_type", "Jenkins")
             config.set("CI_SOURCE", "ci_src_hostname", input(
-                "CI Source instance ({}) URL: ".format(config.get("CI_SOURCE", "ci_src_type"))))
+                f"CI Source instance ({config.get('CI_SOURCE', 'ci_src_type')}) URL: "))
             config.set("CI_SOURCE", "ci_src_username",
                        input("CI Source Username: "))
             config.set("CI_SOURCE", "ci_src_access_token", obfuscate(
