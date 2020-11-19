@@ -98,14 +98,14 @@
 ### src_password is only used by the GitHubBrowser class. Use an access token for any API requests. The password must also be obfuscated
 # src_password = ****
 
-### Conside below changes when tmultiple sources are GitHub Server, rest all other configuration remains same
+### Consider below changes when multiple sources are GitHub Server, all other configuration remains same
 #sources = {
 #    "github_source": [{
 #        "src_hostname": "https://github.gitlab-proserv.net",
-#        "src_access_token": "ZjgyZTY0NzdlZDUyMGQ4ODViZTQzN2YxZWRjODQ4MGM0NTIyZjFjNw=="
+#        "src_access_token": "<base64 encoded token>"
 #        },{
 #        "src_hostname": "https://github.gitlab-proserv.net",
-#        "src_access_token": "ZjgyZTY0NzdlZDUyMGQ4ODViZTQzN2YxZWRjODQ4MGM0NTIyZjFjNw=="
+#        "src_access_token": "<base64 encoded token>"
 #        }
 #    ]
 #    }

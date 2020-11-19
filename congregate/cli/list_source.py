@@ -75,7 +75,7 @@ def list_github_data(processes=None, partial=False, skip_users=False, skip_group
             repos = GitHubRepos(b.config.source_host, b.config.source_token)
             repos.retrieve_repo_info(processes=processes)
             mongo.dump_collection_to_file(
-                "projects", f"{b.app_path}/data/project_json.json")
+                "projects", f"{b.app_path}/data/projects.json")
     else:        
         for i, single_source in enumerate(b.config.list_multiple_source_config("github_source")):
             if not skip_users:
