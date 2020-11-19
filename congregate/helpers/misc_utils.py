@@ -352,7 +352,7 @@ def dig(dictionary, *args):
     for i, arg in enumerate(args):
         if found := dictionary.get(arg, None):
             if isinstance(found, dict):
-                args = args[i+1:]
+                args = args[i + 1:]
                 return dig(found, *args)
             return found
 
@@ -553,7 +553,10 @@ def safe_json_response(response):
     """
     if response is not None:
         try:
-            return response.json()
+            if isinstance(response, GeneratorType):
+                return list(response)
+            else:
+                return response.json()
         except ValueError:
             return None
     return None
@@ -622,6 +625,21 @@ def get_duplicate_paths(data, are_projects=True):
     paths = [x.get("path_with_namespace", "").lower() if are_projects else x.get(
         "full_path", "").lower() for x in data]
     return [i for i, c in Counter(paths).items() if c > 1]
+
+
+def are_keys_in_dict(list_of_keys, dictionary):
+    keys_in_dict = False
+    for k in list_of_keys:
+        if k in dictionary.keys():
+            keys_in_dict = True
+    return keys_in_dict
+
+
+def is_nested_dict(d):
+    if isinstance(d, dict):
+        return any(isinstance(i, dict) for i in d.values())
+    return False
+
 
 def find_files_in_folder(wildcard, directory="data"):
     return [f for f in os.listdir(f"{get_congregate_path()}/{directory}") if wildcard in f]

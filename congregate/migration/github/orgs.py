@@ -155,3 +155,31 @@ class OrgsClient(BaseClass):
             m["permissions"] = permissions
             members.append(m)
         return self.users.format_users(members, mongo)
+
+    def transform_gh_org_repos(self, repositories):
+        list_of_repos = []
+        for repo in repositories:
+            if repo["private"]:
+                visibility = "private"
+            else:
+                # Need to determine if we should use public or internal
+                visibility = "internal"
+            list_of_repos.append(
+                {
+                    "description": repo["description"],
+                    "name": repo["name"],
+                    "name_with_namespace": repo["full_name"],
+                    "created_at": repo["created_at"],
+                    "default_branch": repo["default_branch"],
+                    "forks_count": repo["forks"],
+                    "star_count": repo["stargazers_count"],
+                    "last_activity_at": repo["updated_at"],
+                    "archived": repo["archived"],
+                    "visibility": visibility,
+                    "issues_enabled": repo["has_issues"],
+                    "wiki_enabled": repo["has_wiki"],
+                    "open_issues_count": repo["open_issues_count"],
+                }
+            )
+
+        return list_of_repos

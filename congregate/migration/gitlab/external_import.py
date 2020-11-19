@@ -134,6 +134,8 @@ class ImportClient(BaseClass):
 
     def get_failed_result(self, project, data=None):
         return {
-            project["path_with_namespace"]: False,
-            "data": data
+            project["path_with_namespace"]: {
+                "repository": True if data else False,
+                "response": data
+            }
         }

@@ -264,9 +264,9 @@ class Comparator(object):
         """
         The real workhorse
         """
-        if not old_obj and hasattr(self, "obj1"):
+        if old_obj is None and hasattr(self, "obj1"):
             old_obj = self.obj1
-        if not new_obj and hasattr(self, "obj2"):
+        if new_obj is None and hasattr(self, "obj2"):
             new_obj = self.obj2
 
         old_keys = set()

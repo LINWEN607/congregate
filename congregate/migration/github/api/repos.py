@@ -38,13 +38,14 @@ class ReposApi():
         """
         return self.api.list_all(self.host, f"repos/{owner}/{repo}/branches")
 
-    def get_repo_pulls(self, owner, repo):
+    def get_repo_pulls(self, owner, repo, state="all"):
         """
         List repository pull requests.
+        Default behavior returns all pull requests.
 
         GitHub API v3 Doc: https://docs.github.com/en/free-pro-team@latest/rest/reference/pulls#list-pull-requests
         """
-        return self.api.list_all(self.host, f"repos/{owner}/{repo}/pulls")
+        return self.api.list_all(self.host, f"repos/{owner}/{repo}/pulls?state={state}")
 
     def get_repo_tags(self, owner, repo):
         """
@@ -54,13 +55,23 @@ class ReposApi():
         """
         return self.api.list_all(self.host, f"repos/{owner}/{repo}/tags")
 
-    def get_repo_milestones(self, owner, repo):
+    def get_repo_milestones(self, owner, repo, state="all"):
         """
         List repository milestones.
+        Default behavior returns all milestones.
 
         GitHub API v3 Doc: https://docs.github.com/en/free-pro-team@latest/rest/reference/issues#list-milestones
         """
-        return self.api.list_all(self.host, f"repos/{owner}/{repo}/milestones")
+        return self.api.list_all(self.host, f"repos/{owner}/{repo}/milestones?state={state}")
+
+    def get_repo_issues(self, owner, repo, state="all"):
+        """
+        List repository issues.
+        Default behavior returns all milestones.
+
+        GitHub API v3 Doc: https://docs.github.com/en/free-pro-team@latest/rest/reference/issues#list-repository-issues
+        """
+        return self.api.list_all(self.host, f"repos/{owner}/{repo}/issues?state={state}")
 
     def get_repo_releases(self, owner, repo):
         """
@@ -144,14 +155,6 @@ class ReposApi():
             data,
             description=message
         )
-    
-    def get_list_branches(self, owner, repo):
-        """
-        List branches.
-
-        GitHub API v3 Doc: https://docs.github.com/en/free-pro-team@latest/rest/reference/repos#list-branches
-        """
-        return self.api.list_all(self.host, f"repos/{owner}/{repo}/branches")
 
     def get_single_project_protected_branch(self, owner, repo, branch):
         """
@@ -160,4 +163,3 @@ class ReposApi():
         GitHub API v3 Doc: https://docs.github.com/en/free-pro-team@latest/rest/reference/repos#get-branch-protection
         """
         return self.api.generate_v3_get_request(self.host, f"repos/{owner}/{repo}/branches/{branch}/protection")
-

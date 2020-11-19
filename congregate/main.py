@@ -223,6 +223,7 @@ def main():
             from congregate.migration.gitlab.diff.userdiff import UserDiffClient
             from congregate.migration.gitlab.diff.projectdiff import ProjectDiffClient
             from congregate.migration.gitlab.diff.groupdiff import GroupDiffClient
+            from congregate.migration.github.diff.repodiff import RepoDiffClient
             from congregate.helpers.user_util import map_users
             from congregate.helpers.mdbc import MongoConnector
             from congregate.helpers.misc_utils import convert_to_underscores
@@ -390,19 +391,23 @@ def main():
             if arguments["generate-diff"]:
                 start = time()
                 rotate_logs()
-                user_diff = UserDiffClient(
-                    "/data/user_migration_results.json", staged=STAGED, processes=PROCESSES, rollback=ROLLBACK)
-                user_diff.generate_html_report(
-                    user_diff.generate_diff_report(), "/data/user_migration_results.html")
-                group_diff = GroupDiffClient(
-                    "/data/group_migration_results.json", staged=STAGED, processes=PROCESSES, rollback=ROLLBACK)
-                group_diff.generate_html_report(
-                    group_diff.generate_diff_report(), "/data/group_migration_results.html")
-                project_diff = ProjectDiffClient(
-                    "/data/project_migration_results.json", staged=STAGED, processes=PROCESSES, rollback=ROLLBACK)
-                project_diff.generate_html_report(
-                    project_diff.generate_diff_report(), "/data/project_migration_results.html")
-                add_post_migration_stats(start, log=log)
+                if config.source_type == "gitlab":
+                    user_diff = UserDiffClient(
+                        "/data/user_migration_results.json", staged=STAGED, processes=PROCESSES, rollback=ROLLBACK)
+                    user_diff.generate_html_report(
+                        user_diff.generate_diff_report(), "/data/user_migration_results.html")
+                    group_diff = GroupDiffClient(
+                        "/data/group_migration_results.json", staged=STAGED, processes=PROCESSES, rollback=ROLLBACK)
+                    group_diff.generate_html_report(
+                        group_diff.generate_diff_report(), "/data/group_migration_results.html")
+                    project_diff = ProjectDiffClient(
+                        "/data/project_migration_results.json", staged=STAGED, processes=PROCESSES, rollback=ROLLBACK)
+                    project_diff.generate_html_report(
+                        project_diff.generate_diff_report(), "/data/project_migration_results.html")
+                elif config.source_type == "github":
+                    repo_diff = RepoDiffClient(
+                        "/data/project_migration_results.json", staged=STAGED, processes=PROCESSES, rollback=ROLLBACK)
+                    repo_diff.generate_diff_report()
             if arguments["stitch-results"]:
                 result_type = str(
                     arguments["--result-type"]).rstrip("s") if arguments["--result-type"] else "project"
