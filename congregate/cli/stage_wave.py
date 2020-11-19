@@ -17,7 +17,6 @@ class WaveStageCLI(BaseStageClass):
         self.pcli = ProjectStageCLI()
         self.groups_api = GroupsApi()
         super(WaveStageCLI, self).__init__()
-        #self.log = myLogger(__name__)
 
     def stage_data(self, wave_to_stage, dry_run=True, skip_users=False, scm_source=None):
         self.stage_wave(wave_to_stage, dry_run, scm_source)
