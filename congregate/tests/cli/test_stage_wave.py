@@ -390,7 +390,7 @@ class StageWaveTests(unittest.TestCase):
             {
                 "id": 4,
                 "name": "Diaspora Client",
-                "namespace": "path/to/group/diaspora",
+                "namespace": "diaspora",
                 "path": "diaspora-client",
                 "path_with_namespace": "diaspora/diaspora-client",
                 "visibility": "private",
@@ -418,7 +418,7 @@ class StageWaveTests(unittest.TestCase):
             {
                 "id": 80,
                 "name": "Puppet",
-                "namespace": "path/to/group/brightbox",
+                "namespace": "brightbox",
                 "path": "puppet",
                 "path_with_namespace": "brightbox/puppet",
                 "visibility": "private",

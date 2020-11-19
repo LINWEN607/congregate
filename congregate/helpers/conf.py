@@ -193,6 +193,12 @@ class Config(object):
         return self.prop_int("DESTINATION", "pmi_project_id")
 
 # SOURCE
+    def list_multiple_source_config(self, source_options):
+        """
+            Returns list of multiple SCM source config dictionarty including hostname and token
+        """
+        return self.prop_dict("MULTIPLE_SOURCE", "sources", {}).get(source_options, [])
+
     @property
     def source_type(self):
         return self.prop_lower("SOURCE", "src_type")

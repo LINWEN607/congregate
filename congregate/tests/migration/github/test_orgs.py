@@ -25,7 +25,7 @@ class OrgsTests(unittest.TestCase):
         self.mock_repos = MockReposApi()
         self.mock_teams = MockTeamsApi()
         self.mongo_mock = MongoConnector(host="test-server", port=123456, client=mongomock.MongoClient)
-        self.orgs = OrgsClient()
+        self.orgs = OrgsClient(host="gitlab", token="123")
 
     def tearDown(self):
         self.mongo_mock.drop_collection("projects")

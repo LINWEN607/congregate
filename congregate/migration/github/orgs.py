@@ -27,14 +27,12 @@ class OrgsClient(BaseClass):
         None: 10,  # Guest, in case of no "permission" field
     }
 
-    def __init__(self):
+    def __init__(self, host, token):
         super(OrgsClient, self).__init__()
-        self.orgs_api = OrgsApi(self.config.source_host,
-                                self.config.source_token)
-        self.teams_api = TeamsApi(self.config.source_host,
-                                  self.config.source_token)
-        self.repos = ReposClient()
-        self.users = UsersClient()
+        self.orgs_api = OrgsApi(host, token)
+        self.teams_api = TeamsApi(host, token)
+        self.repos = ReposClient(host, token)
+        self.users = UsersClient(host, token)
 
     def connect_to_mongo(self):
         return MongoConnector()

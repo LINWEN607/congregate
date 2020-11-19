@@ -11,18 +11,19 @@ from congregate.cli.stage_base import BaseStageClass
 from congregate.cli.stage_projects import ProjectStageCLI
 
 
+
 class WaveStageCLI(BaseStageClass):
     def __init__(self):
         self.pcli = ProjectStageCLI()
         self.groups_api = GroupsApi()
         super(WaveStageCLI, self).__init__()
 
-    def stage_data(self, wave_to_stage, dry_run=True, skip_users=False):
-        self.stage_wave(wave_to_stage)
+    def stage_data(self, wave_to_stage, dry_run=True, skip_users=False, scm_source=None):
+        self.stage_wave(wave_to_stage, dry_run, scm_source)
         if not dry_run:
             self.write_staging_files(skip_users=skip_users)
 
-    def stage_wave(self, wave_to_stage):
+    def stage_wave(self, wave_to_stage, dry_run=True, scm_source=None):
         """
         Gets all IDs of repos from specific wave listed in wave stage spreadsheet
 
@@ -32,19 +33,23 @@ class WaveStageCLI(BaseStageClass):
         :param dry_run: Optional parameter. Default True
         :return: List of IDs cast to strings to be used by ProjectStageCLI
         """
+        i = 0
+        if scm_source is not None:
+            i = self.the_number_of_instance(scm_source)
+        if i == -1:
+            self.log.warn(f"Couldn't find the correct GH instance with hostname: {scm_source}")
         self.rewritten_projects = rewrite_list_into_dict(
-            self.open_projects_file(), "id")
+            self.open_projects_file(i, scm_source), "id")
         self.rewritten_users = rewrite_list_into_dict(
-            self.open_users_file(), "id")
+            self.open_users_file(i, scm_source), "id")
         self.rewritten_groups = rewrite_list_into_dict(
-            self.open_groups_file(), "id")
-        groups = rewrite_list_into_dict(self.open_groups_file(), "full_path")
+            self.open_groups_file(i, scm_source), "id")
+        groups = rewrite_list_into_dict(self.open_groups_file(i, scm_source), "full_path")
         projects = rewrite_list_into_dict(
-            self.open_projects_file(), "http_url_to_repo")
+            self.open_projects_file(i, scm_source), "http_url_to_repo")
         project_paths = rewrite_list_into_dict(
-            self.open_projects_file(), "path_with_namespace")
-        wsh = WaveSpreadsheetHandler(
-            self.config.wave_spreadsheet_path, columns_to_use=self.config.wave_spreadsheet_columns)
+            self.open_projects_file(i, scm_source), "path_with_namespace")
+        wsh = WaveSpreadsheetHandler(self.config.wave_spreadsheet_path, columns_to_use=self.config.wave_spreadsheet_columns)
         wave_data = wsh.read_file_as_json(
             df_filter=(
                 self.config.wave_spreadsheet_column_mapping["Wave name"], wave_to_stage))
@@ -54,14 +59,15 @@ class WaveStageCLI(BaseStageClass):
                 obj = self.get_project_metadata(project)
                 if parent_path := self.config.wave_spreadsheet_column_mapping.get("Parent Path"):
                     obj["target_namespace"] = w[parent_path].strip("/")
-                    obj["namespace"] = f"{w[parent_path].strip('/')}/{obj['namespace']}"
-                self.append_project_data(obj, wave_data, w)
+                    # obj["namespace"] = f"{w[parent_path].strip('/')}/{obj['namespace']}"
+                self.append_project_data(obj, wave_data, w, dry_run=dry_run)
             elif group := groups.get(w[url_key].rstrip("/").split("/")[-1]):
                 if parent_path := self.config.wave_spreadsheet_column_mapping.get("Parent Path"):
                     group["full_path"] = f"{w[parent_path]}/{group['full_path']}"
                 self.handle_parent_group(w, group)
-                self.append_group_data(group, wave_data, w)
-
+                self.append_group_data(group, wave_data, w, dry_run=dry_run)
+            else:
+                self.log.warn(f"The project {w[url_key]} doesn't exit on source instance")
     def append_project_data(self, project, projects_to_stage, wave_row, p_range=0, dry_run=True):
         for member in project["members"]:
             self.append_member_to_members_list([], member, dry_run)

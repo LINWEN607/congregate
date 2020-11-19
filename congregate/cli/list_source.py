@@ -39,7 +39,6 @@ def list_gitlab_data(skip_users=False, skip_groups=False, skip_projects=False):
         projects.retrieve_project_info(
             b.config.source_host, b.config.source_token)
 
-
 def list_bitbucket_data(skip_users=False, skip_groups=False, skip_projects=False):
     if not skip_users:
         users = BitBucketUsers()
@@ -52,8 +51,7 @@ def list_bitbucket_data(skip_users=False, skip_groups=False, skip_projects=False
         groups = groups_client.retrieve_group_info()
         repos.retrieve_repo_info(groups=groups)
 
-
-def list_github_data(processes=None, partial=False, skip_users=False, skip_groups=False, skip_projects=False):
+def list_github_data(processes=None, partial=False, skip_users=False, skip_groups=False, skip_projects=False, src_instances=False):
     mongo = MongoConnector()
     if not partial:
         b.log.info("Dropping database collections")
@@ -63,20 +61,35 @@ def list_github_data(processes=None, partial=False, skip_users=False, skip_group
             mongo.drop_collection("groups")
         if not skip_users:
             mongo.drop_collection("users")
-    if not skip_users:
-        users = GitHubUsers()
-        users.retrieve_user_info(processes=processes)
-        mongo.dump_collection_to_file("users", f"{b.app_path}/data/users.json")
-    if not skip_groups:
-        orgs = GitHubOrgs()
-        orgs.retrieve_org_info(processes=processes)
-        mongo.dump_collection_to_file(
-            "groups", f"{b.app_path}/data/groups.json")
-    if not skip_projects:
-        repos = GitHubRepos()
-        repos.retrieve_repo_info(processes=processes)
-        mongo.dump_collection_to_file(
-            "projects", f"{b.app_path}/data/projects.json")
+    if not src_instances:
+        if not skip_users:
+            users = GitHubRepos(b.config.source_host, b.config.source_token)
+            users.retrieve_user_info(processes=processes)
+            mongo.dump_collection_to_file("users", f"{b.app_path}/data/users.json")
+        if not skip_groups:
+            orgs = GitHubOrgs(b.config.source_host, b.config.source_token)
+            orgs.retrieve_org_info(processes=processes)
+            mongo.dump_collection_to_file(
+                "groups", f"{b.app_path}/data/groups.json")
+        if not skip_projects:
+            repos = GitHubRepos(b.config.source_host, b.config.source_token)
+            repos.retrieve_repo_info(processes=processes)
+            mongo.dump_collection_to_file(
+                "projects", f"{b.app_path}/data/projects.json")
+    else:        
+        for i, single_source in enumerate(b.config.list_multiple_source_config("github_source")):
+            if not skip_users:
+                users = GitHubUsers(single_source.get('src_hostname'), deobfuscate(single_source.get('src_access_token')))
+                users.retrieve_user_info(processes=processes)
+                mongo.dump_collection_to_file("users", f"{b.app_path}/data/users-{i}.json") 
+            if not skip_groups:    
+                orgs = GitHubOrgs(single_source.get('src_hostname'), deobfuscate(single_source.get('src_access_token')))
+                orgs.retrieve_org_info(processes=processes)
+                mongo.dump_collection_to_file("groups", f"{b.app_path}/data/groups-{i}.json")
+            if not skip_projects:    
+                repos = GitHubRepos(single_source.get('src_hostname'), deobfuscate(single_source.get('src_access_token')))
+                repos.retrieve_repo_info(processes=processes)
+                mongo.dump_collection_to_file("projects", f"{b.app_path}/data/project_json-{i}.json")
     mongo.close_connection()
 
 
@@ -113,7 +126,7 @@ def write_empty_file(filename):
             f.write("[]")
 
 
-def list_data(processes=None, partial=False, skip_users=False, skip_groups=False, skip_projects=False, skip_ci=False):
+def list_data(processes=None, partial=False, skip_users=False, skip_groups=False, skip_projects=False, skip_ci=False, src_instances=False):
     src_type = b.config.source_type
     staged_files = ["staged_projects", "staged_groups", "staged_users"]
 
@@ -136,7 +149,7 @@ def list_data(processes=None, partial=False, skip_users=False, skip_groups=False
                          skip_projects=skip_projects, skip_groups=skip_groups)
     elif src_type == "github":
         list_github_data(processes=processes, partial=partial, skip_users=skip_users,
-                         skip_projects=skip_projects, skip_groups=skip_groups)
+                         skip_projects=skip_projects, skip_groups=skip_groups, src_instances=src_instances)
     else:
         b.log.warning("Cannot list from source {}".format(src_type))
         exit()

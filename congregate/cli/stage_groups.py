@@ -12,7 +12,7 @@ from congregate.helpers.misc_utils import get_dry_log, remove_dupes, rewrite_lis
 
 class GroupStageCLI(BaseStageClass):
 
-    def stage_data(self, groups_to_stage, dry_run=True, skip_users=False):
+    def stage_data(self, groups_to_stage, dry_run=True, skip_users=False, scm_source=None):
         """
             Stage data based on selected groups on source instance
 
@@ -20,21 +20,26 @@ class GroupStageCLI(BaseStageClass):
             :param: dry_run (bool) If true, it will only build the staging data lists
             :param: skip_users (bool) If true will skip writing staged users to file
         """
-        self.build_staging_data(groups_to_stage, dry_run)
+        self.build_staging_data(groups_to_stage, dry_run, scm_source)
         if not dry_run:
             self.write_staging_files(skip_users=skip_users)
 
-    def build_staging_data(self, groups_to_stage, dry_run=True):
+    def build_staging_data(self, groups_to_stage, dry_run=True, scm_source=None):
         """
             Build data down from group level, including sub-groups, projects and users (members)
 
             :param: groups_to_stage: (dict) the staged groups objects
             :param: dry_run (bool) If true, it will only build the staging data lists.
         """
+        i = 0
+        if scm_source is not None:
+            i = self.the_number_of_instance(scm_source) 
+        if i == -1:
+            self.log.warning(f"Couldn't find the correct GH instance with hostname: {scm_source}")    
         # Loading projects information
-        groups = self.open_groups_file()
-        projects = self.open_projects_file()
-        users = self.open_users_file()
+        groups = self.open_groups_file(i, scm_source)
+        projects = self.open_projects_file(i, scm_source)
+        users = self.open_users_file(i, scm_source)
 
         # Rewriting projects to retrieve objects by ID more efficiently
         self.rewritten_users = rewrite_list_into_dict(users, "id")
@@ -110,3 +115,4 @@ class GroupStageCLI(BaseStageClass):
         # Append all group members to staged users
         for member in group["members"]:
             self.append_member_to_members_list([], member, dry_run)
+

@@ -52,16 +52,16 @@ class ImportClient(BaseClass):
             migration_dry_run("project", data)
             return self.get_failed_result(project, data)
 
-    def trigger_import_from_ghe(self, project, dry_run=True):
+    def trigger_import_from_ghe(self, project, host, token, dry_run=True):
         data = {
-            "personal_access_token": self.config.source_token,
+            "personal_access_token": token,
             "repo_id": project["id"],
-            "target_namespace": f"{project.get('target_namespace', None)}/{project['path_with_namespace']}" if project.get("target_namespace", None) else get_dst_path_with_namespace(project).rsplit("/", 1)[0]
+            "target_namespace": f"{project.get('target_namespace', None)}/{project['namespace']}" if project.get("target_namespace", None) else get_dst_path_with_namespace(project).rsplit("/", 1)[0]
         }
         dest_version = safe_json_response(self.instance.get_version(
             self.config.destination_host, self.config.destination_token))
         if dest_version and version.parse(dest_version["version"]) >= version.parse("13.6"):
-            data["github_hostname"] = self.config.source_host
+            data["github_hostname"] = host
         if not dry_run:
             try:
                 resp = self.ext_import.import_from_github(

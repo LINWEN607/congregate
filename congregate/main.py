@@ -4,12 +4,12 @@ Copyright (c) 2020 - GitLab
 
 Usage:
     congregate init
-    congregate list [--processes=<n>] [--partial] [--skip-users] [--skip-groups] [--skip-projects] [--skip-ci]
+    congregate list [--processes=<n>] [--partial] [--skip-users] [--skip-groups] [--skip-projects] [--skip-ci] [--src-instances]
     congregate configure
-    congregate stage-projects <projects>... [--skip-users] [--commit]
-    congregate stage-groups <groups>... [--skip-users] [--commit]
-    congregate stage-wave <wave> [--commit]
-    congregate migrate [--processes=<n>] [--skip-users] [--skip-adding-members] [--skip-group-export] [--skip-group-import] [--skip-project-export] [--skip-project-import] [--only-post-migration-info] [--subgroups-only] [--commit]
+    congregate stage-projects <projects>... [--skip-users] [--commit] [--scm-source=hostanme]
+    congregate stage-groups <groups>... [--skip-users] [--commit] [--scm-source=hostanme]
+    congregate stage-wave <wave> [--commit] [--scm-source=hostanme]
+    congregate migrate [--processes=<n>] [--skip-users] [--skip-adding-members] [--skip-group-export] [--skip-group-import] [--skip-project-export] [--skip-project-import] [--only-post-migration-info] [--subgroups-only] [--scm-source=hostanme] [--commit]
     congregate rollback [--hard-delete] [--skip-users] [--skip-groups] [--skip-projects] [--commit]
     congregate ui
     congregate do-all [--commit]
@@ -61,6 +61,8 @@ Options:
 Arguments:
     processes                               Set number of processes to run in parallel.
     commit                                  Disable the dry-run and perform the full migration with all reads/writes.
+    src_instances                           Present if there are multiple GH source instances
+    scm_source                              Specific SCM source hostname
     skip-users                              Stage: Skip staging users; Migrate: Skip migrating users; Rollback: Remove only groups and projects.
     skip-adding-members                     Skip adding members from GitHub as source instance
     hard-delete                             Remove user contributions and solely owned groups
@@ -179,6 +181,8 @@ def main():
         SKIP_ADDING_MEMBERS = arguments["--skip-adding-members"]
         ONLY_POST_MIGRATION_INFO = arguments["--only-post-migration-info"]
         PARTIAL = arguments["--partial"]
+        SRC_INSTANCES = arguments["--src-instances"] 
+        SCM_SOURCE = arguments["--scm-source"] 
 
         if arguments["--version"]:
             with open(f"{app_path}/pyproject.toml", "r") as f:
@@ -244,24 +248,25 @@ def main():
                     skip_users=SKIP_USERS,
                     skip_groups=SKIP_GROUPS,
                     skip_projects=SKIP_PROJECTS,
-                    skip_ci=arguments["--skip-ci"]
+                    skip_ci=arguments["--skip-ci"],
+                    src_instances=SRC_INSTANCES
                 )
                 add_post_migration_stats(start, log=log)
 
             if arguments["stage-projects"]:
                 pcli = ProjectStageCLI()
                 pcli.stage_data(arguments['<projects>'],
-                                dry_run=DRY_RUN, skip_users=SKIP_USERS)
+                                dry_run=DRY_RUN, skip_users=SKIP_USERS, scm_source=SCM_SOURCE)
 
             if arguments["stage-groups"]:
                 gcli = GroupStageCLI()
                 gcli.stage_data(arguments['<groups>'],
-                                dry_run=DRY_RUN, skip_users=SKIP_USERS)
+                                dry_run=DRY_RUN, skip_users=SKIP_USERS, scm_source=SCM_SOURCE)
 
             if arguments["stage-wave"]:
                 wcli = WaveStageCLI()
                 wcli.stage_data(
-                    arguments['<wave>'], dry_run=DRY_RUN, skip_users=SKIP_USERS)
+                    arguments['<wave>'], dry_run=DRY_RUN, skip_users=SKIP_USERS, scm_source=SCM_SOURCE)
 
             if arguments["migrate"]:
                 migrate = MigrateClient(
@@ -274,7 +279,8 @@ def main():
                     skip_project_export=True if arguments["--skip-project-export"] or ONLY_POST_MIGRATION_INFO else False,
                     skip_project_import=arguments["--skip-project-import"],
                     only_post_migration_info=ONLY_POST_MIGRATION_INFO,
-                    subgroups_only=arguments["--subgroups-only"]
+                    subgroups_only=arguments["--subgroups-only"],
+                    scm_source=arguments["--scm-source"]
                 )
                 migrate.migrate()
 

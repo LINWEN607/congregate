@@ -61,7 +61,8 @@ class MigrateClient(BaseClass):
         skip_group_import=False,
         skip_project_export=False,
         skip_project_import=False,
-        subgroups_only=False
+        subgroups_only=False,
+        scm_source = None
     ):
         self.ie = ImportExportClient()
         self.mirror = MirrorClient()
@@ -85,7 +86,6 @@ class MigrateClient(BaseClass):
         super(MigrateClient, self).__init__()
         self.bbs_repos_client = BBSReposClient()
         self.job_template = JobTemplateGenerator()
-        self.gh_repos = ReposClient()
 
         self.dry_run = dry_run
         self.processes = processes
@@ -101,8 +101,10 @@ class MigrateClient(BaseClass):
         self.skip_project_export = skip_project_export
         self.skip_project_import = skip_project_import
         self.subgroups_only = subgroups_only
+        self.scm_source = scm_source
 
     def migrate(self):
+        
         self.log.info(
             f"{get_dry_log(self.dry_run)}Migrating data from {self.config.source_host} ({self.config.source_type}) to {self.config.destination_host}")
 
@@ -117,7 +119,7 @@ class MigrateClient(BaseClass):
             self.migrate_from_gitlab()
         elif self.config.source_type == "bitbucket server":
             self.migrate_from_bitbucket_server()
-        elif self.config.source_type == "github":
+        elif self.config.source_type == "github" or self.config.list_multiple_source_config("github_source") is not None:
             self.migrate_from_github()
         else:
             self.log.warning(
@@ -204,14 +206,14 @@ class MigrateClient(BaseClass):
                 Reporting(
                     self.config.reporting["pmi_project_id"], project_name=group["name"])
             # Wait for parent group to create
-            if self.config.dstn_parent_group_path is not None:
-                pnamespace = self.groups.wait_for_parent_group_creation(group)
-                if not pnamespace:
-                    return {
-                        group["full_path"]: False
-                    }
-            group["parent_id"] = safe_json_response(
-                pnamespace)["id"] if group["parent_id"] else self.config.dstn_parent_id
+            # if self.config.dstn_parent_group_path is not None:
+            #     pnamespace = self.groups.wait_for_parent_group_creation(group)
+            #     if not pnamespace:
+            #         return {
+            #             group["full_path"]: False
+            #         }
+            # group["parent_id"] = safe_json_response(
+            #     pnamespace)["id"] if group["parent_id"] else self.config.dstn_parent_id
             if group.get("description", None) is None:
                 group["description"] = ""
             result = safe_json_response(self.groups_api.create_group(
@@ -233,19 +235,22 @@ class MigrateClient(BaseClass):
         }
 
     def import_github_project(self, project):
-        members = project.pop("members")
-        dst_path_with_namespace = get_dst_path_with_namespace(
-            project)
-        if dst_pid := self.projects.find_project_by_path(
-            self.config.destination_host, self.config.destination_token, dst_path_with_namespace):
-            self.log.info(f"Project '{dst_path_with_namespace}' already exists. Skipping import")
-            response = safe_json_response(self.projects_api.get_project(dst_pid, self.config.destination_host, self.config.destination_token))
-            result = self.ext_import.get_result_data(project, response)
+        gh_host = None
+        gh_token = None
+        if self.scm_source is not None:
+           for single_source in self.config.list_multiple_source_config("github_source"):
+               if self.scm_source == single_source.get("src_hostname", None):
+                   self.gh_repos = ReposClient(single_source["src_hostname"], deobfuscate(single_source["src_access_token"]))
+                   gh_host = single_source["src_hostname"]
+                   gh_token = deobfuscate(single_source["src_access_token"])    
         else:
-            result = self.ext_import.trigger_import_from_ghe(
-                project, dry_run=self.dry_run)
-        
-        if result.get(project["path_with_namespace"], False) is not False and not self.dry_run:
+            self.gh_repos = ReposClient(self.config.source_host, self.config.source_token)
+            gh_host = self.config.source_host
+            gh_token = self.config.source_token
+        members = project.pop("members")
+        result = self.ext_import.trigger_import_from_ghe(
+            project, gh_host, gh_token, dry_run=self.dry_run)
+        if result.get(project["path_with_namespace"], False) is not False:
             result_response = result[project["path_with_namespace"]]["response"]
             if project_id := result_response.get("id", None):
                 full_path = result_response.get("full_path").strip("/")
