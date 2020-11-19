@@ -1,10 +1,12 @@
 # Congregate
 
+This file will help developers understand how to setup a congregate development environment. For general usability, check out the [user guide](using-congregate.md)
+
 [[_TOC_]]
 
 ## About
 
-* Congregate is a Professional Services utility for migrating one or more GitLab instances into another, single GitLab instance.
+* Congregate is a Professional Services utility for migrating one or more data sources into a single GitLab instance.
 * Users are migrated using individual API endpoints.
 * Congregate leverages both the [Project](https://docs.gitlab.com/ee/api/project_import_export.html) and [Group](https://docs.gitlab.com/ee/api/group_import_export.html) Export / Import API to migrate projects and groups.
   * Export / Import on the source and destination instance are bound by [rate limit settings](https://docs.gitlab.com/ee/api/README.html#rate-limits).
@@ -90,7 +92,7 @@ filterwarnings = error
 
 ## Configuring Congregate
 
-Once all of the dependencies are installed, run `congregate configure` to set up the Congregate config.
+Once all of the dependencies are installed, run `congregate configure` to set up the Congregate config. Alternatively, you can copy the config that you need from the [config template](congregate.conf.template)
 
 ### Config staging location
 
@@ -216,14 +218,13 @@ cp congregate.sh /usr/local/bin
 
 #### Configuring
 
-Before you start make sure to have a source and destination instance available and accessible from Congregate.
-
-**N.B.** Congregate is currently only configurable to migrate from GitLab -> GitLab (either SaaS or self-managed).
-Migrating from and to other external instances (BitBucket, GitHub, etc.) is currently not supported.
+Before you start make sure to have a source and destination instance(s) available and accessible from Congregate. To do this run a `curl -k <source-hostname>` and `curl -k <destination-hostname>` to make sure they are routable. You can leave off -k if SSL certs are configured correctly.
 
 Using the `root` user account create a Personal Access Token or PAT (preferably create a separate user with Admin privileges) on both instances.
-From the user profile's *Settings -> Access Tokens* enter a name and check `api` from *Scopes*. This may change once more granular rights are introduced for PATs as described [here](https://gitlab.com/groups/gitlab-org/-/epics/637).
+In Gitlab, from the user profile's *Settings -> Access Tokens* enter a name and check `api` from *Scopes*. *Note: This may change once more granular rights are introduced for PATs as described [here](https://gitlab.com/groups/gitlab-org/-/epics/637).*
 Make sure to safely store the tokens before configuring.
+
+> if you are configuring `data/congregate.conf` without using `congregate configure` make sure to base64 encode the tokens by using the `congregate obfuscate` utility. It will prompt you to paste the token in and spit out the encoded token. 
 
 As part of project migrations Congregate extends the Project export/import API by migrating registries (docker images).
 Make sure to enable the **Container Registry** on both instances as you will need the hostnames during configuration.
@@ -245,6 +246,7 @@ With Congregate configured and projects, groups, and users retrieved, you should
 **N.B.** Instead of exporting an environment variable within your shell session, you can also add `CONGREGATE_PATH` to `bash_profile` or an `init.d` script. This is a bit more of a permanent solution than just exporting the variable within the session.
 
 ### Usage
+Make sure to check out our [user guide](using-congregate.md) if you're just getting started to learn the basics. 
 
 ``` text
 Usage:
@@ -382,74 +384,10 @@ Commands:
 #### Important Notes
 
 * The GitLab Project export / import API versions need to match between instances. [This documentation](https://docs.gitlab.com/ee/user/project/settings/import_export.html) shows which versions of the API exist in each version of GitLab.
-* The GitLab Group export / import API versions need to match between instances and be at least on **12.8**.
+* The GitLab Group export / import API versions need to match between instances and be at least on **12.8**, but preferebly **13.3**.
 
 #### Migration steps
-
-##### Dry-run
-
-For all API facing commands `dry_run` is the default mode.
-To revert it add `--commit` at the end.
-
-##### Migrate users
-
-Best practice is to first migrate ONLY users by running:
-
-* `congregate ui &` - Open the UI in your browser (by default `localhost:8000`), select and stage all users.
-* `congregate migrate --skip-group-export --skip-group-import --skip-project-export --skip-project-import` - Inspect the dry-run output in:
-  * `data/dry_run_user_migration.json`
-  * `data/congregate.log`
-  * Inspect `data/staged_users.json` if any of the NOT found users are blocked as, by default, they will not be migrated.
-  * To explicitly remove blocked users from staged users, groups and projects run `congregate remove-blocked-users`.
-* `congregate migrate --skip-group-export --skip-group-import --skip-project-export --skip-project-import --commit`
-
-##### Migrate groups and sub-groups
-
-Once all the users are migrated:
-
-* Go back to the UI, select and stage all groups and sub-groups
-* Only the top level groups will be staged as they comprise the entire tree structure.
-* `congregate search-for-staged-users` - Check output for found and NOT found users on destination.
-  * All users should be found.
-  * Inspect `data/staged_users.json` if any of the NOT found users are blocked as, by default, they will not be migrated.
-  * To explicitly remove blocked users from staged users, groups and projects run `congregate remove-blocked-users`.
-* `congregate migrate --skip-users --skip-project-export --skip-project-import` - Inspect the dry-run output in:
-  * `data/dry_run_group_migration.json`
-  * `data/congregate.log`
-* `congregate migrate --skip-users --skip-project-export --skip-project-import --commit`
-
-##### Migrate projects
-
-Once all the users and groups (w/ sub-groups) are migrated:
-
-* Go back to the UI, select and stage projects (either all, or in waves).
-* `congregate search-for-staged-users` - Check output for found and NOT found users on destination.
-  * All users should be found.
-  * Inspect `data/staged_users.json` if any of the NOT found users are blocked as, by default, they will not be migrated.
-  * To explicitly remove blocked users from staged users, groups and projects run `congregate remove-blocked-users`.
-* `congregate migrate --skip-users --skip-group-export --skip-group-import` - Inspect the dry-run output in:
-  * `data/dry_run_project_migration.json`
-  * `data/congregate.log`
-* `congregate migrate --skip-users --skip-group-export --skip-group-import --commit`
-
-##### Rollback
-
-To remove all of the staged users, groups (w/ sub-groups) and projects on destination run:
-
-* `congregate rollback` - Inspect the output in:
-  * `data/congregate.log`
-* `congregate rollback --commit`
-* For more granular rollback see [Usage](#usage).
-
-##### do-all commands
-
-For a CLI only based migration, the following commands are available:
-
-* `do-all` - Migrate all users, projects and their groups
-* `do-all-users` - Migrate all users
-* `do-all-groups-and-projects` - Migrate all projects and their groups
-
-**N.B.** By default these commands will run in `dry_run` mode. To revert it add `--commit` at the end.
+For detailed, step-by-step instructions on how to use congregate to migrate with a specific source and destination pairing, check out our [run books](runbooks). Also, we've recently moved this section to our [basic user guide](using-congregate.md).
 
 ### Development Environment Setup
 

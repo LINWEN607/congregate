@@ -170,8 +170,8 @@
 ### Specify an absolute path to the spreadsheet. Supports excel, openoffice, and csv spreadsheet formats
 # wave_spreadsheet_path = /absolute/path/to/waves.xls
 
-### Specify the columns for congregate to use from the spreadsheet
-# wave_spreadsheet_columns = Wave name, Wave date, Source Url
+### Specify the column names for congregate to use from the spreadsheet. These names will be required to the right of the colon in the next configuration item.
+# wave_spreadsheet_columns = Migration wave, Date of execution, Repo URL, Group Path
 
 ### If you are using columns that do not match the expected "Wave name", "Wave date", and "Source Url", you will need to provide a map setting like the example below
 # wave_spreadsheet_column_mapping = {
