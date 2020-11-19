@@ -179,7 +179,7 @@ def input_generator(params):
 
 
 def migration_dry_run(data_type, post_data):
-    with open("{0}/data/dry_run_{1}_migration.json".format(get_congregate_path(), data_type), "a") as f:
+    with open(f"{get_congregate_path()}/data/results/dry_run_{data_type}_migration.json", "a") as f:
         json.dump(post_data, f, indent=4)
 
 
@@ -254,27 +254,27 @@ def clean_data(dry_run=True, files=None):
         "projects.json",
         "users.json",
         "groups.json",
-        "user_migration_results.json",
-        "user_migration_results.html",
-        "user_diff.json",
-        "group_migration_results.json",
-        "group_migration_results.html",
-        "group_diff.json",
-        "project_migration_results.json",
-        "project_migration_results.html",
-        "project_diff.json",
-        "migration_rollback_results.html",
+        "results/user_migration_results.json",
+        "results/user_migration_results.html",
+        "results/user_diff.json",
+        "results/group_migration_results.json",
+        "results/group_migration_results.html",
+        "results/group_diff.json",
+        "results/project_migration_results.json",
+        "results/project_migration_results.html",
+        "results/project_diff.json",
+        "results/migration_rollback_results.html",
         "newer_users.json",
         "unknown_users.json",
         "groups_audit.json",
-        "dry_run_user_migration.json",
-        "dry_run_group_migration.json",
-        "dry_run_project_migration.json"
+        "results/dry_run_user_migration.json",
+        "results/dry_run_group_migration.json",
+        "results/dry_run_project_migration.json"
     ] if not files else files
 
     if os.path.isdir("{}/data".format(app_path)):
         for f in files_to_delete:
-            path = "{0}/data/{1}".format(app_path, f)
+            path = f"{app_path}/data/{f}"
             try:
                 print("{0}Removing {1}".format(get_dry_log(dry_run), path))
                 if not dry_run:
@@ -290,17 +290,17 @@ def rotate_logs():
     """
         Rotate and empty logs
     """
-    app_path = get_congregate_path()
-    if os.path.isdir("{}/data".format(app_path)):
-        log = "{}/data/congregate.log".format(app_path)
-        audit_log = "{}/data/audit.log".format(app_path)
+    log_path = f"{get_congregate_path()}/data/logs"
+    if os.path.isdir(log_path):
+        log = f"{log_path}/congregate.log"
+        audit_log = f"{log_path}/audit.log"
         end_time = str(datetime.now()).replace(" ", "_")
         print("Rotating and emptying:\n{}".format("\n".join([log, audit_log])))
         try:
-            copy(log, "{0}/data/congregate_{1}.log".format(app_path, end_time))
+            copy(log, f"{log_path}/congregate_{end_time}.log")
             open(log, "w").close()
             copy(
-                audit_log, "{0}/data/audit_{1}.log".format(app_path, end_time))
+                audit_log, f"{log_path}/audit_{end_time}.log")
             open(audit_log, "w").close()
         except OSError as e:
             if e.errno != errno.ENOENT:
@@ -387,7 +387,7 @@ def add_post_migration_stats(start, log=None):
     """
     reqs = ["POST request to", "PUT request to", "DELETE request to"]
     reqs_no = 0
-    with open("{}/data/audit.log".format(get_congregate_path()), "r") as f:
+    with open(f"{get_congregate_path()}/data/logs/audit.log", "r") as f:
         for line in f:
             if any(req in line for req in reqs):
                 reqs_no += 1
@@ -445,11 +445,10 @@ def list_to_dict(lst):
 
 def write_results_to_file(import_results, result_type="project", log=None):
     end_time = str(datetime.now()).replace(" ", "_")
-    file_path = "%s/data/%s_migration_results_%s.json" % (
-        get_congregate_path(), result_type, end_time)
+    file_path = f"{get_congregate_path()}/data/results/{result_type}_migration_results_{end_time}.json"
     write_json_to_file(file_path, import_results, log=log)
-    copy(file_path, "%s/data/%s_migration_results.json" %
-         (get_congregate_path(), result_type))
+    copy(file_path,
+         f"{get_congregate_path()}/data/results/{result_type}_migration_results.json")
 
 
 def stitch_json_results(result_type="project", steps=0, order="tail"):
@@ -462,8 +461,8 @@ def stitch_json_results(result_type="project", steps=0, order="tail"):
     """
     reverse = True if order.lower() == "tail" else False
     steps += 1
-    files = glob.glob("%s/data/%s_migration_results_*" %
-                      (get_congregate_path(), result_type))
+    files = glob.glob(
+        f"{get_congregate_path()}/data/results/{result_type}_migration_results_*")
     files.sort(key=lambda f: f.split("results_")[
                1].replace(".json", ""), reverse=reverse)
     if steps > len(files):

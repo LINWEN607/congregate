@@ -18,7 +18,7 @@ def myLogger(name):
     else:
         logger = getLogger(name)
         logger.setLevel(INFO)
-        file_log_handler = FileHandler('%s/data/congregate.log' % app_path)
+        file_log_handler = FileHandler(f'{app_path}/data/logs/congregate.log')
         stderr_log_handler = StreamHandler()
         formatter = Formatter(log_file_format, datefmt="%d %b %Y %H:%M:%S")
         file_log_handler.setFormatter(formatter)

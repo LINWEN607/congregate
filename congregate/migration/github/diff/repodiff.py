@@ -17,7 +17,8 @@ class RepoDiffClient(BaseDiffClient):
 
     def __init__(self, results_path, staged=False, rollback=False, processes=None):
         super(RepoDiffClient, self).__init__()
-        self.repos_api = ReposApi(self.config.source_host, self.config.source_token)
+        self.repos_api = ReposApi(
+            self.config.source_host, self.config.source_token)
         self.repos_client = ReposClient()
         self.gl_projects_api = ProjectsApi()
         self.issues_api = IssuesApi()
@@ -65,7 +66,7 @@ class RepoDiffClient(BaseDiffClient):
                 "%s/data/staged_projects.json" % self.app_path)
         else:
             self.source_data = self.load_json_data(
-                "%s/data/project_json.json" % self.app_path)
+                "%s/data/projects.json" % self.app_path)
         self.source_data = [i for i in self.source_data if i]
 
     def generate_diff_report(self):
@@ -73,7 +74,7 @@ class RepoDiffClient(BaseDiffClient):
         self.log.info("{}Generating Repo Diff Report".format(
             get_rollback_log(self.rollback)))
         results = handle_multi_process_write_to_file_and_return_results(
-            self.generate_single_diff_report, self.return_only_accuracies, self.source_data, "%s/data/repos_diff.json" % self.app_path, processes=self.processes)
+            self.generate_single_diff_report, self.return_only_accuracies, self.source_data, "{self.app_path}/data/results/repos_diff.json", processes=self.processes)
 
         for result in results:
             diff_report.update(result)
@@ -121,16 +122,20 @@ class RepoDiffClient(BaseDiffClient):
         repo_diff = {}
 
         # branches
-        repo_branch_data = list(self.repos_api.get_repo_branches(project["namespace"], project["name"]))
-        transformed_data = self.repos_client.transform_gh_branches(repo_branch_data)
+        repo_branch_data = list(self.repos_api.get_repo_branches(
+            project["namespace"], project["name"]))
+        transformed_data = self.repos_client.transform_gh_branches(
+            repo_branch_data)
         repo_diff["/projects/:id/branches"] = self.generate_repo_diff(
             project, "name", transformed_data, self.gl_repository_api.get_all_project_repository_branches, obfuscate=True)
-        
+
         # branch permissions
-        
+
         # pull requests
-        repo_pr_data = list(self.repos_api.get_repo_pulls(project["namespace"], project["name"]))
-        transformed_data = self.repos_client.transform_gh_pull_requests(repo_pr_data)
+        repo_pr_data = list(self.repos_api.get_repo_pulls(
+            project["namespace"], project["name"]))
+        transformed_data = self.repos_client.transform_gh_pull_requests(
+            repo_pr_data)
         repo_diff["/projects/:id/pull_requests"] = self.generate_repo_diff(
             project, None, transformed_data, self.gl_mr_api.get_all_project_merge_requests, obfuscate=True)
 
@@ -142,28 +147,35 @@ class RepoDiffClient(BaseDiffClient):
         #         project, "body", transformed_data, self.gl_mr_api.get_merge_request_notes, obfuscate=True)  # How to pass in PR id here??
 
         # tags (Currently not diffing data)
-        repo_tag_data = list(self.repos_api.get_repo_tags(project["namespace"], project["name"]))
+        repo_tag_data = list(self.repos_api.get_repo_tags(
+            project["namespace"], project["name"]))
         transformed_data = self.repos_client.transform_gh_tags(repo_tag_data)
         repo_diff["/projects/:id/tags"] = self.generate_repo_diff(
             project, "name", transformed_data, self.gl_repository_api.get_all_project_repository_tags, obfuscate=True)
 
         self.keys_to_ignore.append("id")
-        
+
         # issues (Currently not diffing data)
-        repo_issue_data = list(self.repos_api.get_repo_issues(project["namespace"], project["name"]))
-        transformed_data = self.repos_client.transform_gh_issues(repo_issue_data)
+        repo_issue_data = list(self.repos_api.get_repo_issues(
+            project["namespace"], project["name"]))
+        transformed_data = self.repos_client.transform_gh_issues(
+            repo_issue_data)
         repo_diff["/projects/:id/issues"] = self.generate_repo_diff(
             project, None, transformed_data, self.gl_projects_api.get_all_project_issues, obfuscate=True)
 
         # milestones (Currently not diffing data)
-        repo_milestone_data = list(self.repos_api.get_repo_milestones(project["namespace"], project["name"]))
-        transformed_data = self.repos_client.transform_gh_milestones(repo_milestone_data)
+        repo_milestone_data = list(self.repos_api.get_repo_milestones(
+            project["namespace"], project["name"]))
+        transformed_data = self.repos_client.transform_gh_milestones(
+            repo_milestone_data)
         repo_diff["/projects/:id/milestones"] = self.generate_repo_diff(
             project, None, transformed_data, self.gl_projects_api.get_all_project_milestones, obfuscate=True)
 
         # releases
-        repo_release_data = list(self.repos_api.get_repo_releases(project["namespace"], project["name"]))
-        transformed_data = self.repos_client.transform_gh_releases(repo_release_data)
+        repo_release_data = list(self.repos_api.get_repo_releases(
+            project["namespace"], project["name"]))
+        transformed_data = self.repos_client.transform_gh_releases(
+            repo_release_data)
         repo_diff["/projects/:id/releases"] = self.generate_repo_diff(
             project, "name", transformed_data, self.gl_projects_api.get_all_project_releases, obfuscate=True)
 

@@ -190,8 +190,8 @@ def main():
             if not os.path.exists('data'):
                 print("Creating data directory and empty log file")
                 os.makedirs('data')
-                if not os.path.exists("%s/data/congregate.log" % app_path):
-                    with open(f"{app_path}/data/congregate.log", "w") as f:
+                if not os.path.exists(f"{app_path}/data/logs/congregate.log"):
+                    with open(f"{app_path}/data/logs/congregate.log", "w") as f:
                         f.write("")
             else:
                 print("Congregate already initialized")
@@ -387,20 +387,20 @@ def main():
                 rotate_logs()
                 if config.source_type == "gitlab":
                     user_diff = UserDiffClient(
-                        "/data/user_migration_results.json", staged=STAGED, processes=PROCESSES, rollback=ROLLBACK)
+                        "/data/results/user_migration_results.json", staged=STAGED, processes=PROCESSES, rollback=ROLLBACK)
                     user_diff.generate_html_report(
-                        user_diff.generate_diff_report(), "/data/user_migration_results.html")
+                        user_diff.generate_diff_report(), "/data/results/user_migration_results.html")
                     group_diff = GroupDiffClient(
-                        "/data/group_migration_results.json", staged=STAGED, processes=PROCESSES, rollback=ROLLBACK)
+                        "/data/results/group_migration_results.json", staged=STAGED, processes=PROCESSES, rollback=ROLLBACK)
                     group_diff.generate_html_report(
-                        group_diff.generate_diff_report(), "/data/group_migration_results.html")
+                        group_diff.generate_diff_report(), "/data/results/group_migration_results.html")
                     project_diff = ProjectDiffClient(
-                        "/data/project_migration_results.json", staged=STAGED, processes=PROCESSES, rollback=ROLLBACK)
+                        "/data/results/project_migration_results.json", staged=STAGED, processes=PROCESSES, rollback=ROLLBACK)
                     project_diff.generate_html_report(
-                        project_diff.generate_diff_report(), "/data/project_migration_results.html")
+                        project_diff.generate_diff_report(), "/data/results/project_migration_results.html")
                 elif config.source_type == "github":
                     repo_diff = RepoDiffClient(
-                        "/data/project_migration_results.json", staged=STAGED, processes=PROCESSES, rollback=ROLLBACK)
+                        "/data/results/project_migration_results.json", staged=STAGED, processes=PROCESSES, rollback=ROLLBACK)
                     repo_diff.generate_diff_report()
             if arguments["stitch-results"]:
                 result_type = str(
@@ -417,15 +417,12 @@ def main():
             if arguments["dump-database"]:
                 m = MongoConnector()
                 for collection in m.db.list_collection_names():
-                    if collection == "projects":
-                        collection = "project_json"
                     print(f"Dumping collection {collection} to file")
-                    m.dump_collection_to_file(collection, f"{app_path}/data/{convert_to_underscores(collection)}.json")
+                    m.dump_collection_to_file(
+                        collection, f"{app_path}/data/{convert_to_underscores(collection)}.json")
             if arguments["reingest"]:
                 m = MongoConnector()
                 for asset in arguments["<assets>"]:
-                    if asset == "projects":
-                        asset = "project_json"
                     print(f"Reingesting {asset} into database")
                     m.re_ingest_into_mongo(asset)
         if arguments["obfuscate"]:
