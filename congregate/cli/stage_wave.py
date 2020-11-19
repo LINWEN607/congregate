@@ -9,7 +9,7 @@ from congregate.migration.meta.etl import WaveSpreadsheetHandler
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.cli.stage_base import BaseStageClass
 from congregate.cli.stage_projects import ProjectStageCLI
-from congregate.helpers.logger import myLogger
+
 
 
 class WaveStageCLI(BaseStageClass):
@@ -17,7 +17,7 @@ class WaveStageCLI(BaseStageClass):
         self.pcli = ProjectStageCLI()
         self.groups_api = GroupsApi()
         super(WaveStageCLI, self).__init__()
-        self.log = myLogger(__name__)
+        #self.log = myLogger(__name__)
 
     def stage_data(self, wave_to_stage, dry_run=True, skip_users=False, scm_source=None):
         self.stage_wave(wave_to_stage, dry_run, scm_source)
@@ -38,7 +38,7 @@ class WaveStageCLI(BaseStageClass):
         if scm_source is not None:
             i = self.the_number_of_instance(scm_source)
         if i == -1:
-            self.log.warning(f"Couldn't find the correct GH instance with hostname: {scm_source}")
+            self.log.warn(f"Couldn't find the correct GH instance with hostname: {scm_source}")
         self.rewritten_projects = rewrite_list_into_dict(
             self.open_projects_file(i, scm_source), "id")
         self.rewritten_users = rewrite_list_into_dict(
@@ -68,7 +68,7 @@ class WaveStageCLI(BaseStageClass):
                 self.handle_parent_group(w, group)
                 self.append_group_data(group, wave_data, w, dry_run=dry_run)
             else:
-                self.log.warning(f"The project {w[url_key]} doesn't exit on source instance")
+                self.log.warn(f"The project {w[url_key]} doesn't exit on source instance")
     def append_project_data(self, project, projects_to_stage, wave_row, p_range=0, dry_run=True):
         for member in project["members"]:
             self.append_member_to_members_list([], member, dry_run)
