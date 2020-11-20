@@ -45,7 +45,7 @@ Usage:
     congregate validate-staged-groups-schema
     congregate validate-staged-projects-schema
     congregate map-users [--commit]
-    congregate generate-diff [--processes=<n>] [--staged] [--rollback]
+    congregate generate-diff [--processes=<n>] [--staged] [--rollback] [--scm-source=hostanme]
     congregate clean [--commit]
     congregate stitch-results [--result-type=<project|group|user>] [--no-of-files=<n>] [--head|--tail]
     congregate obfuscate
@@ -404,9 +404,28 @@ def main():
                         "/data/project_migration_results.json", staged=STAGED, processes=PROCESSES, rollback=ROLLBACK)
                     project_diff.generate_html_report(
                         project_diff.generate_diff_report(), "/data/project_migration_results.html")
-                elif config.source_type == "github":
-                    repo_diff = RepoDiffClient(
-                        "/data/project_migration_results.json", staged=STAGED, processes=PROCESSES, rollback=ROLLBACK)
+                elif config.source_type == "github" or SCM_SOURCE is not None:
+                    if SCM_SOURCE is not None:
+                        for single_instance in config.list_multiple_source_config("github_source"):
+                            if SCM_SOURCE == single_instance.get('src_hostname'):
+                                token = deobfuscate(single_source.get('src_access_token'))
+                            repo_diff = RepoDiffClient(
+                                "/data/project_migration_results.json", 
+                                single_instance.get('src_hostname'), 
+                                single_instance.get('src_access_token'), 
+                                staged=STAGED, 
+                                processes=PROCESSES, 
+                                rollback=ROLLBACK, 
+                            )
+                    else:
+                        repo_diff = RepoDiffClient(
+                            "/data/project_migration_results.json", 
+                            config.source_host, 
+                            config.source_token, 
+                            staged=STAGED, 
+                            processes=PROCESSES,
+                            rollback=ROLLBACK
+                        )
                     repo_diff.generate_diff_report()
             if arguments["stitch-results"]:
                 result_type = str(
