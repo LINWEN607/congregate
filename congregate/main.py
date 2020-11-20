@@ -9,7 +9,7 @@ Usage:
     congregate stage-projects <projects>... [--skip-users] [--commit] [--scm-source=hostanme]
     congregate stage-groups <groups>... [--skip-users] [--commit] [--scm-source=hostanme]
     congregate stage-wave <wave> [--commit] [--scm-source=hostanme]
-    congregate migrate [--processes=<n>] [--skip-users] [--skip-adding-members] [--skip-group-export] [--skip-group-import] [--skip-project-export] [--skip-project-import] [--only-post-migration-info] [--subgroups-only] [--scm-source=hostanme] [--commit]
+    congregate migrate [--processes=<n>] [--skip-users] [--skip-adding-members] [--skip-group-export] [--skip-group-import] [--skip-project-export] [--skip-project-import] [--only-post-migration-info] [--subgroups-only] [--scm-source=hostanme] [--commit] [archive-staged-projects] [unarchive-staged-projects]
     congregate rollback [--hard-delete] [--skip-users] [--skip-groups] [--skip-projects] [--commit]
     congregate ui
     congregate do-all [--commit]
@@ -182,7 +182,9 @@ def main():
         ONLY_POST_MIGRATION_INFO = arguments["--only-post-migration-info"]
         PARTIAL = arguments["--partial"]
         SRC_INSTANCES = arguments["--src-instances"] 
-        SCM_SOURCE = arguments["--scm-source"] 
+        SCM_SOURCE = arguments["--scm-source"]
+        ARCHIVE_STAGED_PROJECTS= True if arguments["archive-staged-projects"] else False
+        UNARCHIVE_STAGED_PROJECTS= True if arguments["unarchive-staged-projects"] else False
 
         if arguments["--version"]:
             with open(f"{app_path}/pyproject.toml", "r") as f:
@@ -280,7 +282,9 @@ def main():
                     skip_project_import=arguments["--skip-project-import"],
                     only_post_migration_info=ONLY_POST_MIGRATION_INFO,
                     subgroups_only=arguments["--subgroups-only"],
-                    scm_source=arguments["--scm-source"]
+                    scm_source=SCM_SOURCE,
+                    archive_staged_projects=ARCHIVE_STAGED_PROJECTS,
+                    unarchive_staged_projects=UNARCHIVE_STAGED_PROJECTS
                 )
                 migrate.migrate()
 
