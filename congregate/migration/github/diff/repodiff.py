@@ -15,10 +15,10 @@ class RepoDiffClient(BaseDiffClient):
         Extension of BaseDiffClient focused on finding the differences between migrated repositories
     '''
 
-    def __init__(self, results_path, staged=False, rollback=False, processes=None):
+    def __init__(self, results_path, host, token,staged=False, rollback=False, processes=None):
         super(RepoDiffClient, self).__init__()
-        self.repos_api = ReposApi(self.config.source_host, self.config.source_token)
-        self.repos_client = ReposClient(self.config.source_host, self.config.source_token)
+        self.repos_api = ReposApi(host, token)
+        self.repos_client = ReposClient(host, token)
         self.gl_projects_api = ProjectsApi()
         self.issues_api = IssuesApi()
         self.gl_mr_api = MergeRequestsApi()
