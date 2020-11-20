@@ -38,20 +38,28 @@ export default {
           type: 'number'
         },
         {
-          label: 'Project Name',
-          field: 'path'
-        },
-        {
-          label: 'Description',
-          field: 'description'
+          label: 'Name',
+          field: 'name'
         },
         {
           label: 'Namespace',
-          field: 'namespace.full_path'
+          field: 'path_with_namespace'
         },
         {
-          label: 'Project Type',
+          label: 'Type',
           field: 'namespace.kind'
+        },
+        {
+          label: 'Visibility',
+          field: 'visibility'
+        },
+        {
+          label: 'Archived',
+          field: 'archived'
+        },
+        {
+          label: 'Empty',
+          field: 'empty_repo'
         },
         {
           label: 'Last Activity',

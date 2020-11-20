@@ -16,7 +16,7 @@ from congregate.helpers.misc_utils import get_congregate_path
 
 def get_data(file_name, sort_by=None):
     data = None
-    with open("%s/data/%s.json" % (get_congregate_path(), file_name), "r") as f:
+    with open(f"{get_congregate_path()}/data/{file_name}.json", "r") as f:
         data = json.load(f)
 
     if sort_by is not None:
@@ -38,11 +38,11 @@ def get_counts():
     total_groups = len(get_data("groups"))
     staged_groups = get_data("staged_groups")
     return jsonify({
-        "Total Staged Projects": "%s/%s" % (len(staged_projects), total_projects),
+        "Total Staged Projects": f"{len(staged_projects)}/{total_projects}",
         "Staged Projects": staged_projects,
-        "Total Staged Groups": "%s/%s" % (len(staged_groups), total_groups),
+        "Total Staged Groups": f"{len(staged_groups)}/{total_groups}",
         "Staged Groups": staged_groups,
-        "Total Staged Users": "%s/%s" % (len(staged_users), total_users),
+        "Total Staged Users": f"{len(staged_users)}/{total_users}",
         "Staged Users": staged_users,
     })
 
