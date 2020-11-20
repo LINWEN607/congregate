@@ -417,7 +417,7 @@ class BaseDiffClient(BaseClass):
                     diff_cell_row.append(diff_cell_header)
                 diff_row_table.append(diff_cell_row)
                 for endpoint in v:
-                    if "overall_accuracy" or "error" not in endpoint:
+                    if endpoint not in ["overall_accuracy", "error"]:
                         diff_data_row = soup.new_tag("tr")
                         data = [
                             endpoint,
