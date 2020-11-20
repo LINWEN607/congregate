@@ -39,6 +39,7 @@ def list_gitlab_data(skip_users=False, skip_groups=False, skip_projects=False):
         projects.retrieve_project_info(
             b.config.source_host, b.config.source_token)
 
+
 def list_bitbucket_data(skip_users=False, skip_groups=False, skip_projects=False):
     if not skip_users:
         users = BitBucketUsers()
@@ -47,9 +48,10 @@ def list_bitbucket_data(skip_users=False, skip_groups=False, skip_projects=False
         projects = BitBucketProjects()
         groups_client = BitBucketGroups()
         repos = BitBucketRepos()
-        projects.retrieve_project_info(groups=groups)
         groups = groups_client.retrieve_group_info()
+        projects.retrieve_project_info(groups=groups)
         repos.retrieve_repo_info(groups=groups)
+
 
 def list_github_data(processes=None, partial=False, skip_users=False, skip_groups=False, skip_projects=False, src_instances=False):
     mongo = MongoConnector()
@@ -65,7 +67,8 @@ def list_github_data(processes=None, partial=False, skip_users=False, skip_group
         if not skip_users:
             users = GitHubUsers(b.config.source_host, b.config.source_token)
             users.retrieve_user_info(processes=processes)
-            mongo.dump_collection_to_file("users", f"{b.app_path}/data/users.json")
+            mongo.dump_collection_to_file(
+                "users", f"{b.app_path}/data/users.json")
         if not skip_groups:
             orgs = GitHubOrgs(b.config.source_host, b.config.source_token)
             orgs.retrieve_org_info(processes=processes)
@@ -76,20 +79,26 @@ def list_github_data(processes=None, partial=False, skip_users=False, skip_group
             repos.retrieve_repo_info(processes=processes)
             mongo.dump_collection_to_file(
                 "projects", f"{b.app_path}/data/projects.json")
-    else:        
+    else:
         for i, single_source in enumerate(b.config.list_multiple_source_config("github_source")):
             if not skip_users:
-                users = GitHubUsers(single_source.get('src_hostname'), deobfuscate(single_source.get('src_access_token')))
+                users = GitHubUsers(single_source.get('src_hostname'), deobfuscate(
+                    single_source.get('src_access_token')))
                 users.retrieve_user_info(processes=processes)
-                mongo.dump_collection_to_file("users", f"{b.app_path}/data/users-{i}.json") 
-            if not skip_groups:    
-                orgs = GitHubOrgs(single_source.get('src_hostname'), deobfuscate(single_source.get('src_access_token')))
+                mongo.dump_collection_to_file(
+                    "users", f"{b.app_path}/data/users-{i}.json")
+            if not skip_groups:
+                orgs = GitHubOrgs(single_source.get('src_hostname'), deobfuscate(
+                    single_source.get('src_access_token')))
                 orgs.retrieve_org_info(processes=processes)
-                mongo.dump_collection_to_file("groups", f"{b.app_path}/data/groups-{i}.json")
-            if not skip_projects:    
-                repos = GitHubRepos(single_source.get('src_hostname'), deobfuscate(single_source.get('src_access_token')))
+                mongo.dump_collection_to_file(
+                    "groups", f"{b.app_path}/data/groups-{i}.json")
+            if not skip_projects:
+                repos = GitHubRepos(single_source.get('src_hostname'), deobfuscate(
+                    single_source.get('src_access_token')))
                 repos.retrieve_repo_info(processes=processes)
-                mongo.dump_collection_to_file("projects", f"{b.app_path}/data/project_json-{i}.json")
+                mongo.dump_collection_to_file(
+                    "projects", f"{b.app_path}/data/project_json-{i}.json")
     mongo.close_connection()
 
 
