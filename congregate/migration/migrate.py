@@ -957,7 +957,7 @@ class MigrateClient(BaseClass):
             result = True
             for job in ci_sources.get("TeamCity", []):
                 params = tc_client.teamcity_api.get_build_params(job)
-                if params.get("properties"):
+                if params.get("properties", None) is not None:
                     for param in params["properties"]["property"]:
                         if self.variables.safe_add_variables(new_id, tc_client.transform_ci_variables(param, tc_ci_src_hostname)) is False:
                             result = False
