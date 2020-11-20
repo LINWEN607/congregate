@@ -226,7 +226,7 @@ class UsersClient(BaseClass):
             return "{0}_".format(username)
 
     def add_users_to_parent_group(self, dry_run=True):
-        user_results_path = "%s/data/user_migration_results.json" % self.app_path
+        user_results_path = f"{self.app_path}/data/results/user_migration_results.json"
         if path.exists(user_results_path):
             new_users = read_json_file_into_object(user_results_path)
             for user in new_users:

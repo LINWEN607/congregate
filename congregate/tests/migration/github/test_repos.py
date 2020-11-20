@@ -1,7 +1,6 @@
 import unittest
-import json
 import pytest
-from mock import patch, PropertyMock, MagicMock, mock_open
+from mock import patch, PropertyMock, MagicMock
 import warnings
 # mongomock is using deprecated logic as of Python 3.3
 # This warning suppression is used so tests can pass
@@ -13,7 +12,6 @@ from congregate.tests.mockapi.github.repos import MockReposApi
 from congregate.migration.github.repos import ReposClient
 from congregate.migration.github.users import UsersClient
 from congregate.migration.github.api.repos import ReposApi
-from congregate.helpers.conf import Config
 
 
 @pytest.mark.unit_test
@@ -34,10 +32,10 @@ class ReposTests(unittest.TestCase):
                                mock_ci_sources2,
                                mock_format_users,
                                mock_get_repo):
-        
+
         mock_ci_sources1.return_value = []
         mock_ci_sources2.return_value = ['test-job1', 'test-job2']
-        
+
         formatted_users1 = [
             {
                 "id": 3,
@@ -79,7 +77,8 @@ class ReposTests(unittest.TestCase):
 
         mock_close_connection.return_value = None
 
-        mongo = MongoConnector(host="test-server", port=123456, client=mongomock.MongoClient)
+        mongo = MongoConnector(
+            host="test-server", port=123456, client=mongomock.MongoClient)
         for repo in listed_repos:
             self.repos.handle_retrieving_repos(repo, mongo=mongo)
 
@@ -134,19 +133,18 @@ class ReposTests(unittest.TestCase):
             self.assertEqual(
                 actual_projects[i].items(), expected_projects[i].items())
 
-
     @patch.object(ReposApi, "get_repo")
     @patch.object(UsersClient, "format_users")
     @patch.object(ReposClient, "list_ci_sources_jenkins")
     @patch.object(ReposClient, "list_ci_sources_teamcity")
     @patch.object(MongoConnector, "close_connection")
     def test_format_user_repos_with_error(self,
-                                        mock_close_connection,
-                                        mock_ci_sources1,
-                                        mock_ci_sources2,
-                                        mock_format_users,
-                                        mock_get_repo):
-        
+                                          mock_close_connection,
+                                          mock_ci_sources1,
+                                          mock_ci_sources2,
+                                          mock_format_users,
+                                          mock_get_repo):
+
         mock_ci_sources1.return_value = []
         mock_ci_sources2.return_value = ['test-job1', 'test-job2']
 
@@ -182,7 +180,8 @@ class ReposTests(unittest.TestCase):
 
         mock_close_connection.return_value = None
 
-        mongo = MongoConnector(host="test-server", port=123456, client=mongomock.MongoClient)
+        mongo = MongoConnector(
+            host="test-server", port=123456, client=mongomock.MongoClient)
         for repo in listed_repos:
             self.repos.handle_retrieving_repos(repo, mongo=mongo)
 
@@ -327,7 +326,8 @@ class ReposTests(unittest.TestCase):
 
         mock_close_connection.return_value = None
 
-        mongo = MongoConnector(host="test-server", port=123456, client=mongomock.MongoClient)
+        mongo = MongoConnector(
+            host="test-server", port=123456, client=mongomock.MongoClient)
         for repo in listed_repos:
             self.repos.handle_retrieving_repos(repo, mongo=mongo)
 
@@ -389,15 +389,16 @@ class ReposTests(unittest.TestCase):
                                          mock_close_connection,
                                          mock_ci_sources1,
                                          mock_ci_sources2,
-                                        ):
-        
+                                         ):
+
         mock_ci_sources1.return_value = []
         mock_ci_sources2.return_value = ['test-job1', 'test-job2']
-        
+
         listed_repos = [self.mock_repos.get_listed_repos(
         )[2], self.mock_repos.get_listed_repos()[3]]
 
-        mongo = MongoConnector(host="test-server", port=123456, client=mongomock.MongoClient)
+        mongo = MongoConnector(
+            host="test-server", port=123456, client=mongomock.MongoClient)
         for repo in listed_repos:
             self.repos.handle_retrieving_repos(repo, mongo=mongo)
 
@@ -461,7 +462,8 @@ class ReposTests(unittest.TestCase):
                 "jenkins_ci_src_access_token": "token"
             }
         ]
-        mongo_mock = MongoConnector(host="test-server", port=123456, client=mongomock.MongoClient)
+        mongo_mock = MongoConnector(
+            host="test-server", port=123456, client=mongomock.MongoClient)
         data = [
             {
                 "name": "demo-job",
@@ -474,14 +476,15 @@ class ReposTests(unittest.TestCase):
             {
                 "name": "test-job2",
                 "url": "https://github.gitlab-proserv.net/gitlab/website.git"
-            }   
+            }
         ]
 
         for d in data:
             mongo_mock.insert_data('jenkins-test', d)
-            
-        expected = ["test-job1","test-job2"]
-        actual = self.repos.list_ci_sources_jenkins("https://github.gitlab-proserv.net/gitlab/website.git", mongo_mock)
+
+        expected = ["test-job1", "test-job2"]
+        actual = self.repos.list_ci_sources_jenkins(
+            "https://github.gitlab-proserv.net/gitlab/website.git", mongo_mock)
 
         self.assertListEqual(expected, actual)
 
@@ -491,18 +494,21 @@ class ReposTests(unittest.TestCase):
             "tc_ci_src_hostname": "tc_hostname",
             "tc_ci_src_username": "test",
             "tc_ci_src_access_token": "eyJ0eXA"
-            }
+        }
         ]
 
-        mongo_mock = MongoConnector(host="test-server", port=123456, client=mongomock.MongoClient)
+        mongo_mock = MongoConnector(
+            host="test-server", port=123456, client=mongomock.MongoClient)
         expected = []
         actual = self.repos.list_ci_sources_teamcity("website", mongo_mock)
 
         self.assertListEqual(expected, actual)
- 
+
     def mock_repo_client(self):
         with patch.object(ReposClient, "connect_to_mongo") as mongo_mock:
-            mongo_mock.return_value = MongoConnector(host="test-server", port=123456, client=mongomock.MongoClient)
+            mongo_mock.return_value = MongoConnector(
+                host="test-server", port=123456, client=mongomock.MongoClient)
             with patch.object(UsersClient, "connect_to_mongo") as mongo_mock_2:
-                mongo_mock_2.return_value = MongoConnector(host="test-server", port=123456, client=mongomock.MongoClient)
-                return ReposClient()
+                mongo_mock_2.return_value = MongoConnector(
+                    host="test-server", port=123456, client=mongomock.MongoClient)
+                return ReposClient(host="gitlab", token="123")

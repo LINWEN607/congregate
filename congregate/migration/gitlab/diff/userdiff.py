@@ -47,7 +47,7 @@ class UserDiffClient(BaseDiffClient):
         self.log.info("{}Generating User Diff Report".format(
             get_rollback_log(self.rollback)))
         results = handle_multi_process_write_to_file_and_return_results(
-            self.generate_single_diff_report, self.return_only_accuracies, self.source_data, "%s/data/user_diff.json" % self.app_path, processes=self.processes)
+            self.generate_single_diff_report, self.return_only_accuracies, self.source_data, f"{self.app_path}/data/results/user_diff.json", processes=self.processes)
 
         for result in results:
             diff_report.update(result)

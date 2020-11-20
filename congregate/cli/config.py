@@ -199,13 +199,14 @@ def generate_config():
     ci_src = input("Migrating from a CI Source (Default: No)? ")
     if ci_src.lower() in ["yes", "y"]:
         config.add_section("CI_SOURCE")
-        ci_src_option = input("CI Source (1. Jenkins, 2. TeamCity 3. Jenkins and TeamCity)? ")
+        ci_src_option = input(
+            "CI Source (1. Jenkins, 2. TeamCity 3. Jenkins and TeamCity)? ")
         if ci_src_option.lower() in ["1", "1.", "jenkins"]:
             config.set("CI_SOURCE", "ci_src_type", "Jenkins")
             config.set("CI_SOURCE", "ci_src_hostname", input(
-            "CI Source instance ({}) URL: ".format(config.get("CI_SOURCE", "ci_src_type"))))
+                f"CI Source instance ({config.get('CI_SOURCE', 'ci_src_type')}) URL: "))
             config.set("CI_SOURCE", "ci_src_username",
-                   input("CI Source Username: "))
+                       input("CI Source Username: "))
             config.set("CI_SOURCE", "ci_src_access_token", obfuscate(
                 "CI Source instance ({}) Personal Access Token: ".format(config.get("CI_SOURCE", "ci_src_type"))))
         elif ci_src_option.lower() in ["2", "2.", "teamcity"]:
@@ -213,7 +214,7 @@ def generate_config():
             config.set("CI_SOURCE", "ci_src_hostname", input(
                 "CI Source instance ({}) URL: ".format(config.get("CI_SOURCE", "ci_src_type"))))
             config.set("CI_SOURCE", "ci_src_username",
-                   input("CI Source Username: "))
+                       input("CI Source Username: "))
             config.set("CI_SOURCE", "ci_src_access_token", obfuscate(
                 "CI Source instance ({}) Personal Access Token: ".format(config.get("CI_SOURCE", "ci_src_type"))))
         elif ci_src_option.lower() in ["3", "3.", "jenkins and teamcity"]:
@@ -223,21 +224,20 @@ def generate_config():
             config.set("JENKINS_CI_SOURCE", "jenkins_ci_src_hostname", input(
                 "Jenkins CI Source instance ({}) URL: ".format(config.get("JENKINS_CI_SOURCE", "jenkins_ci_src_type"))))
             config.set("JENKINS_CI_SOURCE", "jenkins_ci_src_username",
-                input("Jenkins CI Source Username: "))
+                       input("Jenkins CI Source Username: "))
             config.set("JENKINS_CI_SOURCE", "jenkins_ci_src_access_token", obfuscate(
-                "Jenkins CI Source instance ({}) Personal Access Token: ".format(config.get("JENKINS_CI_SOURCE", "jenkins_ci_src_type"))))           
+                "Jenkins CI Source instance ({}) Personal Access Token: ".format(config.get("JENKINS_CI_SOURCE", "jenkins_ci_src_type"))))
             # Teamcity Config
             config.add_section("TEAMCITY_CI_SOURCE")
             config.set("TEAMCITY_CI_SOURCE", "tc_ci_src_type", "TeamCity")
             config.set("TEAMCITY_CI_SOURCE", "tc_ci_src_hostname", input(
                 "Teamcity CI Source instance ({}) URL: ".format(config.get("TEAMCITY_CI_SOURCE", "tc_ci_src_type"))))
             config.set("TEAMCITY_CI_SOURCE", "tc_ci_src_username",
-                input("Teamcity CI Source Username: "))
+                       input("Teamcity CI Source Username: "))
             config.set("TEAMCITY_CI_SOURCE", "tc_ci_src_access_token", obfuscate(
                 "Teamcity CI Source instance ({}) Personal Access Token: ".format(config.get("TEAMCITY_CI_SOURCE", "tc_ci_src_type"))))
         else:
             print("CI Source type {} is currently not supported".format(ci_src_option))
-        
 
     # User specific configuration
     config.add_section("USER")
@@ -287,7 +287,9 @@ def write_to_file(config):
         :param: data: (dict) config object
     """
     if not path.isdir("{}/data".format(app_path)):
-        mkdir("{}/data".format(app_path))
+        mkdir(f"{app_path}/data")
+        mkdir(f"{app_path}/data/logs")
+        mkdir(f"{app_path}/data/results")
     if config.has_option("EXPORT", "filesystem_path") and config.get("EXPORT", "filesystem_path"):
         down_dir = config.get("EXPORT", "filesystem_path")
         sub_dir = "downloads"

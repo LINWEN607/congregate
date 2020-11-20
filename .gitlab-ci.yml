@@ -65,10 +65,10 @@ workflow:
   artifacts:
     when: always
     paths:
-      - data/*.html
-      - data/*diff*.json
-      - data/*results.json
-      - data/audit*.log
+      - data/**/*.html
+      - data/**/*diff*.json
+      - data/**/*results.json
+      - data/**/audit*.log
       - api_json.log
       - importer.log
       - exceptions_json.log
