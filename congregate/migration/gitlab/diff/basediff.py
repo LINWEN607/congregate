@@ -417,30 +417,43 @@ class BaseDiffClient(BaseClass):
                     diff_cell_row.append(diff_cell_header)
                 diff_row_table.append(diff_cell_row)
                 for endpoint in v:
-                    if "overall_accuracy" not in endpoint:
+                    if "overall_accuracy" or "error" not in endpoint:
                         diff_data_row = soup.new_tag("tr")
                         data = [
                             endpoint,
                             str(v[endpoint]['accuracy']),
                             v[endpoint]['diff']
                         ]
-                        for da in data:
-                            cell_data = soup.new_tag("td")
-                            if isinstance(da, dict):
-                                showhide = soup.new_tag("button")
-                                showhide['id'] = f"{endpoint}-showhide"
-                                showhide['class'] = 'accordion'
-                                showhide.string = "show/hide"
-                                cell_data.append(showhide)
-                                json_block = soup.new_tag("pre")
-                                json_block['id'] = 'json'
-                                json_block['class'] = 'accordion-content'
-                                json_block.string = json.dumps(da, indent=4)
-                                cell_data.append(json_block)
-                            else:
-                                cell_data.string = da
-                            diff_data_row.append(cell_data)
-                        diff_row_table.append(diff_data_row)
+                    elif "overall_accuracy" in endpoint:
+                        data = [
+                            "Overall Accuracy",
+                            str(v[endpoint]['overall_accuracy']['accuracy']),
+                            v[endpoint]['overall_accuracy']['result']
+                        ]
+                    elif "error" in endpoint:
+                        data = [
+                            "Error",
+                            "N/A",
+                            v[endpoint]['error']
+                        ]
+                    for da in data:
+                        cell_data = soup.new_tag("td")
+                        if isinstance(da, dict):
+                            showhide = soup.new_tag("button")
+                            showhide['id'] = f"{endpoint}-showhide"
+                            showhide['class'] = 'accordion'
+                            showhide.string = "show/hide"
+                            cell_data.append(showhide)
+                            json_block = soup.new_tag("pre")
+                            json_block['id'] = 'json'
+                            json_block['class'] = 'accordion-content'
+                            json_block.string = json.dumps(da, indent=4)
+                            cell_data.append(json_block)
+                        else:
+                            cell_data.string = da
+                        diff_data_row.append(cell_data)
+                    diff_row_table.append(diff_data_row)
+
                 td = soup.new_tag("td")
                 td['colspan'] = 3
                 td.append(diff_row_table)
