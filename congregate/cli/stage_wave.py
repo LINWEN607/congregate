@@ -69,7 +69,7 @@ class WaveStageCLI(BaseStageClass):
             else:
                 self.log.warn(f"Unable to find {w[url_key]} in listed data")
                 unable_to_find.append(w[url_key])
-        if len(unable_to_find) > 0:
+        if unable_to_find:
             self.log.warn("The following data was not found:\n{}".format("\n".join(unable_to_find)))
     def append_project_data(self, project, projects_to_stage, wave_row, p_range=0, dry_run=True):
         for member in project["members"]:
