@@ -226,7 +226,7 @@ def main():
             from congregate.migration.github.diff.repodiff import RepoDiffClient
             from congregate.helpers.user_util import map_users
             from congregate.helpers.mdbc import MongoConnector
-            from congregate.helpers.misc_utils import convert_to_underscores, deobfuscate
+            from congregate.helpers.misc_utils import convert_to_underscores
             config = conf.Config()
             users = UsersClient()
             groups = GroupsClient()
@@ -411,7 +411,7 @@ def main():
                                 repo_diff = RepoDiffClient(
                                     "/data/project_migration_results.json", 
                                     single_instance.get('src_hostname'), 
-                                    deobfuscate(single_instance.get('src_access_token')), 
+                                    single_instance.get('src_access_token'), 
                                     staged=STAGED, 
                                     processes=PROCESSES, 
                                     rollback=ROLLBACK, 
