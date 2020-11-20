@@ -206,14 +206,14 @@ class MigrateClient(BaseClass):
                 Reporting(
                     self.config.reporting["pmi_project_id"], project_name=group["name"])
             # Wait for parent group to create
-            # if self.config.dstn_parent_group_path is not None:
-            #     pnamespace = self.groups.wait_for_parent_group_creation(group)
-            #     if not pnamespace:
-            #         return {
-            #             group["full_path"]: False
-            #         }
-            # group["parent_id"] = safe_json_response(
-            #     pnamespace)["id"] if group["parent_id"] else self.config.dstn_parent_id
+            if self.config.dstn_parent_group_path is not None:
+                pnamespace = self.groups.wait_for_parent_group_creation(group)
+                if not pnamespace:
+                    return {
+                        group["full_path"]: False
+                    }
+                group["parent_id"] = safe_json_response(
+                    pnamespace)["id"] if group["parent_id"] else self.config.dstn_parent_id
             if group.get("description", None) is None:
                 group["description"] = ""
             result = safe_json_response(self.groups_api.create_group(
@@ -957,9 +957,10 @@ class MigrateClient(BaseClass):
             result = True
             for job in ci_sources.get("TeamCity", []):
                 params = tc_client.teamcity_api.get_build_params(job)
-                for param in params["properties"]["property"]:
-                    if self.variables.safe_add_variables(new_id, tc_client.transform_ci_variables(param, tc_ci_src_hostname)) is False:
-                        result = False
+                if params.get("properties"):
+                    for param in params["properties"]["property"]:
+                        if self.variables.safe_add_variables(new_id, tc_client.transform_ci_variables(param, tc_ci_src_hostname)) is False:
+                            result = False
             return result
         return None
 

@@ -57,7 +57,7 @@ class UsersClient(BaseClass):
         return {
             "id": single_user["id"],
             "username": single_user["login"],
-            "name": single_user.get("name", None),
+            "name": single_user.get("name", single_user.get("login", None)),
             "email": self.get_email_address(single_user, github_browser, mongo),
             "avatar_url": "" if self.config.source_host in single_user["avatar_url"] else single_user["avatar_url"],
             "state": "blocked" if single_user.get("suspended_at", None) else "active",
@@ -67,7 +67,7 @@ class UsersClient(BaseClass):
     def get_email_address(self, single_user, github_browser, mongo):
         if email := single_user.get("email", None):
             return email
-        elif email := mongo.find_user_email(single_user["email"]):
+        elif email := mongo.find_user_email(single_user["login"]):
             return email
         elif github_browser:
             self.log.warning(f"User email not found. Attempting to scrape for username {single_user['login']}")
