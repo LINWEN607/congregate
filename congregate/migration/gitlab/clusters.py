@@ -26,7 +26,7 @@ class ClustersClient(BaseClass):
                 for c in clusters:
                     if is_error_message_present(c) or not c:
                         self.log.error(
-                            f"Failed to fetch source instance clusters ({c})")
+                            f"Failed to fetch source instance clusters ({c['name']})")
                         break
                     if not dry_run:
                         if is_dot_com(self.config.destination_host) and self.config.dstn_parent_id:
@@ -37,7 +37,7 @@ class ClustersClient(BaseClass):
                                 self.config.destination_host, self.config.destination_token, self.create_data(c, {}))
                         if resp.status_code != 201:
                             self.log.error(
-                                f"Failed to create instance cluster {c}, with error:\n{resp} - {resp.text}")
+                                f"Failed to create instance cluster {c['name']}, with error:\n{resp} - {resp.text}")
             except TypeError as te:
                 self.log.error(f"Instance clusters {resp} {te}")
             except RequestException as re:
@@ -54,13 +54,13 @@ class ClustersClient(BaseClass):
             for c in clusters:
                 if is_error_message_present(c) or not c:
                     self.log.error(
-                        f"Failed to fetch clusters ({c}) for group {full_path} (ID: {old_id})")
+                        f"Failed to fetch clusters ({c['name']}) for group {full_path} (ID: {old_id})")
                     return False
                 resp = self.groups_api.add_group_cluster(
                     new_id, self.config.destination_host, self.config.destination_token, data=self.create_data(c, {}))
                 if resp.status_code != 201:
                     self.log.error(
-                        f"Failed to create group {full_path} cluster {c}, with error:\n{resp} - {resp.text}")
+                        f"Failed to create group {full_path} cluster {c['name']}, with error:\n{resp} - {resp.text}")
             return True
         except TypeError as te:
             self.log.error(
@@ -82,13 +82,13 @@ class ClustersClient(BaseClass):
                 for c in clusters:
                     if is_error_message_present(c) or not c:
                         self.log.error(
-                            f"Failed to fetch project {path} (ID: {old_id}) cluster ({c})")
+                            f"Failed to fetch project {path} (ID: {old_id}) cluster ({c['name']})")
                         return False
                     resp = self.projects_api.add_project_cluster(
                         new_id, self.config.destination_host, self.config.destination_token, data=self.create_data(c, {}))
                     if resp.status_code != 201:
                         self.log.error(
-                            f"Failed to create project {path} (ID: {new_id}) cluster ({c}), with error:\n{resp} - {resp.text}")
+                            f"Failed to create project {path} (ID: {new_id}) cluster ({c['name']}), with error:\n{resp} - {resp.text}")
                 return True
             else:
                 self.log.info(

@@ -16,7 +16,7 @@ def audit_logger(name):
         logger = logging.getLogger(name)
         logger.setLevel(logging.INFO)
         file_log_handler = logging.FileHandler(
-            '%s/data/audit.log' % app_path)
+            f'{app_path}/data/logs/audit.log')
         stderr_log_handler = logging.StreamHandler()
 
         formatter = logging.Formatter(

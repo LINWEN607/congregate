@@ -104,7 +104,7 @@ Copy the following data and add subsequent columns for single project migration
 * [ ] Confirm everything looks correct and move on to the next step in the runbook
   * Specifically, review the API requests and make sure the paths look correct.
   * If anything looks wrong in the dry run, make a note of it in the issue and reach out to @pprokic or @leopardm for review. Do not proceed with the migration if the dry run data looks incorrect. If this is incorrect, the data we send will be incorrect.
-* [ ] Attach the dry run log (`data/dry_run_user_migration.json`) to this issue
+* [ ] Attach the dry run log (`data/results/dry_run_user_migration.json`) to this issue
 * [ ] Copy the dry run log to `/opt/congregate/data/waves/user_wave/`
 * [ ] Notify in the internal Slack channel dedicated to this migration you have completed dry run for the user wave
 
@@ -115,8 +115,8 @@ Copy the following data and add subsequent columns for single project migration
 * **NOTE:** The command below assumes you have no groups or projects staged
 * [ ] Run the following command `nohup ./congregate.sh migrate --commit > data/waves/user_wave/user_wave.log 2>&1 &`
 * [ ] Monitor the wave periodically by running `tail -f data/waves/user_wave/user_wave.log`
-* [ ] Attach `data/congregate.log`, `data/audit.log`, and `data/waves/user_wave/user_wave.log` to this issue
-* [ ] Copy `data/congregate.log`, `data/audit.log`, and `data/waves/user_wave/user_wave.log` to `/opt/congregate/data/waves/user_wave/`
+* [ ] Attach `data/logs/congregate.log`, `data/logs/audit.log`, and `data/waves/user_wave/user_wave.log` to this issue
+* [ ] Copy `data/logs/congregate.log`, `data/logs/audit.log`, and `data/waves/user_wave/user_wave.log` to `/opt/congregate/data/waves/user_wave/`
 
 ### Group and project migration
 
@@ -139,7 +139,7 @@ Copy the following data and add subsequent columns for single project migration
 * [ ] Confirm everything looks correct and move on to the next step in the runbook
   * Specifically, review the API requests and make sure the paths look correct. For example, make sure any parent IDs or namespaces are matching the parent ID and parent namespaces we have specified in the congregate config.
   * If anything looks wrong in the dry run, make a note of it in the issue and reach out to @pprokic or @leopardm for review. Do not proceed with the migration if the dry run data looks incorrect. If this is incorrect, the data we send will be incorrect.
-* [ ] Attach the dry run logs (`data/dry_run_*_migration.json`) to this issue
+* [ ] Attach the dry run logs (`data/results/dry_run_*_migration.json`) to this issue
 * [ ] Copy the dry run logs to `/opt/congregate/data/waves/wave_<insert_wave_number>/`
 * [ ] Notify in the internal Slack channel dedicated to this migration you have completed dry run for the wave
 
@@ -149,8 +149,8 @@ Copy the following data and add subsequent columns for single project migration
 * [ ] Notify the customer in the customer-facing Slack channel you are starting the migration wave
 * [ ] Run the following command `nohup ./congregate.sh migrate --skip-users --commit > data/waves/wave_<insert_wave_number>/wave<insert-wave-here>.log 2>&1 &`
 * [ ] Monitor the wave periodically by running `tail -f data/waves/wave_<insert_wave_number>/wave<insert-wave-here>.log`
-* [ ] Attach `data/congregate.log`, `data/audit.log`, and `data/waves/wave_<insert_wave_number>/wave<insert-wave-here>.log` to this issue
-* [ ] Copy `data/congregate.log`, `data/audit.log`, and `data/waves/wave_<insert_wave_number>/wave<insert-wave-here>.log` to `/opt/congregate/data/waves/wave_<insert_wave_number>/`
+* [ ] Attach `data/logs/congregate.log`, `data/logs/audit.log`, and `data/waves/wave_<insert_wave_number>/wave<insert-wave-here>.log` to this issue
+* [ ] Copy `data/logs/congregate.log`, `data/logs/audit.log`, and `data/waves/wave_<insert_wave_number>/wave<insert-wave-here>.log` to `/opt/congregate/data/waves/wave_<insert_wave_number>/`
 
 ### Post Migration of Failed Groups and Projects
 
@@ -170,8 +170,8 @@ For each migration attempt check if any project or group imports failed or have 
 * [ ] Monitor the wave periodically by running `tail -f data/waves/wave_<insert_wave_number>/wave<insert-wave-here>_attempt<insert-attempt>.log`
 * [ ] Notify in the internal Slack channel dedicated to this migration the migration has finished
 * [ ] Notify the customer in the customer-facing Slack channel the migration wave has finished
-* [ ] Attach `data/congregate.log`, `data/audit.log`, and `data/waves/wave_<insert_wave_number>/wave<insert-wave-here>_attempt<insert-attempt>.log` to this issue
-* [ ] Copy `data/congregate.log`, `data/audit.log`, and `data/waves/wave_<insert_wave_number>/wave<insert-wave-here>_attempt<insert-attempt>.log` to `/opt/congregate/data/waves/wave_<insert_wave_number>/`
+* [ ] Attach `data/logs/congregate.log`, `data/logs/audit.log`, and `data/waves/wave_<insert_wave_number>/wave<insert-wave-here>_attempt<insert-attempt>.log` to this issue
+* [ ] Copy `data/logs/congregate.log`, `data/logs/audit.log`, and `data/waves/wave_<insert_wave_number>/wave<insert-wave-here>_attempt<insert-attempt>.log` to `/opt/congregate/data/waves/wave_<insert_wave_number>/`
 
 <!-- TO DO: No diff reports exist for BB server at this time
 
@@ -201,7 +201,7 @@ p "Number of Services import failures: #{services_import_failures.count}"
 p "Number of Protected Branches import failures: #{protected_branches_import_failures.count}"
 ```
 
-* [ ] Review the diff reports (`data/*_results.html`) once they are finished generating
+* [ ] Review the diff reports (`data/results/*_results.html`) once they are finished generating
   * Review the following:
     * Overall accuracy of groups and projects
     * Individual accuracy of each group and project
@@ -221,8 +221,8 @@ p "Number of Protected Branches import failures: #{protected_branches_import_fai
   * Users: `<insert-overall-accuracy>`
 * [ ] If accuracy is greater than 90%, mark this migration as a success
 * [ ] If accuracy is lower than 90%, review the diff reports again and see if any projects or groups are missing
-* [ ] Attach `data/*_results.*` and `data/*_diff.json` to this issue
-* [ ] Copy `data/*_results.*` and `data/*_diff.json` to `/opt/congregate/data/waves/wave_<insert_wave_number>/`
+* [ ] Attach `data/results/*_results.*` and `data/results/*_diff.json` to this issue
+* [ ] Copy `data/results/*_results.*` and `data/results/*_diff.json` to `/opt/congregate/data/waves/wave_<insert_wave_number>/`
 * [ ] Notify in the internal Slack channel dedicated to this migration the diff report is finished generating with a link to the comment you just posted. If you need to run another small subset of this migration, mention that in the Slack message as well.
 * [ ] Notify the customer in the customer-facing Slack channel the migration wave has finished
 
@@ -238,8 +238,8 @@ If **any** data was migrated incorrectly (i.e. to the wrong namespace), you **mu
 * [ ] Dry run `nohup ./congregate.sh rollback --hard-delete --skip-groups --skip-projects > data/waves/user_wave/rollback_dry_run.log 2>&1 &`
   * **NOTE:** `--hard-delete` will also remove user contributions
 * [ ] Live run `nohup ./congregate.sh rollback --hard-delete --skip-groups --skip-projects --commit > data/waves/user_wave/rollback.log 2>&1 &`
-* [ ] Copy `data/congregate.log` and `data/audit.log` to `/opt/congregate/data/waves/user_wave/`
-* [ ] Post a comment describing the reason for the rollback and attach the rollback log and `data/audit.log`
+* [ ] Copy `data/logs/congregate.log` and `data/logs/audit.log` to `/opt/congregate/data/waves/user_wave/`
+* [ ] Post a comment describing the reason for the rollback and attach the rollback log and `data/logs/audit.log`
 * [ ] Follow these [instructions in the handbook](https://about.gitlab.com/handbook/engineering/security/#engaging-the-security-on-call) and link to this issue.
 
 #### Groups and projects
@@ -247,8 +247,8 @@ If **any** data was migrated incorrectly (i.e. to the wrong namespace), you **mu
 * [ ] Notify in the internal Slack channel dedicated to this migration you are running a rollback due to an issue with the migration
 * [ ] Dry run `nohup ./congregate.sh rollback --skip-users > data/waves/wave_<insert_wave_number>/rollback_dry_run.log 2>&1 &`
 * [ ] Live run `nohup ./congregate.sh rollback --skip-users --commit > data/waves/wave_<insert_wave_number>/rollback.log 2>&1 &`
-* [ ] Copy `data/congregate.log` and `data/audit.log` to `/opt/congregate/data/waves/wave_<insert_wave_number>/`
-* [ ] Post a comment describing the reason for the rollback and attach the rollback log and `data/audit.log`
+* [ ] Copy `data/logs/congregate.log` and `data/logs/audit.log` to `/opt/congregate/data/waves/wave_<insert_wave_number>/`
+* [ ] Post a comment describing the reason for the rollback and attach the rollback log and `data/logs/audit.log`
 * [ ] Follow these [instructions in the handbook](https://about.gitlab.com/handbook/engineering/security/#engaging-the-security-on-call) and link to this issue.
 
 /confidential

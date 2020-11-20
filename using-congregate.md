@@ -62,11 +62,11 @@ When running stage in a shell (without UI), we will need to identify the project
 
 ### `stage-projects`
 
-To get the project IDs from the names of the projects (that the customer should have provided) you can run a `cat data/projects_json.json | grep <ProjectName> -A10 -B10` where ProjectName is the name of the repository (github & bitbucket) or project (gitlab) that is in scope to migrate. From there you will see the ID that can be noted for the following command `./congregate.sh stage-projects 13 78 951 446`. Note you can list multiple project ids space delimited after the stage-projects verb. To force this command to write to the `staged_projects.json` and other staged json files use the `--commit` flag.
+To get the project IDs from the names of the projects (that the customer should have provided) you can run a `cat data/projects.json | grep <ProjectName> -A10 -B10` where ProjectName is the name of the repository (github & bitbucket) or project (gitlab) that is in scope to migrate. From there you will see the ID that can be noted for the following command `./congregate.sh stage-projects 13 78 951 446`. Note you can list multiple project ids space delimited after the stage-projects verb. To force this command to write to the `staged_projects.json` and other staged json files use the `--commit` flag.
 
 ### `stage-groups`
 
-This process is very similar to stage-projects, but you need to search for group ids in the `groups.json` file. Run `cat data/projects_json.json | grep <GroupName> -A10 -B10`. Then run `./congregate.sh stage-groups 78 651 997 --commit` to produce the `staged_*.json` files.
+This process is very similar to stage-projects, but you need to search for group ids in the `groups.json` file. Run `cat data/projects.json | grep <GroupName> -A10 -B10`. Then run `./congregate.sh stage-groups 78 651 997 --commit` to produce the `staged_*.json` files.
 
 ### `stage-wave`
 
@@ -90,8 +90,8 @@ Best practice is to first migrate ONLY users by running:
 
 - `./congregate.sh ui &` - Open the UI in your browser (by default `localhost:8000`), select and stage all users.
 - `./congregate.sh migrate --skip-group-export --skip-group-import --skip-project-export --skip-project-import` - Inspect the dry-run output in:
-  - `data/dry_run_user_migration.json`
-  - `data/congregate.log`
+  - `data/results/dry_run_user_migration.json`
+  - `data/logs/congregate.log`
   - Inspect `data/staged_users.json` if any of the NOT found users are blocked as, by default, they will not be migrated.
   - To explicitly remove blocked users from staged users, groups and projects run `./congregate.sh remove-blocked-users --commit`.
 - `./congregate.sh migrate --skip-group-export --skip-group-import --skip-project-export --skip-project-import --commit`
@@ -107,8 +107,8 @@ Once all the users are migrated:
   - Inspect `data/staged_users.json` if any of the NOT found users are blocked as, by default, they will not be migrated.
   - To explicitly remove blocked users from staged users, groups and projects run `./congregate.sh remove-blocked-users --commit`.
 - `./congregate.sh migrate --skip-users --skip-project-export --skip-project-import` - Inspect the dry-run output in:
-  - `data/dry_run_group_migration.json`
-  - `data/congregate.log`
+  - `data/results/dry_run_group_migration.json`
+  - `data/logs/congregate.log`
 - `./congregate.sh migrate --skip-users --skip-project-export --skip-project-import --commit`
 
 #### Migrate Projects
@@ -121,8 +121,8 @@ Once all the users and groups and sub-groups are migrated:
   - Inspect `data/staged_users.json` if any of the NOT found users are blocked as, by default, they will not be migrated.
   - To explicitly remove blocked users from staged users, groups and projects run `./congregate.sh remove-blocked-users --commit`.
 - `./congregate.sh migrate --skip-users --skip-group-export --skip-group-import` - Inspect the dry-run output in:
-  - `data/dry_run_project_migration.json`
-  - `data/congregate.log`
+  - `data/results/dry_run_project_migration.json`
+  - `data/logs/congregate.log`
 - `./congregate.sh migrate --skip-users --skip-group-export --skip-group-import --commit`
 
 ### Rollback
@@ -132,7 +132,7 @@ To remove all of the staged users, groups (w/ sub-groups) and projects on destin
 > :warning: This will delete everything that was previously staged and migrated. If a significant period of time has passed since migration, you will risk losing data added by users in the time since migration completed. There is a default timeout on rollback 24 hours from the time of migration that acts as a guard against accidental rollbacks.
 
 - `./congregate.sh rollback --hard-delete` - Inspect the output in:
-  - `data/congregate.log`
+  - `data/logs/congregate.log`
 - `./congregate.sh rollback --commit`
 - For more granular rollback see [Usage](#usage).
 
