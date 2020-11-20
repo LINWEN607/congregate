@@ -436,6 +436,7 @@ class BaseDiffClient(BaseClass):
                             "N/A",
                             v[endpoint]['error']
                         ]
+                    
                     for da in data:
                         cell_data = soup.new_tag("td")
                         if isinstance(da, dict):
@@ -450,7 +451,7 @@ class BaseDiffClient(BaseClass):
                             json_block.string = json.dumps(da, indent=4)
                             cell_data.append(json_block)
                         else:
-                            cell_data.string = da
+                            cell_data.string = da if da else ""
                         diff_data_row.append(cell_data)
                     diff_row_table.append(diff_data_row)
 
