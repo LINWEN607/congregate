@@ -224,7 +224,7 @@ def main():
             from congregate.migration.github.diff.repodiff import RepoDiffClient
             from congregate.helpers.user_util import map_users
             from congregate.helpers.mdbc import MongoConnector
-            from congregate.helpers.misc_utils import convert_to_underscores
+            from congregate.helpers.misc_utils import convert_to_underscores, deobfuscate
             config = conf.Config()
             users = UsersClient()
             groups = GroupsClient()
@@ -408,7 +408,7 @@ def main():
                             if SCM_SOURCE == single_instance.get('src_hostname', None):
                                 repo_diff = RepoDiffClient(
                                     single_instance['src_hostname'],
-                                    single_instance['src_access_token'],
+                                    deobfuscate(single_instance['src_access_token']),
                                     staged=STAGED,
                                     processes=PROCESSES,
                                     rollback=ROLLBACK,
@@ -422,6 +422,9 @@ def main():
                             rollback=ROLLBACK
                         )
                     repo_diff.generate_diff_report()
+                    repo_diff.generate_html_report(
+                        repo_diff.generate_diff_report(), "/data/results/project_migration_results.html")
+
             if arguments["stitch-results"]:
                 result_type = str(
                     arguments["--result-type"]).rstrip("s") if arguments["--result-type"] else "project"
