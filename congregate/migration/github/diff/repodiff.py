@@ -5,7 +5,7 @@ from congregate.migration.gitlab.api.issues import IssuesApi
 from congregate.migration.gitlab.api.merge_requests import MergeRequestsApi
 from congregate.migration.gitlab.api.project_repository import ProjectRepositoryApi
 from congregate.migration.github.repos import ReposClient
-from congregate.helpers.misc_utils import rewrite_json_list_into_dict, get_rollback_log, dig, deobfuscate
+from congregate.helpers.misc_utils import rewrite_json_list_into_dict, get_rollback_log, dig
 from congregate.helpers.migrate_utils import get_dst_path_with_namespace
 from congregate.helpers.processes import handle_multi_process_write_to_file_and_return_results
 
@@ -17,8 +17,8 @@ class RepoDiffClient(BaseDiffClient):
 
     def __init__(self, host, token, staged=False, rollback=False, processes=None):
         super(RepoDiffClient, self).__init__()
-        self.repos_api = ReposApi(host, deobfuscate(token))
-        self.repos_client = ReposClient(host, deobfuscate(token))
+        self.repos_api = ReposApi(host, token)
+        self.repos_client = ReposClient(host, token)
         self.gl_projects_api = ProjectsApi()
         self.issues_api = IssuesApi()
         self.gl_mr_api = MergeRequestsApi()

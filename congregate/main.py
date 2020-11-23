@@ -155,7 +155,7 @@ if __name__ == '__main__':
             os.path.dirname(os.path.abspath(__file__))))
     from congregate.helpers import conf
     from congregate.helpers.logger import myLogger
-    from congregate.helpers.misc_utils import get_congregate_path, clean_data, obfuscate, \
+    from congregate.helpers.misc_utils import get_congregate_path, clean_data, obfuscate, deobfuscate, \
         spin_up_ui, stitch_json_results, write_results_to_file, add_post_migration_stats, rotate_logs
 else:
     import sys
@@ -163,7 +163,7 @@ else:
         os.path.dirname(os.path.abspath(__file__))))
     from congregate.helpers import conf
     from congregate.helpers.logger import myLogger
-    from congregate.helpers.misc_utils import get_congregate_path, clean_data, obfuscate, \
+    from congregate.helpers.misc_utils import get_congregate_path, clean_data, obfuscate, deobfuscate, \
         stitch_json_results, write_results_to_file, spin_up_ui, add_post_migration_stats, rotate_logs
 
 app_path = get_congregate_path()
@@ -408,7 +408,8 @@ def main():
                             if SCM_SOURCE == single_instance.get('src_hostname', None):
                                 repo_diff = RepoDiffClient(
                                     single_instance['src_hostname'],
-                                    single_instance['src_access_token'],
+                                    deobfuscate(
+                                        single_instance['src_access_token']),
                                     staged=STAGED,
                                     processes=PROCESSES,
                                     rollback=ROLLBACK,
