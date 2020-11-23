@@ -62,9 +62,7 @@ class MigrateClient(BaseClass):
         skip_project_export=False,
         skip_project_import=False,
         subgroups_only=False,
-        scm_source = None,
-        archive_staged_projects = False,
-        unarchive_staged_projects = False
+        scm_source = None
     ):
         self.ie = ImportExportClient()
         self.mirror = MirrorClient()
@@ -104,8 +102,6 @@ class MigrateClient(BaseClass):
         self.skip_project_import = skip_project_import
         self.subgroups_only = subgroups_only
         self.scm_source = scm_source
-        self.archive_staged_projects = archive_staged_projects,
-        self.unarchive_staged_projects = unarchive_staged_projects
 
     def migrate(self):
         
@@ -299,11 +295,6 @@ class MigrateClient(BaseClass):
                             if resp and resp.status_code == 204:
                                 result[project["path_with_namespace"]
                                        ]["members"]["email"] = "removed"
-                    # Archive/Unarchive all the projects with the flag during post migration
-                    if self.archive_staged_projects:
-                        self.projects_api.archive_project(self.config.destination_host, self.config.destination_token, project_id)
-                    if self.unarchive_staged_projects:
-                        self.projects_api.unarchive_project(self.config.destination_host, self.config.destination_token, project_id)
                 else:
                     result = self.ext_import.get_failed_result(project, data={
                         "error": "Import time limit exceeded. Unable to execute post migration phase"
