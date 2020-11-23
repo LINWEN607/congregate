@@ -17,8 +17,8 @@ class RepoDiffClient(BaseDiffClient):
 
     def __init__(self, host, token, staged=False, rollback=False, processes=None):
         super(RepoDiffClient, self).__init__()
-        self.repos_api = ReposApi(host, deobfuscate(token))
-        self.repos_client = ReposClient(host, deobfuscate(token))
+        self.repos_api = ReposApi(host, token)
+        self.repos_client = ReposClient(host, token)
         self.gl_projects_api = ProjectsApi()
         self.issues_api = IssuesApi()
         self.gl_mr_api = MergeRequestsApi()

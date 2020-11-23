@@ -427,8 +427,8 @@ class BaseDiffClient(BaseClass):
                     elif "overall_accuracy" in endpoint:
                         data = [
                             "Overall Accuracy",
-                            str(v[endpoint]['overall_accuracy']['accuracy']),
-                            v[endpoint]['overall_accuracy']['result']
+                            str(v[endpoint]['accuracy']),
+                            v[endpoint]['result']
                         ]
                     elif "error" in endpoint:
                         data = [
