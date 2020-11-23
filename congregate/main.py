@@ -412,7 +412,7 @@ def main():
                             if SCM_SOURCE == single_instance.get('src_hostname', None):
                                 repo_diff = RepoDiffClient(
                                     single_instance['src_hostname'],
-                                    single_instance['src_access_token'],
+                                    deobfuscate(single_instance['src_access_token']),
                                     staged=STAGED,
                                     processes=PROCESSES,
                                     rollback=ROLLBACK,
