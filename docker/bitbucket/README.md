@@ -38,6 +38,53 @@ Once the instance is up, navigate to localhost:7990 to see the BitBucket instanc
 
 To login use `admin` as username and the previously mentioned password. For more details see ***congregate/docker/butbucket/docker-compose.yml***.
 
+### Spin up the migration test infrastructure with docker compose
+```bash
+# In a separate terminal
+cd $CONGREGATE_PATH/docker/bitbucket
+docker-compose -f  migration-bb-to-gitlab.yaml up -d
+# You can take out the `-d` if you want to see all the logs while the containers are running
+```
+
+The docker-compose file `migration-bb-to-gitlab.yaml` will create 3 services: `gitlab-web`, `bitbucket`, and `congregate` and two networks. One network is for bitbucket and the other is for gitlab. The gitlab-web and congregate services will be on both networks. Congregate needs to communicate directly to the `bitbucket` and `gitlab-web` services for import and export functionality and therefore the `congregate` service must be on both networks. The `gitlab-web` service requires both networks to allow direct gitlab to bitbucket connections for streaming projects (as required by [gitlab's bitbucket import tool](https://docs.gitlab.com/ee/api/import.html#import-repository-from-bitbucket-server)). 
+
+All of the same set up times and dependency specifications mentioned above for creating bitbucket infrastructure apply to the `migration-bb-to-gitlab.yaml` infrastructure.
+
+Once the services are started you may use congregate by exec'ing into the `congregate` container service with the command: `docker-compose -f migration-bb-to-gitlab.yaml exec congregate bash`. This will create a terminal for you in the congregate container service. Once you recieve the shell prompt you can configure congregate to migrate from the bitbucket service to the gitlab service using standard congregate functionality. 
+
+
+An example congregate config file can be seen below:
+
+```
+[DESTINATION]
+dstn_hostname = http://gitlab-web # The service name for gitlab created by docker-compose
+dstn_access_token = <gitlab token here>
+import_user_id = 1
+shared_runners_enabled = True
+project_suffix = False
+max_import_retries = 3
+username_suffix = 
+mirror_username = 
+max_asset_expiration_time = 24
+
+
+
+[SOURCE]
+src_type = Bitbucket Server
+src_username = admin
+src_hostname = http://bitbucket:7990 # The service name for bitbucket created by docker-compose
+src_access_token = <bitbucket token here>
+repo_path = /opt/congregate/
+
+[USER]
+keep_blocked_users = False
+reset_pwd = True
+force_rand_pwd = False
+
+[APP]
+export_import_wait_time = 10
+ui_port = 8000
+```
 ## Troubleshooting
 
 ### Docker image won't build

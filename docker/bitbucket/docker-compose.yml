@@ -1,4 +1,5 @@
 version: '3'
+
 services:
     bitbucket:
         image: bitbucket-seed:latest
@@ -25,8 +26,10 @@ services:
             - $CONGREGATE_PATH/test-data/bitbucket:/var/atlassian/application-data/bitbucket
         networks:
             default:
-              aliases:
-                - bitbucket
+                aliases: 
+                    - bitbucket
+
+
     postgres:
         image: postgres:11.8-alpine
         restart: always
@@ -39,7 +42,6 @@ services:
         hostname: 'postgres'
         networks:
             default:
-                aliases:
-                - postgres
-
+                aliases: 
+                    - postgres
 
