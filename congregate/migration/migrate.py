@@ -206,7 +206,7 @@ class MigrateClient(BaseClass):
                 Reporting(
                     self.config.reporting["pmi_project_id"], project_name=group["name"])
             # Wait for parent group to create
-            if self.config.dstn_parent_group_path is not None:
+            if self.config.dstn_parent_group_path:
                 pnamespace = self.groups.wait_for_parent_group_creation(group)
                 if not pnamespace:
                     return {
