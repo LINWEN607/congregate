@@ -93,7 +93,7 @@ def list_github_data(processes=None, partial=False, skip_users=False, skip_group
             if not skip_projects:    
                 repos = GitHubRepos(single_source.get('src_hostname'), deobfuscate(single_source.get('src_access_token')))
                 repos.retrieve_repo_info(processes=processes)
-                mongo.dump_collection_to_file(f"projects-{single_source.get('src_hostname')}", f"{b.app_path}/data/project_json-{single_source.get('src_hostname')}.json")
+                mongo.dump_collection_to_file(f"projects-{single_source.get('src_hostname')}", f"{b.app_path}/data/projects-{single_source.get('src_hostname')}.json")
     mongo.close_connection()
 
 

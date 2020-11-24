@@ -179,23 +179,6 @@ class BaseDiffClient(BaseClass):
 
         return self.diff(source_data, destination_data, critical_key=critical_key, obfuscate=obfuscate, parent_group=parent_group)
 
-    def calculate_individual_list_accuracy(self, diff, source_data, destination_data, critical_key, parent_group=None):
-        if diff is not None:
-            dest_lines = len(destination_data)
-            src_lines = len(source_data)
-            if dest_lines > src_lines:
-                discrepency = dest_lines - src_lines
-                src_lines += discrepency
-                dest_lines -= discrepency
-            src_lines += self.total_number_of_differences(diff)
-            print(f"Dest lines: {dest_lines}")
-            print(f"Src lines: {src_lines}")
-            original_accuracy = dest_lines / src_lines
-            print(original_accuracy)
-        else:
-            original_accuracy = 1
-        return self.critical_key_case_check(diff, critical_key, original_accuracy, parent_group=parent_group)
-
     def calculate_individual_dict_accuracy(self, diff, source_data, destination_data, critical_key, parent_group=None):
         if diff is not None:
             dest_lines = self.total_number_of_lines(destination_data)
@@ -386,7 +369,7 @@ class BaseDiffClient(BaseClass):
             'error': 'asset is missing'
         }
 
-    def generate_html_report(self, diff, filepath):
+    def generate_html_report(self, asset, diff, filepath):
         filepath = "{0}{1}".format(self.app_path, filepath)
         soup = bs("<html><body><table class = 'content'></table></body></html>", features="lxml")
         style = soup.new_tag("style")
@@ -398,7 +381,7 @@ class BaseDiffClient(BaseClass):
                 header_row = soup.new_tag("tr")
                 header_data_row = soup.new_tag("tr")
                 header_data = {
-                    "Project": d,
+                    asset: d,
                     "Accuracy": str(dig(v, "overall_accuracy", "accuracy")),
                     "Result": dig(v, "overall_accuracy", "result")
                 }

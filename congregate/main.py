@@ -393,15 +393,15 @@ def main():
                     user_diff = UserDiffClient(
                         "/data/results/user_migration_results.json", staged=STAGED, processes=PROCESSES, rollback=ROLLBACK)
                     user_diff.generate_html_report(
-                        user_diff.generate_diff_report(), "/data/results/user_migration_results.html")
+                        "User", user_diff.generate_diff_report(), "/data/results/user_migration_results.html")
                     group_diff = GroupDiffClient(
                         "/data/results/group_migration_results.json", staged=STAGED, processes=PROCESSES, rollback=ROLLBACK)
                     group_diff.generate_html_report(
-                        group_diff.generate_diff_report(), "/data/results/group_migration_results.html")
+                        "Group", group_diff.generate_diff_report(), "/data/results/group_migration_results.html")
                     project_diff = ProjectDiffClient(
                         "/data/results/project_migration_results.json", staged=STAGED, processes=PROCESSES, rollback=ROLLBACK)
                     project_diff.generate_html_report(
-                        project_diff.generate_diff_report(), "/data/results/project_migration_results.html")
+                        "Project", project_diff.generate_diff_report(), "/data/results/project_migration_results.html")
                 elif config.source_type == "github" or SCM_SOURCE is not None:
                     if SCM_SOURCE is not None:
                         for single_instance in config.list_multiple_source_config("github_source"):
@@ -424,7 +424,7 @@ def main():
                         )
                     repo_diff.generate_diff_report()
                     repo_diff.generate_html_report(
-                        repo_diff.generate_diff_report(), "/data/results/project_migration_results.html")
+                        "Project", repo_diff.generate_diff_report(), "/data/results/project_migration_results.html")
 
             if arguments["stitch-results"]:
                 result_type = str(
