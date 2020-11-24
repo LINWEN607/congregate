@@ -3,7 +3,7 @@ import base64
 from types import GeneratorType
 from bs4 import BeautifulSoup as bs
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import find as nested_find, is_error_message_present, rewrite_list_into_dict, is_nested_dict, dig
+from congregate.helpers.misc_utils import find as nested_find, is_error_message_present, rewrite_list_into_dict, is_nested_dict, dig, pretty_print_key
 from congregate.helpers.jsondiff import Comparator
 
 
@@ -401,7 +401,7 @@ class BaseDiffClient(BaseClass):
                     cell_header = soup.new_tag("th")
                     cell_data = soup.new_tag("td")
                     cell_header.string = k
-                    cell_data.string = kv
+                    cell_data.string = str(kv)
                     header_row.append(cell_header)
                     header_data_row.append(cell_data)
                 soup.html.body.table.append(header_row)
@@ -425,12 +425,9 @@ class BaseDiffClient(BaseClass):
                             v[endpoint]['diff']
                         ]
                     elif "overall_accuracy" in endpoint:
-                        data = [
-                            "Overall Accuracy",
-                            str(v[endpoint]['accuracy']),
-                            v[endpoint]['result']
-                        ]
+                        data = []
                     elif "error" in endpoint:
+                        diff_data_row = soup.new_tag("tr")
                         data = [
                             "Error",
                             "N/A",
@@ -460,6 +457,26 @@ class BaseDiffClient(BaseClass):
                 td.append(diff_row_table)
                 diff_row.append(td)
                 soup.html.body.table.append(diff_row)
+            else:
+                overall_results_header_row = soup.new_tag("tr")
+                diff_headers = [pretty_print_key(d), "Overall Accuracy", "Result"]
+                for diff_header in diff_headers:
+                    diff_cell_header = soup.new_tag("th")
+                    diff_cell_header.string = diff_header
+                    overall_results_header_row.append(diff_cell_header)
+                soup.html.body.table.insert(0, overall_results_header_row)
+                overall_results_data_row = soup.new_tag("tr")
+                data = [
+                    "",
+                    str(v["overall_accuracy"]),
+                    v["result"]
+                ]
+                for da in data:
+                    cell_data = soup.new_tag("td")
+                    cell_data.string = da if da else ""
+                    overall_results_data_row.append(cell_data)
+                soup.html.body.table.insert(1, overall_results_data_row)
+
 
         head = soup.new_tag("head")
         script = soup.new_tag("script")

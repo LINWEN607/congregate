@@ -244,6 +244,9 @@ def deobfuscate(secret):
 def convert_to_underscores(s):
     return sub(r" |\/|\.|\:", "_", s)
 
+def pretty_print_key(s):
+    return " ".join(w.capitalize() for w in s.split("_"))
+
 
 def clean_data(dry_run=True, files=None):
     app_path = get_congregate_path()
