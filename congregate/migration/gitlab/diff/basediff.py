@@ -3,7 +3,7 @@ import base64
 from types import GeneratorType
 from bs4 import BeautifulSoup as bs
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import find as nested_find, is_error_message_present, rewrite_list_into_dict, is_nested_dict
+from congregate.helpers.misc_utils import find as nested_find, is_error_message_present, rewrite_list_into_dict, is_nested_dict, dig
 from congregate.helpers.jsondiff import Comparator
 
 
@@ -394,8 +394,8 @@ class BaseDiffClient(BaseClass):
                 header_data_row = soup.new_tag("tr")
                 header_data = {
                     "Project": d,
-                    "Accuracy": str(v["overall_accuracy"]["accuracy"]),
-                    "Result": v["overall_accuracy"]["result"]
+                    "Accuracy": str(dig(v, "overall_accuracy", "accuracy")),
+                    "Result": dig(v, "overall_accuracy", "result")
                 }
                 for k, kv in header_data.items():
                     cell_header = soup.new_tag("th")
