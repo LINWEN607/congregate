@@ -371,7 +371,8 @@ def main():
             if arguments["unarchive-staged-projects"]:
                 if config.source_type == "GitLab":
                     projects.unarchive_staged_projects(dry_run=DRY_RUN)
-                
+                else:
+                    self.log.warn("We do not have mass unarchiving available for this source system yet")
             if arguments["find-empty-repos"]:
                 projects.find_empty_repos()
             if arguments["compare-groups"]:
