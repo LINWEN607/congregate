@@ -426,8 +426,8 @@ class BaseDiffClient(BaseClass):
                         diff_data_row = soup.new_tag("tr")
                         data = [
                             endpoint,
-                            str(v[endpoint]['accuracy']),
-                            v[endpoint]['diff']
+                            str(dig(v, endpoint, 'accuracy')),
+                            dig(v, endpoint, 'diff')
                         ]
                     elif "overall_accuracy" in endpoint:
                         data = []
@@ -436,7 +436,7 @@ class BaseDiffClient(BaseClass):
                         data = [
                             "Error",
                             "N/A",
-                            v[endpoint]['error']
+                            dig(v, endpoint, 'error')
                         ]
                     
                     for da in data:
@@ -473,8 +473,8 @@ class BaseDiffClient(BaseClass):
                 overall_results_data_row = soup.new_tag("tr")
                 data = [
                     "",
-                    str(v["overall_accuracy"]),
-                    v["result"]
+                    str(v.get("overall_accuracy", 0)),
+                    v.get("result", "failure")
                 ]
                 for da in data:
                     cell_data = soup.new_tag("td")
