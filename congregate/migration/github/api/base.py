@@ -91,6 +91,17 @@ class GitHubApi():
             headers = self.generate_v3_request_header(self.token)
         return requests.post(url, json=data, headers=headers, verify=self.config.ssl_verify)
 
+    @stable_retry
+    def generate_v3_patch_request(self, host, api, data, headers=None, description=None):
+        """
+        Generates PATCH request to GitHub API
+        """
+        url = self.generate_v3_request_url(host, api)
+        audit.info(generate_audit_log_message("PATCH", description, url))
+        if headers is None:
+            headers = self.generate_v3_request_header(self.token)
+        return requests.patch(url, json=data, headers=headers, verify=self.config.ssl_verify)
+
     def replace_unwanted_characters(self, s):
         """
         Given string s, remove undesirable characters from it
