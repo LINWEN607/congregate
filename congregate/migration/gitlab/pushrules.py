@@ -22,11 +22,6 @@ class PushRulesClient(BaseClass):
                 self.log.error(
                     f"Failed to fetch push rules ({pr}) for project {name}")
                 return False
-            # Non Core feature
-            elif isinstance(pr, dict) and pr.get("error", None) == "404 Not Found":
-                self.log.info(
-                    f"Source instance {self.config.source_host} does not have Project Push Rules enabled")
-                return None
             self.log.info(f"Migrating project {name} push rules")
             pr.pop("id", None)
             pr.pop("created_at", None)

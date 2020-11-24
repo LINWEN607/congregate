@@ -41,11 +41,10 @@ class MergeRequestApprovalsClient(BaseClass):
                 self.log.error(
                     "Failed to fetch MR approval configuration ({0}) for project {1}".format(conf, name))
                 return False
-            else:
-                self.log.info(
-                    "Migrating project-level MR approval configuration for {0} (ID: {1})".format(name, old_id))
-                self.projects_api.change_project_level_mr_approval_configuration(
-                    new_id, self.config.destination_host, self.config.destination_token, conf)
+            self.log.info(
+                "Migrating project-level MR approval configuration for {0} (ID: {1})".format(name, old_id))
+            self.projects_api.change_project_level_mr_approval_configuration(
+                new_id, self.config.destination_host, self.config.destination_token, conf)
 
             # migrate approval rules
             resp = self.projects_api.get_all_project_level_mr_approval_rules(

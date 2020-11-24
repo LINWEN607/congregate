@@ -136,19 +136,11 @@ class ProjectDiffClient(BaseDiffClient):
             project_diff["/projects/:id/protected_tags"] = self.generate_project_diff(
                 project, self.projects_api.get_all_project_protected_tags)
 
-            # Merge request approvers
-            project_diff["/projects/:id/approvals"] = self.generate_project_diff(
-                project, self.projects_api.get_project_level_mr_approval_configuration)
-            project_diff["/projects/:id/approval_rules"] = self.generate_project_diff(
-                project, self.projects_api.get_all_project_level_mr_approval_rules)
-
             # Repository
             project_diff["/projects/:id/forks"] = self.generate_project_diff(
                 project, self.projects_api.get_all_project_forks)
             project_diff["/projects/:id/protected_branches"] = self.generate_project_diff(
                 project, self.projects_api.get_all_project_protected_branches)
-            project_diff["/projects/:id/push_rule"] = self.generate_project_diff(
-                project, self.projects_api.get_all_project_push_rules)
             project_diff["/projects/:id/releases"] = self.generate_project_diff(
                 project, self.projects_api.get_all_project_releases)
 
@@ -182,6 +174,13 @@ class ProjectDiffClient(BaseDiffClient):
             project_diff["/projects/:id/clusters"] = self.generate_project_diff(
                 project, self.projects_api.get_all_project_clusters)
 
+            if self.config.source_tier not in ["core", "free"]:
+                project_diff["/projects/:id/approvals"] = self.generate_project_diff(
+                    project, self.projects_api.get_project_level_mr_approval_configuration)
+                project_diff["/projects/:id/approval_rules"] = self.generate_project_diff(
+                    project, self.projects_api.get_all_project_level_mr_approval_rules)
+                project_diff["/projects/:id/push_rule"] = self.generate_project_diff(
+                    project, self.projects_api.get_all_project_push_rules)
         return project_diff
 
     def generate_project_diff(self, project, endpoint, **kwargs):

@@ -1,11 +1,10 @@
 import json
 import base64
-from collections import OrderedDict
 from types import GeneratorType
 from bs4 import BeautifulSoup as bs
 from json2html import json2html
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import find as nested_find, is_error_message_present, safe_json_response, rewrite_list_into_dict, is_nested_dict
+from congregate.helpers.misc_utils import find as nested_find, is_error_message_present, rewrite_list_into_dict, is_nested_dict
 from congregate.helpers.jsondiff import Comparator
 
 
@@ -64,7 +63,7 @@ class BaseDiffClient(BaseClass):
         engine = Comparator()
         diff = None
         accuracy = 1
-        if destination_data is not None:
+        if destination_data:
             if not is_error_message_present(destination_data):
                 if isinstance(source_data, list):
                     if obfuscate:
@@ -140,11 +139,13 @@ class BaseDiffClient(BaseClass):
         return self.empty_diff()
 
     def generate_gh_diff(self, asset, key, sort_key, source_data, gl_endpoint, critical_key=None, obfuscate=False, parent_group=None, **kwargs):
-        identifier = "{0}/{1}".format(parent_group, asset[key]) if parent_group else asset[key]
+        identifier = "{0}/{1}".format(parent_group,
+                                      asset[key]) if parent_group else asset[key]
         if self.results.get(identifier) is not None:
             if isinstance(self.results[identifier], dict):
                 destination_id = self.results[identifier]["response"]["id"]
-                response = gl_endpoint(destination_id, self.config.destination_host, self.config.destination_token, **kwargs)
+                response = gl_endpoint(
+                    destination_id, self.config.destination_host, self.config.destination_token, **kwargs)
                 destination_data = self.generate_cleaned_instance_data(
                     response)
             else:
@@ -157,7 +158,8 @@ class BaseDiffClient(BaseClass):
 
         if sort_key:
             source_data = rewrite_list_into_dict(source_data, sort_key)
-            destination_data = rewrite_list_into_dict(destination_data, sort_key)
+            destination_data = rewrite_list_into_dict(
+                destination_data, sort_key)
 
         return self.diff(source_data, destination_data, critical_key=critical_key, obfuscate=obfuscate, parent_group=parent_group)
 
@@ -169,13 +171,15 @@ class BaseDiffClient(BaseClass):
         if diff is not None:
             dest_lines = self.total_number_of_lines(destination_data)
             src_lines = self.total_number_of_lines(source_data)
-            print(f"Before any calculations \ndest: {dest_lines} \nsrc: {src_lines}")
+            print(
+                f"Before any calculations \ndest: {dest_lines} \nsrc: {src_lines}")
             if dest_lines > src_lines:
                 discrepency = dest_lines - src_lines
                 src_lines += discrepency
                 dest_lines -= discrepency
             src_lines += self.total_number_of_differences(diff)
-            print(f"After calculations \ndest: {dest_lines} \nsrc: {src_lines}")
+            print(
+                f"After calculations \ndest: {dest_lines} \nsrc: {src_lines}")
             original_accuracy = dest_lines / src_lines
         else:
             original_accuracy = 1
@@ -187,15 +191,17 @@ class BaseDiffClient(BaseClass):
         if is_nested_dict(d):
             for k in d.keys():
                 if isinstance(d[k], dict):
-                    count += self.total_number_of_lines(d[k], keys_to_exclude=keys_to_exclude)
+                    count += self.total_number_of_lines(
+                        d[k], keys_to_exclude=keys_to_exclude)
         else:
             if keys_to_exclude:
                 length = len({k for k in d if k not in keys_to_exclude})
-                count += 1 if (length == 0 and "+++" in keys_to_exclude) else length
+                count += 1 if (length ==
+                               0 and "+++" in keys_to_exclude) else length
             else:
                 count += len(d)
         return count
-    
+
     def total_number_of_differences(self, d):
         count = 0
         if is_nested_dict(d):
@@ -208,7 +214,6 @@ class BaseDiffClient(BaseClass):
                     if not isinstance(v, dict):
                         count += 1
         return count
-
 
     def get_num_denom(self, a, b):
         if self.total_number_of_lines(a) > self.total_number_of_lines(b):
@@ -313,7 +318,8 @@ class BaseDiffClient(BaseClass):
                     try:
                         obj[key] = base64.b64encode(obj[key])
                     except TypeError:
-                        obj[key] = str(base64.b64encode(bytes(obj[key], encoding='UTF-8')))
+                        obj[key] = str(base64.b64encode(
+                            bytes(obj[key], encoding='UTF-8')))
 
         return obj
 

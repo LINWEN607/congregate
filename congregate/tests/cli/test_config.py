@@ -1,12 +1,13 @@
 import unittest
-import mock
 import pytest
+from mock import patch, MagicMock, PropertyMock
 from congregate.cli import config
 from congregate.helpers.misc_utils import input_generator
 from congregate.tests.mockapi.gitlab.users import MockUsersApi
 from congregate.tests.mockapi.gitlab.groups import MockGroupsApi
 from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.api.groups import GroupsApi
+from congregate.migration.gitlab.api.instance import InstanceApi
 
 test_dir_prefix = "./congregate/tests/cli/data/"
 
@@ -17,7 +18,7 @@ class ConfigTests(unittest.TestCase):
         self.users_api = MockUsersApi()
         self.groups_api = MockGroupsApi()
 
-    @mock.patch.object(UsersApi, "get_current_user")
+    @patch.object(UsersApi, "get_current_user")
     def test_full_ext_src_skeleton_bitbucket_server(self, mock_get):
         """
             Generates a full skeleton outline of the configuration using empty strings and default values
@@ -53,12 +54,12 @@ class ConfigTests(unittest.TestCase):
         g = input_generator(values)
 
         mock_get.return_value = self.users_api.get_current_user()
-        with mock.patch('congregate.cli.config.write_to_file', mock_file):
-            with mock.patch('congregate.cli.config.app_path', "."):
-                with mock.patch('congregate.cli.config.obfuscate', lambda x: "dGVzdA=="):
-                    with mock.patch('congregate.cli.config.deobfuscate', lambda x: "dGVzdA=="):
-                        with mock.patch('getpass.getpass', lambda x: "password"):
-                            with mock.patch('builtins.input', lambda x: next(g)):
+        with patch('congregate.cli.config.write_to_file', mock_file):
+            with patch('congregate.cli.config.app_path', "."):
+                with patch('congregate.cli.config.obfuscate', lambda x: "dGVzdA=="):
+                    with patch('congregate.cli.config.deobfuscate', lambda x: "dGVzdA=="):
+                        with patch('getpass.getpass', lambda x: "password"):
+                            with patch('builtins.input', lambda x: next(g)):
                                 config.generate_config()
 
         # load the file that was just written
@@ -71,7 +72,7 @@ class ConfigTests(unittest.TestCase):
 
         self.assertListEqual(generated, reference)
 
-    @mock.patch.object(UsersApi, "get_current_user")
+    @patch.object(UsersApi, "get_current_user")
     def test_full_ext_src_skeleton_github_server(self, mock_get):
         """
             Generates a full skeleton outline of the configuration using empty strings and default values
@@ -110,12 +111,12 @@ class ConfigTests(unittest.TestCase):
         g = input_generator(values)
 
         mock_get.return_value = self.users_api.get_current_user()
-        with mock.patch('congregate.cli.config.write_to_file', mock_file):
-            with mock.patch('congregate.cli.config.app_path', "."):
-                with mock.patch('congregate.cli.config.obfuscate', lambda x: "dGVzdA=="):
-                    with mock.patch('congregate.cli.config.deobfuscate', lambda x: "dGVzdA=="):
-                        with mock.patch('getpass.getpass', lambda x: "password"):
-                            with mock.patch('builtins.input', lambda x: next(g)):
+        with patch('congregate.cli.config.write_to_file', mock_file):
+            with patch('congregate.cli.config.app_path', "."):
+                with patch('congregate.cli.config.obfuscate', lambda x: "dGVzdA=="):
+                    with patch('congregate.cli.config.deobfuscate', lambda x: "dGVzdA=="):
+                        with patch('getpass.getpass', lambda x: "password"):
+                            with patch('builtins.input', lambda x: next(g)):
                                 config.generate_config()
 
         # load the file that was just written
@@ -128,9 +129,10 @@ class ConfigTests(unittest.TestCase):
 
         self.assertListEqual(generated, reference)
 
-    @mock.patch.object(GroupsApi, "get_group")
-    @mock.patch.object(UsersApi, "get_current_user")
-    def test_not_ext_src_src_parent_group_path_mirror_name_filesystem_skeleton(self, mock_get_current_user, mock_get_group):
+    @patch.object(GroupsApi, "get_group")
+    @patch.object(UsersApi, "get_current_user")
+    @patch.object(InstanceApi, "get_current_license")
+    def test_not_ext_src_src_parent_group_path_mirror_name_filesystem_skeleton(self, mock_get_license, mock_get_current_user, mock_get_group):
         """
             Not external source
             source parent group
@@ -172,6 +174,11 @@ class ConfigTests(unittest.TestCase):
 
         g = input_generator(values)
 
+        mock_lic = MagicMock()
+        type(mock_lic).status_code = PropertyMock(return_value=200)
+        mock_lic.json.return_value = {"plan": "ultimate"}
+        mock_get_license.return_value = mock_lic
+
         mock_get_current_user.return_value = {
             "id": 123, "username": "username"}
 
@@ -183,14 +190,14 @@ class ConfigTests(unittest.TestCase):
                 return self._json
 
         mock_get_group.return_value = GroupHack()
-        with mock.patch('congregate.cli.config.write_to_file', mock_file):
-            with mock.patch('congregate.cli.config.getcwd', lambda: "."):
-                with mock.patch('congregate.cli.config.get_congregate_path', lambda: "."):
-                    with mock.patch('congregate.cli.config.obfuscate', lambda x: "dGVzdA=="):
-                        with mock.patch('congregate.cli.config.test_registries', lambda x, y, z: None):
-                            with mock.patch('congregate.cli.config.test_slack', lambda x: None):
-                                with mock.patch('congregate.cli.config.deobfuscate', lambda x: "dGVzdA=="):
-                                    with mock.patch('builtins.input', lambda x: next(g)):
+        with patch('congregate.cli.config.write_to_file', mock_file):
+            with patch('congregate.cli.config.getcwd', lambda: "."):
+                with patch('congregate.cli.config.get_congregate_path', lambda: "."):
+                    with patch('congregate.cli.config.obfuscate', lambda x: "dGVzdA=="):
+                        with patch('congregate.cli.config.test_registries', lambda x, y, z: None):
+                            with patch('congregate.cli.config.test_slack', lambda x: None):
+                                with patch('congregate.cli.config.deobfuscate', lambda x: "dGVzdA=="):
+                                    with patch('builtins.input', lambda x: next(g)):
                                         config.generate_config()
 
         # load the file that was just written
@@ -203,9 +210,10 @@ class ConfigTests(unittest.TestCase):
 
         self.assertListEqual(generated, reference)
 
-    @mock.patch.object(GroupsApi, "get_group")
-    @mock.patch.object(UsersApi, "get_current_user")
-    def test_not_ext_src_parent_group_path_no_mirror_name_aws_default(self, mock_get, mock_get_group):
+    @patch.object(GroupsApi, "get_group")
+    @patch.object(UsersApi, "get_current_user")
+    @patch.object(InstanceApi, "get_current_license")
+    def test_not_ext_src_parent_group_path_no_mirror_name_aws_default(self, mock_get_license, mock_get, mock_get_group):
         """
             Not external source
             parent group found (first if)
@@ -254,6 +262,11 @@ class ConfigTests(unittest.TestCase):
 
         g = input_generator(values)
 
+        mock_lic = MagicMock()
+        type(mock_lic).status_code = PropertyMock(return_value=200)
+        mock_lic.json.return_value = {"plan": "ultimate"}
+        mock_get_license.return_value = mock_lic
+
         mock_get.return_value = self.users_api.get_current_user()
 
         class GroupHack(object):
@@ -264,16 +277,16 @@ class ConfigTests(unittest.TestCase):
                 return self._json
 
         mock_get_group.return_value = GroupHack()
-        with mock.patch('congregate.cli.config.write_to_file', mock_file):
-            with mock.patch('congregate.cli.config.getcwd', lambda: "."):
-                with mock.patch('congregate.cli.config.get_congregate_path', lambda: "."):
-                    with mock.patch('congregate.cli.config.aws.set_access_key_id', lambda x: "access_key_id"):
-                        with mock.patch('congregate.cli.config.aws.set_secret_access_key', lambda x: "secret_access_key"):
-                            with mock.patch('congregate.cli.config.obfuscate', lambda x: "dGVzdA=="):
-                                with mock.patch('congregate.cli.config.test_registries', lambda x, y, z: None):
-                                    with mock.patch('congregate.cli.config.test_slack', lambda x: None):
-                                        with mock.patch('congregate.cli.config.deobfuscate', lambda x: "dGVzdA=="):
-                                            with mock.patch('builtins.input', lambda x: next(g)):
+        with patch('congregate.cli.config.write_to_file', mock_file):
+            with patch('congregate.cli.config.getcwd', lambda: "."):
+                with patch('congregate.cli.config.get_congregate_path', lambda: "."):
+                    with patch('congregate.cli.config.aws.set_access_key_id', lambda x: "access_key_id"):
+                        with patch('congregate.cli.config.aws.set_secret_access_key', lambda x: "secret_access_key"):
+                            with patch('congregate.cli.config.obfuscate', lambda x: "dGVzdA=="):
+                                with patch('congregate.cli.config.test_registries', lambda x, y, z: None):
+                                    with patch('congregate.cli.config.test_slack', lambda x: None):
+                                        with patch('congregate.cli.config.deobfuscate', lambda x: "dGVzdA=="):
+                                            with patch('builtins.input', lambda x: next(g)):
                                                 config.generate_config()
 
         # load the file that was just written
@@ -286,9 +299,10 @@ class ConfigTests(unittest.TestCase):
 
         self.assertListEqual(generated, reference)
 
-    @mock.patch.object(GroupsApi, "get_group")
-    @mock.patch.object(UsersApi, "get_current_user")
-    def test_not_ext_src_parent_group_path_no_mirror_name_aws_default_hash_map_sso(self, mock_get, mock_get_group):
+    @patch.object(GroupsApi, "get_group")
+    @patch.object(UsersApi, "get_current_user")
+    @patch.object(InstanceApi, "get_current_license")
+    def test_not_ext_src_parent_group_path_no_mirror_name_aws_default_hash_map_sso(self, mock_get_license, mock_get, mock_get_group):
         """
             Not external source
             parent group found (first if)
@@ -338,6 +352,11 @@ class ConfigTests(unittest.TestCase):
 
         g = input_generator(values)
 
+        mock_lic = MagicMock()
+        type(mock_lic).status_code = PropertyMock(return_value=200)
+        mock_lic.json.return_value = {"plan": "ultimate"}
+        mock_get_license.return_value = mock_lic
+
         mock_get.return_value = self.users_api.get_current_user()
 
         class GroupHack(object):
@@ -348,16 +367,16 @@ class ConfigTests(unittest.TestCase):
                 return self._json
 
         mock_get_group.return_value = GroupHack()
-        with mock.patch('congregate.cli.config.write_to_file', mock_file):
-            with mock.patch('congregate.cli.config.getcwd', lambda: "."):
-                with mock.patch('congregate.cli.config.get_congregate_path', lambda: "."):
-                    with mock.patch('congregate.cli.config.aws.set_access_key_id', lambda x: "access_key_id"):
-                        with mock.patch('congregate.cli.config.aws.set_secret_access_key', lambda x: "secret_access_key"):
-                            with mock.patch('congregate.cli.config.obfuscate', lambda x: "dGVzdA=="):
-                                with mock.patch('congregate.cli.config.test_registries', lambda x, y, z: None):
-                                    with mock.patch('congregate.cli.config.test_slack', lambda x: None):
-                                        with mock.patch('congregate.cli.config.deobfuscate', lambda x: "dGVzdA=="):
-                                            with mock.patch('builtins.input', lambda x: next(g)):
+        with patch('congregate.cli.config.write_to_file', mock_file):
+            with patch('congregate.cli.config.getcwd', lambda: "."):
+                with patch('congregate.cli.config.get_congregate_path', lambda: "."):
+                    with patch('congregate.cli.config.aws.set_access_key_id', lambda x: "access_key_id"):
+                        with patch('congregate.cli.config.aws.set_secret_access_key', lambda x: "secret_access_key"):
+                            with patch('congregate.cli.config.obfuscate', lambda x: "dGVzdA=="):
+                                with patch('congregate.cli.config.test_registries', lambda x, y, z: None):
+                                    with patch('congregate.cli.config.test_slack', lambda x: None):
+                                        with patch('congregate.cli.config.deobfuscate', lambda x: "dGVzdA=="):
+                                            with patch('builtins.input', lambda x: next(g)):
                                                 config.generate_config()
 
         # load the file that was just written
@@ -370,9 +389,10 @@ class ConfigTests(unittest.TestCase):
 
         self.assertListEqual(generated, reference)
 
-    @mock.patch.object(GroupsApi, "get_group")
-    @mock.patch.object(UsersApi, "get_current_user")
-    def test_not_ext_src_parent_group_path_no_mirror_name_aws(self, mock_get, mock_get_group):
+    @patch.object(GroupsApi, "get_group")
+    @patch.object(UsersApi, "get_current_user")
+    @patch.object(InstanceApi, "get_current_license")
+    def test_not_ext_src_parent_group_path_no_mirror_name_aws(self, mock_get_license, mock_get, mock_get_group):
         """
             Not external source
             No import user ID or username
@@ -421,6 +441,11 @@ class ConfigTests(unittest.TestCase):
 
         g = input_generator(values)
 
+        mock_lic = MagicMock()
+        type(mock_lic).status_code = PropertyMock(return_value=200)
+        mock_lic.json.return_value = {"plan": "ultimate"}
+        mock_get_license.return_value = mock_lic
+
         mock_get.return_value = {"id": None, "username": None}
 
         class GroupHack(object):
@@ -431,14 +456,14 @@ class ConfigTests(unittest.TestCase):
                 return self._json
 
         mock_get_group.return_value = GroupHack()
-        with mock.patch('congregate.cli.config.write_to_file', mock_file):
-            with mock.patch('congregate.cli.config.get_congregate_path', lambda: "."):
-                with mock.patch('congregate.cli.config.aws.set_access_key_id', lambda x: "access_key_id"):
-                    with mock.patch('congregate.cli.config.aws.set_secret_access_key', lambda x: "secret_access_key"):
-                        with mock.patch('congregate.cli.config.obfuscate', lambda x: "dGVzdA=="):
-                            with mock.patch('congregate.cli.config.test_registries', lambda x, y, z: None):
-                                with mock.patch('congregate.cli.config.deobfuscate', lambda x: "dGVzdA=="):
-                                    with mock.patch('builtins.input', lambda x: next(g)):
+        with patch('congregate.cli.config.write_to_file', mock_file):
+            with patch('congregate.cli.config.get_congregate_path', lambda: "."):
+                with patch('congregate.cli.config.aws.set_access_key_id', lambda x: "access_key_id"):
+                    with patch('congregate.cli.config.aws.set_secret_access_key', lambda x: "secret_access_key"):
+                        with patch('congregate.cli.config.obfuscate', lambda x: "dGVzdA=="):
+                            with patch('congregate.cli.config.test_registries', lambda x, y, z: None):
+                                with patch('congregate.cli.config.deobfuscate', lambda x: "dGVzdA=="):
+                                    with patch('builtins.input', lambda x: next(g)):
                                         config.generate_config()
 
         # load the file that was just written
@@ -451,9 +476,10 @@ class ConfigTests(unittest.TestCase):
 
         self.assertListEqual(generated, reference)
 
-    @mock.patch.object(GroupsApi, "get_group")
-    @mock.patch.object(UsersApi, "get_current_user")
-    def test_not_ext_src_no_parent_group_path_mirror_name_filesystem_skeleton(self, mock_get_current_user, mock_get_group):
+    @patch.object(GroupsApi, "get_group")
+    @patch.object(UsersApi, "get_current_user")
+    @patch.object(InstanceApi, "get_current_license")
+    def test_not_ext_src_no_parent_group_path_mirror_name_filesystem_skeleton(self, mock_get_license, mock_get_current_user, mock_get_group):
         """
             Not external source
             no parent group
@@ -493,6 +519,11 @@ class ConfigTests(unittest.TestCase):
 
         g = input_generator(values)
 
+        mock_lic = MagicMock()
+        type(mock_lic).status_code = PropertyMock(return_value=200)
+        mock_lic.json.return_value = {"plan": "ultimate"}
+        mock_get_license.return_value = mock_lic
+
         mock_get_current_user.return_value = {
             "id": 123, "username": "username"}
 
@@ -505,14 +536,14 @@ class ConfigTests(unittest.TestCase):
 
         mock_get_group.return_value = GroupHack()
 
-        with mock.patch('congregate.cli.config.write_to_file', mock_file):
-            with mock.patch('congregate.cli.config.getcwd', lambda: "."):
-                with mock.patch('congregate.cli.config.get_congregate_path', lambda: "."):
-                    with mock.patch('congregate.cli.config.obfuscate', lambda x: "dGVzdA=="):
-                        with mock.patch('congregate.cli.config.test_registries', lambda x, y, z: None):
-                            with mock.patch('congregate.cli.config.test_slack', lambda x: None):
-                                with mock.patch('congregate.cli.config.deobfuscate', lambda x: "dGVzdA=="):
-                                    with mock.patch('builtins.input', lambda x: next(g)):
+        with patch('congregate.cli.config.write_to_file', mock_file):
+            with patch('congregate.cli.config.getcwd', lambda: "."):
+                with patch('congregate.cli.config.get_congregate_path', lambda: "."):
+                    with patch('congregate.cli.config.obfuscate', lambda x: "dGVzdA=="):
+                        with patch('congregate.cli.config.test_registries', lambda x, y, z: None):
+                            with patch('congregate.cli.config.test_slack', lambda x: None):
+                                with patch('congregate.cli.config.deobfuscate', lambda x: "dGVzdA=="):
+                                    with patch('builtins.input', lambda x: next(g)):
                                         config.generate_config()
 
         # load the file that was just written
@@ -555,7 +586,7 @@ class ConfigTests(unittest.TestCase):
             "slack_url":"https://slack.url"\
         }'
 
-        with mock.patch('congregate.cli.config.write_to_file', mock_file):
+        with patch('congregate.cli.config.write_to_file', mock_file):
             config.update_config(data)
 
         # load the file that was just written
@@ -598,7 +629,7 @@ class ConfigTests(unittest.TestCase):
             "slack_url":"https://slack.url"\
         }'
 
-        with mock.patch('congregate.cli.config.write_to_file', mock_file):
+        with patch('congregate.cli.config.write_to_file', mock_file):
             update = config.update_config(data)
 
         # load the file that was just written

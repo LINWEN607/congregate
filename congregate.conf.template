@@ -76,6 +76,7 @@
 # src_type = GitLab
 # src_hostname = source_hostname
 # src_access_token = *****
+# src_tier = source_tier
 # src_parent_group_id = 0
 # src_parent_group_path = source_group_full_path
 ### The maximum amount of time to wait for exports. It differs for external filesystem and AWS

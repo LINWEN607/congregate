@@ -7,15 +7,17 @@ import requests
 from docker import from_env
 from docker.errors import APIError, TLSParameterError
 
-from congregate.helpers.misc_utils import get_congregate_path, obfuscate, deobfuscate, json_pretty
+from congregate.helpers.misc_utils import get_congregate_path, obfuscate, deobfuscate, json_pretty, safe_json_response
 from congregate.helpers.configuration_validator import ConfigurationValidator
 from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.api.groups import GroupsApi
+from congregate.migration.gitlab.api.instance import InstanceApi
 from congregate.migration.gitlab.registries import RegistryClient
 from congregate.aws import AwsClient
 
 users = UsersApi()
 groups = GroupsApi()
+instance = InstanceApi()
 aws = AwsClient()
 reg_client = RegistryClient()
 app_path = get_congregate_path()
@@ -64,9 +66,9 @@ def generate_config():
     if dstn_group.lower() in ["yes", "y"]:
         config.set("DESTINATION", "dstn_parent_group_id", input(
             "Parent group ID (Group -> Settings -> General): "))
-        group = groups.get_group(config.getint("DESTINATION", "dstn_parent_group_id"), config.get(
-            "DESTINATION", "dstn_hostname"), deobfuscate(config.get("DESTINATION", "dstn_access_token"))).json()
-        if group.get("full_path", None) is not None:
+        group = safe_json_response(groups.get_group(config.getint("DESTINATION", "dstn_parent_group_id"), config.get(
+            "DESTINATION", "dstn_hostname"), deobfuscate(config.get("DESTINATION", "dstn_access_token"))))
+        if group and group.get("full_path", None) is not None:
             config.set("DESTINATION", "dstn_parent_group_path",
                        group["full_path"])
         else:
@@ -130,15 +132,19 @@ def generate_config():
         config.set("SOURCE", "src_type", "GitLab")
         config.set("SOURCE", "src_hostname", input("Source instance URL: "))
         config.set("SOURCE", "src_access_token", obfuscate(
-            "Source instance ({}) Personal Access Token: ").format(config.set("SOURCE", "src_type", "GitLab")))
+            "Source instance ({}) Personal Access Token: ").format(config.get("SOURCE", "src_type")))
+        lic = safe_json_response(instance.get_current_license(config.get(
+            "SOURCE", "src_hostname"), deobfuscate(config.get("SOURCE", "src_access_token"))))
+        config.set("SOURCE", "src_tier", lic.get(
+            "plan", "core") if lic else "core")
         source_group = input(
             "Are you migrating from a parent group to a new instance, e.g. gitlab.com to self-managed (Default: No)? ")
         if source_group.lower() in ["yes", "y"]:
             config.set("SOURCE", "src_parent_group_id", input(
                 "Source group ID (Group -> Settings -> General): "))
-            src_group = groups.get_group(config.getint("SOURCE", "src_parent_group_id"), config.get(
-                "SOURCE", "src_hostname"), deobfuscate(config.get("SOURCE", "src_access_token"))).json()
-            if src_group.get("full_path", None) is not None:
+            src_group = safe_json_response(groups.get_group(config.getint("SOURCE", "src_parent_group_id"), config.get(
+                "SOURCE", "src_hostname"), deobfuscate(config.get("SOURCE", "src_access_token"))))
+            if src_group and src_group.get("full_path", None) is not None:
                 config.set("SOURCE", "src_parent_group_path",
                            src_group["full_path"])
             else:

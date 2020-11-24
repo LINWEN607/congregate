@@ -80,7 +80,6 @@ class Config(object):
             return json.loads(self.config.get(section, option))
         return default
 
-
     def as_obj(self):
         """
         Return entire config object (setter)
@@ -204,13 +203,17 @@ class Config(object):
         return self.prop_lower("SOURCE", "src_type")
 
     @property
+    def source_tier(self):
+        return self.prop("SOURCE", "src_tier")
+
+    @property
     def source_host(self):
         return self.prop("SOURCE", "src_hostname")
 
     @property
     def source_username(self):
         return self.prop("SOURCE", "src_username")
-    
+
     @property
     def source_password(self):
         return self.prop("SOURCE", "src_password", None, True)
@@ -260,7 +263,7 @@ class Config(object):
     def ci_source_token(self):
         return self.prop("CI_SOURCE", "ci_src_access_token", None, True)
 
-# JENKINS_CI_SOURCE    
+# JENKINS_CI_SOURCE
     @property
     def jenkins_ci_source_type(self):
         return self.prop_lower("JENKINS_CI_SOURCE", "jenkins_ci_src_type")
@@ -277,7 +280,7 @@ class Config(object):
     def jenkins_ci_source_token(self):
         return self.prop("JENKINS_CI_SOURCE", "jenkins_ci_src_access_token", None, True)
 
-# TEAMCITY_CI_SOURCE     
+# TEAMCITY_CI_SOURCE
     @property
     def tc_ci_source_type(self):
         return self.prop_lower("TEAMCITY_CI_SOURCE", "tc_ci_src_type")
@@ -407,6 +410,7 @@ class Config(object):
 # HIDDEN PROPERTIES
 
     # Used only by "map-users" command
+
     @property
     def user_map(self):
         return self.prop("USER", "user_map_csv")

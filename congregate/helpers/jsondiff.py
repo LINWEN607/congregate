@@ -8,7 +8,6 @@ JsonDiff: Library for JSON DIFF - based on opslib jsondiff
 """
 
 try:
-    from congregate.helpers.misc_utils import list_to_dict
     import json
 except ImportError:
     import simplejson as json

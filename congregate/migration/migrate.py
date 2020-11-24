@@ -62,7 +62,7 @@ class MigrateClient(BaseClass):
         skip_project_export=False,
         skip_project_import=False,
         subgroups_only=False,
-        scm_source = None
+        scm_source=None
     ):
         self.ie = ImportExportClient()
         self.mirror = MirrorClient()
@@ -104,7 +104,7 @@ class MigrateClient(BaseClass):
         self.scm_source = scm_source
 
     def migrate(self):
-        
+
         self.log.info(
             f"{get_dry_log(self.dry_run)}Migrating data from {self.config.source_host} ({self.config.source_type}) to {self.config.destination_host}")
 
@@ -238,13 +238,15 @@ class MigrateClient(BaseClass):
         gh_host = None
         gh_token = None
         if self.scm_source is not None:
-           for single_source in self.config.list_multiple_source_config("github_source"):
-               if self.scm_source == single_source.get("src_hostname", None):
-                   self.gh_repos = ReposClient(single_source["src_hostname"], deobfuscate(single_source["src_access_token"]))
-                   gh_host = single_source["src_hostname"]
-                   gh_token = deobfuscate(single_source["src_access_token"])    
+            for single_source in self.config.list_multiple_source_config("github_source"):
+                if self.scm_source == single_source.get("src_hostname", None):
+                    self.gh_repos = ReposClient(single_source["src_hostname"], deobfuscate(
+                        single_source["src_access_token"]))
+                    gh_host = single_source["src_hostname"]
+                    gh_token = deobfuscate(single_source["src_access_token"])
         else:
-            self.gh_repos = ReposClient(self.config.source_host, self.config.source_token)
+            self.gh_repos = ReposClient(
+                self.config.source_host, self.config.source_token)
             gh_host = self.config.source_host
             gh_token = self.config.source_token
         members = project.pop("members")
@@ -697,13 +699,14 @@ class MigrateClient(BaseClass):
         results["cicd_variables"] = self.variables.migrate_cicd_variables(
             src_gid, dst_gid, full_path, "group", src_gid)
 
-        # Hooks (Webhooks)
-        results["hooks"] = self.hooks.migrate_group_hooks(
-            src_gid, dst_gid, full_path)
-
         # Clusters
         results["clusters"] = self.clusters.migrate_group_clusters(
             src_gid, dst_gid, full_path)
+
+        if self.config.source_tier not in ["core", "free"]:
+            # Hooks (Webhooks)
+            results["hooks"] = self.hooks.migrate_group_hooks(
+                src_gid, dst_gid, full_path)
 
         # Remove import user
         self.groups.remove_import_user(dst_gid)
@@ -879,14 +882,6 @@ class MigrateClient(BaseClass):
         results["pipeline_schedule_variables"] = self.variables.migrate_pipeline_schedule_variables(
             src_id, dst_id, path_with_namespace, jobs_enabled)
 
-        # Push Rules
-        results["push_rules"] = self.pushrules.migrate_push_rules(
-            src_id, dst_id, path_with_namespace)
-
-        # Merge Request Approvals
-        results["project_level_mr_approvals"] = self.mr_approvals.migrate_project_level_mr_approvals(
-            src_id, dst_id, path_with_namespace)
-
         # Deploy Keys
         results["deploy_keys"] = self.keys.migrate_project_deploy_keys(
             src_id, dst_id, path_with_namespace)
@@ -903,6 +898,15 @@ class MigrateClient(BaseClass):
         # Clusters
         results["clusters"] = self.clusters.migrate_project_clusters(
             src_id, dst_id, path_with_namespace, jobs_enabled)
+
+        if self.config.source_tier not in ["core", "free"]:
+            # Push Rules
+            results["push_rules"] = self.pushrules.migrate_push_rules(
+                src_id, dst_id, path_with_namespace)
+
+            # Merge Request Approvals
+            results["project_level_mr_approvals"] = self.mr_approvals.migrate_project_level_mr_approvals(
+                src_id, dst_id, path_with_namespace)
 
         self.projects.remove_import_user(dst_id)
 

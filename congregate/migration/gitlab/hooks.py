@@ -90,17 +90,12 @@ class HooksClient(BaseClass):
             resp = self.groups_api.get_all_group_hooks(
                 old_id, self.config.source_host, self.config.source_token)
             hooks = iter(resp)
-            self.log.info("Migrating group {full_path} (ID: {old_id}) hooks")
+            self.log.info(f"Migrating group {full_path} (ID: {old_id}) hooks")
             for h in hooks:
                 if is_error_message_present(h) or not h:
                     self.log.error(
                         f"Failed to fetch hooks ({h}) for group {full_path} (ID: {old_id})")
                     return False
-                # Non Core feature
-                elif isinstance(h, dict) and h.get("error", None) == "404 Not Found":
-                    self.log.info(
-                        f"Source instance {self.config.source_host} does not have Group Hooks enabled")
-                    return None
                 h.pop("id", None)
                 h.pop("created_at", None)
                 h.pop("group_id", None)
