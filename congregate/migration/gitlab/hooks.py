@@ -96,6 +96,11 @@ class HooksClient(BaseClass):
                     self.log.error(
                         f"Failed to fetch hooks ({h}) for group {full_path} (ID: {old_id})")
                     return False
+                # Non Core feature
+                elif isinstance(h, dict) and h.get("error", None) == "404 Not Found":
+                    self.log.info(
+                        f"Source instance {self.config.source_host} does not have Group Hooks enabled")
+                    return None
                 h.pop("id", None)
                 h.pop("created_at", None)
                 h.pop("group_id", None)

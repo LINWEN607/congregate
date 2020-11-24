@@ -12,24 +12,29 @@ class PushRulesClient(BaseClass):
 
     def migrate_push_rules(self, old_id, new_id, name):
         try:
-            push_rules = safe_json_response(self.projects_api.get_all_project_push_rules(
+            pr = safe_json_response(self.projects_api.get_all_project_push_rules(
                 old_id, self.config.source_host, self.config.source_token))
-            if push_rules is None:
+            if pr is None:
                 self.log.info(
-                    f"No push rules ({push_rules}) to migrate for project {name}")
+                    f"No push rules ({pr}) to migrate for project {name}")
                 return None
-            elif is_error_message_present(push_rules):
+            elif is_error_message_present(pr):
                 self.log.error(
-                    f"Failed to fetch push rules ({push_rules}) for project {name}")
+                    f"Failed to fetch push rules ({pr}) for project {name}")
                 return False
+            # Non Core feature
+            elif isinstance(pr, dict) and pr.get("error", None) == "404 Not Found":
+                self.log.info(
+                    f"Source instance {self.config.source_host} does not have Project Push Rules enabled")
+                return None
             self.log.info(f"Migrating project {name} push rules")
-            push_rules.pop("id", None)
-            push_rules.pop("created_at", None)
-            push_rules.pop("project_id", None)
+            pr.pop("id", None)
+            pr.pop("created_at", None)
+            pr.pop("project_id", None)
             self.projects_api.create_project_push_rule(
-                new_id, self.config.destination_host, self.config.destination_token, push_rules)
+                new_id, self.config.destination_host, self.config.destination_token, pr)
             return True
         except RequestException as re:
             self.log.error(
-                f"Failed to migrate {name} push rules, with error:\n{e}")
+                f"Failed to migrate {name} push rules, with error:\n{re}")
             return False
