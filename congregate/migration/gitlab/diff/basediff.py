@@ -81,7 +81,7 @@ class BaseDiffClient(BaseClass):
         engine = Comparator()
         diff = None
         accuracy = 1
-        if destination_data is not None:
+        if destination_data:
             if not is_error_message_present(destination_data):
                 if isinstance(source_data, list):
                     if obfuscate:
@@ -102,10 +102,11 @@ class BaseDiffClient(BaseClass):
                 if source_data:
                     if isinstance(source_data, list):
                         if diff:
+                            accuracy = 0
                             for i, _ in enumerate(source_data):
                                 if diff.get(i):
-                                    accuracy += self.calculate_individual_list_accuracy(
-                                        diff[i], source_data[i], critical_key, parent_group=parent_group)
+                                    accuracy += self.calculate_individual_dict_accuracy(
+                                        diff[i], source_data[i], destination_data[i], critical_key, parent_group=parent_group)
                             if accuracy != 0:
                                 accuracy = float(accuracy) / \
                                     float(len(source_data))
@@ -178,8 +179,21 @@ class BaseDiffClient(BaseClass):
 
         return self.diff(source_data, destination_data, critical_key=critical_key, obfuscate=obfuscate, parent_group=parent_group)
 
-    def calculate_individual_list_accuracy(self, diff, source_data, critical_key, parent_group=None):
-        original_accuracy = 1 - float(len(diff)) / float(len(source_data))
+    def calculate_individual_list_accuracy(self, diff, source_data, destination_data, critical_key, parent_group=None):
+        if diff is not None:
+            dest_lines = len(destination_data)
+            src_lines = len(source_data)
+            if dest_lines > src_lines:
+                discrepency = dest_lines - src_lines
+                src_lines += discrepency
+                dest_lines -= discrepency
+            src_lines += self.total_number_of_differences(diff)
+            print(f"Dest lines: {dest_lines}")
+            print(f"Src lines: {src_lines}")
+            original_accuracy = dest_lines / src_lines
+            print(original_accuracy)
+        else:
+            original_accuracy = 1
         return self.critical_key_case_check(diff, critical_key, original_accuracy, parent_group=parent_group)
 
     def calculate_individual_dict_accuracy(self, diff, source_data, destination_data, critical_key, parent_group=None):
@@ -225,11 +239,6 @@ class BaseDiffClient(BaseClass):
         return count
 
 
-    def get_num_denom(self, a, b):
-        if self.total_number_of_lines(a) > self.total_number_of_lines(b):
-            return b, a
-        return a, b
-
     def critical_key_case_check(self, diff, critical_key, original_accuracy, parent_group=None):
         if critical_key in diff:
             diff_minus = diff[critical_key]['---']
@@ -237,10 +246,6 @@ class BaseDiffClient(BaseClass):
             if (parent_group and parent_group not in diff_plus) or diff_minus.lower() != diff_plus.lower():
                 return 0
         return original_accuracy
-
-    def load_json_data(self, path):
-        with open(path, "r") as f:
-            return json.load(f)
 
     def calculate_overall_accuracy(self, obj):
         accuracy = 0
