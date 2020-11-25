@@ -192,6 +192,9 @@ test:end-to-end full:
     - export GITLAB_DEST_REG_URL=gitlab_destination:4567
     - poetry run pytest -s -m e2e_setup congregate/tests/
     - poetry run pytest -s -m e2e --cov-config=.coveragerc --cov=congregate congregate/tests/
+  rules:
+    - changes:
+      - congregate/migration/gitlab/**/*
   timeout: 20 minutes
 
 test:end-to-end single group:
@@ -211,6 +214,9 @@ test:end-to-end single group:
     - export GITLAB_DEST_REG_URL=gitlab_destination:4567
     - poetry run pytest -s -m e2e_setup_2 congregate/tests/
     - poetry run pytest -s -m e2e --cov-config=.coveragerc --cov=congregate congregate/tests/
+  rules:
+    - changes:
+      - congregate/migration/gitlab/**/*
   timeout: 15 minutes
 
 test:GitHub Server end to end:
@@ -223,9 +229,9 @@ test:GitHub Server end to end:
     - curl -k $GH_TEST_INSTANCE_URL -v
   rules:
     - changes:
-        - .gitlab-ci.yml
+        - congregate/migration/github/**/*
 
-test:Spin up jenkins:
+test:Jenkins Integration Tests:
   extends:
     - .jenkins-test
     - .test-job
@@ -237,6 +243,9 @@ test:Spin up jenkins:
     - curl http://jenkins-test:8080/job/test-job/config.xml --user $JENKINS_USER:$JENKINS_PASSWORD
     - echo "Jenkins is up and running, starting pytest"
     - poetry run pytest -s -m "jenkins_it" congregate/tests/
+  rules:
+    - changes:
+      - congregate/migration/jenkins/**/*
   timeout: 10 minutes
 
 debian rolling release:
@@ -247,14 +256,12 @@ debian rolling release:
   rules:
     - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
   variables:
-    RELEASE_IMAGE_NAME: "$CI_REGISTRY_IMAGE/$CI_COMMIT_REF_NAME:$CI_COMMIT_SHA-debian"
-    LATEST: "$CI_REGISTRY_IMAGE/$CI_COMMIT_REF_NAME:latest-debian"
+    RELEASE_IMAGE_NAME: "$CI_REGISTRY_IMAGE:rolling-debian"
   script:
     - cp docker/release/debian.Dockerfile ./Dockerfile
     - DOCKER_BUILDKIT=1 docker build --tag "$RELEASE_IMAGE_NAME" .
     - docker image tag $RELEASE_IMAGE_NAME $LATEST
     - docker push "$RELEASE_IMAGE_NAME"
-    - docker push "$LATEST"
 
 debian-release-tag:
   extends:
@@ -281,14 +288,12 @@ centos rolling release:
   rules:
     - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
   variables:
-    RELEASE_IMAGE_NAME: "$CI_REGISTRY_IMAGE/$CI_COMMIT_REF_NAME:$CI_COMMIT_SHA-centos"
-    LATEST: "$CI_REGISTRY_IMAGE/$CI_COMMIT_REF_NAME:latest-centos"
+    RELEASE_IMAGE_NAME: "$CI_REGISTRY_IMAGE:rolling-centos"
   script:
     - cp docker/release/centos.Dockerfile ./Dockerfile
     - DOCKER_BUILDKIT=1 docker build --tag "$RELEASE_IMAGE_NAME" .
     - docker image tag $RELEASE_IMAGE_NAME $LATEST
     - docker push "$RELEASE_IMAGE_NAME"
-    - docker push "$LATEST"
 
 centos-release-tag:
   extends:
