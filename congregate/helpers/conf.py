@@ -27,7 +27,7 @@ class Config(object):
             self.config.read(config_path)
         except ParsingError as pe:
             print("Failed to parse configuration, with error:\n{}".format(pe))
-            raise SystemExit()
+            raise SystemExit() from pe
 
     def option_exists(self, section, option):
         return self.config.has_option(
@@ -103,7 +103,7 @@ class Config(object):
 
     @property
     def destination_token(self):
-        return self.prop("DESTINATION", "dstn_access_token", None, True)
+        return self.prop("DESTINATION", "dstn_access_token", default=None, obfuscated=True)
 
     @property
     def destination_registry(self):
@@ -111,7 +111,7 @@ class Config(object):
 
     @property
     def reporting(self):
-        return self.prop_dict("DESTINATION", "reporting", {})
+        return self.prop_dict("DESTINATION", "reporting", default={})
 
     @property
     def import_user_id(self):
@@ -119,7 +119,7 @@ class Config(object):
 
     @property
     def shared_runners_enabled(self):
-        return self.prop_bool("DESTINATION", "shared_runners_enabled", True)
+        return self.prop_bool("DESTINATION", "shared_runners_enabled", default=True)
 
     @property
     def append_project_suffix_on_existing_found(self):
@@ -130,7 +130,7 @@ class Config(object):
                     The `False` return will execute the default behavior and cause the import to fail if an existing
                     project is found
         """
-        return self.prop_bool("DESTINATION", "project_suffix", False)
+        return self.prop_bool("DESTINATION", "project_suffix", default=False)
 
     @property
     def max_import_retries(self):
@@ -138,7 +138,7 @@ class Config(object):
         Project import retry count.
         :return: The set config value or 3 as default.
         """
-        return self.prop_int("DESTINATION", "max_import_retries", 3)
+        return self.prop_int("DESTINATION", "max_import_retries", default=3)
 
     @property
     def dstn_parent_id(self):
@@ -182,7 +182,7 @@ class Config(object):
         The maximum number of hours to rollback users, groups, and projects
         :return: The set config value or 24 hours as default
         """
-        return self.prop_int("DESTINATION", "max_asset_expiration_time", 24)
+        return self.prop_int("DESTINATION", "max_asset_expiration_time", default=24)
 
     @property
     def pmi_project_id(self):
@@ -196,7 +196,7 @@ class Config(object):
         """
             Returns list of multiple SCM source config dictionarty including hostname and token
         """
-        return self.prop_dict("MULTIPLE_SOURCE", "sources", {}).get(source_options, [])
+        return self.prop_dict("MULTIPLE_SOURCE", "sources", default={}).get(source_options, [])
 
     @property
     def source_type(self):
@@ -204,7 +204,7 @@ class Config(object):
 
     @property
     def source_tier(self):
-        return self.prop("SOURCE", "src_tier")
+        return self.prop_lower("SOURCE", "src_tier", default="core")
 
     @property
     def source_host(self):
@@ -216,11 +216,11 @@ class Config(object):
 
     @property
     def source_password(self):
-        return self.prop("SOURCE", "src_password", None, True)
+        return self.prop("SOURCE", "src_password", default=None, obfuscated=True)
 
     @property
     def source_token(self):
-        return self.prop("SOURCE", "src_access_token", None, True)
+        return self.prop("SOURCE", "src_access_token", default=None, obfuscated=True)
 
     @property
     def repo_list(self):
@@ -237,7 +237,7 @@ class Config(object):
         increments
         :return: The set config value of 3600 seconds (one hour) as default
         """
-        return self.prop_int("SOURCE", "max_export_wait_time", 3600)
+        return self.prop_int("SOURCE", "max_export_wait_time", default=3600)
 
 # CI_SOURCE
     def list_ci_source_config(self, ci_source_options):
@@ -245,7 +245,7 @@ class Config(object):
             Returns list of ci source config dictionarty including hostname, username and token
             ci_source_options could be jenkins_ci_source or teamcity_ci_source
         """
-        return self.prop_dict("CI_SOURCE", "sources", {}).get(ci_source_options, [])
+        return self.prop_dict("CI_SOURCE", "sources", default={}).get(ci_source_options, [])
 
     @property
     def ci_source_type(self):
@@ -261,7 +261,7 @@ class Config(object):
 
     @property
     def ci_source_token(self):
-        return self.prop("CI_SOURCE", "ci_src_access_token", None, True)
+        return self.prop("CI_SOURCE", "ci_src_access_token", default=None, obfuscated=True)
 
 # JENKINS_CI_SOURCE
     @property
@@ -278,7 +278,7 @@ class Config(object):
 
     @property
     def jenkins_ci_source_token(self):
-        return self.prop("JENKINS_CI_SOURCE", "jenkins_ci_src_access_token", None, True)
+        return self.prop("JENKINS_CI_SOURCE", "jenkins_ci_src_access_token", default=None, obfuscated=True)
 
 # TEAMCITY_CI_SOURCE
     @property
@@ -295,7 +295,7 @@ class Config(object):
 
     @property
     def tc_ci_source_token(self):
-        return self.prop("TEAMCITY_CI_SOURCE", "tc_ci_src_access_token", None, True)
+        return self.prop("TEAMCITY_CI_SOURCE", "tc_ci_src_access_token", default=None, obfuscated=True)
 
 # EXPORT
     @property
@@ -312,11 +312,11 @@ class Config(object):
 
     @property
     def s3_access_key(self):
-        return self.prop("EXPORT", "s3_access_key_id", None, True)
+        return self.prop("EXPORT", "s3_access_key_id", default=None, obfuscated=True)
 
     @property
     def s3_secret_key(self):
-        return self.prop("EXPORT", "s3_secret_access_key", None, True)
+        return self.prop("EXPORT", "s3_secret_access_key", default=None, obfuscated=True)
 
     @property
     def filesystem_path(self):
@@ -329,7 +329,7 @@ class Config(object):
         Determines if we should keep blocked users.
         :return: The set config value or False as default.
         """
-        return self.prop_bool("USER", "keep_blocked_users", False)
+        return self.prop_bool("USER", "keep_blocked_users", default=False)
 
     @property
     def reset_password(self):
@@ -337,7 +337,7 @@ class Config(object):
         Whether or not we should send the reset password link on user creation. Note: The API defaults to false
         :return: The set config value or True as default.
         """
-        return self.prop_bool("USER", "reset_pwd", True)
+        return self.prop_bool("USER", "reset_pwd", default=True)
 
     @property
     def force_random_password(self):
@@ -346,7 +346,7 @@ class Config(object):
         reset_password to generate a random password at create
         :return: The set config value or False as default.
         """
-        return self.prop_bool("USER", "force_rand_pwd", False)
+        return self.prop_bool("USER", "force_rand_pwd", default=False)
 
 # APP
     @property
@@ -357,7 +357,7 @@ class Config(object):
         In general it should be increased when using multiple processes i.e. when the API cannot handle all the requests.
         :return: The set config value or 10 (seconds) as default.
         """
-        return self.prop_int("APP", "export_import_wait_time", 10)
+        return self.prop_int("APP", "export_import_wait_time", default=10)
 
     @property
     def slack_url(self):
@@ -372,11 +372,11 @@ class Config(object):
         """
         The port used to serve up the flask/VueJS UI. Defaults to 8000
         """
-        return self.prop_int("APP", "ui_port", 8000)
+        return self.prop_int("APP", "ui_port", default=8000)
 
     @property
     def ssl_verify(self):
-        return self.prop_bool("APP", "ssl_verify", True)
+        return self.prop_bool("APP", "ssl_verify", default=True)
 
     @property
     def wave_spreadsheet_path(self):
@@ -418,21 +418,21 @@ class Config(object):
     # Used only by disabled migration mode "filesystem-aws"
     @property
     def allow_presigned_url(self):
-        return self.prop_bool("EXPORT", "allow_presigned_url", False)
+        return self.prop_bool("EXPORT", "allow_presigned_url", default=False)
 
     @property
     def lower_case_group_path(self):
         """
         If all groups need to be converted to lowercase during a migration
         """
-        return self.prop_bool("DESTINATION", "lower_case_group_path", False)
+        return self.prop_bool("DESTINATION", "lower_case_group_path", default=False)
 
     @property
     def lower_case_project_path(self):
         """
         If all projects need to be converted to lowercase during a migration
         """
-        return self.prop_bool("DESTINATION", "lower_case_project_path", False)
+        return self.prop_bool("DESTINATION", "lower_case_project_path", default=False)
 
     @property
     def users_to_ignore(self):
@@ -440,4 +440,4 @@ class Config(object):
         A list of users to ignore during a migration. Currently only used in BitBucket Server migrations.
         Defaults to empty list
         """
-        return self.prop_list("DESTINATION", "users_to_ignore", [])
+        return self.prop_list("DESTINATION", "users_to_ignore", default=[])
