@@ -89,8 +89,7 @@ class UsersTests(unittest.TestCase):
             "http://github.example.com", "admin", "password")
         for user in self.users.users_api.get_all_users():
             self.users.handle_retrieving_users(browser, user, mongo=mongo)
-
-        actual_users = [d for d, _ in mongo.stream_collection("users")]
+        actual_users = [d for d, _ in mongo.stream_collection("users-github")]
 
         expected_users = [
             {
@@ -275,4 +274,4 @@ class UsersTests(unittest.TestCase):
         with patch.object(UsersClient, "connect_to_mongo") as mongo_mock:
             mongo_mock.return_value = MongoConnector(
                 host="test-server", port=123456, client=mongomock.MongoClient)
-            return UsersClient(host="gitlab", token="123")
+            return UsersClient(host="github", token="123")

@@ -5,7 +5,7 @@ from congregate.migration.gitlab.api.issues import IssuesApi
 from congregate.migration.gitlab.api.merge_requests import MergeRequestsApi
 from congregate.migration.gitlab.api.project_repository import ProjectRepositoryApi
 from congregate.migration.github.repos import ReposClient
-from congregate.helpers.misc_utils import rewrite_json_list_into_dict, get_rollback_log, dig
+from congregate.helpers.misc_utils import rewrite_json_list_into_dict, get_rollback_log, dig, deobfuscate, read_json_file_into_object
 from congregate.helpers.migrate_utils import get_dst_path_with_namespace
 from congregate.helpers.processes import handle_multi_process_write_to_file_and_return_results
 
@@ -24,7 +24,7 @@ class RepoDiffClient(BaseDiffClient):
         self.gl_mr_api = MergeRequestsApi()
         self.gl_repository_api = ProjectRepositoryApi()
         self.rollback = rollback
-        self.results = rewrite_json_list_into_dict(self.load_json_data(
+        self.results = rewrite_json_list_into_dict(read_json_file_into_object(
             f"{self.app_path}{'/data/results/project_migration_results.json'}"))
         self.processes = processes
         self.keys_to_ignore = [
@@ -61,10 +61,10 @@ class RepoDiffClient(BaseDiffClient):
             "short_id"
         ]
         if staged:
-            self.source_data = self.load_json_data(
+            self.source_data = read_json_file_into_object(
                 "%s/data/staged_projects.json" % self.app_path)
         else:
-            self.source_data = self.load_json_data(
+            self.source_data = read_json_file_into_object(
                 "%s/data/projects.json" % self.app_path)
         self.source_data = [i for i in self.source_data if i]
 

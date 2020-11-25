@@ -49,6 +49,7 @@ class WaveStageCLI(BaseStageClass):
             self.open_projects_file(i, scm_source), "http_url_to_repo")
         project_paths = rewrite_list_into_dict(
             self.open_projects_file(i, scm_source), "path_with_namespace")
+        unable_to_find = []
         wsh = WaveSpreadsheetHandler(self.config.wave_spreadsheet_path, columns_to_use=self.config.wave_spreadsheet_columns)
         wave_data = wsh.read_file_as_json(
             df_filter=(
@@ -59,7 +60,6 @@ class WaveStageCLI(BaseStageClass):
                 obj = self.get_project_metadata(project)
                 if parent_path := self.config.wave_spreadsheet_column_mapping.get("Parent Path"):
                     obj["target_namespace"] = w[parent_path].strip("/")
-                    # obj["namespace"] = f"{w[parent_path].strip('/')}/{obj['namespace']}"
                 self.append_project_data(obj, wave_data, w, dry_run=dry_run)
             elif group := groups.get(w[url_key].rstrip("/").split("/")[-1]):
                 if parent_path := self.config.wave_spreadsheet_column_mapping.get("Parent Path"):
@@ -67,7 +67,10 @@ class WaveStageCLI(BaseStageClass):
                 self.handle_parent_group(w, group)
                 self.append_group_data(group, wave_data, w, dry_run=dry_run)
             else:
-                self.log.warn(f"The project {w[url_key]} doesn't exit on source instance")
+                self.log.warn(f"Unable to find {w[url_key]} in listed data")
+                unable_to_find.append(w[url_key])
+        if unable_to_find:
+            self.log.warn("The following data was not found:\n{}".format("\n".join(unable_to_find)))
     def append_project_data(self, project, projects_to_stage, wave_row, p_range=0, dry_run=True):
         for member in project["members"]:
             self.append_member_to_members_list([], member, dry_run)

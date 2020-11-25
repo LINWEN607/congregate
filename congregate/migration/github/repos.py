@@ -1,12 +1,16 @@
+from time import time
+from requests.exceptions import RequestException
+
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.mdbc import MongoConnector
 from congregate.helpers.processes import start_multi_process_stream
-from congregate.helpers.misc_utils import safe_json_response, is_error_message_present
 from congregate.migration.github.api.repos import ReposApi
 from congregate.migration.github.users import UsersClient
 from congregate.migration.github.api.users import UsersApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
-
+from congregate.migration.gitlab.projects import ProjectsClient
+from congregate.helpers.misc_utils import get_dry_log, get_timedelta, json_pretty, remove_dupes, \
+    is_error_message_present, safe_json_response, add_post_migration_stats, rotate_logs
 
 class ReposClient(BaseClass):
     REPO_PERMISSIONS_MAP = {
@@ -23,6 +27,7 @@ class ReposClient(BaseClass):
         self.users = UsersClient(host, token)
         self.users_api = UsersApi(host, token)
         self.gl_project_api = ProjectsApi()
+        self.gl_project = ProjectsClient()
 
     def retrieve_repo_info(self, processes=None):
         """
@@ -366,3 +371,23 @@ class ReposClient(BaseClass):
                 self.config.destination_host, self.config.destination_token, new_id)
             return True
         return False
+
+    def archive_staged_repos(self, dry_run=True):
+        start = time()
+        rotate_logs()
+        staged_projects = self.gl_project.get_staged_projects()
+        self.log.info("Project count is: {}".format(len(staged_projects)))
+        try:
+            for single_project in staged_projects:
+                single_project["archived"] = True
+                self.log.info("{0}Archiving source project {1}".format(
+                    get_dry_log(dry_run),
+                    single_project["path_with_namespace"]))
+                if not dry_run:
+                    self.repos_api.update_repo(
+                        single_project["namespace"], single_project["name"], single_project)
+        except RequestException as re:
+            self.log.error(
+                "Failed to archive staged projects, with error:\n{}".format(re))
+        finally:
+            add_post_migration_stats(start, log=self.log)

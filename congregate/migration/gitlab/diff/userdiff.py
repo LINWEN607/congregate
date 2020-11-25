@@ -1,6 +1,6 @@
 from congregate.migration.gitlab.diff.basediff import BaseDiffClient
 from congregate.migration.gitlab.api.users import UsersApi
-from congregate.helpers.misc_utils import get_rollback_log
+from congregate.helpers.misc_utils import get_rollback_log, read_json_file_into_object
 from congregate.helpers.processes import handle_multi_process_write_to_file_and_return_results
 
 
@@ -12,7 +12,7 @@ class UserDiffClient(BaseDiffClient):
     def __init__(self, results_path, staged=False, rollback=False, processes=None):
         super(UserDiffClient, self).__init__()
         self.users_api = UsersApi()
-        self.results = self.load_json_data(
+        self.results = read_json_file_into_object(
             "{0}{1}".format(self.app_path, results_path))
         self.rollback = rollback
         self.processes = processes
@@ -36,10 +36,10 @@ class UserDiffClient(BaseDiffClient):
             "sign_in_count"
         ]
         if staged:
-            self.source_data = self.load_json_data(
+            self.source_data = read_json_file_into_object(
                 "%s/data/staged_users.json" % self.app_path)
         else:
-            self.source_data = self.load_json_data(
+            self.source_data = read_json_file_into_object(
                 "%s/data/users.json" % self.app_path)
 
     def generate_diff_report(self):

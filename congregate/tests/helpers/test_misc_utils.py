@@ -554,3 +554,9 @@ class MiscUtilsTests(unittest.TestCase):
         actual = misc.find_files_in_folder("teamcity")
 
         self.assertListEqual(expected, actual)
+
+    def test_pretty_print_key(self):
+        expected = "Hello World How Are You"
+        actual = misc.pretty_print_key("hello_world_how_are_you")
+
+        self.assertEqual(expected, actual)

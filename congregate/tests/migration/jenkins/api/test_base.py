@@ -21,3 +21,12 @@ class JenkinsApiBaseTests(unittest.TestCase):
         actual = api.strip_url(test_url)
 
         self.assertEqual(expected, actual)
+    
+    def test_strip_url_with_trailing_slash(self):
+        api = JenkinsApi(None, None, None)
+        test_url = "https://jenkins.example.com/jenkins/job/test-job/"
+
+        expected = "job/test-job/"
+        actual = api.strip_url(test_url)
+
+        self.assertEqual(expected, actual)

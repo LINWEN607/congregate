@@ -163,3 +163,11 @@ class ReposApi():
         GitHub API v3 Doc: https://docs.github.com/en/free-pro-team@latest/rest/reference/repos#get-branch-protection
         """
         return self.api.generate_v3_get_request(self.host, f"repos/{owner}/{repo}/branches/{branch}/protection")
+
+    def update_repo(self, owner, repo, data=None, message=None):
+        """
+        Update a repository.
+
+        GitHub API v3 Doc: https://developer.github.com/v3/repos/#update-a-repository
+        """
+        return self.api.generate_v3_patch_request(self.host, f"repos/{owner}/{repo}", data, message)

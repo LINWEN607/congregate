@@ -32,7 +32,7 @@ class MigrationEndToEndTest(unittest.TestCase):
             "/data/results/user_migration_results.json", staged=True)
         diff_report = user_diff.generate_diff_report()
         user_diff.generate_html_report(
-            diff_report, "/data/results/user_migration_results.html")
+            "User", diff_report, "/data/results/user_migration_results.html")
         self.assertGreaterEqual(
             diff_report["user_migration_results"]["overall_accuracy"], 0.95)
 
@@ -41,7 +41,7 @@ class MigrationEndToEndTest(unittest.TestCase):
             "/data/results/group_migration_results.json", staged=True)
         diff_report = group_diff.generate_diff_report()
         group_diff.generate_html_report(
-            diff_report, "/data/results/group_migration_results.html")
+            "Group", diff_report, "/data/results/group_migration_results.html")
         self.assertGreaterEqual(
             diff_report["group_migration_results"]["overall_accuracy"], 0.95)
 
@@ -50,7 +50,7 @@ class MigrationEndToEndTest(unittest.TestCase):
             "/data/results/project_migration_results.json", staged=True)
         diff_report = project_diff.generate_diff_report()
         project_diff.generate_html_report(
-            diff_report, "/data/results/project_migration_results.html")
+            "Project", diff_report, "/data/results/project_migration_results.html")
         self.assertGreaterEqual(
             diff_report["project_migration_results"]["overall_accuracy"], 0.95)
 
@@ -68,4 +68,4 @@ def rollback_diff():
         "/data/results/user_migration_results.json", staged=True, rollback=True)
     diff_report["user_diff"] = user_diff.generate_diff_report()
     base_diff.generate_html_report(
-        diff_report, "/data/results/migration_rollback_results.html")
+        "Rollback", diff_report, "/data/results/migration_rollback_results.html")

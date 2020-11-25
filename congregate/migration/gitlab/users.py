@@ -516,11 +516,13 @@ class UsersClient(BaseClass):
             return self.log_and_return_failed_user_creation(
                 "Unable to create user due to internal server error:\n{}".format(response.text), user["email"])
         else:
-            resp = response.json()
-            return {
-                "email": resp["email"],
-                "id": resp["id"]
-            }
+            if resp := safe_json_response(response):
+                return {
+                    "email": resp["email"],
+                    "id": resp["id"]
+                }
+            else:
+                return self.log_and_return_failed_user_creation(response.text, user["email"])
 
     def log_and_return_failed_user_creation(self, message, email):
         self.log.error(message)

@@ -142,7 +142,7 @@ class ProjectsApi():
         """
         if not message:
             message = "Archiving project"
-        return api.generate_post_request(host, token, f"projects/{pid}/archive", {}, description=message).json()
+        return api.generate_post_request(host, token, f"projects/{pid}/archive", {}, description=message)
 
     def unarchive_project(self, host, token, id, message=None):
         """
@@ -158,7 +158,7 @@ class ProjectsApi():
         """
         if not message:
             message = "Unarchiving project"
-        return api.generate_post_request(host, token, f"projects/{id}/unarchive", {}, description=message).json()
+        return api.generate_post_request(host, token, f"projects/{id}/unarchive", {}, description=message)
 
     def delete_project(self, host, token, id):
         """
