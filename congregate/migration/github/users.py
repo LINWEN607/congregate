@@ -9,6 +9,7 @@ from congregate.helpers.misc_utils import safe_json_response, is_error_message_p
 class UsersClient(BaseClass):
     def __init__(self, host, token):
         super(UsersClient, self).__init__()
+        self.host = host
         self.users_api = UsersApi(host, token)
 
     def connect_to_mongo(self):
@@ -35,7 +36,7 @@ class UsersClient(BaseClass):
         else:
             if single_user.get("type") != "Organization":
                 formatted_user = self.format_user(single_user, browser, mongo)
-                mongo.insert_data("users", formatted_user)
+                mongo.insert_data(f"users-{self.host}", formatted_user)
         mongo.close_connection()
 
     def format_users(self, users, mongo):
