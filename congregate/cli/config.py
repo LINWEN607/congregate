@@ -41,7 +41,7 @@ def generate_config():
                obfuscate("Destination instance GitLab access token (Settings -> Access Tokens): "))
     migration_user = users.get_current_user(config.get("DESTINATION", "dstn_hostname"),
                                             deobfuscate(config.get("DESTINATION", "dstn_access_token")))
-    if migration_user.get("id", None) is not None:
+    if migration_user.get("id", None):
         config.set("DESTINATION", "import_user_id", str(migration_user["id"]))
     else:
         config.set("DESTINATION", "import_user_id", "")
@@ -66,9 +66,11 @@ def generate_config():
     if dstn_group.lower() in ["yes", "y"]:
         config.set("DESTINATION", "dstn_parent_group_id", input(
             "Parent group ID (Group -> Settings -> General): "))
-        group = safe_json_response(groups.get_group(config.getint("DESTINATION", "dstn_parent_group_id"), config.get(
-            "DESTINATION", "dstn_hostname"), deobfuscate(config.get("DESTINATION", "dstn_access_token"))))
-        if group and group.get("full_path", None) is not None:
+        group = safe_json_response(groups.get_group(
+            config.getint("DESTINATION", "dstn_parent_group_id"),
+            config.get("DESTINATION", "dstn_hostname"),
+            deobfuscate(config.get("DESTINATION", "dstn_access_token"))))
+        if group and group.get("full_path", None):
             config.set("DESTINATION", "dstn_parent_group_path",
                        group["full_path"])
         else:
@@ -93,7 +95,7 @@ def generate_config():
     mirror = input(
         "Planning a soft cut-over migration by mirroring repos to keep both instances running (Default: No)? ")
     if mirror.lower() in ["yes", "y"]:
-        if migration_user.get("username", None) is not None:
+        if migration_user.get("username", None):
             config.set("DESTINATION", "mirror_username",
                        migration_user["username"])
         else:
@@ -133,8 +135,9 @@ def generate_config():
         config.set("SOURCE", "src_hostname", input("Source instance URL: "))
         config.set("SOURCE", "src_access_token", obfuscate(
             "Source instance ({}) Personal Access Token: ").format(config.get("SOURCE", "src_type")))
-        lic = safe_json_response(instance.get_current_license(config.get(
-            "SOURCE", "src_hostname"), deobfuscate(config.get("SOURCE", "src_access_token"))))
+        lic = safe_json_response(instance.get_current_license(
+            config.get("SOURCE", "src_hostname"),
+            deobfuscate(config.get("SOURCE", "src_access_token"))))
         config.set("SOURCE", "src_tier", lic.get(
             "plan", "core") if lic else "core")
         source_group = input(
@@ -142,9 +145,12 @@ def generate_config():
         if source_group.lower() in ["yes", "y"]:
             config.set("SOURCE", "src_parent_group_id", input(
                 "Source group ID (Group -> Settings -> General): "))
-            src_group = safe_json_response(groups.get_group(config.getint("SOURCE", "src_parent_group_id"), config.get(
-                "SOURCE", "src_hostname"), deobfuscate(config.get("SOURCE", "src_access_token"))))
-            if src_group and src_group.get("full_path", None) is not None:
+            src_group = safe_json_response(
+                groups.get_group(
+                    config.getint("SOURCE", "src_parent_group_id"),
+                    config.get("SOURCE", "src_hostname"),
+                    deobfuscate(config.get("SOURCE", "src_access_token"))))
+            if src_group and src_group.get("full_path", None):
                 config.set("SOURCE", "src_parent_group_path",
                            src_group["full_path"])
             else:
