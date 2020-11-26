@@ -194,7 +194,7 @@ test:end-to-end full:
     - poetry run pytest -s -m e2e --cov-config=.coveragerc --cov=congregate congregate/tests/
   rules:
     - changes:
-      - congregate/migration/gitlab/**/*
+        - congregate/migration/gitlab/**/*
   timeout: 20 minutes
 
 test:end-to-end single group:
@@ -216,7 +216,7 @@ test:end-to-end single group:
     - poetry run pytest -s -m e2e --cov-config=.coveragerc --cov=congregate congregate/tests/
   rules:
     - changes:
-      - congregate/migration/gitlab/**/*
+        - congregate/migration/gitlab/**/*
   timeout: 15 minutes
 
 test:GitHub Server end to end:
@@ -245,7 +245,7 @@ test:Jenkins Integration Tests:
     - poetry run pytest -s -m "jenkins_it" congregate/tests/
   rules:
     - changes:
-      - congregate/migration/jenkins/**/*
+        - congregate/migration/jenkins/**/*
   timeout: 10 minutes
 
 debian rolling release:
@@ -260,7 +260,6 @@ debian rolling release:
   script:
     - cp docker/release/debian.Dockerfile ./Dockerfile
     - DOCKER_BUILDKIT=1 docker build --tag "$RELEASE_IMAGE_NAME" .
-    - docker image tag $RELEASE_IMAGE_NAME $LATEST
     - docker push "$RELEASE_IMAGE_NAME"
 
 debian-release-tag:
@@ -292,7 +291,6 @@ centos rolling release:
   script:
     - cp docker/release/centos.Dockerfile ./Dockerfile
     - DOCKER_BUILDKIT=1 docker build --tag "$RELEASE_IMAGE_NAME" .
-    - docker image tag $RELEASE_IMAGE_NAME $LATEST
     - docker push "$RELEASE_IMAGE_NAME"
 
 centos-release-tag:
