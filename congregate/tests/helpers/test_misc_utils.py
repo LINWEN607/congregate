@@ -545,6 +545,19 @@ class MiscUtilsTests(unittest.TestCase):
         actual = misc.dig(test, "nest", "hello")
 
         self.assertEqual(expected, actual)
+    
+    def test_dig_return_different_default(self):
+        test = {
+            "nest": {
+                "hello": {
+                    "world": "this is nested"
+                }
+            }
+        }
+        expected = []
+        actual = misc.dig(test, "nest", "key", default=[])
+
+        self.assertEqual(expected, actual)
 
     @mock.patch("os.listdir")
     def test_find_files_in_folder(self, mock_list_dir):

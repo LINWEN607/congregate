@@ -15,7 +15,7 @@ from congregate.helpers.reporting import Reporting
 from congregate.helpers.migrate_utils import get_export_filename_from_namespace_and_name, get_dst_path_with_namespace, get_full_path_with_parent_namespace, get_staged_user_projects, \
     is_top_level_group, get_failed_export_from_results, get_results, get_staged_groups_without_failed_export, get_staged_projects_without_failed_export, can_migrate_users
 from congregate.helpers.misc_utils import get_dry_log, json_pretty, is_dot_com, clean_data, add_post_migration_stats, \
-    rotate_logs, write_results_to_file, migration_dry_run, safe_json_response, is_error_message_present, get_duplicate_paths, deobfuscate
+    rotate_logs, write_results_to_file, migration_dry_run, safe_json_response, is_error_message_present, get_duplicate_paths, deobfuscate, dig
 from congregate.helpers.jobtemplategenerator import JobTemplateGenerator
 from congregate.helpers.processes import start_multi_process
 from congregate.cli.stage_projects import ProjectStageCLI
@@ -226,10 +226,11 @@ class MigrateClient(BaseClass):
                     self.groups.remove_import_user(group_id)
                     if self.skip_adding_members:
                         for member in members:
-                            resp = self.groups_api.remove_member(
-                                group_id, member["user_id"], self.config.destination_host, self.config.destination_token)
-                            if resp and resp.status_code == 204:
-                                result["members"][member["email"]] = "removed"
+                            if member.get("user_id", None):
+                                resp = self.groups_api.remove_member(
+                                    group_id, member["user_id"], self.config.destination_host, self.config.destination_token)
+                                if resp and resp.status_code == 204:
+                                    result["members"][member["email"]] = "removed"
         return {
             group["full_path"]: result
         }
@@ -962,7 +963,7 @@ class MigrateClient(BaseClass):
             for job in ci_sources.get("TeamCity", []):
                 params = tc_client.teamcity_api.get_build_params(job)
                 if params.get("properties", None) is not None:
-                    for param in params["properties"]["property"]:
+                    for param in dig(params, "properties", "property", default=[]):
                         if self.variables.safe_add_variables(new_id, tc_client.transform_ci_variables(param, tc_ci_src_hostname)) is False:
                             result = False
             return result

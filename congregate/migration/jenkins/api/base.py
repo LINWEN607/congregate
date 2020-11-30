@@ -95,19 +95,19 @@ class JenkinsApi(BaseClass):
         Returns:    list of param dictionaries in following format
             [{"name": param_name}, {"defaultValue": param_value}]
         '''
-        job_info = self.generate_get_request("json", job_path)
-        job_info = job_info.json()
+        job_info = safe_json_response(self.generate_get_request("json", job_path))
 
         param_list = []
-        job_properties = job_info["property"]
+        if job_info:
+            job_properties = job_info.get("property", [])
 
-        for dictionary in job_properties:
-            if dictionary.get("parameterDefinitions"):
-                for param_data in dictionary["parameterDefinitions"]:
-                    if param_data.get("defaultParameterValue"):
-                        param_list.append({"name": param_data["name"], "defaultValue": param_data["defaultParameterValue"].get("value")})
-                    else:
-                        param_list.append({"name": param_data["name"], "defaultValue": None})
+            for dictionary in job_properties:
+                if dictionary.get("parameterDefinitions"):
+                    for param_data in dictionary["parameterDefinitions"]:
+                        if param_data.get("defaultParameterValue"):
+                            param_list.append({"name": param_data["name"], "defaultValue": param_data["defaultParameterValue"].get("value")})
+                        else:
+                            param_list.append({"name": param_data["name"], "defaultValue": None})
 
         return param_list
 

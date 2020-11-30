@@ -337,7 +337,7 @@ def find(key, dictionary):
                         yield result
 
 
-def dig(dictionary, *args):
+def dig(dictionary, *args, default=None):
     """
         Recursive dictionary key lookup function
 
@@ -356,8 +356,9 @@ def dig(dictionary, *args):
         if found := dictionary.get(arg, None):
             if isinstance(found, dict):
                 args = args[i + 1:]
-                return dig(found, *args)
+                return dig(found, *args, default=default)
             return found
+        return default
 
 
 def is_dot_com(host):

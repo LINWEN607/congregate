@@ -9,7 +9,7 @@ from congregate.helpers.misc_utils import safe_json_response, is_error_message_p
 class UsersClient(BaseClass):
     def __init__(self, host, token):
         super(UsersClient, self).__init__()
-        self.host = host
+        self.host = host.split("//")[-1]
         self.users_api = UsersApi(host, token)
 
     def connect_to_mongo(self):
@@ -60,7 +60,7 @@ class UsersClient(BaseClass):
             "username": single_user["login"],
             "name": single_user.get("name", single_user.get("login", None)),
             "email": self.get_email_address(single_user, github_browser, mongo),
-            "avatar_url": "" if self.config.source_host in single_user["avatar_url"] else single_user["avatar_url"],
+            "avatar_url": single_user.get("avatar_url", ""),
             "state": "blocked" if single_user.get("suspended_at", None) else "active",
             "is_admin": single_user["site_admin"]
         }

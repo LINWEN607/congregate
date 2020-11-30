@@ -94,7 +94,7 @@ class WaveStageCLI(BaseStageClass):
 
     def append_group_data(self, group, groups_to_stage, wave_row, p_range=0, dry_run=True):
         # Append all group projects to staged projects
-        for project in group["projects"]:
+        for project in group.get("projects", []):
             obj = self.get_project_metadata(project)
             if parent_path := self.config.wave_spreadsheet_column_mapping.get("Parent Path"):
                 obj["target_namespace"] = wave_row[parent_path].strip("/")

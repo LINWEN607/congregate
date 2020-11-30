@@ -28,6 +28,7 @@ class ReposClient(BaseClass):
         self.users_api = UsersApi(host, token)
         self.gl_project_api = ProjectsApi()
         self.gl_project = ProjectsClient()
+        self.host = host.split("//")[-1]
 
     def retrieve_repo_info(self, processes=None):
         """
@@ -43,7 +44,7 @@ class ReposClient(BaseClass):
         if not mongo:
             mongo = self.connect_to_mongo()
         data = self.format_repo(repo, mongo)
-        mongo.insert_data("projects", data)
+        mongo.insert_data(f"projects-{self.host}", data)
         mongo.close_connection()
 
     def format_repo(self, repo, mongo, org=False):

@@ -33,6 +33,7 @@ class OrgsClient(BaseClass):
         self.teams_api = TeamsApi(host, token)
         self.repos = ReposClient(host, token)
         self.users = UsersClient(host, token)
+        self.host = host.split("//")[-1]
 
     def connect_to_mongo(self):
         return MongoConnector()
@@ -70,12 +71,12 @@ class OrgsClient(BaseClass):
             org_repos = []
             for org_repo, _ in self.orgs_api.get_all_org_repos(org_name, page_check=True):
                 formatted_repo = self.repos.format_repo(org_repo, mongo)
-                mongo.insert_data("projects", formatted_repo)
+                mongo.insert_data(f"projects-{self.host}", formatted_repo)
                 formatted_repo.pop("_id")
                 formatted_repo["members"] = []
                 org_repos.append(formatted_repo)
             members = self.add_org_members([], org, mongo)
-            mongo.insert_data("groups", {
+            mongo.insert_data(f"groups-{self.host}", {
                 "name": org["login"],
                 "id": org["id"],
                 "path": org["login"],
@@ -100,11 +101,11 @@ class OrgsClient(BaseClass):
                 team_repos = []
                 for team_repo in self.teams_api.get_team_repos(team["id"]):
                     formatted_repo = self.repos.format_repo(team_repo, mongo)
-                    mongo.insert_data("projects", formatted_repo)
+                    mongo.insert_data(f"projects-{self.host}", formatted_repo)
                     formatted_repo.pop("_id")
                     formatted_repo["members"] = []
                     team_repos.append(formatted_repo)
-                mongo.insert_data("groups", {
+                mongo.insert_data(f"groups-{self.host}", {
                     "name": team["name"],
                     "id": team["id"],
                     "path": team["slug"],
