@@ -21,9 +21,29 @@ class MongoConnector(BaseClass):
             self.log.error(f"ConnectionFailure: Unable to connect to mongodb at {host}:{port}")
             exit()
     
+    def __generate_collections_list(self):
+        collections = []
+        if self.config.source_host:
+            collections += ["projects", "groups", "users"]
+        elif self.config.list_multiple_source_config("github_source"):
+            for source in self.config.list_multiple_source_config("github_source"):
+                src_hostname = source.get('src_hostname', "").split("//")[-1]
+                collections += [
+                    f"projects-{src_hostname}",
+                    f"groups-{src_hostname}",
+                    f"users-{src_hostname}"
+                ]
+        if tc_sources := self.config.list_ci_source_config("teamcity_ci_source"):
+            for tc in tc_sources:
+                collections.append(f"teamcity-{tc.get('tc_ci_src_hostname').split('//')[-1]}")
+        if jenkins_sources := self.config.list_ci_source_config("jenkins_ci_source"):
+            for jenkins in jenkins_sources:
+                collections.append(f"jenkins-{jenkins.get('jenkins_ci_src_hostname').split('//')[-1]}")
+
+        return collections
+    
     def __setup_db(self):
-        collections = ["projects", "groups", "users"]
-        for collection in collections:
+        for collection in self.__generate_collections_list():
             self.__create_unique_index(collection, "id")
 
     def __create_unique_index(self, collection, key):
