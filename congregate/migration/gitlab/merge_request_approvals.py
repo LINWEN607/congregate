@@ -116,18 +116,16 @@ class MergeRequestApprovalsClient(BaseClass):
         p_branch_ids = []
         for u in rule["users"]:
             if u.get("id", None):
-                user = safe_json_response(self.users_api.get_user(
-                    u["id"], self.config.source_host, self.config.source_token))
-                if user:
+                if user := safe_json_response(self.users_api.get_user(
+                    u["id"], self.config.source_host, self.config.source_token)):
                     new_user = api.search(
                         self.config.destination_host, self.config.destination_token, "users", user["email"])
                     user_ids = self.user_search_check_and_log(
                         new_user, user, user_ids)
         for g in rule["groups"]:
             if g.get("id", None):
-                group = safe_json_response(self.groups_api.get_group(
-                    g["id"], self.config.source_host, self.config.source_token))
-                if group:
+	        if group := safe_json_response(self.groups_api.get_group(
+                    g["id"], self.config.source_host, self.config.source_token)):
                     if self.config.dstn_parent_id:
                         group["full_path"] = f"{self.config.dstn_parent_group_path}/{group['full_path']}"
                     dst_gid = self.groups.find_group_id_by_path(
