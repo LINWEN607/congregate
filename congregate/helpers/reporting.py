@@ -26,12 +26,15 @@ class Reporting(BaseClass):
         iterate over the details of an issue and do any variable substitution.  Return a new details.
         '''
         if key in self.config.reporting['subs']:
-            description = description.replace(f"{{{{{key}}}}}", self.config.reporting['subs'][key])
+            description = description.replace(
+                f"{{{{{key}}}}}", self.config.reporting['subs'][key])
         else:
             try:
-                description = description.replace(f"{{{{{key}}}}}", str(eval(key)))
+                description = description.replace(
+                    f"{{{{{key}}}}}", str(eval(key)))
             except AttributeError:
-                self.log.warn(f"Problem with VAR: '{key}', it does not exist.")
+                self.log.warning(
+                    f"Problem with VAR: '{key}', it does not exist.")
         return description
 
     def get_issue_keys(self, description):
@@ -39,7 +42,8 @@ class Reporting(BaseClass):
         find all occurences of pattern and create a list of them. Then call the subs_replace function and replace the
         pattern, then return the updated description.
         '''
-        occurrences = re.findall("{{(.*?)}}", description)  # One or more matches in the line
+        occurrences = re.findall(
+            "{{(.*?)}}", description)  # One or more matches in the line
         for key in occurrences:
             description = self.subs_replace(key, description)
         return description

@@ -369,13 +369,13 @@ def main():
                             config.source_host, config.source_token)
                     gh_repos.archive_staged_repos(dry_run=DRY_RUN)
                 else:
-                    log.warn(
+                    log.warning(
                         "We do not have mass archiving available for this source system yet")
             if arguments["unarchive-staged-projects"]:
                 if config.source_type == "gitlab":
                     projects.unarchive_staged_projects(dry_run=DRY_RUN)
                 else:
-                    log.warn(
+                    log.warning(
                         "We do not have mass unarchiving available for this source system")
             if arguments["find-empty-repos"]:
                 projects.find_empty_repos()
