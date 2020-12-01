@@ -195,6 +195,7 @@ test:end-to-end full:
   rules:
     - changes:
         - congregate/migration/gitlab/**/*
+        - congregate/migration/migrate.py
   timeout: 20 minutes
 
 test:end-to-end single group:
@@ -217,6 +218,7 @@ test:end-to-end single group:
   rules:
     - changes:
         - congregate/migration/gitlab/**/*
+        - congregate/migration/migrate.py
   timeout: 15 minutes
 
 test:GitHub Server end to end:
