@@ -244,6 +244,7 @@ def deobfuscate(secret):
 def convert_to_underscores(s):
     return sub(r" |\/|\.|\:", "_", s)
 
+
 def pretty_print_key(s):
     return " ".join(w.capitalize() for w in s.split("_"))
 
@@ -388,7 +389,8 @@ def add_post_migration_stats(start, log=None):
         Assuming you've started the migration with an empty congregate.log
         Print total migration time
     """
-    reqs = ["POST request to", "PUT request to", "DELETE request to"]
+    reqs = ["POST request to", "PUT request to",
+            "DELETE request to", "PATCH request to"]
     reqs_no = 0
     with open(f"{get_congregate_path()}/data/logs/audit.log", "r") as f:
         for line in f:

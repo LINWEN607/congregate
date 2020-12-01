@@ -182,7 +182,7 @@ def main():
         SKIP_ADDING_MEMBERS = arguments["--skip-adding-members"]
         ONLY_POST_MIGRATION_INFO = arguments["--only-post-migration-info"]
         PARTIAL = arguments["--partial"]
-        SRC_INSTANCES = arguments["--src-instances"] 
+        SRC_INSTANCES = arguments["--src-instances"]
         SCM_SOURCE = arguments["--scm-source"]
 
         if arguments["--version"]:
@@ -356,23 +356,27 @@ def main():
             if arguments["count-unarchived-projects"]:
                 projects.count_unarchived_projects()
             if arguments["archive-staged-projects"]:
-                if config.source_type == "GitLab":
+                if config.source_type == "gitlab":
                     projects.archive_staged_projects(dry_run=DRY_RUN)
-                elif config.source_type == "GitHub" or config.list_multiple_source_config("github_source") is not None:
+                elif config.source_type == "github" or config.list_multiple_source_config("github_source") is not None:
                     if SCM_SOURCE is not None:
                         for single_source in config.list_multiple_source_config("github_source"):
                             if SCM_SOURCE == single_source.get("src_hostname", None):
-                                gh_repos = ReposClient(single_source["src_hostname"], deobfuscate(single_source["src_access_token"]))
+                                gh_repos = ReposClient(single_source["src_hostname"], deobfuscate(
+                                    single_source["src_access_token"]))
                     else:
-                        gh_repos = ReposClient(config.source_host, config.source_token)
+                        gh_repos = ReposClient(
+                            config.source_host, config.source_token)
                     gh_repos.archive_staged_repos(dry_run=DRY_RUN)
                 else:
-                    log.warn("We do not have mass archiving available for this source system yet")
+                    log.warn(
+                        "We do not have mass archiving available for this source system yet")
             if arguments["unarchive-staged-projects"]:
-                if config.source_type == "GitLab":
+                if config.source_type == "gitlab":
                     projects.unarchive_staged_projects(dry_run=DRY_RUN)
                 else:
-                    log.warn("We do not have mass unarchiving available for this source system")
+                    log.warn(
+                        "We do not have mass unarchiving available for this source system")
             if arguments["find-empty-repos"]:
                 projects.find_empty_repos()
             if arguments["compare-groups"]:
