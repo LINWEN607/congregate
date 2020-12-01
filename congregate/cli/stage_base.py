@@ -19,40 +19,40 @@ class BaseStageClass(BaseClass):
         self.rewritten_groups = {}
         super(BaseStageClass, self).__init__()
 
-    def open_projects_file(self, i, scm_source=None):
+    def open_projects_file(self, scm_source=None):
         """
             Open project.json file to read, turning JSON encoded data to projects.
 
             :return: projects object
         """
         if scm_source is not None:
-            with open(f'%s/data/projects-{i}.json' % self.app_path, "r") as f:
+            with open(f'%s/data/projects-{scm_source}.json' % self.app_path, "r") as f:
                 return json.load(f)
         else:
             with open('%s/data/projects.json' % self.app_path, "r") as f:
                 return json.load(f)
 
-    def open_groups_file(self, i, scm_source=None):
+    def open_groups_file(self, scm_source=None):
         """
             Open group.json file to read, turning JSON encoded data to groups object.
 
             :return: groups object
         """
         if scm_source is not None:
-            with open(f"%s/data/groups-{i}.json" % self.app_path, "r") as f:
+            with open(f"%s/data/groups-{scm_source}.json" % self.app_path, "r") as f:
                 return json.load(f)
         else:
             with open("%s/data/groups.json" % self.app_path, "r") as f:
                 return json.load(f)
 
-    def open_users_file(self, i, scm_source=None):
+    def open_users_file(self, scm_source=None):
         """
             Open users.json file to read, turning JSON encoded data to users object.
 
             :return: users object
         """
         if scm_source is not None:
-            with open(f"{self.app_path}/data/users-{i}.json", "r") as f:
+            with open(f"{self.app_path}/data/users-{scm_source}.json", "r") as f:
                 return json.load(f)
         else:        
             with open("%s/data/users.json" % self.app_path, "r") as f:
@@ -131,6 +131,6 @@ class BaseStageClass(BaseClass):
 
     def the_number_of_instance(self, scm_source):
         for i, single_source in enumerate(self.config.list_multiple_source_config("github_source")):
-            if scm_source == single_source.get("src_hostname", None):
+            if scm_source == single_source.get("src_hostname", None).split("//")[-1]:
                 return i
         return -1

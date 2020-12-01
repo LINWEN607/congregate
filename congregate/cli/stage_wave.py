@@ -39,16 +39,16 @@ class WaveStageCLI(BaseStageClass):
         if i == -1:
             self.log.warn(f"Couldn't find the correct GH instance with hostname: {scm_source}")
         self.rewritten_projects = rewrite_list_into_dict(
-            self.open_projects_file(i, scm_source), "id")
+            self.open_projects_file(scm_source), "id")
         self.rewritten_users = rewrite_list_into_dict(
-            self.open_users_file(i, scm_source), "id")
+            self.open_users_file(scm_source), "id")
         self.rewritten_groups = rewrite_list_into_dict(
-            self.open_groups_file(i, scm_source), "id")
-        groups = rewrite_list_into_dict(self.open_groups_file(i, scm_source), "full_path")
+            self.open_groups_file(scm_source), "id")
+        groups = rewrite_list_into_dict(self.open_groups_file(scm_source), "full_path")
         projects = rewrite_list_into_dict(
-            self.open_projects_file(i, scm_source), "http_url_to_repo")
+            self.open_projects_file(scm_source), "http_url_to_repo")
         project_paths = rewrite_list_into_dict(
-            self.open_projects_file(i, scm_source), "path_with_namespace")
+            self.open_projects_file(scm_source), "path_with_namespace")
         unable_to_find = []
         wsh = WaveSpreadsheetHandler(self.config.wave_spreadsheet_path, columns_to_use=self.config.wave_spreadsheet_columns)
         wave_data = wsh.read_file_as_json(
@@ -56,7 +56,7 @@ class WaveStageCLI(BaseStageClass):
                 self.config.wave_spreadsheet_column_mapping["Wave name"], wave_to_stage))
         for w in wave_data:
             url_key = self.config.wave_spreadsheet_column_mapping["Source Url"]
-            if project := (projects.get(w[url_key], None) or project_paths.get(self.sanitize_project_path(w[url_key]))):
+            if project := (projects.get(w[url_key], None) or (projects.get(w[url_key] + 'git', None)) or project_paths.get(self.sanitize_project_path(w[url_key], host=scm_source))):
                 obj = self.get_project_metadata(project)
                 if parent_path := self.config.wave_spreadsheet_column_mapping.get("Parent Path"):
                     obj["target_namespace"] = w[parent_path].strip("/")
@@ -131,5 +131,6 @@ class WaveStageCLI(BaseStageClass):
                 group, wave_row, parent_path)
             group["parent_id"] = self.get_parent_id(wave_row, parent_path)
 
-    def sanitize_project_path(self, http_url_to_repo):
-        return http_url_to_repo.rstrip("/").split(self.config.source_host)[-1].lstrip("/").strip(" ")
+    def sanitize_project_path(self, http_url_to_repo, host=""):
+        host = host if host else self.config.source_host
+        return http_url_to_repo.rstrip("/").split(host)[-1].lstrip("/").strip(" ")

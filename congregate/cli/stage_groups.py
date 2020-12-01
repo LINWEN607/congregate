@@ -37,9 +37,9 @@ class GroupStageCLI(BaseStageClass):
         if i == -1:
             self.log.warning(f"Couldn't find the correct GH instance with hostname: {scm_source}")    
         # Loading projects information
-        groups = self.open_groups_file(i, scm_source)
-        projects = self.open_projects_file(i, scm_source)
-        users = self.open_users_file(i, scm_source)
+        groups = self.open_groups_file(scm_source)
+        projects = self.open_projects_file(scm_source)
+        users = self.open_users_file(scm_source)
 
         # Rewriting projects to retrieve objects by ID more efficiently
         self.rewritten_users = rewrite_list_into_dict(users, "id")
