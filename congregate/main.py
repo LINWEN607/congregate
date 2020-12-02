@@ -183,7 +183,7 @@ def main():
         ONLY_POST_MIGRATION_INFO = arguments["--only-post-migration-info"]
         PARTIAL = arguments["--partial"]
         SRC_INSTANCES = arguments["--src-instances"] 
-        SCM_SOURCE = arguments["--scm-source"]
+        SCM_SOURCE = arguments["--scm-source"].split("//")[-1]
 
         if arguments["--version"]:
             with open(f"{app_path}/pyproject.toml", "r") as f:
