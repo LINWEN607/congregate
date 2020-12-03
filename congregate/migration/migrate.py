@@ -302,7 +302,7 @@ class MigrateClient(BaseClass):
                     result = self.ext_import.get_failed_result(project, data={
                         "error": "Import time limit exceeded. Unable to execute post migration phase"
                     })
-        return result
+        return result 
 
     def add_pipeline_for_github_pages(self, project_id):
         '''

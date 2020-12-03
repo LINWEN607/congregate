@@ -66,7 +66,7 @@ def list_github_data(processes=None, partial=False, skip_users=False, skip_group
     if not src_instances:
         src_hostname = b.config.source_host.split("//")[-1]
         if not skip_users:
-            users = GitHubUsers(b.config.source_host, b.config.source_token)
+            users = GitHubUsers(b.config.source_host, b.config.source_token)         
             users.retrieve_user_info(processes=processes)
             mongo.dump_collection_to_file(
                 f"users-{src_hostname}", f"{b.app_path}/data/users.json")

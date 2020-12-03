@@ -9,6 +9,7 @@ from congregate.migration.github.users import UsersClient
 from congregate.migration.github.api.users import UsersApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.projects import ProjectsClient
+from congregate.migration.gitlab.users import UsersClient as GitLabUsersClient
 from congregate.helpers.misc_utils import get_dry_log, get_timedelta, json_pretty, remove_dupes, \
     is_error_message_present, safe_json_response, add_post_migration_stats, rotate_logs
 
@@ -26,8 +27,9 @@ class ReposClient(BaseClass):
         self.repos_api = ReposApi(host, token)
         self.users = UsersClient(host, token)
         self.users_api = UsersApi(host, token)
-        self.gl_project_api = ProjectsApi()
-        self.gl_project = ProjectsClient()
+        self.gl_projects_api = ProjectsApi()
+        self.gl_projects = ProjectsClient()
+        self.gl_users = GitLabUsersClient()
         self.host = host.split("//")[-1]
 
     def retrieve_repo_info(self, processes=None):
@@ -83,10 +85,10 @@ class ReposClient(BaseClass):
         if kind in self.GROUP_TYPE:
             members = []
             # TODO: Determine single PAT for retrieving repo/org/team collaborators
-            # for c in self.repos_api.get_all_repo_collaborators(owner, repo):
-            #     c["permissions"] = self.REPO_PERMISSIONS_MAP[tuple(
-            #         c.get("permissions", None).items())]
-            #     members.append(c)
+            for c in self.repos_api.get_all_repo_collaborators(owner, repo):
+                c["permissions"] = self.REPO_PERMISSIONS_MAP[tuple(
+                    c.get("permissions", None).items())]
+                members.append(c)
         elif kind == "User":
             members = [{"login": owner}]
             user_repo = safe_json_response(
@@ -122,14 +124,14 @@ class ReposClient(BaseClass):
             if branch["protected"]:
                 single_branch = self.format_protected_branch(
                     new_id, branch["name"])
-                r = self.gl_project_api.protect_repository_branches(
+                r = self.gl_projects_api.protect_repository_branches(
                     new_id, branch["name"], self.config.destination_host, self.config.destination_token, single_branch)
                 if r.status_code != 201:
                     # Unprotect the protected branch
-                    self.gl_project_api.unprotect_repository_branches(
+                    self.gl_projects_api.unprotect_repository_branches(
                         new_id, branch["name"], self.config.destination_host, self.config.destination_token)
                     # Added protected branch
-                    self.gl_project_api.protect_repository_branches(
+                    self.gl_projects_api.protect_repository_branches(
                         new_id, branch["name"], self.config.destination_host, self.config.destination_token, single_branch)
                 is_result = True
         return is_result
@@ -143,7 +145,6 @@ class ReposClient(BaseClass):
         }
 
     def migrate_gh_project_level_mr_approvals(self, new_id, repo):
-        is_result = False
         conf = {}
         default_branch = safe_json_response(self.repos_api.get_single_project_protected_branch(
             repo["namespace"], repo["path"], "master"))
@@ -160,22 +161,32 @@ class ReposClient(BaseClass):
         else:
             self.log.info(
                 "Migrating project-level MR approval configuration for {0} (New ID: {1}) to GitLab".format(repo["name"], new_id))
-            self.gl_project_api.change_project_level_mr_approval_configuration(
+            self.gl_projects_api.change_project_level_mr_approval_configuration(
                 new_id, self.config.destination_host, self.config.destination_token, conf)
         # migrate approval rules
         protected_branch_ids = []
-        gl_projected_branches = self.gl_project_api.get_all_project_protected_branches(
+        gl_projected_branches = self.gl_projects_api.get_all_project_protected_branches(
             new_id, self.config.destination_host, self.config.destination_token)
         for branch in gl_projected_branches:
             protected_branch_ids.append(branch["id"])
 
-        rule = self.format_project_level_mr_rule(new_id, protected_branch_ids)
+        users = self.get_email_list_of_reviewers_for_pr(repo["namespace"], repo["path"])
+        des_user_ids = []
+        if users:
+            for user in users:
+                des_user = self.gl_users.find_user_by_email_comparison_without_id(user)
+                des_user_ids.append(des_user["id"])
+        else:
+            return None
+
+        rule = self.format_project_level_mr_rule(new_id, protected_branch_ids, des_user_ids)
+        
         if is_error_message_present(rule) or not rule:
             self.log.error(
                 "Failed to generate MR approval rules ({0}) for project {1}".format(rule, repo["name"]))
             return False
         else:
-            self.gl_project_api.create_project_level_mr_approval_rule(
+            self.gl_projects_api.create_project_level_mr_approval_rule(
                 new_id, self.config.destination_host, self.config.destination_token, rule)
             return True
 
@@ -368,7 +379,7 @@ class ReposClient(BaseClass):
         gh_repo = safe_json_response(
             self.repos_api.get_repo(repo["namespace"], repo["path"]))
         if gh_repo and gh_repo.get("archived", None):
-            self.gl_project_api.archive_project(
+            self.gl_projects_api.archive_project(
                 self.config.destination_host, self.config.destination_token, new_id)
             return True
         return False
@@ -376,7 +387,7 @@ class ReposClient(BaseClass):
     def archive_staged_repos(self, dry_run=True):
         start = time()
         rotate_logs()
-        staged_projects = self.gl_project.get_staged_projects()
+        staged_projects = self.gl_projects.get_staged_projects()
         self.log.info("Project count is: {}".format(len(staged_projects)))
         try:
             for single_project in staged_projects:
@@ -392,3 +403,15 @@ class ReposClient(BaseClass):
                 "Failed to archive staged projects, with error:\n{}".format(re))
         finally:
             add_post_migration_stats(start, log=self.log)
+
+    def get_email_list_of_reviewers_for_pr(self, owner, repo):
+        user_emails_list = []
+        pulls = self.repos_api.get_repo_pulls(owner, repo)
+        for pull in pulls:
+            reviewers = safe_json_response(self.repos_api.list_reviewers_for_a_pull_request(owner, repo, pull["number"]))
+            if reviewers:
+                for user in reviewers["users"]:
+                    single_user = safe_json_response(self.users_api.get_user(user["login"]))
+                    if email := self.users.get_email_address(single_user):
+                        user_emails_list.append(email)
+        return user_emails_list

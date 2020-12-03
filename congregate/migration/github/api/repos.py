@@ -171,3 +171,27 @@ class ReposApi():
         GitHub API v3 Doc: https://developer.github.com/v3/repos/#update-a-repository
         """
         return self.api.generate_v3_patch_request(self.host, f"repos/{owner}/{repo}", data, message)
+
+    def list_pull_requests(self, owner, repo):
+        """
+        List pull requests.
+
+        GitHub API v3 Doc: https://developer.github.com/v3/pulls/#list-pull-requests
+        """
+        return self.api.generate_v3_get_request(self.host, f"repos/{owner}/{repo}/pulls")
+    
+    def get_a_single_pull_request(self, owner, repo, pull_numner):
+        """
+        Get a pull request.
+
+        GitHub API v3 Doc: https://developer.github.com/v3/pulls/#get-a-pull-request
+        """
+        return self.api.generate_v3_get_request(self.host, f"repos/{owner}/{repo}/{pull_number}")
+    
+    def list_reviewers_for_a_pull_request(self, owner, repo, pull_number):
+        """
+        List requested reviewers for a pull request.
+
+        GitHub API v3 Doc: https://developer.github.com/v3/pulls/review_requests/#list-requested-reviewers-for-a-pull-request
+        """
+        return self.api.generate_v3_get_request(self.host, f"repos/{owner}/{repo}/pulls/{pull_number}/requested_reviewers")

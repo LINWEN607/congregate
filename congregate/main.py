@@ -187,7 +187,7 @@ def main():
         
         if SCM_SOURCE is not None:
             SCM_SOURCE = SCM_SOURCE.split("//")[-1]
-
+            
         if arguments["--version"]:
             with open(f"{app_path}/pyproject.toml", "r") as f:
                 print(

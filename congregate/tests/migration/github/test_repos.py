@@ -382,6 +382,7 @@ class ReposTests(unittest.TestCase):
             self.assertEqual(
                 actual_projects[i].items(), expected_projects[i].items())
 
+    @patch.object(ReposApi, "get_all_repo_collaborators")
     @patch.object(ReposClient, "list_ci_sources_jenkins")
     @patch.object(ReposClient, "list_ci_sources_teamcity")
     @patch.object(MongoConnector, "close_connection")
@@ -389,6 +390,7 @@ class ReposTests(unittest.TestCase):
                                          mock_close_connection,
                                          mock_ci_sources1,
                                          mock_ci_sources2,
+                                         mock_get_all_repo_collaborators
                                          ):
 
         mock_ci_sources1.return_value = []
