@@ -87,7 +87,7 @@ class BaseStageClass(BaseClass):
             if member.get("id", None) is not None:
                 self.log.info("{0}Staging user {1} (ID: {2})".format(
                     get_dry_log(dry_run), member["username"], member["id"]))
-                if self.rewritten_users.get(member['id']):
+                if self.rewritten_users.get(member['id'], None):
                     self.staged_users.append(
                         self.rewritten_users[member["id"]])
                     members_list.append(member)
