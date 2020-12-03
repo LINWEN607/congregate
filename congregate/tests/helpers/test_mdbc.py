@@ -16,7 +16,9 @@ class MongoConnectorTests(unittest.TestCase):
     def setUp(self):
         with patch("congregate.helpers.conf.Config.list_ci_source_config") as mock_list_ci_sources:
             mock_list_ci_sources.side_effect = [{}, {}]
-            self.c = MongoConnector(client=mongomock.MongoClient)
+            with patch("congregate.helpers.conf.Config.source_host") as mock_source_host:
+                mock_source_host.return_value = "github"
+                self.c = MongoConnector(client=mongomock.MongoClient)
 
     
     def test_init(self):
