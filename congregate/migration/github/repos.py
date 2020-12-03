@@ -103,14 +103,14 @@ class ReposClient(BaseClass):
     def list_ci_sources_jenkins(self, repo_url, mongo):
         data = []
         for c in mongo.wildcard_collection_query("jenkins"):
-            for r in mongo.db[c].find({"url": repo_url}, hint="url_1"):
+            for r in mongo.safe_find(c, query={"url": repo_url}, hint="url_1"):
                 data.append(r["name"])
         return data
 
     def list_ci_sources_teamcity(self, repo_url, mongo):
         data = []
         for c in mongo.wildcard_collection_query("teamcity"):
-            for r in mongo.db[c].find({"url": repo_url}, hint="url_1"):
+            for r in mongo.safe_find(c, query={"url": repo_url}, hint="url_1"):
                 data.append(r["name"])
         return data
 

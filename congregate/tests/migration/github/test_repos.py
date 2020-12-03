@@ -19,7 +19,7 @@ class ReposTests(unittest.TestCase):
 
     def setUp(self):
         self.mock_repos = MockReposApi()
-        self.repos = ReposClient(host="gitlab", token="123")
+        self.repos = ReposClient(host="github", token="123")
 
     @patch.object(ReposApi, "get_repo")
     @patch.object(UsersClient, "format_users")
@@ -82,7 +82,7 @@ class ReposTests(unittest.TestCase):
         for repo in listed_repos:
             self.repos.handle_retrieving_repos(repo, mongo=mongo)
 
-        actual_projects = [d for d, _ in mongo.stream_collection("projects")]
+        actual_projects = [d for d, _ in mongo.stream_collection("projects-github")]
 
         expected_projects = [
             {
@@ -185,7 +185,7 @@ class ReposTests(unittest.TestCase):
         for repo in listed_repos:
             self.repos.handle_retrieving_repos(repo, mongo=mongo)
 
-        actual_projects = [d for d, _ in mongo.stream_collection("projects")]
+        actual_projects = [d for d, _ in mongo.stream_collection("projects-github")]
 
         expected_projects = [
             {
@@ -331,7 +331,7 @@ class ReposTests(unittest.TestCase):
         for repo in listed_repos:
             self.repos.handle_retrieving_repos(repo, mongo=mongo)
 
-        actual_projects = [d for d, _ in mongo.stream_collection("projects")]
+        actual_projects = [d for d, _ in mongo.stream_collection("projects-github")]
 
         expected_projects = [
             {
@@ -402,7 +402,7 @@ class ReposTests(unittest.TestCase):
         for repo in listed_repos:
             self.repos.handle_retrieving_repos(repo, mongo=mongo)
 
-        actual_projects = [d for d, _ in mongo.stream_collection("projects")]
+        actual_projects = [d for d, _ in mongo.stream_collection("projects-github")]
 
         expected_projects = [
             {
@@ -453,15 +453,24 @@ class ReposTests(unittest.TestCase):
             self.assertEqual(
                 actual_projects[i].items(), expected_projects[i].items())
 
-    @patch("congregate.helpers.conf.Config.list_ci_source_config")
-    def test_list_ci_sources_jenkins(self, list_ci_source_config):
-        list_ci_source_config.return_value = [
-            {
-                "jenkins_ci_src_hostname": "http://jenkins-test:8080",
-                "jenkins_ci_src_username": "jenkins-admin",
-                "jenkins_ci_src_access_token": "token"
+    @patch("congregate.helpers.conf.Config.ci_sources")
+    def test_list_ci_sources_jenkins(self, mock_ci_sources):
+        mock_ci_sources.return_value = {
+                "teamcity_ci_source": [
+                    {
+                        "tc_ci_src_hostname": "tc_hostname",
+                        "tc_ci_src_username": "test",
+                        "tc_ci_src_access_token": "eyJ0eXA"
+                    }
+                ],
+                "jenkins_ci_source": [
+                    {
+                            "jenkins_ci_src_hostname": "http://jenkins-test:8080",
+                            "jenkins_ci_src_username": "jenkins-admin",
+                            "jenkins_ci_src_access_token": "token"
+                        }
+                ]
             }
-        ]
         mongo_mock = MongoConnector(
             host="test-server", port=123456, client=mongomock.MongoClient)
         data = [
@@ -488,14 +497,25 @@ class ReposTests(unittest.TestCase):
 
         self.assertListEqual(expected, actual)
 
-    @patch("congregate.helpers.conf.Config.list_ci_source_config")
-    def test_list_ci_sources_teamcity(self, mock_tc_ci_sources):
-        mock_tc_ci_sources.return_value = [{
-            "tc_ci_src_hostname": "tc_hostname",
-            "tc_ci_src_username": "test",
-            "tc_ci_src_access_token": "eyJ0eXA"
-        }
-        ]
+    @patch("congregate.helpers.conf.Config.ci_sources")
+    def test_list_ci_sources_teamcity(self, mock_ci_sources):
+        mock_ci_sources.return_value = {
+                "teamcity_ci_source": [
+                    {
+                        "tc_ci_src_hostname": "tc_hostname",
+                        "tc_ci_src_username": "test",
+                        "tc_ci_src_access_token": "eyJ0eXA"
+                    }
+                ],
+                "jenkins_ci_source": [
+                    {
+                            "jenkins_ci_src_hostname": "http://jenkins-test:8080",
+                            "jenkins_ci_src_username": "jenkins-admin",
+                            "jenkins_ci_src_access_token": "token"
+                        }
+                ]
+            }
+                
 
         mongo_mock = MongoConnector(
             host="test-server", port=123456, client=mongomock.MongoClient)

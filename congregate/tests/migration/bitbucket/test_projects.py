@@ -10,7 +10,6 @@ from congregate.tests.mockapi.bitbucket.groups import MockGroupsApi
 @pytest.mark.unit_test
 class ProjectsTests(unittest.TestCase):
     def setUp(self):
-        self.maxDiff = None
         self.mock_projects = MockProjectsApi()
         self.projects = ProjectsClient()
         self.mock_groups = MockGroupsApi()

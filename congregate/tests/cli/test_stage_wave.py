@@ -241,7 +241,6 @@ class StageWaveTests(unittest.TestCase):
     @mock.patch.object(BaseStageClass, "open_projects_file")
     def test_stage_wave_mixed_project_and_group(self, projects, read_as_json, mock_source_host, mock_source_type, spreadsheet_path, column_mapping, columns_to_use, mock_groups, mock_users):
         mock_source_type.return_value = "gitlab"
-        self.maxDiff = None
         mock_users.return_value = self.users_api.get_all_users_list()
         mock_groups.return_value = self.groups_api.get_all_groups_list()
         projects.return_value = self.projects_api.get_all_projects()

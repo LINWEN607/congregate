@@ -10,7 +10,6 @@ from congregate.migration.bitbucket.api.groups import GroupsApi
 @pytest.mark.unit_test
 class GroupsTests(unittest.TestCase):
     def setUp(self):
-        self.maxDiff = None
         self.mock_groups = MockGroupsApi()
         self.groups = GroupsClient()
 

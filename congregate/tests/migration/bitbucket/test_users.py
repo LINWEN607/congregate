@@ -12,7 +12,6 @@ from congregate.helpers.misc_utils import json_pretty
 class UsersTests(unittest.TestCase):
     def setUp(self):
         self.mock_users = MockUsersApi()
-        self.maxDiff = None
 
     @patch("io.TextIOBase")
     @patch('builtins.open')

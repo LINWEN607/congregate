@@ -25,7 +25,7 @@ class OrgsTests(unittest.TestCase):
         self.mock_repos = MockReposApi()
         self.mock_teams = MockTeamsApi()
         self.mongo_mock = MongoConnector(host="test-server", port=123456, client=mongomock.MongoClient)
-        self.orgs = OrgsClient(host="gitlab", token="123")
+        self.orgs = OrgsClient(host="github", token="123")
 
     def tearDown(self):
         self.mongo_mock.drop_collection("projects")
@@ -47,7 +47,6 @@ class OrgsTests(unittest.TestCase):
                               mock_format_users,
                               mock_org_repos,
                               mock_org_response):
-        self.maxDiff = None
         mock_ci_sources1.return_value = []
         mock_ci_sources2.return_value = ['test-job1', 'test-job2']
         
@@ -229,8 +228,8 @@ class OrgsTests(unittest.TestCase):
         self.orgs.add_org_as_group(
             [self.mock_orgs.get_org()], "org1", self.mongo_mock)
         
-        actual_groups = [d for d, _ in self.mongo_mock.stream_collection("groups")]
-        actual_projects = [d for d, _ in self.mongo_mock.stream_collection("projects")]
+        actual_groups = [d for d, _ in self.mongo_mock.stream_collection("groups-github")]
+        actual_projects = [d for d, _ in self.mongo_mock.stream_collection("projects-github")]
 
         for i in range(len(expected_groups)):
             self.assertDictEqual(
@@ -266,8 +265,8 @@ class OrgsTests(unittest.TestCase):
 
         expected_groups, expected_projects = [], []
 
-        actual_groups = [d for d, _ in self.mongo_mock.stream_collection("groups")]
-        actual_projects = [d for d, _ in self.mongo_mock.stream_collection("projects")]
+        actual_groups = [d for d, _ in self.mongo_mock.stream_collection("groups-github")]
+        actual_projects = [d for d, _ in self.mongo_mock.stream_collection("projects-github")]
 
         self.orgs.add_team_as_subgroup(mock_org, mock_team, self.mongo_mock)
 
@@ -441,8 +440,8 @@ class OrgsTests(unittest.TestCase):
 
         self.orgs.add_team_as_subgroup(mock_org, self.mock_orgs.get_org_child_team(), self.mongo_mock)
 
-        actual_groups = [d for d, _ in self.mongo_mock.stream_collection("groups")]
-        actual_projects = [d for d, _ in self.mongo_mock.stream_collection("projects")]
+        actual_groups = [d for d, _ in self.mongo_mock.stream_collection("groups-github")]
+        actual_projects = [d for d, _ in self.mongo_mock.stream_collection("projects-github")]
 
         self.assertEqual(actual_groups.sort(key=lambda x: x["id"]),
                          expected_groups.sort(key=lambda x: x["id"]))
@@ -620,9 +619,9 @@ class OrgsTests(unittest.TestCase):
         self.orgs.add_team_as_subgroup(
             mock_org, self.mock_orgs.get_org_child_team(), self.mongo_mock)
 
-        actual_groups = [d for d, _ in self.mongo_mock.stream_collection("groups")]
+        actual_groups = [d for d, _ in self.mongo_mock.stream_collection("groups-github")]
         
-        actual_projects = [d for d, _ in self.mongo_mock.stream_collection("projects")]
+        actual_projects = [d for d, _ in self.mongo_mock.stream_collection("projects-github")]
 
         self.assertEqual(actual_groups.sort(key=lambda x: x["id"]),
                          expected_groups.sort(key=lambda x: x["id"]))

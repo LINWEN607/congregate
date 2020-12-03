@@ -352,13 +352,16 @@ def dig(dictionary, *args, default=None):
     """
     if not args:
         return dictionary
-    for i, arg in enumerate(args):
-        if found := dictionary.get(arg, None):
-            if isinstance(found, dict):
-                args = args[i + 1:]
-                return dig(found, *args, default=default)
-            return found
-        return default
+    if isinstance(dictionary, dict):
+        for i, arg in enumerate(args):
+            found = dictionary.get(arg, None)
+            if found is not None:
+                if isinstance(found, dict):
+                    args = args[i + 1:]
+                    return dig(found, *args, default=default)
+                return found
+            return default
+    return default
 
 
 def is_dot_com(host):

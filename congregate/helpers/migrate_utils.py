@@ -1,7 +1,7 @@
 from collections import Counter
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import is_dot_com, is_error_message_present
+from congregate.helpers.misc_utils import is_dot_com, is_error_message_present, dig
 from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.users import UsersClient
 
@@ -169,9 +169,20 @@ def get_results(res):
         :param res: List of dicts containing export or import results
         :return: Dict of "Total" and "Successful" number of exports or imports
     """
+    c = []
+    for r in res:
+        for k, v in r.items():
+            if not v:
+                c.append(False)
+            elif is_error_message_present(v):
+                c.append(False)
+            repo_present = dig(r[k], 'repository')
+            if repo_present is not None and repo_present is False:
+                c.append(False)
+
     return {
         "Total": len(res),
-        "Successful": len(res) - Counter(False for r in res for k, v in r.items() if not v or is_error_message_present(v) or v.get("repository", False)).get(False, 0)
+        "Successful": len(res) - Counter(c).get(False, 0)
     }
 
 

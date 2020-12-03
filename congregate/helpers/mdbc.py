@@ -113,5 +113,14 @@ class MongoConnector(BaseClass):
             return self.db[collection].find_one(query, **kwargs)
         except TypeError:
             return self.db[collection].find_one(query)
+    
+    def safe_find(self, collection, query=None, **kwargs):
+        """
+            Helper method to get around mongomock bug in the unit tests
+        """
+        try:
+            return self.db[collection].find(query, **kwargs)
+        except TypeError:
+            return self.db[collection].find(query)
 
         

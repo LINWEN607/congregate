@@ -589,6 +589,16 @@ class MigrateTests(unittest.TestCase):
         self.assertEqual(mutils.get_results(results), {
                          "Total": 3, "Successful": 2})
 
+    def test_get_results_repository_error_message(self):
+        results = [
+            {"import1": {"key": "value"}},
+            {"import2": {"message": "Failed to import"}},
+            {"import3": {"repository": True}},
+            {"import4": {"repository": False}}
+        ]
+        self.assertEqual(mutils.get_results(results), {
+                         "Total": 4, "Successful": 2})
+
     def test_is_top_level_group(self):
         self.assertTrue(mutils.is_top_level_group(
             self.mock_groups.get_group()))
