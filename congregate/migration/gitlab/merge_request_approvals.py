@@ -1,9 +1,10 @@
 from requests.exceptions import RequestException
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import is_error_message_present
+from congregate.helpers.misc_utils import is_error_message_present, safe_json_response
 from congregate.helpers import api
 from congregate.migration.gitlab.api.groups import GroupsApi
+from congregate.migration.gitlab.groups import GroupsClient
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.users import UsersApi
 
@@ -12,6 +13,7 @@ class MergeRequestApprovalsClient(BaseClass):
     def __init__(self):
         self.users_api = UsersApi()
         self.groups_api = GroupsApi()
+        self.groups = GroupsClient()
         self.projects_api = ProjectsApi()
         super(MergeRequestApprovalsClient, self).__init__()
 
@@ -35,14 +37,16 @@ class MergeRequestApprovalsClient(BaseClass):
     def migrate_project_approvals(self, new_id, old_id, name):
         try:
             # migrate configuration
-            conf = self.projects_api.get_project_level_mr_approval_configuration(
-                old_id, self.config.source_host, self.config.source_token).json()
+            conf = safe_json_response(self.projects_api.get_project_level_mr_approval_configuration(
+                old_id, self.config.source_host, self.config.source_token))
             if is_error_message_present(conf) or not conf:
                 self.log.error(
                     "Failed to fetch MR approval configuration ({0}) for project {1}".format(conf, name))
                 return False
             self.log.info(
                 "Migrating project-level MR approval configuration for {0} (ID: {1})".format(name, old_id))
+            conf.pop("approvers", None)
+            conf.pop("approver_groups", None)
             self.projects_api.change_project_level_mr_approval_configuration(
                 new_id, self.config.destination_host, self.config.destination_token, conf)
 
@@ -110,32 +114,29 @@ class MergeRequestApprovalsClient(BaseClass):
         user_ids = []
         group_ids = []
         p_branch_ids = []
-        for user in rule["users"]:
-            if user.get("id", None) is not None:
-                user = self.users_api.get_user(
-                    user["id"], self.config.source_host, self.config.source_token).json()
-                new_user = api.search(
-                    self.config.destination_host, self.config.destination_token, "users", user["email"])
-                user_ids = self.user_search_check_and_log(
-                    new_user, user, user_ids)
-        for group in rule["groups"]:
-            if group.get("id", None) is not None:
-                group = self.groups_api.get_group(
-                    group["id"], self.config.source_host, self.config.source_token).json()
-                if self.config.dstn_parent_id is not None:
-                    parent_group = self.groups_api.get_group(
-                        self.config.dstn_parent_id, self.config.destination_host, self.config.destination_token).json()
-                    group["full_path"] = "%s/%s" % (
-                        parent_group["full_path"], group["full_path"])
-                for new_group in self.groups_api.search_for_group(group["name"], self.config.destination_host, self.config.destination_token):
-                    if new_group["full_path"].lower() == group["full_path"].lower():
-                        group_ids.append(new_group["id"])
+        for u in rule["users"]:
+            if u.get("id", None):
+                if user := safe_json_response(self.users_api.get_user(
+                        u["id"], self.config.source_host, self.config.source_token)):
+                    new_user = api.search(
+                        self.config.destination_host, self.config.destination_token, "users", user["email"])
+                    user_ids = self.user_search_check_and_log(
+                        new_user, user, user_ids)
+        for g in rule["groups"]:
+            if g.get("id", None):
+                if group := safe_json_response(self.groups_api.get_group(
+                        g["id"], self.config.source_host, self.config.source_token)):
+                    if self.config.dstn_parent_id:
+                        group["full_path"] = f"{self.config.dstn_parent_group_path}/{group['full_path']}"
+                    dst_gid = self.groups.find_group_id_by_path(
+                        self.config.destination_host, self.config.destination_token, group["full_path"])
+                    if dst_gid:
+                        group_ids.append(dst_gid)
                         break
-        for p_branch in rule["protected_branches"]:
-            if p_branch.get("name", None) is not None:
-                p_branch = self.projects_api.get_single_project_protected_branch(
-                    pid, p_branch["name"], self.config.destination_host, self.config.destination_token).json()
-                if p_branch.get("id", None) is not None:
+        for pb in rule["protected_branches"]:
+            if pb.get("name", None):
+                p_branch = safe_json_response(self.projects_api.get_single_project_protected_branch(
+                    pid, pb["name"], self.config.destination_host, self.config.destination_token))
+                if p_branch and p_branch.get("id", None):
                     p_branch_ids.append(p_branch["id"])
-
         return user_ids, group_ids, p_branch_ids
