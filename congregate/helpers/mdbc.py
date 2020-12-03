@@ -7,6 +7,9 @@ class MongoConnector(BaseClass):
     """
         Wrapper class for connecting to a mongo instance
     """
+
+    CI_SOURCES=["jenkins", "teamcity"]
+
     def __init__(self, host='localhost', port=27017, client=None):
         super(MongoConnector, self).__init__()
         try:
@@ -50,7 +53,7 @@ class MongoConnector(BaseClass):
     
     def __setup_db(self):
         for collection in self.__generate_collections_list():
-            if "teamcity" in collection or "jenkins" in collection:
+            if any(collection == ci_source for ci_source in self.CI_SOURCES):
                 self.__create_unique_index(collection, "name")
                 self.db[collection].create_index("url")
             else:
