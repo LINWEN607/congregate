@@ -171,7 +171,7 @@ def get_results(res):
     """
     return {
         "Total": len(res),
-        "Successful": len(res) - Counter(False for r in res for k, v in r.items() if not v or is_error_message_present(v)).get(False, 0)
+        "Successful": len(res) - Counter(False for r in res for k, v in r.items() if not v or is_error_message_present(v) or v.get("repository", False)).get(False, 0)
     }
 
 

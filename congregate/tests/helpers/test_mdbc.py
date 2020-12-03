@@ -14,11 +14,13 @@ from congregate.helpers.mdbc import MongoConnector
 @pytest.mark.unit_test
 class MongoConnectorTests(unittest.TestCase):
     def setUp(self):
-        self.c = MongoConnector(client=mongomock.MongoClient)
+        with patch("congregate.helpers.conf.Config.list_ci_source_config") as mock_list_ci_sources:
+            mock_list_ci_sources.side_effect = [{}, {}]
+            self.c = MongoConnector(client=mongomock.MongoClient)
 
+    
     def test_init(self):
         expected = ["projects", "groups", "users"]
-
         self.assertListEqual(self.c.db.list_collection_names(), expected)
 
     def test_insert_duplicate_data(self):
