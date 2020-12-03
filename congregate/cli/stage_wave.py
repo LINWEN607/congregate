@@ -11,7 +11,6 @@ from congregate.cli.stage_base import BaseStageClass
 from congregate.cli.stage_projects import ProjectStageCLI
 
 
-
 class WaveStageCLI(BaseStageClass):
     def __init__(self):
         self.pcli = ProjectStageCLI()
@@ -37,20 +36,23 @@ class WaveStageCLI(BaseStageClass):
         if scm_source is not None:
             i = self.the_number_of_instance(scm_source)
         if i == -1:
-            self.log.warn(f"Couldn't find the correct GH instance with hostname: {scm_source}")
+            self.log.warning(
+                f"Couldn't find the correct GH instance with hostname: {scm_source}")
         self.rewritten_projects = rewrite_list_into_dict(
             self.open_projects_file(scm_source), "id")
         self.rewritten_users = rewrite_list_into_dict(
             self.open_users_file(scm_source), "id")
         self.rewritten_groups = rewrite_list_into_dict(
             self.open_groups_file(scm_source), "id")
-        groups = rewrite_list_into_dict(self.open_groups_file(scm_source), "full_path")
+        groups = rewrite_list_into_dict(
+            self.open_groups_file(scm_source), "full_path")
         projects = rewrite_list_into_dict(
             self.open_projects_file(scm_source), "http_url_to_repo")
         project_paths = rewrite_list_into_dict(
             self.open_projects_file(scm_source), "path_with_namespace")
         unable_to_find = []
-        wsh = WaveSpreadsheetHandler(self.config.wave_spreadsheet_path, columns_to_use=self.config.wave_spreadsheet_columns)
+        wsh = WaveSpreadsheetHandler(
+            self.config.wave_spreadsheet_path, columns_to_use=self.config.wave_spreadsheet_columns)
         wave_data = wsh.read_file_as_json(
             df_filter=(
                 self.config.wave_spreadsheet_column_mapping["Wave name"], wave_to_stage))
@@ -67,10 +69,12 @@ class WaveStageCLI(BaseStageClass):
                 self.handle_parent_group(w, group)
                 self.append_group_data(group, wave_data, w, dry_run=dry_run)
             else:
-                self.log.warn(f"Unable to find {w[url_key]} in listed data")
+                self.log.warning(f"Unable to find {w[url_key]} in listed data")
                 unable_to_find.append(w[url_key])
         if unable_to_find:
-            self.log.warn("The following data was not found:\n{}".format("\n".join(unable_to_find)))
+            self.log.warning("The following data was not found:\n{}".format(
+                "\n".join(unable_to_find)))
+
     def append_project_data(self, project, projects_to_stage, wave_row, p_range=0, dry_run=True):
         for member in project["members"]:
             self.append_member_to_members_list([], member, dry_run)
