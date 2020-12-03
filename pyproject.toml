@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "congregate"
-version = "6.8"
+version = "6.9-rc-1"
 description = "GitLab Professional Service Migration Utility"
 authors = ["Michael Leopard <mleopard@gitlab.com>", "Petar Prokic <pprokic@gitlab.com>", "Glen Miller <gmiller@gitlab.com>"]
 
