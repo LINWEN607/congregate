@@ -301,7 +301,7 @@ class MigrateClient(BaseClass):
                     result = self.ext_import.get_failed_result(project, data={
                         "error": "Import time limit exceeded. Unable to execute post migration phase"
                     })
-        return result 
+        return result
 
     def add_pipeline_for_github_pages(self, project_id):
         '''
@@ -803,9 +803,15 @@ class MigrateClient(BaseClass):
                 project = json.loads(project)
             dst_pid = self.projects.find_project_by_path(
                 self.config.destination_host, self.config.destination_token, dst_path_with_namespace)
+            # Certain project features cannot be migrated when archived
+            if archived and not self.dry_run:
+                self.log.info(
+                    "Unarchiving source project {0} (ID: {1})".format(path, src_id))
+                self.projects_api.unarchive_project(
+                    self.config.source_host, self.config.source_token, src_id)
             if dst_pid:
-                import_status = self.projects_api.get_project_import_status(
-                    self.config.destination_host, self.config.destination_token, dst_pid).json()
+                import_status = safe_json_response(self.projects_api.get_project_import_status(
+                    self.config.destination_host, self.config.destination_token, dst_pid))
                 self.log.info("Project {0} (ID: {1}) found on destination, with import status: {2}".format(
                     dst_path_with_namespace, dst_pid, import_status))
                 if self.only_post_migration_info and not self.dry_run:
@@ -817,7 +823,6 @@ class MigrateClient(BaseClass):
                     get_dry_log(self.dry_run), dst_path_with_namespace))
                 import_id = self.ie.import_project(
                     project, dry_run=self.dry_run)
-
             if import_id and not self.dry_run:
                 # Disable Auto DevOps
                 self.log.info("Disabling Auto DevOps on imported project {0} (ID: {1})".format(
@@ -828,13 +833,7 @@ class MigrateClient(BaseClass):
                     data["shared_runners_enabled"] = self.config.shared_runners_enabled
                 self.projects_api.edit_project(
                     self.config.destination_host, self.config.destination_token, import_id, data)
-
-                # Archived projects cannot be migrated
-                if archived:
-                    self.log.info(
-                        "Unarchiving source project {0} (ID: {1})".format(path, src_id))
-                    self.projects_api.unarchive_project(
-                        self.config.source_host, self.config.source_token, src_id)
+                # Post import features
                 self.log.info(
                     "Migrating source project {0} (ID: {1}) info".format(path, src_id))
                 result[dst_path_with_namespace] = self.migrate_single_project_features(
