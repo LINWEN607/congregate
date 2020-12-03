@@ -1,7 +1,7 @@
 from re import search
 from pymongo import MongoClient, errors
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import stream_json_yield_to_file, read_json_file_into_object, find_files_in_folder
+from congregate.helpers.misc_utils import stream_json_yield_to_file, read_json_file_into_object, find_files_in_folder, strip_protocol
 
 class MongoConnector(BaseClass):
     """
@@ -25,10 +25,15 @@ class MongoConnector(BaseClass):
     def __generate_collections_list(self):
         collections = []
         if self.config.source_host:
-            collections += ["projects", "groups", "users"]
+            src_hostname = strip_protocol(self.config.source_host)
+            collections += [
+                f"projects-{src_hostname}",
+                f"groups-{src_hostname}",
+                f"users-{src_hostname}"
+            ]
         elif self.config.list_multiple_source_config("github_source"):
             for source in self.config.list_multiple_source_config("github_source"):
-                src_hostname = source.get('src_hostname', "").split("//")[-1]
+                src_hostname = strip_protocol(source.get('src_hostname', ""))
                 collections += [
                     f"projects-{src_hostname}",
                     f"groups-{src_hostname}",

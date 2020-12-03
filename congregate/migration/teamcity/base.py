@@ -1,6 +1,6 @@
 from congregate.helpers.base_class import BaseClass
 from congregate.migration.teamcity.api.base import TeamcityApi
-from congregate.helpers.misc_utils import convert_to_underscores
+from congregate.helpers.misc_utils import convert_to_underscores, strip_protocol
 from congregate.helpers.processes import start_multi_process_stream
 from congregate.helpers.mdbc import MongoConnector
 
@@ -20,7 +20,7 @@ class TeamcityClient(BaseClass):
         mongo = MongoConnector()
         job_name = job['@id']
         scm_data = self.teamcity_api.get_build_vcs_roots(job_name)
-        tc_host = (self.teamcity_api.host).split("//")[-1]
+        tc_host = strip_protocol(self.teamcity_api.host)
         if scm_data != "no_scm":
             for property_node in scm_data["vcs-root"]["properties"]["property"]:
                 if property_node["@name"] == "url":

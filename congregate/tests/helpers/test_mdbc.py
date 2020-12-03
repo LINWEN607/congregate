@@ -16,13 +16,13 @@ class MongoConnectorTests(unittest.TestCase):
     def setUp(self):
         with patch("congregate.helpers.conf.Config.list_ci_source_config") as mock_list_ci_sources:
             mock_list_ci_sources.side_effect = [{}, {}]
-            with patch("congregate.helpers.conf.Config.source_host") as mock_source_host:
+            with patch("congregate.helpers.conf.Config.source_host", new_callable=PropertyMock) as mock_source_host:
                 mock_source_host.return_value = "github"
                 self.c = MongoConnector(client=mongomock.MongoClient)
 
     
     def test_init(self):
-        expected = ["projects", "groups", "users"]
+        expected = ["projects-github", "groups-github", "users-github"]
         self.assertListEqual(self.c.db.list_collection_names(), expected)
 
     def test_insert_duplicate_data(self):
@@ -93,7 +93,7 @@ class MongoConnectorTests(unittest.TestCase):
             "email": "jdoe@email.com",
             "username": "jdoe"
         }
-        self.c.insert_data("users", data)
+        self.c.insert_data("users-github", data)
 
         actual = self.c.find_user_email("jdoe")
         expected = "jdoe@email.com"

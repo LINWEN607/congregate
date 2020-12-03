@@ -573,3 +573,8 @@ class MiscUtilsTests(unittest.TestCase):
         actual = misc.pretty_print_key("hello_world_how_are_you")
 
         self.assertEqual(expected, actual)
+
+    def test_strip_protocol(self):
+        expected = "test.gitlab.com"
+        actual = misc.strip_protocol("https://test.gitlab.com")
+        self.assertEqual(expected, actual)
