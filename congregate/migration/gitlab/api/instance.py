@@ -81,7 +81,7 @@ class InstanceApi():
 
     def get_all_instance_deploy_keys(self, host, token):
         """
-        Get a list of all deploy keys across all projects of the GitLab instance. This endpoint requires admin access and is not available on GitLab.com.
+        Get a list of all deploy keys across all projects of the GitLab instance. This endpoint requires admin access and is not recommended for listing on GitLab.com.
 
         GitLab API Doc: https://docs.gitlab.com/ee/api/deploy_keys.html#list-all-deploy-keys
 
