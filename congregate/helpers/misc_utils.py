@@ -651,3 +651,6 @@ def is_nested_dict(d):
 
 def find_files_in_folder(wildcard, directory="data"):
     return [f for f in os.listdir(f"{get_congregate_path()}/{directory}") if wildcard in f]
+
+def strip_protocol(s):
+    return s.split("//")[-1]

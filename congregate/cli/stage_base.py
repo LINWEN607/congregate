@@ -6,7 +6,7 @@ Copyright (c) 2020 - GitLab
 
 import json
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import get_dry_log, remove_dupes
+from congregate.helpers.misc_utils import get_dry_log, remove_dupes, strip_protocol
 
 
 class BaseStageClass(BaseClass):
@@ -87,7 +87,7 @@ class BaseStageClass(BaseClass):
             if member.get("id", None) is not None:
                 self.log.info("{0}Staging user {1} (ID: {2})".format(
                     get_dry_log(dry_run), member["username"], member["id"]))
-                if self.rewritten_users.get(member['id']):
+                if self.rewritten_users.get(member['id'], None):
                     self.staged_users.append(
                         self.rewritten_users[member["id"]])
                     members_list.append(member)
@@ -131,6 +131,6 @@ class BaseStageClass(BaseClass):
 
     def the_number_of_instance(self, scm_source):
         for i, single_source in enumerate(self.config.list_multiple_source_config("github_source")):
-            if scm_source == single_source.get("src_hostname", None).split("//")[-1]:
+            if scm_source == strip_protocol(single_source.get("src_hostname", "")):
                 return i
         return -1

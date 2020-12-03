@@ -1,12 +1,15 @@
 from re import search
 from pymongo import MongoClient, errors
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import stream_json_yield_to_file, read_json_file_into_object, find_files_in_folder
+from congregate.helpers.misc_utils import stream_json_yield_to_file, read_json_file_into_object, find_files_in_folder, strip_protocol
 
 class MongoConnector(BaseClass):
     """
         Wrapper class for connecting to a mongo instance
     """
+
+    CI_SOURCES=["jenkins", "teamcity"]
+
     def __init__(self, host='localhost', port=27017, client=None):
         super(MongoConnector, self).__init__()
         try:
@@ -25,10 +28,15 @@ class MongoConnector(BaseClass):
     def __generate_collections_list(self):
         collections = []
         if self.config.source_host:
-            collections += ["projects", "groups", "users"]
+            src_hostname = strip_protocol(self.config.source_host)
+            collections += [
+                f"projects-{src_hostname}",
+                f"groups-{src_hostname}",
+                f"users-{src_hostname}"
+            ]
         elif self.config.list_multiple_source_config("github_source"):
             for source in self.config.list_multiple_source_config("github_source"):
-                src_hostname = source.get('src_hostname', "").split("//")[-1]
+                src_hostname = strip_protocol(source.get('src_hostname', ""))
                 collections += [
                     f"projects-{src_hostname}",
                     f"groups-{src_hostname}",
@@ -45,7 +53,7 @@ class MongoConnector(BaseClass):
     
     def __setup_db(self):
         for collection in self.__generate_collections_list():
-            if "teamcity" in collection or "jenkins" in collection:
+            if any(collection == ci_source for ci_source in self.CI_SOURCES):
                 self.__create_unique_index(collection, "name")
                 self.db[collection].create_index("url")
             else:

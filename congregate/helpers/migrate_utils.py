@@ -172,9 +172,7 @@ def get_results(res):
     c = []
     for r in res:
         for k, v in r.items():
-            if not v:
-                c.append(False)
-            elif is_error_message_present(v):
+            if not v or is_error_message_present(v):
                 c.append(False)
             repo_present = dig(r[k], 'repository')
             if repo_present is not None and repo_present is False:

@@ -1,6 +1,6 @@
 from congregate.helpers.base_class import BaseClass
 from congregate.migration.jenkins.api.base import JenkinsApi
-from congregate.helpers.misc_utils import write_json_to_file, convert_to_underscores
+from congregate.helpers.misc_utils import convert_to_underscores, strip_protocol
 from congregate.helpers.processes import start_multi_process_stream
 from congregate.helpers.mdbc import MongoConnector
 
@@ -20,7 +20,7 @@ class JenkinsClient(BaseClass):
             mongo = MongoConnector()
         job_path = self.jenkins_api.strip_url(job["url"]).rstrip('/')
         scm_url_list = self.jenkins_api.get_scm(job_path)
-        jenkins_host = (self.jenkins_api.host).split("//")[-1]
+        jenkins_host = strip_protocol(self.jenkins_api.host)
         for scm_url in scm_url_list:
             job_dict = {'name': job_path, 'url': scm_url}
             self.log.info(f"Inserting job {job_dict} from {jenkins_host} into mongo")
