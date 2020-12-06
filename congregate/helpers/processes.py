@@ -24,8 +24,8 @@ def start_multi_process(function, iterable, processes=None):
     try:
         return p.map(worker, iterable)
     except Exception as e:
-        b.log.error("Migration pool failed with error:\n{}".format(e))
-        b.log.error(print_exc())
+        b.log.critical("Migration pool failed with error:\n{}".format(e))
+        b.log.critical(print_exc())
     finally:
         p.close()
         p.join()
@@ -38,8 +38,8 @@ def start_multi_process_stream(function, iterable, processes=None):
     try:
         return p.imap_unordered(worker, iterable)
     except Exception as e:
-        b.log.error("Migration pool failed with error:\n{}".format(e))
-        b.log.error(print_exc())
+        b.log.critical("Migration pool failed with error:\n{}".format(e))
+        b.log.critical(print_exc())
     finally:
         p.close()
         p.join()
@@ -52,8 +52,8 @@ def start_multi_process_stream_with_args(function, iterable, *args, processes=No
     try:
         return p.imap_unordered(worker, iterable)
     except Exception as e:
-        b.log.error("Migration pool failed with error:\n{}".format(e))
-        b.log.error(print_exc())
+        b.log.critical("Migration pool failed with error:\n{}".format(e))
+        b.log.critical(print_exc())
     finally:
         p.close()
         p.join()
@@ -72,8 +72,9 @@ def handle_multi_process_write_to_file_and_return_results(function, results_func
             print_exc()
             print("Found None ({}). Stopping write to file".format(te))
         except Exception as e:
-            b.log.error("Migration processes failed with error:\n{}".format(e))
-            b.log.error(print_exc())
+            b.log.critical(
+                "Migration processes failed with error:\n{}".format(e))
+            b.log.critical(print_exc())
         else:
             f.write("\n]")
         finally:

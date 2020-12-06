@@ -34,6 +34,13 @@ def myLogger(name):
 
 
 class SlackLogHandler(Handler):
+    EMOJIS = {
+        "CRITICAL": ":boom:",
+        "ERROR": ":x:",
+        "WARNING": ":warning:",
+        "NOTSET": ":question:",
+    }
+
     def __init__(self):
         Handler.__init__(self)
 
@@ -42,8 +49,11 @@ class SlackLogHandler(Handler):
             from congregate.helpers.conf import Config
             config = Config()
             if config.slack_url:
-                json_data = json.dumps({"text": "{}".format(
-                    record.getMessage()), "username": "CongregateBot", "icon_emoji": ":warning:"})
+                json_data = json.dumps({
+                    "text": f"{record.asctime} - {record.module} - {record.msg}",
+                    "username": f"{record.levelname} - {record.process}",
+                    "icon_emoji": self.EMOJIS.get(record.levelname, self.EMOJIS["NOTSET"])
+                })
                 requests.post(config.slack_url, data=json_data.encode(
                     'ascii'), headers={'Content-Type': 'application/json'})
         except Exception as em:
