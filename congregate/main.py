@@ -184,10 +184,10 @@ def main():
         PARTIAL = arguments["--partial"]
         SRC_INSTANCES = arguments["--src-instances"]
         SCM_SOURCE = arguments["--scm-source"]
-        
+
         if SCM_SOURCE is not None:
             SCM_SOURCE = SCM_SOURCE.split("//")[-1]
-            
+
         if arguments["--version"]:
             with open(f"{app_path}/pyproject.toml", "r") as f:
                 print(
@@ -448,6 +448,7 @@ def main():
                     repo_diff.generate_diff_report()
                     repo_diff.generate_html_report(
                         "Project", repo_diff.generate_diff_report(), "/data/results/project_migration_results.html")
+                add_post_migration_stats(start, log=log)
 
             if arguments["stitch-results"]:
                 result_type = str(
