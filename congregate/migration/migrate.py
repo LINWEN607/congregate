@@ -126,6 +126,16 @@ class MigrateClient(BaseClass):
                 f"Configuration (data/congregate.conf) src_type {self.config.source_type} not supported")
         add_post_migration_stats(self.start, log=self.log)
 
+    def validate_groups_and_projects(self, staged, are_projects=False):
+        if dupes := get_duplicate_paths(staged, are_projects=are_projects):
+            self.log.warning("Duplicate {} paths:\n{}".format(
+                "project" if are_projects else "group", "\n".join(d for d in dupes)))
+        if not are_projects:
+            # Temp bug fix: Group names must be 2+ characters long
+            if invalid_group_names := [g for g in staged if len(g["name"]) < 2]:
+                self.log.warning("Invalid group names:\n{}".format(
+                    "\n".join(i for i in invalid_group_names)))
+
     def migrate_from_gitlab(self):
         # Users
         self.migrate_user_info()
@@ -155,9 +165,7 @@ class MigrateClient(BaseClass):
         # Migrate GH orgs/teams to groups/sub-groups
         staged_groups = self.groups.get_staged_groups()
         if staged_groups and not self.skip_group_import:
-            if dupes := get_duplicate_paths(staged_groups, are_projects=False):
-                self.log.warning("Duplicate group paths:\n{}".format(
-                    "\n".join(d for d in dupes)))
+            self.validate_groups_and_projects(staged_groups)
             self.log.info(
                 f"{dry_log}Migrating GitHub orgs/teams to GitLab groups/sub-groups")
             results = start_multi_process(
@@ -175,9 +183,8 @@ class MigrateClient(BaseClass):
         # Migrate GH repos to projects
         staged_projects = self.projects.get_staged_projects()
         if staged_projects and not self.skip_project_import:
-            if dupes := get_duplicate_paths(staged_projects):
-                self.log.warning("Duplicate project paths:\n{}".format(
-                    "\n".join(d for d in dupes)))
+            self.validate_groups_and_projects(
+                staged_projects, are_projects=True)
             if user_projects := get_staged_user_projects(staged_projects):
                 self.log.warning("User projects staged:\n{}".format(
                     "\n".join(u for u in user_projects)))
@@ -230,7 +237,8 @@ class MigrateClient(BaseClass):
                                 resp = self.groups_api.remove_member(
                                     group_id, member["user_id"], self.config.destination_host, self.config.destination_token)
                                 if resp and resp.status_code == 204:
-                                    result["members"][member["email"]] = "removed"
+                                    result["members"][member["email"]
+                                                      ] = "removed"
         return {
             group["full_path"]: result
         }
@@ -302,7 +310,7 @@ class MigrateClient(BaseClass):
                     result = self.ext_import.get_failed_result(project, data={
                         "error": "Import time limit exceeded. Unable to execute post migration phase"
                     })
-        return result 
+        return result
 
     def add_pipeline_for_github_pages(self, project_id):
         '''
@@ -335,9 +343,7 @@ class MigrateClient(BaseClass):
         # Migrate BB projects to groups
         staged_groups = self.groups.get_staged_groups()
         if staged_groups and not self.skip_group_import:
-            if dupes := get_duplicate_paths(staged_groups, are_projects=False):
-                self.log.warning("Duplicate group paths:\n{}".format(
-                    "\n".join(d for d in dupes)))
+            self.validate_groups_and_projects(staged_groups)
             self.log.info(
                 f"{dry_log}Migrating BitBucket projects to GitLab groups")
             results = start_multi_process(
@@ -356,9 +362,8 @@ class MigrateClient(BaseClass):
         # Migrate BB repos to projects
         staged_projects = self.projects.get_staged_projects()
         if staged_projects and not self.skip_project_import:
-            if dupes := get_duplicate_paths(staged_projects):
-                self.log.warning("Duplicate project paths:\n{}".format(
-                    "\n".join(d for d in dupes)))
+            self.validate_groups_and_projects(
+                staged_projects, are_projects=True)
             if user_projects := get_staged_user_projects(staged_projects):
                 self.log.warning("User projects staged:\n{}".format(
                     "\n".join(u for u in user_projects)))
@@ -534,9 +539,7 @@ class MigrateClient(BaseClass):
             g for g in staged_groups if not is_top_level_group(g)]
         dry_log = get_dry_log(self.dry_run)
         if staged_groups:
-            if dupes := get_duplicate_paths(staged_groups, are_projects=False):
-                self.log.warning("Duplicate group paths:\n{}".format(
-                    "\n".join(d for d in dupes)))
+            self.validate_groups_and_projects(staged_groups)
             if not self.skip_group_export:
                 self.log.info(f"{dry_log}Exporting groups")
                 export_results = start_multi_process(
@@ -718,9 +721,8 @@ class MigrateClient(BaseClass):
         staged_projects = self.projects.get_staged_projects()
         dry_log = get_dry_log(self.dry_run)
         if staged_projects:
-            if dupes := get_duplicate_paths(staged_projects):
-                self.log.warning("Duplicate project paths:\n{}".format(
-                    "\n".join(d for d in dupes)))
+            self.validate_groups_and_projects(
+                staged_projects, are_projects=True)
             if user_projects := get_staged_user_projects(staged_projects):
                 self.log.warning("User projects staged:\n{}".format(
                     "\n".join(u for u in user_projects)))
