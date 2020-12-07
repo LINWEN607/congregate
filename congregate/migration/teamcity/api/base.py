@@ -47,7 +47,7 @@ class TeamcityApi():
             params = {}
 
         return requests.get(url, params=params, headers=headers, verify=self.config.ssl_verify)
-    
+
     def get_maven_settings_file_links(self, jobid, recursive=False):
         t = []
         maven_settings_request = self.generate_get_request(None, url=f"{self.host}/admin/editProject.html?projectId={jobid}&tab=mavenSettings")

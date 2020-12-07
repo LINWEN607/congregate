@@ -1,8 +1,10 @@
+import re
 from congregate.helpers.base_class import BaseClass
 from congregate.migration.teamcity.api.base import TeamcityApi
 from congregate.helpers.misc_utils import convert_to_underscores, strip_protocol
 from congregate.helpers.processes import start_multi_process_stream
 from congregate.helpers.mdbc import MongoConnector
+
 
 class TeamcityClient(BaseClass):
     def __init__(self, host, user, token):
@@ -15,7 +17,7 @@ class TeamcityClient(BaseClass):
         """
         build_configs = self.teamcity_api.list_build_configs()
         start_multi_process_stream(self.handle_retrieving_tc_jobs, build_configs['buildTypes']['buildType'], processes=processes)
-    
+
     def handle_retrieving_tc_jobs(self, job):
         mongo = MongoConnector()
         job_name = job['@id']
@@ -24,7 +26,8 @@ class TeamcityClient(BaseClass):
         if scm_data != "no_scm":
             for property_node in scm_data["vcs-root"]["properties"]["property"]:
                 if property_node["@name"] == "url":
-                    scm_url = property_node["@value"]
+                    # Regex replaces URL where '#refs' is found and trims it.
+                    scm_url = re.sub("([#]refs.*)", "", property_node["@value"])
             job_dict = {'name': job_name, 'url': scm_url}
             self.log.info(f"Inserting TC job {job_name} from {tc_host} into mongo")
             mongo.insert_data(f"teamcity-{tc_host}", job_dict)
