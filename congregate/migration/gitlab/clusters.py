@@ -29,9 +29,11 @@ class ClustersClient(BaseClass):
                             f"Failed to fetch source instance clusters ({c['name']})")
                         break
                     if not dry_run:
-                        if is_dot_com(self.config.destination_host) and self.config.dstn_parent_id:
-                            resp = self.groups_api.add_group_cluster(
-                                self.config.dstn_parent_id, self.config.destination_host, self.config.destination_token, self.create_data(c, {}))
+                        if is_dot_com(self.config.destination_host):
+                            # Only if migrating to the parent group on gitlab.com
+                            if self.config.dstn_parent_id and "/" not in self.config.dstn_parent_group_path:
+                                resp = self.groups_api.add_group_cluster(
+                                    self.config.dstn_parent_id, self.config.destination_host, self.config.destination_token, self.create_data(c, {}))
                         else:
                             resp = self.instance_api.add_instance_cluster(
                                 self.config.destination_host, self.config.destination_token, self.create_data(c, {}))

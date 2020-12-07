@@ -39,11 +39,13 @@ class HooksClient(BaseClass):
                         f"{get_dry_log(dry_run)}Migrating instance hook {shc['url']} (ID: {shc['id']})")
                     shc.pop("id", None)
                     shc.pop("created_at", None)
+                    # hook does not include secret token
                     if not dry_run and not shc in s_hooks_dstn:
-                        # hook does not include secret token
-                        if is_dot_com(self.config.destination_host) and self.config.dstn_parent_id:
-                            resp = self.groups_api.add_group_hook(
-                                self.config.destination_host, self.config.destination_token, self.config.dstn_parent_id, shc)
+                        if is_dot_com(self.config.destination_host):
+                            # Only if migrating to the parent group on gitlab.com
+                            if self.config.dstn_parent_id and "/" not in self.config.dstn_parent_group_path:
+                                resp = self.groups_api.add_group_hook(
+                                    self.config.destination_host, self.config.destination_token, self.config.dstn_parent_id, shc)
                         else:
                             resp = self.instance_api.add_instance_hook(
                                 self.config.destination_host, self.config.destination_token, shc)
