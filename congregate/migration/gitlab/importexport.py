@@ -575,7 +575,7 @@ class ImportExportClient(BaseClass):
                     self.log.info("Downloading project {0} (ID: {1}) as {2}".format(
                         name, pid, filename))
                     download_file(url, self.config.filesystem_path, filename, headers={
-                        "PRIVATE-TOKEN": self.config.source_token})
+                        "PRIVATE-TOKEN": self.config.source_token}, verify=self.config.ssl_verify)
             # TODO: Refactor and sync with other scenarios (#119)
             elif loc == "filesystem-aws":
                 self.log.error(
@@ -615,7 +615,7 @@ class ImportExportClient(BaseClass):
                 self.log.info("Downloading export")
                 try:
                     filename = download_file(url, self.config.filesystem_path, path_with_namespace, headers={
-                        "PRIVATE-TOKEN": self.config.source_token})
+                        "PRIVATE-TOKEN": self.config.source_token}, verify=self.config.ssl_verify)
                     self.log.info("Copying %s to s3", filename)
                     success = self.aws.copy_file_to_s3(filename)
                     if success:
@@ -663,7 +663,7 @@ class ImportExportClient(BaseClass):
                     self.log.info("Downloading group {0} (ID: {1}) as {2}".format(
                         full_path, src_gid, filename))
                     download_file(url, self.config.filesystem_path, filename=filename, headers={
-                        "PRIVATE-TOKEN": self.config.source_token})
+                        "PRIVATE-TOKEN": self.config.source_token}, verify=self.config.ssl_verify)
             # TODO: Refactor and sync with other scenarios (#119)
             elif loc == "filesystem-aws":
                 self.log.error(

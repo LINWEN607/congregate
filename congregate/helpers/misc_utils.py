@@ -47,10 +47,11 @@ def remove_dupes_but_take_higher_access(my_list):
     return new_list
 
 
-def download_file(url, path, filename=None, headers=None):
+def download_file(url, path, filename=None, headers=None, verify=True):
     # NOTE the stream=True parameter
-    if __is_downloadable(url):
-        r = get(url, stream=True, headers=headers, allow_redirects=True)
+    if __is_downloadable(url, verify):
+        r = get(url, stream=True, headers=headers,
+                allow_redirects=True, verify=verify)
         if filename is None:
             filename = __get_filename_from_cd(
                 r.headers.get('content-disposition'))
@@ -72,11 +73,11 @@ def create_local_project_export_structure(dir_path):
                 raise
 
 
-def __is_downloadable(url):
+def __is_downloadable(url, verify):
     """
         Does the url contain a downloadable resource
     """
-    h = head(url, allow_redirects=True)
+    h = head(url, allow_redirects=True, verify=verify)
     header = h.headers
     content_type = header.get('content-type')
     if 'text' in content_type.lower():
@@ -651,6 +652,7 @@ def is_nested_dict(d):
 
 def find_files_in_folder(wildcard, directory="data"):
     return [f for f in os.listdir(f"{get_congregate_path()}/{directory}") if wildcard in f]
+
 
 def strip_protocol(s):
     return s.split("//")[-1]
