@@ -30,7 +30,7 @@ echo $INSTANCE_ID > instance_id
 
 echo $(get_instance_ip)
 
-while [ $(get_instance_ip) == "null" ]; do
+while [[ $(get_instance_ip) == "null" ]]; do
     echo "Waiting for instance to start"
     sleep 5
 done
