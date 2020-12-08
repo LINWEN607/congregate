@@ -88,6 +88,7 @@ class Manage_Repos():
         small < 10780 ; medium < 1255976 ; large > 1255976 (anything left)
         '''
         if 'size' in self.__dict__:
+            self.size = str(self.size)
             if self.size.lower() == 'small':  # small repos 50 megs or less
                 self.size = 10780
             elif self.size.lower() == 'medium':  # roughly 500 megs or less
@@ -160,7 +161,7 @@ class Manage_Repos():
         will probably only be used for local workstation testing.  This will always assume all.
         '''
         self.get_new_seeds()
-        start_multi_process(self.clone_repo, self.seed_repos)   # clone the repos
+        start_multi_process(self.clone_single_repo, self.seed_repos)   # clone the repos
         self.repo_map = self.create_repo_data()  # TODO Clone or check for the existence of repos.
         self.write_config()
 

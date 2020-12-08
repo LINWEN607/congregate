@@ -25,7 +25,7 @@ class GistsClient(BaseClass):
                 self.log.error("Failed to get JSON for gist {} ({})".format(
                     gist["id"], single_gist))
             else:
-                data.append(self.format_gist(single_gist))
+                data.append(self.transform_gist(single_gist))
         return data
 
     def transform_gist(self, single_gist):

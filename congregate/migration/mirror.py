@@ -94,7 +94,7 @@ class MirrorClient(BaseClass):
         print(namespace_id)
         mirror_user_id = self.config.import_user_id
         user_name = self.config.source_username
-        user_password = self.config.external_user_password
+        user_password = self.config.source_password
 
         import_url = "%s://%s:%s@%s" % (protocol,
                                         user_name, user_password, repo_url)
@@ -225,7 +225,7 @@ class MirrorClient(BaseClass):
     def set_repo_read_only(self, project_key, repository_slug):
         PROXY_LIST = {'http': '', 'https': ''}
         username = self.config.source_username
-        password = self.config.external_user_password
+        password = self.config.source_password
         auth = (username, password)
         headers = {
             "Content-Type": "application/vnd.atl.bitbucket.bulk+json",

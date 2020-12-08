@@ -155,16 +155,24 @@ build jenkins seed image:
         - poetry.lock
         - spin_up_test_vm.sh
         - package.json
+        - pylint*.sh
 
 test:pylint:
   extends: .test-job
-  rules:
-    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
   script:
     - ./pylint.sh
   artifacts:
     paths:
       - pylint.txt
+
+test:pylint:syntax-errors:
+  extends: .test-job
+  script:
+    - ./pylint-errors.sh
+  artifacts:
+    paths:
+      - pylint.txt
+    when: on_failure
 
 test:unit:
   extends: .test-job

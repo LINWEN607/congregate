@@ -42,3 +42,5 @@ yarn-error.log*
 
 !package*.json
 htmlcov/*
+
+pylint.txt

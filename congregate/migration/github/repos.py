@@ -146,6 +146,7 @@ class ReposClient(BaseClass):
 
     def migrate_gh_project_level_mr_approvals(self, new_id, repo):
         conf = {}
+        mongo = self.connect_to_mongo
         default_branch = safe_json_response(self.repos_api.get_single_project_protected_branch(
             repo["namespace"], repo["path"], "master"))
         if default_branch is not None:
@@ -170,7 +171,7 @@ class ReposClient(BaseClass):
         for branch in gl_projected_branches:
             protected_branch_ids.append(branch["id"])
 
-        users = self.get_email_list_of_reviewers_for_pr(repo["namespace"], repo["path"])
+        users = self.get_email_list_of_reviewers_for_pr(repo["namespace"], repo["path"], None, mongo)
         des_user_ids = []
         if users:
             for user in users:
@@ -404,7 +405,7 @@ class ReposClient(BaseClass):
         finally:
             add_post_migration_stats(start, log=self.log)
 
-    def get_email_list_of_reviewers_for_pr(self, owner, repo):
+    def get_email_list_of_reviewers_for_pr(self, owner, repo, github_browser, mongo):
         user_emails_list = []
         pulls = self.repos_api.get_repo_pulls(owner, repo)
         for pull in pulls:
@@ -412,6 +413,6 @@ class ReposClient(BaseClass):
             if reviewers:
                 for user in reviewers["users"]:
                     single_user = safe_json_response(self.users_api.get_user(user["login"]))
-                    if email := self.users.get_email_address(single_user):
+                    if email := self.users.get_email_address(single_user, github_browser, mongo):
                         user_emails_list.append(email)
         return user_emails_list

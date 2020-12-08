@@ -180,7 +180,7 @@ class ReposApi():
         """
         return self.api.generate_v3_get_request(self.host, f"repos/{owner}/{repo}/pulls")
     
-    def get_a_single_pull_request(self, owner, repo, pull_numner):
+    def get_a_single_pull_request(self, owner, repo, pull_number):
         """
         Get a pull request.
 
