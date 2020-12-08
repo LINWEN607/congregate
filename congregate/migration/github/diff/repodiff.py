@@ -145,7 +145,7 @@ class RepoDiffClient(BaseDiffClient):
         #     repo_diff["/projects/:id/pull_requests_comments"] = self.generate_repo_diff(
         #         project, "body", transformed_data, self.gl_mr_api.get_merge_request_notes, obfuscate=True)  # How to pass in PR id here??
 
-        # tags (Currently not diffing data)
+        # tags
         repo_tag_data = list(self.repos_api.get_repo_tags(
             project["namespace"], project["name"]))
         transformed_data = self.repos_client.transform_gh_tags(repo_tag_data)
@@ -154,7 +154,7 @@ class RepoDiffClient(BaseDiffClient):
 
         self.keys_to_ignore.append("id")
 
-        # issues (Currently not diffing data)
+        # issues
         repo_issue_data = list(self.repos_api.get_repo_issues(
             project["namespace"], project["name"]))
         transformed_data = self.repos_client.transform_gh_issues(
@@ -162,7 +162,7 @@ class RepoDiffClient(BaseDiffClient):
         repo_diff["/projects/:id/issues"] = self.generate_repo_diff(
             project, None, transformed_data, self.gl_projects_api.get_all_project_issues, obfuscate=True)
 
-        # milestones (Currently not diffing data)
+        # milestones
         repo_milestone_data = list(self.repos_api.get_repo_milestones(
             project["namespace"], project["name"]))
         transformed_data = self.repos_client.transform_gh_milestones(
