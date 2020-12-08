@@ -4,15 +4,18 @@ Congregate is an internal tool for GitLab professional services to handle migrat
 
 * Self-managed to gitlab.com
 * Self-managed to self-managed
+* Bitbucket to gitlab.com
+* Bitbucket to self-managed
+* GitHub Enterprise to gitlab.com
+* GitHub Enterprise to self-managed
 
 Our guidance on some other migrations at this time:
 
 * Bitbucket
   * We support migrating BitBucket Server to GitLab as of GitLab 13.1 with the recent addition of the BitBucket Server import API
   * BitBucket cloud is not slated to be supported in congregate due to a lack of an API to consume and its requirement to authenticate through OAuth
-* GitHub
-  * We are actively developing support for GitHub to GitLab migrations with an MVC of the support to be available by October 1st, 2020
-  * In the meantime, we have a [built-in importer](https://docs.gitlab.com/ee/user/project/import/github.html) for importing from GitHub
+* GitHub.com
+  * We have a [built-in importer](https://docs.gitlab.com/ee/user/project/import/github.html) for importing from GitHub.com
 * SVN
   * We have some [documentation](https://docs.gitlab.com/ee/user/project/import/svn.html) on gitlab.com discussing migrating from SVN
 
@@ -20,6 +23,7 @@ Our guidance on some other migrations at this time:
 
 * [Getting Started](static_docs/setup.md)
 * [README](static_docs/readme.md)
+* [Migration Features](static_docs/migration-features-matrix.md)
 * [Migration Metrics](static_docs/migration-metrics.md)
 * [Development Environment Setup Tips](static_docs/local-development.md)
 * [Writing Tests in Congregate](static_docs/writing-tests.md)
