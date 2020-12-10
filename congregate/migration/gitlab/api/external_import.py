@@ -38,4 +38,10 @@ class ImportApi(BaseClass):
             audit_data = data.copy()
             audit_data.pop("personal_access_token", None)
             message = f"Triggering import from BitBucket Server with payload {audit_data}"
-        return api.generate_post_request(host, token, "import/bitbucket_server", dumps(data), description=message).json()
+        return api.generate_post_request(
+            host,
+            token,
+            "import/bitbucket_server",
+            dumps(data),
+            description=message
+        ).json()

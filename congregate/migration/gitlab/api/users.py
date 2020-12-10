@@ -15,7 +15,7 @@ class UsersApi():
             :param: token: (str) Access token to GitLab instance
             :return: Response object containing the response to GET /users/:id
         """
-        return api.generate_get_request(host, token, "users/%d" % id)
+        return api.generate_get_request(host, token, f"users/{id}")
 
     def get_user_email(self, id, host, token):
         return self.get_user(id, host, token).json()["email"]
@@ -86,7 +86,7 @@ class UsersApi():
             :param: email: (str) Email of the specific user being searched
             :yield: Generator containing JSON results from GET /users?search=:email
         """
-        return api.list_all(host, token, "users?search=%s" % email, per_page=50)
+        return api.list_all(host, token, f"users?search={email}", per_page=50)
 
     def search_for_user_by_username(self, host, token, username):
         """

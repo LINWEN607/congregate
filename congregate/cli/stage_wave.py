@@ -52,28 +52,80 @@ class WaveStageCLI(BaseStageClass):
             self.open_projects_file(scm_source), "path_with_namespace")
         unable_to_find = []
         wsh = WaveSpreadsheetHandler(
-            self.config.wave_spreadsheet_path, columns_to_use=self.config.wave_spreadsheet_columns)
+            self.config.wave_spreadsheet_path,
+            columns_to_use=self.config.wave_spreadsheet_columns
+        )
+        # Simplifying the variable name, for readability.
+        column_mapping = self.config.wave_spreadsheet_column_mapping
+        # This is reading the actual spreadsheet, filtering it to the desired stage
         wave_data = wsh.read_file_as_json(
             df_filter=(
-                self.config.wave_spreadsheet_column_mapping["Wave name"], wave_to_stage))
-        for w in wave_data:
-            url_key = self.config.wave_spreadsheet_column_mapping["Source Url"]
-            if project := (projects.get(w[url_key], None) or (projects.get(w[url_key] + 'git', None)) or project_paths.get(self.sanitize_project_path(w[url_key], host=scm_source))):
+                column_mapping["Wave name"],
+                wave_to_stage
+            )
+        )
+        # Some basic sanity checks for reading in spreadsheet data
+        self.check_spreadsheet_data(wave_data)
+        # Iterating over a spreadsheet row
+        for row in wave_data:
+            url_key = column_mapping["Source Url"]
+            if project := (projects.get(row[url_key], None) or (projects.get(row[url_key] + 'git', None)) or project_paths.get(self.sanitize_project_path(row[url_key], host=scm_source))):
                 obj = self.get_project_metadata(project)
-                if parent_path := self.config.wave_spreadsheet_column_mapping.get("Parent Path"):
-                    obj["target_namespace"] = w[parent_path].strip("/")
-                self.append_project_data(obj, wave_data, w, dry_run=dry_run)
-            elif group := groups.get(w[url_key].rstrip("/").split("/")[-1]):
-                if parent_path := self.config.wave_spreadsheet_column_mapping.get("Parent Path"):
-                    group["full_path"] = f"{w[parent_path]}/{group['full_path']}"
-                self.handle_parent_group(w, group)
-                self.append_group_data(group, wave_data, w, dry_run=dry_run)
+                if parent_path := column_mapping.get("Parent Path"):
+                    obj["target_namespace"] = row[parent_path].strip("/")
+                    obj['swc_manager_name'] = row['SWC Manager Name']
+                    obj['swc_manager_email'] = row['SWC Manager Email']
+                    obj['swc_id'] = row['SWC AA ID']
+                self.append_project_data(obj, wave_data, row, dry_run=dry_run)
+            elif group := groups.get(row[url_key].rstrip("/").split("/")[-1]):
+                if parent_path := column_mapping.get("Parent Path"):
+                    group["full_path"] = f"{row[parent_path]}/{group['full_path']}"
+                self.handle_parent_group(row, group)
+                self.append_group_data(group, wave_data, row, dry_run=dry_run)
             else:
-                self.log.warning(f"Unable to find {w[url_key]} in listed data")
-                unable_to_find.append(w[url_key])
+                self.log.warning(f"Unable to find {row[url_key]} in listed data")
+                unable_to_find.append(row[url_key])
+
         if unable_to_find:
             self.log.warning("The following data was not found:\n{}".format(
                 "\n".join(unable_to_find)))
+
+    def check_spreadsheet_data(self, file_contents):
+        '''
+        Check the spreadsheet against the values in the config file,
+        return true if all good, warn if not.
+        '''
+        if not (mapping := self.config.wave_spreadsheet_column_mapping):
+            self.log.warning("We didn't find a wave_spreadsheet_column_mapping in congregate.conf")
+        if not (columns := self.config.wave_spreadsheet_columns):
+            self.log.warning("We didn't find a wave_spreadsheet_columns in congregate.conf")
+        if not self.check_spreadsheet_lengths(mapping, columns):
+            self.log.warning(
+                "The length of wave_spreadsheet_columns didn't match "
+                "wave_spreadsheet_column_mapping in congregate.conf"
+            )
+        if not self.check_spreadsheet_kv(mapping, columns):
+            self.log.warning(
+                "Mismatch between keys in wave_spreadsheet_columns and wave_spreadsheet_column_mapping"
+            )
+
+    def check_spreadsheet_kv(self, mapping, columns):
+        '''
+        make sure each item in columns list exists in mapping dictionary.
+        '''
+        i = 0
+        for item in mapping:
+            if mapping[item] in columns:
+                i += 1
+        if i == len(mapping):
+            return True
+
+    def check_spreadsheet_lengths(self, mapping, columns):
+        '''
+        Compare the lengths of columns and mappings, return True if == False if not
+        '''
+
+        return len(mapping) == len(columns)
 
     def append_project_data(self, project, projects_to_stage, wave_row, p_range=0, dry_run=True):
         for member in project["members"]:
@@ -92,8 +144,10 @@ class WaveStageCLI(BaseStageClass):
             for member in group_to_stage["members"]:
                 self.append_member_to_members_list([], member, dry_run)
 
-        self.log.info("{0}Staging project {1} (ID: {2}) [{3}/{4}]".format(get_dry_log(
-            dry_run), project["path_with_namespace"], project["id"], len(self.staged_projects) + 1, len(p_range) if p_range else len(projects_to_stage)))
+        self.log.info(
+            f"{get_dry_log(dry_run)}Staging project {project['path_with_namespace']} (ID: {project['id']})"
+            f"[{len(self.staged_projects) + 1}/{len(p_range) if p_range else len(projects_to_stage)}]"
+        )
         self.staged_projects.append(project)
 
     def append_group_data(self, group, groups_to_stage, wave_row, p_range=0, dry_run=True):
@@ -109,8 +163,10 @@ class WaveStageCLI(BaseStageClass):
                 get_dry_log(dry_run), obj["path_with_namespace"], obj["id"]))
             self.staged_projects.append(obj)
 
-        self.log.info("{0}Staging group {1} (ID: {2}) [{3}/{4}]".format(get_dry_log(
-            dry_run), group["full_path"], group["id"], len(self.staged_groups) + 1, len(p_range) if p_range else len(groups_to_stage)))
+        self.log.info(
+            f"{get_dry_log(dry_run)}Staging group {group['full_path']} (ID: {group['id']})"
+            f"[{len(self.staged_groups) + 1}/{len(p_range) if p_range else len(groups_to_stage)}]"
+        )
         group.pop("projects", None)
         self.staged_groups.append(group)
 

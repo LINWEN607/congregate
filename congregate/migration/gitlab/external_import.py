@@ -53,11 +53,23 @@ class ImportClient(BaseClass):
             return self.get_failed_result(project, data)
 
     def trigger_import_from_ghe(self, project, host, token, dry_run=True):
+        '''
+
+        Use the GitLab built in importers to start a GitHub Enterprise import.
+
+            :param project: (dict)? This should be a dictionary representing a project
+            :param host: (str)
+            :param token: (str)
+            :return: (dict) Project and its response code
+
+        '''
+
         data = {
             "personal_access_token": token,
             "repo_id": project["id"],
             "target_namespace": f"{project.get('target_namespace', None)}/{project['namespace']}" if project.get("target_namespace", None) else get_dst_path_with_namespace(project).rsplit("/", 1)[0]
         }
+
         dest_version = safe_json_response(self.instance.get_version(
             self.config.destination_host, self.config.destination_token))
         if dest_version and version.parse(dest_version["version"]) >= version.parse("13.6"):
@@ -86,7 +98,12 @@ class ImportClient(BaseClass):
         success = False
         while True:
             project_statistics = safe_json_response(
-                self.projects.get_project_statistics(full_path, self.config.destination_host, self.config.destination_token))
+                self.projects.get_project_statistics(
+                    full_path,
+                    self.config.destination_host,
+                    self.config.destination_token
+                )
+            )
             if project_statistics and project_statistics.get("data", None) is not None:
                 if project_statistics["data"].get("project", None) is not None:
                     if project_statistics["data"]["project"]["importStatus"] == "finished":

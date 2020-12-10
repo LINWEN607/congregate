@@ -240,7 +240,9 @@ def main():
 
             if not config.ssl_verify:
                 log.warning(
-                    "ssl_verify is set to False. Suppressing downstream SSL warnings. Consider enforcing SSL verification in the future")
+                    "ssl_verify is set to False. Suppressing downstream SSL warnings. Consider enforcing SSL "
+                    "verification in the future"
+                )
 
             if arguments["list"]:
                 start = time()
@@ -414,15 +416,30 @@ def main():
                 rotate_logs()
                 if config.source_type == "gitlab":
                     user_diff = UserDiffClient(
-                        "/data/results/user_migration_results.json", staged=STAGED, processes=PROCESSES, rollback=ROLLBACK)
+                        "/data/results/user_migration_results.json",
+                        staged=STAGED,
+                        processes=PROCESSES,
+                        rollback=ROLLBACK
+                    )
                     user_diff.generate_html_report(
-                        "User", user_diff.generate_diff_report(), "/data/results/user_migration_results.html")
+                        "User",
+                        user_diff.generate_diff_report(),
+                        "/data/results/user_migration_results.html"
+                    )
                     group_diff = GroupDiffClient(
-                        "/data/results/group_migration_results.json", staged=STAGED, processes=PROCESSES, rollback=ROLLBACK)
+                        "/data/results/group_migration_results.json",
+                        staged=STAGED,
+                        processes=PROCESSES,
+                        rollback=ROLLBACK
+                    )
                     group_diff.generate_html_report(
                         "Group", group_diff.generate_diff_report(), "/data/results/group_migration_results.html")
                     project_diff = ProjectDiffClient(
-                        "/data/results/project_migration_results.json", staged=STAGED, processes=PROCESSES, rollback=ROLLBACK)
+                        "/data/results/project_migration_results.json",
+                        staged=STAGED,
+                        processes=PROCESSES,
+                        rollback=ROLLBACK
+                    )
                     project_diff.generate_html_report(
                         "Project", project_diff.generate_diff_report(), "/data/results/project_migration_results.html")
                 elif config.source_type == "github" or SCM_SOURCE is not None:

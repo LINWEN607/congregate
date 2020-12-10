@@ -12,10 +12,12 @@ from requests.exceptions import RequestException
 
 from congregate.helpers import api
 from congregate.helpers.reporting import Reporting
-from congregate.helpers.migrate_utils import get_export_filename_from_namespace_and_name, get_dst_path_with_namespace, get_full_path_with_parent_namespace, get_staged_user_projects, \
-    is_top_level_group, get_failed_export_from_results, get_results, get_staged_groups_without_failed_export, get_staged_projects_without_failed_export, can_migrate_users
+from congregate.helpers.migrate_utils import get_export_filename_from_namespace_and_name, get_dst_path_with_namespace, \
+    get_full_path_with_parent_namespace, get_staged_user_projects, is_top_level_group, get_failed_export_from_results, \
+    get_results, get_staged_groups_without_failed_export, get_staged_projects_without_failed_export, can_migrate_users
 from congregate.helpers.misc_utils import get_dry_log, json_pretty, is_dot_com, clean_data, add_post_migration_stats, \
-    rotate_logs, write_results_to_file, migration_dry_run, safe_json_response, is_error_message_present, get_duplicate_paths, deobfuscate, dig
+    rotate_logs, write_results_to_file, migration_dry_run, safe_json_response, is_error_message_present, \
+    get_duplicate_paths, deobfuscate, dig
 from congregate.helpers.jobtemplategenerator import JobTemplateGenerator
 from congregate.helpers.processes import start_multi_process
 from congregate.cli.stage_projects import ProjectStageCLI
@@ -86,7 +88,6 @@ class MigrateClient(BaseClass):
         super(MigrateClient, self).__init__()
         self.bbs_repos_client = BBSReposClient()
         self.job_template = JobTemplateGenerator()
-
         self.dry_run = dry_run
         self.processes = processes
         self.only_post_migration_info = only_post_migration_info
@@ -104,9 +105,10 @@ class MigrateClient(BaseClass):
         self.scm_source = scm_source
 
     def migrate(self):
-
         self.log.info(
-            f"{get_dry_log(self.dry_run)}Migrating data from {self.config.source_host} ({self.config.source_type}) to {self.config.destination_host}")
+            f"{get_dry_log(self.dry_run)}Migrating data from {self.config.source_host} ({self.config.source_type}) to "
+            f"{self.config.destination_host}"
+        )
 
         # Dry-run and log cleanup
         if self.dry_run:
@@ -119,7 +121,7 @@ class MigrateClient(BaseClass):
             self.migrate_from_gitlab()
         elif self.config.source_type == "bitbucket server":
             self.migrate_from_bitbucket_server()
-        elif self.config.source_type == "github" or self.config.list_multiple_source_config("github_source") is not None:
+        elif self.config.source_type == "github" or self.config.list_multiple_source_config("github_source"):
             self.migrate_from_github()
         else:
             self.log.warning(
@@ -170,7 +172,6 @@ class MigrateClient(BaseClass):
                 f"{dry_log}Migrating GitHub orgs/teams to GitLab groups/sub-groups")
             results = start_multi_process(
                 self.migrate_github_group, staged_groups, processes=self.processes)
-
             self.are_results(results, "group", "import")
             results.append(get_results(results))
             self.log.info(
@@ -179,7 +180,6 @@ class MigrateClient(BaseClass):
                 results, result_type="group", log=self.log)
         else:
             self.log.info("SKIP: No projects to migrate")
-
         # Migrate GH repos to projects
         staged_projects = self.projects.get_staged_projects()
         if staged_projects and not self.skip_project_import:
@@ -191,6 +191,12 @@ class MigrateClient(BaseClass):
             self.log.info("Importing projects from GitHub")
             import_results = start_multi_process(
                 self.import_github_project, staged_projects, processes=self.processes)
+            successes = self.reporting_check_results(import_results)
+
+            # Reporting on completed projects
+            for completed_project in staged_projects:
+                if completed_project['path_with_namespace'] in successes:
+                    self.create_tracking_issues(completed_project)
 
             self.are_results(import_results, "project", "import")
             # append Total : Successful count of project imports
@@ -201,17 +207,45 @@ class MigrateClient(BaseClass):
         else:
             self.log.info("SKIP: No projects to migrate")
 
+    def reporting_check_results(self, import_results):
+        '''
+
+        Take in an import_results, convert all successful imports + specfic fails to a list, and return it.
+
+            :param import_results: (list) results of the last stage import in its raw form
+            :return: (list) containing just the names of the successful repos
+
+        '''
+
+        good_errors = ['Name has already been taken, Path has already been taken']
+        successes = []
+        for result in import_results:
+            for k, v in result.items():
+                if result[k]['repository']:
+                    successes.append(k)
+                else:
+                    if result[k]['response']['errors'] in good_errors:
+                        successes.append(k)
+        return successes
+
+    def check_required_reporting_issues(self):
+        '''
+        Check that all our REQUIRED reporting fields are in congregate.conf. Return True if so. This will not check non 
+        required fields.
+        '''
+        if all([
+            self.config.reporting,
+            self.config.reporting.get("post_migration_issues"),
+            self.config.reporting.get("pmi_project_id")
+        ]):
+            return True
+
     def migrate_github_group(self, group):
         result = False
         members = group.pop("members")
         group["full_path"] = get_full_path_with_parent_namespace(
             group["full_path"])
         if not self.dry_run:
-            # Create our tracking issues first.  Just another check incase we fail to create groups.
-            # implies we have issues to create
-            if self.config.reporting and self.config.reporting.get("post_migration_issues", None) and self.config.reporting.get("pmi_project_id", None):
-                Reporting(
-                    self.config.reporting["pmi_project_id"], project_name=group["name"])
             # Wait for parent group to create
             if self.config.dstn_parent_group_path:
                 pnamespace = self.groups.wait_for_parent_group_creation(group)
@@ -235,7 +269,10 @@ class MigrateClient(BaseClass):
                         for member in members:
                             if member.get("user_id", None):
                                 resp = self.groups_api.remove_member(
-                                    group_id, member["user_id"], self.config.destination_host, self.config.destination_token)
+                                    group_id, member["user_id"],
+                                    self.config.destination_host,
+                                    self.config.destination_token
+                                )
                                 if resp and resp.status_code == 204:
                                     result["members"][member["email"]
                                                       ] = "removed"
@@ -243,10 +280,32 @@ class MigrateClient(BaseClass):
             group["full_path"]: result
         }
 
+    def create_tracking_issues(self, project):
+        '''
+        Use the Reporting class to create/update whatever issues are in the congregate.conf for a given project, using
+        supplied spreadsheet data.
+
+        # TODO anonymize this, so its not specific to customer columns.
+
+        '''
+        if self.check_required_reporting_issues:  # This is making sure all required fields are present.
+            self.log.info("Successfully got reporting config from congregate.conf. Proceeding to make our issues.")
+            report = Reporting(
+                reporting_project_id=self.config.reporting['pmi_project_id'],
+                project=project
+            )
+            report.init_class_vars()
+            reporting_issues = report.reporting_issues
+        else:
+            self.log.warning(
+                f"Couldn't find a required REPORTING config in [DESTINATION] section of congregate.conf.\n"
+                f"Issues will not be created."
+            )
+
     def import_github_project(self, project):
         gh_host = None
         gh_token = None
-        if self.scm_source is not None:
+        if self.scm_source:
             for single_source in self.config.list_multiple_source_config("github_source"):
                 if self.scm_source == single_source.get("src_hostname", None):
                     self.gh_repos = ReposClient(single_source["src_hostname"], deobfuscate(
@@ -267,34 +326,66 @@ class MigrateClient(BaseClass):
                 full_path = result_response.get("full_path").strip("/")
                 success = self.ext_import.wait_for_project_to_import(full_path)
                 if success:
-                    result[project["path_with_namespace"]]["members"] = self.projects.add_members_to_destination_project(
-                        self.config.destination_host, self.config.destination_token, project_id, members)
+                    result[project["path_with_namespace"]]["members"] = (
+                        self.projects.add_members_to_destination_project(
+                            self.config.destination_host,
+                            self.config.destination_token,
+                            project_id, members
+                        )
+                    )
                     if jenkins_configs := self.config.list_ci_source_config("jenkins_ci_source"):
                         for jc in jenkins_configs:
-                            jenkins_client = JenkinsClient(jc["jenkins_ci_src_hostname"], jc["jenkins_ci_src_username"], deobfuscate(
-                                jc["jenkins_ci_src_access_token"]))
-                            result[project["path_with_namespace"]]["jenkins_variables"] = self.migrate_jenkins_variables(
-                                project, project_id, jenkins_client, jc["jenkins_ci_src_hostname"])
-                            result[project["path_with_namespace"]]["jenkins_config_xml"] = self.migrate_jenkins_config_xml(
-                                project, project_id, jenkins_client)
+                            jenkins_client = (
+                                JenkinsClient(
+                                    jc["jenkins_ci_src_hostname"],
+                                    jc["jenkins_ci_src_username"],
+                                    deobfuscate(
+                                        jc["jenkins_ci_src_access_token"]
+                                    )
+                                )
+                            )
+                            result[project["path_with_namespace"]]["jenkins_variables"] = (
+                                self.migrate_jenkins_variables(
+                                    project,
+                                    project_id,
+                                    jenkins_client,
+                                    jc["jenkins_ci_src_hostname"]
+                                )
+                            )
+                            result[project["path_with_namespace"]]["jenkins_config_xml"] = (
+                                self.migrate_jenkins_config_xml(
+                                    project,
+                                    project_id,
+                                    jenkins_client
+                                )
+                            )
                     if teamcity_configs := self.config.list_ci_source_config("teamcity_ci_source"):
                         for tc in teamcity_configs:
                             tc_client = TeamcityClient(tc["tc_ci_src_hostname"], tc["tc_ci_src_username"], deobfuscate(
                                 tc["tc_ci_src_access_token"]))
-                            result[project["path_with_namespace"]]["teamcity_variables"] = self.migrate_teamcity_variables(
-                                project, project_id, tc_client, tc["tc_ci_src_hostname"])
-                            result[project["path_with_namespace"]]["teamcity_config_xml"] = self.migrate_teamcity_build_config(
-                                project, project_id, tc_client)
+                            result[project["path_with_namespace"]]["teamcity_variables"] = (
+                                self.migrate_teamcity_variables(
+                                    project,
+                                    project_id,
+                                    tc_client,
+                                    tc["tc_ci_src_hostname"]
+                                )
+                            )
+                            result[project["path_with_namespace"]]["teamcity_config_xml"] = (
+                                self.migrate_teamcity_build_config(project, project_id, tc_client)
+                            )
                     self.projects.remove_import_user(project_id)
                     # Added a new file in the repo
                     result[project["path_with_namespace"]]["is_gh_pages"] = self.add_pipeline_for_github_pages(
                         project_id)
                     # Added protected branch
-                    result[project["path_with_namespace"]]["project_level_protected_branch"] = self.gh_repos.migrate_gh_project_protected_branch(
-                        project_id, project)
+                    result[project["path_with_namespace"]]["project_level_protected_branch"] = (
+                        self.gh_repos.migrate_gh_project_protected_branch(project_id, project)
+                    )
                     # Added project level MR rules
-                    result[project["path_with_namespace"]]["project_level_mr_approvals"] = self.gh_repos.migrate_gh_project_level_mr_approvals(
-                        project_id, project)
+                    result[project["path_with_namespace"]]["project_level_mr_approvals"] = (
+                        self.gh_repos.migrate_gh_project_level_mr_approvals(project_id, project)
+                    )
                     # Migrate archived projects
                     result[project["path_with_namespace"]]["archived"] = self.gh_repos.migrate_archived_repo(
                         project_id, project)
@@ -302,7 +393,10 @@ class MigrateClient(BaseClass):
                     if self.skip_adding_members:
                         for member in members:
                             resp = self.projects_api.remove_member(
-                                project_id, member["user_id"], self.config.destination_host, self.config.destination_token)
+                                project_id, member["user_id"],
+                                self.config.destination_host,
+                                self.config.destination_token
+                            )
                             if resp and resp.status_code == 204:
                                 result[project["path_with_namespace"]
                                        ]["members"]["email"] = "removed"
@@ -324,8 +418,12 @@ class MigrateClient(BaseClass):
             "commit_message": "Adding .gitlab-ci.yml for publishing GitHub pages",
             "content": self.job_template.generate_plain_html_template()
         }
-        branches = list(self.project_repository_api.get_all_project_repository_branches(project_id,
-                                                                                        self.config.destination_host, self.config.destination_token))
+        branches = list(
+            self.project_repository_api.get_all_project_repository_branches(
+                project_id,
+                self.config.destination_host,
+                self.config.destination_token)
+        )
         for branch in branches:
             if branch["name"] == "gh-pages":
                 is_result = True
@@ -425,7 +523,11 @@ class MigrateClient(BaseClass):
                         self.config.destination_host, self.config.destination_token, project_id, members)
                     # Set default branch
                     self.projects_api.set_default_project_branch(
-                        project_id, self.config.destination_host, self.config.destination_token, project.get("default_branch", "master"))
+                        project_id,
+                        self.config.destination_host,
+                        self.config.destination_token,
+                        project.get("default_branch", "master")
+                    )
                     # Set branch permissions
                     self.bbs_repos_client.migrate_permissions(
                         project, project_id)
@@ -454,7 +556,10 @@ class MigrateClient(BaseClass):
                 self.log.info("{}Migrating user info".format(
                     get_dry_log(self.dry_run)))
                 staged = self.users.handle_users_not_found(
-                    "staged_users", self.users.search_for_staged_users()[0], keep=False if self.only_post_migration_info else True)
+                    "staged_users",
+                    self.users.search_for_staged_users()[0],
+                    keep=False if self.only_post_migration_info else True
+                )
                 new_users = start_multi_process(
                     self.handle_user_creation, staged, self.processes)
                 self.are_results(new_users, "user", "creation")
@@ -503,7 +608,10 @@ class MigrateClient(BaseClass):
                     self.log.info("{0}Attempting to create user {1}".format(
                         get_dry_log(self.dry_run), email))
                     response = self.users_api.create_user(
-                        self.config.destination_host, self.config.destination_token, user_data) if not self.dry_run else None
+                        self.config.destination_host,
+                        self.config.destination_token,
+                        user_data
+                    ) if not self.dry_run else None
                 else:
                     self.log.info("SKIP: Not migrating {0} user:\n{1}".format(
                         state, json_pretty(user)))
@@ -543,7 +651,10 @@ class MigrateClient(BaseClass):
             if not self.skip_group_export:
                 self.log.info(f"{dry_log}Exporting groups")
                 export_results = start_multi_process(
-                    self.handle_exporting_groups, staged_subgroups if self.subgroups_only else staged_top_groups, processes=self.processes)
+                    self.handle_exporting_groups,
+                    staged_subgroups if self.subgroups_only else staged_top_groups,
+                    processes=self.processes
+                )
 
                 self.are_results(export_results, "group", "export")
 
@@ -566,7 +677,10 @@ class MigrateClient(BaseClass):
             if not self.skip_group_import:
                 self.log.info(f"{dry_log}Importing groups")
                 import_results = start_multi_process(
-                    self.handle_importing_groups, staged_subgroups if self.subgroups_only else staged_top_groups, processes=self.processes)
+                    self.handle_importing_groups,
+                    staged_subgroups if self.subgroups_only else staged_top_groups,
+                    processes=self.processes
+                )
 
                 # Migrate sub-group info
                 if staged_subgroups:
@@ -641,7 +755,12 @@ class MigrateClient(BaseClass):
                 self.log.info("{0}Group {1} NOT found on destination, importing..."
                               .format(get_dry_log(self.dry_run), full_path_with_parent_namespace))
                 imported = self.ie.import_group(
-                    group, full_path_with_parent_namespace, filename, dry_run=self.dry_run, subgroups_only=self.subgroups_only)
+                    group,
+                    full_path_with_parent_namespace,
+                    filename,
+                    dry_run=self.dry_run,
+                    subgroups_only=self.subgroups_only
+                )
                 # In place of checking the import status
                 if not self.dry_run and imported:
                     group = self.ie.wait_for_group_import(
@@ -920,7 +1039,10 @@ class MigrateClient(BaseClass):
             for job in ci_sources.get("Jenkins", []):
                 params = jenkins_client.jenkins_api.get_job_params(job)
                 for param in params:
-                    if self.variables.safe_add_variables(new_id, jenkins_client.transform_ci_variables(param, jenkins_ci_src_hostname)) is False:
+                    if not self.variables.safe_add_variables(
+                        new_id,
+                        jenkins_client.transform_ci_variables(param, jenkins_ci_src_hostname)
+                    ):
                         result = False
             return result
         return None
@@ -940,7 +1062,11 @@ class MigrateClient(BaseClass):
                         "ref": "master"
                     }
                     self.projects_api.create_branch(
-                        self.config.destination_host, self.config.destination_token, project_id, data=json.dumps(branch_data))
+                        self.config.destination_host,
+                        self.config.destination_token,
+                        project_id,
+                        data=json.dumps(branch_data)
+                    )
                     content = config_xml.text
                     data = {
                         "branch": "%s-jenkins-config" % job.lstrip("/"),
@@ -965,7 +1091,10 @@ class MigrateClient(BaseClass):
                 params = tc_client.teamcity_api.get_build_params(job)
                 if params.get("properties", None) is not None:
                     for param in dig(params, "properties", "property", default=[]):
-                        if self.variables.safe_add_variables(new_id, tc_client.transform_ci_variables(param, tc_ci_src_hostname)) is False:
+                        if not self.variables.safe_add_variables(
+                            new_id,
+                            tc_client.transform_ci_variables(param, tc_ci_src_hostname)
+                        ):
                             result = False
             return result
         return None
@@ -985,7 +1114,11 @@ class MigrateClient(BaseClass):
                         "ref": "master"
                     }
                     self.projects_api.create_branch(
-                        self.config.destination_host, self.config.destination_token, project_id, data=json.dumps(branch_data))
+                        self.config.destination_host,
+                        self.config.destination_token,
+                        project_id,
+                        data=json.dumps(branch_data)
+                    )
 
                     dom = xml.dom.minidom.parseString(build_config.text)
                     build_config = dom.toprettyxml()

@@ -44,6 +44,23 @@ class IssuesApi(BaseClass):
         """
         return api.generate_get_request(host, token, f"projects/{project_id}/issues/{issue_iid}")
 
+    def update_issue(self, host, token, project_id, issue_iid, data):
+        """
+        Update a existing issue.
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/issues.html#edit-issue
+
+            :param: project_id: (int) GitLab project ID
+            :param: issue_iid: (int) Internal ID of an issue
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :param: data: (dict) Structure containing key value pairs to be changed. Many possible required fields, see
+                GL API Doc
+            :yield: Response object containing the response to PUT /projects/:id/issues/:issue_iid
+        """
+        endpoint = f"projects/{project_id}/issues/{issue_iid}"
+        return api.generate_put_request(host, token, endpoint, json.dumps(data))
+
     def create_issue(self, host, token, project_id, title=None, description=None):
         """
         Creates a single issue in a project.

@@ -356,13 +356,16 @@ class StageWaveTests(unittest.TestCase):
             "Wave name": "Wave name",
             "Wave date": "Wave date",
             "Source Url": "Source Url",
-            "Parent Path": "Group"
+            "Parent Path": "Group",
+            "swc_manager_name": "SWC Manager Name",
+            "swc_manager_email": "SWC Manager Email",
+            "swc_id": "SWC AA ID"
         }
         columns_to_use.return_value = [
-            "Wave name", "Wave date", "Source Url", "Group"]
+            "Wave name", "Wave date", "Source Url", "Group", "SWC Manager Name", "SWC Manager Email", "SWC AA ID"]
 
         mock_parent_id.side_effect = [None, None]
-        
+
         read_as_json.return_value = [
             {
                 "Wave name": "Wave1",
@@ -372,7 +375,10 @@ class StageWaveTests(unittest.TestCase):
                 "Group": "/path/to/group",
                 "notneeded3": -1,
                 "notneeded4": "qqq",
-                "Source Url": "http://example.com/diaspora/diaspora-client.git"
+                "Source Url": "http://example.com/diaspora/diaspora-client.git",
+                "SWC Manager Name": "application owner name",
+                "SWC Manager Email": "owner@example.com",
+                "SWC AA ID": "application group"
             },
             {
                 "Wave name": "Wave1",
@@ -382,7 +388,10 @@ class StageWaveTests(unittest.TestCase):
                 "Group": "/path/to/group",
                 "notneeded3": 0,
                 "notneeded4": "qqq",
-                "Source Url": "http://example.com/brightbox/puppet.git"
+                "Source Url": "http://example.com/brightbox/puppet.git",
+                "SWC Manager Name": "application owner name",
+                "SWC Manager Email": "owner@example.com",
+                "SWC AA ID": "application group"
             }
         ]
         expected = [
@@ -412,7 +421,10 @@ class StageWaveTests(unittest.TestCase):
                 'archived': False,
                 'shared_with_groups': [],
                 'default_branch': 'master',
-                'target_namespace': 'path/to/group'
+                'target_namespace': 'path/to/group',
+                "swc_manager_name": "application owner name",
+                "swc_manager_email": "owner@example.com",
+                "swc_id": "application group"
             },
             {
                 "id": 80,
@@ -440,7 +452,10 @@ class StageWaveTests(unittest.TestCase):
                 'archived': False,
                 'shared_with_groups': [],
                 'default_branch': 'master',
-                'target_namespace': 'path/to/group'
+                'target_namespace': 'path/to/group',
+                "swc_manager_name": "application owner name",
+                "swc_manager_email": "owner@example.com",
+                "swc_id": "application group"
             }
         ]
 
