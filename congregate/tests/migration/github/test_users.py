@@ -274,4 +274,4 @@ class UsersTests(unittest.TestCase):
         with patch.object(UsersClient, "connect_to_mongo") as mongo_mock:
             mongo_mock.return_value = MongoConnector(
                 host="test-server", port=123456, client=mongomock.MongoClient)
-            return UsersClient(host="github", token="123")
+            return UsersClient("github", "123", None, None)

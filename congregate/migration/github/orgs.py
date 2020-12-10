@@ -105,20 +105,6 @@ class OrgsClient(BaseClass):
                     formatted_repo.pop("_id")
                     formatted_repo["members"] = []
                     team_repos.append(formatted_repo)
-                mongo.insert_data(f"groups-{self.host}", {
-                    "name": team["name"],
-                    "id": team["id"],
-                    "path": team["slug"],
-                    "full_path": full_path,
-                    "description": team.get("description", ""),
-                    # if team["privacy"] == "secret" else "public",
-                    "visibility": "private",
-                    # parent group
-                    "parent_id": team["parent"]["id"] if team.get("parent", None) else org["id"],
-                    "auto_devops_enabled": False,
-                    "members": self.add_team_members([], team, mongo),
-                    "projects": team_repos
-                })
 
     def get_team_full_path(self, org_name, team):
         """

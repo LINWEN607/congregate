@@ -4,9 +4,6 @@ from congregate.helpers.reporting import Reporting
 
 @pytest.mark.unit_test
 class ReportingTests(unittest.TestCase):
-    '''
-    '''
-
     def setUp(self):
         self.reporting = Reporting()
 

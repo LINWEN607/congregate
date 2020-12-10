@@ -26,6 +26,17 @@ def remove_dupes(my_list):
     """
     return list({v["id"]: v for v in my_list}.values())
 
+def remove_dupes_with_keys(my_list, list_of_keys):
+    """
+        Deduping function to remove any duplicates from a list based on a set of keys
+    """
+    d = {}
+    for v in my_list:
+        key = ""
+        for k in list_of_keys:
+            key += str(v.get(k, ""))
+        d[key] = v
+    return list(d.values())
 
 def remove_dupes_but_take_higher_access(my_list):
     """

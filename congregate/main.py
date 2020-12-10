@@ -36,8 +36,8 @@ Usage:
     congregate set-default-branch [--commit]
     congregate enable-mirroring [--commit] # TODO: Find a use for it or remove
     congregate count-unarchived-projects
-    congregate archive-staged-projects [--commit]
-    congregate unarchive-staged-projects [--commit]
+    congregate archive-staged-projects [--commit] [--scm-source=hostname]
+    congregate unarchive-staged-projects [--commit] [--scm-source=hostname]
     congregate find-empty-repos
     congregate compare-groups [--staged]
     congregate staged-user-list
@@ -366,7 +366,7 @@ def main():
                 elif config.source_type == "github" or config.list_multiple_source_config("github_source") is not None:
                     if SCM_SOURCE is not None:
                         for single_source in config.list_multiple_source_config("github_source"):
-                            if SCM_SOURCE == single_source.get("src_hostname", None):
+                            if SCM_SOURCE in single_source.get("src_hostname", None):
                                 gh_repos = ReposClient(single_source["src_hostname"], deobfuscate(
                                     single_source["src_access_token"]))
                     else:

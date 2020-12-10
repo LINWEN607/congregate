@@ -53,7 +53,7 @@ class MongoConnector(BaseClass):
     
     def __setup_db(self):
         for collection in self.__generate_collections_list():
-            if any(collection == ci_source for ci_source in self.CI_SOURCES):
+            if any(ci_source in collection for ci_source in self.CI_SOURCES):
                 self.__create_unique_index(collection, "name")
                 self.db[collection].create_index("url")
             else:

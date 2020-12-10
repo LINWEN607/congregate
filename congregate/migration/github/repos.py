@@ -1,6 +1,6 @@
 from time import time
 from requests.exceptions import RequestException
-
+from traceback import print_exc
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.mdbc import MongoConnector
 from congregate.helpers.processes import start_multi_process_stream
@@ -41,7 +41,7 @@ class ReposClient(BaseClass):
 
     def connect_to_mongo(self):
         return MongoConnector()
-
+    
     def handle_retrieving_repos(self, repo, mongo=None):
         if not mongo:
             mongo = self.connect_to_mongo()
@@ -86,9 +86,12 @@ class ReposClient(BaseClass):
             members = []
             # TODO: Determine single PAT for retrieving repo/org/team collaborators
             for c in self.repos_api.get_all_repo_collaborators(owner, repo):
-                c["permissions"] = self.REPO_PERMISSIONS_MAP[tuple(
-                    c.get("permissions", None).items())]
-                members.append(c)
+                if c:
+                    c["permissions"] = self.REPO_PERMISSIONS_MAP[tuple(
+                        c.get("permissions", None).items())]
+                    members.append(c)
+                else:
+                    break
         elif kind == "User":
             members = [{"login": owner}]
             user_repo = safe_json_response(
@@ -101,6 +104,7 @@ class ReposClient(BaseClass):
                 members[0]["permissions"] = self.REPO_PERMISSIONS_MAP[tuple(user_repo.get(
                     "permissions", None).items())]
         return self.users.format_users(members, mongo)
+        
 
     def list_ci_sources_jenkins(self, repo_url, mongo):
         data = []

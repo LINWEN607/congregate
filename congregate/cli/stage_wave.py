@@ -73,15 +73,15 @@ class WaveStageCLI(BaseStageClass):
                 obj = self.get_project_metadata(project)
                 if parent_path := column_mapping.get("Parent Path"):
                     obj["target_namespace"] = row[parent_path].strip("/")
-                    obj['swc_manager_name'] = row['SWC Manager Name']
-                    obj['swc_manager_email'] = row['SWC Manager Email']
-                    obj['swc_id'] = row['SWC AA ID']
+                    if row.get("SWC AA ID"):
+                        obj['swc_manager_name'] = row.get('SWC Manager Name')
+                        obj['swc_manager_email'] = row.get('SWC Manager Email')
+                        obj['swc_id'] = row.get('SWC AA ID')
                 self.append_project_data(obj, wave_data, row, dry_run=dry_run)
             elif group := groups.get(row[url_key].rstrip("/").split("/")[-1]):
-                if parent_path := column_mapping.get("Parent Path"):
-                    group["full_path"] = f"{row[parent_path]}/{group['full_path']}"
-                self.handle_parent_group(row, group)
-                self.append_group_data(group, wave_data, row, dry_run=dry_run)
+                group_copy = group.copy()
+                self.handle_parent_group(row, group_copy)
+                self.append_group_data(group_copy, wave_data, row, dry_run=dry_run)
             else:
                 self.log.warning(f"Unable to find {row[url_key]} in listed data")
                 unable_to_find.append(row[url_key])
@@ -133,7 +133,7 @@ class WaveStageCLI(BaseStageClass):
 
         if project["project_type"] == "group":
             group_to_stage = self.rewritten_groups[self.rewritten_projects.get(project["id"])[
-                "namespace"]["id"]]
+                "namespace"]["id"]].copy()
             self.log.info("{0}Staging group {1} (ID: {2})".format(get_dry_log(
                 dry_run), group_to_stage["full_path"], group_to_stage["id"]))
             group_to_stage.pop("projects", None)
@@ -174,10 +174,11 @@ class WaveStageCLI(BaseStageClass):
         for member in group["members"]:
             self.append_member_to_members_list([], member, dry_run)
 
-    def append_parent_group_full_path(self, group, wave_row, parent_path):
-        if wave_row[parent_path] not in group["full_path"]:
-            return f"{wave_row[parent_path]}/{group['full_path']}"
-        return group["full_path"]
+    def append_parent_group_full_path(self, full_path, wave_row, parent_path):
+        if parent_path := self.config.wave_spreadsheet_column_mapping.get("Parent Path"):
+            if len(set(full_path.split("/")) - set(parent_path.split("/"))) <= 1:
+                return f"{wave_row[parent_path]}/{full_path}"
+            return full_path
 
     def get_parent_id(self, wave_row, parent_path):
         if req := safe_json_response(self.groups_api.get_group_by_full_path(wave_row[parent_path].lstrip("/"),
@@ -188,7 +189,7 @@ class WaveStageCLI(BaseStageClass):
     def handle_parent_group(self, wave_row, group):
         if parent_path := self.config.wave_spreadsheet_column_mapping.get("Parent Path"):
             group["full_path"] = self.append_parent_group_full_path(
-                group, wave_row, parent_path)
+                group["full_path"], wave_row, parent_path)
             group["parent_id"] = self.get_parent_id(wave_row, parent_path)
 
     def sanitize_project_path(self, http_url_to_repo, host=""):

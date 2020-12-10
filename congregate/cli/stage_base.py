@@ -6,7 +6,7 @@ Copyright (c) 2020 - GitLab
 
 import json
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import get_dry_log, remove_dupes, strip_protocol
+from congregate.helpers.misc_utils import get_dry_log, remove_dupes, strip_protocol, remove_dupes_with_keys
 
 
 class BaseStageClass(BaseClass):
@@ -67,7 +67,10 @@ class BaseStageClass(BaseClass):
             :param: staged_groups: (dict) staged groups
         """
         with open("%s/data/staged_groups.json" % self.app_path, "w") as f:
-            f.write(json.dumps(remove_dupes(self.staged_groups), indent=4))
+            if self.config.wave_spreadsheet_path:
+                f.write(json.dumps(remove_dupes_with_keys(self.staged_groups, ["id", "full_path"]), indent=4))
+            else:
+                f.write(json.dumps(remove_dupes(self.staged_groups), indent=4))
         with open("%s/data/staged_projects.json" % self.app_path, "w") as f:
             f.write(json.dumps(remove_dupes(self.staged_projects), indent=4))
         with open("%s/data/staged_users.json" % self.app_path, "w") as f:

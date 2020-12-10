@@ -54,7 +54,6 @@ class ImportClient(BaseClass):
 
     def trigger_import_from_ghe(self, project, host, token, dry_run=True):
         '''
-
         Use the GitLab built in importers to start a GitHub Enterprise import.
 
             :param project: (dict)? This should be a dictionary representing a project
@@ -63,11 +62,15 @@ class ImportClient(BaseClass):
             :return: (dict) Project and its response code
 
         '''
+        if project.get("target_namespace"):
+            tn = f"{project.get('target_namespace')}/{project['namespace']}"
+        else:
+            tn = get_dst_path_with_namespace(project).rsplit("/", 1)[0]
 
         data = {
             "personal_access_token": token,
             "repo_id": project["id"],
-            "target_namespace": f"{project.get('target_namespace', None)}/{project['namespace']}" if project.get("target_namespace", None) else get_dst_path_with_namespace(project).rsplit("/", 1)[0]
+            "target_namespace": tn
         }
 
         dest_version = safe_json_response(self.instance.get_version(

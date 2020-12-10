@@ -3,20 +3,25 @@ from congregate.helpers.mdbc import MongoConnector
 from congregate.helpers.processes import start_multi_process_stream_with_args
 from congregate.migration.github.api.users import UsersApi
 from congregate.migration.github.meta.github_browser import GitHubBrowser
-from congregate.helpers.misc_utils import safe_json_response, is_error_message_present
+from congregate.helpers.misc_utils import safe_json_response, is_error_message_present, strip_protocol, deobfuscate
 
 
 class UsersClient(BaseClass):
-    def __init__(self, host, token):
+    def __init__(self, host, token, username=None, password=None):
         super(UsersClient, self).__init__()
-        self.host = host.split("//")[-1]
+        self.host = host
+        self.username = username
+        self.password = password
         self.users_api = UsersApi(host, token)
 
     def connect_to_mongo(self):
         return MongoConnector()
     
     def establish_browser_connection(self):
-        return GitHubBrowser(self.config.source_host, self.config.source_username, self.config.source_password)
+        if self.username and self.password:
+            return GitHubBrowser(self.host, self.username, self.password)
+        else:
+            self.log.warning("Username/password not set in UseClient initialization. Skipping github browser connection")
 
     def retrieve_user_info(self, processes=None):
         """
@@ -36,7 +41,7 @@ class UsersClient(BaseClass):
         else:
             if single_user.get("type") != "Organization":
                 formatted_user = self.format_user(single_user, browser, mongo)
-                mongo.insert_data(f"users-{self.host}", formatted_user)
+                mongo.insert_data(f"users-{strip_protocol(self.host)}", formatted_user)
         mongo.close_connection()
 
     def format_users(self, users, mongo):

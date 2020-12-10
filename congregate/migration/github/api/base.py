@@ -156,14 +156,11 @@ class GitHubApi():
                 host, api, url, params=params)
             resp_json = safe_json_response(r)
             if r.status_code != 200:
-                if r.status_code == 404 or r.status_code == 500 or r.status_code == 401:
+                if r.status_code >= 400:
                     log.error(
-                        f"\nERROR: HTTP Response was {r.status_code}\n\nBody Text: {r.text}\n")
+                        f"\nERROR: HTTP Response was {r.status_code}.\nBody Text: '{r.text}'")
                     break
-                yield ValueError(
-                    f"ERROR HTTP Response was NOT 200, which implies something wrong."
-                    f"The actual return code was {r.status_code}\n{r.text}\n"
-                )
+                yield (resp_json, True) if page_check else resp_json
             if resp_json and r.headers.get("Link", None):
                 h = self.create_dict_from_headers(r.headers['Link'])
                 if h.get('next', None):

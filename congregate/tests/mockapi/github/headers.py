@@ -118,3 +118,8 @@ class MockHeaders():
                 "description": None
             }
         ]
+
+    def mock_token_scope_headers(self):
+        return {
+            "X-OAuth-Scopes": "admin:enterprise, admin:gpg_key, admin:org, admin:org_hook, admin:pre_receive_hook, admin:public_key, admin:repo_hook, delete_repo, gist, notifications, repo, site_admin, user, write:discussion"
+        }

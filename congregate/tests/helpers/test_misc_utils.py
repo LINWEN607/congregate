@@ -76,6 +76,50 @@ class MiscUtilsTests(unittest.TestCase):
         actual = misc.remove_dupes_but_take_higher_access(test)
         self.assertEqual(expected, actual)
 
+    def test_remove_dupes_with_keys(self):
+        L = [
+            {
+                "id": 1,
+                "path": "test-path",
+                "test": "test"
+            },
+            {
+                "id": 1,
+                "path": "test-path2",
+                "test": "test"
+            },
+            {
+                "id": 1,
+                "path": "test-path",
+                "test": "test"
+            },
+            {
+                "id": 2,
+                "path": "test-path2",
+                "test": "test"
+            }
+        ]
+
+        expected = [
+            {
+                "id": 1,
+                "path": "test-path",
+                "test": "test"
+            },
+            {
+                "id": 1,
+                "path": "test-path2",
+                "test": "test"
+            },
+            {
+                "id": 2,
+                "path": "test-path2",
+                "test": "test"
+            }
+        ]
+        actual = misc.remove_dupes_with_keys(L, ["id", "path"])
+        self.assertEqual(expected, actual)
+
     @mock.patch("congregate.helpers.misc_utils.__get_filename_from_cd")
     @mock.patch("congregate.helpers.misc_utils.__is_downloadable")
     @mock.patch("io.TextIOBase")

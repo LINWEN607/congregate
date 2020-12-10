@@ -19,7 +19,7 @@ from congregate.migration.teamcity.base import TeamcityClient as TeamcityData
 
 from congregate.helpers.mdbc import MongoConnector
 
-from congregate.helpers.misc_utils import deobfuscate
+from congregate.helpers.misc_utils import deobfuscate, strip_protocol
 
 b = BaseClass()
 
@@ -66,7 +66,7 @@ def list_github_data(processes=None, partial=False, skip_users=False, skip_group
     if not src_instances:
         src_hostname = b.config.source_host.split("//")[-1]
         if not skip_users:
-            users = GitHubUsers(b.config.source_host, b.config.source_token)         
+            users = GitHubUsers(b.config.source_host, b.config.source_token, b.config.source_username, b.config.source_password)         
             users.retrieve_user_info(processes=processes)
             mongo.dump_collection_to_file(
                 f"users-{src_hostname}", f"{b.app_path}/data/users.json")
@@ -82,17 +82,19 @@ def list_github_data(processes=None, partial=False, skip_users=False, skip_group
                 f"projects-{src_hostname}", f"{b.app_path}/data/projects.json")
     else:        
         for _, single_source in enumerate(b.config.list_multiple_source_config("github_source")):
-            src_hostname = single_source.get('src_hostname', "").split("//")[-1]
+            src_hostname = strip_protocol(single_source.get('src_hostname', ""))
             if not skip_users:
-                users = GitHubUsers(single_source.get('src_hostname'), deobfuscate(
-                    single_source.get('src_access_token')))
+                users = GitHubUsers(single_source.get('src_hostname'),
+                        deobfuscate(single_source.get('src_access_token')),
+                        single_source.get('src_username'),
+                        deobfuscate(single_source.get('src_password')))
                 users.retrieve_user_info(processes=processes)
                 mongo.dump_collection_to_file(f"users-{src_hostname}", f"{b.app_path}/data/users-{src_hostname}.json") 
-            if not skip_groups:    
+            if not skip_groups:
                 orgs = GitHubOrgs(single_source.get('src_hostname'), deobfuscate(single_source.get('src_access_token')))
                 orgs.retrieve_org_info(processes=processes)
                 mongo.dump_collection_to_file(f"groups-{src_hostname}", f"{b.app_path}/data/groups-{src_hostname}.json")
-            if not skip_projects:    
+            if not skip_projects:
                 repos = GitHubRepos(single_source.get('src_hostname'), deobfuscate(single_source.get('src_access_token')))
                 repos.retrieve_repo_info(processes=processes)
                 mongo.dump_collection_to_file(f"projects-{src_hostname}", f"{b.app_path}/data/projects-{src_hostname}.json")

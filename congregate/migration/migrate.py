@@ -307,7 +307,7 @@ class MigrateClient(BaseClass):
         gh_token = None
         if self.scm_source:
             for single_source in self.config.list_multiple_source_config("github_source"):
-                if self.scm_source == single_source.get("src_hostname", None):
+                if self.scm_source in single_source.get("src_hostname", None):
                     self.gh_repos = ReposClient(single_source["src_hostname"], deobfuscate(
                         single_source["src_access_token"]))
                     gh_host = single_source["src_hostname"]

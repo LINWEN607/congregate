@@ -1,6 +1,7 @@
 import unittest
 import pytest
 from mock import patch, PropertyMock, MagicMock
+import responses
 import warnings
 # mongomock is using deprecated logic as of Python 3.3
 # This warning suppression is used so tests can pass
@@ -9,6 +10,7 @@ with warnings.catch_warnings():
     import mongomock
 from congregate.helpers.mdbc import MongoConnector
 from congregate.tests.mockapi.github.repos import MockReposApi
+from congregate.tests.mockapi.github.headers import MockHeaders
 from congregate.migration.github.repos import ReposClient
 from congregate.migration.github.users import UsersClient
 from congregate.migration.github.api.repos import ReposApi
@@ -19,7 +21,8 @@ class ReposTests(unittest.TestCase):
 
     def setUp(self):
         self.mock_repos = MockReposApi()
-        self.repos = ReposClient(host="github", token="123")
+        self.mock_headers = MockHeaders()
+        self.repos = ReposClient(host="https://github.company.com", token="123")
 
     @patch.object(ReposApi, "get_repo")
     @patch.object(UsersClient, "format_users")
@@ -82,7 +85,7 @@ class ReposTests(unittest.TestCase):
         for repo in listed_repos:
             self.repos.handle_retrieving_repos(repo, mongo=mongo)
 
-        actual_projects = [d for d, _ in mongo.stream_collection("projects-github")]
+        actual_projects = [d for d, _ in mongo.stream_collection("projects-github.company.com")]
 
         expected_projects = [
             {
@@ -185,7 +188,7 @@ class ReposTests(unittest.TestCase):
         for repo in listed_repos:
             self.repos.handle_retrieving_repos(repo, mongo=mongo)
 
-        actual_projects = [d for d, _ in mongo.stream_collection("projects-github")]
+        actual_projects = [d for d, _ in mongo.stream_collection("projects-github.company.com")]
 
         expected_projects = [
             {
@@ -331,7 +334,7 @@ class ReposTests(unittest.TestCase):
         for repo in listed_repos:
             self.repos.handle_retrieving_repos(repo, mongo=mongo)
 
-        actual_projects = [d for d, _ in mongo.stream_collection("projects-github")]
+        actual_projects = [d for d, _ in mongo.stream_collection("projects-github.company.com")]
 
         expected_projects = [
             {
@@ -404,7 +407,7 @@ class ReposTests(unittest.TestCase):
         for repo in listed_repos:
             self.repos.handle_retrieving_repos(repo, mongo=mongo)
 
-        actual_projects = [d for d, _ in mongo.stream_collection("projects-github")]
+        actual_projects = [d for d, _ in mongo.stream_collection("projects-github.company.com")]
 
         expected_projects = [
             {
@@ -525,12 +528,4 @@ class ReposTests(unittest.TestCase):
         actual = self.repos.list_ci_sources_teamcity("website", mongo_mock)
 
         self.assertListEqual(expected, actual)
-
-    def mock_repo_client(self):
-        with patch.object(ReposClient, "connect_to_mongo") as mongo_mock:
-            mongo_mock.return_value = MongoConnector(
-                host="test-server", port=123456, client=mongomock.MongoClient)
-            with patch.object(UsersClient, "connect_to_mongo") as mongo_mock_2:
-                mongo_mock_2.return_value = MongoConnector(
-                    host="test-server", port=123456, client=mongomock.MongoClient)
-                return ReposClient(host="gitlab", token="123")
+    
