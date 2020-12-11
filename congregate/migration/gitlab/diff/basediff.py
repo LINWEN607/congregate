@@ -5,7 +5,7 @@ from bs4 import BeautifulSoup as bs
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.misc_utils import find as nested_find, is_error_message_present, rewrite_list_into_dict, is_nested_dict, dig, pretty_print_key
 from congregate.helpers.jsondiff import Comparator
-
+from congregate.helpers.mdbc import MongoConnector
 
 class BaseDiffClient(BaseClass):
     SCRIPT = """
@@ -76,6 +76,22 @@ class BaseDiffClient(BaseClass):
         super(BaseDiffClient, self).__init__()
         self.keys_to_ignore = []
         self.results = None
+    
+    def connect_to_mongo(self):
+        return MongoConnector()
+    
+    def generate_split_html_report(self):
+        """
+            Queries MongoDB for all diff_report collections 
+            and outputs them to the HTML report format
+        """
+        mongo = self.connect_to_mongo()
+        for diff_col in mongo.wildcard_collection_query("diff_report"):
+            diff = {}
+            for d, _ in mongo.stream_collection(diff_col):
+                diff.update(d)
+            self.generate_html_report("Project", diff, f"/data/results/{diff_col}.html")
+        mongo.close_connection()
 
     def diff(self, source_data, destination_data, critical_key=None, obfuscate=False, parent_group=None):
         engine = Comparator()

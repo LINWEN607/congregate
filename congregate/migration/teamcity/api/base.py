@@ -68,7 +68,6 @@ class TeamcityApi():
         return t
 
     def extract_maven_xml(self, url):
-        self.log.info(url)
         page = self.generate_get_request(None, url=f"{self.host}/{url}").text
         s = bs(page, 'html.parser')
         return url.split("&file=")[-1], s.find_all('pre')[0].text
