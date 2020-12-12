@@ -8,7 +8,7 @@ import re
 class Reporting(BaseClass):
     '''
     Reporting class, designed to work at the project level.  Feed it a project data structure, and it will attempt to
-    create reporting issues.
+    create reporting issues. If dry_run is passed, we WILL make read only API calls (Checking users, issues, etc...).
 
         :param reporting_project_id: (int)  This should be the project ID where the issues will be created.  They
             should exist OUTSIDE of migration groups or projects, so as to not effect rollbacks.
@@ -23,13 +23,14 @@ class Reporting(BaseClass):
 
     '''
 
-    def __init__(self, reporting_project_id=1, project='test'):
+    def __init__(self, reporting_project_id=1, project='test', dry_run=True):
         self.project = project
         self.reporting_project_id = reporting_project_id
         self.issuesApi = IssuesApi()
         self.usersClient = UsersClient()
         self.templates = []
         super(Reporting, self).__init__()
+        self.dry_run = dry_run
 
     def init_class_vars(self):
         '''
@@ -62,7 +63,8 @@ class Reporting(BaseClass):
             if not issue_data:
                 issue_data = self.create_issue(issue, self.project['swc_id'])
             # Clean up the data and save it in the class var self.reporting_issues
-            self.reporting_issues[self.project['swc_id']][issue_data['iid']] = self.format_issue_data(issue_data)
+            if issue_data:
+                self.reporting_issues[self.project['swc_id']][issue_data['iid']] = self.format_issue_data(issue_data)
         self.fix_issues()
 
     def fix_issues(self):
@@ -144,13 +146,13 @@ class Reporting(BaseClass):
         :return: response object?
 
         '''
-
-        return self.issuesApi.update_issue(
-            self.config.destination_host,
-            self.config.destination_token,
-            self.reporting_project_id,
-            issue_id, data
-        )
+        if not self.dry_run:
+            return self.issuesApi.update_issue(
+                self.config.destination_host,
+                self.config.destination_token,
+                self.reporting_project_id,
+                issue_id, data
+            )
 
     def check_existing_assignees(self, assignees, username):
         '''
@@ -187,16 +189,17 @@ class Reporting(BaseClass):
                 Meant to replace existing data with a smaller subset of data, saving or freeing memory.
 
         '''
-        return {
-            'url': issue_data['url'],
-            'web_url': issue_data['web_url'],
-            'state': issue_data['state'],
-            'iid': issue_data['iid'],
-            'description': issue_data['description'],
-            'project_id': issue_data['project_id'],
-            'assignees': issue_data['assignees'],
-            'task_completion_status': issue_data['task_completion_status']
-        }
+        if issue_data:
+            return {
+                'url': issue_data['url'],
+                'web_url': issue_data['web_url'],
+                'state': issue_data['state'],
+                'iid': issue_data['iid'],
+                'description': issue_data['description'],
+                'project_id': issue_data['project_id'],
+                'assignees': issue_data['assignees'],
+                'task_completion_status': issue_data['task_completion_status']
+            }
 
     def subs_replace(self, var, description):
         '''
@@ -262,7 +265,7 @@ class Reporting(BaseClass):
 
     def get_project_issues(self):
         '''
-        Get all the issues for our Reporting, so we can check for duplicates later.
+        Get all the issues for our Reporting project, so we can check for duplicates later.
         Returns a json body if successful, none if not.
         '''
         issues = []
@@ -280,18 +283,23 @@ class Reporting(BaseClass):
         The issue title will be created using project_name, and the issue description will be filled in with details.
         Returns a json body if successful, None if not.
         '''
-
-        created_issue = safe_json_response(
-            self.issuesApi.create_issue(
-                self.config.destination_host,
-                self.config.destination_token,
-                self.reporting_project_id,
-                title=f"{project_name.upper()} | {details['title']}",
-                description=details['description']
+        message = "Will Create"
+        if not self.dry_run:
+            created_issue = safe_json_response(
+                self.issuesApi.create_issue(
+                    self.config.destination_host,
+                    self.config.destination_token,
+                    self.reporting_project_id,
+                    title=f"{project_name.upper()} | {details['title']}",
+                    description=details['description']
+                )
             )
-        )
+            message = "Created"
+            # Remapping for convenience
+            created_issue['url'] = created_issue['_links']['self']
+        else:
+            created_issue = None
 
-        self.log.info(f"Created issue: {project_name.upper()} | {details['title']}")
+        self.log.info(f"{message} issue: {project_name.upper()} | {details['title']}")
 
-        created_issue['url'] = created_issue['_links']['self']
         return created_issue

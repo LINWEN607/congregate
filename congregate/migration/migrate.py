@@ -191,12 +191,8 @@ class MigrateClient(BaseClass):
             self.log.info("Importing projects from GitHub")
             import_results = start_multi_process(
                 self.import_github_project, staged_projects, processes=self.processes)
-            successes = self.reporting_check_results(import_results)
 
-            # Reporting on completed projects
-            for completed_project in staged_projects:
-                if completed_project['path_with_namespace'] in successes:
-                    self.create_tracking_issues(completed_project)
+            self.reporting_needful(import_results, staged_projects)
 
             self.are_results(import_results, "project", "import")
             # append Total : Successful count of project imports
@@ -206,6 +202,20 @@ class MigrateClient(BaseClass):
             write_results_to_file(import_results, log=self.log)
         else:
             self.log.info("SKIP: No projects to migrate")
+
+    def reporting_needful(self, import_results, staged_projects):
+        '''
+
+        This method will call the required methods to massage the data, and lessen our API calls.
+        '''
+
+        # Getting successful project imports or already imported projects
+        successes = self.reporting_check_results(import_results)
+
+        # Reporting on completed projects
+        for completed_project in staged_projects:
+            if completed_project['path_with_namespace'] in successes:
+                self.create_tracking_issues(completed_project)
 
     def reporting_check_results(self, import_results):
         '''
@@ -292,7 +302,8 @@ class MigrateClient(BaseClass):
             self.log.info("Successfully got reporting config from congregate.conf. Proceeding to make our issues.")
             report = Reporting(
                 reporting_project_id=self.config.reporting['pmi_project_id'],
-                project=project
+                project=project,
+                dry_run=self.dry_run
             )
             report.init_class_vars()
             reporting_issues = report.reporting_issues
