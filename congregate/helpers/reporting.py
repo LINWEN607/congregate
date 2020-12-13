@@ -23,8 +23,7 @@ class Reporting(BaseClass):
 
     '''
 
-    def __init__(self, reporting_project_id=1, project='test', dry_run=True):
-        self.project = project
+    def __init__(self, reporting_project_id, dry_run=True):
         self.reporting_project_id = reporting_project_id
         self.issuesApi = IssuesApi()
         self.usersClient = UsersClient()
@@ -32,7 +31,7 @@ class Reporting(BaseClass):
         super(Reporting, self).__init__()
         self.dry_run = dry_run
 
-    def init_class_vars(self):
+    def init_class_vars(self, staged_projects, import_results):
         '''
         Do the needful. Check/Create issues, assign tasks, etc...
 
@@ -43,18 +42,32 @@ class Reporting(BaseClass):
 
         '''
 
+        self.combined_data = self.combine_wave_data(staged_projects, import_results)
         self.reporting_issues = {}  # The issues this class will return
-        self.existing_issues = self.get_project_issues()
+        self.combined_data['issues'] = self.get_project_issues()
         self.new_issues = []
+        self.combined_data['users'] = self.define_users(self.combined_data['projects'])
+
+
+        # Read our configuration issues in
+        for issue in self.config.reporting['post_migration_issues']:
+            self.new_issues.append(self.read_template_file(issue))
+        # self.reporting_issues = {self.project['swc_id']: {}}
+
+        # print(f"{'*' * 80}")
+        # for issue in self.combined_data['users']:
+        #     print(f"issue: {issue['title']}")
+        # print(f"{'*' * 80}")
+        # print(f"users: {self.combined_data['users']}")
+        self.get_required_users(self.combined_data['users'])
+        return
+
         # Convert our spreadsheet defined email into a GitLab Username
         if user := self.usersClient.find_user_by_email_comparison_without_id(self.project.get('swc_manager_email')):
             self.assignee = user['username']
         else:
             self.assignee = None
-        # Read our configuration issues in
-        for issue in self.config.reporting['post_migration_issues']:
-            self.new_issues.append(self.read_template_file(issue))
-        self.reporting_issues = {self.project['swc_id']: {}}
+
         for issue in self.new_issues:
             # Template variable substitution
             issue['description'] = self.check_substituions(issue['description'])
@@ -66,6 +79,129 @@ class Reporting(BaseClass):
             if issue_data:
                 self.reporting_issues[self.project['swc_id']][issue_data['iid']] = self.format_issue_data(issue_data)
         self.fix_issues()
+
+    def get_required_users(self, users):
+        '''
+        Check if our email has a GitLab username or not
+        '''
+
+        new_users = {}
+        self.log.info(f"There are '{len(users)}' emails to check.")
+        for email in users:
+            if not users[email]:
+                if username := self.usersClient.find_user_by_email_comparison_without_id(email):
+                    print(f"\nFound username: {username['username']}\n")
+                else:
+                    print(f"\nno user for '{email}'\n")
+        
+
+    def define_users(self, clean_data):
+        '''
+
+        Create a user mapping dict from clean_data, containing email as key to hold future data
+
+        :param clean_data: (dict)
+
+        '''
+
+        users = {}
+        for project in clean_data:
+            users[clean_data[project]['swc_manager_email']] = None
+
+        return users
+
+    def combine_wave_data(self, staged_projects, import_results):
+        '''
+        Take staged_projects and import_results, combine them, and return the resulting successful dataset
+
+        :param staged_projects: (str) The staged projects used in our migration
+        :param import_results: (str) The results of our migration
+        :return: (dict) A dictionary of the successful results, keyed off repo.
+
+        '''
+        clean_data = {}
+        # removing the counts dictionary
+        clean_data['projects'] = self.check_import_results(import_results)
+        clean_data['projects'] = self.check_staged_projects(staged_projects, clean_data['projects'])
+        return clean_data
+
+    # TODO: recreate all the migrate.py stuff into reporting.py.  Leaving only the class instantiation in migrate.py
+    # TODO: implement all the random code pulled over from migrate.py
+    '''
+            if self.check_required_reporting_issues:  # This is making sure all required fields are present.
+            self.log.info("Successfully got reporting config from congregate.conf. Proceeding to make our issues.")
+
+       else:
+            self.log.warning(
+                f"Couldn't find a required REPORTING config in [DESTINATION] section of congregate.conf.\n"
+                f"Issues will not be created."
+            )
+
+    '''
+    def rpt_needful(self, import_results, staged_projects):
+        '''
+
+        This method will call the required methods to massage the data, and lessen our API calls.
+        '''
+
+        # Getting successful project imports or already imported projects
+        successes = self.reporting_check_results(import_results)
+
+        # Reporting on completed projects
+        for completed_project in staged_projects:
+            if completed_project['path_with_namespace'] in successes:
+                self.create_tracking_issues(completed_project)
+
+    def check_reporting_config(self):
+        '''
+        Check that all our REQUIRED reporting fields are in congregate.conf. Return True if so. This will not check non 
+        required fields.
+        '''
+        if all([
+            self.config.reporting,
+            self.config.reporting.get("post_migration_issues"),
+            self.config.reporting.get("pmi_project_id")
+        ]):
+            return True
+
+    def check_import_results(self, import_results):
+        '''
+
+        Take in an import_results, convert all successful imports + specfic fails to a list, and return it.
+
+            :param import_results: (list) results of the last stage import in its raw form
+            :return: (dict) containing just the names of the successful repos
+
+        '''
+        # removing reporting dict from import_results
+        import_results.pop(-1)
+        good_errors = ['Name has already been taken, Path has already been taken']
+        successes = {}
+        for result in import_results:
+            for k, v in result.items():
+                if result[k]['repository']:
+                    successes[k.split('/')[1]] = None
+                else:
+                    if result[k]['response']['errors'] in good_errors:
+                        successes[k.split('/')[1]] = None
+        return successes
+
+    def check_staged_projects(self, staged_projects, clean_data):
+        '''
+
+        Take a staged_projects and imported_projects, return all the pertinent stage data if its in imported_projects.
+
+            :param staged_projects: (list) staged project data
+            :param cleaned_data: (dict) succesfully imported or already existing projects
+            :return: (dict) containing successful projects and its associated data
+
+        '''
+
+        for project in staged_projects:
+            if project['name'] in clean_data:
+                clean_data[project['name']] = project
+
+        return clean_data
 
     def fix_issues(self):
         '''

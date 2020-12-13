@@ -192,8 +192,6 @@ class MigrateClient(BaseClass):
             import_results = start_multi_process(
                 self.import_github_project, staged_projects, processes=self.processes)
 
-            self.reporting_needful(import_results, staged_projects)
-
             self.are_results(import_results, "project", "import")
             # append Total : Successful count of project imports
             import_results.append(get_results(import_results))
@@ -203,52 +201,24 @@ class MigrateClient(BaseClass):
         else:
             self.log.info("SKIP: No projects to migrate")
 
-    def reporting_needful(self, import_results, staged_projects):
+        # After all is said and done, run our reporting with the staged_projects and results
+        if staged_projects and import_results:
+            self.create_issue_reporting(staged_projects, import_results)
+
+    def create_issue_reporting(self, staged_projects, import_results):
         '''
-
-        This method will call the required methods to massage the data, and lessen our API calls.
-        '''
-
-        # Getting successful project imports or already imported projects
-        successes = self.reporting_check_results(import_results)
-
-        # Reporting on completed projects
-        for completed_project in staged_projects:
-            if completed_project['path_with_namespace'] in successes:
-                self.create_tracking_issues(completed_project)
-
-    def reporting_check_results(self, import_results):
-        '''
-
-        Take in an import_results, convert all successful imports + specfic fails to a list, and return it.
-
-            :param import_results: (list) results of the last stage import in its raw form
-            :return: (list) containing just the names of the successful repos
+        Use the Reporting class to create/update whatever issues are in the congregate.conf for a given staged_projects
+        and import_results.
 
         '''
 
-        good_errors = ['Name has already been taken, Path has already been taken']
-        successes = []
-        for result in import_results:
-            for k, v in result.items():
-                if result[k]['repository']:
-                    successes.append(k)
-                else:
-                    if result[k]['response']['errors'] in good_errors:
-                        successes.append(k)
-        return successes
-
-    def check_required_reporting_issues(self):
-        '''
-        Check that all our REQUIRED reporting fields are in congregate.conf. Return True if so. This will not check non 
-        required fields.
-        '''
-        if all([
-            self.config.reporting,
-            self.config.reporting.get("post_migration_issues"),
-            self.config.reporting.get("pmi_project_id")
-        ]):
-            return True
+        if report := Reporting(
+            reporting_project_id=self.config.reporting['pmi_project_id'],
+            dry_run=self.dry_run
+        ):
+            report.init_class_vars(staged_projects, import_results)
+        else:
+            self.log.warning(f"REPORTING: Failed to instaniate the reporting module")
 
     def migrate_github_group(self, group):
         result = False
@@ -289,29 +259,6 @@ class MigrateClient(BaseClass):
         return {
             group["full_path"]: result
         }
-
-    def create_tracking_issues(self, project):
-        '''
-        Use the Reporting class to create/update whatever issues are in the congregate.conf for a given project, using
-        supplied spreadsheet data.
-
-        # TODO anonymize this, so its not specific to customer columns.
-
-        '''
-        if self.check_required_reporting_issues:  # This is making sure all required fields are present.
-            self.log.info("Successfully got reporting config from congregate.conf. Proceeding to make our issues.")
-            report = Reporting(
-                reporting_project_id=self.config.reporting['pmi_project_id'],
-                project=project,
-                dry_run=self.dry_run
-            )
-            report.init_class_vars()
-            reporting_issues = report.reporting_issues
-        else:
-            self.log.warning(
-                f"Couldn't find a required REPORTING config in [DESTINATION] section of congregate.conf.\n"
-                f"Issues will not be created."
-            )
 
     def import_github_project(self, project):
         gh_host = None
