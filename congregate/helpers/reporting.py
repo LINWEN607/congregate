@@ -47,75 +47,87 @@ class Reporting(BaseClass):
 
         # Read our configuration template_issues in
         for issue in self.config.reporting['post_migration_issues']:
-            self.template_issues.append(self.read_template_file(issue))
+            i = self.read_template_file(issue)
+            i['description'] = self.check_substitutions(i['description'])
+            self.template_issues.append(i)
 
         # Perform variable subs on our template issues
         for issue in self.template_issues:
-            issue['description'] = self.check_substituions(issue['description'])
-        # Start creating our data structure
-        self.combined_data = self.combine_wave_data(staged_projects, import_results)
+            issue['description'] = self.check_substitutions(issue['description'])
+        # Create our data structure
+        combined_data = self.combine_wave_data(staged_projects, import_results)
+        self.merge_issues(combined_data['issues'])
 
         return
 
-        # Get all our tasks
-        # TODO: add tasks to all our issues
-        # print(f"TESTING combined_data[issues]:\n{self.combined_data['issues']}")
-        # self.add_tasks_to_issues(self.combined_data['issues'], self.combined_data['projects'])
+        # # renamed new_issues to template_issues
+        # for issue in self.new_issues:
+        #     # Template variable substitution
+        #     issue['description'] = self.check_substituions(issue['description'])
+        #     # Use an existing issue if we find one, otherwise create a new issue
+        #     issue_data = self.check_existing_issues(f"{self.project['swc_id'].upper()} | {issue['title']}")
+        #     if not issue_data:
+        #         issue_data = self.create_issue(issue, self.project['swc_id'])
+        #     # Clean up the data and save it in the class var self.reporting_issues
+        #     if issue_data:
+        #         self.reporting_issues[self.project['swc_id']][issue_data['iid']] = self.format_issue_data(issue_data)
+        # self.fix_issues()
 
-        # self.combined_data['issues'] = self.get_project_issues()
-
-
-        # renamed new_issues to template_issues
-        for issue in self.new_issues:
-            # Template variable substitution
-            issue['description'] = self.check_substituions(issue['description'])
-            # Use an existing issue if we find one, otherwise create a new issue
-            issue_data = self.check_existing_issues(f"{self.project['swc_id'].upper()} | {issue['title']}")
-            if not issue_data:
-                issue_data = self.create_issue(issue, self.project['swc_id'])
-            # Clean up the data and save it in the class var self.reporting_issues
-            if issue_data:
-                self.reporting_issues[self.project['swc_id']][issue_data['iid']] = self.format_issue_data(issue_data)
-        self.fix_issues()
-
-    def add_tasks_to_issues(self, issues, projects):
+    def merge_issues(self, data):
         '''
-        Create all the project tasks for a given swc and assign it to the issue, returning all issues with a
-        list of tasks.
+        Take staged and results data, and combine it with existing issues
 
-        :param issues: (dict) containing all issues
-        :return: (dict) updated issues with a task key
+
         '''
+        # Get any existing issues
+        existing = self.get_project_issues()
+        for issue in data:
+            print(f"TESTING NEW issues:\n{data[issue]}\n")
+        for issue in existing:
+            print(f"TESTING EXISTING issues:\n{issue}\n")
 
-        for project in projects:
-            print(f"\nTESTING project:\n{project.__dict__}\n")
-        for issue in issues:
-            print(f"\nTESTING issues:\n{issue}\n")
-        # # Add task with link to repo into issue if needed
+    def fix_issues(self, data, existing_issues):
+        '''
+        Add all the required details, using quick commands, to the end of an issues description. Currently this is only
+        assigning the issue, and adding tasks to the end of the issue.
+
+        '''
+        # TODO get existing tasks
+        # TODO get existing assignees
+        # TODO combine the new data with existing data
+        # TODO If anything is updated in the data set, create or update the issue on gitlab.com
+        print(f"TESTING issues:\n{data['issues']}\n")
+        # Get the existing tasks
         # tasks = self.get_existing_tasks(description)
-        # if not self.check_existing_tasks(tasks, self.project['name']):
-        #     newline = (
-        #         f"- [ ] [{self.project['name']}]"
-        #         f"({self.config.destination_host}/{self.project['target_namespace']}"
-        #         f"/{self.project['path_with_namespace']})"
-        #     )
-        #     description = self.modify_description(description, newline)
-        # else:
-        #     self.log.info(f"The correct task: '{self.project['name']}' all ready existing in issue: '#{issue_id}'.")
 
-    def rpt_needful(self, import_results, staged_projects):
-        '''
+        # # By the point this method gets called, everything required should be a class var
+        # for issue_id in self.reporting_issues[self.project['swc_id']].keys():
+        #     # Oversimplifcations for readability
+        #     description = self.reporting_issues[self.project['swc_id']][issue_id]['description']
+        #     original_desc_len = len(description)
+        #     assignees = self.reporting_issues[self.project['swc_id']][issue_id]['assignees']
 
-        This method will call the required methods to massage the data, and lessen our API calls.
-        '''
+        #     # Add assignee if needed
+        #     if not self.check_existing_assignees(assignees, self.assignee) and self.assignee:
+        #         description = self.modify_description(description, f"/assign {self.assignee}")
 
-        # Getting successful project imports or already imported projects
-        successes = self.reporting_check_results(import_results)
+        #     # Add task with link to repo into issue if needed
+        #     tasks = self.get_existing_tasks(description)
+        #     if not self.check_existing_tasks(tasks, self.project['name']):
+        #         newline = (
+        #             f"- [ ] [{self.project['name']}]"
+        #             f"({self.config.destination_host}/{self.project['target_namespace']}"
+        #             f"/{self.project['path_with_namespace']})"
+        #         )
+        #         description = self.modify_description(description, newline)
+        #     else:
+        #         self.log.info(f"The correct task: '{self.project['name']}' all ready existing in issue: '#{issue_id}'.")
 
-        # Reporting on completed projects
-        for completed_project in staged_projects:
-            if completed_project['path_with_namespace'] in successes:
-                self.create_tracking_issues(completed_project)
+        #     # finally, update the issue with our new and improved description
+        #     if len(description) != original_desc_len:
+        #         self.log.info(f"Issue: '#{issue_id}' description has been changed. Attempting to update.")
+        #         data = {'description': description}
+        #         r = self.update_issue(issue_id, data)
 
     def combine_wave_data(self, staged_projects, import_results):
         '''
@@ -135,8 +147,7 @@ class Reporting(BaseClass):
         clean_data['users_map'] = self.create_users_map_from_data(clean_data['projects'])
         # Create our issues
         clean_data['issues'] = self.create_issues_from_data(clean_data, self.template_issues)
-        # for t in clean_data:
-        #     print(f"TESTING: clean_data[{t}]:\n{clean_data[t]}\n")
+
         return clean_data
 
     def create_issues_from_data(self, clean_data, template_issues):
@@ -145,24 +156,28 @@ class Reporting(BaseClass):
 
         :param clean_data: (dict) dict of successful projects and users
         :return issues: (dict) new dict of issues keyed on title
+
         '''
         req_issues = {}
         # readability simplification
         projects = clean_data['projects']
 
         for project in projects:
-            # readability simplification
+            # readability simplifications
             email = projects[project]['swc_manager_email']
-            username = clean_data['users_map'][email]
-
+            uname = clean_data['users_map'].get(email)
+            proj = projects[project]
+            task = (
+                f"[{proj['name']}]({self.config.destination_host}/{proj['target_namespace']}/{proj['path_with_namespace']})"
+            )
             for issue in template_issues:
+                cur_title = f"{proj['swc_id']} | {issue['title']}"
                 # Does our issue already exist in the dataset?
-                if cur_title := f"{projects[project]['swc_id']} | {issue['title']}" not in req_issues:
-                    req_issues[cur_title] = {'assignees': [username]}
-                else:
-                    req_issues[cur_title]['assignees'].append(username)
-
-        # print(f"TESTING users_map?:\n{clean_data['users_map']}\n")
+                if cur_title not in req_issues:
+                    req_issues[cur_title] = {'assignees': [uname], 'tasks': [task]}
+                elif (uname) and (uname not in req_issues[cur_title]['assignees']):
+                    req_issues[cur_title]['assignees'].append(uname)
+                    req_issues[cur_title]['tasks'].append(task)
         return req_issues
 
     def create_users_map_from_data(self, projects):
@@ -173,17 +188,20 @@ class Reporting(BaseClass):
         :return users_map: (dict) dict keys: users values: gitlab username
 
         '''
+
         progress = {'total': len(projects), 'current': 0}
         users_map = {}
+
         for project in projects:
-            # Did the staged project have a customer defined email?
-            if email := projects[project].get('swc_manager_email'):
+            email = projects[project].get('swc_manager_email')
+            # Did the staged project have a customer defined email and is it already mapped?
+            if email and email not in users_map:
                 # Did we get a username back from the GitLab instance?
-                if username := self.usersClient.find_user_by_email_comparison_without_id(email):
-                    users_map[email] = username['name']
+                if uname := self.usersClient.find_user_by_email_comparison_without_id(email):
+                    users_map[email] = uname['username']
                     progress['current'] += 1
                     self.log.info(
-                        f"Found username: '{username['username']}' for email: '{email}' Progress: "
+                        f"Found username: '{uname['username']}' for email: '{email}' Progress: "
                         f"[ {progress['current']} / {progress['total']} ]"
                     )
                 else:
@@ -193,12 +211,19 @@ class Reporting(BaseClass):
                     self.log.warning(
                         f"No username found for '{email}' Progress: [ {progress['current']} / {progress['total']} ]"
                     )
+            elif email in users_map:
+                progress['current'] += 1
+                self.log.info(
+                    f"User '{users_map[email]}' existed. No need to look it up again. Progress: [ {progress['current']} / {progress['total']} ]"
+                )
             else:
                 # No email in the staged project
                 progress['current'] += 1
                 self.log.warning(
-                    f"No email staged found for '{projects[project]['name']}' Progress: [ {progress['current']} / {progress['total']} ]"
+                    f"No email staged found for '{projects[project]['name']}' "
+                    f"Progress: [ {progress['current']} / {progress['total']} ]"
                 )
+
         return users_map
 
     def check_import_results(self, import_results):
@@ -239,42 +264,6 @@ class Reporting(BaseClass):
                 clean_data[project['name']] = project
 
         return clean_data
-
-    def fix_issues(self):
-        '''
-        Add all the required details, using quick commands, to the end of an issues description. Currently this is only
-        assigning the issue, and adding tasks to the end of the issue.
-
-        '''
-
-        # By the point this method gets called, everything required should be a class var
-        for issue_id in self.reporting_issues[self.project['swc_id']].keys():
-            # Oversimplifcations for readability
-            description = self.reporting_issues[self.project['swc_id']][issue_id]['description']
-            original_desc_len = len(description)
-            assignees = self.reporting_issues[self.project['swc_id']][issue_id]['assignees']
-
-            # Add assignee if needed
-            if not self.check_existing_assignees(assignees, self.assignee) and self.assignee:
-                description = self.modify_description(description, f"/assign {self.assignee}")
-
-            # Add task with link to repo into issue if needed
-            tasks = self.get_existing_tasks(description)
-            if not self.check_existing_tasks(tasks, self.project['name']):
-                newline = (
-                    f"- [ ] [{self.project['name']}]"
-                    f"({self.config.destination_host}/{self.project['target_namespace']}"
-                    f"/{self.project['path_with_namespace']})"
-                )
-                description = self.modify_description(description, newline)
-            else:
-                self.log.info(f"The correct task: '{self.project['name']}' all ready existing in issue: '#{issue_id}'.")
-
-            # finally, update the issue with our new and improved description
-            if len(description) != original_desc_len:
-                self.log.info(f"Issue: '#{issue_id}' description has been changed. Attempting to update.")
-                data = {'description': description}
-                r = self.update_issue(issue_id, data)
 
     def get_existing_tasks(self, description):
         '''
@@ -394,7 +383,7 @@ class Reporting(BaseClass):
                 self.log.warning(f"Problem with REPORTING VAR: '{var}', it does not exist.")
         return description
 
-    def check_substituions(self, description):
+    def check_substitutions(self, description):
         '''
         find all occurences of pattern and create a list of them. Then call the subs_replace function and replace the
         pattern, then return the updated description.
