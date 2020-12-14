@@ -194,9 +194,10 @@ class MigrateClient(BaseClass):
             successes = self.reporting_check_results(import_results)
 
             # Reporting on completed projects
-            for completed_project in staged_projects:
-                if completed_project['path_with_namespace'] in successes:
-                    self.create_tracking_issues(completed_project)
+            if self.config.reporting.get('pmi_project_id'):
+                for completed_project in staged_projects:
+                    if completed_project['path_with_namespace'] in successes:
+                        self.create_tracking_issues(completed_project)
 
             self.are_results(import_results, "project", "import")
             # append Total : Successful count of project imports
