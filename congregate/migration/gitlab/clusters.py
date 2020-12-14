@@ -108,8 +108,8 @@ class ClustersClient(BaseClass):
     def create_data(self, c, data, c_type, path=""):
         data["name"] = c["name"]
         data["domain"] = c["domain"]
-        data["enabled"] = c.get("enabled", "true")
-        data["managed"] = c.get("managed", "true")
+        data["enabled"] = c.get("enabled", True)
+        data["managed"] = c.get("managed", True)
         if c["management_project"]:
             # Find and retrieve management project ID on destination
             sp = safe_json_response(self.projects_api.get_project(
