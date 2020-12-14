@@ -88,6 +88,8 @@ class ImportExportClient(BaseClass):
                                 src_id, is_project)
                             retry = False
                             total_time = 0
+                        else:
+                            break
                     elif total_time < self.config.max_export_wait_time:
                         self.log.info(
                             f"Checking {export_type.lower()} {name} export status ({state}) in {wait_time} seconds")
@@ -275,7 +277,6 @@ class ImportExportClient(BaseClass):
         return import_id
 
     def attempt_import(self, filename, name, path, namespace, override_params, members):
-        import_response = None
         if self.config.location == "aws":
             presigned_get_url = self.aws.generate_presigned_url(
                 filename, "GET")
@@ -524,6 +525,8 @@ class ImportExportClient(BaseClass):
                                 filename, name, path, dst_namespace, override_params, members)
                             retry = False
                             timeout = 0
+                        else:
+                            return None
                     # For any other import status (started, scheduled, etc.) wait for it to update
                     elif timeout < max_wait_time:
                         self.log.info(
