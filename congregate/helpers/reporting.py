@@ -56,7 +56,8 @@ class Reporting(BaseClass):
             issue['description'] = self.check_substitutions(issue['description'])
         # Create our data structure
         combined_data = self.combine_wave_data(staged_projects, import_results)
-        self.merge_issues(combined_data['issues'])
+        existing_issues = self.combine_existing_issues()
+
 
         return
 
@@ -73,18 +74,19 @@ class Reporting(BaseClass):
         #         self.reporting_issues[self.project['swc_id']][issue_data['iid']] = self.format_issue_data(issue_data)
         # self.fix_issues()
 
-    def merge_issues(self, data):
+    def combine_existing_issues(self):
         '''
-        Take staged and results data, and combine it with existing issues
+        Get existing issues, and put it in a format similar to what our combined_data looks like. Add tasks and
+        assignees lists split out into its own key in the existing dict.
 
-
+        :return existing: (dict) existing issues, formatted similar to our combined data.
         '''
         # Get any existing issues
         existing = self.get_project_issues()
-        for issue in data:
-            print(f"TESTING NEW issues:\n{data[issue]}\n")
         for issue in existing:
-            print(f"TESTING EXISTING issues:\n{issue}\n")
+            existing[issue]['tasks'] = self.get_existing_tasks(existing[issue]['description'])
+
+        return existing
 
     def fix_issues(self, data, existing_issues):
         '''
@@ -167,17 +169,23 @@ class Reporting(BaseClass):
             email = projects[project]['swc_manager_email']
             uname = clean_data['users_map'].get(email)
             proj = projects[project]
-            task = (
-                f"[{proj['name']}]({self.config.destination_host}/{proj['target_namespace']}/{proj['path_with_namespace']})"
-            )
+            task = {
+                'repo_name': proj['name'],
+                'status': None,
+                'url': f"{self.config.destination_host}/{proj['target_namespace']}"
+            }
+
             for issue in template_issues:
                 cur_title = f"{proj['swc_id']} | {issue['title']}"
-                # Does our issue already exist in the dataset?
+                # Does our issue already exist in the dataset, if not create it with current assignee and task
                 if cur_title not in req_issues:
-                    req_issues[cur_title] = {'assignees': [uname], 'tasks': [task]}
-                elif (uname) and (uname not in req_issues[cur_title]['assignees']):
-                    req_issues[cur_title]['assignees'].append(uname)
+                    req_issues[cur_title] = {'assignees': [{'name': uname}], 'tasks': [task]}
+                else:
                     req_issues[cur_title]['tasks'].append(task)
+                    # Making sure username exists, and its not already in the list of assignees, add it
+                    if (uname) and not any(u['name'] == uname for u in req_issues[cur_title]['assignees']):
+                        req_issues[cur_title]['assignees'].append({'name': uname})
+
         return req_issues
 
     def create_users_map_from_data(self, projects):
@@ -343,26 +351,6 @@ class Reporting(BaseClass):
         description = description + f"\n{change}"
         return description
 
-    def format_issue_data(self, issue_data):
-        '''
-        Clean up all the superfluous data and return a nice clean dict.
-
-            :param issue_data: (dict) This should be all the messy data from either a newly created or existing issue.
-                Meant to replace existing data with a smaller subset of data, saving or freeing memory.
-
-        '''
-        if issue_data:
-            return {
-                'url': issue_data['url'],
-                'web_url': issue_data['web_url'],
-                'state': issue_data['state'],
-                'iid': issue_data['iid'],
-                'description': issue_data['description'],
-                'project_id': issue_data['project_id'],
-                'assignees': issue_data['assignees'],
-                'task_completion_status': issue_data['task_completion_status']
-            }
-
     def subs_replace(self, var, description):
         '''
         Performs variable substitution on issue description, returning a new description.  Check the config first for a
@@ -392,6 +380,19 @@ class Reporting(BaseClass):
         for var in occurrences:
             description = self.subs_replace(var, description)
         return description
+
+    def format_assignees(self, assignees):
+        '''
+        Take in a list of dicts of a gitlab assignee, and return only the data we are interested in
+
+        :param assignees: (list) issue api call for assignees.
+        return users: (list) stripped down dict to just gitlab username
+        '''
+        # I should probably do something else here. This is so basic. Maybe something with pop, or list comprehension.
+        users = []
+        for assignee in assignees:
+            users.append({'name': assignee['name']})
+        return users
 
     def check_existing_issues(self, new_issue):
         '''
@@ -430,14 +431,25 @@ class Reporting(BaseClass):
         Get all the issues for our Reporting project, so we can check for duplicates later.
         Returns a json body if successful, none if not.
         '''
-        issues = []
-        for i in self.issuesApi.get_all_project_issues(
+        clean_issues = {}
+
+        for issue in self.issuesApi.get_all_project_issues(
             self.reporting_project_id,
             self.config.destination_host,
             self.config.destination_token
         ):
-            issues.append(i)
-        return issues
+            clean_issues[issue['title']] = {
+                'url': issue['_links']['self'],
+                'web_url': issue['web_url'],
+                'state': issue['state'],
+                'iid': issue['iid'],
+                'description': issue['description'],
+                'project_id': issue['project_id'],
+                'assignees': self.format_assignees(issue['assignees']),
+                'task_completion_status': issue['task_completion_status']
+            }
+
+        return clean_issues
 
     def create_issue(self, details, project_name):
         '''
