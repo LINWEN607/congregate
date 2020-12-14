@@ -113,9 +113,9 @@ class MigrateClient(BaseClass):
         # Dry-run and log cleanup
         if self.dry_run:
             clean_data(dry_run=False, files=[
-                "dry_run_user_migration.json",
-                "dry_run_group_migration.json",
-                "dry_run_project_migration.json"])
+                "results/dry_run_user_migration.json",
+                "results/dry_run_group_migration.json",
+                "results/dry_run_project_migration.json"])
         rotate_logs()
         if self.config.source_type == "gitlab":
             self.migrate_from_gitlab()
@@ -218,7 +218,8 @@ class MigrateClient(BaseClass):
 
         '''
 
-        good_errors = ['Name has already been taken, Path has already been taken']
+        good_errors = [
+            'Name has already been taken, Path has already been taken']
         successes = []
         for result in import_results:
             for k, v in result.items():
@@ -290,7 +291,8 @@ class MigrateClient(BaseClass):
 
         '''
         if self.check_required_reporting_issues:  # This is making sure all required fields are present.
-            self.log.info("Successfully got reporting config from congregate.conf. Proceeding to make our issues.")
+            self.log.info(
+                "Successfully got reporting config from congregate.conf. Proceeding to make our issues.")
             report = Reporting(
                 reporting_project_id=self.config.reporting['pmi_project_id'],
                 project=project
@@ -373,7 +375,8 @@ class MigrateClient(BaseClass):
                                 )
                             )
                             result[project["path_with_namespace"]]["teamcity_config_xml"] = (
-                                self.migrate_teamcity_build_config(project, project_id, tc_client)
+                                self.migrate_teamcity_build_config(
+                                    project, project_id, tc_client)
                             )
                     self.projects.remove_import_user(project_id)
                     # Added a new file in the repo
@@ -381,11 +384,13 @@ class MigrateClient(BaseClass):
                         project_id)
                     # Added protected branch
                     result[project["path_with_namespace"]]["project_level_protected_branch"] = (
-                        self.gh_repos.migrate_gh_project_protected_branch(project_id, project)
+                        self.gh_repos.migrate_gh_project_protected_branch(
+                            project_id, project)
                     )
                     # Added project level MR rules
                     result[project["path_with_namespace"]]["project_level_mr_approvals"] = (
-                        self.gh_repos.migrate_gh_project_level_mr_approvals(project_id, project)
+                        self.gh_repos.migrate_gh_project_level_mr_approvals(
+                            project_id, project)
                     )
                     # Migrate archived projects
                     result[project["path_with_namespace"]]["archived"] = self.gh_repos.migrate_archived_repo(
@@ -1042,7 +1047,8 @@ class MigrateClient(BaseClass):
                 for param in params:
                     if not self.variables.safe_add_variables(
                         new_id,
-                        jenkins_client.transform_ci_variables(param, jenkins_ci_src_hostname)
+                        jenkins_client.transform_ci_variables(
+                            param, jenkins_ci_src_hostname)
                     ):
                         result = False
             return result
@@ -1094,7 +1100,8 @@ class MigrateClient(BaseClass):
                     for param in dig(params, "properties", "property", default=[]):
                         if not self.variables.safe_add_variables(
                             new_id,
-                            tc_client.transform_ci_variables(param, tc_ci_src_hostname)
+                            tc_client.transform_ci_variables(
+                                param, tc_ci_src_hostname)
                         ):
                             result = False
             return result

@@ -33,10 +33,10 @@ class ClustersClient(BaseClass):
                             # Only if migrating to the parent group on gitlab.com
                             if self.config.dstn_parent_id and "/" not in self.config.dstn_parent_group_path:
                                 resp = self.groups_api.add_group_cluster(
-                                    self.config.dstn_parent_id, self.config.destination_host, self.config.destination_token, self.create_data(c, {}))
+                                    self.config.dstn_parent_id, self.config.destination_host, self.config.destination_token, self.create_data(c, {}, "Instance "))
                         else:
                             resp = self.instance_api.add_instance_cluster(
-                                self.config.destination_host, self.config.destination_token, self.create_data(c, {}))
+                                self.config.destination_host, self.config.destination_token, self.create_data(c, {}, "Instance "))
                         if resp.status_code != 201:
                             self.log.error(
                                 f"Failed to create instance cluster {c['name']}, with error:\n{resp} - {resp.text}")
@@ -59,7 +59,7 @@ class ClustersClient(BaseClass):
                         f"Failed to fetch clusters ({c['name']}) for group {full_path} (ID: {old_id})")
                     return False
                 resp = self.groups_api.add_group_cluster(
-                    new_id, self.config.destination_host, self.config.destination_token, data=self.create_data(c, {}))
+                    new_id, self.config.destination_host, self.config.destination_token, data=self.create_data(c, {}, "Group ", path=full_path))
                 if resp.status_code != 201:
                     self.log.error(
                         f"Failed to create group {full_path} cluster {c['name']}, with error:\n{resp} - {resp.text}")
@@ -87,7 +87,7 @@ class ClustersClient(BaseClass):
                             f"Failed to fetch project {path} (ID: {old_id}) cluster ({c['name']})")
                         return False
                     resp = self.projects_api.add_project_cluster(
-                        new_id, self.config.destination_host, self.config.destination_token, data=self.create_data(c, {}))
+                        new_id, self.config.destination_host, self.config.destination_token, data=self.create_data(c, {}, "Project ", path=path))
                     if resp.status_code != 201:
                         self.log.error(
                             f"Failed to create project {path} (ID: {new_id}) cluster ({c['name']}), with error:\n{resp} - {resp.text}")
@@ -105,9 +105,11 @@ class ClustersClient(BaseClass):
                 f"Failed to migrate project {path} (ID: {old_id}) clusters, with error:\n{re}")
             return False
 
-    def create_data(self, c, data):
+    def create_data(self, c, data, c_type, path=""):
         data["name"] = c["name"]
         data["domain"] = c["domain"]
+        data["enabled"] = c.get("enabled", True)
+        data["managed"] = c.get("managed", True)
         if c["management_project"]:
             # Find and retrieve management project ID on destination
             sp = safe_json_response(self.projects_api.get_project(
@@ -120,7 +122,7 @@ class ClustersClient(BaseClass):
                     data["management_project_id"] = mp_id
                 else:
                     self.log.warning(
-                        f"Cluster {c['name']} management project {path} NOT found on destination")
+                        f"{c_type}{path} cluster {c['name']} management project {path} NOT found on destination")
         data["environment_scope"] = c["environment_scope"]
         data["platform_kubernetes_attributes"] = {}
         data["platform_kubernetes_attributes"]["api_url"] = c["platform_kubernetes"]["api_url"]
