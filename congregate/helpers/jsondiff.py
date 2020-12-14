@@ -281,17 +281,19 @@ class Comparator(object):
             u"+++": {},
             u"---": {},
         }
-        for name in keys:
-            # old_obj is missing
-            if name not in old_obj:
-                result[u'+++'][name] = new_obj[name]
-            # new_obj is missing
-            elif name not in new_obj:
-                result[u'---'][name] = old_obj[name]
-            else:
-                res = self._compare_elements(old_obj[name], new_obj[name])
-                if res is not None:
-                    result[name] = res
+
+        if old_obj and new_obj:
+            for name in keys:
+                # old_obj is missing
+                if name not in old_obj:
+                    result[u'+++'][name] = new_obj[name]
+                # new_obj is missing
+                elif name not in new_obj:
+                    result[u'---'][name] = old_obj[name]
+                else:
+                    res = self._compare_elements(old_obj[name], new_obj[name])
+                    if res is not None:
+                        result[name] = res
 
         return self._filter_results(result)
 
