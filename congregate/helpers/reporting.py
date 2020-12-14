@@ -42,32 +42,30 @@ class Reporting(BaseClass):
 
         '''
 
-        self.combined_data = self.combine_wave_data(staged_projects, import_results)
+        self.template_issues = []
         self.reporting_issues = {}  # The issues this class will return
-        self.combined_data['issues'] = self.get_project_issues()
-        self.new_issues = []
-        self.combined_data['users'] = self.define_users(self.combined_data['projects'])
 
-
-        # Read our configuration issues in
+        # Read our configuration template_issues in
         for issue in self.config.reporting['post_migration_issues']:
-            self.new_issues.append(self.read_template_file(issue))
-        # self.reporting_issues = {self.project['swc_id']: {}}
+            self.template_issues.append(self.read_template_file(issue))
 
-        # print(f"{'*' * 80}")
-        # for issue in self.combined_data['users']:
-        #     print(f"issue: {issue['title']}")
-        # print(f"{'*' * 80}")
-        # print(f"users: {self.combined_data['users']}")
-        self.get_required_users(self.combined_data['users'])
+        # Perform variable subs on our template issues
+        for issue in self.template_issues:
+            issue['description'] = self.check_substituions(issue['description'])
+        # Start creating our data structure
+        self.combined_data = self.combine_wave_data(staged_projects, import_results)
+
         return
 
-        # Convert our spreadsheet defined email into a GitLab Username
-        if user := self.usersClient.find_user_by_email_comparison_without_id(self.project.get('swc_manager_email')):
-            self.assignee = user['username']
-        else:
-            self.assignee = None
+        # Get all our tasks
+        # TODO: add tasks to all our issues
+        # print(f"TESTING combined_data[issues]:\n{self.combined_data['issues']}")
+        # self.add_tasks_to_issues(self.combined_data['issues'], self.combined_data['projects'])
 
+        # self.combined_data['issues'] = self.get_project_issues()
+
+
+        # renamed new_issues to template_issues
         for issue in self.new_issues:
             # Template variable substitution
             issue['description'] = self.check_substituions(issue['description'])
@@ -80,64 +78,31 @@ class Reporting(BaseClass):
                 self.reporting_issues[self.project['swc_id']][issue_data['iid']] = self.format_issue_data(issue_data)
         self.fix_issues()
 
-    def get_required_users(self, users):
+    def add_tasks_to_issues(self, issues, projects):
         '''
-        Check if our email has a GitLab username or not
-        '''
+        Create all the project tasks for a given swc and assign it to the issue, returning all issues with a
+        list of tasks.
 
-        new_users = {}
-        self.log.info(f"There are '{len(users)}' emails to check.")
-        for email in users:
-            if not users[email]:
-                if username := self.usersClient.find_user_by_email_comparison_without_id(email):
-                    print(f"\nFound username: {username['username']}\n")
-                else:
-                    print(f"\nno user for '{email}'\n")
-        
-
-    def define_users(self, clean_data):
+        :param issues: (dict) containing all issues
+        :return: (dict) updated issues with a task key
         '''
 
-        Create a user mapping dict from clean_data, containing email as key to hold future data
+        for project in projects:
+            print(f"\nTESTING project:\n{project.__dict__}\n")
+        for issue in issues:
+            print(f"\nTESTING issues:\n{issue}\n")
+        # # Add task with link to repo into issue if needed
+        # tasks = self.get_existing_tasks(description)
+        # if not self.check_existing_tasks(tasks, self.project['name']):
+        #     newline = (
+        #         f"- [ ] [{self.project['name']}]"
+        #         f"({self.config.destination_host}/{self.project['target_namespace']}"
+        #         f"/{self.project['path_with_namespace']})"
+        #     )
+        #     description = self.modify_description(description, newline)
+        # else:
+        #     self.log.info(f"The correct task: '{self.project['name']}' all ready existing in issue: '#{issue_id}'.")
 
-        :param clean_data: (dict)
-
-        '''
-
-        users = {}
-        for project in clean_data:
-            users[clean_data[project]['swc_manager_email']] = None
-
-        return users
-
-    def combine_wave_data(self, staged_projects, import_results):
-        '''
-        Take staged_projects and import_results, combine them, and return the resulting successful dataset
-
-        :param staged_projects: (str) The staged projects used in our migration
-        :param import_results: (str) The results of our migration
-        :return: (dict) A dictionary of the successful results, keyed off repo.
-
-        '''
-        clean_data = {}
-        # removing the counts dictionary
-        clean_data['projects'] = self.check_import_results(import_results)
-        clean_data['projects'] = self.check_staged_projects(staged_projects, clean_data['projects'])
-        return clean_data
-
-    # TODO: recreate all the migrate.py stuff into reporting.py.  Leaving only the class instantiation in migrate.py
-    # TODO: implement all the random code pulled over from migrate.py
-    '''
-            if self.check_required_reporting_issues:  # This is making sure all required fields are present.
-            self.log.info("Successfully got reporting config from congregate.conf. Proceeding to make our issues.")
-
-       else:
-            self.log.warning(
-                f"Couldn't find a required REPORTING config in [DESTINATION] section of congregate.conf.\n"
-                f"Issues will not be created."
-            )
-
-    '''
     def rpt_needful(self, import_results, staged_projects):
         '''
 
@@ -152,17 +117,89 @@ class Reporting(BaseClass):
             if completed_project['path_with_namespace'] in successes:
                 self.create_tracking_issues(completed_project)
 
-    def check_reporting_config(self):
+    def combine_wave_data(self, staged_projects, import_results):
         '''
-        Check that all our REQUIRED reporting fields are in congregate.conf. Return True if so. This will not check non 
-        required fields.
+        Take staged_projects and import_results, combine them, and return the resulting successful dataset
+
+        :param staged_projects: (str) The staged projects used in our migration
+        :param import_results: (str) The results of our migration
+        :return: (dict) A dictionary of the successful results, keyed off repo.
+
         '''
-        if all([
-            self.config.reporting,
-            self.config.reporting.get("post_migration_issues"),
-            self.config.reporting.get("pmi_project_id")
-        ]):
-            return True
+        clean_data = {}
+        # Raw projects
+        clean_data['projects'] = self.check_import_results(import_results)
+        # Combine with successful projects.  This limits us to only successful projects
+        clean_data['projects'] = self.check_staged_projects(staged_projects, clean_data['projects'])
+        # Create the email to username map
+        clean_data['users_map'] = self.create_users_map_from_data(clean_data['projects'])
+        # Create our issues
+        clean_data['issues'] = self.create_issues_from_data(clean_data, self.template_issues)
+        # for t in clean_data:
+        #     print(f"TESTING: clean_data[{t}]:\n{clean_data[t]}\n")
+        return clean_data
+
+    def create_issues_from_data(self, clean_data, template_issues):
+        '''
+        Create issues using supplied project data
+
+        :param clean_data: (dict) dict of successful projects and users
+        :return issues: (dict) new dict of issues keyed on title
+        '''
+        req_issues = {}
+        # readability simplification
+        projects = clean_data['projects']
+
+        for project in projects:
+            # readability simplification
+            email = projects[project]['swc_manager_email']
+            username = clean_data['users_map'][email]
+
+            for issue in template_issues:
+                # Does our issue already exist in the dataset?
+                if cur_title := f"{projects[project]['swc_id']} | {issue['title']}" not in req_issues:
+                    req_issues[cur_title] = {'assignees': [username]}
+                else:
+                    req_issues[cur_title]['assignees'].append(username)
+
+        # print(f"TESTING users_map?:\n{clean_data['users_map']}\n")
+        return req_issues
+
+    def create_users_map_from_data(self, projects):
+        '''
+        Check if our email has a GitLab username or not. Return a dict containing the map of username to gitlab name
+
+        :param projects: (dict) successful migrated project data
+        :return users_map: (dict) dict keys: users values: gitlab username
+
+        '''
+        progress = {'total': len(projects), 'current': 0}
+        users_map = {}
+        for project in projects:
+            # Did the staged project have a customer defined email?
+            if email := projects[project].get('swc_manager_email'):
+                # Did we get a username back from the GitLab instance?
+                if username := self.usersClient.find_user_by_email_comparison_without_id(email):
+                    users_map[email] = username['name']
+                    progress['current'] += 1
+                    self.log.info(
+                        f"Found username: '{username['username']}' for email: '{email}' Progress: "
+                        f"[ {progress['current']} / {progress['total']} ]"
+                    )
+                else:
+                    # No username for a given user, still adding it, so we don't repeat an API call
+                    users_map[email] = None
+                    progress['current'] += 1
+                    self.log.warning(
+                        f"No username found for '{email}' Progress: [ {progress['current']} / {progress['total']} ]"
+                    )
+            else:
+                # No email in the staged project
+                progress['current'] += 1
+                self.log.warning(
+                    f"No email staged found for '{projects[project]['name']}' Progress: [ {progress['current']} / {progress['total']} ]"
+                )
+        return users_map
 
     def check_import_results(self, import_results):
         '''

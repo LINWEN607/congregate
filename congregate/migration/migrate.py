@@ -205,6 +205,31 @@ class MigrateClient(BaseClass):
         if staged_projects and import_results:
             self.create_issue_reporting(staged_projects, import_results)
 
+    def check_reporting_requirements(self):
+        '''
+        Return true if congregate.conf is correct, log an error if not.
+
+        '''
+
+        if self.config.reporting:
+            if all([
+                self.config.reporting,
+                self.config.reporting.get("post_migration_issues"),
+                self.config.reporting.get("pmi_project_id")
+            ]):
+                self.log.info("Successfully got reporting config from congregate.conf. Proceeding to make our issues.")
+                return True
+            else:
+                self.log.error(
+                    f"Couldn't find a required REPORTING config in [DESTINATION] section of congregate.conf.\n"
+                    f"Issues will not be created."
+                )
+        else:
+            self.log.error(
+                f"Couldn't find a required REPORTING config in [DESTINATION] section of congregate.conf.\n"
+                f"Issues will not be created."
+            )
+
     def create_issue_reporting(self, staged_projects, import_results):
         '''
         Use the Reporting class to create/update whatever issues are in the congregate.conf for a given staged_projects
@@ -212,13 +237,14 @@ class MigrateClient(BaseClass):
 
         '''
 
-        if report := Reporting(
-            reporting_project_id=self.config.reporting['pmi_project_id'],
-            dry_run=self.dry_run
-        ):
-            report.init_class_vars(staged_projects, import_results)
-        else:
-            self.log.warning(f"REPORTING: Failed to instaniate the reporting module")
+        if self.check_reporting_requirements():
+            if report := Reporting(
+                reporting_project_id=self.config.reporting['pmi_project_id'],
+                dry_run=self.dry_run
+            ):
+                report.init_class_vars(staged_projects, import_results)
+            else:
+                self.log.warning(f"REPORTING: Failed to instaniate the reporting module")
 
     def migrate_github_group(self, group):
         result = False
