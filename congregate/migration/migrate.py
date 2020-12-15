@@ -538,7 +538,7 @@ class MigrateClient(BaseClass):
 
     def migrate_user_info(self):
         staged_users = self.users.get_staged_users()
-        if staged_users and can_migrate_users(staged_users):
+        if staged_users:
             if not self.skip_users:
                 self.log.info("{}Migrating user info".format(
                     get_dry_log(self.dry_run)))
@@ -580,6 +580,8 @@ class MigrateClient(BaseClass):
         response = None
         state = user.get("state", None).lower()
         email = user.get("email", None)
+        name = user.get("name", None)
+        username = user.get("username", None)
         new_user = {
             "email": email,
             "id": None
@@ -590,7 +592,9 @@ class MigrateClient(BaseClass):
         }
         try:
             if not self.only_post_migration_info:
-                if state == "active" or (state in self.BLOCKED and self.config.keep_blocked_users):
+                if state == "active" or \
+                    (state in self.BLOCKED and self.config.keep_blocked_users) or \
+                    all(v is not None for v in [name, username, email]):
                     user_data = self.users.generate_user_data(user)
                     self.log.info("{0}Attempting to create user {1}".format(
                         get_dry_log(self.dry_run), email))

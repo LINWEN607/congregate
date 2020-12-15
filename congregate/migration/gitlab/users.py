@@ -42,20 +42,23 @@ class UsersClient(BaseClass):
         :param src: Is this the source or destination system? True if source else False. Defaults to False.
         :return: The user entity found or None
         """
-        self.log.info("Searching for user email {0} in {1} system".format(
-            email, "source" if src else "destination"))
-        users = self.users_api.search_for_user_by_email(
-            self.config.source_host if src else self.config.destination_host,
-            self.config.source_token if src else self.config.destination_token,
-            email)
-        # Will searching for an explicit email actually return more than one? Probably is just an array of 1
-        for user in users:
-            if user and user.get("email", None) and user["email"].lower() == email.lower():
-                self.log.info("Found user by email {}".format(email))
-                return user
-            else:
-                self.log.error(
-                    "Could not find user based on email {}".format(email))
+        if email:
+            self.log.info("Searching for user email {0} in {1} system".format(
+                email, "source" if src else "destination"))
+            users = self.users_api.search_for_user_by_email(
+                self.config.source_host if src else self.config.destination_host,
+                self.config.source_token if src else self.config.destination_token,
+                email)
+            # Will searching for an explicit email actually return more than one? Probably is just an array of 1
+            for user in users:
+                if user and user.get("email", None) and user["email"].lower() == email.lower():
+                    self.log.info("Found user by email {}".format(email))
+                    return user
+                else:
+                    self.log.error(
+                        "Could not find user based on email {}".format(email))
+        else:
+            self.log.error("No user email provided. Skipping")
         return None
 
     def username_exists(self, old_user):
