@@ -242,9 +242,9 @@ class MigrateClient(BaseClass):
                 reporting_project_id=self.config.reporting['pmi_project_id'],
                 dry_run=self.dry_run
             ):
-                report.init_class_vars(staged_projects, import_results)
+                report.handle_creating_issues(staged_projects, import_results)
             else:
-                self.log.warning(f"REPORTING: Failed to instaniate the reporting module")
+                self.log.warning(f"REPORTING: Failed to instantiate the reporting module")
 
     def migrate_github_group(self, group):
         result = False
@@ -306,7 +306,7 @@ class MigrateClient(BaseClass):
             project, gh_host, gh_token, dry_run=self.dry_run)
         if result.get(project["path_with_namespace"], False) is not False:
             result_response = result[project["path_with_namespace"]]["response"]
-            if project_id := result_response.get("id", None):
+            if (isinstance(result_response, dict)) and (project_id := result_response.get("id", None)):
                 full_path = result_response.get("full_path").strip("/")
                 success = self.ext_import.wait_for_project_to_import(full_path)
                 if success:

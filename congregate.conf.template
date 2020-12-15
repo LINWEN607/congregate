@@ -62,10 +62,10 @@
 # reporting = {
 #    "post_migration_issues": ["issue1.md", "issue2.md"],
 #    "pmi_project_id": 6439,
-#    "subs": [  # subs are keyword values that will be replaced in the post_migration_issues templates
-#        {"faq_page": "https://about.gitlab.com/handbook/engineering/infrastructure/faq/"},
-#        {"jira_page": "https://www.atlassian.com/"}
-#        ]
+#    "subs": {
+#        "faq_page": "https://about.gitlab.com/handbook/engineering/infrastructure/faq/",
+#        "jira_page": "https://www.atlassian.com/"
+#        }
 #    }
 
 

@@ -31,12 +31,12 @@ class Reporting(BaseClass):
         super(Reporting, self).__init__()
         self.dry_run = dry_run
 
-    def init_class_vars(self, staged_projects, import_results):
+    def handle_creating_issues(self, staged_projects, import_results):
         '''
         Do the needful. Check/Create issues, assign tasks, etc...
 
         >>> ri = Reporting(reporting_project_id, project)
-        >>> ri.init_class_vars()
+        >>> ri.handle_creating_issues()
         >>> ri.reporting_issues # saving this data in case we want to use it later
         {issue_iid: {'iid': 345, 'title', 'some title'}, issue_iid: {'iid': 345, 'title', 'some title'}}
 
@@ -96,8 +96,6 @@ class Reporting(BaseClass):
             else:
                 progress['current'] += 1
                 self.log.info(f"No changes for issue: '{issue}' Progress: [ {progress['current']} / {progress['total']} ]")
-
-        return
 
     def create_new_combined_issues(self, new_data, exst_data):
         '''
@@ -199,28 +197,33 @@ class Reporting(BaseClass):
         # readability simplification
         projects = clean_data['projects']
 
-        for project in projects:
+        for _, project in projects.items():
             # readability simplifications
-            email = projects[project]['swc_manager_email']
-            uname = clean_data['users_map'].get(email)
-            proj = projects[project]
-            task = {
-                'repo_name': proj['name'],
-                'status': None,
-                'url': f"{self.config.destination_host}/{proj['target_namespace']}/{proj['path_with_namespace']}"
-            }
-
-            for issue in template_issues:
-                cur_title = f"{proj['swc_id']} | {issue['title']}"
-                cur_desc = issue['description']
-                # Does our issue already exist in the dataset, if not create it with current assignee and task
-                if cur_title not in req_issues:
-                    req_issues[cur_title] = {'assignees': [{'name': uname}], 'tasks': [task], 'description': cur_desc}
+            if isinstance(project, dict) and project.get('swc_manager_email'):
+                email = project['swc_manager_email']
+                uname = clean_data['users_map'].get(email)
+                task = {
+                    'repo_name': project['name'],
+                    'status': None
+                }
+                if project.get("target_namespace"):
+                    task['url'] = f"{self.config.destination_host}/{project['target_namespace']}/{project['path_with_namespace']}"
                 else:
-                    req_issues[cur_title]['tasks'].append(task)
-                    # Making sure username exists, and its not already in the list of assignees, add it
-                    if (uname) and not any(u['name'] == uname for u in req_issues[cur_title]['assignees']):
-                        req_issues[cur_title]['assignees'].append({'name': uname})
+                    task['url'] = f"{self.config.destination_host}/{project['path_with_namespace']}"
+
+                for issue in template_issues:
+                    cur_title = f"{project['swc_id']} | {issue['title']}"
+                    cur_desc = issue['description']
+                    # Does our issue already exist in the dataset, if not create it with current assignee and task
+                    if cur_title not in req_issues:
+                        req_issues[cur_title] = {'assignees': [{'name': uname}], 'tasks': [task], 'description': cur_desc}
+                    else:
+                        req_issues[cur_title]['tasks'].append(task)
+                        # Making sure username exists, and its not already in the list of assignees, add it
+                        if (uname) and not any(u['name'] == uname for u in req_issues[cur_title]['assignees']):
+                            req_issues[cur_title]['assignees'].append({'name': uname})
+            else:
+                self.log.warning("Unable to create issue due to missing SWC manager email. Check your staged_projects.json")
 
         return req_issues
 
@@ -236,37 +239,43 @@ class Reporting(BaseClass):
         progress = {'total': len(projects), 'current': 0}
         users_map = {}
 
-        for project in projects:
-            email = projects[project].get('swc_manager_email')
-            # Did the staged project have a customer defined email and is it already mapped?
-            if email and email not in users_map:
-                # Did we get a username back from the GitLab instance?
-                if uname := self.usersClient.find_user_by_email_comparison_without_id(email):
-                    users_map[email] = uname['username']
+        for _, project in projects.items():
+            if isinstance(project, dict):
+                email = project.get('swc_manager_email')
+                # Did the staged project have a customer defined email and is it already mapped?
+                if email and email not in users_map:
+                    # Did we get a username back from the GitLab instance?
+                    if uname := self.usersClient.find_user_by_email_comparison_without_id(email):
+                        users_map[email] = uname['username']
+                        progress['current'] += 1
+                        self.log.info(
+                            f"Found username: '{uname['username']}' for email: '{email}' Progress: "
+                            f"[ {progress['current']} / {progress['total']} ]"
+                        )
+                    else:
+                        # No username for a given user, still adding it, so we don't repeat an API call
+                        users_map[email] = None
+                        progress['current'] += 1
+                        self.log.warning(
+                            f"No username found for '{email}' Progress: [ {progress['current']} / {progress['total']} ]"
+                        )
+                elif email in users_map:
                     progress['current'] += 1
                     self.log.info(
-                        f"Found username: '{uname['username']}' for email: '{email}' Progress: "
-                        f"[ {progress['current']} / {progress['total']} ]"
+                        f"User '{users_map[email]}' existed. No need to look it up again. Progress: [ {progress['current']} / {progress['total']} ]"
                     )
                 else:
-                    # No username for a given user, still adding it, so we don't repeat an API call
-                    users_map[email] = None
+                    # No email in the staged project
                     progress['current'] += 1
                     self.log.warning(
-                        f"No username found for '{email}' Progress: [ {progress['current']} / {progress['total']} ]"
+                        f"No email staged found for '{projects[project]['name']}' "
+                        f"Progress: [ {progress['current']} / {progress['total']} ]"
                     )
-            elif email in users_map:
-                progress['current'] += 1
-                self.log.info(
-                    f"User '{users_map[email]}' existed. No need to look it up again. Progress: [ {progress['current']} / {progress['total']} ]"
-                )
             else:
-                # No email in the staged project
-                progress['current'] += 1
-                self.log.warning(
-                    f"No email staged found for '{projects[project]['name']}' "
-                    f"Progress: [ {progress['current']} / {progress['total']} ]"
-                )
+                self.log.warning("""
+                    Unable to add user to map due to malformed project found. 
+                    Check project_migration_results.json or staged_projects.json
+                """)
 
         return users_map
 
@@ -341,19 +350,7 @@ class Reporting(BaseClass):
 
         '''
 
-        not_required = []
-        required_tasks = new.copy()
-        # Find any tasks that exist in old
-        for task in new:
-            for otask in old:
-                if otask['repo_name'] == task['repo_name']:
-                    # task exists in new
-                    not_required.append(task)
-
-        for d in not_required:
-            required_tasks.remove(d)
-
-        return required_tasks
+        return [i for i in new if i not in old]
 
     def update_issue(self, issue_id, data):
         '''
