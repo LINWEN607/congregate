@@ -350,7 +350,20 @@ class Reporting(BaseClass):
 
         '''
 
-        return [i for i in new if i not in old]
+        not_required = []
+        required_tasks = new.copy()
+        # Find any tasks that exist in old
+        for task in new:
+            for otask in old:
+                if otask['repo_name'] == task['repo_name']:
+                    # task exists in new
+                    not_required.append(task)
+
+        for d in not_required:
+            required_tasks.remove(d)
+
+        return required_tasks
+
 
     def update_issue(self, issue_id, data):
         '''
