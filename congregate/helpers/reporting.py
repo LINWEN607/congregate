@@ -353,11 +353,10 @@ class Reporting(BaseClass):
         not_required = []
         required_tasks = new.copy()
         # Find any tasks that exist in old
-        for task in new:
-            for otask in old:
-                if otask['repo_name'] == task['repo_name']:
-                    # task exists in new
-                    not_required.append(task)
+        old_repo_names = [o['repo_name'] for o in old]
+        not_required = [
+            i for i in new if i['repo_name'] in old_repo_names
+        ]
 
         for d in not_required:
             required_tasks.remove(d)
