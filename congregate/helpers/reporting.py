@@ -51,32 +51,110 @@ class Reporting(BaseClass):
             i['description'] = self.check_substitutions(i['description'])
             self.template_issues.append(i)
 
-        # Perform variable subs on our template issues
-        for issue in self.template_issues:
-            issue['description'] = self.check_substitutions(issue['description'])
-        # Create our data structure
+        # making an issues data strucuture, building off previous structures
         combined_data = self.combine_wave_data(staged_projects, import_results)
         existing_issues = self.combine_existing_issues()
+        combined_issues = self.create_new_combined_issues(combined_data['issues'], existing_issues)
 
+        # Some stats ahead of time
+        stats = {
+            'total_projects': len(combined_data),
+            'total_issues': len(combined_issues),
+            'existed': 0,
+            'changed': 0,
+            'create': 0
+        }
+        for issue in combined_issues:
+            if not combined_issues[issue]['status']['exists']:
+                stats['create'] += 1
+            elif combined_issues[issue]['status']['changed']:
+                stats['changed'] += 1
+            elif combined_issues[issue]['status']['exists']:
+                stats['existed'] += 1
+
+        self.log.info(f"\n{'*' * 80}\n{'*' * 80}\n\n")
+        for stat in stats:
+            self.log.info(f"REPORTING: {stat}: {stats[stat]}")
+        self.log.info(f"\n{'*' * 80}\n{'*' * 80}\n")
+
+        # Do it
+        progress = {'total': len(combined_issues), 'current': 0}
+        for issue in combined_issues:
+            # Create an issue
+            if not combined_issues[issue]['status']['exists']:
+                progress['current'] += 1
+                self.log.info(f"Creating issue: '{issue}' Progress: [ {progress['current']} / {progress['total']} ]")
+                data = {'title': issue, 'description': combined_issues[issue]['description']}
+                self.create_issue(data)
+            # Update an issue
+            elif combined_issues[issue]['status']['changed']:
+                progress['current'] += 1
+                self.log.info(f"Updating issue: '{issue}' Progress: [ {progress['current']} / {progress['total']} ]")
+                data = {'description': combined_issues[issue]['description']}
+                r = self.update_issue(combined_issues[issue]['status']['exists'], data)
+            # Nothing to see here, move along
+            else:
+                progress['current'] += 1
+                self.log.info(f"No changes for issue: '{issue}' Progress: [ {progress['current']} / {progress['total']} ]")
 
         return
 
-        # # renamed new_issues to template_issues
-        # for issue in self.new_issues:
-        #     # Template variable substitution
-        #     issue['description'] = self.check_substituions(issue['description'])
-        #     # Use an existing issue if we find one, otherwise create a new issue
-        #     issue_data = self.check_existing_issues(f"{self.project['swc_id'].upper()} | {issue['title']}")
-        #     if not issue_data:
-        #         issue_data = self.create_issue(issue, self.project['swc_id'])
-        #     # Clean up the data and save it in the class var self.reporting_issues
-        #     if issue_data:
-        #         self.reporting_issues[self.project['swc_id']][issue_data['iid']] = self.format_issue_data(issue_data)
-        # self.fix_issues()
+    def create_new_combined_issues(self, new_data, exst_data):
+        '''
+        Take our new data and our existing data, and combine them as required.  Returning a new issues dict with
+        any updates or creations we need to do.
+
+        :param new_data: (dict) Our existing combined data, as created from staged_data import_results.
+        :param exst_data: (dict) Existing GitLab issue data from the GitLab instance.
+        :return combined_issues: (dict) Combined dict with whether or not we need to create or update issue.
+
+        '''
+
+        for issue in new_data:
+            new_data[issue]['status'] = {'exists': None, 'changed': None}
+            if issue in exst_data:
+                new_data[issue]['status']['exists'] = exst_data[issue]['iid']
+                if not new_data[issue]['assignees'] == exst_data[issue]['assignees']:
+                    # stupid hack so I can goto bed. Equality on a list of dicts only works if the list is in the same order.
+                    nusers = []
+                    for new_user in new_data[issue]['assignees']:
+                        nusers.append(new_user['name'])
+                    ousers = []
+                    for old_user in exst_data[issue]['assignees']:
+                        ousers.append(old_user['name'])
+                    if not (ousers.sort() == nusers.sort()):
+                        # Readability Simplification
+                        new = new_data[issue]['assignees']
+                        old = exst_data[issue]['assignees']
+                        # replacing our new assignees list with users that aren't in existing assignees
+                        new = [user for user in new if user not in old]
+                        new_data[issue]['status']['changed'] = True
+                else:
+                    # No changes to make, so we empty the list, I feel like this should be handled differently
+                    new_data[issue]['assignees'] = []
+                # Get the required tasks
+                new_data[issue]['tasks'] = self.check_existing_tasks(new_data[issue]['tasks'], exst_data[issue]['tasks'])
+                if new_data[issue]['tasks']:
+                    new_data[issue]['status']['changed'] = True
+                # Use the existing description
+                new_data[issue]['description'] = exst_data[issue]['description']
+
+        # Now that our data is all munged up, lets go ahead and change descriptions if needed
+        for issue in new_data:
+            # Tasks first
+            for task in new_data[issue]['tasks']:
+                newline = f"- [ ] [{task['repo_name']}]({task['url']})"
+                new_data[issue]['description'] += f"\n{newline}"
+
+            # Now assignees
+            for assignee in new_data[issue]['assignees']:
+                new_data[issue]['description'] += f"\n/assign {assignee['name']}"
+
+        return new_data
 
     def combine_existing_issues(self):
         '''
-        Get existing issues, and put it in a format similar to what our combined_data looks like. Add tasks and
+        Get EXISTING issues, and put it in a format similar to what our combined_data looks like. Add tasks and
         assignees lists split out into its own key in the existing dict.
 
         :return existing: (dict) existing issues, formatted similar to our combined data.
@@ -87,49 +165,6 @@ class Reporting(BaseClass):
             existing[issue]['tasks'] = self.get_existing_tasks(existing[issue]['description'])
 
         return existing
-
-    def fix_issues(self, data, existing_issues):
-        '''
-        Add all the required details, using quick commands, to the end of an issues description. Currently this is only
-        assigning the issue, and adding tasks to the end of the issue.
-
-        '''
-        # TODO get existing tasks
-        # TODO get existing assignees
-        # TODO combine the new data with existing data
-        # TODO If anything is updated in the data set, create or update the issue on gitlab.com
-        print(f"TESTING issues:\n{data['issues']}\n")
-        # Get the existing tasks
-        # tasks = self.get_existing_tasks(description)
-
-        # # By the point this method gets called, everything required should be a class var
-        # for issue_id in self.reporting_issues[self.project['swc_id']].keys():
-        #     # Oversimplifcations for readability
-        #     description = self.reporting_issues[self.project['swc_id']][issue_id]['description']
-        #     original_desc_len = len(description)
-        #     assignees = self.reporting_issues[self.project['swc_id']][issue_id]['assignees']
-
-        #     # Add assignee if needed
-        #     if not self.check_existing_assignees(assignees, self.assignee) and self.assignee:
-        #         description = self.modify_description(description, f"/assign {self.assignee}")
-
-        #     # Add task with link to repo into issue if needed
-        #     tasks = self.get_existing_tasks(description)
-        #     if not self.check_existing_tasks(tasks, self.project['name']):
-        #         newline = (
-        #             f"- [ ] [{self.project['name']}]"
-        #             f"({self.config.destination_host}/{self.project['target_namespace']}"
-        #             f"/{self.project['path_with_namespace']})"
-        #         )
-        #         description = self.modify_description(description, newline)
-        #     else:
-        #         self.log.info(f"The correct task: '{self.project['name']}' all ready existing in issue: '#{issue_id}'.")
-
-        #     # finally, update the issue with our new and improved description
-        #     if len(description) != original_desc_len:
-        #         self.log.info(f"Issue: '#{issue_id}' description has been changed. Attempting to update.")
-        #         data = {'description': description}
-        #         r = self.update_issue(issue_id, data)
 
     def combine_wave_data(self, staged_projects, import_results):
         '''
@@ -172,14 +207,15 @@ class Reporting(BaseClass):
             task = {
                 'repo_name': proj['name'],
                 'status': None,
-                'url': f"{self.config.destination_host}/{proj['target_namespace']}"
+                'url': f"{self.config.destination_host}/{proj['target_namespace']}/{proj['path_with_namespace']}"
             }
 
             for issue in template_issues:
                 cur_title = f"{proj['swc_id']} | {issue['title']}"
+                cur_desc = issue['description']
                 # Does our issue already exist in the dataset, if not create it with current assignee and task
                 if cur_title not in req_issues:
-                    req_issues[cur_title] = {'assignees': [{'name': uname}], 'tasks': [task]}
+                    req_issues[cur_title] = {'assignees': [{'name': uname}], 'tasks': [task], 'description': cur_desc}
                 else:
                     req_issues[cur_title]['tasks'].append(task)
                     # Making sure username exists, and its not already in the list of assignees, add it
@@ -295,18 +331,29 @@ class Reporting(BaseClass):
 
         return tasks
 
-    def check_existing_tasks(self, tasks, repo_name):
+    def check_existing_tasks(self, new, old):
         '''
         See if our repo has a task already, return True if so
 
-            :param tasks: (list) a sanitized list of issue tasks
-            :param repo: (string) a repos name we want to check if exists in tasks
-            :return bool: (bool) return True if found
+            :param new: (list) Tasks created from staged_projects
+            :param old: (list) Tasks pulled from existing issues on GitLab instance
+            :return required: (list) Return a list of new tasks that don't exist in old tasks
 
         '''
-        for task in tasks:
-            if task['repo_name'] == repo_name:
-                return True
+
+        not_required = []
+        required_tasks = new.copy()
+        # Find any tasks that exist in old
+        for task in new:
+            for otask in old:
+                if otask['repo_name'] == task['repo_name']:
+                    # task exists in new
+                    not_required.append(task)
+
+        for d in not_required:
+            required_tasks.remove(d)
+
+        return required_tasks
 
     def update_issue(self, issue_id, data):
         '''
@@ -323,20 +370,6 @@ class Reporting(BaseClass):
                 self.reporting_project_id,
                 issue_id, data
             )
-
-    def check_existing_assignees(self, assignees, username):
-        '''
-        Return True if assignee in the list assignees
-
-            :param: assignees: (list) Assigned users list from an issue
-            :param: username: (str) GitLab username to check
-            :return: True if username found in assignees
-
-        '''
-
-        for user in assignees:
-            if (user['username'] == username) and username:  # Meaning our username can't be None
-                return True
 
     def modify_description(self, description, change):
         '''
@@ -391,7 +424,7 @@ class Reporting(BaseClass):
         # I should probably do something else here. This is so basic. Maybe something with pop, or list comprehension.
         users = []
         for assignee in assignees:
-            users.append({'name': assignee['name']})
+            users.append({'name': assignee['username']})
         return users
 
     def check_existing_issues(self, new_issue):
@@ -451,29 +484,20 @@ class Reporting(BaseClass):
 
         return clean_issues
 
-    def create_issue(self, details, project_name):
+    def create_issue(self, details):
         '''
         Creating an issue using the issues.py, for reporting purposes.
         The issue title will be created using project_name, and the issue description will be filled in with details.
         Returns a json body if successful, None if not.
         '''
-        message = "Will Create"
+
         if not self.dry_run:
             created_issue = safe_json_response(
                 self.issuesApi.create_issue(
                     self.config.destination_host,
                     self.config.destination_token,
                     self.reporting_project_id,
-                    title=f"{project_name.upper()} | {details['title']}",
+                    title=f"{details['title']}",
                     description=details['description']
                 )
             )
-            message = "Created"
-            # Remapping for convenience
-            created_issue['url'] = created_issue['_links']['self']
-        else:
-            created_issue = None
-
-        self.log.info(f"{message} issue: {project_name.upper()} | {details['title']}")
-
-        return created_issue
