@@ -53,8 +53,8 @@ class Reporting(BaseClass):
 
         # making an issues data strucuture, building off previous structures
         combined_data = self.combine_wave_data(staged_projects, import_results)
-        existing_issues = self.combine_existing_issues()
-        combined_issues = self.create_new_combined_issues(combined_data['issues'], existing_issues)
+        self.existing_issues = self.combine_existing_issues()
+        combined_issues = self.create_new_combined_issues(combined_data['issues'], self.existing_issues)
 
         # Some stats ahead of time
         stats = {
@@ -380,8 +380,8 @@ class Reporting(BaseClass):
             :return: (str) updated description
 
         '''
-
-        description = description + f"\n{change}"
+        if change:
+            description = description + f"\n{change}"
         return description
 
     def subs_replace(self, var, description):
@@ -402,6 +402,8 @@ class Reporting(BaseClass):
                 description = description.replace(f"{{{{{var}}}}}", str(eval(var)))
             except AttributeError:
                 self.log.warning(f"Problem with REPORTING VAR: '{var}', it does not exist.")
+            except NameError as e:
+                self.log.warning(f"Problem with REPORTING VAR: {e}")
         return description
 
     def check_substitutions(self, description):
