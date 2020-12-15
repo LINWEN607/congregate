@@ -465,6 +465,7 @@ def main():
                     repo_diff.generate_diff_report()
                     repo_diff.generate_html_report(
                         "Project", repo_diff.generate_diff_report(), "/data/results/project_migration_results.html")
+                    repo_diff.generate_split_html_report()
                 add_post_migration_stats(start, log=log)
 
             if arguments["stitch-results"]:

@@ -18,10 +18,12 @@ class ClustersTests(unittest.TestCase):
 
     def test_create_data(self):
         actual = self.clusters.create_data(
-            self.mock_clusters.get_cluster(), {})
+            self.mock_clusters.get_cluster(), {}, "Project")
         expected = {
             "name": "cluster-1",
             "domain": "",
+            "enabled": False,
+            "managed": True,
             "environment_scope": "development",
             "platform_kubernetes_attributes": {
                 "api_url": "https://36.111.51.20",
@@ -54,10 +56,12 @@ class ClustersTests(unittest.TestCase):
         mock_project.json.return_value = self.mock_projects.get_project()
 
         actual = self.clusters.create_data(
-            self.mock_clusters.get_cluster_with_mp(), {})
+            self.mock_clusters.get_cluster_with_mp(), {}, "Project")
         expected = {
             "name": "cluster-1",
             "domain": "",
+            "enabled": True,
+            "managed": True,
             "management_project_id": 42,
             "environment_scope": "development",
             "platform_kubernetes_attributes": {

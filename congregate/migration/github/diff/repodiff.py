@@ -9,7 +9,6 @@ from congregate.helpers.misc_utils import rewrite_json_list_into_dict, get_rollb
 from congregate.helpers.migrate_utils import get_dst_path_with_namespace
 from congregate.helpers.processes import handle_multi_process_write_to_file_and_return_results
 
-
 class RepoDiffClient(BaseDiffClient):
     '''
         Extension of BaseDiffClient focused on finding the differences between migrated repositories
@@ -85,12 +84,15 @@ class RepoDiffClient(BaseDiffClient):
     def generate_single_diff_report(self, project):
         diff_report = {}
         project_path = get_dst_path_with_namespace(project)
-        id = dig(self.results[project_path], "response", "repo_id")
-        id = id if id else dig(self.results[project_path], "response", "id")
+        if not (project_id := dig(self.results.get(project_path), "response", "repo_id")):
+            project_id = dig(self.results.get(project_path), "response", "id")
 
+        project_path_replaced = project_path.replace(".", "_")
+        group_namespace = "/".join(project_path_replaced.split("/")[:1])
+        mongo = self.connect_to_mongo()
         if isinstance(self.results.get(project_path), int) and self.results.get(project_path):
             return {
-                project_path: {
+                project_path_replaced: {
                     "info": "project already migrated",
                     "overall_accuracy": {
                         "accuracy": 1,
@@ -98,17 +100,19 @@ class RepoDiffClient(BaseDiffClient):
                     }
                 }
             }
-        elif isinstance(self.results.get(project_path), dict) and self.asset_exists(self.gl_projects_api.get_project, id):
+        elif (isinstance(self.results.get(project_path), dict)) and (self.asset_exists(self.gl_projects_api.get_project, project_id)):
             project_diff = self.handle_endpoints(project)
-            diff_report[project_path] = project_diff
+            diff_report[project_path_replaced] = project_diff
             try:
-                diff_report[project_path]["overall_accuracy"] = self.calculate_overall_accuracy(
-                    diff_report[project_path])
+                diff_report[project_path_replaced]["overall_accuracy"] = self.calculate_overall_accuracy(
+                    diff_report[project_path_replaced])
+                mongo.insert_data(f"diff_report_{group_namespace}", diff_report.copy())
+                mongo.close_connection()
                 return diff_report
-            except Exception:
-                self.log.info("Failed to generate diff for %s" % project_path)
-        return {
-            project_path: {
+            except Exception as e:
+                self.log.error(f"Failed to generate diff for {project_path} with error {e}")
+        missing_data = {
+            project_path_replaced: {
                 "error": "project missing",
                 "overall_accuracy": {
                     "accuracy": 0,
@@ -116,6 +120,9 @@ class RepoDiffClient(BaseDiffClient):
                 }
             }
         }
+        mongo.insert_data(f"diff_report_{group_namespace}", missing_data.copy())
+        mongo.close_connection()
+        return missing_data
 
     def handle_endpoints(self, project):
         repo_diff = {}

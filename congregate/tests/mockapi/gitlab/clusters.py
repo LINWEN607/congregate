@@ -5,6 +5,8 @@ class MockClustersApi():
             "name": "cluster-1",
             "created_at": "2020-11-01T22:42:42.764Z",
             "domain": "",
+            "enabled": False,
+            "managed": True,
             "provider_type": "user",
             "platform_type": "kubernetes",
             "environment_scope": "development",
