@@ -73,7 +73,7 @@ Copy the following data and add subsequent rows for single group migration
 
 ### User migration
 
-#### Preparation
+#### Prepare users
 
 * [ ] Review migration schedule (see customer migration schedule)
 * [ ] Login to the migration VM using `ssh -L 8000:localhost:8000 <vm_alias_ip_or_hostname>` to expose UI port `8000` outside of the docker container
@@ -102,7 +102,7 @@ Copy the following data and add subsequent rows for single group migration
   * [ ] Live: `./congregate.sh remove-blocked-users --commit`
 * [ ] Notify in the internal Slack channel dedicated to this migration you have completed preparation for the user wave
 
-#### Dry run
+#### Dry run users
 
 * [ ] Run the following command: `nohup ./congregate.sh migrate > data/waves/user_wave/user_wave_dry_run.log 2>&1 &`
   * **NOTE:** The command assumes you have no groups or projects staged
@@ -113,7 +113,7 @@ Copy the following data and add subsequent rows for single group migration
 * [ ] Copy the dry run log to `/opt/congregate/data/waves/user_wave/`
 * [ ] Notify in the internal Slack channel dedicated to this migration you have completed dry run for the user wave
 
-#### Migration
+#### Migrate users
 
 * [ ] Notify in the internal Slack channel dedicated to this migration you are starting the user migration wave
 * [ ] Notify the customer in the customer-facing Slack channel you are starting the user migration wave
@@ -124,7 +124,7 @@ Copy the following data and add subsequent rows for single group migration
 
 ### Group and project migration
 
-#### Preparation
+#### Prepare groups and projects
 
 * [ ] Review migration schedule (see customer migration schedule)
 * [ ] Check the status of **gitlab.com** (https://status.gitlab.com/)
@@ -140,7 +140,7 @@ Copy the following data and add subsequent rows for single group migration
 * [ ] Copy all staged data to `/opt/congregate/data/waves/wave_<insert_wave_number>/`
 * [ ] Notify in the internal Slack channel dedicated to this migration you have completed preparation for the wave
 
-#### Dry run
+#### Dry run groups and projects
 
 * [ ] Run the following command: `nohup ./congregate.sh migrate --skip-users > data/waves/wave_<insert_wave_number>/wave_<insert_wave_number>_dry_run.log 2>&1 &`
   * [ ] If only sub-groups are staged make sure to add `--subgroups-only`
@@ -151,7 +151,7 @@ Copy the following data and add subsequent rows for single group migration
 * [ ] Copy the dry run logs to `/opt/congregate/data/waves/wave_<insert_wave_number>/`
 * [ ] Notify in the internal Slack channel dedicated to this migration you have completed dry run for the wave
 
-#### Migration
+#### Migrate group and projects
 
 * [ ] Notify in the internal Slack channel dedicated to this migration you are starting the migration wave
 * [ ] Notify the customer in the customer-facing Slack channel you are starting the migration wave
@@ -160,6 +160,13 @@ Copy the following data and add subsequent rows for single group migration
 * [ ] Monitor the wave periodically by running `tail -f data/waves/wave_<insert_wave_number>/wave<insert-wave-here>.log`
 * [ ] Attach `data/logs/congregate.log`, `data/logs/audit.log`, and `data/waves/wave_<insert_wave_number>/wave<insert-wave-here>.log` to this issue
 * [ ] Copy `data/logs/congregate.log`, `data/logs/audit.log`, and `data/waves/wave_<insert_wave_number>/wave<insert-wave-here>.log` to `/opt/congregate/data/waves/wave_<insert_wave_number>/`
+* [ ] Inspect `data/results/import_failed_relations` for any project import failed relations (missing feature info)
+  * In case of missing MRs, Piplines, etc. that are critical to the customer and business:
+    * [ ] Stage and rollback projects with critical failed relations
+      * **NOTE:** `--skip-users` and `--skip-groups`
+    * [ ] Repeat [migration](#migrate-group-and-projects)
+    * [ ] Once complete, and in case of consistently missing info, discuss and request verbal or written sign-off from customer
+      * [ ] Otherwise [rollback](#rollback) the entire wave and reschedule
 
 ### Post Migration of Failed Groups and Projects
 
