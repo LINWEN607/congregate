@@ -52,11 +52,16 @@ class UsersClient(BaseClass):
             # Will searching for an explicit email actually return more than one? Probably is just an array of 1
             for user in users:
                 if user and user.get("email", None) and user["email"].lower() == email.lower():
-                    self.log.info("Found user by email {}".format(email))
+                    self.log.info(
+                        f"Found user by matching primary email {email}")
                     return user
+                # Allow secondary emails in user search (as of 13.7)
+                elif user and user.get("email", None):
+                    self.log.warning(
+                        f"Found user by email {email}, with primary set to {user['email']}")
                 else:
                     self.log.error(
-                        "Could not find user based on email {}".format(email))
+                        f"Could NOT find user by primary email {email}")
         else:
             self.log.error("No user email provided. Skipping")
         return None
