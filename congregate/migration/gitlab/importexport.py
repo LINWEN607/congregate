@@ -506,6 +506,9 @@ class ImportExportClient(BaseClass):
                     if state == "finished":
                         self.log.info(
                             f"Project {name} successfully imported to {dst_namespace}, with import status:\n{json_pretty(status_json)}")
+                        with open(self.app_path + "/data/results/import_failed_relations.json", "a") as f:
+                            json.dump({status_json.get("path_with_namespace", None): status_json.get(
+                                "failed_relations", None)}, f, indent=4)
                         break
                     elif state == "failed":
                         if self.SAML_MSG in status_json.get("import_error", None):

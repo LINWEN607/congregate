@@ -794,9 +794,9 @@ class MigrateClient(BaseClass):
                 if not self.dry_run:
                     result[full_path_with_parent_namespace] = self.migrate_single_group_features(
                         src_gid, dst_gid, full_path)
-            else:
+            elif not self.dry_run:
                 self.log.warning(
-                    f"{get_dry_log(self.dry_run)}Sub-group {full_path_with_parent_namespace} NOT found on destination")
+                    f"Sub-group {full_path_with_parent_namespace} NOT found on destination")
         except (RequestException, KeyError, OverflowError) as oe:
             self.log.error(
                 f"Failed to migrate sub-group {full_path} (ID: {src_gid}) info with error:\n{oe}")

@@ -26,6 +26,7 @@ def remove_dupes(my_list):
     """
     return list({v["id"]: v for v in my_list}.values())
 
+
 def remove_dupes_with_keys(my_list, list_of_keys):
     """
         Deduping function to remove any duplicates from a list based on a set of keys
@@ -37,6 +38,7 @@ def remove_dupes_with_keys(my_list, list_of_keys):
             key += str(v.get(k, ""))
         d[key] = v
     return list(d.values())
+
 
 def remove_dupes_but_take_higher_access(my_list):
     """
@@ -285,7 +287,8 @@ def clean_data(dry_run=True, files=None):
         "groups_audit.json",
         "results/dry_run_user_migration.json",
         "results/dry_run_group_migration.json",
-        "results/dry_run_project_migration.json"
+        "results/dry_run_project_migration.json",
+        "results/import_failed_relations.json"
     ] if not files else files
 
     if os.path.isdir("{}/data".format(app_path)):
