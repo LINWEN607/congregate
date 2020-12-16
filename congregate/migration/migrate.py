@@ -217,7 +217,8 @@ class MigrateClient(BaseClass):
                 self.config.reporting.get("post_migration_issues"),
                 self.config.reporting.get("pmi_project_id")
             ]):
-                self.log.info("Successfully got reporting config from congregate.conf. Proceeding to make our issues.")
+                self.log.info(
+                    "Successfully got reporting config from congregate.conf. Proceeding to make our issues.")
                 return True
             else:
                 self.log.error(
@@ -244,7 +245,8 @@ class MigrateClient(BaseClass):
             ):
                 report.handle_creating_issues(staged_projects, import_results)
             else:
-                self.log.warning(f"REPORTING: Failed to instantiate the reporting module")
+                self.log.warning(
+                    f"REPORTING: Failed to instantiate the reporting module")
 
     def migrate_github_group(self, group):
         result = False
@@ -594,7 +596,7 @@ class MigrateClient(BaseClass):
             if not self.only_post_migration_info:
                 if state == "active" or \
                     (state in self.BLOCKED and self.config.keep_blocked_users) or \
-                    all(v is not None for v in [name, username, email]):
+                        all(v is not None for v in [name, username, email]):
                     user_data = self.users.generate_user_data(user)
                     self.log.info("{0}Attempting to create user {1}".format(
                         get_dry_log(self.dry_run), email))
@@ -932,8 +934,9 @@ class MigrateClient(BaseClass):
                 else:
                     result[dst_path_with_namespace] = dst_pid
             else:
-                self.log.info("{0}Project {1} NOT found on destination, importing...".format(
-                    get_dry_log(self.dry_run), dst_path_with_namespace))
+                self.log.info(
+                    f"{get_dry_log(self.dry_run)}Project {dst_path_with_namespace} NOT found on destination, importing...")
+            if not self.only_post_migration_info:
                 import_id = self.ie.import_project(
                     project, dry_run=self.dry_run)
             if import_id and not self.dry_run:
