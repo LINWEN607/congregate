@@ -206,7 +206,7 @@ test:end-to-end full:
     - changes:
         - congregate/migration/gitlab/**/*
         - congregate/migration/migrate.py
-  timeout: 20 minutes
+  timeout: 25 minutes
 
 test:end-to-end single group:
   extends:
