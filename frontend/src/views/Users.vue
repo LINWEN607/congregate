@@ -48,6 +48,10 @@ export default {
         {
           label: 'Email',
           field: 'email'
+        },
+        {
+          label: 'State',
+          field: 'state'
         }
       ],
       rows: []
