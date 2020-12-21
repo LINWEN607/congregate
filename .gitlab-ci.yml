@@ -143,6 +143,8 @@ build jenkins seed image:
   stage: test
   before_script:
     - pip install poetry
+    # Disable parallel installer to avoid "Key Error" issues
+    - poetry config experimental.new-installer false
     - poetry install
     - ./congregate.sh init
   retry: 2
@@ -359,6 +361,7 @@ pages:
   #   - code_quality
   script:
     - mkdir -p data
+    - poetry config experimental.new-installer false
     - poetry install
     # - mv gl-code-quality-report.json congregate/docs/source/_static/
     - poetry run sphinx-apidoc -f -o congregate/docs/source/ ./
