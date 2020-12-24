@@ -1,7 +1,7 @@
 from requests.exceptions import RequestException
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import is_error_message_present, safe_json_response
+from congregate.helpers.misc_utils import is_error_message_present, safe_json_response, pop_multiple_keys
 from congregate.helpers import api
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.groups import GroupsClient
@@ -45,8 +45,7 @@ class MergeRequestApprovalsClient(BaseClass):
                 return False
             self.log.info(
                 "Migrating project-level MR approval configuration for {0} (ID: {1})".format(name, old_id))
-            conf.pop("approvers", None)
-            conf.pop("approver_groups", None)
+            conf = pop_multiple_keys(conf, ["approvers", "approver_groups"])
             self.projects_api.change_project_level_mr_approval_configuration(
                 new_id, self.config.destination_host, self.config.destination_token, conf)
 

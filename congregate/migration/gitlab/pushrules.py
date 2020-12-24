@@ -1,7 +1,7 @@
 from requests.exceptions import RequestException
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import is_error_message_present, safe_json_response
+from congregate.helpers.misc_utils import is_error_message_present, safe_json_response, pop_multiple_keys
 from congregate.migration.gitlab.api.projects import ProjectsApi
 
 
@@ -23,9 +23,7 @@ class PushRulesClient(BaseClass):
                     f"Failed to fetch push rules ({pr}) for project {name}")
                 return False
             self.log.info(f"Migrating project {name} push rules")
-            pr.pop("id", None)
-            pr.pop("created_at", None)
-            pr.pop("project_id", None)
+            pr = pop_multiple_keys(pr, ["id", "created_at", "project_id"])
             self.projects_api.create_project_push_rule(
                 new_id, self.config.destination_host, self.config.destination_token, pr)
             return True

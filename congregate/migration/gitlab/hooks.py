@@ -1,7 +1,7 @@
 from requests.exceptions import RequestException
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import get_dry_log, is_error_message_present, is_dot_com
+from congregate.helpers.misc_utils import get_dry_log, is_error_message_present, is_dot_com, pop_multiple_keys
 from congregate.migration.gitlab.api.instance import InstanceApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.groups import GroupsApi
@@ -28,8 +28,7 @@ class HooksClient(BaseClass):
                     s_hooks_dstn = list(self.instance_api.get_all_instance_hooks(
                         self.config.destination_host, self.config.destination_token))
                 for shd in s_hooks_dstn:
-                    shd.pop("id", None)
-                    shd.pop("created_at", None)
+                    shd = pop_multiple_keys(shd, ["id", "created_at"])
                 for shc in s_hooks_src:
                     if is_error_message_present(shc) or not shc:
                         self.log.error(
@@ -37,8 +36,7 @@ class HooksClient(BaseClass):
                         break
                     self.log.info(
                         f"{get_dry_log(dry_run)}Migrating instance hook {shc['url']} (ID: {shc['id']})")
-                    shc.pop("id", None)
-                    shc.pop("created_at", None)
+                    shc = pop_multiple_keys(shc, ["id", "created_at"])
                     # hook does not include secret token
                     if not dry_run and not shc in s_hooks_dstn:
                         if is_dot_com(self.config.destination_host):
@@ -69,9 +67,7 @@ class HooksClient(BaseClass):
                     self.log.error(
                         f"Failed to fetch project {path} (ID: {old_id}) hook ({h})")
                     return False
-                h.pop("id", None)
-                h.pop("created_at", None)
-                h.pop("project_id", None)
+                h = pop_multiple_keys(h, ["id", "created_at", "project_id"])
                 # hook does not include secret token
                 resp = self.projects_api.add_project_hook(
                     self.config.destination_host, self.config.destination_token, new_id, h)
@@ -98,9 +94,7 @@ class HooksClient(BaseClass):
                     self.log.error(
                         f"Failed to fetch hooks ({h}) for group {full_path} (ID: {old_id})")
                     return False
-                h.pop("id", None)
-                h.pop("created_at", None)
-                h.pop("group_id", None)
+                h = pop_multiple_keys(h, ["id", "created_at", "group_id"])
                 # hook does not include secret token
                 resp = self.groups_api.add_group_hook(
                     self.config.destination_host, self.config.destination_token, new_id, h)

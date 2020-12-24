@@ -1,7 +1,7 @@
 from requests.exceptions import RequestException
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import is_error_message_present, is_dot_com
+from congregate.helpers.misc_utils import is_error_message_present, is_dot_com, pop_multiple_keys
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.api.instance import InstanceApi
@@ -22,8 +22,7 @@ class KeysClient(BaseClass):
                 old_id, self.config.source_host, self.config.source_token))
             for key in d_keys:
                 # Remove unused key-values before posting key
-                key.pop("id", None)
-                key.pop("created_at", None)
+                key = pop_multiple_keys(key, ["id", "created_at"])
                 resp = self.projects_api.create_new_project_deploy_key(
                     new_id, self.config.destination_host, self.config.destination_token, key)
                 # When a key being migrated already exists somewhere on the destination instance
@@ -62,8 +61,7 @@ class KeysClient(BaseClass):
                         "Failed to fetch SSH keys ({0}) for user {1}".format(k, email))
                     return False
                 # Remove unused key-values before posting key
-                k.pop("id", None)
-                k.pop("created_at", None)
+                k = pop_multiple_keys(k, ["id", "created_at"])
                 self.users_api.create_user_ssh_key(
                     self.config.destination_host, self.config.destination_token, new_user.get("id", None), k)
             return True
@@ -88,8 +86,7 @@ class KeysClient(BaseClass):
                         "Failed to fetch GPG keys ({0}) for user {1}".format(k, email))
                     return False
                 # Remove unused key-values before posting key
-                k.pop("id", None)
-                k.pop("created_at", None)
+                k = pop_multiple_keys(k, ["id", "created_at"])
                 self.users_api.create_user_gpg_key(
                     self.config.destination_host, self.config.destination_token, new_user.get("id", None), k)
             return True

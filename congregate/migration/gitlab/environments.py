@@ -1,7 +1,7 @@
 from requests.exceptions import RequestException
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import is_error_message_present
+from congregate.helpers.misc_utils import is_error_message_present, pop_multiple_keys
 from congregate.migration.gitlab.api.projects import ProjectsApi
 
 
@@ -38,7 +38,4 @@ class EnvironmentsClient(BaseClass):
             return False
 
     def generate_environment_data(self, environment):
-        environment.pop("state")
-        environment.pop("slug")
-        environment.pop("id")
-        return environment
+        return pop_multiple_keys(environment, ["state", "slug", "id"])

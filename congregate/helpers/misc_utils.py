@@ -670,3 +670,9 @@ def find_files_in_folder(wildcard, directory="data"):
 
 def strip_protocol(s):
     return s.split("//")[-1]
+
+
+def pop_multiple_keys(src, keys):
+    for k in keys:
+        src.pop(k, None)
+    return src

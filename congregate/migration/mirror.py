@@ -4,6 +4,7 @@ from requests.exceptions import RequestException
 from congregate.helpers import api, logger as log
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.decorators import stable_retry
+from congregate.helpers.misc_utils import pop_multiple_keys
 from congregate.migration.gitlab.projects import ProjectsApi
 
 
@@ -115,8 +116,8 @@ class MirrorClient(BaseClass):
 
         try:
             if generic_repo.get("personal_repo", None):
-                data.pop("namespace_id")
-                data.pop("default_branch")
+                data = pop_multiple_keys(
+                    data, ["namespace_id", "default_branch"])
                 data["mirror_user_id"] = namespace_id
                 self.log.info(
                     "Attempting to generate personal shell repo for %s and create mirror" % generic_repo["name"])
