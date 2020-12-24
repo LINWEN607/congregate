@@ -1,7 +1,6 @@
 import unittest
 import pytest
 from mock import patch, PropertyMock, MagicMock
-import responses
 import warnings
 # mongomock is using deprecated logic as of Python 3.3
 # This warning suppression is used so tests can pass
@@ -14,6 +13,7 @@ from congregate.tests.mockapi.github.headers import MockHeaders
 from congregate.migration.github.repos import ReposClient
 from congregate.migration.github.users import UsersClient
 from congregate.migration.github.api.repos import ReposApi
+from congregate.migration.gitlab.api.projects import ProjectsApi
 
 
 @pytest.mark.unit_test
@@ -22,7 +22,8 @@ class ReposTests(unittest.TestCase):
     def setUp(self):
         self.mock_repos = MockReposApi()
         self.mock_headers = MockHeaders()
-        self.repos = ReposClient(host="https://github.company.com", token="123")
+        self.repos = ReposClient(
+            host="https://github.company.com", token="123")
 
     @patch.object(ReposApi, "get_repo")
     @patch.object(UsersClient, "format_users")
@@ -85,7 +86,8 @@ class ReposTests(unittest.TestCase):
         for repo in listed_repos:
             self.repos.handle_retrieving_repos(repo, mongo=mongo)
 
-        actual_projects = [d for d, _ in mongo.stream_collection("projects-github.company.com")]
+        actual_projects = [d for d, _ in mongo.stream_collection(
+            "projects-github.company.com")]
 
         expected_projects = [
             {
@@ -188,7 +190,8 @@ class ReposTests(unittest.TestCase):
         for repo in listed_repos:
             self.repos.handle_retrieving_repos(repo, mongo=mongo)
 
-        actual_projects = [d for d, _ in mongo.stream_collection("projects-github.company.com")]
+        actual_projects = [d for d, _ in mongo.stream_collection(
+            "projects-github.company.com")]
 
         expected_projects = [
             {
@@ -334,7 +337,8 @@ class ReposTests(unittest.TestCase):
         for repo in listed_repos:
             self.repos.handle_retrieving_repos(repo, mongo=mongo)
 
-        actual_projects = [d for d, _ in mongo.stream_collection("projects-github.company.com")]
+        actual_projects = [d for d, _ in mongo.stream_collection(
+            "projects-github.company.com")]
 
         expected_projects = [
             {
@@ -407,7 +411,8 @@ class ReposTests(unittest.TestCase):
         for repo in listed_repos:
             self.repos.handle_retrieving_repos(repo, mongo=mongo)
 
-        actual_projects = [d for d, _ in mongo.stream_collection("projects-github.company.com")]
+        actual_projects = [d for d, _ in mongo.stream_collection(
+            "projects-github.company.com")]
 
         expected_projects = [
             {
@@ -461,21 +466,21 @@ class ReposTests(unittest.TestCase):
     @patch("congregate.helpers.conf.Config.ci_sources")
     def test_list_ci_sources_jenkins(self, mock_ci_sources):
         mock_ci_sources.return_value = {
-                "teamcity_ci_source": [
-                    {
-                        "tc_ci_src_hostname": "tc_hostname",
-                        "tc_ci_src_username": "test",
-                        "tc_ci_src_access_token": "eyJ0eXA"
-                    }
-                ],
-                "jenkins_ci_source": [
-                    {
-                            "jenkins_ci_src_hostname": "http://jenkins-test:8080",
-                            "jenkins_ci_src_username": "jenkins-admin",
-                            "jenkins_ci_src_access_token": "token"
-                        }
-                ]
-            }
+            "teamcity_ci_source": [
+                {
+                    "tc_ci_src_hostname": "tc_hostname",
+                    "tc_ci_src_username": "test",
+                    "tc_ci_src_access_token": "eyJ0eXA"
+                }
+            ],
+            "jenkins_ci_source": [
+                {
+                    "jenkins_ci_src_hostname": "http://jenkins-test:8080",
+                    "jenkins_ci_src_username": "jenkins-admin",
+                    "jenkins_ci_src_access_token": "token"
+                }
+            ]
+        }
         mongo_mock = MongoConnector(
             host="test-server", port=123456, client=mongomock.MongoClient)
         data = [
@@ -505,22 +510,21 @@ class ReposTests(unittest.TestCase):
     @patch("congregate.helpers.conf.Config.ci_sources")
     def test_list_ci_sources_teamcity(self, mock_ci_sources):
         mock_ci_sources.return_value = {
-                "teamcity_ci_source": [
-                    {
-                        "tc_ci_src_hostname": "tc_hostname",
-                        "tc_ci_src_username": "test",
-                        "tc_ci_src_access_token": "eyJ0eXA"
-                    }
-                ],
-                "jenkins_ci_source": [
-                    {
-                            "jenkins_ci_src_hostname": "http://jenkins-test:8080",
-                            "jenkins_ci_src_username": "jenkins-admin",
-                            "jenkins_ci_src_access_token": "token"
-                        }
-                ]
-            }
-                
+            "teamcity_ci_source": [
+                {
+                    "tc_ci_src_hostname": "tc_hostname",
+                    "tc_ci_src_username": "test",
+                    "tc_ci_src_access_token": "eyJ0eXA"
+                }
+            ],
+            "jenkins_ci_source": [
+                {
+                    "jenkins_ci_src_hostname": "http://jenkins-test:8080",
+                    "jenkins_ci_src_username": "jenkins-admin",
+                    "jenkins_ci_src_access_token": "token"
+                }
+            ]
+        }
 
         mongo_mock = MongoConnector(
             host="test-server", port=123456, client=mongomock.MongoClient)
@@ -528,4 +532,52 @@ class ReposTests(unittest.TestCase):
         actual = self.repos.list_ci_sources_teamcity("website", mongo_mock)
 
         self.assertListEqual(expected, actual)
-    
+
+    @patch.object(ProjectsApi, "archive_project")
+    @patch.object(ReposApi, "get_repo")
+    def test_migrate_archived_repo_true(self, mock_get_repo, mock_archive):
+        mock_repo = MagicMock()
+        type(mock_repo).status_code = PropertyMock(return_value=200)
+        mock_repo.json.return_value = self.mock_repos.get_repo()[0]
+        mock_get_repo.return_value = mock_repo
+
+        mock_archive = MagicMock()
+        type(mock_archive).status_code = PropertyMock(return_value=200)
+
+        repo = {
+            "namespace": "test",
+            "path": "path"
+        }
+
+        self.assertTrue(self.repos.migrate_archived_repo(1, repo))
+
+    @patch.object(ReposApi, "get_repo")
+    def test_migrate_archived_repo_false_not_archived(self, mock_get_repo):
+        mock_repo = MagicMock()
+        type(mock_repo).status_code = PropertyMock(return_value=200)
+        mock_repo.json.return_value = self.mock_repos.get_repo()[1]
+        mock_get_repo.return_value = mock_repo
+
+        repo = {
+            "namespace": "test",
+            "path": "path"
+        }
+
+        self.assertFalse(self.repos.migrate_archived_repo(1, repo))
+
+    @patch.object(ReposApi, "get_repo")
+    def test_migrate_archived_repo_false_no_repo(self, mock_get_repo):
+        mock_repo = MagicMock()
+        type(mock_repo).status_code = PropertyMock(return_value=404)
+        mock_repo.json.return_value = {
+            "message": "Not Found",
+            "documentation_url": "https://developer.github.com/enterprise/2.21/v3"
+        }
+        mock_get_repo.return_value = mock_repo
+
+        repo = {
+            "namespace": "test",
+            "path": "path"
+        }
+
+        self.assertFalse(self.repos.migrate_archived_repo(1, repo))

@@ -260,7 +260,7 @@ class MockReposApi():
                 "has_pages": False,
                 "forks_count": 0,
                 "mirror_url": None,
-                "archived": False,
+                "archived": True,
                 "disabled": False,
                 "open_issues_count": 0,
                 "license": {
