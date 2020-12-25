@@ -26,7 +26,7 @@ This file will help developers understand how to setup a congregate development 
 
 ## Migration features
 
-[Migration Features Matrix](./migration-features-matrix.md)
+[List and overview of Migration Features](./migration-features.md)
 
 ## Dependencies
 
