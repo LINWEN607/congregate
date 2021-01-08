@@ -349,6 +349,7 @@ mvc:
       changes:
         - ./**/*.md
         - README.md
+        - docker/release/*
 
 pages:
   stage: deploy
