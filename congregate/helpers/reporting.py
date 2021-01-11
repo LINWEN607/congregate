@@ -120,7 +120,7 @@ class Reporting(BaseClass):
                     ousers = []
                     for old_user in exst_data[issue]['assignees']:
                         ousers.append(old_user['name'])
-                    if not (ousers.sort() == nusers.sort()):
+                    if not (sorted(ousers) == sorted(nusers)):
                         # Readability Simplification
                         new = new_data[issue]['assignees']
                         old = exst_data[issue]['assignees']
@@ -197,7 +197,7 @@ class Reporting(BaseClass):
         # readability simplification
         projects = clean_data['projects']
 
-        for _, project in projects.items():
+        for project in projects.values():
             # readability simplifications
             if isinstance(project, dict) and project.get('swc_manager_email'):
                 email = project['swc_manager_email']
@@ -238,8 +238,7 @@ class Reporting(BaseClass):
 
         progress = {'total': len(projects), 'current': 0}
         users_map = {}
-
-        for _, project in projects.items():
+        for project in projects.values():
             if isinstance(project, dict):
                 email = project.get('swc_manager_email')
                 # Did the staged project have a customer defined email and is it already mapped?
@@ -268,7 +267,7 @@ class Reporting(BaseClass):
                     # No email in the staged project
                     progress['current'] += 1
                     self.log.warning(
-                        f"No email staged found for '{projects[project]['name']}' "
+                        f"No email staged found for '{project}' "
                         f"Progress: [ {progress['current']} / {progress['total']} ]"
                     )
             else:
@@ -362,7 +361,6 @@ class Reporting(BaseClass):
             required_tasks.remove(d)
 
         return required_tasks
-
 
     def update_issue(self, issue_id, data):
         '''
