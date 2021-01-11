@@ -107,7 +107,7 @@ From **docker**:
 
 1. Pull the docker image from the container registry
     * For official versioned releases, pull from registry.gitlab.com/gitlab-com/customer-success/tools/congregate
-    * For rolling releases, pull from registry.gitlab.com/gitlab-com/customer-success/tools/congregate/master
+    * For rolling releases, pull from registry.gitlab.com/gitlab-com/customer-success/tools/congregate:rolling-debian
 2. Run the following command:
 
 ```bash

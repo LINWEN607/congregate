@@ -15,13 +15,13 @@ alias pt='poetry run pytest \
             --cov-config=.coveragerc \
             --cov=congregate congregate/tests/'
 alias pt_e2e='poetry run pytest -s -m e2e congregate/tests/'
-alias dpull='docker pull registry.gitlab.com/gitlab-com/customer-success/tools/congregate/master:$(get_latest_master_tag)'
+alias dpull='docker pull registry.gitlab.com/gitlab-com/customer-success/tools/congregate:rolling-debian'
 alias drun='docker run \
               --name congregate \
               -v /var/run/docker.sock:/var/run/docker.sock \
               -v $HOME/congregate_data:/opt/congregate/data \
               -p 8000:8000 \
-              -it registry.gitlab.com/gitlab-com/customer-success/tools/congregate/master:$(get_latest_master_tag) \
+              -it registry.gitlab.com/gitlab-com/customer-success/tools/congregate:rolling-debian \
               /bin/bash'
 alias pyclean='find ./congregate -name "*.pyc" -delete'
 alias gendocs='./read-docs.sh'
