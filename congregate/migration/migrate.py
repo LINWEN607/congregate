@@ -160,6 +160,7 @@ class MigrateClient(BaseClass):
 
     def migrate_from_github(self):
         dry_log = get_dry_log(self.dry_run)
+        import_results = None
 
         # Migrate users
         self.migrate_user_info()
@@ -289,8 +290,30 @@ class MigrateClient(BaseClass):
         }
 
     def import_github_project(self, project):
-        gh_host = None
-        gh_token = None
+        gh_host, gh_token = self.get_host_and_token()
+        members = project.pop("members")
+        path_with_namespace = f"{project.get('target_namespace', '')}/{project.get('path_with_namespace', '')}"
+        if dst_pid := self.projects.find_project_by_path(
+                    self.config.destination_host, self.config.destination_token, path_with_namespace):
+            self.log.info(f"Repo {path_with_namespace} has already been imported. Skipping import")
+            result = self.ext_import.get_result_data(project, {"id": dst_pid})
+        else:
+            result = self.ext_import.trigger_import_from_ghe(
+                project, gh_host, gh_token, dry_run=self.dry_run)
+            if result.get(project["path_with_namespace"], False) is not False:
+                result_response = result[project["path_with_namespace"]]["response"]
+                if (isinstance(result_response, dict)) and (project_id := result_response.get("id", None)):
+                    full_path = result_response.get("full_path").strip("/")
+                    success = self.ext_import.wait_for_project_to_import(full_path)
+                    if success:
+                        result = self.handle_gh_post_migration(result, project, project_id, members)
+                    else:
+                        result = self.ext_import.get_failed_result(project, data={
+                            "error": "Import time limit exceeded. Unable to execute post migration phase"
+                        })
+        return result
+
+    def get_host_and_token(self):
         if self.scm_source:
             for single_source in self.config.list_multiple_source_config("github_source"):
                 if self.scm_source in single_source.get("src_hostname", None):
@@ -303,97 +326,100 @@ class MigrateClient(BaseClass):
                 self.config.source_host, self.config.source_token)
             gh_host = self.config.source_host
             gh_token = self.config.source_token
-        members = project.pop("members")
-        result = self.ext_import.trigger_import_from_ghe(
-            project, gh_host, gh_token, dry_run=self.dry_run)
-        if result.get(project["path_with_namespace"], False) is not False:
-            result_response = result[project["path_with_namespace"]]["response"]
-            if (isinstance(result_response, dict)) and (project_id := result_response.get("id", None)):
-                full_path = result_response.get("full_path").strip("/")
-                success = self.ext_import.wait_for_project_to_import(full_path)
-                if success:
-                    result[project["path_with_namespace"]]["members"] = (
-                        self.projects.add_members_to_destination_project(
-                            self.config.destination_host,
-                            self.config.destination_token,
-                            project_id, members
+
+        return gh_host, gh_token
+
+    def handle_gh_post_migration(self, result, project, project_id, members):
+        result[project["path_with_namespace"]]["members"] = (
+            self.projects.add_members_to_destination_project(
+                self.config.destination_host,
+                self.config.destination_token,
+                project_id, members
+            )
+        )
+
+        # Migrate any external CI data
+        self.handle_ext_ci_src_migration(result, project, project_id)
+        
+        self.projects.remove_import_user(project_id)
+        # Added a new file in the repo
+        result[project["path_with_namespace"]]["is_gh_pages"] = self.add_pipeline_for_github_pages(
+            project_id)
+        # Added protected branch
+        result[project["path_with_namespace"]]["project_level_protected_branch"] = (
+            self.gh_repos.migrate_gh_project_protected_branch(
+                project_id, project)
+        )
+        # Added project level MR rules
+        result[project["path_with_namespace"]]["project_level_mr_approvals"] = (
+            self.gh_repos.migrate_gh_project_level_mr_approvals(
+                project_id, project)
+        )
+        # Migrate archived projects
+        result[project["path_with_namespace"]]["archived"] = self.gh_repos.migrate_archived_repo(
+            project_id, project)
+        # Remove members if skip_adding_members is True
+        result[project["path_with_namespace"]
+            ]["members"]["email"] = self.handle_member_retention(members, project_id)
+
+        return result
+    
+    def handle_ext_ci_src_migration(self, result, project, project_id):
+        if jenkins_configs := self.config.list_ci_source_config("jenkins_ci_source"):
+            for jc in jenkins_configs:
+                jenkins_client = (
+                    JenkinsClient(
+                        jc["jenkins_ci_src_hostname"],
+                        jc["jenkins_ci_src_username"],
+                        deobfuscate(
+                            jc["jenkins_ci_src_access_token"]
                         )
                     )
-                    if jenkins_configs := self.config.list_ci_source_config("jenkins_ci_source"):
-                        for jc in jenkins_configs:
-                            jenkins_client = (
-                                JenkinsClient(
-                                    jc["jenkins_ci_src_hostname"],
-                                    jc["jenkins_ci_src_username"],
-                                    deobfuscate(
-                                        jc["jenkins_ci_src_access_token"]
-                                    )
-                                )
-                            )
-                            result[project["path_with_namespace"]]["jenkins_variables"] = (
-                                self.migrate_jenkins_variables(
-                                    project,
-                                    project_id,
-                                    jenkins_client,
-                                    jc["jenkins_ci_src_hostname"]
-                                )
-                            )
-                            result[project["path_with_namespace"]]["jenkins_config_xml"] = (
-                                self.migrate_jenkins_config_xml(
-                                    project,
-                                    project_id,
-                                    jenkins_client
-                                )
-                            )
-                    if teamcity_configs := self.config.list_ci_source_config("teamcity_ci_source"):
-                        for tc in teamcity_configs:
-                            tc_client = TeamcityClient(tc["tc_ci_src_hostname"], tc["tc_ci_src_username"], deobfuscate(
-                                tc["tc_ci_src_access_token"]))
-                            result[project["path_with_namespace"]]["teamcity_variables"] = (
-                                self.migrate_teamcity_variables(
-                                    project,
-                                    project_id,
-                                    tc_client,
-                                    tc["tc_ci_src_hostname"]
-                                )
-                            )
-                            result[project["path_with_namespace"]]["teamcity_config_xml"] = (
-                                self.migrate_teamcity_build_config(
-                                    project, project_id, tc_client)
-                            )
-                    self.projects.remove_import_user(project_id)
-                    # Added a new file in the repo
-                    result[project["path_with_namespace"]]["is_gh_pages"] = self.add_pipeline_for_github_pages(
-                        project_id)
-                    # Added protected branch
-                    result[project["path_with_namespace"]]["project_level_protected_branch"] = (
-                        self.gh_repos.migrate_gh_project_protected_branch(
-                            project_id, project)
+                )
+                result[project["path_with_namespace"]]["jenkins_variables"] = (
+                    self.migrate_jenkins_variables(
+                        project,
+                        project_id,
+                        jenkins_client,
+                        jc["jenkins_ci_src_hostname"]
                     )
-                    # Added project level MR rules
-                    result[project["path_with_namespace"]]["project_level_mr_approvals"] = (
-                        self.gh_repos.migrate_gh_project_level_mr_approvals(
-                            project_id, project)
+                )
+                result[project["path_with_namespace"]]["jenkins_config_xml"] = (
+                    self.migrate_jenkins_config_xml(
+                        project,
+                        project_id,
+                        jenkins_client
                     )
-                    # Migrate archived projects
-                    result[project["path_with_namespace"]]["archived"] = self.gh_repos.migrate_archived_repo(
-                        project_id, project)
-                    # Removing members if skip_adding_members is Ture
-                    if self.skip_adding_members:
-                        for member in members:
-                            resp = self.projects_api.remove_member(
-                                project_id, member["user_id"],
-                                self.config.destination_host,
-                                self.config.destination_token
-                            )
-                            if resp and resp.status_code == 204:
-                                result[project["path_with_namespace"]
-                                       ]["members"]["email"] = "removed"
-                else:
-                    result = self.ext_import.get_failed_result(project, data={
-                        "error": "Import time limit exceeded. Unable to execute post migration phase"
-                    })
-        return result
+                )
+        if teamcity_configs := self.config.list_ci_source_config("teamcity_ci_source"):
+            for tc in teamcity_configs:
+                tc_client = TeamcityClient(tc["tc_ci_src_hostname"], tc["tc_ci_src_username"], deobfuscate(
+                    tc["tc_ci_src_access_token"]))
+                result[project["path_with_namespace"]]["teamcity_variables"] = (
+                    self.migrate_teamcity_variables(
+                        project,
+                        project_id,
+                        tc_client,
+                        tc["tc_ci_src_hostname"]
+                    )
+                )
+                result[project["path_with_namespace"]]["teamcity_config_xml"] = (
+                    self.migrate_teamcity_build_config(
+                        project, project_id, tc_client)
+                )
+        
+    def handle_member_retention(self, members, pid):
+        status = "retained"
+        if self.skip_adding_members:
+            for member in members:
+                resp = self.projects_api.remove_member(
+                    pid, member["user_id"],
+                    self.config.destination_host,
+                    self.config.destination_token
+                )
+                if resp and resp.status_code == 204:
+                    status = "removed"
+        return status
 
     def add_pipeline_for_github_pages(self, project_id):
         '''
@@ -407,18 +433,16 @@ class MigrateClient(BaseClass):
             "commit_message": "Adding .gitlab-ci.yml for publishing GitHub pages",
             "content": self.job_template.generate_plain_html_template()
         }
-        branches = list(
-            self.project_repository_api.get_all_project_repository_branches(
+        for branch in self.project_repository_api.get_all_project_repository_branches(
                 project_id,
                 self.config.destination_host,
-                self.config.destination_token)
-        )
-        for branch in branches:
-            if branch["name"] == "gh-pages":
-                is_result = True
-                self.project_repository_api.create_repo_file(
-                    self.config.destination_host, self.config.destination_token,
-                    project_id, ".gitlab-ci.yml", data)
+                self.config.destination_token):
+            if isinstance(branch, dict):
+                if branch["name"] == "gh-pages":
+                    is_result = True
+                    self.project_repository_api.create_repo_file(
+                        self.config.destination_host, self.config.destination_token,
+                        project_id, ".gitlab-ci.yml", data)
         return is_result
 
     def migrate_from_bitbucket_server(self):
@@ -1135,17 +1159,18 @@ class MigrateClient(BaseClass):
                     for url in tc_client.teamcity_api.get_maven_settings_file_links(job):
                         file_name, content = tc_client.teamcity_api.extract_maven_xml(
                             url)
-                        data = {
-                            "branch": "%s-teamcity-config" % job,
-                            "commit_message": f"Adding {file_name} for TeamCity job",
-                            "content": content
-                        }
-                        req = self.project_repository_api.create_repo_file(
-                            self.config.destination_host, self.config.destination_token,
-                            project_id, file_name, data)
+                        if content:
+                            data = {
+                                "branch": "%s-teamcity-config" % job,
+                                "commit_message": f"Adding {file_name} for TeamCity job",
+                                "content": content
+                            }
+                            req = self.project_repository_api.create_repo_file(
+                                self.config.destination_host, self.config.destination_token,
+                                project_id, file_name, data)
 
-                        if req.status_code != 200:
-                            is_result = False
+                            if req.status_code != 200:
+                                is_result = False
 
         return is_result
 

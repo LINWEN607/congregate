@@ -3,6 +3,7 @@ from multiprocessing import Pool, cpu_count, get_context
 from functools import partial
 from congregate.helpers.misc_utils import json_pretty
 from congregate.helpers.base_class import BaseClass
+from congregate.helpers.process import NoDaemonProcess
 
 b = BaseClass()
 _func = None
@@ -18,7 +19,19 @@ def worker(x):
 
 
 def start_multi_process(function, iterable, processes=None):
+    """
+        Wrapper function to handle multiprocessing a function with a list of data
+
+        This function leverages map to handle multiprocessing. This function will return a list of data from the function so use this function if your function returns necessary data
+
+        :param: function: (func) The function processesing the elements of the list
+        :param: iterable: (list) A list of data to be passed into the function to process
+        :param: processes: (int) Explicit number of processes to split the function across. If processes is not set, number of processes will default to total number of physical cores of CPU
+
+        :return: A list of the data returned from the process map
+    """
     ctx = get_context("spawn")
+    ctx.Process = NoDaemonProcess
     p = ctx.Pool(processes=get_no_of_processes(processes),
                  initializer=worker_init, initargs=(function,))
     try:
@@ -30,8 +43,44 @@ def start_multi_process(function, iterable, processes=None):
         p.close()
         p.join()
 
+def start_multi_process_with_args(function, iterable, *args, processes=None):
+    """
+        Wrapper function to handle multiprocessing a function with multiple arguments with a list of data
+
+        This function leverages map to handle multiprocessing. This function will return a list of data from the function so use this function if your function returns necessary data
+
+        :param: function: (func) The function processesing the elements of the list
+        :param: iterable: (list) A list of data to be passed into the function to process
+        :param: *args: (args) Any additional arguments the function needs passed in
+        :params processes: (int) Explicit number of processes to split the function across. If processes is not set, number of processes will default to total number of physical cores of CPU
+
+        :return: A list of the data returned from the process map
+    """
+    ctx = get_context("spawn")
+    p = ctx.Pool(processes=get_no_of_processes(processes),
+                 initializer=worker_init, initargs=(partial(function, *args),))
+    try:
+        return p.map(worker, iterable)
+    except Exception as e:
+        b.log.critical("Migration pool failed with error:\n{}".format(e))
+        b.log.critical(print_exc())
+    finally:
+        p.close()
+        p.join()
+
 
 def start_multi_process_stream(function, iterable, processes=None):
+    """
+        Wrapper function to handle multiprocessing a function with a list of data
+
+        This function leverages imap_unordered to handle processing a stream of data of unknown length, like from a generator
+
+        :param: function: (func) The function processesing the elements of the list
+        :param: iterable: (list) A list of data to be passed into the function to process
+        :param: processes: (int) Explicit number of processes to split the function across. If processes is not set, number of processes will default to total number of physical cores of CPU
+
+        :return: An imap_unordered object. Assume no useful data will be returned with this function
+    """
     ctx = get_context("spawn")
     p = ctx.Pool(processes=get_no_of_processes(processes),
                  initializer=worker_init, initargs=(function,))
@@ -46,6 +95,18 @@ def start_multi_process_stream(function, iterable, processes=None):
 
 
 def start_multi_process_stream_with_args(function, iterable, *args, processes=None):
+    """
+        Wrapper function to handle multiprocessing a function with multiple arguments with a list of data
+
+        This function leverages imap_unordered to handle processing a stream of data of unknown length, like from a generator
+
+        :param: function: (func) The function processesing the elements of the list
+        :param: iterable: (list) A list of data to be passed into the function to process
+        :param: *args: (args) Any additional arguments the function needs passed in
+        :param: processes: (int) Explicit number of processes to split the function across. If processes is not set, number of processes will default to total number of physical cores of CPU
+
+        :return: An imap_unordered object. Assume no useful data will be returned with this function
+    """
     ctx = get_context("spawn")
     p = ctx.Pool(processes=get_no_of_processes(processes),
                  initializer=worker_init, initargs=(partial(function, *args),))

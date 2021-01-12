@@ -73,10 +73,14 @@ class ImportClient(BaseClass):
             "target_namespace": tn
         }
 
-        dest_version = safe_json_response(self.instance.get_version(
-            self.config.destination_host, self.config.destination_token))
-        if dest_version and version.parse(dest_version["version"]) >= version.parse("13.6"):
-            data["github_hostname"] = host
+        # TODO: This condition needs to be moved to the __init__ function of this class 
+        # and properly handle non standard GitLab versions like RCs
+        #
+        # dest_version = safe_json_response(self.instance.get_version(
+        #     self.config.destination_host, self.config.destination_token))
+        # if dest_version and version.parse(dest_version["version"]) >= version.parse("13.6"):
+        #     data["github_hostname"] = host
+        data["github_hostname"] = host
         if not dry_run:
             try:
                 resp = self.ext_import.import_from_github(

@@ -17,7 +17,8 @@ class WaveStageCLI(BaseStageClass):
         self.groups_api = GroupsApi()
         super(WaveStageCLI, self).__init__()
 
-    def stage_data(self, wave_to_stage, dry_run=True, skip_users=False, scm_source=None):
+    def stage_data(self, wave_to_stage, dry_run=True,
+                   skip_users=False, scm_source=None):
         self.stage_wave(wave_to_stage, dry_run, scm_source)
         if not dry_run:
             self.write_staging_files(skip_users=skip_users)
@@ -45,11 +46,11 @@ class WaveStageCLI(BaseStageClass):
         self.rewritten_groups = rewrite_list_into_dict(
             self.open_groups_file(scm_source), "id")
         groups = rewrite_list_into_dict(
-            self.open_groups_file(scm_source), "full_path")
+            self.open_groups_file(scm_source), "full_path", lowercase=True)
         projects = rewrite_list_into_dict(
-            self.open_projects_file(scm_source), "http_url_to_repo")
+            self.open_projects_file(scm_source), "http_url_to_repo", lowercase=True)
         project_paths = rewrite_list_into_dict(
-            self.open_projects_file(scm_source), "path_with_namespace")
+            self.open_projects_file(scm_source), "path_with_namespace", lowercase=True)
         unable_to_find = []
         wsh = WaveSpreadsheetHandler(
             self.config.wave_spreadsheet_path,
@@ -57,7 +58,8 @@ class WaveStageCLI(BaseStageClass):
         )
         # Simplifying the variable name, for readability.
         column_mapping = self.config.wave_spreadsheet_column_mapping
-        # This is reading the actual spreadsheet, filtering it to the desired stage
+        # This is reading the actual spreadsheet, filtering it to the desired
+        # stage
         wave_data = wsh.read_file_as_json(
             df_filter=(
                 column_mapping["Wave name"],
@@ -69,7 +71,9 @@ class WaveStageCLI(BaseStageClass):
         # Iterating over a spreadsheet row
         for row in wave_data:
             url_key = column_mapping["Source Url"]
-            if project := (projects.get(row[url_key], None) or (projects.get(row[url_key] + 'git', None)) or project_paths.get(self.sanitize_project_path(row[url_key], host=scm_source))):
+            repo_url = row.get(url_key, "").lower()
+            if project := (projects.get(repo_url, None) or (projects.get(repo_url + 'git', None))
+                           or project_paths.get(self.sanitize_project_path(repo_url, host=scm_source))):
                 obj = self.get_project_metadata(project)
                 if parent_path := column_mapping.get("Parent Path"):
                     obj["target_namespace"] = row[parent_path].strip("/")
@@ -78,13 +82,14 @@ class WaveStageCLI(BaseStageClass):
                         obj['swc_manager_email'] = row.get('SWC Manager Email')
                         obj['swc_id'] = row.get('SWC AA ID')
                 self.append_project_data(obj, wave_data, row, dry_run=dry_run)
-            elif group := groups.get(row[url_key].rstrip("/").split("/")[-1]):
+            elif group := groups.get(repo_url.rstrip("/").split("/")[-1]):
                 group_copy = group.copy()
                 self.handle_parent_group(row, group_copy)
-                self.append_group_data(group_copy, wave_data, row, dry_run=dry_run)
+                self.append_group_data(
+                    group_copy, wave_data, row, dry_run=dry_run)
             else:
-                self.log.warning(f"Unable to find {row[url_key]} in listed data")
-                unable_to_find.append(row[url_key])
+                self.log.warning(f"Unable to find {repo_url} in listed data")
+                unable_to_find.append(repo_url)
 
         if unable_to_find:
             self.log.warning("The following data was not found:\n{}".format(
@@ -96,9 +101,11 @@ class WaveStageCLI(BaseStageClass):
         return true if all good, warn if not.
         '''
         if not (mapping := self.config.wave_spreadsheet_column_mapping):
-            self.log.warning("We didn't find a wave_spreadsheet_column_mapping in congregate.conf")
+            self.log.warning(
+                "We didn't find a wave_spreadsheet_column_mapping in congregate.conf")
         if not (columns := self.config.wave_spreadsheet_columns):
-            self.log.warning("We didn't find a wave_spreadsheet_columns in congregate.conf")
+            self.log.warning(
+                "We didn't find a wave_spreadsheet_columns in congregate.conf")
         if not self.check_spreadsheet_lengths(mapping, columns):
             self.log.warning(
                 "The length of wave_spreadsheet_columns didn't match "
@@ -127,7 +134,8 @@ class WaveStageCLI(BaseStageClass):
 
         return len(mapping) == len(columns)
 
-    def append_project_data(self, project, projects_to_stage, wave_row, p_range=0, dry_run=True):
+    def append_project_data(self, project, projects_to_stage,
+                            wave_row, p_range=0, dry_run=True):
         for member in project["members"]:
             self.append_member_to_members_list([], member, dry_run)
 
@@ -150,12 +158,19 @@ class WaveStageCLI(BaseStageClass):
         )
         self.staged_projects.append(project)
 
-    def append_group_data(self, group, groups_to_stage, wave_row, p_range=0, dry_run=True):
+    def append_group_data(self, group, groups_to_stage,
+                          wave_row, p_range=0, dry_run=True):
         # Append all group projects to staged projects
         for project in group.get("projects", []):
             obj = self.get_project_metadata(project)
-            if parent_path := self.config.wave_spreadsheet_column_mapping.get("Parent Path"):
+            if parent_path := self.config.wave_spreadsheet_column_mapping.get(
+                    "Parent Path"):
                 obj["target_namespace"] = wave_row[parent_path].strip("/")
+                if wave_row.get("SWC AA ID"):
+                    obj['swc_manager_name'] = wave_row.get('SWC Manager Name')
+                    obj['swc_manager_email'] = wave_row.get(
+                        'SWC Manager Email')
+                    obj['swc_id'] = wave_row.get('SWC AA ID')
             # Append all project members to staged users
             for project_member in obj["members"]:
                 self.append_member_to_members_list([], project_member, dry_run)
@@ -175,8 +190,10 @@ class WaveStageCLI(BaseStageClass):
             self.append_member_to_members_list([], member, dry_run)
 
     def append_parent_group_full_path(self, full_path, wave_row, parent_path):
-        if parent_path := self.config.wave_spreadsheet_column_mapping.get("Parent Path"):
-            if len(set(full_path.split("/")) - set(parent_path.split("/"))) <= 1:
+        if parent_path := self.config.wave_spreadsheet_column_mapping.get(
+                "Parent Path"):
+            if len(set(full_path.split("/")) -
+                   set(parent_path.split("/"))) <= 1:
                 return f"{wave_row[parent_path]}/{full_path}"
             return full_path
 
@@ -187,11 +204,13 @@ class WaveStageCLI(BaseStageClass):
             return req.get("id")
 
     def handle_parent_group(self, wave_row, group):
-        if parent_path := self.config.wave_spreadsheet_column_mapping.get("Parent Path"):
+        if parent_path := self.config.wave_spreadsheet_column_mapping.get(
+                "Parent Path"):
             group["full_path"] = self.append_parent_group_full_path(
                 group["full_path"], wave_row, parent_path)
             group["parent_id"] = self.get_parent_id(wave_row, parent_path)
 
     def sanitize_project_path(self, http_url_to_repo, host=""):
         host = host if host else self.config.source_host
-        return http_url_to_repo.rstrip("/").split(host)[-1].lstrip("/").strip(" ")
+        return http_url_to_repo.rstrip(
+            "/").split(host)[-1].lstrip("/").strip(" ")

@@ -133,17 +133,28 @@ def parse_query_params(params):
     return query_params_string
 
 
-def rewrite_list_into_dict(l, comparison_key, prefix=""):
+def rewrite_list_into_dict(l, comparison_key, prefix="", lowercase=False):
+    """
+    Rewrites list of dictionaries into a dictionary for easier nested dict lookup
+
+        :param: l: (list) list to convert to a dictionary
+        :param: comparison_key: (str) key to use for lookup. Needs to be a unique value within the nested dictionaries like an ID
+        :param: prefix: (str) optional string to use as a prefix for the key lookup
+        :param: lowercase: (bool) will convert all comparison keys to lowercase to avoid any issues with case sensitive key lookups
+        :return: (dict) rewritten dictionary
+    """
     rewritten_obj = {}
     for i, _ in enumerate(l):
         new_obj = l[i]
         key = l[i][comparison_key]
         if prefix:
             key = prefix + str(key)
-        rewritten_obj[key] = new_obj
+        if lowercase:
+            rewritten_obj[str(key).lower()] = new_obj
+        else:
+            rewritten_obj[key] = new_obj
 
     return rewritten_obj
-
 
 def rewrite_json_list_into_dict(l):
     """

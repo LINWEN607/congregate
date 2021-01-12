@@ -51,6 +51,7 @@ Usage:
     congregate obfuscate
     congregate dump-database
     congregate reingest <assets>...
+    congregate clean-database [--commit]
     congregate -h | --help
     congregate -v | --version
 
@@ -138,6 +139,7 @@ Commands:
     obfuscate                               Obfuscate a secret or password that you want to manually update in the config.
     dump-database                           Dump all database collections to various JSON files
     reingest                                Reingest database dumps into mongo. Specify the asset type (users, groups, projects, teamcity, jenkins)
+    clean-database                          Drop all collections in the congregate MongoDB database and rebuilds the structure
 """
 
 import os
@@ -491,6 +493,12 @@ def main():
                 for asset in arguments["<assets>"]:
                     print(f"Reingesting {asset} into database")
                     m.re_ingest_into_mongo(asset)
+            if arguments["clean-database"]:
+                if not DRY_RUN:
+                    m = MongoConnector()
+                    m.clean_db()
+                else:
+                    print("\nThis command will drop all collections in the congregate database and then recreate the structure. Please append `--commit` to clean the database")
         if arguments["obfuscate"]:
             print(obfuscate("Secret:"))
 

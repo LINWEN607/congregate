@@ -70,7 +70,11 @@ class TeamcityApi():
     def extract_maven_xml(self, url):
         page = self.generate_get_request(None, url=f"{self.host}/{url}").text
         s = bs(page, 'html.parser')
-        return url.split("&file=")[-1], s.find_all('pre')[0].text
+        try:
+            return url.split("&file=")[-1], s.find_all('pre')[0].text
+        except Exception as e:
+            self.log.error(f"Unable to extract maven xml due to: '{e}'")
+            return None, None
 
     def list_build_configs(self):
         """
@@ -88,7 +92,8 @@ class TeamcityApi():
         """
         Returns a dictionary of parameters to a specific build configuration on the TeamCity server.
         """
-        return xml_to_dict(self.generate_get_request("buildTypes/%s/parameters" % jobid).text)
+        if param_response := self.generate_get_request("buildTypes/%s/parameters" % jobid):
+            return xml_to_dict(param_response.text)
 
     def list_build_params(self, jobid):
         """

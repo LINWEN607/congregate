@@ -108,7 +108,7 @@ class ProjectsClient(BaseClass):
             dst_path_with_namespace, host, token)
         if resp.status_code == 200:
             project = safe_json_response(resp)
-            if project and project.get("path_with_namespace", None) == dst_path_with_namespace:
+            if project and (project.get("path_with_namespace", '').lower() == dst_path_with_namespace.lower()):
                 return project.get("id", None)
         return None
 

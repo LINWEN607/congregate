@@ -1,5 +1,5 @@
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import safe_json_response
+from congregate.helpers.misc_utils import safe_json_response, dig
 from congregate.migration.gitlab.api.issues import IssuesApi
 from congregate.migration.gitlab.users import UsersClient
 import re
@@ -212,6 +212,8 @@ class Reporting(BaseClass):
                     task['url'] = f"{self.config.destination_host}/{project['path_with_namespace']}"
 
                 for issue in template_issues:
+                    if project['swc_id'] is None:
+                        project['swc_id'] = "BAD-SWC-ID"
                     cur_title = f"{project['swc_id']} | {issue['title']}"
                     cur_desc = issue['description']
                     # Does our issue already exist in the dataset, if not create it with current assignee and task
@@ -296,8 +298,12 @@ class Reporting(BaseClass):
                 if result[k]['repository']:
                     successes[k.split('/')[1]] = None
                 else:
-                    if result[k]['response']['errors'] in good_errors:
-                        successes[k.split('/')[1]] = None
+                    try:
+                        if errors := dig(result, k, 'response', 'errors'):
+                            if errors in good_errors:
+                                successes[k.split('/')[1]] = None
+                    except TypeError:
+                        self.log.error(f"There was some type of unhandled exception in import_results for: '{v}'. Raw data to follow: \n{v}")
         return successes
 
     def check_staged_projects(self, staged_projects, clean_data):
