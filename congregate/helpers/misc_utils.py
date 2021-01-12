@@ -395,6 +395,10 @@ def is_dot_com(host):
     return True if "gitlab.com" in host else False
 
 
+def is_github_dot_com(host):
+    return True if "api.github.com" in host else False
+
+
 def check_is_project_or_group_for_logging(is_project):
     return "Project" if is_project else "Group"
 

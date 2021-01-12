@@ -1,7 +1,7 @@
 import unittest
 import pytest
 import responses
-from mock import patch, PropertyMock, MagicMock
+from mock import patch
 from congregate.tests.mockapi.github.headers import MockHeaders
 from congregate.migration.github.api.base import GitHubApi
 
@@ -30,6 +30,9 @@ class BaseTests(unittest.TestCase):
         self.assertEqual(resp, r)
         resp = self.api.generate_v3_request_url("HOST/", "ORGANIZATION")
         self.assertEqual(resp, r)
+        resp = self.api.generate_v3_request_url(
+            "https://api.github.com", "users")
+        self.assertEqual(resp, "https://api.github.com/users")
 
     def test_generate_v3_get_request(self):
         with patch("congregate.migration.github.api.base.requests.Response") as mock_resp:
@@ -44,6 +47,8 @@ class BaseTests(unittest.TestCase):
         self.assertEqual(resp, r)
         resp = self.api.generate_v4_request_url("HOST/")
         self.assertEqual(resp, r)
+        resp = self.api.generate_v4_request_url("https://api.github.com")
+        self.assertEqual(resp, "https://api.github.com/graphql")
 
     def test_replace_unwanted_characters(self):
         r = "abcdef"
@@ -84,7 +89,7 @@ class BaseTests(unittest.TestCase):
             json=self.mock_headers.get_data()[0],
             content_type='text/json',
             match_querystring=False)
-        
+
         responses.add(
             responses.GET,
             "https://github.gitlab-proserv.net/api/v3/organizations?since=12",
@@ -93,7 +98,7 @@ class BaseTests(unittest.TestCase):
             json=self.mock_headers.get_data()[1],
             content_type='text/json',
             match_querystring=False)
-        
+
         responses.add(
             responses.GET,
             "https://github.gitlab-proserv.net/api/v3/organizations?since=24",

@@ -9,8 +9,9 @@ from congregate.migration.github.api.users import UsersApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.projects import ProjectsClient
 from congregate.migration.gitlab.users import UsersClient as GitLabUsersClient
-from congregate.helpers.misc_utils import get_dry_log, get_timedelta, json_pretty, remove_dupes, \
-    is_error_message_present, safe_json_response, add_post_migration_stats, rotate_logs
+from congregate.helpers.misc_utils import get_dry_log, is_error_message_present, safe_json_response, \
+    add_post_migration_stats, rotate_logs, is_github_dot_com, json_pretty
+
 
 
 class ReposClient(BaseClass):
@@ -48,10 +49,12 @@ class ReposClient(BaseClass):
         """
         List and transform all GitHub public repo to GitLab project metadata
         """
-        start_multi_process_stream(
-            self.handle_retrieving_repos,
-            self.repos_api.get_all_public_repos(),
-            processes=processes)
+        if is_github_dot_com(self.config.source_host) or self.config.src_parent_org:
+            self.log.warning(
+                f"NOT listing public repos on {self.config.source_host}")
+        else:
+            start_multi_process_stream(
+                self.handle_retrieving_repos, self.repos_api.get_all_public_repos(), processes=processes)
 
     def connect_to_mongo(self):
         return MongoConnector()

@@ -49,6 +49,7 @@ Usage:
     congregate clean [--commit]
     congregate stitch-results [--result-type=<project|group|user>] [--no-of-files=<n>] [--head|--tail]
     congregate obfuscate
+    congregate deobfuscate
     congregate dump-database
     congregate reingest <assets>...
     congregate clean-database [--commit]
@@ -137,6 +138,7 @@ Commands:
     generate-diff                           Generates HTML files containing the diff results of the migration
     map-users                               Maps staged user emails to emails defined in the user-provided user_map.csv
     obfuscate                               Obfuscate a secret or password that you want to manually update in the config.
+    deobfuscate                             Deobfuscate a secret or password from the config.
     dump-database                           Dump all database collections to various JSON files
     reingest                                Reingest database dumps into mongo. Specify the asset type (users, groups, projects, teamcity, jenkins)
     clean-database                          Drop all collections in the congregate MongoDB database and rebuilds the structure
@@ -501,6 +503,10 @@ def main():
                     print("\nThis command will drop all collections in the congregate database and then recreate the structure. Please append `--commit` to clean the database")
         if arguments["obfuscate"]:
             print(obfuscate("Secret:"))
+        if arguments["deobfuscate"]:
+            data = deobfuscate(input("Masked secret:"))
+            subprocess.run("pbcopy", universal_newlines=True, input=data)
+            print("Secret copied to clipboard (pbcopy)")
 
 
 if __name__ == "__main__":

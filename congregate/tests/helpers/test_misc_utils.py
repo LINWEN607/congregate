@@ -269,6 +269,10 @@ class MiscUtilsTests(unittest.TestCase):
         assert misc.is_dot_com("asdasd") is False
         assert misc.is_dot_com("https://gitlab.com") is True
 
+    def test_is_github_dot_com(self):
+        assert misc.is_github_dot_com("asdasd") is False
+        assert misc.is_github_dot_com("https://api.github.com") is True
+
     def test_check_is_project_or_group_for_logging_project(self):
         assert misc.check_is_project_or_group_for_logging(True) is "Project"
         assert misc.check_is_project_or_group_for_logging(False) is "Group"

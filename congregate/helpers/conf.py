@@ -149,14 +149,6 @@ class Config(object):
         return self.prop("DESTINATION", "dstn_parent_group_path")
 
     @property
-    def src_parent_id(self):
-        return self.prop_int("SOURCE", "src_parent_group_id")
-
-    @property
-    def src_parent_group_path(self):
-        return self.prop("SOURCE", "src_parent_group_path")
-
-    @property
     def group_sso_provider(self):
         return self.prop("DESTINATION", "group_sso_provider")
 
@@ -221,6 +213,19 @@ class Config(object):
     @property
     def source_token(self):
         return self.prop("SOURCE", "src_access_token", default=None, obfuscated=True)
+
+    @property
+    def src_parent_id(self):
+        return self.prop_int("SOURCE", "src_parent_group_id")
+
+    @property
+    def src_parent_group_path(self):
+        return self.prop("SOURCE", "src_parent_group_path")
+
+    # GitHub
+    @property
+    def src_parent_org(self):
+        return self.prop("SOURCE", "src_parent_org")
 
     @property
     def repo_list(self):

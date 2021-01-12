@@ -44,3 +44,8 @@ yarn-error.log*
 htmlcov/*
 
 pylint.txt
+
+mongo/*
+congregate/data/*
+docker/github/data/congregate.conf
+docker/github/gitlab-*/

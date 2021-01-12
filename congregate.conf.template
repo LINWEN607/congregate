@@ -23,6 +23,7 @@
 ##! There are instances where this behavior is not possible or desired. For example, when providing passwords,
 ##! or connecting to third party services.
 ##! In those instances, we endeavour to provide an example configuration.
+##! Token and password values must be obfuscated. You can run `./congregate.sh obfuscate` to mask them.
 
 
 ###! **Configuration settings below are for Destination host**
@@ -96,8 +97,10 @@
 # src_hostname = some_external_source
 # src_access_token = *****
 # repo_path = ./repo_path
-### src_password is only used by the GitHubBrowser class. Use an access token for any API requests. The password must also be obfuscated
+### src_password is only used by the GitHubBrowser class. Use an access token for any API requests.
 # src_password = ****
+### src_parent_org is used when migrating a single organization e.g. from github.com
+# src_parent_org = src_parent_org
 
 ### Consider below changes when multiple sources are GitHub Server, all other configuration remains same
 #sources = {

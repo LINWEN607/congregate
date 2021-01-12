@@ -1,7 +1,7 @@
 import json
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import safe_json_response, is_error_message_present
+from congregate.helpers.misc_utils import safe_json_response, is_error_message_present, is_github_dot_com
 from congregate.helpers.mdbc import MongoConnector
 from congregate.helpers.processes import start_multi_process_stream_with_args
 from congregate.migration.github.api.orgs import OrgsApi
@@ -51,8 +51,13 @@ class OrgsClient(BaseClass):
         While traversing orgs gather repo, team and member metadata.
         """
         groups = []
+        if is_github_dot_com(self.config.source_host) and self.config.src_parent_org:
+            orgs = [safe_json_response(
+                self.orgs_api.get_org(self.config.src_parent_org))]
+        else:
+            orgs = self.orgs_api.get_all_orgs()
         start_multi_process_stream_with_args(
-            self.handle_org_retrieval, self.orgs_api.get_all_orgs(), groups, processes=processes)
+            self.handle_org_retrieval, orgs, groups, processes=processes)
 
     def handle_org_retrieval(self, groups, org):
         mongoclient = self.connect_to_mongo()
@@ -97,7 +102,7 @@ class OrgsClient(BaseClass):
                 "Failed to store team {}".format(team))
         else:
             org_name = org.get("login")
-            if full_path := self.get_team_full_path(org_name, team):
+            if self.get_team_full_path(org_name, team):
                 team_repos = []
                 for team_repo in self.teams_api.get_team_repos(team["id"]):
                     formatted_repo = self.repos.format_repo(team_repo, mongo)

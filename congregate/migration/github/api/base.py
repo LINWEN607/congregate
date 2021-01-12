@@ -3,7 +3,7 @@ import requests
 from congregate.helpers.decorators import stable_retry
 from congregate.helpers.audit_logger import audit_logger
 from congregate.helpers.logger import myLogger
-from congregate.helpers.misc_utils import generate_audit_log_message, safe_json_response
+from congregate.helpers.misc_utils import generate_audit_log_message, safe_json_response, is_github_dot_com
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.conf import Config
 
@@ -55,17 +55,15 @@ class GitHubApi():
         """
         Given a host return a formatted url string for GraphQL
         """
-        if host[-1] == "/":
-            host = host.rstrip("/")
-        return f"{host}/api/graphql"
+        host = host.rstrip("/")
+        return f"{host}/graphql" if is_github_dot_com(host) else f"{host}/api/graphql"
 
     def generate_v3_request_url(self, host, api):
         """
         Create the REST URL for a given host and api end point.
         """
-        if host[-1] == "/":
-            host = host.rstrip("/")
-        return f"{host}/api/v3/{api}"
+        host = host.rstrip("/")
+        return f"{host}/{api}" if is_github_dot_com(host) else f"{host}/api/v3/{api}"
 
     @stable_retry
     def generate_v3_get_request(self, host, api, url=None, params=None):
@@ -179,7 +177,6 @@ class GitHubApi():
             else:
                 lastPage = True
                 yield from self.pageless_data(resp_json, page_check=page_check, lastPage=lastPage)
-
 
     def pageless_data(self, resp_json, page_check=False, lastPage=False):
         """
