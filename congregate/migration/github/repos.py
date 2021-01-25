@@ -305,6 +305,8 @@ class ReposClient(BaseClass):
         for mr in pull_requests:
             if mr["state"] == "open":
                 state = "opened"
+            else:
+                state = "closed"
             assignees_list = []
             if mr["assignees"]:
                 for assignee in mr["assignees"]:
@@ -351,6 +353,8 @@ class ReposClient(BaseClass):
         for milestone in milestones:
             if milestone["state"] == "open":
                 milestone_status = "active"
+            else:
+                milestone_status = "closed"
             list_of_milestones.append(
                 {
                     "title": milestone["title"],
@@ -412,7 +416,7 @@ class ReposClient(BaseClass):
                 {
                     "title": issue["title"],
                     "description": issue["body"],
-                    "state": issue["state"],
+                    "state": issue.get("state", "closed"),
                     "created_at": issue["created_at"],
                     "updated_at": issue["updated_at"],
                     "closed_at": issue["closed_at"],
