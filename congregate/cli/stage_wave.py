@@ -81,6 +81,8 @@ class WaveStageCLI(BaseStageClass):
                         obj['swc_manager_name'] = row.get('SWC Manager Name')
                         obj['swc_manager_email'] = row.get('SWC Manager Email')
                         obj['swc_id'] = row.get('SWC AA ID')
+                    else:
+                        self.log.warning(f"No SWC_ID for {obj['target_namespace']}")
                 self.append_project_data(obj, wave_data, row, dry_run=dry_run)
             elif group := groups.get(repo_url.rstrip("/").split("/")[-1]):
                 group_copy = group.copy()
@@ -168,9 +170,10 @@ class WaveStageCLI(BaseStageClass):
                 obj["target_namespace"] = wave_row[parent_path].strip("/")
                 if wave_row.get("SWC AA ID"):
                     obj['swc_manager_name'] = wave_row.get('SWC Manager Name')
-                    obj['swc_manager_email'] = wave_row.get(
-                        'SWC Manager Email')
+                    obj['swc_manager_email'] = wave_row.get('SWC Manager Email')
                     obj['swc_id'] = wave_row.get('SWC AA ID')
+                else:
+                    self.log.warning(f"No SWC_ID for {obj['target_namespace']}")
             # Append all project members to staged users
             for project_member in obj["members"]:
                 self.append_member_to_members_list([], project_member, dry_run)
