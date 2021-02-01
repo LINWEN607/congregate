@@ -280,6 +280,14 @@ def generate_config():
         if wave_columns_to_include := input("Provide a list of comma separate values denoting the columns you want to retain: "):
             config.set("APP", "wave_spreadsheet_columns",
                        f"[{wave_columns_to_include}]")
+            # This will just put in the default mapping. Will require manual intervention
+            # for further customization
+            d = {x.strip():x.strip() for x in wave_columns_to_include.split(",")}
+            config.set(
+                "APP",
+                "wave_spreadsheet_column_mapping",
+                json.dumps(d)
+            )
     slack = input(
         "Send alerts (logs) to Slack via Incoming WebHooks (Default: No)? ")
     if slack.lower() in ["yes", "y"]:

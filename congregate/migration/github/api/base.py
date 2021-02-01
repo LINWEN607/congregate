@@ -40,6 +40,23 @@ class GitHubApi():
         }
         return header
 
+    def generate_v3_basic_auth_request_header(self):
+        """
+        Some GitHub endpoints can only be used via basic auth (user/pass) and do not accept
+        the token header
+        """
+        header = {
+            "Accept": "application/vnd.github.v3+json"
+        }
+        return header
+    
+    def generate_v3_basic_auth(self, username, password):
+        """
+        Generate the basic auth parameter for a v3 request
+        """
+        auth = (username, password)
+        return auth
+
     def generate_v4_request_header(self, token):
         """
         Given a token return a dictionary for authorization. Works for GraphQL
@@ -77,6 +94,32 @@ class GitHubApi():
         if params is None:
             params = {}
         return requests.get(url, params=params, headers=headers, verify=self.config.ssl_verify)
+
+    @stable_retry
+    def generate_v3_basic_auth_get_request(self, host, api, username, password, url=None, params=None):
+        """
+        Generates GET request to GitHub API for a Basic AUTH request
+        """
+        if url is None:
+            url = self.generate_v3_request_url(host, api)
+
+        headers = self.generate_v3_basic_auth_request_header()
+        auth = self.generate_v3_basic_auth(username, password)
+        if params is None:
+            params = {}
+        return requests.get(url, params=params, headers=headers, verify=self.config.ssl_verify, auth=auth)
+
+    @stable_retry
+    def generate_v3_basic_auth_post_request(self, host, api, username, password, data, header=None, description = None):
+        """
+        Generates POST request to GitHub API for a Basic AUTH request
+        """
+        url = self.generate_v3_request_url(host, api)
+        audit.info(generate_audit_log_message("POST", description, url))
+        if header is None:
+            headers = self.generate_v3_basic_auth_request_header()
+        auth = self.generate_v3_basic_auth(username, password)
+        return requests.post(url, json=data, headers=headers, verify=self.config.ssl_verify, auth=auth)
 
     @stable_retry
     def generate_v3_post_request(self, host, api, data, headers=None, description=None):
