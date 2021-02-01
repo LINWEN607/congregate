@@ -95,11 +95,16 @@ class ReposClient(BaseClass):
             "description": repo.get(
                 "description",
                 ""),
-            "members": self.add_repo_members(
-                repo["owner"]["type"],
-                repo["owner"]["login"],
-                repo["name"],
-                mongo) if not org else []}
+            # Temporarily commenting this out. This request is extremely 
+            # slow at scale and needs a refactor
+            #
+            # "members": self.add_repo_members(
+            #     repo["owner"]["type"],
+            #     repo["owner"]["login"],
+            #     repo["name"],
+            #     mongo) if not org else []
+            "members": []
+            }
 
     def add_repo_members(self, kind, owner, repo, mongo):
         """

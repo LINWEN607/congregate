@@ -161,6 +161,13 @@ def get_dst_path_with_namespace(p):
     """
     return "{0}/{1}".format(get_user_project_namespace(p) if is_user_project(p) else get_project_namespace(p), p["path"])
 
+def get_target_namespace(project):
+    if target_namespace := project.get("target_namespace"):
+        if target_namespace.split("/")[-1].lower() == project.get('namespace', '').lower():
+            return target_namespace
+        else:
+            return f"{target_namespace}/{project.get('namespace')}"
+    return None
 
 def get_results(res):
     """
