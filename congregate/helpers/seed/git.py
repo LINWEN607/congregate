@@ -4,8 +4,8 @@ import requests
 import re
 import sys
 import subprocess
+import uuid
 from congregate.helpers.processes import start_multi_process
-
 
 class Manage_Repos():
     '''
@@ -62,6 +62,9 @@ class Manage_Repos():
             raise Exception(message)
 
         os.path.join(self.temp_dir, '')  # Better way of making sure I have a slash, Blame Petar
+
+        if "bare" in self.__dict__:
+            self.from_bare()
 
         # Beginning of our task specific section
         if 'rebuild' in self.__dict__:  # task to create a new json file, then clone the repos
@@ -229,8 +232,11 @@ class Manage_Repos():
         # arbitrarily decided, based off rough mental math
         # small < 10780 ; medium < 1255976 ; large > 1255976 (anything left)
         '''
-        cmd = ['du', '-s', self.temp_dir + repo]
-        return {repo: self.execute_cmd(cmd).stdout.split()[0].decode('utf-8')}
+        dir_name = self.rebuild_dir_for_bare(repo)
+        cmd = ['du', '-s', self.temp_dir + dir_name]        
+        cmd_result = self.execute_cmd(cmd)        
+        stdout = cmd_result.stdout
+        return {repo: stdout.split()[0].decode('utf-8')}
 
     def add_origin(self, repo):
         '''
@@ -317,6 +323,15 @@ class Manage_Repos():
             repos = re.findall(r'(https://.*git)', f.read())
         return repos
 
+    def get_seed_repos(self, file_path):
+        '''
+        Get the https repos out of a ruby file with a - in the name
+        :param: file_path: (str) Path to the seed file
+        '''
+        with open(file_path, 'r') as f:
+            repos = re.findall(r'(https://.*/[^/]*-[^/]*.git)', f.read())
+        return repos
+
     def create_directory(self, dir):
         '''
         Make sure the path we are trying to write to exists
@@ -331,3 +346,89 @@ class Manage_Repos():
                     f"The error returned was: \n {e}"
                 )
                 raise Exception(message)
+
+    def from_bare(self, skip_pull=True, skip_clone=True):
+        """
+        Modified rebuild, as the other wasn't processing properly, and I didn't want to muck
+        with it if there were any other hooksdatetime A combination of a date and a time. Attributes: ()
+        
+        Doesn't handle looping at all, so no appending.
+        """
+        
+        self.seed_url = "https://gitlab.com/gitlab-com/support/toolbox/replication/-/raw/master/gitlab/data/seed.rb?inline=false"
+        self.seed_path = self.temp_dir + 'seed.rb'
+            
+        if not skip_pull:
+            # Get the seed info
+            print(f"{self.colors['green']}INFO{self.colors['clear']}: Getting new seeds.")
+
+            print(f"{self.colors['green']}INFO{self.colors['clear']}: Getting gemfile from {self.seed_url} and {self.seed_path}.")
+            self.get_gemfile(self.seed_url, self.seed_path)
+
+            print(f"{self.colors['green']}INFO{self.colors['clear']}: Setting seed_repos with seed_path of {self.seed_path}.")
+        else:
+            print(f"{self.colors['green']}INFO{self.colors['clear']}: Skipping seed file pull")
+
+        # Set the total repos list to everything in the rb file
+        self.repos = self.get_repos(self.seed_path)
+        
+        # Set seed_repos
+        self.seed_repos = self.get_seed_repos(self.seed_path)       
+
+        print(f"{self.colors['green']}INFO{self.colors['clear']}: Seed_repos are {self.seed_repos}.")
+        
+        if not skip_clone:
+            # Clone the seed info
+            for sr in self.seed_repos:
+                self.clone_single_repo_for_bare(sr)
+        else:
+            print(f"{self.colors['green']}INFO{self.colors['clear']}: Skipping clone")
+
+        # Reset repos to only be the cloned set of seeds
+        self.repos = self.get_repos_from_dir()
+
+        data = {}
+        sizes = start_multi_process(self.get_size, self.seed_repos)
+        for size in sizes:
+            data[next(iter(size))] = {'size': size[next(iter(size))]}
+        for repo in self.repos:
+            for url in self.seed_repos:
+                if repo in url:
+                    data[repo].update({'name': repo, 'original_remote_url': url})
+        self.repo_map = data
+        self.write_config()
+        
+    def rebuild_dir_for_bare(self, repo):
+        '''
+        Given our expanded repo names, rebuild the original name so we can find the path.
+        This is very fragile as it requires the repo names to have a '-' in them. Our
+        seed script should be doing this, but be forewarned.
+        '''
+        print(f"{self.colors['green']}INFO{self.colors['clear']}: Rebuilding {repo} dir")
+        last_match = re.match(r".*/(.*).git", repo)
+        if last_match:            
+           dir_name = last_match[1]
+        else:
+            dir_name = str(uuid.uuid4())
+        print(f"{self.colors['green']}INFO{self.colors['clear']}: Result {dir_name}")
+        return dir_name
+    
+    def clone_single_repo_for_bare(self, repo):
+        '''
+        For a given repo, clone them to their own self.seed_path directory
+        '''
+        print(f"{self.colors['green']}INFO{self.colors['clear']}: Cloning the {repo} repo.")
+        dir_name = self.rebuild_dir_for_bare(repo)
+        self.cwd = self.temp_dir
+        # cmd = ['git', 'clone', self.repo_map[self.rebuild_dir(repo)]['remote'], dir_name]
+        cmd = ['git', 'clone', repo, dir_name]
+        rc = self.execute_cmd(cmd)
+        if rc.returncode:
+            print(
+                f"{self.colors['red']}ERROR{self.colors['clear']}: There was an Error cloning the repo "
+                f"{self.colors['yellow']}{repo}{self.colors['clear']}:\n{rc.stderr}\n"
+                f"Here is the cmd we used: \n{cmd}\n"
+                f"Our current working directory: \n{os.getcwd()}\n"
+            )
+        else:
+            print(f"{self.colors['green']}INFO{self.colors['clear']}: Successfully cloned the repo: {rc}")

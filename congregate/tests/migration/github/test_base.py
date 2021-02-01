@@ -19,6 +19,16 @@ class BaseTests(unittest.TestCase):
         resp = self.api.generate_v3_request_header("TOKEN")
         self.assertEqual(resp, r)
 
+    def test_generate_v3_basic_auth_request_header(self):
+        r = {"Accept": "application/vnd.github.v3+json"}
+        resp = self.api.generate_v3_basic_auth_request_header()
+        self.assertEqual(resp, r)
+
+    def test_generate_v3_basic_auth(self):
+        r = ("user", "pass")
+        resp = self.api.generate_v3_basic_auth("user", "pass")
+        self.assertEqual(resp, r)
+
     def test_generate_v4_request_header(self):
         r = {"Authorization": 'Bearer TOKEN'}
         resp = self.api.generate_v4_request_header("TOKEN")
@@ -41,6 +51,13 @@ class BaseTests(unittest.TestCase):
                 resp = self.api.generate_v3_get_request("HOST", "API")
                 self.assertEqual(mock_resp, resp)
 
+    def test_generate_v3_basic_auth_get_request(self):
+        with patch("congregate.migration.github.api.base.requests.Response") as mock_resp:
+            with patch("congregate.migration.github.api.base.requests.get") as mock_get:
+                mock_get.return_value = mock_resp
+                resp = self.api.generate_v3_get_request("HOST", "API", "USERNAME", "PASSWORD")
+                self.assertEqual(mock_resp, resp)
+
     def test_generate_v4_request_url(self):
         r = "HOST/api/graphql"
         resp = self.api.generate_v4_request_url("HOST")
@@ -61,6 +78,7 @@ class BaseTests(unittest.TestCase):
         resp = self.api.create_dict_from_headers(test_headers.get("Link"))
         self.assertEqual(resp["next"], r)
 
+    
     # pylint: disable=no-member
 
     @responses.activate
