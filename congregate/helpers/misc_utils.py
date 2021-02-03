@@ -691,3 +691,10 @@ def pop_multiple_keys(src, keys):
     for k in keys:
         src.pop(k, None)
     return src
+
+
+def clean_split(s, *args, **kwargs):
+    """
+        Returns split string without any empty string elements
+    """
+    return list(filter(None, s.split(*args, **kwargs)))
