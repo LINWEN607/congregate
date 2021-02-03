@@ -109,7 +109,7 @@ class ReposTests(unittest.TestCase):
                 "http_url_to_repo": "https://github.gitlab-proserv.net/gitlab/website.git",
                 "visibility": "public",
                 "description": None,
-                "members": formatted_users1
+                "members": []
             },
             {
                 "id": 14,
@@ -130,7 +130,7 @@ class ReposTests(unittest.TestCase):
                 "http_url_to_repo": "https://github.gitlab-proserv.net/pprokic/pprokic-public-repo.git",
                 "visibility": "public",
                 "description": None,
-                "members": formatted_users2
+                "members": []
             }
         ]
 
@@ -213,7 +213,7 @@ class ReposTests(unittest.TestCase):
                 "path_with_namespace": "gitlab/website",
                 "visibility": "public",
                 "description": None,
-                "members": formatted_users
+                "members": []
             },
             {
                 "id": 14,
