@@ -50,7 +50,7 @@ from congregate.helpers.seed.git import Manage_Repos
 from congregate.migration.github.api.orgs import OrgsApi
 from congregate.migration.github.api.base import GitHubApi
 
-@pytest.mark.e2e_setup
+@pytest.mark.e2e_ghe_setup
 class MigrationE2EGHETestSetup(unittest.TestCase):
     def setUp(self):
         self.t = token_generator()        

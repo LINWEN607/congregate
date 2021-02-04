@@ -200,7 +200,7 @@ test:end-to-end full:
     - export GITLAB_SRC_REG_URL=$(cat source_ip):4567
     - export GITLAB_DEST=http://gitlab_destination
     - export GITLAB_DEST_REG_URL=gitlab_destination:4567
-    - poetry run pytest -s -m e2e_setup congregate/tests/
+    - poetry run pytest -s -m e2e_gl_setup congregate/tests/
     - poetry run pytest -s -m e2e --cov-config=.coveragerc --cov=congregate congregate/tests/
   rules:
     - changes:
@@ -223,7 +223,7 @@ test:end-to-end single group:
     - export GITLAB_SRC_REG_URL=$(cat source_ip):4567
     - export GITLAB_DEST=http://gitlab_destination
     - export GITLAB_DEST_REG_URL=gitlab_destination:4567
-    - poetry run pytest -s -m e2e_setup_2 congregate/tests/
+    - poetry run pytest -s -m e2e_gl_setup_2 congregate/tests/
     - poetry run pytest -s -m e2e --cov-config=.coveragerc --cov=congregate congregate/tests/
   rules:
     - changes:

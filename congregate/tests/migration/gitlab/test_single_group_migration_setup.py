@@ -10,7 +10,7 @@ from congregate.helpers.seed.generate_token import token_generator
 from congregate.helpers.seed.generator import SeedDataGenerator
 
 
-@pytest.mark.e2e_setup_2
+@pytest.mark.e2e_gl_setup_2
 class MigrationEndToEndTestSetup(unittest.TestCase):
     def setUp(self):
         self.t = token_generator()
