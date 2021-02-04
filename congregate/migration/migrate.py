@@ -1123,7 +1123,7 @@ class MigrateClient(BaseClass):
                             ):
                                 result = False
                     else:
-                        self.log.error(f"Job: {job} had no param properties present")
+                        self.log.warning(f"Job: {job} had no param properties present")
                 except AttributeError as e:
                     self.log.error(f"Attribute Error Caught for Job:{job} Params:{params} with error:{e}")
             return result
