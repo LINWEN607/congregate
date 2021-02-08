@@ -1,7 +1,7 @@
 import requests
 
 from bs4 import BeautifulSoup as bs
-from congregate.helpers.misc_utils import xml_to_dict
+from congregate.helpers.misc_utils import xml_to_dict, dig
 from congregate.helpers.decorators import stable_retry
 from congregate.helpers.logger import myLogger
 from congregate.helpers.conf import Config
@@ -102,7 +102,7 @@ class TeamcityApi():
         job_data = self.get_build_params(jobid)
         param_list = []
 
-        for param in job_data["properties"]["property"]:
+        for param in dig(job_data, 'properties', 'property', default=[]):
             param_list.append(param)
 
         return param_list
@@ -112,8 +112,8 @@ class TeamcityApi():
         Returns a dictionary of vcs entries to a specific build configuration on the TeamCity server.
         """
         job_data = xml_to_dict(self.get_build_config(jobid).text)
-        if "vcs-root-entry" in job_data["buildType"]["vcs-root-entries"]:
-            vcs_id = job_data["buildType"]["vcs-root-entries"]["vcs-root-entry"]["@id"]
+        if "vcs-root-entry" in dig(job_data, 'buildType', 'vcs-root-entries', default=""):
+            vcs_id = dig(job_data, 'buildType', 'vcs-root-entries', 'vcs-root-entry', '@id')
         else:
             return "no_scm"
         return xml_to_dict(self.generate_get_request("vcs-roots/%s" % vcs_id).text)

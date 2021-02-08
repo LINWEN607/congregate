@@ -160,7 +160,7 @@ if __name__ == '__main__':
     from congregate.helpers import conf
     from congregate.helpers.logger import myLogger
     from congregate.helpers.misc_utils import get_congregate_path, clean_data, obfuscate, deobfuscate, \
-        strip_protocol, spin_up_ui, stitch_json_results, write_results_to_file, add_post_migration_stats, rotate_logs
+        strip_protocol, spin_up_ui, stitch_json_results, write_results_to_file, add_post_migration_stats, rotate_logs, dig
 else:
     import sys
     sys.path.append(os.path.dirname(
@@ -195,7 +195,7 @@ def main():
         if arguments["--version"]:
             with open(f"{app_path}/pyproject.toml", "r") as f:
                 print(
-                    f"Congregate {load_toml(f)['tool']['poetry']['version']}")
+                    f"Congregate {dig(load_toml(f), 'tool', 'poetry', 'version')}")
             exit()
 
         if arguments["init"]:

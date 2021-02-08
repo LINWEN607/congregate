@@ -2,7 +2,7 @@ import json
 
 from urllib.parse import quote_plus
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import remove_dupes, remove_dupes_but_take_higher_access, safe_json_response
+from congregate.helpers.misc_utils import remove_dupes, remove_dupes_but_take_higher_access, safe_json_response, dig
 from congregate.migration.bitbucket.api.repos import ReposApi
 from congregate.migration.bitbucket.api.users import UsersApi
 from congregate.migration.bitbucket.users import UsersClient
@@ -24,22 +24,23 @@ class ReposClient(BaseClass):
         # List and reformat all Bitbucket Server repo to GitLab project metadata
         repos = []
         for repo in self.repos_api.get_all_repos():
+            repo_path = dig(repo, 'project', 'key')
             repos.append({
                 "id": repo["id"],
                 "path": repo["slug"],
                 "name": repo["name"],
                 "namespace": {
-                    "id": repo["project"]["id"],
-                    "path": repo["project"]["key"],
-                    "name": repo["project"]["name"],
+                    "id": dig(repo, 'project', 'id'),
+                    "path": repo_path,
+                    "name": dig(repo, 'project', 'name'),
                     "kind": "group",
-                    "full_path": repo["project"]["key"]
+                    "full_path": dig(repo, 'project', 'key')
                 },
-                "path_with_namespace": repo["project"]["key"] + "/" + repo["slug"],
-                "visibility": "public" if repo["public"] else "private",
+                "path_with_namespace": repo_path + "/" + repo.get("slug"),
+                "visibility": "public" if repo.get("public") else "private",
                 "description": repo.get("description", ""),
-                "members": self.add_repo_users([], repo["project"]["key"], repo["slug"], groups),
-                "default_branch": self.get_default_branch(repo["project"]["key"], repo["slug"])
+                "members": self.add_repo_users([], repo_path, repo.get("slug"), groups),
+                "default_branch": self.get_default_branch(repo_path, repo["slug"])
             })
         with open('%s/data/projects.json' % self.app_path, "w") as f:
             json.dump(remove_dupes(repos), f, indent=4)
@@ -58,7 +59,7 @@ class ReposClient(BaseClass):
 
         if groups:
             for group in self.repos_api.get_all_repo_groups(project_key, repo_slug):
-                group_name = group["group"]["name"].lower()
+                group_name = dig(group, 'group', 'name', default="").lower()
                 permission = REPO_PERM_MAP[group["permission"]]
                 if groups.get(group_name, None):
                     for user in groups[group_name]:
@@ -79,30 +80,31 @@ class ReposClient(BaseClass):
         perms = list(self.repos_api.get_repo_branch_permissions(
             project["namespace"], project["path"]))
         for p in perms:
-            if p["scope"]["type"] == "PROJECT":
+            scope_type = dig(p, 'scope', 'type')
+            if scope_type == "PROJECT":
                 self.migrate_project_permissions(
-                    p, [perm for perm in perms if perm["scope"]["type"] == "PROJECT"], pid)
-            elif p["scope"]["type"] == "REPOSITORY":
+                    p, [perm for perm in perms if dig(perm, 'scope', 'type') == "PROJECT"], pid)
+            elif scope_type == "REPOSITORY":
                 self.filter_branch_permissions(
-                    p, [perm for perm in perms if perm["scope"]["type"] == "REPOSITORY"], pid)
+                    p, [perm for perm in perms if dig(perm, 'scope', 'type') == "REPOSITORY"], pid)
 
     def migrate_project_permissions(self, p, perms, pid):
         # TODO: Should take precedence over project-level branch permissions
         self.log.warning(
-            f"Skipping group level permission {p['type']} for branch {p['matcher']['displayId']} of project {pid}")
+            f"Skipping group level permission {p['type']} for branch {dig(p, 'matcher', 'displayId')} of project {pid}")
 
     def filter_branch_permissions(self, p, perms, pid):
-        branch = p["matcher"]["displayId"]
+        branch = dig(p, 'matcher', 'displayId', default="") 
         prio = ["read-only", "no-deletes",
                 "fast-forward-only", "pull-request-only"]
         # Protect branch by highest priority and only once
-        if any(perm["type"] == prio[0] for perm in perms if perm["matcher"]["displayId"] == branch):
+        if any(perm["type"] == prio[0] for perm in perms if dig(perm, 'matcher', 'displayId') == branch):
             return self.migrate_branch_permissions(p, branch, pid) if p["type"] == prio[0] else None
-        elif any(perm["type"] == prio[1] for perm in perms if perm["matcher"]["displayId"] == branch):
+        elif any(perm["type"] == prio[1] for perm in perms if dig(perm, 'matcher', 'displayId') == branch):
             return self.migrate_branch_permissions(p, branch, pid) if p["type"] == prio[1] else None
-        elif any(perm["type"] == prio[2] for perm in perms if perm["matcher"]["displayId"] == branch):
+        elif any(perm["type"] == prio[2] for perm in perms if dig(perm, 'matcher', 'displayId') == branch):
             return self.migrate_branch_permissions(p, branch, pid) if p["type"] == prio[2] else None
-        elif any(perm["type"] == prio[3] for perm in perms if perm["matcher"]["displayId"] == branch):
+        elif any(perm["type"] == prio[3] for perm in perms if dig(perm, 'matcher', 'displayId') == branch):
             return self.migrate_branch_permissions(p, branch, pid) if p["type"] == prio[3] else None
 
     def migrate_branch_permissions(self, p, branch, pid):
@@ -122,7 +124,7 @@ class ReposClient(BaseClass):
         }
         access_level = PERM_TYPES[p["type"]]
         data = {
-            "name": branch if p["matcher"]["type"]["id"] in PERM_MATCHER_TYPES else None,
+            "name": branch if dig(p, 'matcher', 'type', 'id') in PERM_MATCHER_TYPES else None,
             "push_access_level": access_level[0],
             "merge_access_level": access_level[1],
             "unprotect_access_level": access_level[2]
@@ -137,10 +139,10 @@ class ReposClient(BaseClass):
                 pid, branch, self.config.destination_host, self.config.destination_token, data=data).status_code
             if status != 201:
                 self.log.error(
-                    f"Failed to protect project {pid} branch {p['matcher']['displayId']} with status: {status}")
+                    f"Failed to protect project {pid} branch {dig(p, 'matcher', 'displayId', default='')} with status: {status}")
         else:
             self.log.warning(
-                f"Cannot match {p['matcher']['displayId']} ({p['matcher']['type']['id']}) for project {pid}")
+                f"Cannot match {dig(p, 'matcher', 'displayId', default='')} ({dig(p, 'matcher', 'type', 'id')}) for project {pid}")
         return data
 
     def correct_repo_description(self, src_repo, pid):

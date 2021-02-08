@@ -1,7 +1,7 @@
 import json
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import remove_dupes, remove_dupes_but_take_higher_access
+from congregate.helpers.misc_utils import remove_dupes, remove_dupes_but_take_higher_access, dig
 from congregate.migration.bitbucket.api.projects import ProjectsApi
 from congregate.migration.bitbucket.users import UsersClient
 from congregate.migration.bitbucket.repos import ReposClient
@@ -51,7 +51,7 @@ class ProjectsClient(BaseClass):
 
         if groups:
             for group in self.projects_api.get_all_project_groups(project_key):
-                group_name = group["group"]["name"].lower()
+                group_name = dig(group, 'group', 'name', default="").lower()
                 permission = bitbucket_permission_map[group["permission"]]
                 if groups.get(group_name, None):
                     for user in groups[group_name]:
@@ -71,14 +71,14 @@ class ProjectsClient(BaseClass):
                 "path": repo["slug"],
                 "name": repo["name"],
                 "namespace": {
-                    "id": repo["project"]["id"],
-                    "name": repo["project"]["name"],
-                    "path": repo["project"]["key"],
+                    "id": dig(repo, 'project', 'id'),
+                    "name": dig(repo, 'project', 'name'),
+                    "path": dig(repo, 'project', 'key'),
                     "kind": "group",
-                    "full_path": repo["project"]["key"]
+                    "full_path": dig(repo, 'project', 'key')
                 },
-                "path_with_namespace": repo["project"]["key"] + "/" + repo["slug"],
-                "visibility": "public" if repo["public"] else "private",
+                "path_with_namespace": dig(repo, 'project', 'key') + "/" + repo.get("slug"),
+                "visibility": "public" if repo.get("public") else "private",
                 "description": repo.get("description", "")
             })
         return remove_dupes(repos)

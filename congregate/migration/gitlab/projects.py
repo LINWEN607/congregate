@@ -9,7 +9,7 @@ from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.groups import GroupsClient
 from congregate.migration.gitlab.users import UsersClient
-from congregate.helpers.migrate_utils import get_dst_path_with_namespace, get_full_path_with_parent_namespace
+from congregate.helpers.migrate_utils import get_dst_path_with_namespace, get_full_path_with_parent_namespace, dig
 
 
 class ProjectsClient(BaseClass):
@@ -213,7 +213,7 @@ class ProjectsClient(BaseClass):
                             self.config.destination_token,
                             project['name']):
                         if proj["name"] == project["name"]:
-                            if project["namespace"]["full_path"].lower() == proj["path_with_namespace"].lower():
+                            if dig(project, 'namespace', 'full_path', default="").lower() == proj.get("path_with_namespace", "").lower():
                                 project_exists = True
                                 break
                     if not project_exists:
@@ -244,14 +244,14 @@ class ProjectsClient(BaseClass):
             self.config.source_token,
             statistics=True)
         for dp in dest_projects:
-            if dp.get("statistics", None) is not None and dp["statistics"]["repository_size"] == 0:
+            if dp.get("statistics", None) is not None and dig(dp, 'statistics', 'repository_size', default=-1) == 0:
                 self.log.info("Found empty repo on destination instance: {}".format(
                     dp["name_with_namespace"]))
                 for sp in src_projects:
-                    if sp["name"] == dp["name"] and dp["namespace"]["path"] in sp["namespace"]["path"]:
+                    if sp["name"] == dp["name"] and dig(dp, 'namespace', 'path') in dig(sp, 'namespace', 'path', default=""):
                         self.log.info("Found source project {}".format(
                             sp["name_with_namespace"]))
-                        if sp.get("statistics", None) is not None and sp["statistics"]["repository_size"] == 0:
+                        if sp.get("statistics", None) is not None and dig(sp, 'statistics', 'repository_size', default=-1) == 0:
                             self.log.info(
                                 "Project is empty in source instance. Ignoring")
                         else:

@@ -1,7 +1,7 @@
 import json
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import safe_json_response, is_error_message_present, is_github_dot_com
+from congregate.helpers.misc_utils import safe_json_response, is_error_message_present, is_github_dot_com, dig
 from congregate.helpers.mdbc import MongoConnector
 from congregate.helpers.processes import start_multi_process_stream_with_args
 from congregate.migration.github.api.orgs import OrgsApi
@@ -121,9 +121,9 @@ class OrgsClient(BaseClass):
         try:
             full_path = [org_name, team["slug"]]
             while team["parent"]:
-                full_path.insert(1, team["parent"]["slug"])
+                full_path.insert(1, dig(team, 'parent', 'slug'))
                 team = safe_json_response(self.orgs_api.get_org_team(
-                    org_name, team["parent"]["slug"]))
+                    org_name, dig(team, 'parent', 'slug')))
                 if not team or is_error_message_present(team):
                     self.log.error(
                         "Failed to get full_path for team ({})".format(team))

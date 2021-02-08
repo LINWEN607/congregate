@@ -178,7 +178,7 @@ class BaseDiffClient(BaseClass):
                                       asset[key]) if parent_group else asset[key]
         if self.results.get(identifier) is not None:
             if isinstance(self.results[identifier], dict):
-                destination_id = self.results[identifier]["response"]["id"]
+                destination_id = dig(self.results, identifier, 'response', 'id')
                 response = gl_endpoint(
                     destination_id, self.config.destination_host, self.config.destination_token, **kwargs)
                 destination_data = self.generate_cleaned_instance_data(
@@ -284,12 +284,12 @@ class BaseDiffClient(BaseClass):
         try:
             if isinstance(obj, dict):
                 for o in obj.keys():
-                    if (o == "/projects/:id" or o == "/groups/:id") and obj[o]["accuracy"] == 0:
+                    if (o == "/projects/:id" or o == "/groups/:id") and dig(obj, o, 'accuracy') == 0:
                         result = "failure"
                         percentage_sum = 0
                         break
-                    percentage_sum += obj[o]["overall_accuracy"]["accuracy"]
-                    if obj[o]["overall_accuracy"]["accuracy"] == 0:
+                    percentage_sum += dig(obj, o, 'overall_accuracy', 'accuracy')
+                    if dig(obj, o, 'overall_accuracy', 'accuracy') == 0:
                         result = "failure"
                 accuracy = percentage_sum / total_number_of_keys if total_number_of_keys else 0
                 if result is None:

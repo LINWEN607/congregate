@@ -65,11 +65,11 @@ class Reporting(BaseClass):
             'create': 0
         }
         for issue in combined_issues:
-            if not combined_issues[issue]['status']['exists']:
+            if not dig(combined_issues, issue, 'status', 'exists'):
                 stats['create'] += 1
-            elif combined_issues[issue]['status']['changed']:
+            elif dig(combined_issues, issue, 'status', 'changed'):
                 stats['changed'] += 1
-            elif combined_issues[issue]['status']['exists']:
+            elif dig(combined_issues, issue, 'status', 'exists'):
                 stats['existed'] += 1
 
         self.log.info(f"\n{'*' * 80}\n{'*' * 80}\n\n")
@@ -81,13 +81,13 @@ class Reporting(BaseClass):
         progress = {'total': len(combined_issues), 'current': 0}
         for issue in combined_issues:
             # Create an issue
-            if not combined_issues[issue]['status']['exists']:
+            if not dig(combined_issues, issue, 'status', 'exists'):
                 progress['current'] += 1
                 self.log.info(f"Creating issue: '{issue}' Progress: [ {progress['current']} / {progress['total']} ]")
                 data = {'title': issue, 'description': combined_issues[issue]['description']}
                 self.create_issue(data)
             # Update an issue
-            elif combined_issues[issue]['status']['changed']:
+            elif dig(combined_issues, issue, 'status', 'changed'):
                 progress['current'] += 1
                 self.log.info(f"Updating issue: '{issue}' Progress: [ {progress['current']} / {progress['total']} ]")
                 data = {'description': combined_issues[issue]['description']}
@@ -455,7 +455,7 @@ class Reporting(BaseClass):
                 return {
                     'state': e_issue['state'],
                     'iid': e_issue['iid'],
-                    'url': e_issue['_links']['self'],
+                    'url': dig(e_issue, '_links', 'self'),
                     'web_url': e_issue['web_url'],
                     'description': e_issue['description'],
                     'project_id': e_issue['project_id'],
@@ -487,7 +487,7 @@ class Reporting(BaseClass):
             self.config.destination_token
         ):
             clean_issues[issue['title']] = {
-                'url': issue['_links']['self'],
+                'url': dig(issue, '_links', 'self'),
                 'web_url': issue['web_url'],
                 'state': issue['state'],
                 'iid': issue['iid'],
