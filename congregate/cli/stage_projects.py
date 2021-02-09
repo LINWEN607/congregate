@@ -117,7 +117,7 @@ class ProjectStageCLI(BaseStageClass):
                 for member in group_to_stage["members"]:
                     self.append_member_to_members_list([], member, dry_run)
             else:
-                self.log.warning(f"Unable to stage group {dig(project, 'namespace', 'full_path')}")
+                self.log.warning(f"Unable to stage group of {project.get('path_with_namespace')}")
 
         self.log.info("{0}Staging project {1} (ID: {2}) [{3}/{4}]".format(get_dry_log(
             dry_run), obj["path_with_namespace"], obj["id"], len(self.staged_projects) + 1, len(p_range) if p_range else len(projects_to_stage)))

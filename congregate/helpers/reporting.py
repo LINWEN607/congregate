@@ -65,11 +65,11 @@ class Reporting(BaseClass):
             'create': 0
         }
         for issue in combined_issues:
-            if not dig(combined_issues, issue, 'status', 'exists'):
+            if not combined_issues[issue]['status']['exists']:
                 stats['create'] += 1
-            elif dig(combined_issues, issue, 'status', 'changed'):
+            elif combined_issues[issue]['status']['changed']:
                 stats['changed'] += 1
-            elif dig(combined_issues, issue, 'status', 'exists'):
+            elif combined_issues[issue]['status']['exists']:
                 stats['existed'] += 1
 
         self.log.info(f"\n{'*' * 80}\n{'*' * 80}\n\n")
@@ -81,13 +81,13 @@ class Reporting(BaseClass):
         progress = {'total': len(combined_issues), 'current': 0}
         for issue in combined_issues:
             # Create an issue
-            if not dig(combined_issues, issue, 'status', 'exists'):
+            if not combined_issues[issue]['status']['exists']:
                 progress['current'] += 1
                 self.log.info(f"Creating issue: '{issue}' Progress: [ {progress['current']} / {progress['total']} ]")
                 data = {'title': issue, 'description': combined_issues[issue]['description']}
                 self.create_issue(data)
             # Update an issue
-            elif dig(combined_issues, issue, 'status', 'changed'):
+            elif combined_issues[issue]['status']['changed']:
                 progress['current'] += 1
                 self.log.info(f"Updating issue: '{issue}' Progress: [ {progress['current']} / {progress['total']} ]")
                 data = {'description': combined_issues[issue]['description']}

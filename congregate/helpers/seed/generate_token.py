@@ -143,7 +143,7 @@ class token_generator():
         return urljoin(self.endpoint, "/users/password")
 
     def __get_pat_route(self):
-        return urljoin(self.endpoint, "/profile/personal_access_tokens")
+        return urljoin(self.endpoint, "/-/profile/personal_access_tokens")
 
 
 if __name__ == "__main__":
