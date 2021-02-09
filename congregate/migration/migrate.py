@@ -14,7 +14,7 @@ from congregate.helpers import api
 from congregate.helpers.reporting import Reporting
 from congregate.helpers.migrate_utils import get_export_filename_from_namespace_and_name, get_dst_path_with_namespace, \
     get_full_path_with_parent_namespace, get_staged_user_projects, is_top_level_group, get_failed_export_from_results, \
-    get_results, get_staged_groups_without_failed_export, get_staged_projects_without_failed_export
+    get_results, get_staged_groups_without_failed_export, get_staged_projects_without_failed_export, get_target_namespace
 from congregate.helpers.misc_utils import get_dry_log, json_pretty, is_dot_com, clean_data, add_post_migration_stats, \
     rotate_logs, write_results_to_file, migration_dry_run, safe_json_response, is_error_message_present, \
     get_duplicate_paths, deobfuscate, dig
@@ -293,24 +293,32 @@ class MigrateClient(BaseClass):
         gh_host, gh_token = self.get_host_and_token()
         members = project.pop("members")
         path_with_namespace = f"{project.get('target_namespace', '')}/{project.get('path_with_namespace', '')}"
-        if dst_pid := self.projects.find_project_by_path(
-                    self.config.destination_host, self.config.destination_token, path_with_namespace):
-            self.log.info(f"Repo {path_with_namespace} has already been imported. Skipping import")
-            result = self.ext_import.get_result_data(project, {"id": dst_pid})
+        # TODO: Make this target namespace lookup requirement configurable
+        if self.groups.find_group_id_by_path(self.config.destination_host,
+            self.config.destination_token, get_target_namespace(project)):
+            if dst_pid := self.projects.find_project_by_path(
+                        self.config.destination_host, self.config.destination_token, path_with_namespace):
+                self.log.info(f"Repo {path_with_namespace} has already been imported. Skipping import")
+                result = self.ext_import.get_result_data(project, {"id": dst_pid})
+            else:
+                result = self.ext_import.trigger_import_from_ghe(
+                    project, gh_host, gh_token, dry_run=self.dry_run)
+                if result.get(project["path_with_namespace"], False) is not False:
+                    result_response = result[project["path_with_namespace"]]["response"]
+                    if (isinstance(result_response, dict)) and (project_id := result_response.get("id", None)):
+                        full_path = result_response.get("full_path").strip("/")
+                        success = self.ext_import.wait_for_project_to_import(full_path)
+                        if success:
+                            result = self.handle_gh_post_migration(result, project, project_id, members)
+                        else:
+                            result = self.ext_import.get_failed_result(project, data={
+                                "error": "Import time limit exceeded. Unable to execute post migration phase"
+                            })
         else:
-            result = self.ext_import.trigger_import_from_ghe(
-                project, gh_host, gh_token, dry_run=self.dry_run)
-            if result.get(project["path_with_namespace"], False) is not False:
-                result_response = result[project["path_with_namespace"]]["response"]
-                if (isinstance(result_response, dict)) and (project_id := result_response.get("id", None)):
-                    full_path = result_response.get("full_path").strip("/")
-                    success = self.ext_import.wait_for_project_to_import(full_path)
-                    if success:
-                        result = self.handle_gh_post_migration(result, project, project_id, members)
-                    else:
-                        result = self.ext_import.get_failed_result(project, data={
-                            "error": "Import time limit exceeded. Unable to execute post migration phase"
-                        })
+            self.log.info(f"Target namespace does not exist for {project['path_with_namespace']}. Skipping import.")
+            result = self.ext_import.get_result_data(project, {
+                "error": f"Target namespace {project.get('target_namespace', '')} does not exist. Skipping import"
+            })
         return result
 
     def get_host_and_token(self):
@@ -1105,14 +1113,19 @@ class MigrateClient(BaseClass):
             result = True
             for job in ci_sources.get("TeamCity", []):
                 params = tc_client.teamcity_api.get_build_params(job)
-                if params.get("properties", None) is not None:
-                    for param in dig(params, "properties", "property", default=[]):
-                        if not self.variables.safe_add_variables(
-                            new_id,
-                            tc_client.transform_ci_variables(
-                                param, tc_ci_src_hostname)
-                        ):
-                            result = False
+                try:
+                    if params.get("properties", None) is not None:
+                        for param in dig(params, "properties", "property", default=[]):
+                            if not self.variables.safe_add_variables(
+                                new_id,
+                                tc_client.transform_ci_variables(
+                                    param, tc_ci_src_hostname)
+                            ):
+                                result = False
+                    else:
+                        self.log.warning(f"Job: {job} had no param properties present")
+                except AttributeError as e:
+                    self.log.error(f"Attribute Error Caught for Job:{job} Params:{params} with error:{e}")
             return result
         return None
 

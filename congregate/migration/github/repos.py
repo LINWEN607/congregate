@@ -98,11 +98,16 @@ class ReposClient(BaseClass):
             "description": repo.get(
                 "description",
                 ""),
-            "members": self.add_repo_members(
-                repo_type,
-                repo_path,
-                repo_name,
-                mongo) if not org else []}
+            # Temporarily commenting this out. This request is extremely 
+            # slow at scale and needs a refactor
+            #
+            # "members": self.add_repo_members(
+            #     repo["owner"]["type"],
+            #     repo["owner"]["login"],
+            #     repo["name"],
+            #     mongo) if not org else []
+            "members": []
+            }
 
     def add_repo_members(self, kind, owner, repo, mongo):
         """
@@ -309,6 +314,8 @@ class ReposClient(BaseClass):
         for mr in pull_requests:
             if mr["state"] == "open":
                 state = "opened"
+            else:
+                state = "closed"
             assignees_list = []
             if mr["assignees"]:
                 for assignee in mr["assignees"]:
@@ -356,6 +363,8 @@ class ReposClient(BaseClass):
         for milestone in milestones:
             if milestone["state"] == "open":
                 milestone_status = "active"
+            else:
+                milestone_status = "closed"
             list_of_milestones.append(
                 {
                     "title": milestone["title"],
@@ -417,7 +426,7 @@ class ReposClient(BaseClass):
                 {
                     "title": issue["title"],
                     "description": issue["body"],
-                    "state": issue["state"],
+                    "state": issue.get("state", "closed"),
                     "created_at": issue["created_at"],
                     "updated_at": issue["updated_at"],
                     "closed_at": issue["closed_at"],

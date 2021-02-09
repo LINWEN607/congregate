@@ -106,7 +106,9 @@ class RepoDiffClient(BaseDiffClient):
             try:
                 diff_report[project_path_replaced]["overall_accuracy"] = self.calculate_overall_accuracy(
                     diff_report[project_path_replaced])
-                mongo.insert_data(f"diff_report_{group_namespace}", diff_report.copy())
+                # Cast all keys and values to strings to avoid mongo key validation errors
+                cleaned_data = {str(key): str(val) for key, val in (diff_report.copy()).items()}
+                mongo.insert_data(f"diff_report_{group_namespace}", cleaned_data, bypass_document_validation=True)
                 mongo.close_connection()
                 return diff_report
             except Exception as e:

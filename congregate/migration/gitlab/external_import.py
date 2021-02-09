@@ -1,7 +1,7 @@
 from time import sleep
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.misc_utils import migration_dry_run, is_error_message_present, safe_json_response, is_github_dot_com, dig
-from congregate.helpers.migrate_utils import get_dst_path_with_namespace
+from congregate.helpers.migrate_utils import get_dst_path_with_namespace, get_target_namespace
 from congregate.migration.gitlab.api.external_import import ImportApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.instance import InstanceApi
@@ -61,8 +61,8 @@ class ImportClient(BaseClass):
             :return: (dict) Project and its response code
 
         '''
-        if project.get("target_namespace"):
-            tn = f"{project.get('target_namespace')}/{project['namespace']}"
+        if target_namespace := get_target_namespace(project):
+            tn = target_namespace
         else:
             tn = get_dst_path_with_namespace(project).rsplit("/", 1)[0]
 
