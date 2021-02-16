@@ -116,7 +116,9 @@ class MigrateClient(BaseClass):
                 "results/dry_run_user_migration.json",
                 "results/dry_run_group_migration.json",
                 "results/dry_run_project_migration.json"])
+        clean_data(dry_run=False, files=["results/import_failed_relations.json"])
         rotate_logs()
+
         if self.config.source_type == "gitlab":
             self.migrate_from_gitlab()
         elif self.config.source_type == "bitbucket server":
