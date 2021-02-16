@@ -295,7 +295,7 @@ class MiscUtilsTests(unittest.TestCase):
 
     def test_validate_name(self):
         assert misc.validate_name(
-            "-:: This.is-how/WE do\n&it") == "This is-how WE do it"
+            "-:: This.is-how/WE do\n&it") == "This.is-how WE do it"
 
     @mock.patch("congregate.helpers.misc_utils.read_json_file_into_object")
     @mock.patch("glob.glob")
