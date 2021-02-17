@@ -960,14 +960,12 @@ class MigrateClient(BaseClass):
                     self.config.destination_host, self.config.destination_token, dst_pid))
                 self.log.info("Project {0} (ID: {1}) found on destination, with import status: {2}".format(
                     dst_path_with_namespace, dst_pid, import_status))
-                if self.only_post_migration_info and not self.dry_run:
-                    import_id = dst_pid
-                else:
+                import_id = dst_pid
+                if self.dry_run:
                     result[dst_path_with_namespace] = dst_pid
             else:
                 self.log.info(
                     f"{get_dry_log(self.dry_run)}Project {dst_path_with_namespace} NOT found on destination, importing...")
-            if not self.only_post_migration_info:
                 import_id = self.ie.import_project(
                     project, dry_run=self.dry_run)
             if import_id and not self.dry_run:
