@@ -1323,11 +1323,11 @@ class MigrateClient(BaseClass):
             pcli = ProjectStageCLI()
             pcli.stage_data(ids, self.dry_run)
 
-    def toggle_maintenance_mode(self, off=False, dest=False):
+    def toggle_maintenance_mode(self, off=False, msg=None, dest=False):
         data = {
             "maintenance_mode": False if off else True}
-        if not off:
-            data["maintenance_mode_message"] = "GITLAB PS MIGRATION IN PROGRESS"
+        if not off and msg:
+            data["maintenance_mode_message"] = msg.replace("+", " ")
         host = self.config.destination_host if dest else self.config.source_host
         token = self.config.destination_token if dest else self.config.source_token
         self.log.warning(f"Turning maintenance mode {'OFF' if off else 'ON'} for {'destination' if dest else 'source'} instance")

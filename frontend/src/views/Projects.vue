@@ -58,10 +58,6 @@ export default {
           field: 'archived'
         },
         {
-          label: 'Empty',
-          field: 'empty_repo'
-        },
-        {
           label: 'Last Activity',
           field: 'last_activity_at'
         }

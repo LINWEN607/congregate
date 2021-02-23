@@ -53,7 +53,7 @@ Usage:
     congregate dump-database
     congregate reingest <assets>...
     congregate clean-database [--commit]
-    congregate toggle-maintenance-mode [--off] [--dest]
+    congregate toggle-maintenance-mode [--off] [--dest] [--msg=<multi+word+message>]
     congregate -h | --help
     congregate -v | --version
 
@@ -89,6 +89,7 @@ Arguments:
     partial                                 Option used when listing. Keeps existing data in mongo instead of dropping it before retrieving new data
     off                                     Toggle maintenance mode off, otherwise on by default
     dest                                    Toggle maintenance mode on destination instance
+    msg                                     Maintenance mode message, with "+" in place of " "
 
 Commands:
     list                                    List all projects of a source instance and save it to {CONGREGATE_PATH}/data/projects.json.
@@ -505,7 +506,10 @@ def main():
                     print("\nThis command will drop all collections in the congregate database and then recreate the structure. Please append `--commit` to clean the database")
             if arguments["toggle-maintenance-mode"]:
                 migrate = MigrateClient()
-                migrate.toggle_maintenance_mode(arguments["--off"], arguments["--dest"])
+                migrate.toggle_maintenance_mode(
+                    arguments["--off"],
+                    arguments["--msg"],
+                    arguments["--dest"])
         if arguments["obfuscate"]:
             print(obfuscate("Secret:"))
         if arguments["deobfuscate"]:
