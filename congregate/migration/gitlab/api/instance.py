@@ -90,3 +90,17 @@ class InstanceApi():
             :return: Generator returning JSON of each result from GET /deploy_keys
         """
         return api.list_all(host, token, "deploy_keys")
+
+    def change_application_settings(self, host, token, data, message=None):
+        """
+        Use an API call to modify GitLab instance application settings.
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/settings.html#change-application-settings
+
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :return: Response object containing the response to PUT /application/settings
+        """
+        if not message:
+            message = "Changing application settings"
+        return api.generate_put_request(host, token, "application/settings", json.dumps(data), description=message)

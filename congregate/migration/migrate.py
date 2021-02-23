@@ -32,6 +32,7 @@ from congregate.migration.gitlab.projects import ProjectsClient
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.project_repository import ProjectRepositoryApi
 from congregate.migration.gitlab.api.namespaces import NamespacesApi
+from congregate.migration.gitlab.api.instance import InstanceApi
 from congregate.migration.gitlab.pushrules import PushRulesClient
 from congregate.migration.gitlab.merge_request_approvals import MergeRequestApprovalsClient
 from congregate.migration.gitlab.registries import RegistryClient
@@ -77,6 +78,7 @@ class MigrateClient(BaseClass):
         self.projects_api = ProjectsApi()
         self.project_repository_api = ProjectRepositoryApi()
         self.namespaces_api = NamespacesApi()
+        self.instance_api = InstanceApi()
         self.pushrules = PushRulesClient()
         self.mr_approvals = MergeRequestApprovalsClient()
         self.registries = RegistryClient()
@@ -1320,3 +1322,13 @@ class MigrateClient(BaseClass):
         if ids is not None and ids:
             pcli = ProjectStageCLI()
             pcli.stage_data(ids, self.dry_run)
+
+    def toggle_maintenance_mode(self, off=False, dest=False):
+        data = {
+            "maintenance_mode": False if off else True}
+        if not off:
+            data["maintenance_mode_message"] = "GITLAB PS MIGRATION IN PROGRESS"
+        host = self.config.destination_host if dest else self.config.source_host
+        token = self.config.destination_token if dest else self.config.source_token
+        self.log.warning(f"Turning maintenance mode {'OFF' if off else 'ON'} for {'destination' if dest else 'source'} instance")
+        self.instance_api.change_application_settings(host, token, data)

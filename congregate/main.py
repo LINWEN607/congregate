@@ -53,6 +53,7 @@ Usage:
     congregate dump-database
     congregate reingest <assets>...
     congregate clean-database [--commit]
+    congregate toggle-maintenance-mode [--off] [--dest]
     congregate -h | --help
     congregate -v | --version
 
@@ -86,6 +87,8 @@ Arguments:
     head                                    Read results files in chronological order
     tail                                    Read results files in reverse chronological order (default for stitch-results)
     partial                                 Option used when listing. Keeps existing data in mongo instead of dropping it before retrieving new data
+    off                                     Toggle maintenance mode off, otherwise on by default
+    dest                                    Toggle maintenance mode on destination instance
 
 Commands:
     list                                    List all projects of a source instance and save it to {CONGREGATE_PATH}/data/projects.json.
@@ -142,6 +145,7 @@ Commands:
     dump-database                           Dump all database collections to various JSON files
     reingest                                Reingest database dumps into mongo. Specify the asset type (users, groups, projects, teamcity, jenkins)
     clean-database                          Drop all collections in the congregate MongoDB database and rebuilds the structure
+    toggle-maintenance-mode                 Reduce write operations to a minimum by blocking all external actions that change the internal state
 """
 
 import os
@@ -499,6 +503,9 @@ def main():
                     m.clean_db()
                 else:
                     print("\nThis command will drop all collections in the congregate database and then recreate the structure. Please append `--commit` to clean the database")
+            if arguments["toggle-maintenance-mode"]:
+                migrate = MigrateClient()
+                migrate.toggle_maintenance_mode(arguments["--off"], arguments["--dest"])
         if arguments["obfuscate"]:
             print(obfuscate("Secret:"))
         if arguments["deobfuscate"]:
