@@ -253,17 +253,18 @@ With Congregate configured and projects, groups, and users retrieved, you should
 **N.B.** Instead of exporting an environment variable within your shell session, you can also add `CONGREGATE_PATH` to `bash_profile` or an `init.d` script. This is a bit more of a permanent solution than just exporting the variable within the session.
 
 ### Usage
+
 Make sure to check out our [user guide](using-congregate.md) if you're just getting started to learn the basics. 
 
 ``` text
 Usage:
     congregate init
-    congregate list [--processes=<n>] [--partial] [--skip-users] [--skip-groups] [--skip-projects] [--skip-ci]
+    congregate list [--processes=<n>] [--partial] [--skip-users] [--skip-groups] [--skip-projects] [--skip-ci] [--src-instances]
     congregate configure
-    congregate stage-projects <projects>... [--skip-users] [--commit]
-    congregate stage-groups <groups>... [--skip-users] [--commit]
-    congregate stage-wave <wave> [--commit]
-    congregate migrate [--processes=<n>] [--skip-users] [--skip-adding-members] [--skip-group-export] [--skip-group-import] [--skip-project-export] [--skip-project-import] [--only-post-migration-info] [--subgroups-only] [--commit]
+    congregate stage-projects <projects>... [--skip-users] [--commit] [--scm-source=hostanme]
+    congregate stage-groups <groups>... [--skip-users] [--commit] [--scm-source=hostanme]
+    congregate stage-wave <wave> [--commit] [--scm-source=hostanme]
+    congregate migrate [--processes=<n>] [--skip-users] [--skip-adding-members] [--skip-group-export] [--skip-group-import] [--skip-project-export] [--skip-project-import] [--only-post-migration-info] [--subgroups-only] [--scm-source=hostanme] [--commit] 
     congregate rollback [--hard-delete] [--skip-users] [--skip-groups] [--skip-projects] [--commit]
     congregate ui
     congregate do-all [--commit]
@@ -290,8 +291,8 @@ Usage:
     congregate set-default-branch [--commit]
     congregate enable-mirroring [--commit] # TODO: Find a use for it or remove
     congregate count-unarchived-projects
-    congregate archive-staged-projects [--commit]
-    congregate unarchive-staged-projects [--commit]
+    congregate archive-staged-projects [--commit] [--scm-source=hostname]
+    congregate unarchive-staged-projects [--commit] [--scm-source=hostname]
     congregate find-empty-repos
     congregate compare-groups [--staged]
     congregate staged-user-list
@@ -299,10 +300,15 @@ Usage:
     congregate validate-staged-groups-schema
     congregate validate-staged-projects-schema
     congregate map-users [--commit]
-    congregate generate-diff [--processes=<n>] [--staged] [--rollback]
+    congregate generate-diff [--processes=<n>] [--staged] [--rollback] [--scm-source=hostanme]
     congregate clean [--commit]
     congregate stitch-results [--result-type=<project|group|user>] [--no-of-files=<n>] [--head|--tail]
     congregate obfuscate
+    congregate deobfuscate
+    congregate dump-database
+    congregate reingest <assets>...
+    congregate clean-database [--commit]
+    congregate toggle-maintenance-mode [--off] [--dest]
     congregate -h | --help
     congregate -v | --version
 
@@ -313,6 +319,8 @@ Options:
 Arguments:
     processes                               Set number of processes to run in parallel.
     commit                                  Disable the dry-run and perform the full migration with all reads/writes.
+    src_instances                           Present if there are multiple GH source instances
+    scm_source                              Specific SCM source hostname
     skip-users                              Stage: Skip staging users; Migrate: Skip migrating users; Rollback: Remove only groups and projects.
     skip-adding-members                     Skip adding members from GitHub as source instance
     hard-delete                             Remove user contributions and solely owned groups
@@ -334,6 +342,8 @@ Arguments:
     head                                    Read results files in chronological order
     tail                                    Read results files in reverse chronological order (default for stitch-results)
     partial                                 Option used when listing. Keeps existing data in mongo instead of dropping it before retrieving new data
+    off                                     Toggle maintenance mode off, otherwise on by default
+    dest                                    Toggle maintenance mode on destination instance
 
 Commands:
     list                                    List all projects of a source instance and save it to {CONGREGATE_PATH}/data/projects.json.
@@ -371,7 +381,7 @@ Commands:
     check-projects-visibility               Return list of all migrated projects' visibility.
     set-default-branch                      Set default branch to master for all projects on destination.
     enable-mirroring                        Start pull mirror process for all projects on destination.
-    count-unarchived-projects               Return total number and list of all anarchived projects on source.
+    count-unarchived-projects               Return total number and list of all unarchived projects on source.
     find-empty-repos                        Inspect project repo sizes between source and destination instance in search for empty repos.
                                                 This could be misleading as it sometimes shows 0 (zero) commits/tags/bytes for fully migrated projects.
     compare-groups                          Compare source and destination group results.
@@ -386,6 +396,11 @@ Commands:
     generate-diff                           Generates HTML files containing the diff results of the migration
     map-users                               Maps staged user emails to emails defined in the user-provided user_map.csv
     obfuscate                               Obfuscate a secret or password that you want to manually update in the config.
+    deobfuscate                             Deobfuscate a secret or password from the config.
+    dump-database                           Dump all database collections to various JSON files
+    reingest                                Reingest database dumps into mongo. Specify the asset type (users, groups, projects, teamcity, jenkins)
+    clean-database                          Drop all collections in the congregate MongoDB database and rebuilds the structure
+    toggle-maintenance-mode                 Reduce write operations to a minimum by blocking all external actions that change the internal state. Operational as of GitLab version 13.9
 ```
 
 #### Important Notes

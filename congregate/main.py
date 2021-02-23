@@ -145,7 +145,7 @@ Commands:
     dump-database                           Dump all database collections to various JSON files
     reingest                                Reingest database dumps into mongo. Specify the asset type (users, groups, projects, teamcity, jenkins)
     clean-database                          Drop all collections in the congregate MongoDB database and rebuilds the structure
-    toggle-maintenance-mode                 Reduce write operations to a minimum by blocking all external actions that change the internal state
+    toggle-maintenance-mode                 Reduce write operations to a minimum by blocking all external actions that change the internal state. Operational as of GitLab version 13.9
 """
 
 import os
