@@ -181,7 +181,7 @@ app_path = get_congregate_path()
 def main():
     if __name__ == '__main__':
         arguments = docopt(__doc__)
-        DRY_RUN = False if arguments["--commit"] else True
+        DRY_RUN = not arguments["--commit"]
         STAGED = arguments["--staged"]
         ROLLBACK = arguments["--rollback"]
         PROCESSES = arguments["--processes"] if arguments["--processes"] else None
@@ -201,7 +201,7 @@ def main():
             with open(f"{app_path}/pyproject.toml", "r") as f:
                 print(
                     f"Congregate {dig(load_toml(f), 'tool', 'poetry', 'version')}")
-            exit()
+            sys.exit()
 
         if arguments["init"]:
             Path("data/logs").mkdir(parents=True, exist_ok=True)
@@ -288,9 +288,9 @@ def main():
                     dry_run=DRY_RUN,
                     skip_users=SKIP_USERS,
                     skip_adding_members=SKIP_ADDING_MEMBERS,
-                    skip_group_export=True if arguments["--skip-group-export"] or ONLY_POST_MIGRATION_INFO else False,
+                    skip_group_export=bool(arguments["--skip-group-export"] or ONLY_POST_MIGRATION_INFO),
                     skip_group_import=arguments["--skip-group-import"],
-                    skip_project_export=True if arguments["--skip-project-export"] or ONLY_POST_MIGRATION_INFO else False,
+                    skip_project_export=bool(arguments["--skip-project-export"] or ONLY_POST_MIGRATION_INFO),
                     skip_project_import=arguments["--skip-project-import"],
                     only_post_migration_info=ONLY_POST_MIGRATION_INFO,
                     subgroups_only=arguments["--subgroups-only"],

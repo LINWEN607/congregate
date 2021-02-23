@@ -6,6 +6,7 @@
 import os
 import json
 import xml.dom.minidom
+import sys
 from time import time
 from traceback import print_exc
 from requests.exceptions import RequestException
@@ -87,7 +88,7 @@ class MigrateClient(BaseClass):
         self.clusters = ClustersClient()
         self.environments = EnvironmentsClient()
         self.ext_import = ImportClient()
-        super(MigrateClient, self).__init__()
+        super().__init__()
         self.bbs_repos_client = BBSReposClient()
         self.job_template = JobTemplateGenerator()
         self.dry_run = dry_run
@@ -225,15 +226,14 @@ class MigrateClient(BaseClass):
                 self.log.info(
                     "Successfully got reporting config from congregate.conf. Proceeding to make our issues.")
                 return True
-            else:
-                self.log.error(
-                    f"Couldn't find a required REPORTING config in [DESTINATION] section of congregate.conf.\n"
-                    f"Issues will not be created."
-                )
+            self.log.error(
+                "Couldn't find a required REPORTING config in [DESTINATION] section of congregate.conf.\n"
+                "Issues will not be created."
+            )
         else:
             self.log.error(
-                f"Couldn't find a required REPORTING config in [DESTINATION] section of congregate.conf.\n"
-                f"Issues will not be created."
+                "Couldn't find a required REPORTING config in [DESTINATION] section of congregate.conf.\n"
+                "Issues will not be created."
             )
 
     def create_issue_reporting(self, staged_projects, import_results):
@@ -250,8 +250,7 @@ class MigrateClient(BaseClass):
             ):
                 report.handle_creating_issues(staged_projects, import_results)
             else:
-                self.log.warning(
-                    f"REPORTING: Failed to instantiate the reporting module")
+                self.log.warning("REPORTING: Failed to instantiate the reporting module")
 
     def migrate_github_group(self, group):
         result = False
@@ -569,7 +568,7 @@ class MigrateClient(BaseClass):
             self.log.warning(
                 "Results from {0} {1} returned as empty. Aborting.".format(var, stage))
             add_post_migration_stats(self.dry_run, log=self.log)
-            exit()
+            sys.exit()
 
     def migrate_user_info(self):
         staged_users = self.users.get_staged_users()
@@ -580,7 +579,7 @@ class MigrateClient(BaseClass):
                 staged = self.users.handle_users_not_found(
                     "staged_users",
                     self.users.search_for_staged_users()[0],
-                    keep=False if self.only_post_migration_info else True
+                    keep=not self.only_post_migration_info
                 )
                 new_users = start_multi_process(
                     self.handle_user_creation, staged, self.processes)
@@ -1103,10 +1102,7 @@ class MigrateClient(BaseClass):
                     req = self.project_repository_api.create_repo_file(
                         self.config.destination_host, self.config.destination_token,
                         project_id, "config.xml", data)
-                    if req.status_code == 200:
-                        is_result = True
-                    else:
-                        is_result = False
+                    is_result = bool(req.status_code == 200)
             return is_result
         return None
 
@@ -1325,7 +1321,7 @@ class MigrateClient(BaseClass):
 
     def toggle_maintenance_mode(self, off=False, msg=None, dest=False):
         data = {
-            "maintenance_mode": False if off else True}
+            "maintenance_mode": not off}
         if not off and msg:
             data["maintenance_mode_message"] = msg.replace("+", " ")
         host = self.config.destination_host if dest else self.config.source_host
