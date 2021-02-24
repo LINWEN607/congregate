@@ -211,6 +211,10 @@ class MiscUtilsTests(unittest.TestCase):
     def test_deobfuscate(self):
         self.assertEqual(misc.deobfuscate("dGVzdA=="), "test")
 
+    def test_deobfuscate_failed(self):
+        with self.assertRaises(SystemExit):
+            misc.deobfuscate("ddddGVzdA==")
+
     @mock.patch("os.path.exists")
     def test_is_recent_file_no_file(self, exists):
         exists.return_value = False

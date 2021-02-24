@@ -4,6 +4,7 @@ import json
 import getpass
 import subprocess
 import hashlib
+import sys
 
 import glob
 from collections import Counter
@@ -263,7 +264,11 @@ def obfuscate(prompt):
 
 
 def deobfuscate(secret):
-    return b64decode(secret.encode("ascii")).decode("ascii")
+    try:
+        return b64decode(secret.encode("ascii")).decode("ascii")
+    except Exception as e:
+        print(f"Invalid token - {e}")
+        sys.exit()
 
 
 def convert_to_underscores(s):
