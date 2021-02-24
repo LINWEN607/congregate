@@ -5,6 +5,7 @@ Copyright (c) 2021 - GitLab
 """
 
 import re
+import sys
 
 from congregate.cli.stage_base import BaseStageClass
 from congregate.helpers.misc_utils import get_dry_log, remove_dupes, rewrite_list_into_dict
@@ -88,7 +89,7 @@ class GroupStageCLI(BaseStageClass):
                     except (ValueError, KeyError) as e:
                         self.log.error(
                             f"Please use a space delimited list of integers (group IDs):\n{groups_to_stage}\n{e}")
-                        exit()
+                        sys.exit()
                     self.append_data(group, groups_to_stage, dry_run=dry_run)
         else:
             self.log.info("Staging empty list")

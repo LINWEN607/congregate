@@ -397,11 +397,11 @@ def dig(dictionary, *args, default=None):
 
 
 def is_dot_com(host):
-    return True if "gitlab.com" in host else False
+    return "gitlab.com" in host
 
 
 def is_github_dot_com(host):
-    return True if "api.github.com" in host else False
+    return "api.github.com" in host
 
 
 def check_is_project_or_group_for_logging(is_project):
@@ -415,9 +415,9 @@ def is_error_message_present(response):
         response = list(response)
     if isinstance(response, list) and response and response[0] == "message":
         return True
-    elif isinstance(response, dict) and response.get("message", None) is not None:
+    if isinstance(response, dict) and response.get("message", None) is not None:
         return True
-    elif isinstance(response, str) and response == "message":
+    if isinstance(response, str) and response == "message":
         return True
     return False
 
@@ -503,7 +503,7 @@ def stitch_json_results(result_type="project", steps=0, order="tail"):
         :param steps: (int) How many files back you want to go for the stitching. (Default: 0)
         :return: list containing the newly stitched results
     """
-    reverse = True if order.lower() == "tail" else False
+    reverse = order.lower() == "tail"
     steps += 1
     files = glob.glob(
         f"{get_congregate_path()}/data/results/{result_type}_migration_results_*")
@@ -598,8 +598,7 @@ def safe_json_response(response):
         try:
             if isinstance(response, GeneratorType):
                 return list(response)
-            else:
-                return response.json()
+            return response.json()
         except ValueError:
             return None
     return None

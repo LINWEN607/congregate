@@ -17,7 +17,7 @@ class BaseStageClass(BaseClass):
         self.rewritten_users = {}
         self.rewritten_projects = {}
         self.rewritten_groups = {}
-        super(BaseStageClass, self).__init__()
+        super().__init__()
 
     def open_projects_file(self, scm_source=None):
         """

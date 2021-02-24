@@ -15,7 +15,7 @@ class WaveStageCLI(BaseStageClass):
     def __init__(self):
         self.pcli = ProjectStageCLI()
         self.groups_api = GroupsApi()
-        super(WaveStageCLI, self).__init__()
+        super().__init__()
 
     def stage_data(self, wave_to_stage, dry_run=True,
                    skip_users=False, scm_source=None):
@@ -67,7 +67,7 @@ class WaveStageCLI(BaseStageClass):
             )
         )
         # Some basic sanity checks for reading in spreadsheet data
-        self.check_spreadsheet_data(wave_data)
+        self.check_spreadsheet_data()
         # Iterating over a spreadsheet row
         for row in wave_data:
             url_key = column_mapping["Source Url"]
@@ -97,7 +97,7 @@ class WaveStageCLI(BaseStageClass):
             self.log.warning("The following data was not found:\n{}".format(
                 "\n".join(unable_to_find)))
 
-    def check_spreadsheet_data(self, file_contents):
+    def check_spreadsheet_data(self):
         '''
         Check the spreadsheet against the values in the config file,
         return true if all good, warn if not.

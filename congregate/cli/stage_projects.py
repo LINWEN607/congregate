@@ -5,6 +5,7 @@ Copyright (c) 2021 - GitLab
 """
 
 import re
+import sys
 from congregate.helpers.migrate_utils import get_staged_user_projects
 from congregate.helpers.misc_utils import get_dry_log, remove_dupes, rewrite_list_into_dict, dig
 from congregate.cli.stage_base import BaseStageClass
@@ -91,7 +92,7 @@ class ProjectStageCLI(BaseStageClass):
                     except (ValueError, KeyError):
                         self.log.error("Please use a space delimited list of integers (project IDs):\n{}".format(
                             projects_to_stage))
-                        exit()
+                        sys.exit()
                     self.append_data(
                         project, projects_to_stage, dry_run=dry_run)
         else:

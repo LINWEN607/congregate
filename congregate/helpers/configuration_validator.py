@@ -19,19 +19,18 @@ class ConfigurationValidator(Config):
         self._dstn_parent_group_path_validated_in_session = False
         self._dstn_token_validated_in_session = False
         self._src_token_validated_in_session = False
-        super(ConfigurationValidator, self).__init__(path=path)
+        super().__init__(path=path)
 
     @property
     def dstn_parent_id(self):
         dstn_parent_id = self.prop_int("DESTINATION", "dstn_parent_group_id")
         if self.dstn_parent_id_validated_in_session is True:
             return dstn_parent_id
-        else:
-            self.dstn_parent_id_validated_in_session = self.validate_dstn_parent_group_id(dstn_parent_id)
-            if self.dstn_parent_group_path_validated_in_session is True:
-                return dstn_parent_id
-            self.dstn_parent_group_path_validated_in_session = self.validate_dstn_parent_group_path(self.prop("DESTINATION", "dstn_parent_group_path"))
+        self.dstn_parent_id_validated_in_session = self.validate_dstn_parent_group_id(dstn_parent_id)
+        if self.dstn_parent_group_path_validated_in_session is True:
             return dstn_parent_id
+        self.dstn_parent_group_path_validated_in_session = self.validate_dstn_parent_group_path(self.prop("DESTINATION", "dstn_parent_group_path"))
+        return dstn_parent_id
 
     @property
     def import_user_id(self):
@@ -70,8 +69,7 @@ class ConfigurationValidator(Config):
             group_resp = safe_json_response(self.groups.get_group(pgid, self.destination_host, self.destination_token))
             if is_error_message_present(group_resp):
                 raise ConfigurationException("parent_id")
-            else:
-                return True
+            return True
         return True
 
     def validate_import_user_id(self, iuid):
@@ -82,11 +80,9 @@ class ConfigurationValidator(Config):
             elif user_resp.get("error", None) is not None:
                 if user_resp["error"] == "invalid_token":
                     raise ConfigurationException("parent_token")
-                else:
-                    raise Exception
-            else:
-                if user_resp["id"] == iuid:
-                    return True
+                raise Exception
+            if user_resp["id"] == iuid:
+                return True
         raise ConfigurationException("import_user_id")
 
     def validate_dstn_parent_group_path(self, dstn_parent_group_path):
