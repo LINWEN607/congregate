@@ -1,6 +1,6 @@
 """Congregate - GitLab instance migration utility
 
-Copyright (c) 2020 - GitLab
+Copyright (c) 2021 - GitLab
 
 Usage:
     congregate init
