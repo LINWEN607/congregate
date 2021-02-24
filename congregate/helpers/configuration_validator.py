@@ -70,7 +70,7 @@ class ConfigurationValidator(Config):
             if is_error_message_present(group_resp):
                 raise ConfigurationException("parent_id")
             return True
-        raise ConfigurationException("parent_id")
+        return True
 
     def validate_import_user_id(self, iuid):
         if iuid is not None:
@@ -93,7 +93,8 @@ class ConfigurationValidator(Config):
                 self.destination_token))
             if group_resp["full_path"] == dstn_parent_group_path:
                 return True
-        raise ConfigurationException("dstn_parent_group_path")
+            raise ConfigurationException("dstn_parent_group_path")
+        return True
 
     def validate_dstn_token(self, dstn_token):
         if dstn_token is not None:
@@ -101,7 +102,7 @@ class ConfigurationValidator(Config):
             if not license_resp.ok:
                 raise ConfigurationException("destination_token", msg=safe_json_response(license_resp))
             return True
-        raise ConfigurationException("destination_token")
+        return True
 
     def validate_src_token(self, src_token):
         if src_token is not None:
@@ -109,7 +110,7 @@ class ConfigurationValidator(Config):
             if not license_resp.ok:
                 raise ConfigurationException("source_token", msg=safe_json_response(license_resp))
             return True
-        raise ConfigurationException("source_token")
+        return True
 
     @property
     def dstn_parent_id_validated_in_session(self):

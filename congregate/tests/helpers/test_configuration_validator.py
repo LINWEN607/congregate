@@ -92,7 +92,7 @@ class ConfigurationValidationTests(unittest.TestCase):
         self.assertTrue(context.exception)
 
     def test_none_parent_id_validation(self):
-        self.assertRaises(ConfigurationException, self.config.validate_dstn_parent_group_id, None)
+        self.assertTrue(self.config.validate_dstn_parent_group_id(None))
 
     def test_none_import_user_id_validation(self):
         self.assertRaises(ConfigurationException, self.config.validate_import_user_id, None)
@@ -184,7 +184,7 @@ class ConfigurationValidationTests(unittest.TestCase):
                           self.config.validate_dstn_parent_group_path, "not-twitter")
 
     def test_none_parent_group_path_validation(self):
-        self.assertRaises(ConfigurationException, self.config.validate_dstn_parent_group_path, None)
+        self.assertTrue(self.config.validate_dstn_parent_group_path(None))
 
     @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.dstn_parent_group_path_validated_in_session')
     def test_already_validated_parent_group_path_validation(self, validated):
@@ -240,7 +240,7 @@ class ConfigurationValidationTests(unittest.TestCase):
         self.assertTrue(self.config.source_token, "test")
 
     def test_validate_src_token(self):
-        self.assertRaises(ConfigurationException, self.config.validate_src_token, None)
+        self.assertTrue(self.config.validate_src_token(None))
 
     @mock.patch("getpass.getpass")
     @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.src_token_validated_in_session')
@@ -284,7 +284,7 @@ class ConfigurationValidationTests(unittest.TestCase):
         self.assertTrue(self.config.destination_token, "test")
 
     def test_validate_dstn_token(self):
-        self.assertRaises(ConfigurationException, self.config.validate_dstn_token, None)
+        self.assertTrue(self.config.validate_dstn_token(None))
 
     @mock.patch("getpass.getpass")
     @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.dstn_token_validated_in_session')
