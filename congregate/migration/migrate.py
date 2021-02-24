@@ -1320,11 +1320,14 @@ class MigrateClient(BaseClass):
             pcli.stage_data(ids, self.dry_run)
 
     def toggle_maintenance_mode(self, off=False, msg=None, dest=False):
-        data = {
-            "maintenance_mode": not off}
-        if not off and msg:
-            data["maintenance_mode_message"] = msg.replace("+", " ")
         host = self.config.destination_host if dest else self.config.source_host
-        token = self.config.destination_token if dest else self.config.source_token
-        self.log.warning(f"Turning maintenance mode {'OFF' if off else 'ON'} for {'destination' if dest else 'source'} instance")
-        self.instance_api.change_application_settings(host, token, data)
+        if is_dot_com(host):
+            self.log.warning(f"Not allowed to toggle maintenance mode on {host}")
+        else:
+            data = {
+                "maintenance_mode": not off}
+            if not off and msg:
+                data["maintenance_mode_message"] = msg.replace("+", " ")
+            token = self.config.destination_token if dest else self.config.source_token
+            self.log.warning(f"Turning maintenance mode {'OFF' if off else 'ON'} for {'destination' if dest else 'source'} instance")
+            self.instance_api.change_application_settings(host, token, data)
