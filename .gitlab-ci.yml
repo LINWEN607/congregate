@@ -347,7 +347,7 @@ mvc:
   rules:
     - if: "$CI_MERGE_REQUEST_IID || $CI_COMMIT_BRANCH"
       changes:
-        - ./**/*.md
+        - "**/*.md"
         - README.md
         - docker/release/*
 
