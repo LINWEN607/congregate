@@ -59,6 +59,10 @@ This runbook covers the process of preparing and cleaning up after a migration f
   * This may also be done temporarily, for the duration of the migration wave
 * [ ] Configure destination instance (if applicable) [immediate group and project deletion permissions](https://about.gitlab.com/handbook/support/workflows/hard_delete_project.html). They are required in case of a rollback scenario, where all staged groups and projects need to be removed on the destination instance.
   * This may also be done temporarily, for the duration of the migration wave
+* [ ] Make sure the GitLab source instance application users are aware of the migration (code freeze)
+  * As an Admin, broadcast a message to all users from the instance level, at least a week prior to the migration
+  * To discourage application activity during migration you may [restrict users from logging into GitLab](https://docs.gitlab.com/omnibus/maintenance/#restrict-users-from-logging-into-gitlab)
+  * As of GitLab 13.9 it's also possible to [enable maintenance mode](https://docs.gitlab.com/ee/administration/maintenance_mode/index.html#enable-maintenance-mode) during the migration, which allows most external actions that do not change internal state
 
 ## VM
 
@@ -100,6 +104,9 @@ This runbook covers the process of preparing and cleaning up after a migration f
 The VM should be setup with Okta ASA, but based on time constraints it may be necessary to provision only SSH key authenticaton.
 
 ## Migration post-requisites
+
+* [ ] If required archive all projects on source that have been migrated
+* [ ] If applicable [disable maintenance mode](https://docs.gitlab.com/ee/administration/maintenance_mode/index.html#disable-maintenance-mode) on source
 
 ### VM Deprovisioning
 
