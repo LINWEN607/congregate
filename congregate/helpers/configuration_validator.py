@@ -10,6 +10,7 @@ class ConfigurationValidator(Config):
     '''
     Extended config class used to validate the configuration on run
     '''
+
     def __init__(self, path=None):
         self.groups = GroupsApi()
         self.users = UsersApi()
@@ -26,10 +27,12 @@ class ConfigurationValidator(Config):
         dstn_parent_id = self.prop_int("DESTINATION", "dstn_parent_group_id")
         if self.dstn_parent_id_validated_in_session is True:
             return dstn_parent_id
-        self.dstn_parent_id_validated_in_session = self.validate_dstn_parent_group_id(dstn_parent_id)
+        self.dstn_parent_id_validated_in_session = self.validate_dstn_parent_group_id(
+            dstn_parent_id)
         if self.dstn_parent_group_path_validated_in_session is True:
             return dstn_parent_id
-        self.dstn_parent_group_path_validated_in_session = self.validate_dstn_parent_group_path(self.prop("DESTINATION", "dstn_parent_group_path"))
+        self.dstn_parent_group_path_validated_in_session = self.validate_dstn_parent_group_path(
+            self.prop("DESTINATION", "dstn_parent_group_path"))
         return dstn_parent_id
 
     @property
@@ -37,36 +40,44 @@ class ConfigurationValidator(Config):
         import_user_id = self.prop_int("DESTINATION", "import_user_id")
         if self.import_user_id_validated_in_session is True:
             return import_user_id
-        self.import_user_id_validated_in_session = self.validate_import_user_id(import_user_id)
+        self.import_user_id_validated_in_session = self.validate_import_user_id(
+            import_user_id)
         return import_user_id
 
     @property
     def dstn_parent_group_path(self):
-        dstn_parent_group_path = self.prop("DESTINATION", "dstn_parent_group_path")
+        dstn_parent_group_path = self.prop(
+            "DESTINATION", "dstn_parent_group_path")
         if self.dstn_parent_group_path_validated_in_session is True:
             return dstn_parent_group_path
-        self.dstn_parent_group_path_validated_in_session = self.validate_dstn_parent_group_path(dstn_parent_group_path)
+        self.dstn_parent_group_path_validated_in_session = self.validate_dstn_parent_group_path(
+            dstn_parent_group_path)
         return dstn_parent_group_path
 
     @property
     def destination_token(self):
-        dstn_token = self.prop("DESTINATION", "dstn_access_token", default=None, obfuscated=True)
+        dstn_token = self.prop(
+            "DESTINATION", "dstn_access_token", default=None, obfuscated=True)
         if self.dstn_token_validated_in_session is True:
             return dstn_token
-        self.dstn_token_validated_in_session = self.validate_dstn_token(dstn_token)
+        self.dstn_token_validated_in_session = self.validate_dstn_token(
+            dstn_token)
         return dstn_token
 
     @property
     def source_token(self):
-        src_token = self.prop("SOURCE", "src_access_token", default=None, obfuscated=True)
+        src_token = self.prop("SOURCE", "src_access_token",
+                              default=None, obfuscated=True)
         if self.src_token_validated_in_session is True:
             return src_token
-        self.src_token_validated_in_session = self.validate_src_token(src_token)
+        self.src_token_validated_in_session = self.validate_src_token(
+            src_token)
         return src_token
 
     def validate_dstn_parent_group_id(self, pgid):
         if pgid is not None:
-            group_resp = safe_json_response(self.groups.get_group(pgid, self.destination_host, self.destination_token))
+            group_resp = safe_json_response(self.groups.get_group(
+                pgid, self.destination_host, self.destination_token))
             if is_error_message_present(group_resp):
                 raise ConfigurationException("parent_id")
             return True
@@ -74,7 +85,8 @@ class ConfigurationValidator(Config):
 
     def validate_import_user_id(self, iuid):
         if iuid is not None:
-            user_resp = self.users.get_current_user(self.destination_host, self.destination_token)
+            user_resp = self.users.get_current_user(
+                self.destination_host, self.destination_token)
             if is_error_message_present(user_resp):
                 raise ConfigurationException("import_user_id")
             elif user_resp.get("error", None) is not None:
@@ -98,17 +110,23 @@ class ConfigurationValidator(Config):
 
     def validate_dstn_token(self, dstn_token):
         if dstn_token is not None:
-            license_resp = self.instance.get_current_license(self.destination_host, dstn_token)
-            if not license_resp.ok:
-                raise ConfigurationException("destination_token", msg=safe_json_response(license_resp))
+            app_resp = self.instance.get_appearance_configuration(
+                self.destination_host, dstn_token)
+            if not app_resp.ok:
+                raise ConfigurationException(
+                    "destination_token", msg=safe_json_response(app_resp))
             return True
         return True
 
     def validate_src_token(self, src_token):
         if src_token is not None:
-            license_resp = self.instance.get_current_license(self.source_host, src_token)
-            if not license_resp.ok:
-                raise ConfigurationException("source_token", msg=safe_json_response(license_resp))
+            app_resp = None
+            if self.source_type == "gitlab":
+                app_resp = self.instance.get_appearance_configuration(
+                    self.source_host, src_token)
+            if not app_resp or not app_resp.ok:
+                raise ConfigurationException(
+                    "source_token", msg=safe_json_response(app_resp))
             return True
         return True
 
@@ -135,11 +153,11 @@ class ConfigurationValidator(Config):
     @dstn_parent_id_validated_in_session.setter
     def dstn_parent_id_validated_in_session(self, value):
         self._dstn_parent_id_validated_in_session = value
-    
+
     @import_user_id_validated_in_session.setter
     def import_user_id_validated_in_session(self, value):
         self._import_user_id_validated_in_session = value
-    
+
     @dstn_parent_group_path_validated_in_session.setter
     def dstn_parent_group_path_validated_in_session(self, value):
         self._dstn_parent_group_path_validated_in_session = value

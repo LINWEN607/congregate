@@ -1,26 +1,21 @@
 class MockInstanceApi():
-    def get_license(self):
+    def get_appearance_configuration(self):
         return {
-            "id": 3,
-            "plan": "ultimate",
-            "created_at": "2020-05-08T16:43:00.599Z",
-            "starts_at": "2020-05-06",
-            "expires_at": "2021-05-06",
-            "historical_max": 47,
-            "maximum_user_count": 47,
-            "licensee": {
-                "Name": "GitLab test license",
-                "Email": "test@gitlab.com",
-                "Company": "GitLab"
-            },
-            "add_ons": {},
-            "expired": False,
-            "overage": 0,
-            "user_limit": 200,
-            "active_users": 47
+            "title": "",
+            "description": "",
+            "logo": None,
+            "header_logo": None,
+            "favicon": None,
+            "new_project_guidelines": "",
+            "profile_image_guidelines": "",
+            "header_message": "",
+            "footer_message": "",
+            "message_background_color": "#E75E40",
+            "message_font_color": "#FFFFFF",
+            "email_header_and_footer_enabled": False
         }
 
-    def get_license_403(self):
+    def get_appearance_configuration_403(self):
         return {
             "message": "403 Forbidden"
         }
