@@ -5,7 +5,6 @@ import responses
 from congregate.helpers.configuration_validator import ConfigurationValidator
 from congregate.tests.mockapi.gitlab.groups import MockGroupsApi
 from congregate.tests.mockapi.gitlab.users import MockUsersApi
-from congregate.tests.mockapi.gitlab.instance import MockInstanceApi
 from congregate.tests.mockapi.gitlab.token import invalid_token
 from congregate.tests.mockapi.gitlab.error import other_error
 from congregate.helpers.exceptions import ConfigurationException
@@ -18,7 +17,6 @@ class ConfigurationValidationTests(unittest.TestCase):
     def setUp(self):
         self.groups = MockGroupsApi()
         self.users = MockUsersApi()
-        self.instance = MockInstanceApi()
         self.config = ConfigurationValidator(
             path="congregate/tests/cli/data/test_not_ext_src_parent_group_path_no_mirror_name_aws_default.conf")
 
@@ -44,12 +42,14 @@ class ConfigurationValidationTests(unittest.TestCase):
 
     @responses.activate
     # pylint: enable=no-member
+    @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.validate_dstn_token')
     @mock.patch("congregate.helpers.api.generate_v4_request_url")
-    def test_succeed_parent_id_validation(self, url):
+    def test_succeed_parent_id_validation(self, url, valid_token):
         self.config.dstn_parent_id_validated_in_session = False
         print(self.config.dstn_parent_id_validated_in_session)
         url_value = "https://gitlab.com/api/v4/groups/4"
         url.return_value = url_value
+        valid_token.return_value = True
         self.config.as_obj().set("DESTINATION", "dstn_parent_group_id", "1234")
         self.config.as_obj().set("DESTINATION", "dstn_parent_group_path", "twitter")
         # pylint: disable=no-member
@@ -60,13 +60,14 @@ class ConfigurationValidationTests(unittest.TestCase):
 
     @responses.activate
     # pylint: enable=no-member
-    # @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.dstn_parent_group_path_validated_in_session')
+    @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.validate_dstn_token')
     @mock.patch("congregate.helpers.api.generate_v4_request_url")
-    def test_succeed_parent_id_and_path_validation(self, url):
+    def test_succeed_parent_id_and_path_validation(self, url, valid_token):
         self.config.dstn_parent_group_path_validated_in_session = True
         self.config.dstn_parent_id_validated_in_session = False
         url_value = "https://gitlab.com/api/v4/groups/4"
         url.return_value = url_value
+        valid_token.return_value = True
         self.config.as_obj().set("DESTINATION", "dstn_parent_group_id", "1234")
         self.config.as_obj().set("DESTINATION", "dstn_parent_group_path", "twitter")
         # pylint: disable=no-member
@@ -125,10 +126,12 @@ class ConfigurationValidationTests(unittest.TestCase):
 
     @responses.activate
     # pylint: enable=no-member
+    @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.validate_dstn_token')
     @mock.patch("congregate.helpers.api.generate_v4_request_url")
-    def test_pass_import_user_id_validation(self, url):
+    def test_pass_import_user_id_validation(self, url, valid_token):
         url_value = "https://gitlab.com/api/v4/users"
         url.return_value = url_value
+        valid_token.return_value = True
         self.config.as_obj().set("DESTINATION", "import_user_id", "1")
         # pylint: disable=no-member
         responses.add(responses.GET, url_value,
@@ -151,13 +154,15 @@ class ConfigurationValidationTests(unittest.TestCase):
 
     @responses.activate
     # pylint: enable=no-member
+    @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.validate_dstn_token')
     @mock.patch.object(ConfigurationValidator, 'dstn_parent_id', new_callable=mock.PropertyMock)
     @mock.patch("congregate.helpers.api.generate_v4_request_url")
-    def test_succeed_parent_group_path_validation(self, url, parent_id):
+    def test_succeed_parent_group_path_validation(self, url, parent_id, valid_token):
         parent_id.return_value = 4
         self.config.as_obj().set("DESTINATION", "dstn_parent_group_path", "twitter")
         url_value = "https://gitlab.com/api/v4/groups/4"
         url.return_value = url_value
+        valid_token.return_value = True
         # pylint: disable=no-member
         responses.add(responses.GET, url_value,
                       json=self.groups.get_group(), status=200, content_type='text/json', match_querystring=True)
@@ -213,16 +218,35 @@ class ConfigurationValidationTests(unittest.TestCase):
     @mock.patch.object(ConfigurationValidator, 'source_type', new_callable=mock.PropertyMock)
     @mock.patch("getpass.getpass")
     @mock.patch("congregate.helpers.api.generate_v4_request_url")
-    def test_validate_gitlab_src_token_fail(self, url, secret, src_type):
+    def test_validate_gitlab_src_token_invalid(self, url, secret, src_type):
         secret.return_value = "test"
         src_type.return_value = "gitlab"
         self.config.src_token_validated_in_session = False
-        url_value = "https://gitlab.com/api/v4/application/appearance"
+        url_value = "https://gitlab.com/api/v4/user"
         url.return_value = url_value
         self.config.as_obj().set("SOURCE", "source_token", obfuscate("Enter secret: "))
         # pylint: disable=no-member
         responses.add(responses.GET, url_value,
-                      json=self.instance.get_appearance_configuration_403(), status=403, content_type='text/json', match_querystring=True)
+                      json=self.users.get_user_401(), status=401, content_type='text/json', match_querystring=True)
+        # pylint: enable=no-member
+        self.assertRaises(ConfigurationException,
+                          self.config.validate_src_token, "test")
+
+    @responses.activate
+    # pylint: enable=no-member
+    @mock.patch.object(ConfigurationValidator, 'source_type', new_callable=mock.PropertyMock)
+    @mock.patch("getpass.getpass")
+    @mock.patch("congregate.helpers.api.generate_v4_request_url")
+    def test_validate_gitlab_src_token_not_admin(self, url, secret, src_type):
+        secret.return_value = "test"
+        src_type.return_value = "gitlab"
+        self.config.src_token_validated_in_session = False
+        url_value = "https://gitlab.com/api/v4/user"
+        url.return_value = url_value
+        self.config.as_obj().set("SOURCE", "source_token", obfuscate("Enter secret: "))
+        # pylint: disable=no-member
+        responses.add(responses.GET, url_value,
+                      json=self.users.get_current_user(), status=200, content_type='text/json', match_querystring=True)
         # pylint: enable=no-member
         self.assertRaises(ConfigurationException,
                           self.config.validate_src_token, "test")
@@ -236,12 +260,12 @@ class ConfigurationValidationTests(unittest.TestCase):
         secret.return_value = "test"
         src_type.return_value = "gitlab"
         self.config.src_token_validated_in_session = False
-        url_value = "https://gitlab.com/api/v4/application/appearance"
+        url_value = "https://gitlab.com/api/v4/user"
         url.return_value = url_value
         self.config.as_obj().set("SOURCE", "source_token", obfuscate("Enter secret: "))
         # pylint: disable=no-member
         responses.add(responses.GET, url_value,
-                      json=self.instance.get_appearance_configuration(), status=200, content_type='text/json', match_querystring=True)
+                      json=self.users.get_admin_user(), status=200, content_type='text/json', match_querystring=True)
         # pylint: enable=no-member
         self.assertTrue(self.config.source_token, "test")
 
@@ -261,16 +285,34 @@ class ConfigurationValidationTests(unittest.TestCase):
     # pylint: enable=no-member
     @mock.patch("getpass.getpass")
     @mock.patch("congregate.helpers.api.generate_v4_request_url")
-    def test_validate_dstn_token_fail(self, url, secret):
+    def test_validate_dstn_token_invalid(self, url, secret):
         secret.return_value = "test"
         self.config.dstn_token_validated_in_session = False
-        url_value = "https://gitlab.com/api/v4/application/appearance"
+        url_value = "https://gitlab.com/api/v4/user"
         url.return_value = url_value
         self.config.as_obj().set("DESTINATION", "destination_token",
                                  obfuscate("Enter secret: "))
         # pylint: disable=no-member
         responses.add(responses.GET, url_value,
-                      json=self.instance.get_appearance_configuration_403(), status=403, content_type='text/json', match_querystring=True)
+                      json=self.users.get_user_401(), status=401, content_type='text/json', match_querystring=True)
+        # pylint: enable=no-member
+        self.assertRaises(ConfigurationException,
+                          self.config.validate_dstn_token, "test")
+
+    @responses.activate
+    # pylint: enable=no-member
+    @mock.patch("getpass.getpass")
+    @mock.patch("congregate.helpers.api.generate_v4_request_url")
+    def test_validate_dstn_token_not_admin(self, url, secret):
+        secret.return_value = "test"
+        self.config.dstn_token_validated_in_session = False
+        url_value = "https://gitlab.com/api/v4/user"
+        url.return_value = url_value
+        self.config.as_obj().set("DESTINATION", "destination_token",
+                                 obfuscate("Enter secret: "))
+        # pylint: disable=no-member
+        responses.add(responses.GET, url_value,
+                      json=self.users.get_current_user(), status=200, content_type='text/json', match_querystring=True)
         # pylint: enable=no-member
         self.assertRaises(ConfigurationException,
                           self.config.validate_dstn_token, "test")
@@ -282,13 +324,13 @@ class ConfigurationValidationTests(unittest.TestCase):
     def test_validate_dstn_token_success(self, url, secret):
         secret.return_value = "test"
         self.config.dstn_token_validated_in_session = False
-        url_value = "https://gitlab.com/api/v4/application/appearance"
+        url_value = "https://gitlab.com/api/v4/user"
         url.return_value = url_value
         self.config.as_obj().set("DESTINATION", "destination_token",
                                  obfuscate("Enter secret: "))
         # pylint: disable=no-member
         responses.add(responses.GET, url_value,
-                      json=self.instance.get_appearance_configuration(), status=200, content_type='text/json', match_querystring=True)
+                      json=self.users.get_admin_user(), status=200, content_type='text/json', match_querystring=True)
         # pylint: enable=no-member
         self.assertTrue(self.config.destination_token, "test")
 

@@ -104,14 +104,3 @@ class InstanceApi():
         if not message:
             message = "Changing application settings"
         return api.generate_put_request(host, token, "application/settings", json.dumps(data), description=message)
-
-    def get_appearance_configuration(self, host, token):
-        """
-        List the current appearance configuration of the GitLab instance.
-
-        GitLab API Doc: https://docs.gitlab.com/ee/api/appearance.html#get-current-appearance-configuration
-            :param: host: (str) GitLab host URL
-            :param: token: (str) Access token to GitLab instance
-            :return: JSON response containing version information from GET /application/appearance
-        """
-        return api.generate_get_request(host, token, "application/appearance")

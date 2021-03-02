@@ -2,7 +2,6 @@ from congregate.helpers.exceptions import ConfigurationException
 from congregate.helpers.conf import Config
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.users import UsersApi
-from congregate.migration.gitlab.api.instance import InstanceApi
 from congregate.helpers.misc_utils import is_error_message_present, safe_json_response
 
 
@@ -14,7 +13,6 @@ class ConfigurationValidator(Config):
     def __init__(self, path=None):
         self.groups = GroupsApi()
         self.users = UsersApi()
-        self.instance = InstanceApi()
         self._dstn_parent_id_validated_in_session = False
         self._import_user_id_validated_in_session = False
         self._dstn_parent_group_path_validated_in_session = False
@@ -110,23 +108,21 @@ class ConfigurationValidator(Config):
 
     def validate_dstn_token(self, dstn_token):
         if dstn_token is not None:
-            app_resp = self.instance.get_appearance_configuration(
-                self.destination_host, dstn_token)
-            if not app_resp.ok:
-                raise ConfigurationException(
-                    "destination_token", msg=safe_json_response(app_resp))
+            user = safe_json_response(self.users.get_current_user(
+                self.destination_host, dstn_token))
+            if is_error_message_present(user) or not user.get("is_admin", None):
+                raise ConfigurationException("destination_token", msg=user)
             return True
         return True
 
     def validate_src_token(self, src_token):
         if src_token is not None:
-            app_resp = None
+            user = None
             if self.source_type == "gitlab":
-                app_resp = self.instance.get_appearance_configuration(
-                    self.source_host, src_token)
-            if not app_resp or not app_resp.ok:
-                raise ConfigurationException(
-                    "source_token", msg=safe_json_response(app_resp))
+                user = safe_json_response(
+                    self.users.get_current_user(self.source_host, src_token))
+            if is_error_message_present(user) or not user.get("is_admin", None):
+                raise ConfigurationException("source_token", msg=user)
             return True
         return True
 
