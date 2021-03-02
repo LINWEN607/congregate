@@ -39,8 +39,8 @@ def generate_config():
                input("Destination instance Host: "))
     config.set("DESTINATION", "dstn_access_token",
                obfuscate("Destination instance GitLab access token (Settings -> Access Tokens): "))
-    migration_user = users.get_current_user(config.get("DESTINATION", "dstn_hostname"),
-                                            deobfuscate(config.get("DESTINATION", "dstn_access_token")))
+    migration_user = safe_json_response(users.get_current_user(config.get("DESTINATION", "dstn_hostname"),
+                                                               deobfuscate(config.get("DESTINATION", "dstn_access_token"))))
     if migration_user.get("id", None):
         config.set("DESTINATION", "import_user_id", str(migration_user["id"]))
     else:
@@ -282,7 +282,8 @@ def generate_config():
                        f"[{wave_columns_to_include}]")
             # This will just put in the default mapping. Will require manual intervention
             # for further customization
-            d = {x.strip():x.strip() for x in wave_columns_to_include.split(",")}
+            d = {x.strip(): x.strip()
+                 for x in wave_columns_to_include.split(",")}
             config.set(
                 "APP",
                 "wave_spreadsheet_column_mapping",

@@ -4,21 +4,21 @@ from congregate.helpers import api
 
 class UsersApi():
 
-    def get_user(self, id, host, token):
+    def get_user(self, pid, host, token):
         """
         Get a single user
 
         GitLab API Doc: https://docs.gitlab.com/ee/api/users.html#single-user
 
-            :param: id: (int) GitLab user ID
+            :param: pid: (int) GitLab user ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
             :return: Response object containing the response to GET /users/:id
         """
-        return api.generate_get_request(host, token, f"users/{id}")
+        return api.generate_get_request(host, token, f"users/{pid}")
 
-    def get_user_email(self, id, host, token):
-        return self.get_user(id, host, token).json()["email"]
+    def get_user_email(self, pid, host, token):
+        return self.get_user(pid, host, token).json()["email"]
 
     def get_current_user(self, host, token):
         """
@@ -31,7 +31,7 @@ class UsersApi():
             :param: token: (str) Access token to GitLab instance
             :return: Response object containing the response to GET /user
         """
-        return api.generate_get_request(host, token, "user").json()
+        return api.generate_get_request(host, token, "user")
 
     def get_all_users(self, host, token):
         """

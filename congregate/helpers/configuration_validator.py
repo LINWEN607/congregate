@@ -85,8 +85,8 @@ class ConfigurationValidator(Config):
 
     def validate_import_user_id(self, iuid):
         if iuid is not None:
-            user_resp = self.users.get_current_user(
-                self.destination_host, self.destination_token)
+            user_resp = safe_json_response(self.users.get_current_user(
+                self.destination_host, self.destination_token))
             if is_error_message_present(user_resp):
                 raise ConfigurationException("import_user_id")
             elif user_resp.get("error", None) is not None:
