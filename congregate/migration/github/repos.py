@@ -10,7 +10,7 @@ from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.projects import ProjectsClient
 from congregate.migration.gitlab.users import UsersClient as GitLabUsersClient
 from congregate.helpers.misc_utils import get_dry_log, is_error_message_present, safe_json_response, \
-    add_post_migration_stats, rotate_logs, is_github_dot_com, json_pretty
+    add_post_migration_stats, rotate_logs, is_github_dot_com, json_pretty, dig
 
 
 
@@ -72,10 +72,13 @@ class ReposClient(BaseClass):
         Leave org/team repo members empty ([]) as they are retrieved during staging.
         """
         repo_url = repo["html_url"] + ".git"
+        repo_path = dig(repo, 'owner', 'login')
+        repo_type = dig(repo, 'owner', 'type')
+        repo_name = repo.get('name')
         return {
-            "id": repo["id"],
-            "path": repo["name"],
-            "name": repo["name"],
+            "id": repo.get("id"),
+            "path": repo_name,
+            "name": repo_name,
             "ci_sources": {
                 "Jenkins": self.list_ci_sources_jenkins(
                     repo_url,
@@ -84,22 +87,27 @@ class ReposClient(BaseClass):
                     repo_url,
                     mongo)},
             "namespace": {
-                "id": repo["owner"]["id"],
-                "path": repo["owner"]["login"],
-                "name": repo["owner"]["login"],
-                "kind": "group" if repo["owner"]["type"] in self.GROUP_TYPE else "user",
-                "full_path": repo["owner"]["login"]},
+                "id": dig(repo, 'owner', 'id'),
+                "path": repo_path,
+                "name": repo_path,
+                "kind": "group" if repo_type in self.GROUP_TYPE else "user",
+                "full_path": repo_path},
             "http_url_to_repo": repo_url,
-            "path_with_namespace": repo["full_name"],
-            "visibility": "private" if repo["private"] else "public",
+            "path_with_namespace": repo.get("full_name"),
+            "visibility": "private" if repo.get("private") else "public",
             "description": repo.get(
                 "description",
                 ""),
-            "members": self.add_repo_members(
-                repo["owner"]["type"],
-                repo["owner"]["login"],
-                repo["name"],
-                mongo) if not org else []}
+            # Temporarily commenting this out. This request is extremely 
+            # slow at scale and needs a refactor
+            #
+            # "members": self.add_repo_members(
+            #     repo["owner"]["type"],
+            #     repo["owner"]["login"],
+            #     repo["name"],
+            #     mongo) if not org else []
+            "members": []
+            }
 
     def add_repo_members(self, kind, owner, repo, mongo):
         """
@@ -250,7 +258,8 @@ class ReposClient(BaseClass):
             "approvals_before_merge": 1,
             "reset_approvals_on_push": True if branch.get(
                 "required_pull_request_reviews",
-                None) and branch["required_pull_request_reviews"]["dismissal_restrictions"]["users"] else False,
+                None) and dig(branch, 'required_pull_request_reviews', 'dismissal_restrictions', 'users') else False,
+
             "disable_overriding_approvers_per_merge_request": False,
             "merge_requests_author_approval": False,
             "merge_requests_disable_committers_approval": False,
@@ -274,12 +283,12 @@ class ReposClient(BaseClass):
                 {
                     "id": commit["sha"],
                     "message": commit["message"],
-                    "author_name": commit["commit"]["author"]["name"],
-                    "author_email": commit["commit"]["author"]["email"],
-                    "authored_date": commit["commit"]["author"]["date"],
-                    "committer_name": commit["commit"]["committer"]["name"],
-                    "committer_email": commit["commit"]["committer"]["email"],
-                    "committed_date": commit["commit"]["committer"]["date"],
+                    "author_name": dig(commit, 'commit', 'author', 'name'),
+                    "author_email": dig(commit, 'commit', 'author', 'email'),
+                    "authored_date": dig(commit, 'commit', 'author', 'date'),
+                    "committer_name": dig(commit, 'commit', 'committer', 'name'),
+                    "committer_email": dig(commit, 'commit', 'committer', 'email'),
+                    "committed_date": dig(commit, 'commit', 'committer', 'date'),
                 }
             )
 
@@ -292,7 +301,7 @@ class ReposClient(BaseClass):
                 {
                     "name": branch["name"],
                     "commit": {
-                        "id": branch["commit"]["sha"],
+                        "id": dig(branch, 'commit', 'sha'),
                     },
                     "protected": branch["protected"],
                 }
@@ -305,6 +314,8 @@ class ReposClient(BaseClass):
         for mr in pull_requests:
             if mr["state"] == "open":
                 state = "opened"
+            else:
+                state = "closed"
             assignees_list = []
             if mr["assignees"]:
                 for assignee in mr["assignees"]:
@@ -316,12 +327,12 @@ class ReposClient(BaseClass):
             list_of_merge_requests.append(
                 {
                     "title": mr["title"],
-                    "description": mr["head"]["repo"]["description"],
+                    "description": dig(mr, 'head', 'repo', 'description'),
                     "state": state,
                     "created_at": mr["created_at"],
                     "updated_at": mr["updated_at"],
                     "author": {
-                        "username": mr["user"]["login"],
+                        "username": dig(mr, 'user', 'login'),
                     },
                     "assignees": assignees_list,
                     "work_in_progress": mr["draft"],
@@ -334,13 +345,14 @@ class ReposClient(BaseClass):
     def transform_gh_tags(self, tags):
         list_of_tags = []
         for tag in tags:
+            commit_sha = dig(tag, 'commit', 'sha')
             list_of_tags.append(
                 {
                     "name": tag["name"],
                     "commit": {
-                        "id": tag["commit"]["sha"],
+                        "id": commit_sha,
                     },
-                    "target": tag["commit"]["sha"]
+                    "target": commit_sha
                 }
             )
 
@@ -351,6 +363,8 @@ class ReposClient(BaseClass):
         for milestone in milestones:
             if milestone["state"] == "open":
                 milestone_status = "active"
+            else:
+                milestone_status = "closed"
             list_of_milestones.append(
                 {
                     "title": milestone["title"],
@@ -375,7 +389,7 @@ class ReposClient(BaseClass):
                     "created_at": release["created_at"],
                     "released_at": release["published_at"],
                     "author": {
-                        "username": release["author"]["login"],
+                        "username": dig(release, 'author', 'login'),
                     },
                     "upcoming_release": release["prerelease"],
                 }
@@ -390,7 +404,7 @@ class ReposClient(BaseClass):
                 {
                     "body": comment["body"],
                     "author": {
-                        "username": comment["user"]["login"],
+                        "username": dig(comment, 'user', 'login'),
                     },
                     "created_at": comment["created_at"],
                     "updated_at": comment["updated_at"],
@@ -412,7 +426,7 @@ class ReposClient(BaseClass):
                 {
                     "title": issue["title"],
                     "description": issue["body"],
-                    "state": issue["state"],
+                    "state": issue.get("state", "closed"),
                     "created_at": issue["created_at"],
                     "updated_at": issue["updated_at"],
                     "closed_at": issue["closed_at"],
@@ -420,7 +434,7 @@ class ReposClient(BaseClass):
                     "milestone": issue["milestone"],
                     "assignees": assignees_list,
                     "author": {
-                        "username": issue["user"]["login"],
+                        "username": dig(issue, 'user', 'login'),
                     },
                     "assignee": issue["assignee"],
                     "user_notes_count": issue["comments"],

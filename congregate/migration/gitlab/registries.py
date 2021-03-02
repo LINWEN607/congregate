@@ -31,11 +31,9 @@ class RegistryClient(BaseClass):
             if reg[0] and reg[1]:
                 return self.migrate(old_id, name)
             else:
-                self.log.warning("Container registry is disabled for project {0} on {1} instance".format(
-                    name, "source" if not reg[0] else "destination" if not reg[1] else "source and destination"))
+                self.log.warning(f"Container registry is disabled for project {name} on {'source' if not reg[0] else 'destination' if not reg[1] else 'source and destination'} instance")
         except Exception as e:
-            self.log.error(
-                "Failed to migrate container registries for project {0}, with error:\n{1}".format(name, e))
+            self.log.error(f"Failed to migrate container registries for project {name}, with error:\n{e}")
             return False
 
     def migrate(self, old_id, name):
@@ -46,34 +44,28 @@ class RegistryClient(BaseClass):
             resp = self.projects_api.get_all_project_registry_repositories(
                 old_id, self.config.source_host, self.config.source_token)
             regs = iter(resp)
-            self.log.info(
-                "Migrating project {0} (ID: {1}) container registries".format(name, old_id))
+            self.log.info(f"Migrating project {name} (ID: {old_id}) container registries")
             for reg in regs:
                 if is_error_message_present(reg) or not reg:
-                    self.log.error(
-                        "Failed to fetch container registries ({0}) for project {1}".format(reg, name))
+                    self.log.error(f"Failed to fetch container registries ({reg}) for project {name}")
                     return False
                 tags = self.projects_api.get_all_project_registry_repositories_tags(
                     old_id, reg["id"], self.config.source_host, self.config.source_token)
                 if list(tags):
                     reg_loc = reg["location"]
-                    self.log.info("Pulling images from project {0} (ID: {1}) registry {2}".format(
-                        name, old_id, reg_loc))
+                    self.log.info(f"Pulling images from project {name} (ID: {old_id}) registry {reg_loc}")
                     images = src_client.images.pull(reg_loc)
                     # 2nd argument - passing the suffix for multi path registries
                     self.__import_registries(images, reg_loc.split("/", 1)[1])
             return True
         except TypeError as te:
-            self.log.error("Project {0} (ID: {1}) registries {2} {3}".format(
-                name, old_id, resp, te))
+            self.log.error(f"Project {name} (ID: {old_id}) registries {resp} {te}")
             return False
         except APIError as ae:
-            self.log.error(
-                "Failed to export registry, with error:\n{}".format(ae))
+            self.log.error(f"Failed to export registry, with error:\n{ae}")
             return False
         except RequestException as re:
-            self.log.error(
-                "Failed to migrate container registries for project {0}, with error:\n{1}".format(name, re))
+            self.log.error(f"Failed to migrate container registries for project {name}, with error:\n{re}")
             return False
 
     def __import_registries(self, images, sufix):
@@ -90,15 +82,17 @@ class RegistryClient(BaseClass):
                     tag_name = tag.replace(
                         self.config.source_registry, "").split(":")[-1]
                     if image.tag(new_reg, tag_name):
-                        self.log.debug("Created tag %s" % tag_name)
-            self.log.info("Migrating images to registry %s" % new_reg)
+                        self.log.debug(f"Created tag {tag_name}")
+            self.log.info(f"Migrating images to registry {new_reg}")
             for line in dest_client.images.push(new_reg, stream=True, decode=True):
                 print(line)
-            self.log.info("Removing locally stored source images")
+                if "errorDetail" in line:
+                    self.log.error(f"Failed to push image to {new_reg}, due to:\n{line}")
+            self.log.info(f"Removing locally stored source images for {new_reg}")
             for image in images:
                 dest_client.images.remove(image.id, force=True)
         except (APIError) as err:
-            self.log.error("Failed to import registry, with error:\n%s" % err)
+            self.log.error(f"Failed to import registry, with error:\n{err}")
 
     def __login_to_registry(self, host, token, registry):
         try:
@@ -108,10 +102,9 @@ class RegistryClient(BaseClass):
                          registry=registry)
             return client
         except (APIError, TLSParameterError) as err:
-            self.log.error(
-                "Failed to login to docker registry %s, with error:\n%s" % (registry, err))
+            self.log.error(f"Failed to login to docker registry {registry}, with error:\n{err}")
 
     def generate_destination_registry_url(self, suffix):
         if self.config.dstn_parent_group_path is not None:
-            return "%s/%s/%s" % (self.config.destination_registry, self.config.dstn_parent_group_path, suffix)
-        return "%s/%s" % (self.config.destination_registry, suffix)
+            return f"{self.config.destination_registry}/{self.config.dstn_parent_group_path}/{suffix}"
+        return f"{self.config.destination_registry}/{suffix}"

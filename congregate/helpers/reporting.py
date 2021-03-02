@@ -455,7 +455,7 @@ class Reporting(BaseClass):
                 return {
                     'state': e_issue['state'],
                     'iid': e_issue['iid'],
-                    'url': e_issue['_links']['self'],
+                    'url': dig(e_issue, '_links', 'self'),
                     'web_url': e_issue['web_url'],
                     'description': e_issue['description'],
                     'project_id': e_issue['project_id'],
@@ -487,7 +487,7 @@ class Reporting(BaseClass):
             self.config.destination_token
         ):
             clean_issues[issue['title']] = {
-                'url': issue['_links']['self'],
+                'url': dig(issue, '_links', 'self'),
                 'web_url': issue['web_url'],
                 'state': issue['state'],
                 'iid': issue['iid'],

@@ -211,6 +211,10 @@ class MiscUtilsTests(unittest.TestCase):
     def test_deobfuscate(self):
         self.assertEqual(misc.deobfuscate("dGVzdA=="), "test")
 
+    def test_deobfuscate_failed(self):
+        with self.assertRaises(SystemExit):
+            misc.deobfuscate("ddddGVzdA==")
+
     @mock.patch("os.path.exists")
     def test_is_recent_file_no_file(self, exists):
         exists.return_value = False
@@ -295,7 +299,7 @@ class MiscUtilsTests(unittest.TestCase):
 
     def test_validate_name(self):
         assert misc.validate_name(
-            "-:: This.is-how/WE do\n&it") == "This is-how WE do it"
+            "-:: This.is-how/WE do\n&it") == "This.is-how WE do it"
 
     @mock.patch("congregate.helpers.misc_utils.read_json_file_into_object")
     @mock.patch("glob.glob")

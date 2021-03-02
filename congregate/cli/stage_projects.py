@@ -1,12 +1,13 @@
 """
 Congregate - GitLab instance migration utility
 
-Copyright (c) 2020 - GitLab
+Copyright (c) 2021 - GitLab
 """
 
 import re
+import sys
 from congregate.helpers.migrate_utils import get_staged_user_projects
-from congregate.helpers.misc_utils import get_dry_log, remove_dupes, rewrite_list_into_dict
+from congregate.helpers.misc_utils import get_dry_log, remove_dupes, rewrite_list_into_dict, dig
 from congregate.cli.stage_base import BaseStageClass
 
 
@@ -91,7 +92,7 @@ class ProjectStageCLI(BaseStageClass):
                     except (ValueError, KeyError):
                         self.log.error("Please use a space delimited list of integers (project IDs):\n{}".format(
                             projects_to_stage))
-                        exit()
+                        sys.exit()
                     self.append_data(
                         project, projects_to_stage, dry_run=dry_run)
         else:
@@ -106,15 +107,18 @@ class ProjectStageCLI(BaseStageClass):
             self.append_member_to_members_list([], member, dry_run)
 
         if obj["project_type"] == "group":
-            group_to_stage = self.rewritten_groups[project["namespace"]["id"]]
-            self.log.info("{0}Staging group {1} (ID: {2})".format(get_dry_log(
-                dry_run), group_to_stage["full_path"], group_to_stage["id"]))
-            group_to_stage.pop("projects", None)
-            self.staged_groups.append(group_to_stage)
+            group_to_stage = self.rewritten_groups.get(dig(project, 'namespace', 'id'))
+            if group_to_stage:
+                self.log.info("{0}Staging group {1} (ID: {2})".format(get_dry_log(
+                    dry_run), group_to_stage["full_path"], group_to_stage["id"]))
+                group_to_stage.pop("projects", None)
+                self.staged_groups.append(group_to_stage)
 
-            # Append all group members to staged users
-            for member in group_to_stage["members"]:
-                self.append_member_to_members_list([], member, dry_run)
+                # Append all group members to staged users
+                for member in group_to_stage["members"]:
+                    self.append_member_to_members_list([], member, dry_run)
+            else:
+                self.log.warning(f"Unable to stage group of {project.get('path_with_namespace')}")
 
         self.log.info("{0}Staging project {1} (ID: {2}) [{3}/{4}]".format(get_dry_log(
             dry_run), obj["path_with_namespace"], obj["id"], len(self.staged_projects) + 1, len(p_range) if p_range else len(projects_to_stage)))

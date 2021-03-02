@@ -5,9 +5,11 @@ import responses
 from congregate.helpers.configuration_validator import ConfigurationValidator
 from congregate.tests.mockapi.gitlab.groups import MockGroupsApi
 from congregate.tests.mockapi.gitlab.users import MockUsersApi
+from congregate.tests.mockapi.gitlab.instance import MockInstanceApi
 from congregate.tests.mockapi.gitlab.token import invalid_token
 from congregate.tests.mockapi.gitlab.error import other_error
 from congregate.helpers.exceptions import ConfigurationException
+from congregate.helpers.misc_utils import obfuscate
 
 
 @pytest.mark.unit_test
@@ -16,6 +18,7 @@ class ConfigurationValidationTests(unittest.TestCase):
     def setUp(self):
         self.groups = MockGroupsApi()
         self.users = MockUsersApi()
+        self.instance = MockInstanceApi()
         self.config = ConfigurationValidator(
             path="congregate/tests/cli/data/test_not_ext_src_parent_group_path_no_mirror_name_aws_default.conf")
 
@@ -92,8 +95,7 @@ class ConfigurationValidationTests(unittest.TestCase):
         self.assertTrue(self.config.validate_dstn_parent_group_id(None))
 
     def test_none_import_user_id_validation(self):
-        self.assertRaises(ConfigurationException,
-                          self.config.validate_import_user_id, None)
+        self.assertRaises(ConfigurationException, self.config.validate_import_user_id, None)
 
     @responses.activate
     # pylint: enable=no-member
@@ -204,3 +206,91 @@ class ConfigurationValidationTests(unittest.TestCase):
         self.config.as_obj().set("DESTINATION", "import_user_id", "1")
         self.config.import_user_id_validated_in_session = True
         self.assertEqual(self.config.import_user_id, 1)
+
+    @responses.activate
+    # pylint: enable=no-member
+    @mock.patch("getpass.getpass")
+    @mock.patch("congregate.helpers.api.generate_v4_request_url")
+    def test_validate_src_token_fail(self, url, secret):
+        secret.return_value = "test"
+        self.config.src_token_validated_in_session = False
+        url_value = "https://gitlab.com/api/v4/license"
+        url.return_value = url_value
+        self.config.as_obj().set("SOURCE", "source_token", obfuscate("Enter secret: "))
+        # pylint: disable=no-member
+        responses.add(responses.GET, url_value,
+                      json=self.instance.get_license_403(), status=403, content_type='text/json', match_querystring=True)
+        # pylint: enable=no-member
+        self.assertRaises(ConfigurationException, self.config.validate_src_token, "test")
+
+    @responses.activate
+    # pylint: enable=no-member
+    @mock.patch("getpass.getpass")
+    @mock.patch("congregate.helpers.api.generate_v4_request_url")
+    def test_validate_src_token_success(self, url, secret):
+        secret.return_value = "test"
+        self.config.src_token_validated_in_session = False
+        url_value = "https://gitlab.com/api/v4/license"
+        url.return_value = url_value
+        self.config.as_obj().set("SOURCE", "source_token", obfuscate("Enter secret: "))
+        # pylint: disable=no-member
+        responses.add(responses.GET, url_value,
+                      json=self.instance.get_license(), status=200, content_type='text/json', match_querystring=True)
+        # pylint: enable=no-member
+        self.assertTrue(self.config.source_token, "test")
+
+    def test_validate_src_token(self):
+        self.assertTrue(self.config.validate_src_token(None))
+
+    @mock.patch("getpass.getpass")
+    @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.src_token_validated_in_session')
+    def test_src_token_validated_in_session(self, validated, secret):
+        secret.return_value = "test"
+        validated.return_value = True
+        self.config.as_obj().set("SOURCE", "src_access_token", obfuscate("Enter secret: "))
+        self.config.src_token_validated_in_session = True
+        self.assertEqual(self.config.source_token, "test")
+
+    @responses.activate
+    # pylint: enable=no-member
+    @mock.patch("getpass.getpass")
+    @mock.patch("congregate.helpers.api.generate_v4_request_url")
+    def test_validate_dstn_token_fail(self, url, secret):
+        secret.return_value = "test"
+        self.config.dstn_token_validated_in_session = False
+        url_value = "https://gitlab.com/api/v4/license"
+        url.return_value = url_value
+        self.config.as_obj().set("DESTINATION", "destination_token", obfuscate("Enter secret: "))
+        # pylint: disable=no-member
+        responses.add(responses.GET, url_value,
+                      json=self.instance.get_license_403(), status=403, content_type='text/json', match_querystring=True)
+        # pylint: enable=no-member
+        self.assertRaises(ConfigurationException, self.config.validate_dstn_token, "test")
+
+    @responses.activate
+    # pylint: enable=no-member
+    @mock.patch("getpass.getpass")
+    @mock.patch("congregate.helpers.api.generate_v4_request_url")
+    def test_validate_dstn_token_success(self, url, secret):
+        secret.return_value = "test"
+        self.config.dstn_token_validated_in_session = False
+        url_value = "https://gitlab.com/api/v4/license"
+        url.return_value = url_value
+        self.config.as_obj().set("DESTINATION", "destination_token", obfuscate("Enter secret: "))
+        # pylint: disable=no-member
+        responses.add(responses.GET, url_value,
+                      json=self.instance.get_license(), status=200, content_type='text/json', match_querystring=True)
+        # pylint: enable=no-member
+        self.assertTrue(self.config.destination_token, "test")
+
+    def test_validate_dstn_token(self):
+        self.assertTrue(self.config.validate_dstn_token(None))
+
+    @mock.patch("getpass.getpass")
+    @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.dstn_token_validated_in_session')
+    def test_dstn_token_validated_in_session(self, validated, secret):
+        secret.return_value = "test"
+        validated.return_value = True
+        self.config.as_obj().set("DESTINATION", "dstn_access_token", obfuscate("Enter secret: "))
+        self.config.dstn_token_validated_in_session = True
+        self.assertEqual(self.config.destination_token, "test")

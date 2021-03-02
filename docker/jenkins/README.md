@@ -24,7 +24,7 @@ docker run --name jenkins -p 8080:8080 -it jenkins-test /bin/bash
 ### Spin up the container
 
 ```bash
-docker run --name jenkins -p 8080:8080 -it registry.gitlab.com/gitlab-com/customer-success/tools/congregate/jenkins-seed:latest /bin/bash
+docker run --name jenkins -p 8080:8080 -it registry.gitlab.com/gitlab-com/customer-success/professional-services-group/global-practice-development/migration/congregate/jenkins-seed:latest /bin/bash
 ```
 
 Navigate to localhost:8080 to see jenkins up and running. You can log in with the following credentials:
@@ -33,3 +33,4 @@ Navigate to localhost:8080 to see jenkins up and running. You can log in with th
 username: test-admin
 password: password
 ```
+

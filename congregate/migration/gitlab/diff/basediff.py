@@ -121,8 +121,12 @@ class BaseDiffClient(BaseClass):
                             accuracy = 0
                             for i, _ in enumerate(source_data):
                                 if diff.get(i):
-                                    accuracy += self.calculate_individual_dict_accuracy(
-                                        diff[i], source_data[i], destination_data[i], critical_key, parent_group=parent_group)
+                                    try:
+                                        accuracy += self.calculate_individual_dict_accuracy(
+                                            diff[i], source_data[i], destination_data[i], critical_key, parent_group=parent_group)
+                                    except IndexError as e:
+                                        self.log.warn(e)
+                                        accuracy += 0
                             if accuracy != 0:
                                 accuracy = float(accuracy) / \
                                     float(len(source_data))
@@ -178,7 +182,7 @@ class BaseDiffClient(BaseClass):
                                       asset[key]) if parent_group else asset[key]
         if self.results.get(identifier) is not None:
             if isinstance(self.results[identifier], dict):
-                destination_id = self.results[identifier]["response"]["id"]
+                destination_id = dig(self.results, identifier, 'response', 'id')
                 response = gl_endpoint(
                     destination_id, self.config.destination_host, self.config.destination_token, **kwargs)
                 destination_data = self.generate_cleaned_instance_data(
@@ -284,12 +288,12 @@ class BaseDiffClient(BaseClass):
         try:
             if isinstance(obj, dict):
                 for o in obj.keys():
-                    if (o == "/projects/:id" or o == "/groups/:id") and obj[o]["accuracy"] == 0:
+                    if (o == "/projects/:id" or o == "/groups/:id") and dig(obj, o, 'accuracy') == 0:
                         result = "failure"
                         percentage_sum = 0
                         break
-                    percentage_sum += obj[o]["overall_accuracy"]["accuracy"]
-                    if obj[o]["overall_accuracy"]["accuracy"] == 0:
+                    percentage_sum += dig(obj, o, 'overall_accuracy', 'accuracy')
+                    if dig(obj, o, 'overall_accuracy', 'accuracy') == 0:
                         result = "failure"
                 accuracy = percentage_sum / total_number_of_keys if total_number_of_keys else 0
                 if result is None:
@@ -390,8 +394,9 @@ class BaseDiffClient(BaseClass):
             'error': 'asset is missing'
         }
 
-    def generate_html_report(self, asset, diff, filepath):
+    def generate_html_report(self, asset, diff, filepath, nested=False):
         filepath = "{0}{1}".format(self.app_path, filepath)
+        self.log.info(f"Writing HTML report to {filepath}")
         soup = bs(
             "<html><body><table class = 'content'></table></body></html>", features="lxml")
         style = soup.new_tag("style")
@@ -399,94 +404,104 @@ class BaseDiffClient(BaseClass):
         soup.html.append(soup.new_tag("head"))
         soup.html.head.append(style)
         for d, v in diff.items():
-            if "migration_results" not in d:
-                header_row = soup.new_tag("tr")
-                header_data_row = soup.new_tag("tr")
-                header_data = {
-                    asset: d,
-                    "Accuracy": str(dig(v, "overall_accuracy", "accuracy")),
-                    "Result": dig(v, "overall_accuracy", "result")
-                }
-                for k, kv in header_data.items():
-                    cell_header = soup.new_tag("th")
-                    cell_data = soup.new_tag("td")
-                    cell_header.string = k
-                    cell_data.string = str(kv)
-                    header_row.append(cell_header)
-                    header_data_row.append(cell_data)
-                soup.html.body.table.append(header_row)
-                soup.html.body.table.append(header_data_row)
+            if (len(v) > 50000 and len(v) < 100000) and nested is False:
+                self.log.info("Writing to a separate file")
+                subdiff = {d: v}
+                subfilepath = (f"{filepath.split('.html')[0]}_{d.split('/')[-1]}.html").replace(self.app_path, "")
+                self.generate_html_report(asset, subdiff, subfilepath, nested=True)
+            elif len(v) > 100000:
+                self.log.warn(f"Skipping {d} due to large size")
+            else:
+                if not isinstance(v, dict):
+                    v = json.loads(v)
+                if "migration_results" not in d:
+                    header_row = soup.new_tag("tr")
+                    header_data_row = soup.new_tag("tr")
+                    header_data = {
+                        asset: d,
+                        "Accuracy": str(dig(v, "overall_accuracy", "accuracy")),
+                        "Result": dig(v, "overall_accuracy", "result")
+                    }
+                    for k, kv in header_data.items():
+                        cell_header = soup.new_tag("th")
+                        cell_data = soup.new_tag("td")
+                        cell_header.string = k
+                        cell_data.string = str(kv)
+                        header_row.append(cell_header)
+                        header_data_row.append(cell_data)
+                    soup.html.body.table.append(header_row)
+                    soup.html.body.table.append(header_data_row)
 
-                diff_row = soup.new_tag("tr")
-                diff_row_table = soup.new_tag("table")
-                diff_headers = ["endpoint", "accuracy", "diff"]
-                diff_cell_row = soup.new_tag("tr")
-                for diff_header in diff_headers:
-                    diff_cell_header = soup.new_tag("th")
-                    diff_cell_header.string = diff_header
-                    diff_cell_row.append(diff_cell_header)
-                diff_row_table.append(diff_cell_row)
-                for endpoint in v:
-                    if endpoint not in ["overall_accuracy", "error"]:
-                        diff_data_row = soup.new_tag("tr")
-                        data = [
-                            endpoint,
-                            str(dig(v, endpoint, 'accuracy')),
-                            dig(v, endpoint, 'diff')
-                        ]
-                    elif "overall_accuracy" in endpoint:
-                        data = []
-                    elif "error" in endpoint:
-                        diff_data_row = soup.new_tag("tr")
-                        data = [
-                            "Error",
-                            "N/A",
-                            dig(v, endpoint, 'error')
-                        ]
+                    diff_row = soup.new_tag("tr")
+                    diff_row_table = soup.new_tag("table")
+                    diff_headers = ["endpoint", "accuracy", "diff"]
+                    diff_cell_row = soup.new_tag("tr")
+                    for diff_header in diff_headers:
+                        diff_cell_header = soup.new_tag("th")
+                        diff_cell_header.string = diff_header
+                        diff_cell_row.append(diff_cell_header)
+                    diff_row_table.append(diff_cell_row)
+                    for endpoint in v:
+                        if endpoint not in ["overall_accuracy", "error"]:
+                            diff_data_row = soup.new_tag("tr")
+                            data = [
+                                endpoint,
+                                str(dig(v, endpoint, 'accuracy')),
+                                dig(v, endpoint, 'diff')
+                            ]
+                        elif "overall_accuracy" in endpoint:
+                            data = []
+                        elif "error" in endpoint:
+                            diff_data_row = soup.new_tag("tr")
+                            data = [
+                                "Error",
+                                "N/A",
+                                dig(v, endpoint, 'error')
+                            ]
 
+                        for da in data:
+                            cell_data = soup.new_tag("td")
+                            if isinstance(da, dict):
+                                showhide = soup.new_tag("button")
+                                showhide['id'] = f"{endpoint}-showhide"
+                                showhide['class'] = 'accordion'
+                                showhide.string = "show/hide"
+                                cell_data.append(showhide)
+                                json_block = soup.new_tag("pre")
+                                json_block['id'] = 'json'
+                                json_block['class'] = 'accordion-content'
+                                json_block.string = json.dumps(da, indent=4)
+                                cell_data.append(json_block)
+                            else:
+                                cell_data.string = da if da else ""
+                            diff_data_row.append(cell_data)
+                        diff_row_table.append(diff_data_row)
+
+                    td = soup.new_tag("td")
+                    td['colspan'] = 3
+                    td.append(diff_row_table)
+                    diff_row.append(td)
+                    soup.html.body.table.append(diff_row)
+                else:
+                    overall_results_header_row = soup.new_tag("tr")
+                    diff_headers = [pretty_print_key(
+                        d), "Overall Accuracy", "Result"]
+                    for diff_header in diff_headers:
+                        diff_cell_header = soup.new_tag("th")
+                        diff_cell_header.string = diff_header
+                        overall_results_header_row.append(diff_cell_header)
+                    soup.html.body.table.insert(0, overall_results_header_row)
+                    overall_results_data_row = soup.new_tag("tr")
+                    data = [
+                        "",
+                        str(v.get("overall_accuracy", 0)),
+                        v.get("result", "failure")
+                    ]
                     for da in data:
                         cell_data = soup.new_tag("td")
-                        if isinstance(da, dict):
-                            showhide = soup.new_tag("button")
-                            showhide['id'] = f"{endpoint}-showhide"
-                            showhide['class'] = 'accordion'
-                            showhide.string = "show/hide"
-                            cell_data.append(showhide)
-                            json_block = soup.new_tag("pre")
-                            json_block['id'] = 'json'
-                            json_block['class'] = 'accordion-content'
-                            json_block.string = json.dumps(da, indent=4)
-                            cell_data.append(json_block)
-                        else:
-                            cell_data.string = da if da else ""
-                        diff_data_row.append(cell_data)
-                    diff_row_table.append(diff_data_row)
-
-                td = soup.new_tag("td")
-                td['colspan'] = 3
-                td.append(diff_row_table)
-                diff_row.append(td)
-                soup.html.body.table.append(diff_row)
-            else:
-                overall_results_header_row = soup.new_tag("tr")
-                diff_headers = [pretty_print_key(
-                    d), "Overall Accuracy", "Result"]
-                for diff_header in diff_headers:
-                    diff_cell_header = soup.new_tag("th")
-                    diff_cell_header.string = diff_header
-                    overall_results_header_row.append(diff_cell_header)
-                soup.html.body.table.insert(0, overall_results_header_row)
-                overall_results_data_row = soup.new_tag("tr")
-                data = [
-                    "",
-                    str(v.get("overall_accuracy", 0)),
-                    v.get("result", "failure")
-                ]
-                for da in data:
-                    cell_data = soup.new_tag("td")
-                    cell_data.string = da if da else ""
-                    overall_results_data_row.append(cell_data)
-                soup.html.body.table.insert(1, overall_results_data_row)
+                        cell_data.string = da if da else ""
+                        overall_results_data_row.append(cell_data)
+                    soup.html.body.table.insert(1, overall_results_data_row)
 
         head = soup.new_tag("head")
         script = soup.new_tag("script")

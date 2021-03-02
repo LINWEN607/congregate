@@ -74,8 +74,8 @@ def get_project_namespace(p):
         :return: Destination group project namespace
     """
     p_type = p["project_type"] if p.get(
-        "project_type", None) else p["namespace"]["kind"]
-    p_namespace = p["namespace"]["full_path"] if isinstance(
+        "project_type", None) else dig(p, 'namespace', 'kind')
+    p_namespace = dig(p,'namespace', 'full_path') if isinstance(
         p.get("namespace", None), dict) else p["namespace"]
 
     if p_type != "user":
@@ -111,7 +111,7 @@ def is_user_project(p):
         :return: True if user project, else False
     """
     p_type = p["project_type"] if p.get(
-        "project_type", None) else p["namespace"]["kind"]
+        "project_type", None) else dig(p, 'namespace', 'kind')
     return p_type == "user"
 
 
@@ -135,7 +135,7 @@ def get_user_project_namespace(p):
         :param: namespace:
         :return: Destination user project namespace
     """
-    p_namespace = p["namespace"]["full_path"] if isinstance(
+    p_namespace = dig(p, 'namespace', 'full_path') if isinstance(
         p.get("namespace", None), dict) else p["namespace"]
     if is_dot_com(b.config.destination_host) or p_namespace == "root":
         b.log.info("User project {0} is assigned to import user id (ID: {1})".format(
@@ -161,6 +161,13 @@ def get_dst_path_with_namespace(p):
     """
     return "{0}/{1}".format(get_user_project_namespace(p) if is_user_project(p) else get_project_namespace(p), p["path"])
 
+def get_target_namespace(project):
+    if target_namespace := project.get("target_namespace"):
+        if target_namespace.split("/")[-1].lower() == project.get('namespace', '').lower():
+            return target_namespace
+        else:
+            return f"{target_namespace}/{project.get('namespace')}"
+    return None
 
 def get_results(res):
     """

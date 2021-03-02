@@ -1,11 +1,12 @@
 """
     Congregate - GitLab instance migration utility
 
-    Copyright (c) 2020 - GitLab
+    Copyright (c) 2021 - GitLab
 """
 import os
 import json
 import xml.dom.minidom
+import sys
 from time import time
 from traceback import print_exc
 from requests.exceptions import RequestException
@@ -14,7 +15,7 @@ from congregate.helpers import api
 from congregate.helpers.reporting import Reporting
 from congregate.helpers.migrate_utils import get_export_filename_from_namespace_and_name, get_dst_path_with_namespace, \
     get_full_path_with_parent_namespace, get_staged_user_projects, is_top_level_group, get_failed_export_from_results, \
-    get_results, get_staged_groups_without_failed_export, get_staged_projects_without_failed_export
+    get_results, get_staged_groups_without_failed_export, get_staged_projects_without_failed_export, get_target_namespace
 from congregate.helpers.misc_utils import get_dry_log, json_pretty, is_dot_com, clean_data, add_post_migration_stats, \
     rotate_logs, write_results_to_file, migration_dry_run, safe_json_response, is_error_message_present, \
     get_duplicate_paths, deobfuscate, dig
@@ -32,6 +33,7 @@ from congregate.migration.gitlab.projects import ProjectsClient
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.project_repository import ProjectRepositoryApi
 from congregate.migration.gitlab.api.namespaces import NamespacesApi
+from congregate.migration.gitlab.api.instance import InstanceApi
 from congregate.migration.gitlab.pushrules import PushRulesClient
 from congregate.migration.gitlab.merge_request_approvals import MergeRequestApprovalsClient
 from congregate.migration.gitlab.registries import RegistryClient
@@ -77,6 +79,7 @@ class MigrateClient(BaseClass):
         self.projects_api = ProjectsApi()
         self.project_repository_api = ProjectRepositoryApi()
         self.namespaces_api = NamespacesApi()
+        self.instance_api = InstanceApi()
         self.pushrules = PushRulesClient()
         self.mr_approvals = MergeRequestApprovalsClient()
         self.registries = RegistryClient()
@@ -85,7 +88,7 @@ class MigrateClient(BaseClass):
         self.clusters = ClustersClient()
         self.environments = EnvironmentsClient()
         self.ext_import = ImportClient()
-        super(MigrateClient, self).__init__()
+        super().__init__()
         self.bbs_repos_client = BBSReposClient()
         self.job_template = JobTemplateGenerator()
         self.dry_run = dry_run
@@ -116,7 +119,9 @@ class MigrateClient(BaseClass):
                 "results/dry_run_user_migration.json",
                 "results/dry_run_group_migration.json",
                 "results/dry_run_project_migration.json"])
+        clean_data(dry_run=False, files=["results/import_failed_relations.json"])
         rotate_logs()
+
         if self.config.source_type == "gitlab":
             self.migrate_from_gitlab()
         elif self.config.source_type == "bitbucket server":
@@ -221,15 +226,14 @@ class MigrateClient(BaseClass):
                 self.log.info(
                     "Successfully got reporting config from congregate.conf. Proceeding to make our issues.")
                 return True
-            else:
-                self.log.error(
-                    f"Couldn't find a required REPORTING config in [DESTINATION] section of congregate.conf.\n"
-                    f"Issues will not be created."
-                )
+            self.log.error(
+                "Couldn't find a required REPORTING config in [DESTINATION] section of congregate.conf.\n"
+                "Issues will not be created."
+            )
         else:
             self.log.error(
-                f"Couldn't find a required REPORTING config in [DESTINATION] section of congregate.conf.\n"
-                f"Issues will not be created."
+                "Couldn't find a required REPORTING config in [DESTINATION] section of congregate.conf.\n"
+                "Issues will not be created."
             )
 
     def create_issue_reporting(self, staged_projects, import_results):
@@ -246,8 +250,7 @@ class MigrateClient(BaseClass):
             ):
                 report.handle_creating_issues(staged_projects, import_results)
             else:
-                self.log.warning(
-                    f"REPORTING: Failed to instantiate the reporting module")
+                self.log.warning("REPORTING: Failed to instantiate the reporting module")
 
     def migrate_github_group(self, group):
         result = False
@@ -293,24 +296,32 @@ class MigrateClient(BaseClass):
         gh_host, gh_token = self.get_host_and_token()
         members = project.pop("members")
         path_with_namespace = f"{project.get('target_namespace', '')}/{project.get('path_with_namespace', '')}"
-        if dst_pid := self.projects.find_project_by_path(
-                    self.config.destination_host, self.config.destination_token, path_with_namespace):
-            self.log.info(f"Repo {path_with_namespace} has already been imported. Skipping import")
-            result = self.ext_import.get_result_data(project, {"id": dst_pid})
+        # TODO: Make this target namespace lookup requirement configurable
+        if self.groups.find_group_id_by_path(self.config.destination_host,
+            self.config.destination_token, get_target_namespace(project)):
+            if dst_pid := self.projects.find_project_by_path(
+                        self.config.destination_host, self.config.destination_token, path_with_namespace):
+                self.log.info(f"Repo {path_with_namespace} has already been imported. Skipping import")
+                result = self.ext_import.get_result_data(project, {"id": dst_pid})
+            else:
+                result = self.ext_import.trigger_import_from_ghe(
+                    project, gh_host, gh_token, dry_run=self.dry_run)
+                if result.get(project["path_with_namespace"], False) is not False:
+                    result_response = result[project["path_with_namespace"]]["response"]
+                    if (isinstance(result_response, dict)) and (project_id := result_response.get("id", None)):
+                        full_path = result_response.get("full_path").strip("/")
+                        success = self.ext_import.wait_for_project_to_import(full_path)
+                        if success:
+                            result = self.handle_gh_post_migration(result, project, project_id, members)
+                        else:
+                            result = self.ext_import.get_failed_result(project, data={
+                                "error": "Import time limit exceeded. Unable to execute post migration phase"
+                            })
         else:
-            result = self.ext_import.trigger_import_from_ghe(
-                project, gh_host, gh_token, dry_run=self.dry_run)
-            if result.get(project["path_with_namespace"], False) is not False:
-                result_response = result[project["path_with_namespace"]]["response"]
-                if (isinstance(result_response, dict)) and (project_id := result_response.get("id", None)):
-                    full_path = result_response.get("full_path").strip("/")
-                    success = self.ext_import.wait_for_project_to_import(full_path)
-                    if success:
-                        result = self.handle_gh_post_migration(result, project, project_id, members)
-                    else:
-                        result = self.ext_import.get_failed_result(project, data={
-                            "error": "Import time limit exceeded. Unable to execute post migration phase"
-                        })
+            self.log.info(f"Target namespace does not exist for {project['path_with_namespace']}. Skipping import.")
+            result = self.ext_import.get_result_data(project, {
+                "error": f"Target namespace {project.get('target_namespace', '')} does not exist. Skipping import"
+            })
         return result
 
     def get_host_and_token(self):
@@ -557,7 +568,7 @@ class MigrateClient(BaseClass):
             self.log.warning(
                 "Results from {0} {1} returned as empty. Aborting.".format(var, stage))
             add_post_migration_stats(self.dry_run, log=self.log)
-            exit()
+            sys.exit()
 
     def migrate_user_info(self):
         staged_users = self.users.get_staged_users()
@@ -568,7 +579,7 @@ class MigrateClient(BaseClass):
                 staged = self.users.handle_users_not_found(
                     "staged_users",
                     self.users.search_for_staged_users()[0],
-                    keep=False if self.only_post_migration_info else True
+                    keep=not self.only_post_migration_info
                 )
                 new_users = start_multi_process(
                     self.handle_user_creation, staged, self.processes)
@@ -950,14 +961,12 @@ class MigrateClient(BaseClass):
                     self.config.destination_host, self.config.destination_token, dst_pid))
                 self.log.info("Project {0} (ID: {1}) found on destination, with import status: {2}".format(
                     dst_path_with_namespace, dst_pid, import_status))
-                if self.only_post_migration_info and not self.dry_run:
-                    import_id = dst_pid
-                else:
+                import_id = dst_pid
+                if self.dry_run:
                     result[dst_path_with_namespace] = dst_pid
             else:
                 self.log.info(
                     f"{get_dry_log(self.dry_run)}Project {dst_path_with_namespace} NOT found on destination, importing...")
-            if not self.only_post_migration_info:
                 import_id = self.ie.import_project(
                     project, dry_run=self.dry_run)
             if import_id and not self.dry_run:
@@ -1093,10 +1102,7 @@ class MigrateClient(BaseClass):
                     req = self.project_repository_api.create_repo_file(
                         self.config.destination_host, self.config.destination_token,
                         project_id, "config.xml", data)
-                    if req.status_code == 200:
-                        is_result = True
-                    else:
-                        is_result = False
+                    is_result = bool(req.status_code == 200)
             return is_result
         return None
 
@@ -1105,14 +1111,19 @@ class MigrateClient(BaseClass):
             result = True
             for job in ci_sources.get("TeamCity", []):
                 params = tc_client.teamcity_api.get_build_params(job)
-                if params.get("properties", None) is not None:
-                    for param in dig(params, "properties", "property", default=[]):
-                        if not self.variables.safe_add_variables(
-                            new_id,
-                            tc_client.transform_ci_variables(
-                                param, tc_ci_src_hostname)
-                        ):
-                            result = False
+                try:
+                    if params.get("properties", None) is not None:
+                        for param in dig(params, "properties", "property", default=[]):
+                            if not self.variables.safe_add_variables(
+                                new_id,
+                                tc_client.transform_ci_variables(
+                                    param, tc_ci_src_hostname)
+                            ):
+                                result = False
+                    else:
+                        self.log.warning(f"Job: {job} had no param properties present")
+                except AttributeError as e:
+                    self.log.error(f"Attribute Error Caught for Job:{job} Params:{params} with error:{e}")
             return result
         return None
 
@@ -1307,3 +1318,16 @@ class MigrateClient(BaseClass):
         if ids is not None and ids:
             pcli = ProjectStageCLI()
             pcli.stage_data(ids, self.dry_run)
+
+    def toggle_maintenance_mode(self, off=False, msg=None, dest=False):
+        host = self.config.destination_host if dest else self.config.source_host
+        if is_dot_com(host):
+            self.log.warning(f"Not allowed to toggle maintenance mode on {host}")
+        else:
+            data = {
+                "maintenance_mode": not off}
+            if not off and msg:
+                data["maintenance_mode_message"] = msg.replace("+", " ")
+            token = self.config.destination_token if dest else self.config.source_token
+            self.log.warning(f"Turning maintenance mode {'OFF' if off else 'ON'} for {'destination' if dest else 'source'} instance")
+            self.instance_api.change_application_settings(host, token, data)

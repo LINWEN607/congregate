@@ -78,11 +78,11 @@ class MongoConnector(BaseClass):
         self.db = None
         self.client.close()
 
-    def insert_data(self, collection, data):
+    def insert_data(self, collection, data, bypass_document_validation=False):
         try:
             if isinstance(data, tuple):
                 data = data[0]
-            return self.db[collection].insert_one(data).inserted_id
+            return self.db[collection].insert_one(data, bypass_document_validation=bypass_document_validation).inserted_id
         except errors.DuplicateKeyError:
             self.log.debug("Duplicate insert attempted. Aborting operation")
             return None

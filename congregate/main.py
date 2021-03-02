@@ -1,6 +1,6 @@
 """Congregate - GitLab instance migration utility
 
-Copyright (c) 2020 - GitLab
+Copyright (c) 2021 - GitLab
 
 Usage:
     congregate init
@@ -53,6 +53,7 @@ Usage:
     congregate dump-database
     congregate reingest <assets>...
     congregate clean-database [--commit]
+    congregate toggle-maintenance-mode [--off] [--dest] [--msg=<multi+word+message>]
     congregate -h | --help
     congregate -v | --version
 
@@ -86,6 +87,9 @@ Arguments:
     head                                    Read results files in chronological order
     tail                                    Read results files in reverse chronological order (default for stitch-results)
     partial                                 Option used when listing. Keeps existing data in mongo instead of dropping it before retrieving new data
+    off                                     Toggle maintenance mode off, otherwise on by default
+    dest                                    Toggle maintenance mode on destination instance
+    msg                                     Maintenance mode message, with "+" in place of " "
 
 Commands:
     list                                    List all projects of a source instance and save it to {CONGREGATE_PATH}/data/projects.json.
@@ -142,6 +146,7 @@ Commands:
     dump-database                           Dump all database collections to various JSON files
     reingest                                Reingest database dumps into mongo. Specify the asset type (users, groups, projects, teamcity, jenkins)
     clean-database                          Drop all collections in the congregate MongoDB database and rebuilds the structure
+    toggle-maintenance-mode                 Reduce write operations to a minimum by blocking all external actions that change the internal state. Operational as of GitLab version 13.9
 """
 
 import os
@@ -160,7 +165,7 @@ if __name__ == '__main__':
     from congregate.helpers import conf
     from congregate.helpers.logger import myLogger
     from congregate.helpers.misc_utils import get_congregate_path, clean_data, obfuscate, deobfuscate, \
-        strip_protocol, spin_up_ui, stitch_json_results, write_results_to_file, add_post_migration_stats, rotate_logs
+        strip_protocol, spin_up_ui, stitch_json_results, write_results_to_file, add_post_migration_stats, rotate_logs, dig
 else:
     import sys
     sys.path.append(os.path.dirname(
@@ -176,7 +181,7 @@ app_path = get_congregate_path()
 def main():
     if __name__ == '__main__':
         arguments = docopt(__doc__)
-        DRY_RUN = False if arguments["--commit"] else True
+        DRY_RUN = not arguments["--commit"]
         STAGED = arguments["--staged"]
         ROLLBACK = arguments["--rollback"]
         PROCESSES = arguments["--processes"] if arguments["--processes"] else None
@@ -195,8 +200,8 @@ def main():
         if arguments["--version"]:
             with open(f"{app_path}/pyproject.toml", "r") as f:
                 print(
-                    f"Congregate {load_toml(f)['tool']['poetry']['version']}")
-            exit()
+                    f"Congregate {dig(load_toml(f), 'tool', 'poetry', 'version')}")
+            sys.exit()
 
         if arguments["init"]:
             Path("data/logs").mkdir(parents=True, exist_ok=True)
@@ -283,9 +288,9 @@ def main():
                     dry_run=DRY_RUN,
                     skip_users=SKIP_USERS,
                     skip_adding_members=SKIP_ADDING_MEMBERS,
-                    skip_group_export=True if arguments["--skip-group-export"] or ONLY_POST_MIGRATION_INFO else False,
+                    skip_group_export=bool(arguments["--skip-group-export"] or ONLY_POST_MIGRATION_INFO),
                     skip_group_import=arguments["--skip-group-import"],
-                    skip_project_export=True if arguments["--skip-project-export"] or ONLY_POST_MIGRATION_INFO else False,
+                    skip_project_export=bool(arguments["--skip-project-export"] or ONLY_POST_MIGRATION_INFO),
                     skip_project_import=arguments["--skip-project-import"],
                     only_post_migration_info=ONLY_POST_MIGRATION_INFO,
                     subgroups_only=arguments["--subgroups-only"],
@@ -467,8 +472,6 @@ def main():
                             rollback=ROLLBACK
                         )
                     repo_diff.generate_diff_report()
-                    repo_diff.generate_html_report(
-                        "Project", repo_diff.generate_diff_report(), "/data/results/project_migration_results.html")
                     repo_diff.generate_split_html_report()
                 add_post_migration_stats(start, log=log)
 
@@ -501,6 +504,12 @@ def main():
                     m.clean_db()
                 else:
                     print("\nThis command will drop all collections in the congregate database and then recreate the structure. Please append `--commit` to clean the database")
+            if arguments["toggle-maintenance-mode"]:
+                migrate = MigrateClient()
+                migrate.toggle_maintenance_mode(
+                    arguments["--off"],
+                    arguments["--msg"],
+                    arguments["--dest"])
         if arguments["obfuscate"]:
             print(obfuscate("Secret:"))
         if arguments["deobfuscate"]:

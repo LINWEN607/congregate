@@ -1,12 +1,12 @@
 """
 Congregate - GitLab instance migration utility
 
-Copyright (c) 2020 - GitLab
+Copyright (c) 2021 - GitLab
 """
 
 import json
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import get_dry_log, remove_dupes, strip_protocol, remove_dupes_with_keys
+from congregate.helpers.misc_utils import get_dry_log, remove_dupes, strip_protocol, remove_dupes_with_keys, dig
 
 
 class BaseStageClass(BaseClass):
@@ -17,7 +17,7 @@ class BaseStageClass(BaseClass):
         self.rewritten_users = {}
         self.rewritten_projects = {}
         self.rewritten_groups = {}
-        super(BaseStageClass, self).__init__()
+        super().__init__()
 
     def open_projects_file(self, scm_source=None):
         """
@@ -107,14 +107,14 @@ class BaseStageClass(BaseClass):
         obj = {
             "id": project["id"],
             "name": project["name"],
-            "namespace": project["namespace"]["full_path"],
+            "namespace": dig(project, 'namespace', 'full_path'),
             "path": project["path"],
             "path_with_namespace": project["path_with_namespace"],
             "visibility": project["visibility"],
             "description": project["description"],
             # Will be deprecated in favor of builds_access_level
             "jobs_enabled": project.get("jobs_enabled", None),
-            "project_type": project["namespace"]["kind"],
+            "project_type": dig(project, 'namespace', 'kind'),
             # Project members are not listed when listing group projects
             "members": project["members"] if project.get("members", None) else self.rewritten_projects[project["id"]]["members"]
         }
