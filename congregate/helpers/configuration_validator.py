@@ -1,4 +1,5 @@
 import requests
+from requests.auth import HTTPBasicAuth
 
 from congregate.helpers.exceptions import ConfigurationException
 from congregate.helpers.conf import Config
@@ -135,8 +136,17 @@ class ConfigurationValidator(Config):
                         "Authorization": f"token {src_token}"
                     },
                     verify=self.ssl_verify))
-                print(user)
                 if is_error_message_present(user) or (not user.get("site_admin", None) and not is_github_dot_com(self.source_host)):
+                    raise ConfigurationException("source_token", msg=user)
+            elif self.source_type == "bitbucket server":
+                user = safe_json_response(requests.get(
+                    f"{self.source_host}/rest/api/1.0/user",
+                    params={},
+                    headers={
+                        "Content-Type": "application/json"
+                    },
+                    auth=HTTPBasicAuth(self.source_username, src_token)))
+                if is_error_message_present(user) or not user.get("type", None) == "ADMINISTRATOR":
                     raise ConfigurationException("source_token", msg=user)
             return True
         return True

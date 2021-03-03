@@ -6,6 +6,7 @@ from congregate.helpers.configuration_validator import ConfigurationValidator
 from congregate.tests.mockapi.gitlab.groups import MockGroupsApi
 from congregate.tests.mockapi.gitlab.users import MockUsersApi as GLMockUsers
 from congregate.tests.mockapi.github.users import MockUsersApi as GHMockUsers
+from congregate.tests.mockapi.bitbucket.users import MockUsersApi as BBSUsers
 from congregate.tests.mockapi.gitlab.token import invalid_token
 from congregate.tests.mockapi.gitlab.error import other_error
 from congregate.helpers.exceptions import ConfigurationException
@@ -19,6 +20,7 @@ class ConfigurationValidationTests(unittest.TestCase):
         self.groups = MockGroupsApi()
         self.users = GLMockUsers()
         self.github_users = GHMockUsers()
+        self.bbs_users = BBSUsers()
         self.config = ConfigurationValidator(
             path="congregate/tests/cli/data/test_not_ext_src_parent_group_path_no_mirror_name_aws_default.conf")
 
@@ -296,6 +298,71 @@ class ConfigurationValidationTests(unittest.TestCase):
         # pylint: disable=no-member
         responses.add(responses.GET, url_value,
                       json=self.github_users.get_non_admin_user(), status=200, content_type='text/json', match_querystring=True)
+        # pylint: enable=no-member
+        self.assertTrue(self.config.source_token, "test")
+
+    @responses.activate
+    # pylint: enable=no-member
+    @mock.patch.object(ConfigurationValidator, 'source_type', new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, 'source_host', new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, 'source_username', new_callable=mock.PropertyMock)
+    @mock.patch("getpass.getpass")
+    def test_validate_bbs_src_token_invalid(self, secret, username, host, src_type):
+        secret.return_value = "test"
+        src_type.return_value = "bitbucket server"
+        username.return_value = "admin"
+        host.return_value = "https://bitbucket.server.com"
+        self.config.src_token_validated_in_session = False
+        url_value = "https://bitbucket.server.com/rest/api/1.0/user"
+        # url.return_value = url_value
+        self.config.as_obj().set("SOURCE", "source_token", obfuscate("Enter secret: "))
+        # pylint: disable=no-member
+        responses.add(responses.GET, url_value,
+                      json=self.bbs_users.get_user_404(), status=404, content_type='text/json', match_querystring=True)
+        # pylint: enable=no-member
+        self.assertRaises(ConfigurationException,
+                          self.config.validate_src_token, "test")
+
+    @responses.activate
+    # pylint: enable=no-member
+    @mock.patch.object(ConfigurationValidator, 'source_type', new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, 'source_host', new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, 'source_username', new_callable=mock.PropertyMock)
+    @mock.patch("getpass.getpass")
+    def test_validate_bbs_src_token_not_admin(self, secret, username, host, src_type):
+        secret.return_value = "test"
+        src_type.return_value = "bitbucket server"
+        username.return_value = "admin"
+        host.return_value = "https://bitbucket.server.com"
+        self.config.src_token_validated_in_session = False
+        url_value = "https://bitbucket.server.com/rest/api/1.0/user"
+        # url.return_value = url_value
+        self.config.as_obj().set("SOURCE", "source_token", obfuscate("Enter secret: "))
+        # pylint: disable=no-member
+        responses.add(responses.GET, url_value,
+                      json=self.bbs_users.get_non_admin_user(), status=200, content_type='text/json', match_querystring=True)
+        # pylint: enable=no-member
+        self.assertRaises(ConfigurationException,
+                          self.config.validate_src_token, "test")
+
+    @responses.activate
+    # pylint: enable=no-member
+    @mock.patch.object(ConfigurationValidator, 'source_type', new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, 'source_host', new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, 'source_username', new_callable=mock.PropertyMock)
+    @mock.patch("getpass.getpass")
+    def test_validate_bbs_src_token_success(self, secret, username, host, src_type):
+        secret.return_value = "test"
+        src_type.return_value = "bitbucket server"
+        username.return_value = "admin"
+        host.return_value = "https://bitbucket.server.com"
+        self.config.src_token_validated_in_session = False
+        url_value = "https://bitbucket.server.com/rest/api/1.0/user"
+        # url.return_value = url_value
+        self.config.as_obj().set("SOURCE", "source_token", obfuscate("Enter secret: "))
+        # pylint: disable=no-member
+        responses.add(responses.GET, url_value,
+                      json=self.bbs_users.get_admin_user(), status=200, content_type='text/json', match_querystring=True)
         # pylint: enable=no-member
         self.assertTrue(self.config.source_token, "test")
 
