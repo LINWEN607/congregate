@@ -204,6 +204,7 @@ test:end-to-end full:
     - poetry run pytest -s -m e2e --cov-config=.coveragerc --cov=congregate congregate/tests/
   rules:
     - changes:
+        - congregate/helpers/seed/generate_token.py
         - congregate/migration/gitlab/**/*
         - congregate/migration/migrate.py
   timeout: 30 minutes
@@ -227,6 +228,7 @@ test:end-to-end single group:
     - poetry run pytest -s -m e2e --cov-config=.coveragerc --cov=congregate congregate/tests/
   rules:
     - changes:
+        - congregate/helpers/seed/generate_token.py
         - congregate/migration/gitlab/**/*
         - congregate/migration/migrate.py
   timeout: 15 minutes
