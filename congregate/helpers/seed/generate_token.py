@@ -27,10 +27,12 @@ from urllib.parse import urljoin
 import requests
 from bs4 import BeautifulSoup
 from congregate.helpers.decorators import configurable_stable_retry
+from congregate.helpers.logger import myLogger
 
 
 class token_generator():
     def __init__(self):
+        self.log = myLogger(__name__)
         self.endpoint = os.getenv('GITLAB_URL')
         self.login = os.getenv('GITLAB_ADMIN_USER')
         self.password = os.getenv('GITLAB_ADMIN_PASSWD')
@@ -47,17 +49,20 @@ class token_generator():
 
     @configurable_stable_retry(retries=50, delay=10)
     def obtain_csrf_token(self):
+        self.log.info("Obtaining CSRF token")
         r = requests.get(self.__get_root_route())
-        print(r.status_code)
+        self.log.debug(f"Status code for {self.__get_root_route}: {r.status_code}")
         if r.status_code != 200:
             raise Exception
         token = self.find_csrf_token(r.text)
         reset_password_token = None
         if "?reset_password_token=" in r.url:
             reset_password_token = r.url.split("?reset_password_token=")[1]
+        self.log.info("Found reset password token")
         return token, r.cookies, reset_password_token
 
     def sign_in(self, csrf, cookies):
+        self.log.info("Signing in to GitLab instance")
         data = {
             "user[login]": self.login,
             "user[password]": self.password,
@@ -67,13 +72,16 @@ class token_generator():
         data.update(csrf)
         r = requests.post(self.__get_sign_in_route(),
                           data=data, cookies=cookies)
+        self.log.debug(f"Status code for {self.__get_sign_in_route()}: {r.status_code}")
         token = self.find_csrf_token(r.text)
+        self.log.info("Signed in to GitLab instance")
         if len(r.history) > 0:
             return token, r.history[0].cookies
         return token, cookies
 
     def change_password(self, csrf, cookies, reset_password_token):
         if reset_password_token is not None:
+            self.log.info("Changing password for root")
             data = {
                 "utf8": "✓",
                 "_method": "put",
@@ -84,13 +92,16 @@ class token_generator():
             data.update(csrf)
             r = requests.post(self.__get_password_route(),
                               data=data, cookies=cookies)
+            self.log.debug(f"Status code for {self.__get_password_route()}: {r.status_code}")
             token = self.find_csrf_token(r.text)
             if len(r.history) > 0:
                 return token, r.history[0].cookies
             return token, cookies
+        self.log.info("Reset password token was None. Not changing password")
         return csrf, cookies
 
     def obtain_personal_access_token(self, name, expires_at, csrf, cookies):
+        self.log.info("Obtaining personal access token for root")
         data = {
             "personal_access_token[expires_at]": expires_at,
             "personal_access_token[name]": name,
@@ -99,9 +110,11 @@ class token_generator():
         data.update(self.scopes)
         data.update(csrf)
         r = requests.post(self.__get_pat_route(), data=data, cookies=cookies)
+        self.log.debug(f"Status code for {self.__get_pat_route()}: {r.status_code}")
         soup = BeautifulSoup(r.text, "lxml")
         token = soup.find(
             'input', id='created-personal-access-token').get('value')
+        self.log.info("Obtained personal access token for root")
         return token
 
     def generate_token(self, name, expires_at, url=None, username=None, pword=None):
@@ -122,6 +135,8 @@ class token_generator():
 
         token = self.obtain_personal_access_token(
             name, expires_at, csrf3, cookies3)
+
+        self.log.info("Token has been successfully generated")
         return token
 
     def __set_endpoint(self, endpoint):
@@ -148,6 +163,6 @@ class token_generator():
 
 if __name__ == "__main__":
     t = token_generator()
-    name = sys.argv[1]
-    expires_at = sys.argv[2]
-    print(t.generate_token(name, expires_at))
+    name_arg = sys.argv[1]
+    expires_at_arg = sys.argv[2]
+    print(t.generate_token(name_arg, expires_at_arg))
