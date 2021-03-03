@@ -1,4 +1,5 @@
 import os
+import sys
 
 from congregate.helpers.base_class import BaseClass
 from congregate.migration.gitlab.groups import GroupsClient
@@ -165,8 +166,8 @@ def list_data(processes=None, partial=False, skip_users=False, skip_groups=False
         list_github_data(processes=processes, partial=partial, skip_users=skip_users,
                          skip_projects=skip_projects, skip_groups=skip_groups, src_instances=src_instances)
     else:
-        b.log.warning("Cannot list from source {}".format(src_type))
-        exit()
+        b.log.warning(f"Cannot list from source {src_type}")
+        sys.exit()
 
     for f in staged_files:
         write_empty_file(f)

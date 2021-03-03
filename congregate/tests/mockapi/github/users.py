@@ -62,7 +62,7 @@ class MockUsersApi():
                 "site_admin": True
             }
         ]
-    
+
     def get_user(self):
         return [
             {
@@ -204,3 +204,43 @@ class MockUsersApi():
 
         ]
 
+    def get_user_404(self):
+        return {
+            "message": "404 User Not Found"
+        }
+
+    def get_non_admin_user(self):
+        return {
+            "login": "ghost",
+            "id": 1,
+            "node_id": "MDQ6VXNlcjE=",
+            "avatar_url": "https://github.gitlab-proserv.net/avatars/u/1?",
+            "gravatar_id": "",
+            "url": "https://github.gitlab-proserv.net/api/v3/users/ghost",
+            "html_url": "https://github.gitlab-proserv.net/ghost",
+            "followers_url": "https://github.gitlab-proserv.net/api/v3/users/ghost/followers",
+            "following_url": "https://github.gitlab-proserv.net/api/v3/users/ghost/following{/other_user}",
+            "gists_url": "https://github.gitlab-proserv.net/api/v3/users/ghost/gists{/gist_id}",
+            "starred_url": "https://github.gitlab-proserv.net/api/v3/users/ghost/starred{/owner}{/repo}",
+            "subscriptions_url": "https://github.gitlab-proserv.net/api/v3/users/ghost/subscriptions",
+            "organizations_url": "https://github.gitlab-proserv.net/api/v3/users/ghost/orgs",
+            "repos_url": "https://github.gitlab-proserv.net/api/v3/users/ghost/repos",
+            "events_url": "https://github.gitlab-proserv.net/api/v3/users/ghost/events{/privacy}",
+            "received_events_url": "https://github.gitlab-proserv.net/api/v3/users/ghost/received_events",
+            "type": "User",
+            "site_admin": False,
+            "name": None,
+            "company": None,
+            "blog": "",
+            "location": None,
+            "email": None,
+            "hireable": None,
+            "bio": None,
+            "public_repos": 0,
+            "public_gists": 0,
+            "followers": 0,
+            "following": 0,
+            "created_at": "2020-07-14T15:00:39Z",
+            "updated_at": None,
+            "suspended_at": None
+        }
