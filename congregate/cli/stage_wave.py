@@ -4,7 +4,7 @@ Congregate - GitLab instance migration utility
 Copyright (c) 2021 - GitLab
 """
 
-from congregate.helpers.misc_utils import rewrite_list_into_dict, get_dry_log, safe_json_response
+from congregate.helpers.misc_utils import rewrite_list_into_dict, get_dry_log, safe_json_response, clean_split
 from congregate.migration.meta.etl import WaveSpreadsheetHandler
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.cli.stage_base import BaseStageClass
@@ -45,11 +45,11 @@ class WaveStageCLI(BaseStageClass):
             self.open_users_file(scm_source), "id")
         self.rewritten_groups = rewrite_list_into_dict(
             self.open_groups_file(scm_source), "id")
-        groups = rewrite_list_into_dict(
+        self.group_paths = rewrite_list_into_dict(
             self.open_groups_file(scm_source), "full_path", lowercase=True)
-        projects = rewrite_list_into_dict(
+        self.project_urls = rewrite_list_into_dict(
             self.open_projects_file(scm_source), "http_url_to_repo", lowercase=True)
-        project_paths = rewrite_list_into_dict(
+        self.project_paths = rewrite_list_into_dict(
             self.open_projects_file(scm_source), "path_with_namespace", lowercase=True)
         unable_to_find = []
         wsh = WaveSpreadsheetHandler(
@@ -72,8 +72,8 @@ class WaveStageCLI(BaseStageClass):
         for row in wave_data:
             url_key = column_mapping["Source Url"]
             repo_url = row.get(url_key, "").lower()
-            if project := (projects.get(repo_url, None) or (projects.get(repo_url + 'git', None))
-                           or project_paths.get(self.sanitize_project_path(repo_url, host=scm_source))):
+            if project := (self.project_urls.get(repo_url, None) or (self.project_urls.get(repo_url + 'git', None))
+                           or self.project_paths.get(self.sanitize_project_path(repo_url, host=scm_source))):
                 obj = self.get_project_metadata(project)
                 if parent_path := column_mapping.get("Parent Path"):
                     obj["target_namespace"] = row[parent_path].strip("/")
@@ -84,7 +84,7 @@ class WaveStageCLI(BaseStageClass):
                     else:
                         self.log.warning(f"No SWC_ID for {obj['target_namespace']}")
                 self.append_project_data(obj, wave_data, row, dry_run=dry_run)
-            elif group := groups.get(repo_url.rstrip("/").split("/")[-1]):
+            elif group := self.find_group(repo_url):
                 group_copy = group.copy()
                 self.handle_parent_group(row, group_copy)
                 self.append_group_data(
@@ -217,3 +217,11 @@ class WaveStageCLI(BaseStageClass):
         host = host if host else self.config.source_host
         return http_url_to_repo.rstrip(
             "/").split(host)[-1].lstrip("/").strip(" ")
+
+    def find_group(self, repo_url):
+        group_path = repo_url.rstrip("/").split("/")[-1]
+        if group := self.group_paths.get(group_path):
+            if len(clean_split(repo_url, group_path, 1)) == 1:
+                return group
+            else:
+                self.log.warning(f"Possible invalid group {repo_url} found. Review spreadsheet.")

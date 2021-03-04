@@ -696,3 +696,20 @@ def pop_multiple_keys(src, keys):
     for k in keys:
         src.pop(k, None)
     return src
+
+
+def clean_split(s, *args, **kwargs):
+    """
+        Returns split string without any empty string elements
+
+        :param: s: (str) the string to split
+        :param: *args, **kwargs: any arguments you need to pass to the split function
+
+        example usage:
+
+        s = "hello/world"
+        clean_split(s, "/")
+        ['hello', 'world']
+    """
+    return list(filter(None, s.split(*args, **kwargs)))
+
