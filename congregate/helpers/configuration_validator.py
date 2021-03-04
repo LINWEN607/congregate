@@ -5,7 +5,7 @@ from congregate.helpers.exceptions import ConfigurationException
 from congregate.helpers.conf import Config
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.users import UsersApi
-from congregate.helpers.misc_utils import is_error_message_present, safe_json_response, is_github_dot_com
+from congregate.helpers.misc_utils import is_error_message_present, safe_json_response, is_github_dot_com, json_pretty
 
 
 class ConfigurationValidator(Config):
@@ -124,8 +124,9 @@ class ConfigurationValidator(Config):
             if self.source_type == "gitlab":
                 user = safe_json_response(
                     self.users.get_current_user(self.source_host, src_token))
-                if is_error_message_present(user) or not user.get("is_admin", None):
-                    raise ConfigurationException("source_token", msg=user)
+                if not user or is_error_message_present(user) or not user.get("is_admin", None):
+                    raise ConfigurationException(
+                        "source_token", msg=json_pretty(user))
             elif self.source_type == "github":
                 user = safe_json_response(requests.get(
                     f"{self.source_host.rstrip('/')}/user" if is_github_dot_com(
@@ -136,8 +137,9 @@ class ConfigurationValidator(Config):
                         "Authorization": f"token {src_token}"
                     },
                     verify=self.ssl_verify))
-                if is_error_message_present(user) or (not user.get("site_admin", None) and not is_github_dot_com(self.source_host)):
-                    raise ConfigurationException("source_token", msg=user)
+                if not user or is_error_message_present(user) or (not user.get("site_admin", None) and not is_github_dot_com(self.source_host)):
+                    raise ConfigurationException(
+                        "source_token", msg=json_pretty(user))
             elif self.source_type == "bitbucket server":
                 user = safe_json_response(requests.get(
                     f"{self.source_host}/rest/api/1.0/admin/permissions/users?filter={self.source_username}",
@@ -148,8 +150,9 @@ class ConfigurationValidator(Config):
                     auth=HTTPBasicAuth(self.source_username, src_token)))
                 not_sys_admin = user["values"][0]["permission"] != "SYS_ADMIN" if user.get(
                     "values", []) else True
-                if is_error_message_present(user) or not_sys_admin:
-                    raise ConfigurationException("source_token", msg=user)
+                if not user or is_error_message_present(user) or not_sys_admin:
+                    raise ConfigurationException(
+                        "source_token", msg=json_pretty(user))
             return True
         return True
 
