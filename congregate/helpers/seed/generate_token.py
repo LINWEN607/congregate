@@ -165,4 +165,5 @@ if __name__ == "__main__":
     t = token_generator()
     name_arg = sys.argv[1]
     expires_at_arg = sys.argv[2]
-    print(t.generate_token(name_arg, expires_at_arg))
+    log = myLogger(__name__)
+    log.info(t.generate_token(name_arg, expires_at_arg))
