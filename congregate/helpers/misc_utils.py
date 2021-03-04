@@ -157,6 +157,7 @@ def rewrite_list_into_dict(l, comparison_key, prefix="", lowercase=False):
 
     return rewritten_obj
 
+
 def rewrite_json_list_into_dict(l):
     """
         Converts a JSON list:
@@ -413,11 +414,11 @@ def is_error_message_present(response):
         response = safe_json_response(response)
     if isinstance(response, (GeneratorType, map, filter)):
         response = list(response)
-    if isinstance(response, list) and response and response[0] == "message":
+    if isinstance(response, list) and response and response[0] in ["message", "errors"]:
         return True
-    if isinstance(response, dict) and response.get("message", None) is not None:
+    if isinstance(response, dict) and ((response.get("message", None) or response.get("errors", None)) is not None):
         return True
-    if isinstance(response, str) and response == "message":
+    if isinstance(response, str) and response in ["message", "errors"]:
         return True
     return False
 

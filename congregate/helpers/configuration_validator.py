@@ -140,13 +140,15 @@ class ConfigurationValidator(Config):
                     raise ConfigurationException("source_token", msg=user)
             elif self.source_type == "bitbucket server":
                 user = safe_json_response(requests.get(
-                    f"{self.source_host}/rest/api/1.0/user",
+                    f"{self.source_host}/rest/api/1.0/admin/permissions/users?filter={self.source_username}",
                     params={},
                     headers={
                         "Content-Type": "application/json"
                     },
                     auth=HTTPBasicAuth(self.source_username, src_token)))
-                if is_error_message_present(user) or not user.get("type", None) == "ADMINISTRATOR":
+                not_sys_admin = user["values"][0]["permission"] != "SYS_ADMIN" if user.get(
+                    "values", []) else True
+                if is_error_message_present(user) or not_sys_admin:
                     raise ConfigurationException("source_token", msg=user)
             return True
         return True

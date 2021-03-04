@@ -204,9 +204,10 @@ class MockUsersApi():
 
         ]
 
-    def get_user_404(self):
+    def get_user_401(self):
         return {
-            "message": "404 User Not Found"
+            "message": "Bad credentials",
+            "documentation_url": "https://developer.github.com/enterprise/2.21/v3"
         }
 
     def get_non_admin_user(self):
