@@ -3,6 +3,7 @@ from configparser import ConfigParser, NoOptionError
 
 import json
 import requests
+import sys
 
 from docker import from_env
 from docker.errors import APIError, TLSParameterError
@@ -120,7 +121,7 @@ def generate_config():
             config.set("SOURCE", "src_type", "GitHub")
         else:
             print("Source type {} is currently not supported".format(src))
-            exit()
+            sys.exit()
         config.set("SOURCE", "src_hostname", input(
             "Source instance ({}) URL: ".format(config.get("SOURCE", "src_type"))))
         config.set("SOURCE", "src_access_token", obfuscate(
@@ -332,11 +333,11 @@ def test_registries(token, registry, user):
     except (APIError, TLSParameterError) as err:
         print("Failed to login to docker registry {0}, with error:\n{1}".format(
             registry, err))
-        exit()
+        sys.exit()
     except Exception as e:
         print("Login attempt to docker registry {0} failed, with error:\n{1}".format(
             registry, e))
-        exit()
+        sys.exit()
 
 
 def test_slack(url):
@@ -349,7 +350,7 @@ def test_slack(url):
             raise Exception(resp)
     except Exception as em:
         print("EXCEPTION: " + str(em))
-        exit()
+        sys.exit()
 
 
 def get_sso_provider_pattern():

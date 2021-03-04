@@ -191,7 +191,7 @@ class ConfigTests(unittest.TestCase):
             "id": 123, "username": "username"}
         mock_get_current_user.return_value = mock_user
 
-        class GroupHack(object):
+        class GroupHack():
             def __init__(self):
                 self._json = {"full_path": "source_group_full_path"}
 
@@ -281,7 +281,7 @@ class ConfigTests(unittest.TestCase):
         mock_user.json.return_value = self.users_api.get_current_user()
         mock_get.return_value = mock_user
 
-        class GroupHack(object):
+        class GroupHack():
             def __init__(self):
                 self._json = {"full_path": "destination_group_full_path"}
 
@@ -374,7 +374,7 @@ class ConfigTests(unittest.TestCase):
         mock_user.json.return_value = self.users_api.get_current_user()
         mock_get.return_value = mock_user
 
-        class GroupHack(object):
+        class GroupHack():
             def __init__(self):
                 self._json = {"full_path": "destination_group_full_path"}
 
@@ -466,7 +466,7 @@ class ConfigTests(unittest.TestCase):
         mock_user.json.return_value = {"id": None, "username": None}
         mock_get.return_value = mock_user
 
-        class GroupHack(object):
+        class GroupHack():
             def __init__(self):
                 self._json = {"full_path": "destination_group_full_path"}
 
@@ -548,7 +548,7 @@ class ConfigTests(unittest.TestCase):
             "id": 123, "username": "username"}
         mock_get_current_user.return_value = mock_user
 
-        class GroupHack(object):
+        class GroupHack():
             def __init__(self):
                 self._json = {"full_path": None}
 

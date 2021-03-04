@@ -313,7 +313,7 @@ class ConfigurationValidationTests(unittest.TestCase):
         username.return_value = "admin"
         host.return_value = "https://bitbucket.server.com"
         self.config.src_token_validated_in_session = False
-        url_value = f"https://bitbucket.server.com/rest/api/1.0/admin/permissions/users?filter=admin"
+        url_value = "https://bitbucket.server.com/rest/api/1.0/admin/permissions/users?filter=admin"
         # url.return_value = url_value
         self.config.as_obj().set("SOURCE", "source_token", obfuscate("Enter secret: "))
         # pylint: disable=no-member
@@ -335,7 +335,7 @@ class ConfigurationValidationTests(unittest.TestCase):
         username.return_value = "non-user"
         host.return_value = "https://bitbucket.server.com"
         self.config.src_token_validated_in_session = False
-        url_value = f"https://bitbucket.server.com/rest/api/1.0/admin/permissions/users?filter=non-user"
+        url_value = "https://bitbucket.server.com/rest/api/1.0/admin/permissions/users?filter=non-user"
         # url.return_value = url_value
         self.config.as_obj().set("SOURCE", "source_token", obfuscate("Enter secret: "))
         # pylint: disable=no-member

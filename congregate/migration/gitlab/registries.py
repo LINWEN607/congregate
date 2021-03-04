@@ -12,7 +12,7 @@ class RegistryClient(BaseClass):
     def __init__(self):
         self.users = UsersApi()
         self.projects_api = ProjectsApi()
-        super(RegistryClient, self).__init__()
+        super().__init__()
 
     def are_enabled(self, new_id, old_id):
         src = self.is_enabled(self.config.source_host,
@@ -30,9 +30,8 @@ class RegistryClient(BaseClass):
             reg = self.are_enabled(new_id, old_id)
             if reg[0] and reg[1]:
                 return self.migrate(old_id, name)
-            else:
-                self.log.warning(
-                    f"Container registry is disabled for project {name} on {'source' if not reg[0] else 'destination' if not reg[1] else 'source and destination'} instance")
+            self.log.warning(
+                f"Container registry is disabled for project {name} on {'source' if not reg[0] else 'destination' if not reg[1] else 'source and destination'} instance")
         except Exception as e:
             self.log.error(
                 f"Failed to migrate container registries for project {name}, with error:\n{e}")

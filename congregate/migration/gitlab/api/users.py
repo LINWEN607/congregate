@@ -4,21 +4,21 @@ from congregate.helpers import api
 
 class UsersApi():
 
-    def get_user(self, pid, host, token):
+    def get_user(self, uid, host, token):
         """
         Get a single user
 
         GitLab API Doc: https://docs.gitlab.com/ee/api/users.html#single-user
 
-            :param: pid: (int) GitLab user ID
+            :param: uid: (int) GitLab user ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
             :return: Response object containing the response to GET /users/:id
         """
-        return api.generate_get_request(host, token, f"users/{pid}")
+        return api.generate_get_request(host, token, f"users/{uid}")
 
-    def get_user_email(self, pid, host, token):
-        return self.get_user(pid, host, token).json()["email"]
+    def get_user_email(self, uid, host, token):
+        return self.get_user(uid, host, token).json()["email"]
 
     def get_current_user(self, host, token):
         """
@@ -57,23 +57,22 @@ class UsersApi():
             :return: Response object containing the response to POST /users
         """
         if not message:
-            message = "Creating new user %s with payload %s" % (
-                data["email"], str(data))
+            message = f"Creating new user {data['email']} with payload {str(data)}"
         return api.generate_post_request(host, token, "users", json.dumps(data), description=message)
 
-    def delete_user(self, host, token, id, hard_delete=False):
+    def delete_user(self, host, token, uid, hard_delete=False):
         """
         Delete a single user
 
         GitLab API Doc: https://docs.gitlab.com/ee/api/users.html#user-deletion
 
-            :param: id: (int) GitLab user ID
+            :param: uid: (int) GitLab user ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
             :param: hard_delete: (boo) Option to delete user contributions and solely owned groups
             :return: Response object containing a 204 (No Content) or 404 (Group not found) from DELETE /users/:id
         """
-        return api.generate_delete_request(host, token, "users/{0}?hard_delete={1}".format(id, hard_delete))
+        return api.generate_delete_request(host, token, "users/{0}?hard_delete={1}".format(uid, hard_delete))
 
     def search_for_user_by_email(self, host, token, email):
         """
@@ -99,9 +98,9 @@ class UsersApi():
             :param: email: (str) Email of the specific user being searched
             :yield: Generator containing JSON results from GET /users?search=:email
         """
-        return api.list_all(host, token, "users?username=%s" % username, per_page=50)
+        return api.list_all(host, token, f"users?username={username}", per_page=50)
 
-    def create_user_impersonation_token(self, host, token, id, data, message=None):
+    def create_user_impersonation_token(self, host, token, uid, data, message=None):
         """
         It creates a new impersonation token. Note that only administrators can do this.
 
@@ -109,15 +108,15 @@ class UsersApi():
 
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
-            :param: id: (int) GitLab user ID
+            :param: uid: (int) GitLab user ID
             :param: data: (dict) Object containing the necessary data for creating a user. Refer to the link above for specific examples
             :return: Response object containing the response to POST /users/:id/impersonation_tokens
         """
         if not message:
-            message = "Creating impersonation token for %d" % id
-        return api.generate_post_request(host, token, "users/%d/impersonation_tokens" % id, json.dumps(data), description=message)
+            message = f"Creating impersonation token for {uid}"
+        return api.generate_post_request(host, token, f"users/{uid}/impersonation_tokens", json.dumps(data), description=message)
 
-    def delete_user_impersonation_token(self, host, token, user_id, token_id):
+    def delete_user_impersonation_token(self, host, token, uid, token_id):
         """
         Revokes an impersonation token. Note that only administrators can do this.
 
@@ -125,13 +124,13 @@ class UsersApi():
 
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
-            :param: user_id: (int) GitLab user ID
-            :param: token: (int) GitLab user impersonation token ID
+            :param: uid: (int) GitLab user ID
+            :param: token_id: (int) GitLab user impersonation token ID
             :return: Response object containing a 202 (accepted) or 404 (Group not found) from DELETE /users/:user_id/impersonation_tokens/:impersonation_token_id
         """
-        return api.generate_delete_request(host, token, "users/%d/impersonation_tokens/%d" % (user_id, token_id))
+        return api.generate_delete_request(host, token, f"users/{uid}/impersonation_tokens/{token_id}")
 
-    def block_user(self, host, token, user_id, message=None):
+    def block_user(self, host, token, uid, message=None):
         """
         Blocks the specified user. Available only for admin.
 
@@ -139,51 +138,51 @@ class UsersApi():
 
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
-            :param: user_id: (int) GitLab user ID
+            :param: uid: (int) GitLab user ID
             :return: 201 OK / 404 User Not Found / 403 Forbidden
         """
         if not message:
-            message = "Blocking user %d" % user_id
-        return api.generate_post_request(host, token, "users/%d/block" % user_id, data=None)
+            message = f"Blocking user {uid}"
+        return api.generate_post_request(host, token, f"users/{uid}/block", data=None)
 
-    def get_all_user_contribution_events(self, id, host, token):
+    def get_all_user_contribution_events(self, uid, host, token):
         """
         Get the contribution events for the specified user
 
         GitLab API Doc: https://docs.gitlab.com/ee/api/events.html#get-user-contribution-events
 
-            :param: id: (int) GitLab user ID
+            :param: uid: (int) GitLab user ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
             :return: Generator returning JSON of each result from GET /users/:id/events
         """
-        return api.generate_get_request(host, token, "users/%d/events" % id)
+        return api.generate_get_request(host, token, f"users/{uid}/events")
 
-    def get_all_user_memberships(self, id, host, token):
+    def get_all_user_memberships(self, uid, host, token):
         """
         Lists all projects and groups a user is a member of
 
         GitLab API Doc: https://docs.gitlab.com/ee/api/users.html#user-memberships-admin-only
 
-            :param: id: (int) GitLab user ID
+            :param: uid: (int) GitLab user ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
             :return: Generator returning JSON of each result from GET /users/:id/memberships
         """
-        return api.generate_get_request(host, token, "users/%d/memberships" % id)
+        return api.generate_get_request(host, token, f"users/{uid}/memberships")
 
-    def get_user_status(self, id, host, token):
+    def get_user_status(self, uid, host, token):
         """
         Get the status of a user
 
         GitLab API Doc: https://docs.gitlab.com/ee/api/users.html#get-the-status-of-a-user
 
-            :param: id: (int) GitLab user ID
+            :param: uid: (int) GitLab user ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
             :return: Response object containing the response to GET /users/:id_or_username/status
         """
-        return api.generate_get_request(host, token, "users/%d/status" % id)
+        return api.generate_get_request(host, token, f"users/{uid}/status")
 
     def get_all_user_ssh_keys(self, uid, host, token):
         """
@@ -243,44 +242,44 @@ class UsersApi():
             message = "Creating GPG key for {}".format(uid)
         return api.generate_post_request(host, token, "users/{}/gpg_keys".format(uid), json.dumps(data), description=message)
 
-    def get_all_user_projects(self, id, host, token):
+    def get_all_user_projects(self, uid, host, token):
         """
         Get a list of visible projects owned by the given user
 
         GitLab API Doc: https://docs.gitlab.com/ee/api/projects.html#list-user-projects
 
-            :param: id: (int) GitLab user ID
+            :param: uid: (int) GitLab user ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
             :return: Response object containing the response to GET /users/:user_id/projects
         """
-        return api.generate_get_request(host, token, "users/%d/projects" % id)
+        return api.generate_get_request(host, token, f"users/{uid}/projects")
 
-    def get_all_user_emails(self, id, host, token):
+    def get_all_user_emails(self, uid, host, token):
         """
         Get a list of emails for a give user
 
         GitLab API Doc: https://docs.gitlab.com/ee/api/users.html#list-emails-for-user
 
-            :param: id: (int) GitLab user ID
+            :param: uid: (int) GitLab user ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
             :return: Response object containing the response to GET /users/:id/emails
         """
-        return api.generate_get_request(host, token, "users/%d/emails" % id)
+        return api.generate_get_request(host, token, f"users/{uid}/emails")
 
-    def get_all_user_custom_attributes(self, id, host, token):
+    def get_all_user_custom_attributes(self, uid, host, token):
         """
         Get all custom attributes on a user
 
         https://docs.gitlab.com/ee/api/custom_attributes.html#list-custom-attributes
 
-            :param: id: (int) GitLab user ID
+            :param: uid: (int) GitLab user ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /users/:id/custom_attributes
         """
-        return api.list_all(host, token, "users/%d/custom_attributes" % id)
+        return api.list_all(host, token, f"users/{uid}/custom_attributes")
 
     def get_user_counts(self, host, token):
         """
