@@ -4,6 +4,7 @@ import pytest
 import responses
 
 from requests import Response
+from congregate.helpers.configuration_validator import ConfigurationValidator
 from congregate.migration.gitlab.groups import GroupsClient
 from congregate.tests.mockapi.gitlab.groups import MockGroupsApi
 
@@ -29,8 +30,10 @@ class GroupsTests(unittest.TestCase):
         group = self.mock_groups.get_group()
         self.assertTrue(self.groups.is_group_non_empty(group))
 
+    @mock.patch.object(ConfigurationValidator, 'destination_token', new_callable=mock.PropertyMock)
     @mock.patch("congregate.helpers.api.list_all")
-    def test_is_group_non_empty_false_no_subgroups(self, mock_list_all):
+    def test_is_group_non_empty_false_no_subgroups(self, mock_list_all, mock_token):
+        mock_token.return_value = "test"
         group = self.mock_groups.get_group()
         group["projects"] = []
         mock_list_all.return_value = []
