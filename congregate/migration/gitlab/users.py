@@ -5,7 +5,7 @@ from requests.exceptions import RequestException
 
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.misc_utils import get_dry_log, json_pretty, get_timedelta, \
-    remove_dupes, rewrite_list_into_dict, read_json_file_into_object, safe_json_response
+    remove_dupes, rewrite_list_into_dict, read_json_file_into_object, safe_json_response, is_dot_com
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.users import UsersApi
 
@@ -454,10 +454,15 @@ class UsersClient(BaseClass):
             "bio",
             "bio_html",
             # SSO causes issues with the avatar URL due to the authentication
-            "avatar_url" if self.config.group_sso_provider else ""
+            "avatar_url" if self.config.group_sso_provider else "",
+            # Avoid propagating field when creating users on gitlab.com with no config value set
+            "projects_limit" if is_dot_com(
+                self.config.destination_host) and not self.config.projects_limit else ""
         ]
         for user in users:
             user["email"] = user["email"].lower()
+            if self.config.projects_limit:
+                user["projects_limit"] = self.config.projects_limit
             for key in keys_to_delete:
                 user.pop(key, None)
 

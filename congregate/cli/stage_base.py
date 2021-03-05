@@ -54,7 +54,7 @@ class BaseStageClass(BaseClass):
         if scm_source is not None:
             with open(f"{self.app_path}/data/users-{scm_source}.json", "r") as f:
                 return json.load(f)
-        else:        
+        else:
             with open("%s/data/users.json" % self.app_path, "r") as f:
                 return json.load(f)
 
@@ -68,7 +68,8 @@ class BaseStageClass(BaseClass):
         """
         with open("%s/data/staged_groups.json" % self.app_path, "w") as f:
             if self.config.wave_spreadsheet_path:
-                f.write(json.dumps(remove_dupes_with_keys(self.staged_groups, ["id", "full_path"]), indent=4))
+                f.write(json.dumps(remove_dupes_with_keys(
+                    self.staged_groups, ["id", "full_path"]), indent=4))
             else:
                 f.write(json.dumps(remove_dupes(self.staged_groups), indent=4))
         with open("%s/data/staged_projects.json" % self.app_path, "w") as f:
@@ -126,7 +127,7 @@ class BaseStageClass(BaseClass):
             obj["archived"] = project["archived"]
             obj["shared_with_groups"] = project["shared_with_groups"]
 
-        if self.config.source_type == "gitlab" or self.config.source_type == "bitbucket server":
+        if self.config.source_type in ["gitlab", "bitbucket server"]:
             # In case of projects without repos (e.g. Wiki)
             if "default_branch" in project:
                 obj["default_branch"] = project["default_branch"]
