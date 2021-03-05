@@ -539,9 +539,7 @@ class ImportExportClient(BaseClass):
                     # In case of timeout delete
                     else:
                         self.log.error(
-                            f"Time limit exceeded waiting for project {name} ({dst_namespace}) import status (deleting):\n{json_pretty(status_json)}")
-                        self.projects_api.delete_project(
-                            host, token, import_id)
+                            f"Time limit exceeded waiting for project {name} ({dst_namespace}) import status:\n{json_pretty(status_json)}")
                         return None
                 else:
                     self.log.error(
