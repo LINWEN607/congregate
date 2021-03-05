@@ -8,6 +8,7 @@ from congregate.tests.mockapi.gitlab.users import MockUsersApi
 from congregate.helpers.misc_utils import rewrite_list_into_dict
 from congregate.helpers.configuration_validator import ConfigurationValidator
 
+
 @pytest.mark.unit_test
 class CompareTests(unittest.TestCase):
     def setUp(self):
@@ -17,7 +18,11 @@ class CompareTests(unittest.TestCase):
 
     @mock.patch.object(CompareClient, "load_group_data")
     @mock.patch.object(ConfigurationValidator, 'dstn_parent_id', new_callable=mock.PropertyMock)
-    def test_compare_groups(self, parent_id, group_data):
+    @mock.patch.object(ConfigurationValidator, 'source_token', new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, 'destination_token', new_callable=mock.PropertyMock)
+    def test_compare_groups(self, dest_token, src_token, parent_id, group_data):
+        dest_token.return_value = "test"
+        src_token.return_value = "test"
         parent_id.return_value = None
         source_groups = self.groups.get_all_groups_list()
         destination_groups = self.mock_destination_ids()
@@ -59,11 +64,9 @@ class CompareTests(unittest.TestCase):
             }
         }
 
-        with mock.patch('congregate.helpers.conf.deobfuscate', lambda x: ""):
-            actual_results, actual_unknown_users = self.compare.create_group_migration_results()
+        actual_results, actual_unknown_users = self.compare.create_group_migration_results()
         self.assertEqual(actual_results, expected_results)
         self.assertEqual(actual_unknown_users, {})
-
 
     def test_generate_diff(self):
         diff_one = "ABC"
@@ -75,14 +78,12 @@ class CompareTests(unittest.TestCase):
         actual = self.compare.generate_diff(diff_one, diff_two)
         self.assertEqual(expected, actual)
 
-
     def test_generate_matching_diff(self):
         diff_one = "ABC"
         diff_two = "ABC"
         actual = self.compare.generate_diff(diff_one, diff_two)
         expected = True
         self.assertEqual(expected, actual)
-
 
     @mock.patch.object(ConfigurationValidator, 'dstn_parent_id', new_callable=mock.PropertyMock)
     def test_compare_members_different_usernames_same_ids(self, parent_id):
@@ -246,15 +247,14 @@ class CompareTests(unittest.TestCase):
 
     # pylint: disable=no-member
 
-
-
     # pylint: disable=no-member
-
 
     @responses.activate
     # pylint: enable=no-member
+    @mock.patch.object(ConfigurationValidator, 'destination_token', new_callable=mock.PropertyMock)
     @mock.patch("congregate.helpers.api.generate_v4_request_url")
-    def test_unknown_user_snapshot(self, url):
+    def test_unknown_user_snapshot(self, url, dest_token):
+        dest_token.return_value = "test"
         dummy_members = [{
             "members": [
                 self.users.get_dummy_user()
@@ -266,17 +266,15 @@ class CompareTests(unittest.TestCase):
         url.return_value = url_value
         # pylint: disable=no-member
         responses.add(responses.GET, url_value,
-                    json=self.users.get_user_404(), status=404)
+                      json=self.users.get_user_404(), status=404)
         # pylint: enable=no-member
         expected = {
             27: {
                 "message": "404 User Not Found"
             }
         }
-        with mock.patch('congregate.helpers.conf.deobfuscate', lambda x: ""):
-            actual = self.compare.generate_user_snapshot_map(dummy_members)
+        actual = self.compare.generate_user_snapshot_map(dummy_members)
         self.assertEqual(expected, actual)
-
 
     def mock_destination_ids(self):
         mock_destination = self.groups.get_all_groups_list()
@@ -284,7 +282,6 @@ class CompareTests(unittest.TestCase):
             for member in group["members"]:
                 member["id"] = member.get("id") + 10
         return mock_destination
-
 
     def mock_destination_usernames(self):
         mock_destination = self.groups.get_all_groups_list()

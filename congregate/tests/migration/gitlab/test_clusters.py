@@ -2,6 +2,7 @@ import unittest
 import pytest
 from mock import patch, PropertyMock, MagicMock
 
+from congregate.helpers.configuration_validator import ConfigurationValidator
 from congregate.migration.gitlab.clusters import ClustersClient
 from congregate.tests.mockapi.gitlab.clusters import MockClustersApi
 from congregate.tests.mockapi.gitlab.projects import MockProjectsApi
@@ -38,9 +39,9 @@ class ClustersTests(unittest.TestCase):
     @patch.object(ProjectsApi, "get_project")
     @patch.object(ProjectsClient, "find_project_by_path")
     @patch('congregate.helpers.conf.Config.source_host', new_callable=PropertyMock)
-    @patch('congregate.helpers.conf.Config.source_token', new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'source_token', new_callable=PropertyMock)
     @patch('congregate.helpers.conf.Config.destination_host', new_callable=PropertyMock)
-    @patch('congregate.helpers.conf.Config.destination_token', new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'destination_token', new_callable=PropertyMock)
     @patch('congregate.helpers.conf.Config.src_parent_id', new_callable=PropertyMock)
     @patch('congregate.helpers.configuration_validator.ConfigurationValidator.dstn_parent_id', new_callable=PropertyMock)
     def test_create_data_with_mp(self, mock_dstn_parent_id, mock_src_parent_id, mock_dstn_token, mock_dstn_host, mock_src_token, mock_src_host, mock_find_project, mock_project):

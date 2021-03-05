@@ -63,3 +63,81 @@ class MockUsersApi():
                 }
             }
         ]
+
+    def get_sys_admin_user(self):
+        return {
+            "size": 1,
+            "limit": 25,
+            "isLastPage": True,
+            "values": [
+                {
+                    "user": {
+                        "name": "admin",
+                        "emailAddress": "sysadmin@yourcompany.com",
+                        "id": 1,
+                        "displayName": "John Doe",
+                        "active": True,
+                        "slug": "admin",
+                        "type": "NORMAL",
+                        "links": {
+                            "self": [
+                                {
+                                    "href": "http://localhost:7990/users/admin"
+                                }
+                            ]
+                        }
+                    },
+                    "permission": "SYS_ADMIN"
+                }
+            ],
+            "start": 0
+        }
+
+    def get_non_sys_admin_user(self):
+        return {
+            "size": 1,
+            "limit": 25,
+            "isLastPage": True,
+            "values": [
+                {
+                    "user": {
+                        "name": "test",
+                        "emailAddress": "test@tester.com",
+                        "id": 52,
+                        "displayName": "tester",
+                        "active": True,
+                        "slug": "test",
+                        "type": "NORMAL",
+                        "links": {
+                            "self": [
+                                {
+                                    "href": "http://localhost:7990/users/test"
+                                }
+                            ]
+                        }
+                    },
+                    "permission": "ADMIN"
+                }
+            ],
+            "start": 0
+        }
+
+    def get_user_invalid(self):
+        return {
+            "size": 0,
+            "limit": 25,
+            "isLastPage": True,
+            "values": [],
+            "start": 0
+        }
+
+    def get_user_401(self):
+        return {
+            "errors": [
+                {
+                    "context": None,
+                    "message": "You are not permitted to access this resource",
+                    "exceptionName": "com.atlassian.bitbucket.AuthorisationException"
+                }
+            ]
+        }

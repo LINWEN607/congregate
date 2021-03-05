@@ -4,6 +4,7 @@ import mock
 import pytest
 import responses
 
+from congregate.helpers.configuration_validator import ConfigurationValidator
 from congregate.migration.migrate import MigrateClient
 from congregate.tests.mockapi.gitlab.users import MockUsersApi
 from congregate.tests.mockapi.gitlab.groups import MockGroupsApi
@@ -24,10 +25,14 @@ class UsersTests(unittest.TestCase):
     # pylint: disable=no-member
     @responses.activate
     # pylint: enable=no-member
+    @mock.patch.object(ConfigurationValidator, 'source_token', new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, 'destination_token', new_callable=mock.PropertyMock)
     @mock.patch("congregate.helpers.api.generate_v4_request_url")
-    def test_find_user_by_email_comparison_incorrect_user(self, url):
+    def test_find_user_by_email_comparison_incorrect_user(self, url, dest_token, src_token):
         url_value = "https://gitlabsource.com/api/v4/users/5"
         url.return_value = url_value
+        src_token.return_value = "token"
+        dest_token.return_value = "token"
         # pylint: disable=no-member
         responses.add(responses.GET, url_value,
                       json=self.mock_users.get_user_404(), status=404)
@@ -38,11 +43,15 @@ class UsersTests(unittest.TestCase):
     # pylint: disable=no-member
     @responses.activate
     # pylint: enable=no-member
+    @mock.patch.object(ConfigurationValidator, 'source_token', new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, 'destination_token', new_callable=mock.PropertyMock)
     @mock.patch("congregate.helpers.api.generate_v4_request_url")
     @mock.patch.object(UsersApi, "search_for_user_by_email")
-    def test_find_user_by_email_comparison_found_user(self, search, url):
+    def test_find_user_by_email_comparison_found_user(self, search, url, dest_token, src_token):
         url_value = "https://gitlabsource.com/api/v4/users/5"
         url.return_value = url_value
+        src_token.return_value = "token"
+        dest_token.return_value = "token"
         # pylint: disable=no-member
         responses.add(responses.GET, url_value,
                       json=self.mock_users.get_dummy_user(), status=200)
@@ -564,11 +573,15 @@ class UsersTests(unittest.TestCase):
     @mock.patch("io.TextIOBase")
     @mock.patch('builtins.open')
     @mock.patch.object(UsersApi, "get_all_users")
+    @mock.patch('congregate.helpers.conf.Config.destination_host', new_callable=mock.PropertyMock)
+    @mock.patch('congregate.helpers.conf.Config.projects_limit', new_callable=mock.PropertyMock)
     @mock.patch('congregate.helpers.conf.Config.src_parent_group_path', new_callable=mock.PropertyMock)
     @mock.patch('congregate.helpers.conf.Config.group_sso_provider', new_callable=mock.PropertyMock)
-    def test_retrieve_user_info(self, mock_sso, mock_src_parent_group_path, mock_get_all_users, mock_open, mock_file):
+    def test_retrieve_user_info(self, mock_sso, mock_src_parent_group_path, mock_limit, mock_host, mock_get_all_users, mock_open, mock_file):
         mock_sso.return_value = ""
         mock_src_parent_group_path.return_value = ""
+        mock_limit.return_value = None
+        mock_host.return_value = "https://gitlab.com"
         mock_get_all_users.return_value = self.mock_users.get_test_source_users()
         mock_open.return_value = mock_file
         expected_users = [
@@ -588,7 +601,6 @@ class UsersTests(unittest.TestCase):
                 "email": "rsmith@email.com",
                 "theme_id": None,
                 "color_scheme_id": 5,
-                "projects_limit": 10,
                 "identities": [],
                 "can_create_group": True,
                 "can_create_project": True,
@@ -616,7 +628,6 @@ class UsersTests(unittest.TestCase):
                 "email": "jdoe@email.com",
                 "theme_id": None,
                 "color_scheme_id": 5,
-                "projects_limit": 10,
                 "identities": [],
                 "can_create_group": True,
                 "can_create_project": True,
@@ -636,12 +647,16 @@ class UsersTests(unittest.TestCase):
     @mock.patch('builtins.open')
     @mock.patch.object(UsersApi, "get_user")
     @mock.patch.object(GroupsApi, "get_all_group_members")
+    @mock.patch('congregate.helpers.conf.Config.destination_host', new_callable=mock.PropertyMock)
+    @mock.patch('congregate.helpers.conf.Config.projects_limit', new_callable=mock.PropertyMock)
     @mock.patch('congregate.helpers.conf.Config.src_parent_group_path', new_callable=mock.PropertyMock)
     @mock.patch('congregate.helpers.conf.Config.src_parent_id', new_callable=mock.PropertyMock)
     @mock.patch('congregate.helpers.conf.Config.group_sso_provider', new_callable=mock.PropertyMock)
-    def test_retrieve_user_info_src_parent_group_sso(self, mock_sso, mock_src_parent_id, mock_src_parent_group_path, mock_get_all_group_members, mock_get_user, mock_open, mock_file):
+    def test_retrieve_user_info_src_parent_group_sso(self, mock_sso, mock_src_parent_id, mock_src_parent_group_path, mock_limit, mock_host, mock_get_all_group_members, mock_get_user, mock_open, mock_file):
         mock_sso.return_value = "mock_sso"
         mock_src_parent_id.return_value = 42
+        mock_limit.return_value = 100
+        mock_host.return_value = "https://gitlab.example.com"
         mock_src_parent_group_path.return_value = "mock_src_parent_group_path"
         mock_get_all_group_members.return_value = self.mock_groups.get_group_members()
         ok_get_mock = mock.MagicMock()
@@ -669,7 +684,7 @@ class UsersTests(unittest.TestCase):
                 "email": "rsmith@email.com",
                 "theme_id": None,
                 "color_scheme_id": 5,
-                "projects_limit": 10,
+                "projects_limit": 100,
                 "identities": [],
                 "can_create_group": True,
                 "can_create_project": True,
@@ -696,7 +711,7 @@ class UsersTests(unittest.TestCase):
                 "email": "jdoe@email.com",
                 "theme_id": None,
                 "color_scheme_id": 5,
-                "projects_limit": 10,
+                "projects_limit": 100,
                 "identities": [],
                 "can_create_group": True,
                 "can_create_project": True,

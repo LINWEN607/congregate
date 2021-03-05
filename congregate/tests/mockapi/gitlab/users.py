@@ -43,7 +43,22 @@ class MockUsersApi():
             "username": "root",
             "name": "John Smith",
             "state": "active",
+            "avatar_url": "http://localhost:3000/uploads/user/avatar/1/cd8.jpeg"
+        }
+
+    def get_admin_user(self):
+        return {
+            "id": 1,
+            "username": "root",
+            "name": "John Smith",
+            "state": "active",
             "avatar_url": "http://localhost:3000/uploads/user/avatar/1/cd8.jpeg",
+            "is_admin": True
+        }
+
+    def get_user_401(self):
+        return {
+            "message": "401 Unauthorized"
         }
 
     def get_user_400(self):

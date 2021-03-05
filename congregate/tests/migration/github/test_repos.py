@@ -7,6 +7,7 @@ import warnings
 with warnings.catch_warnings():
     warnings.simplefilter("ignore")
     import mongomock
+from congregate.helpers.configuration_validator import ConfigurationValidator
 from congregate.helpers.mdbc import MongoConnector
 from congregate.tests.mockapi.github.repos import MockReposApi
 from congregate.tests.mockapi.github.headers import MockHeaders
@@ -533,16 +534,22 @@ class ReposTests(unittest.TestCase):
 
         self.assertListEqual(expected, actual)
 
+    @patch('congregate.helpers.conf.Config.src_parent_group_path', new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'destination_token', new_callable=PropertyMock)
     @patch.object(ProjectsApi, "archive_project")
     @patch.object(ReposApi, "get_repo")
-    def test_migrate_archived_repo_true(self, mock_get_repo, mock_archive):
+    def test_migrate_archived_repo_true(self, mock_get_repo, mock_archive, mock_token, mock_host):
+        mock_token.return_value = "test"
+        mock_host.return_value = "host"
+
         mock_repo = MagicMock()
         type(mock_repo).status_code = PropertyMock(return_value=200)
         mock_repo.json.return_value = self.mock_repos.get_repo()[0]
         mock_get_repo.return_value = mock_repo
 
-        mock_archive = MagicMock()
-        type(mock_archive).status_code = PropertyMock(return_value=200)
+        archive_repo = MagicMock()
+        type(archive_repo).status_code = PropertyMock(return_value=200)
+        mock_archive.return_value = archive_repo
 
         repo = {
             "namespace": "test",

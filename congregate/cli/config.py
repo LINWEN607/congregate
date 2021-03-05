@@ -3,6 +3,7 @@ from configparser import ConfigParser, NoOptionError
 
 import json
 import requests
+import sys
 
 from docker import from_env
 from docker.errors import APIError, TLSParameterError
@@ -39,8 +40,8 @@ def generate_config():
                input("Destination instance Host: "))
     config.set("DESTINATION", "dstn_access_token",
                obfuscate("Destination instance GitLab access token (Settings -> Access Tokens): "))
-    migration_user = users.get_current_user(config.get("DESTINATION", "dstn_hostname"),
-                                            deobfuscate(config.get("DESTINATION", "dstn_access_token")))
+    migration_user = safe_json_response(users.get_current_user(config.get("DESTINATION", "dstn_hostname"),
+                                                               deobfuscate(config.get("DESTINATION", "dstn_access_token"))))
     if migration_user.get("id", None):
         config.set("DESTINATION", "import_user_id", str(migration_user["id"]))
     else:
@@ -120,7 +121,7 @@ def generate_config():
             config.set("SOURCE", "src_type", "GitHub")
         else:
             print("Source type {} is currently not supported".format(src))
-            exit()
+            sys.exit()
         config.set("SOURCE", "src_hostname", input(
             "Source instance ({}) URL: ".format(config.get("SOURCE", "src_type"))))
         config.set("SOURCE", "src_access_token", obfuscate(
@@ -282,7 +283,8 @@ def generate_config():
                        f"[{wave_columns_to_include}]")
             # This will just put in the default mapping. Will require manual intervention
             # for further customization
-            d = {x.strip():x.strip() for x in wave_columns_to_include.split(",")}
+            d = {x.strip(): x.strip()
+                 for x in wave_columns_to_include.split(",")}
             config.set(
                 "APP",
                 "wave_spreadsheet_column_mapping",
@@ -331,11 +333,11 @@ def test_registries(token, registry, user):
     except (APIError, TLSParameterError) as err:
         print("Failed to login to docker registry {0}, with error:\n{1}".format(
             registry, err))
-        exit()
+        sys.exit()
     except Exception as e:
         print("Login attempt to docker registry {0} failed, with error:\n{1}".format(
             registry, e))
-        exit()
+        sys.exit()
 
 
 def test_slack(url):
@@ -348,7 +350,7 @@ def test_slack(url):
             raise Exception(resp)
     except Exception as em:
         print("EXCEPTION: " + str(em))
-        exit()
+        sys.exit()
 
 
 def get_sso_provider_pattern():

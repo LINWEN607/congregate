@@ -49,7 +49,7 @@ class GitHubApi():
             "Accept": "application/vnd.github.v3+json"
         }
         return header
-    
+
     def generate_v3_basic_auth(self, username, password):
         """
         Generate the basic auth parameter for a v3 request
@@ -110,7 +110,7 @@ class GitHubApi():
         return requests.get(url, params=params, headers=headers, verify=self.config.ssl_verify, auth=auth)
 
     @stable_retry
-    def generate_v3_basic_auth_post_request(self, host, api, username, password, data, header=None, description = None):
+    def generate_v3_basic_auth_post_request(self, host, api, username, password, data, header=None, description=None):
         """
         Generates POST request to GitHub API for a Basic AUTH request
         """

@@ -450,3 +450,10 @@ class Config(object):
         Defaults to empty list
         """
         return self.prop_list("DESTINATION", "users_to_ignore", default=[])
+
+    @property
+    def projects_limit(self):
+        """
+        Max number of personal projects a GitLab user can create. Value may be enforced on instance level
+        """
+        return self.prop_int("USER", "projects_limit")

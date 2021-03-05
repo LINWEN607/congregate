@@ -510,3 +510,26 @@ class StageWaveTests(unittest.TestCase):
         actual = self.wcli.sanitize_project_path(url)
 
         self.assertEqual(expected, actual)
+
+    def test_find_group(self):
+        self.wcli.group_paths = {
+            "test-group": {
+                "path": "test-group"
+            }
+        }
+        expected = {
+            "path": "test-group"
+        }
+        actual = self.wcli.find_group("http://github.test.com/test-group")
+
+        self.assertEqual(expected, actual)
+    
+    def test_find_group_invalid(self):
+        self.wcli.group_paths = {
+            "test-group": {
+                "path": "test-group"
+            }
+        }
+        actual = self.wcli.find_group("http://github.test.com/test-group/test-group")
+
+        self.assertIsNone(actual)

@@ -204,4 +204,12 @@
 ###! **HIDDEN PROPERTIES**
 
 ### Used only by "map-users" command
+# user_map_csv =
+
 ### Used only by disabled migration mode "filesystem-aws"
+# allow_presigned_url = False
+
+# lower_case_group_path = False
+# lower_case_project_path = False
+# users_to_ignore = []
+# projects_limit =

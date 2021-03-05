@@ -53,7 +53,10 @@ class ConfigTests(unittest.TestCase):
 
         g = input_generator(values)
 
-        mock_get.return_value = self.users_api.get_current_user()
+        mock_user = MagicMock()
+        type(mock_user).status_code = PropertyMock(return_value=200)
+        mock_user.json.return_value = self.users_api.get_current_user()
+        mock_get.return_value = mock_user
         with patch('congregate.cli.config.write_to_file', mock_file):
             with patch('congregate.cli.config.app_path', "."):
                 with patch('congregate.cli.config.obfuscate', lambda x: "dGVzdA=="):
@@ -110,7 +113,10 @@ class ConfigTests(unittest.TestCase):
 
         g = input_generator(values)
 
-        mock_get.return_value = self.users_api.get_current_user()
+        mock_user = MagicMock()
+        type(mock_user).status_code = PropertyMock(return_value=200)
+        mock_user.json.return_value = self.users_api.get_current_user()
+        mock_get.return_value = mock_user
         with patch('congregate.cli.config.write_to_file', mock_file):
             with patch('congregate.cli.config.app_path', "."):
                 with patch('congregate.cli.config.obfuscate', lambda x: "dGVzdA=="):
@@ -179,10 +185,13 @@ class ConfigTests(unittest.TestCase):
         mock_lic.json.return_value = {"plan": "ultimate"}
         mock_get_license.return_value = mock_lic
 
-        mock_get_current_user.return_value = {
+        mock_user = MagicMock()
+        type(mock_user).status_code = PropertyMock(return_value=200)
+        mock_user.json.return_value = {
             "id": 123, "username": "username"}
+        mock_get_current_user.return_value = mock_user
 
-        class GroupHack(object):
+        class GroupHack():
             def __init__(self):
                 self._json = {"full_path": "source_group_full_path"}
 
@@ -267,9 +276,12 @@ class ConfigTests(unittest.TestCase):
         mock_lic.json.return_value = {"plan": "ultimate"}
         mock_get_license.return_value = mock_lic
 
-        mock_get.return_value = self.users_api.get_current_user()
+        mock_user = MagicMock()
+        type(mock_user).status_code = PropertyMock(return_value=200)
+        mock_user.json.return_value = self.users_api.get_current_user()
+        mock_get.return_value = mock_user
 
-        class GroupHack(object):
+        class GroupHack():
             def __init__(self):
                 self._json = {"full_path": "destination_group_full_path"}
 
@@ -357,9 +369,12 @@ class ConfigTests(unittest.TestCase):
         mock_lic.json.return_value = {"plan": "ultimate"}
         mock_get_license.return_value = mock_lic
 
-        mock_get.return_value = self.users_api.get_current_user()
+        mock_user = MagicMock()
+        type(mock_user).status_code = PropertyMock(return_value=200)
+        mock_user.json.return_value = self.users_api.get_current_user()
+        mock_get.return_value = mock_user
 
-        class GroupHack(object):
+        class GroupHack():
             def __init__(self):
                 self._json = {"full_path": "destination_group_full_path"}
 
@@ -446,9 +461,12 @@ class ConfigTests(unittest.TestCase):
         mock_lic.json.return_value = {"plan": "ultimate"}
         mock_get_license.return_value = mock_lic
 
-        mock_get.return_value = {"id": None, "username": None}
+        mock_user = MagicMock()
+        type(mock_user).status_code = PropertyMock(return_value=200)
+        mock_user.json.return_value = {"id": None, "username": None}
+        mock_get.return_value = mock_user
 
-        class GroupHack(object):
+        class GroupHack():
             def __init__(self):
                 self._json = {"full_path": "destination_group_full_path"}
 
@@ -524,10 +542,13 @@ class ConfigTests(unittest.TestCase):
         mock_lic.json.return_value = {"plan": "ultimate"}
         mock_get_license.return_value = mock_lic
 
-        mock_get_current_user.return_value = {
+        mock_user = MagicMock()
+        type(mock_user).status_code = PropertyMock(return_value=200)
+        mock_user.json.return_value = {
             "id": 123, "username": "username"}
+        mock_get_current_user.return_value = mock_user
 
-        class GroupHack(object):
+        class GroupHack():
             def __init__(self):
                 self._json = {"full_path": None}
 
