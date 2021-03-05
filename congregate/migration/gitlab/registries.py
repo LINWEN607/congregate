@@ -22,8 +22,9 @@ class RegistryClient(BaseClass):
         return (src, dest)
 
     def is_enabled(self, host, token, pid):
-        project = self.projects_api.get_project(pid, host, token).json()
-        return project.get("container_registry_enabled", False)
+        project = safe_json_response(
+            self.projects_api.get_project(pid, host, token))
+        return project.get("container_registry_enabled", False) if project else False
 
     def migrate_registries(self, old_id, new_id, name):
         try:
