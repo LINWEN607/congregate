@@ -6,10 +6,11 @@ Usage:
     congregate init
     congregate list [--processes=<n>] [--partial] [--skip-users] [--skip-groups] [--skip-projects] [--skip-ci] [--src-instances]
     congregate configure
-    congregate stage-projects <projects>... [--skip-users] [--commit] [--scm-source=hostanme]
-    congregate stage-groups <groups>... [--skip-users] [--commit] [--scm-source=hostanme]
-    congregate stage-wave <wave> [--commit] [--scm-source=hostanme]
-    congregate migrate [--processes=<n>] [--skip-users] [--skip-adding-members] [--skip-group-export] [--skip-group-import] [--skip-project-export] [--skip-project-import] [--only-post-migration-info] [--subgroups-only] [--scm-source=hostanme] [--commit] 
+    congregate generate-reporting
+    congregate stage-projects <projects>... [--skip-users] [--commit] [--scm-source=hostname]
+    congregate stage-groups <groups>... [--skip-users] [--commit] [--scm-source=hostname]
+    congregate stage-wave <wave> [--commit] [--scm-source=hostname]
+    congregate migrate [--processes=<n>] [--reporting] [--skip-users] [--skip-adding-members] [--skip-group-export] [--skip-group-import] [--skip-project-export] [--skip-project-import] [--only-post-migration-info] [--subgroups-only] [--scm-source=hostname] [--commit] 
     congregate rollback [--hard-delete] [--skip-users] [--skip-groups] [--skip-projects] [--commit]
     congregate ui
     congregate do-all [--commit]
@@ -45,7 +46,7 @@ Usage:
     congregate validate-staged-groups-schema
     congregate validate-staged-projects-schema
     congregate map-users [--commit]
-    congregate generate-diff [--processes=<n>] [--staged] [--rollback] [--scm-source=hostanme]
+    congregate generate-diff [--processes=<n>] [--staged] [--rollback] [--scm-source=hostname]
     congregate clean [--commit]
     congregate stitch-results [--result-type=<project|group|user>] [--no-of-files=<n>] [--head|--tail]
     congregate obfuscate
@@ -90,11 +91,13 @@ Arguments:
     off                                     Toggle maintenance mode off, otherwise on by default
     dest                                    Toggle maintenance mode on destination instance
     msg                                     Maintenance mode message, with "+" in place of " "
+    reporting                               Create reporting issues, based off reporting data supplied in congregate.conf
 
 Commands:
     list                                    List all projects of a source instance and save it to {CONGREGATE_PATH}/data/projects.json.
     init                                    Creates additional directories and files required by congregate
     configure                               Configure congregate for migrating between two instances and save it to {CONGREGATE_PATH}/data/congregate.conf.
+    generate-reporting                                  Run reporting on staged projects.
     stage-projects                          Stage projects to {CONGREGATE_PATH}/data/staged_projects.json,
                                                 their parent groups to {CONGREGATE_PATH}/data/staged_groups.json.
                                                 all project and group members to {CONGREGATE_PATH}/data/staged_users.json,
@@ -266,6 +269,9 @@ def main():
                     src_instances=SRC_INSTANCES
                 )
                 add_post_migration_stats(start, log=log)
+
+            if arguments["generate-reporting"] or arguments["--reporting"]:
+                pass
 
             if arguments["stage-projects"]:
                 pcli = ProjectStageCLI()

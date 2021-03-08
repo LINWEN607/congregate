@@ -797,8 +797,7 @@ class ProjectsApi():
             :yield: Generator returning JSON of each result from POST /projects/:id/approval_rules
         """
         if not message:
-            message = "Creating project level merge request approval rule with payloda %s" % str(
-                data)
+            message = f"Creating project level merge request approval rule with payload {data}"
         return api.generate_post_request(host, token, f"projects/{pid}/approval_rules", json.dumps(data), description=message)
 
     def get_all_project_registry_repositories(self, pid, host, token):

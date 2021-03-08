@@ -334,6 +334,7 @@ class MigrateClient(BaseClass):
         else:
             gh_host = self.config.source_host
             gh_token = self.config.source_token
+            self.gh_repos = ReposClient(gh_host, gh_token)
 
         return gh_host, gh_token
 

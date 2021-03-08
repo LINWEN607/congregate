@@ -82,10 +82,10 @@ After cloning [the repo](https://gitlab.com/gitlab-com/customer-success/tools/co
 
 #### Congratulations
 
-If we made it this far without errors, we are done with the basic install for development! The next command will run the UT and verify your installation is working.
+If we made it this far without errors, we are done with the basic install for development! The next bash command will run the UT and verify your installation is working.  This command could be pulled from the [.gitlab-ci.yml](.gitlab-ci.yml) or the `pt` alias in [./dev/bin/env](dev/bin/env).
 
 ```bash
-poetry run pytest -m "not e2e and not e2e_setup and not e2e_setup_2" --cov-config=.coveragerc --cov=congregate congregate/tests/
+poetry run pytest -m 'unit_test' --cov-report html --cov-config=.coveragerc --cov=congregate congregate/tests/
 ```
 
 Success looks like;

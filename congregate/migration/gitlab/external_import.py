@@ -6,7 +6,6 @@ from congregate.migration.gitlab.api.external_import import ImportApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.instance import InstanceApi
 
-
 class ImportClient(BaseClass):
     def __init__(self):
         super(ImportClient, self).__init__()
@@ -61,6 +60,7 @@ class ImportClient(BaseClass):
             :return: (dict) Project and its response code
 
         '''
+        
         if target_namespace := get_target_namespace(project):
             tn = target_namespace
         else:
@@ -74,13 +74,8 @@ class ImportClient(BaseClass):
 
         # TODO: This condition needs to be moved to the __init__ function of this class
         # and properly handle non standard GitLab versions like RCs
-        #
-        # dest_version = safe_json_response(self.instance.get_version(
-        #     self.config.destination_host, self.config.destination_token))
-        # if dest_version and version.parse(dest_version["version"]) >= version.parse("13.6"):
-        #     data["github_hostname"] = host
-        if not is_github_dot_com:
-            data["github_hostname"] = host
+
+        data["github_hostname"] = host
         if not dry_run:
             try:
                 resp = self.ext_import.import_from_github(
