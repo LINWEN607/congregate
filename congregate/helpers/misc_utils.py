@@ -52,6 +52,7 @@ def remove_dupes_but_take_higher_access(my_list):
         if already_found.get(obj_id):
             if already_found[obj_id]["access_level"] < d["access_level"]:
                 c = deepcopy(d)
+                c["index"] = already_found[obj_id]["index"]
                 new_list[already_found[obj_id]["index"]] = c
                 already_found[obj_id] = c
         else:

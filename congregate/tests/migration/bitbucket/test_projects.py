@@ -169,7 +169,8 @@ class ProjectsTests(unittest.TestCase):
                         "name": "user2",
                         "email": "user2@example.com",
                         "state": "active",
-                        "access_level": 30
+                        "access_level": 30,
+                        "index": 0
                     },
                     {
                         "id": 2,

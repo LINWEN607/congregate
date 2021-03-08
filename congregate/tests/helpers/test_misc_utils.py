@@ -62,11 +62,13 @@ class MiscUtilsTests(unittest.TestCase):
         expected = [
             {
                 "id": 1,
-                "access_level": 50
+                "access_level": 50,
+                "index": 0
             },
             {
                 "id": 2,
-                "access_level": 40
+                "access_level": 40,
+                "index": 1
             },
             {
                 "id": 3,
