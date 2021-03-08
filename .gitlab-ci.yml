@@ -158,6 +158,7 @@ build jenkins seed image:
         - spin_up_test_vm.sh
         - package.json
         - pylint*.sh
+        - .pylintrc
 
 test:pylint:
   extends: .test-job
