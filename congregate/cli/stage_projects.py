@@ -39,7 +39,8 @@ class ProjectStageCLI(BaseStageClass):
         if scm_source is not None:
             i = self.the_number_of_instance(scm_source)
         if i == -1:
-            self.log.warning(f"Couldn't find the correct GH instance with hostname: {scm_source}")
+            self.log.warning(
+                f"Couldn't find the correct GH instance with hostname: {scm_source}")
         # Loading projects information
         projects = self.open_projects_file(scm_source)
         groups = self.open_groups_file(scm_source)
@@ -82,16 +83,19 @@ class ProjectStageCLI(BaseStageClass):
                         start, end), dry_run=dry_run)
             # Random selection
             else:
-                for i, _ in enumerate(projects_to_stage):
+                for i, d in enumerate(projects_to_stage):
                     # Hacky check for id or project name by explicitly checking
                     # variable type
                     try:
                         # Retrieve group object from groups.json
                         project = self.rewritten_projects[int(
                             re.sub("[^0-9]", "", projects_to_stage[i]))]
-                    except (ValueError, KeyError):
-                        self.log.error("Please use a space delimited list of integers (project IDs):\n{}".format(
-                            projects_to_stage))
+                    except ValueError:
+                        self.log.error(
+                            f"Please use a space delimited list of integers (project IDs), NOT {d}")
+                        sys.exit()
+                    except KeyError:
+                        self.log.error(f"Unknown project ID {d}")
                         sys.exit()
                     self.append_data(
                         project, projects_to_stage, dry_run=dry_run)
@@ -107,7 +111,8 @@ class ProjectStageCLI(BaseStageClass):
             self.append_member_to_members_list([], member, dry_run)
 
         if obj["project_type"] == "group":
-            group_to_stage = self.rewritten_groups.get(dig(project, 'namespace', 'id'))
+            group_to_stage = self.rewritten_groups.get(
+                dig(project, 'namespace', 'id'))
             if group_to_stage:
                 self.log.info("{0}Staging group {1} (ID: {2})".format(get_dry_log(
                     dry_run), group_to_stage["full_path"], group_to_stage["id"]))
@@ -118,7 +123,8 @@ class ProjectStageCLI(BaseStageClass):
                 for member in group_to_stage["members"]:
                     self.append_member_to_members_list([], member, dry_run)
             else:
-                self.log.warning(f"Unable to stage group of {project.get('path_with_namespace')}")
+                self.log.warning(
+                    f"Unable to stage group of {project.get('path_with_namespace')}")
 
         self.log.info("{0}Staging project {1} (ID: {2}) [{3}/{4}]".format(get_dry_log(
             dry_run), obj["path_with_namespace"], obj["id"], len(self.staged_projects) + 1, len(p_range) if p_range else len(projects_to_stage)))

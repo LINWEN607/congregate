@@ -34,9 +34,10 @@ class GroupStageCLI(BaseStageClass):
         """
         i = 0
         if scm_source is not None:
-            i = self.the_number_of_instance(scm_source) 
+            i = self.the_number_of_instance(scm_source)
         if i == -1:
-            self.log.warning(f"Couldn't find the correct GH instance with hostname: {scm_source}")    
+            self.log.warning(
+                f"Couldn't find the correct GH instance with hostname: {scm_source}")
         # Loading projects information
         groups = self.open_groups_file(scm_source)
         projects = self.open_projects_file(scm_source)
@@ -79,16 +80,19 @@ class GroupStageCLI(BaseStageClass):
                         start, end), dry_run=dry_run)
             # Random selection
             else:
-                for i, _ in enumerate(groups_to_stage):
+                for i, d in enumerate(groups_to_stage):
                     # Hacky check for id or project name by explicitly checking
                     # variable type
                     try:
                         # Retrieve group object from groups.json
                         group = self.rewritten_groups[int(
                             re.sub("[^0-9]", "", groups_to_stage[i]))]
-                    except (ValueError, KeyError) as e:
+                    except ValueError:
                         self.log.error(
-                            f"Please use a space delimited list of integers (group IDs):\n{groups_to_stage}\n{e}")
+                            f"Please use a space delimited list of integers (group IDs), NOT {d}")
+                        sys.exit()
+                    except KeyError:
+                        self.log.error(f"Unknown group ID {d}")
                         sys.exit()
                     self.append_data(group, groups_to_stage, dry_run=dry_run)
         else:
@@ -116,4 +120,3 @@ class GroupStageCLI(BaseStageClass):
         # Append all group members to staged users
         for member in group["members"]:
             self.append_member_to_members_list([], member, dry_run)
-
