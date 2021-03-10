@@ -34,6 +34,7 @@ class JenkinsClient(BaseClass):
         """
         Takes a Jenkins Parameter and returns it in GitLab format.
         Will only work for standard parameters.
+
         Accepts parameter provided as:
         {
             "name": "Jenkins Parameter",
