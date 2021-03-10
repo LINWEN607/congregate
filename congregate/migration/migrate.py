@@ -119,7 +119,8 @@ class MigrateClient(BaseClass):
                 "results/dry_run_user_migration.json",
                 "results/dry_run_group_migration.json",
                 "results/dry_run_project_migration.json"])
-        clean_data(dry_run=False, files=["results/import_failed_relations.json"])
+        clean_data(dry_run=False, files=[
+                   "results/import_failed_relations.json"])
         rotate_logs()
 
         if self.config.source_type == "gitlab":
@@ -250,7 +251,8 @@ class MigrateClient(BaseClass):
             ):
                 report.handle_creating_issues(staged_projects, import_results)
             else:
-                self.log.warning("REPORTING: Failed to instantiate the reporting module")
+                self.log.warning(
+                    "REPORTING: Failed to instantiate the reporting module")
 
     def migrate_github_group(self, group):
         result = False
@@ -298,11 +300,13 @@ class MigrateClient(BaseClass):
         path_with_namespace = f"{project.get('target_namespace', '')}/{project.get('path_with_namespace', '')}"
         # TODO: Make this target namespace lookup requirement configurable
         if self.groups.find_group_id_by_path(self.config.destination_host,
-            self.config.destination_token, get_target_namespace(project)):
+                                             self.config.destination_token, get_target_namespace(project)):
             if dst_pid := self.projects.find_project_by_path(
-                        self.config.destination_host, self.config.destination_token, path_with_namespace):
-                self.log.info(f"Repo {path_with_namespace} has already been imported. Skipping import")
-                result = self.ext_import.get_result_data(project, {"id": dst_pid})
+                    self.config.destination_host, self.config.destination_token, path_with_namespace):
+                self.log.info(
+                    f"Repo {path_with_namespace} has already been imported. Skipping import")
+                result = self.ext_import.get_result_data(
+                    project, {"id": dst_pid})
             else:
                 result = self.ext_import.trigger_import_from_ghe(
                     project, gh_host, gh_token, dry_run=self.dry_run)
@@ -310,15 +314,18 @@ class MigrateClient(BaseClass):
                     result_response = result[project["path_with_namespace"]]["response"]
                     if (isinstance(result_response, dict)) and (project_id := result_response.get("id", None)):
                         full_path = result_response.get("full_path").strip("/")
-                        success = self.ext_import.wait_for_project_to_import(full_path)
+                        success = self.ext_import.wait_for_project_to_import(
+                            full_path)
                         if success:
-                            result = self.handle_gh_post_migration(result, project, project_id, members)
+                            result = self.handle_gh_post_migration(
+                                result, project, project_id, members)
                         else:
                             result = self.ext_import.get_failed_result(project, data={
                                 "error": "Import time limit exceeded. Unable to execute post migration phase"
                             })
         else:
-            self.log.info(f"Target namespace does not exist for {project['path_with_namespace']}. Skipping import.")
+            self.log.info(
+                f"Target namespace does not exist for {project['path_with_namespace']}. Skipping import.")
             result = self.ext_import.get_result_data(project, {
                 "error": f"Target namespace {project.get('target_namespace', '')} does not exist. Skipping import"
             })
@@ -349,7 +356,7 @@ class MigrateClient(BaseClass):
 
         # Migrate any external CI data
         self.handle_ext_ci_src_migration(result, project, project_id)
-        
+
         self.projects.remove_import_user(project_id)
         # Added a new file in the repo
         result[project["path_with_namespace"]]["is_gh_pages"] = self.add_pipeline_for_github_pages(
@@ -369,10 +376,10 @@ class MigrateClient(BaseClass):
             project_id, project)
         # Remove members if skip_adding_members is True
         result[project["path_with_namespace"]
-            ]["members"]["email"] = self.handle_member_retention(members, project_id)
+               ]["members"]["email"] = self.handle_member_retention(members, project_id)
 
         return result
-    
+
     def handle_ext_ci_src_migration(self, result, project, project_id):
         if jenkins_configs := self.config.list_ci_source_config("jenkins_ci_source"):
             for jc in jenkins_configs:
@@ -416,7 +423,7 @@ class MigrateClient(BaseClass):
                     self.migrate_teamcity_build_config(
                         project, project_id, tc_client)
                 )
-        
+
     def handle_member_retention(self, members, pid):
         status = "retained"
         if self.skip_adding_members:
@@ -1076,7 +1083,7 @@ class MigrateClient(BaseClass):
     def migrate_jenkins_config_xml(self, project, project_id, jenkins_client):
         '''
         In order to maintain configuration from old Jenkins instance,
-        we save a copy of a Jenkin's job config.xml file and commit it to the associated repoistory.
+        we save a copy of a Jenkins job config.xml file and commit it to the associated repository.
         '''
         if (ci_sources := project.get("ci_sources", None)):
             is_result = False
@@ -1122,9 +1129,11 @@ class MigrateClient(BaseClass):
                             ):
                                 result = False
                     else:
-                        self.log.warning(f"Job: {job} had no param properties present")
+                        self.log.warning(
+                            f"Job: {job} had no param properties present")
                 except AttributeError as e:
-                    self.log.error(f"Attribute Error Caught for Job:{job} Params:{params} with error:{e}")
+                    self.log.error(
+                        f"Attribute Error Caught for Job:{job} Params:{params} with error:{e}")
             return result
         return None
 
@@ -1323,12 +1332,14 @@ class MigrateClient(BaseClass):
     def toggle_maintenance_mode(self, off=False, msg=None, dest=False):
         host = self.config.destination_host if dest else self.config.source_host
         if is_dot_com(host):
-            self.log.warning(f"Not allowed to toggle maintenance mode on {host}")
+            self.log.warning(
+                f"Not allowed to toggle maintenance mode on {host}")
         else:
             data = {
                 "maintenance_mode": not off}
             if not off and msg:
                 data["maintenance_mode_message"] = msg.replace("+", " ")
             token = self.config.destination_token if dest else self.config.source_token
-            self.log.warning(f"Turning maintenance mode {'OFF' if off else 'ON'} for {'destination' if dest else 'source'} instance")
+            self.log.warning(
+                f"Turning maintenance mode {'OFF' if off else 'ON'} for {'destination' if dest else 'source'} instance")
             self.instance_api.change_application_settings(host, token, data)

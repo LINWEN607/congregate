@@ -227,6 +227,13 @@ If a project or group import continues to fail (2 retries max), you'll need to c
     * [ ] If only sub-groups are staged make sure to add `--subgroups-only`
     * **NOTE:** `--only-post-migration-info` will implicitly skip group and project exports, but not imports and user creation
 
+#### Alternative Export/Import methods
+
+* [Export/Import project via Rails console](https://docs.gitlab.com/ee/administration/troubleshooting/gitlab_rails_cheat_sheet.html#imports--exports)
+  * [Import project via Rails console](https://docs.gitlab.com/ee/development/import_project.html#importing-via-the-rails-console)
+  * [Export project repo via  Rails console](https://docs.gitlab.com/ee/administration/troubleshooting/gitlab_rails_cheat_sheet.html#export-a-repository)
+* [Import project via Rake task](https://docs.gitlab.com/ee/development/import_project.html#importing-via-a-rake-task)
+
 #### Fallback if no container registry migrate
 
 In the event container registries fail to migrate, there is a bash script built in to the container you can use as a backup.

@@ -190,6 +190,13 @@ For each migration attempt check if any project or group imports failed or have 
   * `data/results/import_failed_relations.json`
   * `data/waves/wave_<insert_wave_number>/wave<insert-wave-here>.log`
 
+#### Alternative Export/Import methods
+
+* [Export/Import project via Rails console](https://docs.gitlab.com/ee/administration/troubleshooting/gitlab_rails_cheat_sheet.html#imports--exports)
+  * [Import project via Rails console](https://docs.gitlab.com/ee/development/import_project.html#importing-via-the-rails-console)
+  * [Export project repo via  Rails console](https://docs.gitlab.com/ee/administration/troubleshooting/gitlab_rails_cheat_sheet.html#export-a-repository)
+* [Import project via Rake task](https://docs.gitlab.com/ee/development/import_project.html#importing-via-a-rake-task)
+
 #### Fallback if no container registry migrate
 
 In the event container registries fail to migrate, there is a bash script built in to the container you can use as a backup.

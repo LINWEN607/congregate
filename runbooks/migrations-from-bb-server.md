@@ -177,6 +177,12 @@ For each migration attempt check if any project or group imports failed or have 
   * `data/logs/audit.log`
   * `data/waves/wave_<insert_wave_number>/wave<insert-wave-here>.log`
 
+#### Alternative Import methods
+
+* [Export/Import project via Rails console](https://docs.gitlab.com/ee/administration/troubleshooting/gitlab_rails_cheat_sheet.html#imports--exports)
+  * [Import project via Rails console](https://docs.gitlab.com/ee/development/import_project.html#importing-via-the-rails-console)
+* [Import project via Rake task](https://docs.gitlab.com/ee/development/import_project.html#importing-via-a-rake-task)
+
 <!-- TO DO: No diff reports exist for BB server at this time
 
 ### Post Migration

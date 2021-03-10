@@ -1,12 +1,10 @@
 # GitHub Development in Congregate
 
-## Setting up a GitHub Enterprise Server instance
-
-### Installing GHE Server on Azure
+## Installing GHE Server on Azure
 
 The current test instance is installed on Azure by following the [official docs](https://docs.github.com/en/enterprise/2.21/admin/installation/installing-github-enterprise-server-on-azure).
 
-#### Site admin dashboard
+### Site admin dashboard
 
 Once GitHub Enterprise Server is up and running, you can configure the appliance to suit your needs.
 
@@ -17,7 +15,7 @@ Use the site admin dashboard to configure, among others:
 - Repositories (archiving/unarchiving, LFS, etc.)
 - Users (dormant/suspended, site admins, etc.)
 
-##### Managing your GitHub Enterprise license
+#### Managing your GitHub Enterprise license
 
 The installation comes with a 45-day trial license with no seat restrictions.
 
@@ -25,13 +23,13 @@ Once that period expires a license is needed to unlock the application via web b
 
 For more details on how to purchase/renew your license see [here](https://docs.github.com/en/enterprise/2.21/admin/overview/managing-your-github-enterprise-license).
 
-##### Configuring your enterprise
+#### Configuring your enterprise
 
 To make sure you are authenticated, as a site admin or regular user, access the management console. For details see [here](https://docs.github.com/en/enterprise/2.21/admin/configuration/accessing-the-management-console).
 
 For configurating the rate limits see [here](https://docs.github.com/en/enterprise/2.21/admin/configuration/configuring-rate-limits) for more details.
 
-##### Users and access permissions
+#### Users and access permissions
 
 GitHub Enterprise Server provides 3 types of accounts:
 
@@ -41,7 +39,7 @@ GitHub Enterprise Server provides 3 types of accounts:
 
 For more datils see [here](https://docs.github.com/en/enterprise/2.21/user/github/getting-started-with-github/access-permissions-on-github).
 
-##### Authentication
+#### Authentication
 
 GitHub Enterprise Server provides 4 authentication methods:
 
