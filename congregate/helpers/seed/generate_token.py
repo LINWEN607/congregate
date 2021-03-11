@@ -111,6 +111,9 @@ class token_generator():
         data.update(csrf)
         r = requests.post(self.__get_pat_route(), data=data, cookies=cookies)
         self.log.debug(f"Status code for {self.__get_pat_route()}: {r.status_code}")
+        if r.status_code != 200:
+            r = requests.post(urljoin(self.endpoint, "/profile/personal_access_tokens"), data=data, cookies=cookies)
+            self.log.debug(f"Status code for {self.__get_pat_route()}: {r.status_code}")
         soup = BeautifulSoup(r.text, "lxml")
         token = soup.find(
             'input', id='created-personal-access-token').get('value')
