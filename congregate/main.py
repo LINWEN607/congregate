@@ -294,9 +294,11 @@ def main():
                     dry_run=DRY_RUN,
                     skip_users=SKIP_USERS,
                     skip_adding_members=SKIP_ADDING_MEMBERS,
-                    skip_group_export=bool(arguments["--skip-group-export"] or ONLY_POST_MIGRATION_INFO),
+                    skip_group_export=bool(
+                        arguments["--skip-group-export"] or ONLY_POST_MIGRATION_INFO),
                     skip_group_import=arguments["--skip-group-import"],
-                    skip_project_export=bool(arguments["--skip-project-export"] or ONLY_POST_MIGRATION_INFO),
+                    skip_project_export=bool(
+                        arguments["--skip-project-export"] or ONLY_POST_MIGRATION_INFO),
                     skip_project_import=arguments["--skip-project-import"],
                     only_post_migration_info=ONLY_POST_MIGRATION_INFO,
                     subgroups_only=arguments["--subgroups-only"],
