@@ -208,7 +208,7 @@ test:end-to-end full:
         - congregate/helpers/**/*
         - congregate/migration/gitlab/**/*
         - congregate/migration/migrate.py
-  timeout: 30 minutes
+  timeout: 25 minutes
 
 test:end-to-end single group:
   extends:
@@ -232,7 +232,7 @@ test:end-to-end single group:
         - congregate/helpers/**/*
         - congregate/migration/gitlab/**/*
         - congregate/migration/migrate.py
-  timeout: 15 minutes
+  timeout: 12 minutes
 
 test:GitHub Server end to end:
   extends:
