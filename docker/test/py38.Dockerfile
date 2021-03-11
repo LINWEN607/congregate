@@ -8,3 +8,6 @@ RUN apt-get update && \
 
 RUN pip install poetry
 
+RUN wget https://packages.microsoft.com/config/debian/10/packages-microsoft-prod.deb
+RUN dpkg -i packages-microsoft-prod.deb
+RUN apt-get update -y && apt-get install -y powershell
