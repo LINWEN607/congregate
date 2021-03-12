@@ -28,8 +28,7 @@ class MigrationEndToEndTest(unittest.TestCase):
         rollback_diff()
 
     def test_user_migration_diff(self):
-        user_diff = UserDiffClient(
-            "/data/results/user_migration_results.json", staged=True)
+        user_diff = UserDiffClient(staged=True)
         diff_report = user_diff.generate_diff_report()
         user_diff.generate_html_report(
             "User", diff_report, "/data/results/user_migration_results.html")
@@ -37,8 +36,7 @@ class MigrationEndToEndTest(unittest.TestCase):
             diff_report["user_migration_results"]["overall_accuracy"], 0.95)
 
     def test_group_migration_diff(self):
-        group_diff = GroupDiffClient(
-            "/data/results/group_migration_results.json", staged=True)
+        group_diff = GroupDiffClient(staged=True)
         diff_report = group_diff.generate_diff_report()
         group_diff.generate_html_report(
             "Group", diff_report, "/data/results/group_migration_results.html")
@@ -46,8 +44,7 @@ class MigrationEndToEndTest(unittest.TestCase):
             diff_report["group_migration_results"]["overall_accuracy"], 0.95)
 
     def test_project_migration_diff(self):
-        project_diff = ProjectDiffClient(
-            "/data/results/project_migration_results.json", staged=True)
+        project_diff = ProjectDiffClient(staged=True)
         diff_report = project_diff.generate_diff_report()
         project_diff.generate_html_report(
             "Project", diff_report, "/data/results/project_migration_results.html")

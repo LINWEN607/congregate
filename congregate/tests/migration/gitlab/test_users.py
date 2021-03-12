@@ -847,7 +847,8 @@ class UsersTests(unittest.TestCase):
         pattern.return_value = "hash"
         map_file.return_file = "path/to/file"
         read_file.side_effect = FileNotFoundError
-        self.assertIsNone(self.users.generate_hash_map())
+        with self.assertRaises(SystemExit):
+            self.users.generate_hash_map()
 
     @mock.patch('congregate.helpers.conf.Config.group_sso_provider_pattern', new_callable=mock.PropertyMock)
     @mock.patch('congregate.helpers.conf.Config.group_sso_provider_map_file', new_callable=mock.PropertyMock)
