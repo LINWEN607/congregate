@@ -90,7 +90,7 @@ def start_multi_process_stream(function, iterable, processes=None):
     p = ctx.Pool(processes=get_no_of_processes(processes),
                  initializer=worker_init, initargs=(function,))
     try:
-        return tqdm(p.imap_unordered(worker, iterable), total=len(iterable), colour=tanuki)
+        return p.imap_unordered(worker, iterable)
     except Exception as e:
         b.log.critical("Migration pool failed with error:\n{}".format(e))
         b.log.critical(print_exc())
@@ -116,7 +116,7 @@ def start_multi_process_stream_with_args(function, iterable, *args, processes=No
     p = ctx.Pool(processes=get_no_of_processes(processes),
                  initializer=worker_init, initargs=(partial(function, *args),))
     try:
-        return tqdm(p.imap_unordered(worker, iterable), total=len(iterable), colour=tanuki)
+        return p.imap_unordered(worker, iterable)
     except Exception as e:
         b.log.critical("Migration pool failed with error:\n{}".format(e))
         b.log.critical(print_exc())

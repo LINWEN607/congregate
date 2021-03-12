@@ -55,14 +55,11 @@ class MigrationEndToEndTest(unittest.TestCase):
 def rollback_diff():
     diff_report = {}
     base_diff = BaseDiffClient()
-    project_diff = ProjectDiffClient(
-        "/data/results/project_migration_results.json", staged=True, rollback=True)
+    project_diff = ProjectDiffClient(staged=True, rollback=True)
     diff_report["project_diff"] = project_diff.generate_diff_report()
-    group_diff = GroupDiffClient(
-        "/data/results/group_migration_results.json", staged=True, rollback=True)
+    group_diff = GroupDiffClient(staged=True, rollback=True)
     diff_report["group_diff"] = group_diff.generate_diff_report()
-    user_diff = UserDiffClient(
-        "/data/results/user_migration_results.json", staged=True, rollback=True)
+    user_diff = UserDiffClient(staged=True, rollback=True)
     diff_report["user_diff"] = user_diff.generate_diff_report()
     base_diff.generate_html_report(
         "Rollback", diff_report, "/data/results/migration_rollback_results.html")
