@@ -9,11 +9,11 @@ class UserDiffClient(BaseDiffClient):
         Extension of BaseDiffClient focused on finding the differences between migrated users
     '''
 
-    def __init__(self, results_path, staged=False, rollback=False, processes=None):
-        super(UserDiffClient, self).__init__()
+    def __init__(self, staged=False, rollback=False, processes=None):
+        super().__init__()
         self.users_api = UsersApi()
         self.results = read_json_file_into_object(
-            "{0}{1}".format(self.app_path, results_path))
+            f"{self.app_path}/data/results/user_migration_results.json", log=self.log)
         self.rollback = rollback
         self.processes = processes
         self.keys_to_ignore = [

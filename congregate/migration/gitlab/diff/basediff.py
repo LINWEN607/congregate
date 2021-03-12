@@ -7,6 +7,7 @@ from congregate.helpers.misc_utils import find as nested_find, is_error_message_
 from congregate.helpers.jsondiff import Comparator
 from congregate.helpers.mdbc import MongoConnector
 
+
 class BaseDiffClient(BaseClass):
     SCRIPT = """
         window.onload = function () {
@@ -76,10 +77,10 @@ class BaseDiffClient(BaseClass):
         super(BaseDiffClient, self).__init__()
         self.keys_to_ignore = []
         self.results = None
-    
+
     def connect_to_mongo(self):
         return MongoConnector()
-    
+
     def generate_split_html_report(self):
         """
             Queries MongoDB for all diff_report collections 
@@ -90,7 +91,8 @@ class BaseDiffClient(BaseClass):
             diff = {}
             for d, _ in mongo.stream_collection(diff_col):
                 diff.update(d)
-            self.generate_html_report("Project", diff, f"/data/results/{diff_col}.html")
+            self.generate_html_report(
+                "Project", diff, f"/data/results/{diff_col}.html")
         mongo.close_connection()
 
     def diff(self, source_data, destination_data, critical_key=None, obfuscate=False, parent_group=None):
@@ -182,7 +184,8 @@ class BaseDiffClient(BaseClass):
                                       asset[key]) if parent_group else asset[key]
         if self.results.get(identifier) is not None:
             if isinstance(self.results[identifier], dict):
-                destination_id = dig(self.results, identifier, 'response', 'id')
+                destination_id = dig(
+                    self.results, identifier, 'response', 'id')
                 response = gl_endpoint(
                     destination_id, self.config.destination_host, self.config.destination_token, **kwargs)
                 destination_data = self.generate_cleaned_instance_data(
@@ -292,7 +295,8 @@ class BaseDiffClient(BaseClass):
                         result = "failure"
                         percentage_sum = 0
                         break
-                    percentage_sum += dig(obj, o, 'overall_accuracy', 'accuracy')
+                    percentage_sum += dig(obj, o,
+                                          'overall_accuracy', 'accuracy')
                     if dig(obj, o, 'overall_accuracy', 'accuracy') == 0:
                         result = "failure"
                 accuracy = percentage_sum / total_number_of_keys if total_number_of_keys else 0
@@ -407,8 +411,10 @@ class BaseDiffClient(BaseClass):
             if (len(v) > 50000 and len(v) < 100000) and nested is False:
                 self.log.info("Writing to a separate file")
                 subdiff = {d: v}
-                subfilepath = (f"{filepath.split('.html')[0]}_{d.split('/')[-1]}.html").replace(self.app_path, "")
-                self.generate_html_report(asset, subdiff, subfilepath, nested=True)
+                subfilepath = (
+                    f"{filepath.split('.html')[0]}_{d.split('/')[-1]}.html").replace(self.app_path, "")
+                self.generate_html_report(
+                    asset, subdiff, subfilepath, nested=True)
             elif len(v) > 100000:
                 self.log.warn(f"Skipping {d} due to large size")
             else:

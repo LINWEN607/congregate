@@ -13,15 +13,15 @@ class ProjectDiffClient(BaseDiffClient):
         Extension of BaseDiffClient focused on finding the differences between migrated projects
     '''
 
-    def __init__(self, results_path, staged=False, rollback=False, processes=None):
-        super(ProjectDiffClient, self).__init__()
+    def __init__(self, staged=False, rollback=False, processes=None):
+        super().__init__()
         self.projects_api = ProjectsApi()
         self.issues_api = IssuesApi()
         self.mr_api = MergeRequestsApi()
         self.repository_api = ProjectRepositoryApi()
         self.rollback = rollback
-        self.results = rewrite_json_list_into_dict(
-            read_json_file_into_object("{0}{1}".format(self.app_path, results_path)))
+        self.results = rewrite_json_list_into_dict(read_json_file_into_object(
+            f"{self.app_path}/data/results/project_migration_results.json"))
         self.processes = processes
         self.keys_to_ignore = [
             "id",
