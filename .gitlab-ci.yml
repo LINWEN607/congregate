@@ -56,6 +56,11 @@ workflow:
           "python3 -m http.server 443 --directory /var/log/gitlab/gitlab-rails/ & :; /assets/wrapper",
         ]
 
+.e2e-ghe-cleanup:
+  after_script:
+    - pwsh --version
+    - pwsh -f ./azure_scripts/delete_azure_vm.ps1
+
 .e2e-cleanup:
   after_script:
     - curl -O http://gitlab_destination:443/api_json.log
@@ -159,6 +164,8 @@ build jenkins seed image:
         - package.json
         - pylint*.sh
         - .pylintrc
+        - delete_azure_vm.ps1
+        - restore_azure_vm.sh
 
 test:pylint:
   extends: .test-job
@@ -377,3 +384,23 @@ pages:
   artifacts:
     paths:
       - public
+
+test:GitHub Enterprise end to end:
+  stage: test
+  extends:
+    - .test-job
+    - .e2e-ghe-cleanup
+  script:
+    - poetry add azure-cli
+    - poetry run ./azure_scripts/restore_azure_vm.sh
+  rules:
+    - if: "$CI_MERGE_REQUEST_IID || $CI_COMMIT_BRANCH"
+      changes:
+        - azure_scripts/*.ps1
+        - azure_scripts/*.sh
+      when: manual
+      allow_failure: true
+    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
+      when: manual
+      allow_failure: true
+    - when: never
