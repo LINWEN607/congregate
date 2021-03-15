@@ -1,7 +1,6 @@
 from time import sleep
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import migration_dry_run, is_error_message_present, safe_json_response, is_github_dot_com, dig
-from congregate.helpers.migrate_utils import get_dst_path_with_namespace, get_target_namespace
+from congregate.helpers.misc_utils import migration_dry_run, is_error_message_present, safe_json_response, dig
 from congregate.migration.gitlab.api.external_import import ImportApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.instance import InstanceApi
@@ -9,7 +8,7 @@ from congregate.migration.gitlab.api.instance import InstanceApi
 
 class ImportClient(BaseClass):
     def __init__(self):
-        super(ImportClient, self).__init__()
+        super().__init__()
         self.ext_import = ImportApi()
         self.projects = ProjectsApi()
         self.instance = InstanceApi()
@@ -24,11 +23,9 @@ class ImportClient(BaseClass):
             "bitbucket_server_project": project_key,
             "bitbucket_server_repo": repo
         }
-        if self.config.dstn_parent_group_path:
-            data["target_namespace"] = "{0}/{1}".format(
-                self.config.dstn_parent_group_path, project_key)
-        else:
-            data["target_namespace"] = project_key
+        target_namespace = f"{self.config.dstn_parent_group_path or ''}/{project_key}".strip(
+            "/")
+        data["target_namespace"] = target_namespace
 
         if self.config.lower_case_project_path:
             data["new_name"] = repo.lower()
@@ -40,18 +37,18 @@ class ImportClient(BaseClass):
                 if is_error_message_present(resp):
                     message = resp.get("message")
                     self.log.error(message)
-                    return self.get_failed_result(project, message)
-                return self.get_result_data(project, resp)
+                    return self.get_failed_result(target_namespace, message)
+                return self.get_result_data(target_namespace, resp)
             except ValueError as e:
                 self.log.error(
                     "Failed to import from bitbucket server due to %s" % e)
-                return self.get_failed_result(project)
+                return self.get_failed_result(target_namespace)
         else:
             data.pop("personal_access_token", None)
             migration_dry_run("project", data)
-            return self.get_failed_result(project, data)
+            return self.get_failed_result(target_namespace, data)
 
-    def trigger_import_from_ghe(self, project, tn, host, token, dry_run=True):
+    def trigger_import_from_ghe(self, pid, path_with_namespace, tn, host, token, dry_run=True):
         '''
         Use the GitLab built in importers to start a GitHub Enterprise import.
 
@@ -63,7 +60,7 @@ class ImportClient(BaseClass):
         '''
         data = {
             "personal_access_token": token,
-            "repo_id": project["id"],
+            "repo_id": pid,
             "target_namespace": tn
         }
 
@@ -78,15 +75,15 @@ class ImportClient(BaseClass):
                 if is_error_message_present(resp):
                     message = resp.get("message")
                     self.log.error(message)
-                    return self.get_failed_result(project, message)
-                return self.get_result_data(project, resp)
+                    return self.get_failed_result(path_with_namespace, message)
+                return self.get_result_data(path_with_namespace, resp)
             except ValueError as ve:
                 self.log.error(f"Failed to import from GitHub due to {ve}")
-                return self.get_failed_result(project)
+                return self.get_failed_result(path_with_namespace)
         else:
             data.pop("personal_access_token", None)
             migration_dry_run("project", data)
-            return self.get_failed_result(project, data)
+            return self.get_failed_result(path_with_namespace, data)
 
     def wait_for_project_to_import(self, full_path):
         total_time = 0
@@ -139,18 +136,18 @@ class ImportClient(BaseClass):
         repo = split[1]
         return project, repo
 
-    def get_result_data(self, project, response):
+    def get_result_data(self, path_with_namespace, response):
         return {
-            project["path_with_namespace"]: {
-                "repository": True if response.get("id", None) is not None else False,
+            path_with_namespace: {
+                "repository": response.get("id", None) is not None,
                 "response": response
             }
         }
 
-    def get_failed_result(self, project, data=None):
+    def get_failed_result(self, path_with_namespace, data=None):
         return {
-            project["path_with_namespace"]: {
-                "repository": True if data else False,
+            path_with_namespace: {
+                "repository": bool(data),
                 "response": data
             }
         }
