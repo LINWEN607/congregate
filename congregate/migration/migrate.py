@@ -232,7 +232,7 @@ class MigrateClient(BaseClass):
                 "Issues will not be created."
             )
         else:
-            self.log.error(
+            self.log.warning(
                 "Couldn't find a required REPORTING config in [DESTINATION] section of congregate.conf.\n"
                 "Issues will not be created."
             )
@@ -297,10 +297,13 @@ class MigrateClient(BaseClass):
     def import_github_project(self, project):
         gh_host, gh_token = self.get_host_and_token()
         members = project.pop("members")
-        path_with_namespace = f"{project.get('target_namespace', '')}/{project.get('path_with_namespace', '')}"
+        path_with_namespace = f"{project.get('target_namespace', self.config.dstn_parent_group_path or '')}/{project.get('path_with_namespace', '')}"
+        if target_namespace := get_target_namespace(project):
+            tn = target_namespace
+        else:
+            tn = get_dst_path_with_namespace(project).rsplit("/", 1)[0]
         # TODO: Make this target namespace lookup requirement configurable
-        if self.groups.find_group_id_by_path(self.config.destination_host,
-                                             self.config.destination_token, get_target_namespace(project)):
+        if self.groups.find_group_id_by_path(self.config.destination_host, self.config.destination_token, tn):
             if dst_pid := self.projects.find_project_by_path(
                     self.config.destination_host, self.config.destination_token, path_with_namespace):
                 self.log.info(
@@ -309,7 +312,7 @@ class MigrateClient(BaseClass):
                     project, {"id": dst_pid})
             else:
                 result = self.ext_import.trigger_import_from_ghe(
-                    project, gh_host, gh_token, dry_run=self.dry_run)
+                    project, tn, gh_host, gh_token, dry_run=self.dry_run)
                 if result.get(project["path_with_namespace"], False) is not False:
                     result_response = result[project["path_with_namespace"]]["response"]
                     if (isinstance(result_response, dict)) and (project_id := result_response.get("id", None)):
@@ -324,10 +327,11 @@ class MigrateClient(BaseClass):
                                 "error": "Import time limit exceeded. Unable to execute post migration phase"
                             })
         else:
-            self.log.info(
-                f"Target namespace does not exist for {project['path_with_namespace']}. Skipping import.")
+            log = f"Target namespace {tn} does not exist"
+            self.log.info("Skipping import. " + log +
+                          f" for {project['path']}")
             result = self.ext_import.get_result_data(project, {
-                "error": f"Target namespace {project.get('target_namespace', '')} does not exist. Skipping import"
+                "error": log
             })
         return result
 
@@ -357,23 +361,29 @@ class MigrateClient(BaseClass):
         # Migrate any external CI data
         self.handle_ext_ci_src_migration(result, project, project_id)
 
+        # Remove import user from members
         self.projects.remove_import_user(project_id)
-        # Added a new file in the repo
+
+        # Add pages file to repo
         result[project["path_with_namespace"]]["is_gh_pages"] = self.add_pipeline_for_github_pages(
             project_id)
-        # Added protected branch
+
+        # Add protected branch
         result[project["path_with_namespace"]]["project_level_protected_branch"] = (
             self.gh_repos.migrate_gh_project_protected_branch(
                 project_id, project)
         )
-        # Added project level MR rules
+
+        # Add project level MR rules
         result[project["path_with_namespace"]]["project_level_mr_approvals"] = (
             self.gh_repos.migrate_gh_project_level_mr_approvals(
                 project_id, project)
         )
+
         # Migrate archived projects
         result[project["path_with_namespace"]]["archived"] = self.gh_repos.migrate_archived_repo(
             project_id, project)
+
         # Remove members if skip_adding_members is True
         result[project["path_with_namespace"]
                ]["members"]["email"] = self.handle_member_retention(members, project_id)

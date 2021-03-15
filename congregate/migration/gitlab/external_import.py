@@ -6,6 +6,7 @@ from congregate.migration.gitlab.api.external_import import ImportApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.instance import InstanceApi
 
+
 class ImportClient(BaseClass):
     def __init__(self):
         super(ImportClient, self).__init__()
@@ -50,7 +51,7 @@ class ImportClient(BaseClass):
             migration_dry_run("project", data)
             return self.get_failed_result(project, data)
 
-    def trigger_import_from_ghe(self, project, host, token, dry_run=True):
+    def trigger_import_from_ghe(self, project, tn, host, token, dry_run=True):
         '''
         Use the GitLab built in importers to start a GitHub Enterprise import.
 
@@ -60,12 +61,6 @@ class ImportClient(BaseClass):
             :return: (dict) Project and its response code
 
         '''
-        
-        if target_namespace := get_target_namespace(project):
-            tn = target_namespace
-        else:
-            tn = get_dst_path_with_namespace(project).rsplit("/", 1)[0]
-
         data = {
             "personal_access_token": token,
             "repo_id": project["id"],
@@ -113,7 +108,8 @@ class ImportClient(BaseClass):
                             f"Import Status is marked as finished for {full_path}. Import is complete")
                         success = True
                         break
-                    stats = dig(project_statistics, 'data', 'project', 'statistics')
+                    stats = dig(project_statistics, 'data',
+                                'project', 'statistics')
                     if stats["commitCount"] > 0:
                         self.log.info(
                             f"Git commits have been found for {full_path}. Import is complete")
