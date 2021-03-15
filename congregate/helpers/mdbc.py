@@ -111,9 +111,14 @@ class MongoConnector(BaseClass):
 
     def find_user_email(self, username):
         for user_collection in self.user_collections:
-            if query := self.safe_find_one(user_collection, query={
-                                           "username": username}, hint="username_1"):
-                return query.get("email", None)
+            if query := self.safe_find_one(
+                user_collection,
+                query={
+                        "username": username
+                },
+                hint="username_1"
+                ):
+                    return query.get("email", None)
 
     def ingest_json_file_into_mongo(self, file_path, collection=None):
         if not collection:
