@@ -256,14 +256,12 @@ def write_json_to_file(path, data, log=None):
         json.dump(data, f, indent=4)
 
 
-def read_json_file_into_object(path, log=None):
+def read_json_file_into_object(path):
     try:
         with open(path, "r") as f:
             return json.load(f)
     except FileNotFoundError:
-        if log:
-            log.error(f"{path} not found")
-        sys.exit()
+        sys.exit(f"{path} not found")
 
 
 def obfuscate(prompt):

@@ -13,7 +13,7 @@ class UserDiffClient(BaseDiffClient):
         super().__init__()
         self.users_api = UsersApi()
         self.results = read_json_file_into_object(
-            f"{self.app_path}/data/results/user_migration_results.json", log=self.log)
+            f"{self.app_path}/data/results/user_migration_results.json")
         self.rollback = rollback
         self.processes = processes
         self.keys_to_ignore = [
