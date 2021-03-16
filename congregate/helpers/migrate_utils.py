@@ -181,7 +181,7 @@ def get_results(res):
     c = 0
     for r in res:
         for v in r.values():
-            if not v or is_error_message_present(v):
+            if not v or is_error_message_present(v) or (isinstance(v, dict) and is_error_message_present(v.get("response", None))):
                 c += 1
             repo_present = dig(v, 'repository')
             if repo_present is not None and repo_present is False:

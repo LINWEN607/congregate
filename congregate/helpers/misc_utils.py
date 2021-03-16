@@ -414,15 +414,16 @@ def check_is_project_or_group_for_logging(is_project):
 
 
 def is_error_message_present(response):
+    errors = ["message", "errors", "error"]
     if isinstance(response, Response):
         response = safe_json_response(response)
     if isinstance(response, (GeneratorType, map, filter)):
         response = list(response)
-    if isinstance(response, list) and response and response[0] in ["message", "errors"]:
+    if isinstance(response, list) and response and response[0] in errors:
         return True
-    if isinstance(response, dict) and ((response.get("message", None) or response.get("errors", None)) is not None):
+    if isinstance(response, dict) and any(r in response for r in errors):
         return True
-    if isinstance(response, str) and response in ["message", "errors"]:
+    if isinstance(response, str) and response in errors:
         return True
     return False
 

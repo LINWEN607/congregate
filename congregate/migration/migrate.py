@@ -556,7 +556,7 @@ class MigrateClient(BaseClass):
             full_path = result_response.get("full_path").strip("/")
             success = self.ext_import.wait_for_project_to_import(full_path)
             if success:
-                result["members"] = self.projects.add_members_to_destination_project(
+                result[path_with_namespace]["members"] = self.projects.add_members_to_destination_project(
                     self.config.destination_host, self.config.destination_token, project_id, members)
                 # Set default branch
                 self.projects_api.set_default_project_branch(
