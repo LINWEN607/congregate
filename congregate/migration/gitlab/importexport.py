@@ -10,7 +10,7 @@ from requests_toolbelt.multipart.encoder import MultipartEncoder
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers import api
 from congregate.helpers.misc_utils import download_file, migration_dry_run, get_dry_log, \
-    check_is_project_or_group_for_logging, json_pretty, validate_name, safe_json_response
+    check_is_project_or_group_for_logging, json_pretty, safe_json_response
 from congregate.aws import AwsClient
 from congregate.migration.gitlab.projects import ProjectsClient
 from congregate.migration.gitlab.groups import GroupsClient
@@ -323,7 +323,7 @@ class ImportExportClient(BaseClass):
                         "file": (filename, f),
                         "path": path,
                         "namespace": namespace,
-                        "name": validate_name(name)
+                        "name": name
                     })
                     headers = {
                         "Private-Token": self.config.destination_token,
@@ -341,7 +341,7 @@ class ImportExportClient(BaseClass):
                     data = {
                         "path": path,
                         "namespace": namespace,
-                        "name": validate_name(name)
+                        "name": name
                     }
                     files = {
                         "file": (filename, f)
@@ -430,7 +430,7 @@ class ImportExportClient(BaseClass):
             with open("%s/downloads/%s" % (self.config.filesystem_path, filename), "rb") as f:
                 data = {
                     "path": path,
-                    "name": validate_name(name),
+                    "name": name,
                     "parent_id": parent_id if parent_id else self.config.dstn_parent_id if self.config.dstn_parent_id else None
                 }
                 files = {

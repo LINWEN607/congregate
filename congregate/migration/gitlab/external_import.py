@@ -1,10 +1,11 @@
 from time import sleep
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import migration_dry_run, is_error_message_present, safe_json_response, is_github_dot_com, dig
+from congregate.helpers.misc_utils import migration_dry_run, is_error_message_present, safe_json_response, dig
 from congregate.helpers.migrate_utils import get_dst_path_with_namespace, get_target_namespace
 from congregate.migration.gitlab.api.external_import import ImportApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.instance import InstanceApi
+
 
 class ImportClient(BaseClass):
     def __init__(self):
@@ -60,7 +61,7 @@ class ImportClient(BaseClass):
             :return: (dict) Project and its response code
 
         '''
-        
+
         if target_namespace := get_target_namespace(project):
             tn = target_namespace
         else:
@@ -113,7 +114,8 @@ class ImportClient(BaseClass):
                             f"Import Status is marked as finished for {full_path}. Import is complete")
                         success = True
                         break
-                    stats = dig(project_statistics, 'data', 'project', 'statistics')
+                    stats = dig(project_statistics, 'data',
+                                'project', 'statistics')
                     if stats["commitCount"] > 0:
                         self.log.info(
                             f"Git commits have been found for {full_path}. Import is complete")
