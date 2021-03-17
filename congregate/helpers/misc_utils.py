@@ -470,8 +470,9 @@ def validate_name(name, log=None):
     """
     valid = " ".join(sub(r"[^a-zA-Z0-9\_\-\. ]", " ",
                          name.lstrip("-").lstrip(".")).split())
-    if name != valid and log:
-        log.warning(f"Invalid name {name} has been renamed to {valid}")
+    if name != valid:
+        output = f"Renaming invalid name {name} -> {valid}"
+        log.warning(output) if log else print(output)
     return valid
 
 
