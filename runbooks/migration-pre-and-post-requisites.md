@@ -1,13 +1,12 @@
 <!-- 
     Copy the contents of this runbook into an issue when running through migration prerequisites.
-    Post the link to the issue on the Slack channel dedicated to this migration. 
+    Post the link to the issue on the Slack channel dedicated to this migration.
 -->
 
-# <customer name> Migration Pre and Post-requisites
+# [customer name] Migration Pre and Post-requisites
 
 This runbook covers the process of preparing and cleaning up after a migration from a source GitLab instance to a destination GitLab instance.
 
-* (gitlab.com) requesting to have a VM created in the transient-imports GCP project.
 * (gitlab.com) [GitLab Commercial Customer Success Documentation](https://gitlab-com.gitlab.io/account-management/commercial/documentation/) on migrating to gitlab.com.
 
 ## Migration pre-requisites
@@ -80,6 +79,22 @@ This runbook covers the process of preparing and cleaning up after a migration f
     * 200GB storage - SSD
 -->
 
+* (gitlab.com) Create a [GitLab Infra team issue](https://gitlab.com/groups/gitlab-com/gl-infra/-/issues) with labels and assign to `@gitlab-com/gl-infra/managers` ([example](https://gitlab.com/gitlab-com/gl-infra/infrastructure/-/issues/12813))
+* (gitlab.com) Create an MR in [Transient Imports project](https://gitlab.com/gitlab-com/gl-infra/transient-imports) by following the `README`
+  * Make sure all PSEs running the migration have added their public IP to the `source_ranges_allowed` list (comma separated)
+  * Assign yourself and add `@gitlab-com/gl-infra/managers` as Reviewer
+* Once the MR is approved and merged retrieve the IP from the `apply` stage and job
+
+  ```text
+  Apply complete! Resources: 1 added, 0 changed, 0 destroyed.
+  Outputs:
+  import-<issue_id>-ip = <public_ip>
+  ```
+
+  * Test the access: `ssh -i ~/.ssh/<ssh_public_key> root@<public_ip>`
+  * Install docker: `apt install docker.io`
+  * Pull Congregate image relevant for the migration
+
 ### Network; VM interaction
 
 <!--
@@ -101,7 +116,8 @@ This runbook covers the process of preparing and cleaning up after a migration f
 
 ### Authentication (for gitlab.com)
 
-The VM should be setup with Okta ASA, but based on time constraints it may be necessary to provision only SSH key authenticaton.
+If possible, the VM should be setup with Okta Advanced Server Access (ASA).
+Due to time constraints, ASA costs and scaling limitations it may be necessary to provision only SSH key authenticaton.
 
 ## Migration post-requisites
 
@@ -110,9 +126,10 @@ The VM should be setup with Okta ASA, but based on time constraints it may be ne
 
 ### VM Deprovisioning
 
-* [ ] (gitlab.com) Once the migration is complete follow the [PS Deprovisioning Process](https://gitlab.com/gitlab-com/business-ops/team-member-enablement/runbooks/-/blob/master/it_operations/GitLab_com_environment_(PRD,DEV,STG)access_requests.md#deprovisioning-process) for GitLab.com environments Access Request.
-* [ ] Strip dedicated migration user on destination of Admin rights, PATs and update sign-in credentials.
-* [ ] (Optional) backup group and project export archive files.
+* [ ] (gitlab.com) Once the migration is complete follow the [PS Deprovisioning Process](https://gitlab.com/gitlab-com/business-ops/team-member-enablement/runbooks/-/blob/master/it_operations/GitLab_com_environment_(PRD,DEV,STG)access_requests.md#deprovisioning-process) for GitLab.com environments Access Request
+* [ ] (gitlab.com) Deprovision migration VM by informing Infra in the issue ([VM Requirements](#VM)) that the migration is complete
+* [ ] Strip dedicated migration user on destination of Admin rights, PATs and update sign-in credentials
+* [ ] (Optional) Backup group and project export archive files
 
 ### Instance checks
 
