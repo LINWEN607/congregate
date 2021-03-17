@@ -183,6 +183,22 @@ class Config(object):
         """
         return self.prop_int("DESTINATION", "pmi_project_id")
 
+    # LDAP Info
+    def ldap_group_link_provider(self):
+        """
+        The LDAP server label from the instance configuration. 
+        In gitlab.rb: gitlab_rails['ldap_servers'].label
+        On the UI: Visible in the LDAP synchonizations page for a group
+        """
+        return self.prop("DESTINATION", "ldap_group_link_provider", default="")
+    
+    def ldap_group_link_group_access(self):
+        """
+        The minimum access to give users via the sync. This maps directly to the values at https://docs.gitlab.com/ee/api/members.html#valid-access-levels
+        Defaults to no access
+        """
+        return self.prop_int("DESTINATION", "ldap_group_link_group_access", default=0)
+
 # SOURCE
     def list_multiple_source_config(self, source_options):
         """
