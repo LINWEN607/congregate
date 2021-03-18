@@ -55,6 +55,7 @@ Usage:
     congregate reingest <assets>...
     congregate clean-database [--commit]
     congregate toggle-maintenance-mode [--off] [--dest] [--msg=<multi+word+message>]
+    congregate ldap-group-sync <file-path> [--commit]
     congregate -h | --help
     congregate -v | --version
 
@@ -150,6 +151,7 @@ Commands:
     reingest                                Reingest database dumps into mongo. Specify the asset type (users, groups, projects, teamcity, jenkins)
     clean-database                          Drop all collections in the congregate MongoDB database and rebuilds the structure
     toggle-maintenance-mode                 Reduce write operations to a minimum by blocking all external actions that change the internal state. Operational as of GitLab version 13.9
+    ldap-group-sync                         Perform LDAP Group sync operations over a pipe-delimited file of group_id|CN
 """
 
 import os
@@ -241,6 +243,7 @@ def main():
             from congregate.helpers.mdbc import MongoConnector
             from congregate.helpers.misc_utils import convert_to_underscores
             from congregate.migration.github.repos import ReposClient
+            from congregate.cli.ldap_group_sync import LdapGroupSync
 
             config = conf.Config()
             users = UsersClient()
@@ -524,6 +527,13 @@ def main():
                     arguments["--off"],
                     arguments["--msg"],
                     arguments["--dest"])
+            if arguments["ldap-group-sync"]:
+                if not DRY_RUN:
+                    ldap = LdapGroupSync()
+                    ldap.load_pdv(arguments['<file-path>'])
+                    ldap.synchronize_groups(dry_run=DRY_RUN)
+                else:
+                    print("\nThis command will setup LDAP group sync based on the file passed in via <file-path>")
         if arguments["obfuscate"]:
             print(obfuscate("Secret:"))
         if arguments["deobfuscate"]:

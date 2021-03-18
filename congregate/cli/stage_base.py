@@ -6,7 +6,7 @@ Copyright (c) 2021 - GitLab
 
 import json
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import get_dry_log, remove_dupes, strip_protocol, remove_dupes_with_keys, dig
+from congregate.helpers.misc_utils import get_dry_log, remove_dupes, strip_protocol, remove_dupes_with_keys, dig, validate_name
 
 
 class BaseStageClass(BaseClass):
@@ -107,7 +107,7 @@ class BaseStageClass(BaseClass):
         """
         obj = {
             "id": project["id"],
-            "name": project["name"],
+            "name": validate_name(project["name"], log=self.log),
             "namespace": dig(project, 'namespace', 'full_path'),
             "path": project["path"],
             "path_with_namespace": project["path_with_namespace"],

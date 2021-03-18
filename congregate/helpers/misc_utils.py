@@ -463,13 +463,18 @@ def get_timedelta(timestamp):
     return (now - created_at).days * 24
 
 
-def validate_name(name):
+def validate_name(name, log=None):
     """
     Validate group and project names to satisfy the following criteria:
     Name can only contain letters, digits, emojis, '_', '.', dash, space.
     It must start with letter, digit, emoji or '_'.
     """
-    return " ".join(sub(r"[^a-zA-Z0-9\_\-\. ]", " ", name.lstrip("-").lstrip(".")).split())
+    valid = " ".join(sub(r"[^a-zA-Z0-9\_\-\. ]", " ",
+                         name.lstrip("-").lstrip(".")).split())
+    if name != valid:
+        output = f"Renaming invalid name {name} -> {valid}"
+        log.warning(output) if log else print(output)
+    return valid
 
 
 def list_to_dict(lst):

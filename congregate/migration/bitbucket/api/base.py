@@ -44,7 +44,7 @@ class BitBucketServerApi(BaseClass):
             params = {}
 
         auth = self.get_authorization()
-        return requests.get(url, params=params, headers=headers, auth=auth)
+        return requests.get(url, params=params, headers=headers, auth=auth, verify=self.config.ssl_verify)
 
     def list_all(self, api, params=None, limit=1000, branch_permissions=False):
         isLastPage = False

@@ -309,6 +309,7 @@ Usage:
     congregate reingest <assets>...
     congregate clean-database [--commit]
     congregate toggle-maintenance-mode [--off] [--dest] [--msg=<multi+word+message>]
+    congregate ldap-group-sync <file-path> [--commit]
     congregate -h | --help
     congregate -v | --version
 
@@ -402,6 +403,7 @@ Commands:
     reingest                                Reingest database dumps into mongo. Specify the asset type (users, groups, projects, teamcity, jenkins)
     clean-database                          Drop all collections in the congregate MongoDB database and rebuilds the structure
     toggle-maintenance-mode                 Reduce write operations to a minimum by blocking all external actions that change the internal state. Operational as of GitLab version 13.9
+    ldap-group-sync                         Perform LDAP Group sync operations over a pipe-delimited file of group_id|CN
 ```
 
 #### Important Notes

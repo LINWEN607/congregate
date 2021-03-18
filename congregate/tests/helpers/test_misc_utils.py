@@ -643,7 +643,7 @@ class MiscUtilsTests(unittest.TestCase):
         self.assertEqual({"path": "path"},
                          misc.pop_multiple_keys(src, ["id", "name"]))
         self.assertEqual(src, misc.pop_multiple_keys(src, ["ids", "names"]))
-    
+
     def test_clean_split(self):
         test_string = "/path/to/file"
         expected = ["path", "to", "file"]

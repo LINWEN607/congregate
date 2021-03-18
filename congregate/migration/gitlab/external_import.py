@@ -41,7 +41,7 @@ class ImportClient(BaseClass):
                 return self.get_result_data(target_namespace, resp)
             except ValueError as e:
                 self.log.error(
-                    "Failed to import from bitbucket server due to %s" % e)
+                    f"Failed to import from BitBucket Server due to {e}")
                 return self.get_failed_result(target_namespace)
         else:
             data.pop("personal_access_token", None)
@@ -66,7 +66,6 @@ class ImportClient(BaseClass):
 
         # TODO: This condition needs to be moved to the __init__ function of this class
         # and properly handle non standard GitLab versions like RCs
-
         data["github_hostname"] = host
         if not dry_run:
             try:
