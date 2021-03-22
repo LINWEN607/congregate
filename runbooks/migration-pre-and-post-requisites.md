@@ -79,10 +79,11 @@ This runbook covers the process of preparing and cleaning up after a migration f
     * 200GB storage - SSD
 -->
 
-* (gitlab.com) Create a [GitLab Infra team issue](https://gitlab.com/groups/gitlab-com/gl-infra/-/issues) with labels and assign to `@gitlab-com/gl-infra/managers` ([example](https://gitlab.com/gitlab-com/gl-infra/infrastructure/-/issues/12813))
+* (gitlab.com) Create a [GitLab Infra team issue](https://gitlab.com/groups/gitlab-com/gl-infra/-/issues) with labels `~"team::Core-Infra"` and `~"AssistType::CloudInfra"` and `/assign @gitlab-com/gl-infra/managers` ([example](https://gitlab.com/gitlab-com/gl-infra/infrastructure/-/issues/12813))
 * (gitlab.com) Create an MR in [Transient Imports project](https://gitlab.com/gitlab-com/gl-infra/transient-imports) by following the `README`
+  * The lead PSE should add their gitlab.com `.pub` SSH key as `owner_key`
   * Make sure all PSEs running the migration have added their public IP to the `source_ranges_allowed` list (comma separated)
-  * Assign yourself and add `@gitlab-com/gl-infra/managers` as Reviewer
+  * Assign yourself and comment `/assign_reviewer @gitlab-com/gl-infra/managers`
 * Once the MR is approved and merged retrieve the IP from the `apply` stage and job
 
   ```text
