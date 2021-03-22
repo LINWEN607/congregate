@@ -15,7 +15,7 @@ alias pt='poetry run pytest \
             --cov-config=.coveragerc \
             --cov=congregate congregate/tests/'
 alias pt_e2e='poetry run pytest -s -m e2e congregate/tests/'
-alias dpull='docker pull registry.gitlab.com/gitlab-com/customer-success/tools/congregate:rolling-debian'
+alias dpull='docker pull registry.gitlab.com/gitlab-com/customer-success/professional-services-group/global-practice-development/migration/congregate:rolling-debian'
 alias drun='docker run \
               --name congregate \
               -v /var/run/docker.sock:/var/run/docker.sock \
