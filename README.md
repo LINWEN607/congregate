@@ -41,7 +41,7 @@ This file will help developers understand how to setup a congregate development 
 
 This document assumes you have a working python 3.8.5 or greater installed, you know how to clone a repo in terminal, and switch to its directory.  If you do not have a working python, you will need to take appropriate OS specific steps to install it.
 
-After cloning [the repo](https://gitlab.com/gitlab-com/customer-success/tools/congregate/) and changing to the directory in terminal, run the following appropriate commands to run your first UT!
+After cloning [the repo](https://gitlab.com/gitlab-com/customer-success/professional-services-group/global-practice-development/migration/congregate) and changing to the directory in terminal, run the following appropriate commands to run your first UT!
 
 1. For Mac users, using `brew`:
    1. `brew update`
@@ -112,7 +112,7 @@ The following method is supported only for project export / import:
 * **aws** - export and download data directly to an S3 bucket and import directly from the S3 bucket.
   * AWS (S3) user attributes are **not yet** available on the Group export / import API.
 
-The following method may be supported in the future ([issue](https://gitlab.com/gitlab-com/customer-success/tools/congregate/issues/119)):
+The following method may be supported in the future ([issue](https://gitlab.com/gitlab-com/customer-success/professional-services-group/global-practice-development/migration/congregate/issues/119)):
 
 * **filesystem-aws** - export and download data locally, copy it to an S3 bucket for storage, then delete the data locally. Copy the data back from S3, import it and then delete the local data again.
   * This is used to help work with company policies like restricting presigned URLs or in case any of the source instances involved in the migration cannot connect to an S3 bucket while the destination instance can.
@@ -155,26 +155,26 @@ npm install
 From **docker**:
 
 1. Pull the docker image from the container registry
-    * For official versioned releases, pull from registry.gitlab.com/gitlab-com/customer-success/tools/congregate
-    * For rolling releases, pull from registry.gitlab.com/gitlab-com/customer-success/tools/congregate:rolling-debian
+    * For official versioned releases, `docker pull registry.gitlab.com/gitlab-com/customer-success/professional-services-group/global-practice-development/migration/congregate:<version>`
+    * For rolling releases, `docker pull registry.gitlab.com/gitlab-com/customer-success/professional-services-group/global-practice-development/migration/congregate:rolling-debian`
 2. For proper DNS mapping make sure to add the source, destination and proxy IP (or hostname) to the VM and docker container `/etc/hosts` file, e.g.:
 
   ```bash
   127.0.0.1 localhost
   192.168.1.1 source.instance.org
   ```
-  
+
 3. Login to the migration VM using `ssh -L 8000:localhost:8000 <vm_alias_ip_or_hostname>` to expose the Congregate UI outside of the docker container
 4. Run the following command:
 
 ```bash
-docker login registry.gitlab.com/gitlab-com/customer-success/tools/congregate -u <user name> -p <personal token>
+docker login registry.gitlab.com/gitlab-com/customer-success/professional-services-group/global-practice-development/migration/congregate -u <user name> -p <personal token>
 docker run \
 --name <name> \
 -v /var/run/docker.sock:/var/run/docker.sock \ # expose docker socket as volume
 -v <path_to_local_storage>:/opt/congregate/data \ # expose data directory as volume
 -p 8000:8000 \ # expose UI port
--it registry.gitlab.com/gitlab-com/customer-success/tools/congregate:latest \
+-it registry.gitlab.com/gitlab-com/customer-success/professional-services-group/global-practice-development/migration/congregate:<version> \
 /bin/bash
 ./congregate.sh configure
 ./congregate.sh list

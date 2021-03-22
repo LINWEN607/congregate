@@ -5,7 +5,7 @@
 # Usage: 
 # sudo -E ./manually_move_images.sh <source-repo> <target-repo>
 # Example:
-# sudo -E ./manually_move_images.sh registry.gitlab.com/gitlab-com/customer-success/tools/congregate registry.gitlab.com/move-this/to-here/actually-move-this/test-project
+# sudo -E ./manually_move_images.sh registry.gitlab.com/gitlab-com/customer-success/professional-services-group/global-practice-development/migration/congregate registry.gitlab.com/move-this/to-here/actually-move-this/test-project
 
 source_repo=$1
 destination_repo=$2

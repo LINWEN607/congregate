@@ -11,11 +11,11 @@ In general congregate needs to perform tasks to get data from the source systems
 We are adding an onboarding issue for new employees and contractors with this info, but including it here to get you up to speed with testing and using congregate
 
 1. download and install [docker desktop](https://www.docker.com/products/docker-desktop) on your machine.
-1. download  `congregate:latest` using `docker pull registry.gitlab.com/gitlab-com/customer-success/tools/congregate:latest`
+1. download  `congregate:<version>` using `docker pull registry.gitlab.com/gitlab-com/customer-success/professional-services-group/global-practice-development/migration/congregate:<version>`
      - create personal access token (I created a file `gl_token.txt` containing the personal access token )
      - login into registry.gitlab.com with docker, `cat gl_token.txt | docker login --username 'cwolfe@taos.com' --password-stdin registry.gitlab.com`
 
-1. navigate to `https://gitlab.com/gitlab-com/customer-success/tools/congregate` and clone the repository to your local machine
+1. navigate to `https://gitlab.com/gitlab-com/customer-success/professional-services-group/global-practice-development/migration/congregate` and clone the repository to your local machine
 1. spin up gitlab, source, and congregate instances with data on them.
     - Create two Gitlab docker instances with `gitlab-ee` images and a `congregate` instance with the image you pulled previously in step one
        - Spin up migration test environment: `docker-compose -f migration-gitlab-to-gitlab.yaml up -d`
@@ -32,7 +32,7 @@ We are adding an onboarding issue for new employees and contractors with this in
     - manually create in `gitlab-web-2`:
       - personal access token under the default `root` user
 1. `exec` into congregate services `docker-compose -f migration-gitlab-to-gitlab.yaml exec congregate bash`
-1. Run the congregate configuration with `./congregate.sh configure` and follow the prompts. Provide `http://gitlab-web` as the source and `http://gitlab-web-2` as the destination along with username and tokens. You can grab examples from the [configuration template](https://gitlab.com/gitlab-com/customer-success/tools/congregate/-/blob/master/congregate.conf.template)
+1. Run the congregate configuration with `./congregate.sh configure` and follow the prompts. Provide `http://gitlab-web` as the source and `http://gitlab-web-2` as the destination along with username and tokens. You can grab examples from the [configuration template](https://gitlab.com/gitlab-com/customer-success/professional-services-group/global-practice-development/migration/congregate/-/blob/master/congregate.conf.template)
 1. run `./congregate.sh list` to pull all data from source systems
 1. if this runs successfully, run a `less data/groups.json` to see some of the data that was pulled in.
 1. migrate a specific group by finding the group id by running `cat data/groups.json | grep -i <group-name> -A 10 -B 10`

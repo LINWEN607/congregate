@@ -85,13 +85,14 @@ force_rand_pwd = False
 export_import_wait_time = 10
 ui_port = 8000
 ```
+
 ## Troubleshooting
 
 ### Docker image won't build
 
 If you are having trouble building the docker image, you can replace `bitbucket-seed:latest` in `docker-compose.yml` with the bitbucket seed image stored in the container registry:
 
-`registry.gitlab.com/gitlab-com/customer-success/tools/congregate/bitbucket-seed:latest`
+`registry.gitlab.com/gitlab-com/customer-success/professional-services-group/global-practice-development/migration/congregate/bitbucket-seed:latest`
 
 This will require you to login to the GitLab container registry (`docker login registry.gitlab.com`) before spinning up the containers
 

@@ -1,4 +1,4 @@
-version: '3'
+version: "3"
 
 volumes:
     glone-etc:
@@ -15,7 +15,7 @@ services:
             - "7999:7999"
         depends_on:
             - postgres
-        hostname: 'bitbucket'
+        hostname: "bitbucket"
         environment:
             - SETUP_LICENSE=$BITBUCKET_LICENSE
             - SETUP_BASEURL=http://bitbucket
@@ -38,21 +38,21 @@ services:
         container_name: gitlab-web
         hostname: gitlab-web-local.com
         volumes:
-            - 'glone-etc:/etc/gitlab'
-            - 'glone-logs:/var/log/gitlab'
-            - 'glone-data:/var/opt/gitlab'
+            - "glone-etc:/etc/gitlab"
+            - "glone-logs:/var/log/gitlab"
+            - "glone-data:/var/opt/gitlab"
         ports:
-            - '22:22'
-            - '8080:80'
-            - '8443:443'
-            - '9090:9090'
+            - "22:22"
+            - "8080:80"
+            - "8443:443"
+            - "9090:9090"
         networks:
             # Gitlab will build a direct stream for bitbucket repo to gitlab project imports so both networks are required
             congregate:
             bitbucket:
 
     congregate:
-        image: registry.gitlab.com/gitlab-com/customer-success/tools/congregate:latest-debian
+        image: registry.gitlab.com/gitlab-com/customer-success/professional-services-group/global-practice-development/migration/congregate:latest-debian
         container_name: congregate
         hostname: congregate
         volumes:
@@ -75,7 +75,7 @@ services:
             - database.env
         volumes:
             - $CONGREGATE_PATH/test-data/database:/var/lib/postgresql/data/
-        hostname: 'postgres'
+        hostname: "postgres"
         networks:
             bitbucket:
 
@@ -83,12 +83,12 @@ networks:
     # Create seperate subnets for gitlab and bitbucket so gitlab will be able to send outbound requests to bitbucket on a "non local" network
     # By default, gitlab prevents outbound requests on a local network
     congregate:
-        ipam: 
-          driver: default
-          config:
-            - subnet: 173.28.0.0/29
+        ipam:
+            driver: default
+            config:
+                - subnet: 173.28.0.0/29
     bitbucket:
         ipam:
-          driver: default
-          config:
-            - subnet: 173.29.0.0/29
+            driver: default
+            config:
+                - subnet: 173.29.0.0/29
