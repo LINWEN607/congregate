@@ -21,7 +21,7 @@ alias drun='docker run \
               -v /var/run/docker.sock:/var/run/docker.sock \
               -v $HOME/congregate_data:/opt/congregate/data \
               -p 8000:8000 \
-              -it registry.gitlab.com/gitlab-com/customer-success/tools/congregate:rolling-debian \
+              -it registry.gitlab.com/gitlab-com/customer-success/professional-services-group/global-practice-development/migration/congregate:rolling-debian \
               /bin/bash'
 alias pyclean='find ./congregate -name "*.pyc" -delete'
 alias gendocs='./read-docs.sh'
