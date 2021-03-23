@@ -182,11 +182,17 @@ class ImportExportClientTests(unittest.TestCase):
 
     @patch('congregate.helpers.conf.Config.importexport_wait', new_callable=PropertyMock)
     @patch('congregate.helpers.conf.Config.max_export_wait_time', new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.source_type', new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.source_host', new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'source_token', new_callable=PropertyMock)
     @patch.object(ProjectsApi, "export_project")
     @patch.object(ProjectsApi, "get_project_export_status")
-    def test_wait_for_export_to_finish_project_202_200_finished(self, mock_get_project_export_status, mock_export_project, max_wait, wait):
+    def test_wait_for_export_to_finish_project_202_200_finished(self, mock_get_project_export_status, mock_export_project, mock_token, mock_host, mock_type, max_wait, wait):
         wait.return_value = 0.01
         max_wait.return_value = 0.1
+        mock_token.return_value = "token"
+        mock_host.return_value = "https//gitlab.example.com"
+        mock_type.return_value = "gitlab"
         ok_export_mock = MagicMock()
         type(ok_export_mock).status_code = PropertyMock(
             return_value=202)
@@ -202,11 +208,17 @@ class ImportExportClientTests(unittest.TestCase):
 
     @patch('congregate.helpers.conf.Config.importexport_wait', new_callable=PropertyMock)
     @patch('congregate.helpers.conf.Config.max_export_wait_time', new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.source_type', new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.source_host', new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'source_token', new_callable=PropertyMock)
     @patch.object(ProjectsApi, "export_project")
     @patch.object(ProjectsApi, "get_project_export_status")
-    def test_wait_for_export_to_finish_project_202_200_none_timeout(self, mock_get_project_export_status, mock_export_project, max_wait, wait):
+    def test_wait_for_export_to_finish_project_202_200_none_timeout(self, mock_get_project_export_status, mock_export_project, mock_token, mock_host, mock_type, max_wait, wait):
         wait.return_value = 0.01
         max_wait.return_value = 0.1
+        mock_token.return_value = "token"
+        mock_host.return_value = "https//gitlab.example.com"
+        mock_type.return_value = "gitlab"
         ok_export_mock = MagicMock()
         type(ok_export_mock).status_code = PropertyMock(
             return_value=202)
@@ -222,10 +234,16 @@ class ImportExportClientTests(unittest.TestCase):
 
     @patch('congregate.helpers.conf.Config.importexport_wait', new_callable=PropertyMock)
     @patch('congregate.helpers.conf.Config.max_export_wait_time', new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.source_type', new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.source_host', new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'source_token', new_callable=PropertyMock)
     @patch.object(ProjectsApi, "export_project")
-    def test_wait_for_export_to_finish_project_404(self, mock_export_project, max_wait, wait):
+    def test_wait_for_export_to_finish_project_404(self, mock_export_project, mock_token, mock_host, mock_type, max_wait, wait):
         wait.return_value = 0.01
         max_wait.return_value = 0.1
+        mock_token.return_value = "token"
+        mock_host.return_value = "https//gitlab.example.com"
+        mock_type.return_value = "gitlab"
         ok_export_mock = MagicMock()
         type(ok_export_mock).status_code = PropertyMock(
             return_value=404)

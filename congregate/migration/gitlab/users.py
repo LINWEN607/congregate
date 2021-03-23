@@ -21,18 +21,18 @@ class UsersClient(BaseClass):
         return read_json_file_into_object("{}/data/staged_users.json".format(self.app_path))
 
     def find_user_by_email_comparison_with_id(self, old_user_id):
-        self.log.info("Searching for user email by ID {}".format(old_user_id))
+        self.log.info(f"Searching for user email by ID {old_user_id}")
         old_user = self.users_api.get_user(
             old_user_id,
             self.config.source_host,
             self.config.source_token).json()
         if old_user is not None and old_user and old_user.get("email", None) is not None:
-            self.log.info("Found by old user ID email {0} and user:\n{1}"
-                          .format(old_user.get("email", None), json_pretty(old_user)))
+            self.log.info(
+                f"Found by OLD user ID email {old_user.get('email', None)} and user:\n{json_pretty(old_user)}")
             return self.find_user_by_email_comparison_without_id(old_user["email"])
         else:
-            self.log.error("Could not by old user ID {0} email of user:\n{1}"
-                           .format(old_user_id, json_pretty(old_user)))
+            self.log.error(
+                f"Could NOT find by OLD user ID {old_user_id} email of user:\n{json_pretty(old_user)}")
         return None
 
     def find_user_by_email_comparison_without_id(self, email, src=False):

@@ -1,4 +1,4 @@
-from collections import Counter
+import sys
 
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.misc_utils import is_dot_com, is_error_message_present, dig
@@ -75,7 +75,7 @@ def get_project_namespace(p):
     """
     p_type = p["project_type"] if p.get(
         "project_type", None) else dig(p, 'namespace', 'kind')
-    p_namespace = dig(p,'namespace', 'full_path') if isinstance(
+    p_namespace = dig(p, 'namespace', 'full_path') if isinstance(
         p.get("namespace", None), dict) else p["namespace"]
 
     if p_type != "user":
@@ -161,6 +161,7 @@ def get_dst_path_with_namespace(p):
     """
     return "{0}/{1}".format(get_user_project_namespace(p) if is_user_project(p) else get_project_namespace(p), p["path"])
 
+
 def get_target_namespace(project):
     if target_namespace := project.get("target_namespace"):
         if target_namespace.split("/")[-1].lower() == project.get('namespace', '').lower():
@@ -169,6 +170,7 @@ def get_target_namespace(project):
             return f"{target_namespace}/{project.get('namespace')}"
     return None
 
+
 def get_results(res):
     """
     Calculate number of total and successful export or import results.
@@ -176,18 +178,17 @@ def get_results(res):
         :param res: List of dicts containing export or import results
         :return: Dict of "Total" and "Successful" number of exports or imports
     """
-    c = []
+    c = 0
     for r in res:
-        for k, v in r.items():
-            if not v or is_error_message_present(v):
-                c.append(False)
-            repo_present = dig(r[k], 'repository')
+        for v in r.values():
+            if not v or is_error_message_present(v) or (isinstance(v, dict) and is_error_message_present(v.get("response", None))):
+                c += 1
+            repo_present = dig(v, 'repository')
             if repo_present is not None and repo_present is False:
-                c.append(False)
-
+                c += 1
     return {
         "Total": len(res),
-        "Successful": len(res) - Counter(c).get(False, 0)
+        "Successful": len(res) - c
     }
 
 
@@ -203,8 +204,7 @@ def is_top_level_group(g):
 
 def is_loc_supported(loc):
     if loc not in ["filesystem", "aws"]:
-        b.log.error("Unsupported export location: {}".format(loc))
-        exit()
+        sys.exit(f"Unsupported export location: {loc}")
 
 
 def can_migrate_users(users):

@@ -232,7 +232,7 @@ class MigrateClient(BaseClass):
                 "Issues will not be created."
             )
         else:
-            self.log.error(
+            self.log.warning(
                 "Couldn't find a required REPORTING config in [DESTINATION] section of congregate.conf.\n"
                 "Issues will not be created."
             )
@@ -297,37 +297,40 @@ class MigrateClient(BaseClass):
     def import_github_project(self, project):
         gh_host, gh_token = self.get_host_and_token()
         members = project.pop("members")
-        path_with_namespace = f"{project.get('target_namespace', '')}/{project.get('path_with_namespace', '')}"
+        path_with_namespace = f"{project.get('target_namespace', self.config.dstn_parent_group_path or '')}/{project.get('path_with_namespace', '')}".strip("/")
+        if target_namespace := get_target_namespace(project):
+            tn = target_namespace
+        else:
+            tn = get_dst_path_with_namespace(project).rsplit("/", 1)[0]
         # TODO: Make this target namespace lookup requirement configurable
-        if self.groups.find_group_id_by_path(self.config.destination_host,
-                                             self.config.destination_token, get_target_namespace(project)):
+        if self.groups.find_group_id_by_path(self.config.destination_host, self.config.destination_token, tn):
             if dst_pid := self.projects.find_project_by_path(
                     self.config.destination_host, self.config.destination_token, path_with_namespace):
-                self.log.info(
-                    f"Repo {path_with_namespace} has already been imported. Skipping import")
+                self.log.warning(
+                    f"Skipping import. Repo {path_with_namespace} has already been imported")
                 result = self.ext_import.get_result_data(
-                    project, {"id": dst_pid})
+                    path_with_namespace, {"id": dst_pid})
             else:
                 result = self.ext_import.trigger_import_from_ghe(
-                    project, gh_host, gh_token, dry_run=self.dry_run)
-                if result.get(project["path_with_namespace"], False) is not False:
-                    result_response = result[project["path_with_namespace"]]["response"]
-                    if (isinstance(result_response, dict)) and (project_id := result_response.get("id", None)):
-                        full_path = result_response.get("full_path").strip("/")
-                        success = self.ext_import.wait_for_project_to_import(
-                            full_path)
-                        if success:
-                            result = self.handle_gh_post_migration(
-                                result, project, project_id, members)
-                        else:
-                            result = self.ext_import.get_failed_result(project, data={
-                                "error": "Import time limit exceeded. Unable to execute post migration phase"
-                            })
+                    project["id"], path_with_namespace, tn, gh_host, gh_token, dry_run=self.dry_run)
+                result_response = result[path_with_namespace]["response"]
+                if (isinstance(result_response, dict)) and (project_id := result_response.get("id", None)):
+                    full_path = result_response.get("full_path").strip("/")
+                    success = self.ext_import.wait_for_project_to_import(
+                        full_path)
+                    if success:
+                        result = self.handle_gh_post_migration(
+                            result, path_with_namespace, project, project_id, members)
+                    else:
+                        result = self.ext_import.get_failed_result(path_with_namespace, data={
+                            "error": "Import time limit exceeded. Unable to execute post migration phase"
+                        })
         else:
-            self.log.info(
-                f"Target namespace does not exist for {project['path_with_namespace']}. Skipping import.")
-            result = self.ext_import.get_result_data(project, {
-                "error": f"Target namespace {project.get('target_namespace', '')} does not exist. Skipping import"
+            log = f"Target namespace {tn} does not exist"
+            self.log.info("Skipping import. " + log +
+                          f" for {project['path']}")
+            result = self.ext_import.get_result_data(path_with_namespace, {
+                "error": log
             })
         return result
 
@@ -345,38 +348,43 @@ class MigrateClient(BaseClass):
 
         return gh_host, gh_token
 
-    def handle_gh_post_migration(self, result, project, project_id, members):
-        result[project["path_with_namespace"]]["members"] = (
+    def handle_gh_post_migration(self, result, path_with_namespace, project, pid, members):
+        result[path_with_namespace]["members"] = (
             self.projects.add_members_to_destination_project(
                 self.config.destination_host,
                 self.config.destination_token,
-                project_id, members
+                pid,
+                members
             )
         )
 
         # Migrate any external CI data
-        self.handle_ext_ci_src_migration(result, project, project_id)
+        self.handle_ext_ci_src_migration(result, project, pid)
 
-        self.projects.remove_import_user(project_id)
-        # Added a new file in the repo
-        result[project["path_with_namespace"]]["is_gh_pages"] = self.add_pipeline_for_github_pages(
-            project_id)
-        # Added protected branch
-        result[project["path_with_namespace"]]["project_level_protected_branch"] = (
-            self.gh_repos.migrate_gh_project_protected_branch(
-                project_id, project)
+        # Remove import user from members
+        self.projects.remove_import_user(pid)
+
+        # Add pages file to repo
+        result[path_with_namespace]["is_gh_pages"] = self.add_pipeline_for_github_pages(
+            pid)
+
+        # Add protected branch
+        result[path_with_namespace]["project_level_protected_branch"] = (
+            self.gh_repos.migrate_gh_project_protected_branch(pid, project)
         )
-        # Added project level MR rules
-        result[project["path_with_namespace"]]["project_level_mr_approvals"] = (
-            self.gh_repos.migrate_gh_project_level_mr_approvals(
-                project_id, project)
+
+        # Add project level MR rules
+        result[path_with_namespace]["project_level_mr_approvals"] = (
+            self.gh_repos.migrate_gh_project_level_mr_approvals(pid, project)
         )
+
         # Migrate archived projects
-        result[project["path_with_namespace"]]["archived"] = self.gh_repos.migrate_archived_repo(
-            project_id, project)
+        result[path_with_namespace]["archived"] = self.gh_repos.migrate_archived_repo(
+            pid, project)
+
         # Remove members if skip_adding_members is True
-        result[project["path_with_namespace"]
-               ]["members"]["email"] = self.handle_member_retention(members, project_id)
+        result[path_with_namespace]["members"]["email"] = self.handle_member_retention(
+            members, pid)
 
         return result
 
@@ -542,33 +550,33 @@ class MigrateClient(BaseClass):
         members = project.pop("members")
         result = self.ext_import.trigger_import_from_bb_server(
             project, dry_run=self.dry_run)
-        if result.get(project["path_with_namespace"], False) is not False:
-            result_response = result[project["path_with_namespace"]]["response"]
-            if project_id := result_response.get("id", None):
-                full_path = result_response.get("full_path").strip("/")
-                success = self.ext_import.wait_for_project_to_import(full_path)
-                if success:
-                    result["members"] = self.projects.add_members_to_destination_project(
-                        self.config.destination_host, self.config.destination_token, project_id, members)
-                    # Set default branch
-                    self.projects_api.set_default_project_branch(
-                        project_id,
-                        self.config.destination_host,
-                        self.config.destination_token,
-                        project.get("default_branch", "master")
-                    )
-                    # Set branch permissions
-                    self.bbs_repos_client.migrate_permissions(
-                        project, project_id)
-                    # Correcting bug where group's description is persisted to project's description
-                    self.bbs_repos_client.correct_repo_description(
-                        project, project_id)
-                    # Remove import user
-                    self.projects.remove_import_user(project_id)
-                else:
-                    result = self.ext_import.get_failed_result(project, data={
-                        "error": "Import time limit exceeded. Unable to execute post migration phase"
-                    })
+        path_with_namespace = next(iter(result))
+        result_response = result[path_with_namespace]["response"]
+        if project_id := result_response.get("id", None):
+            full_path = result_response.get("full_path").strip("/")
+            success = self.ext_import.wait_for_project_to_import(full_path)
+            if success:
+                result[path_with_namespace]["members"] = self.projects.add_members_to_destination_project(
+                    self.config.destination_host, self.config.destination_token, project_id, members)
+                # Set default branch
+                self.projects_api.set_default_project_branch(
+                    project_id,
+                    self.config.destination_host,
+                    self.config.destination_token,
+                    project.get("default_branch", "master")
+                )
+                # Set branch permissions
+                self.bbs_repos_client.migrate_permissions(
+                    project, project_id)
+                # Correcting bug where group's description is persisted to project's description
+                self.bbs_repos_client.correct_repo_description(
+                    project, project_id)
+                # Remove import user
+                self.projects.remove_import_user(project_id)
+            else:
+                result = self.ext_import.get_failed_result(path_with_namespace, data={
+                    "error": "Import time limit exceeded. Unable to execute post migration phase"
+                })
         return result
 
     def are_results(self, results, var, stage):

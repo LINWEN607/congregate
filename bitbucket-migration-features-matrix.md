@@ -18,7 +18,7 @@
 |                  | Pull requests              |             | :white_check_mark:   | :white_check_mark:   |
 |                  | MR comments                |             | :white_check_mark: * | :white_check_mark: * |
 |                  | Git Repo                   |             | :white_check_mark:   | :white_check_mark:   |
-|                  | LFS Objects                |             | :x:                  | :x:                  |
+|                  | LFS Objects                |             | :white_check_mark:   | :white_check_mark:   |
 |                  | Members/permission mapping |             | :x:                  | :white_check_mark:   |
 | **Users**        |
 |                  | User creation              |             | :x:                  | :white_check_mark:   |
