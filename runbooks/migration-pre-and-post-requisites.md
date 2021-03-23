@@ -21,6 +21,7 @@ This runbook covers the process of preparing and cleaning up after a migration f
 
 * [ ] Setup the migration VM that will host the Professional Services (PS) migration tool’s (Congregate) Docker container.
   * [ ] It should have minimal port and IP access. See [VM Requirements](#VM) for more detail.
+  * **NOTE:** If required the VM might be created, by the customer, within their environment. Make sure this approach is covered in the SoW.
 * [ ] (gitlab.com) Follow the [PS Provisioning Process](https://gitlab.com/gitlab-com/business-ops/team-member-enablement/runbooks/-/blob/master/it_operations/GitLab_com_environment_(PRD,DEV,STG)access_requests.md#provisioning-process) for GitLab.com environments Access Request.
 * [ ] Configure LDAP/SAML (in [identity provider](https://docs.gitlab.com/ee/administration/auth/)) for the Admin user account on the destination instance (as for other users).
   * This is required for the user-group-project mapping to succeed.
@@ -92,9 +93,10 @@ This runbook covers the process of preparing and cleaning up after a migration f
   import-<issue_id>-ip = <public_ip>
   ```
 
-  * Test the access: `ssh -i ~/.ssh/<ssh_public_key> root@<public_ip>`
+  * Test the access: `ssh -i ~/.ssh/<ssh_private_key> root@<public_ip>`
+  * Update package manager: `apt update && apt upgrade -y && apt autoremove -y`
   * Install docker: `apt install docker.io`
-  * Pull Congregate image relevant for the migration
+  * Follow `README.md#Installing and configuring Congregate (end-user)` for further steps
 
 ### Network; VM interaction
 
