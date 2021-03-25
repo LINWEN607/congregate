@@ -1,6 +1,6 @@
 from time import sleep
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import migration_dry_run, is_error_message_present, safe_json_response, dig
+from congregate.helpers.misc_utils import migration_dry_run, is_error_message_present, safe_json_response, dig, is_dot_com, is_github_dot_com
 from congregate.migration.gitlab.api.external_import import ImportApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.instance import InstanceApi
@@ -66,7 +66,9 @@ class ImportClient(BaseClass):
 
         # TODO: This condition needs to be moved to the __init__ function of this class
         # and properly handle non standard GitLab versions like RCs
-        data["github_hostname"] = host
+        if not is_github_dot_com(host):
+            data["github_hostname"] = f"{host.rstrip('/')}/api/v3" if is_dot_com(
+                self.config.destination_host) else host
         if not dry_run:
             try:
                 resp = self.ext_import.import_from_github(
