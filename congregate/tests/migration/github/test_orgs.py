@@ -18,6 +18,7 @@ from congregate.migration.github.users import UsersClient
 from congregate.migration.github.api.orgs import OrgsApi
 from congregate.migration.github.api.teams import TeamsApi
 
+
 @pytest.mark.unit_test
 class OrgsTests(unittest.TestCase):
     def setUp(self):
@@ -25,7 +26,8 @@ class OrgsTests(unittest.TestCase):
         self.mock_orgs = MockOrgsApi()
         self.mock_repos = MockReposApi()
         self.mock_teams = MockTeamsApi()
-        self.mongo_mock = MongoConnector(host="test-server", port=123456, client=mongomock.MongoClient)
+        self.mongo_mock = MongoConnector(
+            host="test-server", port=123456, client=mongomock.MongoClient)
         self.orgs = OrgsClient(host="github", token="123")
 
     def tearDown(self):
@@ -50,14 +52,15 @@ class OrgsTests(unittest.TestCase):
                               mock_org_response):
         mock_ci_sources1.return_value = []
         mock_ci_sources2.return_value = ['test-job1', 'test-job2']
-        
+
         mock_org = MagicMock()
         type(mock_org).status_code = PropertyMock(return_value=200)
         mock_org.json.return_value = self.mock_orgs.get_org()
         mock_org_response.return_value = mock_org
 
         mock_org_members.return_value = self.mock_orgs.get_all_org_members()
-        mock_org_repos.return_value = [(r, True) for r in self.mock_orgs.get_all_org_repos()]
+        mock_org_repos.return_value = [(r, True)
+                                       for r in self.mock_orgs.get_all_org_repos()]
 
         repo_members = [
             {
@@ -121,14 +124,12 @@ class OrgsTests(unittest.TestCase):
             }
         ]
 
-        # TODO: revert back to this line once collaborators are corrected
-        # mock_format_users.return_value = org_members
-        mock_format_users.return_value = []
+        mock_format_users.return_value = org_members
 
         expected_projects = [
             {
                 "name": "googleapis",
-                "members": [],
+                "members": repo_members,
                 "path": "googleapis",
                 "path_with_namespace": "org1/googleapis",
                 "http_url_to_repo": "https://github.gitlab-proserv.net/org1/googleapis.git",
@@ -149,7 +150,7 @@ class OrgsTests(unittest.TestCase):
             },
             {
                 "name": "gradio",
-                "members": [],
+                "members": repo_members,
                 "path": "gradio",
                 "ci_sources": {
                     "Jenkins": ['test-job1', 'test-job2'],
@@ -172,7 +173,7 @@ class OrgsTests(unittest.TestCase):
 
         expected_groups = [
             {
-                "members": [],
+                "members": org_members,
                 "parent_id": None,
                 "visibility": "private",
                 "name": "org1",
@@ -230,9 +231,11 @@ class OrgsTests(unittest.TestCase):
 
         self.orgs.add_org_as_group(
             [self.mock_orgs.get_org()], "org1", self.mongo_mock)
-        
-        actual_groups = [d for d, _ in self.mongo_mock.stream_collection("groups-github")]
-        actual_projects = [d for d, _ in self.mongo_mock.stream_collection("projects-github")]
+
+        actual_groups = [
+            d for d, _ in self.mongo_mock.stream_collection("groups-github")]
+        actual_projects = [
+            d for d, _ in self.mongo_mock.stream_collection("projects-github")]
 
         for i in range(len(expected_groups)):
             self.assertDictEqual(
@@ -268,8 +271,10 @@ class OrgsTests(unittest.TestCase):
 
         expected_groups, expected_projects = [], []
 
-        actual_groups = [d for d, _ in self.mongo_mock.stream_collection("groups-github")]
-        actual_projects = [d for d, _ in self.mongo_mock.stream_collection("projects-github")]
+        actual_groups = [
+            d for d, _ in self.mongo_mock.stream_collection("groups-github")]
+        actual_projects = [
+            d for d, _ in self.mongo_mock.stream_collection("projects-github")]
 
         self.orgs.add_team_as_subgroup(mock_org, mock_team, self.mongo_mock)
 
@@ -296,7 +301,7 @@ class OrgsTests(unittest.TestCase):
 
         mock_ci_sources1.return_value = []
         mock_ci_sources2.return_value = ['test-job1', 'test-job2']
-        
+
         mock_team = MagicMock()
         type(mock_team).status_code = PropertyMock(return_value=200)
         mock_team.json.return_value = self.mock_orgs.get_org_team()
@@ -358,7 +363,7 @@ class OrgsTests(unittest.TestCase):
                 "http_url_to_repo": "https://github.gitlab-proserv.net/org2/arrow.git",
                 "visibility": "public",
                 "description": None,
-                "members": []
+                "members": org_team_repo_members
             },
             {
                 "id": 9,
@@ -379,7 +384,7 @@ class OrgsTests(unittest.TestCase):
                 "http_url_to_repo": "https://github.gitlab-proserv.net/org2/phaser.git",
                 "visibility": "private",
                 "description": None,
-                "members": []
+                "members": org_team_repo_members
             }
         ]
 
@@ -441,17 +446,20 @@ class OrgsTests(unittest.TestCase):
             }
         ]
 
-        self.orgs.add_team_as_subgroup(mock_org, self.mock_orgs.get_org_child_team(), self.mongo_mock)
+        self.orgs.add_team_as_subgroup(
+            mock_org, self.mock_orgs.get_org_child_team(), self.mongo_mock)
 
-        actual_groups = [d for d, _ in self.mongo_mock.stream_collection("groups-github")]
-        actual_projects = [d for d, _ in self.mongo_mock.stream_collection("projects-github")]
+        actual_groups = [
+            d for d, _ in self.mongo_mock.stream_collection("groups-github")]
+        actual_projects = [
+            d for d, _ in self.mongo_mock.stream_collection("projects-github")]
 
         self.assertEqual(actual_groups.sort(key=lambda x: x["id"]),
                          expected_groups.sort(key=lambda x: x["id"]))
-        
+
         self.assertLogs("Failed to get full_path for team ({})".format(
             self.mock_orgs.get_org_child_team()))
-        
+
         for i in range(len(expected_projects)):
             self.assertDictEqual(
                 actual_projects[i], expected_projects[i]
@@ -475,7 +483,7 @@ class OrgsTests(unittest.TestCase):
 
         mock_ci_sources1.return_value = []
         mock_ci_sources2.return_value = ['test-job1', 'test-job2']
-      
+
         mock_team = MagicMock()
         type(mock_team).status_code = PropertyMock(return_value=200)
         mock_team.json.return_value = self.mock_orgs.get_org_team()
@@ -487,8 +495,6 @@ class OrgsTests(unittest.TestCase):
         mock_org_team_members.return_value = self.mock_orgs.get_all_org_team_members()
         mock_org_team_repos.return_value = self.mock_teams.get_all_team_repos()
         mock_org = self.mock_orgs.get_all_orgs()[1]
-
-        
 
         org_team_repo_members = [
             {
@@ -536,7 +542,7 @@ class OrgsTests(unittest.TestCase):
                 "http_url_to_repo": "https://github.gitlab-proserv.net/org2/arrow.git",
                 "visibility": "public",
                 "description": None,
-                "members": []
+                "members": org_team_repo_members
             },
             {
                 "id": 9,
@@ -557,7 +563,7 @@ class OrgsTests(unittest.TestCase):
                 "http_url_to_repo": "https://github.gitlab-proserv.net/org2/phaser.git",
                 "visibility": "private",
                 "description": None,
-                "members": []
+                "members": org_team_repo_members
             }
         ]
 
@@ -622,9 +628,11 @@ class OrgsTests(unittest.TestCase):
         self.orgs.add_team_as_subgroup(
             mock_org, self.mock_orgs.get_org_child_team(), self.mongo_mock)
 
-        actual_groups = [d for d, _ in self.mongo_mock.stream_collection("groups-github")]
-        
-        actual_projects = [d for d, _ in self.mongo_mock.stream_collection("projects-github")]
+        actual_groups = [
+            d for d, _ in self.mongo_mock.stream_collection("groups-github")]
+
+        actual_projects = [
+            d for d, _ in self.mongo_mock.stream_collection("projects-github")]
 
         self.assertEqual(actual_groups.sort(key=lambda x: x["id"]),
                          expected_groups.sort(key=lambda x: x["id"]))
