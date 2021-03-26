@@ -13,7 +13,6 @@ from congregate.helpers.misc_utils import get_dry_log, is_error_message_present,
     add_post_migration_stats, rotate_logs, is_github_dot_com, json_pretty, dig
 
 
-
 class ReposClient(BaseClass):
     REPO_PERMISSIONS_MAP = {
         ((u"admin", True), (u"push", True), (u"pull", True)): 40,  # Maintainer
@@ -98,7 +97,7 @@ class ReposClient(BaseClass):
             "description": repo.get(
                 "description",
                 ""),
-            # Temporarily commenting this out. This request is extremely 
+            # Temporarily commenting this out. This request is extremely
             # slow at scale and needs a refactor
             #
             # "members": self.add_repo_members(
@@ -107,7 +106,7 @@ class ReposClient(BaseClass):
             #     repo["name"],
             #     mongo) if not org else []
             "members": []
-            }
+        }
 
     def add_repo_members(self, kind, owner, repo, mongo):
         """
@@ -273,8 +272,7 @@ class ReposClient(BaseClass):
             "merge_requests_disable_committers_approval": False,
             "require_password_to_approve": False}
 
-    def format_project_level_mr_rule(
-            self, new_id, protected_branch_ids, user_ids=None, group_ids=None):
+    def format_project_level_mr_rule(self, protected_branch_ids, user_ids=None, group_ids=None):
         return{
             "name": "gh_pr_rules",
             "rule_type": "regular",
