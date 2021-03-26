@@ -186,7 +186,7 @@ class MigrateClient(BaseClass):
             write_results_to_file(
                 results, result_type="group", log=self.log)
         else:
-            self.log.info("SKIP: No projects to migrate")
+            self.log.info("SKIP: No groups to migrate")
         # Migrate GH repos to projects
         staged_projects = self.projects.get_staged_projects()
         if staged_projects and not self.skip_project_import:

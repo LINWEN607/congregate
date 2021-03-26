@@ -16,15 +16,18 @@ from congregate.migration.github.api.users import UsersApi
 from congregate.migration.github.meta.github_browser import GitHubBrowser
 from congregate.tests.mockapi.github.scrape import GitHubWebPageScrape
 
+
 class mock_github_browser():
     def scrape_user_email(self, x):
         return None
+
 
 @pytest.mark.unit_test
 class UsersTests(unittest.TestCase):
     def setUp(self):
         self.mock_users = MockUsersApi()
-        self.mongo_mock = MongoConnector(host="test-server", port=123456, client=mongomock.MongoClient)
+        self.mongo_mock = MongoConnector(
+            host="test-server", port=123456, client=mongomock.MongoClient)
         self.users = self.mock_user_client()
 
     def tearDown(self):
@@ -52,8 +55,10 @@ class UsersTests(unittest.TestCase):
                                 mock_file,
                                 mock_scrape_user_email,
                                 browser_init):
-        browser_init.side_effect = [mock_github_browser(), mock_github_browser(), mock_github_browser()]
-        mock_scrape_user_email.side_effect = ['test@email.com', 'test@email.com', 'test@email.com']
+        browser_init.side_effect = [mock_github_browser(
+        ), mock_github_browser(), mock_github_browser()]
+        mock_scrape_user_email.side_effect = [
+            'test@email.com', 'test@email.com', 'test@email.com']
         mock_source_token.return_value = "token"
         mock_source_host.return_value = "https://github.com"
         mock_user1 = MagicMock()
@@ -67,13 +72,13 @@ class UsersTests(unittest.TestCase):
         mock_user3.json.return_value = self.mock_users.get_user()[2]
         mock_single_user.side_effect = [mock_user1, mock_user2, mock_user3]
 
-
         mock_users.return_value = self.mock_users.get_all_users()
         mock_open.return_value = mock_file
 
         close_connection.return_value = None
 
-        mongo = MongoConnector(host="test-server", port=123456, client=mongomock.MongoClient)
+        mongo = MongoConnector(
+            host="test-server", port=123456, client=mongomock.MongoClient)
         scrape = GitHubWebPageScrape()
         # pylint: disable=no-member
         responses.add(responses.GET, "http://github.example.com",
@@ -94,7 +99,7 @@ class UsersTests(unittest.TestCase):
         expected_users = [
             {
                 "username": "ghost",
-                "name": None,
+                "name": "ghost",
                 "id": 1,
                 "state": "active",
                 "avatar_url": "https://github.gitlab-proserv.net/avatars/u/1?",
@@ -103,7 +108,7 @@ class UsersTests(unittest.TestCase):
             },
             {
                 "username": "gitlab",
-                "name": None,
+                "name": "gitlab",
                 "id": 3,
                 "state": "active",
                 "avatar_url": "https://github.gitlab-proserv.net/avatars/u/3?",
@@ -126,8 +131,10 @@ class UsersTests(unittest.TestCase):
                                            mock_single_user,
                                            mock_scrape_user_email,
                                            browser_init):
-        browser_init.side_effect = [mock_github_browser(), mock_github_browser(), mock_github_browser()]
-        mock_scrape_user_email.side_effect = ['test@email.com', 'test@email.com', 'test@email.com']
+        browser_init.side_effect = [mock_github_browser(
+        ), mock_github_browser(), mock_github_browser()]
+        mock_scrape_user_email.side_effect = [
+            'test@email.com', 'test@email.com', 'test@email.com']
         mock_source_host.return_value = "https://github.com"
 
         mock_user1 = MagicMock()
@@ -140,7 +147,8 @@ class UsersTests(unittest.TestCase):
         type(mock_user3).status_code = PropertyMock(return_value=200)
         mock_user3.json.return_value = self.mock_users.get_user()[2]
         mock_single_user.side_effect = [mock_user1, mock_user2, mock_user3]
-        mongo = MongoConnector(host="test-server", port=123456, client=mongomock.MongoClient)
+        mongo = MongoConnector(
+            host="test-server", port=123456, client=mongomock.MongoClient)
         actual_users = self.users.format_users([
             {"login": "ghost", "permissions": 40},
             {"login": "github-enterprise", "permissions": 30},
@@ -192,8 +200,10 @@ class UsersTests(unittest.TestCase):
                                      mock_single_user,
                                      mock_scrape_user_email,
                                      browser_init):
-        browser_init.side_effect = [mock_github_browser(), mock_github_browser(), mock_github_browser()]
-        mock_scrape_user_email.side_effect = ['test@email.com', 'test@email.com', 'test@email.com']
+        browser_init.side_effect = [mock_github_browser(
+        ), mock_github_browser(), mock_github_browser()]
+        mock_scrape_user_email.side_effect = [
+            'test@email.com', 'test@email.com', 'test@email.com']
         mock_source_host.return_value = "https://github.com"
 
         mock_user1 = MagicMock()
@@ -209,7 +219,8 @@ class UsersTests(unittest.TestCase):
         type(mock_user3).status_code = PropertyMock(return_value=200)
         mock_user3.json.return_value = self.mock_users.get_user()[2]
         mock_single_user.side_effect = [mock_user1, mock_user2, mock_user3]
-        mongo = MongoConnector(host="test-server", port=123456, client=mongomock.MongoClient)
+        mongo = MongoConnector(
+            host="test-server", port=123456, client=mongomock.MongoClient)
         actual_users = self.users.format_users([
             {"login": "ghost", "permissions": 40},
             {"login": "github-enterprise", "permissions": 30},
@@ -241,7 +252,7 @@ class UsersTests(unittest.TestCase):
 
         self.assertEqual(actual_users.sort(
             key=lambda x: x["id"]), expected_users.sort(key=lambda x: x["id"]))
-        
+
     @responses.activate
     def test_get_email_address_no_email(self):
         scrape = GitHubWebPageScrape()
@@ -260,14 +271,17 @@ class UsersTests(unittest.TestCase):
         expected = "jdoe@gitlab.com"
         u = self.mock_users.get_user()[3]
         u["email"] = None
-        mongo = MongoConnector(host="test-server", port=123456, client=mongomock.MongoClient)
+        mongo = MongoConnector(
+            host="test-server", port=123456, client=mongomock.MongoClient)
         actual = self.users.get_email_address(u, browser, mongo)
         self.assertEqual(expected, actual)
 
     def test_get_email_address(self):
         expected = "jdoe@gitlab.com"
-        mongo = MongoConnector(host="test-server", port=123456, client=mongomock.MongoClient)
-        actual = self.users.get_email_address(self.mock_users.get_user()[3], mock_github_browser(), mongo)
+        mongo = MongoConnector(
+            host="test-server", port=123456, client=mongomock.MongoClient)
+        actual = self.users.get_email_address(
+            self.mock_users.get_user()[3], mock_github_browser(), mongo)
         self.assertEqual(expected, actual)
 
     def mock_user_client(self):

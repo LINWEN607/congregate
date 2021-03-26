@@ -75,7 +75,7 @@ class UsersClient(BaseClass):
         return {
             "id": single_user["id"],
             "username": single_user["login"],
-            "name": single_user.get("name", single_user.get("login", None)),
+            "name": single_user["name"] or single_user["login"],
             "email": self.get_email_address(single_user, github_browser, mongo),
             "avatar_url": single_user.get("avatar_url", ""),
             "state": "blocked" if single_user.get("suspended_at", None) else "active",

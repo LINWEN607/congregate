@@ -270,8 +270,7 @@ class ReposClient(BaseClass):
             "merge_requests_disable_committers_approval": False,
             "require_password_to_approve": False}
 
-    def format_project_level_mr_rule(
-            self, new_id, protected_branch_ids, user_ids=None, group_ids=None):
+    def format_project_level_mr_rule(self, protected_branch_ids, user_ids=None, group_ids=None):
         return{
             "name": "gh_pr_rules",
             "rule_type": "regular",
