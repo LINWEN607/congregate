@@ -1,14 +1,15 @@
 import unittest
 import mock
 import pytest
-from requests import Response
 
+from congregate.helpers.configuration_validator import ConfigurationValidator
 from congregate.tests.mockapi.gitlab.groups import MockGroupsApi
 from congregate.tests.mockapi.gitlab.projects import MockProjectsApi
 from congregate.tests.mockapi.gitlab.users import MockUsersApi
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.projects import ProjectsClient
+from congregate.migration.gitlab.users import UsersApi
 
 
 @pytest.mark.unit_test
@@ -60,12 +61,13 @@ class ProjectsTests(unittest.TestCase):
         self.assertEqual(
             self.projects.retrieve_project_info("host", "token"), [])
 
-
-    @mock.patch("requests.Response.json")
-    @mock.patch("congregate.migration.gitlab.api.projects.ProjectsApi.add_member")
-    @mock.patch("congregate.migration.gitlab.users.UsersClient.find_user_by_email_comparison_without_id")
-    @mock.patch("congregate.helpers.misc_utils.safe_json_response")
-    def test_add_members_to_destination_group(self, users, user_by_email, projects, resp):
+    @mock.patch('congregate.helpers.conf.Config.destination_host', new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, 'destination_token', new_callable=mock.PropertyMock)
+    @mock.patch.object(ProjectsApi, "add_member")
+    @mock.patch.object(UsersApi, "search_for_user_by_email")
+    def test_add_members_to_destination_group(self, user_search_mock, add_member_mock, mock_token, mock_host):
+        mock_host.return_value = "https://gitlabdestination.com"
+        mock_token.return_value = "token"
         user_data = [
             {
                 "email": "johndoe@email.com",
@@ -84,36 +86,29 @@ class ProjectsTests(unittest.TestCase):
                 "email": "janedoe@email.com"
             }
         ]
-        user_by_email.side_effect = user_data
-        users.side_effect = [
-            {
-                "id": 1
-            },
-            {
-                "id": 2
-            }
-        ]
-
-        resp.json.side_effect = user_data
-
-        projects.side_effect = [
-            Response,
-            Response
-        ]
-
+        user_search_mock.side_effect = [[user_data[0]], [user_data[1]]]
+        member1_mock = mock.MagicMock()
+        type(member1_mock).status_code = mock.PropertyMock(return_value=200)
+        member1_mock.json.return_value = user_data[0]
+        member2_mock = mock.MagicMock()
+        type(member2_mock).status_code = mock.PropertyMock(return_value=200)
+        member2_mock.json.return_value = user_data[1]
+        add_member_mock.side_effect = [member1_mock, member2_mock]
         expected = {
             "johndoe@email.com": True,
             "janedoe@email.com": True
         }
-
-        actual = self.projects.add_members_to_destination_project("", "", 000, members)
+        actual = self.projects.add_members_to_destination_project(
+            "", "", 000, members)
         self.assertDictEqual(expected, actual)
 
-    @mock.patch("requests.Response.json")
-    @mock.patch("congregate.migration.gitlab.api.projects.ProjectsApi.add_member")
-    @mock.patch("congregate.migration.gitlab.users.UsersClient.find_user_by_email_comparison_without_id")
-    @mock.patch("congregate.helpers.misc_utils.safe_json_response")
-    def test_add_members_to_destination_group_missing_user(self, users, user_by_email, projects, resp):
+    @mock.patch('congregate.helpers.conf.Config.destination_host', new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, 'destination_token', new_callable=mock.PropertyMock)
+    @mock.patch.object(ProjectsApi, "add_member")
+    @mock.patch.object(UsersApi, "search_for_user_by_email")
+    def test_add_members_to_destination_group_missing_user(self, user_search_mock, add_member_mock, mock_token, mock_host):
+        mock_host.return_value = "https://gitlabdestination.com"
+        mock_token.return_value = "token"
         user_data = [
             {
                 "email": "johndoe@email.com",
@@ -129,23 +124,18 @@ class ProjectsTests(unittest.TestCase):
                 "email": "janedoe@email.com"
             }
         ]
-        user_by_email.side_effect = user_data
-        users.side_effect = [
-            {
-                "id": 1
-            }
-        ]
-
-        resp.json.side_effect = user_data
-
-        projects.side_effect = [
-            Response
-        ]
-
+        user_search_mock.side_effect = [[user_data[0]], [user_data[1]]]
+        member1_mock = mock.MagicMock()
+        type(member1_mock).status_code = mock.PropertyMock(return_value=200)
+        member1_mock.json.return_value = user_data[0]
+        member2_mock = mock.MagicMock()
+        type(member2_mock).status_code = mock.PropertyMock(return_value=404)
+        member2_mock.json.return_value = user_data[1]
+        add_member_mock.return_value = member1_mock
         expected = {
             "johndoe@email.com": True,
             "janedoe@email.com": False
         }
-
-        actual = self.projects.add_members_to_destination_project("", "", 000, members)
+        actual = self.projects.add_members_to_destination_project(
+            "", "", 000, members)
         self.assertDictEqual(expected, actual)

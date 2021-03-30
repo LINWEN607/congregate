@@ -8,8 +8,8 @@ from congregate.helpers.misc_utils import get_dry_log, get_timedelta, json_prett
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.groups import GroupsClient
-from congregate.migration.gitlab.users import UsersClient
-from congregate.helpers.migrate_utils import get_dst_path_with_namespace, get_full_path_with_parent_namespace, dig
+from congregate.helpers.migrate_utils import get_dst_path_with_namespace, \
+    get_full_path_with_parent_namespace, dig, get_staged_projects, get_staged_groups, find_user_by_email_comparison_without_id
 
 
 class ProjectsClient(BaseClass):
@@ -17,15 +17,10 @@ class ProjectsClient(BaseClass):
         self.projects_api = ProjectsApi()
         self.groups_api = GroupsApi()
         self.groups = GroupsClient()
-        self.users = UsersClient()
-        super(ProjectsClient, self).__init__()
+        super().__init__()
 
     def get_projects(self):
         with open("{}/data/projects.json".format(self.app_path), "r") as f:
-            return json.load(f)
-
-    def get_staged_projects(self):
-        with open("{}/data/staged_projects.json".format(self.app_path), "r") as f:
             return json.load(f)
 
     def root_user_present(self, members):
@@ -113,7 +108,7 @@ class ProjectsClient(BaseClass):
         return None
 
     def delete_projects(self, dry_run=True):
-        staged_projects = self.get_staged_projects()
+        staged_projects = get_staged_projects(self.app_path)
         for sp in staged_projects:
             # SaaS destination instances have a parent group
             path_with_namespace = get_dst_path_with_namespace(sp)
@@ -159,7 +154,7 @@ class ProjectsClient(BaseClass):
     def archive_staged_projects(self, dry_run=True):
         start = time()
         rotate_logs()
-        staged_projects = self.get_staged_projects()
+        staged_projects = get_staged_projects(self.app_path)
         self.log.info("Project count is: {}".format(len(staged_projects)))
         try:
             for project in staged_projects:
@@ -180,7 +175,7 @@ class ProjectsClient(BaseClass):
     def unarchive_staged_projects(self, dry_run=True):
         start = time()
         rotate_logs()
-        staged_projects = self.get_staged_projects()
+        staged_projects = get_staged_projects(self.app_path)
         self.log.info("Project count is: {}".format(len(staged_projects)))
         try:
             for project in staged_projects:
@@ -260,7 +255,7 @@ class ProjectsClient(BaseClass):
             len(empty_repos), "\n".join(ep for ep in empty_repos)))
 
     def validate_staged_projects_schema(self):
-        staged_groups = self.groups.get_staged_groups()
+        staged_groups = get_staged_groups(self.app_path)
         for g in staged_groups:
             self.log.info(g)
             if g.get("name", None) is None:
@@ -289,7 +284,7 @@ class ProjectsClient(BaseClass):
         self.log.info(
             f"Adding members to project ID {project_id}:\n{json_pretty(members)}")
         for member in members:
-            user_id_req = self.users.find_user_by_email_comparison_without_id(
+            user_id_req = find_user_by_email_comparison_without_id(
                 member["email"])
             member["user_id"] = user_id_req.get(
                 "id", None) if user_id_req else None
