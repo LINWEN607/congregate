@@ -6,6 +6,7 @@ from requests.exceptions import RequestException
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.misc_utils import get_dry_log, json_pretty, get_timedelta, \
     remove_dupes, rewrite_list_into_dict, read_json_file_into_object, safe_json_response, is_dot_com
+from congregate.helpers.migrate_utils import get_staged_users, find_user_by_email_comparison_without_id
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.users import UsersApi
 
@@ -14,11 +15,8 @@ class UsersClient(BaseClass):
     def __init__(self):
         self.groups_api = GroupsApi()
         self.users_api = UsersApi()
-        super(UsersClient, self).__init__()
+        super().__init__()
         self.sso_hash_map = self.generate_hash_map()
-
-    def get_staged_users(self):
-        return read_json_file_into_object("{}/data/staged_users.json".format(self.app_path))
 
     def find_user_by_email_comparison_with_id(self, old_user_id):
         self.log.info(f"Searching for user email by ID {old_user_id}")
@@ -29,41 +27,10 @@ class UsersClient(BaseClass):
         if old_user is not None and old_user and old_user.get("email", None) is not None:
             self.log.info(
                 f"Found by OLD user ID email {old_user.get('email', None)} and user:\n{json_pretty(old_user)}")
-            return self.find_user_by_email_comparison_without_id(old_user["email"])
+            return find_user_by_email_comparison_without_id(old_user["email"])
         else:
             self.log.error(
                 f"Could NOT find by OLD user ID {old_user_id} email of user:\n{json_pretty(old_user)}")
-        return None
-
-    def find_user_by_email_comparison_without_id(self, email, src=False):
-        """
-        Find a user by email address in the destination system
-        :param email: the email address to check for
-        :param src: Is this the source or destination system? True if source else False. Defaults to False.
-        :return: The user entity found or None
-        """
-        if email:
-            self.log.info("Searching for user email {0} in {1} system".format(
-                email, "source" if src else "destination"))
-            users = self.users_api.search_for_user_by_email(
-                self.config.source_host if src else self.config.destination_host,
-                self.config.source_token if src else self.config.destination_token,
-                email)
-            # Will searching for an explicit email actually return more than one? Probably is just an array of 1
-            for user in users:
-                if user and user.get("email", None) and user["email"].lower() == email.lower():
-                    self.log.info(
-                        f"Found user by matching primary email {email}")
-                    return user
-                # Allow secondary emails in user search (as of 13.7)
-                elif user and user.get("email", None):
-                    self.log.warning(
-                        f"Found user by email {email}, with primary set to {user['email']}")
-                else:
-                    self.log.error(
-                        f"Could NOT find user by primary email {email}")
-        else:
-            self.log.error("No user email provided. Skipping")
         return None
 
     def username_exists(self, old_user):
@@ -138,7 +105,7 @@ class UsersClient(BaseClass):
         new_user = None
         if user:
             if user.get("email", None) is not None:
-                new_user = self.find_user_by_email_comparison_without_id(
+                new_user = find_user_by_email_comparison_without_id(
                     user["email"])
             elif user.get("id", None) is not None:
                 new_user = self.find_user_by_email_comparison_with_id(
@@ -218,7 +185,7 @@ class UsersClient(BaseClass):
             # This means we're going to attempt to create the same user at some point, which is fine
             # However, this also messes up some of our remapping efforts, as those match on source username
             # and not email
-            found_by_email_user = self.find_user_by_email_comparison_without_id(
+            found_by_email_user = find_user_by_email_comparison_without_id(
                 user["email"])
             if found_by_email_user and found_by_email_user.get("username", None):
                 return found_by_email_user["username"]
@@ -372,7 +339,7 @@ class UsersClient(BaseClass):
         search based on the email address and *not* username
         :return:
         """
-        staged_users = self.get_staged_users()
+        staged_users = get_staged_users(self.app_path)
         new_users = []
         users_not_found = {}
         # Duplicate emails
@@ -381,7 +348,7 @@ class UsersClient(BaseClass):
         for user in staged_users:
             email = user.get("email", None)
             state = user.get("state", None)
-            new_user = self.find_user_by_email_comparison_without_id(email)
+            new_user = find_user_by_email_comparison_without_id(email)
             if new_user:
                 new_users.append({
                     "id": new_user.get("id", None),
@@ -490,7 +457,7 @@ class UsersClient(BaseClass):
 
     def block_user(self, user_data):
         try:
-            response = self.find_user_by_email_comparison_without_id(
+            response = find_user_by_email_comparison_without_id(
                 user_data["email"])
             user_creation_data = self.get_user_creation_id_and_email(response)
             if user_creation_data:
@@ -516,7 +483,7 @@ class UsersClient(BaseClass):
             self.log.info("User {0} already exists".format(user["email"]))
             try:
                 # Try to find the user by email. We either just created this, or it already existed
-                response = self.find_user_by_email_comparison_without_id(
+                response = find_user_by_email_comparison_without_id(
                     user["email"])
                 return self.get_user_creation_id_and_email(response)
             except RequestException as e:
@@ -571,12 +538,12 @@ class UsersClient(BaseClass):
             json.dump(remove_dupes(staged_users), f, indent=4)
 
     def delete_users(self, dry_run=True, hard_delete=False):
-        staged_users = self.get_staged_users()
+        staged_users = get_staged_users(self.app_path)
         for su in staged_users:
             email = su["email"]
             self.log.info("{0}Removing user {1}".format(
                 get_dry_log(dry_run), email))
-            user = self.find_user_by_email_comparison_without_id(email)
+            user = find_user_by_email_comparison_without_id(email)
             if user is None:
                 self.log.info(
                     "User {} does not exist or has already been removed".format(email))
