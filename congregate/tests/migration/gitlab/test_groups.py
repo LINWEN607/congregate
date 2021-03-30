@@ -3,10 +3,11 @@ import mock
 import pytest
 import responses
 
-from requests import Response
 from congregate.helpers.configuration_validator import ConfigurationValidator
 from congregate.migration.gitlab.groups import GroupsClient
 from congregate.tests.mockapi.gitlab.groups import MockGroupsApi
+from congregate.migration.gitlab.groups import GroupsApi
+from congregate.migration.gitlab.users import UsersApi
 
 
 @pytest.mark.unit_test
@@ -41,11 +42,16 @@ class GroupsTests(unittest.TestCase):
 
     # pylint: disable=no-member
     @responses.activate
+    @mock.patch('congregate.helpers.conf.Config.destination_host', new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, 'destination_token', new_callable=mock.PropertyMock)
     @mock.patch("congregate.helpers.api.list_all")
     @mock.patch("congregate.helpers.api.generate_get_request")
-    def test_is_group_non_empty_true_subgroups(self, mock_get_api, mock_list_all):
+    def test_is_group_non_empty_true_subgroups(self, mock_get_group, mock_list_all, mock_token, mock_host):
+        mock_host.return_value = "https://gitlabdestination.com"
+        mock_token.return_value = "token"
         url_value = "https://gitlab.com/api/v4/groups"
-        mock_list_all.return_value = self.mock_groups.get_all_subgroups_list()
+        mock_list_all.return_value = [
+            self.mock_groups.get_all_subgroups_list()[0]]
         responses.add(
             responses.GET,
             url_value,
@@ -87,11 +93,13 @@ class GroupsTests(unittest.TestCase):
             "host", "token", "some_full_path")
         self.assertIsNone(group_id)
 
-    @mock.patch("requests.Response.json")
-    @mock.patch("congregate.migration.gitlab.api.groups.GroupsApi.add_member_to_group")
-    @mock.patch("congregate.migration.gitlab.users.UsersClient.find_user_by_email_comparison_without_id")
-    @mock.patch("congregate.helpers.misc_utils.safe_json_response")
-    def test_add_members_to_destination_group(self, users, user_by_email, groups, resp):
+    @mock.patch('congregate.helpers.conf.Config.destination_host', new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, 'destination_token', new_callable=mock.PropertyMock)
+    @mock.patch.object(GroupsApi, "add_member_to_group")
+    @mock.patch.object(UsersApi, "search_for_user_by_email")
+    def test_add_members_to_destination_group(self, user_search_mock, add_member_mock, mock_token, mock_host):
+        mock_host.return_value = "https://gitlabdestination.com"
+        mock_token.return_value = "token"
         user_data = [
             {
                 "email": "johndoe@email.com",
@@ -110,37 +118,29 @@ class GroupsTests(unittest.TestCase):
                 "email": "janedoe@email.com"
             }
         ]
-        user_by_email.side_effect = user_data
-        users.side_effect = [
-            {
-                "id": 1
-            },
-            {
-                "id": 2
-            }
-        ]
-
-        resp.json.side_effect = user_data
-
-        groups.side_effect = [
-            Response,
-            Response
-        ]
-
+        user_search_mock.side_effect = [[user_data[0]], [user_data[1]]]
+        member1_mock = mock.MagicMock()
+        type(member1_mock).status_code = mock.PropertyMock(return_value=200)
+        member1_mock.json.return_value = user_data[0]
+        member2_mock = mock.MagicMock()
+        type(member2_mock).status_code = mock.PropertyMock(return_value=200)
+        member2_mock.json.return_value = user_data[1]
+        add_member_mock.side_effect = [member1_mock, member2_mock]
         expected = {
             "johndoe@email.com": True,
             "janedoe@email.com": True
         }
-
         actual = self.groups.add_members_to_destination_group(
             "", "", 000, members)
         self.assertDictEqual(expected, actual)
 
-    @mock.patch("requests.Response.json")
-    @mock.patch("congregate.migration.gitlab.api.groups.GroupsApi.add_member_to_group")
-    @mock.patch("congregate.migration.gitlab.users.UsersClient.find_user_by_email_comparison_without_id")
-    @mock.patch("congregate.helpers.misc_utils.safe_json_response")
-    def test_add_members_to_destination_group_missing_user(self, users, user_by_email, groups, resp):
+    @mock.patch('congregate.helpers.conf.Config.destination_host', new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, 'destination_token', new_callable=mock.PropertyMock)
+    @mock.patch.object(GroupsApi, "add_member_to_group")
+    @mock.patch.object(UsersApi, "search_for_user_by_email")
+    def test_add_members_to_destination_group_missing_user(self, user_search_mock, add_member_mock, mock_token, mock_host):
+        mock_host.return_value = "https://gitlabdestination.com"
+        mock_token.return_value = "token"
         user_data = [
             {
                 "email": "johndoe@email.com",
@@ -156,24 +156,18 @@ class GroupsTests(unittest.TestCase):
                 "email": "janedoe@email.com"
             }
         ]
-        user_by_email.side_effect = user_data
-        users.side_effect = [
-            {
-                "id": 1
-            }
-        ]
-
-        resp.json.side_effect = user_data
-
-        groups.side_effect = [
-            Response
-        ]
-
+        user_search_mock.side_effect = [[user_data[0]], [user_data[1]]]
+        member1_mock = mock.MagicMock()
+        type(member1_mock).status_code = mock.PropertyMock(return_value=200)
+        member1_mock.json.return_value = user_data[0]
+        member2_mock = mock.MagicMock()
+        type(member2_mock).status_code = mock.PropertyMock(return_value=404)
+        member2_mock.json.return_value = user_data[1]
+        add_member_mock.return_value = member1_mock
         expected = {
             "johndoe@email.com": True,
             "janedoe@email.com": False
         }
-
         actual = self.groups.add_members_to_destination_group(
             "", "", 000, members)
         self.assertDictEqual(expected, actual)

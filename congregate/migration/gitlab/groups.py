@@ -4,10 +4,9 @@ from requests.exceptions import RequestException
 
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.misc_utils import remove_dupes, get_timedelta, json_pretty, safe_json_response, write_json_to_file
-from congregate.helpers.migrate_utils import get_full_path_with_parent_namespace, is_top_level_group
+from congregate.helpers.migrate_utils import get_full_path_with_parent_namespace, is_top_level_group, get_staged_groups, find_user_by_email_comparison_without_id
 from congregate.migration.gitlab.variables import VariablesClient
 from congregate.migration.gitlab.badges import BadgesClient
-from congregate.migration.gitlab.users import UsersClient
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.namespaces import NamespacesApi
 
@@ -17,14 +16,9 @@ class GroupsClient(BaseClass):
         self.vars = VariablesClient()
         self.groups_api = GroupsApi()
         self.badges = BadgesClient()
-        self.users = UsersClient()
         self.namespaces_api = NamespacesApi()
         self.group_id_mapping = {}
-        super(GroupsClient, self).__init__()
-
-    def get_staged_groups(self):
-        with open("{}/data/staged_groups.json".format(self.app_path), "r") as f:
-            return json.load(f)
+        super().__init__()
 
     def traverse_groups(self, base_groups, transient_list, host, token, parent_group=None):
         for group in base_groups:
@@ -132,7 +126,7 @@ class GroupsClient(BaseClass):
                 return self.is_group_non_empty(resp.json())
 
     def delete_groups(self, dry_run=True, skip_projects=False):
-        staged_groups = self.get_staged_groups()
+        staged_groups = get_staged_groups(self.app_path)
         for sg in staged_groups:
             # SaaS destination instances have a parent group
             dest_full_path = get_full_path_with_parent_namespace(
@@ -214,7 +208,7 @@ class GroupsClient(BaseClass):
         print(ids)
 
     def validate_staged_groups_schema(self):
-        staged_groups = self.get_staged_groups()
+        staged_groups = get_staged_groups(self.app_path)
         for g in staged_groups:
             self.log.info(g)
             if g.get("name", None) is None:
@@ -283,7 +277,7 @@ class GroupsClient(BaseClass):
             f"Adding members to Group ID {group_id}:\n{json_pretty(members)}")
         for member in members:
             if member.get("email", None):
-                user_id_req = self.users.find_user_by_email_comparison_without_id(
+                user_id_req = find_user_by_email_comparison_without_id(
                     member["email"])
                 member["user_id"] = user_id_req.get(
                     "id", None) if user_id_req else None
