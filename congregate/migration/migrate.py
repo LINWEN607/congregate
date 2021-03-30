@@ -11,14 +11,10 @@ from time import time
 from traceback import print_exc
 from requests.exceptions import RequestException
 
+import congregate.helpers.misc_utils as misc_utils
+import congregate.helpers.migrate_utils as mig_utils
 from congregate.helpers import api
 from congregate.helpers.reporting import Reporting
-from congregate.helpers.migrate_utils import get_export_filename_from_namespace_and_name, get_dst_path_with_namespace, \
-    get_full_path_with_parent_namespace, get_staged_user_projects, is_top_level_group, get_failed_export_from_results, \
-    get_results, get_staged_groups_without_failed_export, get_staged_projects_without_failed_export, get_target_namespace
-from congregate.helpers.misc_utils import get_dry_log, json_pretty, is_dot_com, clean_data, add_post_migration_stats, \
-    rotate_logs, write_results_to_file, migration_dry_run, safe_json_response, is_error_message_present, \
-    get_duplicate_paths, deobfuscate, dig
 from congregate.helpers.jobtemplategenerator import JobTemplateGenerator
 from congregate.helpers.processes import start_multi_process
 from congregate.cli.stage_projects import ProjectStageCLI
@@ -109,19 +105,19 @@ class MigrateClient(BaseClass):
 
     def migrate(self):
         self.log.info(
-            f"{get_dry_log(self.dry_run)}Migrating data from {self.config.source_host} ({self.config.source_type}) to "
+            f"{misc_utils.get_dry_log(self.dry_run)}Migrating data from {self.config.source_host} ({self.config.source_type}) to "
             f"{self.config.destination_host}"
         )
 
         # Dry-run and log cleanup
         if self.dry_run:
-            clean_data(dry_run=False, files=[
+            misc_utils.clean_data(dry_run=False, files=[
                 "results/dry_run_user_migration.json",
                 "results/dry_run_group_migration.json",
                 "results/dry_run_project_migration.json"])
-        clean_data(dry_run=False, files=[
-                   "results/import_failed_relations.json"])
-        rotate_logs()
+        misc_utils.clean_data(dry_run=False, files=[
+            "results/import_failed_relations.json"])
+        misc_utils.rotate_logs()
 
         if self.config.source_type == "gitlab":
             self.migrate_from_gitlab()
@@ -132,10 +128,10 @@ class MigrateClient(BaseClass):
         else:
             self.log.warning(
                 f"Configuration (data/congregate.conf) src_type {self.config.source_type} not supported")
-        add_post_migration_stats(self.start, log=self.log)
+        misc_utils.add_post_migration_stats(self.start, log=self.log)
 
     def validate_groups_and_projects(self, staged, are_projects=False):
-        if dupes := get_duplicate_paths(staged, are_projects=are_projects):
+        if dupes := misc_utils.get_duplicate_paths(staged, are_projects=are_projects):
             self.log.warning("Duplicate {} paths:\n{}".format(
                 "project" if are_projects else "group", "\n".join(d for d in dupes)))
         if not are_projects:
@@ -161,18 +157,18 @@ class MigrateClient(BaseClass):
         self.clusters.migrate_instance_clusters(dry_run=self.dry_run)
 
         # Remove import user from parent group to avoid inheritance (self-managed only)
-        if not self.dry_run and self.config.dstn_parent_id and not is_dot_com(self.config.destination_host):
+        if not self.dry_run and self.config.dstn_parent_id and not misc_utils.is_dot_com(self.config.destination_host):
             self.groups.remove_import_user(self.config.dstn_parent_id)
 
     def migrate_from_github(self):
-        dry_log = get_dry_log(self.dry_run)
+        dry_log = misc_utils.get_dry_log(self.dry_run)
         import_results = None
 
         # Migrate users
         self.migrate_user_info()
 
         # Migrate GH orgs/teams to groups/sub-groups
-        staged_groups = self.groups.get_staged_groups()
+        staged_groups = mig_utils.get_staged_groups(self.app_path)
         if staged_groups and not self.skip_group_import:
             self.validate_groups_and_projects(staged_groups)
             self.log.info(
@@ -180,19 +176,19 @@ class MigrateClient(BaseClass):
             results = [r for r in start_multi_process(
                 self.migrate_github_group, staged_groups, processes=self.processes)]
             self.are_results(results, "group", "import")
-            results.append(get_results(results))
+            results.append(mig_utils.get_results(results))
             self.log.info(
-                f"### {dry_log}Group import results ###\n{json_pretty(results)}")
-            write_results_to_file(
+                f"### {dry_log}Group import results ###\n{misc_utils.json_pretty(results)}")
+            misc_utils.write_results_to_file(
                 results, result_type="group", log=self.log)
         else:
             self.log.info("SKIP: No groups to migrate")
         # Migrate GH repos to projects
-        staged_projects = self.projects.get_staged_projects()
+        staged_projects = mig_utils.get_staged_projects(self.app_path)
         if staged_projects and not self.skip_project_import:
             self.validate_groups_and_projects(
                 staged_projects, are_projects=True)
-            if user_projects := get_staged_user_projects(staged_projects):
+            if user_projects := mig_utils.get_staged_user_projects(staged_projects):
                 self.log.warning("User projects staged:\n{}".format(
                     "\n".join(u for u in user_projects)))
             self.log.info("Importing projects from GitHub")
@@ -201,10 +197,10 @@ class MigrateClient(BaseClass):
 
             self.are_results(import_results, "project", "import")
             # append Total : Successful count of project imports
-            import_results.append(get_results(import_results))
+            import_results.append(mig_utils.get_results(import_results))
             self.log.info(
-                f"### {dry_log}Project import results ###\n{json_pretty(import_results)}")
-            write_results_to_file(import_results, log=self.log)
+                f"### {dry_log}Project import results ###\n{misc_utils.json_pretty(import_results)}")
+            misc_utils.write_results_to_file(import_results, log=self.log)
         else:
             self.log.info("SKIP: No projects to migrate")
 
@@ -257,7 +253,7 @@ class MigrateClient(BaseClass):
     def migrate_github_group(self, group):
         result = False
         members = group.pop("members")
-        group["full_path"] = get_full_path_with_parent_namespace(
+        group["full_path"] = mig_utils.get_full_path_with_parent_namespace(
             group["full_path"])
         if not self.dry_run:
             # Wait for parent group to create
@@ -267,13 +263,13 @@ class MigrateClient(BaseClass):
                     return {
                         group["full_path"]: False
                     }
-                group["parent_id"] = safe_json_response(
+                group["parent_id"] = misc_utils.safe_json_response(
                     pnamespace)["id"] if group["parent_id"] else self.config.dstn_parent_id
             if group.get("description", None) is None:
                 group["description"] = ""
-            result = safe_json_response(self.groups_api.create_group(
+            result = misc_utils.safe_json_response(self.groups_api.create_group(
                 self.config.destination_host, self.config.destination_token, group))
-            if result and not is_error_message_present(result):
+            if result and not misc_utils.is_error_message_present(result):
                 group_id = result.get("id", None)
                 if group_id:
                     result["members"] = self.groups.add_members_to_destination_group(
@@ -298,10 +294,11 @@ class MigrateClient(BaseClass):
         gh_host, gh_token = self.get_host_and_token()
         members = project.pop("members")
         path_with_namespace = f"{project.get('target_namespace', self.config.dstn_parent_group_path or '')}/{project.get('path_with_namespace', '')}".strip("/")
-        if target_namespace := get_target_namespace(project):
+        if target_namespace := mig_utils.get_target_namespace(project):
             tn = target_namespace
         else:
-            tn = get_dst_path_with_namespace(project).rsplit("/", 1)[0]
+            tn = mig_utils.get_dst_path_with_namespace(
+                project).rsplit("/", 1)[0]
         # TODO: Make this target namespace lookup requirement configurable
         if self.groups.find_group_id_by_path(self.config.destination_host, self.config.destination_token, tn):
             if dst_pid := self.projects.find_project_by_path(
@@ -339,7 +336,8 @@ class MigrateClient(BaseClass):
             for single_source in self.config.list_multiple_source_config("github_source"):
                 if self.scm_source in single_source.get("src_hostname", None):
                     gh_host = single_source["src_hostname"]
-                    gh_token = deobfuscate(single_source["src_access_token"])
+                    gh_token = misc_utils.deobfuscate(
+                        single_source["src_access_token"])
                     self.gh_repos = ReposClient(gh_host, gh_token)
         else:
             gh_host = self.config.source_host
@@ -395,7 +393,7 @@ class MigrateClient(BaseClass):
                     JenkinsClient(
                         jc["jenkins_ci_src_hostname"],
                         jc["jenkins_ci_src_username"],
-                        deobfuscate(
+                        misc_utils.deobfuscate(
                             jc["jenkins_ci_src_access_token"]
                         )
                     )
@@ -417,7 +415,7 @@ class MigrateClient(BaseClass):
                 )
         if teamcity_configs := self.config.list_ci_source_config("teamcity_ci_source"):
             for tc in teamcity_configs:
-                tc_client = TeamcityClient(tc["tc_ci_src_hostname"], tc["tc_ci_src_username"], deobfuscate(
+                tc_client = TeamcityClient(tc["tc_ci_src_hostname"], tc["tc_ci_src_username"], misc_utils.deobfuscate(
                     tc["tc_ci_src_access_token"]))
                 result[project["path_with_namespace"]]["teamcity_variables"] = (
                     self.migrate_teamcity_variables(
@@ -470,13 +468,13 @@ class MigrateClient(BaseClass):
         return is_result
 
     def migrate_from_bitbucket_server(self):
-        dry_log = get_dry_log(self.dry_run)
+        dry_log = misc_utils.get_dry_log(self.dry_run)
 
         # Migrate users
         self.migrate_user_info()
 
         # Migrate BB projects to groups
-        staged_groups = self.groups.get_staged_groups()
+        staged_groups = mig_utils.get_staged_groups(self.app_path)
         if staged_groups and not self.skip_group_import:
             self.validate_groups_and_projects(staged_groups)
             self.log.info(
@@ -486,20 +484,20 @@ class MigrateClient(BaseClass):
 
             self.are_results(results, "group", "import")
 
-            results.append(get_results(results))
+            results.append(mig_utils.get_results(results))
             self.log.info("### {0}Group import results ###\n{1}"
-                          .format(dry_log, json_pretty(results)))
-            write_results_to_file(
+                          .format(dry_log, misc_utils.json_pretty(results)))
+            misc_utils.write_results_to_file(
                 results, result_type="group", log=self.log)
         else:
             self.log.info("SKIP: No projects to migrate")
 
         # Migrate BB repos to projects
-        staged_projects = self.projects.get_staged_projects()
+        staged_projects = mig_utils.get_staged_projects(self.app_path)
         if staged_projects and not self.skip_project_import:
             self.validate_groups_and_projects(
                 staged_projects, are_projects=True)
-            if user_projects := get_staged_user_projects(staged_projects):
+            if user_projects := mig_utils.get_staged_user_projects(staged_projects):
                 self.log.warning("User projects staged:\n{}".format(
                     "\n".join(u for u in user_projects)))
             self.log.info("Importing projects from BitBucket Server")
@@ -509,17 +507,17 @@ class MigrateClient(BaseClass):
             self.are_results(import_results, "project", "import")
 
             # append Total : Successful count of project imports
-            import_results.append(get_results(import_results))
+            import_results.append(mig_utils.get_results(import_results))
             self.log.info("### {0}Project import results ###\n{1}"
-                          .format(dry_log, json_pretty(import_results)))
-            write_results_to_file(import_results, log=self.log)
+                          .format(dry_log, misc_utils.json_pretty(import_results)))
+            misc_utils.write_results_to_file(import_results, log=self.log)
         else:
             self.log.info("SKIP: No projects to migrate")
 
     def migrate_bitbucket_group(self, group):
         result = False
         members = group.pop("members")
-        group["full_path"] = get_full_path_with_parent_namespace(
+        group["full_path"] = mig_utils.get_full_path_with_parent_namespace(
             group["full_path"]).lower()
         if group.get("path", None) is not None:
             group["path"] = group["path"].lower()
@@ -531,9 +529,9 @@ class MigrateClient(BaseClass):
                 f"{group['full_path']} ({group_id}) found. Skipping import. Adding members")
         if not self.dry_run:
             if not group_id:
-                result = safe_json_response(self.groups_api.create_group(
+                result = misc_utils.safe_json_response(self.groups_api.create_group(
                     self.config.destination_host, self.config.destination_token, group))
-                if result and not is_error_message_present(result):
+                if result and not misc_utils.is_error_message_present(result):
                     group_id = result.get("id", None)
                 else:
                     self.log.error(f"Unable to create group due to: {result}")
@@ -583,15 +581,15 @@ class MigrateClient(BaseClass):
         if not results:
             self.log.warning(
                 "Results from {0} {1} returned as empty. Aborting.".format(var, stage))
-            add_post_migration_stats(self.dry_run, log=self.log)
+            misc_utils.add_post_migration_stats(self.dry_run, log=self.log)
             sys.exit()
 
     def migrate_user_info(self):
-        staged_users = self.users.get_staged_users()
+        staged_users = mig_utils.get_staged_users(self.app_path)
         if staged_users:
             if not self.skip_users:
                 self.log.info("{}Migrating user info".format(
-                    get_dry_log(self.dry_run)))
+                    misc_utils.get_dry_log(self.dry_run)))
                 staged = self.users.handle_users_not_found(
                     "staged_users",
                     self.users.search_for_staged_users()[0],
@@ -603,15 +601,15 @@ class MigrateClient(BaseClass):
                 formatted_users = {}
                 for nu in new_users:
                     formatted_users[nu["email"]] = nu
-                new_users.append(get_results(new_users))
+                new_users.append(mig_utils.get_results(new_users))
                 self.log.info("### {0}User creation results ###\n{1}"
-                              .format(get_dry_log(self.dry_run), json_pretty(new_users)))
-                write_results_to_file(
+                              .format(misc_utils.get_dry_log(self.dry_run), misc_utils.json_pretty(new_users)))
+                misc_utils.write_results_to_file(
                     formatted_users, result_type="user", log=self.log)
                 if self.dry_run and not self.only_post_migration_info:
                     self.log.info(
                         "DRY-RUN: Outputing various USER migration data to dry_run_user_migration.json")
-                    migration_dry_run("user", list(start_multi_process(
+                    misc_utils.migration_dry_run("user", list(start_multi_process(
                         self.users.generate_user_data, staged_users, self.processes)))
             else:
                 self.log.info(
@@ -647,7 +645,7 @@ class MigrateClient(BaseClass):
                         all(v is not None for v in [name, username, email]):
                     user_data = self.users.generate_user_data(user)
                     self.log.info("{0}Attempting to create user {1}".format(
-                        get_dry_log(self.dry_run), email))
+                        misc_utils.get_dry_log(self.dry_run), email))
                     response = self.users_api.create_user(
                         self.config.destination_host,
                         self.config.destination_token,
@@ -655,7 +653,7 @@ class MigrateClient(BaseClass):
                     ) if not self.dry_run else None
                 else:
                     self.log.info("SKIP: Not migrating {0} user:\n{1}".format(
-                        state, json_pretty(user)))
+                        state, misc_utils.json_pretty(user)))
                 if response is not None:
                     # NOTE: Persist 'blocked' user state regardless of domain and creation status.
                     if user_data.get("state", None).lower() in self.BLOCKED:
@@ -664,7 +662,7 @@ class MigrateClient(BaseClass):
                         response, user_data)
             if not self.dry_run and self.config.source_type == "gitlab":
                 found_user = new_user if new_user.get(
-                    "id", None) is not None else self.users.find_user_by_email_comparison_without_id(email)
+                    "id", None) is not None else mig_utils.find_user_by_email_comparison_without_id(email)
                 new_user["id"] = found_user.get(
                     "id", None) if found_user else None
                 if found_user:
@@ -682,11 +680,12 @@ class MigrateClient(BaseClass):
         return new_user
 
     def migrate_group_info(self):
-        staged_groups = self.groups.get_staged_groups()
-        staged_top_groups = [g for g in staged_groups if is_top_level_group(g)]
+        staged_groups = mig_utils.get_staged_groups(self.app_path)
+        staged_top_groups = [
+            g for g in staged_groups if mig_utils.is_top_level_group(g)]
         staged_subgroups = [
-            g for g in staged_groups if not is_top_level_group(g)]
-        dry_log = get_dry_log(self.dry_run)
+            g for g in staged_groups if not mig_utils.is_top_level_group(g)]
+        dry_log = misc_utils.get_dry_log(self.dry_run)
         if staged_groups:
             self.validate_groups_and_projects(staged_groups)
             if not self.skip_group_export:
@@ -700,17 +699,17 @@ class MigrateClient(BaseClass):
                 self.are_results(export_results, "group", "export")
 
                 # Create list of groups that failed export
-                if failed := get_failed_export_from_results(export_results):
+                if failed := mig_utils.get_failed_export_from_results(export_results):
                     self.log.warning(
-                        f"SKIP: Groups that failed to export or already exist on destination:\n{json_pretty(failed)}")
+                        f"SKIP: Groups that failed to export or already exist on destination:\n{misc_utils.json_pretty(failed)}")
 
                 # Append total count of groups exported
-                export_results.append(get_results(export_results))
+                export_results.append(mig_utils.get_results(export_results))
                 self.log.info(
-                    f"### {dry_log}Group export results ###\n{json_pretty(export_results)}")
+                    f"### {dry_log}Group export results ###\n{misc_utils.json_pretty(export_results)}")
 
                 # Filter out the failed ones
-                staged_top_groups = get_staged_groups_without_failed_export(
+                staged_top_groups = mig_utils.get_staged_groups_without_failed_export(
                     staged_top_groups, failed)
             else:
                 self.log.info(
@@ -731,10 +730,10 @@ class MigrateClient(BaseClass):
                 self.are_results(import_results, "group", "import")
 
                 # Append Total : Successful count of group migrations
-                import_results.append(get_results(import_results))
+                import_results.append(mig_utils.get_results(import_results))
                 self.log.info(
-                    f"### {dry_log}Group import results ###\n{json_pretty(import_results)}")
-                write_results_to_file(
+                    f"### {dry_log}Group import results ###\n{misc_utils.json_pretty(import_results)}")
+                misc_utils.write_results_to_file(
                     import_results, result_type="group", log=self.log)
             else:
                 self.log.info(
@@ -745,8 +744,8 @@ class MigrateClient(BaseClass):
     def handle_exporting_groups(self, group):
         full_path = group["full_path"]
         gid = group["id"]
-        dry_log = get_dry_log(self.dry_run)
-        filename = get_export_filename_from_namespace_and_name(
+        dry_log = misc_utils.get_dry_log(self.dry_run)
+        filename = mig_utils.get_export_filename_from_namespace_and_name(
             full_path)
         result = {
             filename: False
@@ -767,9 +766,9 @@ class MigrateClient(BaseClass):
     def handle_importing_groups(self, group):
         full_path = group["full_path"]
         src_gid = group["id"]
-        full_path_with_parent_namespace = get_full_path_with_parent_namespace(
+        full_path_with_parent_namespace = mig_utils.get_full_path_with_parent_namespace(
             full_path)
-        filename = get_export_filename_from_namespace_and_name(
+        filename = mig_utils.get_export_filename_from_namespace_and_name(
             full_path)
         result = {
             full_path_with_parent_namespace: False
@@ -785,7 +784,7 @@ class MigrateClient(BaseClass):
             dst_gid = dst_grp.get("id", None) if dst_grp else None
             if dst_gid:
                 self.log.info("{0}Group {1} (ID: {2}) already exists on destination".format(
-                    get_dry_log(self.dry_run), full_path, dst_gid))
+                    misc_utils.get_dry_log(self.dry_run), full_path, dst_gid))
                 result[full_path_with_parent_namespace] = dst_gid
                 if self.only_post_migration_info and not self.dry_run:
                     import_id = dst_gid
@@ -794,7 +793,7 @@ class MigrateClient(BaseClass):
                     result[full_path_with_parent_namespace] = dst_gid
             else:
                 self.log.info("{0}Group {1} NOT found on destination, importing..."
-                              .format(get_dry_log(self.dry_run), full_path_with_parent_namespace))
+                              .format(misc_utils.get_dry_log(self.dry_run), full_path_with_parent_namespace))
                 imported = self.ie.import_group(
                     group,
                     full_path_with_parent_namespace,
@@ -821,7 +820,7 @@ class MigrateClient(BaseClass):
     def migrate_subgroup_info(self, subgroup):
         full_path = subgroup["full_path"]
         src_gid = subgroup["id"]
-        full_path_with_parent_namespace = get_full_path_with_parent_namespace(
+        full_path_with_parent_namespace = mig_utils.get_full_path_with_parent_namespace(
             full_path)
         result = {
             full_path_with_parent_namespace: False
@@ -840,7 +839,7 @@ class MigrateClient(BaseClass):
                 dst_gid = dst_grp.get("id", None) if dst_grp else None
             if dst_gid:
                 self.log.info(
-                    f"{get_dry_log(self.dry_run)}Sub-group {full_path} (ID: {dst_gid}) found on destination")
+                    f"{misc_utils.get_dry_log(self.dry_run)}Sub-group {full_path} (ID: {dst_gid}) found on destination")
                 if not self.dry_run:
                     result[full_path_with_parent_namespace] = self.migrate_single_group_features(
                         src_gid, dst_gid, full_path)
@@ -878,12 +877,12 @@ class MigrateClient(BaseClass):
         return results
 
     def migrate_project_info(self):
-        staged_projects = self.projects.get_staged_projects()
-        dry_log = get_dry_log(self.dry_run)
+        staged_projects = mig_utils.get_staged_projects(self.app_path)
+        dry_log = misc_utils.get_dry_log(self.dry_run)
         if staged_projects:
             self.validate_groups_and_projects(
                 staged_projects, are_projects=True)
-            if user_projects := get_staged_user_projects(staged_projects):
+            if user_projects := mig_utils.get_staged_user_projects(staged_projects):
                 self.log.warning("User projects staged:\n{}".format(
                     "\n".join(u for u in user_projects)))
             if not self.skip_project_export:
@@ -894,17 +893,17 @@ class MigrateClient(BaseClass):
                 self.are_results(export_results, "project", "export")
 
                 # Create list of projects that failed export
-                if failed := get_failed_export_from_results(export_results):
+                if failed := mig_utils.get_failed_export_from_results(export_results):
                     self.log.warning("SKIP: Projects that failed to export or already exist on destination:\n{}".format(
-                        json_pretty(failed)))
+                        misc_utils.json_pretty(failed)))
 
                 # Append total count of projects exported
-                export_results.append(get_results(export_results))
+                export_results.append(mig_utils.get_results(export_results))
                 self.log.info("### {0}Project export results ###\n{1}"
-                              .format(dry_log, json_pretty(export_results)))
+                              .format(dry_log, misc_utils.json_pretty(export_results)))
 
                 # Filter out the failed ones
-                staged_projects = get_staged_projects_without_failed_export(
+                staged_projects = mig_utils.get_staged_projects_without_failed_export(
                     staged_projects, failed)
             else:
                 self.log.info(
@@ -918,10 +917,10 @@ class MigrateClient(BaseClass):
                 self.are_results(import_results, "project", "import")
 
                 # append Total : Successful count of project imports
-                import_results.append(get_results(import_results))
+                import_results.append(mig_utils.get_results(import_results))
                 self.log.info("### {0}Project import results ###\n{1}"
-                              .format(dry_log, json_pretty(import_results)))
-                write_results_to_file(import_results, log=self.log)
+                              .format(dry_log, misc_utils.json_pretty(import_results)))
+                misc_utils.write_results_to_file(import_results, log=self.log)
             else:
                 self.log.info(
                     "SKIP: Assuming staged projects will be later imported")
@@ -932,8 +931,8 @@ class MigrateClient(BaseClass):
         name = project["name"]
         namespace = project["namespace"]
         pid = project["id"]
-        dry_log = get_dry_log(self.dry_run)
-        filename = get_export_filename_from_namespace_and_name(
+        dry_log = misc_utils.get_dry_log(self.dry_run)
+        filename = mig_utils.get_export_filename_from_namespace_and_name(
             namespace, name)
         result = {
             filename: False
@@ -955,7 +954,7 @@ class MigrateClient(BaseClass):
         src_id = project["id"]
         archived = project["archived"]
         path = project["path_with_namespace"]
-        dst_path_with_namespace = get_dst_path_with_namespace(
+        dst_path_with_namespace = mig_utils.get_dst_path_with_namespace(
             project)
         result = {
             dst_path_with_namespace: False
@@ -973,7 +972,7 @@ class MigrateClient(BaseClass):
                 self.projects_api.unarchive_project(
                     self.config.source_host, self.config.source_token, src_id)
             if dst_pid:
-                import_status = safe_json_response(self.projects_api.get_project_import_status(
+                import_status = misc_utils.safe_json_response(self.projects_api.get_project_import_status(
                     self.config.destination_host, self.config.destination_token, dst_pid))
                 self.log.info("Project {0} (ID: {1}) found on destination, with import status: {2}".format(
                     dst_path_with_namespace, dst_pid, import_status))
@@ -982,7 +981,7 @@ class MigrateClient(BaseClass):
                     result[dst_path_with_namespace] = dst_pid
             else:
                 self.log.info(
-                    f"{get_dry_log(self.dry_run)}Project {dst_path_with_namespace} NOT found on destination, importing...")
+                    f"{misc_utils.get_dry_log(self.dry_run)}Project {dst_path_with_namespace} NOT found on destination, importing...")
                 import_id = self.ie.import_project(
                     project, dry_run=self.dry_run)
             if import_id and not self.dry_run:
@@ -1129,7 +1128,7 @@ class MigrateClient(BaseClass):
                 params = tc_client.teamcity_api.get_build_params(job)
                 try:
                     if params.get("properties", None) is not None:
-                        for param in dig(params, "properties", "property", default=[]):
+                        for param in misc_utils.dig(params, "properties", "property", default=[]):
                             if not self.variables.safe_add_variables(
                                 new_id,
                                 tc_client.transform_ci_variables(
@@ -1201,8 +1200,8 @@ class MigrateClient(BaseClass):
         return is_result
 
     def rollback(self):
-        rotate_logs()
-        dry_log = get_dry_log(self.dry_run)
+        misc_utils.rotate_logs()
+        dry_log = misc_utils.get_dry_log(self.dry_run)
 
         # Remove groups and projects OR only empty groups
         if not self.skip_groups:
@@ -1224,7 +1223,7 @@ class MigrateClient(BaseClass):
             self.users.delete_users(
                 dry_run=self.dry_run, hard_delete=self.hard_delete)
 
-        add_post_migration_stats(self.start, log=self.log)
+        misc_utils.add_post_migration_stats(self.start, log=self.log)
 
     def remove_all_mirrors(self):
         # if os.path.isfile("%s/data/new_ids.txt" % self.app_path):
@@ -1239,7 +1238,7 @@ class MigrateClient(BaseClass):
 
     def get_new_ids(self):
         ids = []
-        staged_projects = self.projects.get_staged_projects()
+        staged_projects = mig_utils.get_staged_projects(self.app_path)
         if staged_projects:
             for project in staged_projects:
                 try:
@@ -1265,7 +1264,7 @@ class MigrateClient(BaseClass):
 
     def mirror_staged_projects(self):
         ids = self.get_new_ids()
-        staged_projects = self.projects.get_staged_projects()
+        staged_projects = mig_utils.get_staged_projects(self.app_path)
         if staged_projects:
             for i in enumerate(staged_projects):
                 pid = ids[i]
@@ -1339,7 +1338,7 @@ class MigrateClient(BaseClass):
 
     def toggle_maintenance_mode(self, off=False, msg=None, dest=False):
         host = self.config.destination_host if dest else self.config.source_host
-        if is_dot_com(host):
+        if misc_utils.is_dot_com(host):
             self.log.warning(
                 f"Not allowed to toggle maintenance mode on {host}")
         else:
