@@ -8,9 +8,9 @@ from congregate.migration.github.users import UsersClient
 from congregate.migration.github.api.users import UsersApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.projects import ProjectsClient
-from congregate.migration.gitlab.users import UsersClient as GitLabUsersClient
 from congregate.helpers.misc_utils import get_dry_log, is_error_message_present, safe_json_response, \
     add_post_migration_stats, rotate_logs, is_github_dot_com, json_pretty, dig
+from congregate.helpers.migrate_utils import get_staged_projects, find_user_by_email_comparison_without_id
 
 
 class ReposClient(BaseClass):
@@ -29,7 +29,6 @@ class ReposClient(BaseClass):
         self.users_api = UsersApi(host, token)
         self.gl_projects_api = ProjectsApi()
         self.gl_projects = ProjectsClient()
-        self.gl_users = GitLabUsersClient()
         self.host = host.split("//")[-1]
         self.processes = processes
         self.sub_processes = self.split_processes(processes)
@@ -240,8 +239,7 @@ class ReposClient(BaseClass):
         des_user_ids = []
         for user in self.get_email_list_of_reviewers_for_pr(
                 repo["namespace"], repo["path"]):
-            if des_user := self.gl_users.find_user_by_email_comparison_without_id(
-                    user):
+            if des_user := find_user_by_email_comparison_without_id(user):
                 des_user_ids.append(des_user["id"])
 
         rule = self.format_project_level_mr_rule(
@@ -460,7 +458,7 @@ class ReposClient(BaseClass):
     def archive_staged_repos(self, dry_run=True):
         start = time()
         rotate_logs()
-        staged_projects = self.gl_projects.get_staged_projects()
+        staged_projects = get_staged_projects(self.app_path)
         self.log.info("Project count is: {}".format(len(staged_projects)))
         try:
             for single_project in staged_projects:

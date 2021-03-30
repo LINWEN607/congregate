@@ -1,8 +1,9 @@
+import re
+
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.misc_utils import safe_json_response, dig
+from congregate.helpers.migrate_utils import find_user_by_email_comparison_without_id
 from congregate.migration.gitlab.api.issues import IssuesApi
-from congregate.migration.gitlab.users import UsersClient
-import re
 
 
 class Reporting(BaseClass):
@@ -26,7 +27,6 @@ class Reporting(BaseClass):
     def __init__(self, reporting_project_id, dry_run=True):
         self.reporting_project_id = reporting_project_id
         self.issuesApi = IssuesApi()
-        self.usersClient = UsersClient()
         self.templates = []
         super(Reporting, self).__init__()
         self.dry_run = dry_run
@@ -54,7 +54,8 @@ class Reporting(BaseClass):
         # making an issues data strucuture, building off previous structures
         combined_data = self.combine_wave_data(staged_projects, import_results)
         self.existing_issues = self.combine_existing_issues()
-        combined_issues = self.create_new_combined_issues(combined_data['issues'], self.existing_issues)
+        combined_issues = self.create_new_combined_issues(
+            combined_data['issues'], self.existing_issues)
 
         # Some stats ahead of time
         stats = {
@@ -83,19 +84,24 @@ class Reporting(BaseClass):
             # Create an issue
             if not combined_issues[issue]['status']['exists']:
                 progress['current'] += 1
-                self.log.info(f"Creating issue: '{issue}' Progress: [ {progress['current']} / {progress['total']} ]")
-                data = {'title': issue, 'description': combined_issues[issue]['description']}
+                self.log.info(
+                    f"Creating issue: '{issue}' Progress: [ {progress['current']} / {progress['total']} ]")
+                data = {'title': issue,
+                        'description': combined_issues[issue]['description']}
                 self.create_issue(data)
             # Update an issue
             elif combined_issues[issue]['status']['changed']:
                 progress['current'] += 1
-                self.log.info(f"Updating issue: '{issue}' Progress: [ {progress['current']} / {progress['total']} ]")
+                self.log.info(
+                    f"Updating issue: '{issue}' Progress: [ {progress['current']} / {progress['total']} ]")
                 data = {'description': combined_issues[issue]['description']}
-                r = self.update_issue(combined_issues[issue]['status']['exists'], data)
+                r = self.update_issue(
+                    combined_issues[issue]['status']['exists'], data)
             # Nothing to see here, move along
             else:
                 progress['current'] += 1
-                self.log.info(f"No changes for issue: '{issue}' Progress: [ {progress['current']} / {progress['total']} ]")
+                self.log.info(
+                    f"No changes for issue: '{issue}' Progress: [ {progress['current']} / {progress['total']} ]")
 
     def create_new_combined_issues(self, new_data, exst_data):
         '''
@@ -131,7 +137,8 @@ class Reporting(BaseClass):
                     # No changes to make, so we empty the list, I feel like this should be handled differently
                     new_data[issue]['assignees'] = []
                 # Get the required tasks
-                new_data[issue]['tasks'] = self.check_existing_tasks(new_data[issue]['tasks'], exst_data[issue]['tasks'])
+                new_data[issue]['tasks'] = self.check_existing_tasks(
+                    new_data[issue]['tasks'], exst_data[issue]['tasks'])
                 if new_data[issue]['tasks']:
                     new_data[issue]['status']['changed'] = True
                 # Use the existing description
@@ -160,7 +167,8 @@ class Reporting(BaseClass):
         # Get any existing issues
         existing = self.get_project_issues()
         for issue in existing:
-            existing[issue]['tasks'] = self.get_existing_tasks(existing[issue]['description'])
+            existing[issue]['tasks'] = self.get_existing_tasks(
+                existing[issue]['description'])
 
         return existing
 
@@ -177,11 +185,14 @@ class Reporting(BaseClass):
         # Raw projects
         clean_data['projects'] = self.check_import_results(import_results)
         # Combine with successful projects.  This limits us to only successful projects
-        clean_data['projects'] = self.check_staged_projects(staged_projects, clean_data['projects'])
+        clean_data['projects'] = self.check_staged_projects(
+            staged_projects, clean_data['projects'])
         # Create the email to username map
-        clean_data['users_map'] = self.create_users_map_from_data(clean_data['projects'])
+        clean_data['users_map'] = self.create_users_map_from_data(
+            clean_data['projects'])
         # Create our issues
-        clean_data['issues'] = self.create_issues_from_data(clean_data, self.template_issues)
+        clean_data['issues'] = self.create_issues_from_data(
+            clean_data, self.template_issues)
 
         return clean_data
 
@@ -218,14 +229,17 @@ class Reporting(BaseClass):
                     cur_desc = issue['description']
                     # Does our issue already exist in the dataset, if not create it with current assignee and task
                     if cur_title not in req_issues:
-                        req_issues[cur_title] = {'assignees': [{'name': uname}], 'tasks': [task], 'description': cur_desc}
+                        req_issues[cur_title] = {'assignees': [
+                            {'name': uname}], 'tasks': [task], 'description': cur_desc}
                     else:
                         req_issues[cur_title]['tasks'].append(task)
                         # Making sure username exists, and its not already in the list of assignees, add it
                         if (uname) and not any(u['name'] == uname for u in req_issues[cur_title]['assignees']):
-                            req_issues[cur_title]['assignees'].append({'name': uname})
+                            req_issues[cur_title]['assignees'].append(
+                                {'name': uname})
             else:
-                self.log.warning("Unable to create issue due to missing SWC manager email. Check your staged_projects.json")
+                self.log.warning(
+                    "Unable to create issue due to missing SWC manager email. Check your staged_projects.json")
 
         return req_issues
 
@@ -246,7 +260,7 @@ class Reporting(BaseClass):
                 # Did the staged project have a customer defined email and is it already mapped?
                 if email and email not in users_map:
                     # Did we get a username back from the GitLab instance?
-                    if uname := self.usersClient.find_user_by_email_comparison_without_id(email):
+                    if uname := find_user_by_email_comparison_without_id(email):
                         users_map[email] = uname['username']
                         progress['current'] += 1
                         self.log.info(
@@ -291,7 +305,8 @@ class Reporting(BaseClass):
         '''
         # removing reporting dict from import_results
         import_results.pop(-1)
-        good_errors = ['Name has already been taken, Path has already been taken']
+        good_errors = [
+            'Name has already been taken, Path has already been taken']
         successes = {}
         for result in import_results:
             for k, v in result.items():
@@ -303,7 +318,8 @@ class Reporting(BaseClass):
                             if errors in good_errors:
                                 successes[k.split('/')[1]] = None
                     except TypeError:
-                        self.log.error(f"There was some type of unhandled exception in import_results for: '{v}'. Raw data to follow: \n{v}")
+                        self.log.error(
+                            f"There was some type of unhandled exception in import_results for: '{v}'. Raw data to follow: \n{v}")
         return successes
 
     def check_staged_projects(self, staged_projects, clean_data):
@@ -409,12 +425,15 @@ class Reporting(BaseClass):
         '''
 
         if var in self.config.reporting['subs']:
-            description = description.replace(f"{{{{{var}}}}}", self.config.reporting['subs'][var])
+            description = description.replace(
+                f"{{{{{var}}}}}", self.config.reporting['subs'][var])
         else:
             try:
-                description = description.replace(f"{{{{{var}}}}}", str(eval(var)))
+                description = description.replace(
+                    f"{{{{{var}}}}}", str(eval(var)))
             except AttributeError:
-                self.log.warning(f"Problem with REPORTING VAR: '{var}', it does not exist.")
+                self.log.warning(
+                    f"Problem with REPORTING VAR: '{var}', it does not exist.")
             except NameError as e:
                 self.log.warning(f"Problem with REPORTING VAR: {e}")
         return description
@@ -424,7 +443,8 @@ class Reporting(BaseClass):
         find all occurences of pattern and create a list of them. Then call the subs_replace function and replace the
         pattern, then return the updated description.
         '''
-        occurrences = re.findall("{{(.*?)}}", description)  # One or more matches in the line
+        occurrences = re.findall(
+            "{{(.*?)}}", description)  # One or more matches in the line
         for var in occurrences:
             description = self.subs_replace(var, description)
         return description

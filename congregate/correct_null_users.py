@@ -1,7 +1,7 @@
 import json
 import sys
 from congregate.helpers.base_class import BaseClass
-from congregate.migration.gitlab.users import UsersClient
+from congregate.helpers.migrate_utils import find_user_by_email_comparison_without_id
 
 # Usage: poetry run python congregate/correct_null_users.py <file-in-data-directory>
 # Use this in the event all users listed the user_migration_results file had no IDs
@@ -9,7 +9,6 @@ from congregate.migration.gitlab.users import UsersClient
 path = sys.argv[1]
 
 b = BaseClass()
-u = UsersClient()
 
 
 with open(f"{b.app_path}/data/results/{path}", "r") as f:
@@ -18,7 +17,7 @@ with open(f"{b.app_path}/data/results/{path}", "r") as f:
 count = 0
 
 for k, v in data.items():
-    if user := u.find_user_by_email_comparison_without_id(v["email"]):
+    if user := find_user_by_email_comparison_without_id(v["email"]):
         print(user["id"])
         data[k]["id"] = user["id"]
         count += 1

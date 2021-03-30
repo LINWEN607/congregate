@@ -1,15 +1,14 @@
 import unittest
-import mock
 import pytest
 import responses
+from mock import patch, PropertyMock
+
 import congregate.helpers.migrate_utils as mutils
-from mock import patch, PropertyMock, MagicMock
 from congregate.tests.mockapi.gitlab.users import MockUsersApi
 from congregate.tests.mockapi.gitlab.groups import MockGroupsApi
 from congregate.tests.mockapi.gitlab.projects import MockProjectsApi
 from congregate.helpers.configuration_validator import ConfigurationValidator
 from congregate.migration.gitlab.api.groups import GroupsApi
-from congregate.migration.gitlab.users import UsersClient
 
 
 @pytest.mark.unit_test
@@ -321,7 +320,7 @@ class MigrateTests(unittest.TestCase):
     @patch.object(ConfigurationValidator, "import_user_id", new_callable=PropertyMock)
     @patch.object(ConfigurationValidator, "destination_host", new_callable=PropertyMock)
     @patch.object(ConfigurationValidator, "destination_token", new_callable=PropertyMock)
-    @patch.object(UsersClient, "find_user_by_email_comparison_without_id")
+    @patch("congregate.helpers.migrate_utils.find_user_by_email_comparison_without_id")
     def test_get_user_project_namespace_non_root(self, user, token, host, user_id):
         user.return_value = self.mock_users.get_user_gen()
         token.return_value = "abc"

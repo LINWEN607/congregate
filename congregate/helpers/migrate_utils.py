@@ -1,12 +1,10 @@
 import sys
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import is_dot_com, is_error_message_present, dig
+from congregate.helpers.misc_utils import is_dot_com, is_error_message_present, dig, read_json_file_into_object
 from congregate.migration.gitlab.api.users import UsersApi
-from congregate.migration.gitlab.users import UsersClient
 
 b = BaseClass()
-users_client = UsersClient()
 users_api = UsersApi()
 
 
@@ -18,6 +16,10 @@ def get_failed_export_from_results(res):
         :return: List of group or project filenames
     """
     return [k for r in res for k, v in r.items() if not v]
+
+
+def get_staged_projects(app_path):
+    return read_json_file_into_object(f"{app_path}/data/staged_projects.json")
 
 
 def get_staged_projects_without_failed_export(staged_projects, failed_export):
@@ -32,6 +34,10 @@ def get_staged_projects_without_failed_export(staged_projects, failed_export):
         p) not in failed_export]
 
 
+def get_staged_groups(app_path):
+    return read_json_file_into_object(f"{app_path}/data/staged_groups.json")
+
+
 def get_staged_groups_without_failed_export(staged_groups, failed_export):
     """
     Filter out groups that failed to export from the staged groups
@@ -41,6 +47,10 @@ def get_staged_groups_without_failed_export(staged_groups, failed_export):
         :return: A new staged_grups list removing those that failed export
     """
     return [g for g in staged_groups if get_export_filename_from_namespace_and_name(g["full_path"]) not in failed_export]
+
+
+def get_staged_users(app_path):
+    return read_json_file_into_object(f"{app_path}/data/staged_users.json")
 
 
 def get_project_filename(p):
@@ -145,11 +155,43 @@ def get_user_project_namespace(p):
     else:
         # Retrieve user username based on email to determine correct destination user namespace
         if p["members"] and p["members"][0].get("email", None) is not None:
-            user = users_client.find_user_by_email_comparison_without_id(
+            user = find_user_by_email_comparison_without_id(
                 p["members"][0]["email"])
             if user:
                 return user["username"]
     return p_namespace
+
+
+def find_user_by_email_comparison_without_id(email, src=False):
+    """
+    Find a user by email address in the destination system
+    :param email: the email address to check for
+    :param src: Is this the source or destination system? True if source else False. Defaults to False.
+    :return: The user entity found or None
+    """
+    if email:
+        b.log.info(
+            f"Searching for user email {email} in {'source' if src else 'destination'} system")
+        users = users_api.search_for_user_by_email(
+            b.config.source_host if src else b.config.destination_host,
+            b.config.source_token if src else b.config.destination_token,
+            email)
+        # Will searching for an explicit email actually return more than one? Probably is just an array of 1
+        for user in users:
+            if user and user.get("email", None) and user["email"].lower() == email.lower():
+                b.log.info(
+                    f"Found user by matching primary email {email}")
+                return user
+            # Allow secondary emails in user search (as of 13.7)
+            elif user and user.get("email", None):
+                b.log.warning(
+                    f"Found user by email {email}, with primary set to {user['email']}")
+            else:
+                b.log.error(
+                    f"Could NOT find user by primary email {email}")
+    else:
+        b.log.error("No user email provided. Skipping")
+    return None
 
 
 def get_dst_path_with_namespace(p):
