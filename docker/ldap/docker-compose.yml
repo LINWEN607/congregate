@@ -1,0 +1,42 @@
+version: '3'
+
+volumes:
+  glone-etc:
+  glone-logs:
+  glone-data:
+  openldap_data:
+    driver: local
+
+services:
+  openldap:
+    image: registry.gitlab.com/gitlab-com/customer-success/professional-services-group/global-practice-development/migration/openldap-container-bases/master:latest
+    ports:
+      - '1389:1389'
+      - '1636:1636'
+    environment:
+      - LDAP_ADMIN_USERNAME=admin
+      - LDAP_ADMIN_PASSWORD=adminpassword
+    volumes:
+      - "$LDAP_HOME:/bitnami/openldap"
+  gitlab-web:
+      image: gitlab/gitlab-ee:latest
+      container_name: gitlab-web
+      hostname: gitlab-web-local.com
+      environment:
+        GITLAB_OMNIBUS_CONFIG: "from_file('/tmp/data/gitlab.rb')"
+      secrets:
+        - gitlab_root_password
+      volumes:
+        - "$GITLAB_HOME/config:/etc/gitlab"
+        - "$GITLAB_HOME/logs:/var/log/gitlab"
+        - "$GITLAB_HOME/data:/var/opt/gitlab"
+        - "./data:/tmp/data"
+      ports:
+          - "22:22"
+          - "8080:80"
+          - "8443:443"
+          - "9090:9090"
+
+secrets:
+  gitlab_root_password:
+    file: ./data/root_password.txt

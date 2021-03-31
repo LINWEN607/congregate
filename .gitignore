@@ -49,3 +49,6 @@ mongo/*
 congregate/data/*
 docker/github/data/congregate.conf
 docker/github/gitlab-*/
+
+docker/ldap/ldap_dir
+docker/ldap/gitlab_dir

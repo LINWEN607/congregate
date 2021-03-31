@@ -144,6 +144,27 @@ build jenkins seed image:
         - docker/jenkins/jenkins.py
         - docker/jenkins/setup_and_seed.py
 
+check ldap compose yaml:
+  extends:
+    - .use-docker-in-docker
+    - .docker-login
+  stage: build
+  script:
+    - cd docker/ldap
+    - docker info
+    - apk update
+    - apk upgrade
+    - apk add curl
+    - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --profile default -y
+    - source $HOME/.cargo/env
+    - apk add python3 py-pip python3-dev libffi-dev openssl-dev gcc libc-dev rust cargo make
+    - /usr/bin/python3.7 -m pip install --upgrade pip
+    - pip3 install docker-compose
+    - docker-compose -f docker-compose.yml config
+  rules:
+    - changes:
+        - docker/ldap/**/*
+
 .test-job:
   stage: test
   before_script:
