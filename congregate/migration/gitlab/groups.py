@@ -126,7 +126,7 @@ class GroupsClient(BaseClass):
                 return self.is_group_non_empty(resp.json())
 
     def delete_groups(self, dry_run=True, skip_projects=False):
-        staged_groups = get_staged_groups(self.app_path)
+        staged_groups = get_staged_groups()
         for sg in staged_groups:
             # SaaS destination instances have a parent group
             dest_full_path = get_full_path_with_parent_namespace(
@@ -208,7 +208,7 @@ class GroupsClient(BaseClass):
         print(ids)
 
     def validate_staged_groups_schema(self):
-        staged_groups = get_staged_groups(self.app_path)
+        staged_groups = get_staged_groups()
         for g in staged_groups:
             self.log.info(g)
             if g.get("name", None) is None:

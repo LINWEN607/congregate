@@ -339,7 +339,7 @@ class UsersClient(BaseClass):
         search based on the email address and *not* username
         :return:
         """
-        staged_users = get_staged_users(self.app_path)
+        staged_users = get_staged_users()
         new_users = []
         users_not_found = {}
         # Duplicate emails
@@ -538,7 +538,7 @@ class UsersClient(BaseClass):
             json.dump(remove_dupes(staged_users), f, indent=4)
 
     def delete_users(self, dry_run=True, hard_delete=False):
-        staged_users = get_staged_users(self.app_path)
+        staged_users = get_staged_users()
         for su in staged_users:
             email = su["email"]
             self.log.info("{0}Removing user {1}".format(

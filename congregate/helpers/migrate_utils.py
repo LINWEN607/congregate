@@ -18,8 +18,8 @@ def get_failed_export_from_results(res):
     return [k for r in res for k, v in r.items() if not v]
 
 
-def get_staged_projects(app_path):
-    return read_json_file_into_object(f"{app_path}/data/staged_projects.json")
+def get_staged_projects():
+    return read_json_file_into_object(f"{b.app_path}/data/staged_projects.json")
 
 
 def get_staged_projects_without_failed_export(staged_projects, failed_export):
@@ -34,8 +34,8 @@ def get_staged_projects_without_failed_export(staged_projects, failed_export):
         p) not in failed_export]
 
 
-def get_staged_groups(app_path):
-    return read_json_file_into_object(f"{app_path}/data/staged_groups.json")
+def get_staged_groups():
+    return read_json_file_into_object(f"{b.app_path}/data/staged_groups.json")
 
 
 def get_staged_groups_without_failed_export(staged_groups, failed_export):
@@ -49,8 +49,8 @@ def get_staged_groups_without_failed_export(staged_groups, failed_export):
     return [g for g in staged_groups if get_export_filename_from_namespace_and_name(g["full_path"]) not in failed_export]
 
 
-def get_staged_users(app_path):
-    return read_json_file_into_object(f"{app_path}/data/staged_users.json")
+def get_staged_users():
+    return read_json_file_into_object(f"{b.app_path}/data/staged_users.json")
 
 
 def get_project_filename(p):

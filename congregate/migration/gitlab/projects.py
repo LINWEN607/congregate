@@ -108,7 +108,7 @@ class ProjectsClient(BaseClass):
         return None
 
     def delete_projects(self, dry_run=True):
-        staged_projects = get_staged_projects(self.app_path)
+        staged_projects = get_staged_projects()
         for sp in staged_projects:
             # SaaS destination instances have a parent group
             path_with_namespace = get_dst_path_with_namespace(sp)
@@ -154,7 +154,7 @@ class ProjectsClient(BaseClass):
     def archive_staged_projects(self, dry_run=True):
         start = time()
         rotate_logs()
-        staged_projects = get_staged_projects(self.app_path)
+        staged_projects = get_staged_projects()
         self.log.info("Project count is: {}".format(len(staged_projects)))
         try:
             for project in staged_projects:
@@ -175,7 +175,7 @@ class ProjectsClient(BaseClass):
     def unarchive_staged_projects(self, dry_run=True):
         start = time()
         rotate_logs()
-        staged_projects = get_staged_projects(self.app_path)
+        staged_projects = get_staged_projects()
         self.log.info("Project count is: {}".format(len(staged_projects)))
         try:
             for project in staged_projects:
@@ -255,7 +255,7 @@ class ProjectsClient(BaseClass):
             len(empty_repos), "\n".join(ep for ep in empty_repos)))
 
     def validate_staged_projects_schema(self):
-        staged_groups = get_staged_groups(self.app_path)
+        staged_groups = get_staged_groups()
         for g in staged_groups:
             self.log.info(g)
             if g.get("name", None) is None:

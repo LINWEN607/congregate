@@ -168,7 +168,7 @@ class MigrateClient(BaseClass):
         self.migrate_user_info()
 
         # Migrate GH orgs/teams to groups/sub-groups
-        staged_groups = mig_utils.get_staged_groups(self.app_path)
+        staged_groups = mig_utils.get_staged_groups()
         if staged_groups and not self.skip_group_import:
             self.validate_groups_and_projects(staged_groups)
             self.log.info(
@@ -184,7 +184,7 @@ class MigrateClient(BaseClass):
         else:
             self.log.info("SKIP: No groups to migrate")
         # Migrate GH repos to projects
-        staged_projects = mig_utils.get_staged_projects(self.app_path)
+        staged_projects = mig_utils.get_staged_projects()
         if staged_projects and not self.skip_project_import:
             self.validate_groups_and_projects(
                 staged_projects, are_projects=True)
@@ -474,7 +474,7 @@ class MigrateClient(BaseClass):
         self.migrate_user_info()
 
         # Migrate BB projects to groups
-        staged_groups = mig_utils.get_staged_groups(self.app_path)
+        staged_groups = mig_utils.get_staged_groups()
         if staged_groups and not self.skip_group_import:
             self.validate_groups_and_projects(staged_groups)
             self.log.info(
@@ -493,7 +493,7 @@ class MigrateClient(BaseClass):
             self.log.info("SKIP: No projects to migrate")
 
         # Migrate BB repos to projects
-        staged_projects = mig_utils.get_staged_projects(self.app_path)
+        staged_projects = mig_utils.get_staged_projects()
         if staged_projects and not self.skip_project_import:
             self.validate_groups_and_projects(
                 staged_projects, are_projects=True)
@@ -585,7 +585,7 @@ class MigrateClient(BaseClass):
             sys.exit()
 
     def migrate_user_info(self):
-        staged_users = mig_utils.get_staged_users(self.app_path)
+        staged_users = mig_utils.get_staged_users()
         if staged_users:
             if not self.skip_users:
                 self.log.info("{}Migrating user info".format(
@@ -680,7 +680,7 @@ class MigrateClient(BaseClass):
         return new_user
 
     def migrate_group_info(self):
-        staged_groups = mig_utils.get_staged_groups(self.app_path)
+        staged_groups = mig_utils.get_staged_groups()
         staged_top_groups = [
             g for g in staged_groups if mig_utils.is_top_level_group(g)]
         staged_subgroups = [
@@ -877,7 +877,7 @@ class MigrateClient(BaseClass):
         return results
 
     def migrate_project_info(self):
-        staged_projects = mig_utils.get_staged_projects(self.app_path)
+        staged_projects = mig_utils.get_staged_projects()
         dry_log = misc_utils.get_dry_log(self.dry_run)
         if staged_projects:
             self.validate_groups_and_projects(
@@ -1238,7 +1238,7 @@ class MigrateClient(BaseClass):
 
     def get_new_ids(self):
         ids = []
-        staged_projects = mig_utils.get_staged_projects(self.app_path)
+        staged_projects = mig_utils.get_staged_projects()
         if staged_projects:
             for project in staged_projects:
                 try:
@@ -1264,7 +1264,7 @@ class MigrateClient(BaseClass):
 
     def mirror_staged_projects(self):
         ids = self.get_new_ids()
-        staged_projects = mig_utils.get_staged_projects(self.app_path)
+        staged_projects = mig_utils.get_staged_projects()
         if staged_projects:
             for i in enumerate(staged_projects):
                 pid = ids[i]

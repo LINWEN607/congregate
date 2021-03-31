@@ -458,7 +458,7 @@ class ReposClient(BaseClass):
     def archive_staged_repos(self, dry_run=True):
         start = time()
         rotate_logs()
-        staged_projects = get_staged_projects(self.app_path)
+        staged_projects = get_staged_projects()
         self.log.info("Project count is: {}".format(len(staged_projects)))
         try:
             for single_project in staged_projects:
