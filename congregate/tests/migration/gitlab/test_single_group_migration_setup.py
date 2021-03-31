@@ -43,7 +43,7 @@ class MigrationEndToEndTestSetup(unittest.TestCase):
             "yes",  # source parent group
             "3",   # source parent group ID
             # "source_group_full_path",   # source parent group path
-            "300",  # max_export_wait_time
+            "300",  # export_import_timeout
             "yes",  # migrating registries
             # source_token
             os.getenv("GITLAB_SRC_REG_URL"),  # source registry url

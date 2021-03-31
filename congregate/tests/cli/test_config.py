@@ -162,7 +162,7 @@ class ConfigTests(unittest.TestCase):
             "yes",  # source parent group
             "0",   # source parent group ID
             # "source_group_full_path",   # source parent group path
-            "3600",  # max_export_wait_time
+            "3600",  # export_import_timeout
             "yes",  # migrating registries
             "source_registry_url",    # source registry url
             "destination_registry_url",    # destination registry url
@@ -248,7 +248,7 @@ class ConfigTests(unittest.TestCase):
             "source_hostname",  # source host
             # "source_access_token", # source token
             "no",  # source parent group
-            "3600",  # max_export_wait_time
+            "3600",  # export_import_timeout
             "yes",  # migrating registries
             # "source_access_token", # source token
             "source_registry_url",    # source registry url
@@ -341,7 +341,7 @@ class ConfigTests(unittest.TestCase):
             "source_hostname",  # source host
             # "source_access_token", # source token
             "no",  # source parent group
-            "3600",  # max_export_wait_time
+            "3600",  # export_import_timeout
             "yes",  # migrating registries
             # "source_access_token", # source token
             "source_registry_url",    # source registry url
@@ -434,7 +434,7 @@ class ConfigTests(unittest.TestCase):
             "no",  # external_src_url
             "source_hostname",  # source host
             "no",  # source parent group
-            "1200",  # max_export_wait_time
+            "1200",  # export_import_timeout
             "yes",  # migrating registries
             # "source_access_token", # source token
             "source_registry_url",    # source registry url
@@ -519,7 +519,7 @@ class ConfigTests(unittest.TestCase):
             "source_hostname",  # source host
             # "source_access_token", # source token
             "no",  # source parent group
-            "3600",  # max_export_wait_time
+            "3600",  # export_import_timeout
             "yes",  # migrating registries
             "source_registry_url",    # source registry url
             "destination_registry_url",    # destination registry url
@@ -591,7 +591,7 @@ class ConfigTests(unittest.TestCase):
             "src_access_token":"dGVzdA==",\
             "src_parent_group_id":"0",\
             "src_parent_group_path":"source_group_full_path",\
-            "max_export_wait_time":"3600",\
+            "export_import_timeout":"3600",\
             "src_registry_url":"source_registry_url",\
             "dstn_registry_url":"destination_registry_url",\
             "location":"aws",\
@@ -603,7 +603,7 @@ class ConfigTests(unittest.TestCase):
             "keep_blocked_users":"False",\
             "reset_pwd":"False",\
             "force_rand_pwd":"True",\
-            "export_import_wait_time":"30",\
+            "export_import_status_check_time":"30",\
             "slack_url":"https://slack.url"\
         }'
 
@@ -634,7 +634,7 @@ class ConfigTests(unittest.TestCase):
             "src_access_token":"dGVzdA==",\
             "src_parent_group_id":"0",\
             "src_parent_group_path":"source_group_full_path",\
-            "max_export_wait_time":"3600",\
+            "export_import_timeout":"3600",\
             "src_registry_url":"source_registry_url",\
             "dstn_registry_url":"destination_registry_url",\
             "location":"aws",\
@@ -646,7 +646,7 @@ class ConfigTests(unittest.TestCase):
             "keep_blocked_users":"False",\
             "reset_pwd":"True",\
             "force_rand_pwd":"False",\
-            "export_import_wait_time":"30",\
+            "export_import_status_check_time":"30",\
             "slack_url":"https://slack.url"\
         }'
 

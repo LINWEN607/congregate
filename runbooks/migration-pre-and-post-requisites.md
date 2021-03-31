@@ -22,7 +22,7 @@ This runbook covers the process of preparing and cleaning up after a migration f
 * [ ] Setup the migration VM that will host the Professional Services (PS) migration tool’s (Congregate) Docker container.
   * [ ] It should have minimal port and IP access. See [VM Requirements](#VM) for more detail.
   * **NOTE:** If required the VM might be created, by the customer, within their environment. Make sure this approach is covered in the SoW.
-* [ ] (gitlab.com) Follow the [PS Provisioning Process](https://gitlab.com/gitlab-com/business-ops/team-member-enablement/runbooks/-/blob/master/it_operations/GitLab_com_environment_(PRD,DEV,STG)access_requests.md#provisioning-process) for GitLab.com environments Access Request.
+* [ ] (gitlab.com) Follow the [PS Provisioning Process](https://gitlab.com/gitlab-com/business-technology/team-member-enablement/runbooks/-/blob/master/it_operations/GitLab_com_environment_(PRD,DEV,STG)access_requests.md#provisioning-process) for GitLab.com environments Access Request.
 * [ ] Configure LDAP/SAML (in [identity provider](https://docs.gitlab.com/ee/administration/auth/)) for the Admin user account on the destination instance (as for other users).
   * This is required for the user-group-project mapping to succeed.
   * (gitlab.com) Add user to SAML+SSO identity provider destination parent group.
@@ -129,7 +129,7 @@ Due to time constraints, ASA costs and scaling limitations it may be necessary t
 
 ### VM Deprovisioning
 
-* [ ] (gitlab.com) Once the migration is complete follow the [PS Deprovisioning Process](https://gitlab.com/gitlab-com/business-ops/team-member-enablement/runbooks/-/blob/master/it_operations/GitLab_com_environment_(PRD,DEV,STG)access_requests.md#deprovisioning-process) for GitLab.com environments Access Request
+* [ ] (gitlab.com) Once the migration is complete follow the [PS Deprovisioning Process](https://gitlab.com/gitlab-com/business-technology/team-member-enablement/runbooks/-/blob/master/it_operations/GitLab_com_environment_(PRD,DEV,STG)access_requests.md#deprovisioning-process) for GitLab.com environments Access Request
 * [ ] (gitlab.com) Deprovision migration VM by informing Infra in the issue ([VM Requirements](#VM)) that the migration is complete
 * [ ] Strip dedicated migration user on destination of Admin rights, PATs and update sign-in credentials
 * [ ] (Optional) Backup group and project export archive files

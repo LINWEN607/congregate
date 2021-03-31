@@ -1,9 +1,9 @@
 # TODO:
-    # 1. Communicate with GHE
-    # 2. Import the manage_repos
-    # 3. Create an ORG if it doesn't exist
-    # 4. Push Repos to the org.
-    # 5. Update variables based on existing names
+# 1. Communicate with GHE
+# 2. Import the manage_repos
+# 3. Create an ORG if it doesn't exist
+# 4. Push Repos to the org.
+# 5. Update variables based on existing names
 
 """
 Relevant environment variables:
@@ -50,16 +50,17 @@ from congregate.helpers.seed.git import Manage_Repos
 from congregate.migration.github.api.orgs import OrgsApi
 from congregate.migration.github.api.base import GitHubApi
 
+
 @pytest.mark.e2e_ghe_setup
 class MigrationE2EGHETestSetup(unittest.TestCase):
     def setUp(self):
-        self.t = token_generator()        
+        self.t = token_generator()
         self.generate_default_config_with_tokens()
 
     def generate_default_config_with_tokens(self):
         # Assumption here is pre-baked GHE Ami with admin token already onboard
         ghe_src_token = os.getenv("GHE_SOURCE_TOKEN")
-        
+
         print("Generating Destination Token")
         # destination_token = self.t.generate_token(
         #     "source_token",
@@ -67,7 +68,7 @@ class MigrationE2EGHETestSetup(unittest.TestCase):
         #     url=os.getenv("GITLAB_SRC"),
         #     username="root",
         #     pword="5iveL!fe"
-        # )          
+        # )
 
         # Can we assume that the container will always be the old system of 5iveL!fe? Current EE containers default to forcing a root password set
         # at first login
@@ -81,23 +82,28 @@ class MigrationE2EGHETestSetup(unittest.TestCase):
             # self.t.generate_token("destination_token", "2020-08-27", url=os.getenv("GITLAB_DEST"), username="root", pword=uuid4().hex), # Destination access token
             # "0",                                  # Destination import user id
             "yes",                                  # shared runners enabled
-            "no",                                   # append project suffix (retry)
+            # append project suffix (retry)
+            "no",
             "3",                                    # max_import_retries,
             "no",                                   # destination parent group
             "_gtest",                               # username suffix
             "no",                                   # mirror
             "yes",                                  # external source?
             "GitHub",                               # Src type
-            os.getenv("GHE_SOURCE_URL", os.getenv("GH_TEST_INSTANCE_URL", "HOST_ENV_VAR_NOT_FOUND")),           # source host external_src_url
+            # source host external_src_url
+            os.getenv("GHE_SOURCE_URL", os.getenv(
+                "GH_TEST_INSTANCE_URL", "HOST_ENV_VAR_NOT_FOUND")),
             "repo_path",                            # Repo path
             "no",                                   # CI Source
             "no",                                   # keep_blocked_users
             "yes",                                  # password reset email
             "no",                                   # randomized password
-            "300",                                  # max_export_wait_time
+            "300",                                  # export_import_timeout
             "yes",                                  # spreadsheet?
-            os.getenv("CONGREGATE_PATH", "FAKE_CONGREGATE_PATH") + "/congregate/tests/data/example_wave.csv",   # absolute spreadsheet path                                                    
-            "Wave name, Wave date, Source Url, Parent Path",                                                    # spreadsheet columns
+            os.getenv("CONGREGATE_PATH", "FAKE_CONGREGATE_PATH") + \
+            "/congregate/tests/data/example_wave.csv",   # absolute spreadsheet path
+            # spreadsheet columns
+            "Wave name, Wave date, Source Url, Parent Path",
             "no"                                    # Use Slack?
         ]
         tokens = [
@@ -109,14 +115,14 @@ class MigrationE2EGHETestSetup(unittest.TestCase):
         print("Setting generators")
         g = input_generator(values)
         t = input_generator(tokens)
-        
+
         print("Looping on mocks")
         config.ssl_verify = False
         with mock.patch('congregate.cli.config.test_registries', lambda x, y, z: None):
             with mock.patch('builtins.input', lambda x: next(g)):
                 with mock.patch('congregate.cli.config.obfuscate', lambda x: b64encode(next(t).encode("ascii")).decode("ascii")):
                     config.generate_config()
-   
+
     def test_to_trigger(self):
         assert True is True
 
@@ -129,14 +135,15 @@ class MigrationE2EGHETestSetup(unittest.TestCase):
         # Only way to call the GHE authorization endpoint is with basic auth
         ghe_host = os.getenv("GHE_SOURCE_URL")
         ghe_username = os.getenv("GHE_SOURCE_USERNAME")
-        ghe_password = os.getenv("GHE_SOURCE_PASSWORD")        
-        pipeline_id = os.getenv("CI_PIPELINE_ID", os.getenv("HOSTNAME", "NoPipelineOrHost"))
-        gh_api = GitHubApi(ghe_host, token=None, api="authorization")                
-        
-        # TODO: For testing during dev. Leave alone 
+        ghe_password = os.getenv("GHE_SOURCE_PASSWORD")
+        pipeline_id = os.getenv("CI_PIPELINE_ID", os.getenv(
+            "HOSTNAME", "NoPipelineOrHost"))
+        gh_api = GitHubApi(ghe_host, token=None, api="authorization")
+
+        # TODO: For testing during dev. Leave alone
         # self.resp = gh_api.generate_v3_basic_auth_get_request(ghe_host, "authorizations", ghe_username, ghe_password)
         # print(self.resp)
-        
+
         # Set scopes for the token we will request. Basically, everything
         scopes = [
             "admin:enterprise",
@@ -155,14 +162,15 @@ class MigrationE2EGHETestSetup(unittest.TestCase):
             "write:discussion"
         ]
         note = f"For {pipeline_id}"
-        
+
         json_data = {
-            "scopes": scopes, 
+            "scopes": scopes,
             "note": note
         }
 
-        self.resp = gh_api.generate_v3_basic_auth_post_request(ghe_host, "authorizations", ghe_username, ghe_password, json_data)
-        
+        self.resp = gh_api.generate_v3_basic_auth_post_request(
+            ghe_host, "authorizations", ghe_username, ghe_password, json_data)
+
         json = self.resp.json()
         if json.keys() and "token" in json.keys():
             return json["token"]

@@ -80,7 +80,7 @@ reset_pwd = True
 force_rand_pwd = False
 
 [APP]
-export_import_wait_time = 10
+export_import_status_check_time = 10
 ui_port = 8000
 ```
 
