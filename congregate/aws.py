@@ -30,7 +30,7 @@ class AwsClient(BaseClass):
         url = "{}/api/v4/projects/import".format(self.config.destination_host)
         # Returns out on success, so no need for success tracker
         while True and retry_count <= self.config.max_import_retries:
-            sleep_time = self.config.importexport_wait
+            sleep_time = self.config.export_import_status_check_time
             try:
                 # Added timeout tuple for connection/read until the retry is implemented
                 with requests.get(presigned_url, stream=True, timeout=(10, 10)) as r:

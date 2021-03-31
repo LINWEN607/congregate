@@ -35,9 +35,9 @@ class ImportClient(BaseClass):
                 resp = self.ext_import.import_from_bitbucket_server(
                     self.config.destination_host, self.config.destination_token, data)
                 if is_error_message_present(resp):
-                    message = resp.get("message")
-                    self.log.error(message)
-                    return self.get_failed_result(target_namespace, message)
+                    error = resp.get("error")
+                    self.log.error(error)
+                    return self.get_failed_result(target_namespace, error)
                 return self.get_result_data(target_namespace, resp)
             except ValueError as e:
                 self.log.error(
@@ -74,9 +74,9 @@ class ImportClient(BaseClass):
                 resp = self.ext_import.import_from_github(
                     self.config.destination_host, self.config.destination_token, data)
                 if is_error_message_present(resp):
-                    message = resp.get("message")
-                    self.log.error(message)
-                    return self.get_failed_result(path_with_namespace, message)
+                    errors = resp.get("errors")
+                    self.log.error(errors)
+                    return self.get_failed_result(path_with_namespace, errors)
                 return self.get_result_data(path_with_namespace, resp)
             except ValueError as ve:
                 self.log.error(f"Failed to import from GitHub due to {ve}")
@@ -88,8 +88,8 @@ class ImportClient(BaseClass):
 
     def wait_for_project_to_import(self, full_path):
         total_time = 0
-        wait_time = self.config.importexport_wait
-        max_wait_time = self.config.max_export_wait_time
+        wait_time = self.config.export_import_status_check_time
+        timeout = self.config.export_import_timeout
         success = False
         while True:
             project_statistics = safe_json_response(
@@ -118,14 +118,14 @@ class ImportClient(BaseClass):
                             f"Project storage is greater than 0 for {full_path}. Import is complete")
                         success = True
                         break
-            if total_time >= max_wait_time:
+            if total_time >= timeout:
                 self.log.error(
                     f"Max import time exceeded for {full_path}. Skipping post-migration phase")
                 break
             self.log.info(f"Waiting for project {full_path} to import")
             total_time += wait_time
             self.log.info(
-                f"Total time: {total_time}. Max time: {max_wait_time}")
+                f"Total time: {total_time}. Max time: {timeout}")
             sleep(wait_time)
         return success
 

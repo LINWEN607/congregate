@@ -39,18 +39,12 @@ class UsersTests(unittest.TestCase):
     @patch.object(GitHubBrowser, "scrape_user_email")
     @patch("io.TextIOBase")
     @patch('builtins.open')
-    @patch.object(UsersApi, "get_all_users")
     @patch.object(UsersApi, "get_user")
-    @patch("congregate.helpers.conf.Config.source_host", new_callable=PropertyMock)
-    @patch("congregate.helpers.conf.Config.source_token", new_callable=PropertyMock)
     @patch.object(MongoConnector, "close_connection")
     @responses.activate
     def test_retrieve_user_info(self,
                                 close_connection,
-                                mock_source_token,
-                                mock_source_host,
                                 mock_single_user,
-                                mock_users,
                                 mock_open,
                                 mock_file,
                                 mock_scrape_user_email,
@@ -59,8 +53,6 @@ class UsersTests(unittest.TestCase):
         ), mock_github_browser(), mock_github_browser()]
         mock_scrape_user_email.side_effect = [
             'test@email.com', 'test@email.com', 'test@email.com']
-        mock_source_token.return_value = "token"
-        mock_source_host.return_value = "https://github.com"
         mock_user1 = MagicMock()
         type(mock_user1).status_code = PropertyMock(return_value=200)
         mock_user1.json.return_value = self.mock_users.get_user()[0]
@@ -72,29 +64,28 @@ class UsersTests(unittest.TestCase):
         mock_user3.json.return_value = self.mock_users.get_user()[2]
         mock_single_user.side_effect = [mock_user1, mock_user2, mock_user3]
 
-        mock_users.return_value = self.mock_users.get_all_users()
         mock_open.return_value = mock_file
 
         close_connection.return_value = None
 
+        host = "github.example.com"
         mongo = MongoConnector(
             host="test-server", port=123456, client=mongomock.MongoClient)
         scrape = GitHubWebPageScrape()
         # pylint: disable=no-member
-        responses.add(responses.GET, "http://github.example.com",
-                      body=scrape.auth_token(), status=200, content_type='text/html', match_querystring=True)
-        responses.add(responses.POST, "http://github.example.com/session",
-                      body=None, status=200, content_type='text/html', match_querystring=True)
-        responses.add(responses.GET, "http://github.example.com/stafftools/users/jdoe",
-                      body=scrape.html_snippet(), status=200, content_type='text/html', match_querystring=True)
-        responses.add(responses.GET, "http://github.example.com/stafftools/users/admin",
-                      body=scrape.html_snippet(), status=200, content_type='text/html', match_querystring=True)
+        responses.add(responses.GET, f"http://{host}", body=scrape.auth_token(
+        ), status=200, content_type='text/html', match_querystring=True)
+        responses.add(responses.POST, f"http://{host}/session", body=None,
+                      status=200, content_type='text/html', match_querystring=True)
+        responses.add(responses.GET, f"http://{host}/stafftools/users/jdoe", body=scrape.html_snippet(
+        ), status=200, content_type='text/html', match_querystring=True)
+        responses.add(responses.GET, f"http://{host}/stafftools/users/admin", body=scrape.html_snippet(
+        ), status=200, content_type='text/html', match_querystring=True)
         # pylint: enable=no-member
-        browser = GitHubBrowser(
-            "http://github.example.com", "admin", "password")
-        for user in self.users.users_api.get_all_users():
+        browser = GitHubBrowser(f"http://{host}", "admin", "password")
+        for user in self.mock_users.get_all_users():
             self.users.handle_retrieving_users(browser, user, mongo=mongo)
-        actual_users = [d for d, _ in mongo.stream_collection("users-github")]
+        actual_users = [d for d, _ in mongo.stream_collection(f"users-{host}")]
 
         expected_users = [
             {
@@ -117,7 +108,7 @@ class UsersTests(unittest.TestCase):
             }
         ]
 
-        self.assertGreater(len(actual_users), 0)
+        self.assertEqual(len(actual_users), len(expected_users))
 
         for i, _ in enumerate(expected_users):
             self.assertDictEqual(expected_users[i], actual_users[i])
@@ -288,4 +279,4 @@ class UsersTests(unittest.TestCase):
         with patch.object(UsersClient, "connect_to_mongo") as mongo_mock:
             mongo_mock.return_value = MongoConnector(
                 host="test-server", port=123456, client=mongomock.MongoClient)
-            return UsersClient("github", "123", None, None)
+            return UsersClient("http://github.example.com", "123", None, None)

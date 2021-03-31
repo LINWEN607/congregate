@@ -14,7 +14,6 @@
 #
 import os
 import sys
-import recommonmark
 from recommonmark.transform import AutoStructify
 sys.path.append(os.path.abspath("../../.."))
 sys.path.append(os.path.join(os.path.dirname(__name__), '..'))
@@ -22,7 +21,7 @@ sys.path.append(os.path.join(os.path.dirname(__name__), '..'))
 # -- Project information -----------------------------------------------------
 
 project = u'Congregate'
-copyright = u'2020 GitLab Inc. Professional Services'
+copyright = u'2021 GitLab Inc. Professional Services'
 author = u'Michael Leopard, Petar Prokic, Glen Miller, Mike Lindsay, Nicki Peric'
 
 # The short X.Y version

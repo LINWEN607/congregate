@@ -9,7 +9,7 @@ from congregate.helpers.misc_utils import safe_json_response, is_error_message_p
 
 class UsersClient(BaseClass):
     def __init__(self, host, token, username=None, password=None):
-        super(UsersClient, self).__init__()
+        super().__init__()
         self.host = host
         self.username = username
         self.password = password

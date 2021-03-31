@@ -1,8 +1,8 @@
 # TODO
-    # 1. Communicate with GHE
-    # 2. Import the manage_repos
-    # 3. Create an ORG if it doesn't exist
-    # 4. Push Repos to the org.
+# 1. Communicate with GHE
+# 2. Import the manage_repos
+# 3. Create an ORG if it doesn't exist
+# 4. Push Repos to the org.
 
 
 import mock
@@ -24,7 +24,7 @@ from congregate.migration.github.api.orgs import OrgsApi
 #     github_connection = OrgsApi(host, token)
 
 
-## Placeholder
+# # Placeholder
 
 # @pytest.mark.e2e_setup
 # class MigrationE2EGHETestSetup(unittest.TestCase):
@@ -57,7 +57,7 @@ from congregate.migration.github.api.orgs import OrgsApi
 #             "no",  # external_src_url
 #             os.getenv("GITLAB_SRC"),  # source host
 #             "no",  # single group migration
-#             "300",  # max_export_wait_time
+#             "300",  # export_import_timeout
 #             "yes",  # migrating registries
 #             # self.t.generate_token("source_token", "2020-08-27", url=os.getenv("GITLAB_SRC"), username="root", pword=uuid4().hex), # source token
 #             os.getenv("GITLAB_SRC_REG_URL"),  # source registry url

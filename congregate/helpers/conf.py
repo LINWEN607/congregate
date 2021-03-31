@@ -191,7 +191,7 @@ class Config(object):
         On the UI: Visible in the LDAP synchonizations page for a group
         """
         return self.prop("DESTINATION", "ldap_group_link_provider", default="")
-    
+
     def ldap_group_link_group_access(self):
         """
         The minimum access to give users via the sync. This maps directly to the values at https://docs.gitlab.com/ee/api/members.html#valid-access-levels
@@ -252,13 +252,15 @@ class Config(object):
         return self.prop("SOURCE", "src_registry_url")
 
     @property
-    def max_export_wait_time(self):
+    def export_import_timeout(self):
         """
-        The maximum amount of time to wait for exports. Accumulated in congregate.helpers.conf.ig#importexport_wait
-        increments
+        The maximum amount of time to wait for a group or project export or import.
+        We should adjust it depending on the size of the largest projects we are migrating.
+        In general 1h should be sufficient for each export or import process.
+        We can always go back and run the project post-migration if it takes longer to import.
         :return: The set config value of 3600 seconds (one hour) as default
         """
-        return self.prop_int("SOURCE", "max_export_wait_time", default=3600)
+        return self.prop_int("SOURCE", "export_import_timeout", default=3600)
 
 # CI_SOURCE
     def list_ci_source_config(self, ci_source_options):
@@ -375,14 +377,14 @@ class Config(object):
 
 # APP
     @property
-    def importexport_wait(self):
+    def export_import_status_check_time(self):
         """
-        This key-value (in seconds) concerns the import/export status wait time.
+        The frequency of checking a group or project export or import status.
         Depending whether we are migrating during peak hours or not we should be able to adjust it.
         In general it should be increased when using multiple processes i.e. when the API cannot handle all the requests.
         :return: The set config value or 10 (seconds) as default.
         """
-        return self.prop_int("APP", "export_import_wait_time", default=10)
+        return self.prop_int("APP", "export_import_status_check_time", default=10)
 
     @property
     def slack_url(self):

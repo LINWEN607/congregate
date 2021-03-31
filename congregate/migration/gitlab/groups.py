@@ -291,14 +291,14 @@ class GroupsClient(BaseClass):
 
     def wait_for_parent_group_creation(self, group):
         timeout = 0
-        wait_time = self.config.importexport_wait
+        wait_time = self.config.export_import_status_check_time
         ppath = group["full_path"].rsplit("/", 1)[0]
         name = group["name"]
         pnamespace = self.namespaces_api.get_namespace_by_full_path(
             ppath, self.config.destination_host, self.config.destination_token)
         while pnamespace.status_code != 200:
             self.log.info(
-                f"Waiting {self.config.importexport_wait} seconds to create parent group {ppath} for group {name}")
+                f"Waiting {self.config.export_import_status_check_time} seconds to create parent group {ppath} for group {name}")
             timeout += wait_time
             sleep(wait_time)
             if timeout > wait_time * 10:

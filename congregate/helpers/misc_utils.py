@@ -17,6 +17,7 @@ from re import sub, findall
 from datetime import timedelta, date, datetime
 from types import GeneratorType
 from xml.parsers.expat import ExpatError
+from urllib.parse import urlparse
 from xmltodict import parse as xmlparse
 from requests import get, head, Response
 
@@ -699,7 +700,7 @@ def find_files_in_folder(wildcard, directory="data"):
 
 
 def strip_protocol(s):
-    return s.split("//")[-1]
+    return urlparse(s).netloc
 
 
 def pop_multiple_keys(src, keys):

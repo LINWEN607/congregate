@@ -41,7 +41,7 @@ This runbook covers the process of migrating a wave of **groups and projects** f
     For example:
 
     * @leopardm: PSE conducting the migration
-    * @kyletsmith: Security Manager (Security Incident Response Team - SIRT) in the loop in case anything goes wrong
+    * @blutz1: Security Manager (Security Incident Response Team - SIRT) in the loop in case anything goes wrong
     * @gitlab-com/gl-infra/managers: Infra managers that are aware of the migration and assigning the SRE during the migration period
     * @lyle: Support Manager with Rails Console access
 -->
