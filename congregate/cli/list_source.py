@@ -25,20 +25,33 @@ from congregate.helpers.misc_utils import deobfuscate, strip_protocol
 b = BaseClass()
 
 
-def list_gitlab_data(skip_users=False, skip_groups=False, skip_projects=False):
+def list_gitlab_data(processes=None, partial=False, skip_users=False, skip_groups=False, skip_projects=False):
     """
         List the projects information, and Retrieve user info, group info from source instance.
     """
+    mongo = MongoConnector()
+    if not partial:
+        b.log.info("Dropping database collections")
+        if not skip_projects:
+            mongo.drop_collection("projects")
+        if not skip_groups:
+            mongo.drop_collection("groups")
+        if not skip_users:
+            mongo.drop_collection("users")
     if not skip_users:
         users = UsersClient()
-        users.retrieve_user_info(b.config.source_host, b.config.source_token)
+        users.retrieve_user_info(b.config.source_host, b.config.source_token, processes=processes)
+        mongo.dump_collection_to_file(f"users-{strip_protocol(b.config.source_host)}", f"{b.app_path}/data/users.json")
     if not skip_groups:
         groups = GroupsClient()
-        groups.retrieve_group_info(b.config.source_host, b.config.source_token)
+        groups.retrieve_group_info(b.config.source_host, b.config.source_token, processes=processes)
+        mongo.dump_collection_to_file(f"groups-{strip_protocol(b.config.source_host)}", f"{b.app_path}/data/groups.json")
     if not skip_projects:
         projects = ProjectsClient()
         projects.retrieve_project_info(
-            b.config.source_host, b.config.source_token)
+            b.config.source_host, b.config.source_token, processes=processes)
+        mongo.dump_collection_to_file(f"projects-{strip_protocol(b.config.source_host)}", f"{b.app_path}/data/projects.json")
+
 
 
 def list_bitbucket_data(skip_users=False, skip_groups=False, skip_projects=False):
@@ -160,7 +173,7 @@ def list_data(processes=None, partial=False, skip_users=False, skip_groups=False
         list_bitbucket_data(skip_users=skip_users,
                             skip_projects=skip_projects, skip_groups=skip_groups)
     elif src_type == "gitlab":
-        list_gitlab_data(skip_users=skip_users,
+        list_gitlab_data(processes=processes, partial=partial, skip_users=skip_users,
                          skip_projects=skip_projects, skip_groups=skip_groups)
     elif src_type == "github":
         list_github_data(processes=processes, partial=partial, skip_users=skip_users,

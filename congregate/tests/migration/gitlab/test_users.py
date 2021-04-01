@@ -2,6 +2,7 @@ import unittest
 import json
 import pytest
 import responses
+import warnings
 from mock import patch, mock_open, PropertyMock, MagicMock
 
 from congregate.helpers.configuration_validator import ConfigurationValidator
@@ -12,6 +13,12 @@ from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.users import UsersClient
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.keys import KeysClient
+from congregate.helpers.mdbc import MongoConnector
+# mongomock is using deprecated logic as of Python 3.3
+# This warning suppression is used so tests can pass
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore")
+    import mongomock
 
 
 @pytest.mark.unit_test
@@ -667,14 +674,18 @@ class UsersTests(unittest.TestCase):
     @patch('builtins.open')
     @patch.object(UsersApi, "get_all_users")
     @patch('congregate.helpers.conf.Config.destination_host', new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.source_host', new_callable=PropertyMock)
     @patch('congregate.helpers.conf.Config.projects_limit', new_callable=PropertyMock)
     @patch('congregate.helpers.conf.Config.src_parent_group_path', new_callable=PropertyMock)
     @patch('congregate.helpers.conf.Config.group_sso_provider', new_callable=PropertyMock)
-    def test_retrieve_user_info(self, mock_sso, mock_src_parent_group_path, mock_limit, mock_host, mock_get_all_users, mock_open, mock_file):
+    @patch.object(MongoConnector, "close_connection")
+    def test_retrieve_user_info(self, close_connection, mock_sso, mock_src_parent_group_path, mock_limit, mock_src_host, mock_dest_host, mock_get_all_users, mock_open, mock_file):
         mock_sso.return_value = ""
         mock_src_parent_group_path.return_value = ""
         mock_limit.return_value = None
-        mock_host.return_value = "https://gitlab.com"
+        mock_src_host.return_value = "https://gitlab.example.com"
+        mock_dest_host.return_value = "https://gitlab.com"
+        close_connection.return_value = None
         mock_get_all_users.return_value = self.mock_users.get_test_source_users()
         mock_open.return_value = mock_file
         expected_users = [
@@ -733,32 +744,44 @@ class UsersTests(unittest.TestCase):
                 "extra_shared_runners_minutes_limit": None
             }
         ]
-        self.assertEqual(self.users.retrieve_user_info("host", "token").sort(
-            key=lambda x: x["id"]), expected_users.sort(key=lambda x: x["id"]))
+        mongo = MongoConnector(client=mongomock.MongoClient)
+        for user in self.mock_users.get_test_source_users():
+            self.users.handle_retrieving_users(user, mongo=mongo)
+        actual_users = [d for d, _ in mongo.stream_collection("users-gitlab.example.com")]
+
+        self.assertGreater(len(actual_users), 0)
+
+        for i, _ in enumerate(expected_users):
+            self.assertDictEqual(expected_users[i], actual_users[i])
 
     @patch("io.TextIOBase")
     @patch('builtins.open')
     @patch.object(UsersApi, "get_user")
     @patch.object(GroupsApi, "get_all_group_members")
     @patch('congregate.helpers.conf.Config.destination_host', new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.source_host', new_callable=PropertyMock)
     @patch('congregate.helpers.conf.Config.projects_limit', new_callable=PropertyMock)
     @patch('congregate.helpers.conf.Config.src_parent_group_path', new_callable=PropertyMock)
     @patch('congregate.helpers.conf.Config.src_parent_id', new_callable=PropertyMock)
     @patch('congregate.helpers.conf.Config.group_sso_provider', new_callable=PropertyMock)
-    def test_retrieve_user_info_src_parent_group_sso(self, mock_sso, mock_src_parent_id, mock_src_parent_group_path, mock_limit, mock_host, mock_get_all_group_members, mock_get_user, mock_open, mock_file):
+    @patch.object(MongoConnector, "close_connection")
+    def test_retrieve_user_info_src_parent_group_sso(self, close_connection, mock_sso, mock_src_parent_id, mock_src_parent_group_path, mock_limit, mock_src_host, mock_dest_host, mock_get_all_group_members, mock_get_user, mock_open, mock_file):
         mock_sso.return_value = "mock_sso"
         mock_src_parent_id.return_value = 42
         mock_limit.return_value = 100
-        mock_host.return_value = "https://gitlab.example.com"
+        mock_src_host.return_value = "https://gitlab.example.com"
+        mock_dest_host.return_value = "https://gitlab.example.com"
         mock_src_parent_group_path.return_value = "mock_src_parent_group_path"
         mock_get_all_group_members.return_value = self.mock_groups.get_group_members()
-        ok_get_mock = MagicMock()
-        type(ok_get_mock).status_code = PropertyMock(return_value=200)
-        ok_get_mock.json.side_effect = [
+        mock_users = [
             self.mock_users.get_dummy_old_users()[0],
             self.mock_users.get_dummy_old_users()[1],
             self.mock_users.get_dummy_old_users()[1]
         ]
+        ok_get_mock = MagicMock()
+        type(ok_get_mock).status_code = PropertyMock(return_value=200)
+        ok_get_mock.json.side_effect = mock_users
+        close_connection.return_value = None
         mock_get_user.return_value = ok_get_mock
         mock_open.return_value = mock_file
         expected_users = [
@@ -817,8 +840,15 @@ class UsersTests(unittest.TestCase):
                 "extra_shared_runners_minutes_limit": None
             }
         ]
-        self.assertEqual(self.users.retrieve_user_info("host", "token").sort(
-            key=lambda x: x["id"]), expected_users.sort(key=lambda x: x["id"]))
+        mongo = MongoConnector(client=mongomock.MongoClient)
+        for user in mock_users:
+            self.users.handle_retrieving_users(user, mongo=mongo)
+        actual_users = [d for d, _ in mongo.stream_collection("users-gitlab.example.com")]
+
+        self.assertGreater(len(actual_users), 0)
+
+        for i, _ in enumerate(expected_users):
+            self.assertDictEqual(expected_users[i], actual_users[i])
 
     @patch('congregate.helpers.conf.Config.group_sso_provider_pattern', new_callable=PropertyMock)
     def test_generate_extern_uid(self, pattern):

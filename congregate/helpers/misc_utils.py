@@ -403,8 +403,7 @@ def dig(dictionary, *args, default=None):
 
 
 def is_dot_com(host):
-    return "gitlab.com" in host
-
+    return "gitlab.com" in host if host else None
 
 def is_github_dot_com(host):
     return "api.github.com" in host
@@ -723,3 +722,9 @@ def clean_split(s, *args, **kwargs):
         ['hello', 'world']
     """
     return list(filter(None, s.split(*args, **kwargs)))
+
+def sort_dict(d):
+    """
+        Sorts dictionary by key name in descending order
+    """
+    return {k: d[k] for k in sorted(d.keys())}

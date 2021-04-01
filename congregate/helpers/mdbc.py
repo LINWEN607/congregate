@@ -1,3 +1,4 @@
+import sys
 from re import search
 from pymongo import MongoClient, errors
 from congregate.helpers.base_class import BaseClass
@@ -11,9 +12,11 @@ class MongoConnector(BaseClass):
 
     CI_SOURCES = ["jenkins", "teamcity"]
 
-    def __init__(self, host='localhost', port=27017, client=None):
+    def __init__(self, client=None):
         super(MongoConnector, self).__init__()
         try:
+            host = self.config.mongo_host
+            port = self.config.mongo_port
             self.client = client(
                 host=host, port=port) if client else MongoClient(
                 host=host, port=port, maxPoolSize=500)
@@ -24,11 +27,11 @@ class MongoConnector(BaseClass):
         except errors.ServerSelectionTimeoutError:
             self.log.error(
                 f"ServerSelectionTimeoutError: Unable to connect to mongodb at {host}:{port}")
-            exit()
+            sys.exit()
         except errors.ConnectionFailure:
             self.log.error(
                 f"ConnectionFailure: Unable to connect to mongodb at {host}:{port}")
-            exit()
+            sys.exit()
 
     def __generate_collections_list(self):
         collections = []

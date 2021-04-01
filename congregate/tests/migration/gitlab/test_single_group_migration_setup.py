@@ -60,7 +60,9 @@ class MigrationEndToEndTestSetup(unittest.TestCase):
             "no",  # randomized password
             "5",  # import wait time
             "no",  # wave spreadsheet
-            ""  # slack_url
+            "",  # slack_url
+            "yes", # external mongo host
+            "mongo" # mongo host
         ]
         tokens = [
             destination_token,

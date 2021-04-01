@@ -1,7 +1,7 @@
 import json
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import safe_json_response, is_error_message_present, is_github_dot_com, dig
+from congregate.helpers.misc_utils import safe_json_response, is_error_message_present, is_github_dot_com, dig, strip_protocol
 from congregate.helpers.mdbc import MongoConnector
 from congregate.helpers.processes import start_multi_process_stream_with_args
 from congregate.migration.github.api.orgs import OrgsApi
@@ -33,7 +33,7 @@ class OrgsClient(BaseClass):
         self.teams_api = TeamsApi(host, token)
         self.repos = ReposClient(host, token)
         self.users = UsersClient(host, token)
-        self.host = host.split("//")[-1]
+        self.host = strip_protocol(host)
 
     def connect_to_mongo(self):
         return MongoConnector()

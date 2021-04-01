@@ -432,6 +432,20 @@ class Config(object):
         }
         """
         return self.prop_dict("APP", "wave_spreadsheet_column_mapping")
+    
+    @property
+    def mongo_host(self):
+        """
+        The explicit host for the mongodb connection. Defaults to None
+        """
+        return self.prop("APP", "mongo_host", default=None)
+    
+    @property
+    def mongo_port(self):
+        """
+        The explicit port for the mongodb connection. Defaults to 27017
+        """
+        return self.prop("APP", "mongo_port", default=27017)
 
 
 # HIDDEN PROPERTIES

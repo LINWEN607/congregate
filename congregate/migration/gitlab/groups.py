@@ -3,7 +3,9 @@ from time import sleep
 from requests.exceptions import RequestException
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import remove_dupes, get_timedelta, json_pretty, safe_json_response, write_json_to_file
+from congregate.helpers.processes import start_multi_process_stream_with_args, start_multi_process_stream
+from congregate.helpers.mdbc import MongoConnector
+from congregate.helpers.misc_utils import remove_dupes, get_timedelta, json_pretty, safe_json_response, write_json_to_file, strip_protocol
 from congregate.helpers.migrate_utils import get_full_path_with_parent_namespace, is_top_level_group, get_staged_groups, find_user_by_email_comparison_without_id
 from congregate.migration.gitlab.variables import VariablesClient
 from congregate.migration.gitlab.badges import BadgesClient
@@ -20,8 +22,9 @@ class GroupsClient(BaseClass):
         self.group_id_mapping = {}
         super().__init__()
 
-    def traverse_groups(self, base_groups, transient_list, host, token, parent_group=None):
-        for group in base_groups:
+    def traverse_groups(self, host, token, group):
+        mongo = MongoConnector()
+        if group_id := group.get("id", None):
             keys_to_ignore = [
                 "web_url",
                 "full_name",
@@ -30,48 +33,34 @@ class GroupsClient(BaseClass):
             ]
             for k in keys_to_ignore:
                 group.pop(k, None)
-            if group_id := group.get("id", None):
-                group["members"] = [m for m in self.groups_api.get_all_group_members(
-                    group_id, host, token) if m["id"] != 1]
-                group["projects"] = list(self.groups_api.get_all_group_projects(
-                    group_id, host, token, with_shared=False))
-                transient_list.append(group)
-                for subgroup in self.groups_api.get_all_subgroups(group_id, host, token):
-                    if len(subgroup) > 0:
-                        parent_group = transient_list[-1]
-                        self.log.debug("traversing into a subgroup")
-                        self.traverse_groups(
-                            [subgroup], transient_list, host, token, parent_group)
-                parent_group = None
+            group["members"] = [m for m in self.groups_api.get_all_group_members(
+                group_id, host, token) if m["id"] != 1]
+            group["projects"] = list(self.groups_api.get_all_group_projects(
+                group_id, host, token, with_shared=False))
+            for subgroup in self.groups_api.get_all_subgroups(group_id, host, token):
+                self.log.debug("traversing into a subgroup")
+                self.traverse_groups(
+                    host, token, subgroup)
+            mongo.insert_data(
+                f"groups-{strip_protocol(host)}", group)
 
-    def retrieve_group_info(self, host, token, location="source", top_level_group=False):
+        mongo.close_connection()
+
+    def retrieve_group_info(self, host, token, location="source", processes=None):
         prefix = ""
         if location != "source":
             prefix = location
 
-        if not top_level_group:
-            if self.config.src_parent_group_path:
-                groups = list(self.groups_api.get_all_subgroups(
-                    self.config.src_parent_id, host, token))
-                groups.append(safe_json_response(self.groups_api.get_group(
-                    self.config.src_parent_id, host, token)))
-            else:
-                groups = list(self.groups_api.get_all_groups(
-                    host, token))
+        if self.config.src_parent_group_path:
+            start_multi_process_stream_with_args(self.traverse_groups, 
+                self.groups_api.get_all_subgroups(
+                    self.config.src_parent_id, host, token), host, token, processes=processes)
+            self.traverse_groups(host, token, safe_json_response(self.groups_api.get_group(
+                self.config.src_parent_id, host, token)))
         else:
-            if self.config.dstn_parent_id is not None:
-                groups = [safe_json_response(self.groups_api.get_group(
-                    self.config.dstn_parent_id, self.config.destination_host, self.config.destination_token))]
-                prefix += str(self.config.dstn_parent_id)
-            else:
-                self.log.info("No parent ID found")
-                return None
-
-        transient_list = []
-        self.traverse_groups(groups, transient_list, host, token)
-        write_json_to_file(
-            f"{self.app_path}/data/{prefix}groups.json", remove_dupes(groups), log=self.log)
-        return transient_list
+            start_multi_process_stream_with_args(self.traverse_groups,
+                self.groups_api.get_all_groups(
+                    host, token), host, token, processes=processes)
 
     def remove_import_user(self, gid):
         try:
@@ -163,49 +152,51 @@ class GroupsClient(BaseClass):
                     "Failed to GET group {} by full_path".format(dest_full_path))
 
     def find_all_non_private_groups(self):
-        groups_to_change = []
-        transient_list = []
-        parent_group = [self.groups_api.get_group(
-            self.config.dstn_parent_id,
-            self.config.destination_host,
-            self.config.destination_token).json()]
-        self.traverse_groups(
-            parent_group,
-            transient_list,
-            self.config.destination_host,
-            self.config.destination_token)
-        count = 0
+        pass
+    #     groups_to_change = []
+    #     transient_list = []
+    #     parent_group = [self.groups_api.get_group(
+    #         self.config.dstn_parent_id,
+    #         self.config.destination_host,
+    #         self.config.destination_token).json()]
+    #     self.traverse_groups(
+    #         parent_group,
+    #         transient_list,
+    #         self.config.destination_host,
+    #         self.config.destination_token)
+    #     count = 0
 
-        for group in transient_list:
-            print("{0}, {1}".format(group["name"], group["visibility"]))
-            if group["visibility"] != "private":
-                self.log.info("Group {0} has {1} visibility".format(
-                    group["name"], group["visibility"]))
-                count += 1
-                groups_to_change.append(group)
-        self.log.info("Non-private groups ({0}):\n{1}".format(
-            len(groups_to_change), "\n".join(g for g in groups_to_change)))
+    #     for group in transient_list:
+    #         print("{0}, {1}".format(group["name"], group["visibility"]))
+    #         if group["visibility"] != "private":
+    #             self.log.info("Group {0} has {1} visibility".format(
+    #                 group["name"], group["visibility"]))
+    #             count += 1
+    #             groups_to_change.append(group)
+    #     self.log.info("Non-private groups ({0}):\n{1}".format(
+    #         len(groups_to_change), "\n".join(g for g in groups_to_change)))
 
-        return groups_to_change
+    #     return groups_to_change
 
     def make_all_internal_groups_private(self):
-        groups = self.find_all_non_private_groups()
-        ids = []
-        for group in groups:
-            try:
-                self.log.debug("Searching for existing %s" % group["name"])
-                for proj in self.groups_api.search_for_group(self.config.destination_host,
-                                                             self.config.destination_token, group['name']):
-                    if proj["name"] == group["name"]:
-                        if "%s" % group["path"].lower() in proj["full_path"].lower():
-                            # self.log.info("Migrating variables for %s" % proj["name"])
-                            ids.append(proj["id"])
-                            print("%s: %s" %
-                                  (proj["full_path"], proj["visibility"]))
-                            break
-            except IOError as e:
-                self.log.error(e)
-        print(ids)
+    #     groups = self.find_all_non_private_groups()
+    #     ids = []
+    #     for group in groups:
+    #         try:
+    #             self.log.debug("Searching for existing %s" % group["name"])
+    #             for proj in self.groups_api.search_for_group(self.config.destination_host,
+    #                                                          self.config.destination_token, group['name']):
+    #                 if proj["name"] == group["name"]:
+    #                     if "%s" % group["path"].lower() in proj["full_path"].lower():
+    #                         # self.log.info("Migrating variables for %s" % proj["name"])
+    #                         ids.append(proj["id"])
+    #                         print("%s: %s" %
+    #                               (proj["full_path"], proj["visibility"]))
+    #                         break
+    #         except IOError as e:
+    #             self.log.error(e)
+    #     print(ids)
+        pass
 
     def validate_staged_groups_schema(self):
         staged_groups = get_staged_groups()

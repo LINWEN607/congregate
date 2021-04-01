@@ -297,6 +297,15 @@ def generate_config():
             "Slack Incoming WebHooks URL: "))
         test_slack(config.get("APP", "slack_url"))
 
+    mongo = input(
+        "External mongodb host? (Default: No)? ")
+    if mongo.lower() in ["yes", "y"]:
+        config.set("APP", "mongo_host", input(
+            "Mongo host (excluding port): "))
+    else:
+        config.set("APP", "mongo_host", "localhost")
+        config.set("APP", "mongo_port", "27017")
+
     config.set("APP", "ui_port", "8000")
 
     write_to_file(config)

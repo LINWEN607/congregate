@@ -25,6 +25,7 @@ class StageProjectsTests(unittest.TestCase):
     @mock.patch.object(ConfigurationValidator, 'dstn_parent_id', new_callable=mock.PropertyMock)
     @mock.patch.object(ConfigurationValidator, 'source_type', new_callable=mock.PropertyMock)
     def test_build_stage_data(self, mock_source_type, mock_parent_id, mock_groups, mock_users, mock_projects, mock_check, mock_open):
+        self.maxDiff = None
         mock_source_type.return_value = "gitlab"
         mock_parent_id.return_value = None
         mock_check.return_value = True
@@ -101,7 +102,8 @@ class StageProjectsTests(unittest.TestCase):
                 "state": "active",
                 "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon",
                 "expires_at": "2012-10-22T14:13:35Z",
-                "access_level": 30
+                "access_level": 30,
+                "email": "jdoe@email.com"
             },
             {
                 "username": "smart3",
@@ -110,7 +112,8 @@ class StageProjectsTests(unittest.TestCase):
                 "access_level": 50,
                 "state": "active",
                 "avatar_url": "https://secure.gravatar.com/avatar/d549ee47080f3512a835905895c46545?s=80&d=identicon",
-                "id": 285
+                "id": 285,
+                "email": "jdoe2@email.com"
             },
             {
                 "username": "smart4",
@@ -119,7 +122,8 @@ class StageProjectsTests(unittest.TestCase):
                 "access_level": 30,
                 "state": "active",
                 "avatar_url": "https://secure.gravatar.com/avatar/77b6da6e1b9aa2527600bc7727f5bad8?s=80&d=identicon",
-                "id": 286
+                "id": 286,
+                "email": "jdoe3@email.com"
             }
         ]
 
@@ -245,7 +249,7 @@ class StageProjectsTests(unittest.TestCase):
                         "state": "active",
                         "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon",
                         "expires_at": "2012-10-22T14:13:35Z",
-                        "access_level": 30
+                        "access_level": 30,
                     }
                 ],
                 "http_url_to_repo": "http://example.com/diaspora/diaspora-client.git",
@@ -272,7 +276,7 @@ class StageProjectsTests(unittest.TestCase):
                         "state": "active",
                         "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon",
                         "expires_at": "2012-10-22T14:13:35Z",
-                        "access_level": 30
+                        "access_level": 30,
                     }
                 ],
                 "http_url_to_repo": "http://example.com/brightbox/puppet.git",
@@ -297,7 +301,8 @@ class StageProjectsTests(unittest.TestCase):
                 "state": "active",
                 "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon",
                 "expires_at": "2012-10-22T14:13:35Z",
-                "access_level": 30
+                "access_level": 30,
+                "email": "jdoe@email.com"
             },
             {
                 "username": "smart3",
@@ -306,7 +311,8 @@ class StageProjectsTests(unittest.TestCase):
                 "access_level": 50,
                 "state": "active",
                 "avatar_url": "https://secure.gravatar.com/avatar/d549ee47080f3512a835905895c46545?s=80&d=identicon",
-                "id": 285
+                "id": 285,
+                "email": "jdoe2@email.com"
             },
             {
                 "username": "smart4",
@@ -315,7 +321,8 @@ class StageProjectsTests(unittest.TestCase):
                 "access_level": 30,
                 "state": "active",
                 "avatar_url": "https://secure.gravatar.com/avatar/77b6da6e1b9aa2527600bc7727f5bad8?s=80&d=identicon",
-                "id": 286
+                "id": 286,
+                "email": "jdoe3@email.com"
             }
         ]
 

@@ -1,3 +1,4 @@
+import warnings
 import unittest
 import mock
 import pytest
@@ -9,6 +10,12 @@ from congregate.tests.mockapi.gitlab.users import MockUsersApi
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.projects import ProjectsClient
+from congregate.helpers.mdbc import MongoConnector
+# mongomock is using deprecated logic as of Python 3.3
+# This warning suppression is used so tests can pass
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore")
+    import mongomock
 from congregate.migration.gitlab.users import UsersApi
 
 
@@ -28,38 +35,68 @@ class ProjectsTests(unittest.TestCase):
     @mock.patch.object(GroupsApi, "get_all_group_projects")
     @mock.patch('congregate.helpers.conf.Config.src_parent_group_path', new_callable=mock.PropertyMock)
     @mock.patch('congregate.helpers.conf.Config.src_parent_id', new_callable=mock.PropertyMock)
-    def test_retrieve_project_info_src_parent_group(self, mock_src_parent_id, mock_src_parent_group_path, mock_get_all_group_projects, mock_get_members, mock_open, mock_file):
+    @mock.patch.object(MongoConnector, "close_connection")
+    def test_retrieve_project_info_src_parent_group(self, mock_close, mock_src_parent_id, mock_src_parent_group_path, mock_get_all_group_projects, mock_get_members, mock_open, mock_file):
         mock_src_parent_id.return_value = 42
         mock_src_parent_group_path.return_value = "mock_src_parent_group_path"
         mock_get_all_group_projects.return_value = self.mock_projects.get_all_projects()
         mock_get_members.return_value = self.mock_users.get_project_members()
         mock_open.return_value = mock_file
-        self.assertEqual(self.projects.retrieve_project_info("host", "token").sort(
-            key=lambda x: x["id"]), self.mock_projects.get_all_projects().sort(key=lambda x: x["id"]))
+        mock_close.return_value = None
+
+        mongo = MongoConnector(client=mongomock.MongoClient)
+        for project in self.groups_api.get_all_group_projects("https://gitlab.example.com", "token", 1):
+            self.projects.handle_retrieving_project("https://gitlab.example.com", "token", project, mongo=mongo)
+
+        actual_projects = [d for d, _ in mongo.stream_collection("projects-gitlab.example.com")]
+        self.assertGreater(len(actual_projects), 0)
+        expected_projects = self.mock_projects.get_all_projects()
+
+        for i, _ in enumerate(expected_projects):
+            self.assertDictEqual(expected_projects[i], actual_projects[i])
+
 
     @mock.patch("io.TextIOBase")
     @mock.patch('builtins.open')
     @mock.patch.object(ProjectsApi, "get_members")
     @mock.patch.object(ProjectsApi, "get_all_projects")
     @mock.patch('congregate.helpers.conf.Config.src_parent_group_path', new_callable=mock.PropertyMock)
-    def test_retrieve_project_info(self, mock_src_parent_group_path, mock_get_all_projects, mock_get_members, mock_open, mock_file):
+    @mock.patch.object(MongoConnector, "close_connection")
+    def test_retrieve_project_info(self, mock_close, mock_src_parent_group_path, mock_get_all_projects, mock_get_members, mock_open, mock_file):
         mock_src_parent_group_path.return_value = None
         mock_get_all_projects.return_value = self.mock_projects.get_all_projects()
         mock_get_members.return_value = self.mock_users.get_project_members()
         mock_open.return_value = mock_file
-        self.assertEqual(self.projects.retrieve_project_info("host", "token").sort(
-            key=lambda x: x["id"]), self.mock_projects.get_all_projects().sort(key=lambda x: x["id"]))
+        mock_close.return_value = None
+
+        mongo = MongoConnector(client=mongomock.MongoClient)
+        for project in self.projects_api.get_all_projects("https://gitlab.example.com", "token"):
+            self.projects.handle_retrieving_project("https://gitlab.example.com", "token", project, mongo=mongo)
+
+        actual_projects = [d for d, _ in mongo.stream_collection("projects-gitlab.example.com")]
+        self.assertGreater(len(actual_projects), 0)
+        expected_projects = self.mock_projects.get_all_projects()
+
+        for i, _ in enumerate(expected_projects):
+            self.assertDictEqual(expected_projects[i], actual_projects[i])
 
     @mock.patch("io.TextIOBase")
     @mock.patch('builtins.open')
     @mock.patch.object(ProjectsApi, "get_all_projects")
     @mock.patch('congregate.helpers.conf.Config.src_parent_group_path', new_callable=mock.PropertyMock)
-    def test_retrieve_project_info_error_message(self, mock_src_parent_group_path, mock_get_all_projects, mock_open, mock_file):
+    @mock.patch.object(MongoConnector, "close_connection")
+    def test_retrieve_project_info_error_message(self, mock_close, mock_src_parent_group_path, mock_get_all_projects, mock_open, mock_file):
         mock_src_parent_group_path.return_value = None
         mock_get_all_projects.return_value = [{"message": "some error"}]
         mock_open.return_value = mock_file
-        self.assertEqual(
-            self.projects.retrieve_project_info("host", "token"), [])
+        mock_close.return_value = None
+
+        mongo = MongoConnector(client=mongomock.MongoClient)
+        for project in self.projects_api.get_all_projects("https://gitlab.example.com", "token"):
+            self.projects.handle_retrieving_project("https://gitlab.example.com", "token", project, mongo=mongo)
+        
+        actual_projects = [d for d, _ in mongo.stream_collection("gitlab.example.com-host")]
+        self.assertEqual(len(actual_projects), 0)
 
     @mock.patch('congregate.helpers.conf.Config.destination_host', new_callable=mock.PropertyMock)
     @mock.patch.object(ConfigurationValidator, 'destination_token', new_callable=mock.PropertyMock)

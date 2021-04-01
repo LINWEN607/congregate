@@ -17,6 +17,7 @@ class ConfigTests(unittest.TestCase):
     def setUp(self):
         self.users_api = MockUsersApi()
         self.groups_api = MockGroupsApi()
+        self.maxDiff = None
 
     @patch.object(UsersApi, "get_current_user")
     def test_full_ext_src_skeleton_bitbucket_server(self, mock_get):
@@ -48,7 +49,8 @@ class ConfigTests(unittest.TestCase):
             "no",    # randomized password
             "30",   # import wait time
             "no",   # Wave spreadsheet
-            "no"   # slack
+            "no",   # slack
+            "no"    # mongo
         ]
 
         g = input_generator(values)
@@ -108,7 +110,8 @@ class ConfigTests(unittest.TestCase):
             "no",    # randomized password
             "30",   # import wait time
             "no",   # Wave spreadsheet
-            "no"   # slack
+            "no",   # slack
+            "no"    # mongo
         ]
 
         g = input_generator(values)
@@ -175,7 +178,8 @@ class ConfigTests(unittest.TestCase):
             "30",   # import wait time
             "no",   # Wave spreadsheet
             "yes",   # slack
-            "https://slack.url"   # slack_url
+            "https://slack.url",   # slack_url
+            "no"    # mongo
         ]
 
         g = input_generator(values)
@@ -266,7 +270,8 @@ class ConfigTests(unittest.TestCase):
             "30",   # import wait time
             "no",   # Wave spreadsheet
             "yes",   # slack
-            "https://slack.url"   # slack_url
+            "https://slack.url",   # slack_url
+            "no"    # mongo
         ]
 
         g = input_generator(values)
@@ -359,7 +364,8 @@ class ConfigTests(unittest.TestCase):
             "30",   # import wait time
             "no",   # Wave spreadsheet
             "yes",   # slack
-            "https://slack.url"   # slack_url
+            "https://slack.url",   # slack_url
+            "no"    # mongo
         ]
 
         g = input_generator(values)
@@ -451,7 +457,8 @@ class ConfigTests(unittest.TestCase):
             "no",    # randomized password
             "60",   # import wait time
             "no",   # Wave spreadsheet
-            "no"   # slack
+            "no",   # slack
+            "no"    # mongo
         ]
 
         g = input_generator(values)
@@ -532,7 +539,8 @@ class ConfigTests(unittest.TestCase):
             "30",   # import wait time
             "no",   # Wave spreadsheet
             "yes",   # slack
-            "https://slack.url"   # slack_url
+            "https://slack.url",   # slack_url
+            "no"    # mongo 
         ]
 
         g = input_generator(values)

@@ -26,8 +26,7 @@ class mock_github_browser():
 class UsersTests(unittest.TestCase):
     def setUp(self):
         self.mock_users = MockUsersApi()
-        self.mongo_mock = MongoConnector(
-            host="test-server", port=123456, client=mongomock.MongoClient)
+        self.mongo_mock = MongoConnector(client=mongomock.MongoClient)
         self.users = self.mock_user_client()
 
     def tearDown(self):
@@ -49,6 +48,7 @@ class UsersTests(unittest.TestCase):
                                 mock_file,
                                 mock_scrape_user_email,
                                 browser_init):
+        host = "github.example.com"
         browser_init.side_effect = [mock_github_browser(
         ), mock_github_browser(), mock_github_browser()]
         mock_scrape_user_email.side_effect = [
@@ -68,9 +68,7 @@ class UsersTests(unittest.TestCase):
 
         close_connection.return_value = None
 
-        host = "github.example.com"
-        mongo = MongoConnector(
-            host="test-server", port=123456, client=mongomock.MongoClient)
+        mongo = MongoConnector(client=mongomock.MongoClient)
         scrape = GitHubWebPageScrape()
         # pylint: disable=no-member
         responses.add(responses.GET, f"http://{host}", body=scrape.auth_token(
@@ -85,6 +83,7 @@ class UsersTests(unittest.TestCase):
         browser = GitHubBrowser(f"http://{host}", "admin", "password")
         for user in self.mock_users.get_all_users():
             self.users.handle_retrieving_users(browser, user, mongo=mongo)
+        print(mongo.db.list_collection_names())
         actual_users = [d for d, _ in mongo.stream_collection(f"users-{host}")]
 
         expected_users = [
@@ -138,8 +137,7 @@ class UsersTests(unittest.TestCase):
         type(mock_user3).status_code = PropertyMock(return_value=200)
         mock_user3.json.return_value = self.mock_users.get_user()[2]
         mock_single_user.side_effect = [mock_user1, mock_user2, mock_user3]
-        mongo = MongoConnector(
-            host="test-server", port=123456, client=mongomock.MongoClient)
+        mongo = MongoConnector(client=mongomock.MongoClient)
         actual_users = self.users.format_users([
             {"login": "ghost", "permissions": 40},
             {"login": "github-enterprise", "permissions": 30},
@@ -210,8 +208,7 @@ class UsersTests(unittest.TestCase):
         type(mock_user3).status_code = PropertyMock(return_value=200)
         mock_user3.json.return_value = self.mock_users.get_user()[2]
         mock_single_user.side_effect = [mock_user1, mock_user2, mock_user3]
-        mongo = MongoConnector(
-            host="test-server", port=123456, client=mongomock.MongoClient)
+        mongo = MongoConnector(client=mongomock.MongoClient)
         actual_users = self.users.format_users([
             {"login": "ghost", "permissions": 40},
             {"login": "github-enterprise", "permissions": 30},
@@ -262,21 +259,18 @@ class UsersTests(unittest.TestCase):
         expected = "jdoe@gitlab.com"
         u = self.mock_users.get_user()[3]
         u["email"] = None
-        mongo = MongoConnector(
-            host="test-server", port=123456, client=mongomock.MongoClient)
+        mongo = MongoConnector(client=mongomock.MongoClient)
         actual = self.users.get_email_address(u, browser, mongo)
         self.assertEqual(expected, actual)
 
     def test_get_email_address(self):
         expected = "jdoe@gitlab.com"
-        mongo = MongoConnector(
-            host="test-server", port=123456, client=mongomock.MongoClient)
+        mongo = MongoConnector(client=mongomock.MongoClient)
         actual = self.users.get_email_address(
             self.mock_users.get_user()[3], mock_github_browser(), mongo)
         self.assertEqual(expected, actual)
 
     def mock_user_client(self):
         with patch.object(UsersClient, "connect_to_mongo") as mongo_mock:
-            mongo_mock.return_value = MongoConnector(
-                host="test-server", port=123456, client=mongomock.MongoClient)
+            mongo_mock.return_value = MongoConnector(client=mongomock.MongoClient)
             return UsersClient("http://github.example.com", "123", None, None)

@@ -5,10 +5,12 @@ from requests.exceptions import RequestException
 
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.misc_utils import get_dry_log, json_pretty, get_timedelta, \
-    remove_dupes, rewrite_list_into_dict, read_json_file_into_object, safe_json_response, is_dot_com
+    remove_dupes, rewrite_list_into_dict, read_json_file_into_object, safe_json_response, is_dot_com, strip_protocol
 from congregate.helpers.migrate_utils import get_staged_users, find_user_by_email_comparison_without_id
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.users import UsersApi
+from congregate.helpers.mdbc import MongoConnector
+from congregate.helpers.processes import start_multi_process_stream
 
 
 class UsersClient(BaseClass):
@@ -17,6 +19,9 @@ class UsersClient(BaseClass):
         self.users_api = UsersApi()
         super().__init__()
         self.sso_hash_map = self.generate_hash_map()
+
+    def connect_to_mongo(self):
+        return MongoConnector()
 
     def find_user_by_email_comparison_with_id(self, old_user_id):
         self.log.info(f"Searching for user email by ID {old_user_id}")
@@ -399,7 +404,7 @@ class UsersClient(BaseClass):
 
         return staged
 
-    def retrieve_user_info(self, host, token):
+    def retrieve_user_info(self, host, token, processes=None):
         if self.config.src_parent_group_path:
             users = []
             for user in self.groups_api.get_all_group_members(self.config.src_parent_id, host, token):
@@ -408,34 +413,39 @@ class UsersClient(BaseClass):
         else:
             users = self.users_api.get_all_users(host, token)
 
-        # Remove root user
-        users = [u for u in users if u["id"] != 1]
-        keys_to_delete = [
-            "web_url",
-            "last_sign_in_at",
-            "last_activity_at",
-            "current_sign_in_at",
-            "created_at",
-            "confirmed_at",
-            "last_activity_on",
-            "bio",
-            "bio_html",
-            # SSO causes issues with the avatar URL due to the authentication
-            "avatar_url" if self.config.group_sso_provider else "",
-            # Avoid propagating field when creating users on gitlab.com with no config value set
-            "projects_limit" if is_dot_com(
-                self.config.destination_host) and not self.config.projects_limit else ""
-        ]
-        for user in users:
+        start_multi_process_stream(self.handle_retrieving_users, users, processes=processes)
+        
+
+    def handle_retrieving_users(self, user, mongo=None):
+        # mongo should be set to None unless this function is being used in a unit test
+        if not mongo:
+            mongo = self.connect_to_mongo()
+        if user["id"] != 1:
             user["email"] = user["email"].lower()
             if self.config.projects_limit:
                 user["projects_limit"] = self.config.projects_limit
+            keys_to_delete = [
+                "web_url",
+                "last_sign_in_at",
+                "last_activity_at",
+                "current_sign_in_at",
+                "created_at",
+                "confirmed_at",
+                "last_activity_on",
+                "bio",
+                "bio_html",
+                # SSO causes issues with the avatar URL due to the authentication
+                "avatar_url" if self.config.group_sso_provider else "",
+                # Avoid propagating field when creating users on gitlab.com with no config value set
+                "projects_limit" if is_dot_com(
+                    self.config.destination_host) and not self.config.projects_limit else ""
+            ]
             for key in keys_to_delete:
                 user.pop(key, None)
+            mongo.insert_data(
+                f"users-{strip_protocol(self.config.source_host)}", user)
 
-        with open('%s/data/users.json' % self.app_path, "w") as f:
-            json.dump(remove_dupes(users), f, indent=4)
-        return remove_dupes(users)
+        mongo.close_connection()
 
     def generate_user_data(self, user):
         if user.get("id", None) is not None:

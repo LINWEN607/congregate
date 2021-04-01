@@ -75,7 +75,7 @@ class JenkinsBaseTests(unittest.TestCase):
         expected = params.get_jobs_with_scm_info()
         client = JenkinsClient(host, username, token)
         close_connection.return_value = None
-        mongo = MongoConnector(host="test-server", port=123456, client=mongomock.MongoClient)
+        mongo = MongoConnector(client=mongomock.MongoClient)
         for job in client.jenkins_api.list_all_jobs():
             client.handle_retrieving_jenkins_jobs(job, mongo=mongo)
         actual = [d for d, _ in mongo.stream_collection("jenkins-jenkins-test:8080")]

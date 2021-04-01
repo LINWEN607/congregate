@@ -103,7 +103,8 @@ class MockUsersApi():
                 "state": "active",
                 "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon",
                 "expires_at": "2012-10-22T14:13:35Z",
-                "access_level": 30
+                "access_level": 30,
+                "email": "jdoe@email.com"
             },
             {
                 "username": "smart3",
@@ -112,7 +113,8 @@ class MockUsersApi():
                 "access_level": 50,
                 "state": "active",
                 "avatar_url": "https://secure.gravatar.com/avatar/d549ee47080f3512a835905895c46545?s=80&d=identicon",
-                "id": 285
+                "id": 285,
+                "email": "jdoe2@email.com"
             },
             {
                 "username": "smart4",
@@ -121,7 +123,8 @@ class MockUsersApi():
                 "access_level": 30,
                 "state": "active",
                 "avatar_url": "https://secure.gravatar.com/avatar/77b6da6e1b9aa2527600bc7727f5bad8?s=80&d=identicon",
-                "id": 286
+                "id": 286,
+                "email": "jdoe3@email.com"
             }
         ]
 

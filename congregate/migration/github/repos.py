@@ -9,7 +9,7 @@ from congregate.migration.github.api.users import UsersApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.projects import ProjectsClient
 from congregate.helpers.misc_utils import get_dry_log, is_error_message_present, safe_json_response, \
-    add_post_migration_stats, rotate_logs, is_github_dot_com, json_pretty, dig
+    add_post_migration_stats, rotate_logs, is_github_dot_com, json_pretty, dig, strip_protocol
 from congregate.helpers.migrate_utils import get_staged_projects, find_user_by_email_comparison_without_id
 
 
@@ -29,7 +29,7 @@ class ReposClient(BaseClass):
         self.users_api = UsersApi(host, token)
         self.gl_projects_api = ProjectsApi()
         self.gl_projects = ProjectsClient()
-        self.host = host.split("//")[-1]
+        self.host = strip_protocol(host)
         self.processes = processes
         self.sub_processes = self.split_processes(processes)
 

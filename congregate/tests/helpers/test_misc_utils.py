@@ -650,3 +650,19 @@ class MiscUtilsTests(unittest.TestCase):
         actual = misc.clean_split(test_string, "/")
 
         self.assertListEqual(expected, actual)
+
+    def test_sort_dict(self):
+        test_dict = {
+            "b": 0,
+            "e": 5,
+            "a": 7
+        }
+
+        expected = {
+            "a": 7,
+            "b": 0,
+            "e": 5
+        }
+
+        for k, v in misc.sort_dict(test_dict).items():
+            self.assertEqual(expected[k], v)

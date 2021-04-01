@@ -47,9 +47,15 @@ def start_multi_process(function, iterable, processes=None):
         p.join()
 
 
-def start_multi_process_with_args(function, iterable, *args, processes=None):
+def start_multi_process_with_args(function, iterable, *args, processes=None, **kwargs):
     """
         Wrapper function to handle multiprocessing a function with multiple arguments with a list of data
+
+        example function signature:
+
+        def func(*args, iterable, **kwargs)
+
+        The iterable must be the last argument in the handler function signature
 
         This function leverages map to handle multiprocessing. This function will return a list of data from the function so use this function if your function returns necessary data
 
@@ -62,7 +68,7 @@ def start_multi_process_with_args(function, iterable, *args, processes=None):
     """
     ctx = get_context("spawn")
     p = ctx.Pool(processes=get_no_of_processes(processes),
-                 initializer=worker_init, initargs=(partial(function, *args),))
+                 initializer=worker_init, initargs=(partial(function, *args, **kwargs),))
     try:
         for i in tqdm(p.imap_unordered(worker, iterable), total=len(iterable), colour=tanuki):
             yield i
@@ -99,9 +105,15 @@ def start_multi_process_stream(function, iterable, processes=None):
         p.join()
 
 
-def start_multi_process_stream_with_args(function, iterable, *args, processes=None):
+def start_multi_process_stream_with_args(function, iterable, *args, processes=None, **kwargs):
     """
         Wrapper function to handle multiprocessing a function with multiple arguments with a list of data
+
+        example function signature:
+
+        def func(*args, iterable, **kwargs)
+
+        The iterable must be the last argument in the handler function signature
 
         This function leverages imap_unordered to handle processing a stream of data of unknown length, like from a generator
 
@@ -114,7 +126,7 @@ def start_multi_process_stream_with_args(function, iterable, *args, processes=No
     """
     ctx = get_context("spawn")
     p = ctx.Pool(processes=get_no_of_processes(processes),
-                 initializer=worker_init, initargs=(partial(function, *args),))
+                 initializer=worker_init, initargs=(partial(function, *args, **kwargs),))
     try:
         return p.imap_unordered(worker, iterable)
     except Exception as e:

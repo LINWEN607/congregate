@@ -4,10 +4,13 @@ from requests.exceptions import RequestException
 
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.misc_utils import get_dry_log, get_timedelta, json_pretty, remove_dupes, \
-    is_error_message_present, safe_json_response, add_post_migration_stats, rotate_logs
+    is_error_message_present, safe_json_response, add_post_migration_stats, rotate_logs, strip_protocol
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.groups import GroupsClient
+from congregate.migration.gitlab.users import UsersClient
+from congregate.helpers.mdbc import MongoConnector
+from congregate.helpers.processes import start_multi_process_stream_with_args
 from congregate.helpers.migrate_utils import get_dst_path_with_namespace, \
     get_full_path_with_parent_namespace, dig, get_staged_projects, get_staged_groups, find_user_by_email_comparison_without_id
 
@@ -22,6 +25,9 @@ class ProjectsClient(BaseClass):
     def get_projects(self):
         with open("{}/data/projects.json".format(self.app_path), "r") as f:
             return json.load(f)
+
+    def connect_to_mongo(self):
+        return MongoConnector()
 
     def root_user_present(self, members):
         for member in members:
@@ -42,28 +48,38 @@ class ProjectsClient(BaseClass):
             self.log.error(
                 "Failed to remove import user (ID: {0}) from project (ID: {1}), with error:\n{2}".format(self.config.import_user_id, pid, re))
 
-    def retrieve_project_info(self, host, token):
+    def retrieve_project_info(self, host, token, processes=None):
         if self.config.src_parent_group_path:
-            projects = self.groups_api.get_all_group_projects(
-                self.config.src_parent_id, host, token, with_shared=False)
+            start_multi_process_stream_with_args(
+                self.handle_retrieving_project,
+                self.groups_api.get_all_group_projects(
+                    self.config.src_parent_id, host, token, with_shared=False),
+                host,
+                token,
+                processes=processes)
         else:
-            projects = self.projects_api.get_all_projects(host, token)
+            start_multi_process_stream_with_args(
+                self.handle_retrieving_project,
+                self.projects_api.get_all_projects(host, token),
+                host,
+                token,
+                processes=processes)
 
-        data = []
-        for project in projects:
-            if is_error_message_present(project):
-                self.log.error(
-                    "Failed to list project with response: {}".format(project))
-            else:
-                self.log.info(u"[ID: {0}] {1}: {2}".format(
-                    project["id"], project["name"], project["description"]))
-                project["members"] = [m for m in self.projects_api.get_members(
-                    project["id"], host, token) if m["id"] != 1]
-                data.append(project)
+    def handle_retrieving_project(self, host, token, project, mongo=None):
+        if not mongo:
+            mongo = self.connect_to_mongo()
 
-        with open("{}/data/projects.json".format(self.app_path), "w") as f:
-            json.dump(remove_dupes(data), f, indent=4)
-        return remove_dupes(data)
+        if is_error_message_present(project):
+            self.log.error(
+                "Failed to list project with response: {}".format(project))
+        else:
+            self.log.info(u"[ID: {0}] {1}: {2}".format(
+                project["id"], project["name"], project["description"]))
+            project["members"] = [m for m in self.projects_api.get_members(
+                project["id"], host, token) if m["id"] != 1]
+        
+            mongo.insert_data(f"projects-{strip_protocol(host)}", project)
+        mongo.close_connection()
 
     def add_shared_groups(self, new_id, path, shared_with_groups):
         """Adds the list of groups we share the project with."""

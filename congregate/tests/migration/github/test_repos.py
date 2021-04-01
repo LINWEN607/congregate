@@ -82,8 +82,7 @@ class ReposTests(unittest.TestCase):
 
         mock_close_connection.return_value = None
 
-        mongo = MongoConnector(
-            host="test-server", port=123456, client=mongomock.MongoClient)
+        mongo = MongoConnector(client=mongomock.MongoClient)
         for repo in listed_repos:
             self.repos.handle_retrieving_repos(repo, mongo=mongo)
 
@@ -186,8 +185,7 @@ class ReposTests(unittest.TestCase):
 
         mock_close_connection.return_value = None
 
-        mongo = MongoConnector(
-            host="test-server", port=123456, client=mongomock.MongoClient)
+        mongo = MongoConnector(client=mongomock.MongoClient)
         for repo in listed_repos:
             self.repos.handle_retrieving_repos(repo, mongo=mongo)
 
@@ -333,8 +331,7 @@ class ReposTests(unittest.TestCase):
 
         mock_close_connection.return_value = None
 
-        mongo = MongoConnector(
-            host="test-server", port=123456, client=mongomock.MongoClient)
+        mongo = MongoConnector(client=mongomock.MongoClient)
         for repo in listed_repos:
             self.repos.handle_retrieving_repos(repo, mongo=mongo)
 
@@ -407,8 +404,7 @@ class ReposTests(unittest.TestCase):
         listed_repos = [self.mock_repos.get_listed_repos(
         )[2], self.mock_repos.get_listed_repos()[3]]
 
-        mongo = MongoConnector(
-            host="test-server", port=123456, client=mongomock.MongoClient)
+        mongo = MongoConnector(client=mongomock.MongoClient)
         for repo in listed_repos:
             self.repos.handle_retrieving_repos(repo, mongo=mongo)
 
@@ -482,8 +478,7 @@ class ReposTests(unittest.TestCase):
                 }
             ]
         }
-        mongo_mock = MongoConnector(
-            host="test-server", port=123456, client=mongomock.MongoClient)
+        mongo_mock = MongoConnector(client=mongomock.MongoClient)
         data = [
             {
                 "name": "demo-job",
@@ -527,8 +522,7 @@ class ReposTests(unittest.TestCase):
             ]
         }
 
-        mongo_mock = MongoConnector(
-            host="test-server", port=123456, client=mongomock.MongoClient)
+        mongo_mock = MongoConnector(client=mongomock.MongoClient)
         expected = []
         actual = self.repos.list_ci_sources_teamcity("website", mongo_mock)
 
