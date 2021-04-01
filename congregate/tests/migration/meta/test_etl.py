@@ -1,10 +1,10 @@
 import unittest
-import pytest
 import pandas as pd
-from mock import patch
+from unittest.mock import patch
+from pytest import mark
 from congregate.migration.meta.etl import WaveSpreadsheetHandler as wh
 
-@pytest.mark.unit_test
+@mark.unit_test
 class WaveSpreadsheetHandlerTests(unittest.TestCase):
     def test_handle_excel_file(self):
         expected = "excel"

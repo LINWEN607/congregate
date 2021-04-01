@@ -1,7 +1,7 @@
 import unittest
-import pytest
-from mock import patch, PropertyMock, MagicMock
 import warnings
+from unittest.mock import patch, PropertyMock, MagicMock
+from pytest import mark
 # mongomock is using deprecated logic as of Python 3.3
 # This warning suppression is used so tests can pass
 with warnings.catch_warnings():
@@ -17,7 +17,7 @@ from congregate.migration.github.api.repos import ReposApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
 
 
-@pytest.mark.unit_test
+@mark.unit_test
 class ReposTests(unittest.TestCase):
 
     def setUp(self):

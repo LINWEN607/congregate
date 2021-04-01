@@ -1,10 +1,10 @@
 import unittest
-import pytest
+from pytest import mark
 
 from congregate.tests.mockapi.gitlab.environments import MockEnvironmentsApi
 from congregate.migration.gitlab.environments import EnvironmentsClient
 
-@pytest.mark.unit_test
+@mark.unit_test
 class EnvironmentsTests(unittest.TestCase):
     def setUp(self):
         self.mock_environment = MockEnvironmentsApi()

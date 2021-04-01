@@ -1,7 +1,7 @@
 import unittest
-import pytest
-from mock import patch, PropertyMock
 import warnings
+from unittest.mock import patch, PropertyMock
+from pytest import mark
 # mongomock is using deprecated logic as of Python 3.3
 # This warning suppression is used so tests can pass
 with warnings.catch_warnings():
@@ -14,7 +14,7 @@ from congregate.helpers.mdbc import MongoConnector
 
 
 class JenkinsBaseTests(unittest.TestCase):
-    @pytest.mark.unit_test
+    @mark.unit_test
     @patch('congregate.helpers.conf.Config.jenkins_ci_source_type', new_callable=PropertyMock)
     @patch('congregate.helpers.conf.Config.jenkins_ci_source_host', new_callable=PropertyMock)
     @patch('congregate.helpers.conf.Config.jenkins_ci_source_username', new_callable=PropertyMock)
@@ -38,7 +38,7 @@ class JenkinsBaseTests(unittest.TestCase):
         actual = client.transform_ci_variables(test_results, "0.0.0.0")
         self.assertDictEqual(expected, actual)
 
-    @pytest.mark.unit_test
+    @mark.unit_test
     @patch('congregate.helpers.conf.Config.jenkins_ci_source_type', new_callable=PropertyMock)
     @patch('congregate.helpers.conf.Config.jenkins_ci_source_host', new_callable=PropertyMock)
     @patch('congregate.helpers.conf.Config.jenkins_ci_source_username', new_callable=PropertyMock)
@@ -65,7 +65,7 @@ class JenkinsBaseTests(unittest.TestCase):
     # Mark as integration test.
     @patch('congregate.helpers.conf.Config.jenkins_ci_source_type', new_callable=PropertyMock)
     @patch.object(MongoConnector, "close_connection")
-    @pytest.mark.jenkins_it
+    @mark.jenkins_it
     def test_retrieve_jobs_with_scm_info(self, close_connection, source_type):
         token = 'password'
         username = 'test-admin'

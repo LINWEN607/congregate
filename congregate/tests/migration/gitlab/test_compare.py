@@ -1,7 +1,7 @@
 import unittest
-import pytest
-import mock
 import responses
+from pytest import mark
+from unittest import mock
 from congregate.migration.gitlab.compare import CompareClient
 from congregate.tests.mockapi.gitlab.groups import MockGroupsApi
 from congregate.tests.mockapi.gitlab.users import MockUsersApi
@@ -9,7 +9,7 @@ from congregate.helpers.misc_utils import rewrite_list_into_dict
 from congregate.helpers.configuration_validator import ConfigurationValidator
 
 
-@pytest.mark.unit_test
+@mark.unit_test
 class CompareTests(unittest.TestCase):
     def setUp(self):
         self.compare = CompareClient()

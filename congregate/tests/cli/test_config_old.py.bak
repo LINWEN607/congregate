@@ -1,6 +1,6 @@
 import unittest
 import os
-import mock
+from unittest import mock
 import responses
 from congregate.cli import config
 from congregate.helpers.misc_utils import get_congregate_path, input_generator

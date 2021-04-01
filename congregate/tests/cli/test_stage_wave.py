@@ -1,6 +1,6 @@
 import unittest
-import mock
-import pytest
+from unittest import mock
+from pytest import mark
 from congregate.cli.stage_wave import WaveStageCLI
 from congregate.cli.stage_base import BaseStageClass
 from congregate.migration.meta.etl import WaveSpreadsheetHandler
@@ -9,7 +9,7 @@ from congregate.tests.mockapi.gitlab.groups import MockGroupsApi
 from congregate.tests.mockapi.gitlab.users import MockUsersApi
 
 
-@pytest.mark.unit_test
+@mark.unit_test
 class StageWaveTests(unittest.TestCase):
     def setUp(self):
         self.projects_api = MockProjectsApi()

@@ -1,12 +1,12 @@
 import unittest
-import pytest
-import mock
+from pytest import mark
+from unittest import mock
 
 from congregate.helpers.configuration_validator import ConfigurationValidator
 from congregate.migration.gitlab.registries import RegistryClient
 
 
-@pytest.mark.unit_test
+@mark.unit_test
 class RegistryTests(unittest.TestCase):
     def setUp(self):
         self.reg = RegistryClient()

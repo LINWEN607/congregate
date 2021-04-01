@@ -1,12 +1,12 @@
 import unittest
-import pytest
 import responses
-from mock import patch
+from unittest.mock import patch
+from pytest import mark
 from congregate.tests.mockapi.github.headers import MockHeaders
 from congregate.migration.github.api.base import GitHubApi
 
 
-@pytest.mark.unit_test
+@mark.unit_test
 class BaseTests(unittest.TestCase):
 
     def setUp(self):

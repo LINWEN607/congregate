@@ -1,7 +1,7 @@
 import unittest
-import mock
-import pytest
 import responses
+from unittest import mock
+from pytest import mark
 
 from congregate.helpers.configuration_validator import ConfigurationValidator
 from congregate.migration.gitlab.groups import GroupsClient
@@ -10,7 +10,7 @@ from congregate.migration.gitlab.groups import GroupsApi
 from congregate.migration.gitlab.users import UsersApi
 
 
-@pytest.mark.unit_test
+@mark.unit_test
 class GroupsTests(unittest.TestCase):
 
     class MockReturn(object):

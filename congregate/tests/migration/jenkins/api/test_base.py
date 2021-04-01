@@ -1,8 +1,8 @@
 import unittest
-import pytest
+from pytest import mark
 from congregate.migration.jenkins.api.base import JenkinsApi
 
-@pytest.mark.unit_test
+@mark.unit_test
 class JenkinsApiBaseTests(unittest.TestCase):
     def test_strip_url(self):
         api = JenkinsApi(None, None, None)

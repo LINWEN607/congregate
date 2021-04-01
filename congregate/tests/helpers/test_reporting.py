@@ -1,10 +1,10 @@
 import unittest
-import pytest
-from mock import patch, PropertyMock
+from unittest.mock import patch, PropertyMock
+from pytest import mark
 from congregate.helpers.reporting import Reporting
 from congregate.helpers.configuration_validator import ConfigurationValidator
 
-@pytest.mark.unit_test
+@mark.unit_test
 class ReportingTests(unittest.TestCase):
     def setUp(self):
         self.reporting = Reporting(123)

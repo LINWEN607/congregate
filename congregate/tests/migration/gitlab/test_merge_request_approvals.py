@@ -1,10 +1,10 @@
 import unittest
-import pytest
+from pytest import mark
 import congregate.migration.gitlab.merge_request_approvals as mra
 
 
 # TODO: Mock logging capture
-@pytest.mark.unit_test
+@mark.unit_test
 class MergeRequestApprovalsTests(unittest.TestCase):
 
     @staticmethod

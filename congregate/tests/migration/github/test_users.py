@@ -1,8 +1,8 @@
 import unittest
 import warnings
-import pytest
 import responses
-from mock import patch, PropertyMock, MagicMock
+from unittest.mock import patch, PropertyMock, MagicMock
+from pytest import mark
 # mongomock is using deprecated logic as of Python 3.3
 # This warning suppression is used so tests can pass
 with warnings.catch_warnings():
@@ -22,7 +22,7 @@ class mock_github_browser():
         return None
 
 
-@pytest.mark.unit_test
+@mark.unit_test
 class UsersTests(unittest.TestCase):
     def setUp(self):
         self.mock_users = MockUsersApi()

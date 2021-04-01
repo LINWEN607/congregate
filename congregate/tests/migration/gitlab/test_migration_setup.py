@@ -1,16 +1,16 @@
 import os
 import unittest
+from unittest import mock
 from uuid import uuid4
 from base64 import b64encode
-import pytest
-import mock
+from pytest import mark
 from congregate.helpers.misc_utils import input_generator
 from congregate.cli import config
 from congregate.helpers.seed.generate_token import token_generator
 from congregate.helpers.seed.generator import SeedDataGenerator
 
 
-@pytest.mark.e2e_gl_setup
+@mark.e2e_gl_setup
 class MigrationEndToEndTestSetup(unittest.TestCase):
     def setUp(self):
         self.t = token_generator()

@@ -1,6 +1,6 @@
 import unittest
-import mock
-import pytest
+from unittest import mock
+from pytest import mark, fixture
 import responses
 from congregate.helpers.configuration_validator import ConfigurationValidator
 from congregate.tests.mockapi.gitlab.groups import MockGroupsApi
@@ -13,7 +13,7 @@ from congregate.helpers.exceptions import ConfigurationException
 from congregate.helpers.misc_utils import obfuscate
 
 
-@pytest.mark.unit_test
+@mark.unit_test
 class ConfigurationValidationTests(unittest.TestCase):
     # pylint: disable=no-member
     def setUp(self):
@@ -24,7 +24,7 @@ class ConfigurationValidationTests(unittest.TestCase):
         self.config = ConfigurationValidator(
             path="congregate/tests/cli/data/test_not_ext_src_parent_group_path_no_mirror_name_aws_default.conf")
 
-    @pytest.fixture(autouse=True)
+    @fixture(autouse=True)
     def reset_validation(self):
         ConfigurationValidator().dstn_parent_group_path_validated_in_session = False
         ConfigurationValidator().dstn_parent_id_validated_in_session = False

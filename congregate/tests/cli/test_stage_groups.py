@@ -1,6 +1,6 @@
 import unittest
-import mock
-import pytest
+from unittest import mock
+from pytest import mark
 from congregate.cli.stage_groups import GroupStageCLI
 from congregate.tests.mockapi.gitlab.projects import MockProjectsApi
 from congregate.tests.mockapi.gitlab.groups import MockGroupsApi
@@ -8,7 +8,7 @@ from congregate.tests.mockapi.gitlab.users import MockUsersApi
 from congregate.helpers.configuration_validator import ConfigurationValidator
 
 
-@pytest.mark.unit_test
+@mark.unit_test
 class StageProjectsTests(unittest.TestCase):
     def setUp(self):
         self.projects_api = MockProjectsApi()

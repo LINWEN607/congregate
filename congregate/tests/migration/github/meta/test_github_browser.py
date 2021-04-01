@@ -1,10 +1,10 @@
 import unittest
-import pytest
 import responses
+from pytest import mark
 from congregate.migration.github.meta.github_browser import GitHubBrowser
 from congregate.tests.mockapi.github.scrape import GitHubWebPageScrape
 
-@pytest.mark.unit_test
+@mark.unit_test
 class GitHubBrowserTests(unittest.TestCase):
     @responses.activate
     def test_scrape_email(self):

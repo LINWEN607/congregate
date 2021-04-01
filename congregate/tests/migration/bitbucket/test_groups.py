@@ -1,13 +1,13 @@
 import unittest
-import pytest
-from mock import patch, PropertyMock
+from unittest.mock import patch, PropertyMock
+from pytest import mark
 
 from congregate.tests.mockapi.bitbucket.groups import MockGroupsApi
 from congregate.migration.bitbucket.groups import GroupsClient
 from congregate.migration.bitbucket.api.groups import GroupsApi
 
 
-@pytest.mark.unit_test
+@mark.unit_test
 class GroupsTests(unittest.TestCase):
     def setUp(self):
         self.mock_groups = MockGroupsApi()

@@ -1,13 +1,13 @@
 import unittest
-import pytest
-from mock import patch, PropertyMock
+from unittest.mock import patch, PropertyMock
+from pytest import mark
 from congregate.tests.mockapi.teamcity.parameters import ParametersApi
 from congregate.tests.mockapi.teamcity.buildconfigs import TeamcityJobsApi
 from congregate.migration.teamcity.base import TeamcityClient
 
 
 class TeamCityBaseTests(unittest.TestCase):
-    @pytest.mark.unit_test
+    @mark.unit_test
     @patch('congregate.helpers.conf.Config.tc_ci_source_type', new_callable=PropertyMock)
     @patch('congregate.helpers.conf.Config.tc_ci_source_host', new_callable=PropertyMock)
     @patch('congregate.helpers.conf.Config.tc_ci_source_username', new_callable=PropertyMock)
@@ -31,7 +31,7 @@ class TeamCityBaseTests(unittest.TestCase):
         actual = client.transform_ci_variables(test_results, "0.0.0.0")
         self.assertDictEqual(expected, actual)
 
-    @pytest.mark.unit_test
+    @mark.unit_test
     @patch('congregate.helpers.conf.Config.tc_ci_source_type', new_callable=PropertyMock)
     @patch('congregate.helpers.conf.Config.tc_ci_source_host', new_callable=PropertyMock)
     @patch('congregate.helpers.conf.Config.tc_ci_source_username', new_callable=PropertyMock)

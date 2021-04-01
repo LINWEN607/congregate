@@ -1,6 +1,6 @@
 import unittest
-import pytest
-from mock import patch, PropertyMock
+from unittest.mock import patch, PropertyMock
+from pytest import mark
 from congregate.cli.ldap_group_sync import LdapGroupSync
 from congregate.helpers.conf import Config
 from congregate.helpers.configuration_validator import ConfigurationValidator
@@ -11,7 +11,7 @@ class MockPostResponseObject():
         return {"abc": "def"}
 
 
-@pytest.mark.unit_test
+@mark.unit_test
 class LdapGroupSyncTests(unittest.TestCase):
     # pylint: disable=no-member
     def setUp(self):

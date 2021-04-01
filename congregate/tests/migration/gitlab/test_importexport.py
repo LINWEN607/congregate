@@ -1,7 +1,7 @@
 import unittest
-import pytest
-from mock import MagicMock, PropertyMock, patch
 import responses
+from pytest import mark
+from unittest.mock import MagicMock, PropertyMock, patch
 from requests.models import Response
 
 from congregate.helpers.configuration_validator import ConfigurationValidator
@@ -11,7 +11,7 @@ from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.tests.mockapi.gitlab.groups import MockGroupsApi
 
 
-@pytest.mark.unit_test
+@mark.unit_test
 class ImportExportClientTests(unittest.TestCase):
 
     def setUp(self):

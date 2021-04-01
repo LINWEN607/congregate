@@ -5,10 +5,11 @@
 # 4. Push Repos to the org.
 
 
-import mock
+
 import os
-import pytest
 import unittest
+from unittest import mock
+from pytest import mark
 from uuid import uuid4
 from base64 import b64encode
 
@@ -26,7 +27,7 @@ from congregate.migration.github.api.orgs import OrgsApi
 
 # # Placeholder
 
-# @pytest.mark.e2e_setup
+# @mark.e2e_setup
 # class MigrationE2EGHETestSetup(unittest.TestCase):
 #     def setUp(self):
 #         # self.t = token_generator()  # this generates a GL Token, need to find out how to generate a GHE token

@@ -1,7 +1,7 @@
 import unittest
-import pytest
-from mock import patch, PropertyMock, MagicMock
 import warnings
+from unittest.mock import patch, PropertyMock, MagicMock
+from pytest import mark
 # mongomock is using deprecated logic as of Python 3.3
 # This warning suppression is used so tests can pass
 with warnings.catch_warnings():
@@ -19,7 +19,7 @@ from congregate.migration.github.api.orgs import OrgsApi
 from congregate.migration.github.api.teams import TeamsApi
 
 
-@pytest.mark.unit_test
+@mark.unit_test
 class OrgsTests(unittest.TestCase):
     def setUp(self):
         self.maxDiff = None

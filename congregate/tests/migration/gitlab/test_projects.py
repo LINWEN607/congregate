@@ -1,7 +1,7 @@
 import warnings
 import unittest
-import mock
-import pytest
+from unittest import mock
+from pytest import mark
 
 from congregate.helpers.configuration_validator import ConfigurationValidator
 from congregate.tests.mockapi.gitlab.groups import MockGroupsApi
@@ -19,7 +19,7 @@ with warnings.catch_warnings():
 from congregate.migration.gitlab.users import UsersApi
 
 
-@pytest.mark.unit_test
+@mark.unit_test
 class ProjectsTests(unittest.TestCase):
     def setUp(self):
         self.mock_groups = MockGroupsApi()

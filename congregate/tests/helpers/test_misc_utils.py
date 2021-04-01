@@ -1,13 +1,13 @@
 from datetime import datetime, timedelta
 import unittest
-import pytest
-import mock
+from pytest import mark
+from unittest import mock
 from congregate.tests.helpers.mock_data.results import MockProjectResults
 from congregate.tests.mockapi.jenkins.jobs import JenkinsJobsApi
 import congregate.helpers.misc_utils as misc
 
 
-@pytest.mark.unit_test
+@mark.unit_test
 class MiscUtilsTests(unittest.TestCase):
     def test_remove_dupes_no_dupes(self):
         L = [{'id': 1, 'name': 'john', 'age': 34}, {'id': 2, 'name': 'jack',

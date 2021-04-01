@@ -1,6 +1,6 @@
 import unittest
 from time import sleep
-import pytest
+from pytest import mark
 
 from congregate.cli import do_all
 from congregate.migration.gitlab.diff.basediff import BaseDiffClient
@@ -11,7 +11,7 @@ from congregate.migration.migrate import MigrateClient
 from congregate.helpers.base_class import BaseClass
 
 
-@pytest.mark.e2e
+@mark.e2e
 class MigrationEndToEndTest(unittest.TestCase):
 
     @classmethod

@@ -35,12 +35,13 @@ Notes for making calls:
         poetry run pytest --cov-report html --cov-config=.coveragerc --cov=congregate congregate/tests/migration/github/test_GHE_migration_setup.py -s
 """
 
-import mock
+
 import os
-import pytest
 import unittest
-from uuid import uuid4
+from unittest import mock
 from base64 import b64encode
+from pytest import mark
+
 
 from congregate.helpers.misc_utils import input_generator
 from congregate.cli import config
@@ -51,7 +52,7 @@ from congregate.migration.github.api.orgs import OrgsApi
 from congregate.migration.github.api.base import GitHubApi
 
 
-@pytest.mark.e2e_ghe_setup
+@mark.e2e_ghe_setup
 class MigrationE2EGHETestSetup(unittest.TestCase):
     def setUp(self):
         self.t = token_generator()

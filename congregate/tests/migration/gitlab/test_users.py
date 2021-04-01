@@ -1,9 +1,9 @@
 import unittest
 import json
-import pytest
 import responses
 import warnings
-from mock import patch, mock_open, PropertyMock, MagicMock
+from unittest.mock import patch, mock_open, PropertyMock, MagicMock
+from pytest import mark
 
 from congregate.helpers.configuration_validator import ConfigurationValidator
 from congregate.migration.migrate import MigrateClient
@@ -21,7 +21,7 @@ with warnings.catch_warnings():
     import mongomock
 
 
-@pytest.mark.unit_test
+@mark.unit_test
 class UsersTests(unittest.TestCase):
     def setUp(self):
         self.mock_users = MockUsersApi()

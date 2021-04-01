@@ -1,7 +1,7 @@
 import unittest
-import pytest
-from mock import patch, PropertyMock, mock_open
 import warnings
+from unittest.mock import patch, PropertyMock, mock_open
+from pytest import mark
 # mongomock is using deprecated logic as of Python 3.3
 # This warning suppression is used so tests can pass
 with warnings.catch_warnings():
@@ -11,7 +11,7 @@ with warnings.catch_warnings():
 from congregate.helpers.mdbc import MongoConnector
 
 
-@pytest.mark.unit_test
+@mark.unit_test
 class MongoConnectorTests(unittest.TestCase):
     def setUp(self):
         with patch("congregate.helpers.conf.Config.list_ci_source_config") as mock_list_ci_sources:

@@ -1,9 +1,9 @@
 import unittest
-import mock
-import pytest
+from unittest import mock
+from pytest import mark
 import congregate.helpers.api as api
 
-@pytest.mark.unit_test
+@mark.unit_test
 class ApiTests(unittest.TestCase):
     def test_generate_v4_get_request_url(self):
         url = api.generate_v4_request_url("HOST", "API")

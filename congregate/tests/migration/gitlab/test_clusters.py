@@ -1,6 +1,6 @@
 import unittest
-import pytest
-from mock import patch, PropertyMock, MagicMock
+from unittest.mock import patch, PropertyMock, MagicMock
+from pytest import mark
 
 from congregate.helpers.configuration_validator import ConfigurationValidator
 from congregate.migration.gitlab.clusters import ClustersClient
@@ -10,7 +10,7 @@ from congregate.migration.gitlab.projects import ProjectsClient
 from congregate.migration.gitlab.api.projects import ProjectsApi
 
 
-@pytest.mark.unit_test
+@mark.unit_test
 class ClustersTests(unittest.TestCase):
     def setUp(self):
         self.clusters = ClustersClient()

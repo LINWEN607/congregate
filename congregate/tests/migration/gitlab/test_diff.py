@@ -1,9 +1,9 @@
 import unittest
-import pytest
+from pytest import mark
 from congregate.helpers.jsondiff import Comparator
 
 
-@pytest.mark.unit_test
+@mark.unit_test
 class ComparatorTests(unittest.TestCase):
     def setUp(self):
         self.engine = Comparator()
