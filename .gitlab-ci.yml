@@ -110,7 +110,7 @@ build:
     - .docker-login
   stage: build
   script:
-    - /bin/sh build_test_image.sh
+    - /bin/sh ci/build_test_image.sh
   rules:
     - changes:
         - docker/test/*
@@ -183,17 +183,39 @@ check ldap compose yaml:
         - congregate.sh
         - pyproject.toml
         - poetry.lock
-        - spin_up_test_vm.sh
+        - ci/spin_up_test_vm.sh
         - package.json
-        - pylint*.sh
+        - ci/pylint*.sh
         - .pylintrc
         - delete_azure_vm.ps1
         - restore_azure_vm.sh
 
+.e2e-test-setup:
+  image: "${TEST_IMAGE_NAME}"
+  extends: 
+    - .use-docker-in-docker
+    - .gitlab-destination
+    - .e2e-cleanup
+  tags:
+    - congregate-auto-scale-runner
+  before_script:
+    - !reference [.test-job, before_script]
+    - ci/spin_up_test_vm.sh
+    - export GITLAB_SRC=http://$(cat source_ip)
+    - export GITLAB_SRC_REG_URL=$(cat source_ip):4567
+    - export GITLAB_DEST=http://gitlab_destination
+    - export GITLAB_DEST_REG_URL=gitlab_destination:4567
+  rules:
+    - changes:
+      - congregate/helpers/**/*
+      - congregate/migration/gitlab/**/*
+      - congregate/migration/migrate.py
+  timeout: 30 minutes
+
 test:pylint:
   extends: .test-job
   script:
-    - ./pylint.sh
+    - ci/pylint.sh
   artifacts:
     paths:
       - pylint.txt
@@ -201,7 +223,7 @@ test:pylint:
 test:pylint:syntax-errors:
   extends: .test-job
   script:
-    - ./pylint-errors.sh
+    - ci/pylint-errors.sh
   artifacts:
     paths:
       - pylint.txt
@@ -218,50 +240,17 @@ test:unit:
 
 test:end-to-end full:
   extends:
-    - .test-job
-    - .use-docker-in-docker
-    - .gitlab-destination
-    - .e2e-cleanup
-  image: "${TEST_IMAGE_NAME}"
-  tags:
-    - congregate-auto-scale-runner
+    - .e2e-test-setup
   script:
-    - ./spin_up_test_vm.sh
-    - export GITLAB_SRC=http://$(cat source_ip)
-    - export GITLAB_SRC_REG_URL=$(cat source_ip):4567
-    - export GITLAB_DEST=http://gitlab_destination
-    - export GITLAB_DEST_REG_URL=gitlab_destination:4567
     - poetry run pytest -s -m e2e_gl_setup congregate/tests/
     - poetry run pytest -s -m e2e --cov-config=.coveragerc --cov=congregate congregate/tests/
-  rules:
-    - changes:
-        - congregate/helpers/**/*
-        - congregate/migration/gitlab/**/*
-        - congregate/migration/migrate.py
-  timeout: 30 minutes
 
 test:end-to-end single group:
   extends:
-    - .test-job
-    - .use-docker-in-docker
-    - .gitlab-destination
-    - .e2e-cleanup
-  image: "${TEST_IMAGE_NAME}"
-  tags:
-    - congregate-auto-scale-runner
+    - .e2e-test-setup
   script:
-    - ./spin_up_test_vm.sh
-    - export GITLAB_SRC=http://$(cat source_ip)
-    - export GITLAB_SRC_REG_URL=$(cat source_ip):4567
-    - export GITLAB_DEST=http://gitlab_destination
-    - export GITLAB_DEST_REG_URL=gitlab_destination:4567
     - poetry run pytest -s -m e2e_gl_setup_2 congregate/tests/
     - poetry run pytest -s -m e2e --cov-config=.coveragerc --cov=congregate congregate/tests/
-  rules:
-    - changes:
-        - congregate/helpers/**/*
-        - congregate/migration/gitlab/**/*
-        - congregate/migration/migrate.py
   timeout: 15 minutes
 
 test:GitHub Server end to end:
@@ -361,9 +350,9 @@ runbook update:
     - echo "This is a placeholder job ran only when runbooks are changed"
     - echo "Storing any changed runbook to artifacts that will expire in 1 week."
     # To the ps-migration project
-    - python runbookscript.py 11750578
+    - python ci/runbookscript.py 11750578
     # To the Migration Template
-    - python runbookscript.py 21146917
+    - python ci/runbookscript.py 21146917
   rules:
     - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
     - changes:
