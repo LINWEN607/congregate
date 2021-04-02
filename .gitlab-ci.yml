@@ -423,7 +423,7 @@ update gitlab-ps-utils:
   trigger: 'gitlab-com/customer-success/professional-services-group/global-practice-development/utilities/gitlab-ps-utils'
   rules:
     - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
-    - changes:
+      changes:
         - congregate/helpers/api.py
         - congregate/helpers/audit_logger.py
         - congregate/helpers/jsondiff.py
