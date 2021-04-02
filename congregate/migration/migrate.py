@@ -111,11 +111,11 @@ class MigrateClient(BaseClass):
 
         # Dry-run and log cleanup
         if self.dry_run:
-            misc_utils.clean_data(dry_run=False, files=[
+            mig_utils.clean_data(dry_run=False, files=[
                 "results/dry_run_user_migration.json",
                 "results/dry_run_group_migration.json",
                 "results/dry_run_project_migration.json"])
-        misc_utils.clean_data(dry_run=False, files=[
+        mig_utils.clean_data(dry_run=False, files=[
             "results/import_failed_relations.json"])
         misc_utils.rotate_logs()
 
@@ -128,7 +128,7 @@ class MigrateClient(BaseClass):
         else:
             self.log.warning(
                 f"Configuration (data/congregate.conf) src_type {self.config.source_type} not supported")
-        misc_utils.add_post_migration_stats(self.start, log=self.log)
+        mig_utils.add_post_migration_stats(self.start, log=self.log)
 
     def validate_groups_and_projects(self, staged, are_projects=False):
         if dupes := misc_utils.get_duplicate_paths(staged, are_projects=are_projects):
@@ -179,7 +179,7 @@ class MigrateClient(BaseClass):
             results.append(mig_utils.get_results(results))
             self.log.info(
                 f"### {dry_log}Group import results ###\n{misc_utils.json_pretty(results)}")
-            misc_utils.write_results_to_file(
+            mig_utils.write_results_to_file(
                 results, result_type="group", log=self.log)
         else:
             self.log.info("SKIP: No groups to migrate")
@@ -200,7 +200,7 @@ class MigrateClient(BaseClass):
             import_results.append(mig_utils.get_results(import_results))
             self.log.info(
                 f"### {dry_log}Project import results ###\n{misc_utils.json_pretty(import_results)}")
-            misc_utils.write_results_to_file(import_results, log=self.log)
+            mig_utils.write_results_to_file(import_results, log=self.log)
         else:
             self.log.info("SKIP: No projects to migrate")
 
@@ -487,7 +487,7 @@ class MigrateClient(BaseClass):
             results.append(mig_utils.get_results(results))
             self.log.info("### {0}Group import results ###\n{1}"
                           .format(dry_log, misc_utils.json_pretty(results)))
-            misc_utils.write_results_to_file(
+            mig_utils.write_results_to_file(
                 results, result_type="group", log=self.log)
         else:
             self.log.info("SKIP: No projects to migrate")
@@ -510,7 +510,7 @@ class MigrateClient(BaseClass):
             import_results.append(mig_utils.get_results(import_results))
             self.log.info("### {0}Project import results ###\n{1}"
                           .format(dry_log, misc_utils.json_pretty(import_results)))
-            misc_utils.write_results_to_file(import_results, log=self.log)
+            mig_utils.write_results_to_file(import_results, log=self.log)
         else:
             self.log.info("SKIP: No projects to migrate")
 
@@ -581,7 +581,7 @@ class MigrateClient(BaseClass):
         if not results:
             self.log.warning(
                 "Results from {0} {1} returned as empty. Aborting.".format(var, stage))
-            misc_utils.add_post_migration_stats(self.dry_run, log=self.log)
+            mig_utils.add_post_migration_stats(self.dry_run, log=self.log)
             sys.exit()
 
     def migrate_user_info(self):
@@ -604,7 +604,7 @@ class MigrateClient(BaseClass):
                 new_users.append(mig_utils.get_results(new_users))
                 self.log.info("### {0}User creation results ###\n{1}"
                               .format(misc_utils.get_dry_log(self.dry_run), misc_utils.json_pretty(new_users)))
-                misc_utils.write_results_to_file(
+                mig_utils.write_results_to_file(
                     formatted_users, result_type="user", log=self.log)
                 if self.dry_run and not self.only_post_migration_info:
                     self.log.info(
@@ -733,7 +733,7 @@ class MigrateClient(BaseClass):
                 import_results.append(mig_utils.get_results(import_results))
                 self.log.info(
                     f"### {dry_log}Group import results ###\n{misc_utils.json_pretty(import_results)}")
-                misc_utils.write_results_to_file(
+                mig_utils.write_results_to_file(
                     import_results, result_type="group", log=self.log)
             else:
                 self.log.info(
@@ -920,7 +920,7 @@ class MigrateClient(BaseClass):
                 import_results.append(mig_utils.get_results(import_results))
                 self.log.info("### {0}Project import results ###\n{1}"
                               .format(dry_log, misc_utils.json_pretty(import_results)))
-                misc_utils.write_results_to_file(import_results, log=self.log)
+                mig_utils.write_results_to_file(import_results, log=self.log)
             else:
                 self.log.info(
                     "SKIP: Assuming staged projects will be later imported")
@@ -1223,7 +1223,7 @@ class MigrateClient(BaseClass):
             self.users.delete_users(
                 dry_run=self.dry_run, hard_delete=self.hard_delete)
 
-        misc_utils.add_post_migration_stats(self.start, log=self.log)
+        mig_utils.add_post_migration_stats(self.start, log=self.log)
 
     def remove_all_mirrors(self):
         # if os.path.isfile("%s/data/new_ids.txt" % self.app_path):

@@ -9,8 +9,8 @@ from congregate.migration.github.api.users import UsersApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.projects import ProjectsClient
 from congregate.helpers.misc_utils import get_dry_log, is_error_message_present, safe_json_response, \
-    add_post_migration_stats, rotate_logs, is_github_dot_com, json_pretty, dig, strip_protocol
-from congregate.helpers.migrate_utils import get_staged_projects, find_user_by_email_comparison_without_id
+    rotate_logs, is_github_dot_com, json_pretty, dig, strip_protocol
+from congregate.helpers.migrate_utils import get_staged_projects, find_user_by_email_comparison_without_id, add_post_migration_stats
 
 
 class ReposClient(BaseClass):

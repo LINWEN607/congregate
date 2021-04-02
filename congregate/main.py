@@ -169,16 +169,18 @@ if __name__ == '__main__':
             os.path.dirname(os.path.abspath(__file__))))
     from congregate.helpers import conf
     from congregate.helpers.logger import myLogger
-    from congregate.helpers.misc_utils import get_congregate_path, clean_data, obfuscate, deobfuscate, \
-        strip_protocol, spin_up_ui, stitch_json_results, write_results_to_file, add_post_migration_stats, rotate_logs, dig
+    from congregate.helpers.misc_utils import get_congregate_path, obfuscate, deobfuscate, \
+        strip_protocol, spin_up_ui, stitch_json_results, rotate_logs, dig
+    from congregate.helpers.migrate_utils import clean_data, add_post_migration_stats, write_results_to_file
 else:
     import sys
     sys.path.append(os.path.dirname(
         os.path.dirname(os.path.abspath(__file__))))
     from congregate.helpers import conf
     from congregate.helpers.logger import myLogger
-    from congregate.helpers.misc_utils import get_congregate_path, clean_data, obfuscate, deobfuscate, \
-        strip_protocol, stitch_json_results, write_results_to_file, spin_up_ui, add_post_migration_stats, rotate_logs
+    from congregate.helpers.misc_utils import get_congregate_path, obfuscate, deobfuscate, \
+        strip_protocol, stitch_json_results, spin_up_ui, rotate_logs
+    from congregate.helpers.migrate_utils import clean_data, add_post_migration_stats, write_results_to_file
 
 app_path = get_congregate_path()
 

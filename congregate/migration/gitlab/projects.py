@@ -4,7 +4,7 @@ from requests.exceptions import RequestException
 
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.misc_utils import get_dry_log, get_timedelta, json_pretty, remove_dupes, \
-    is_error_message_present, safe_json_response, add_post_migration_stats, rotate_logs, strip_protocol
+    is_error_message_present, safe_json_response, rotate_logs, strip_protocol
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.groups import GroupsClient
@@ -12,7 +12,7 @@ from congregate.migration.gitlab.users import UsersClient
 from congregate.helpers.mdbc import MongoConnector
 from congregate.helpers.processes import start_multi_process_stream_with_args
 from congregate.helpers.migrate_utils import get_dst_path_with_namespace, \
-    get_full_path_with_parent_namespace, dig, get_staged_projects, get_staged_groups, find_user_by_email_comparison_without_id
+    get_full_path_with_parent_namespace, dig, get_staged_projects, get_staged_groups, find_user_by_email_comparison_without_id, add_post_migration_stats
 
 
 class ProjectsClient(BaseClass):

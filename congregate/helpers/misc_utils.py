@@ -285,46 +285,7 @@ def pretty_print_key(s):
     return " ".join(w.capitalize() for w in s.split("_"))
 
 
-def clean_data(dry_run=True, files=None):
-    app_path = get_congregate_path()
-    files_to_delete = [
-        "staged_projects.json",
-        "staged_users.json",
-        "staged_groups.json",
-        "projects.json",
-        "users.json",
-        "groups.json",
-        "results/user_migration_results.json",
-        "results/user_migration_results.html",
-        "results/user_diff.json",
-        "results/group_migration_results.json",
-        "results/group_migration_results.html",
-        "results/group_diff.json",
-        "results/project_migration_results.json",
-        "results/project_migration_results.html",
-        "results/project_diff.json",
-        "results/migration_rollback_results.html",
-        "newer_users.json",
-        "unknown_users.json",
-        "groups_audit.json",
-        "results/dry_run_user_migration.json",
-        "results/dry_run_group_migration.json",
-        "results/dry_run_project_migration.json",
-        "results/import_failed_relations.json"
-    ] if not files else files
 
-    if os.path.isdir("{}/data".format(app_path)):
-        for f in files_to_delete:
-            path = f"{app_path}/data/{f}"
-            try:
-                print("{0}Removing {1}".format(get_dry_log(dry_run), path))
-                if not dry_run:
-                    os.remove(path)
-            except OSError as e:
-                if e.errno != errno.ENOENT:
-                    raise
-    else:
-        print("Cannot find data directory. CONGREGATE_PATH not set or you are not running this in the Congregate directory.")
 
 
 def rotate_logs():
@@ -428,23 +389,7 @@ def is_error_message_present(response):
     return False
 
 
-def add_post_migration_stats(start, log=None):
-    """
-        Print all POST/PUT/DELETE requests and their total number
-        Assuming you've started the migration with an empty congregate.log
-        Print total migration time
-    """
-    reqs = ["POST request to", "PUT request to",
-            "DELETE request to", "PATCH request to"]
-    reqs_no = 0
-    with open(f"{get_congregate_path()}/data/logs/audit.log", "r") as f:
-        for line in f:
-            if any(req in line for req in reqs):
-                reqs_no += 1
-        if log:
-            log.info(f"Total number of POST/PUT/DELETE requests: {reqs_no}")
-    if log:
-        log.info("Total time: {}".format(timedelta(seconds=time() - start)))
+
 
 
 def get_timedelta(timestamp):
@@ -497,13 +442,6 @@ def list_to_dict(lst):
     res_dct = {lst[i]: True for i in range(0, len(lst), 2)}
     return res_dct
 
-
-def write_results_to_file(import_results, result_type="project", log=None):
-    end_time = str(datetime.now()).replace(" ", "_")
-    file_path = f"{get_congregate_path()}/data/results/{result_type}_migration_results_{end_time}.json"
-    write_json_to_file(file_path, import_results, log=log)
-    copy(file_path,
-         f"{get_congregate_path()}/data/results/{result_type}_migration_results.json")
 
 
 def stitch_json_results(result_type="project", steps=0, order="tail"):
