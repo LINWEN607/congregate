@@ -171,7 +171,6 @@ if __name__ == '__main__':
     from congregate.helpers.logger import myLogger
     from congregate.helpers.misc_utils import get_congregate_path, obfuscate, deobfuscate, \
         strip_protocol, spin_up_ui, stitch_json_results, rotate_logs, dig
-    from congregate.helpers.migrate_utils import clean_data, add_post_migration_stats, write_results_to_file
 else:
     import sys
     sys.path.append(os.path.dirname(
@@ -180,7 +179,6 @@ else:
     from congregate.helpers.logger import myLogger
     from congregate.helpers.misc_utils import get_congregate_path, obfuscate, deobfuscate, \
         strip_protocol, stitch_json_results, spin_up_ui, rotate_logs
-    from congregate.helpers.migrate_utils import clean_data, add_post_migration_stats, write_results_to_file
 
 app_path = get_congregate_path()
 
@@ -221,6 +219,7 @@ def main():
             log = myLogger(__name__)
 
         from congregate.cli.config import generate_config
+        from congregate.helpers.migrate_utils import clean_data, add_post_migration_stats, write_results_to_file
 
         if arguments["configure"]:
             generate_config()
