@@ -29,11 +29,8 @@ Usage:
     congregate migrate-variables-in-stage [--commit]
     congregate mirror-staged-projects [--commit]
     congregate remove-all-mirrors [--commit]
-    congregate find-all-non-private-groups
-    # TODO: Refactor or rename, as it does not make any changes
-    congregate make-all-internal-groups-private
-    # TODO: Refactor or rename, as it's not a check but does an update. Add dry-run
-    congregate check-projects-visibility
+    # TODO: Add dry-run, potentially remove
+    congregate update-projects-visibility
     congregate set-default-branch [--commit]
     congregate enable-mirroring [--commit] # TODO: Find a use for it or remove
     congregate count-unarchived-projects
@@ -126,9 +123,7 @@ Commands:
     migrate-variables-in-stage              Migrate CI variables for staged projects.
     mirror-staged-projects                  Set up project mirroring for staged projects.
     remove-all-mirrors                      Remove all project mirrors for staged projects.
-    find-all-non-private-groups             Return list of all groups on destination that are either internal or public.
-    make-all-internal-groups-private        Make all internal migrated groups private.
-    check-projects-visibility               Return list of all migrated projects' visibility.
+    update-projects-visibility               Return list of all migrated projects' visibility.
     set-default-branch                      Set default branch to master for all projects on destination.
     enable-mirroring                        Start pull mirror process for all projects on destination.
     count-unarchived-projects               Return total number and list of all unarchived projects on source.
@@ -366,13 +361,9 @@ def main():
             if arguments["remove-all-mirrors"]:
                 migrate = MigrateClient(dry_run=DRY_RUN)
                 migrate.remove_all_mirrors()
-            if arguments["find-all-non-private-groups"]:
-                groups.find_all_non_private_groups()
-            if arguments["make-all-internal-groups-private"]:
-                groups.make_all_internal_groups_private()
-            if arguments["check-projects-visibility"]:
+            if arguments["update-projects-visibility"]:
                 migrate = MigrateClient()
-                migrate.check_visibility()
+                migrate.update_visibility()
             if arguments["mirror-staged-projects"]:
                 migrate = MigrateClient(dry_run=DRY_RUN)
                 migrate.mirror_staged_projects()

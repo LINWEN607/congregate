@@ -1271,7 +1271,7 @@ class MigrateClient(BaseClass):
                 project = staged_projects[i]
                 self.mirror.mirror_repo(project, pid, self.dry_run)
 
-    def check_visibility(self):
+    def update_visibility(self):
         count = 0
         if os.path.isfile("%s/data/new_ids.txt" % self.app_path):
             ids = []
