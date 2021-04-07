@@ -170,7 +170,8 @@ if __name__ == '__main__':
     from congregate.helpers import conf
     from congregate.helpers.logger import myLogger
     from congregate.helpers.misc_utils import get_congregate_path, obfuscate, deobfuscate, \
-        strip_protocol, spin_up_ui, stitch_json_results, rotate_logs, dig
+        strip_protocol, stitch_json_results, rotate_logs, dig
+    from congregate.helpers.ui_utils import spin_up_ui
 else:
     import sys
     sys.path.append(os.path.dirname(
@@ -178,7 +179,8 @@ else:
     from congregate.helpers import conf
     from congregate.helpers.logger import myLogger
     from congregate.helpers.misc_utils import get_congregate_path, obfuscate, deobfuscate, \
-        strip_protocol, stitch_json_results, spin_up_ui, rotate_logs
+        strip_protocol, stitch_json_results, rotate_logs
+    from congregate.helpers.ui_utils import spin_up_ui
 
 app_path = get_congregate_path()
 

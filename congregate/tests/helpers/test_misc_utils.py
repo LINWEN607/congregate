@@ -380,33 +380,7 @@ class MiscUtilsTests(unittest.TestCase):
     def test_safe_list_index_lookup_missing_index(self):
         self.assertIsNone(misc.safe_list_index_lookup([], "hello"))
 
-    @mock.patch("congregate.helpers.misc_utils.open", new=mock.mock_open(read_data=b"abc123"))
-    @mock.patch("congregate.helpers.misc_utils.get_hash_of_dirs")
-    def test_is_ui_out_of_date_false(self, mock_hash):
-        mock_hash.return_value = b"abc123"
-        expected = False
-        actual = misc.is_ui_out_of_date("")
 
-        self.assertEqual(expected, actual)
-
-    @mock.patch("congregate.helpers.misc_utils.open", new=mock.mock_open(read_data=b"def456"))
-    @mock.patch("congregate.helpers.misc_utils.get_hash_of_dirs")
-    def test_is_ui_out_of_date_true(self, mock_hash):
-        mock_hash.return_value = b"abc123"
-        expected = True
-        actual = misc.is_ui_out_of_date("")
-
-        self.assertEqual(expected, actual)
-
-    @mock.patch("congregate.helpers.misc_utils.open")
-    @mock.patch("congregate.helpers.misc_utils.get_hash_of_dirs")
-    def test_is_ui_out_of_date_true_with_exception(self, mock_hash, mock_open):
-        mock_open.side_effect = [IOError]
-        mock_hash.return_value = b"abc123"
-        expected = True
-        actual = misc.is_ui_out_of_date("")
-
-        self.assertEqual(expected, actual)
 
     @mock.patch("os.path.exists")
     def test_get_hash_of_dirs_no_dir(self, path):
