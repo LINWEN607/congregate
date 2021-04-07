@@ -151,53 +151,6 @@ class GroupsClient(BaseClass):
                 self.log.error(
                     "Failed to GET group {} by full_path".format(dest_full_path))
 
-    def find_all_non_private_groups(self):
-        pass
-    #     groups_to_change = []
-    #     transient_list = []
-    #     parent_group = [self.groups_api.get_group(
-    #         self.config.dstn_parent_id,
-    #         self.config.destination_host,
-    #         self.config.destination_token).json()]
-    #     self.traverse_groups(
-    #         parent_group,
-    #         transient_list,
-    #         self.config.destination_host,
-    #         self.config.destination_token)
-    #     count = 0
-
-    #     for group in transient_list:
-    #         print("{0}, {1}".format(group["name"], group["visibility"]))
-    #         if group["visibility"] != "private":
-    #             self.log.info("Group {0} has {1} visibility".format(
-    #                 group["name"], group["visibility"]))
-    #             count += 1
-    #             groups_to_change.append(group)
-    #     self.log.info("Non-private groups ({0}):\n{1}".format(
-    #         len(groups_to_change), "\n".join(g for g in groups_to_change)))
-
-    #     return groups_to_change
-
-    def make_all_internal_groups_private(self):
-    #     groups = self.find_all_non_private_groups()
-    #     ids = []
-    #     for group in groups:
-    #         try:
-    #             self.log.debug("Searching for existing %s" % group["name"])
-    #             for proj in self.groups_api.search_for_group(self.config.destination_host,
-    #                                                          self.config.destination_token, group['name']):
-    #                 if proj["name"] == group["name"]:
-    #                     if "%s" % group["path"].lower() in proj["full_path"].lower():
-    #                         # self.log.info("Migrating variables for %s" % proj["name"])
-    #                         ids.append(proj["id"])
-    #                         print("%s: %s" %
-    #                               (proj["full_path"], proj["visibility"]))
-    #                         break
-    #         except IOError as e:
-    #             self.log.error(e)
-    #     print(ids)
-        pass
-
     def validate_staged_groups_schema(self):
         staged_groups = get_staged_groups()
         for g in staged_groups:
