@@ -7,7 +7,7 @@ from congregate.helpers.mdbc import MongoConnector
 
 class JenkinsClient(BaseClass):
     def __init__(self, host, user, token):
-        super(JenkinsClient, self).__init__()
+        super().__init__()
         self.jenkins_api = JenkinsApi(host, user, token)
 
     def retrieve_jobs_with_scm_info(self, i, processes=None):
@@ -50,7 +50,7 @@ class JenkinsClient(BaseClass):
             "environment_scope": "*"
         }
         """
-        temp_url = jenkins_ci_src_hostname.split("//")[-1].split(":")[0]
+        temp_url = strip_protocol(jenkins_ci_src_hostname).split(":")[0]
         result_dict = {
             "protected": False,
             "variable_type": "env_var",

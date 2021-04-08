@@ -8,7 +8,7 @@ from congregate.helpers.mdbc import MongoConnector
 
 class TeamcityClient(BaseClass):
     def __init__(self, host, user, token):
-        super(TeamcityClient, self).__init__()
+        super().__init__()
         self.teamcity_api = TeamcityApi(host, user, token)
 
     def retrieve_jobs_with_vcs_info(self, i, processes=None):
@@ -16,7 +16,8 @@ class TeamcityClient(BaseClass):
         List and assigns jobs to associated SCM
         """
         build_configs = self.teamcity_api.list_build_configs()
-        start_multi_process_stream(self.handle_retrieving_tc_jobs, dig(build_configs, 'buildTypes', 'buildType'), processes=processes)
+        start_multi_process_stream(self.handle_retrieving_tc_jobs, dig(
+            build_configs, 'buildTypes', 'buildType'), processes=processes)
 
     def handle_retrieving_tc_jobs(self, job):
         mongo = MongoConnector()
@@ -27,13 +28,16 @@ class TeamcityClient(BaseClass):
             for property_node in dig(scm_data, 'vcs-root', 'properties', 'property', default=[]):
                 if property_node["@name"] == "url":
                     # Regex replaces URL where '#refs' is found and trims it.
-                    scm_url = re.sub("([#]refs.*)", "", property_node["@value"])
+                    scm_url = re.sub("([#]refs.*)", "",
+                                     property_node["@value"])
             job_dict = {'name': job_name, 'url': scm_url}
-            self.log.info(f"Inserting TC job {job_name} from {tc_host} into mongo")
+            self.log.info(
+                f"Inserting TC job {job_name} from {tc_host} into mongo")
             mongo.insert_data(f"teamcity-{tc_host}", job_dict)
         else:
             job_dict = {'name': job_name, 'url': "no_scm"}
-            self.log.info(f"Inserting TC job {job_name} from {tc_host} with no SCM attached into mongo")
+            self.log.info(
+                f"Inserting TC job {job_name} from {tc_host} with no SCM attached into mongo")
             mongo.insert_data(f"teamcity-{tc_host}", job_dict)
         mongo.close_connection()
 
@@ -49,14 +53,14 @@ class TeamcityClient(BaseClass):
             "environment_scope": "*"
         }
         """
-        temp_url = tc_ci_src_hostname.split("//")[-1].split(":")[0]
+        temp_url = strip_protocol(tc_ci_src_hostname).split(":")[0]
         result_dict = {}
         if isinstance(parameter, dict):
             result_dict = {
-                "key": convert_to_underscores(parameter["@name"]), 
-                "protected": False, 
-                "variable_type": "env_var", 
-                "masked": False, 
+                "key": convert_to_underscores(parameter["@name"]),
+                "protected": False,
+                "variable_type": "env_var",
+                "masked": False,
                 "environment_scope": f"teamcity-{temp_url}"
             }
             if parameter.get("@value", None):

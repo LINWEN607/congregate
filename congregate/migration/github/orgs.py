@@ -28,7 +28,7 @@ class OrgsClient(BaseClass):
     }
 
     def __init__(self, host, token):
-        super(OrgsClient, self).__init__()
+        super().__init__()
         self.orgs_api = OrgsApi(host, token)
         self.teams_api = TeamsApi(host, token)
         self.repos = ReposClient(host, token)

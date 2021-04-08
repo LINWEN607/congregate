@@ -271,8 +271,7 @@ class MigrateClient(BaseClass):
             result = misc_utils.safe_json_response(self.groups_api.create_group(
                 self.config.destination_host, self.config.destination_token, group))
             if result and not misc_utils.is_error_message_present(result):
-                group_id = result.get("id", None)
-                if group_id:
+                if group_id := result.get("id", None):
                     result["members"] = self.groups.add_members_to_destination_group(
                         self.config.destination_host, self.config.destination_token, group_id, members)
                     self.groups.remove_import_user(group_id)
