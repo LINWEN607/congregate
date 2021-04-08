@@ -446,7 +446,7 @@ class ReposClient(BaseClass):
 
         return list_of_issues
 
-    def migrate_archived_repo(self, new_id, repo):
+    def archive_migrated_repo(self, new_id, repo):
         gh_repo = safe_json_response(
             self.repos_api.get_repo(repo["namespace"], repo["path"]))
         if gh_repo and gh_repo.get("archived", None):

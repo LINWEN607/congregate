@@ -532,7 +532,7 @@ class ReposTests(unittest.TestCase):
     @patch.object(ConfigurationValidator, 'destination_token', new_callable=PropertyMock)
     @patch.object(ProjectsApi, "archive_project")
     @patch.object(ReposApi, "get_repo")
-    def test_migrate_archived_repo_true(self, mock_get_repo, mock_archive, mock_token, mock_host):
+    def test_archive_migrated_repo_true(self, mock_get_repo, mock_archive, mock_token, mock_host):
         mock_token.return_value = "test"
         mock_host.return_value = "host"
 
@@ -550,10 +550,10 @@ class ReposTests(unittest.TestCase):
             "path": "path"
         }
 
-        self.assertTrue(self.repos.migrate_archived_repo(1, repo))
+        self.assertTrue(self.repos.archive_migrated_repo(1, repo))
 
     @patch.object(ReposApi, "get_repo")
-    def test_migrate_archived_repo_false_not_archived(self, mock_get_repo):
+    def test_archive_migrated_repo_false_not_archived(self, mock_get_repo):
         mock_repo = MagicMock()
         type(mock_repo).status_code = PropertyMock(return_value=200)
         mock_repo.json.return_value = self.mock_repos.get_repo()[1]
@@ -564,10 +564,10 @@ class ReposTests(unittest.TestCase):
             "path": "path"
         }
 
-        self.assertFalse(self.repos.migrate_archived_repo(1, repo))
+        self.assertFalse(self.repos.archive_migrated_repo(1, repo))
 
     @patch.object(ReposApi, "get_repo")
-    def test_migrate_archived_repo_false_no_repo(self, mock_get_repo):
+    def test_archive_migrated_repo_false_no_repo(self, mock_get_repo):
         mock_repo = MagicMock()
         type(mock_repo).status_code = PropertyMock(return_value=404)
         mock_repo.json.return_value = {
@@ -581,4 +581,4 @@ class ReposTests(unittest.TestCase):
             "path": "path"
         }
 
-        self.assertFalse(self.repos.migrate_archived_repo(1, repo))
+        self.assertFalse(self.repos.archive_migrated_repo(1, repo))
