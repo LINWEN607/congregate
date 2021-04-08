@@ -319,6 +319,11 @@ class ProjectsClient(BaseClass):
 
     def get_replacement_data(self, data, f, project_id, src_branch):
         """        
+        :param data: (dict) Data for the replacement task. See form in description
+        :param f: (str) The filename we are replacing for. Used for logging in this method
+        :param project_id: (int) The project id on the destination
+        :param src_branch: (str) The name of the branch we will be pulling files from in the project
+        
         Takes a pattern replace list data item of form: 
         'data':
             {
@@ -348,7 +353,7 @@ class ProjectsClient(BaseClass):
 
     def migrate_gitlab_variable_replace_ci_yml(self, project_id):
         """
-        The project_id at the destination
+        :param project_id: (int) The project_id at the destination
         
         Does the pattern replacement in project files, and cuts a branch with the changes
         each item in the pattern_list is comprised of:
@@ -361,6 +366,10 @@ class ProjectsClient(BaseClass):
                 }
             ]
         }
+        Notes: 
+        * Single branch per project, with commits per configured file.
+        * Does not group same file names, so if a file is listed twice, instead of once with multiple data entries, it will get two commits on the same new branch.
+          * Since the initial read is *always* from the default, this means that the last listed change will "win"          
         """
         self.log.info(
             f"Performing URL remapping for destination project id {project_id}")
@@ -485,14 +494,16 @@ class ProjectsClient(BaseClass):
                     "branch": branch_name,
                     "ref": src_branch
                 }
-                self.projects_api.create_branch(
+                branch_create_resp = self.projects_api.create_branch(
                     self.config.destination_host,
                     self.config.destination_token,
                     project_id,
                     data=json.dumps(branch_data)
                 )
-                # TODO: Make this configurable?
-                create_branch = False
+                if not branch_create_resp or (branch_create_resp and branch_create_resp.status_code not in (200, 201)):
+                    self.log.error(f"Could not create branch for regex replace:\nproject: {project_id}\nbranch data: {branch_data}")
+                else:
+                    create_branch = False
 
             # Put the new file
             put_file_data = {
@@ -501,12 +512,14 @@ class ProjectsClient(BaseClass):
                 "encoding": "base64",
                 "commit_message": f"Commit for migration regex replace replacing file {f}"
             }
-            self.project_repository_api.put_single_repo_file(
+            put_resp = self.project_repository_api.put_single_repo_file(
                 self.config.destination_host,
                 self.config.destination_token,
                 project_id,
                 f"{f}",
                 put_file_data
             )
+            if not put_resp or (put_resp and put_resp.status_code == 400):
+                self.log.error(f"Could not put commit for regex replace:\nproject: {project_id}\nbranch name: {branch_name}\nfile: {f}")
 
             # A branch_name reset would need to go here for the multiple branches

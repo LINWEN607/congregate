@@ -43,6 +43,7 @@ Usage:
     congregate validate-staged-groups-schema
     congregate validate-staged-projects-schema
     congregate map-users [--commit]
+    congregate map-and-stage-users-by-email-match [--commit]
     congregate generate-diff [--processes=<n>] [--staged] [--rollback] [--scm-source=hostname] [--skip-users] [--skip-groups] [--skip-projects]
     congregate clean [--commit]
     congregate stitch-results [--result-type=<project|group|user>] [--no-of-files=<n>] [--head|--tail]
@@ -140,6 +141,7 @@ Commands:
     stitch-results                          Stitches together migration results from multiple migration runs
     generate-diff                           Generates HTML files containing the diff results of the migration
     map-users                               Maps staged user emails to emails defined in the user-provided user_map.csv
+    map-and-stage-users-by-email-match                Maps staged user emails to emails defined in the user-provided user_map.csv. Matches by old/new email instead of username
     obfuscate                               Obfuscate a secret or password that you want to manually update in the config.
     deobfuscate                             Deobfuscate a secret or password from the config.
     dump-database                           Dump all database collections to various JSON files
@@ -237,7 +239,7 @@ def main():
             from congregate.migration.gitlab.diff.projectdiff import ProjectDiffClient
             from congregate.migration.gitlab.diff.groupdiff import GroupDiffClient
             from congregate.migration.github.diff.repodiff import RepoDiffClient
-            from congregate.helpers.user_util import map_users
+            from congregate.helpers.user_util import map_users, map_and_stage_users_by_email_match
             from congregate.helpers.mdbc import MongoConnector
             from congregate.helpers.misc_utils import convert_to_underscores
             from congregate.migration.github.repos import ReposClient
@@ -423,6 +425,8 @@ def main():
                 projects.validate_staged_projects_schema()
             if arguments["map-users"]:
                 map_users(dry_run=DRY_RUN)
+            if arguments["map-and-stage-users-by-email-match"]:
+                map_and_stage_users_by_email_match(dry_run=DRY_RUN)
             if arguments["clean"]:
                 clean_data(dry_run=DRY_RUN)
             if arguments["generate-diff"]:
@@ -527,7 +531,8 @@ def main():
                     ldap.load_pdv(arguments['<file-path>'])
                     ldap.synchronize_groups(dry_run=DRY_RUN)
                 else:
-                    print("\nThis command will setup LDAP group sync based on the file passed in via <file-path>")
+                    print(
+                        "\nThis command will setup LDAP group sync based on the file passed in via <file-path>")
         if arguments["obfuscate"]:
             print(obfuscate("Secret:"))
         if arguments["deobfuscate"]:
