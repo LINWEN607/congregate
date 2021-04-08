@@ -308,6 +308,9 @@ class MigrateClient(BaseClass):
                     f"Skipping import. Repo {path_with_namespace} has already been imported")
                 result = self.ext_import.get_result_data(
                     path_with_namespace, {"id": dst_pid})
+                if self.only_post_migration_info:
+                    result = self.handle_gh_post_migration(
+                        result, path_with_namespace, project, dst_pid, members)
             else:
                 result = self.ext_import.trigger_import_from_ghe(
                     project["id"], path_with_namespace, tn, gh_host, gh_token, dry_run=self.dry_run)
@@ -356,6 +359,8 @@ class MigrateClient(BaseClass):
                 members
             )
         )
+        # Disable Shared CI
+        self.disable_shared_ci(path_with_namespace, pid)
 
         # Migrate any external CI data
         self.handle_ext_ci_src_migration(result, project, pid)
@@ -377,8 +382,8 @@ class MigrateClient(BaseClass):
             self.gh_repos.migrate_gh_project_level_mr_approvals(pid, project)
         )
 
-        # Migrate archived projects
-        result[path_with_namespace]["archived"] = self.gh_repos.migrate_archived_repo(
+        # Archive migrated projects on destination
+        result[path_with_namespace]["archived"] = self.gh_repos.archive_migrated_repo(
             pid, project)
 
         # Remove members if skip_adding_members is True
@@ -987,15 +992,8 @@ class MigrateClient(BaseClass):
                 import_id = self.ie.import_project(
                     project, dry_run=self.dry_run)
             if import_id and not self.dry_run:
-                # Disable Auto DevOps
-                self.log.info("Disabling Auto DevOps on imported project {0} (ID: {1})".format(
-                    dst_path_with_namespace, import_id))
-                data = {"auto_devops_enabled": False}
-                # Disable shared runners
-                if not self.config.shared_runners_enabled:
-                    data["shared_runners_enabled"] = self.config.shared_runners_enabled
-                self.projects_api.edit_project(
-                    self.config.destination_host, self.config.destination_token, import_id, data)
+                # Disable Shared CI
+                self.disable_shared_ci(dst_path_with_namespace, import_id)
                 # Post import features
                 self.log.info(
                     "Migrating source project {0} (ID: {1}) info".format(path, src_id))
@@ -1014,6 +1012,17 @@ class MigrateClient(BaseClass):
                 self.projects_api.archive_project(
                     self.config.source_host, self.config.source_token, src_id)
         return result
+
+    def disable_shared_ci(self, path, pid):
+        # Disable Auto DevOps
+        self.log.info(
+            f"Disabling Auto DevOps on imported project {path} (ID: {pid})")
+        data = {"auto_devops_enabled": False}
+        # Disable shared runners
+        if not self.config.shared_runners_enabled:
+            data["shared_runners_enabled"] = self.config.shared_runners_enabled
+        self.projects_api.edit_project(
+            self.config.destination_host, self.config.destination_token, pid, data)
 
     def migrate_single_project_features(self, project, dst_id):
         """
@@ -1070,7 +1079,7 @@ class MigrateClient(BaseClass):
             results["project_level_mr_approvals"] = self.mr_approvals.migrate_project_level_mr_approvals(
                 src_id, dst_id, path_with_namespace)
 
-        if self.config.remapping_file_path:           
+        if self.config.remapping_file_path:
             self.projects.migrate_gitlab_variable_replace_ci_yml(dst_id)
 
         self.projects.remove_import_user(dst_id)
