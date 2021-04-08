@@ -1,11 +1,11 @@
 from datetime import datetime, timedelta
+import base64
 import unittest
-from pytest import mark
 from unittest import mock
+from pytest import mark
 from congregate.tests.helpers.mock_data.results import MockProjectResults
 from congregate.tests.mockapi.jenkins.jobs import JenkinsJobsApi
 import congregate.helpers.misc_utils as misc
-
 
 @mark.unit_test
 class MiscUtilsTests(unittest.TestCase):
@@ -640,3 +640,25 @@ class MiscUtilsTests(unittest.TestCase):
 
         for k, v in misc.sort_dict(test_dict).items():
             self.assertEqual(expected[k], v)
+
+    class MockResponse():
+        def __init__(self):
+            self.content = ""
+            self.status_code = 200
+
+        def json(self):
+            return {"content": self.content}
+
+    def test_get_b64decode_content_from_response(self):
+        mr = self.MockResponse()
+        mr.content = base64.b64encode(b'test')
+        a = misc.get_decoded_string_from_b64_response_content(mr)
+        self.assertEqual(a, "test")
+
+    def test_do_yml_sub(self):
+        subs = misc.do_yml_sub(
+            "This has to REPLACE in several REPLACE place", "REPLACE", "REPLACED")
+        self.assertEqual(subs[1], 2)
+        self.assertEqual(
+            subs[0], "This has to REPLACED in several REPLACED place"
+        )

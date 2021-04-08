@@ -1,10 +1,13 @@
 import json
+import base64
+import datetime
 from time import time
 from requests.exceptions import RequestException
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import get_dry_log, get_timedelta, json_pretty, remove_dupes, \
-    is_error_message_present, safe_json_response, rotate_logs, strip_protocol
+from congregate.helpers.misc_utils import get_dry_log, get_timedelta, json_pretty, \
+    is_error_message_present, safe_json_response, rotate_logs, strip_protocol, \
+    get_decoded_string_from_b64_response_content, do_yml_sub, read_json_file_into_object
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.groups import GroupsClient
@@ -13,13 +16,15 @@ from congregate.helpers.mdbc import MongoConnector
 from congregate.helpers.processes import start_multi_process_stream_with_args
 from congregate.helpers.migrate_utils import get_dst_path_with_namespace, \
     get_full_path_with_parent_namespace, dig, get_staged_projects, get_staged_groups, find_user_by_email_comparison_without_id, add_post_migration_stats
-
+from congregate.migration.gitlab.api.project_repository import ProjectRepositoryApi
 
 class ProjectsClient(BaseClass):
     def __init__(self):
         self.projects_api = ProjectsApi()
         self.groups_api = GroupsApi()
         self.groups = GroupsClient()
+        self.users = UsersClient()
+        self.project_repository_api = ProjectRepositoryApi()
         super().__init__()
 
     def get_projects(self):
@@ -311,3 +316,197 @@ class ProjectsClient(BaseClass):
                 if resp:
                     result[member["email"]] = True
         return result
+
+    def get_replacement_data(self, data, f, project_id, src_branch):
+        """        
+        Takes a pattern replace list data item of form: 
+        'data':
+            {
+                'pattern': regex pattern string,
+                'replace_with': replacement string. can be a ci_var name
+            }
+        checks pattern and replace_with are valid, and returns them as a tuple. Does the logging on invalid values
+        """
+        if not data or not isinstance(data, dict) or len(data) == 0:
+            self.log.warning(
+                f"No replacement data configured for file {f} in project_id {project_id} branch {src_branch}"
+            )
+            return None
+        pattern = data.get("pattern", None)
+        if not pattern or not isinstance(pattern, str) or pattern.strip() == "":
+            self.log.warning(
+                f"No pattern configured for file {f} in project_id {project_id} branch {src_branch}"
+            )
+            return None
+        replace_with = data.get("replace_with", None)
+        if not replace_with or not isinstance(replace_with, str) or replace_with.strip() == "":
+            self.log.warning(
+                f"No replace_with configured for file {f} in project_id {project_id} branch {src_branch}"
+            )
+            return None
+        return pattern, replace_with
+
+    def migrate_gitlab_variable_replace_ci_yml(self, project_id):
+        """
+        The project_id at the destination
+        
+        Does the pattern replacement in project files, and cuts a branch with the changes
+        each item in the pattern_list is comprised of:
+        {
+            "filename": <name of the file, .gitlab-ci.yml, pom.xml>,
+            "data": [
+                {
+                    "pattern": regex pattern string,
+                    "replace_with": replacement string. can be a ci_var name
+                }
+            ]
+        }
+        """
+        self.log.info(
+            f"Performing URL remapping for destination project id {project_id}")
+
+        create_branch = False
+        branch_name = ""
+        yml_file = ""
+        new_yml_64 = ""
+
+        pattern_list = read_json_file_into_object(
+            self.config.remapping_file_path
+        )
+
+        # Get the project from destination to get the default branch
+        dstn_project = self.projects_api.get_project(
+                project_id,
+                self.config.destination_host,
+                self.config.destination_token
+            )
+
+        if dstn_project and dstn_project.status_code == 200:
+            dstn_project_json = safe_json_response(dstn_project)
+            src_branch = dstn_project_json.get("default_branch", None)
+            self.log.info(f"Source branch is {src_branch}")
+            if not src_branch or src_branch.strip() == "":
+                self.log.warning(
+                    f"Could not determine default branch for project_id {project_id}"
+                )
+                return
+        for pl in pattern_list:
+            # Retrieve the CI file
+            f = pl.get("filename", "")
+            if f == "":
+                self.log.warning(
+                    f"Empty filename in replacement configuration for project_id {project_id} branch {src_branch}"
+                )
+                continue
+            repo_file = f"{f}?ref={src_branch}"
+            self.log.info(f"Pulling repository file for rewrite: {repo_file}")
+            yml_file_response = self.project_repository_api.get_single_repo_file(
+                    self.config.destination_host,
+                    self.config.destination_token,
+                    project_id,
+                    f,
+                    src_branch
+            )
+
+            # Content is base64 string
+            if yml_file_response is None or (yml_file_response is not None and yml_file_response.status_code != 200):
+                self.log.warning(
+                    f"No {f} file available for project_id {project_id} branch {src_branch}"
+                )
+                continue
+
+            if yml_file_response.status_code == 200:
+                yml_file = get_decoded_string_from_b64_response_content(
+                    yml_file_response
+                )
+                if not yml_file or yml_file.strip() == "":
+                    self.log.warning(
+                        f"Empty {f} file found for project_id {project_id} branch {src_branch}"
+                    )
+                    continue
+            elif yml_file_response.status_code == 404:
+                self.log.warning(
+                    f"No {f} file available for project_id {project_id} branch {src_branch}"
+                )
+                continue
+
+            data = pl.get("data", None)
+            if not data or len(data) == 0:
+                self.log.warning(
+                    f"No replacement data found for project_id {project_id} and file {f}")
+                continue
+
+            for d in data:
+                repl_data = self.get_replacement_data(
+                    d, f, project_id, src_branch)
+
+                if not repl_data:
+                    self.log.warning(
+                        f"No replacement data configured for file {f} in project_id {project_id} branch {src_branch}"
+                    )
+                    continue
+                pattern = repl_data[0]
+                replace_with = repl_data[1]
+
+                # Perform the substitution
+                self.log.info(f"Subbing {pattern} with {replace_with} in {f}")
+                subs = do_yml_sub(yml_file, pattern, replace_with)
+
+                # If nothing changed, skip it all
+                if subs[1] == 0:
+                    self.log.info(
+                        f"Found no instances of {pattern} in project_id {project_id} branch {src_branch}"
+                    )
+                    continue
+
+                #  Log info
+                self.log.info(
+                    f"Replaced {subs[1]} instances of {pattern} with {replace_with} on project_id {project_id}")
+                create_branch = True
+                # Make the next pass of the file be with the current subbed value
+                yml_file = subs[0]
+
+            # After changing all the data, encode and write
+            # b64encode the new data. Must also encode the subs results. This returns a byte object b''
+            new_yml_64 = base64.b64encode(yml_file.encode())
+            # Put it back to string for the eventual post
+            new_yml_64 = new_yml_64.decode()
+
+            # Don't want to create a branch unless we find something to do, and haven't already created one
+            # (the name check). For now, place everything on one branch
+            # If we want multiple branches, reset create to False *and* empty name
+            if create_branch and branch_name == "":
+                # Create a branch
+                n = datetime.datetime.now()
+                branch_name = f"ci-rewrite-{n.year}{n.month}{n.day}{n.hour}{n.minute}{n.second}"
+                self.log.info(
+                    f"Creating branch {branch_name} in project {project_id} from {src_branch}")
+                branch_data = {
+                    "branch": branch_name,
+                    "ref": src_branch
+                }
+                self.projects_api.create_branch(
+                    self.config.destination_host,
+                    self.config.destination_token,
+                    project_id,
+                    data=json.dumps(branch_data)
+                )
+                # TODO: Make this configurable?
+                create_branch = False
+
+            # Put the new file
+            put_file_data = {
+                "branch": f"{branch_name}",
+                "content": f"{new_yml_64}",
+                "encoding": "base64",
+                "commit_message": f"Commit for migration regex replace replacing file {f}"
+            }
+            self.project_repository_api.put_single_repo_file(
+                self.config.destination_host,
+                self.config.destination_token,
+                project_id,
+                f"{f}",
+                put_file_data
+            )
+
+            # A branch_name reset would need to go here for the multiple branches

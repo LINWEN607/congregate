@@ -489,3 +489,26 @@ class Config(object):
         Max number of personal projects a GitLab user can create. Value may be enforced on instance level
         """
         return self.prop_int("USER", "projects_limit")
+
+    @property
+    def remapping_file_path(self):
+        """
+        Path to a JSON file for remapping URLs during a GitLab to GitLab import. Notes:
+            * The existence of this file path in a congregate.conf is also the flag for enabling this feature
+            * Currently, changes are made against one branch, spawned from default, no matter how many file/data sections are configured
+            * File is of the form:
+        [
+            {
+                "filename": <name of the file, .gitlab-ci.yml, pom.xml>,
+                "data": [
+                    {
+                        "pattern": regex pattern string,
+                        "replace_with": replacement string. can be a ci_var name
+                    },
+                    ...
+            },
+            ...
+        ]        
+        which allows for multiple files with multiple changes.
+        """
+        return self.prop("APP", "remapping_file")

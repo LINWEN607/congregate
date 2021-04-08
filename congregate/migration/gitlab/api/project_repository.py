@@ -184,3 +184,34 @@ class ProjectRepositoryApi():
         if not message:
             message = f"Adding a {filepath} for project {pid} with {data}"
         return api.generate_post_request(host, token, f"projects/{pid}/repository/files/{filepath}", json.dumps(data), description=message)
+    
+    def get_single_repo_file(self, host, token, pid, filepath, branch):
+        """
+        Get a single repository file via the API
+        
+        https://docs.gitlab.com/ee/api/repository_files.html#get-file-from-repository
+            :param: pid: (int) GitLab project ID
+            :param: filepath (str) the unencoded file path with filename
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+        """
+        return api.generate_get_request(host, token, f"projects/{pid}/repository/files/{quote_plus(filepath)}?ref={branch}")
+
+    def put_single_repo_file(self, host, token, pid, filepath, put_file_data):
+        """
+        Update a single repository file via the API
+        
+        https://docs.gitlab.com/ee/api/repository_files.html#update-existing-file-in-repository
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :param: pid: (int) GitLab project ID
+            :param: filepath (str) the unencoded file path with filename
+            :param: put_file_data (dict) of the form 
+                {
+                    "branch": "branch_name",
+                    "content": "base64 or text content",
+                    "encoding": "base64 or text depending on content format",
+                    "commit_message": "some commit message"
+                }
+        """
+        return api.generate_put_request(host, token, f"projects/{pid}/repository/files/{quote_plus(filepath)}", json.dumps(put_file_data))

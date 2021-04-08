@@ -1,8 +1,9 @@
 import os
+import base64
 import errno
 import json
 import getpass
-import subprocess
+import re
 import hashlib
 import sys
 
@@ -635,3 +636,19 @@ def sort_dict(d):
         Sorts dictionary by key name in descending order
     """
     return {k: d[k] for k in sorted(d.keys())}
+
+def get_decoded_string_from_b64_response_content(response):
+    """
+        Takes a web response, returns the decoded *string* of the content, not byte object
+    """
+    if j := safe_json_response(response):
+        content = j.get("content", "")
+        if content is not None and str("content").strip() != "":
+            return base64.b64decode(content).decode()
+    return None
+
+def do_yml_sub(yml_file, pattern, replace_with):
+    """
+        Does a regex subn and returns the entity
+    """
+    return re.subn(pattern, replace_with, yml_file)

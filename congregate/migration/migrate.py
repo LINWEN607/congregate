@@ -3,6 +3,7 @@
 
     Copyright (c) 2021 - GitLab
 """
+
 import os
 import json
 import xml.dom.minidom
@@ -554,8 +555,9 @@ class MigrateClient(BaseClass):
             full_path = result_response.get("full_path").strip("/")
             success = self.ext_import.wait_for_project_to_import(full_path)
             if success:
-                result[path_with_namespace]["members"] = self.projects.add_members_to_destination_project(
-                    self.config.destination_host, self.config.destination_token, project_id, members)
+                if not self.skip_adding_members:
+                    result[path_with_namespace]["members"] = self.projects.add_members_to_destination_project(
+                        self.config.destination_host, self.config.destination_token, project_id, members)
                 # Set default branch
                 self.projects_api.set_default_project_branch(
                     project_id,
@@ -1067,6 +1069,9 @@ class MigrateClient(BaseClass):
             # Merge Request Approvals
             results["project_level_mr_approvals"] = self.mr_approvals.migrate_project_level_mr_approvals(
                 src_id, dst_id, path_with_namespace)
+
+        if self.config.remapping_file_path:           
+            self.projects.migrate_gitlab_variable_replace_ci_yml(dst_id)
 
         self.projects.remove_import_user(dst_id)
 

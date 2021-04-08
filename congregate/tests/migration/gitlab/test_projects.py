@@ -176,3 +176,69 @@ class ProjectsTests(unittest.TestCase):
         actual = self.projects.add_members_to_destination_project(
             "", "", 000, members)
         self.assertDictEqual(expected, actual)
+
+    def test_get_replacement_data(self):
+        good_data = {
+            "pattern": "some_pattern",
+            "replace_with": "some_replacement"
+        }
+        f = ".gitlab-ci.yml"
+        project_id = 1234
+        src_branch = "a_branch"
+        resp = self.projects.get_replacement_data(
+            good_data, f, project_id, src_branch)
+        self.assertEqual(resp[0], "some_pattern")
+        self.assertEqual(resp[1], "some_replacement")
+
+    def test_get_replacement_data_none_on_bad_data_elements(self):
+        bad_data = {}
+        f = ".gitlab-ci.yml"
+        project_id = 1234
+        src_branch = "a_branch"
+        resp = self.projects.get_replacement_data(
+            bad_data,
+            f,
+            project_id,
+            src_branch
+        )
+        self.assertIsNone(resp)
+
+        bad_data = {
+            "data": {}
+        }
+
+        resp = self.projects.get_replacement_data(
+            bad_data,
+            f,
+            project_id,
+            src_branch
+        )
+        self.assertIsNone(resp)
+
+        bad_data = {
+            "data": {
+                "pattern": ""
+            }
+        }
+
+        resp = self.projects.get_replacement_data(
+            bad_data,
+            f,
+            project_id,
+            src_branch
+        )
+        self.assertIsNone(resp)
+
+        bad_data = {
+            "data": {
+                "replace_with": ""
+            }
+        }
+
+        resp = self.projects.get_replacement_data(
+            bad_data,
+            f,
+            project_id,
+            src_branch
+        )
+        self.assertIsNone(resp)
