@@ -450,7 +450,7 @@ class Config(object):
 
 # HIDDEN PROPERTIES
 
-    # Used only by "map-users" command
+    # Used only by "map-users" and "map-and-stage-users-by-email-match" command
 
     @property
     def user_map(self):
