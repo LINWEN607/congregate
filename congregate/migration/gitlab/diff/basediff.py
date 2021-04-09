@@ -1,5 +1,6 @@
 import json
 import base64
+import re
 from types import GeneratorType
 from bs4 import BeautifulSoup as bs
 from congregate.helpers.base_class import BaseClass
@@ -416,10 +417,12 @@ class BaseDiffClient(BaseClass):
                 self.generate_html_report(
                     asset, subdiff, subfilepath, nested=True)
             elif len(v) > 100000:
-                self.log.warn(f"Skipping {d} due to large size")
+                self.log.warning(f"Skipping {d} due to large size")
             else:
                 if not isinstance(v, dict):
-                    v = json.loads(v)
+                    # Make sure the JSON only has double quotes
+                    p = re.compile('(?<!\\\\)\'')
+                    v = json.loads(json.dumps(p.sub('\"', v)))
                 if "migration_results" not in d:
                     header_row = soup.new_tag("tr")
                     header_data_row = soup.new_tag("tr")
