@@ -22,20 +22,21 @@ class JenkinsBaseTests(unittest.TestCase):
     def test_transform_ci_variables(self, token, username, host, source_type):
         token.return_value = 'abc123'
         username.return_value = 'abc123'
-        host.return_value = 'http://example.jenkins.com/'
+        url = 'http://example.teamcity.com'
+        host.return_value = url
         source_type.return_value = 'abc123'
         params = ParametersApi()
         test_results = params.get_single_parameter()
         client = JenkinsClient(host, username, token)
 
         expected = {
-            'environment_scope': 'jenkins-0.0.0.0',
+            'environment_scope': 'jenkins-example.teamcity.com',
             'key': 'Boolean_Parameter',
             'masked': False,
             'protected': False,
             'value': "True",
             'variable_type': 'env_var'}
-        actual = client.transform_ci_variables(test_results, "0.0.0.0")
+        actual = client.transform_ci_variables(test_results, url)
         self.assertDictEqual(expected, actual)
 
     @mark.unit_test
@@ -46,20 +47,21 @@ class JenkinsBaseTests(unittest.TestCase):
     def test_transform_ci_variables_no_default_param(self, token, username, host, source_type):
         token.return_value = 'abc123'
         username.return_value = 'abc123'
-        host.return_value = 'http://example.jenkins.com/'
+        url = 'http://example.teamcity.com'
+        host.return_value = url
         source_type.return_value = 'abc123'
         params = ParametersApi()
         test_results = params.get_single_parameter_no_default_param()
         client = JenkinsClient(host, username, token)
 
         expected = {
-            'environment_scope': 'jenkins-0.0.0.0',
+            'environment_scope': 'jenkins-example.teamcity.com',
             'key': 'run_parameter',
             'masked': False,
             'protected': False,
             'value': "No Default Value",
             'variable_type': 'env_var'}
-        actual = client.transform_ci_variables(test_results, '0.0.0.0')
+        actual = client.transform_ci_variables(test_results, url)
         self.assertDictEqual(expected, actual)
 
     # Mark as integration test.
@@ -78,6 +80,6 @@ class JenkinsBaseTests(unittest.TestCase):
         mongo = MongoConnector(client=mongomock.MongoClient)
         for job in client.jenkins_api.list_all_jobs():
             client.handle_retrieving_jenkins_jobs(job, mongo=mongo)
-        actual = [d for d, _ in mongo.stream_collection("jenkins-jenkins-test:8080")]
+        actual = [d for d, _ in mongo.stream_collection(
+            "jenkins-jenkins-test:8080")]
         self.assertListEqual(expected, actual)
-
