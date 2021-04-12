@@ -42,14 +42,14 @@ class HooksClient(BaseClass):
                         if is_dot_com(self.config.destination_host):
                             # Only if migrating to the parent group on gitlab.com
                             if self.config.dstn_parent_id and "/" not in self.config.dstn_parent_group_path:
-                                resp = self.groups_api.add_group_hook(
+                                add_resp = self.groups_api.add_group_hook(
                                     self.config.destination_host, self.config.destination_token, self.config.dstn_parent_id, shc)
                         else:
-                            resp = self.instance_api.add_instance_hook(
+                            add_resp = self.instance_api.add_instance_hook(
                                 self.config.destination_host, self.config.destination_token, shc)
-                        if resp.status_code != 201:
+                        if add_resp.status_code != 201:
                             self.log.error(
-                                f"Failed to create instance hook {shc}, with error:\n{resp} - {resp.text}")
+                                f"Failed to create instance hook {shc}, with error:\n{add_resp} - {add_resp.text}")
             except TypeError as te:
                 self.log.error(f"Instance hooks {resp} {te}")
             except RequestException as re:
@@ -69,11 +69,11 @@ class HooksClient(BaseClass):
                     return False
                 h = pop_multiple_keys(h, ["id", "created_at", "project_id"])
                 # hook does not include secret token
-                resp = self.projects_api.add_project_hook(
+                add_resp = self.projects_api.add_project_hook(
                     self.config.destination_host, self.config.destination_token, new_id, h)
-                if resp.status_code != 201:
+                if add_resp.status_code != 201:
                     self.log.error(
-                        f"Failed to create project {path} (ID: {new_id}) hook ({h}), with error:\n{resp} - {resp.text}")
+                        f"Failed to create project {path} (ID: {new_id}) hook ({h}), with error:\n{add_resp} - {add_resp.text}")
             return True
         except TypeError as te:
             self.log.error(f"Project {path} (ID: {old_id}) hooks {resp} {te}")
@@ -96,11 +96,11 @@ class HooksClient(BaseClass):
                     return False
                 h = pop_multiple_keys(h, ["id", "created_at", "group_id"])
                 # hook does not include secret token
-                resp = self.groups_api.add_group_hook(
+                add_resp = self.groups_api.add_group_hook(
                     self.config.destination_host, self.config.destination_token, new_id, h)
-                if resp.status_code != 201:
+                if add_resp.status_code != 201:
                     self.log.error(
-                        f"Failed to create group {full_path} hook {h}, with error:\n{resp} - {resp.text}")
+                        f"Failed to create group {full_path} hook {h}, with error:\n{add_resp} - {add_resp.text}")
             return True
         except TypeError as te:
             self.log.error(
