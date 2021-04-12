@@ -164,11 +164,10 @@ def handle_multi_process_write_to_file_and_return_results(function, results_func
 
 def get_no_of_processes(processes):
     try:
-        proc = int(processes) if processes else 4   # Optimal number
+        proc = int(processes) if processes else b.config.processes
         b.log.info(
             f"Running command with {proc} parallel processes on {cpu_count} CPU")
         return proc
     except ValueError:
-        b.log.error(
-            "Input for # of processes is not an integer: {}".format(processes))
+        b.log.error(f"Input for # of processes is not an integer: {processes}")
         sys.exit()

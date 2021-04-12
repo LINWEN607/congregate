@@ -307,6 +307,7 @@ def generate_config():
         config.set("APP", "mongo_port", "27017")
 
     config.set("APP", "ui_port", "8000")
+    config.set("APP", "processes", "4")
 
     write_to_file(config)
 
