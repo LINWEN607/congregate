@@ -504,18 +504,25 @@ class Config(object):
             * The existence of this file path in a congregate.conf is also the flag for enabling this feature
             * Currently, changes are made against one branch, spawned from default, no matter how many file/data sections are configured
             * File is of the form:
-        [
-            {
-                "filename": <name of the file, .gitlab-ci.yml, pom.xml>,
-                "data": [
-                    {
-                        "pattern": regex pattern string,
-                        "replace_with": replacement string. can be a ci_var name
-                    },
-                    ...
-            },
-            ...
-        ]        
+                {
+                    "filenames": [
+                        ".gitlab-ci.yml",
+                        "requirements.yml",
+                        "ansible/playbooks/requirements.yml",
+                        "ansible/molecule/default/requirements.yml"
+                    ],
+                    "patterns": [
+                        {
+                            "pattern": "https://git.internal.ca/ansible/roles/global-setup.git",
+                            "replace_with": "https://gitlab.com/company/infra/ansible/roles/global-setup.git"
+                        },
+                        {
+                            "pattern": "https://git.internal.ca/ansible/roles/healthcheck.git",
+                            "replace_with": "https://gitlab.com/company/infra/ansible/roles/healthcheck.git"
+                        },
+                        {...}
+                    ]
+                }      
         which allows for multiple files with multiple changes.
         """
         return self.prop("APP", "remapping_file")

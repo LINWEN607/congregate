@@ -356,14 +356,23 @@ class ProjectsClient(BaseClass):
         :param project_id: (int) The project_id at the destination
         
         Does the pattern replacement in project files, and cuts a branch with the changes
-        each item in the pattern_list is comprised of:
         {
-            "filename": <name of the file, .gitlab-ci.yml, pom.xml>,
-            "data": [
+            "filenames": [
+                ".gitlab-ci.yml",
+                "requirements.yml",
+                "ansible/playbooks/requirements.yml",
+                "ansible/molecule/default/requirements.yml"
+            ],
+            "patterns": [
                 {
-                    "pattern": regex pattern string,
-                    "replace_with": replacement string. can be a ci_var name
-                }
+                    "pattern": "https://git.internal.ca/ansible/roles/global-setup.git",
+                    "replace_with": "https://gitlab.com/company/infra/ansible/roles/global-setup.git"
+                },
+                {
+                    "pattern": "https://git.internal.ca/ansible/roles/healthcheck.git",
+                    "replace_with": "https://gitlab.com/company/infra/ansible/roles/healthcheck.git"
+                },
+                {...}
             ]
         }
         Notes: 
@@ -399,9 +408,24 @@ class ProjectsClient(BaseClass):
                     f"Could not determine default branch for project_id {project_id}"
                 )
                 return
-        for pl in pattern_list:
-            # Retrieve the CI file
-            f = pl.get("filename", "")
+        
+        # Get the list of filenames
+        filenames = pattern_list.get("filenames", None)
+        if not filenames:
+            self.log.error(
+                "No URL replacement filenames found"
+            )
+            return
+
+        # Get the list of patterns
+        patterns = pattern_list.get("patterns", None)
+        if not patterns:
+            self.log.error(
+                "No URL replacement patterns found"
+            )
+            return
+
+        for f in filenames:
             if f == "":
                 self.log.warning(
                     f"Empty filename in replacement configuration for project_id {project_id} branch {src_branch}"
@@ -439,15 +463,12 @@ class ProjectsClient(BaseClass):
                 )
                 continue
 
-            data = pl.get("data", None)
-            if not data or len(data) == 0:
-                self.log.warning(
-                    f"No replacement data found for project_id {project_id} and file {f}")
-                continue
-
-            for d in data:
+            # We have the decoded base64
+            # Loop of the patterns list
+            for p in patterns:
                 repl_data = self.get_replacement_data(
-                    d, f, project_id, src_branch)
+                    p, f, project_id, src_branch
+                )
 
                 if not repl_data:
                     self.log.warning(
@@ -470,7 +491,8 @@ class ProjectsClient(BaseClass):
 
                 #  Log info
                 self.log.info(
-                    f"Replaced {subs[1]} instances of {pattern} with {replace_with} on project_id {project_id}")
+                    f"Replaced {subs[1]} instances of {pattern} with {replace_with} on project_id {project_id}"
+                )
                 create_branch = True
                 # Make the next pass of the file be with the current subbed value
                 yml_file = subs[0]
