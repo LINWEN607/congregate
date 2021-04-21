@@ -527,21 +527,23 @@ class ProjectsClient(BaseClass):
                 else:
                     create_branch = False
 
-            # Put the new file
-            put_file_data = {
-                "branch": f"{branch_name}",
-                "content": f"{new_yml_64}",
-                "encoding": "base64",
-                "commit_message": f"Commit for migration regex replace replacing file {f}"
-            }
-            put_resp = self.project_repository_api.put_single_repo_file(
-                self.config.destination_host,
-                self.config.destination_token,
-                project_id,
-                f"{f}",
-                put_file_data
-            )
-            if not put_resp or (put_resp and put_resp.status_code == 400):
-                self.log.error(f"Could not put commit for regex replace:\nproject: {project_id}\nbranch name: {branch_name}\nfile: {f}")
+            if branch_name != "":
+                # Put the new file
+                put_file_data = {
+                    "branch": f"{branch_name}",
+                    "content": f"{new_yml_64}",
+                    "encoding": "base64",
+                    "commit_message": f"Commit for migration regex replace replacing file {f}"
+                }
+                put_resp = self.project_repository_api.put_single_repo_file(
+                    self.config.destination_host,
+                    self.config.destination_token,
+                    project_id,
+                    f"{f}",
+                    put_file_data
+                )
+                if not put_resp or (put_resp and put_resp.status_code == 400):
+                    self.log.error(f"Could not put commit for regex replace:\nproject: {project_id}\nbranch name: {branch_name}\nfile: {f}")
+                branch_name = ""
 
             # A branch_name reset would need to go here for the multiple branches
