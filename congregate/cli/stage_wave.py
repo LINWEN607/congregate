@@ -77,6 +77,12 @@ class WaveStageCLI(BaseStageClass):
                 obj = self.get_project_metadata(project)
                 if parent_path := column_mapping.get("Parent Path"):
                     obj["target_namespace"] = row[parent_path].strip("/")
+                    if row.get("Override"):
+                        obj["path_with_namespace"] = "{0}/{1}".format(obj["target_namespace"], obj["path"])
+                        obj["namespace"] = obj["target_namespace"].split("/")[-1]
+                        obj["override_dstn_ns"] = True
+                    else:
+                        obj["override_dstn_ns"] = False
                     if row.get("SWC AA ID"):
                         obj['swc_manager_name'] = row.get('SWC Manager Name')
                         obj['swc_manager_email'] = row.get('SWC Manager Email')
@@ -195,9 +201,12 @@ class WaveStageCLI(BaseStageClass):
     def append_parent_group_full_path(self, full_path, wave_row, parent_path):
         if parent_path := self.config.wave_spreadsheet_column_mapping.get(
                 "Parent Path"):
-            if len(set(full_path.split("/")) -
-                   set(parent_path.split("/"))) <= 1:
-                return f"{wave_row[parent_path]}/{full_path}"
+            if wave_row.get("Override"):
+                return wave_row[parent_path]
+            else:
+                if len(set(full_path.split("/")) -
+                    set(parent_path.split("/"))) <= 1:
+                    return f"{wave_row[parent_path]}/{full_path}"
             return full_path
 
     def get_parent_id(self, wave_row, parent_path):

@@ -359,10 +359,12 @@ class StageWaveTests(unittest.TestCase):
             "Parent Path": "Group",
             "swc_manager_name": "SWC Manager Name",
             "swc_manager_email": "SWC Manager Email",
-            "swc_id": "SWC AA ID"
+            "swc_id": "SWC AA ID",
+            "Parent Path": "Target Parent Group",
+            "Override": "Override"
         }
         columns_to_use.return_value = [
-            "Wave name", "Wave date", "Source Url", "Group", "SWC Manager Name", "SWC Manager Email", "SWC AA ID"]
+            "Wave name", "Wave date", "Source Url", "Group", "SWC Manager Name", "SWC Manager Email", "SWC AA ID", "Target Parent Group", "Override"]
 
         mock_parent_id.side_effect = [None, None]
 
@@ -378,7 +380,9 @@ class StageWaveTests(unittest.TestCase):
                 "Source Url": "http://example.com/diaspora/diaspora-client.git",
                 "SWC Manager Name": "application owner name",
                 "SWC Manager Email": "owner@example.com",
-                "SWC AA ID": "application group"
+                "SWC AA ID": "application group",
+                "Target Parent Group": "target_parent_group",
+                "Override": "true"
             },
             {
                 "Wave name": "Wave1",
@@ -391,16 +395,18 @@ class StageWaveTests(unittest.TestCase):
                 "Source Url": "http://example.com/brightbox/puppet.git",
                 "SWC Manager Name": "application owner name",
                 "SWC Manager Email": "owner@example.com",
-                "SWC AA ID": "application group"
+                "SWC AA ID": "application group",
+                "Target Parent Group": "should_not_matter",
+                "Override": None
             }
         ]
         expected = [
             {
                 "id": 4,
                 "name": "Diaspora Client",
-                "namespace": "diaspora",
+                "namespace": "target_parent_group",
                 "path": "diaspora-client",
-                "path_with_namespace": "diaspora/diaspora-client",
+                "path_with_namespace": "target_parent_group/diaspora-client",
                 "visibility": "private",
                 "description": "Project that does stuff",
                 "jobs_enabled": None,
@@ -421,10 +427,11 @@ class StageWaveTests(unittest.TestCase):
                 'archived': False,
                 'shared_with_groups': [],
                 'default_branch': 'master',
-                'target_namespace': 'path/to/group',
+                'target_namespace': 'target_parent_group',
                 "swc_manager_name": "application owner name",
                 "swc_manager_email": "owner@example.com",
-                "swc_id": "application group"
+                "swc_id": "application group",
+                "override_dstn_ns": True
             },
             {
                 "id": 80,
@@ -452,10 +459,11 @@ class StageWaveTests(unittest.TestCase):
                 'archived': False,
                 'shared_with_groups': [],
                 'default_branch': 'master',
-                'target_namespace': 'path/to/group',
+                'target_namespace': 'should_not_matter',
                 "swc_manager_name": "application owner name",
                 "swc_manager_email": "owner@example.com",
-                "swc_id": "application group"
+                "swc_id": "application group",
+                "override_dstn_ns": False
             }
         ]
 

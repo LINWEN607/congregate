@@ -301,7 +301,12 @@ class MigrateClient(BaseClass):
     def import_github_project(self, project):
         gh_host, gh_token = self.get_host_and_token()
         members = project.pop("members")
-        path_with_namespace = f"{project.get('target_namespace', self.config.dstn_parent_group_path or '')}/{project.get('path_with_namespace', '')}".strip("/")
+        
+        if project.get("override_dstn_ns"):
+            path_with_namespace = project.get("path_with_namespace")
+        else:
+            path_with_namespace = f"{project.get('target_namespace', self.config.dstn_parent_group_path or '')}/{project.get('path_with_namespace', '')}".strip("/")
+
         if target_namespace := mig_utils.get_target_namespace(project):
             tn = target_namespace
         else:
