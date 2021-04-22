@@ -9,8 +9,10 @@ from congregate.migration.github.api.users import UsersApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.projects import ProjectsClient
 from congregate.helpers.misc_utils import get_dry_log, is_error_message_present, safe_json_response, \
-    rotate_logs, is_github_dot_com, json_pretty, dig, strip_protocol
+    dig, strip_protocol
 from congregate.helpers.migrate_utils import get_staged_projects, find_user_by_email_comparison_without_id, add_post_migration_stats
+from congregate.helpers.utils import is_github_dot_com, rotate_logs
+from congregate.helpers.json_utils import json_pretty
 
 
 class ReposClient(BaseClass):
@@ -47,7 +49,8 @@ class ReposClient(BaseClass):
         """
         List and transform all GitHub public repo to GitLab project metadata
         """
-        if is_github_dot_com(self.config.source_host) or self.config.src_parent_org:
+        if is_github_dot_com(
+                self.config.source_host) or self.config.src_parent_org:
             self.log.warning(
                 f"NOT listing public repos on {self.config.source_host}")
         else:
@@ -268,7 +271,8 @@ class ReposClient(BaseClass):
             "merge_requests_disable_committers_approval": False,
             "require_password_to_approve": False}
 
-    def format_project_level_mr_rule(self, protected_branch_ids, user_ids=None, group_ids=None):
+    def format_project_level_mr_rule(
+            self, protected_branch_ids, user_ids=None, group_ids=None):
         return{
             "name": "gh_pr_rules",
             "rule_type": "regular",

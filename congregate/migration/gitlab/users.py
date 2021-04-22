@@ -4,9 +4,11 @@ from os import path
 from requests.exceptions import RequestException
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import get_dry_log, json_pretty, get_timedelta, \
-    remove_dupes, rewrite_list_into_dict, read_json_file_into_object, safe_json_response, is_dot_com, strip_protocol
+from congregate.helpers.misc_utils import get_dry_log, get_timedelta, \
+    remove_dupes, rewrite_list_into_dict, safe_json_response, strip_protocol
+from congregate.helpers.json_utils import json_pretty, read_json_file_into_object
 from congregate.helpers.migrate_utils import get_staged_users, find_user_by_email_comparison_without_id
+from congregate.helpers.utils import is_dot_com
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.users import UsersApi
 from congregate.helpers.mdbc import MongoConnector
@@ -29,7 +31,8 @@ class UsersClient(BaseClass):
             old_user_id,
             self.config.source_host,
             self.config.source_token).json()
-        if old_user is not None and old_user and old_user.get("email", None) is not None:
+        if old_user is not None and old_user and old_user.get(
+                "email", None) is not None:
             self.log.info(
                 f"Found by OLD user ID email {old_user.get('email', None)} and user:\n{json_pretty(old_user)}")
             return find_user_by_email_comparison_without_id(old_user["email"])
@@ -44,10 +47,12 @@ class UsersClient(BaseClass):
         is_group = self.is_username_group_name(old_user)
         if is_group is None:
             # None will only come back in error conditions.
-            # As such, assume it does exist and try the upstream uniqueness techniques
+            # As such, assume it does exist and try the upstream uniqueness
+            # techniques
             return True
         if not is_group:
-            # Wasn't found as a group, and wasn't None (error) so check user as actual username
+            # Wasn't found as a group, and wasn't None (error) so check user as
+            # actual username
             for user in self.users_api.search_for_user_by_username(
                     self.config.destination_host,
                     self.config.destination_token,
@@ -55,7 +60,8 @@ class UsersClient(BaseClass):
                 if user["username"].lower() == username.lower():
                     return True
                 elif index > 100:
-                    # Now that `search_for_user_by_username` uses username= explicitly, is this even necessary?
+                    # Now that `search_for_user_by_username` uses username=
+                    # explicitly, is this even necessary?
                     return False
                 index += 1
             return False
@@ -83,8 +89,10 @@ class UsersClient(BaseClass):
                 namespace_check_response.append(group)
             if namespace_check_response:
                 for z in namespace_check_response:
-                    if z.get("path", None) is not None and str(z["path"]).lower() == username.lower():
-                        # We found a match, so username is group name. Return True
+                    if z.get("path", None) is not None and str(
+                            z["path"]).lower() == username.lower():
+                        # We found a match, so username is group name. Return
+                        # True
                         return True
             return False
         except Exception as e:
@@ -98,7 +106,8 @@ class UsersClient(BaseClass):
         index = 0
         if old_user.get("email"):
             email = old_user["email"]
-            for user in self.users_api.search_for_user_by_email(self.config.destination_host, self.config.destination_token, email):
+            for user in self.users_api.search_for_user_by_email(
+                    self.config.destination_host, self.config.destination_token, email):
                 if user.get("email", None) == email:
                     return True
                 elif index > 100:
@@ -117,7 +126,8 @@ class UsersClient(BaseClass):
                     user["id"])
         return new_user
 
-    def find_or_create_impersonation_token(self, user, users_map, expiration_date):
+    def find_or_create_impersonation_token(
+            self, user, users_map, expiration_date):
         email = user["email"]
         uid = user["id"]
         if users_map.get(email, None) is None:
@@ -165,7 +175,8 @@ class UsersClient(BaseClass):
                 if map_user := self.sso_hash_map.get(email, None):
                     return map_user["externalid"]
         else:
-            return self.find_extern_uid_by_provider(identities, self.config.group_sso_provider)
+            return self.find_extern_uid_by_provider(
+                identities, self.config.group_sso_provider)
 
     def find_extern_uid_by_provider(self, identities, provider):
         if identities:
@@ -192,7 +203,8 @@ class UsersClient(BaseClass):
             # and not email
             found_by_email_user = find_user_by_email_comparison_without_id(
                 user["email"])
-            if found_by_email_user and found_by_email_user.get("username", None):
+            if found_by_email_user and found_by_email_user.get(
+                    "username", None):
                 return found_by_email_user["username"]
         return username
 
@@ -407,17 +419,21 @@ class UsersClient(BaseClass):
     def retrieve_user_info(self, host, token, processes=None):
         if self.config.src_parent_group_path:
             users = []
-            for user in self.groups_api.get_all_group_members(self.config.src_parent_id, host, token):
+            for user in self.groups_api.get_all_group_members(
+                    self.config.src_parent_id, host, token):
                 users.append(safe_json_response(
                     self.users_api.get_user(user["id"], host, token)))
         else:
             users = self.users_api.get_all_users(host, token)
 
-        start_multi_process_stream(self.handle_retrieving_users, users, processes=processes)
-        
+        start_multi_process_stream(
+            self.handle_retrieving_users,
+            users,
+            processes=processes)
 
     def handle_retrieving_users(self, user, mongo=None):
-        # mongo should be set to None unless this function is being used in a unit test
+        # mongo should be set to None unless this function is being used in a
+        # unit test
         if not mongo:
             mongo = self.connect_to_mongo()
         if user["id"] != 1:
@@ -434,9 +450,11 @@ class UsersClient(BaseClass):
                 "last_activity_on",
                 "bio",
                 "bio_html",
-                # SSO causes issues with the avatar URL due to the authentication
+                # SSO causes issues with the avatar URL due to the
+                # authentication
                 "avatar_url" if self.config.group_sso_provider else "",
-                # Avoid propagating field when creating users on gitlab.com with no config value set
+                # Avoid propagating field when creating users on gitlab.com
+                # with no config value set
                 "projects_limit" if is_dot_com(
                     self.config.destination_host) and not self.config.projects_limit else ""
             ]
@@ -492,7 +510,8 @@ class UsersClient(BaseClass):
         if response.status_code == 409:
             self.log.info("User {0} already exists".format(user["email"]))
             try:
-                # Try to find the user by email. We either just created this, or it already existed
+                # Try to find the user by email. We either just created this,
+                # or it already existed
                 response = find_user_by_email_comparison_without_id(
                     user["email"])
                 return self.get_user_creation_id_and_email(response)
@@ -512,7 +531,8 @@ class UsersClient(BaseClass):
                     "id": resp["id"]
                 }
             else:
-                return self.log_and_return_failed_user_creation(response.text, user["email"])
+                return self.log_and_return_failed_user_creation(
+                    response.text, user["email"])
 
     def log_and_return_failed_user_creation(self, message, email):
         self.log.error(message)
@@ -559,7 +579,8 @@ class UsersClient(BaseClass):
                     "User {} does not exist or has already been removed".format(email))
             elif not dry_run:
                 try:
-                    if get_timedelta(user["created_at"]) < self.config.max_asset_expiration_time:
+                    if get_timedelta(
+                            user["created_at"]) < self.config.max_asset_expiration_time:
                         self.users_api.delete_user(
                             self.config.destination_host,
                             self.config.destination_token,

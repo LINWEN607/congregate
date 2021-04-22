@@ -2,7 +2,9 @@ import sys
 from re import search
 from pymongo import MongoClient, errors
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import stream_json_yield_to_file, read_json_file_into_object, find_files_in_folder, strip_protocol
+from congregate.helpers.misc_utils import strip_protocol
+from congregate.helpers.json_utils import stream_json_yield_to_file, read_json_file_into_object
+from congregate.helpers.file_utils import find_files_in_folder
 
 
 class MongoConnector(BaseClass):
@@ -85,7 +87,8 @@ class MongoConnector(BaseClass):
         try:
             if isinstance(data, tuple):
                 data = data[0]
-            return self.db[collection].insert_one(data, bypass_document_validation=bypass_document_validation).inserted_id
+            return self.db[collection].insert_one(
+                data, bypass_document_validation=bypass_document_validation).inserted_id
         except errors.DuplicateKeyError:
             self.log.debug("Duplicate insert attempted. Aborting operation")
             return None
@@ -117,11 +120,11 @@ class MongoConnector(BaseClass):
             if query := self.safe_find_one(
                 user_collection,
                 query={
-                        "username": username
+                    "username": username
                 },
                 hint="username_1"
-                ):
-                    return query.get("email", None)
+            ):
+                return query.get("email", None)
 
     def ingest_json_file_into_mongo(self, file_path, collection=None):
         if not collection:
@@ -130,7 +133,8 @@ class MongoConnector(BaseClass):
             self.insert_data(collection, data)
 
     def re_ingest_into_mongo(self, asset_type):
-        for found_file in find_files_in_folder(asset_type):
+        for found_file in find_files_in_folder(
+                asset_type, f"{self.app_path}/data"):
             if ".json" in found_file:
                 self.ingest_json_file_into_mongo(
                     f"{self.app_path}/data/{found_file}")

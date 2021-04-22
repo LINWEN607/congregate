@@ -1,5 +1,5 @@
 import logging
-from congregate.helpers.misc_utils import get_congregate_path
+from congregate.helpers.utils import get_congregate_path
 
 loggers = {}
 log_file_format = \

@@ -3,7 +3,8 @@ from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.issues import IssuesApi
 from congregate.migration.gitlab.api.merge_requests import MergeRequestsApi
 from congregate.migration.gitlab.api.project_repository import ProjectRepositoryApi
-from congregate.helpers.misc_utils import rewrite_json_list_into_dict, get_rollback_log, read_json_file_into_object
+from congregate.helpers.misc_utils import rewrite_json_list_into_dict, get_rollback_log
+from congregate.helpers.json_utils import read_json_file_into_object
 from congregate.helpers.migrate_utils import get_dst_path_with_namespace
 from congregate.helpers.processes import handle_multi_process_write_to_file_and_return_results
 
@@ -74,7 +75,8 @@ class ProjectDiffClient(BaseDiffClient):
     def generate_single_diff_report(self, project):
         diff_report = {}
         project_path = get_dst_path_with_namespace(project)
-        if isinstance(self.results.get(project_path), int) and self.results.get(project_path):
+        if isinstance(self.results.get(project_path),
+                      int) and self.results.get(project_path):
             return {
                 project_path: {
                     "info": "project already migrated",
@@ -184,4 +186,5 @@ class ProjectDiffClient(BaseDiffClient):
         return project_diff
 
     def generate_project_diff(self, project, endpoint, **kwargs):
-        return self.generate_diff(project, "path_with_namespace", endpoint, parent_group=self.config.dstn_parent_group_path, **kwargs)
+        return self.generate_diff(project, "path_with_namespace", endpoint,
+                                  parent_group=self.config.dstn_parent_group_path, **kwargs)

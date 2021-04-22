@@ -1,7 +1,7 @@
 import subprocess
 from flask import request, Response, stream_with_context
 
-from congregate.helpers.misc_utils import get_congregate_path
+from congregate.helpers.utils import get_congregate_path
 from congregate.cli.stage_projects import ProjectStageCLI
 from congregate.cli.stage_groups import GroupStageCLI
 # from congregate.cli.config import update_config

@@ -5,7 +5,9 @@ from congregate.helpers.exceptions import ConfigurationException
 from congregate.helpers.conf import Config
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.users import UsersApi
-from congregate.helpers.misc_utils import is_error_message_present, safe_json_response, is_github_dot_com, json_pretty
+from congregate.helpers.misc_utils import is_error_message_present, safe_json_response
+from congregate.helpers.utils import is_github_dot_com
+from congregate.helpers.json_utils import json_pretty
 
 
 class ConfigurationValidator(Config):
@@ -113,7 +115,8 @@ class ConfigurationValidator(Config):
         if dstn_token is not None:
             user = safe_json_response(self.users.get_current_user(
                 self.destination_host, dstn_token))
-            if is_error_message_present(user) or not user.get("is_admin", None):
+            if is_error_message_present(
+                    user) or not user.get("is_admin", None):
                 raise ConfigurationException("destination_token", msg=user)
             return True
         return True
@@ -124,7 +127,8 @@ class ConfigurationValidator(Config):
             if self.source_type == "gitlab":
                 user = safe_json_response(
                     self.users.get_current_user(self.source_host, src_token))
-                if not user or is_error_message_present(user) or not user.get("is_admin", None):
+                if not user or is_error_message_present(
+                        user) or not user.get("is_admin", None):
                     raise ConfigurationException(
                         "source_token", msg=json_pretty(user))
             elif self.source_type == "github":
@@ -137,7 +141,8 @@ class ConfigurationValidator(Config):
                         "Authorization": f"token {src_token}"
                     },
                     verify=self.ssl_verify))
-                if not user or is_error_message_present(user) or (not user.get("site_admin", None) and not is_github_dot_com(self.source_host)):
+                if not user or is_error_message_present(user) or (not user.get(
+                        "site_admin", None) and not is_github_dot_com(self.source_host)):
                     raise ConfigurationException(
                         "source_token", msg=json_pretty(user))
             elif self.source_type == "bitbucket server":

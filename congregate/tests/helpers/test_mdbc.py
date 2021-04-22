@@ -99,8 +99,9 @@ class MongoConnectorTests(unittest.TestCase):
 
         self.assertEqual(expected, actual)
 
-    @patch('builtins.open', new=mock_open(read_data=b'[{"id": 1,"hello": "world"}]'))
-    @patch("congregate.helpers.misc_utils.read_json_file_into_object")
+    @patch('builtins.open',
+           new=mock_open(read_data=b'[{"id": 1,"hello": "world"}]'))
+    @patch("congregate.helpers.json_utils.read_json_file_into_object")
     def test_insert_json_file_into_mongo(self, json_file):
         json_file.return_value = [{
             "id": 1,
@@ -117,8 +118,9 @@ class MongoConnectorTests(unittest.TestCase):
 
         self.assertDictEqual(expected, actual)
 
-    @patch('builtins.open', new=mock_open(read_data=b'[{"id": 1,"hello": "world"}]'))
-    @patch("congregate.helpers.misc_utils.read_json_file_into_object")
+    @patch('builtins.open',
+           new=mock_open(read_data=b'[{"id": 1,"hello": "world"}]'))
+    @patch("congregate.helpers.json_utils.read_json_file_into_object")
     def test_insert_json_file_into_mongo_with_collection(self, json_file):
         json_file.return_value = [{
             "id": 1,
@@ -135,9 +137,10 @@ class MongoConnectorTests(unittest.TestCase):
 
         self.assertDictEqual(expected, actual)
 
-    @patch('builtins.open', new=mock_open(read_data=b'[{"id": 1,"hello": "world"}]'))
-    @patch("congregate.helpers.misc_utils.read_json_file_into_object")
-    @patch("congregate.helpers.misc_utils.find_files_in_folder")
+    @patch('builtins.open',
+           new=mock_open(read_data=b'[{"id": 1,"hello": "world"}]'))
+    @patch("congregate.helpers.json_utils.read_json_file_into_object")
+    @patch("congregate.helpers.file_utils.find_files_in_folder")
     @patch("os.listdir")
     def test_re_ingest_into_mongo(self, mock_list_dir, mock_find, json_file):
         mock_list_dir.return_value = [

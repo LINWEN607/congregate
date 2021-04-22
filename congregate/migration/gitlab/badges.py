@@ -1,7 +1,8 @@
 from requests.exceptions import RequestException
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import json_pretty, get_dry_log
+from congregate.helpers.misc_utils import get_dry_log
+from congregate.helpers.json_utils import json_pretty
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
 
@@ -12,7 +13,8 @@ class BadgesClient(BaseClass):
         self.projects = ProjectsApi()
         super(BadgesClient, self).__init__()
 
-    def migrate_group_badges(self, old_id, new_id, parent_group_path, dry_run=True):
+    def migrate_group_badges(self, old_id, new_id,
+                             parent_group_path, dry_run=True):
         try:
             response = self.groups.get_all_group_badges(
                 old_id, self.config.source_host, self.config.source_token)

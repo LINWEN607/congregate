@@ -1,7 +1,8 @@
 import json
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import safe_json_response, is_error_message_present, is_github_dot_com, dig, strip_protocol
+from congregate.helpers.misc_utils import safe_json_response, is_error_message_present, dig, strip_protocol
+from congregate.helpers.utils import is_github_dot_com
 from congregate.helpers.mdbc import MongoConnector
 from congregate.helpers.processes import start_multi_process_stream_with_args
 from congregate.migration.github.api.orgs import OrgsApi
@@ -51,7 +52,8 @@ class OrgsClient(BaseClass):
         While traversing orgs gather repo, team and member metadata.
         """
         groups = []
-        if is_github_dot_com(self.config.source_host) and self.config.src_parent_org:
+        if is_github_dot_com(
+                self.config.source_host) and self.config.src_parent_org:
             orgs = [safe_json_response(
                 self.orgs_api.get_org(self.config.src_parent_org))]
         else:
@@ -74,7 +76,8 @@ class OrgsClient(BaseClass):
                 "Failed to append org {} ({}) to list {}".format(org_name, org, groups))
         else:
             org_repos = []
-            for org_repo, _ in self.orgs_api.get_all_org_repos(org_name, page_check=True):
+            for org_repo, _ in self.orgs_api.get_all_org_repos(
+                    org_name, page_check=True):
                 formatted_repo = self.repos.format_repo(org_repo, mongo)
                 mongo.insert_data(f"projects-{self.host}", formatted_repo)
                 formatted_repo.pop("_id")

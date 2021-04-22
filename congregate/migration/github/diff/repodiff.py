@@ -5,16 +5,19 @@ from congregate.migration.gitlab.api.issues import IssuesApi
 from congregate.migration.gitlab.api.merge_requests import MergeRequestsApi
 from congregate.migration.gitlab.api.project_repository import ProjectRepositoryApi
 from congregate.migration.github.repos import ReposClient
-from congregate.helpers.misc_utils import rewrite_json_list_into_dict, get_rollback_log, dig, deobfuscate, read_json_file_into_object
+from congregate.helpers.misc_utils import rewrite_json_list_into_dict, get_rollback_log, dig, deobfuscate
+from congregate.helpers.json_utils import read_json_file_into_object
 from congregate.helpers.migrate_utils import get_dst_path_with_namespace
 from congregate.helpers.processes import handle_multi_process_write_to_file_and_return_results
+
 
 class RepoDiffClient(BaseDiffClient):
     '''
         Extension of BaseDiffClient focused on finding the differences between migrated repositories
     '''
 
-    def __init__(self, host, token, staged=False, rollback=False, processes=None):
+    def __init__(self, host, token, staged=False,
+                 rollback=False, processes=None):
         super(RepoDiffClient, self).__init__()
         self.repos_api = ReposApi(host, token)
         self.repos_client = ReposClient(host, token)
@@ -84,13 +87,15 @@ class RepoDiffClient(BaseDiffClient):
     def generate_single_diff_report(self, project):
         diff_report = {}
         project_path = get_dst_path_with_namespace(project)
-        if not (project_id := dig(self.results.get(project_path), "response", "repo_id")):
+        if not (project_id := dig(self.results.get(
+                project_path), "response", "repo_id")):
             project_id = dig(self.results.get(project_path), "response", "id")
 
         project_path_replaced = project_path.replace(".", "_")
         group_namespace = "/".join(project_path_replaced.split("/")[:1])
         mongo = self.connect_to_mongo()
-        if isinstance(self.results.get(project_path), int) and self.results.get(project_path):
+        if isinstance(self.results.get(project_path),
+                      int) and self.results.get(project_path):
             return {
                 project_path_replaced: {
                     "info": "project already migrated",
@@ -106,13 +111,20 @@ class RepoDiffClient(BaseDiffClient):
             try:
                 diff_report[project_path_replaced]["overall_accuracy"] = self.calculate_overall_accuracy(
                     diff_report[project_path_replaced])
-                # Cast all keys and values to strings to avoid mongo key validation errors
-                cleaned_data = {str(key): str(val) for key, val in (diff_report.copy()).items()}
-                mongo.insert_data(f"diff_report_{group_namespace}", cleaned_data, bypass_document_validation=True)
+                # Cast all keys and values to strings to avoid mongo key
+                # validation errors
+                cleaned_data = {
+                    str(key): str(val) for key, val in (
+                        diff_report.copy()).items()}
+                mongo.insert_data(
+                    f"diff_report_{group_namespace}",
+                    cleaned_data,
+                    bypass_document_validation=True)
                 mongo.close_connection()
                 return diff_report
             except Exception as e:
-                self.log.error(f"Failed to generate diff for {project_path} with error {e}")
+                self.log.error(
+                    f"Failed to generate diff for {project_path} with error {e}")
         missing_data = {
             project_path_replaced: {
                 "error": "project missing",
@@ -122,7 +134,9 @@ class RepoDiffClient(BaseDiffClient):
                 }
             }
         }
-        mongo.insert_data(f"diff_report_{group_namespace}", missing_data.copy())
+        mongo.insert_data(
+            f"diff_report_{group_namespace}",
+            missing_data.copy())
         mongo.close_connection()
         return missing_data
 
@@ -152,7 +166,9 @@ class RepoDiffClient(BaseDiffClient):
         #     repo_pr_notes_data = list(self.repos_api.get_repo_pr_comments(project["namespace"], project["name"], pr["number"]))
         #     transformed_data = self.repos_client.transform_gh_pr_comments(repo_pr_notes_data)
         #     repo_diff["/projects/:id/pull_requests_comments"] = self.generate_repo_diff(
-        #         project, "body", transformed_data, self.gl_mr_api.get_merge_request_notes, obfuscate=True)  # How to pass in PR id here??
+        # project, "body", transformed_data,
+        # self.gl_mr_api.get_merge_request_notes, obfuscate=True)  # How to
+        # pass in PR id here??
 
         # tags
         repo_tag_data = list(self.repos_api.get_repo_tags(
@@ -193,5 +209,7 @@ class RepoDiffClient(BaseDiffClient):
 
         return repo_diff
 
-    def generate_repo_diff(self, project, sort_key, source_data, gl_endpoint, **kwargs):
-        return self.generate_gh_diff(project, "path_with_namespace", sort_key, source_data, gl_endpoint, parent_group=self.config.dstn_parent_group_path, **kwargs)
+    def generate_repo_diff(self, project, sort_key,
+                           source_data, gl_endpoint, **kwargs):
+        return self.generate_gh_diff(project, "path_with_namespace", sort_key, source_data,
+                                     gl_endpoint, parent_group=self.config.dstn_parent_group_path, **kwargs)

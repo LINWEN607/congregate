@@ -1,11 +1,14 @@
 import sys
 import os
 import errno
+import json
 from shutil import copy
 from time import time
 from datetime import timedelta, datetime
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import is_dot_com, is_error_message_present, dig, read_json_file_into_object, get_dry_log, write_json_to_file
+from congregate.helpers.misc_utils import is_error_message_present, dig, get_dry_log, strip_protocol
+from congregate.helpers.utils import is_dot_com, get_congregate_path
+from congregate.helpers.json_utils import read_json_file_into_object, write_json_to_file
 from congregate.migration.gitlab.api.users import UsersApi
 
 b = BaseClass()
@@ -23,7 +26,8 @@ def get_failed_export_from_results(res):
 
 
 def get_staged_projects():
-    return read_json_file_into_object(f"{b.app_path}/data/staged_projects.json")
+    return read_json_file_into_object(
+        f"{b.app_path}/data/staged_projects.json")
 
 
 def get_staged_projects_without_failed_export(staged_projects, failed_export):
@@ -50,7 +54,8 @@ def get_staged_groups_without_failed_export(staged_groups, failed_export):
         :param failed_export: A list of group export filenames
         :return: A new staged_grups list removing those that failed export
     """
-    return [g for g in staged_groups if get_export_filename_from_namespace_and_name(g["full_path"]) not in failed_export]
+    return [g for g in staged_groups if get_export_filename_from_namespace_and_name(
+        g["full_path"]) not in failed_export]
 
 
 def get_staged_users():
@@ -64,8 +69,10 @@ def get_project_filename(p):
         :param p: The JSON object representing a GitLab project
         :return: Project filename or empty string
     """
-    if p.get("name", None) is not None and p.get("namespace", None) is not None:
-        return get_export_filename_from_namespace_and_name(p["namespace"], p["name"])
+    if p.get("name", None) is not None and p.get(
+            "namespace", None) is not None:
+        return get_export_filename_from_namespace_and_name(
+            p["namespace"], p["name"])
     return ""
 
 
@@ -77,7 +84,8 @@ def get_export_filename_from_namespace_and_name(namespace, name=""):
         :param name: Project name
         :return: Exported filename
     """
-    return "{0}{1}.tar.gz".format(namespace, "/" + name if name else "").replace("/", "_").lower()
+    return "{0}{1}.tar.gz".format(
+        namespace, "/" + name if name else "").replace("/", "_").lower()
 
 
 def get_project_namespace(p):
@@ -99,7 +107,8 @@ def get_project_namespace(p):
                                           p_namespace.split(b.config.src_parent_group_path)[-1])
 
         if b.config.dstn_parent_id is not None:
-            return "{0}/{1}".format(b.config.dstn_parent_group_path, p_namespace)
+            return "{0}/{1}".format(b.config.dstn_parent_group_path,
+                                    p_namespace)
     return p_namespace
 
 
@@ -137,7 +146,8 @@ def get_staged_user_projects(staged_projects):
         :return: List of user projects staged for migrating to a group
     """
     if is_dot_com(b.config.destination_host) or b.config.dstn_parent_id:
-        return [sp["path_with_namespace"] for sp in staged_projects if is_user_project(sp)]
+        return [sp["path_with_namespace"]
+                for sp in staged_projects if is_user_project(sp)]
     return []
 
 
@@ -157,7 +167,8 @@ def get_user_project_namespace(p):
         return users_api.get_user(
             b.config.import_user_id, b.config.destination_host, b.config.destination_token).json()["username"]
     else:
-        # Retrieve user username based on email to determine correct destination user namespace
+        # Retrieve user username based on email to determine correct
+        # destination user namespace
         if p["members"] and p["members"][0].get("email", None) is not None:
             user = find_user_by_email_comparison_without_id(
                 p["members"][0]["email"])
@@ -180,9 +191,11 @@ def find_user_by_email_comparison_without_id(email, src=False):
             b.config.source_host if src else b.config.destination_host,
             b.config.source_token if src else b.config.destination_token,
             email)
-        # Will searching for an explicit email actually return more than one? Probably is just an array of 1
+        # Will searching for an explicit email actually return more than one?
+        # Probably is just an array of 1
         for user in users:
-            if user and user.get("email", None) and user["email"].lower() == email.lower():
+            if user and user.get(
+                    "email", None) and user["email"].lower() == email.lower():
                 b.log.info(
                     f"Found user by matching primary email {email}")
                 return user
@@ -205,12 +218,13 @@ def get_dst_path_with_namespace(p):
         :param p: The JSON object representing a GitLab project
         :return: Destination project path with namespace
     """
-    return "{0}/{1}".format(get_user_project_namespace(p) if is_user_project(p) else get_project_namespace(p), p["path"])
+    return "{0}/{1}".format(get_user_project_namespace(p)
+                            if is_user_project(p) else get_project_namespace(p), p["path"])
 
 
 def get_target_namespace(project):
     if target_namespace := project.get("target_namespace"):
-        if target_namespace.split("/")[-1].lower() == project.get('namespace', '').lower():
+        if strip_protocol(target_namespace).lower() == project.get('namespace', '').lower():
             return target_namespace
         else:
             return f"{target_namespace}/{project.get('namespace')}"
@@ -227,7 +241,8 @@ def get_results(res):
     c = 0
     for r in res:
         for v in r.values():
-            if not v or is_error_message_present(v) or (isinstance(v, dict) and is_error_message_present(v.get("response", None))):
+            if not v or is_error_message_present(v) or (isinstance(
+                    v, dict) and is_error_message_present(v.get("response", None))):
                 c += 1
             repo_present = dig(v, 'repository')
             if repo_present is not None and repo_present is False:
@@ -245,7 +260,8 @@ def is_top_level_group(g):
         :param g: The JSON object representing a GitLab group
         :return: True if top-level-group, else False
     """
-    return not g.get("parent_id", None) or g.get("id", None) == b.config.src_parent_id
+    return not g.get("parent_id", None) or g.get(
+        "id", None) == b.config.src_parent_id
 
 
 def is_loc_supported(loc):
@@ -332,3 +348,12 @@ def write_results_to_file(import_results, result_type="project", log=None):
     write_json_to_file(file_path, import_results, log=log)
     copy(file_path,
          f"{b.app_path}/data/results/{result_type}_migration_results.json")
+
+
+def check_is_project_or_group_for_logging(is_project):
+    return "Project" if is_project else "Group"
+
+
+def migration_dry_run(data_type, post_data):
+    with open(f"{get_congregate_path()}/data/results/dry_run_{data_type}_migration.json", "a") as f:
+        json.dump(post_data, f, indent=4)

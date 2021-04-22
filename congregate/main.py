@@ -10,7 +10,7 @@ Usage:
     congregate stage-projects <projects>... [--skip-users] [--commit] [--scm-source=hostname]
     congregate stage-groups <groups>... [--skip-users] [--commit] [--scm-source=hostname]
     congregate stage-wave <wave> [--commit] [--scm-source=hostname]
-    congregate migrate [--processes=<n>] [--reporting] [--skip-users] [--skip-adding-members] [--skip-group-export] [--skip-group-import] [--skip-project-export] [--skip-project-import] [--only-post-migration-info] [--subgroups-only] [--scm-source=hostname] [--commit] 
+    congregate migrate [--processes=<n>] [--reporting] [--skip-users] [--skip-adding-members] [--skip-group-export] [--skip-group-import] [--skip-project-export] [--skip-project-import] [--only-post-migration-info] [--subgroups-only] [--scm-source=hostname] [--commit]
     congregate rollback [--hard-delete] [--skip-users] [--skip-groups] [--skip-projects] [--commit]
     congregate ui
     congregate do-all [--commit]
@@ -166,8 +166,9 @@ if __name__ == '__main__':
             os.path.dirname(os.path.abspath(__file__))))
     from congregate.helpers import conf
     from congregate.helpers.logger import myLogger
-    from congregate.helpers.misc_utils import get_congregate_path, obfuscate, deobfuscate, \
-        strip_protocol, stitch_json_results, rotate_logs, dig
+    from congregate.helpers.utils import get_congregate_path, rotate_logs, stitch_json_results
+    from congregate.helpers.misc_utils import obfuscate, deobfuscate, \
+        strip_protocol, dig
     from congregate.helpers.ui_utils import spin_up_ui
 else:
     import sys
@@ -175,8 +176,9 @@ else:
         os.path.dirname(os.path.abspath(__file__))))
     from congregate.helpers import conf
     from congregate.helpers.logger import myLogger
-    from congregate.helpers.misc_utils import get_congregate_path, obfuscate, deobfuscate, \
-        strip_protocol, stitch_json_results, rotate_logs
+    from congregate.helpers.utils import get_congregate_path, rotate_logs, stitch_json_results
+    from congregate.helpers.misc_utils import obfuscate, deobfuscate, \
+        strip_protocol, dig
     from congregate.helpers.ui_utils import spin_up_ui
 
 app_path = get_congregate_path()
@@ -381,8 +383,10 @@ def main():
                     projects.archive_staged_projects(dry_run=DRY_RUN)
                 elif config.source_type == "github" or config.list_multiple_source_config("github_source") is not None:
                     if SCM_SOURCE is not None:
-                        for single_source in config.list_multiple_source_config("github_source"):
-                            if SCM_SOURCE in single_source.get("src_hostname", None):
+                        for single_source in config.list_multiple_source_config(
+                                "github_source"):
+                            if SCM_SOURCE in single_source.get(
+                                    "src_hostname", None):
                                 gh_repos = ReposClient(single_source["src_hostname"], deobfuscate(
                                     single_source["src_access_token"]))
                     else:
@@ -468,8 +472,10 @@ def main():
                         )
                 elif config.source_type == "github" or SCM_SOURCE is not None:
                     if SCM_SOURCE is not None:
-                        for single_instance in config.list_multiple_source_config("github_source"):
-                            if SCM_SOURCE == strip_protocol(single_instance.get('src_hostname', '')):
+                        for single_instance in config.list_multiple_source_config(
+                                "github_source"):
+                            if SCM_SOURCE == strip_protocol(
+                                    single_instance.get('src_hostname', '')):
                                 repo_diff = RepoDiffClient(
                                     single_instance['src_hostname'],
                                     deobfuscate(

@@ -5,9 +5,10 @@ from time import time
 from requests.exceptions import RequestException
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import get_dry_log, get_timedelta, json_pretty, \
-    is_error_message_present, safe_json_response, rotate_logs, strip_protocol, \
-    get_decoded_string_from_b64_response_content, do_yml_sub, read_json_file_into_object
+from congregate.helpers.misc_utils import get_dry_log, get_timedelta, \
+    is_error_message_present, safe_json_response, strip_protocol, \
+    get_decoded_string_from_b64_response_content, do_yml_sub
+from congregate.helpers.json_utils import json_pretty, read_json_file_into_object
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.groups import GroupsClient
@@ -16,7 +17,9 @@ from congregate.helpers.mdbc import MongoConnector
 from congregate.helpers.processes import start_multi_process_stream_with_args
 from congregate.helpers.migrate_utils import get_dst_path_with_namespace, \
     get_full_path_with_parent_namespace, dig, get_staged_projects, get_staged_groups, find_user_by_email_comparison_without_id, add_post_migration_stats
+from congregate.helpers.utils import rotate_logs
 from congregate.migration.gitlab.api.project_repository import ProjectRepositoryApi
+
 
 class ProjectsClient(BaseClass):
     def __init__(self):
@@ -82,7 +85,7 @@ class ProjectsClient(BaseClass):
                 project["id"], project["name"], project["description"]))
             project["members"] = [m for m in self.projects_api.get_members(
                 project["id"], host, token) if m["id"] != 1]
-        
+
             mongo.insert_data(f"projects-{strip_protocol(host)}", project)
         mongo.close_connection()
 
@@ -124,7 +127,8 @@ class ProjectsClient(BaseClass):
             dst_path_with_namespace, host, token)
         if resp.status_code == 200:
             project = safe_json_response(resp)
-            if project and (project.get("path_with_namespace", '').lower() == dst_path_with_namespace.lower()):
+            if project and (project.get("path_with_namespace",
+                                        '').lower() == dst_path_with_namespace.lower()):
                 return project.get("id", None)
         return None
 
@@ -145,7 +149,8 @@ class ProjectsClient(BaseClass):
                 elif not dry_run:
                     try:
                         project = resp.json()
-                        if get_timedelta(project["created_at"]) < self.config.max_asset_expiration_time:
+                        if get_timedelta(
+                                project["created_at"]) < self.config.max_asset_expiration_time:
                             self.projects_api.delete_project(
                                 self.config.destination_host,
                                 self.config.destination_token,
@@ -163,7 +168,8 @@ class ProjectsClient(BaseClass):
     def count_unarchived_projects(self):
         unarchived_user_projects = []
         unarchived_group_projects = []
-        for project in self.projects_api.get_all_projects(self.config.source_host, self.config.source_token):
+        for project in self.projects_api.get_all_projects(
+                self.config.source_host, self.config.source_token):
             if not project.get("archived", True):
                 unarchived_user_projects.append(project["path_with_namespace"]) if project["namespace"][
                     "kind"] == "user" else unarchived_group_projects.append(project["path_with_namespace"])
@@ -229,7 +235,8 @@ class ProjectsClient(BaseClass):
                             self.config.destination_token,
                             project['name']):
                         if proj["name"] == project["name"]:
-                            if dig(project, 'namespace', 'full_path', default="").lower() == proj.get("path_with_namespace", "").lower():
+                            if dig(project, 'namespace', 'full_path', default="").lower(
+                            ) == proj.get("path_with_namespace", "").lower():
                                 project_exists = True
                                 break
                     if not project_exists:
@@ -260,14 +267,17 @@ class ProjectsClient(BaseClass):
             self.config.source_token,
             statistics=True)
         for dp in dest_projects:
-            if dp.get("statistics", None) is not None and dig(dp, 'statistics', 'repository_size', default=-1) == 0:
+            if dp.get("statistics", None) is not None and dig(
+                    dp, 'statistics', 'repository_size', default=-1) == 0:
                 self.log.info("Found empty repo on destination instance: {}".format(
                     dp["name_with_namespace"]))
                 for sp in src_projects:
-                    if sp["name"] == dp["name"] and dig(dp, 'namespace', 'path') in dig(sp, 'namespace', 'path', default=""):
+                    if sp["name"] == dp["name"] and dig(dp, 'namespace', 'path') in dig(
+                            sp, 'namespace', 'path', default=""):
                         self.log.info("Found source project {}".format(
                             sp["name_with_namespace"]))
-                        if sp.get("statistics", None) is not None and dig(sp, 'statistics', 'repository_size', default=-1) == 0:
+                        if sp.get("statistics", None) is not None and dig(
+                                sp, 'statistics', 'repository_size', default=-1) == 0:
                             self.log.info(
                                 "Project is empty in source instance. Ignoring")
                         else:
@@ -300,7 +310,8 @@ class ProjectsClient(BaseClass):
             if g.get("description", None) is None:
                 self.log.warning("description is missing")
 
-    def add_members_to_destination_project(self, host, token, project_id, members):
+    def add_members_to_destination_project(
+            self, host, token, project_id, members):
         result = {}
         self.log.info(
             f"Adding members to project ID {project_id}:\n{json_pretty(members)}")
@@ -318,13 +329,13 @@ class ProjectsClient(BaseClass):
         return result
 
     def get_replacement_data(self, data, f, project_id, src_branch):
-        """        
+        """
         :param data: (dict) Data for the replacement task. See form in description
         :param f: (str) The filename we are replacing for. Used for logging in this method
         :param project_id: (int) The project id on the destination
         :param src_branch: (str) The name of the branch we will be pulling files from in the project
-        
-        Takes a pattern replace list data item of form: 
+
+        Takes a pattern replace list data item of form:
         'data':
             {
                 'pattern': regex pattern string,
@@ -338,13 +349,15 @@ class ProjectsClient(BaseClass):
             )
             return None
         pattern = data.get("pattern", None)
-        if not pattern or not isinstance(pattern, str) or pattern.strip() == "":
+        if not pattern or not isinstance(
+                pattern, str) or pattern.strip() == "":
             self.log.warning(
                 f"No pattern configured for file {f} in project_id {project_id} branch {src_branch}"
             )
             return None
         replace_with = data.get("replace_with", None)
-        if not replace_with or not isinstance(replace_with, str) or replace_with.strip() == "":
+        if not replace_with or not isinstance(
+                replace_with, str) or replace_with.strip() == "":
             self.log.warning(
                 f"No replace_with configured for file {f} in project_id {project_id} branch {src_branch}"
             )
@@ -354,7 +367,7 @@ class ProjectsClient(BaseClass):
     def migrate_gitlab_variable_replace_ci_yml(self, project_id):
         """
         :param project_id: (int) The project_id at the destination
-        
+
         Does the pattern replacement in project files, and cuts a branch with the changes
         {
             "filenames": [
@@ -375,10 +388,10 @@ class ProjectsClient(BaseClass):
                 {...}
             ]
         }
-        Notes: 
+        Notes:
         * Single branch per project, with commits per configured file.
         * Does not group same file names, so if a file is listed twice, instead of once with multiple data entries, it will get two commits on the same new branch.
-          * Since the initial read is *always* from the default, this means that the last listed change will "win"          
+          * Since the initial read is *always* from the default, this means that the last listed change will "win"
         """
         self.log.info(
             f"Performing URL remapping for destination project id {project_id}")
@@ -394,10 +407,10 @@ class ProjectsClient(BaseClass):
 
         # Get the project from destination to get the default branch
         dstn_project = self.projects_api.get_project(
-                project_id,
-                self.config.destination_host,
-                self.config.destination_token
-            )
+            project_id,
+            self.config.destination_host,
+            self.config.destination_token
+        )
 
         if dstn_project and dstn_project.status_code == 200:
             dstn_project_json = safe_json_response(dstn_project)
@@ -434,15 +447,16 @@ class ProjectsClient(BaseClass):
             repo_file = f"{f}?ref={src_branch}"
             self.log.info(f"Pulling repository file for rewrite: {repo_file}")
             yml_file_response = self.project_repository_api.get_single_repo_file(
-                    self.config.destination_host,
-                    self.config.destination_token,
-                    project_id,
-                    f,
-                    src_branch
+                self.config.destination_host,
+                self.config.destination_token,
+                project_id,
+                f,
+                src_branch
             )
 
             # Content is base64 string
-            if yml_file_response is None or (yml_file_response is not None and yml_file_response.status_code != 200):
+            if yml_file_response is None or (
+                    yml_file_response is not None and yml_file_response.status_code != 200):
                 self.log.warning(
                     f"No {f} file available for project_id {project_id} branch {src_branch}"
                 )
@@ -494,18 +508,21 @@ class ProjectsClient(BaseClass):
                     f"Replaced {subs[1]} instances of {pattern} with {replace_with} on project_id {project_id}"
                 )
                 create_branch = True
-                # Make the next pass of the file be with the current subbed value
+                # Make the next pass of the file be with the current subbed
+                # value
                 yml_file = subs[0]
 
             # After changing all the data, encode and write
-            # b64encode the new data. Must also encode the subs results. This returns a byte object b''
+            # b64encode the new data. Must also encode the subs results. This
+            # returns a byte object b''
             new_yml_64 = base64.b64encode(yml_file.encode())
             # Put it back to string for the eventual post
             new_yml_64 = new_yml_64.decode()
 
             # Don't want to create a branch unless we find something to do, and haven't already created one
             # (the name check). For now, place everything on one branch
-            # If we want multiple branches, reset create to False *and* empty name
+            # If we want multiple branches, reset create to False *and* empty
+            # name
             if create_branch and branch_name == "":
                 # Create a branch
                 n = datetime.datetime.now()
@@ -522,8 +539,10 @@ class ProjectsClient(BaseClass):
                     project_id,
                     data=json.dumps(branch_data)
                 )
-                if not branch_create_resp or (branch_create_resp and branch_create_resp.status_code not in (200, 201)):
-                    self.log.error(f"Could not create branch for regex replace:\nproject: {project_id}\nbranch data: {branch_data}")
+                if not branch_create_resp or (
+                        branch_create_resp and branch_create_resp.status_code not in (200, 201)):
+                    self.log.error(
+                        f"Could not create branch for regex replace:\nproject: {project_id}\nbranch data: {branch_data}")
                 else:
                     create_branch = False
 
@@ -546,4 +565,5 @@ class ProjectsClient(BaseClass):
                     self.log.error(f"Could not put commit for regex replace:\nproject: {project_id}\nbranch name: {branch_name}\nfile: {f}")
                 branch_name = ""
 
-            # A branch_name reset would need to go here for the multiple branches
+            # A branch_name reset would need to go here for the multiple
+            # branches

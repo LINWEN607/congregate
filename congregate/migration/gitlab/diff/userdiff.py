@@ -1,6 +1,7 @@
 from congregate.migration.gitlab.diff.basediff import BaseDiffClient
 from congregate.migration.gitlab.api.users import UsersApi
-from congregate.helpers.misc_utils import get_rollback_log, read_json_file_into_object
+from congregate.helpers.misc_utils import get_rollback_log
+from congregate.helpers.json_utils import read_json_file_into_object
 from congregate.helpers.processes import handle_multi_process_write_to_file_and_return_results
 
 
@@ -60,7 +61,8 @@ class UserDiffClient(BaseDiffClient):
     def generate_single_diff_report(self, user):
         diff_report = {}
         user_email = user["email"]
-        if self.results and self.results.get(user_email) and self.asset_exists(self.users_api.get_user, self.results[user_email].get("id")):
+        if self.results and self.results.get(user_email) and self.asset_exists(
+                self.users_api.get_user, self.results[user_email].get("id")):
             user_diff = self.handle_endpoints(user)
             diff_report[user_email] = user_diff
             try:

@@ -7,20 +7,17 @@ import re
 import hashlib
 import sys
 
-import glob
 from collections import Counter
-from traceback import print_exc
 from base64 import b64encode, b64decode
 from copy import deepcopy
 from shutil import copy
-from time import time
-from re import sub, findall
+from re import sub
 from datetime import timedelta, date, datetime
 from types import GeneratorType
 from xml.parsers.expat import ExpatError
 from urllib.parse import urlparse
 from xmltodict import parse as xmlparse
-from requests import get, head, Response
+from requests import Response
 
 
 def remove_dupes(my_list):
@@ -62,58 +59,6 @@ def remove_dupes_but_take_higher_access(my_list):
             new_list.append(d)
             already_found[obj_id]["index"] = len(new_list) - 1
     return new_list
-
-
-def download_file(url, path, filename=None, headers=None, verify=True):
-    # NOTE the stream=True parameter
-    if __is_downloadable(url, verify):
-        r = get(url, stream=True, headers=headers,
-                allow_redirects=True, verify=verify)
-        if filename is None:
-            filename = __get_filename_from_cd(
-                r.headers.get('content-disposition'))
-        file_path = "{0}/downloads/{1}".format(path, filename)
-        create_local_project_export_structure(os.path.dirname(file_path))
-        with open(file_path, "wb") as f:
-            for chunk in r.iter_content(chunk_size=1024):
-                if chunk:
-                    f.write(chunk)
-    return filename
-
-
-def create_local_project_export_structure(dir_path):
-    if not os.path.exists(dir_path):
-        try:
-            os.makedirs(dir_path)
-        except OSError as exc:  # Guard against race condition
-            if exc.errno != errno.EEXIST:
-                raise
-
-
-def __is_downloadable(url, verify):
-    """
-        Does the url contain a downloadable resource
-    """
-    h = head(url, allow_redirects=True, verify=verify)
-    header = h.headers
-    content_type = header.get('content-type')
-    if 'text' in content_type.lower():
-        return False
-    if 'html' in content_type.lower():
-        return False
-    return True
-
-
-def __get_filename_from_cd(cd):
-    """
-        Get filename from content-disposition
-    """
-    if not cd:
-        return None
-    fname = findall('filename=(.+)', cd)
-    if len(fname) == 0:
-        return None
-    return fname[0]
 
 
 def strip_numbers(s):
@@ -196,21 +141,9 @@ def rewrite_json_list_into_dict(l):
     return new_dict
 
 
-def get_congregate_path():
-    app_path = os.getenv("CONGREGATE_PATH")
-    if app_path is None:
-        app_path = os.getcwd()
-    return app_path
-
-
 def input_generator(params):
     for param in params:
         yield param
-
-
-def migration_dry_run(data_type, post_data):
-    with open(f"{get_congregate_path()}/data/results/dry_run_{data_type}_migration.json", "a") as f:
-        json.dump(post_data, f, indent=4)
 
 
 def get_dry_log(dry_run=True):
@@ -219,10 +152,6 @@ def get_dry_log(dry_run=True):
 
 def get_rollback_log(rollback=False):
     return "Rollback: " if rollback else ""
-
-
-def json_pretty(data):
-    return json.dumps(data, indent=4, sort_keys=True)
 
 
 def xml_to_dict(data):
@@ -251,21 +180,6 @@ def sanitize_booleans_in_dict(d):
     return d
 
 
-def write_json_to_file(path, data, log=None):
-    if log:
-        log.info("### Writing output to %s" % path)
-    with open(path, "w") as f:
-        json.dump(data, f, indent=4)
-
-
-def read_json_file_into_object(path):
-    try:
-        with open(path, "r") as f:
-            return json.load(f)
-    except FileNotFoundError:
-        sys.exit(f"{path} not found")
-
-
 def obfuscate(prompt):
     return b64encode(getpass.getpass(prompt).encode("ascii")).decode("ascii")
 
@@ -284,40 +198,6 @@ def convert_to_underscores(s):
 
 def pretty_print_key(s):
     return " ".join(w.capitalize() for w in s.split("_"))
-
-
-
-
-
-def rotate_logs():
-    """
-        Rotate and empty logs
-    """
-    log_path = f"{get_congregate_path()}/data/logs"
-    if os.path.isdir(log_path):
-        log = f"{log_path}/congregate.log"
-        audit_log = f"{log_path}/audit.log"
-        end_time = str(datetime.now()).replace(" ", "_")
-        print("Rotating and emptying:\n{}".format("\n".join([log, audit_log])))
-        try:
-            copy(log, f"{log_path}/congregate_{end_time}.log")
-            open(log, "w").close()
-            copy(
-                audit_log, f"{log_path}/audit_{end_time}.log")
-            open(audit_log, "w").close()
-        except OSError as e:
-            if e.errno != errno.ENOENT:
-                raise
-    else:
-        print("Cannot find data directory. CONGREGATE_PATH not set or you are not running this in the Congregate directory.")
-
-
-def is_recent_file(path, age=2592000):
-    """
-        Check whether a file path exists, is empty and older than 1 month
-    """
-    return os.path.exists(path) and os.path.getsize(
-        path) > 0 and time() - os.path.getmtime(path) < age
 
 
 def find(key, dictionary):
@@ -364,17 +244,6 @@ def dig(dictionary, *args, default=None):
     return default
 
 
-def is_dot_com(host):
-    return "gitlab.com" in host if host else None
-
-def is_github_dot_com(host):
-    return "api.github.com" in host
-
-
-def check_is_project_or_group_for_logging(is_project):
-    return "Project" if is_project else "Group"
-
-
 def is_error_message_present(response):
     errors = ["message", "errors", "error"]
     if isinstance(response, Response):
@@ -388,9 +257,6 @@ def is_error_message_present(response):
     if isinstance(response, str) and response in errors:
         return True
     return False
-
-
-
 
 
 def get_timedelta(timestamp):
@@ -444,34 +310,6 @@ def list_to_dict(lst):
     return res_dct
 
 
-
-def stitch_json_results(result_type="project", steps=0, order="tail"):
-    """
-    Stitch together multiple JSON results files into a single file.
-
-        :param result_type: (str) The specific result type file you want to stitch. (Default: project)
-        :param steps: (int) How many files back you want to go for the stitching. (Default: 0)
-        :return: list containing the newly stitched results
-    """
-    reverse = order.lower() == "tail"
-    steps += 1
-    files = glob.glob(
-        f"{get_congregate_path()}/data/results/{result_type}_migration_results_*")
-    files.sort(key=lambda f: f.split("results_")[
-               1].replace(".json", ""), reverse=reverse)
-    if steps > len(files):
-        steps = len(files)
-    files = files[:steps]
-    results = []
-    for result in files:
-        data = read_json_file_into_object(result)
-        results += ([r for r in data if r[next(iter(r))]])
-    return results
-
-
-
-
-
 def generate_audit_log_message(req_type, message, url, data=None):
     try:
         return "{0}enerating {1} request to {2}{3}".format(
@@ -480,33 +318,8 @@ def generate_audit_log_message(req_type, message, url, data=None):
             url,
             " with data: {}".format(data) if data else "")
     except TypeError as e:
-        return "Message formatting ERROR. No specific message generated. Generating {0} request to {1}".format(req_type, url)
-
-
-def write_json_yield_to_file(file_path, generator_function, *args):
-    with open(file_path, "w") as f:
-        output = []
-        for data in generator_function(*args):
-            output.append(data)
-        f.write(json_pretty(output))
-
-
-def stream_json_yield_to_file(file_path, generator_function, *args, log=None, **kwargs):
-    with open(file_path, 'w') as f:
-        f.write("[\n")
-        try:
-            for data, last_result in generator_function(*args, **kwargs):
-                f.write(json_pretty(data))
-                if not last_result:
-                    f.write(",")
-        except Exception as e:
-            if log:
-                log.error("Streamed write failed with error:\n{}".format(e))
-                log.error(print_exc())
-            else:
-                print_exc()
-        finally:
-            f.write("\n]")
+        return "Message formatting ERROR. No specific message generated. Generating {0} request to {1}".format(
+            req_type, url)
 
 
 def safe_json_response(response):
@@ -536,49 +349,6 @@ def get_hash_of_dict(d):
     return SHAhash.hexdigest()
 
 
-# http://akiscode.com/articles/sha-1directoryhash.shtml
-# Copyright (c) 2009 Stephen Akiki
-# MIT License (Means you can do whatever you want with this)
-#  See http://www.opensource.org/licenses/mit-license.php
-# Error Codes:
-#   -1 -> Directory does not exist
-#   -2 -> General error (see stack traceback)
-
-
-def get_hash_of_dirs(directory, verbose=0):
-    SHAhash = hashlib.sha1()
-    if not os.path.exists(directory):
-        return -1
-
-    try:
-        for root, _, files in os.walk(directory):
-            for names in files:
-                if verbose == 1:
-                    print('Hashing', names)
-                filepath = os.path.join(root, names)
-                f1 = None
-                try:
-                    f1 = open(filepath, 'rb')
-                except:
-                    # You can't open the file for some reason
-                    f1.close()
-                    continue
-
-                while 1:
-                    # Read file in as little chunks
-                    buf = f1.read(4096)
-                    if not buf:
-                        break
-                    SHAhash.update(hashlib.sha1(buf).hexdigest().encode())
-                f1.close()
-    except:
-        # Print the stack traceback
-        print_exc()
-        return -2
-
-    return SHAhash.hexdigest()
-
-
 def get_duplicate_paths(data, are_projects=True):
     """
         Legacy GL versions had case insensitive paths, which on newer GL versions are seen as duplicates
@@ -600,10 +370,6 @@ def is_nested_dict(d):
     if isinstance(d, dict):
         return any(isinstance(i, dict) for i in d.values())
     return False
-
-
-def find_files_in_folder(wildcard, directory="data"):
-    return [f for f in os.listdir(f"{get_congregate_path()}/{directory}") if wildcard in f]
 
 
 def strip_protocol(s):
@@ -631,11 +397,13 @@ def clean_split(s, *args, **kwargs):
     """
     return list(filter(None, s.split(*args, **kwargs)))
 
+
 def sort_dict(d):
     """
         Sorts dictionary by key name in descending order
     """
     return {k: d[k] for k in sorted(d.keys())}
+
 
 def get_decoded_string_from_b64_response_content(response):
     """
@@ -646,6 +414,7 @@ def get_decoded_string_from_b64_response_content(response):
         if content is not None and str("content").strip() != "":
             return base64.b64decode(content).decode()
     return None
+
 
 def do_yml_sub(yml_file, pattern, replace_with):
     """

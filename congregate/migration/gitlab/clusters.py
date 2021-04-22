@@ -1,8 +1,9 @@
 from requests.exceptions import RequestException
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import is_error_message_present, safe_json_response, is_dot_com, dig
+from congregate.helpers.misc_utils import is_error_message_present, safe_json_response, dig
 from congregate.helpers.migrate_utils import get_dst_path_with_namespace
+from congregate.helpers.utils import is_dot_com
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.instance import InstanceApi
@@ -30,7 +31,8 @@ class ClustersClient(BaseClass):
                         break
                     if not dry_run:
                         if is_dot_com(self.config.destination_host):
-                            # Only if migrating to the parent group on gitlab.com
+                            # Only if migrating to the parent group on
+                            # gitlab.com
                             if self.config.dstn_parent_id and "/" not in self.config.dstn_parent_group_path:
                                 resp = self.groups_api.add_group_cluster(
                                     self.config.dstn_parent_id, self.config.destination_host, self.config.destination_token, self.create_data(c, {}, "Instance "))
@@ -125,10 +127,14 @@ class ClustersClient(BaseClass):
                         f"{c_type}{path} cluster {c['name']} management project {path} NOT found on destination")
         data["environment_scope"] = c["environment_scope"]
         data["platform_kubernetes_attributes"] = {}
-        data["platform_kubernetes_attributes"]["api_url"] = dig(c, 'platform_kubernetes', 'api_url')
+        data["platform_kubernetes_attributes"]["api_url"] = dig(
+            c, 'platform_kubernetes', 'api_url')
         # Any value, cannot be empty
         data["platform_kubernetes_attributes"]["token"] = c["id"]
-        data["platform_kubernetes_attributes"]["ca_cert"] = dig(c, 'platform_kubernetes', 'ca_cert')
-        data["platform_kubernetes_attributes"]["namespace"] = dig(c, 'platform_kubernetes', 'namespace')
-        data["platform_kubernetes_attributes"]["authorization_type"] = dig(c, 'platform_kubernetes', 'authorization_type')
+        data["platform_kubernetes_attributes"]["ca_cert"] = dig(
+            c, 'platform_kubernetes', 'ca_cert')
+        data["platform_kubernetes_attributes"]["namespace"] = dig(
+            c, 'platform_kubernetes', 'namespace')
+        data["platform_kubernetes_attributes"]["authorization_type"] = dig(
+            c, 'platform_kubernetes', 'authorization_type')
         return data

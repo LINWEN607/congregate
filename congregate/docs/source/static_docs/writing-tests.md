@@ -74,7 +74,7 @@ Utilize a [side_effect](https://docs.python.org/3/library/unittest.mock.html#uni
 Example test utilizing a side effect:
 
 ```python
-@mock.patch("congregate.helpers.misc_utils.read_json_file_into_object")
+@mock.patch("congregate.helpers.json_utils.read_json_file_into_object")
 @mock.patch("glob.glob")
 def test_stitch_json(glob, json):
     results = MockProjectResults()

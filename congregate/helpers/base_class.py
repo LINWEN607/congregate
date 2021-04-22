@@ -8,7 +8,7 @@ from urllib3.exceptions import InsecureRequestWarning
 from congregate.helpers.configuration_validator import ConfigurationValidator
 from congregate.helpers.logger import myLogger
 from congregate.helpers.audit_logger import audit_logger
-from congregate.helpers.misc_utils import get_congregate_path
+from congregate.helpers.utils import get_congregate_path
 
 
 class BaseClass(object):

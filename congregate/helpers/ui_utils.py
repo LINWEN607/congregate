@@ -1,6 +1,7 @@
 import os
 import subprocess
-from congregate.helpers.misc_utils import get_hash_of_dirs
+from congregate.helpers.file_utils import get_hash_of_dirs
+
 
 def build_ui(app_path):
     build_command = "npm run build"

@@ -4,7 +4,8 @@ from congregate.helpers.processes import start_multi_process_stream_with_args
 from congregate.migration.github.api.users import UsersApi
 from congregate.migration.github.api.orgs import OrgsApi
 from congregate.migration.github.meta.github_browser import GitHubBrowser
-from congregate.helpers.misc_utils import safe_json_response, is_error_message_present, strip_protocol, is_github_dot_com
+from congregate.helpers.misc_utils import safe_json_response, is_error_message_present, strip_protocol
+from congregate.helpers.utils import is_github_dot_com
 
 
 class UsersClient(BaseClass):
@@ -30,9 +31,11 @@ class UsersClient(BaseClass):
         """
         List and transform all GitHub user to GitLab user metadata
         """
-        if self.config.src_parent_org or (is_github_dot_com(self.config.source_host) and self.config.src_parent_org):
+        if self.config.src_parent_org or (is_github_dot_com(
+                self.config.source_host) and self.config.src_parent_org):
             users = []
-            for m in self.orgs_api.get_all_org_members(self.config.src_parent_org):
+            for m in self.orgs_api.get_all_org_members(
+                    self.config.src_parent_org):
                 users.append(safe_json_response(
                     self.users_api.get_user(m["login"])))
         else:
@@ -41,7 +44,8 @@ class UsersClient(BaseClass):
             self.handle_retrieving_users, users, self.establish_browser_connection(), processes=processes)
 
     def handle_retrieving_users(self, browser, user, mongo=None):
-        # mongo should be set to None unless this function is being used in a unit test
+        # mongo should be set to None unless this function is being used in a
+        # unit test
         if not mongo:
             mongo = self.connect_to_mongo()
         single_user = safe_json_response(

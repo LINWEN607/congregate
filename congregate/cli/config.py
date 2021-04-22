@@ -2,13 +2,15 @@ from os import getcwd, path, mkdir, makedirs
 from configparser import ConfigParser, NoOptionError
 
 import json
-import requests
 import sys
+import requests
 
 from docker import from_env
 from docker.errors import APIError, TLSParameterError
 
-from congregate.helpers.misc_utils import get_congregate_path, obfuscate, deobfuscate, json_pretty, safe_json_response
+from congregate.helpers.utils import get_congregate_path
+from congregate.helpers.misc_utils import obfuscate, deobfuscate, safe_json_response
+from congregate.helpers.json_utils import json_pretty
 from congregate.helpers.configuration_validator import ConfigurationValidator
 from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.api.groups import GroupsApi
@@ -250,7 +252,8 @@ def generate_config():
             config.set("TEAMCITY_CI_SOURCE", "tc_ci_src_access_token", obfuscate(
                 "Teamcity CI Source instance ({}) Personal Access Token: ".format(config.get("TEAMCITY_CI_SOURCE", "tc_ci_src_type"))))
         else:
-            print("CI Source type {} is currently not supported".format(ci_src_option))
+            print(
+                "CI Source type {} is currently not supported".format(ci_src_option))
 
     # User specific configuration
     config.add_section("USER")
@@ -278,7 +281,8 @@ def generate_config():
     if wave_spreadsheet.lower() in ["yes", "y"]:
         wave_spreadsheet_path = input("Absolute path to spreadsheet: ")
         config.set("APP", "wave_spreadsheet_path", wave_spreadsheet_path)
-        if wave_columns_to_include := input("Provide a list of comma separate values denoting the columns you want to retain: "):
+        if wave_columns_to_include := input(
+                "Provide a list of comma separate values denoting the columns you want to retain: "):
             config.set("APP", "wave_spreadsheet_columns",
                        f"[{wave_columns_to_include}]")
             # This will just put in the default mapping. Will require manual intervention
@@ -322,7 +326,8 @@ def write_to_file(config):
         mkdir(f"{app_path}/data")
         mkdir(f"{app_path}/data/logs")
         mkdir(f"{app_path}/data/results")
-    if config.has_option("EXPORT", "filesystem_path") and config.get("EXPORT", "filesystem_path"):
+    if config.has_option("EXPORT", "filesystem_path") and config.get(
+            "EXPORT", "filesystem_path"):
         down_dir = config.get("EXPORT", "filesystem_path")
         sub_dir = "downloads"
         if not path.isdir("{0}/{1}".format(down_dir, sub_dir)):
@@ -414,7 +419,8 @@ def update_config(data):
     write_new_config = False
     options_list = [d.strip("{}").replace('"', '') for d in data.split(",")]
 
-    # Loop over current config options, per section, and compare with UI input fields
+    # Loop over current config options, per section, and compare with UI input
+    # fields
     for section in config_obj.sections():
         options = config_obj.items(section)
         y += len(options)

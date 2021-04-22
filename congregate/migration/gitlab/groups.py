@@ -5,8 +5,9 @@ from requests.exceptions import RequestException
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.processes import start_multi_process_stream_with_args, start_multi_process_stream
 from congregate.helpers.mdbc import MongoConnector
-from congregate.helpers.misc_utils import remove_dupes, get_timedelta, json_pretty, safe_json_response, write_json_to_file, strip_protocol
+from congregate.helpers.misc_utils import remove_dupes, get_timedelta, safe_json_response, strip_protocol
 from congregate.helpers.migrate_utils import get_full_path_with_parent_namespace, is_top_level_group, get_staged_groups, find_user_by_email_comparison_without_id
+from congregate.helpers.json_utils import json_pretty, write_json_to_file
 from congregate.migration.gitlab.variables import VariablesClient
 from congregate.migration.gitlab.badges import BadgesClient
 from congregate.migration.gitlab.api.groups import GroupsApi
@@ -37,7 +38,8 @@ class GroupsClient(BaseClass):
                 group_id, host, token) if m["id"] != 1]
             group["projects"] = list(self.groups_api.get_all_group_projects(
                 group_id, host, token, with_shared=False))
-            for subgroup in self.groups_api.get_all_subgroups(group_id, host, token):
+            for subgroup in self.groups_api.get_all_subgroups(
+                    group_id, host, token):
                 self.log.debug("traversing into a subgroup")
                 self.traverse_groups(
                     host, token, subgroup)
@@ -46,21 +48,22 @@ class GroupsClient(BaseClass):
 
         mongo.close_connection()
 
-    def retrieve_group_info(self, host, token, location="source", processes=None):
+    def retrieve_group_info(
+            self, host, token, location="source", processes=None):
         prefix = ""
         if location != "source":
             prefix = location
 
         if self.config.src_parent_group_path:
-            start_multi_process_stream_with_args(self.traverse_groups, 
-                self.groups_api.get_all_subgroups(
-                    self.config.src_parent_id, host, token), host, token, processes=processes)
+            start_multi_process_stream_with_args(self.traverse_groups,
+                                                 self.groups_api.get_all_subgroups(
+                                                     self.config.src_parent_id, host, token), host, token, processes=processes)
             self.traverse_groups(host, token, safe_json_response(self.groups_api.get_group(
                 self.config.src_parent_id, host, token)))
         else:
             start_multi_process_stream_with_args(self.traverse_groups,
-                self.groups_api.get_all_groups(
-                    host, token), host, token, processes=processes)
+                                                 self.groups_api.get_all_groups(
+                                                     host, token), host, token, processes=processes)
 
     def remove_import_user(self, gid):
         try:
@@ -136,7 +139,8 @@ class GroupsClient(BaseClass):
                     group = resp.json()
                     try:
                         if group.get("created_at", None):
-                            if get_timedelta(group["created_at"]) < self.config.max_asset_expiration_time:
+                            if get_timedelta(
+                                    group["created_at"]) < self.config.max_asset_expiration_time:
                                 self.groups_api.delete_group(
                                     group["id"],
                                     self.config.destination_host,
@@ -196,14 +200,16 @@ class GroupsClient(BaseClass):
             return group
         return None
 
-    def find_group_id_by_path(self, host, token, full_name_with_parent_namespace):
+    def find_group_id_by_path(self, host, token,
+                              full_name_with_parent_namespace):
         group = self.find_group_by_path(
             host, token, full_name_with_parent_namespace)
         if group is not None:
             return group.get("id", None)
         return None
 
-    def search_for_group_pr_namespace_by_full_name_with_parent_namespace(self, host, token, full_name_with_parent_namespace, is_group):
+    def search_for_group_pr_namespace_by_full_name_with_parent_namespace(
+            self, host, token, full_name_with_parent_namespace, is_group):
         resp = None
         if is_group:
             resp = self.groups_api.get_group_by_full_path(

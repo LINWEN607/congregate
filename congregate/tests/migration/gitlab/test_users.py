@@ -32,11 +32,15 @@ class UsersTests(unittest.TestCase):
     # pylint: disable=no-member
     @responses.activate
     # pylint: enable=no-member
-    @patch('congregate.helpers.conf.Config.source_type', new_callable=PropertyMock)
-    @patch('congregate.helpers.conf.Config.source_host', new_callable=PropertyMock)
-    @patch.object(ConfigurationValidator, 'source_token', new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.source_type',
+           new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.source_host',
+           new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'source_token',
+                  new_callable=PropertyMock)
     @patch("congregate.helpers.api.generate_v4_request_url")
-    def test_find_user_by_email_comparison_incorrect_user(self, url, src_token, src_host, src_type):
+    def test_find_user_by_email_comparison_incorrect_user(
+            self, url, src_token, src_host, src_type):
         url_value = "https://gitlabsource.com/api/v4/users/5"
         url.return_value = url_value
         src_token.return_value = "token"
@@ -52,14 +56,20 @@ class UsersTests(unittest.TestCase):
     # pylint: disable=no-member
     @responses.activate
     # pylint: enable=no-member
-    @patch('congregate.helpers.conf.Config.source_type', new_callable=PropertyMock)
-    @patch('congregate.helpers.conf.Config.source_host', new_callable=PropertyMock)
-    @patch.object(ConfigurationValidator, 'source_token', new_callable=PropertyMock)
-    @patch('congregate.helpers.conf.Config.destination_host', new_callable=PropertyMock)
-    @patch.object(ConfigurationValidator, 'destination_token', new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.source_type',
+           new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.source_host',
+           new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'source_token',
+                  new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.destination_host',
+           new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'destination_token',
+                  new_callable=PropertyMock)
     @patch("congregate.helpers.api.generate_v4_request_url")
     @patch.object(UsersApi, "search_for_user_by_email")
-    def test_find_user_by_email_comparison_found_user(self, search, url, dest_token, dest_host, src_token, src_host, src_type):
+    def test_find_user_by_email_comparison_found_user(
+            self, search, url, dest_token, dest_host, src_token, src_host, src_type):
         url_value = "https://gitlabsource.com/api/v4/users/5"
         url.return_value = url_value
         src_token.return_value = "token"
@@ -78,9 +88,12 @@ class UsersTests(unittest.TestCase):
 
     @patch.object(UsersClient, "is_username_group_name")
     @patch.object(UsersApi, "search_for_user_by_username")
-    @patch('congregate.helpers.conf.Config.destination_host', new_callable=PropertyMock)
-    @patch.object(ConfigurationValidator, 'destination_token', new_callable=PropertyMock)
-    def test_user_exists_true(self, dest_token, dest_host, search, users_client):
+    @patch('congregate.helpers.conf.Config.destination_host',
+           new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'destination_token',
+                  new_callable=PropertyMock)
+    def test_user_exists_true(
+            self, dest_token, dest_host, search, users_client):
         users_client.return_value = False
         dest_host.return_value = "https//gitlab.example.com"
         dest_token.return_value = "token"
@@ -93,9 +106,12 @@ class UsersTests(unittest.TestCase):
 
     @patch.object(UsersClient, "is_username_group_name")
     @patch.object(UsersApi, "search_for_user_by_username")
-    @patch('congregate.helpers.conf.Config.destination_host', new_callable=PropertyMock)
-    @patch.object(ConfigurationValidator, 'destination_token', new_callable=PropertyMock)
-    def test_user_exists_false(self, dest_token, dest_host, search, users_client):
+    @patch('congregate.helpers.conf.Config.destination_host',
+           new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'destination_token',
+                  new_callable=PropertyMock)
+    def test_user_exists_false(
+            self, dest_token, dest_host, search, users_client):
         users_client.return_value = False
         dest_host.return_value = "https//gitlab.example.com"
         dest_token.return_value = "token"
@@ -108,9 +124,12 @@ class UsersTests(unittest.TestCase):
 
     @patch.object(UsersClient, "is_username_group_name")
     @patch.object(UsersApi, "search_for_user_by_username")
-    @patch('congregate.helpers.conf.Config.destination_host', new_callable=PropertyMock)
-    @patch.object(ConfigurationValidator, 'destination_token', new_callable=PropertyMock)
-    def test_user_exists_over_100(self, dest_token, dest_host, search, users_client):
+    @patch('congregate.helpers.conf.Config.destination_host',
+           new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'destination_token',
+                  new_callable=PropertyMock)
+    def test_user_exists_over_100(
+            self, dest_token, dest_host, search, users_client):
         users_client.return_value = False
         dest_host.return_value = "https//gitlab.example.com"
         dest_token.return_value = "token"
@@ -126,9 +145,12 @@ class UsersTests(unittest.TestCase):
 
     @patch.object(UsersClient, "is_username_group_name")
     @patch.object(UsersApi, "search_for_user_by_username")
-    @patch('congregate.helpers.conf.Config.destination_host', new_callable=PropertyMock)
-    @patch.object(ConfigurationValidator, 'destination_token', new_callable=PropertyMock)
-    def test_user_exists_no_results(self, dest_token, dest_host, search, users_client):
+    @patch('congregate.helpers.conf.Config.destination_host',
+           new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'destination_token',
+                  new_callable=PropertyMock)
+    def test_user_exists_no_results(
+            self, dest_token, dest_host, search, users_client):
         users_client.return_value = False
         dest_host.return_value = "https//gitlab.example.com"
         dest_token.return_value = "token"
@@ -140,8 +162,10 @@ class UsersTests(unittest.TestCase):
         self.assertFalse(actual)
 
     @patch.object(UsersApi, "search_for_user_by_email")
-    @patch('congregate.helpers.conf.Config.destination_host', new_callable=PropertyMock)
-    @patch.object(ConfigurationValidator, 'destination_token', new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.destination_host',
+           new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'destination_token',
+                  new_callable=PropertyMock)
     def test_user_email_exists_true(self, dest_token, dest_host, search):
         search.return_value = [self.mock_users.get_dummy_user()]
         dest_host.return_value = "https//gitlab.example.com"
@@ -153,8 +177,10 @@ class UsersTests(unittest.TestCase):
         self.assertTrue(actual)
 
     @patch.object(UsersApi, "search_for_user_by_email")
-    @patch('congregate.helpers.conf.Config.destination_host', new_callable=PropertyMock)
-    @patch.object(ConfigurationValidator, 'destination_token', new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.destination_host',
+           new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'destination_token',
+                  new_callable=PropertyMock)
     def test_user_email_exists_false(self, dest_token, dest_host, search):
         search.return_value = [self.mock_users.get_dummy_user()]
         dest_host.return_value = "https//gitlab.example.com"
@@ -166,8 +192,10 @@ class UsersTests(unittest.TestCase):
         self.assertFalse(actual)
 
     @patch.object(UsersApi, "search_for_user_by_email")
-    @patch('congregate.helpers.conf.Config.destination_host', new_callable=PropertyMock)
-    @patch.object(ConfigurationValidator, 'destination_token', new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.destination_host',
+           new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'destination_token',
+                  new_callable=PropertyMock)
     def test_user_email_exists_over_100(self, dest_token, dest_host, search):
         dummy_large_list = []
         dest_host.return_value = "https//gitlab.example.com"
@@ -182,8 +210,10 @@ class UsersTests(unittest.TestCase):
         self.assertFalse(actual)
 
     @patch.object(UsersApi, "search_for_user_by_email")
-    @patch('congregate.helpers.conf.Config.destination_host', new_callable=PropertyMock)
-    @patch.object(ConfigurationValidator, 'destination_token', new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.destination_host',
+           new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'destination_token',
+                  new_callable=PropertyMock)
     def test_user_email_exists_no_results(self, dest_token, dest_host, search):
         dest_host.return_value = "https//gitlab.example.com"
         dest_token.return_value = "token"
@@ -197,13 +227,17 @@ class UsersTests(unittest.TestCase):
     # pylint: disable=no-member
     @responses.activate
     # pylint: enable=no-member
-    @patch('congregate.helpers.conf.Config.destination_host', new_callable=PropertyMock)
-    @patch.object(ConfigurationValidator, 'destination_token', new_callable=PropertyMock)
-    @patch.object(ConfigurationValidator, 'dstn_parent_id', new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.destination_host',
+           new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'destination_token',
+                  new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'dstn_parent_id',
+                  new_callable=PropertyMock)
     @patch('congregate.helpers.api.get_count')
     @patch.object(KeysClient, "migrate_user_ssh_keys")
     @patch.object(KeysClient, "migrate_user_gpg_keys")
-    def test_handle_user_creation(self, get_gpg, get_ssh, count, parent_id, dest_token, destination):
+    def test_handle_user_creation(
+            self, get_gpg, get_ssh, count, parent_id, dest_token, destination):
         get_ssh.return_value = True
         get_gpg.return_value = True
         count.return_value = 1
@@ -233,13 +267,17 @@ class UsersTests(unittest.TestCase):
     # pylint: disable=no-member
     @responses.activate
     # pylint: enable=no-member
-    @patch('congregate.helpers.conf.Config.destination_host', new_callable=PropertyMock)
-    @patch.object(ConfigurationValidator, 'destination_token', new_callable=PropertyMock)
-    @patch.object(ConfigurationValidator, 'dstn_parent_id', new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.destination_host',
+           new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'destination_token',
+                  new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'dstn_parent_id',
+                  new_callable=PropertyMock)
     @patch('congregate.helpers.api.get_count')
     @patch.object(KeysClient, "migrate_user_ssh_keys")
     @patch.object(KeysClient, "migrate_user_gpg_keys")
-    def test_handle_user_creation_user_already_exists_no_parent_group(self, get_gpg, get_ssh, count, parent_id, dest_token, destination):
+    def test_handle_user_creation_user_already_exists_no_parent_group(
+            self, get_gpg, get_ssh, count, parent_id, dest_token, destination):
         get_ssh.return_value = True
         get_gpg.return_value = True
         count.return_value = 1
@@ -269,13 +307,17 @@ class UsersTests(unittest.TestCase):
     # pylint: disable=no-member
     @responses.activate
     # pylint: enable=no-member
-    @patch('congregate.helpers.conf.Config.destination_host', new_callable=PropertyMock)
-    @patch.object(ConfigurationValidator, 'destination_token', new_callable=PropertyMock)
-    @patch.object(ConfigurationValidator, 'dstn_parent_id', new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.destination_host',
+           new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'destination_token',
+                  new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'dstn_parent_id',
+                  new_callable=PropertyMock)
     @patch('congregate.helpers.api.get_count')
     @patch.object(KeysClient, "migrate_user_ssh_keys")
     @patch.object(KeysClient, "migrate_user_gpg_keys")
-    def test_handle_user_creation_user_already_exists_with_parent_group(self, get_gpg, get_ssh, count, parent_id, dest_token, destination):
+    def test_handle_user_creation_user_already_exists_with_parent_group(
+            self, get_gpg, get_ssh, count, parent_id, dest_token, destination):
         get_ssh.return_value = True
         get_gpg.return_value = True
         count.return_value = 1
@@ -305,8 +347,10 @@ class UsersTests(unittest.TestCase):
     # pylint: disable=no-member
     @responses.activate
     # pylint: enable=no-member
-    @patch('congregate.helpers.conf.Config.destination_host', new_callable=PropertyMock)
-    @patch.object(ConfigurationValidator, 'destination_token', new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.destination_host',
+           new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'destination_token',
+                  new_callable=PropertyMock)
     @patch('congregate.helpers.api.get_count')
     def test_block_user(self, count, dest_token, destination):
         destination.return_value = "https://gitlabdestination.com"
@@ -393,11 +437,14 @@ class UsersTests(unittest.TestCase):
         self.assertEqual(
             result, self.mock_users.get_dummy_project_active_members())
 
-    @patch('congregate.helpers.conf.Config.destination_host', new_callable=PropertyMock)
-    @patch.object(ConfigurationValidator, 'destination_token', new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.destination_host',
+           new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'destination_token',
+                  new_callable=PropertyMock)
     @patch.object(UsersApi, "search_for_user_by_email")
     @patch.object(UsersClient, "user_email_exists")
-    def test_create_valid_username_found_email_returns_username(self, mock_email_check, mock_user_search, mock_token, mock_host):
+    def test_create_valid_username_found_email_returns_username(
+            self, mock_email_check, mock_user_search, mock_token, mock_host):
         mock_host.return_value = "https://gitlabdestination.com"
         mock_token.return_value = "token"
         dummy_user = self.mock_users.get_dummy_user()
@@ -406,8 +453,10 @@ class UsersTests(unittest.TestCase):
         created_user_name = self.users.create_valid_username(dummy_user)
         self.assertEqual(created_user_name, dummy_user["username"])
 
-    @patch('congregate.helpers.conf.Config.destination_host', new_callable=PropertyMock)
-    @patch.object(ConfigurationValidator, 'destination_token', new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.destination_host',
+           new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'destination_token',
+                  new_callable=PropertyMock)
     @patch.object(UsersApi, "search_for_user_by_email")
     @patch.object(UsersClient, "user_email_exists")
     @patch.object(UsersClient, "username_exists")
@@ -428,9 +477,12 @@ class UsersTests(unittest.TestCase):
         created_user_name = self.users.create_valid_username(dummy_user)
         self.assertEqual(created_user_name, dummy_user["username"])
 
-    @patch('congregate.helpers.conf.Config.destination_host', new_callable=PropertyMock)
-    @patch.object(ConfigurationValidator, 'destination_token', new_callable=PropertyMock)
-    @patch('congregate.helpers.conf.Config.username_suffix', new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.destination_host',
+           new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'destination_token',
+                  new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.username_suffix',
+           new_callable=PropertyMock)
     @patch.object(UsersClient, "username_exists")
     @patch.object(UsersApi, "search_for_user_by_email")
     @patch.object(UsersClient, "user_email_exists")
@@ -454,9 +506,12 @@ class UsersTests(unittest.TestCase):
         self.assertEqual(created_user_name,
                          dummy_user["username"] + "_BLEPBLEP")
 
-    @patch('congregate.helpers.conf.Config.destination_host', new_callable=PropertyMock)
-    @patch.object(ConfigurationValidator, 'destination_token', new_callable=PropertyMock)
-    @patch('congregate.helpers.conf.Config.username_suffix', new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.destination_host',
+           new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'destination_token',
+                  new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.username_suffix',
+           new_callable=PropertyMock)
     @patch.object(UsersClient, "username_exists")
     @patch.object(UsersApi, "search_for_user_by_email")
     @patch.object(UsersClient, "user_email_exists")
@@ -485,9 +540,12 @@ class UsersTests(unittest.TestCase):
     @patch("congregate.helpers.api.generate_v4_request_url")
     @patch.object(UsersApi, "search_for_user_by_email")
     @patch('congregate.migration.gitlab.users.UsersClient.user_email_exists')
-    @patch('congregate.helpers.conf.Config.destination_host', new_callable=PropertyMock)
-    @patch.object(ConfigurationValidator, 'destination_token', new_callable=PropertyMock)
-    def test_find_user_primarily_by_email_with_email(self, dest_token, dest_host, check, search, url):
+    @patch('congregate.helpers.conf.Config.destination_host',
+           new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'destination_token',
+                  new_callable=PropertyMock)
+    def test_find_user_primarily_by_email_with_email(
+            self, dest_token, dest_host, check, search, url):
         user = {
             "email": "jdoe@email.com",
             "id": 5
@@ -512,11 +570,16 @@ class UsersTests(unittest.TestCase):
     @patch("congregate.helpers.api.generate_v4_request_url")
     @patch.object(UsersApi, "search_for_user_by_email")
     @patch('congregate.migration.gitlab.users.UsersClient.user_email_exists')
-    @patch('congregate.helpers.conf.Config.source_host', new_callable=PropertyMock)
-    @patch.object(ConfigurationValidator, 'source_token', new_callable=PropertyMock)
-    @patch('congregate.helpers.conf.Config.destination_host', new_callable=PropertyMock)
-    @patch.object(ConfigurationValidator, 'destination_token', new_callable=PropertyMock)
-    def test_find_user_primarily_by_email_with_id(self, dest_token, dest_host, src_token, src_host, check, search, url):
+    @patch('congregate.helpers.conf.Config.source_host',
+           new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'source_token',
+                  new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.destination_host',
+           new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'destination_token',
+                  new_callable=PropertyMock)
+    def test_find_user_primarily_by_email_with_id(
+            self, dest_token, dest_host, src_token, src_host, check, search, url):
         user = {
             "id": 5
         }
@@ -541,7 +604,8 @@ class UsersTests(unittest.TestCase):
     # pylint: enable=no-member
     @patch("congregate.helpers.api.generate_v4_request_url")
     @patch.object(UsersApi, "search_for_user_by_email")
-    def test_find_user_primarily_by_email_with_invalid_object(self, search, url):
+    def test_find_user_primarily_by_email_with_invalid_object(
+            self, search, url):
         user = {}
         url_value = "https://gitlabsource.com/api/v4/users/5"
         url.return_value = url_value
@@ -570,40 +634,52 @@ class UsersTests(unittest.TestCase):
         actual = self.users.find_user_primarily_by_email(user)
         self.assertIsNone(actual)
 
-    @patch('congregate.helpers.conf.Config.destination_host', new_callable=PropertyMock)
-    @patch.object(ConfigurationValidator, 'destination_token', new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.destination_host',
+           new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'destination_token',
+                  new_callable=PropertyMock)
     @patch.object(GroupsApi, "search_for_group")
-    def test_is_username_group_path_not_found(self, group_api, dest_token, dest_host):
+    def test_is_username_group_path_not_found(
+            self, group_api, dest_token, dest_host):
         group_api.return_value = [{"path": "xyz"}]
         dest_host.return_value = "https://gitlabdestination.com"
         dest_token.return_value = "token"
         response = self.users.is_username_group_name({"username": "abc"})
         self.assertFalse(response)
 
-    @patch('congregate.helpers.conf.Config.destination_host', new_callable=PropertyMock)
-    @patch.object(ConfigurationValidator, 'destination_token', new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.destination_host',
+           new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'destination_token',
+                  new_callable=PropertyMock)
     @patch.object(GroupsApi, "search_for_group")
-    def test_is_username_group_path_found(self, group_api, dest_token, dest_host):
+    def test_is_username_group_path_found(
+            self, group_api, dest_token, dest_host):
         group_api.return_value = [{"path": "abc"}]
         dest_host.return_value = "https://gitlabdestination.com"
         dest_token.return_value = "token"
         response = self.users.is_username_group_name({"username": "abc"})
         self.assertTrue(response)
 
-    @patch('congregate.helpers.conf.Config.destination_host', new_callable=PropertyMock)
-    @patch.object(ConfigurationValidator, 'destination_token', new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.destination_host',
+           new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'destination_token',
+                  new_callable=PropertyMock)
     @patch.object(GroupsApi, "search_for_group")
-    def test_is_username_group_path_found_ignore_case(self, group_api, dest_token, dest_host):
+    def test_is_username_group_path_found_ignore_case(
+            self, group_api, dest_token, dest_host):
         group_api.return_value = [{"path": "ABC"}]
         dest_host.return_value = "https://gitlabdestination.com"
         dest_token.return_value = "token"
         response = self.users.is_username_group_name({"username": "abc"})
         self.assertTrue(response)
 
-    @patch('congregate.helpers.conf.Config.destination_host', new_callable=PropertyMock)
-    @patch.object(ConfigurationValidator, 'destination_token', new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.destination_host',
+           new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'destination_token',
+                  new_callable=PropertyMock)
     @patch.object(GroupsApi, "search_for_group")
-    def test_is_username_group_name_error_assumes_none(self, group_api, dest_token, dest_host):
+    def test_is_username_group_name_error_assumes_none(
+            self, group_api, dest_token, dest_host):
         group_api.side_effect = Exception("THIS HAPPENED")
         dest_host.return_value = "https://gitlabdestination.com"
         dest_token.return_value = "token"
@@ -635,13 +711,18 @@ class UsersTests(unittest.TestCase):
     # pylint: disable=no-member
     @responses.activate
     # pylint: enable=no-member
-    @patch('congregate.helpers.conf.Config.destination_host', new_callable=PropertyMock)
-    @patch.object(ConfigurationValidator, 'destination_token', new_callable=PropertyMock)
-    @patch('congregate.helpers.conf.Config.source_type', new_callable=PropertyMock)
-    @patch.object(ConfigurationValidator, 'dstn_parent_id', new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.destination_host',
+           new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'destination_token',
+                  new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.source_type',
+           new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'dstn_parent_id',
+                  new_callable=PropertyMock)
     @patch('congregate.helpers.api.get_count')
     @patch.object(UsersClient, "generate_user_data")
-    def test_handle_user_creation_improperly_formatted_json(self, mock_gen, count, parent_id, source_type, dest_token, destination):
+    def test_handle_user_creation_improperly_formatted_json(
+            self, mock_gen, count, parent_id, source_type, dest_token, destination):
         count.return_value = 1
         parent_id.return_value = None
         source_type.return_value = "gitlab"
@@ -673,13 +754,19 @@ class UsersTests(unittest.TestCase):
     @patch("io.TextIOBase")
     @patch('builtins.open')
     @patch.object(UsersApi, "get_all_users")
-    @patch('congregate.helpers.conf.Config.destination_host', new_callable=PropertyMock)
-    @patch('congregate.helpers.conf.Config.source_host', new_callable=PropertyMock)
-    @patch('congregate.helpers.conf.Config.projects_limit', new_callable=PropertyMock)
-    @patch('congregate.helpers.conf.Config.src_parent_group_path', new_callable=PropertyMock)
-    @patch('congregate.helpers.conf.Config.group_sso_provider', new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.destination_host',
+           new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.source_host',
+           new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.projects_limit',
+           new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.src_parent_group_path',
+           new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.group_sso_provider',
+           new_callable=PropertyMock)
     @patch.object(MongoConnector, "close_connection")
-    def test_retrieve_user_info(self, close_connection, mock_sso, mock_src_parent_group_path, mock_limit, mock_src_host, mock_dest_host, mock_get_all_users, mock_open, mock_file):
+    def test_retrieve_user_info(self, close_connection, mock_sso, mock_src_parent_group_path,
+                                mock_limit, mock_src_host, mock_dest_host, mock_get_all_users, mock_open, mock_file):
         mock_sso.return_value = ""
         mock_src_parent_group_path.return_value = ""
         mock_limit.return_value = None
@@ -747,7 +834,8 @@ class UsersTests(unittest.TestCase):
         mongo = MongoConnector(client=mongomock.MongoClient)
         for user in self.mock_users.get_test_source_users():
             self.users.handle_retrieving_users(user, mongo=mongo)
-        actual_users = [d for d, _ in mongo.stream_collection("users-gitlab.example.com")]
+        actual_users = [d for d, _ in mongo.stream_collection(
+            "users-gitlab.example.com")]
 
         self.assertGreater(len(actual_users), 0)
 
@@ -758,14 +846,21 @@ class UsersTests(unittest.TestCase):
     @patch('builtins.open')
     @patch.object(UsersApi, "get_user")
     @patch.object(GroupsApi, "get_all_group_members")
-    @patch('congregate.helpers.conf.Config.destination_host', new_callable=PropertyMock)
-    @patch('congregate.helpers.conf.Config.source_host', new_callable=PropertyMock)
-    @patch('congregate.helpers.conf.Config.projects_limit', new_callable=PropertyMock)
-    @patch('congregate.helpers.conf.Config.src_parent_group_path', new_callable=PropertyMock)
-    @patch('congregate.helpers.conf.Config.src_parent_id', new_callable=PropertyMock)
-    @patch('congregate.helpers.conf.Config.group_sso_provider', new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.destination_host',
+           new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.source_host',
+           new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.projects_limit',
+           new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.src_parent_group_path',
+           new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.src_parent_id',
+           new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.group_sso_provider',
+           new_callable=PropertyMock)
     @patch.object(MongoConnector, "close_connection")
-    def test_retrieve_user_info_src_parent_group_sso(self, close_connection, mock_sso, mock_src_parent_id, mock_src_parent_group_path, mock_limit, mock_src_host, mock_dest_host, mock_get_all_group_members, mock_get_user, mock_open, mock_file):
+    def test_retrieve_user_info_src_parent_group_sso(self, close_connection, mock_sso, mock_src_parent_id, mock_src_parent_group_path,
+                                                     mock_limit, mock_src_host, mock_dest_host, mock_get_all_group_members, mock_get_user, mock_open, mock_file):
         mock_sso.return_value = "mock_sso"
         mock_src_parent_id.return_value = 42
         mock_limit.return_value = 100
@@ -843,14 +938,16 @@ class UsersTests(unittest.TestCase):
         mongo = MongoConnector(client=mongomock.MongoClient)
         for user in mock_users:
             self.users.handle_retrieving_users(user, mongo=mongo)
-        actual_users = [d for d, _ in mongo.stream_collection("users-gitlab.example.com")]
+        actual_users = [d for d, _ in mongo.stream_collection(
+            "users-gitlab.example.com")]
 
         self.assertGreater(len(actual_users), 0)
 
         for i, _ in enumerate(expected_users):
             self.assertDictEqual(expected_users[i], actual_users[i])
 
-    @patch('congregate.helpers.conf.Config.group_sso_provider_pattern', new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.group_sso_provider_pattern',
+           new_callable=PropertyMock)
     def test_generate_extern_uid(self, pattern):
         pattern.return_value = "email"
         mock_user = self.mock_users.get_dummy_user()
@@ -859,7 +956,8 @@ class UsersTests(unittest.TestCase):
 
         self.assertEqual(expected, actual)
 
-    @patch('congregate.helpers.conf.Config.group_sso_provider', new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.group_sso_provider',
+           new_callable=PropertyMock)
     def test_generate_extern_uid_no_pattern(self, provider):
         provider.return_value = "okta"
         mock_user = self.mock_users.get_dummy_user()
@@ -869,7 +967,8 @@ class UsersTests(unittest.TestCase):
 
         self.assertEqual(expected, actual)
 
-    @patch('congregate.helpers.conf.Config.group_sso_provider', new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.group_sso_provider',
+           new_callable=PropertyMock)
     def test_generate_extern_uid_no_pattern_no_ids(self, provider):
         provider.return_value = "okta"
         mock_user = self.mock_users.get_dummy_user()
@@ -878,8 +977,10 @@ class UsersTests(unittest.TestCase):
 
         self.assertEqual(expected, actual)
 
-    @patch('congregate.helpers.conf.Config.group_sso_provider_pattern', new_callable=PropertyMock)
-    @patch('congregate.helpers.conf.Config.group_sso_provider_map_file', new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.group_sso_provider_pattern',
+           new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.group_sso_provider_map_file',
+           new_callable=PropertyMock)
     def test_generate_extern_uid_with_hash(self, map_file, pattern):
         pattern.return_value = "hash"
         map_file.return_value = "path/to/file"
@@ -927,12 +1028,16 @@ class UsersTests(unittest.TestCase):
 
         self.assertEqual(expected, actual)
 
-    @patch.object(ConfigurationValidator, 'dstn_parent_id', new_callable=PropertyMock)
-    @patch('congregate.helpers.conf.Config.reset_password', new_callable=PropertyMock)
-    @patch('congregate.helpers.conf.Config.force_random_password', new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'dstn_parent_id',
+                  new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.reset_password',
+           new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.force_random_password',
+           new_callable=PropertyMock)
     @patch('congregate.migration.gitlab.users.UsersClient.generate_extern_uid')
     @patch('congregate.migration.gitlab.users.UsersClient.create_valid_username')
-    def test_generate_user_group_saml_post_data(self, valid_username, extern_uid, rand_pass, reset_pass, parent_id):
+    def test_generate_user_group_saml_post_data(
+            self, valid_username, extern_uid, rand_pass, reset_pass, parent_id):
         mock_user = self.mock_users.get_dummy_staged_user()
         valid_username.return_value = mock_user.get("username")
         extern_uid.return_value = mock_user.get("email")
@@ -980,23 +1085,29 @@ class UsersTests(unittest.TestCase):
 
         self.assertDictEqual(expected, actual)
 
-    @patch('congregate.helpers.conf.Config.group_sso_provider_pattern', new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.group_sso_provider_pattern',
+           new_callable=PropertyMock)
     def test_generate_hash_map_with_no_hash(self, pattern):
         pattern.return_value = "not hash"
         self.assertIsNone(self.users.generate_hash_map())
 
-    @patch('congregate.helpers.conf.Config.group_sso_provider_pattern', new_callable=PropertyMock)
-    @patch('congregate.helpers.conf.Config.group_sso_provider_map_file', new_callable=PropertyMock)
-    @patch('congregate.helpers.misc_utils.read_json_file_into_object')
-    def test_generate_hash_map_with_invalid_file(self, read_file, map_file, pattern):
+    @patch('congregate.helpers.conf.Config.group_sso_provider_pattern',
+           new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.group_sso_provider_map_file',
+           new_callable=PropertyMock)
+    @patch('congregate.helpers.json_utils.read_json_file_into_object')
+    def test_generate_hash_map_with_invalid_file(
+            self, read_file, map_file, pattern):
         pattern.return_value = "hash"
         map_file.return_file = "path/to/file"
         read_file.side_effect = FileNotFoundError
         with self.assertRaises(SystemExit):
             self.users.generate_hash_map()
 
-    @patch('congregate.helpers.conf.Config.group_sso_provider_pattern', new_callable=PropertyMock)
-    @patch('congregate.helpers.conf.Config.group_sso_provider_map_file', new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.group_sso_provider_pattern',
+           new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.group_sso_provider_map_file',
+           new_callable=PropertyMock)
     def test_generate_hash_map_with_valid_file(self, map_file, pattern):
         pattern.return_value = "hash"
         map_file.return_value = "path/to/file"

@@ -3,8 +3,10 @@ from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.issues import IssuesApi
 from congregate.migration.gitlab.api.merge_requests import MergeRequestsApi
 from congregate.migration.gitlab.groups import GroupsClient
-from congregate.helpers.misc_utils import rewrite_json_list_into_dict, get_rollback_log, is_dot_com, read_json_file_into_object
+from congregate.helpers.misc_utils import rewrite_json_list_into_dict, get_rollback_log
 from congregate.helpers.migrate_utils import get_full_path_with_parent_namespace, is_top_level_group
+from congregate.helpers.utils import is_dot_com
+from congregate.helpers.json_utils import read_json_file_into_object
 from congregate.helpers.processes import handle_multi_process_write_to_file_and_return_results
 
 
@@ -33,7 +35,8 @@ class GroupDiffClient(BaseDiffClient):
             "prevent_forking_outside_group",
             "shared_with_groups"   # Temporarily, until we add shared_with_groups feature
         ]
-        if is_dot_com(self.config.destination_host) or is_dot_com(self.config.source_host):
+        if is_dot_com(self.config.destination_host) or is_dot_com(
+                self.config.source_host):
             self.keys_to_ignore.append("ldap_group_links")
         if staged:
             self.source_data = read_json_file_into_object(
@@ -63,7 +66,8 @@ class GroupDiffClient(BaseDiffClient):
     def generate_single_diff_report(self, group):
         diff_report = {}
         group_path = get_full_path_with_parent_namespace(group["full_path"])
-        if isinstance(self.results.get(group_path), int) and self.results.get(group_path):
+        if isinstance(self.results.get(group_path),
+                      int) and self.results.get(group_path):
             return {
                 group_path: {
                     "info": "group already migrated",
@@ -124,10 +128,12 @@ class GroupDiffClient(BaseDiffClient):
             if self.config.source_tier not in ["core", "free"]:
                 group_diff["/groups/:id/hooks"] = self.generate_group_diff(
                     group, self.groups_api.get_all_group_hooks)
-            if self.config.source_tier not in ["core", "free", "starter", "bronze"]:
+            if self.config.source_tier not in [
+                    "core", "free", "starter", "bronze"]:
                 group_diff["/groups/:id/epics"] = self.generate_group_diff(
                     group, self.groups_api.get_all_group_epics)
         return group_diff
 
     def generate_group_diff(self, group, endpoint, **kwargs):
-        return self.generate_diff(group, "full_path", endpoint, parent_group=self.config.dstn_parent_group_path, **kwargs)
+        return self.generate_diff(group, "full_path", endpoint,
+                                  parent_group=self.config.dstn_parent_group_path, **kwargs)

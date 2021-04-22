@@ -3,7 +3,8 @@ import requests
 from congregate.helpers.decorators import stable_retry
 from congregate.helpers.audit_logger import audit_logger
 from congregate.helpers.logger import myLogger
-from congregate.helpers.misc_utils import generate_audit_log_message, safe_json_response, is_github_dot_com
+from congregate.helpers.misc_utils import generate_audit_log_message, safe_json_response
+from congregate.helpers.utils import is_github_dot_com
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.conf import Config
 
@@ -73,14 +74,16 @@ class GitHubApi():
         Given a host return a formatted url string for GraphQL
         """
         host = host.rstrip("/")
-        return f"{host}/graphql" if is_github_dot_com(host) else f"{host}/api/graphql"
+        return f"{host}/graphql" if is_github_dot_com(
+            host) else f"{host}/api/graphql"
 
     def generate_v3_request_url(self, host, api):
         """
         Create the REST URL for a given host and api end point.
         """
         host = host.rstrip("/")
-        return f"{host}/{api}" if is_github_dot_com(host) else f"{host}/api/v3/{api}"
+        return f"{host}/{api}" if is_github_dot_com(
+            host) else f"{host}/api/v3/{api}"
 
     @stable_retry
     def generate_v3_get_request(self, host, api, url=None, params=None):
@@ -93,10 +96,12 @@ class GitHubApi():
         headers = self.generate_v3_request_header(self.token)
         if params is None:
             params = {}
-        return requests.get(url, params=params, headers=headers, verify=self.config.ssl_verify)
+        return requests.get(url, params=params, headers=headers,
+                            verify=self.config.ssl_verify)
 
     @stable_retry
-    def generate_v3_basic_auth_get_request(self, host, api, username, password, url=None, params=None):
+    def generate_v3_basic_auth_get_request(
+            self, host, api, username, password, url=None, params=None):
         """
         Generates GET request to GitHub API for a Basic AUTH request
         """
@@ -107,10 +112,12 @@ class GitHubApi():
         auth = self.generate_v3_basic_auth(username, password)
         if params is None:
             params = {}
-        return requests.get(url, params=params, headers=headers, verify=self.config.ssl_verify, auth=auth)
+        return requests.get(url, params=params, headers=headers,
+                            verify=self.config.ssl_verify, auth=auth)
 
     @stable_retry
-    def generate_v3_basic_auth_post_request(self, host, api, username, password, data, header=None, description=None):
+    def generate_v3_basic_auth_post_request(
+            self, host, api, username, password, data, header=None, description=None):
         """
         Generates POST request to GitHub API for a Basic AUTH request
         """
@@ -119,10 +126,12 @@ class GitHubApi():
         if header is None:
             headers = self.generate_v3_basic_auth_request_header()
         auth = self.generate_v3_basic_auth(username, password)
-        return requests.post(url, json=data, headers=headers, verify=self.config.ssl_verify, auth=auth)
+        return requests.post(url, json=data, headers=headers,
+                             verify=self.config.ssl_verify, auth=auth)
 
     @stable_retry
-    def generate_v3_post_request(self, host, api, data, headers=None, description=None):
+    def generate_v3_post_request(
+            self, host, api, data, headers=None, description=None):
         """
         Generates POST request to GitHub API
         """
@@ -130,10 +139,12 @@ class GitHubApi():
         audit.info(generate_audit_log_message("POST", description, url))
         if headers is None:
             headers = self.generate_v3_request_header(self.token)
-        return requests.post(url, json=data, headers=headers, verify=self.config.ssl_verify)
+        return requests.post(url, json=data, headers=headers,
+                             verify=self.config.ssl_verify)
 
     @stable_retry
-    def generate_v3_patch_request(self, host, api, data, headers=None, description=None):
+    def generate_v3_patch_request(
+            self, host, api, data, headers=None, description=None):
         """
         Generates PATCH request to GitHub API
         """
@@ -141,7 +152,8 @@ class GitHubApi():
         audit.info(generate_audit_log_message("PATCH", description, url))
         if headers is None:
             headers = self.generate_v3_request_header(self.token)
-        return requests.patch(url, json=data, headers=headers, verify=self.config.ssl_verify)
+        return requests.patch(url, json=data, headers=headers,
+                              verify=self.config.ssl_verify)
 
     def replace_unwanted_characters(self, s):
         """
@@ -208,7 +220,8 @@ class GitHubApi():
                     url = h['next']
                     yield from self.pageless_data(resp_json, page_check=page_check, lastPage=lastPage)
                 resp_length = len(resp_json)
-                if (resp_length < limit) or all(k not in h.keys() for k in ["next", "last"]):
+                if (resp_length < limit) or all(k not in h.keys()
+                                                for k in ["next", "last"]):
                     if isinstance(resp_json, list):
                         for i, data in enumerate(resp_json):
                             if i == resp_length - 1:

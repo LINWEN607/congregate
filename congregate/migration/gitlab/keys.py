@@ -1,7 +1,8 @@
 from requests.exceptions import RequestException
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import is_error_message_present, is_dot_com, pop_multiple_keys
+from congregate.helpers.misc_utils import is_error_message_present, pop_multiple_keys
+from congregate.helpers.utils import is_dot_com
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.api.instance import InstanceApi
@@ -25,13 +26,16 @@ class KeysClient(BaseClass):
                 key = pop_multiple_keys(key, ["id", "created_at"])
                 resp = self.projects_api.create_new_project_deploy_key(
                     new_id, self.config.destination_host, self.config.destination_token, key)
-                # When a key being migrated already exists somewhere on the destination instance
-                if resp.status_code == 400 and is_error_message_present(resp) and isinstance(resp.json().get("message", None), dict):
+                # When a key being migrated already exists somewhere on the
+                # destination instance
+                if resp.status_code == 400 and is_error_message_present(
+                        resp) and isinstance(resp.json().get("message", None), dict):
                     if is_dot_com(self.config.destination_host):
                         self.log.warning(
                             f"Duplicate deploy key {key} for project {name} (ID: {new_id})\n{resp} - {resp.text}")
                     else:
-                        for k in self.instance_api.get_all_instance_deploy_keys(self.config.destination_host, self.config.destination_token):
+                        for k in self.instance_api.get_all_instance_deploy_keys(
+                                self.config.destination_host, self.config.destination_token):
                             if k and key["key"] == k["key"]:
                                 self.projects_api.enable_deploy_key(
                                     new_id, k["id"], self.config.destination_host, self.config.destination_token)

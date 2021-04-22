@@ -9,8 +9,11 @@ from requests.exceptions import RequestException
 from requests_toolbelt.multipart.encoder import MultipartEncoder
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers import api
-from congregate.helpers.misc_utils import download_file, migration_dry_run, get_dry_log, \
-    check_is_project_or_group_for_logging, json_pretty, safe_json_response
+from congregate.helpers.misc_utils import get_dry_log, \
+    safe_json_response
+from congregate.helpers.migrate_utils import check_is_project_or_group_for_logging, migration_dry_run
+from congregate.helpers.file_utils import download_file
+from congregate.helpers.json_utils import json_pretty
 from congregate.aws import AwsClient
 from congregate.migration.gitlab.projects import ProjectsClient
 from congregate.migration.gitlab.groups import GroupsClient
@@ -51,13 +54,16 @@ class ImportExportClient(BaseClass):
 
     def get_export_status(self, src_id, is_project=True):
         if is_project:
-            return self.projects_api.get_project_export_status(src_id, self.config.source_host, self.config.source_token)
+            return self.projects_api.get_project_export_status(
+                src_id, self.config.source_host, self.config.source_token)
         return self.get_group_export_status(src_id)
 
     def get_group_export_status(self, src_id):
-        return api.generate_get_request(self.config.source_host, self.config.source_token, "groups/%d/export" % src_id)
+        return api.generate_get_request(
+            self.config.source_host, self.config.source_token, "groups/%d/export" % src_id)
 
-    def wait_for_export_to_finish(self, src_id, name, is_project=True, retry=True):
+    def wait_for_export_to_finish(
+            self, src_id, name, is_project=True, retry=True):
         exported = False
         total_time = 0
         wait_time = self.config.export_import_status_check_time
@@ -126,7 +132,8 @@ class ImportExportClient(BaseClass):
             if response.status_code == 202:
                 status = self.groups_api.get_group_download_status(
                     self.config.source_host, self.config.source_token, gid)
-                # Assuming Max Group Export Download requests per minute per user = 1
+                # Assuming Max Group Export Download requests per minute per
+                # user = 1
                 if status.status_code == 200:
                     self.log.info(
                         f"Waiting {self.COOL_OFF_MINUTES} minutes to download group {gid}")
@@ -175,7 +182,8 @@ class ImportExportClient(BaseClass):
                 break
         return group
 
-    def get_export_response(self, source_id, is_project, data=None, headers=None):
+    def get_export_response(self, source_id, is_project,
+                            data=None, headers=None):
         """
         Gets the export response for both project and group exports
         """
@@ -248,7 +256,8 @@ class ImportExportClient(BaseClass):
             if import_response.status_code == 404:
                 timeout = 0
                 wait_time = self.config.export_import_status_check_time
-                while self.namespaces_api.get_namespace_by_full_path(dst_namespace, self.config.destination_host, self.config.destination_token).status_code != 200:
+                while self.namespaces_api.get_namespace_by_full_path(
+                        dst_namespace, self.config.destination_host, self.config.destination_token).status_code != 200:
                     self.log.info("Waiting {0} seconds to create {1} for project {2}".format(
                         self.config.export_import_status_check_time, dst_namespace, name))
                     timeout += wait_time
@@ -276,7 +285,8 @@ class ImportExportClient(BaseClass):
                 "project": project})
         return import_id
 
-    def attempt_import(self, filename, name, path, namespace, override_params, members):
+    def attempt_import(self, filename, name, path,
+                       namespace, override_params, members):
         if self.config.location == "aws":
             presigned_get_url = self.aws.generate_presigned_url(
                 filename, "GET")
@@ -355,7 +365,8 @@ class ImportExportClient(BaseClass):
                         self.config.destination_host, self.config.destination_token, data=data, files=files, headers=headers, message=message)
         return resp
 
-    def import_group(self, group, full_path, filename, dry_run=True, subgroups_only=False):
+    def import_group(self, group, full_path, filename,
+                     dry_run=True, subgroups_only=False):
         """
             Imports groups to destination GitLab instance.
         """
@@ -418,7 +429,8 @@ class ImportExportClient(BaseClass):
                 "group": group})
         return False
 
-    def attempt_group_import(self, filename, name, path, members, parent_id=None):
+    def attempt_group_import(self, filename, name,
+                             path, members, parent_id=None):
         resp = None
         self.log.info("Importing group {} from filesystem".format(name))
         # NOTE: Group export does not yet support (AWS/S3) user attributes
@@ -460,7 +472,8 @@ class ImportExportClient(BaseClass):
                 another_strip.pop(ind)
         return "/".join(another_strip)
 
-    def get_import_id_from_response(self, import_response, filename, name, path, dst_namespace, override_params, members):
+    def get_import_id_from_response(
+            self, import_response, filename, name, path, dst_namespace, override_params, members):
         total_time = 0
         retry = True
         import_id = None
@@ -476,7 +489,8 @@ class ImportExportClient(BaseClass):
                     self.log.info(
                         f"Re-importing project {name} to {dst_namespace}, waiting {self.COOL_OFF_MINUTES} minutes due to:\n{text}")
                     sleep(self.COOL_OFF_MINUTES * 60)
-                # Assuming Default deletion adjourned period (Admin -> Settings -> General -> Visibility and access controls) is 0
+                # Assuming Default deletion adjourned period (Admin -> Settings
+                # -> General -> Visibility and access controls) is 0
                 elif import_response.status_code in [409, 400]:
                     if total_time > timeout:
                         self.log.error(
@@ -510,14 +524,17 @@ class ImportExportClient(BaseClass):
                                 "failed_relations", None)}, f, indent=4)
                         break
                     elif state == "failed":
-                        if self.SAML_MSG in status_json.get("import_error", None):
+                        if self.SAML_MSG in status_json.get(
+                                "import_error", None):
                             self.log.error(
                                 f"Project {name} import to {dst_namespace} failed:\n{json_pretty(status_json)}")
                             return None
                         self.log.error(
                             f"Project {name} import to {dst_namespace} failed, with import status{' (re-importing)' if retry else ''}:\n{json_pretty(status_json)}")
                         # Delete and re-import once if the project import status failed, otherwise just delete
-                        # Assuming Default deletion adjourned period (Admin -> Settings -> General -> Visibility and access controls) is 0
+                        # Assuming Default deletion adjourned period (Admin ->
+                        # Settings -> General -> Visibility and access
+                        # controls) is 0
                         if retry:
                             self.log.info(
                                 f"Deleting project {name} from {dst_namespace} after import status failed (re-importing)")
@@ -529,7 +546,8 @@ class ImportExportClient(BaseClass):
                             total_time = 0
                         else:
                             return None
-                    # For any other import status (started, scheduled, etc.) wait for it to update
+                    # For any other import status (started, scheduled, etc.)
+                    # wait for it to update
                     elif total_time < timeout:
                         self.log.info(
                             f"Checking project {name} ({dst_namespace}) import status ({state}) in {wait_time} seconds")
@@ -591,7 +609,8 @@ class ImportExportClient(BaseClass):
                 else:
                     export_status = self.wait_for_export_to_finish(pid, name)
                     # If export status is unknown lookup the file on AWS
-                    # Could be misleading, since it assumes the file is complete
+                    # Could be misleading, since it assumes the file is
+                    # complete
                     exported = export_status or self.aws.is_export_on_aws(
                         filename)
         else:

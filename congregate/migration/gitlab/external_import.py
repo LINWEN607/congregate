@@ -1,6 +1,8 @@
 from time import sleep
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import migration_dry_run, is_error_message_present, safe_json_response, dig, is_dot_com, is_github_dot_com
+from congregate.helpers.misc_utils import is_error_message_present, safe_json_response, dig
+from congregate.helpers.migrate_utils import migration_dry_run
+from congregate.helpers.utils import is_dot_com, is_github_dot_com
 from congregate.migration.gitlab.api.external_import import ImportApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.instance import InstanceApi
@@ -48,7 +50,8 @@ class ImportClient(BaseClass):
             migration_dry_run("project", data)
             return self.get_failed_result(target_namespace, data)
 
-    def trigger_import_from_ghe(self, pid, path_with_namespace, tn, host, token, dry_run=True):
+    def trigger_import_from_ghe(
+            self, pid, path_with_namespace, tn, host, token, dry_run=True):
         '''
         Use the GitLab built in importers to start a GitHub Enterprise import.
 
@@ -99,9 +102,11 @@ class ImportClient(BaseClass):
                     self.config.destination_token
                 )
             )
-            if project_statistics and project_statistics.get("data", None) is not None:
+            if project_statistics and project_statistics.get(
+                    "data", None) is not None:
                 if project_statistics["data"].get("project", None) is not None:
-                    if dig(project_statistics, 'data', 'project', 'importStatus', default="") == "finished":
+                    if dig(project_statistics, 'data', 'project',
+                           'importStatus', default="") == "finished":
                         self.log.info(
                             f"Import Status is marked as finished for {full_path}. Import is complete")
                         success = True
@@ -113,7 +118,8 @@ class ImportClient(BaseClass):
                             f"Git commits have been found for {full_path}. Import is complete")
                         success = True
                         break
-                    if (stats["storageSize"] > 0) or (stats['repositorySize'] > 0):
+                    if (stats["storageSize"] > 0) or (
+                            stats['repositorySize'] > 0):
                         self.log.info(
                             f"Project storage is greater than 0 for {full_path}. Import is complete")
                         success = True

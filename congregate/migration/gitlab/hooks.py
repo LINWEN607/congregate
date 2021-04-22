@@ -1,7 +1,8 @@
 from requests.exceptions import RequestException
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import get_dry_log, is_error_message_present, is_dot_com, pop_multiple_keys
+from congregate.helpers.misc_utils import get_dry_log, is_error_message_present, pop_multiple_keys
+from congregate.helpers.utils import is_dot_com
 from congregate.migration.gitlab.api.instance import InstanceApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.groups import GroupsApi
@@ -21,7 +22,8 @@ class HooksClient(BaseClass):
                     self.config.source_host, self.config.source_token)
                 s_hooks_src = iter(resp)
                 # Used to check if hook already exists
-                if is_dot_com(self.config.destination_host) and self.config.dstn_parent_id:
+                if is_dot_com(
+                        self.config.destination_host) and self.config.dstn_parent_id:
                     s_hooks_dstn = list(self.groups_api.get_all_group_hooks(
                         self.config.dstn_parent_id, self.config.destination_host, self.config.destination_token))
                 else:
@@ -40,7 +42,8 @@ class HooksClient(BaseClass):
                     # hook does not include secret token
                     if not dry_run and not shc in s_hooks_dstn:
                         if is_dot_com(self.config.destination_host):
-                            # Only if migrating to the parent group on gitlab.com
+                            # Only if migrating to the parent group on
+                            # gitlab.com
                             if self.config.dstn_parent_id and "/" not in self.config.dstn_parent_group_path:
                                 add_resp = self.groups_api.add_group_hook(
                                     self.config.destination_host, self.config.destination_token, self.config.dstn_parent_id, shc)

@@ -5,7 +5,7 @@ from flask import jsonify
 from . import app
 
 # try:
-from congregate.helpers.misc_utils import get_congregate_path
+from congregate.helpers.utils import get_congregate_path
 # except ImportError:
 #     from cli import stage_projects
 #     from cli.config import update_config

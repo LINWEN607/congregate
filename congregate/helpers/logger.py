@@ -3,7 +3,7 @@ from logging import getLogger, FileHandler, StreamHandler, Formatter, Handler, I
 import json
 import requests
 
-from congregate.helpers.misc_utils import get_congregate_path
+from congregate.helpers.utils import get_congregate_path
 
 loggers = {}
 log_file_format = \
