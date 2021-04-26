@@ -2,7 +2,7 @@ import json
 from csv import reader
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import strip_numbers
+from congregate.helpers.string_utils import strip_numbers
 
 
 '''

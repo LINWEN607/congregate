@@ -10,7 +10,7 @@ from re import sub, split
 from configparser import ConfigParser, ParsingError
 
 from congregate.helpers.utils import get_congregate_path
-from congregate.helpers.misc_utils import deobfuscate
+from congregate.helpers.string_utils import deobfuscate
 
 
 class Config(object):

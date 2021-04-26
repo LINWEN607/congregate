@@ -1,6 +1,7 @@
 from congregate.helpers.base_class import BaseClass
 from congregate.migration.jenkins.api.base import JenkinsApi
-from congregate.helpers.misc_utils import convert_to_underscores, strip_protocol
+from congregate.helpers.misc_utils import strip_protocol
+from congregate.helpers.string_utils import convert_to_underscores
 from congregate.helpers.processes import start_multi_process_stream
 from congregate.helpers.mdbc import MongoConnector
 

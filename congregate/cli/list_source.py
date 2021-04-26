@@ -20,7 +20,8 @@ from congregate.migration.teamcity.base import TeamcityClient as TeamcityData
 
 from congregate.helpers.mdbc import MongoConnector
 
-from congregate.helpers.misc_utils import deobfuscate, strip_protocol
+from congregate.helpers.misc_utils import strip_protocol
+from congregate.helpers.string_utils import deobfuscate
 
 b = BaseClass()
 

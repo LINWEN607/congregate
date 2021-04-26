@@ -61,10 +61,6 @@ def remove_dupes_but_take_higher_access(my_list):
     return new_list
 
 
-def strip_numbers(s):
-    return sub(r"[0-9]+", '', s)
-
-
 def expiration_date():
     return (date.today() + timedelta(days=2)).strftime('%Y-%m-%d')
 
@@ -180,20 +176,10 @@ def sanitize_booleans_in_dict(d):
     return d
 
 
-def obfuscate(prompt):
-    return b64encode(getpass.getpass(prompt).encode("ascii")).decode("ascii")
 
 
-def deobfuscate(secret):
-    try:
-        return b64decode(secret.encode("ascii")).decode("ascii")
-    except Exception as e:
-        print(f"Invalid token - {e}")
-        sys.exit()
 
 
-def convert_to_underscores(s):
-    return sub(r" |\/|\.|\:", "_", s)
 
 
 def pretty_print_key(s):
@@ -380,22 +366,6 @@ def pop_multiple_keys(src, keys):
     for k in keys:
         src.pop(k, None)
     return src
-
-
-def clean_split(s, *args, **kwargs):
-    """
-        Returns split string without any empty string elements
-
-        :param: s: (str) the string to split
-        :param: *args, **kwargs: any arguments you need to pass to the split function
-
-        example usage:
-
-        s = "hello/world"
-        clean_split(s, "/")
-        ['hello', 'world']
-    """
-    return list(filter(None, s.split(*args, **kwargs)))
 
 
 def sort_dict(d):

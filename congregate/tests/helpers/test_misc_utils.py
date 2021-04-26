@@ -122,18 +122,6 @@ class MiscUtilsTests(unittest.TestCase):
         actual = misc.remove_dupes_with_keys(L, ["id", "path"])
         self.assertEqual(expected, actual)
 
-    def test_strip_numbers(self):
-        stripped = misc.strip_numbers("aaa98bbb98hhh222133")
-        self.assertEqual(stripped, "aaabbbhhh")
-
-    def test_strip_numbers_returns_empty(self):
-        stripped = misc.strip_numbers("12345")
-        self.assertEqual(stripped, "")
-
-    def test_strip_numbers_returns_string_on_no_numbers(self):
-        stripped = misc.strip_numbers("ABCD")
-        self.assertEqual(stripped, "ABCD")
-
     def test_parse_query_params(self):
         qp = misc.parse_query_params({"abc": 1})
         self.assertEqual(qp, "?abc=1")
@@ -156,17 +144,7 @@ class MiscUtilsTests(unittest.TestCase):
         assert misc.get_rollback_log(True) == "Rollback: "
         assert misc.get_rollback_log("whatever") == "Rollback: "
 
-    @mock.patch("getpass.getpass")
-    def test_obfuscate(self, secret):
-        secret.return_value = "test"
-        self.assertEqual(misc.obfuscate("Enter secret: "), "dGVzdA==")
-
-    def test_deobfuscate(self):
-        self.assertEqual(misc.deobfuscate("dGVzdA=="), "test")
-
-    def test_deobfuscate_failed(self):
-        with self.assertRaises(SystemExit):
-            misc.deobfuscate("ddddGVzdA==")
+    
 
     def test_rewrite_json_list_into_dict(self):
         initial = [
@@ -270,24 +248,6 @@ class MiscUtilsTests(unittest.TestCase):
 
         self.assertEqual(expected, actual)
 
-    def test_convert_single_space_to_underscore(self):
-        expected = "hello_world"
-        actual = misc.convert_to_underscores("hello world")
-
-        self.assertEqual(expected, actual)
-
-    def test_convert_multiple_spaces_to_underscore(self):
-        expected = "replacing_spaces_with_underscores_in_a_sentence"
-        actual = misc.convert_to_underscores(
-            "replacing spaces with underscores in a sentence")
-
-        self.assertEqual(expected, actual)
-
-    def test_convert_multiple_slashes_to_underscore(self):
-        expected = "absolute_path_to_file"
-        actual = misc.convert_to_underscores("absolute/path/to/file")
-
-        self.assertEqual(expected, actual)
 
     def test_get_hash_of_dict(self):
         expected = "97abd2c1280faf011ac57adcf2bcad8a180e5a08"
@@ -419,13 +379,6 @@ class MiscUtilsTests(unittest.TestCase):
         self.assertEqual({"path": "path"},
                          misc.pop_multiple_keys(src, ["id", "name"]))
         self.assertEqual(src, misc.pop_multiple_keys(src, ["ids", "names"]))
-
-    def test_clean_split(self):
-        test_string = "/path/to/file"
-        expected = ["path", "to", "file"]
-        actual = misc.clean_split(test_string, "/")
-
-        self.assertListEqual(expected, actual)
 
     def test_sort_dict(self):
         test_dict = {

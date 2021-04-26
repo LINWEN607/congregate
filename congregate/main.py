@@ -167,8 +167,8 @@ if __name__ == '__main__':
     from congregate.helpers import conf
     from congregate.helpers.logger import myLogger
     from congregate.helpers.utils import get_congregate_path, rotate_logs, stitch_json_results
-    from congregate.helpers.misc_utils import obfuscate, deobfuscate, \
-        strip_protocol, dig
+    from congregate.helpers.misc_utils import strip_protocol, dig
+    from congregate.helpers.string_utils import obfuscate, deobfuscate
     from congregate.helpers.ui_utils import spin_up_ui
 else:
     import sys
@@ -177,8 +177,8 @@ else:
     from congregate.helpers import conf
     from congregate.helpers.logger import myLogger
     from congregate.helpers.utils import get_congregate_path, rotate_logs, stitch_json_results
-    from congregate.helpers.misc_utils import obfuscate, deobfuscate, \
-        strip_protocol, dig
+    from congregate.helpers.misc_utils import strip_protocol, dig
+    from congregate.helpers.string_utils import obfuscate, deobfuscate
     from congregate.helpers.ui_utils import spin_up_ui
 
 app_path = get_congregate_path()
@@ -243,7 +243,7 @@ def main():
             from congregate.migration.github.diff.repodiff import RepoDiffClient
             from congregate.helpers.user_util import map_users, map_and_stage_users_by_email_match
             from congregate.helpers.mdbc import MongoConnector
-            from congregate.helpers.misc_utils import convert_to_underscores
+            from congregate.helpers.string_utils import convert_to_underscores
             from congregate.migration.github.repos import ReposClient
             from congregate.cli.ldap_group_sync import LdapGroupSync
 

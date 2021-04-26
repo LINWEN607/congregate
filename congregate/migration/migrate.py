@@ -15,6 +15,7 @@ from requests.exceptions import RequestException
 import congregate.helpers.misc_utils as misc_utils
 import congregate.helpers.migrate_utils as mig_utils
 import congregate.helpers.json_utils as json_utils
+import congregate.helpers.string_utils as string_utils
 import congregate.helpers.utils as utils
 from congregate.helpers import api
 from congregate.helpers.reporting import Reporting
@@ -355,7 +356,7 @@ class MigrateClient(BaseClass):
                     "github_source"):
                 if self.scm_source in single_source.get("src_hostname", None):
                     gh_host = single_source["src_hostname"]
-                    gh_token = misc_utils.deobfuscate(
+                    gh_token = string_utils.deobfuscate(
                         single_source["src_access_token"])
                     self.gh_repos = ReposClient(gh_host, gh_token)
         else:
@@ -416,7 +417,7 @@ class MigrateClient(BaseClass):
                     JenkinsClient(
                         jc["jenkins_ci_src_hostname"],
                         jc["jenkins_ci_src_username"],
-                        misc_utils.deobfuscate(
+                        string_utils.deobfuscate(
                             jc["jenkins_ci_src_access_token"]
                         )
                     )
@@ -439,7 +440,7 @@ class MigrateClient(BaseClass):
         if teamcity_configs := self.config.list_ci_source_config(
                 "teamcity_ci_source"):
             for tc in teamcity_configs:
-                tc_client = TeamcityClient(tc["tc_ci_src_hostname"], tc["tc_ci_src_username"], misc_utils.deobfuscate(
+                tc_client = TeamcityClient(tc["tc_ci_src_hostname"], tc["tc_ci_src_username"], string_utils.deobfuscate(
                     tc["tc_ci_src_access_token"]))
                 result[project["path_with_namespace"]]["teamcity_variables"] = (
                     self.migrate_teamcity_variables(
