@@ -10,6 +10,7 @@ Usage:
     congregate stage-projects <projects>... [--skip-users] [--commit] [--scm-source=hostname]
     congregate stage-groups <groups>... [--skip-users] [--commit] [--scm-source=hostname]
     congregate stage-wave <wave> [--commit] [--scm-source=hostname]
+    congregate create-stage-wave-csv [--commit]
     congregate migrate [--processes=<n>] [--reporting] [--skip-users] [--skip-adding-members] [--skip-group-export] [--skip-group-import] [--skip-project-export] [--skip-project-import] [--only-post-migration-info] [--subgroups-only] [--scm-source=hostname] [--commit]
     congregate rollback [--hard-delete] [--skip-users] [--skip-groups] [--skip-projects] [--commit]
     congregate ui
@@ -108,6 +109,7 @@ Commands:
                                                 All groups can be staged with '.' or 'all'.
                                                 Individual ones can be staged as a space delimited list of integers (group IDs).
     stage-wave                              Stage wave of projects based on migration wave spreadsheet. This only takes a single wave for input
+    create-stage-wave-csv                   Generate a baseline version of the CSV for stage wave from the listed data
     migrate                                 Commence migration based on configuration and staged assets.
     rollback                                Remove staged users/groups/projects on destination.
     ui                                      Deploy UI to port 8000.
@@ -238,6 +240,7 @@ def main():
             from congregate.cli.stage_projects import ProjectStageCLI
             from congregate.cli.stage_groups import GroupStageCLI
             from congregate.cli.stage_wave import WaveStageCLI
+            from congregate.cli.stage_wave_csv_generator import WaveStageCSVGeneratorCLI
             from congregate.helpers.seed.generator import SeedDataGenerator
             from congregate.migration.gitlab.diff.userdiff import UserDiffClient
             from congregate.migration.gitlab.diff.projectdiff import ProjectDiffClient
@@ -294,6 +297,17 @@ def main():
                 wcli = WaveStageCLI()
                 wcli.stage_data(
                     arguments['<wave>'], dry_run=DRY_RUN, skip_users=SKIP_USERS, scm_source=SCM_SOURCE)
+
+            if arguments["create-stage-wave-csv"]:
+                wscsvCli = WaveStageCSVGeneratorCLI()
+                wscsvCli.generate(
+                    destination_file=config.wave_spreadsheet_path,
+                    header_info={
+                        "headers": config.wave_spreadsheet_columns, 
+                        "header_map": config.wave_spreadsheet_column_to_project_property_mapping
+                    },
+                    dry_run=DRY_RUN                    
+                )
 
             if arguments["migrate"]:
                 migrate = MigrateClient(

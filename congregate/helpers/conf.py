@@ -435,6 +435,19 @@ class Config(object):
         return self.prop_dict("APP", "wave_spreadsheet_column_mapping")
 
     @property
+    def wave_spreadsheet_column_to_project_property_mapping(self):
+        """
+        Similar to wave_spreadsheet_column_mapping, this defines how our headers map to properties in the project object 
+        for when we generate the stage wave CSV file
+
+        Example output:
+        {
+            "Source Url": "http_url_to_repo"
+        }
+        """
+        return self.prop_dict("APP", "wave_spreadsheet_column_to_project_property_mapping")
+
+    @property
     def mongo_host(self):
         """
         The explicit host for the mongodb connection. Defaults to None
