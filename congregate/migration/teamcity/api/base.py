@@ -1,7 +1,7 @@
 import requests
 
 from bs4 import BeautifulSoup as bs
-from congregate.helpers.misc_utils import xml_to_dict, dig
+from congregate.helpers.dict_utils import xml_to_dict, dig
 from congregate.helpers.decorators import stable_retry
 from congregate.helpers.logger import myLogger
 from congregate.helpers.conf import Config

@@ -5,7 +5,8 @@ from congregate.migration.gitlab.api.issues import IssuesApi
 from congregate.migration.gitlab.api.merge_requests import MergeRequestsApi
 from congregate.migration.gitlab.api.project_repository import ProjectRepositoryApi
 from congregate.migration.github.repos import ReposClient
-from congregate.helpers.misc_utils import rewrite_json_list_into_dict, get_rollback_log, dig
+from congregate.helpers.misc_utils import get_rollback_log
+from congregate.helpers.dict_utils import  rewrite_json_list_into_dict, dig
 from congregate.helpers.string_utils import deobfuscate
 from congregate.helpers.json_utils import read_json_file_into_object
 from congregate.helpers.migrate_utils import get_dst_path_with_namespace

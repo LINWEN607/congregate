@@ -1,7 +1,9 @@
 import json
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import remove_dupes, remove_dupes_but_take_higher_access, dig
+from congregate.helpers.list_utils import remove_dupes
+from congregate.helpers.misc_utils import remove_dupes_but_take_higher_access
+from congregate.helpers.dict_utils import dig
 from congregate.migration.bitbucket.api.projects import ProjectsApi
 from congregate.migration.bitbucket.users import UsersClient
 from congregate.migration.bitbucket.repos import ReposClient

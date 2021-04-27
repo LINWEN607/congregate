@@ -1,7 +1,8 @@
 from requests.exceptions import RequestException
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import is_error_message_present, pop_multiple_keys
+from congregate.helpers.misc_utils import is_error_message_present
+from congregate.helpers.dict_utils import pop_multiple_keys
 from congregate.helpers.utils import is_dot_com
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.users import UsersApi

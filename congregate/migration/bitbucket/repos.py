@@ -2,7 +2,9 @@ import json
 
 from urllib.parse import quote_plus
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import remove_dupes, remove_dupes_but_take_higher_access, safe_json_response, dig
+from congregate.helpers.misc_utils import safe_json_response, remove_dupes_but_take_higher_access
+from congregate.helpers.list_utils import remove_dupes
+from congregate.helpers.dict_utils import dig
 from congregate.migration.bitbucket.api.repos import ReposApi
 from congregate.migration.bitbucket.api.users import UsersApi
 from congregate.migration.bitbucket.users import UsersClient

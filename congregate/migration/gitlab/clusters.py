@@ -1,7 +1,8 @@
 from requests.exceptions import RequestException
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import is_error_message_present, safe_json_response, dig
+from congregate.helpers.misc_utils import is_error_message_present, safe_json_response
+from congregate.helpers.dict_utils import dig
 from congregate.helpers.migrate_utils import get_dst_path_with_namespace
 from congregate.helpers.utils import is_dot_com
 from congregate.migration.gitlab.api.projects import ProjectsApi

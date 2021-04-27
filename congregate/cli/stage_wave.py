@@ -4,7 +4,8 @@ Congregate - GitLab instance migration utility
 Copyright (c) 2021 - GitLab
 """
 
-from congregate.helpers.misc_utils import rewrite_list_into_dict, get_dry_log, safe_json_response
+from congregate.helpers.misc_utils import get_dry_log, safe_json_response
+from congregate.helpers.dict_utils import rewrite_list_into_dict
 from congregate.helpers.string_utils import clean_split
 from congregate.migration.meta.etl import WaveSpreadsheetHandler
 from congregate.migration.gitlab.api.groups import GroupsApi

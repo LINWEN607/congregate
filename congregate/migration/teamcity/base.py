@@ -1,7 +1,8 @@
 import re
 from congregate.helpers.base_class import BaseClass
 from congregate.migration.teamcity.api.base import TeamcityApi
-from congregate.helpers.misc_utils import strip_protocol, dig
+from congregate.helpers.misc_utils import strip_protocol
+from congregate.helpers.dict_utils import dig
 from congregate.helpers.string_utils import convert_to_underscores
 from congregate.helpers.processes import start_multi_process_stream
 from congregate.helpers.mdbc import MongoConnector

@@ -167,7 +167,8 @@ if __name__ == '__main__':
     from congregate.helpers import conf
     from congregate.helpers.logger import myLogger
     from congregate.helpers.utils import get_congregate_path, rotate_logs, stitch_json_results
-    from congregate.helpers.misc_utils import strip_protocol, dig
+    from congregate.helpers.misc_utils import strip_protocol
+    from congregate.helpers.dict_utils import dig
     from congregate.helpers.string_utils import obfuscate, deobfuscate
     from congregate.helpers.ui_utils import spin_up_ui
 else:
@@ -177,7 +178,8 @@ else:
     from congregate.helpers import conf
     from congregate.helpers.logger import myLogger
     from congregate.helpers.utils import get_congregate_path, rotate_logs, stitch_json_results
-    from congregate.helpers.misc_utils import strip_protocol, dig
+    from congregate.helpers.misc_utils import strip_protocol
+    from congregate.helpers.dict_utils import dig
     from congregate.helpers.string_utils import obfuscate, deobfuscate
     from congregate.helpers.ui_utils import spin_up_ui
 

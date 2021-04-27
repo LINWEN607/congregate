@@ -4,7 +4,7 @@ from requests.exceptions import RequestException
 from congregate.helpers import api, logger as log
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.decorators import stable_retry
-from congregate.helpers.misc_utils import pop_multiple_keys
+from congregate.helpers.dict_utils import pop_multiple_keys
 from congregate.migration.gitlab.projects import ProjectsApi
 
 

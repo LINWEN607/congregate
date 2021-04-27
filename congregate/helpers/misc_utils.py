@@ -1,43 +1,13 @@
-import os
 import base64
-import errno
-import json
-import getpass
 import re
-import hashlib
-import sys
 
 from collections import Counter
-from base64 import b64encode, b64decode
 from copy import deepcopy
-from shutil import copy
 from re import sub
 from datetime import timedelta, date, datetime
 from types import GeneratorType
-from xml.parsers.expat import ExpatError
 from urllib.parse import urlparse
-from xmltodict import parse as xmlparse
 from requests import Response
-
-
-def remove_dupes(my_list):
-    """
-        Basic deduping function to remove any duplicates from a list
-    """
-    return list({v["id"]: v for v in my_list}.values())
-
-
-def remove_dupes_with_keys(my_list, list_of_keys):
-    """
-        Deduping function to remove any duplicates from a list based on a set of keys
-    """
-    d = {}
-    for v in my_list:
-        key = ""
-        for k in list_of_keys:
-            key += str(v.get(k, ""))
-        d[key] = v
-    return list(d.values())
 
 
 def remove_dupes_but_take_higher_access(my_list):
@@ -78,65 +48,6 @@ def parse_query_params(params):
     return query_params_string
 
 
-def rewrite_list_into_dict(l, comparison_key, prefix="", lowercase=False):
-    """
-    Rewrites list of dictionaries into a dictionary for easier nested dict lookup
-
-        :param: l: (list) list to convert to a dictionary
-        :param: comparison_key: (str) key to use for lookup. Needs to be a unique value within the nested dictionaries like an ID
-        :param: prefix: (str) optional string to use as a prefix for the key lookup
-        :param: lowercase: (bool) will convert all comparison keys to lowercase to avoid any issues with case sensitive key lookups
-        :return: (dict) rewritten dictionary
-    """
-    rewritten_obj = {}
-    for i, _ in enumerate(l):
-        new_obj = l[i]
-        key = l[i][comparison_key]
-        if prefix:
-            key = prefix + str(key)
-        if lowercase:
-            rewritten_obj[str(key).lower()] = new_obj
-        else:
-            rewritten_obj[key] = new_obj
-
-    return rewritten_obj
-
-
-def rewrite_json_list_into_dict(l):
-    """
-        Converts a JSON list:
-        [
-            {
-                "hello": {
-                    "world": "how are you"
-                }
-            },
-            {
-                "world": {
-                    "how": "are you"
-                }
-            }
-        ]
-
-        to:
-        {
-            "hello": {
-                "world": "how are you"
-            },
-            "world": {
-                "how": "are you"
-            }
-        }
-
-        Note: The top level keys in the nested objects must be unique or else data will be overwritten
-    """
-    new_dict = {}
-    for i, _ in enumerate(l):
-        key = list(l[i].keys())[0]
-        new_dict[key] = l[i][key]
-    return new_dict
-
-
 def input_generator(params):
     for param in params:
         yield param
@@ -150,84 +61,8 @@ def get_rollback_log(rollback=False):
     return "Rollback: " if rollback else ""
 
 
-def xml_to_dict(data):
-    return sanitize_booleans_in_dict(safe_xml_parse(data))
-
-
-def safe_xml_parse(data):
-    try:
-        return xmlparse(data)
-    except ExpatError:
-        return {}
-
-
-def sanitize_booleans_in_dict(d):
-    """
-        Helper method to convert string representations of boolean values to boolean type
-    """
-    for k, v in d.items():
-        if isinstance(v, dict):
-            sanitize_booleans_in_dict(v)
-        if isinstance(v, str):
-            if v.lower() == 'false':
-                d[k] = False
-            elif v.lower() == 'true':
-                d[k] = True
-    return d
-
-
-
-
-
-
-
-
 def pretty_print_key(s):
     return " ".join(w.capitalize() for w in s.split("_"))
-
-
-def find(key, dictionary):
-    """
-        Nested dictionary lookup from https://gist.github.com/douglasmiranda/5127251
-    """
-    if isinstance(dictionary, dict):
-        for k, v in dictionary.items():
-            if k == key:
-                yield v
-            elif isinstance(v, dict):
-                for result in find(key, v):
-                    yield result
-            elif isinstance(v, list):
-                for d in v:
-                    for result in find(key, d):
-                        yield result
-
-
-def dig(dictionary, *args, default=None):
-    """
-        Recursive dictionary key lookup function
-
-        Example:
-            dig({"nest": {"hello": {"world": "this is nested"}}}, "nest", "hello")
-            >>>> {'world': 'this is nested'}
-
-        :param dictionary: (dict) dictionary to traverse
-        :param *args: (tuple) series of keys to dig through
-        :return: If the most nested key is found, the value of the key
-
-    """
-    if not args:
-        return dictionary
-    if isinstance(dictionary, dict):
-        for i, arg in enumerate(args):
-            found = dictionary.get(arg, None)
-            if found is not None:
-                if isinstance(found, dict):
-                    args = args[i + 1:]
-                    return dig(found, *args, default=default)
-                return found
-            return default
-    return default
 
 
 def is_error_message_present(response):
@@ -275,27 +110,6 @@ def validate_name(name, log=None):
     return valid
 
 
-def list_to_dict(lst):
-    """
-    Convert list to dictionary for unique key comparison
-    Example input:
-        [1, 2, 3, 4, 5]
-    Example output:
-        {
-            1: True,
-            2: True,
-            3: True,
-            4: True,
-            5L True
-        }
-
-        :param lst: list to convert
-        :return: dictionary converted from list
-    """
-    res_dct = {lst[i]: True for i in range(0, len(lst), 2)}
-    return res_dct
-
-
 def generate_audit_log_message(req_type, message, url, data=None):
     try:
         return "{0}enerating {1} request to {2}{3}".format(
@@ -322,19 +136,6 @@ def safe_json_response(response):
     return None
 
 
-def safe_list_index_lookup(l, v):
-    """
-        Helper method to safely lookup the index of a list based on a specific value
-    """
-    return l.index(v) if v in l else None
-
-
-def get_hash_of_dict(d):
-    SHAhash = hashlib.sha1()
-    SHAhash.update(bytes(json.dumps(d), encoding="UTF-8"))
-    return SHAhash.hexdigest()
-
-
 def get_duplicate_paths(data, are_projects=True):
     """
         Legacy GL versions had case insensitive paths, which on newer GL versions are seen as duplicates
@@ -344,35 +145,8 @@ def get_duplicate_paths(data, are_projects=True):
     return [i for i, c in Counter(paths).items() if c > 1]
 
 
-def are_keys_in_dict(list_of_keys, dictionary):
-    keys_in_dict = False
-    for k in list_of_keys:
-        if k in dictionary.keys():
-            keys_in_dict = True
-    return keys_in_dict
-
-
-def is_nested_dict(d):
-    if isinstance(d, dict):
-        return any(isinstance(i, dict) for i in d.values())
-    return False
-
-
 def strip_protocol(s):
     return urlparse(s).netloc
-
-
-def pop_multiple_keys(src, keys):
-    for k in keys:
-        src.pop(k, None)
-    return src
-
-
-def sort_dict(d):
-    """
-        Sorts dictionary by key name in descending order
-    """
-    return {k: d[k] for k in sorted(d.keys())}
 
 
 def get_decoded_string_from_b64_response_content(response):

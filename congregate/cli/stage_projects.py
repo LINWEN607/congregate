@@ -7,7 +7,9 @@ Copyright (c) 2021 - GitLab
 import re
 import sys
 from congregate.helpers.migrate_utils import get_staged_user_projects
-from congregate.helpers.misc_utils import get_dry_log, remove_dupes, rewrite_list_into_dict, dig
+from congregate.helpers.misc_utils import get_dry_log
+from congregate.helpers.list_utils import remove_dupes
+from congregate.helpers.dict_utils import rewrite_list_into_dict, dig
 from congregate.cli.stage_base import BaseStageClass
 
 

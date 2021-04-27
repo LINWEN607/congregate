@@ -3,6 +3,8 @@ from unittest import mock
 from pytest import mark
 import congregate.helpers.utils as utils
 from congregate.tests.helpers.mock_data.results import MockProjectResults
+from congregate.helpers.dict_utils import xml_to_dict
+from congregate.tests.mockapi.jenkins.jobs import JenkinsJobsApi
 
 
 @mark.unit_test
@@ -75,5 +77,14 @@ class UtilsTests(unittest.TestCase):
 
         expected = results.get_completely_successful_results()
         actual = utils.stitch_json_results(steps=6)
+
+        self.assertEqual(expected, actual)
+    
+    def test_xml_to_dict_complex(self):
+        j = JenkinsJobsApi()
+        test_xml = j.get_test_job_config_xml()
+        expected = j.get_job_config_dict()
+
+        actual = xml_to_dict(test_xml)
 
         self.assertEqual(expected, actual)

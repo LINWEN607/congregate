@@ -4,7 +4,8 @@ import re
 from types import GeneratorType
 from bs4 import BeautifulSoup as bs
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import find as nested_find, is_error_message_present, rewrite_list_into_dict, is_nested_dict, dig, pretty_print_key
+from congregate.helpers.misc_utils import is_error_message_present, pretty_print_key
+from congregate.helpers.dict_utils import rewrite_list_into_dict, is_nested_dict, dig, find as nested_find
 from congregate.helpers.jsondiff import Comparator
 from congregate.helpers.mdbc import MongoConnector
 

@@ -5,7 +5,8 @@ from requests.exceptions import RequestException
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.processes import start_multi_process_stream_with_args, start_multi_process_stream
 from congregate.helpers.mdbc import MongoConnector
-from congregate.helpers.misc_utils import remove_dupes, get_timedelta, safe_json_response, strip_protocol
+from congregate.helpers.misc_utils import get_timedelta, safe_json_response, strip_protocol
+from congregate.helpers.list_utils import remove_dupes
 from congregate.helpers.migrate_utils import get_full_path_with_parent_namespace, is_top_level_group, get_staged_groups, find_user_by_email_comparison_without_id
 from congregate.helpers.json_utils import json_pretty, write_json_to_file
 from congregate.migration.gitlab.variables import VariablesClient

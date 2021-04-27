@@ -6,7 +6,9 @@ Copyright (c) 2021 - GitLab
 
 import json
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import get_dry_log, remove_dupes, strip_protocol, remove_dupes_with_keys, dig, validate_name
+from congregate.helpers.misc_utils import get_dry_log, strip_protocol, validate_name
+from congregate.helpers.list_utils import remove_dupes_with_keys, remove_dupes
+from congregate.helpers.dict_utils import dig
 
 
 class BaseStageClass(BaseClass):

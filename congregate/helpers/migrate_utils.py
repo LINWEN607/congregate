@@ -6,9 +6,10 @@ from shutil import copy
 from time import time
 from datetime import timedelta, datetime
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import is_error_message_present, dig, get_dry_log, strip_protocol
+from congregate.helpers.misc_utils import is_error_message_present, get_dry_log, strip_protocol
 from congregate.helpers.utils import is_dot_com, get_congregate_path
 from congregate.helpers.json_utils import read_json_file_into_object, write_json_to_file
+from congregate.helpers.dict_utils import dig
 from congregate.migration.gitlab.api.users import UsersApi
 
 b = BaseClass()

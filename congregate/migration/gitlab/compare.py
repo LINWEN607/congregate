@@ -1,11 +1,12 @@
 
+import json
+from os import path
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers import api, misc_utils
+from congregate.helpers.dict_utils import rewrite_list_into_dict
 from congregate.migration.gitlab.groups import GroupsClient
 from congregate.migration.gitlab.api.users import UsersApi
 from requests.exceptions import RequestException
-import json
-from os import path
 
 
 class CompareClient(BaseClass):
@@ -37,9 +38,9 @@ class CompareClient(BaseClass):
             '%s/data/groups.json' % self.app_path, self.config.source_host, self.config.source_token)
 
         shared_key = "full_path"
-        rewritten_destination_groups = misc_utils.rewrite_list_into_dict(
+        rewritten_destination_groups = rewrite_list_into_dict(
             destination_groups, shared_key)
-        rewritten_source_groups = misc_utils.rewrite_list_into_dict(
+        rewritten_source_groups = rewrite_list_into_dict(
             source_groups, shared_key, prefix=prefix)
 
         results = {
@@ -119,9 +120,9 @@ class CompareClient(BaseClass):
         else:
             results["member_counts_match"] = True
 
-        rewritten_source_members = misc_utils.rewrite_list_into_dict(
+        rewritten_source_members = rewrite_list_into_dict(
             source_members, "username")
-        rewritten_destination_members = misc_utils.rewrite_list_into_dict(
+        rewritten_destination_members = rewrite_list_into_dict(
             destination_members, "username")
 
         diff = {k: rewritten_destination_members[k] for k in set(

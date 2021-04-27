@@ -2,7 +2,7 @@ from pathlib import Path
 import json
 import pandas as pd
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import safe_list_index_lookup
+from congregate.helpers.list_utils import safe_list_index_lookup
 
 class WaveSpreadsheetHandler(BaseClass):
     def __init__(self, file_path, columns_to_use=None):

@@ -16,6 +16,7 @@ import congregate.helpers.misc_utils as misc_utils
 import congregate.helpers.migrate_utils as mig_utils
 import congregate.helpers.json_utils as json_utils
 import congregate.helpers.string_utils as string_utils
+import congregate.helpers.dict_utils as dict_utils
 import congregate.helpers.utils as utils
 from congregate.helpers import api
 from congregate.helpers.reporting import Reporting
@@ -1170,7 +1171,7 @@ class MigrateClient(BaseClass):
                 params = tc_client.teamcity_api.get_build_params(job)
                 try:
                     if params.get("properties", None) is not None:
-                        for param in misc_utils.dig(
+                        for param in dict_utils.dig(
                                 params, "properties", "property", default=[]):
                             if not self.variables.safe_add_variables(
                                 new_id,
