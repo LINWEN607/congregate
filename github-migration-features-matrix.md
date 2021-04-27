@@ -18,7 +18,7 @@
 |                  | Pull Requests             | Pull request comments, Review comments                           | :white_check_mark: | :white_check_mark: |
 |                  | Members                   |                                                                  | :white_check_mark: | :white_check_mark: |
 |                  | Wiki                      |                                                                  | :white_check_mark: | :white_check_mark: |
-| .                | Milestones                |                                                                  | :white_check_mark: | :white_check_mark: |
+|                  | Milestones                |                                                                  | :white_check_mark: | :white_check_mark: |
 |                  | Labels                    |                                                                  | :white_check_mark: | :white_check_mark: |
 |                  | Release note descriptions |                                                                  | :white_check_mark: | :white_check_mark: |
 |                  | LFS Objects               |                                                                  | :white_check_mark: | :white_check_mark: |
@@ -28,6 +28,7 @@
 |                  | Protected Tags            | Create Access Levels                                             | :x:                | :white_check_mark: |
 |                  | Push rules                |                                                                  | :x:                | :white_check_mark: |
 |                  | Merge request approvals   |                                                                  | :x:                | :white_check_mark: |
+|                  | Pages                     |                                                                  | :x:                | :heavy_minus_sign: |
 |                  | Default Branch            |                                                                  | :x:                | :x:                |
 |                  | Deploy keys               |                                                                  | :x:                | :x:                |
 |                  | Webhooks (w/o token)      |                                                                  | :x:                | :x:                |

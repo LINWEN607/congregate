@@ -187,14 +187,15 @@
 # wave_spreadsheet_path = /absolute/path/to/waves.xls
 
 ### Specify the column names for congregate to use from the spreadsheet. These names will be required to the right of the colon in the next configuration item.
-# wave_spreadsheet_columns = Migration wave, Date of execution, Repo URL, Group Path
+# wave_spreadsheet_columns = Migration wave, Date of execution, Repo URL, Group Path, Override
 
 ### If you are using columns that do not match the expected "Wave name", "Wave date", and "Source Url", you will need to provide a map setting like the example below
 # wave_spreadsheet_column_mapping = {
 #        "Wave name": "Migration wave",
 #        "Wave date": "Date of execution",
 #        "Source Url": "Repo URL",
-#        "Parent Path": "Group Path"
+#        "Parent Path": "Group Path",
+#        "Override": "Override"
 #    }
 
 ### Setting to enforce SSL Verification with our API requests. Defaults to True

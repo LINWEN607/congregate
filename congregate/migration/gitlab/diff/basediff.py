@@ -76,7 +76,7 @@ class BaseDiffClient(BaseClass):
     """
 
     def __init__(self):
-        super(BaseDiffClient, self).__init__()
+        super().__init__()
         self.keys_to_ignore = []
         self.results = None
 

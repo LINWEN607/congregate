@@ -172,7 +172,7 @@ def get_no_of_processes(processes):
     try:
         proc = int(processes) if processes else b.config.processes
         b.log.info(
-            f"Running command with {proc} parallel processes on {cpu_count} CPU")
+            f"Running command with {proc} parallel processes on {cpu_count()} CPU")
         return proc
     except ValueError:
         b.log.error(f"Input for # of processes is not an integer: {processes}")

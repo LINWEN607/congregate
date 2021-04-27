@@ -404,9 +404,9 @@ class StageWaveTests(unittest.TestCase):
             {
                 "id": 4,
                 "name": "Diaspora Client",
-                "namespace": "target_parent_group",
+                "namespace": "diaspora",
                 "path": "diaspora-client",
-                "path_with_namespace": "target_parent_group/diaspora-client",
+                "path_with_namespace": "diaspora/diaspora-client",
                 "visibility": "private",
                 "description": "Project that does stuff",
                 "jobs_enabled": None,
@@ -531,13 +531,14 @@ class StageWaveTests(unittest.TestCase):
         actual = self.wcli.find_group("http://github.test.com/test-group")
 
         self.assertEqual(expected, actual)
-    
+
     def test_find_group_invalid(self):
         self.wcli.group_paths = {
             "test-group": {
                 "path": "test-group"
             }
         }
-        actual = self.wcli.find_group("http://github.test.com/test-group/test-group")
+        actual = self.wcli.find_group(
+            "http://github.test.com/test-group/test-group")
 
         self.assertIsNone(actual)

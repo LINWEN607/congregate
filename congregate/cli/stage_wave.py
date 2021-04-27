@@ -79,19 +79,16 @@ class WaveStageCLI(BaseStageClass):
                 obj = self.get_project_metadata(project)
                 if parent_path := column_mapping.get("Parent Path"):
                     obj["target_namespace"] = row[parent_path].strip("/")
-                    if row.get("Override"):
-                        obj["path_with_namespace"] = "{0}/{1}".format(obj["target_namespace"], obj["path"])
-                        obj["namespace"] = obj["target_namespace"].split("/")[-1]
-                        obj["override_dstn_ns"] = True
-                    else:
-                        obj["override_dstn_ns"] = False
+                    obj["override_dstn_ns"] = bool(row.get("Override"))
                     if row.get("SWC AA ID"):
                         obj['swc_manager_name'] = row.get('SWC Manager Name')
                         obj['swc_manager_email'] = row.get('SWC Manager Email')
                         obj['swc_id'] = row.get('SWC AA ID')
                     else:
-                        self.log.warning(f"No SWC_ID for {obj['target_namespace']}")
-                self.append_project_data(obj, wave_data, row, dry_run=dry_run)
+                        self.log.warning(
+                            f"No SWC_ID for {obj['target_namespace']}")
+                self.append_project_data(
+                    obj, wave_data, row, dry_run=dry_run)
             elif group := self.find_group(repo_url):
                 group_copy = group.copy()
                 self.handle_parent_group(row, group_copy)
@@ -178,10 +175,12 @@ class WaveStageCLI(BaseStageClass):
                 obj["target_namespace"] = wave_row[parent_path].strip("/")
                 if wave_row.get("SWC AA ID"):
                     obj['swc_manager_name'] = wave_row.get('SWC Manager Name')
-                    obj['swc_manager_email'] = wave_row.get('SWC Manager Email')
+                    obj['swc_manager_email'] = wave_row.get(
+                        'SWC Manager Email')
                     obj['swc_id'] = wave_row.get('SWC AA ID')
                 else:
-                    self.log.warning(f"No SWC_ID for {obj['target_namespace']}")
+                    self.log.warning(
+                        f"No SWC_ID for {obj['target_namespace']}")
             # Append all project members to staged users
             for project_member in obj["members"]:
                 self.append_member_to_members_list([], project_member, dry_run)
@@ -207,7 +206,7 @@ class WaveStageCLI(BaseStageClass):
                 return wave_row[parent_path]
             else:
                 if len(set(full_path.split("/")) -
-                    set(parent_path.split("/"))) <= 1:
+                       set(parent_path.split("/"))) <= 1:
                     return f"{wave_row[parent_path]}/{full_path}"
             return full_path
 
@@ -235,4 +234,5 @@ class WaveStageCLI(BaseStageClass):
             if len(clean_split(repo_url, group_path, 1)) == 1:
                 return group
             else:
-                self.log.warning(f"Possible invalid group {repo_url} found. Review spreadsheet.")
+                self.log.warning(
+                    f"Possible invalid group {repo_url} found. Review spreadsheet.")

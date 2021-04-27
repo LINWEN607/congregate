@@ -126,7 +126,7 @@ Commands:
     migrate-variables-in-stage              Migrate CI variables for staged projects.
     mirror-staged-projects                  Set up project mirroring for staged projects.
     remove-all-mirrors                      Remove all project mirrors for staged projects.
-    update-projects-visibility               Return list of all migrated projects' visibility.
+    update-projects-visibility              Return list of all migrated projects' visibility.
     set-default-branch                      Set default branch to master for all projects on destination.
     enable-mirroring                        Start pull mirror process for all projects on destination.
     count-unarchived-projects               Return total number and list of all unarchived projects on source.
@@ -204,8 +204,8 @@ def main():
         SRC_INSTANCES = arguments["--src-instances"]
         SCM_SOURCE = arguments["--scm-source"]
 
-        if SCM_SOURCE is not None:
-            SCM_SOURCE = SCM_SOURCE.split("//")[-1]
+        if SCM_SOURCE:
+            SCM_SOURCE = strip_protocol(SCM_SOURCE)
 
         if arguments["--version"]:
             with open(f"{app_path}/pyproject.toml", "r") as f:
@@ -303,10 +303,10 @@ def main():
                 wscsvCli.generate(
                     destination_file=config.wave_spreadsheet_path,
                     header_info={
-                        "headers": config.wave_spreadsheet_columns, 
+                        "headers": config.wave_spreadsheet_columns,
                         "header_map": config.wave_spreadsheet_column_to_project_property_mapping
                     },
-                    dry_run=DRY_RUN                    
+                    dry_run=DRY_RUN
                 )
 
             if arguments["migrate"]:
@@ -434,8 +434,8 @@ def main():
                 results = compare.compare_staged_users()
                 log.info(
                     f"Staged user list:\n{dumps(results, indent=4, sort_keys=True)}")
-                log.info("Length: {}".format({key: len(value)
-                                              for key, value in results.items()}))
+                log.info(
+                    f"Length: {{key: len(value) for key, value in results.items()}}")
             if arguments["generate-seed-data"]:
                 s = SeedDataGenerator()
                 s.generate_seed_data(dry_run=DRY_RUN)
@@ -559,7 +559,8 @@ def main():
             print(obfuscate("Secret:"))
         if arguments["deobfuscate"]:
             data = deobfuscate(input("Masked secret:"))
-            subprocess.run("pbcopy", universal_newlines=True, input=data)
+            subprocess.run("pbcopy", universal_newlines=True,
+                           input=data, check=True)
             print("Secret copied to clipboard (pbcopy)")
 
 

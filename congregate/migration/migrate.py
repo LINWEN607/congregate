@@ -276,18 +276,18 @@ class MigrateClient(BaseClass):
                     }
                 group["parent_id"] = misc_utils.safe_json_response(
                     pnamespace)["id"] if group["parent_id"] else self.config.dstn_parent_id
-            if group.get("description", None) is None:
+            if group.get("description") is None:
                 group["description"] = ""
             result = misc_utils.safe_json_response(self.groups_api.create_group(
                 self.config.destination_host, self.config.destination_token, group))
             if result and not misc_utils.is_error_message_present(result):
-                if group_id := result.get("id", None):
+                if group_id := result.get("id"):
                     result["members"] = self.groups.add_members_to_destination_group(
                         self.config.destination_host, self.config.destination_token, group_id, members)
                     self.groups.remove_import_user(group_id)
                     if self.skip_adding_members:
                         for member in members:
-                            if member.get("user_id", None):
+                            if member.get("user_id"):
                                 resp = self.groups_api.remove_member(
                                     group_id, member["user_id"],
                                     self.config.destination_host,
@@ -303,11 +303,19 @@ class MigrateClient(BaseClass):
     def import_github_project(self, project):
         gh_host, gh_token = self.get_host_and_token()
         members = project.pop("members")
-        
-        if project.get("override_dstn_ns"):
-            path_with_namespace = project.get("path_with_namespace")
+        src_pwn = project["path_with_namespace"]
+        staged_tn = project.get("target_namespace")
+
+        if project.get("override_dstn_ns") and staged_tn:
+            dstn_pwn = f"{staged_tn}/{project['path']}"
+        elif staged_tn:
+            dstn_pwn = f"{staged_tn}/{src_pwn}"
+        elif self.config.dstn_parent_group_path:
+            dstn_pwn = f"{self.config.dstn_parent_group_path}/{src_pwn}"
         else:
-            path_with_namespace = f"{project.get('target_namespace', self.config.dstn_parent_group_path or '')}/{project.get('path_with_namespace', '')}".strip("/")
+            self.log.error(
+                f"Neither 'target_namespace' or 'dstn_parent_group_path' set for project {src_pwn}")
+            return None
 
         if target_namespace := mig_utils.get_target_namespace(project):
             tn = target_namespace
@@ -318,35 +326,36 @@ class MigrateClient(BaseClass):
         if self.groups.find_group_id_by_path(
                 self.config.destination_host, self.config.destination_token, tn):
             if dst_pid := self.projects.find_project_by_path(
-                    self.config.destination_host, self.config.destination_token, path_with_namespace):
-                self.log.warning(
-                    f"Skipping import. Repo {path_with_namespace} has already been imported")
+                    self.config.destination_host, self.config.destination_token, dstn_pwn):
                 result = self.ext_import.get_result_data(
-                    path_with_namespace, {"id": dst_pid})
+                    dstn_pwn, {"id": dst_pid})
                 if self.only_post_migration_info:
                     result = self.handle_gh_post_migration(
-                        result, path_with_namespace, project, dst_pid, members)
+                        result, dstn_pwn, project, dst_pid, members)
+                else:
+                    self.log.warning(
+                        f"Skipping import. Repo {dstn_pwn} has already been imported")
             else:
                 result = self.ext_import.trigger_import_from_ghe(
-                    project["id"], path_with_namespace, tn, gh_host, gh_token, dry_run=self.dry_run)
-                result_response = result[path_with_namespace]["response"]
+                    project["id"], dstn_pwn, tn, gh_host, gh_token, dry_run=self.dry_run)
+                result_response = result[dstn_pwn]["response"]
                 if (isinstance(result_response, dict)) and (
-                        project_id := result_response.get("id", None)):
+                        project_id := result_response.get("id")):
                     full_path = result_response.get("full_path").strip("/")
                     success = self.ext_import.wait_for_project_to_import(
                         full_path)
                     if success:
                         result = self.handle_gh_post_migration(
-                            result, path_with_namespace, project, project_id, members)
+                            result, dstn_pwn, project, project_id, members)
                     else:
-                        result = self.ext_import.get_failed_result(path_with_namespace, data={
+                        result = self.ext_import.get_failed_result(dstn_pwn, data={
                             "error": "Import time limit exceeded. Unable to execute post migration phase"
                         })
         else:
             log = f"Target namespace {tn} does not exist"
             self.log.info("Skipping import. " + log +
                           f" for {project['path']}")
-            result = self.ext_import.get_result_data(path_with_namespace, {
+            result = self.ext_import.get_result_data(dstn_pwn, {
                 "error": log
             })
         return result

@@ -225,7 +225,7 @@ def get_dst_path_with_namespace(p):
 
 def get_target_namespace(project):
     if target_namespace := project.get("target_namespace"):
-        if strip_protocol(target_namespace).lower() == project.get('namespace', '').lower():
+        if (strip_protocol(target_namespace).lower() == project.get('namespace', '').lower()) or project.get("override_dstn_ns"):
             return target_namespace
         else:
             return f"{target_namespace}/{project.get('namespace')}"

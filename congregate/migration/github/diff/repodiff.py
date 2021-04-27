@@ -6,8 +6,7 @@ from congregate.migration.gitlab.api.merge_requests import MergeRequestsApi
 from congregate.migration.gitlab.api.project_repository import ProjectRepositoryApi
 from congregate.migration.github.repos import ReposClient
 from congregate.helpers.misc_utils import get_rollback_log
-from congregate.helpers.dict_utils import  rewrite_json_list_into_dict, dig
-from congregate.helpers.string_utils import deobfuscate
+from congregate.helpers.dict_utils import rewrite_json_list_into_dict, dig
 from congregate.helpers.json_utils import read_json_file_into_object
 from congregate.helpers.migrate_utils import get_dst_path_with_namespace
 from congregate.helpers.processes import handle_multi_process_write_to_file_and_return_results
@@ -88,9 +87,12 @@ class RepoDiffClient(BaseDiffClient):
 
     def generate_single_diff_report(self, project):
         diff_report = {}
-        project_path = get_dst_path_with_namespace(project)
-        if not (project_id := dig(self.results.get(
-                project_path), "response", "repo_id")):
+        if target_namespace := project.get("target_namespace", None):
+            project_path = f"{target_namespace}/{project.get('path_with_namespace', '')}".strip(
+                "/")
+        else:
+            project_path = get_dst_path_with_namespace(project)
+        if not (project_id := dig(self.results.get(project_path), "response", "repo_id")):
             project_id = dig(self.results.get(project_path), "response", "id")
 
         project_path_replaced = project_path.replace(".", "_")
@@ -113,15 +115,11 @@ class RepoDiffClient(BaseDiffClient):
             try:
                 diff_report[project_path_replaced]["overall_accuracy"] = self.calculate_overall_accuracy(
                     diff_report[project_path_replaced])
-                # Cast all keys and values to strings to avoid mongo key
-                # validation errors
-                cleaned_data = {
-                    str(key): str(val) for key, val in (
-                        diff_report.copy()).items()}
+                # Cast all keys and values to strings to avoid mongo key validation errors
+                cleaned_data = {str(key): str(val)
+                                for key, val in (diff_report.copy()).items()}
                 mongo.insert_data(
-                    f"diff_report_{group_namespace}",
-                    cleaned_data,
-                    bypass_document_validation=True)
+                    f"diff_report_{group_namespace}", cleaned_data, bypass_document_validation=True)
                 mongo.close_connection()
                 return diff_report
             except Exception as e:
@@ -137,8 +135,7 @@ class RepoDiffClient(BaseDiffClient):
             }
         }
         mongo.insert_data(
-            f"diff_report_{group_namespace}",
-            missing_data.copy())
+            f"diff_report_{group_namespace}", missing_data.copy())
         mongo.close_connection()
         return missing_data
 
@@ -211,7 +208,5 @@ class RepoDiffClient(BaseDiffClient):
 
         return repo_diff
 
-    def generate_repo_diff(self, project, sort_key,
-                           source_data, gl_endpoint, **kwargs):
-        return self.generate_gh_diff(project, "path_with_namespace", sort_key, source_data,
-                                     gl_endpoint, parent_group=self.config.dstn_parent_group_path, **kwargs)
+    def generate_repo_diff(self, project, sort_key, source_data, gl_endpoint, **kwargs):
+        return self.generate_gh_diff(project, "path_with_namespace", sort_key, source_data, gl_endpoint, parent_group=self.config.dstn_parent_group_path or project.get("target_namespace", ""), **kwargs)

@@ -172,7 +172,8 @@ docker login registry.gitlab.com/gitlab-com/customer-success/professional-servic
 docker run \
 --name <name> \
 -v /var/run/docker.sock:/var/run/docker.sock \ # expose docker socket as volume
--v <path_to_local_storage>:/opt/congregate/data \ # expose data directory as volume
+-v <path_to_local_data>:/opt/congregate/data \ # expose data directory as volume
+-v <path_to_local_downloads>:/opt/congregate/downloads \ # if migrating from GitLab expose downloads directory as volume
 -p 8000:8000 \ # expose UI port
 -it registry.gitlab.com/gitlab-com/customer-success/professional-services-group/global-practice-development/migration/congregate:<version> \
 /bin/bash

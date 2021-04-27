@@ -26,7 +26,7 @@ class ReposClient(BaseClass):
     GROUP_TYPE = ["Organization", "Enterprise"]
 
     def __init__(self, host, token, processes=None):
-        super(ReposClient, self).__init__()
+        super().__init__()
         self.repos_api = ReposApi(host, token)
         self.users = UsersClient(host, token)
         self.users_api = UsersApi(host, token)
@@ -234,30 +234,32 @@ class ReposClient(BaseClass):
                     repo["name"], new_id))
             self.gl_projects_api.change_project_level_mr_approval_configuration(
                 new_id, self.config.destination_host, self.config.destination_token, conf)
-        # migrate approval rules
-        protected_branch_ids = []
-        for branch in self.gl_projects_api.get_all_project_protected_branches(
-                new_id, self.config.destination_host, self.config.destination_token):
-            protected_branch_ids.append(branch["id"])
 
-        des_user_ids = []
-        for user in self.get_email_list_of_reviewers_for_pr(
-                repo["namespace"], repo["path"]):
-            if des_user := find_user_by_email_comparison_without_id(user):
-                des_user_ids.append(des_user["id"])
+        # TODO: Refactor this method (and format_project_level_mr_rule) or remove completely
+        # # migrate approval rules
+        # protected_branch_ids = []
+        # for branch in self.gl_projects_api.get_all_project_protected_branches(
+        #         new_id, self.config.destination_host, self.config.destination_token):
+        #     protected_branch_ids.append(branch["id"])
 
-        rule = self.format_project_level_mr_rule(
-            new_id, protected_branch_ids, des_user_ids)
+        # dest_user_ids = []
+        # for user in self.get_email_list_of_reviewers_for_pr(
+        #         repo["namespace"], repo["path"]):
+        #     if dest_user := find_user_by_email_comparison_without_id(user):
+        #         dest_user_ids.append(dest_user["id"])
 
-        if is_error_message_present(rule) or not rule:
-            self.log.error(
-                "Failed to generate MR approval rules ({0}) for project {1}".format(
-                    rule, repo["name"]))
-            return False
-        else:
-            self.gl_projects_api.create_project_level_mr_approval_rule(
-                new_id, self.config.destination_host, self.config.destination_token, rule)
-            return True
+        # rule = self.format_project_level_mr_rule(
+        #     new_id, protected_branch_ids, dest_user_ids)
+
+        # if is_error_message_present(rule) or not rule:
+        #     self.log.error(
+        #         "Failed to generate MR approval rules ({0}) for project {1}".format(
+        #             rule, repo["name"]))
+        #     return False
+        # else:
+        #     self.gl_projects_api.create_project_level_mr_approval_rule(
+        #         new_id, self.config.destination_host, self.config.destination_token, rule)
+        #     return True
 
     def format_project_level_configuration(self, new_id, branch):
         return {
@@ -272,16 +274,15 @@ class ReposClient(BaseClass):
             "merge_requests_disable_committers_approval": False,
             "require_password_to_approve": False}
 
-    def format_project_level_mr_rule(
-            self, protected_branch_ids, user_ids=None, group_ids=None):
-        return{
-            "name": "gh_pr_rules",
-            "rule_type": "regular",
-            "user_ids": user_ids,
-            "group_ids": group_ids,
-            "approvals_required": 1,
-            "protected_branch_ids": protected_branch_ids
-        }
+    # def format_project_level_mr_rule(self, protected_branch_ids, user_ids=None, group_ids=None):
+    #     return{
+    #         "name": "gh_pr_rules",
+    #         "rule_type": "regular",
+    #         "user_ids": user_ids,
+    #         "group_ids": group_ids,
+    #         "approvals_required": 1,
+    #         "protected_branch_ids": protected_branch_ids
+    #     }
 
     def transform_gh_repo_commit(self, commits):
         list_of_commits = []
@@ -464,21 +465,17 @@ class ReposClient(BaseClass):
         start = time()
         rotate_logs()
         staged_projects = get_staged_projects()
-        self.log.info("Project count is: {}".format(len(staged_projects)))
+        self.log.info(f"Project count: {len(staged_projects)}")
         try:
-            for single_project in staged_projects:
-                single_project["archived"] = True
-                self.log.info("{0}Archiving source project {1}".format(
-                    get_dry_log(dry_run),
-                    single_project["path_with_namespace"]))
+            for sp in staged_projects:
+                self.log.info(
+                    f"{get_dry_log(dry_run)}Archiving source project {sp['path_with_namespace']}")
                 if not dry_run:
                     self.repos_api.update_repo(
-                        single_project["namespace"],
-                        single_project["name"],
-                        single_project)
+                        sp["namespace"], sp["name"], {"archived": True})
         except RequestException as re:
             self.log.error(
-                "Failed to archive staged projects, with error:\n{}".format(re))
+                f"Failed to archive staged projects, with error:\n{re}")
         finally:
             add_post_migration_stats(start, log=self.log)
 

@@ -20,6 +20,7 @@ alias drun='docker run \
               --name congregate \
               -v /var/run/docker.sock:/var/run/docker.sock \
               -v $HOME/congregate_data:/opt/congregate/data \
+              -v $HOME/congregate_downloads:/opt/congregate/downloads \
               -p 8000:8000 \
               -it registry.gitlab.com/gitlab-com/customer-success/professional-services-group/global-practice-development/migration/congregate:rolling-debian \
               /bin/bash'
