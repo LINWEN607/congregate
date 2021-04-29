@@ -3,22 +3,19 @@ from logging import getLogger, FileHandler, StreamHandler, Formatter, Handler, I
 import json
 import requests
 
-from congregate.helpers.utils import get_congregate_path
-
 loggers = {}
 log_file_format = \
     "[%(asctime)s][%(levelname)s]|%(module)s.%(funcName)s:%(lineno)d| %(message)s"
 
 
-def myLogger(name):
+def myLogger(name, app_path='.', log_name='application'):
     global loggers
-    app_path = get_congregate_path()
     if loggers.get(name):
         return loggers.get(name)
     else:
         logger = getLogger(name)
         logger.setLevel(INFO)
-        file_log_handler = FileHandler(f'{app_path}/data/logs/congregate.log')
+        file_log_handler = FileHandler(f'{app_path}/data/logs/{log_name}.log')
         stderr_log_handler = StreamHandler()
         formatter = Formatter(log_file_format, datefmt="%d %b %Y %H:%M:%S")
         file_log_handler.setFormatter(formatter)
@@ -41,20 +38,19 @@ class SlackLogHandler(Handler):
         "NOTSET": ":question:",
     }
 
-    def __init__(self):
+    def __init__(self, config=None):
         Handler.__init__(self)
+        self.config = config
 
     def emit(self, record):
         try:
-            from congregate.helpers.conf import Config
-            config = Config()
-            if config.slack_url:
+            if self.config.slack_url:
                 json_data = json.dumps({
                     "text": f"{record.asctime} - {record.module} - {record.msg}",
                     "username": f"{record.levelname} - {record.process}",
                     "icon_emoji": self.EMOJIS.get(record.levelname, self.EMOJIS["NOTSET"])
                 })
-                requests.post(config.slack_url, data=json_data.encode(
+                requests.post(self.config.slack_url, data=json_data.encode(
                     'ascii'), headers={'Content-Type': 'application/json'})
         except Exception as em:
             print("EXCEPTION: " + str(em))

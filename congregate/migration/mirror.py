@@ -1,7 +1,6 @@
 import json
 import requests
 from requests.exceptions import RequestException
-from congregate.helpers import api, logger as log
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.decorators import stable_retry
 from congregate.helpers.dict_utils import pop_multiple_keys
@@ -9,14 +8,9 @@ from congregate.migration.gitlab.projects import ProjectsApi
 
 
 class MirrorClient(BaseClass):
-
     def __init__(self):
-        # self.config = conf.Config()
         super(MirrorClient, self).__init__()
-        self.logger = log.myLogger(__name__)
         self.projects_api = ProjectsApi()
-        # self.total_to_remove = 0
-        # self.total_to_keep = 0
 
     @stable_retry
     def remove_mirror(self, project_id, dry_run=True):
@@ -122,7 +116,7 @@ class MirrorClient(BaseClass):
                 self.log.info(
                     "Attempting to generate personal shell repo for %s and create mirror" % generic_repo["name"])
                 # self.log.info(json.dumps(data, indent=4))
-                response = api.generate_post_request(
+                response = self.projects_api.api.generate_post_request(
                     self.config.destination_host, self.config.destination_token, "projects/user/%d" % namespace_id,
                     json.dumps(data)).json()
                 if response.get("id", None) is not None:
@@ -130,19 +124,18 @@ class MirrorClient(BaseClass):
                     default_branch = {
                         "default_branch": "master"
                     }
-                    api.generate_put_request(self.config.destination_host, self.config.destination_token,
+                    self.projects_api.api.generate_put_request(self.config.destination_host, self.config.destination_token,
                                              "projects/%d" % response["id"], json.dumps(default_branch))
             else:
                 self.log.info(
                     "Attempting to generate shell repo for %s and create mirror" % generic_repo["name"])
-                response = api.generate_post_request(
+                response = self.projects_api.api.generate_post_request(
                     self.config.destination_host,
                     self.config.destination_token,
                     "projects",
                     json.dumps(data)).json()
                 print(response)
 
-            # put_response = api.generate_put_request(self.config.destination_host, self.config.destination_token, "projects/%d" % response["id"], json.dumps(put_data))
             self.log.info(
                 "Project %s has been created and mirroring has been enabled" % generic_repo["name"])
             db_data = {
@@ -192,9 +185,9 @@ class MirrorClient(BaseClass):
                     "SKIP: Mirroring project (not a dict) {}".format(project))
 
     @stable_retry
-    def enable_mirror_by_id(self, id):
-        resp = api.generate_post_request(
-            self.config.destination_host, self.config.destination_token, "projects/%d/mirror/pull" % id, None)
+    def enable_mirror_by_id(self, pid):
+        resp = self.projects_api.api.generate_post_request(
+            self.config.destination_host, self.config.destination_token, "projects/%d/mirror/pull" % pid, None)
         print(resp.status_code)
 
     # TODO: This was disabled in the source repo
@@ -244,4 +237,4 @@ class MirrorClient(BaseClass):
                                                     "type": {"id": "PATTERN", "name": "Pattern"}}, "users": "",
                    "groups": ""}
         r = requests.session().post(api_url, auth=auth, proxies=PROXY_LIST, json=payload)
-        self.logger.info(r.status_code)
+        self.log.info(r.status_code)

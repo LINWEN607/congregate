@@ -1,9 +1,8 @@
 from json import dumps
-from congregate.helpers.base_class import BaseClass
-from congregate.helpers import api
+from congregate.migration.gitlab.api.base_api import GitLabApiWrapper
 
+class ImportApi(GitLabApiWrapper):
 
-class ImportApi(BaseClass):
     def import_from_github(self, host, token, data, message=None):
         """
         Import your projects from GitHub to GitLab via the API
@@ -20,7 +19,7 @@ class ImportApi(BaseClass):
             audit_data = data.copy()
             audit_data.pop("personal_access_token", None)
             message = f"Triggering import from GitHub with payload {audit_data}"
-        return api.generate_post_request(host, token, "import/github", dumps(data), description=message).json()
+        return self.api.generate_post_request(host, token, "import/github", dumps(data), description=message).json()
 
     def import_from_bitbucket_server(self, host, token, data, message=None):
         """
@@ -38,7 +37,7 @@ class ImportApi(BaseClass):
             audit_data = data.copy()
             audit_data.pop("personal_access_token", None)
             message = f"Triggering import from BitBucket Server with payload {audit_data}"
-        return api.generate_post_request(
+        return self.api.generate_post_request(
             host,
             token,
             "import/bitbucket_server",

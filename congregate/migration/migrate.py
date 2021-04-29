@@ -18,7 +18,6 @@ import congregate.helpers.json_utils as json_utils
 import congregate.helpers.string_utils as string_utils
 import congregate.helpers.dict_utils as dict_utils
 import congregate.helpers.utils as utils
-from congregate.helpers import api
 from congregate.helpers.reporting import Reporting
 from congregate.helpers.jobtemplategenerator import JobTemplateGenerator
 from congregate.helpers.processes import start_multi_process
@@ -1345,7 +1344,7 @@ class MigrateClient(BaseClass):
                 data = {
                     "visibility": "private"
                 }
-                change = api.generate_put_request(
+                change = self.projects_api.api.generate_put_request(
                     self.config.destination_host, self.config.destination_token, "projects/%d?visibility=private" % int(
                         i),
                     data=None)
@@ -1357,14 +1356,14 @@ class MigrateClient(BaseClass):
         # self.config.destination_host, self.config.destination_token,
         # "groups/%d/projects" % self.config.dstn_parent_id)
         subgroup_count = 0
-        for group in api.list_all(self.config.destination_host, self.config.destination_token,
-                                  "groups/%d/subgroups" % self.config.dstn_parent_id):
-            count = api.get_count(
+        for group in self.groups_api.get_all_subgroups(self.config.dstn_parent_id, 
+            self.config.destination_host, self.config.destination_token):
+            count = self.groups_api.api.get_count(
                 self.config.destination_host, self.config.destination_token, "groups/%d/projects" % group["id"])
             sub_count = 0
             if group.get("child_ids", None) is not None:
                 for child_id in group["child_ids"]:
-                    sub_count += api.get_count(self.config.destination_host,
+                    sub_count += self.projects_api.api.get_count(self.config.destination_host,
                                                self.config.destination_token, "groups/%d/projects" % child_id)
             subgroup_count += count
         # return subgroup_count + group_projects

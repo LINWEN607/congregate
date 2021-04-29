@@ -1,7 +1,7 @@
 from csv import reader
 
 from congregate.helpers.base_class import BaseClass
-import congregate.helpers.api as api
+from congregate.migration.gitlab.api.base_api import GitLabApiWrapper
 
 
 class LdapGroupSync(BaseClass):
@@ -13,6 +13,7 @@ class LdapGroupSync(BaseClass):
         super().__init__()
         self.ldap_dict = {}
         self.ldap_results = []
+        self.gl_wrapper = GitLabApiWrapper()
 
     def load_pdv(self, file_path):
         """
@@ -45,7 +46,7 @@ class LdapGroupSync(BaseClass):
                 group_id=link, cn=self.ldap_dict[link])
             self.log.info(gitlab_post_description)
             if not dry_run:
-                response_json = api.generate_post_request(
+                response_json = self.gl_wrapper.api.generate_post_request(
                     host=gitlab_host, token=gitlab_token, api=gitlab_api, data=gitlab_post_data, description=gitlab_post_description).json()
                 self.ldap_results.append(response_json)
             # TODO: Decide how error handling or output might work

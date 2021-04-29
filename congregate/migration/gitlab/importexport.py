@@ -8,7 +8,6 @@ from glob import glob
 from requests.exceptions import RequestException
 from requests_toolbelt.multipart.encoder import MultipartEncoder
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers import api
 from congregate.helpers.misc_utils import get_dry_log, \
     safe_json_response
 from congregate.helpers.migrate_utils import check_is_project_or_group_for_logging, migration_dry_run
@@ -59,7 +58,7 @@ class ImportExportClient(BaseClass):
         return self.get_group_export_status(src_id)
 
     def get_group_export_status(self, src_id):
-        return api.generate_get_request(
+        return self.projects_api.api.generate_get_request(
             self.config.source_host, self.config.source_token, "groups/%d/export" % src_id)
 
     def wait_for_export_to_finish(

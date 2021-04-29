@@ -1,8 +1,8 @@
 import json
-from congregate.helpers import api
+from congregate.migration.gitlab.api.base_api import GitLabApiWrapper
 
 
-class UsersApi():
+class UsersApi(GitLabApiWrapper):
 
     def get_user(self, uid, host, token):
         """
@@ -15,7 +15,7 @@ class UsersApi():
             :param: token: (str) Access token to GitLab instance
             :return: Response object containing the response to GET /users/:id
         """
-        return api.generate_get_request(host, token, f"users/{uid}")
+        return self.api.generate_get_request(host, token, f"users/{uid}")
 
     def get_user_email(self, uid, host, token):
         return self.get_user(uid, host, token).json()["email"]
@@ -31,7 +31,7 @@ class UsersApi():
             :param: token: (str) Access token to GitLab instance
             :return: Response object containing the response to GET /user
         """
-        return api.generate_get_request(host, token, "user")
+        return self.api.generate_get_request(host, token, "user")
 
     def get_all_users(self, host, token):
         """
@@ -43,7 +43,7 @@ class UsersApi():
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /users
         """
-        return api.list_all(host, token, "users")
+        return self.api.list_all(host, token, "users")
 
     def create_user(self, host, token, data, message=None):
         """
@@ -58,7 +58,7 @@ class UsersApi():
         """
         if not message:
             message = f"Creating new user {data['email']} with payload {str(data)}"
-        return api.generate_post_request(host, token, "users", json.dumps(data), description=message)
+        return self.api.generate_post_request(host, token, "users", json.dumps(data), description=message)
 
     def delete_user(self, host, token, uid, hard_delete=False):
         """
@@ -72,7 +72,7 @@ class UsersApi():
             :param: hard_delete: (boo) Option to delete user contributions and solely owned groups
             :return: Response object containing a 204 (No Content) or 404 (Group not found) from DELETE /users/:id
         """
-        return api.generate_delete_request(host, token, "users/{0}?hard_delete={1}".format(uid, hard_delete))
+        return self.api.generate_delete_request(host, token, "users/{0}?hard_delete={1}".format(uid, hard_delete))
 
     def search_for_user_by_email(self, host, token, email):
         """
@@ -85,7 +85,7 @@ class UsersApi():
             :param: email: (str) Email of the specific user being searched
             :yield: Generator containing JSON results from GET /users?search=:email
         """
-        return api.list_all(host, token, f"users?search={email}", per_page=50)
+        return self.api.list_all(host, token, f"users?search={email}", per_page=50)
 
     def search_for_user_by_username(self, host, token, username):
         """
@@ -98,7 +98,7 @@ class UsersApi():
             :param: email: (str) Email of the specific user being searched
             :yield: Generator containing JSON results from GET /users?search=:email
         """
-        return api.list_all(host, token, f"users?username={username}", per_page=50)
+        return self.api.list_all(host, token, f"users?username={username}", per_page=50)
 
     def create_user_impersonation_token(self, host, token, uid, data, message=None):
         """
@@ -114,7 +114,7 @@ class UsersApi():
         """
         if not message:
             message = f"Creating impersonation token for {uid}"
-        return api.generate_post_request(host, token, f"users/{uid}/impersonation_tokens", json.dumps(data), description=message)
+        return self.api.generate_post_request(host, token, f"users/{uid}/impersonation_tokens", json.dumps(data), description=message)
 
     def delete_user_impersonation_token(self, host, token, uid, token_id):
         """
@@ -128,7 +128,7 @@ class UsersApi():
             :param: token_id: (int) GitLab user impersonation token ID
             :return: Response object containing a 202 (accepted) or 404 (Group not found) from DELETE /users/:user_id/impersonation_tokens/:impersonation_token_id
         """
-        return api.generate_delete_request(host, token, f"users/{uid}/impersonation_tokens/{token_id}")
+        return self.api.generate_delete_request(host, token, f"users/{uid}/impersonation_tokens/{token_id}")
 
     def block_user(self, host, token, uid, message=None):
         """
@@ -143,7 +143,7 @@ class UsersApi():
         """
         if not message:
             message = f"Blocking user {uid}"
-        return api.generate_post_request(host, token, f"users/{uid}/block", data=None)
+        return self.api.generate_post_request(host, token, f"users/{uid}/block", data=None)
 
     def get_all_user_contribution_events(self, uid, host, token):
         """
@@ -156,7 +156,7 @@ class UsersApi():
             :param: token: (str) Access token to GitLab instance
             :return: Generator returning JSON of each result from GET /users/:id/events
         """
-        return api.generate_get_request(host, token, f"users/{uid}/events")
+        return self.api.generate_get_request(host, token, f"users/{uid}/events")
 
     def get_all_user_memberships(self, uid, host, token):
         """
@@ -169,7 +169,7 @@ class UsersApi():
             :param: token: (str) Access token to GitLab instance
             :return: Generator returning JSON of each result from GET /users/:id/memberships
         """
-        return api.generate_get_request(host, token, f"users/{uid}/memberships")
+        return self.api.generate_get_request(host, token, f"users/{uid}/memberships")
 
     def get_user_status(self, uid, host, token):
         """
@@ -182,7 +182,7 @@ class UsersApi():
             :param: token: (str) Access token to GitLab instance
             :return: Response object containing the response to GET /users/:id_or_username/status
         """
-        return api.generate_get_request(host, token, f"users/{uid}/status")
+        return self.api.generate_get_request(host, token, f"users/{uid}/status")
 
     def get_all_user_ssh_keys(self, uid, host, token):
         """
@@ -195,7 +195,7 @@ class UsersApi():
             :param: token: (str) Access token to GitLab instance
             :return: Response object containing the response to GET /users/:id_or_username/keys
         """
-        return api.generate_get_request(host, token, "users/{}/keys".format(uid))
+        return self.api.generate_get_request(host, token, "users/{}/keys".format(uid))
 
     def create_user_ssh_key(self, host, token, uid, data, message=None):
         """
@@ -211,7 +211,7 @@ class UsersApi():
         """
         if not message:
             message = "Creating SSH key for {}".format(uid)
-        return api.generate_post_request(host, token, "users/{}/keys".format(uid), json.dumps(data), description=message)
+        return self.api.generate_post_request(host, token, "users/{}/keys".format(uid), json.dumps(data), description=message)
 
     def get_all_user_gpg_keys(self, uid, host, token):
         """
@@ -224,7 +224,7 @@ class UsersApi():
             :param: token: (str) Access token to GitLab instance
             :return: Response object containing the response to GET /users/:id/gpg_keys
         """
-        return api.generate_get_request(host, token, "users/{}/gpg_keys".format(uid))
+        return self.api.generate_get_request(host, token, "users/{}/gpg_keys".format(uid))
 
     def create_user_gpg_key(self, host, token, uid, data, message=None):
         """
@@ -240,7 +240,7 @@ class UsersApi():
         """
         if not message:
             message = "Creating GPG key for {}".format(uid)
-        return api.generate_post_request(host, token, "users/{}/gpg_keys".format(uid), json.dumps(data), description=message)
+        return self.api.generate_post_request(host, token, "users/{}/gpg_keys".format(uid), json.dumps(data), description=message)
 
     def get_all_user_projects(self, uid, host, token):
         """
@@ -253,7 +253,7 @@ class UsersApi():
             :param: token: (str) Access token to GitLab instance
             :return: Response object containing the response to GET /users/:user_id/projects
         """
-        return api.generate_get_request(host, token, f"users/{uid}/projects")
+        return self.api.generate_get_request(host, token, f"users/{uid}/projects")
 
     def get_all_user_emails(self, uid, host, token):
         """
@@ -266,7 +266,7 @@ class UsersApi():
             :param: token: (str) Access token to GitLab instance
             :return: Response object containing the response to GET /users/:id/emails
         """
-        return api.generate_get_request(host, token, f"users/{uid}/emails")
+        return self.api.generate_get_request(host, token, f"users/{uid}/emails")
 
     def get_all_user_custom_attributes(self, uid, host, token):
         """
@@ -279,7 +279,7 @@ class UsersApi():
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /users/:id/custom_attributes
         """
-        return api.list_all(host, token, f"users/{uid}/custom_attributes")
+        return self.api.list_all(host, token, f"users/{uid}/custom_attributes")
 
     def get_user_counts(self, host, token):
         """
@@ -291,4 +291,4 @@ class UsersApi():
             :param: token: (str) Access token to GitLab instance
             :yield:  Response object containing the response to GET /user_counts
         """
-        return api.generate_get_request(host, token, "user_counts")
+        return self.api.generate_get_request(host, token, "user_counts")

@@ -7,6 +7,7 @@ from congregate.tests.mockapi.gitlab.groups import MockGroupsApi
 from congregate.tests.mockapi.gitlab.users import MockUsersApi
 from congregate.helpers.dict_utils import rewrite_list_into_dict
 from congregate.helpers.configuration_validator import ConfigurationValidator
+from congregate.helpers.api import GitLabApi
 
 
 @mark.unit_test
@@ -252,7 +253,7 @@ class CompareTests(unittest.TestCase):
     @responses.activate
     # pylint: enable=no-member
     @mock.patch.object(ConfigurationValidator, 'destination_token', new_callable=mock.PropertyMock)
-    @mock.patch("congregate.helpers.api.generate_v4_request_url")
+    @mock.patch.object(GitLabApi, "generate_v4_request_url")
     def test_unknown_user_snapshot(self, url, dest_token):
         dest_token.return_value = "test"
         dummy_members = [{

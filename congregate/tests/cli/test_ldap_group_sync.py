@@ -4,6 +4,7 @@ from pytest import mark
 from congregate.cli.ldap_group_sync import LdapGroupSync
 from congregate.helpers.conf import Config
 from congregate.helpers.configuration_validator import ConfigurationValidator
+from congregate.helpers.api import GitLabApi
 
 
 class MockPostResponseObject():
@@ -55,7 +56,7 @@ class LdapGroupSyncTests(unittest.TestCase):
 
     @patch.object(ConfigurationValidator, 'destination_token', new_callable=PropertyMock)
     @patch('congregate.helpers.conf.Config.destination_host', new_callable=PropertyMock)
-    @patch("congregate.helpers.api.generate_post_request")
+    @patch.object(GitLabApi, "generate_post_request")
     def test_load_config_gets_defaults(self, p, dstn_hostname, dstn_access_token):
         p.return_value = MockPostResponseObject()
         dstn_hostname.return_value = "test.gitlab.com"

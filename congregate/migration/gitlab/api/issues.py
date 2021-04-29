@@ -1,9 +1,8 @@
-from congregate.helpers.base_class import BaseClass
-from congregate.helpers import api
+from congregate.migration.gitlab.api.base_api import GitLabApiWrapper
 import json
 
 
-class IssuesApi(BaseClass):
+class IssuesApi(GitLabApiWrapper):
     def get_all_project_issues(self, pid, host, token):
         """
         Get a list of issues for the given project
@@ -15,7 +14,7 @@ class IssuesApi(BaseClass):
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /projects/:id/issues
         """
-        return api.list_all(host, token, f"projects/{pid}/issues")
+        return self.api.list_all(host, token, f"projects/{pid}/issues")
 
     def get_all_group_issues(self, gid, host, token):
         """
@@ -28,7 +27,7 @@ class IssuesApi(BaseClass):
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /groups/:id/issues
         """
-        return api.list_all(host, token, f"groups/{gid}/issues")
+        return self.api.list_all(host, token, f"groups/{gid}/issues")
 
     def get_single_project_issue(self, host, token, project_id, issue_iid):
         """
@@ -42,7 +41,7 @@ class IssuesApi(BaseClass):
             :param: token: (str) Access token to GitLab instance
             :yield: Response object containing the response to GET /projects/:id/issues/:issue_iid
         """
-        return api.generate_get_request(host, token, f"projects/{project_id}/issues/{issue_iid}")
+        return self.api.generate_get_request(host, token, f"projects/{project_id}/issues/{issue_iid}")
 
     def update_issue(self, host, token, project_id, issue_iid, data):
         """
@@ -59,7 +58,7 @@ class IssuesApi(BaseClass):
             :yield: Response object containing the response to PUT /projects/:id/issues/:issue_iid
         """
         endpoint = f"projects/{project_id}/issues/{issue_iid}"
-        return api.generate_put_request(host, token, endpoint, json.dumps(data))
+        return self.api.generate_put_request(host, token, endpoint, json.dumps(data))
 
     def create_issue(self, host, token, project_id, title=None, description=None):
         """
@@ -70,7 +69,7 @@ class IssuesApi(BaseClass):
         endpoint = f"projects/{project_id}/issues"
         data = {'title': title, 'description': description}
         message = f"Creating PM sign off issue: {title} at: {endpoint}"
-        return api.generate_post_request(host, token, endpoint, json.dumps(data), description=message)
+        return self.api.generate_post_request(host, token, endpoint, json.dumps(data), description=message)
 
     def get_all_project_issue_notes(self, host, token, pid, iid):
         """
@@ -84,7 +83,7 @@ class IssuesApi(BaseClass):
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /projects/:id/issues/:issue_iid/notes
         """
-        return api.list_all(host, token, f"projects/{pid}/issues/{iid}/notes")
+        return self.api.list_all(host, token, f"projects/{pid}/issues/{iid}/notes")
 
     def get_project_issue_note_awards(self, host, token, project_id, issue_iid, note_id):
         """
@@ -99,7 +98,7 @@ class IssuesApi(BaseClass):
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /projects/:id/issues/:issue_iid/notes/:note_id/award_emoji
         """
-        return api.generate_get_request(
+        return self.api.generate_get_request(
             host,
             token,
             f"projects/{project_id}/issues/{issue_iid}/notes/{note_id}/award_emoji"
@@ -119,7 +118,7 @@ class IssuesApi(BaseClass):
             :param: token: (str) Access token to GitLab instance
             :return: Response object containing the response to POST /projects/:id/issues/:issue_iid/notes/:note_id/award_emoji
         """
-        return api.generate_post_request(
+        return self.api.generate_post_request(
             host,
             token,
             f"projects/{project_id}/issues/{issue_iid}/notes/{note_id}/award_emoji?name={name}",
@@ -138,7 +137,7 @@ class IssuesApi(BaseClass):
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /projects/:id/issues/:issue_iid/award_emoji
         """
-        return api.generate_get_request(host, token, f"projects/{project_id}/issues/{issue_iid}/award_emoji")
+        return self.api.generate_get_request(host, token, f"projects/{project_id}/issues/{issue_iid}/award_emoji")
 
     def create_project_issue_award(self, host, token, project_id, issue_iid, name):
         """
@@ -153,7 +152,7 @@ class IssuesApi(BaseClass):
             :param: token: (str) Access token to GitLab instance
             :return: Response object containing the response to POST /projects/:id/snippets/:issue_iid/award_emoji
         """
-        return api.generate_post_request(
+        return self.api.generate_post_request(
             host,
             token,
             f"projects/{project_id}/snippets/{issue_iid}/award_emoji?name={name}",
@@ -172,7 +171,7 @@ class IssuesApi(BaseClass):
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /projects/:id/issues/:issue_id/related_merge_requests
         """
-        return api.generate_get_request(host, token, f"projects/{project_id}/issues/{issue_iid}/related_merge_requests")
+        return self.api.generate_get_request(host, token, f"projects/{project_id}/issues/{issue_iid}/related_merge_requests")
 
     def get_project_issue_close_by_merge_requests(self, host, token, project_id, issue_iid):
         """
@@ -186,7 +185,7 @@ class IssuesApi(BaseClass):
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /projects/:id/issues/:issue_iid/closed_by
         """
-        return api.generate_get_request(host, token, f"projects/{project_id}/issues/{issue_iid}/closed_by")
+        return self.api.generate_get_request(host, token, f"projects/{project_id}/issues/{issue_iid}/closed_by")
 
     def get_project_issue_participants(self, host, token, project_id, issue_iid):
         """
@@ -200,4 +199,4 @@ class IssuesApi(BaseClass):
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /projects/:id/issues/:issue_iid/participants
         """
-        return api.generate_get_request(host, token, f"projects/{project_id}/issues/{issue_iid}/participants")
+        return self.api.generate_get_request(host, token, f"projects/{project_id}/issues/{issue_iid}/participants")

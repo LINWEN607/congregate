@@ -1,8 +1,6 @@
-import json
+from congregate.migration.gitlab.api.base_api import GitLabApiWrapper
 
-from congregate.helpers import api
-
-class SnippetsApi():
+class SnippetsApi(GitLabApiWrapper):
 
     def get_public_snippets(self, host, token):
         """
@@ -14,4 +12,4 @@ class SnippetsApi():
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /snippets/public
         """
-        return api.list_all(host, token, "snippets/public")
+        return self.api.list_all(host, token, "snippets/public")

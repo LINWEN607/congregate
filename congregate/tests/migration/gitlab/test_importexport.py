@@ -9,6 +9,7 @@ from congregate.migration.gitlab.importexport import ImportExportClient
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.tests.mockapi.gitlab.groups import MockGroupsApi
+from congregate.helpers.api import GitLabApi
 
 
 @mark.unit_test
@@ -323,7 +324,7 @@ class ImportExportClientTests(unittest.TestCase):
     # pylint: disable=no-member
     @responses.activate
     # pylint: enable=no-member
-    @patch("congregate.helpers.api.generate_v4_request_url")
+    @patch.object(GitLabApi, "generate_v4_request_url")
     @patch('congregate.migration.gitlab.groups.GroupsClient.find_group_by_path')
     @patch.object(ConfigurationValidator, 'destination_token', new_callable=PropertyMock)
     def test_wait_for_group_import_200(self, mock_token, mock_find_group_by_path, url):

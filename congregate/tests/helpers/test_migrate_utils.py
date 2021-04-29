@@ -10,6 +10,7 @@ from congregate.tests.mockapi.gitlab.projects import MockProjectsApi
 from congregate.helpers.configuration_validator import ConfigurationValidator
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.tests.helpers.mock_data.results import MockProjectResults
+from congregate.helpers.api import GitLabApi
 
 
 @mark.unit_test
@@ -295,7 +296,7 @@ class MigrateTests(unittest.TestCase):
     # pylint: disable=no-member
     @responses.activate
     # pylint: enable=no-member
-    @patch("congregate.helpers.api.generate_v4_request_url")
+    @patch.object(GitLabApi, "generate_v4_request_url")
     @patch.object(ConfigurationValidator, "import_user_id",
                   new_callable=PropertyMock)
     @patch.object(ConfigurationValidator, "destination_host",
@@ -319,7 +320,7 @@ class MigrateTests(unittest.TestCase):
     # pylint: disable=no-member
     @responses.activate
     # pylint: enable=no-member
-    @patch("congregate.helpers.api.generate_v4_request_url")
+    @patch.object(GitLabApi, "generate_v4_request_url")
     @patch.object(ConfigurationValidator, "import_user_id",
                   new_callable=PropertyMock)
     @patch.object(ConfigurationValidator, "destination_host",
@@ -424,7 +425,7 @@ class MigrateTests(unittest.TestCase):
     # pylint: disable=no-member
     @responses.activate
     # pylint: enable=no-member
-    @patch("congregate.helpers.api.generate_v4_request_url")
+    @patch.object(GitLabApi, "generate_v4_request_url")
     @patch.object(ConfigurationValidator, "import_user_id",
                   new_callable=PropertyMock)
     @patch.object(ConfigurationValidator, "destination_host",
@@ -462,7 +463,7 @@ class MigrateTests(unittest.TestCase):
     # pylint: disable=no-member
     @responses.activate
     # pylint: enable=no-member
-    @patch("congregate.helpers.api.generate_v4_request_url")
+    @patch.object(GitLabApi, "generate_v4_request_url")
     @patch.object(ConfigurationValidator, "import_user_id",
                   new_callable=PropertyMock)
     @patch.object(ConfigurationValidator, "destination_host",
@@ -492,7 +493,7 @@ class MigrateTests(unittest.TestCase):
     # pylint: disable=no-member
     @responses.activate
     # pylint: enable=no-member
-    @patch("congregate.helpers.api.generate_v4_request_url")
+    @patch.object(GitLabApi, "generate_v4_request_url")
     @patch.object(ConfigurationValidator, "import_user_id",
                   new_callable=PropertyMock)
     @patch.object(ConfigurationValidator, "destination_host",
@@ -530,7 +531,7 @@ class MigrateTests(unittest.TestCase):
     # pylint: disable=no-member
     @responses.activate
     # pylint: enable=no-member
-    @patch("congregate.helpers.api.generate_v4_request_url")
+    @patch.object(GitLabApi, "generate_v4_request_url")
     @patch.object(ConfigurationValidator, "import_user_id",
                   new_callable=PropertyMock)
     @patch.object(ConfigurationValidator, "destination_host",

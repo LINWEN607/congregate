@@ -1,9 +1,9 @@
 import json
 
-from congregate.helpers import api
+from congregate.migration.gitlab.api.base_api import GitLabApiWrapper
 
 
-class InstanceApi():
+class InstanceApi(GitLabApiWrapper):
     def get_all_instance_hooks(self, host, token):
         """
         Get a list of all instance hooks
@@ -14,7 +14,7 @@ class InstanceApi():
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /hooks
         """
-        return api.list_all(host, token, "hooks")
+        return self.api.list_all(host, token, "hooks")
 
     def add_instance_hook(self, host, token, data, message=None):
         """
@@ -28,7 +28,7 @@ class InstanceApi():
         """
         if not message:
             message = "Creating instance hook"
-        return api.generate_post_request(host, token, "hooks", json.dumps(data), description=message)
+        return self.api.generate_post_request(host, token, "hooks", json.dumps(data), description=message)
 
     def get_all_instance_clusters(self, host, token):
         """
@@ -40,7 +40,7 @@ class InstanceApi():
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /admin/clusters
         """
-        return api.list_all(host, token, "admin/clusters")
+        return self.api.list_all(host, token, "admin/clusters")
 
     def add_instance_cluster(self, host, token, data, message=None):
         """
@@ -54,7 +54,7 @@ class InstanceApi():
         """
         if not message:
             message = "Creating instance cluster"
-        return api.generate_post_request(host, token, "admin/clusters/add", json.dumps(data), description=message)
+        return self.api.generate_post_request(host, token, "admin/clusters/add", json.dumps(data), description=message)
 
     def get_current_license(self, host, token):
         """
@@ -66,7 +66,7 @@ class InstanceApi():
             :param: token: (str) Access token to GitLab instance
             :return: Response object containing the response to GET /license
         """
-        return api.generate_get_request(host, token, "license")
+        return self.api.generate_get_request(host, token, "license")
 
     def get_version(self, host, token):
         """
@@ -77,7 +77,7 @@ class InstanceApi():
             :param: token: (str) Access token to GitLab instance
             :return: JSON response containing version information from GET /version
         """
-        return api.generate_get_request(host, token, "version")
+        return self.api.generate_get_request(host, token, "version")
 
     def get_all_instance_deploy_keys(self, host, token):
         """
@@ -89,7 +89,7 @@ class InstanceApi():
             :param: token: (str) Access token to GitLab instance
             :return: Generator returning JSON of each result from GET /deploy_keys
         """
-        return api.list_all(host, token, "deploy_keys")
+        return self.api.list_all(host, token, "deploy_keys")
 
     def change_application_settings(self, host, token, data, message=None):
         """
@@ -103,4 +103,4 @@ class InstanceApi():
         """
         if not message:
             message = "Changing application settings"
-        return api.generate_put_request(host, token, "application/settings", json.dumps(data), description=message)
+        return self.api.generate_put_request(host, token, "application/settings", json.dumps(data), description=message)

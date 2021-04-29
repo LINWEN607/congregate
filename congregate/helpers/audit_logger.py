@@ -6,10 +6,9 @@ log_file_format = \
     "[%(asctime)s][%(levelname)s]| %(message)s"
 
 
-def audit_logger(name):
+def audit_logger(name, app_path='.'):
     name = name + "_audit"
     global loggers
-    app_path = get_congregate_path()
     if loggers.get(name):
         return loggers.get(name)
     else:

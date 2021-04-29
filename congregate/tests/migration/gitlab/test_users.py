@@ -5,6 +5,7 @@ import warnings
 from unittest.mock import patch, mock_open, PropertyMock, MagicMock
 from pytest import mark
 
+from congregate.helpers.api import GitLabApi
 from congregate.helpers.configuration_validator import ConfigurationValidator
 from congregate.migration.migrate import MigrateClient
 from congregate.tests.mockapi.gitlab.users import MockUsersApi
@@ -38,7 +39,7 @@ class UsersTests(unittest.TestCase):
            new_callable=PropertyMock)
     @patch.object(ConfigurationValidator, 'source_token',
                   new_callable=PropertyMock)
-    @patch("congregate.helpers.api.generate_v4_request_url")
+    @patch.object(GitLabApi, "generate_v4_request_url")
     def test_find_user_by_email_comparison_incorrect_user(
             self, url, src_token, src_host, src_type):
         url_value = "https://gitlabsource.com/api/v4/users/5"
@@ -66,7 +67,7 @@ class UsersTests(unittest.TestCase):
            new_callable=PropertyMock)
     @patch.object(ConfigurationValidator, 'destination_token',
                   new_callable=PropertyMock)
-    @patch("congregate.helpers.api.generate_v4_request_url")
+    @patch.object(GitLabApi, "generate_v4_request_url")
     @patch.object(UsersApi, "search_for_user_by_email")
     def test_find_user_by_email_comparison_found_user(
             self, search, url, dest_token, dest_host, src_token, src_host, src_type):
@@ -233,7 +234,7 @@ class UsersTests(unittest.TestCase):
                   new_callable=PropertyMock)
     @patch.object(ConfigurationValidator, 'dstn_parent_id',
                   new_callable=PropertyMock)
-    @patch('congregate.helpers.api.get_count')
+    @patch.object(GitLabApi, 'get_count')
     @patch.object(KeysClient, "migrate_user_ssh_keys")
     @patch.object(KeysClient, "migrate_user_gpg_keys")
     def test_handle_user_creation(
@@ -273,7 +274,7 @@ class UsersTests(unittest.TestCase):
                   new_callable=PropertyMock)
     @patch.object(ConfigurationValidator, 'dstn_parent_id',
                   new_callable=PropertyMock)
-    @patch('congregate.helpers.api.get_count')
+    @patch.object(GitLabApi, 'get_count')
     @patch.object(KeysClient, "migrate_user_ssh_keys")
     @patch.object(KeysClient, "migrate_user_gpg_keys")
     def test_handle_user_creation_user_already_exists_no_parent_group(
@@ -313,7 +314,7 @@ class UsersTests(unittest.TestCase):
                   new_callable=PropertyMock)
     @patch.object(ConfigurationValidator, 'dstn_parent_id',
                   new_callable=PropertyMock)
-    @patch('congregate.helpers.api.get_count')
+    @patch.object(GitLabApi, 'get_count')
     @patch.object(KeysClient, "migrate_user_ssh_keys")
     @patch.object(KeysClient, "migrate_user_gpg_keys")
     def test_handle_user_creation_user_already_exists_with_parent_group(
@@ -351,7 +352,7 @@ class UsersTests(unittest.TestCase):
            new_callable=PropertyMock)
     @patch.object(ConfigurationValidator, 'destination_token',
                   new_callable=PropertyMock)
-    @patch('congregate.helpers.api.get_count')
+    @patch.object(GitLabApi, 'get_count')
     def test_block_user(self, count, dest_token, destination):
         destination.return_value = "https://gitlabdestination.com"
         dest_token.return_value = "token"
@@ -537,7 +538,7 @@ class UsersTests(unittest.TestCase):
     # pylint: disable=no-member
     @responses.activate
     # pylint: enable=no-member
-    @patch("congregate.helpers.api.generate_v4_request_url")
+    @patch.object(GitLabApi, "generate_v4_request_url")
     @patch.object(UsersApi, "search_for_user_by_email")
     @patch('congregate.migration.gitlab.users.UsersClient.user_email_exists')
     @patch('congregate.helpers.conf.Config.destination_host',
@@ -567,7 +568,7 @@ class UsersTests(unittest.TestCase):
     # pylint: disable=no-member
     @responses.activate
     # pylint: enable=no-member
-    @patch("congregate.helpers.api.generate_v4_request_url")
+    @patch.object(GitLabApi, "generate_v4_request_url")
     @patch.object(UsersApi, "search_for_user_by_email")
     @patch('congregate.migration.gitlab.users.UsersClient.user_email_exists')
     @patch('congregate.helpers.conf.Config.source_host',
@@ -602,7 +603,7 @@ class UsersTests(unittest.TestCase):
     # pylint: disable=no-member
     @responses.activate
     # pylint: enable=no-member
-    @patch("congregate.helpers.api.generate_v4_request_url")
+    @patch.object(GitLabApi, "generate_v4_request_url")
     @patch.object(UsersApi, "search_for_user_by_email")
     def test_find_user_primarily_by_email_with_invalid_object(
             self, search, url):
@@ -620,7 +621,7 @@ class UsersTests(unittest.TestCase):
     # pylint: disable=no-member
     @responses.activate
     # pylint: enable=no-member
-    @patch("congregate.helpers.api.generate_v4_request_url")
+    @patch.object(GitLabApi, "generate_v4_request_url")
     @patch.object(UsersApi, "search_for_user_by_email")
     def test_find_user_primarily_by_email_with_none(self, search, url):
         user = None
@@ -719,7 +720,7 @@ class UsersTests(unittest.TestCase):
            new_callable=PropertyMock)
     @patch.object(ConfigurationValidator, 'dstn_parent_id',
                   new_callable=PropertyMock)
-    @patch('congregate.helpers.api.get_count')
+    @patch.object(GitLabApi, 'get_count')
     @patch.object(UsersClient, "generate_user_data")
     def test_handle_user_creation_improperly_formatted_json(
             self, mock_gen, count, parent_id, source_type, dest_token, destination):

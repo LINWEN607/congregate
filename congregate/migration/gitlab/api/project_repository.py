@@ -1,8 +1,8 @@
-from urllib.parse import quote_plus
-from congregate.helpers import api
 import json
+from urllib.parse import quote_plus
+from congregate.migration.gitlab.api.base_api import GitLabApiWrapper
 
-class ProjectRepositoryApi():
+class ProjectRepositoryApi(GitLabApiWrapper):
     def get_all_project_repository_tree(self, id, host, token):
         """
         Get a list of repository files and directories in a project
@@ -14,7 +14,7 @@ class ProjectRepositoryApi():
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /projects/:id/repository/tree
         """
-        return api.list_all(host, token, "projects/%d/repository/tree" % id)
+        return self.api.list_all(host, token, "projects/%d/repository/tree" % id)
 
     def get_all_project_repository_contributors(self, id, host, token):
         """
@@ -27,7 +27,7 @@ class ProjectRepositoryApi():
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /projects/:id/repository/contributors
         """
-        return api.list_all(host, token, "projects/%d/repository/contributors" % id)
+        return self.api.list_all(host, token, "projects/%d/repository/contributors" % id)
 
     def get_all_project_repository_branches(self, pid, host, token, query_params=""):
         """
@@ -41,7 +41,7 @@ class ProjectRepositoryApi():
             :param: query_params: (str) Query parameters
             :yield: Generator returning JSON of each result from GET /projects/:id/repository/branches
         """
-        return api.list_all(host, token, "projects/{0}/repository/branches{1}".format(pid, query_params))
+        return self.api.list_all(host, token, "projects/{0}/repository/branches{1}".format(pid, query_params))
 
     def get_single_project_repository_branch(self, host, token, pid, branch_name):
         """
@@ -55,7 +55,7 @@ class ProjectRepositoryApi():
             :param: token: (str) Access token to GitLab instance
             :yield: Response object containing the response to GET /projects/:id/repository/branches/:branch
         """
-        return api.generate_get_request(host, token, "projects/%d/repository/branches/%s" % (pid, quote_plus(branch_name)))
+        return self.api.generate_get_request(host, token, "projects/%d/repository/branches/%s" % (pid, quote_plus(branch_name)))
 
     def get_all_project_repository_tags(self, id, host, token):
         """
@@ -68,7 +68,7 @@ class ProjectRepositoryApi():
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /projects/:id/repository/tags
         """
-        return api.list_all(host, token, "projects/%d/repository/tags" % id)
+        return self.api.list_all(host, token, "projects/%d/repository/tags" % id)
 
     def get_all_project_repository_commits(self, pid, host, token, query_params=""):
         """
@@ -82,7 +82,7 @@ class ProjectRepositoryApi():
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /projects/:id/repository/commits
         """
-        return api.list_all(host, token, "projects/{0}/repository/commits{1}".format(pid, query_params))
+        return self.api.list_all(host, token, "projects/{0}/repository/commits{1}".format(pid, query_params))
 
     def get_single_project_repository_commit(self, host, token, id, sha):
         """
@@ -96,7 +96,7 @@ class ProjectRepositoryApi():
             :param: token: (str) Access token to GitLab instance
             :yield: Response object containing the response GET /projects/:id/repository/commits/:sha
         """
-        return api.generate_get_request(host, token, "projects/%d/repository/commits/%s" % (id, sha))
+        return self.api.generate_get_request(host, token, "projects/%d/repository/commits/%s" % (id, sha))
 
     def get_project_repository_commit_diff(self, pid, sha, host, token):
         """
@@ -110,7 +110,7 @@ class ProjectRepositoryApi():
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /projects/:id/repository/commits/:sha/diff
         """
-        return api.list_all(host, token, "projects/{0}/repository/commits/{1}/diff".format(pid, sha))
+        return self.api.list_all(host, token, "projects/{0}/repository/commits/{1}/diff".format(pid, sha))
 
     def get_project_repository_commit_comments(self, pid, sha, host, token):
         """
@@ -124,7 +124,7 @@ class ProjectRepositoryApi():
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /projects/:id/repository/commits/:sha/comments
         """
-        return api.list_all(host, token, "projects/{0}/repository/commits/{1}/comments".format(pid, sha))
+        return self.api.list_all(host, token, "projects/{0}/repository/commits/{1}/comments".format(pid, sha))
 
     def get_project_repository_commit_refs(self, host, token, pid, sha, query_params=""):
         """
@@ -139,7 +139,7 @@ class ProjectRepositoryApi():
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /projects/:id/repository/commits/:sha/refs
         """
-        return api.list_all(host, token, "projects/%d/repository/commits/%s/refs%s" % (pid, sha, query_params))
+        return self.api.list_all(host, token, "projects/%d/repository/commits/%s/refs%s" % (pid, sha, query_params))
 
     def get_project_repository_commit_merge_requests(self, pid, sha, host, token):
         """
@@ -153,7 +153,7 @@ class ProjectRepositoryApi():
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /projects/:id/repository/commits/:sha/merge_requests
         """
-        return api.list_all(host, token, "projects/{0}/repository/commits/{1}/merge_requests".format(pid, sha))
+        return self.api.list_all(host, token, "projects/{0}/repository/commits/{1}/merge_requests".format(pid, sha))
 
     def get_project_repository_commit_statuses(self, pid, sha, host, token):
         """
@@ -167,7 +167,7 @@ class ProjectRepositoryApi():
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /projects/:id/repository/commits/:sha/statuses
         """
-        return api.list_all(host, token, "projects/{0}/repository/commits/{1}/statuses".format(pid, sha))
+        return self.api.list_all(host, token, "projects/{0}/repository/commits/{1}/statuses".format(pid, sha))
 
 
     def create_repo_file(self, host, token, pid, filepath, data, message=None):
@@ -183,7 +183,7 @@ class ProjectRepositoryApi():
         """
         if not message:
             message = f"Adding a {filepath} for project {pid} with {data}"
-        return api.generate_post_request(host, token, f"projects/{pid}/repository/files/{filepath}", json.dumps(data), description=message)
+        return self.api.generate_post_request(host, token, f"projects/{pid}/repository/files/{filepath}", json.dumps(data), description=message)
     
     def get_single_repo_file(self, host, token, pid, filepath, branch):
         """
@@ -195,7 +195,7 @@ class ProjectRepositoryApi():
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
         """
-        return api.generate_get_request(host, token, f"projects/{pid}/repository/files/{quote_plus(filepath)}?ref={branch}")
+        return self.api.generate_get_request(host, token, f"projects/{pid}/repository/files/{quote_plus(filepath)}?ref={branch}")
 
     def put_single_repo_file(self, host, token, pid, filepath, put_file_data):
         """
@@ -214,4 +214,4 @@ class ProjectRepositoryApi():
                     "commit_message": "some commit message"
                 }
         """
-        return api.generate_put_request(host, token, f"projects/{pid}/repository/files/{quote_plus(filepath)}", json.dumps(put_file_data))
+        return self.api.generate_put_request(host, token, f"projects/{pid}/repository/files/{quote_plus(filepath)}", json.dumps(put_file_data))

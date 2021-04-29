@@ -1,8 +1,7 @@
-from congregate.helpers.base_class import BaseClass
-from congregate.helpers import api
+from congregate.migration.gitlab.api.base_api import GitLabApiWrapper
 
 
-class MergeRequestsApi(BaseClass):
+class MergeRequestsApi(GitLabApiWrapper):
     def get_all_project_merge_requests(self, pid, host, token):
         """
         Get all merge requests for the given project
@@ -14,7 +13,7 @@ class MergeRequestsApi(BaseClass):
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /projects/:id/merge_requests
         """
-        return api.list_all(host, token, "projects/{}/merge_requests".format(pid))
+        return self.api.list_all(host, token, "projects/{}/merge_requests".format(pid))
 
     def get_all_group_merge_requests(self, gid, host, token):
         """
@@ -27,7 +26,7 @@ class MergeRequestsApi(BaseClass):
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /groups/:id/merge_requests
         """
-        return api.list_all(host, token, "groups/{}/merge_requests".format(gid))
+        return self.api.list_all(host, token, "groups/{}/merge_requests".format(gid))
 
     def get_single_project_merge_requests(self, host, token, project_id, mr_iid):
         """
@@ -41,7 +40,7 @@ class MergeRequestsApi(BaseClass):
             :param: token: (str) Access token to GitLab instance
             :yield: Response object containing the response to GET /projects/:id/merge_requests/:merge_request_iid
         """
-        return api.generate_get_request(host, token, "projects/%d/merge_requests/%d" % (project_id, mr_iid))
+        return self.api.generate_get_request(host, token, "projects/%d/merge_requests/%d" % (project_id, mr_iid))
 
     def get_merge_request_participants(self, host, token, project_id, mr_iid):
         """
@@ -55,7 +54,7 @@ class MergeRequestsApi(BaseClass):
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /projects/:id/merge_requests/:merge_request_iid/participants
         """
-        return api.list_all(host, token, "projects/%d/merge_requests/%d/participants" % (project_id, mr_iid))
+        return self.api.list_all(host, token, "projects/%d/merge_requests/%d/participants" % (project_id, mr_iid))
 
     def get_merge_request_notes(self, host, token, project_id, mr_iid):
         """
@@ -69,7 +68,7 @@ class MergeRequestsApi(BaseClass):
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /projects/:id/merge_requests/:merge_request_iid/notes
         """
-        return api.list_all(host, token, "projects/%d/merge_requests/%d/notes" % (project_id, mr_iid))
+        return self.api.list_all(host, token, "projects/%d/merge_requests/%d/notes" % (project_id, mr_iid))
 
     def get_merge_request_awards(self, host, token, project_id, mr_iid):
         """
@@ -83,7 +82,7 @@ class MergeRequestsApi(BaseClass):
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /projects/:id/merge_requests/:merge_request_iid/award_emoji
         """
-        return api.list_all(host, token, "projects/%d/merge_requests/%d/award_emoji" % (project_id, mr_iid))
+        return self.api.list_all(host, token, "projects/%d/merge_requests/%d/award_emoji" % (project_id, mr_iid))
 
     def create_merge_request_award(self, host, token, project_id, mr_iid, name):
         """
@@ -98,7 +97,7 @@ class MergeRequestsApi(BaseClass):
             :param: token: (str) Access token to GitLab instance
             :return: Response object containing the response to POST /projects/:id/merge_requests/:merge_request_iid/award_emoji
         """
-        return api.generate_post_request(host, token, "projects/%d/merge_requests/%d/award_emoji?name=%s" % (project_id, mr_iid, name), None)
+        return self.api.generate_post_request(host, token, "projects/%d/merge_requests/%d/award_emoji?name=%s" % (project_id, mr_iid, name), None)
 
     def get_merge_request_note_awards(self, host, token, project_id, mr_iid, note_id):
         """
@@ -113,7 +112,7 @@ class MergeRequestsApi(BaseClass):
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /projects/:id/merge_requests/:mr_iid/notes/:note_id/award_emoji
         """
-        return api.generate_get_request(host, token, "projects/%d/merge_requests/%d/notes/%d/award_emoji" % (project_id, mr_iid, note_id))
+        return self.api.generate_get_request(host, token, "projects/%d/merge_requests/%d/notes/%d/award_emoji" % (project_id, mr_iid, note_id))
 
     def create_merge_request_note_award(self, host, token, project_id, mr_iid, note_id, name):
         """
@@ -129,7 +128,7 @@ class MergeRequestsApi(BaseClass):
             :param: token: (str) Access token to GitLab instance
             :return: Response object containing the response to POST /projects/:id/merge_requests/:mr_iid/notes/:note_id/award_emoji
         """
-        return api.generate_post_request(host, token, "projects/%d/merge_requests/%d/notes/%d/award_emoji?name=%s" % (project_id, mr_iid, note_id, name), None)
+        return self.api.generate_post_request(host, token, "projects/%d/merge_requests/%d/notes/%d/award_emoji?name=%s" % (project_id, mr_iid, note_id, name), None)
 
     def get_merge_request_changes(self, host, token, project_id, mr_iid):
         """
@@ -143,7 +142,7 @@ class MergeRequestsApi(BaseClass):
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /projects/:id/merge_requests/:merge_request_iid/changes
         """
-        return api.list_all(host, token, "projects/%d/merge_requests/%d/changes" % (project_id, mr_iid))
+        return self.api.list_all(host, token, "projects/%d/merge_requests/%d/changes" % (project_id, mr_iid))
 
     def get_merge_request_commits(self, host, token, project_id, mr_iid):
         """
@@ -157,7 +156,7 @@ class MergeRequestsApi(BaseClass):
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /projects/:id/merge_requests/:merge_request_iid/commits
         """
-        return api.list_all(host, token, "projects/%d/merge_requests/%d/commits" % (project_id, mr_iid))
+        return self.api.list_all(host, token, "projects/%d/merge_requests/%d/commits" % (project_id, mr_iid))
 
     def get_merge_request_diff_versions(self, host, token, project_id, mr_iid):
         """
@@ -171,7 +170,7 @@ class MergeRequestsApi(BaseClass):
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /projects/:id/merge_requests/:merge_request_iid/versions
         """
-        return api.list_all(host, token, "projects/%d/merge_requests/%d/versions" % (project_id, mr_iid))
+        return self.api.list_all(host, token, "projects/%d/merge_requests/%d/versions" % (project_id, mr_iid))
 
     def get_merge_request_pipelines(self, host, token, project_id, mr_iid):
         """
@@ -185,7 +184,7 @@ class MergeRequestsApi(BaseClass):
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /projects/:id/merge_requests/:merge_request_iid/pipelines
         """
-        return api.list_all(host, token, "projects/%d/merge_requests/%d/pipelines" % (project_id, mr_iid))
+        return self.api.list_all(host, token, "projects/%d/merge_requests/%d/pipelines" % (project_id, mr_iid))
 
     def get_merge_request_approvals(self, host, token, project_id, mr_iid):
         """
@@ -199,7 +198,7 @@ class MergeRequestsApi(BaseClass):
             :param: token: (str) Access token to GitLab instance
             :yield: Response object containing the response to GET /projects/:id/merge_requests/:merge_request_iid/approvals
         """
-        return api.list_all(host, token, "projects/%d/merge_requests/%d/approvals" % (project_id, mr_iid))
+        return self.api.list_all(host, token, "projects/%d/merge_requests/%d/approvals" % (project_id, mr_iid))
 
     def get_merge_request_approval_rules(self, host, token, project_id, mr_iid):
         """
@@ -213,4 +212,4 @@ class MergeRequestsApi(BaseClass):
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /projects/:id/merge_requests/:merge_request_iid/approval_rules
         """
-        return api.list_all(host, token, "projects/%d/merge_requests/%d/approval_rules" % (project_id, mr_iid))
+        return self.api.list_all(host, token, "projects/%d/merge_requests/%d/approval_rules" % (project_id, mr_iid))

@@ -8,6 +8,7 @@ from congregate.migration.gitlab.groups import GroupsClient
 from congregate.tests.mockapi.gitlab.groups import MockGroupsApi
 from congregate.migration.gitlab.groups import GroupsApi
 from congregate.migration.gitlab.users import UsersApi
+from congregate.helpers.api import GitLabApi
 
 
 @mark.unit_test
@@ -32,7 +33,7 @@ class GroupsTests(unittest.TestCase):
         self.assertTrue(self.groups.is_group_non_empty(group))
 
     @mock.patch.object(ConfigurationValidator, 'destination_token', new_callable=mock.PropertyMock)
-    @mock.patch("congregate.helpers.api.list_all")
+    @mock.patch.object(GitLabApi, "list_all")
     def test_is_group_non_empty_false_no_subgroups(self, mock_list_all, mock_token):
         mock_token.return_value = "test"
         group = self.mock_groups.get_group()
@@ -44,8 +45,8 @@ class GroupsTests(unittest.TestCase):
     @responses.activate
     @mock.patch('congregate.helpers.conf.Config.destination_host', new_callable=mock.PropertyMock)
     @mock.patch.object(ConfigurationValidator, 'destination_token', new_callable=mock.PropertyMock)
-    @mock.patch("congregate.helpers.api.list_all")
-    @mock.patch("congregate.helpers.api.generate_get_request")
+    @mock.patch.object(GitLabApi, "list_all")
+    @mock.patch.object(GitLabApi, "generate_get_request")
     def test_is_group_non_empty_true_subgroups(self, mock_get_group, mock_list_all, mock_token, mock_host):
         mock_host.return_value = "https://gitlabdestination.com"
         mock_token.return_value = "token"

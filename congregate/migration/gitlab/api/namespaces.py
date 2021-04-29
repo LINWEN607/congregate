@@ -1,13 +1,9 @@
 from urllib.parse import quote_plus
-from congregate.helpers import api
+from congregate.migration.gitlab.api.base_api import GitLabApiWrapper
 
 
-class NamespacesApi(object):
-    def __init__(self):
-        pass
-
-    @staticmethod
-    def get_namespace_by_full_path(full_path, host, token):
+class NamespacesApi(GitLabApiWrapper):
+    def get_namespace_by_full_path(self, full_path, host, token):
         """
         Get all details of a namespace matching the full path
 
@@ -16,4 +12,4 @@ class NamespacesApi(object):
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /namespaces/<full_path>
         """
-        return api.generate_get_request(host, token, "namespaces/{}".format(quote_plus(full_path)))
+        return self.api.generate_get_request(host, token, "namespaces/{}".format(quote_plus(full_path)))

@@ -3,7 +3,6 @@ from requests.exceptions import RequestException
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.misc_utils import is_error_message_present, safe_json_response
 from congregate.helpers.dict_utils import pop_multiple_keys
-from congregate.helpers import api
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.groups import GroupsClient
 from congregate.migration.gitlab.api.projects import ProjectsApi
@@ -118,7 +117,7 @@ class MergeRequestApprovalsClient(BaseClass):
             if u.get("id", None):
                 if user := safe_json_response(self.users_api.get_user(
                         u["id"], self.config.source_host, self.config.source_token)):
-                    new_user = api.search(
+                    new_user = self.users_api.api.search(
                         self.config.destination_host, self.config.destination_token, "users", user["email"])
                     user_ids = self.user_search_check_and_log(
                         new_user, user, user_ids)

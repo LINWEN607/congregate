@@ -11,6 +11,7 @@ from congregate.tests.mockapi.gitlab.token import invalid_token
 from congregate.tests.mockapi.gitlab.error import other_error
 from congregate.helpers.exceptions import ConfigurationException
 from congregate.helpers.string_utils import obfuscate
+from congregate.helpers.api import GitLabApi
 
 
 @mark.unit_test
@@ -31,7 +32,7 @@ class ConfigurationValidationTests(unittest.TestCase):
         ConfigurationValidator().import_user_id_validated_in_session = False
 
     @responses.activate
-    @mock.patch("congregate.helpers.api.generate_v4_request_url")
+    @mock.patch.object(GitLabApi, "generate_v4_request_url")
     def test_fail_parent_id_validation(self, url):
         self.config.dstn_parent_id_validated_in_session = False
         url_value = "https://gitlab.com/api/v4/groups/1234"
@@ -47,7 +48,7 @@ class ConfigurationValidationTests(unittest.TestCase):
     @responses.activate
     # pylint: enable=no-member
     @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.validate_dstn_token')
-    @mock.patch("congregate.helpers.api.generate_v4_request_url")
+    @mock.patch.object(GitLabApi, "generate_v4_request_url")
     def test_succeed_parent_id_validation(self, url, valid_token):
         self.config.dstn_parent_id_validated_in_session = False
         print(self.config.dstn_parent_id_validated_in_session)
@@ -65,7 +66,7 @@ class ConfigurationValidationTests(unittest.TestCase):
     @responses.activate
     # pylint: enable=no-member
     @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.validate_dstn_token')
-    @mock.patch("congregate.helpers.api.generate_v4_request_url")
+    @mock.patch.object(GitLabApi, "generate_v4_request_url")
     def test_succeed_parent_id_and_path_validation(self, url, valid_token):
         self.config.dstn_parent_group_path_validated_in_session = True
         self.config.dstn_parent_id_validated_in_session = False
@@ -82,7 +83,7 @@ class ConfigurationValidationTests(unittest.TestCase):
 
     @responses.activate
     # pylint: enable=no-member
-    @mock.patch("congregate.helpers.api.generate_v4_request_url")
+    @mock.patch.object(GitLabApi, "generate_v4_request_url")
     def test_fail_import_user_id_validation(self, url):
         url_value = "https://gitlab.com/api/v4/users"
         url.return_value = url_value
@@ -105,7 +106,7 @@ class ConfigurationValidationTests(unittest.TestCase):
 
     @responses.activate
     # pylint: enable=no-member
-    @mock.patch("congregate.helpers.api.generate_v4_request_url")
+    @mock.patch.object(GitLabApi, "generate_v4_request_url")
     def test_invalid_token(self, url):
         url_value = "https://gitlab.com/api/v4/users"
         url.return_value = url_value
@@ -118,7 +119,7 @@ class ConfigurationValidationTests(unittest.TestCase):
 
     @responses.activate
     # pylint: enable=no-member
-    @mock.patch("congregate.helpers.api.generate_v4_request_url")
+    @mock.patch.object(GitLabApi, "generate_v4_request_url")
     def test_unexpected_error(self, url):
         url_value = "https://gitlab.com/api/v4/users"
         url.return_value = url_value
@@ -131,7 +132,7 @@ class ConfigurationValidationTests(unittest.TestCase):
     @responses.activate
     # pylint: enable=no-member
     @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.validate_dstn_token')
-    @mock.patch("congregate.helpers.api.generate_v4_request_url")
+    @mock.patch.object(GitLabApi, "generate_v4_request_url")
     def test_pass_import_user_id_validation(self, url, valid_token):
         url_value = "https://gitlab.com/api/v4/users"
         url.return_value = url_value
@@ -145,7 +146,7 @@ class ConfigurationValidationTests(unittest.TestCase):
 
     @responses.activate
     # pylint: enable=no-member
-    @mock.patch("congregate.helpers.api.generate_v4_request_url")
+    @mock.patch.object(GitLabApi, "generate_v4_request_url")
     def test_mismatched_import_user_id_validation(self, url):
         url_value = "https://gitlab.com/api/v4/users"
         url.return_value = url_value
@@ -160,7 +161,7 @@ class ConfigurationValidationTests(unittest.TestCase):
     # pylint: enable=no-member
     @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.validate_dstn_token')
     @mock.patch.object(ConfigurationValidator, 'dstn_parent_id', new_callable=mock.PropertyMock)
-    @mock.patch("congregate.helpers.api.generate_v4_request_url")
+    @mock.patch.object(GitLabApi, "generate_v4_request_url")
     def test_succeed_parent_group_path_validation(self, url, parent_id, valid_token):
         parent_id.return_value = 4
         self.config.as_obj().set("DESTINATION", "dstn_parent_group_path", "twitter")
@@ -178,7 +179,7 @@ class ConfigurationValidationTests(unittest.TestCase):
     @responses.activate
     # pylint: enable=no-member
     @mock.patch.object(ConfigurationValidator, 'dstn_parent_id', new_callable=mock.PropertyMock)
-    @mock.patch("congregate.helpers.api.generate_v4_request_url")
+    @mock.patch.object(GitLabApi, "generate_v4_request_url")
     def test_fail_parent_group_path_validation(self, url, parent_id):
         parent_id.return_value = 4
         self.config.as_obj().set("DESTINATION", "dstn_parent_group_path", "twitter")
@@ -221,7 +222,7 @@ class ConfigurationValidationTests(unittest.TestCase):
     # pylint: enable=no-member
     @mock.patch.object(ConfigurationValidator, 'source_type', new_callable=mock.PropertyMock)
     @mock.patch("getpass.getpass")
-    @mock.patch("congregate.helpers.api.generate_v4_request_url")
+    @mock.patch.object(GitLabApi, "generate_v4_request_url")
     def test_validate_gitlab_src_token_invalid(self, url, secret, src_type):
         secret.return_value = "test"
         src_type.return_value = "gitlab"
@@ -392,7 +393,7 @@ class ConfigurationValidationTests(unittest.TestCase):
     # pylint: enable=no-member
     @mock.patch.object(ConfigurationValidator, 'source_type', new_callable=mock.PropertyMock)
     @mock.patch("getpass.getpass")
-    @mock.patch("congregate.helpers.api.generate_v4_request_url")
+    @mock.patch.object(GitLabApi, "generate_v4_request_url")
     def test_validate_gitlab_src_token_not_admin(self, url, secret, src_type):
         secret.return_value = "test"
         src_type.return_value = "gitlab"
@@ -411,7 +412,7 @@ class ConfigurationValidationTests(unittest.TestCase):
     # pylint: enable=no-member
     @mock.patch.object(ConfigurationValidator, 'source_type', new_callable=mock.PropertyMock)
     @mock.patch("getpass.getpass")
-    @mock.patch("congregate.helpers.api.generate_v4_request_url")
+    @mock.patch.object(GitLabApi, "generate_v4_request_url")
     def test_validate_gitlab_src_token_success(self, url, secret, src_type):
         secret.return_value = "test"
         src_type.return_value = "gitlab"
@@ -440,7 +441,7 @@ class ConfigurationValidationTests(unittest.TestCase):
     @responses.activate
     # pylint: enable=no-member
     @mock.patch("getpass.getpass")
-    @mock.patch("congregate.helpers.api.generate_v4_request_url")
+    @mock.patch.object(GitLabApi, "generate_v4_request_url")
     def test_validate_dstn_token_invalid(self, url, secret):
         secret.return_value = "test"
         self.config.dstn_token_validated_in_session = False
@@ -458,7 +459,7 @@ class ConfigurationValidationTests(unittest.TestCase):
     @responses.activate
     # pylint: enable=no-member
     @mock.patch("getpass.getpass")
-    @mock.patch("congregate.helpers.api.generate_v4_request_url")
+    @mock.patch.object(GitLabApi, "generate_v4_request_url")
     def test_validate_dstn_token_not_admin(self, url, secret):
         secret.return_value = "test"
         self.config.dstn_token_validated_in_session = False
@@ -476,7 +477,7 @@ class ConfigurationValidationTests(unittest.TestCase):
     @responses.activate
     # pylint: enable=no-member
     @mock.patch("getpass.getpass")
-    @mock.patch("congregate.helpers.api.generate_v4_request_url")
+    @mock.patch.object(GitLabApi, "generate_v4_request_url")
     def test_validate_dstn_token_success(self, url, secret):
         secret.return_value = "test"
         self.config.dstn_token_validated_in_session = False
