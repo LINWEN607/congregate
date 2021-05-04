@@ -3,7 +3,7 @@ version: '3'
 services:
  gitlab-web:
     image: gitlab/gitlab-ee:latest
-    container_name: gitlab-web
+    container_name: gitlab-web-congregate
     hostname: gitlab-web
     volumes:
       - './gitlab-config:/etc/gitlab'

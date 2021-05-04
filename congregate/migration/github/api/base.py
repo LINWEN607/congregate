@@ -1,6 +1,6 @@
 import requests
 
-from congregate.helpers.decorators import stable_retry
+from congregate.helpers.decorators import stable_retry, token_rotate
 from congregate.helpers.audit_logger import audit_logger
 from congregate.helpers.logger import myLogger
 from congregate.helpers.misc_utils import generate_audit_log_message, safe_json_response
@@ -15,9 +15,11 @@ audit = audit_logger(__name__)
 
 
 class GitHubApi():
+    index = 0
     def __init__(self, host, token, query=None, api=None):
         self.host = host
-        self.token = token
+        self.token_array = token.split(",")
+        self.token = self.token_array[self.index]
         self.api = api
         self.config = Config()
         # Test Query
@@ -86,6 +88,7 @@ class GitHubApi():
             host) else f"{host}/api/v3/{api}"
 
     @stable_retry
+    @token_rotate
     def generate_v3_get_request(self, host, api, url=None, params=None):
         """
         Generates GET request to GitHub API
@@ -130,6 +133,7 @@ class GitHubApi():
                              verify=self.config.ssl_verify, auth=auth)
 
     @stable_retry
+    @token_rotate
     def generate_v3_post_request(
             self, host, api, data, headers=None, description=None):
         """
@@ -143,6 +147,7 @@ class GitHubApi():
                              verify=self.config.ssl_verify)
 
     @stable_retry
+    @token_rotate
     def generate_v3_patch_request(
             self, host, api, data, headers=None, description=None):
         """
