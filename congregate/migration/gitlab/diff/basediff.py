@@ -92,6 +92,9 @@ class BaseDiffClient(BaseClass):
         for diff_col in mongo.wildcard_collection_query("diff_report"):
             diff = {}
             for d, _ in mongo.stream_collection(diff_col):
+                # if isinstance(d, str):
+                #     diff.update(json.loads(d))
+                # else:
                 diff.update(d)
             self.generate_html_report(
                 "Project", diff, f"/data/results/{diff_col}.html")
@@ -181,6 +184,12 @@ class BaseDiffClient(BaseClass):
 
         return self.empty_diff()
 
+    def generate_count_diff(self, source_count, destination_count):
+        return {
+            "source": source_count,
+            "destination": destination_count
+        }
+
     def generate_gh_diff(self, asset, key, sort_key, source_data, gl_endpoint, critical_key=None, obfuscate=False, parent_group=None, **kwargs):
         identifier = "{0}/{1}".format(parent_group,
                                       asset[key]) if parent_group else asset[key]
@@ -267,13 +276,16 @@ class BaseDiffClient(BaseClass):
         try:
             if isinstance(obj, dict):
                 for o in obj.keys():
-                    if (o == "/projects/:id" or o == "/groups/:id") and obj[o]["accuracy"] == 0:
-                        result = "failure"
-                        percentage_sum = 0
-                        break
-                    percentage_sum += obj[o]["accuracy"]
-                    if obj[o]["accuracy"] == 0:
-                        result = "failure"
+                    if "total" not in o.lower():
+                        if (o == "/projects/:id" or o == "/groups/:id") and obj[o]["accuracy"] == 0:
+                            result = "failure"
+                            percentage_sum = 0
+                            break
+                        percentage_sum += obj[o]["accuracy"]
+                        if obj[o]["accuracy"] == 0:
+                            result = "failure"
+                    else:
+                        total_number_of_keys -= 1
                 accuracy = percentage_sum / total_number_of_keys if total_number_of_keys else 0
                 if result is None:
                     result = "success"
@@ -409,7 +421,12 @@ class BaseDiffClient(BaseClass):
         style.content = "table tr th td { border: 1px solid #000 }"
         soup.html.append(soup.new_tag("head"))
         soup.html.head.append(style)
+
         for d, v in diff.items():
+            if not isinstance(v, dict):
+                # Make sure the JSON only has double quotes
+                p = re.compile('(?<!\\\\)\'')
+                v = json.loads(json.dumps(p.sub('\"', v)))
             if (len(v) > 50000 and len(v) < 100000) and nested is False:
                 self.log.info("Writing to a separate file")
                 subdiff = {d: v}
@@ -420,10 +437,10 @@ class BaseDiffClient(BaseClass):
             elif len(v) > 100000:
                 self.log.warning(f"Skipping {d} due to large size")
             else:
-                if not isinstance(v, dict):
-                    # Make sure the JSON only has double quotes
-                    p = re.compile('(?<!\\\\)\'')
-                    v = json.loads(json.dumps(p.sub('\"', v)))
+                # if not isinstance(v, dict):
+                #     # Make sure the JSON only has double quotes
+                #     p = re.compile('(?<!\\\\)\'')
+                #     v = json.loads(json.dumps(p.sub('\"', v)))
                 if "migration_results" not in d:
                     header_row = soup.new_tag("tr")
                     header_data_row = soup.new_tag("tr")
@@ -452,7 +469,7 @@ class BaseDiffClient(BaseClass):
                         diff_cell_row.append(diff_cell_header)
                     diff_row_table.append(diff_cell_row)
                     for endpoint in v:
-                        if endpoint not in ["overall_accuracy", "error"]:
+                        if endpoint not in ["overall_accuracy", "error"] and 'total' not in endpoint.lower():
                             diff_data_row = soup.new_tag("tr")
                             data = [
                                 endpoint,
@@ -468,6 +485,13 @@ class BaseDiffClient(BaseClass):
                                 "N/A",
                                 dig(v, endpoint, 'error')
                             ]
+                        elif "total" in endpoint.lower():
+                            diff_data_row = soup.new_tag("tr")
+                            data = [
+                                endpoint,
+                                "N/A",
+                                [f"{count_key}: {count_value}" for count_key, count_value in dig(v, endpoint).items()]
+                            ]
 
                         for da in data:
                             cell_data = soup.new_tag("td")
@@ -482,6 +506,11 @@ class BaseDiffClient(BaseClass):
                                 json_block['class'] = 'accordion-content'
                                 json_block.string = json.dumps(da, indent=4)
                                 cell_data.append(json_block)
+                            elif isinstance(da, list):
+                                for count in da:
+                                    count_data = soup.new_tag("p")
+                                    count_data.string = count
+                                    cell_data.append(count_data)
                             else:
                                 cell_data.string = da if da else ""
                             diff_data_row.append(cell_data)
@@ -538,3 +567,15 @@ class BaseDiffClient(BaseClass):
         if isinstance(request, GeneratorType):
             return True, list(request)
         return True, request
+
+    def get_destination_id(self, asset, key, parent_group):
+        identifier = "{0}/{1}".format(parent_group,
+                                        asset[key]) if parent_group else asset[key]
+        if self.results.get(identifier) is not None:
+            if isinstance(self.results[identifier], dict):
+                if did := dig(self.results, identifier, "id"):
+                    return did
+                elif did := dig(self.results, identifier, "response", "id"):
+                    return did
+                else:
+                    return None

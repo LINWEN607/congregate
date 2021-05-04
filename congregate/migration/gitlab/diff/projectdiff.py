@@ -1,3 +1,4 @@
+from copy import deepcopy
 from congregate.migration.gitlab.diff.basediff import BaseDiffClient
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.issues import IssuesApi
@@ -8,6 +9,7 @@ from congregate.helpers.dict_utils import rewrite_json_list_into_dict
 from congregate.helpers.json_utils import read_json_file_into_object
 from congregate.helpers.migrate_utils import get_dst_path_with_namespace
 from congregate.helpers.processes import handle_multi_process_write_to_file_and_return_results
+from congregate.helpers.api import GitLabApi
 
 
 class ProjectDiffClient(BaseDiffClient):
@@ -17,6 +19,7 @@ class ProjectDiffClient(BaseDiffClient):
 
     def __init__(self, staged=False, rollback=False, processes=None):
         super().__init__()
+        self.gl_api = GitLabApi()
         self.projects_api = ProjectsApi()
         self.issues_api = IssuesApi()
         self.mr_api = MergeRequestsApi()
@@ -49,7 +52,8 @@ class ProjectDiffClient(BaseDiffClient):
             "requirements_enabled",
             "forked_from_project",   # Temporarily, until we add fork relationship feature
             "parent_id",
-            "runners_token"
+            "runners_token",
+            "container_registry_image_prefix"
         ]
         if staged:
             self.source_data = read_json_file_into_object(
@@ -113,6 +117,18 @@ class ProjectDiffClient(BaseDiffClient):
             project, self.projects_api.get_project, obfuscate=True)
 
         if not self.rollback:
+            # Basic Project Stat Counts
+            project_diff["Total Number of Merge Requests"] = self.generate_project_count_diff(
+                project, "projects/:id/merge_requests")
+            project_diff["Total Number of Merge Request Comments"] = self.generate_nested_project_count_diff(
+                project, ["projects/:id/merge_requests", "notes"])
+            project_diff["Total Number of Issues"] = self.generate_project_count_diff(
+                project, "projects/:id/issues")
+            project_diff["Total Number of Issue Comments"] = self.generate_nested_project_count_diff(
+                project, ["projects/:id/issues", "notes"])
+            project_diff["Total Number of Branches"] = self.generate_project_count_diff(
+                project, "projects/:id/branches")
+
             # CI/CD
             project_diff["/projects/:id/variables"] = self.generate_project_diff(
                 project, self.projects_api.get_all_project_variables, obfuscate=True)
@@ -189,3 +205,29 @@ class ProjectDiffClient(BaseDiffClient):
     def generate_project_diff(self, project, endpoint, **kwargs):
         return self.generate_diff(project, "path_with_namespace", endpoint,
                                   parent_group=self.config.dstn_parent_group_path, **kwargs)
+    
+    def generate_project_count_diff(self, project, api):
+        key = "path_with_namespace"
+        source_id = project["id"]
+        destination_id = self.get_destination_id(project, key, self.config.dstn_parent_group_path)
+        source_count = self.gl_api.get_total_count(
+            self.config.source_host, self.config.source_token, api.replace(":id", str(source_id)))
+        destination_count = self.gl_api.get_total_count(
+            self.config.destination_host, self.config.destination_token, api.replace(":id", str(destination_id)))
+        return self.generate_count_diff(source_count, destination_count)
+    
+    def generate_nested_project_count_diff(self, project, apis):
+        key = "path_with_namespace"
+        source_id = project["id"]
+        source_apis = deepcopy(apis)
+        source_apis[0] = source_apis[0].replace(":id", str(source_id))
+        destination_id = self.get_destination_id(project, key, self.config.dstn_parent_group_path)
+        destination_apis = deepcopy(apis)
+        destination_apis[0] = destination_apis[0].replace(":id", str(destination_id))
+        source_count = self.gl_api.get_nested_total_count(
+            self.config.source_host, self.config.source_token, source_apis)
+        destination_count = self.gl_api.get_nested_total_count(
+            self.config.destination_host, self.config.destination_token, destination_apis)
+        return self.generate_count_diff(source_count, destination_count)
+
+        

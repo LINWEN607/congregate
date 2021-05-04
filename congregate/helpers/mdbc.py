@@ -1,5 +1,6 @@
 import sys
 from re import search
+from bson.errors import InvalidDocument
 from pymongo import MongoClient, errors
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.misc_utils import strip_protocol
@@ -84,6 +85,9 @@ class MongoConnector(BaseClass):
         self.client.close()
 
     def insert_data(self, collection, data, bypass_document_validation=False):
+        if isinstance(data, tuple):
+            data = data[0]
+        data = self.stringify_int_keys_in_dict(data)
         try:
             if isinstance(data, tuple):
                 data = data[0]
@@ -179,3 +183,31 @@ class MongoConnector(BaseClass):
         for col in self.db.list_collection_names():
             self.drop_collection(col)
         self.__setup_db()
+
+    def stringify_int_keys_in_dict(self, d):
+        """
+            Helper method to convert all int keys to strings
+        """
+        translate = {}
+        for k, v in d.items():
+            if isinstance(v, dict):
+                self.stringify_int_keys_in_dict(v)
+            if isinstance(k, int):
+                translate[k] = str(k)
+        for old, new in translate.items():
+            d[new] = d.pop(old)
+        return d
+    
+    def strip_dots_in_keys(self, d):
+        """
+            Helper method to replace all keys with dots to underscores
+        """
+        translate = {}
+        for k, v in d.items():
+            if isinstance(v, dict):
+                self.strip_dots_in_keys(v)
+            if '.' in k:
+                translate[k] = k.replace(".", "_")
+        for old, new in translate.items():
+            d[new] = d.pop(old)
+        return d

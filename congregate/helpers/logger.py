@@ -8,7 +8,7 @@ log_file_format = \
     "[%(asctime)s][%(levelname)s]|%(module)s.%(funcName)s:%(lineno)d| %(message)s"
 
 
-def myLogger(name, app_path='.', log_name='application'):
+def myLogger(name, app_path='.', log_name='application', config=None):
     global loggers
     if loggers.get(name):
         return loggers.get(name)
@@ -22,7 +22,7 @@ def myLogger(name, app_path='.', log_name='application'):
         stderr_log_handler.setFormatter(formatter)
         logger.addHandler(file_log_handler)
         logger.addHandler(stderr_log_handler)
-        slack_handler = SlackLogHandler()
+        slack_handler = SlackLogHandler(config=config)
         slack_handler.setLevel(WARNING)
         logger.addHandler(slack_handler)
         loggers[name] = logger
@@ -44,7 +44,7 @@ class SlackLogHandler(Handler):
 
     def emit(self, record):
         try:
-            if self.config.slack_url:
+            if self.config and self.config.slack_url:
                 json_data = json.dumps({
                     "text": f"{record.asctime} - {record.module} - {record.msg}",
                     "username": f"{record.levelname} - {record.process}",

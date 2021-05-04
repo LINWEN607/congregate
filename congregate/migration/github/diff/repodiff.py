@@ -1,4 +1,6 @@
 from congregate.migration.gitlab.diff.basediff import BaseDiffClient
+from congregate.helpers.api import GitLabApi
+from congregate.migration.github.api.base import GitHubApi
 from congregate.migration.github.api.repos import ReposApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.issues import IssuesApi
@@ -10,6 +12,7 @@ from congregate.helpers.dict_utils import rewrite_json_list_into_dict, dig
 from congregate.helpers.json_utils import read_json_file_into_object
 from congregate.helpers.migrate_utils import get_dst_path_with_namespace
 from congregate.helpers.processes import handle_multi_process_write_to_file_and_return_results
+from traceback import print_exc
 
 
 class RepoDiffClient(BaseDiffClient):
@@ -20,6 +23,8 @@ class RepoDiffClient(BaseDiffClient):
     def __init__(self, host, token, staged=False,
                  rollback=False, processes=None):
         super(RepoDiffClient, self).__init__()
+        self.gl_api = GitLabApi()
+        self.gh_api = GitHubApi(host, token)
         self.repos_api = ReposApi(host, token)
         self.repos_client = ReposClient(host, token)
         self.gl_projects_api = ProjectsApi()
@@ -61,7 +66,12 @@ class RepoDiffClient(BaseDiffClient):
             "message",
             "parent_ids",
             "title",
-            "short_id"
+            "short_id",
+            "id",
+            "iid",
+            "project_id",
+            "source_project_id",
+            "target_project_id"
         ]
         if staged:
             self.source_data = read_json_file_into_object(
@@ -141,6 +151,17 @@ class RepoDiffClient(BaseDiffClient):
 
     def handle_endpoints(self, project):
         repo_diff = {}
+        # Basic Project Stat Counts
+        repo_diff["Total Number of Merge Requests"] = self.generate_repo_count_diff(
+            project, f"repositories/{project['id']}/pulls", "projects/:id/merge_requests")
+        repo_diff["Total Number of Merge Request Comments"] = self.generate_repo_count_diff(
+            project, f"repos/{project['namespace']}/{project['path']}/pulls/comments", ["projects/:id/merge_requests", "notes"], bypass_x_total_count=True)
+        repo_diff["Total Number of Issues"] = self.generate_repo_count_diff(
+            project, f"repositories/{project['id']}/issues", "projects/:id/issues")
+        repo_diff["Total Number of Issue Comments"] = self.generate_repo_count_diff(
+            project, f"repos/{project['namespace']}/{project['path']}/issues/comments", ["projects/:id/issues", "notes"], bypass_x_total_count=True)
+        repo_diff["Total Number of Branches"] = self.generate_repo_count_diff(
+            project, f"repositories/{project['id']}/branches", "projects/:id/branches")
 
         # branches
         repo_branch_data = list(self.repos_api.get_repo_branches(
@@ -210,3 +231,19 @@ class RepoDiffClient(BaseDiffClient):
 
     def generate_repo_diff(self, project, sort_key, source_data, gl_endpoint, **kwargs):
         return self.generate_gh_diff(project, "path_with_namespace", sort_key, source_data, gl_endpoint, parent_group=self.config.dstn_parent_group_path or project.get("target_namespace", ""), **kwargs)
+
+    def generate_repo_count_diff(self, project, gh_api, gl_api, bypass_x_total_count=False):
+        key = "path_with_namespace"
+        destination_id = self.get_destination_id(project, key, self.config.dstn_parent_group_path)
+        source_count = self.gh_api.get_total_count(
+            self.config.source_host,  gh_api)
+        if isinstance(gl_api, list):
+            gl_api[0] = gl_api[0].replace(":id", str(destination_id))
+            destination_count = self.gl_api.get_nested_total_count(
+                self.config.destination_host, self.config.destination_token, gl_api, bypass_x_total_count=bypass_x_total_count)
+        else:
+            destination_count = self.gl_api.get_total_count(
+                self.config.destination_host, self.config.destination_token, gl_api.replace(":id", str(destination_id)))
+        return self.generate_count_diff(source_count, destination_count)
+    
+        

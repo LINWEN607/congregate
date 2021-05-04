@@ -233,6 +233,28 @@ class GitHubApi():
             else:
                 lastPage = True
                 yield from self.pageless_data(resp_json, page_check=page_check, lastPage=lastPage)
+    
+    def get_total_count(self, host, api, params=None, limit=100, page_check=False):
+        """
+        Retrieves total count of records form paginated API call
+
+        :param host: (str) GitHub host URL
+        :param api: (str) Specific GitLab API endpoint (ex: users)
+        :param params: (str) Any query parameters needed in the request
+        :param limit: (int) Total results per request. Defaults to 100
+        :param page_check: (bool) If True, then the yield changes from a dict to a tuple of (dict, bool) where bool is True if list_all has reached the last page
+
+        :returns: Total number of records related to that API call
+        """
+        uniq = {}
+        for data in self.list_all(host, api, params=params, limit=limit, page_check=page_check):
+            # Ignoring any data containing the 'pull_request' key. 
+            # See https://docs.github.com/en/rest/reference/issues#list-repository-issues for more information
+            if 'pull_request' not in data.keys():
+                uniq[data.get("id", data.get("name"))] = 1
+        count = len(uniq)
+        log.info(f"Total count for {api}: {count}")
+        return count
 
     def pageless_data(self, resp_json, page_check=False, lastPage=False):
         """

@@ -100,6 +100,21 @@ class SeedDataGenerator(BaseClass):
         }
     ]
 
+    BRANCH_DATA = [
+        {
+            "branch": "test-branch",
+            "ref": "master"
+        },
+        {
+            "branch": "test-branch2",
+            "ref": "master"
+        },
+        {
+            "branch": "test-branch3",
+            "ref": "master"
+        }
+    ]
+
     def __init__(self):
         self.ie = ImportExportClient()
         self.mirror = MirrorClient()
@@ -130,6 +145,7 @@ class SeedDataGenerator(BaseClass):
         projects = self.generate_group_projects(groups, dry_run)
         for p in projects:
             self.add_project_members(users, p["id"], dry_run)
+            self.generate_dummy_branches(p["id"], dry_run)
             self.generate_dummy_environment(p["id"], dry_run)
             self.generate_dummy_project_hooks(p["id"], dry_run)
             self.generate_dummy_project_push_rules(p["id"], dry_run)
@@ -329,6 +345,14 @@ class SeedDataGenerator(BaseClass):
                         self.config.source_host, self.config.source_token, dummy_project_data[i]["name"], data=dummy_project_data[i]).json()
 
         return created_projects
+
+    def generate_dummy_branches(self, pid, dry_run=True):
+        for d in self.BRANCH_DATA:
+            self.log.info(
+                f"{get_dry_log(dry_run)}Creating project {pid} branch ({d})")
+            if not dry_run:
+                self.projects_api.create_branch(
+                    self.config.source_host, self.config.source_token, pid, data=json.dumps(d))
 
     def generate_dummy_environment(self, pid, dry_run=True):
         data = {
