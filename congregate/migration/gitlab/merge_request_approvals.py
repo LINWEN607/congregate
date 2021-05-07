@@ -1,6 +1,6 @@
 from requests.exceptions import RequestException
 
-from congregate.helpers.base_class import BaseClass
+from congregate.migration.gitlab.base_client import BaseGitLabApiClient
 from congregate.helpers.misc_utils import is_error_message_present, safe_json_response
 from congregate.helpers.dict_utils import pop_multiple_keys
 from congregate.migration.gitlab.api.groups import GroupsApi
@@ -9,13 +9,13 @@ from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.users import UsersApi
 
 
-class MergeRequestApprovalsClient(BaseClass):
+class MergeRequestApprovalsClient(BaseGitLabApiClient):
     def __init__(self):
+        super(MergeRequestApprovalsClient, self).__init__()
         self.users_api = UsersApi()
         self.groups_api = GroupsApi()
         self.groups = GroupsClient()
         self.projects_api = ProjectsApi()
-        super(MergeRequestApprovalsClient, self).__init__()
 
     def are_enabled(self, pid):
         project = self.projects_api.get_project(

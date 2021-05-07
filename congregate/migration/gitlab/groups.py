@@ -2,7 +2,7 @@ import json
 from time import sleep
 from requests.exceptions import RequestException
 
-from congregate.helpers.base_class import BaseClass
+from congregate.migration.gitlab.base_client import BaseGitLabApiClient
 from congregate.helpers.processes import start_multi_process_stream_with_args, start_multi_process_stream
 from congregate.helpers.mdbc import MongoConnector
 from congregate.helpers.misc_utils import get_timedelta, safe_json_response, strip_protocol
@@ -15,14 +15,14 @@ from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.namespaces import NamespacesApi
 
 
-class GroupsClient(BaseClass):
+class GroupsClient(BaseGitLabApiClient):
     def __init__(self):
+        self.group_id_mapping = {}
+        super().__init__()
         self.vars = VariablesClient()
         self.groups_api = GroupsApi()
         self.badges = BadgesClient()
         self.namespaces_api = NamespacesApi()
-        self.group_id_mapping = {}
-        super().__init__()
 
     def traverse_groups(self, host, token, group):
         mongo = MongoConnector()

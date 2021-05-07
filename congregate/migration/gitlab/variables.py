@@ -1,17 +1,17 @@
 import json
 
 from requests.exceptions import RequestException
-from congregate.helpers.base_class import BaseClass
+from congregate.migration.gitlab.base_client import BaseGitLabApiClient
 from congregate.helpers.misc_utils import get_dry_log, is_error_message_present, safe_json_response
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.groups import GroupsApi
 
 
-class VariablesClient(BaseClass):
+class VariablesClient(BaseGitLabApiClient):
     def __init__(self):
+        super(VariablesClient, self).__init__()
         self.projects_api = ProjectsApi()
         self.groups_api = GroupsApi()
-        super(VariablesClient, self).__init__()
 
     def get_ci_variables(self, id, host, token, var_type="projects"):
         if var_type == "group":

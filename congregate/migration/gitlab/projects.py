@@ -4,7 +4,7 @@ import datetime
 from time import time
 from requests.exceptions import RequestException
 
-from congregate.helpers.base_class import BaseClass
+from congregate.migration.gitlab.base_client import BaseGitLabApiClient
 from congregate.helpers.misc_utils import get_dry_log, get_timedelta, \
     is_error_message_present, safe_json_response, strip_protocol, \
     get_decoded_string_from_b64_response_content, do_yml_sub
@@ -21,14 +21,14 @@ from congregate.helpers.utils import rotate_logs
 from congregate.migration.gitlab.api.project_repository import ProjectRepositoryApi
 
 
-class ProjectsClient(BaseClass):
+class ProjectsClient(BaseGitLabApiClient):
     def __init__(self):
+        super().__init__()
         self.projects_api = ProjectsApi()
         self.groups_api = GroupsApi()
         self.groups = GroupsClient()
         self.users = UsersClient()
         self.project_repository_api = ProjectRepositoryApi()
-        super().__init__()
 
     def get_projects(self):
         with open("{}/data/projects.json".format(self.app_path), "r") as f:

@@ -2,17 +2,17 @@ from requests.exceptions import RequestException
 
 from docker import from_env
 from docker.errors import APIError, TLSParameterError
-from congregate.helpers.base_class import BaseClass
+from congregate.migration.gitlab.base_client import BaseGitLabApiClient
 from congregate.helpers.misc_utils import is_error_message_present, safe_json_response
 from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
 
 
-class RegistryClient(BaseClass):
+class RegistryClient(BaseGitLabApiClient):
     def __init__(self):
+        super().__init__()
         self.users = UsersApi()
         self.projects_api = ProjectsApi()
-        super().__init__()
 
     def are_enabled(self, new_id, old_id):
         src = self.is_enabled(self.config.source_host,

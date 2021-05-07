@@ -1,6 +1,6 @@
 from requests.exceptions import RequestException
 
-from congregate.helpers.base_class import BaseClass
+from congregate.migration.gitlab.base_client import BaseGitLabApiClient
 from congregate.helpers.misc_utils import is_error_message_present, safe_json_response
 from congregate.helpers.dict_utils import dig
 from congregate.helpers.migrate_utils import get_dst_path_with_namespace
@@ -11,13 +11,13 @@ from congregate.migration.gitlab.api.instance import InstanceApi
 from congregate.migration.gitlab.projects import ProjectsClient
 
 
-class ClustersClient(BaseClass):
+class ClustersClient(BaseGitLabApiClient):
     def __init__(self):
+        super(ClustersClient, self).__init__()
         self.projects_api = ProjectsApi()
         self.projects = ProjectsClient()
         self.groups_api = GroupsApi()
         self.instance_api = InstanceApi()
-        super(ClustersClient, self).__init__()
 
     def migrate_instance_clusters(self, dry_run=True):
         if not is_dot_com(self.config.source_host):
