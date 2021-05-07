@@ -37,6 +37,7 @@ Usage:
     congregate count-unarchived-projects
     congregate archive-staged-projects [--commit] [--scm-source=hostname]
     congregate unarchive-staged-projects [--commit] [--scm-source=hostname]
+    congregate filter-projects-by-state [--commit] [--archived]
     congregate find-empty-repos
     congregate compare-groups [--staged]
     congregate staged-user-list
@@ -92,6 +93,7 @@ Arguments:
     dest                                    Toggle maintenance mode on destination instance
     msg                                     Maintenance mode message, with "+" in place of " "
     reporting                               Create reporting issues, based off reporting data supplied in congregate.conf
+    archived                                Filter out archived projects from the list of staged projects
 
 Commands:
     list                                    List all projects of a source instance and save it to {CONGREGATE_PATH}/data/projects.json.
@@ -136,6 +138,8 @@ Commands:
     staged-user-list                        Output a list of all staged users and their respective user IDs. Used to confirm IDs were updated correctly.
     archive-staged-projects                 Archive projects that are staged, not necessarily migrated.
     unarchive-staged-projects               Unarchive projects that are staged, not necessarily migrate.
+    filter-projects-by-state                Filter out projects by state archived or unarchived (default) from the list of staged projects and overwrite staged_projects.json.
+                                                GitLab source only
     generate-seed-data                      Generate dummy data to test a migration.
     validate-staged-groups-schema           Check staged_groups.json for missing group data.
     validate-staged-projects-schema         Check staged_projects.json for missing project data.
@@ -203,6 +207,7 @@ def main():
         PARTIAL = arguments["--partial"]
         SRC_INSTANCES = arguments["--src-instances"]
         SCM_SOURCE = arguments["--scm-source"]
+        ARCHIVED = arguments["--archived"]
 
         if SCM_SOURCE:
             SCM_SOURCE = strip_protocol(SCM_SOURCE)
@@ -411,13 +416,20 @@ def main():
                     gh_repos.archive_staged_repos(dry_run=DRY_RUN)
                 else:
                     log.warning(
-                        "We do not have mass archiving available for this source system yet")
+                        f"We do not have mass archiving available for {config.source_type}")
             if arguments["unarchive-staged-projects"]:
                 if config.source_type == "gitlab":
                     projects.unarchive_staged_projects(dry_run=DRY_RUN)
                 else:
                     log.warning(
-                        "We do not have mass unarchiving available for this source system")
+                        f"We do not have mass unarchiving available for {config.source_type}")
+            if arguments["filter-projects-by-state"]:
+                if config.source_type == "gitlab":
+                    projects.filter_projects_by_state(
+                        archived=ARCHIVED, dry_run=DRY_RUN)
+                else:
+                    log.warning(
+                        f"The 'archived' field is currently not present when listing on {config.source_type}")
             if arguments["find-empty-repos"]:
                 projects.find_empty_repos()
             if arguments["compare-groups"]:

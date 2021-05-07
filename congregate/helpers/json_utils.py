@@ -9,7 +9,7 @@ def json_pretty(data):
 
 def write_json_to_file(path, data, log=None):
     if log:
-        log.info("### Writing output to %s" % path)
+        log.info(f"### Writing output to {path}")
     with open(path, "w") as f:
         json.dump(data, f, indent=4)
 

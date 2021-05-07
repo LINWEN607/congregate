@@ -7,6 +7,7 @@ from congregate.helpers.configuration_validator import ConfigurationValidator
 from congregate.tests.mockapi.gitlab.groups import MockGroupsApi
 from congregate.tests.mockapi.gitlab.projects import MockProjectsApi
 from congregate.tests.mockapi.gitlab.users import MockUsersApi
+from congregate.migration.gitlab.users import UsersApi
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.projects import ProjectsClient
@@ -16,7 +17,6 @@ from congregate.helpers.mdbc import MongoConnector
 with warnings.catch_warnings():
     warnings.simplefilter("ignore")
     import mongomock
-from congregate.migration.gitlab.users import UsersApi
 
 
 @mark.unit_test
@@ -46,15 +46,16 @@ class ProjectsTests(unittest.TestCase):
 
         mongo = MongoConnector(client=mongomock.MongoClient)
         for project in self.groups_api.get_all_group_projects("https://gitlab.example.com", "token", 1):
-            self.projects.handle_retrieving_project("https://gitlab.example.com", "token", project, mongo=mongo)
+            self.projects.handle_retrieving_project(
+                "https://gitlab.example.com", "token", project, mongo=mongo)
 
-        actual_projects = [d for d, _ in mongo.stream_collection("projects-gitlab.example.com")]
+        actual_projects = [d for d, _ in mongo.stream_collection(
+            "projects-gitlab.example.com")]
         self.assertGreater(len(actual_projects), 0)
         expected_projects = self.mock_projects.get_all_projects()
 
         for i, _ in enumerate(expected_projects):
             self.assertDictEqual(expected_projects[i], actual_projects[i])
-
 
     @mock.patch("io.TextIOBase")
     @mock.patch('builtins.open')
@@ -71,9 +72,11 @@ class ProjectsTests(unittest.TestCase):
 
         mongo = MongoConnector(client=mongomock.MongoClient)
         for project in self.projects_api.get_all_projects("https://gitlab.example.com", "token"):
-            self.projects.handle_retrieving_project("https://gitlab.example.com", "token", project, mongo=mongo)
+            self.projects.handle_retrieving_project(
+                "https://gitlab.example.com", "token", project, mongo=mongo)
 
-        actual_projects = [d for d, _ in mongo.stream_collection("projects-gitlab.example.com")]
+        actual_projects = [d for d, _ in mongo.stream_collection(
+            "projects-gitlab.example.com")]
         self.assertGreater(len(actual_projects), 0)
         expected_projects = self.mock_projects.get_all_projects()
 
@@ -93,9 +96,11 @@ class ProjectsTests(unittest.TestCase):
 
         mongo = MongoConnector(client=mongomock.MongoClient)
         for project in self.projects_api.get_all_projects("https://gitlab.example.com", "token"):
-            self.projects.handle_retrieving_project("https://gitlab.example.com", "token", project, mongo=mongo)
-        
-        actual_projects = [d for d, _ in mongo.stream_collection("gitlab.example.com-host")]
+            self.projects.handle_retrieving_project(
+                "https://gitlab.example.com", "token", project, mongo=mongo)
+
+        actual_projects = [d for d, _ in mongo.stream_collection(
+            "gitlab.example.com-host")]
         self.assertEqual(len(actual_projects), 0)
 
     @mock.patch('congregate.helpers.conf.Config.destination_host', new_callable=mock.PropertyMock)
@@ -242,3 +247,14 @@ class ProjectsTests(unittest.TestCase):
             src_branch
         )
         self.assertIsNone(resp)
+
+    @mock.patch("congregate.helpers.migrate_utils.read_json_file_into_object")
+    def test_filter_projects_by_state_archived(self, staged):
+        staged.return_value = self.mock_projects.get_staged_projects()
+        self.assertEqual(
+            self.projects.filter_projects_by_state(archived=True), 1)
+
+    @mock.patch("congregate.helpers.migrate_utils.read_json_file_into_object")
+    def test_filter_projects_by_state_unarchived(self, staged):
+        staged.return_value = self.mock_projects.get_staged_projects()
+        self.assertEqual(self.projects.filter_projects_by_state(), 2)

@@ -8,7 +8,7 @@ from congregate.helpers.base_class import BaseClass
 from congregate.helpers.misc_utils import get_dry_log, get_timedelta, \
     is_error_message_present, safe_json_response, strip_protocol, \
     get_decoded_string_from_b64_response_content, do_yml_sub
-from congregate.helpers.json_utils import json_pretty, read_json_file_into_object
+from congregate.helpers.json_utils import json_pretty, read_json_file_into_object, write_json_to_file
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.groups import GroupsClient
@@ -220,6 +220,20 @@ class ProjectsClient(BaseClass):
         finally:
             add_post_migration_stats(start, log=self.log)
 
+    def filter_projects_by_state(self, archived=False, dry_run=True):
+        staged = get_staged_projects()
+        self.log.info(f"Total staged projects count: {len(staged)}")
+        arch = [s for s in staged if s.get("archived")]
+        unarch = [s for s in staged if not s.get("archived")]
+        diff = arch if archived else unarch
+
+        self.log.info(
+            f"{get_dry_log(dry_run)}Keeping ONLY {'archived' if archived else 'unarchived'} {len(diff)}/{len(staged)} projects staged")
+        if not dry_run:
+            write_json_to_file(
+                f"{self.app_path}/data/staged_projects.json", diff, log=self.log)
+        return len(diff)
+
     def find_unimported_projects(self, dry_run=True):
         unimported_projects = []
         files = self.get_projects()
@@ -421,7 +435,7 @@ class ProjectsClient(BaseClass):
                     f"Could not determine default branch for project_id {project_id}"
                 )
                 return
-        
+
         # Get the list of filenames
         filenames = pattern_list.get("filenames", None)
         if not filenames:
@@ -562,7 +576,8 @@ class ProjectsClient(BaseClass):
                     put_file_data
                 )
                 if not put_resp or (put_resp and put_resp.status_code == 400):
-                    self.log.error(f"Could not put commit for regex replace:\nproject: {project_id}\nbranch name: {branch_name}\nfile: {f}")
+                    self.log.error(
+                        f"Could not put commit for regex replace:\nproject: {project_id}\nbranch name: {branch_name}\nfile: {f}")
                 branch_name = ""
 
             # A branch_name reset would need to go here for the multiple

@@ -267,7 +267,7 @@ Usage:
     congregate stage-groups <groups>... [--skip-users] [--commit] [--scm-source=hostname]
     congregate stage-wave <wave> [--commit] [--scm-source=hostname]
     congregate create-stage-wave-csv [--commit]
-    congregate migrate [--processes=<n>] [--reporting] [--skip-users] [--skip-adding-members] [--skip-group-export] [--skip-group-import] [--skip-project-export] [--skip-project-import] [--only-post-migration-info] [--subgroups-only] [--scm-source=hostname] [--commit] 
+    congregate migrate [--processes=<n>] [--reporting] [--skip-users] [--skip-adding-members] [--skip-group-export] [--skip-group-import] [--skip-project-export] [--skip-project-import] [--only-post-migration-info] [--subgroups-only] [--scm-source=hostname] [--commit]
     congregate rollback [--hard-delete] [--skip-users] [--skip-groups] [--skip-projects] [--commit]
     congregate ui
     congregate do-all [--commit]
@@ -293,6 +293,7 @@ Usage:
     congregate count-unarchived-projects
     congregate archive-staged-projects [--commit] [--scm-source=hostname]
     congregate unarchive-staged-projects [--commit] [--scm-source=hostname]
+    congregate filter-projects-by-state [--commit] [--archived]
     congregate find-empty-repos
     congregate compare-groups [--staged]
     congregate staged-user-list
@@ -300,8 +301,8 @@ Usage:
     congregate validate-staged-groups-schema
     congregate validate-staged-projects-schema
     congregate map-users [--commit]
-    congregate generate-diff [--processes=<n>] [--staged] [--rollback] [--scm-source=hostname] [--skip-users] [--skip-groups] [--skip-projects]
     congregate map-and-stage-users-by-email-match [--commit]
+    congregate generate-diff [--processes=<n>] [--staged] [--rollback] [--scm-source=hostname] [--skip-users] [--skip-groups] [--skip-projects]
     congregate clean [--commit]
     congregate stitch-results [--result-type=<project|group|user>] [--no-of-files=<n>] [--head|--tail]
     congregate obfuscate
@@ -348,6 +349,7 @@ Arguments:
     dest                                    Toggle maintenance mode on destination instance
     msg                                     Maintenance mode message, with "+" in place of " "
     reporting                               Create reporting issues, based off reporting data supplied in congregate.conf
+    archived                                Filter out archived projects from the list of staged projects
 
 Commands:
     list                                    List all projects of a source instance and save it to {CONGREGATE_PATH}/data/projects.json.
@@ -382,7 +384,7 @@ Commands:
     migrate-variables-in-stage              Migrate CI variables for staged projects.
     mirror-staged-projects                  Set up project mirroring for staged projects.
     remove-all-mirrors                      Remove all project mirrors for staged projects.
-    update-projects-visibility               Return list of all migrated projects' visibility.
+    update-projects-visibility              Return list of all migrated projects' visibility.
     set-default-branch                      Set default branch to master for all projects on destination.
     enable-mirroring                        Start pull mirror process for all projects on destination.
     count-unarchived-projects               Return total number and list of all unarchived projects on source.
@@ -392,6 +394,8 @@ Commands:
     staged-user-list                        Output a list of all staged users and their respective user IDs. Used to confirm IDs were updated correctly.
     archive-staged-projects                 Archive projects that are staged, not necessarily migrated.
     unarchive-staged-projects               Unarchive projects that are staged, not necessarily migrate.
+    filter-projects-by-state                Filter out projects by state archived or unarchived (default) from the list of staged projects and overwrite staged_projects.json.
+                                                GitLab source only
     generate-seed-data                      Generate dummy data to test a migration.
     validate-staged-groups-schema           Check staged_groups.json for missing group data.
     validate-staged-projects-schema         Check staged_projects.json for missing project data.
@@ -399,6 +403,7 @@ Commands:
     stitch-results                          Stitches together migration results from multiple migration runs
     generate-diff                           Generates HTML files containing the diff results of the migration
     map-users                               Maps staged user emails to emails defined in the user-provided user_map.csv
+    map-and-stage-users-by-email-match                Maps staged user emails to emails defined in the user-provided user_map.csv. Matches by old/new email instead of username
     obfuscate                               Obfuscate a secret or password that you want to manually update in the config.
     deobfuscate                             Deobfuscate a secret or password from the config.
     dump-database                           Dump all database collections to various JSON files
