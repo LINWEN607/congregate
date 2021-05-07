@@ -10,9 +10,10 @@ from congregate.helpers.misc_utils import generate_audit_log_message, safe_json_
 
 
 class GitLabApi(object):
-    def __init__(self, app_path=None, log_name=None):
+    def __init__(self, app_path=None, log_name=None, ssl_verify=True):
         self.log = myLogger(__name__, app_path=app_path, log_name=log_name)
         self.audit = audit_logger(__name__, app_path=app_path)
+        self.ssl_verify = ssl_verify
 
     def generate_v4_request_url(self, host, api):
         return f"{host}/api/v4/{api}"
@@ -30,7 +31,7 @@ class GitLabApi(object):
 
 
     @stable_retry
-    def generate_get_request(self, host, token, api, url=None, params=None, verify=True):
+    def generate_get_request(self, host, token, api, url=None, params=None):
         """
         Generates GET request to GitLab API.
         You will need to provide the GL host, access token, and specific api url.
@@ -52,11 +53,11 @@ class GitLabApi(object):
         if params is None:
             params = {}
 
-        return requests.get(url, params=params, headers=headers, verify=verify)
+        return requests.get(url, params=params, headers=headers, verify=self.ssl_verify)
 
 
     @stable_retry
-    def generate_post_request(self, host, token, api, data, url=None, graphql_query=False, headers=None, files=None, verify=True, description=None):
+    def generate_post_request(self, host, token, api, data, url=None, graphql_query=False, headers=None, files=None, description=None):
         """
             Generates POST request to GitLab API.
 
@@ -79,11 +80,11 @@ class GitLabApi(object):
         self.audit.info(generate_audit_log_message("POST", description, url))
         if headers is None:
             headers = self.generate_v4_request_header(token)
-        return requests.post(url, data=data, headers=headers, files=files, verify=verify)
+        return requests.post(url, data=data, headers=headers, files=files, verify=self.ssl_verify)
 
 
     @stable_retry
-    def generate_put_request(self, host, token, api, data, headers=None, files=None, verify=True, description=None):
+    def generate_put_request(self, host, token, api, data, headers=None, files=None, description=None):
         """
             Generates PUT request to GitLab API.
 
@@ -99,11 +100,11 @@ class GitLabApi(object):
         if headers is None:
             headers = self.generate_v4_request_header(token)
 
-        return requests.put(url, headers=headers, data=data, files=files, verify=verify)
+        return requests.put(url, headers=headers, data=data, files=files, verify=self.ssl_verify)
 
 
     @stable_retry
-    def generate_delete_request(self, host, token, api, verify=True, description=None):
+    def generate_delete_request(self, host, token, api, description=None):
         """
             Generates DELETE request to GitLab API.
 
@@ -117,11 +118,11 @@ class GitLabApi(object):
         self.audit.info(generate_audit_log_message("DELETE", description, url))
         headers = self.generate_v4_request_header(token)
 
-        return requests.delete(url, headers=headers, verify=verify)
+        return requests.delete(url, headers=headers, verify=self.ssl_verify)
 
 
     @stable_retry
-    def get_count(self, host, token, api, verify=True):
+    def get_count(self, host, token, api):
         """
             Retrieves total count of projects, users, and groups
 
@@ -133,14 +134,14 @@ class GitLabApi(object):
         """
         url = self.generate_v4_request_url(host, api)
 
-        response = requests.head(url, headers=self.generate_v4_request_header(token), verify=verify)
+        response = requests.head(url, headers=self.generate_v4_request_header(token), verify=self.ssl_verify)
 
         if response.headers.get('X-Total', None) is not None:
             return int(response.headers['X-Total'])
 
 
     @stable_retry
-    def get_total_pages(self, host, token, api, verify=True):
+    def get_total_pages(self, host, token, api):
         """
             Get total number of pages in API result
 
@@ -152,7 +153,7 @@ class GitLabApi(object):
         """
         url = self.generate_v4_request_url(host, api)
 
-        response = requests.head(url, headers=self.generate_v4_request_header(token), verify=verify)
+        response = requests.head(url, headers=self.generate_v4_request_header(token), verify=self.ssl_verify)
         if response.headers.get('X-Total-Pages', None) is not None:
             return int(response.headers['X-Total-Pages'])
 
@@ -160,7 +161,7 @@ class GitLabApi(object):
 
 
     @stable_retry
-    def get_total_count(self, host, token, api, params=None, per_page=100, keyset=False, verify=True, bypass_x_total_count=False):
+    def get_total_count(self, host, token, api, params=None, per_page=100, keyset=False, bypass_x_total_count=False):
         count = self.get_count(host, token, api)
         # Can't use a walrus operator if count is 0
         if (count or count == 0) and bypass_x_total_count is False:
@@ -176,7 +177,7 @@ class GitLabApi(object):
         count = 0
         while True:
             url = self.generate_v4_request_url(host, api)
-            response = requests.get(url, headers=self.generate_v4_request_header(token), verify=verify, params=self.get_params(
+            response = requests.get(url, headers=self.generate_v4_request_header(token), verify=self.ssl_verify, params=self.get_params(
                     params, PER_PAGE, current_page, keyset, last_id))
             headers = response.headers
             if headers.get('x-per-page', None):
@@ -219,7 +220,7 @@ class GitLabApi(object):
 
 
     @stable_retry
-    def list_all(self, host, token, api, params=None, verify=True, per_page=100, keyset=False):
+    def list_all(self, host, token, api, params=None, per_page=100, keyset=False):
         """
             Generates a list of all projects, groups, users, etc.
 
@@ -249,7 +250,7 @@ class GitLabApi(object):
             retried = False
             while current_page <= end_page:
                 data = self.generate_get_request(host, token, api, params=self.get_params(
-                    params, PER_PAGE, current_page, keyset, last_id), verify=verify)
+                    params, PER_PAGE, current_page, keyset, last_id))
                 try:
                     self.log.info(f"Retrieved {PER_PAGE * (current_page - 1) + len(data.json())} {api}")
                     if keyset:
@@ -278,7 +279,7 @@ class GitLabApi(object):
             while True:
                 data = self.generate_get_request(
                     host, token, api, params=self.get_params(
-                        params, PER_PAGE, current_page, keyset, last_id), verify=verify)
+                        params, PER_PAGE, current_page, keyset, last_id))
                 try:
                     self.log.info(f"Retrieved {PER_PAGE * (current_page - 1) + len(data.json())} {api}")
                     if keyset:
@@ -301,7 +302,7 @@ class GitLabApi(object):
 
 
     @stable_retry
-    def search(self, host, token, api, search_query, verify=True):
+    def search(self, host, token, api, search_query):
         """
             Get total number of pages in API result
 
@@ -313,7 +314,7 @@ class GitLabApi(object):
             :return: JSON object containing the request response
         """
         return self.generate_get_request(host, token, api, params={
-                                    'search': search_query}, verify=verify).json()
+                                    'search': search_query}).json()
 
 
     def get_params(self, params, per_page, current_page, keyset, last_id):
