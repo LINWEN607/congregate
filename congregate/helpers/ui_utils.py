@@ -23,7 +23,7 @@ def spin_up_ui(app_path, port):
         print("UI is out of date. Rebuilding UI")
         build_ui(app_path)
     os.chdir(app_path + "/congregate")
-    run_ui = "gunicorn -k gevent -w 4 ui:app --bind=0.0.0.0:" + str(port)
+    run_ui = f"gunicorn -k gevent -w 4 --env CONGREGATE_PATH={app_path} --env APP_PATH={app_path} ui:app --bind=0.0.0.0:{str(port)}"
     subprocess.call(run_ui.split(" "))
 
 

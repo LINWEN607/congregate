@@ -1,11 +1,11 @@
 from traceback import print_exc
-
+from os import getenv
 from time import sleep
 from functools import wraps
 from congregate.helpers.logger import myLogger
 from congregate.helpers.exceptions import ConfigurationException
 
-log = myLogger(__name__)
+log = myLogger(__name__, app_path=getenv('APP_PATH', '.'))
 
 
 def stable_retry(function, ExceptionType=Exception, delay=5, backoff=1.20, sleep_delay=1.5):

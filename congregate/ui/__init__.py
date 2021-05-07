@@ -23,6 +23,6 @@ from . import views
 from congregate.helpers.logger import myLogger
 
 
-log = myLogger('werkzeug')
+log = myLogger('werkzeug', app_path=os.getenv('CONGREGATE_PATH'), log_name='congregate')
 
 log.setLevel(logging.ERROR)
