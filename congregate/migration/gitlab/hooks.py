@@ -1,6 +1,6 @@
 from requests.exceptions import RequestException
 
-from congregate.migration.gitlab.base_client import BaseGitLabApiClient
+from congregate.helpers.base_class import BaseClass
 from congregate.helpers.misc_utils import get_dry_log, is_error_message_present
 from congregate.helpers.dict_utils import pop_multiple_keys
 from congregate.helpers.utils import is_dot_com
@@ -9,12 +9,12 @@ from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.groups import GroupsApi
 
 
-class HooksClient(BaseGitLabApiClient):
+class HooksClient(BaseClass):
     def __init__(self):
-        super(HooksClient, self).__init__()
         self.instance_api = InstanceApi()
         self.projects_api = ProjectsApi()
         self.groups_api = GroupsApi()
+        super(HooksClient, self).__init__()
 
     def migrate_instance_hooks(self, dry_run=True):
         if not is_dot_com(self.config.source_host):

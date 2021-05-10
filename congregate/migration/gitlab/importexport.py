@@ -7,7 +7,7 @@ from os import remove
 from glob import glob
 from requests.exceptions import RequestException
 from requests_toolbelt.multipart.encoder import MultipartEncoder
-from congregate.migration.gitlab.base_client import BaseGitLabApiClient
+from congregate.helpers.base_class import BaseClass
 from congregate.helpers.misc_utils import get_dry_log, \
     safe_json_response
 from congregate.helpers.migrate_utils import check_is_project_or_group_for_logging, migration_dry_run
@@ -24,7 +24,7 @@ from congregate.helpers.migrate_utils import get_project_namespace, is_user_proj
     get_export_filename_from_namespace_and_name, get_dst_path_with_namespace, get_full_path_with_parent_namespace, is_loc_supported
 
 
-class ImportExportClient(BaseGitLabApiClient):
+class ImportExportClient(BaseClass):
     SAML_MSG = "Validation failed: User is not linked to a SAML account"
 
     # Import rate limit cool-off

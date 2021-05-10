@@ -3,7 +3,7 @@ import json
 from os import path
 from requests.exceptions import RequestException
 
-from congregate.migration.gitlab.base_client import BaseGitLabApiClient
+from congregate.helpers.base_class import BaseClass
 from congregate.helpers.misc_utils import get_dry_log, get_timedelta, \
     safe_json_response, strip_protocol
 from congregate.helpers.json_utils import json_pretty, read_json_file_into_object
@@ -17,11 +17,11 @@ from congregate.helpers.mdbc import MongoConnector
 from congregate.helpers.processes import start_multi_process_stream
 
 
-class UsersClient(BaseGitLabApiClient):
+class UsersClient(BaseClass):
     def __init__(self):
-        super().__init__()
         self.groups_api = GroupsApi()
         self.users_api = UsersApi()
+        super().__init__()
         self.sso_hash_map = self.generate_hash_map()
 
     def connect_to_mongo(self):

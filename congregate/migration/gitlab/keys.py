@@ -1,6 +1,6 @@
 from requests.exceptions import RequestException
 
-from congregate.migration.gitlab.base_client import BaseGitLabApiClient
+from congregate.helpers.base_class import BaseClass
 from congregate.helpers.misc_utils import is_error_message_present
 from congregate.helpers.dict_utils import pop_multiple_keys
 from congregate.helpers.utils import is_dot_com
@@ -10,13 +10,13 @@ from congregate.migration.gitlab.api.instance import InstanceApi
 from congregate.migration.gitlab.users import UsersClient
 
 
-class KeysClient(BaseGitLabApiClient):
+class KeysClient(BaseClass):
     def __init__(self):
-        super(KeysClient, self).__init__()
         self.projects_api = ProjectsApi()
         self.users_api = UsersApi()
         self.instance_api = InstanceApi()
         self.users = UsersClient()
+        super(KeysClient, self).__init__()
 
     def migrate_project_deploy_keys(self, old_id, new_id, name):
         try:

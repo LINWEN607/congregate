@@ -1,5 +1,5 @@
 from time import sleep
-from congregate.migration.gitlab.base_client import BaseGitLabApiClient
+from congregate.helpers.base_class import BaseClass
 from congregate.helpers.misc_utils import is_error_message_present, safe_json_response
 from congregate.helpers.dict_utils import dig
 from congregate.helpers.migrate_utils import migration_dry_run
@@ -9,7 +9,7 @@ from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.instance import InstanceApi
 
 
-class ImportClient(BaseGitLabApiClient):
+class ImportClient(BaseClass):
     def __init__(self):
         super().__init__()
         self.ext_import = ImportApi()
@@ -62,10 +62,8 @@ class ImportClient(BaseGitLabApiClient):
             :return: (dict) Project and its response code
 
         '''
-        tkn = token.split(",")
-        pat = tkn[0] # Use just one of the tokens for project import
         data = {
-            "personal_access_token": pat,
+            "personal_access_token": token,
             "repo_id": pid,
             "target_namespace": tn
         }

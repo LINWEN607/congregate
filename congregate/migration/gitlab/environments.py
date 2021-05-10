@@ -1,15 +1,15 @@
 from requests.exceptions import RequestException
 
-from congregate.migration.gitlab.base_client import BaseGitLabApiClient
+from congregate.helpers.base_class import BaseClass
 from congregate.helpers.misc_utils import is_error_message_present
 from congregate.helpers.dict_utils import pop_multiple_keys
 from congregate.migration.gitlab.api.projects import ProjectsApi
 
 
-class EnvironmentsClient(BaseGitLabApiClient):
+class EnvironmentsClient(BaseClass):
     def __init__(self):
-        super(EnvironmentsClient, self).__init__()
         self.projects = ProjectsApi()
+        super(EnvironmentsClient, self).__init__()
 
     def migrate_project_environments(self, src_id, dest_id, name, enabled):
         try:

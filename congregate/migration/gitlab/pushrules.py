@@ -1,15 +1,15 @@
 from requests.exceptions import RequestException
 
-from congregate.migration.gitlab.base_client import BaseGitLabApiClient
+from congregate.helpers.base_class import BaseClass
 from congregate.helpers.misc_utils import is_error_message_present, safe_json_response
 from congregate.helpers.dict_utils import pop_multiple_keys
 from congregate.migration.gitlab.api.projects import ProjectsApi
 
 
-class PushRulesClient(BaseGitLabApiClient):
+class PushRulesClient(BaseClass):
     def __init__(self):
-        super(PushRulesClient, self).__init__()
         self.projects_api = ProjectsApi()
+        super(PushRulesClient, self).__init__()
 
     def migrate_push_rules(self, old_id, new_id, name):
         try:

@@ -1,18 +1,18 @@
 from requests.exceptions import RequestException
 
-from congregate.migration.gitlab.base_client import BaseGitLabApiClient
+from congregate.helpers.base_class import BaseClass
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.helpers.misc_utils import get_dry_log
 
 
-class BranchesClient(BaseGitLabApiClient):
+class BranchesClient(BaseClass):
     def __init__(self):
-        super(BranchesClient, self).__init__()
         self.users = UsersApi()
         self.groups = GroupsApi()
         self.projects = ProjectsApi()
+        super(BranchesClient, self).__init__()
 
     def set_default_branches_to_master(self, dry_run=True):
         for project in self.projects.get_all_projects(self.config.destination_host, self.config.destination_token):
