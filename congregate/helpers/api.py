@@ -18,17 +18,14 @@ class GitLabApi(object):
     def generate_v4_request_url(self, host, api):
         return f"{host}/api/v4/{api}"
 
-
     def generate_graphql_request_url(self, host):
         return f"{host}/api/graphql"
-
 
     def generate_v4_request_header(self, token):
         return {
             'Private-Token': token,
             'Content-Type': 'application/json'
         }
-
 
     @stable_retry
     def generate_get_request(self, host, token, api, url=None, params=None):
@@ -54,7 +51,6 @@ class GitLabApi(object):
             params = {}
 
         return requests.get(url, params=params, headers=headers, verify=self.ssl_verify)
-
 
     @stable_retry
     def generate_post_request(self, host, token, api, data, url=None, graphql_query=False, headers=None, files=None, description=None):
@@ -82,7 +78,6 @@ class GitLabApi(object):
             headers = self.generate_v4_request_header(token)
         return requests.post(url, data=data, headers=headers, files=files, verify=self.ssl_verify)
 
-
     @stable_retry
     def generate_put_request(self, host, token, api, data, headers=None, files=None, description=None):
         """
@@ -102,7 +97,6 @@ class GitLabApi(object):
 
         return requests.put(url, headers=headers, data=data, files=files, verify=self.ssl_verify)
 
-
     @stable_retry
     def generate_delete_request(self, host, token, api, description=None):
         """
@@ -120,7 +114,6 @@ class GitLabApi(object):
 
         return requests.delete(url, headers=headers, verify=self.ssl_verify)
 
-
     @stable_retry
     def get_count(self, host, token, api):
         """
@@ -134,11 +127,11 @@ class GitLabApi(object):
         """
         url = self.generate_v4_request_url(host, api)
 
-        response = requests.head(url, headers=self.generate_v4_request_header(token), verify=self.ssl_verify)
+        response = requests.head(
+            url, headers=self.generate_v4_request_header(token), verify=self.ssl_verify)
 
         if response.headers.get('X-Total', None) is not None:
             return int(response.headers['X-Total'])
-
 
     @stable_retry
     def get_total_pages(self, host, token, api):
@@ -153,12 +146,12 @@ class GitLabApi(object):
         """
         url = self.generate_v4_request_url(host, api)
 
-        response = requests.head(url, headers=self.generate_v4_request_header(token), verify=self.ssl_verify)
+        response = requests.head(
+            url, headers=self.generate_v4_request_header(token), verify=self.ssl_verify)
         if response.headers.get('X-Total-Pages', None) is not None:
             return int(response.headers['X-Total-Pages'])
 
         return None
-
 
     @stable_retry
     def get_total_count(self, host, token, api, params=None, per_page=100, keyset=False, bypass_x_total_count=False):
@@ -178,7 +171,7 @@ class GitLabApi(object):
         while True:
             url = self.generate_v4_request_url(host, api)
             response = requests.get(url, headers=self.generate_v4_request_header(token), verify=self.ssl_verify, params=self.get_params(
-                    params, PER_PAGE, current_page, keyset, last_id))
+                params, PER_PAGE, current_page, keyset, last_id))
             headers = response.headers
             if headers.get('x-per-page', None):
                 if data := safe_json_response(response):
@@ -186,9 +179,11 @@ class GitLabApi(object):
                     # If we include this key in our counts, it will lead to inaccurate note counts
                     if 'system' not in data[0].keys():
                         x_per_page = int(headers.get('x-per-page'))
-                        self.log.info(f"Retrieved {PER_PAGE * (current_page - 1) + x_per_page} {api}")
+                        self.log.info(
+                            f"Retrieved {PER_PAGE * (current_page - 1) + x_per_page} {api}")
                         if keyset:
-                            last_id = self.get_last_id(headers.get("Link", None))
+                            last_id = self.get_last_id(
+                                headers.get("Link", None))
                             if last_id is None:
                                 break
                         if not headers.get("x-next-page"):
@@ -196,14 +191,15 @@ class GitLabApi(object):
                             break
                         count += x_per_page
                     else:
-                        adata = [actual_data for actual_data in data if actual_data.get("system") is False]
+                        adata = [actual_data for actual_data in data if actual_data.get(
+                            "system") is False]
                         if not headers.get("x-next-page"):
                             count += len(adata)
                             break
                         count += len(adata)
             else:
                 if data := safe_json_response(self.generate_get_request(host, token, api, params=self.get_params(
-                    params, PER_PAGE, current_page, keyset, last_id))):
+                        params, PER_PAGE, current_page, keyset, last_id))):
                     count += len(data)
                 break
             current_page += 1
@@ -215,9 +211,9 @@ class GitLabApi(object):
         count = 0
         for top_level_data in self.list_all(host, token, apis[0]):
             if nested_id := top_level_data.get("iid", None):
-                count += self.get_total_count(host, token, f"{apis[0]}/{nested_id}/{apis[1]}", bypass_x_total_count=bypass_x_total_count)
+                count += self.get_total_count(
+                    host, token, f"{apis[0]}/{nested_id}/{apis[1]}", bypass_x_total_count=bypass_x_total_count)
         return count
-
 
     @stable_retry
     def list_all(self, host, token, api, params=None, per_page=100, keyset=False):
@@ -252,9 +248,11 @@ class GitLabApi(object):
                 data = self.generate_get_request(host, token, api, params=self.get_params(
                     params, PER_PAGE, current_page, keyset, last_id))
                 try:
-                    self.log.info(f"Retrieved {PER_PAGE * (current_page - 1) + len(data.json())} {api}")
+                    self.log.info(
+                        f"Retrieved {PER_PAGE * (current_page - 1) + len(data.json())} {api}")
                     if keyset:
-                        last_id = self.get_last_id(data.headers.get("Link", None))
+                        last_id = self.get_last_id(
+                            data.headers.get("Link", None))
                         if last_id is None:
                             break
                     data = data.json()
@@ -281,9 +279,11 @@ class GitLabApi(object):
                     host, token, api, params=self.get_params(
                         params, PER_PAGE, current_page, keyset, last_id))
                 try:
-                    self.log.info(f"Retrieved {PER_PAGE * (current_page - 1) + len(data.json())} {api}")
+                    self.log.info(
+                        f"Retrieved {PER_PAGE * (current_page - 1) + len(data.json())} {api}")
                     if keyset:
-                        last_id = self.get_last_id(data.headers.get("Link", None))
+                        last_id = self.get_last_id(
+                            data.headers.get("Link", None))
                         if last_id is None:
                             break
                     data = data.json()
@@ -300,7 +300,6 @@ class GitLabApi(object):
                     self.log.info("Attempting to retry after 3 seconds")
                     sleep(3)
 
-
     @stable_retry
     def search(self, host, token, api, search_query):
         """
@@ -314,8 +313,7 @@ class GitLabApi(object):
             :return: JSON object containing the request response
         """
         return self.generate_get_request(host, token, api, params={
-                                    'search': search_query}).json()
-
+            'search': search_query}).json()
 
     def get_params(self, params, per_page, current_page, keyset, last_id):
         if params:
@@ -334,8 +332,8 @@ class GitLabApi(object):
             }
         return params
 
-
     # Project only keyset-based pagination - https://docs.gitlab.com/ee/api/#keyset-based-pagination
+
     def get_last_id(self, link):
         # Get id_after value. If the Link key is missing it's done, with an empty list response
         return findall(r"id_after=(.+?)&", link)[0] if link else None

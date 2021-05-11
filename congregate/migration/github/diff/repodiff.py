@@ -12,7 +12,6 @@ from congregate.helpers.dict_utils import rewrite_json_list_into_dict, dig
 from congregate.helpers.json_utils import read_json_file_into_object
 from congregate.helpers.migrate_utils import get_dst_path_with_namespace
 from congregate.helpers.processes import handle_multi_process_write_to_file_and_return_results
-from traceback import print_exc
 
 
 class RepoDiffClient(BaseDiffClient):
@@ -22,7 +21,7 @@ class RepoDiffClient(BaseDiffClient):
 
     def __init__(self, host, token, staged=False,
                  rollback=False, processes=None):
-        super(RepoDiffClient, self).__init__()
+        super().__init__()
         self.gl_api = GitLabApi()
         self.gh_api = GitHubApi(host, token)
         self.repos_api = ReposApi(host, token)
@@ -234,7 +233,8 @@ class RepoDiffClient(BaseDiffClient):
 
     def generate_repo_count_diff(self, project, gh_api, gl_api, bypass_x_total_count=False):
         key = "path_with_namespace"
-        destination_id = self.get_destination_id(project, key, self.config.dstn_parent_group_path)
+        destination_id = self.get_destination_id(
+            project, key, self.config.dstn_parent_group_path)
         source_count = self.gh_api.get_total_count(
             self.config.source_host,  gh_api)
         if isinstance(gl_api, list):
@@ -245,5 +245,3 @@ class RepoDiffClient(BaseDiffClient):
             destination_count = self.gl_api.get_total_count(
                 self.config.destination_host, self.config.destination_token, gl_api.replace(":id", str(destination_id)))
         return self.generate_count_diff(source_count, destination_count)
-    
-        

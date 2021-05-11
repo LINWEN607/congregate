@@ -205,29 +205,30 @@ class ProjectDiffClient(BaseDiffClient):
     def generate_project_diff(self, project, endpoint, **kwargs):
         return self.generate_diff(project, "path_with_namespace", endpoint,
                                   parent_group=self.config.dstn_parent_group_path, **kwargs)
-    
+
     def generate_project_count_diff(self, project, api):
         key = "path_with_namespace"
         source_id = project["id"]
-        destination_id = self.get_destination_id(project, key, self.config.dstn_parent_group_path)
+        destination_id = self.get_destination_id(
+            project, key, self.config.dstn_parent_group_path)
         source_count = self.gl_api.get_total_count(
             self.config.source_host, self.config.source_token, api.replace(":id", str(source_id)))
         destination_count = self.gl_api.get_total_count(
             self.config.destination_host, self.config.destination_token, api.replace(":id", str(destination_id)))
         return self.generate_count_diff(source_count, destination_count)
-    
+
     def generate_nested_project_count_diff(self, project, apis):
         key = "path_with_namespace"
         source_id = project["id"]
         source_apis = deepcopy(apis)
         source_apis[0] = source_apis[0].replace(":id", str(source_id))
-        destination_id = self.get_destination_id(project, key, self.config.dstn_parent_group_path)
+        destination_id = self.get_destination_id(
+            project, key, self.config.dstn_parent_group_path)
         destination_apis = deepcopy(apis)
-        destination_apis[0] = destination_apis[0].replace(":id", str(destination_id))
+        destination_apis[0] = destination_apis[0].replace(
+            ":id", str(destination_id))
         source_count = self.gl_api.get_nested_total_count(
             self.config.source_host, self.config.source_token, source_apis)
         destination_count = self.gl_api.get_nested_total_count(
             self.config.destination_host, self.config.destination_token, destination_apis)
         return self.generate_count_diff(source_count, destination_count)
-
-        

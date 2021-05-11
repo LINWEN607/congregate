@@ -6,7 +6,7 @@ from requests.exceptions import RequestException
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.misc_utils import get_dry_log, get_timedelta, \
     safe_json_response, strip_protocol
-from congregate.helpers.json_utils import json_pretty, read_json_file_into_object
+from congregate.helpers.json_utils import json_pretty, read_json_file_into_object, write_json_to_file
 from congregate.helpers.migrate_utils import get_staged_users, find_user_by_email_comparison_without_id
 from congregate.helpers.utils import is_dot_com
 from congregate.helpers.dict_utils import rewrite_list_into_dict
@@ -347,8 +347,8 @@ class UsersClient(BaseClass):
                     s["members"]) if j not in to_pop]
 
         if not dry_run:
-            with open("{0}/data/{1}.json".format(self.app_path, data), "w") as f:
-                f.write(json_pretty(staged))
+            write_json_to_file(
+                f"{self.app_path}/data/{data}.json", staged, log=self.log)
 
         return staged
 
@@ -413,8 +413,8 @@ class UsersClient(BaseClass):
             for s in staged:
                 s["members"] = [i for j, i in enumerate(
                     s["members"]) if i["id"] not in users.keys()]
-        with open("{0}/data/{1}.json".format(self.app_path, data), "w") as f:
-            json.dump(staged, f, indent=4)
+        write_json_to_file(
+            f"{self.app_path}/data/{data}.json", staged, log=self.log)
 
         return staged
 
@@ -566,8 +566,8 @@ class UsersClient(BaseClass):
                     staged_users.append(u)
                     self.log.info(
                         "Staging user (%s) [%d/%d]" % (u["email"], len(staged_users), len(users)))
-        with open("%s/data/staged_users.json" % self.app_path, "w") as f:
-            json.dump(remove_dupes(staged_users), f, indent=4)
+        write_json_to_file(f"{self.app_path}/data/staged_users.json",
+                           remove_dupes(staged_users), log=self.log)
 
     def delete_users(self, dry_run=True, hard_delete=False):
         staged_users = get_staged_users()
