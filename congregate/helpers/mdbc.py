@@ -1,7 +1,6 @@
 import sys
 from re import search
-from bson.errors import InvalidDocument
-from pymongo import MongoClient, errors
+from pymongo import MongoClient, errors, DESCENDING
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.misc_utils import strip_protocol
 from congregate.helpers.json_utils import stream_json_yield_to_file, read_json_file_into_object
@@ -16,7 +15,7 @@ class MongoConnector(BaseClass):
     CI_SOURCES = ["jenkins", "teamcity"]
 
     def __init__(self, client=None):
-        super(MongoConnector, self).__init__()
+        super().__init__()
         try:
             host = self.config.mongo_host
             port = self.config.mongo_port
@@ -27,6 +26,7 @@ class MongoConnector(BaseClass):
             self.client.server_info()
             self.__setup_db()
             self.user_collections = self.wildcard_collection_query("users")
+            self.DESCENDING = DESCENDING
         except errors.ServerSelectionTimeoutError:
             self.log.error(
                 f"ServerSelectionTimeoutError: Unable to connect to mongodb at {host}:{port}")
@@ -197,7 +197,7 @@ class MongoConnector(BaseClass):
         for old, new in translate.items():
             d[new] = d.pop(old)
         return d
-    
+
     def strip_dots_in_keys(self, d):
         """
             Helper method to replace all keys with dots to underscores

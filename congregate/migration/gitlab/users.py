@@ -1,5 +1,3 @@
-import json
-
 from os import path
 from requests.exceptions import RequestException
 

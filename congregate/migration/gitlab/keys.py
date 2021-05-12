@@ -1,13 +1,14 @@
 from requests.exceptions import RequestException
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import is_error_message_present
+from congregate.helpers.misc_utils import is_error_message_present, strip_protocol
 from congregate.helpers.dict_utils import pop_multiple_keys
 from congregate.helpers.utils import is_dot_com
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.api.instance import InstanceApi
 from congregate.migration.gitlab.users import UsersClient
+from congregate.helpers.mdbc import MongoConnector
 
 
 class KeysClient(BaseClass):
@@ -16,12 +17,18 @@ class KeysClient(BaseClass):
         self.users_api = UsersApi()
         self.instance_api = InstanceApi()
         self.users = UsersClient()
-        super(KeysClient, self).__init__()
+        super().__init__()
 
-    def migrate_project_deploy_keys(self, old_id, new_id, name):
+    def connect_to_mongo(self):
+        return MongoConnector()
+
+    def migrate_project_deploy_keys(self, old_id, new_id, name, mongo=None):
         try:
             d_keys = iter(self.projects_api.get_all_project_deploy_keys(
                 old_id, self.config.source_host, self.config.source_token))
+            if not mongo:
+                mongo = self.connect_to_mongo()
+            coll = f"keys-{strip_protocol(self.config.source_host)}"
             for key in d_keys:
                 # Remove unused key-values before posting key
                 key = pop_multiple_keys(key, ["id", "created_at"])
@@ -30,10 +37,19 @@ class KeysClient(BaseClass):
                 # When a key being migrated already exists somewhere on the
                 # destination instance
                 if resp.status_code == 400 and is_error_message_present(
-                        resp) and isinstance(resp.json().get("message", None), dict):
+                        resp) and isinstance(resp.json().get("message"), dict):
                     if is_dot_com(self.config.destination_host):
-                        self.log.warning(
-                            f"Duplicate deploy key {key} for project {name} (ID: {new_id})\n{resp} - {resp.text}")
+                        # If collection does not already exist
+                        mongo[coll].create_index(name="_id_", unique=False)
+                        # Assuming it was created at some point during the migration
+                        last_key = mongo.safe_find_one(coll, query={"key": key["key"]}, sort=[
+                                                       ("_id", mongo.DESCENDING)])
+                        if last_key:
+                            self.projects_api.enable_deploy_key(
+                                new_id, last_key["id"], self.config.destination_host, self.config.destination_token)
+                        else:
+                            self.log.warning(
+                                f"Duplicate deploy key {key} for project {name} (ID: {new_id})\n{resp} - {resp.text}")
                     else:
                         for k in self.instance_api.get_all_instance_deploy_keys(
                                 self.config.destination_host, self.config.destination_token):
@@ -43,6 +59,8 @@ class KeysClient(BaseClass):
                 elif resp.status_code != 201:
                     self.log.error(
                         f"Failed to create deploy key {key} for project {name} (ID: {new_id}), with error:\n{resp} - {resp.text}")
+                else:
+                    mongo.insert_data(coll, resp.json())
             return True
         except TypeError as te:
             self.log.error(
@@ -52,6 +70,8 @@ class KeysClient(BaseClass):
             self.log.error(
                 "Failed to migrate deploy keys for project {0}, with error:\n{1}".format(name, re))
             return False
+        finally:
+            mongo.close_connection()
 
     def migrate_user_ssh_keys(self, old_user, new_user):
         try:
