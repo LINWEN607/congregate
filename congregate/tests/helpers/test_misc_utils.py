@@ -94,7 +94,7 @@ class MiscUtilsTests(unittest.TestCase):
 
     def test_validate_name(self):
         assert misc.validate_name(
-            "-:: This.is-how/WE do\n&it") == "This.is-how WE do it"
+            "-:: This.is-how/WE do\n&it#? - šđžčć") == "This.is-how WE do it - šđžčć"
 
     @mock.patch("requests.Response")
     def test_safe_json_response_with_exception(self, response):
@@ -114,10 +114,6 @@ class MiscUtilsTests(unittest.TestCase):
 
     def test_safe_json_response_with_none(self):
         self.assertIsNone(misc.safe_json_response(None))
-
-    
-
-    
 
     def test_get_duplicate_paths_projects(self):
         data = [{

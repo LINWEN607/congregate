@@ -102,8 +102,8 @@ def validate_name(name, log=None):
     Name can only contain letters, digits, emojis, '_', '.', dash, space.
     It must start with letter, digit, emoji or '_'.
     """
-    valid = " ".join(sub(r"[^a-zA-Z0-9\_\-\. ]", " ",
-                         name.lstrip("-").lstrip(".")).split())
+    valid = " ".join(sub(r"[^\U00010000-\U0010ffff\w\_\-\. ]",
+                         " ", name.lstrip("-").lstrip(".")).split())
     if name != valid:
         output = f"Renaming invalid name {name} -> {valid}"
         log.warning(output) if log else print(output)
