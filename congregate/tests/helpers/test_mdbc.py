@@ -22,7 +22,7 @@ class MongoConnectorTests(unittest.TestCase):
 
     def test_init(self):
         expected = ["projects-github.example.com",
-                    "groups-github.example.com", "users-github.example.com"]
+                    "groups-github.example.com", "users-github.example.com", "keys-github.example.com"]
         self.assertListEqual(self.c.db.list_collection_names(), expected)
 
     def test_insert_duplicate_data(self):

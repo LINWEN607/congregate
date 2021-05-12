@@ -43,7 +43,8 @@ class MongoConnector(BaseClass):
             collections += [
                 f"projects-{src_hostname}",
                 f"groups-{src_hostname}",
-                f"users-{src_hostname}"
+                f"users-{src_hostname}",
+                f"keys-{src_hostname}"
             ]
         elif self.config.list_multiple_source_config("github_source"):
             for source in self.config.list_multiple_source_config(

@@ -39,12 +39,8 @@ class KeysClient(BaseClass):
                 if resp.status_code == 400 and is_error_message_present(
                         resp) and isinstance(resp.json().get("message"), dict):
                     if is_dot_com(self.config.destination_host):
-                        # If collection does not already exist
-                        mongo[coll].create_index(name="_id_", unique=False)
                         # Assuming it was created at some point during the migration
-                        last_key = mongo.safe_find_one(coll, query={"key": key["key"]}, sort=[
-                                                       ("_id", mongo.DESCENDING)])
-                        if last_key:
+                        if last_key := mongo.safe_find_one(coll, query={"key": key["key"]}, sort=[("created_at", mongo.DESCENDING)]):
                             self.projects_api.enable_deploy_key(
                                 new_id, last_key["id"], self.config.destination_host, self.config.destination_token)
                         else:
