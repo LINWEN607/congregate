@@ -420,7 +420,7 @@ test:GitHub Enterprise end to end:
 
 update gitlab-ps-utils:
   stage: build
-  trigger: 'gitlab-com/customer-success/professional-services-group/global-practice-development/utilities/gitlab-ps-utils'
+  trigger: 'gitlab-org/professional-services-automation/gitlab-ps-utils'
   rules:
     - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
       changes:
@@ -431,5 +431,17 @@ update gitlab-ps-utils:
         - congregate/helpers/misc_utils.py
         - congregate/helpers/process.py
         - congregate/helpers/processes.py
+        - congregate/helpers/file_utils.py
+        - congregate/helpers/dict_utils.py
+        - congregate/helpers/list_utils.py
+        - congregate/helpers/string_utils.py
+        - congregate/helpers/json_utils.py
+        - congregate/helpers/xml_utils.py
+        - congregate/helpers/decorators.py
+        - congregate/tests/helpers/test_dict_utils.py
+        - congregate/tests/helpers/test_misc_utils.py
+        - congregate/tests/helpers/test_string_utils.py
+        - congregate/tests/helpers/test_list_utils.py
+        - congregate/tests/helpers/test_json_utils.py
+        - congregate/tests/helpers/test_file_utils.py
 
-    
