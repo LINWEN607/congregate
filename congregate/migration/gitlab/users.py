@@ -10,6 +10,7 @@ from congregate.helpers.utils import is_dot_com
 from congregate.helpers.dict_utils import rewrite_list_into_dict
 from congregate.helpers.list_utils import remove_dupes
 from congregate.migration.gitlab.api.groups import GroupsApi
+from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.users import UsersApi
 from congregate.helpers.mdbc import MongoConnector
 from congregate.helpers.processes import start_multi_process_stream
@@ -19,6 +20,7 @@ class UsersClient(BaseClass):
     def __init__(self):
         self.groups_api = GroupsApi()
         self.users_api = UsersApi()
+        self.projects_api = ProjectsApi()
         super().__init__()
         self.sso_hash_map = self.generate_hash_map()
 
@@ -156,8 +158,8 @@ class UsersClient(BaseClass):
             user["group_id_for_saml"] = self.config.dstn_parent_id
             user["provider"] = "group_saml"
             user["reset_password"] = self.config.reset_password
-            # make sure the blocked user cannot do anything
-            user["force_random_password"] = "true" if user["state"] in self.BLOCKED else self.config.force_random_password
+            # make sure the inactive user cannot do anything
+            user["force_random_password"] = "true" if user["state"] in self.INACTIVE else self.config.force_random_password
             if not self.config.reset_password and not self.config.force_random_password:
                 # TODO: add config for 'password' field
                 self.log.warning(
@@ -308,46 +310,45 @@ class UsersClient(BaseClass):
             self.log.error(
                 "Failed to update user's parent access level, with error:\n{}".format(e))
 
-    def remove_blocked_users(self, dry_run=True):
+    def remove_inactive_users(self, membership=False, dry_run=True):
         """
-            Remove users with state "blocked" from staged users, groups and projects
+            Remove inactive users from staged users, groups and projects
         """
-        self.log.info(
-            "{}Removing blocked users from staged users/groups/projects".format(get_dry_log(dry_run)))
         # From staged users
-        self.remove("staged_users", dry_run)
+        self.remove("staged_users", dry_run=dry_run)
         # From staged groups
-        self.remove("staged_groups", dry_run)
+        self.remove("staged_groups", membership, dry_run)
         # From staged projects
-        self.remove("staged_projects", dry_run)
+        self.remove("staged_projects", membership, dry_run)
 
-    def remove(self, data, dry_run=True):
+    def remove(self, data, membership=False, dry_run=True):
         staged = read_json_file_into_object(
-            "{0}/data/{1}.json".format(self.app_path, data))
-
+            f"{self.app_path}/data/{data}.json")
+        self.log.info(
+            f"{get_dry_log(dry_run)}Removing inactive users from {data}")
         if data == "staged_users":
-            to_pop = []
-            for user in staged:
-                if user.get("state", None) in self.BLOCKED:
-                    to_pop.append(staged.index(user))
-                    self.log.info("Removing blocked user {0} from {1}".format(
-                        user["username"], data))
-            staged = [i for j, i in enumerate(staged) if j not in to_pop]
+            staged = [u for u in staged if u.get("state") not in self.INACTIVE]
         else:
+            groups = data == "staged_groups"
             for s in staged:
-                to_pop = []
-                for member in s["members"]:
-                    if member.get("state", None) in self.BLOCKED:
-                        to_pop.append(s["members"].index(member))
-                        self.log.info("Removing blocked user {0} from {1} ({2})".format(
-                            member["username"], data, s["name"]))
-                s["members"] = [i for j, i in enumerate(
-                    s["members"]) if j not in to_pop]
-
+                spath = s.get("full_path") if groups else s.get(
+                    "path_with_namespace")
+                self.log.info(
+                    f"{get_dry_log(dry_run)}Removing inactive users from {spath} members")
+                if not dry_run and membership:
+                    try:
+                        for m in s["members"]:
+                            if m.get("state") in self.INACTIVE:
+                                self.groups_api.remove_member(s.get("id"), m.get("id"), self.config.source_host, self.config.source_token) if groups else self.projects_api.remove_member(
+                                    s.get("id"), m.get("id"), self.config.source_host, self.config.source_token)
+                    except RequestException as re:
+                        self.log.error(
+                            f"Failed to remove {m.get('name')} from {spath}, with error:\n{re}")
+                s["members"] = [m for m in s["members"]
+                                if m.get("state") not in self.INACTIVE]
         if not dry_run:
             write_json_to_file(
                 f"{self.app_path}/data/{data}.json", staged, log=self.log)
-
         return staged
 
     def search_for_staged_users(self):
@@ -473,8 +474,8 @@ class UsersClient(BaseClass):
         user["username"] = self.create_valid_username(user)
         user["skip_confirmation"] = True
         user["reset_password"] = self.config.reset_password
-        # make sure the blocked user cannot do anything
-        user["force_random_password"] = "true" if user["state"] in self.BLOCKED else self.config.force_random_password
+        # make sure the inactive user cannot do anything
+        user["force_random_password"] = "true" if user["state"] in self.INACTIVE else self.config.force_random_password
         if not self.config.reset_password and not self.config.force_random_password:
             # TODO: add config for 'password' field
             self.log.warning(

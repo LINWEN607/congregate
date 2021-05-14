@@ -371,21 +371,21 @@ class UsersTests(unittest.TestCase):
 
         self.assertEqual(self.users.block_user(new_user).status_code, 201)
 
-    def test_remove_blocked_users(self):
+    def test_remove_inactive_users(self):
         read_data = json.dumps(
             self.mock_users.get_test_new_destination_users())
         with patch('builtins.open', mock_open(read_data=read_data)):
             result = self.users.remove("staged_users")
         self.assertEqual(result, self.mock_users.get_dummy_new_users_active())
 
-    def test_remove_blocked_users_project_members(self):
+    def test_remove_inactive_users_project_members(self):
         read_data = json.dumps(self.mock_users.get_dummy_project())
         with patch('builtins.open', mock_open(read_data=read_data)):
             result = self.users.remove("staged_projects")
         self.assertEqual(
             result, self.mock_users.get_dummy_project_active_members())
 
-    def test_remove_blocked_users_group_members(self):
+    def test_remove_inactive_users_group_members(self):
         read_data = json.dumps(self.mock_groups.get_dummy_group())
         with patch('builtins.open', mock_open(read_data=read_data)):
             result = self.users.remove("staged_groups")

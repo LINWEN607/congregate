@@ -20,7 +20,7 @@ Usage:
     congregate search-for-staged-users
     congregate update-aws-creds
     congregate add-users-to-parent-group [--commit]
-    congregate remove-blocked-users [--commit]
+    congregate remove-inactive-users [--commit] [--membership]
     congregate update-user-permissions [--access-level=<level>] [--commit]
     congregate get-total-count
     # TODO: Refactor, project name matching does not seem correct
@@ -94,6 +94,7 @@ Arguments:
     msg                                     Maintenance mode message, with "+" in place of " "
     reporting                               Create reporting issues, based off reporting data supplied in congregate.conf
     archived                                Filter out archived projects from the list of staged projects
+    membership                              Remove inactive members from staged groups and projects on source
 
 Commands:
     list                                    List all projects of a source instance and save it to {CONGREGATE_PATH}/data/projects.json.
@@ -119,7 +120,7 @@ Commands:
     search-for-staged-users                 Search for staged users on destination based on email
     update-aws-creds                        Run awscli commands based on the keys stored in the config. Useful for docker updates.
     add-users-to-parent-group               If a parent group is set, all staged users will be added to the parent group with guest permissions.
-    remove-blocked-users                    Remove all blocked users from staged projects and groups.
+    remove-inactive-users                   Remove all inactive users from staged projects and groups.
     update-user-permissions                 Update parent group member access level. Mainly for lowering to Guest/Reporter.
     get-total-count                         Get total count of migrated projects. Used to compare exported projects to imported projects.
     find-unimported-projects                Return a list of projects that failed import.
@@ -208,6 +209,7 @@ def main():
         SRC_INSTANCES = arguments["--src-instances"]
         SCM_SOURCE = arguments["--scm-source"]
         ARCHIVED = arguments["--archived"]
+        MEMBERSHIP = arguments["--membership"]
 
         if SCM_SOURCE:
             SCM_SOURCE = strip_protocol(SCM_SOURCE)
@@ -365,8 +367,9 @@ def main():
                 else:
                     log.warning(
                         f"No AWS configuration. Export location: {config.location}")
-            if arguments["remove-blocked-users"]:
-                users.remove_blocked_users(dry_run=DRY_RUN)
+            if arguments["remove-inactive-users"]:
+                users.remove_inactive_users(
+                    membership=MEMBERSHIP, dry_run=DRY_RUN)
             if arguments["update-user-permissions"]:
                 access_level = arguments["--access-level"]
                 if access_level:

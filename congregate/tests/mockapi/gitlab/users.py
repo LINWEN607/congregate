@@ -449,6 +449,7 @@ class MockUsersApi():
                     }
                 ],
                 "merge_requests_access_level": "enabled",
+                "path_with_namespace": "jdoe-testing/hello-world-spring-boot",
                 "name": "hello-world-spring-boot",
                 "namespace": "jdoe-testing",
                 "project_type": "group",
@@ -483,6 +484,7 @@ class MockUsersApi():
                     }
                 ],
                 "merge_requests_access_level": "enabled",
+                "path_with_namespace": "jdoe-testing/hello-world-spring-boot",
                 "name": "hello-world-spring-boot",
                 "namespace": "jdoe-testing",
                 "project_type": "group",
