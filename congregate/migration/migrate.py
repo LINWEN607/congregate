@@ -133,6 +133,8 @@ class MigrateClient(BaseClass):
             self.log.warning(
                 f"Configuration (data/congregate.conf) src_type {self.config.source_type} not supported")
         mig_utils.add_post_migration_stats(self.start, log=self.log)
+        self.log.warning(
+            f"Completed migrating from {self.config.source_host} to {self.config.destination_host}")
 
     def validate_groups_and_projects(self, staged, are_projects=False):
         if dupes := misc_utils.get_duplicate_paths(
@@ -1356,15 +1358,15 @@ class MigrateClient(BaseClass):
         # self.config.destination_host, self.config.destination_token,
         # "groups/%d/projects" % self.config.dstn_parent_id)
         subgroup_count = 0
-        for group in self.groups_api.get_all_subgroups(self.config.dstn_parent_id, 
-            self.config.destination_host, self.config.destination_token):
+        for group in self.groups_api.get_all_subgroups(self.config.dstn_parent_id,
+                                                       self.config.destination_host, self.config.destination_token):
             count = self.groups_api.api.get_count(
                 self.config.destination_host, self.config.destination_token, "groups/%d/projects" % group["id"])
             sub_count = 0
             if group.get("child_ids", None) is not None:
                 for child_id in group["child_ids"]:
                     sub_count += self.projects_api.api.get_count(self.config.destination_host,
-                                               self.config.destination_token, "groups/%d/projects" % child_id)
+                                                                 self.config.destination_token, "groups/%d/projects" % child_id)
             subgroup_count += count
         # return subgroup_count + group_projects
         self.log.inf(
