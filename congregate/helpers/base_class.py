@@ -18,6 +18,7 @@ class BaseClass(object):
             simplefilter("ignore", category=InsecureRequestWarning)
         self.app_path = get_congregate_path()
         self.log_name = 'congregate'
-        self.log = myLogger(__name__, app_path=self.app_path, log_name=self.log_name, config=self.config)
+        self.log = myLogger(__name__, app_path=self.app_path,
+                            log_name=self.log_name, config=self.config)
         self.audit = audit_logger(__name__, app_path=self.app_path)
-        self.BLOCKED = ["blocked", "ldap_blocked", "deactivated"]
+        self.INACTIVE = ["blocked", "ldap_blocked", "deactivated"]

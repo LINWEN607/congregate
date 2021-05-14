@@ -5,7 +5,6 @@
 # 4. Push Repos to the org.
 
 
-
 import os
 import unittest
 from unittest import mock
@@ -70,7 +69,7 @@ from congregate.migration.github.api.orgs import OrgsApi
 #             # "secret key",   # secret key
 #             "",  # file system path
 #             "no",  # CI Source
-#             "no",  # keep_blocked_users
+#             "no",  # keep_inactive_users
 #             "yes",  # password reset email
 #             "no",  # randomized password
 #             "5",  # import wait time

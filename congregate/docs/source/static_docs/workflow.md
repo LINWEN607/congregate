@@ -57,7 +57,7 @@
         A --> |False| C(Append project suffix)
         A --> |?| D(Migrate to parent group)
         A --> |?| E(Append username suffix)
-        A --> |False| F(Keep blocked users)
+        A --> |False| F(Keep inactive users)
         A --> |True| G(Reset pwd)
         A --> |False| H(Force random pwd)
 ```
@@ -109,7 +109,7 @@
     graph TD
         A(Stage ALL Users) --> B{Inspect}
         B --> |Found| C(Skip)
-        B --> |Not found| D{Remove blocked?}
+        B --> |Not found| D{Remove inactive?}
         D --> |Yes| E(Remove, Dry-run & Inspect)
         E --> F(Migrate)
         D --> |No| G(Dry-run & Inspect)

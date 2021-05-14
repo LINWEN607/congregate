@@ -92,8 +92,8 @@ Best practice is to first migrate ONLY users by running:
 - `./congregate.sh migrate --skip-group-export --skip-group-import --skip-project-export --skip-project-import` - Inspect the dry-run output in:
   - `data/results/dry_run_user_migration.json`
   - `data/logs/congregate.log`
-  - Inspect `data/staged_users.json` if any of the NOT found users are blocked as, by default, they will not be migrated.
-  - To explicitly remove blocked users from staged users, groups and projects run `./congregate.sh remove-blocked-users --commit`.
+  - Inspect `data/staged_users.json` if any of the NOT found users are inactive as, by default, they will not be migrated.
+  - To explicitly remove inactive users from staged users, groups and projects run `./congregate.sh remove-inactive-users --commit`.
 - `./congregate.sh migrate --skip-group-export --skip-group-import --skip-project-export --skip-project-import --commit`
 
 #### Migrate Groups and Sub-Groups
@@ -104,8 +104,8 @@ Once all the users are migrated:
 - Only the top level groups will be staged as they comprise the entire tree structure.
 - `./congregate.sh search-for-staged-users` - Check output for found and NOT found users on destination.
   - All users should be found.
-  - Inspect `data/staged_users.json` if any of the NOT found users are blocked as, by default, they will not be migrated.
-  - To explicitly remove blocked users from staged users, groups and projects run `./congregate.sh remove-blocked-users --commit`.
+  - Inspect `data/staged_users.json` if any of the NOT found users are inactive as, by default, they will not be migrated.
+  - To explicitly remove inactive users from staged users, groups and projects run `./congregate.sh remove-inactive-users --commit`.
 - `./congregate.sh migrate --skip-users --skip-project-export --skip-project-import` - Inspect the dry-run output in:
   - `data/results/dry_run_group_migration.json`
   - `data/logs/congregate.log`
@@ -118,8 +118,8 @@ Once all the users and groups and sub-groups are migrated:
 - Go back to the UI, select and stage projects (either all, or in waves).
 - `./congregate.sh search-for-staged-users` - Check output for found and NOT found users on destination.
   - All users should be found.
-  - Inspect `data/staged_users.json` if any of the NOT found users are blocked as, by default, they will not be migrated.
-  - To explicitly remove blocked users from staged users, groups and projects run `./congregate.sh remove-blocked-users --commit`.
+  - Inspect `data/staged_users.json` if any of the NOT found users are inactive as, by default, they will not be migrated.
+  - To explicitly remove inactive users from staged users, groups and projects run `./congregate.sh remove-inactive-users --commit`.
 - `./congregate.sh migrate --skip-users --skip-group-export --skip-group-import` - Inspect the dry-run output in:
   - `data/results/dry_run_project_migration.json`
   - `data/logs/congregate.log`

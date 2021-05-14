@@ -659,7 +659,7 @@ class MigrateClient(BaseClass):
     def handle_user_creation(self, user):
         """
             This is called when importing staged_users.json.
-            Blocked users will be skipped if we do NOT 'keep_blocked_users'.
+            Inactive users will be skipped if we do NOT 'keep_inactive_users'.
 
             :param user: Each iterable called is a user from the staged_users.json file
             :return:
@@ -680,7 +680,7 @@ class MigrateClient(BaseClass):
         try:
             if not self.only_post_migration_info:
                 if state == "active" or \
-                    (state in self.BLOCKED and self.config.keep_blocked_users) or \
+                    (state in self.INACTIVE and self.config.keep_inactive_users) or \
                         all(v is not None for v in [name, username, email]):
                     user_data = self.users.generate_user_data(user)
                     self.log.info("{0}Attempting to create user {1}".format(
@@ -694,9 +694,9 @@ class MigrateClient(BaseClass):
                     self.log.info("SKIP: Not migrating {0} user:\n{1}".format(
                         state, json_utils.json_pretty(user)))
                 if response is not None:
-                    # NOTE: Persist 'blocked' user state regardless of domain
+                    # NOTE: Persist 'inactive' user state regardless of domain
                     # and creation status.
-                    if user_data.get("state", None).lower() in self.BLOCKED:
+                    if user_data.get("state", None).lower() in self.INACTIVE:
                         self.users.block_user(user_data)
                     new_user = self.users.handle_user_creation_status(
                         response, user_data)

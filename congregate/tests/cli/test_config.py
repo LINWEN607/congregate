@@ -44,7 +44,7 @@ class ConfigTests(unittest.TestCase):
             # "token",  # ext_src_token
             "repo_path",  # ext_src_repo
             "no",   # CI Source
-            "no",    # keep_blocked_users
+            "no",    # keep_inactive_users
             "yes",  # password reset email
             "no",    # randomized password
             "30",   # import wait time
@@ -105,7 +105,7 @@ class ConfigTests(unittest.TestCase):
             "ci_some_external_url",  # ci_ext_src_hostname
             "ci_username",  # ci_ext_src_username
             # "token",  # ci_ext_src_token
-            "no",    # keep_blocked_users
+            "no",    # keep_inactive_users
             "yes",  # password reset email
             "no",    # randomized password
             "30",   # import wait time
@@ -172,7 +172,7 @@ class ConfigTests(unittest.TestCase):
             "filesystem",  # export location
             "absolute_path",    # file system path
             "no",   # CI Source
-            "no",    # keep_blocked_users
+            "no",    # keep_inactive_users
             "yes",  # password reset email
             "no",    # randomized password
             "30",   # import wait time
@@ -264,7 +264,7 @@ class ConfigTests(unittest.TestCase):
             # "secret key",   # secret key
             "absolute_path",    # file system path
             "no",   # CI Source
-            "no",    # keep_blocked_users
+            "no",    # keep_inactive_users
             "yes",  # password reset email
             "no",    # randomized password
             "30",   # import wait time
@@ -358,7 +358,7 @@ class ConfigTests(unittest.TestCase):
             # "secret key",   # secret key
             "absolute_path",    # file system path
             "no",   # CI Source
-            "no",    # keep_blocked_users
+            "no",    # keep_inactive_users
             "yes",  # password reset email
             "no",    # randomized password
             "30",   # import wait time
@@ -452,7 +452,7 @@ class ConfigTests(unittest.TestCase):
             # "secret key",   # secret key
             "/absolute_path",    # file system path
             "no",   # CI Source
-            "no",    # keep_blocked_users
+            "no",    # keep_inactive_users
             "yes",  # password reset email
             "no",    # randomized password
             "60",   # import wait time
@@ -533,14 +533,14 @@ class ConfigTests(unittest.TestCase):
             "filesystem",  # export location
             "absolute_path",    # file system path
             "no",    # CI SOURCE
-            "no",    # keep_blocked_users
+            "no",    # keep_inactive_users
             "yes",  # password reset email
             "no",    # randomized password
             "30",   # import wait time
             "no",   # Wave spreadsheet
             "yes",   # slack
             "https://slack.url",   # slack_url
-            "no"    # mongo 
+            "no"    # mongo
         ]
 
         g = input_generator(values)
@@ -608,7 +608,7 @@ class ConfigTests(unittest.TestCase):
             "s3_access_key_id":"dGVzdA==",\
             "s3_secret_access_key":"dGVzdA==",\
             "filesystem_path":".",\
-            "keep_blocked_users":"False",\
+            "keep_inactive_users":"False",\
             "reset_pwd":"False",\
             "force_rand_pwd":"True",\
             "export_import_status_check_time":"30",\
@@ -651,7 +651,7 @@ class ConfigTests(unittest.TestCase):
             "s3_access_key_id":"dGVzdA==",\
             "s3_secret_access_key":"dGVzdA==",\
             "filesystem_path":".",\
-            "keep_blocked_users":"False",\
+            "keep_inactive_users":"False",\
             "reset_pwd":"True",\
             "force_rand_pwd":"False",\
             "export_import_status_check_time":"30",\

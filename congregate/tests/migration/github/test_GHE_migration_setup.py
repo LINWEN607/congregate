@@ -96,7 +96,7 @@ class MigrationE2EGHETestSetup(unittest.TestCase):
                 "GH_TEST_INSTANCE_URL", "HOST_ENV_VAR_NOT_FOUND")),
             "repo_path",                            # Repo path
             "no",                                   # CI Source
-            "no",                                   # keep_blocked_users
+            "no",                                   # keep_inactive_users
             "yes",                                  # password reset email
             "no",                                   # randomized password
             "300",                                  # export_import_timeout

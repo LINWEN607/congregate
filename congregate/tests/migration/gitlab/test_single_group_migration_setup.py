@@ -55,14 +55,14 @@ class MigrationEndToEndTestSetup(unittest.TestCase):
             # "secret key",   # secret key
             "",  # file system path
             "no",  # CI Source
-            "no",  # keep_blocked_users
+            "no",  # keep_inactive_users
             "yes",  # password reset email
             "no",  # randomized password
             "5",  # import wait time
             "no",  # wave spreadsheet
             "",  # slack_url
-            "yes", # external mongo host
-            "mongo" # mongo host
+            "yes",  # external mongo host
+            "mongo"  # mongo host
         ]
         tokens = [
             destination_token,

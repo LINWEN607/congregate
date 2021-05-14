@@ -161,10 +161,10 @@
 
 ###! **Configuration settings below are for USER**
 
-### Consider below configuration if you need to keep blocked users, 
+### Consider below configuration if you need to keep inactive users,
 ### whether or not you should send the reset password link on user creation
 ### or to generate a random password at create
-# keep_blocked_users = False
+# keep_inactive_users = False
 ### NOTE: Either reset_pwd or force_rand_password need to be set to True for users to be created
 # reset_pwd = True
 # force_rand_pwd = False

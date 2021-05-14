@@ -80,12 +80,12 @@ Copy the following data and add subsequent rows for single group migration
 * [ ] Lookup whether the staged users (emails) already exist on the destination by running `./congregate.sh search-for-staged-users`
   * This will output a list of FOUND, NOT FOUND and DUPLICATE user `email`, along with their `id` and `state`
 * [ ] Determine with customer whether to (configure):
-  * `keep_blocked_users` (`False` by default),
+  * `keep_inactive_users` (`False` by default),
   * `reset_pwd` (`True` by default),
   * `force_rand_pwd` (`False` by default)
-* By default blocked users are skipped during user migration. To be sure they are removed from staged users, groups and projects run the following command:
-  * [ ] Dry run: `./congregate.sh remove-blocked-users`
-  * [ ] Live: `./congregate.sh remove-blocked-users --commit`
+* By default inactive users are skipped during user migration. To be sure they are removed from staged users, groups and projects run the following command:
+  * [ ] Dry run: `./congregate.sh remove-inactive-users`
+  * [ ] Live: `./congregate.sh remove-inactive-users --commit`
 * [ ] Notify in the internal Slack channel dedicated to this migration you have completed preparation for the user wave
 
 #### Dry run users

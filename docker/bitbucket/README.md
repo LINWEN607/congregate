@@ -75,7 +75,7 @@ src_access_token = <bitbucket token here>
 repo_path = /opt/congregate/
 
 [USER]
-keep_blocked_users = False
+keep_inactive_users = False
 reset_pwd = True
 force_rand_pwd = False
 

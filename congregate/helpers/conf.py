@@ -271,12 +271,12 @@ class Config(BaseConfig):
 
 # USER
     @property
-    def keep_blocked_users(self):
+    def keep_inactive_users(self):
         """
-        Determines if we should keep blocked users.
+        Determines if we should keep inactive users.
         :return: The set config value or False as default.
         """
-        return self.prop_bool("USER", "keep_blocked_users", default=False)
+        return self.prop_bool("USER", "keep_inactive_users", default=False)
 
     @property
     def reset_password(self):

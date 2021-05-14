@@ -259,8 +259,8 @@ def generate_config():
     # User specific configuration
     config.add_section("USER")
     keep_blocker_users = input(
-        "Keep blocked users in staged users/groups/projects (Default: No)? ")
-    config.set("USER", "keep_blocked_users",
+        "Keep inactive users in staged users/groups/projects (Default: No)? ")
+    config.set("USER", "keep_inactive_users",
                "True" if keep_blocker_users.lower() in ["yes", "y"] else "False")
     reset_pwd = input(
         "Should users receive password reset emails (Default: Yes)? ")
