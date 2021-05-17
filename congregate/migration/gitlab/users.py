@@ -335,17 +335,17 @@ class UsersClient(BaseClass):
                     "path_with_namespace")
                 self.log.info(
                     f"{get_dry_log(dry_run)}Removing inactive users from {spath} members")
-                if not dry_run and membership:
+                if (not dry_run) and membership:
                     try:
-                        for m in s["members"]:
+                        for m in s.get("members", []):
                             if m.get("state") in self.INACTIVE:
                                 self.groups_api.remove_member(s.get("id"), m.get("id"), self.config.source_host, self.config.source_token) if groups else self.projects_api.remove_member(
                                     s.get("id"), m.get("id"), self.config.source_host, self.config.source_token)
                     except RequestException as re:
                         self.log.error(
                             f"Failed to remove {m.get('name')} from {spath}, with error:\n{re}")
-                s["members"] = [m for m in s["members"]
-                                if m.get("state") not in self.INACTIVE]
+                s["members"] = [m for m in s.get("members", []) if m.get(
+                    "state") not in self.INACTIVE]
         if not dry_run:
             write_json_to_file(
                 f"{self.app_path}/data/{data}.json", staged, log=self.log)

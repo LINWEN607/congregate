@@ -134,7 +134,7 @@ class MigrateClient(BaseClass):
                 f"Configuration (data/congregate.conf) src_type {self.config.source_type} not supported")
         mig_utils.add_post_migration_stats(self.start, log=self.log)
         self.log.warning(
-            f"Completed migrating from {self.config.source_host} to {self.config.destination_host}")
+            f"{misc_utils.get_dry_log(self.dry_run)}Completed migrating from {self.config.source_host} to {self.config.destination_host}")
 
     def validate_groups_and_projects(self, staged, are_projects=False):
         if dupes := misc_utils.get_duplicate_paths(
