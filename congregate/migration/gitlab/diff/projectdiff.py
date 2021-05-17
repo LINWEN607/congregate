@@ -19,7 +19,8 @@ class ProjectDiffClient(BaseDiffClient):
 
     def __init__(self, staged=False, rollback=False, processes=None):
         super().__init__()
-        self.gl_api = GitLabApi()
+        self.gl_api = GitLabApi(
+            app_path=self.app_path, log_name=self.log_name, ssl_verify=self.config.ssl_verify)
         self.projects_api = ProjectsApi()
         self.issues_api = IssuesApi()
         self.mr_api = MergeRequestsApi()

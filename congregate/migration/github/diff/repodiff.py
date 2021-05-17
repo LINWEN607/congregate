@@ -22,7 +22,8 @@ class RepoDiffClient(BaseDiffClient):
     def __init__(self, host, token, staged=False,
                  rollback=False, processes=None):
         super().__init__()
-        self.gl_api = GitLabApi()
+        self.gl_api = GitLabApi(
+            app_path=self.app_path, log_name=self.log_name, ssl_verify=self.config.ssl_verify)
         self.gh_api = GitHubApi(host, token)
         self.repos_api = ReposApi(host, token)
         self.repos_client = ReposClient(host, token)
