@@ -42,6 +42,7 @@ class HooksClient(BaseClass):
                     shc = pop_multiple_keys(shc, ["id", "created_at"])
                     # hook does not include secret token
                     if not dry_run and not shc in s_hooks_dstn:
+                        add_resp = None
                         if is_dot_com(self.config.destination_host):
                             # Only if migrating to the parent group on
                             # gitlab.com
@@ -51,7 +52,7 @@ class HooksClient(BaseClass):
                         else:
                             add_resp = self.instance_api.add_instance_hook(
                                 self.config.destination_host, self.config.destination_token, shc)
-                        if add_resp.status_code != 201:
+                        if add_resp and add_resp.status_code != 201:
                             self.log.error(
                                 f"Failed to create instance hook {shc}, with error:\n{add_resp} - {add_resp.text}")
             except TypeError as te:
