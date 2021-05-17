@@ -182,7 +182,9 @@ class MongoConnector(BaseClass):
 
     def clean_db(self):
         for col in self.db.list_collection_names():
-            self.drop_collection(col)
+            # In order to preserve list of created deploy keys
+            if not "keys-" in col:
+                self.drop_collection(col)
         self.__setup_db()
 
     def stringify_int_keys_in_dict(self, d):
