@@ -195,3 +195,21 @@ class MiscUtilsTests(unittest.TestCase):
         self.assertEqual(
             subs[0], "This has to REPLACED in several REPLACED place"
         )
+
+    def test_do_yml_sub_simple_pattern(self):
+        yml_file = "replace notreplace replace replacenot"
+        subs = misc.do_yml_sub(
+            yml_file, "replace ", "REPLACED")
+        self.assertEqual(subs[1], 3)
+        self.assertEqual(
+            subs[0], "REPLACEDnotREPLACEDREPLACEDreplacenot"
+        )
+
+    def test_do_yml_sub_complex_pattern(self):
+        yml_file = "I am the very model of a scientist Solarian, I've studied species Turian, Asari, and Batarian,"
+        subs = misc.do_yml_sub(
+            yml_file, "([A-Z])\\w+", "SPECIES")
+        self.assertEqual(subs[1], 4)
+        self.assertEqual(
+            subs[0], "I am the very model of a scientist SPECIES, I've studied species SPECIES, SPECIES, and SPECIES,"
+        )
