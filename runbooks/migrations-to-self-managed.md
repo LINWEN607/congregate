@@ -197,6 +197,46 @@ For each migration attempt check if any project or group imports failed or have 
   * [Export project repo via  Rails console](https://docs.gitlab.com/ee/administration/troubleshooting/gitlab_rails_cheat_sheet.html#export-a-repository)
 * [Import project via Rake task](https://docs.gitlab.com/ee/development/import_project.html#importing-via-a-rake-task)
 
+##### Trim or remove project CI pipelines
+
+###### On migration VM
+
+* Export project
+* Unpack file
+  * `tar -xzvf <archive_name>.tar.gz -C <target_directory>`
+* Trim lines or completely remove `<archive_folder>/tree/project/ci_pipelines.ndjson`
+* Pack back ONLY folder content
+  * `tar -czvf <archive_name>.tar.gz -C <archive_name> .`
+* Import project
+
+###### Rails console on source
+
+```bash
+sudo gitlab-rails console
+```
+
+```ruby
+# Assign project and user
+[ gprd ] production> p=Project.find_by_full_path(‘<full_path>’)
+=> #<Project id:<PID> <full_path>
+[ gprd ] production> u=User.find_by(username: “<admin_or_owner_username>”)
+=> #<User id:UID @<admin_or_owner_username>>
+
+# Find out delete error
+[ gprd ] production> p.delete_error
+=> "PG::QueryCanceled: ERROR:  canceling statement due to statement timeout\n"
+
+# Trim CI pipelines
+[ gprd ] production> p.ci_pipelines.find_each(batch_size: <number_of_pipelines>, &:destroy)
+=> nil
+[ gprd ] production> p.ci_pipelines.count
+=> 0
+
+# (WARNING) Completely remove the project
+[ gprd ] production> ProjectDestroyWorker.new.perform(p.id, u.id, {})
+=> true
+```
+
 #### Fallback if no container registry migrate
 
 In the event container registries fail to migrate, there is a bash script built in to the container you can use as a backup.
