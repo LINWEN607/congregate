@@ -44,13 +44,22 @@ This runbook covers the process of preparing and cleaning up after a migration f
 ### Customer
 
 * [ ] Upgrade and align the source and destination instances to the latest version of GitLab-EE ([notes](https://docs.gitlab.com/ee/user/project/settings/import_export.html#important-notes)).
+* [ ]Clean registries and repositories as much as possible:
+  * [ ] Repositories:
+    * [ ]Get under 5gb for the an optimal chance at success
+    * [ ] Clean as many branches, merge requests, etc as possible from the history
+  * [ ] Registries:
+    * [ ] Clear as many tags as possible. Number * size of images can impact migration performance and duration
 * [ ] Consolidate users (and their number) that need to be migrated.
   * Determine whether inactive ones should be removed on source, skipped during migration or migrated and inactive on destination.
   * (gitlab.com) Configure valid primary emails for service accounts to avoid issues with [Confirmation Emails](https://about.gitlab.com/handbook/support/workflows/confirmation_emails.html).
 * [ ] Create a user-group-project migration schedule (waves).
   * All users are migrated first.
   * Consider the option of migrating all groups (w/ sub-groups, w/o projects) next.
+    * (gitlab.com) Notes around Group import/export when using the GitLab Group Export/Import
+    * Consult with your engineer around restrictions for group movement and renaming, as it is dependent on your source system and migration requirements
   * Projects are migrated in waves (with their parent groups if the previous was not done).
+  * (gitlab.com) GitLab support requires a 5-day lead on migrations to gitlab.com. Consider this when determining wave schedule.
 * [ ] Create dedicated migration (Admin) user accounts on the source and destination instance.
 * [ ] Configure LDAP/SAML (in [identity provider](https://docs.gitlab.com/ee/administration/auth/)) for the Admin user account on the destination instance (as for other users).
   * This is required for the user-group-project mapping to succeed.
