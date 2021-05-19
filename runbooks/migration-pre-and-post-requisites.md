@@ -44,9 +44,9 @@ This runbook covers the process of preparing and cleaning up after a migration f
 ### Customer
 
 * [ ] Upgrade and align the source and destination instances to the latest version of GitLab-EE ([notes](https://docs.gitlab.com/ee/user/project/settings/import_export.html#important-notes)).
-* [ ]Clean registries and repositories as much as possible:
+* [ ] Clean registries and repositories as much as possible:
   * [ ] Repositories:
-    * [ ]Get under 5gb for the an optimal chance at success
+    * [ ] Get under 5Gb of project export for an optimal chance at success
     * [ ] Clean as many branches, merge requests, etc as possible from the history
   * [ ] Registries:
     * [ ] Clear as many tags as possible. Number * size of images can impact migration performance and duration
