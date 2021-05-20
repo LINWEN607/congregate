@@ -46,7 +46,7 @@ Usage:
     congregate validate-staged-projects-schema
     congregate map-users [--commit]
     congregate map-and-stage-users-by-email-match [--commit]
-    congregate generate-diff [--processes=<n>] [--staged] [--rollback] [--scm-source=hostname] [--skip-users] [--skip-groups] [--skip-projects]
+    congregate generate-diff [--processes=<n>] [--staged] [--rollback] [--scm-source=hostname] [--skip-users] [--skip-groups] [--skip-projects] [--subgroups-only]
     congregate clean [--commit]
     congregate stitch-results [--result-type=<project|group|user>] [--no-of-files=<n>] [--head|--tail]
     congregate obfuscate
@@ -210,6 +210,7 @@ def main():
         SCM_SOURCE = arguments["--scm-source"]
         ARCHIVED = arguments["--archived"]
         MEMBERSHIP = arguments["--membership"]
+        SUBGROUPS_ONLY = arguments["--subgroups-only"]
 
         if SCM_SOURCE:
             SCM_SOURCE = strip_protocol(SCM_SOURCE)
@@ -329,7 +330,7 @@ def main():
                         arguments["--skip-project-export"] or ONLY_POST_MIGRATION_INFO),
                     skip_project_import=arguments["--skip-project-import"],
                     only_post_migration_info=ONLY_POST_MIGRATION_INFO,
-                    subgroups_only=arguments["--subgroups-only"],
+                    subgroups_only=SUBGROUPS_ONLY,
                     scm_source=SCM_SOURCE
                 )
                 migrate.migrate()
@@ -482,6 +483,7 @@ def main():
                     if not SKIP_GROUPS:
                         group_diff = GroupDiffClient(
                             staged=STAGED,
+                            subgroups_only=SUBGROUPS_ONLY,
                             processes=PROCESSES,
                             rollback=ROLLBACK
                         )

@@ -16,7 +16,7 @@ class GroupDiffClient(BaseDiffClient):
         Extension of BaseDiffClient focused on finding the differences between migrated groups
     '''
 
-    def __init__(self, staged=False, rollback=False, processes=None):
+    def __init__(self, staged=False, subgroups_only=False, rollback=False, processes=None):
         super().__init__()
         self.groups_api = GroupsApi()
         self.issues_api = IssuesApi()
@@ -45,9 +45,12 @@ class GroupDiffClient(BaseDiffClient):
         else:
             self.source_data = read_json_file_into_object(
                 "%s/data/groups.json" % self.app_path)
-        # Keep only top level groups
-        self.source_data = [
-            d for d in self.source_data if is_top_level_group(d)]
+        # Filter out relevant groups
+        staged_top_groups = [
+            g for g in self.source_data if is_top_level_group(g)]
+        staged_subgroups = [
+            g for g in self.source_data if not is_top_level_group(g)]
+        self.source_data = staged_subgroups if subgroups_only else staged_top_groups
 
     def generate_diff_report(self):
         diff_report = {}
