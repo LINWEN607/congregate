@@ -14,7 +14,6 @@ variables:
   BB_SERVER_SEED_IMAGE_NAME: "$CI_REGISTRY_IMAGE/bitbucket-seed:latest"
   JENKINS_SEED_IMAGE_NAME: "$CI_REGISTRY_IMAGE/jenkins-seed:latest"
   SAST_DISABLE_DIND: "true"
-  SAST_DEFAULT_ANALYZERS: "bandit"
 
 default:
   image: "$TEST_IMAGE_NAME"
@@ -192,7 +191,7 @@ check ldap compose yaml:
 
 .e2e-test-setup:
   image: "${TEST_IMAGE_NAME}"
-  extends: 
+  extends:
     - .use-docker-in-docker
     - .gitlab-destination
     - .e2e-cleanup
@@ -207,9 +206,9 @@ check ldap compose yaml:
     - export GITLAB_DEST_REG_URL=gitlab_destination:4567
   rules:
     - changes:
-      - congregate/helpers/**/*
-      - congregate/migration/gitlab/**/*
-      - congregate/migration/migrate.py
+        - congregate/helpers/**/*
+        - congregate/migration/gitlab/**/*
+        - congregate/migration/migrate.py
   timeout: 30 minutes
 
 test:pylint:
@@ -420,7 +419,7 @@ test:GitHub Enterprise end to end:
 
 update gitlab-ps-utils:
   stage: build
-  trigger: 'gitlab-org/professional-services-automation/gitlab-ps-utils'
+  trigger: "gitlab-org/professional-services-automation/gitlab-ps-utils"
   rules:
     - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
       changes:
@@ -444,4 +443,3 @@ update gitlab-ps-utils:
         - congregate/tests/helpers/test_list_utils.py
         - congregate/tests/helpers/test_json_utils.py
         - congregate/tests/helpers/test_file_utils.py
-
