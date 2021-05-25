@@ -290,7 +290,7 @@ Usage:
     congregate update-projects-visibility
     congregate set-default-branch [--commit]
     congregate enable-mirroring [--commit] # TODO: Find a use for it or remove
-    congregate count-unarchived-projects
+    congregate count-unarchived-projects [--local]
     congregate archive-staged-projects [--commit] [--scm-source=hostname]
     congregate unarchive-staged-projects [--commit] [--scm-source=hostname]
     congregate filter-projects-by-state [--commit] [--archived]
@@ -351,6 +351,7 @@ Arguments:
     reporting                               Create reporting issues, based off reporting data supplied in congregate.conf
     archived                                Filter out archived projects from the list of staged projects
     membership                              Remove inactive members from staged groups and projects on source
+    local                                   Use locally listed data instead of API
 
 Commands:
     list                                    List all projects of a source instance and save it to {CONGREGATE_PATH}/data/projects.json.

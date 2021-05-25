@@ -165,11 +165,10 @@ class ProjectsClient(BaseClass):
                 self.log.error(
                     "Failed to GET project {} by path_with_namespace".format(path_with_namespace))
 
-    def count_unarchived_projects(self):
+    def count_unarchived_projects(self, local=False):
         unarchived_user_projects = []
         unarchived_group_projects = []
-        for project in self.projects_api.get_all_projects(
-                self.config.source_host, self.config.source_token):
+        for project in (self.get_projects() if local else self.projects_api.get_all_projects(self.config.source_host, self.config.source_token)):
             if not project.get("archived", True):
                 unarchived_user_projects.append(project["path_with_namespace"]) if project["namespace"][
                     "kind"] == "user" else unarchived_group_projects.append(project["path_with_namespace"])
