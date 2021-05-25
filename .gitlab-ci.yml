@@ -14,6 +14,7 @@ variables:
   BB_SERVER_SEED_IMAGE_NAME: "$CI_REGISTRY_IMAGE/bitbucket-seed:latest"
   JENKINS_SEED_IMAGE_NAME: "$CI_REGISTRY_IMAGE/jenkins-seed:latest"
   SAST_DISABLE_DIND: "true"
+  SAST_EXCLUDED_ANALYZERS: "brakeman,flawfinder,gosec,kubesec,mobsf,phpcs-security-audit,pmd-apex,security-code-scan,sobelow,spotbugs"
 
 default:
   image: "$TEST_IMAGE_NAME"
