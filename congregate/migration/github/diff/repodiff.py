@@ -161,7 +161,7 @@ class RepoDiffClient(BaseDiffClient):
         repo_diff["Total Number of Issue Comments"] = self.generate_repo_count_diff(
             project, f"repos/{project['namespace']}/{project['path']}/issues/comments", ["projects/:id/issues", "notes"], bypass_x_total_count=True)
         repo_diff["Total Number of Branches"] = self.generate_repo_count_diff(
-            project, f"repositories/{project['id']}/branches", "projects/:id/branches")
+            project, f"repositories/{project['id']}/branches", "projects/:id/repository/branches")
 
         # branches
         repo_branch_data = list(self.repos_api.get_repo_branches(

@@ -128,7 +128,7 @@ class ProjectDiffClient(BaseDiffClient):
             project_diff["Total Number of Issue Comments"] = self.generate_nested_project_count_diff(
                 project, ["projects/:id/issues", "notes"])
             project_diff["Total Number of Branches"] = self.generate_project_count_diff(
-                project, "projects/:id/branches")
+                project, "projects/:id/repository/branches")
 
             # CI/CD
             project_diff["/projects/:id/variables"] = self.generate_project_diff(
