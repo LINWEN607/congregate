@@ -1035,17 +1035,19 @@ class UsersTests(unittest.TestCase):
            new_callable=PropertyMock)
     @patch('congregate.helpers.conf.Config.force_random_password',
            new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.group_sso_provider',
+           new_callable=PropertyMock)
     @patch('congregate.migration.gitlab.users.UsersClient.generate_extern_uid')
     @patch('congregate.migration.gitlab.users.UsersClient.create_valid_username')
     def test_generate_user_group_saml_post_data(
-            self, valid_username, extern_uid, rand_pass, reset_pass, parent_id):
+            self, valid_username, extern_uid, provider, rand_pass, reset_pass, parent_id):
         mock_user = self.mock_users.get_dummy_staged_user()
         valid_username.return_value = mock_user.get("username")
         extern_uid.return_value = mock_user.get("email")
         rand_pass.return_value = False
         reset_pass.return_value = True
         parent_id.return_value = 1234
-
+        provider.return_value = "group_saml"
         expected = {
             "two_factor_enabled": False,
             "can_create_project": True,
