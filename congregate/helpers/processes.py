@@ -1,14 +1,15 @@
 import sys
+from os import getenv
 
 from traceback import print_exc
 from multiprocessing import Pool, cpu_count, get_context
 from functools import partial
 from tqdm import tqdm
 from congregate.helpers.json_utils import json_pretty
-from congregate.helpers.base_class import BaseClass
+from congregate.helpers.logger import myLogger
 from congregate.helpers.process import NoDaemonProcess
 
-b = BaseClass()
+log = myLogger(__name__, app_path=getenv('APP_PATH', '.'), log_name=getenv('APP_NAME', 'application'))
 _func = None
 tanuki = "#e24329"
 
@@ -43,8 +44,8 @@ def start_multi_process(function, iterable, processes=None):
                       total=len(iterable), colour=tanuki):
             yield i
     except Exception as e:
-        b.log.critical("Migration pool failed with error:\n{}".format(e))
-        b.log.critical(print_exc())
+        log.critical("Migration pool failed with error:\n{}".format(e))
+        log.critical(print_exc())
     finally:
         p.close()
         p.join()
@@ -78,8 +79,8 @@ def start_multi_process_with_args(
                       total=len(iterable), colour=tanuki):
             yield i
     except Exception as e:
-        b.log.critical("Migration pool failed with error:\n{}".format(e))
-        b.log.critical(print_exc())
+        log.critical("Migration pool failed with error:\n{}".format(e))
+        log.critical(print_exc())
     finally:
         p.close()
         p.join()
@@ -103,8 +104,8 @@ def start_multi_process_stream(function, iterable, processes=None):
     try:
         return p.imap_unordered(worker, iterable)
     except Exception as e:
-        b.log.critical("Migration pool failed with error:\n{}".format(e))
-        b.log.critical(print_exc())
+        log.critical("Migration pool failed with error:\n{}".format(e))
+        log.critical(print_exc())
     finally:
         p.close()
         p.join()
@@ -136,8 +137,8 @@ def start_multi_process_stream_with_args(
     try:
         return p.imap_unordered(worker, iterable)
     except Exception as e:
-        b.log.critical("Migration pool failed with error:\n{}".format(e))
-        b.log.critical(print_exc())
+        log.critical("Migration pool failed with error:\n{}".format(e))
+        log.critical(print_exc())
     finally:
         p.close()
         p.join()
@@ -158,9 +159,9 @@ def handle_multi_process_write_to_file_and_return_results(
             print_exc()
             print("Found None ({}). Stopping write to file".format(te))
         except Exception as e:
-            b.log.critical(
+            log.critical(
                 "Migration processes failed with error:\n{}".format(e))
-            b.log.critical(print_exc())
+            log.critical(print_exc())
         else:
             f.write("\n]")
         finally:
@@ -170,10 +171,10 @@ def handle_multi_process_write_to_file_and_return_results(
 
 def get_no_of_processes(processes):
     try:
-        proc = int(processes) if processes else b.config.processes
-        b.log.info(
+        proc = int(processes) if processes else 4
+        log.info(
             f"Running command with {proc} parallel processes on {cpu_count()} CPU")
         return proc
     except ValueError:
-        b.log.error(f"Input for # of processes is not an integer: {processes}")
+        log.error(f"Input for # of processes is not an integer: {processes}")
         sys.exit()
