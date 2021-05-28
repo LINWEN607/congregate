@@ -1042,6 +1042,11 @@ class UsersTests(unittest.TestCase):
     def test_generate_user_group_saml_post_data(
             self, valid_username, extern_uid, provider, rand_pass, reset_pass, parent_id):
         mock_user = self.mock_users.get_dummy_staged_user()
+        mock_user["identities"] = [
+            {
+                "junk": "so it works"
+            }
+        ]
         valid_username.return_value = mock_user.get("username")
         extern_uid.return_value = mock_user.get("email")
         rand_pass.return_value = False
@@ -1063,6 +1068,124 @@ class UsersTests(unittest.TestCase):
             "id": 2,
             "projects_limit": 100000,
             "provider": "group_saml",
+            "note": None,
+            "state": "active",
+            "reset_password": True,
+            "location": None,
+            "email": "iwdewfsfdyyazqnpkwga@examplegitlab.com",
+            "website_url": "",
+            "job_title": "",
+            "username": "RzKciDiyEzvtSqEicsvW",
+            "bio": None,
+            "work_information": None,
+            "private_profile": False,
+            "external": False,
+            "skip_confirmation": True,
+            "organization": None,
+            "public_email": "",
+            "extra_shared_runners_minutes_limit": None,
+            "name": "FrhUbyTGMoXQUTeaMgFW",
+            "can_create_group": True,
+            "avatar_url": "https://www.gravatar.com/avatar/a0290f87758efba7e7be1ed96b2e5ac1?s=80&d=identicon",
+            "theme_id": 1
+        }
+        actual = self.users.generate_user_group_saml_post_data(mock_user)
+
+        self.assertDictEqual(expected, actual)
+
+    @patch.object(ConfigurationValidator, 'dstn_parent_id', new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.reset_password',
+           new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.force_random_password',
+           new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.group_sso_provider',
+           new_callable=PropertyMock)
+    @patch('congregate.migration.gitlab.users.UsersClient.generate_extern_uid')
+    @patch('congregate.migration.gitlab.users.UsersClient.create_valid_username')
+    def test_generate_user_google_oauth_saml_post_data(
+            self, valid_username, extern_uid, provider, rand_pass, reset_pass, parent_id):
+        mock_user = self.mock_users.get_dummy_staged_user()
+        mock_user["identities"] = [
+            {
+                "junk": "so it works"
+            }
+        ]
+        valid_username.return_value = mock_user.get("username")
+        extern_uid.return_value = "1234567890abcd"
+        rand_pass.return_value = False
+        reset_pass.return_value = True
+        parent_id.return_value = 1234
+        provider.return_value = "google_oauth2"
+        expected = {
+            "two_factor_enabled": False,
+            "can_create_project": True,
+            "twitter": "",
+            "shared_runners_minutes_limit": None,
+            "extern_uid": '1234567890abcd',
+            "force_random_password": False,
+            "linkedin": "",
+            "color_scheme_id": 1,
+            "skype": "",
+            "is_admin": False,
+            "id": 2,
+            "projects_limit": 100000,
+            "provider": "google_oauth2",
+            "note": None,
+            "state": "active",
+            "reset_password": True,
+            "location": None,
+            "email": "iwdewfsfdyyazqnpkwga@examplegitlab.com",
+            "website_url": "",
+            "job_title": "",
+            "username": "RzKciDiyEzvtSqEicsvW",
+            "bio": None,
+            "work_information": None,
+            "private_profile": False,
+            "external": False,
+            "skip_confirmation": True,
+            "organization": None,
+            "public_email": "",
+            "extra_shared_runners_minutes_limit": None,
+            "name": "FrhUbyTGMoXQUTeaMgFW",
+            "can_create_group": True,
+            "avatar_url": "https://www.gravatar.com/avatar/a0290f87758efba7e7be1ed96b2e5ac1?s=80&d=identicon",
+            "theme_id": 1
+        }
+        actual = self.users.generate_user_group_saml_post_data(mock_user)
+
+        self.assertDictEqual(expected, actual)
+
+    @patch.object(ConfigurationValidator, 'dstn_parent_id', new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.reset_password',
+           new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.force_random_password',
+           new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.group_sso_provider',
+           new_callable=PropertyMock)
+    @patch('congregate.migration.gitlab.users.UsersClient.generate_extern_uid')
+    @patch('congregate.migration.gitlab.users.UsersClient.create_valid_username')
+    def test_generate_user_saml_post_data_no_identities(
+            self, valid_username, extern_uid, provider, rand_pass, reset_pass, parent_id):
+        mock_user = self.mock_users.get_dummy_staged_user()
+        mock_user["identities"] = []
+        valid_username.return_value = mock_user.get("username")
+        extern_uid.return_value = None
+        rand_pass.return_value = False
+        reset_pass.return_value = True
+        parent_id.return_value = None
+        provider.return_value = None
+        expected = {
+            "two_factor_enabled": False,
+            "can_create_project": True,
+            "twitter": "",
+            "shared_runners_minutes_limit": None,
+            "force_random_password": False,
+            "linkedin": "",
+            "color_scheme_id": 1,
+            "skype": "",
+            "is_admin": False,
+            "id": 2,
+            "projects_limit": 100000,
             "note": None,
             "state": "active",
             "reset_password": True,

@@ -150,25 +150,25 @@ class UsersClient(BaseClass):
         return users_map[email]
 
     def generate_user_group_saml_post_data(self, user):
-        identities = user.pop("identities", None)
-        extern_uid = self.generate_extern_uid(
-            user, identities)
-        if extern_uid:
-            user["extern_uid"] = extern_uid
-            if self.config.group_sso_provider is not None:
-                provider = str(self.config.group_sso_provider).lower()
-                user["provider"] = provider
-                if provider == "group_saml":
-                    user["group_id_for_saml"] = self.config.dstn_parent_id
-            user["reset_password"] = self.config.reset_password
-            # make sure the inactive user cannot do anything
-            user["force_random_password"] = "true" if user["state"] in self.INACTIVE else self.config.force_random_password
-            if not self.config.reset_password and not self.config.force_random_password:
-                # TODO: add config for 'password' field
-                self.log.warning(
-                    "If both 'reset_password' and 'force_random_password' are False, the 'password' field has to be set")
-            user["skip_confirmation"] = True
-            user["username"] = self.create_valid_username(user)
+        if identities := user.pop("identities", None):
+            extern_uid = self.generate_extern_uid(
+                user, identities)
+            if extern_uid:
+                user["extern_uid"] = extern_uid
+                if self.config.group_sso_provider:
+                    provider = str(self.config.group_sso_provider).lower()
+                    user["provider"] = provider
+                    if provider == "group_saml":
+                        user["group_id_for_saml"] = self.config.dstn_parent_id
+        user["reset_password"] = self.config.reset_password
+        # make sure the inactive user cannot do anything
+        user["force_random_password"] = "true" if user["state"] in self.INACTIVE else self.config.force_random_password
+        if not self.config.reset_password and not self.config.force_random_password:
+            # TODO: add config for 'password' field
+            self.log.warning(
+                "If both 'reset_password' and 'force_random_password' are False, the 'password' field has to be set")
+        user["skip_confirmation"] = True
+        user["username"] = self.create_valid_username(user)
 
         return user
 
