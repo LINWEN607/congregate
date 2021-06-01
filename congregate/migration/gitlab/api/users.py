@@ -1,4 +1,5 @@
 import json
+from urllib.parse import quote_plus
 from congregate.migration.gitlab.api.base_api import GitLabApiWrapper
 
 
@@ -85,7 +86,7 @@ class UsersApi(GitLabApiWrapper):
             :param: email: (str) Email of the specific user being searched
             :yield: Generator containing JSON results from GET /users?search=:email
         """
-        return self.api.list_all(host, token, f"users?search={email}", per_page=50)
+        return self.api.list_all(host, token, f"users?search={quote_plus(email)}", per_page=50)
 
     def search_for_user_by_username(self, host, token, username):
         """
