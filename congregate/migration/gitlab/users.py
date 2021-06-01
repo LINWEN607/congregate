@@ -524,7 +524,7 @@ class UsersClient(BaseClass):
                     "Failed to retrieve user {0} status, due to:\n{1}".format(user, e))
         elif response.status_code == 400:
             return self.log_and_return_failed_user_creation(
-                "Unable to create user due to improperly formatted request:\n{}".format(response.text), user["email"])
+                f"Unable to create user due to improperly formatted request for user email {user['email']} :\n{response.text}", user["email"])
         elif response.status_code == 500:
             return self.log_and_return_failed_user_creation(
                 "Unable to create user due to internal server error:\n{}".format(response.text), user["email"])
