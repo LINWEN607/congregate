@@ -23,7 +23,7 @@ def worker(x):
     return _func(x)
 
 
-def start_multi_process(function, iterable, processes=None):
+def start_multi_process(function, iterable, processes=None, nestable=False):
     """
         Wrapper function to handle multiprocessing a function with a list of data
 
@@ -32,11 +32,13 @@ def start_multi_process(function, iterable, processes=None):
         :param: function: (func) The function processesing the elements of the list
         :param: iterable: (list) A list of data to be passed into the function to process
         :param: processes: (int) Explicit number of processes to split the function across. If processes is not set, number of processes will default to total number of physical cores of CPU
+        :param: nestable: (bool) Allow this multiprocessed function to create nested multiprocessed functions
 
         :return: A list of the data returned from the process map
     """
     ctx = get_context("spawn")
-    ctx.Process = NoDaemonProcess
+    if nestable:
+        ctx.Process = NoDaemonProcess()
     p = ctx.Pool(processes=get_no_of_processes(processes),
                  initializer=worker_init, initargs=(function,))
     try:
@@ -52,7 +54,7 @@ def start_multi_process(function, iterable, processes=None):
 
 
 def start_multi_process_with_args(
-        function, iterable, *args, processes=None, **kwargs):
+        function, iterable, *args, processes=None, nestable=False, **kwargs):
     """
         Wrapper function to handle multiprocessing a function with multiple arguments with a list of data
 
@@ -68,10 +70,13 @@ def start_multi_process_with_args(
         :param: iterable: (list) A list of data to be passed into the function to process
         :param: *args: (args) Any additional arguments the function needs passed in
         :params processes: (int) Explicit number of processes to split the function across. If processes is not set, number of processes will default to total number of physical cores of CPU
+        :param: nestable: (bool) Allow this multiprocessed function to create nested multiprocessed functions
 
         :return: A list of the data returned from the process map
     """
     ctx = get_context("spawn")
+    if nestable:
+        ctx.Process = NoDaemonProcess()
     p = ctx.Pool(processes=get_no_of_processes(processes),
                  initializer=worker_init, initargs=(partial(function, *args, **kwargs),))
     try:
@@ -86,7 +91,7 @@ def start_multi_process_with_args(
         p.join()
 
 
-def start_multi_process_stream(function, iterable, processes=None):
+def start_multi_process_stream(function, iterable, processes=None, nestable=False):
     """
         Wrapper function to handle multiprocessing a function with a list of data
 
@@ -95,10 +100,13 @@ def start_multi_process_stream(function, iterable, processes=None):
         :param: function: (func) The function processesing the elements of the list
         :param: iterable: (list) A list of data to be passed into the function to process
         :param: processes: (int) Explicit number of processes to split the function across. If processes is not set, number of processes will default to total number of physical cores of CPU
+        :param: nestable: (bool) Allow this multiprocessed function to create nested multiprocessed functions
 
         :return: An imap_unordered object. Assume no useful data will be returned with this function
     """
     ctx = get_context("spawn")
+    if nestable:
+        ctx.Process = NoDaemonProcess()
     p = ctx.Pool(processes=get_no_of_processes(processes),
                  initializer=worker_init, initargs=(function,))
     try:
@@ -112,7 +120,7 @@ def start_multi_process_stream(function, iterable, processes=None):
 
 
 def start_multi_process_stream_with_args(
-        function, iterable, *args, processes=None, **kwargs):
+        function, iterable, *args, processes=None, nestable=False, **kwargs):
     """
         Wrapper function to handle multiprocessing a function with multiple arguments with a list of data
 
@@ -128,10 +136,13 @@ def start_multi_process_stream_with_args(
         :param: iterable: (list) A list of data to be passed into the function to process
         :param: *args: (args) Any additional arguments the function needs passed in
         :param: processes: (int) Explicit number of processes to split the function across. If processes is not set, number of processes will default to total number of physical cores of CPU
+        :param: nestable: (bool) Allow this multiprocessed function to create nested multiprocessed functions
 
         :return: An imap_unordered object. Assume no useful data will be returned with this function
     """
     ctx = get_context("spawn")
+    if nestable:
+        ctx.Process = NoDaemonProcess()
     p = ctx.Pool(processes=get_no_of_processes(processes),
                  initializer=worker_init, initargs=(partial(function, *args, **kwargs),))
     try:

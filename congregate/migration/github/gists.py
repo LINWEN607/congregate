@@ -1,5 +1,4 @@
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.processes import start_multi_process_stream
 from congregate.migration.github.api.gists import GistsApi
 from congregate.helpers.misc_utils import safe_json_response, is_error_message_present
 

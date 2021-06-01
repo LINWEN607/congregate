@@ -56,7 +56,7 @@ class ReposClient(BaseClass):
                 f"NOT listing public repos on {self.config.source_host}")
         else:
             start_multi_process_stream(
-                self.handle_retrieving_repos, self.repos_api.get_all_public_repos(), processes=processes)
+                self.handle_retrieving_repos, self.repos_api.get_all_public_repos(), processes=processes, nestable=True)
 
     def connect_to_mongo(self):
         return MongoConnector()

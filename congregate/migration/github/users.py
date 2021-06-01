@@ -41,7 +41,7 @@ class UsersClient(BaseClass):
         else:
             users = self.users_api.get_all_users()
         start_multi_process_stream_with_args(
-            self.handle_retrieving_users, users, self.establish_browser_connection(), processes=processes)
+            self.handle_retrieving_users, users, self.establish_browser_connection(), processes=processes, nestable=True)
 
     def handle_retrieving_users(self, browser, user, mongo=None):
         # mongo should be set to None unless this function is being used in a

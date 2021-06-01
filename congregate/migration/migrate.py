@@ -184,7 +184,7 @@ class MigrateClient(BaseClass):
             self.log.info(
                 f"{dry_log}Migrating GitHub orgs/teams to GitLab groups/sub-groups")
             results = [r for r in start_multi_process(
-                self.migrate_github_group, staged_groups, processes=self.processes)]
+                self.migrate_github_group, staged_groups, processes=self.processes, nestable=True)]
             self.are_results(results, "group", "import")
             results.append(mig_utils.get_results(results))
             self.log.info(
@@ -204,7 +204,7 @@ class MigrateClient(BaseClass):
                     "\n".join(u for u in user_projects)))
             self.log.info("Importing projects from GitHub")
             import_results = [ir for ir in start_multi_process(
-                self.import_github_project, staged_projects, processes=self.processes)]
+                self.import_github_project, staged_projects, processes=self.processes, nestable=True)]
 
             self.are_results(import_results, "project", "import")
             # append Total : Successful count of project imports
@@ -516,7 +516,7 @@ class MigrateClient(BaseClass):
             self.log.info(
                 f"{dry_log}Migrating BitBucket projects to GitLab groups")
             results = [r for r in start_multi_process(
-                self.migrate_bitbucket_group, staged_groups, processes=self.processes)]
+                self.migrate_bitbucket_group, staged_groups, processes=self.processes, nestable=True)]
 
             self.are_results(results, "group", "import")
 
@@ -539,7 +539,7 @@ class MigrateClient(BaseClass):
                     "\n".join(u for u in user_projects)))
             self.log.info("Importing projects from BitBucket Server")
             import_results = [ir for ir in start_multi_process(
-                self.import_bitbucket_project, staged_projects, processes=self.processes)]
+                self.import_bitbucket_project, staged_projects, processes=self.processes, nestable=True)]
 
             self.are_results(import_results, "project", "import")
 

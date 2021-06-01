@@ -60,7 +60,7 @@ class OrgsClient(BaseClass):
         else:
             orgs = self.orgs_api.get_all_orgs()
         start_multi_process_stream_with_args(
-            self.handle_org_retrieval, orgs, groups, processes=processes)
+            self.handle_org_retrieval, orgs, groups, processes=processes, nestable=True)
 
     def handle_org_retrieval(self, groups, org):
         mongoclient = self.connect_to_mongo()
