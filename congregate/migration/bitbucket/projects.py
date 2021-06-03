@@ -16,7 +16,7 @@ class ProjectsClient(BaseClass):
         self.users = UsersClient()
         self.repos = ReposClient()
         self.groups_api = GroupsApi()
-        super(ProjectsClient, self).__init__()
+        super().__init__()
 
     def get_projects(self):
         with open("{}/data/groups.json".format(self.app_path), "r") as f:

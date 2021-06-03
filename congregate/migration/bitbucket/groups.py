@@ -8,7 +8,7 @@ class GroupsClient(BaseClass):
 
     def __init__(self):
         self.groups_api = GroupsApi()
-        super(GroupsClient, self).__init__()
+        super().__init__()
 
     def retrieve_group_info(self):
         """

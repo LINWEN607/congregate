@@ -19,8 +19,7 @@ class ReposClient(BaseClass):
         self.users = UsersClient()
         self.groups_api = GroupsApi()
         self.gl_projects_api = GLProjectsApi()
-
-        super(ReposClient, self).__init__()
+        super().__init__()
 
     def retrieve_repo_info(self, groups=None):
         # List and reformat all Bitbucket Server repo to GitLab project metadata
@@ -96,7 +95,7 @@ class ReposClient(BaseClass):
             f"Skipping group level permission {p['type']} for branch {dig(p, 'matcher', 'displayId')} of project {pid}")
 
     def filter_branch_permissions(self, p, perms, pid):
-        branch = dig(p, 'matcher', 'displayId', default="") 
+        branch = dig(p, 'matcher', 'displayId', default="")
         prio = ["read-only", "no-deletes",
                 "fast-forward-only", "pull-request-only"]
         # Protect branch by highest priority and only once

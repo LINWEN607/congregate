@@ -10,7 +10,7 @@ class UsersClient(BaseClass):
     def __init__(self):
         self.projects_api = ProjectsApi()
         self.users_api = UsersApi()
-        super(UsersClient, self).__init__()
+        super().__init__()
         self.users_to_ignore = self.config.users_to_ignore
 
     def retrieve_user_info(self):
