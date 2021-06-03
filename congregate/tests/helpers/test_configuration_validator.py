@@ -363,7 +363,7 @@ class ConfigurationValidationTests(unittest.TestCase):
         self.config.as_obj().set("SOURCE", "source_token", obfuscate("Enter secret: "))
         # pylint: disable=no-member
         responses.add(responses.GET, url_value,
-                      json=self.bbs_users.get_non_sys_admin_user(), status=200, content_type='text/json', match_querystring=True)
+                      json=self.bbs_users.get_non_admin_user(), status=200, content_type='text/json', match_querystring=True)
         # pylint: enable=no-member
         self.assertRaises(ConfigurationException,
                           self.config.validate_src_token, "test")

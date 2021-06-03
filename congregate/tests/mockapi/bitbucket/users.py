@@ -93,7 +93,7 @@ class MockUsersApi():
             "start": 0
         }
 
-    def get_non_sys_admin_user(self):
+    def get_non_admin_user(self):
         return {
             "size": 1,
             "limit": 25,
@@ -116,7 +116,7 @@ class MockUsersApi():
                             ]
                         }
                     },
-                    "permission": "ADMIN"
+                    "permission": "PROJECT_CREATE"
                 }
             ],
             "start": 0
