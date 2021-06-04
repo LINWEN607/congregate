@@ -5,11 +5,13 @@ from traceback import print_exc
 from multiprocessing import Pool, cpu_count, get_context
 from functools import partial
 from tqdm import tqdm
+from congregate.helpers.conf import Config
 from congregate.helpers.json_utils import json_pretty
 from congregate.helpers.logger import myLogger
 from congregate.helpers.process import NoDaemonProcess
 
-log = myLogger(__name__, app_path=getenv('APP_PATH', '.'), log_name=getenv('APP_NAME', 'application'))
+log = myLogger(__name__, app_path=getenv('APP_PATH', '.'),
+               log_name=getenv('APP_NAME', 'application'))
 _func = None
 tanuki = "#e24329"
 
@@ -182,7 +184,7 @@ def handle_multi_process_write_to_file_and_return_results(
 
 def get_no_of_processes(processes):
     try:
-        proc = int(processes) if processes else 4
+        proc = int(processes) if processes else Config().processes or 4
         log.info(
             f"Running command with {proc} parallel processes on {cpu_count()} CPU")
         return proc

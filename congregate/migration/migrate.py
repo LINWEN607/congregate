@@ -712,7 +712,8 @@ class MigrateClient(BaseClass):
                         # Migrate GPG keys
                         self.keys.migrate_user_gpg_keys(old_user, new_user)
                 else:
-                    self.log.warning(f"Could not create user. User may exist with a different primary email. Check previous logs warnings. Userdata follows:\n{user_data}")
+                    self.log.warning(
+                        f"Could not create user. User may exist with a different primary email. Check previous logs warnings. Userdata follows:\n{user_data}")
                     # Return the "original" new_user setting
                     return {
                         "email": email,
