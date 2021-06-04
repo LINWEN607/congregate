@@ -200,7 +200,7 @@ def main():
         DRY_RUN = not arguments["--commit"]
         STAGED = arguments["--staged"]
         ROLLBACK = arguments["--rollback"]
-        PROCESSES = arguments["--processes"] if arguments["--processes"] else None
+        PROCESSES = arguments["--processes"] or conf.Config().processes
         SKIP_USERS = arguments["--skip-users"]
         SKIP_GROUPS = arguments["--skip-groups"]
         SKIP_PROJECTS = arguments["--skip-projects"]
