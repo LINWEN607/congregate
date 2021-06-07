@@ -1,4 +1,4 @@
-FROM python:3.8.5-buster
+FROM python:3.8.10-buster
 
 # Define the ENV variable
 ENV CONGREGATE_PATH=/opt/congregate \
@@ -16,8 +16,8 @@ COPY congregate.sh pyproject.toml poetry.lock README.md package.json package-loc
 
 # Installing some basic utilities and updating apt
 RUN apt-get update && \
-    apt-get upgrade -y && \
-    apt-get install less vim jq curl libcurl4 openssl liblzma5 screen -y
+    apt-get upgrade -y
+
 
 # Install mongo
 RUN mkdir /mongo-install && \
@@ -27,9 +27,9 @@ RUN mkdir /mongo-install && \
     chown `whoami` /var/lib/mongodb && \
     chown `whoami` /var/log/mongodb && \
     cd /mongo-install && \
-    wget https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-debian10-4.4.1.tgz && \
-    tar -zxvf mongodb-linux-*-4.4.1.tgz && \
-    cp mongodb-linux-x86_64-debian10-4.4.1/bin/* /usr/local/bin/
+    wget https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-debian10-4.4.4.tgz && \
+    tar -zxvf mongodb-linux-*-4.4.4.tgz && \
+    cp mongodb-linux-x86_64-debian10-4.4.4/bin/* /usr/local/bin/
 
 # Install congregate
 RUN cd /opt/congregate && \

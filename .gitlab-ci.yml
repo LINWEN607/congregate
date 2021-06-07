@@ -7,6 +7,7 @@ include:
   - template: SAST.gitlab-ci.yml
   - template: Secret-Detection.gitlab-ci.yml
   - template: Code-Quality.gitlab-ci.yml
+  - template: Container-Scanning.gitlab-ci.yml
 
 variables:
   DOCKER_VERSION: "19.03.1"
@@ -15,6 +16,7 @@ variables:
   JENKINS_SEED_IMAGE_NAME: "$CI_REGISTRY_IMAGE/jenkins-seed:latest"
   SAST_DISABLE_DIND: "true"
   SAST_EXCLUDED_ANALYZERS: "brakeman,flawfinder,gosec,kubesec,mobsf,phpcs-security-audit,pmd-apex,security-code-scan,sobelow,spotbugs"
+  SECURE_LOG_LEVEL: 'debug'
 
 default:
   image: "$TEST_IMAGE_NAME"
@@ -55,7 +57,7 @@ workflow:
           "-c",
           "python3 -m http.server 443 --directory /var/log/gitlab/gitlab-rails/ & :; /assets/wrapper",
         ]
-    - name: mongo:4.4.1
+    - name: mongo:4.4.4
       alias: mongo
 
 .e2e-ghe-cleanup:
@@ -282,67 +284,123 @@ test:Jenkins Integration Tests:
         - congregate/migration/jenkins/**/*
   timeout: 10 minutes
 
-debian rolling release:
+.docker-build:
   extends:
     - .use-docker-in-docker
     - .docker-login
+  script:
+    - |
+      cp docker/release/$DISTRO.Dockerfile ./Dockerfile
+      DOCKER_BUILDKIT=1 docker build --tag "$RELEASE_IMAGE_NAME" .
+      docker push "$RELEASE_IMAGE_NAME"
+      if [ -n "$LATEST" ]
+      then 
+        docker image tag $RELEASE_IMAGE_NAME $LATEST
+        docker push "$LATEST"
+      fi
+
+debian rolling release:
+  extends:
+    - .docker-build
   stage: release
   rules:
     - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
   variables:
+    DISTRO: "debian"
     RELEASE_IMAGE_NAME: "$CI_REGISTRY_IMAGE:rolling-debian"
-  script:
-    - cp docker/release/debian.Dockerfile ./Dockerfile
-    - DOCKER_BUILDKIT=1 docker build --tag "$RELEASE_IMAGE_NAME" .
-    - docker push "$RELEASE_IMAGE_NAME"
 
 debian-release-tag:
   extends:
-    - .use-docker-in-docker
-    - .docker-login
+    - .docker-build
   rules:
     - if: "$CI_COMMIT_TAG"
   stage: release
   variables:
+    DISTRO: "debian"
     RELEASE_IMAGE_NAME: "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME-debian"
     LATEST: "$CI_REGISTRY_IMAGE:latest-debian"
-  script:
-    - cp docker/release/debian.Dockerfile ./Dockerfile
-    - DOCKER_BUILDKIT=1 docker build --tag "$RELEASE_IMAGE_NAME" .
-    - docker image tag $RELEASE_IMAGE_NAME $LATEST
-    - docker push "$RELEASE_IMAGE_NAME"
-    - docker push "$LATEST"
 
 centos rolling release:
   extends:
-    - .use-docker-in-docker
-    - .docker-login
+    - .docker-build
   stage: release
   rules:
     - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
   variables:
+    DISTRO: "centos"
     RELEASE_IMAGE_NAME: "$CI_REGISTRY_IMAGE:rolling-centos"
-  script:
-    - cp docker/release/centos.Dockerfile ./Dockerfile
-    - DOCKER_BUILDKIT=1 docker build --tag "$RELEASE_IMAGE_NAME" .
-    - docker push "$RELEASE_IMAGE_NAME"
 
 centos-release-tag:
   extends:
-    - .use-docker-in-docker
-    - .docker-login
+    - .docker-build
   rules:
     - if: "$CI_COMMIT_TAG"
   stage: release
   variables:
+    DISTRO: "centos"
     RELEASE_IMAGE_NAME: "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME-centos"
     LATEST: "$CI_REGISTRY_IMAGE:latest-centos"
+
+container-scan-build:centos:
+  stage: build
+  extends:
+    - .docker-build
+  variables:
+    DISTRO: "centos"
+    RELEASE_IMAGE_NAME: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHA-centos
+  # Keeping these rules commented out until we resolve the container vulnerabilities
+  # rules:
+  #   - changes:
+  #       - pyproject.toml
+  #       - package.json
+  #       - docker/release/centos.Dockerfile
+
+container-scan-build:debian:
+  stage: build
+  extends:
+    - .docker-build
+  variables:
+    DISTRO: "debian"
+    RELEASE_IMAGE_NAME: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHA-debian
+  # Keeping these rules commented out until we resolve the container vulnerabilities
+  # rules:
+  #   - changes:
+  #       - pyproject.toml
+  #       - package.json
+  #       - docker/release/debian.Dockerfile
+
+# Scanning the centos image
+container_scanning:
+  variables:
+    DOCKER_IMAGE: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHA-centos
+    DOCKERFILE_PATH: "docker/release/centos.Dockerfile"
+    GIT_STRATEGY: "fetch"
   script:
-    - cp docker/release/centos.Dockerfile ./Dockerfile
-    - DOCKER_BUILDKIT=1 docker build --tag "$RELEASE_IMAGE_NAME" .
-    - docker image tag $RELEASE_IMAGE_NAME $LATEST
-    - docker push "$RELEASE_IMAGE_NAME"
-    - docker push "$LATEST"
+    - gtcs scan
+  rules:
+    - changes:
+        - pyproject.toml
+        - package.json
+        - docker/release/centos.Dockerfile
+        - docker/release/debian.Dockerfile
+
+
+debian_container_scanning:
+  extends: container_scanning
+  variables:
+    DOCKER_IMAGE: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHA-debian
+    DOCKERFILE_PATH: "docker/release/debian.Dockerfile"
+    GIT_STRATEGY: "fetch"
+  tags:
+    - gitlab-org-docker
+
+  # Keeping these rules commented out until we resolve the container vulnerabilities
+  # rules:
+  #   - changes:
+  #       - pyproject.toml
+  #       - package.json
+  #       - docker/release/debian.Dockerfile
+
 
 runbook update:
   stage: test

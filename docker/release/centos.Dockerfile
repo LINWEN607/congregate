@@ -1,4 +1,4 @@
-from centos:centos8
+from centos:centos8.3.2011
 
 # Define the ENV variable
 ENV CONGREGATE_PATH=/opt/congregate \

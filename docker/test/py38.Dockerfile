@@ -1,4 +1,4 @@
-FROM python:3.8.5-buster
+FROM python:3.8.10-buster
 
 ENV APP_NAME=congregate \
     PIP_DEFAULT_TIMEOUT=100
