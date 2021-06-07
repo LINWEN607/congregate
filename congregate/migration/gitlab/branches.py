@@ -18,8 +18,7 @@ class BranchesClient(BaseClass):
         for project in self.projects.get_all_projects(self.config.destination_host, self.config.destination_token):
             if project.get("default_branch", None) == "master":
                 path = project["path_with_namespace"]
-                self.log.info("{0}Setting project {1} default branch to master".format(
-                    get_dry_log(dry_run), path))
+                self.log.info(f"{get_dry_log(dry_run)}Setting project {path} default branch to master")
                 if not dry_run:
                     try:
                         resp = self.projects.set_default_project_branch(

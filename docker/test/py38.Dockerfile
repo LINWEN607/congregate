@@ -1,11 +1,11 @@
-FROM python:3.8.10-buster
+FROM python:3.8.10-slim-buster
 
 ENV APP_NAME=congregate \
     PIP_DEFAULT_TIMEOUT=100
 
 RUN apt-get update && \
     apt-get upgrade -y && \
-    apt-get install jq curl -y
+    apt-get install jq curl wget git -y
 
 RUN pip install poetry
 
