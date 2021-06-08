@@ -143,7 +143,9 @@ Due to time constraints, ASA costs and scaling limitations it may be necessary t
 ### VM Deprovisioning
 
 * [ ] (gitlab.com) Once the migration is complete follow the [PS Deprovisioning Process](https://gitlab.com/gitlab-com/business-technology/team-member-enablement/runbooks/-/blob/master/it_operations/GitLab_com_environment_(PRD,DEV,STG)access_requests.md#deprovisioning-process) for GitLab.com environments Access Request
-* [ ] (gitlab.com) Deprovision migration VM by informing Infra in the issue ([VM Requirements](#VM)) that the migration is complete
+* [ ] (gitlab.com) Deprovision migration VM by informing Infra in the issue ([VM Requirements](#VM)) commenting that the migration is complete
+  * [ ] Create an MR, linking to the issue and comment, and delete the `import-<issue_no>.tf` file
+  * [ ] Assign an SRE to review, approve and merge the MR
 * [ ] Strip dedicated migration user on destination of Admin rights, PATs and update sign-in credentials
 * [ ] (Optional) Backup group and project export archive files
 
