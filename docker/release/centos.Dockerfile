@@ -1,4 +1,4 @@
-from centos:centos8.3.2011
+FROM centos:centos8.3.2011
 
 # Define the ENV variable
 ENV CONGREGATE_PATH=/opt/congregate \
@@ -19,7 +19,7 @@ RUN mkdir -p /data/db
 
 # Installing some basic utilities and updating apt
 RUN yum update -y && \
-    yum install -y less vim jq curl git mongodb-org-4.4.1 mongodb-org-server-4.4.1 mongodb-org-shell-4.4.1 mongodb-org-mongos-4.4.1 mongodb-org-tools-4.4.1 python3.8 epel-release && \
+    yum install -y less vim jq curl git mongodb-org-4.4.4 mongodb-org-server-4.4.4 mongodb-org-shell-4.4.4 mongodb-org-mongos-4.4.4 mongodb-org-tools-4.4.4 python3.8 epel-release && \
     yum install -y screen && \
     curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
     python3 get-pip.py

@@ -154,7 +154,10 @@ class MongoConnector(BaseClass):
             except TypeError:
                 return self.db[collection].find_one(query)
         except errors.OperationFailure as e:
-            if "hint provided does not correspond to an existing index" in e._message():
+            # Condition for mongomock testing. Hints are not supported in mongomock
+            if "Unrecognized field 'hint'" in e._message:
+                return self.db[collection].find_one(query)
+            if "hint provided does not correspond to an existing index" in e._message:
                 self.db[collection].rename(f"noindex-{collection}")
                 self.log.warning(
                     f"Unindexed collection {collection} used with hint. Renaming collection to note no index")
@@ -172,7 +175,10 @@ class MongoConnector(BaseClass):
             except TypeError:
                 return self.db[collection].find(query)
         except errors.OperationFailure as e:
-            if "hint provided does not correspond to an existing index" in e._message():
+            # Condition for mongomock testing. Hints are not supported in mongomock
+            if "Unrecognized field 'hint'" in e._message:
+                return self.db[collection].find(query)
+            if "hint provided does not correspond to an existing index" in e._message:
                 self.db[collection].rename(f"noindex-{collection}")
                 self.log.warning(
                     f"Unindexed collection {collection} used with hint. Renaming collection to note no index")

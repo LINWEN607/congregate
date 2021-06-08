@@ -1,9 +1,8 @@
-
-import main
 import re
 import os
 import requests
 from collections import OrderedDict
+from congregate import main
 
 private_token = os.getenv('ACCESS_TOKEN')
 gitlab_user_email = os.getenv('GITLAB_USER_EMAIL')
