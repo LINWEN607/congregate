@@ -508,7 +508,8 @@ class ImportExportClient(BaseClass):
                 import_response = self.attempt_import(
                     filename, name, path, dst_namespace, override_params, members)
                 total_time = 0
-            import_id = import_response.json().get("id", None)
+            safe_resp = safe_json_response(import_response)
+            import_id = safe_resp.get("id") if safe_resp else None
             if import_id:
                 status = self.projects_api.get_project_import_status(
                     host, token, import_id)
@@ -562,7 +563,7 @@ class ImportExportClient(BaseClass):
                     return None
             else:
                 self.log.error(
-                    f"Project {name} ({dst_namespace}) failed to import, with response:\n{import_response} - {import_response.text}")
+                    f"Project {name} ({dst_namespace}) failed to import, with response:\n{import_response}")
                 return None
         return import_id
 
