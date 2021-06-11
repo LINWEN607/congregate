@@ -4,7 +4,6 @@ from congregate.migration.teamcity.api.base import TeamcityApi
 from congregate.helpers.misc_utils import strip_protocol
 from congregate.helpers.dict_utils import dig
 from congregate.helpers.string_utils import convert_to_underscores
-from congregate.helpers.processes import start_multi_process_stream
 from congregate.helpers.mdbc import MongoConnector
 
 
@@ -18,7 +17,7 @@ class TeamcityClient(BaseClass):
         List and assigns jobs to associated SCM
         """
         build_configs = self.teamcity_api.list_build_configs()
-        start_multi_process_stream(self.handle_retrieving_tc_jobs, dig(
+        self.multi.start_multi_process_stream(self.handle_retrieving_tc_jobs, dig(
             build_configs, 'buildTypes', 'buildType'), processes=processes)
 
     def handle_retrieving_tc_jobs(self, job):

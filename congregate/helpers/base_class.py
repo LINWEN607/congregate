@@ -9,6 +9,7 @@ from congregate.helpers.configuration_validator import ConfigurationValidator
 from congregate.helpers.logger import myLogger
 from congregate.helpers.audit_logger import audit_logger
 from congregate.helpers.utils import get_congregate_path
+from congregate.helpers.processes import MultiProcessing
 
 
 class BaseClass(object):
@@ -22,3 +23,4 @@ class BaseClass(object):
                             log_name=self.log_name, config=self.config)
         self.audit = audit_logger(__name__, app_path=self.app_path)
         self.INACTIVE = ["blocked", "ldap_blocked", "deactivated"]
+        self.multi = MultiProcessing()

@@ -2,7 +2,6 @@ from congregate.helpers.base_class import BaseClass
 from congregate.migration.jenkins.api.base import JenkinsApi
 from congregate.helpers.misc_utils import strip_protocol
 from congregate.helpers.string_utils import convert_to_underscores
-from congregate.helpers.processes import start_multi_process_stream
 from congregate.helpers.mdbc import MongoConnector
 
 
@@ -15,7 +14,7 @@ class JenkinsClient(BaseClass):
         """
         List and assigns jobs to associated SCM
         """
-        start_multi_process_stream(self.handle_retrieving_jenkins_jobs,
+        self.multi.start_multi_process_stream(self.handle_retrieving_jenkins_jobs,
                                    self.jenkins_api.list_all_jobs(), processes=processes)
 
     def handle_retrieving_jenkins_jobs(self, job, mongo=None):

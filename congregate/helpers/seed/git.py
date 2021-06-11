@@ -5,7 +5,7 @@ import re
 import sys
 import subprocess
 import uuid
-from congregate.helpers.processes import start_multi_process
+from congregate.helpers.processes import MultiProcessing
 
 class Manage_Repos():
     '''
@@ -46,8 +46,9 @@ class Manage_Repos():
             'green': '\033[1;92m',
             'clear': '\033[0m'
         }
+        self.multi = MultiProcessing()
 
-        if sys.path[0]:  # Doing this to deal with start_multi_process() and commands that require a different cwd.
+        if sys.path[0]:  # Doing this to deal with self.multi.start_multi_process() and commands that require a different cwd.
             self.cwd = sys.path[0]
         else:
             self.cwd = "."
@@ -72,18 +73,18 @@ class Manage_Repos():
 
         # I screwed this up and need to ponder on it a bit.
         # if 'reorigin' in self.__dict__:  # singular task to add a new remote
-        #     start_multi_process(self.add_origin, self.repos)
+        #     self.multi.start_multi_process(self.add_origin, self.repos)
 
         if 'clone' in self.__dict__:  # pull the repos down
-            start_multi_process(self.clone_single_repo, self.repos)  # clone the repos
+            self.multi.start_multi_process(self.clone_single_repo, self.repos)  # clone the repos
 
         if 'push' in self.__dict__:  # push the repos up
-            start_multi_process(self.push_single_repo, self.repos)  # push the repos
+            self.multi.start_multi_process(self.push_single_repo, self.repos)  # push the repos
 
         if 'test_all' in self.__dict__:  # This should be used for basic testing, will clone, change origin, and push
-            start_multi_process(self.clone_single_repo, self.repos)
-            start_multi_process(self.add_origin, self.repos)
-            start_multi_process(self.push_single_repo, self.repos)
+            self.multi.start_multi_process(self.clone_single_repo, self.repos)
+            self.multi.start_multi_process(self.add_origin, self.repos)
+            self.multi.start_multi_process(self.push_single_repo, self.repos)
 
     def set_size_limit(self):
         '''
@@ -164,7 +165,7 @@ class Manage_Repos():
         will probably only be used for local workstation testing.  This will always assume all.
         '''
         self.get_new_seeds()
-        start_multi_process(self.clone_single_repo, self.seed_repos)   # clone the repos
+        self.multi.start_multi_process(self.clone_single_repo, self.seed_repos)   # clone the repos
         self.repo_map = self.create_repo_data()  # TODO Clone or check for the existence of repos.
         self.write_config()
 
@@ -217,7 +218,7 @@ class Manage_Repos():
         self.repos = self.get_repos_from_dir()
 
         data = {}
-        sizes = start_multi_process(self.get_size, self.repos)
+        sizes = self.multi.start_multi_process(self.get_size, self.repos)
         for size in sizes:
             data[next(iter(size))] = {'size': size[next(iter(size))]}
         for repo in self.repos:
@@ -388,7 +389,7 @@ class Manage_Repos():
         self.repos = self.get_repos_from_dir()
 
         data = {}
-        sizes = start_multi_process(self.get_size, self.seed_repos)
+        sizes = self.multi.start_multi_process(self.get_size, self.seed_repos)
         for size in sizes:
             data[next(iter(size))] = {'size': size[next(iter(size))]}
         for repo in self.repos:

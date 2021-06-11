@@ -3,7 +3,6 @@ from time import sleep
 from requests.exceptions import RequestException
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.processes import start_multi_process_stream_with_args, start_multi_process_stream
 from congregate.helpers.mdbc import MongoConnector
 from congregate.helpers.misc_utils import get_timedelta, safe_json_response, strip_protocol
 from congregate.helpers.list_utils import remove_dupes
@@ -56,13 +55,13 @@ class GroupsClient(BaseClass):
             prefix = location
 
         if self.config.src_parent_group_path:
-            start_multi_process_stream_with_args(self.traverse_groups,
+            self.multi.start_multi_process_stream_with_args(self.traverse_groups,
                                                  self.groups_api.get_all_subgroups(
                                                      self.config.src_parent_id, host, token), host, token, processes=processes)
             self.traverse_groups(host, token, safe_json_response(self.groups_api.get_group(
                 self.config.src_parent_id, host, token)))
         else:
-            start_multi_process_stream_with_args(self.traverse_groups,
+            self.multi.start_multi_process_stream_with_args(self.traverse_groups,
                                                  self.groups_api.get_all_groups(
                                                      host, token), host, token, processes=processes)
 

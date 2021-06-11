@@ -1,6 +1,5 @@
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.mdbc import MongoConnector
-from congregate.helpers.processes import start_multi_process_stream_with_args
 from congregate.migration.github.api.users import UsersApi
 from congregate.migration.github.api.orgs import OrgsApi
 from congregate.migration.github.meta.github_browser import GitHubBrowser
@@ -40,7 +39,7 @@ class UsersClient(BaseClass):
                     self.users_api.get_user(m["login"])))
         else:
             users = self.users_api.get_all_users()
-        start_multi_process_stream_with_args(
+        self.multi.start_multi_process_stream_with_args(
             self.handle_retrieving_users, users, self.establish_browser_connection(), processes=processes, nestable=True)
 
     def handle_retrieving_users(self, browser, user, mongo=None):

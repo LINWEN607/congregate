@@ -2,7 +2,6 @@ from time import time
 from requests.exceptions import RequestException
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.mdbc import MongoConnector
-from congregate.helpers.processes import start_multi_process_stream, start_multi_process_stream_with_args
 from congregate.migration.github.api.repos import ReposApi
 from congregate.migration.github.users import UsersClient
 from congregate.migration.github.api.users import UsersApi
@@ -55,7 +54,7 @@ class ReposClient(BaseClass):
             self.log.warning(
                 f"NOT listing public repos on {self.config.source_host}")
         else:
-            start_multi_process_stream(
+            self.multi.start_multi_process_stream(
                 self.handle_retrieving_repos, self.repos_api.get_all_public_repos(), processes=processes, nestable=True)
 
     def connect_to_mongo(self):
@@ -164,13 +163,13 @@ class ReposClient(BaseClass):
     def migrate_gh_project_protected_branch(self, new_id, repo):
         """
             Migrates any protected branches.
-            Always returns true due to start_multi_process_stream_with_args return value
+            Always returns true due to self.multi.start_multi_process_stream_with_args return value
 
             :param: new_id: (int) Project ID
             :param: repo: (dict) GitHub Repo metadata
             :return: True (We just assume it works. Check the logs for any errors)
         """
-        start_multi_process_stream_with_args(
+        self.multi.start_multi_process_stream_with_args(
             self.handle_protected_branches,
             self.repos_api.get_repo_branches(
                 repo["namespace"],
@@ -481,7 +480,7 @@ class ReposClient(BaseClass):
 
     def get_email_list_of_reviewers_for_pr(self, owner, repo):
         user_emails_dict = {}
-        start_multi_process_stream_with_args(
+        self.multi.start_multi_process_stream_with_args(
             self.handle_list_of_reviewers,
             self.repos_api.get_repo_pulls(
                 owner,

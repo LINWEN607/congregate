@@ -13,7 +13,6 @@ from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.users import UsersApi
 from congregate.helpers.mdbc import MongoConnector
-from congregate.helpers.processes import start_multi_process_stream
 
 
 class UsersClient(BaseClass):
@@ -430,7 +429,7 @@ class UsersClient(BaseClass):
         else:
             users = self.users_api.get_all_users(host, token)
 
-        start_multi_process_stream(
+        self.multi.start_multi_process_stream(
             self.handle_retrieving_users,
             users,
             processes=processes)

@@ -5,7 +5,6 @@ from congregate.helpers.misc_utils import safe_json_response, is_error_message_p
 from congregate.helpers.dict_utils import dig
 from congregate.helpers.utils import is_github_dot_com
 from congregate.helpers.mdbc import MongoConnector
-from congregate.helpers.processes import start_multi_process_stream_with_args
 from congregate.migration.github.api.orgs import OrgsApi
 from congregate.migration.github.api.teams import TeamsApi
 from congregate.migration.github.repos import ReposClient
@@ -59,7 +58,7 @@ class OrgsClient(BaseClass):
                 self.orgs_api.get_org(self.config.src_parent_org))]
         else:
             orgs = self.orgs_api.get_all_orgs()
-        start_multi_process_stream_with_args(
+        self.multi.start_multi_process_stream_with_args(
             self.handle_org_retrieval, orgs, groups, processes=processes, nestable=True)
 
     def handle_org_retrieval(self, groups, org):

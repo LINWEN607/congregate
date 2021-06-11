@@ -8,7 +8,6 @@ from congregate.helpers.dict_utils import rewrite_json_list_into_dict
 from congregate.helpers.migrate_utils import get_full_path_with_parent_namespace, is_top_level_group
 from congregate.helpers.utils import is_dot_com
 from congregate.helpers.json_utils import read_json_file_into_object
-from congregate.helpers.processes import handle_multi_process_write_to_file_and_return_results
 
 
 class GroupDiffClient(BaseDiffClient):
@@ -56,7 +55,7 @@ class GroupDiffClient(BaseDiffClient):
         diff_report = {}
         self.log.info("{}Generating Group Diff Report".format(
             get_rollback_log(self.rollback)))
-        results = handle_multi_process_write_to_file_and_return_results(
+        results = self.multi.handle_multi_process_write_to_file_and_return_results(
             self.generate_single_diff_report, self.return_only_accuracies, self.source_data, f"{self.app_path}/data/results/group_diff.json", processes=self.processes)
 
         for result in results:

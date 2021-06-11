@@ -14,7 +14,6 @@ from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.groups import GroupsClient
 from congregate.migration.gitlab.users import UsersClient
 from congregate.helpers.mdbc import MongoConnector
-from congregate.helpers.processes import start_multi_process_stream_with_args
 from congregate.helpers.migrate_utils import get_dst_path_with_namespace, \
     get_full_path_with_parent_namespace, dig, get_staged_projects, get_staged_groups, find_user_by_email_comparison_without_id, add_post_migration_stats
 from congregate.helpers.utils import rotate_logs
@@ -58,7 +57,7 @@ class ProjectsClient(BaseClass):
 
     def retrieve_project_info(self, host, token, processes=None):
         if self.config.src_parent_group_path:
-            start_multi_process_stream_with_args(
+            self.multi.start_multi_process_stream_with_args(
                 self.handle_retrieving_project,
                 self.groups_api.get_all_group_projects(
                     self.config.src_parent_id, host, token, with_shared=False),
@@ -66,7 +65,7 @@ class ProjectsClient(BaseClass):
                 token,
                 processes=processes)
         else:
-            start_multi_process_stream_with_args(
+            self.multi.start_multi_process_stream_with_args(
                 self.handle_retrieving_project,
                 self.projects_api.get_all_projects(host, token),
                 host,

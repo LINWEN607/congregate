@@ -2,7 +2,7 @@ import sys
 import time
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.processes import start_multi_process
+from congregate.helpers.processes import MultiProcessing
 from congregate.helpers.seed.git import Manage_Repos
 from congregate.migration.github.api.orgs import OrgsApi
 from congregate.migration.github.api.repos import ReposApi
@@ -99,7 +99,8 @@ def main():
     seeds.create_org()  # Creating the org in GHE
     seeds.define_seed_repos()
     print(f"Our Seed Repos in all their glory: \n{seeds.repos}\n")
-    start_multi_process(seeds.do_it, seeds.repos)
+    multi = MultiProcessing()
+    multi.start_multi_process(seeds.do_it, seeds.repos)
     print(f"The script took {time.time() - start_time} second !")
 
 

@@ -8,7 +8,6 @@ from congregate.helpers.misc_utils import get_rollback_log
 from congregate.helpers.dict_utils import rewrite_json_list_into_dict
 from congregate.helpers.json_utils import read_json_file_into_object
 from congregate.helpers.migrate_utils import get_dst_path_with_namespace
-from congregate.helpers.processes import handle_multi_process_write_to_file_and_return_results
 from congregate.helpers.api import GitLabApi
 
 
@@ -68,7 +67,7 @@ class ProjectDiffClient(BaseDiffClient):
         diff_report = {}
         self.log.info("{}Generating Project Diff Report".format(
             get_rollback_log(self.rollback)))
-        results = handle_multi_process_write_to_file_and_return_results(
+        results = self.multi.handle_multi_process_write_to_file_and_return_results(
             self.generate_single_diff_report, self.return_only_accuracies, self.source_data, f"{self.app_path}/data/results/project_diff.json", processes=self.processes)
 
         for result in results:
