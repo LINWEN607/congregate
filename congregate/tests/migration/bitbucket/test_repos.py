@@ -69,7 +69,8 @@ class ReposTests(unittest.TestCase):
                 "path_with_namespace": "TGP/android",
                 "visibility": "private",
                 "description": "",
-                "id": 6
+                "id": 6,
+                "http_url_to_repo": "http://localhost:7990/scm/tgp/android.git"
             },
             {
                 "name": "Another-Test-Repo",
@@ -103,7 +104,8 @@ class ReposTests(unittest.TestCase):
                 "path_with_namespace": "ATP/another-test-repo",
                 "visibility": "private",
                 "description": "Just another test repo",
-                "id": 13
+                "id": 13,
+                "http_url_to_repo": "http://localhost:7990/scm/atp/another-test-repo.git"
             }
         ]
         actual_repos = self.repos.retrieve_repo_info()
@@ -195,7 +197,8 @@ class ReposTests(unittest.TestCase):
                 "path_with_namespace": "TGP/android",
                 "visibility": "private",
                 "description": "",
-                "id": 6
+                "id": 6,
+                "http_url_to_repo": "http://localhost:7990/scm/tgp/android.git"
             },
             {
                 "name": "Another-Test-Repo",
@@ -229,7 +232,8 @@ class ReposTests(unittest.TestCase):
                 "path_with_namespace": "ATP/another-test-repo",
                 "visibility": "private",
                 "description": "Just another test repo",
-                "id": 13
+                "id": 13,
+                "http_url_to_repo": "http://localhost:7990/scm/atp/another-test-repo.git"
             }
         ]
 

@@ -119,16 +119,15 @@ class BaseStageClass(BaseClass):
             "jobs_enabled": project.get("jobs_enabled", None),
             "project_type": dig(project, 'namespace', 'kind'),
             # Project members are not listed when listing group projects
-            "members": project["members"] if project.get("members", None) else self.rewritten_projects[project["id"]]["members"]
+            "members": project["members"] if project.get("members", None) else self.rewritten_projects[project["id"]]["members"],
+            "http_url_to_repo": project["http_url_to_repo"]
         }
         if project.get("ci_sources", None):
             obj["ci_sources"] = project["ci_sources"]
         if self.config.source_type == "gitlab":
-            obj["http_url_to_repo"] = project["http_url_to_repo"]
             obj["shared_runners_enabled"] = project["shared_runners_enabled"]
             obj["archived"] = project["archived"]
             obj["shared_with_groups"] = project["shared_with_groups"]
-
         if self.config.source_type in ["gitlab", "bitbucket server"]:
             # In case of projects without repos (e.g. Wiki)
             if "default_branch" in project:

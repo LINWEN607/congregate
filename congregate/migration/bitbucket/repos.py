@@ -41,7 +41,9 @@ class ReposClient(BaseClass):
                 "visibility": "public" if repo.get("public") else "private",
                 "description": repo.get("description", ""),
                 "members": self.add_repo_users([], repo_path, repo.get("slug"), groups),
-                "default_branch": self.get_default_branch(repo_path, repo["slug"])
+                "default_branch": self.get_default_branch(repo_path, repo["slug"]),
+                # Assuming http is on index 0
+                "http_url_to_repo": dig(repo, 'links', 'clone', default=[{"href": ""}])[0]["href"]
             })
         with open('%s/data/projects.json' % self.app_path, "w") as f:
             json.dump(remove_dupes(repos), f, indent=4)
