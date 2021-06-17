@@ -263,7 +263,5 @@ class ProjectsTests(unittest.TestCase):
 
         actual_projects = self.projects.retrieve_project_info(groups=groups)
         for i, _ in enumerate(expected_projects):
-            print(actual_projects[i].items())
-            print(expected_projects[i].items())
             self.assertEqual(
                 actual_projects[i].items(), expected_projects[i].items())
