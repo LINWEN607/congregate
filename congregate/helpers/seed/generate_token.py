@@ -29,7 +29,6 @@ from bs4 import BeautifulSoup
 from congregate.helpers.decorators import configurable_stable_retry
 from congregate.helpers.logger import myLogger
 
-
 class token_generator():
     def __init__(self):
         self.log = myLogger(__name__)
@@ -54,11 +53,13 @@ class token_generator():
         self.log.debug(f"Status code for {self.__get_root_route}: {r.status_code}")
         if r.status_code != 200:
             raise Exception
+        # self.log.debug(f"r.text: \n{r.text}")
+        self.log.debug(f"r.url: \n{r.url}")
         token = self.find_csrf_token(r.text)
         reset_password_token = None
         if "?reset_password_token=" in r.url:
             reset_password_token = r.url.split("?reset_password_token=")[1]
-        self.log.info("Found reset password token")
+            self.log.info("Found reset password token")
         return token, r.cookies, reset_password_token
 
     def sign_in(self, csrf, cookies):
@@ -70,6 +71,7 @@ class token_generator():
             "utf8": "✓"
         }
         data.update(csrf)
+        self.log.debug(f"Sign-in password post-data is: \n{data}")
         r = requests.post(self.__get_sign_in_route(),
                           data=data, cookies=cookies)
         self.log.debug(f"Status code for {self.__get_sign_in_route()}: {r.status_code}")
@@ -90,6 +92,7 @@ class token_generator():
                 "user[reset_password_token]": reset_password_token,
             }
             data.update(csrf)
+            
             r = requests.post(self.__get_password_route(),
                               data=data, cookies=cookies)
             self.log.debug(f"Status code for {self.__get_password_route()}: {r.status_code}")
@@ -115,6 +118,7 @@ class token_generator():
             r = requests.post(urljoin(self.endpoint, "/profile/personal_access_tokens"), data=data, cookies=cookies)
             self.log.debug(f"Status code for {self.__get_pat_route()}: {r.status_code}")
         soup = BeautifulSoup(r.text, "lxml")
+        # self.log.debug(f"Soup is:\n{soup}")    
         token = soup.find(
             'input', id='created-personal-access-token').get('value')
         self.log.info("Obtained personal access token for root")
@@ -129,6 +133,9 @@ class token_generator():
             self.__set_password(pword)
 
         csrf1, cookies1, reset_password_token = self.obtain_csrf_token()
+        self.log.debug(f"csrf1:\n {csrf1}")
+        self.log.debug(f"cookies1:\n {cookies1}")
+        self.log.debug(f"reset_password_token:\n {reset_password_token}")
         if reset_password_token is not None:
             csrf2, cookies2 = self.change_password(
                 csrf1, cookies1, reset_password_token)
