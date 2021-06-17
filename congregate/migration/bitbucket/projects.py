@@ -1,9 +1,8 @@
-import json
-
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.list_utils import remove_dupes
 from congregate.helpers.misc_utils import remove_dupes_but_take_higher_access
 from congregate.helpers.dict_utils import dig
+from congregate.helpers.json_utils import write_json_to_file
 from congregate.migration.bitbucket.api.projects import ProjectsApi
 from congregate.migration.bitbucket.users import UsersClient
 from congregate.migration.bitbucket.repos import ReposClient
@@ -17,10 +16,6 @@ class ProjectsClient(BaseClass):
         self.repos = ReposClient()
         self.groups_api = GroupsApi()
         super().__init__()
-
-    def get_projects(self):
-        with open("{}/data/groups.json".format(self.app_path), "r") as f:
-            return json.load(f)
 
     def retrieve_project_info(self, groups=None):
         obj = []
@@ -36,8 +31,8 @@ class ProjectsClient(BaseClass):
                 "members": self.add_project_users([], project["key"], groups),
                 "projects": self.add_project_repos([], project["key"]),
             })
-        with open('%s/data/groups.json' % self.app_path, "w") as f:
-            json.dump(remove_dupes(obj), f, indent=4)
+        write_json_to_file(
+            f"{self.app_path}/data/groups.json", remove_dupes(obj), self.log)
         return remove_dupes(obj)
 
     def add_project_users(self, users, project_key, groups):
@@ -68,19 +63,5 @@ class ProjectsClient(BaseClass):
     def add_project_repos(self, repos, project_key):
         repos = []
         for repo in self.projects_api.get_all_project_repos(project_key):
-            repos.append({
-                "id": repo["id"],
-                "path": repo["slug"],
-                "name": repo["name"],
-                "namespace": {
-                    "id": dig(repo, 'project', 'id'),
-                    "name": dig(repo, 'project', 'name'),
-                    "path": dig(repo, 'project', 'key'),
-                    "kind": "group",
-                    "full_path": dig(repo, 'project', 'key')
-                },
-                "path_with_namespace": dig(repo, 'project', 'key') + "/" + repo.get("slug"),
-                "visibility": "public" if repo.get("public") else "private",
-                "description": repo.get("description", "")
-            })
+            repos.append(self.repos.format_repo(repo, project=True))
         return remove_dupes(repos)

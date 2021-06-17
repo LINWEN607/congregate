@@ -1,5 +1,5 @@
-import json
 from congregate.helpers.base_class import BaseClass
+from congregate.helpers.json_utils import write_json_to_file
 from congregate.migration.bitbucket.api.groups import GroupsApi
 
 
@@ -20,6 +20,6 @@ class GroupsClient(BaseClass):
             if group_name not in self.GROUPS_TO_IGNORE:
                 groups[group_name] = list(
                     self.groups_api.get_all_group_users(group["name"]))
-        with open(f"{self.app_path}/data/bb_groups.json", "w") as f:
-            json.dump(groups, f, indent=4)
+        write_json_to_file(
+            f"{self.app_path}/data/bb_groups.json", groups, self.log)
         return groups

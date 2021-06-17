@@ -3,6 +3,7 @@ from unittest.mock import patch, PropertyMock
 from pytest import mark
 from congregate.tests.mockapi.bitbucket.projects import MockProjectsApi
 from congregate.migration.bitbucket.projects import ProjectsClient
+from congregate.migration.bitbucket.repos import ReposClient
 from congregate.migration.bitbucket.api.projects import ProjectsApi
 from congregate.tests.mockapi.bitbucket.groups import MockGroupsApi
 
@@ -12,6 +13,7 @@ class ProjectsTests(unittest.TestCase):
     def setUp(self):
         self.mock_projects = MockProjectsApi()
         self.projects = ProjectsClient()
+        self.repos = ReposClient()
         self.mock_groups = MockGroupsApi()
 
     @patch("io.TextIOBase")
@@ -19,117 +21,87 @@ class ProjectsTests(unittest.TestCase):
     @patch.object(ProjectsApi, "get_all_project_users")
     @patch.object(ProjectsApi, "get_all_project_repos")
     @patch.object(ProjectsApi, "get_all_projects")
+    @patch.object(ReposClient, "add_repo_users")
     @patch('congregate.helpers.conf.Config.source_host', new_callable=PropertyMock)
     @patch('congregate.helpers.conf.Config.source_token', new_callable=PropertyMock)
-    def test_retrieve_project_info(self, mock_ext_user_token, mock_ext_src_url, mock_get_all_projects, mock_get_all_project_repos, mock_get_all_project_users, mock_open, mock_file):
+    def test_retrieve_project_info(self, mock_ext_user_token, mock_ext_src_url, mock_add_repo_users, mock_get_all_projects, mock_get_all_project_repos, mock_get_all_project_users, mock_open, mock_file):
         mock_ext_src_url.return_value = "http://localhost:7990"
         mock_ext_user_token.return_value = "username:password"
+        mock_add_repo_users.side_effect = [[], []]
         mock_get_all_project_repos.side_effect = [
             self.mock_projects.get_all_project_repos(), self.mock_projects.get_all_project_repos()]
         mock_get_all_project_users.side_effect = [
             self.mock_projects.get_all_project_users(), self.mock_projects.get_all_project_users()]
         mock_get_all_projects.return_value = self.mock_projects.get_all_projects()
         mock_open.return_value = mock_file
-        expected_projects = [
+        expected_members = [
             {
-                "name": "test-group",
-                "members": [
-                    {
-                        "username": "user2",
-                        "name": "user2",
-                        "access_level": 20,
-                        "id": 3,
-                        "email": "user2@example.com",
-                        "state": "active",
-                    }
-                ],
-                "path": "TGP",
-                "full_path": "TGP",
-                "projects": [
-                    {
-                        "path": "node",
-                        "path_with_namespace": "TGP/node",
-                        "namespace": {
-                            "kind": "group",
-                            "name": "test-group",
-                            "path": "TGP",
-                            "id": 1,
-                            "full_path": "TGP"
-                        },
-                        "id": 3,
-                        "name": "node",
-                        "visibility": "private",
-                        "description": ""
-                    },
-                    {
-                        "path": "android",
-                        "path_with_namespace": "TGP/android",
-                        "namespace": {
-                            "kind": "group",
-                            "name": "test-group",
-                            "path": "TGP",
-                            "id": 1,
-                            "full_path": "TGP"
-                        },
-                        "id": 6,
-                        "name": "android",
-                        "visibility": "private",
-                        "description": "Android project"
-                    }
-                ],
-                "id": 1,
+                "username": "user2",
+                "name": "user2",
+                "access_level": 20,
+                "id": 3,
+                "email": "user2@example.com",
+                "state": "active",
+            }
+        ]
+        expected_repos = [
+            {
+                "id": 3,
+                "path": "node",
+                "name": "node",
+                "namespace": {
+                    "kind": "group",
+                    "name": "test-group",
+                    "path": "TGP",
+                    "id": 1,
+                    "full_path": "TGP"
+                },
+                "path_with_namespace": "TGP/node",
                 "visibility": "private",
-                "description": "test"
+                "description": "",
+                "members": [],
+                "default_branch": "master",
+                "http_url_to_repo": "http://localhost:7990/scm/tgp/node.git"
             },
             {
-                "name": "another-test-group",
-                "members": [
-                    {
-                        "username": "user2",
-                        "name": "user2",
-                        "access_level": 20,
-                        "id": 3,
-                        "email": "user2@example.com",
-                        "state": "active",
-                    }
-                ],
-                "path": "ATP",
-                "full_path": "ATP",
-                "projects": [
-                    {
-                        "path": "node",
-                        "path_with_namespace": "TGP/node",
-                        "namespace": {
-                            "kind": "group",
-                            "name": "test-group",
-                            "path": "TGP",
-                            "id": 1,
-                            "full_path": "TGP"
-                        },
-                        "id": 3,
-                        "name": "node",
-                        "visibility": "private",
-                        "description": ""
-                    },
-                    {
-                        "path": "android",
-                        "path_with_namespace": "TGP/android",
-                        "namespace": {
-                            "kind": "group",
-                            "name": "test-group",
-                            "path": "TGP",
-                            "id": 1,
-                            "full_path": "TGP"
-                        },
-                        "id": 6,
-                        "name": "android",
-                        "visibility": "private",
-                        "description": "Android project"
-                    }
-                ],
-                "id": 2,
+                "id": 6,
+                "path": "android",
+                "name": "android",
+                "namespace": {
+                    "kind": "group",
+                    "name": "test-group",
+                    "path": "TGP",
+                    "id": 1,
+                    "full_path": "TGP"
+                },
+                "path_with_namespace": "TGP/android",
                 "visibility": "private",
-                "description": "test"
+                "description": "Android project",
+                "members": [],
+                "default_branch": "master",
+                "http_url_to_repo": "http://localhost:7990/scm/tgp/android.git"
+            }
+        ]
+        expected_projects = [
+            {
+                "id": 1,
+                "path": "TGP",
+                "name": "test-group",
+                "full_path": "TGP",
+                "visibility": "private",
+                "description": "test",
+                "members": expected_members,
+                "projects": expected_repos
+            },
+            {
+                "id": 2,
+                "path": "ATP",
+                "name": "another-test-group",
+                "full_path": "ATP",
+                "visibility": "private",
+                "description": "test",
+                "members": expected_members,
+                "projects": expected_repos
             }
         ]
         actual_projects = self.projects.retrieve_project_info()
@@ -143,11 +115,13 @@ class ProjectsTests(unittest.TestCase):
     @patch.object(ProjectsApi, "get_all_project_users")
     @patch.object(ProjectsApi, "get_all_project_repos")
     @patch.object(ProjectsApi, "get_all_projects")
+    @patch.object(ReposClient, "add_repo_users")
     @patch('congregate.helpers.conf.Config.source_host', new_callable=PropertyMock)
     @patch('congregate.helpers.conf.Config.source_token', new_callable=PropertyMock)
-    def test_retrieve_project_info_with_groups(self, mock_ext_user_token, mock_ext_src_url, mock_get_all_projects, mock_get_all_project_repos, mock_get_all_project_users, mock_get_all_project_groups, mock_open, mock_file):
+    def test_retrieve_project_info_with_groups(self, mock_ext_user_token, mock_ext_src_url, mock_add_repo_users, mock_get_all_projects, mock_get_all_project_repos, mock_get_all_project_users, mock_get_all_project_groups, mock_open, mock_file):
         mock_ext_src_url.return_value = "http://localhost:7990"
         mock_ext_user_token.return_value = "username:password"
+        mock_add_repo_users.side_effect = [[], []]
         mock_get_all_project_repos.side_effect = [
             self.mock_projects.get_all_project_repos(), self.mock_projects.get_all_project_repos()]
         mock_get_all_project_users.side_effect = [
@@ -159,9 +133,52 @@ class ProjectsTests(unittest.TestCase):
         groups = {
             "test-group": self.mock_groups.get_all_group_members()
         }
+        expected_repos = [
+            {
+                "id": 3,
+                "path": "node",
+                "name": "node",
+                "namespace": {
+                    "id": 1,
+                    "path": "TGP",
+                    "name": "test-group",
+                    "kind": "group",
+                    "full_path": "TGP"
+                },
+                "path_with_namespace": "TGP/node",
+                "visibility": "private",
+                "description": "",
+                "members": [],
+                "default_branch": "master",
+                "http_url_to_repo": "http://localhost:7990/scm/tgp/node.git"
+            },
+            {
+                "id": 6,
+                "path": "android",
+                "name": "android",
+                "namespace": {
+                    "id": 1,
+                    "path": "TGP",
+                    "name": "test-group",
+                    "kind": "group",
+                    "full_path": "TGP"
+                },
+                "path_with_namespace": "TGP/android",
+                "visibility": "private",
+                "description": "Android project",
+                "members": [],
+                "default_branch": "master",
+                "http_url_to_repo": "http://localhost:7990/scm/tgp/android.git"
+            }
+        ]
         expected_projects = [
             {
                 "name": "test-group",
+                "id": 1,
+                "path": "TGP",
+                "full_path": "TGP",
+                "visibility": "private",
+                "description": "test",
                 "members": [
                     {
                         "id": 3,
@@ -205,97 +222,32 @@ class ProjectsTests(unittest.TestCase):
                         "access_level": 30
                     }
                 ],
-                "path": "TGP",
-                "full_path": "TGP",
-                "projects": [
-                    {
-                        "path": "node",
-                        "path_with_namespace": "TGP/node",
-                        "namespace": {
-                            "kind": "group",
-                            "name": "test-group",
-                            "path": "TGP",
-                            "id": 1,
-                            "full_path": "TGP"
-                        },
-                        "id": 3,
-                        "name": "node",
-                        "visibility": "private",
-                        "description": ""
-                    },
-                    {
-                        "path": "android",
-                        "path_with_namespace": "TGP/android",
-                        "namespace": {
-                            "kind": "group",
-                            "name": "test-group",
-                            "path": "TGP",
-                            "id": 1,
-                            "full_path": "TGP"
-                        },
-                        "id": 6,
-                        "name": "android",
-                        "visibility": "private",
-                        "description": "Android project"
-                    }
-                ],
-                "id": 1,
-                "visibility": "private",
-                "description": "test"
+                "projects": expected_repos
             },
             {
                 "name": "another-test-group",
-                "members": [
-                    {
-                        "username": "user2",
-                        "name": "user2",
-                        "access_level": 20,
-                        "id": 3,
-                        "email": "user2@example.com",
-                        "state": "active",
-                    }
-                ],
+                "id": 2,
                 "path": "ATP",
                 "full_path": "ATP",
-                "projects": [
+                "visibility": "private",
+                "description": "test",
+                "members": [
                     {
-                        "path": "node",
-                        "path_with_namespace": "TGP/node",
-                        "namespace": {
-                            "kind": "group",
-                            "name": "test-group",
-                            "path": "TGP",
-                            "id": 1,
-                            "full_path": "TGP"
-                        },
                         "id": 3,
-                        "name": "node",
-                        "visibility": "private",
-                        "description": ""
-                    },
-                    {
-                        "path": "android",
-                        "path_with_namespace": "TGP/android",
-                        "namespace": {
-                            "kind": "group",
-                            "name": "test-group",
-                            "path": "TGP",
-                            "id": 1,
-                            "full_path": "TGP"
-                        },
-                        "id": 6,
-                        "name": "android",
-                        "visibility": "private",
-                        "description": "Android project"
+                        "username": "user2",
+                        "name": "user2",
+                        "email": "user2@example.com",
+                        "state": "active",
+                        "access_level": 20
                     }
                 ],
-                "id": 2,
-                "visibility": "private",
-                "description": "test"
+                "projects": expected_repos
             }
         ]
 
         actual_projects = self.projects.retrieve_project_info(groups=groups)
         for i, _ in enumerate(expected_projects):
+            print(actual_projects[i].items())
+            print(expected_projects[i].items())
             self.assertEqual(
                 actual_projects[i].items(), expected_projects[i].items())

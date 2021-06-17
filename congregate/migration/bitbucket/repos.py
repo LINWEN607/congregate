@@ -1,10 +1,9 @@
-import json
-
 from urllib.parse import quote_plus
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.misc_utils import safe_json_response, remove_dupes_but_take_higher_access
 from congregate.helpers.list_utils import remove_dupes
 from congregate.helpers.dict_utils import dig
+from congregate.helpers.json_utils import write_json_to_file
 from congregate.migration.bitbucket.api.repos import ReposApi
 from congregate.migration.bitbucket.api.users import UsersApi
 from congregate.migration.bitbucket.users import UsersClient
@@ -21,32 +20,13 @@ class ReposClient(BaseClass):
         self.gl_projects_api = GLProjectsApi()
         super().__init__()
 
-    def retrieve_repo_info(self, groups=None):
+    def retrieve_repo_info(self, groups=False):
         # List and reformat all Bitbucket Server repo to GitLab project metadata
         repos = []
         for repo in self.repos_api.get_all_repos():
-            repo_path = dig(repo, 'project', 'key')
-            repos.append({
-                "id": repo["id"],
-                "path": repo["slug"],
-                "name": repo["name"],
-                "namespace": {
-                    "id": dig(repo, 'project', 'id'),
-                    "path": repo_path,
-                    "name": dig(repo, 'project', 'name'),
-                    "kind": "group",
-                    "full_path": dig(repo, 'project', 'key')
-                },
-                "path_with_namespace": repo_path + "/" + repo.get("slug"),
-                "visibility": "public" if repo.get("public") else "private",
-                "description": repo.get("description", ""),
-                "members": self.add_repo_users([], repo_path, repo.get("slug"), groups),
-                "default_branch": self.get_default_branch(repo_path, repo["slug"]),
-                # Assuming http is on index 0
-                "http_url_to_repo": dig(repo, 'links', 'clone', default=[{"href": ""}])[0]["href"]
-            })
-        with open('%s/data/projects.json' % self.app_path, "w") as f:
-            json.dump(remove_dupes(repos), f, indent=4)
+            repos.append(self.format_repo(repo, groups))
+        write_json_to_file(
+            f"{self.app_path}/data/projects.json", remove_dupes(repos), self.log)
         return remove_dupes(repos)
 
     def add_repo_users(self, members, project_key, repo_slug, groups):
@@ -77,7 +57,7 @@ class ReposClient(BaseClass):
     def get_default_branch(self, project_key, repo_slug):
         resp = safe_json_response(
             self.repos_api.get_repo_default_branch(project_key, repo_slug))
-        return resp.get("displayId", None) if resp else "master"
+        return resp.get("displayId", "master") if resp else "master"
 
     def migrate_permissions(self, project, pid):
         perms = list(self.repos_api.get_repo_branch_permissions(
@@ -156,3 +136,29 @@ class ReposClient(BaseClass):
         }
         self.gl_projects_api.edit_project(
             self.config.destination_host, self.config.destination_token, pid, data=data)
+
+    def format_repo(self, repo, groups=False, project=False):
+        """
+        Format public and project repos.
+        Leave project repo members empty ([]) as they are retrieved during staging.
+        """
+        repo_path = dig(repo, 'project', 'key')
+        return {
+            "id": repo["id"],
+            "path": repo["slug"],
+            "name": repo["name"],
+            "namespace": {
+                "id": dig(repo, 'project', 'id'),
+                "path": repo_path,
+                "name": dig(repo, 'project', 'name'),
+                "kind": "group",
+                "full_path": dig(repo, 'project', 'key')
+            },
+            "path_with_namespace": repo_path + "/" + repo.get("slug"),
+            "visibility": "public" if repo.get("public") else "private",
+            "description": repo.get("description", ""),
+            "members": [] if project else self.add_repo_users([], repo_path, repo.get("slug"), groups),
+            "default_branch": self.get_default_branch(repo_path, repo["slug"]),
+            # Assuming http is on index 0
+            "http_url_to_repo": dig(repo, 'links', 'clone', default=[{"href": ""}])[0]["href"]
+        }

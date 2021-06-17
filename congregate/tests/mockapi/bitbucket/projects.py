@@ -63,12 +63,12 @@ class MockProjectsApi():
                 "links": {
                     "clone": [
                         {
-                            "href": "ssh://git@localhost:7999/tgp/node.git",
-                            "name": "ssh"
-                        },
-                        {
                             "href": "http://localhost:7990/scm/tgp/node.git",
                             "name": "http"
+                        },
+                        {
+                            "href": "ssh://git@localhost:7999/tgp/node.git",
+                            "name": "ssh"
                         }
                     ],
                     "self": [
