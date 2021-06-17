@@ -16,7 +16,7 @@ variables:
   JENKINS_SEED_IMAGE_NAME: "$CI_REGISTRY_IMAGE/jenkins-seed:latest"
   SAST_DISABLE_DIND: "true"
   SAST_EXCLUDED_ANALYZERS: "brakeman,flawfinder,gosec,kubesec,mobsf,phpcs-security-audit,pmd-apex,security-code-scan,sobelow,spotbugs"
-  SECURE_LOG_LEVEL: 'debug'
+  SECURE_LOG_LEVEL: "debug"
 
 default:
   image: "$TEST_IMAGE_NAME"
@@ -191,6 +191,7 @@ check ldap compose yaml:
         - .pylintrc
         - delete_azure_vm.ps1
         - restore_azure_vm.sh
+  timeout: 5 minutes
 
 .e2e-test-setup:
   image: "${TEST_IMAGE_NAME}"
@@ -246,6 +247,7 @@ test:end-to-end full:
   script:
     - poetry run pytest -s -m e2e_gl_setup congregate/tests/
     - poetry run pytest -s -m e2e --cov-config=.coveragerc --cov=congregate congregate/tests/
+  timeout: 15 minutes
 
 test:end-to-end single group:
   extends:
@@ -384,7 +386,6 @@ container_scanning:
         - docker/release/centos.Dockerfile
         - docker/release/debian.Dockerfile
 
-
 debian_container_scanning:
   extends: container_scanning
   variables:
@@ -400,7 +401,6 @@ debian_container_scanning:
   #       - pyproject.toml
   #       - package.json
   #       - docker/release/debian.Dockerfile
-
 
 runbook update:
   stage: test
