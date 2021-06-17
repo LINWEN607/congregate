@@ -1,10 +1,11 @@
 import unittest
-from unittest.mock import patch, PropertyMock
+from unittest.mock import patch, PropertyMock, MagicMock
 from pytest import mark
 from congregate.tests.mockapi.bitbucket.projects import MockProjectsApi
 from congregate.migration.bitbucket.projects import ProjectsClient
 from congregate.migration.bitbucket.repos import ReposClient
 from congregate.migration.bitbucket.api.projects import ProjectsApi
+from congregate.migration.bitbucket.api.repos import ReposApi
 from congregate.tests.mockapi.bitbucket.groups import MockGroupsApi
 
 
@@ -13,7 +14,6 @@ class ProjectsTests(unittest.TestCase):
     def setUp(self):
         self.mock_projects = MockProjectsApi()
         self.projects = ProjectsClient()
-        self.repos = ReposClient()
         self.mock_groups = MockGroupsApi()
 
     @patch("io.TextIOBase")
@@ -22,11 +22,19 @@ class ProjectsTests(unittest.TestCase):
     @patch.object(ProjectsApi, "get_all_project_repos")
     @patch.object(ProjectsApi, "get_all_projects")
     @patch.object(ReposClient, "add_repo_users")
+    @patch.object(ReposApi, "get_repo_default_branch")
     @patch('congregate.helpers.conf.Config.source_host', new_callable=PropertyMock)
     @patch('congregate.helpers.conf.Config.source_token', new_callable=PropertyMock)
-    def test_retrieve_project_info(self, mock_ext_user_token, mock_ext_src_url, mock_add_repo_users, mock_get_all_projects, mock_get_all_project_repos, mock_get_all_project_users, mock_open, mock_file):
+    def test_retrieve_project_info(self, mock_ext_user_token, mock_ext_src_url, mock_get_default_branch, mock_add_repo_users,
+                                   mock_get_all_projects, mock_get_all_project_repos, mock_get_all_project_users, mock_open, mock_file):
         mock_ext_src_url.return_value = "http://localhost:7990"
         mock_ext_user_token.return_value = "username:password"
+
+        mock_resp = MagicMock()
+        type(mock_resp).status_code = PropertyMock(return_value=200)
+        mock_resp.json.return_value = {"displayId": "main"}
+        mock_get_default_branch.return_value = mock_resp
+
         mock_add_repo_users.side_effect = [[], []]
         mock_get_all_project_repos.side_effect = [
             self.mock_projects.get_all_project_repos(), self.mock_projects.get_all_project_repos()]
@@ -60,7 +68,7 @@ class ProjectsTests(unittest.TestCase):
                 "visibility": "private",
                 "description": "",
                 "members": [],
-                "default_branch": "master",
+                "default_branch": "main",
                 "http_url_to_repo": "http://localhost:7990/scm/tgp/node.git"
             },
             {
@@ -78,7 +86,7 @@ class ProjectsTests(unittest.TestCase):
                 "visibility": "private",
                 "description": "Android project",
                 "members": [],
-                "default_branch": "master",
+                "default_branch": "main",
                 "http_url_to_repo": "http://localhost:7990/scm/tgp/android.git"
             }
         ]
@@ -116,11 +124,19 @@ class ProjectsTests(unittest.TestCase):
     @patch.object(ProjectsApi, "get_all_project_repos")
     @patch.object(ProjectsApi, "get_all_projects")
     @patch.object(ReposClient, "add_repo_users")
+    @patch.object(ReposApi, "get_repo_default_branch")
     @patch('congregate.helpers.conf.Config.source_host', new_callable=PropertyMock)
     @patch('congregate.helpers.conf.Config.source_token', new_callable=PropertyMock)
-    def test_retrieve_project_info_with_groups(self, mock_ext_user_token, mock_ext_src_url, mock_add_repo_users, mock_get_all_projects, mock_get_all_project_repos, mock_get_all_project_users, mock_get_all_project_groups, mock_open, mock_file):
+    def test_retrieve_project_info_with_groups(self, mock_ext_user_token, mock_ext_src_url, mock_get_default_branch, mock_add_repo_users,
+                                               mock_get_all_projects, mock_get_all_project_repos, mock_get_all_project_users, mock_get_all_project_groups, mock_open, mock_file):
         mock_ext_src_url.return_value = "http://localhost:7990"
         mock_ext_user_token.return_value = "username:password"
+
+        mock_resp = MagicMock()
+        type(mock_resp).status_code = PropertyMock(return_value=204)
+        mock_resp.json.return_value = None
+        mock_get_default_branch.return_value = mock_resp
+
         mock_add_repo_users.side_effect = [[], []]
         mock_get_all_project_repos.side_effect = [
             self.mock_projects.get_all_project_repos(), self.mock_projects.get_all_project_repos()]
