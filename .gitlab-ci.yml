@@ -48,6 +48,9 @@ workflow:
     - docker login ${CI_REGISTRY} -u gitlab-ci-token -p $CI_BUILD_TOKEN
 
 .gitlab-destination:
+  variables:
+    GITLAB_OMNIBUS_CONFIG: |-
+      gitlab_rails['initial_root_password'] = '5iveL!fe'
   services:
     - name: gitlab/gitlab-ee:nightly
       alias: gitlab_destination

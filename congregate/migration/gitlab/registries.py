@@ -8,10 +8,11 @@ from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
 
 class RegistryClient(BaseClass):
-    def __init__(self):
+    def __init__(self, reg_dry_run=False):
         self.users = UsersApi()
         self.projects_api = ProjectsApi()
         super().__init__()
+        self.reg_dry_run = reg_dry_run
 
     def are_enabled(self, new_id, old_id):
         src = self.is_enabled(self.config.source_host,
@@ -105,6 +106,7 @@ class RegistryClient(BaseClass):
         # List of tags to clean
         cleaner = {"src": [], "dest": []}
 
+        all_tags = []
         for tag in tags:
             # The source repo location
             # Eg: registry.gitlab.com/gitlab-com/customer-success/professional-services-group/global-practice-development/migration/congregate/jenkins-seed
@@ -113,56 +115,68 @@ class RegistryClient(BaseClass):
             # Eg: latest or rolling-debian, etc
             tag_name = tag["name"]
 
-            self.log.info(
-                f"Pulling images from project {name} (ID: {old_id}). Tagged image {repo_loc}:{tag_name}")
-            # Pulling everything at once can lead to disk fill, which apparently fails silently. Pull/tag/push on each tag
-            # Also, the library will *only* pull latest without the tag, or setting all_tags=True
+            if not self.reg_dry_run:
+                self.log.info(
+                    f"Pulling images from project {name} (ID: {old_id}). Tagged image {repo_loc}:{tag_name}")
+            
+                # Pulling everything at once can lead to disk fill, which apparently fails silently. Pull/tag/push on each tag
+                # Also, the library will *only* pull latest without the tag, or setting all_tags=True
 
-            for pull_attempt in range(2):
-                try:
-                    tagged_image = src_client.images.pull(
-                        repo_loc, tag_name)
-                    # No NotFound exception, and not None/empty
-                    # Exit the try loop
-                    if tagged_image:
-                        break
-                except NotFound as nf:
-                    self.log.warning(f"Registered a NotFound when attempting to pull {repo_loc}:{tag_name} on attempt {pull_attempt}. Cleaning.")
-                    # NotFound or disk full returning NotFound falsely *OR* possibly returning just an empty image
-                    # Let's try to clean-up. This could in theory happen twice
-                    self.__clean_local(cleaner, src_client, "src")
-                    self.__clean_local(cleaner, dest_client, "dest")
-                # Any other exception bubbles up
-            else:
-                # If we hit two tries, we get here. Break skips this
-                if nf:
-                    # This tells us we tried clean-up. Otherwise, jusst throw a request exception
-                    raise nf
-                raise RequestException(
-                    f"Could not pull image after clean-up with: repo_loc {repo_loc} and tag {tag_name}")
+                for pull_attempt in range(2):
+                    try:
+                        tagged_image = src_client.images.pull(
+                            repo_loc, tag_name)
+                        # No NotFound exception, and not None/empty
+                        # Exit the try loop
+                        if tagged_image:
+                            break
+                    except NotFound as nf:
+                        self.log.warning(f"Registered a NotFound when attempting to pull {repo_loc}:{tag_name} on attempt {pull_attempt}. Cleaning.")
+                        # NotFound or disk full returning NotFound falsely *OR* possibly returning just an empty image
+                        # Let's try to clean-up. This could in theory happen twice
+                        self.__clean_local(cleaner, src_client, "src")
+                        self.__clean_local(cleaner, dest_client, "dest")
+                    # Any other exception bubbles up
+                else:
+                    # If we hit two tries, we get here. Break skips this
+                    if nf:
+                        # This tells us we tried clean-up. Otherwise, jusst throw a request exception
+                        raise nf
+                    raise RequestException(
+                        f"Could not pull image after clean-up with: repo_loc {repo_loc} and tag {tag_name}")
 
             # Retag for the new destination
             new_reg = self.generate_destination_registry_url(
                 repo_loc.split("/", 1)[1])
 
-            tagged_image.tag(new_reg, tag_name)
-            # Push to the new registry
-            self.log.info(f"Pushing image {new_reg}:{tag_name}")
-            for line in dest_client.images.push(new_reg, tag_name, stream=True, decode=True):
-                print(line)
-                if "errorDetail" in line:
-                    self.log.error(
-                        f"Failed to push image to {new_reg}:{tag_name}, due to:\n{line}")
+            all_tags.append(
+                (f"{repo_loc}:{tag_name}", f"{new_reg}:{tag_name}")
+            )
             
-            # Clean-up. Slower, possibly, as we have to pull layers, again?
-            # Or, can we just make a loop that goes until fails, cleans, then restarts at the failure point?
-            cleaner["src"].append(
-                {"repo_loc": repo_loc, "tag_name": tag_name})
-            cleaner["dest"].append(
-                {"new_reg": new_reg, "tag_name": tag_name})
+            if not self.reg_dry_run:
+                tagged_image.tag(new_reg, tag_name)
+                # Push to the new registry
+                self.log.info(f"Pushing image {new_reg}:{tag_name}")
+
+                for line in dest_client.images.push(new_reg, tag_name, stream=True, decode=True):
+                    print(line)
+                    if "errorDetail" in line:
+                        self.log.error(
+                            f"Failed to push image to {new_reg}:{tag_name}, due to:\n{line}")
+                
+                # Clean-up. Slower, possibly, as we have to pull layers, again?
+                # Or, can we just make a loop that goes until fails, cleans, then restarts at the failure point?
+                cleaner["src"].append(
+                    {"repo_loc": repo_loc, "tag_name": tag_name})
+                cleaner["dest"].append(
+                    {"new_reg": new_reg, "tag_name": tag_name})
+        
         self.__clean_local(cleaner, src_client, "src")
         self.__clean_local(cleaner, dest_client, "dest")
-        
+
+        if self.reg_dry_run:
+            self.log.info(f"All tags pulled for repo: {repo_loc} project: {old_id}\n{all_tags}")
+
     def __clean_local(self, cleaner, client, key):
         """
         :param cleaner: List of tags to clean on src and dest client connections
@@ -199,4 +213,4 @@ class RegistryClient(BaseClass):
         """
         if self.config.dstn_parent_group_path:
             return f"{self.config.destination_registry}/{self.config.dstn_parent_group_path}/{suffix}"
-        return f"{self.config.destination_registry}/{suffix}"
+        return f"{self.config.destination_registry}/{suffix}"     

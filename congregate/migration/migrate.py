@@ -65,7 +65,8 @@ class MigrateClient(BaseClass):
         skip_project_export=False,
         skip_project_import=False,
         subgroups_only=False,
-        scm_source=None
+        scm_source=None,
+        reg_dry_run=False
     ):
         self.ie = ImportExportClient()
         self.mirror = MirrorClient()
@@ -81,7 +82,9 @@ class MigrateClient(BaseClass):
         self.instance_api = InstanceApi()
         self.pushrules = PushRulesClient()
         self.mr_approvals = MergeRequestApprovalsClient()
-        self.registries = RegistryClient()
+        self.registries = RegistryClient(
+            reg_dry_run=reg_dry_run
+        )
         self.keys = KeysClient()
         self.hooks = HooksClient()
         self.clusters = ClustersClient()
