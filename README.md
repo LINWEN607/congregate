@@ -267,7 +267,7 @@ Usage:
     congregate stage-groups <groups>... [--skip-users] [--commit] [--scm-source=hostname]
     congregate stage-wave <wave> [--commit] [--scm-source=hostname]
     congregate create-stage-wave-csv [--commit]
-    congregate migrate [--processes=<n>] [--reporting] [--skip-users] [--skip-adding-members] [--skip-group-export] [--skip-group-import] [--skip-project-export] [--skip-project-import] [--only-post-migration-info] [--subgroups-only] [--scm-source=hostname] [--commit]
+    congregate migrate [--processes=<n>] [--reporting] [--skip-users] [--skip-adding-members] [--skip-group-export] [--skip-group-import] [--skip-project-export] [--skip-project-import] [--only-post-migration-info] [--subgroups-only] [--scm-source=hostname] [--commit] [--reg-dry-run]
     congregate rollback [--hard-delete] [--skip-users] [--skip-groups] [--skip-projects] [--commit]
     congregate ui
     congregate do-all [--commit]
@@ -338,6 +338,7 @@ Arguments:
     skip-ci                                 Skip migrating data from CI sources
     only-post-migration-info                Skips migrating all content except for post-migration information. Use when import is handled outside of congregate
     subgroups-only                          Expects that only sub-groups are staged and that their parent groups already exist on destination
+    reg-dry-run                             If registry migration is configured, instead of doing the actual migration, write the tags to the logs for use in the brute force migration. Can also be useful when renaming targets
     access-level                            Update parent group level user permissions (Guest/Reporter/Developer/Maintainer/Owner).
     staged                                  Compare using staged data
     no-of-files                             Number of files used to go back when stitching JSON results

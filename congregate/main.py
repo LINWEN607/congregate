@@ -82,7 +82,7 @@ Arguments:
     skip-ci                                 Skip migrating data from CI sources
     only-post-migration-info                Skips migrating all content except for post-migration information. Use when import is handled outside of congregate
     subgroups-only                          Expects that only sub-groups are staged and that their parent groups already exist on destination
-    reg-dry-run                 If registry migration is configured, instead of doing the actual migration, write the tags to the logs for use in the brute force migration. Can also be useful when renaming targets
+    reg-dry-run                             If registry migration is configured, instead of doing the actual migration, write the tags to the logs for use in the brute force migration. Can also be useful when renaming targets
     access-level                            Update parent group level user permissions (Guest/Reporter/Developer/Maintainer/Owner).
     staged                                  Compare using staged data
     no-of-files                             Number of files used to go back when stitching JSON results
