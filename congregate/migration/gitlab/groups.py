@@ -7,7 +7,7 @@ from congregate.helpers.mdbc import MongoConnector
 from congregate.helpers.misc_utils import get_timedelta, safe_json_response, strip_protocol
 from congregate.helpers.list_utils import remove_dupes
 from congregate.helpers.migrate_utils import get_full_path_with_parent_namespace, is_top_level_group, get_staged_groups, find_user_by_email_comparison_without_id
-from congregate.helpers.json_utils import json_pretty, write_json_to_file
+from congregate.helpers.json_utils import json_pretty
 from congregate.migration.gitlab.variables import VariablesClient
 from congregate.migration.gitlab.badges import BadgesClient
 from congregate.migration.gitlab.api.groups import GroupsApi
@@ -56,14 +56,14 @@ class GroupsClient(BaseClass):
 
         if self.config.src_parent_group_path:
             self.multi.start_multi_process_stream_with_args(self.traverse_groups,
-                                                 self.groups_api.get_all_subgroups(
-                                                     self.config.src_parent_id, host, token), host, token, processes=processes)
+                                                            self.groups_api.get_all_subgroups(
+                                                                self.config.src_parent_id, host, token), host, token, processes=processes)
             self.traverse_groups(host, token, safe_json_response(self.groups_api.get_group(
                 self.config.src_parent_id, host, token)))
         else:
             self.multi.start_multi_process_stream_with_args(self.traverse_groups,
-                                                 self.groups_api.get_all_groups(
-                                                     host, token), host, token, processes=processes)
+                                                            self.groups_api.get_all_groups(
+                                                                host, token), host, token, processes=processes)
 
     def remove_import_user(self, gid):
         try:

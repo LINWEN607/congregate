@@ -1,5 +1,3 @@
-import json
-
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.misc_utils import safe_json_response, is_error_message_present, strip_protocol
 from congregate.helpers.dict_utils import dig
@@ -38,13 +36,6 @@ class OrgsClient(BaseClass):
 
     def connect_to_mongo(self):
         return MongoConnector()
-
-    def get_formatted_repos(self):
-        """
-        Get list of already formatted public repos.
-        """
-        with open("{}/data/projects.json".format(self.app_path), "r") as f:
-            return json.load(f)
 
     def retrieve_org_info(self, processes=None):
         """

@@ -137,42 +137,6 @@ class MockReposApi():
             }
         ]
 
-    def get_formatted_repos(self):
-        return [
-            {
-                "name": "website",
-                "members": [],
-                "path": "website",
-                "path_with_namespace": "gitlab/website",
-                "namespace": {
-                    "path": "gitlab",
-                    "kind": "user",
-                    "id": 3,
-                    "full_path": "gitlab",
-                    "name": "gitlab"
-                },
-                "id": 1,
-                "visibility": "public",
-                "description": None
-            },
-            {
-                "name": "asdf",
-                "members": [],
-                "path": "asdf",
-                "path_with_namespace": "bmay/asdf",
-                "namespace": {
-                    "path": "bmay",
-                    "kind": "user",
-                    "id": 5,
-                    "full_path": "bmay",
-                    "name": "bmay"
-                },
-                "id": 2,
-                "visibility": "public",
-                "description": None
-            }
-        ]
-
     def get_repo(self):
         return [
             {

@@ -101,11 +101,11 @@ class ReposClient(BaseClass):
                 ""),
             # This request is extremely slow at scale and needs a refactor
             # "members": []
-            "members": self.add_repo_members(
+            "members": [] if org else self.add_repo_members(
                 repo["owner"]["type"],
                 repo["owner"]["login"],
                 repo["name"],
-                mongo) if not org else []
+                mongo)
         }
 
     def add_repo_members(self, kind, owner, repo, mongo):
