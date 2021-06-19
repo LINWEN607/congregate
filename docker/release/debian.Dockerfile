@@ -16,9 +16,8 @@ COPY congregate.sh pyproject.toml poetry.lock README.md package.json package-loc
 
 # Installing some basic utilities and updating apt
 RUN apt-get update && \
-    apt-get install less vim jq curl wget libcurl4 openssl liblzma5 screen git -y && \
+    apt-get install less vim jq curl wget libcurl4 openssl liblzma5 screen git procps -y && \
     apt-get upgrade -y
-
 
 # Install mongo
 RUN mkdir /mongo-install && \
