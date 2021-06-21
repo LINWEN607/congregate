@@ -151,7 +151,10 @@ class ConfigurationValidator(Config):
                     headers={
                         "Content-Type": "application/json"
                     },
-                    auth=HTTPBasicAuth(self.source_username, src_token)))
+                    auth=HTTPBasicAuth(self.source_username, src_token),
+                    verify=self.ssl_verify
+                    )
+                )
                 not_sys_admin = user["values"][0]["permission"] not in ["SYS_ADMIN", "ADMIN"] if user.get(
                     "values", []) else True
                 if not user or is_error_message_present(user) or not_sys_admin:
