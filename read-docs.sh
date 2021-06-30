@@ -1,5 +1,8 @@
 #!/bin/bash
 
+export CONGREGATE_PATH=$(pwd)
+export APP_PATH=$(pwd)
+
 poetry run sphinx-apidoc -f -o congregate/docs/source/ ./
 cd congregate/docs
 make html

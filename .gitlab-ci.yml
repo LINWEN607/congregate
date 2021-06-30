@@ -447,6 +447,9 @@ mvc:
 
 pages:
   stage: deploy
+  variables:
+    CONGREGATE_PATH: $CI_PROJECT_DIR
+    APP_PATH: $CI_PROJECT_DIR
   rules:
     - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
       changes:
