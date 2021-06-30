@@ -43,7 +43,7 @@ This runbook covers the process of preparing and cleaning up after a migration f
 
 ### Customer
 
-* [ ] Upgrade and align the source and destination instances to the latest version of GitLab-EE ([notes](https://docs.gitlab.com/ee/user/project/settings/import_export.html#important-notes)).
+* [ ] Upgrade and align the source and destination instances to the latest version of GitLab-EE ([notes](https://docs.gitlab.com/ee/user/project/settings/import_export.html#version-history)).
 * [ ] Clean registries and repositories as much as possible:
   * [ ] Repositories:
     * [ ] Get under 5Gb of project export for an optimal chance at success
@@ -160,10 +160,12 @@ Certain GitLab features are migrated but not adapted to the destination instance
 * [ ] Update group and project permissions
 * [ ] Update paths (hostnames) for:
   * project, group and system hooks
+    * **NOTE:** if they are pointing to a private instance or `localhost` gitlab.com will see them as invalid and fail creating them
   * badges
-  * project and group CI/CD variables (if their values are source instance specific)
+  * project and group CI/CD variables are migrated, but values that are source specific, e.g. project url or hostname, should be updated to the new values
+  * secrets (tokens) that may be present in certain features, e.g. hooks, are not exposed in the API response and therefore not migrated. Those individual features have to be newly created
 * [ ] Update project shared groups (unless the entire group structure is migrated first)
 * [ ] Update instance and group level (custom) project templates
-* [ ] Update any features that are not migrating over (based on migration features matrix)
+* [ ] Update and/or create any features that are not migrated (based on migration features matrix)
 
 /confidential

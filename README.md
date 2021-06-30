@@ -20,7 +20,7 @@ This file will help developers understand how to setup a congregate development 
   * [Importers Strategy](https://gitlab.com/groups/gitlab-org/-/epics/2721)
   * [GitLab Group Export/Import bugs](https://gitlab.com/groups/gitlab-org/-/epics/4614)
   * [GitLab Project Export/Import bugs](https://gitlab.com/groups/gitlab-org/-/epics/3054)
-  * [Bitbucket Importer](https://gitlab.com/groups/gitlab-org/-/epics/2958)
+  * [Bitbucket Importer bugs](https://gitlab.com/groups/gitlab-org/-/epics/5514)
   * [GitHub Importer bugs](https://gitlab.com/groups/gitlab-org/-/epics/3050)
 * Congregate will not be ported into the GitLab application as-is, but certain pieces of existing Congregate functionality will be rebuilt in GitLab, which remains focused on self-service migrations. To track this work, please visit the [GitLab Group Migration](https://gitlab.com/groups/gitlab-org/-/epics/2901) epic.
 
