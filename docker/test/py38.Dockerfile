@@ -5,7 +5,7 @@ ENV APP_NAME=congregate \
 
 RUN apt-get update && \
     apt-get upgrade -y && \
-    apt-get install jq curl wget git -y
+    apt-get install jq curl wget git build-essential -y
 
 RUN pip install poetry
 
