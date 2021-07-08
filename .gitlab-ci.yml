@@ -100,10 +100,19 @@ code_quality:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"' # Run code quality job in merge request pipelines
     - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH" # Run code quality job in pipelines on the master branch (but not in other branch pipelines)
     - if: "$CI_COMMIT_TAG" # Run code quality job in pipelines for tags
+    - changes:
+        - ./**/*.py
+        - ./*.py
+        - ./**/*.js
 
 sast:
   artifacts:
     paths: [gl-sast-report.json]
+  rules:
+    - changes:
+        - ./**/*.py
+        - ./*.py
+        - ./**/*.js
 
 secret_detection:
   variables:
@@ -319,6 +328,15 @@ debian rolling release:
   variables:
     DISTRO: "debian"
     RELEASE_IMAGE_NAME: "$CI_REGISTRY_IMAGE:rolling-debian"
+  rules:
+    - changes:
+        - congregate/**/*.py
+        - frontend/**/*
+        - congregate.sh
+        - pyproject.toml
+        - package.json
+        - docker/release/debian.Dockerfile
+
 
 debian-release-tag:
   extends:
@@ -340,6 +358,14 @@ centos rolling release:
   variables:
     DISTRO: "centos"
     RELEASE_IMAGE_NAME: "$CI_REGISTRY_IMAGE:rolling-centos"
+  rules:
+    - changes:
+        - congregate/**/*.py
+        - frontend/**/*
+        - congregate.sh
+        - pyproject.toml
+        - package.json
+        - docker/release/centos.Dockerfile
 
 centos-release-tag:
   extends:
@@ -359,12 +385,11 @@ container-scan-build:centos:
   variables:
     DISTRO: "centos"
     RELEASE_IMAGE_NAME: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHA-centos
-  # Keeping these rules commented out until we resolve the container vulnerabilities
-  # rules:
-  #   - changes:
-  #       - pyproject.toml
-  #       - package.json
-  #       - docker/release/centos.Dockerfile
+  rules:
+    - changes:
+        - pyproject.toml
+        - package.json
+        - docker/release/centos.Dockerfile
 
 container-scan-build:debian:
   stage: build
@@ -373,12 +398,11 @@ container-scan-build:debian:
   variables:
     DISTRO: "debian"
     RELEASE_IMAGE_NAME: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHA-debian
-  # Keeping these rules commented out until we resolve the container vulnerabilities
-  # rules:
-  #   - changes:
-  #       - pyproject.toml
-  #       - package.json
-  #       - docker/release/debian.Dockerfile
+  rules:
+    - changes:
+        - pyproject.toml
+        - package.json
+        - docker/release/debian.Dockerfile
 
 # Scanning the centos image
 container_scanning:
@@ -403,13 +427,11 @@ debian_container_scanning:
     GIT_STRATEGY: "fetch"
   tags:
     - gitlab-org-docker
-
-  # Keeping these rules commented out until we resolve the container vulnerabilities
-  # rules:
-  #   - changes:
-  #       - pyproject.toml
-  #       - package.json
-  #       - docker/release/debian.Dockerfile
+  rules:
+    - changes:
+        - pyproject.toml
+        - package.json
+        - docker/release/debian.Dockerfile
 
 docs update:
   stage: deploy
