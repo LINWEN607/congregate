@@ -5,6 +5,16 @@ import sys
 
 from urllib.parse import quote_plus
 
+def traverse_dir(directory):
+    files = []
+    for root, dir, filenames in os.walk(directory):
+        for fn in filenames:
+            if root != directory:
+                files.append(f"{''.join(root.split('/')[1:])}/{fn}")
+            else:
+                files.append(fn)
+    return files
+
 PID = sys.argv[1]
 EXTRAS = sys.argv[2] if len(sys.argv) > 2 else None
 T1 = os.getenv("MIGRATION_TEMPLATE_TOKEN")
@@ -12,7 +22,7 @@ T2 = os.getenv("PS_MIGRATION_TOKEN")
 
 rpath = 'runbooks'
 conn = http.client.HTTPSConnection("gitlab.com")
-arr = [x for x in os.listdir(rpath) if x != "README.md"]
+arr = [x for x in traverse_dir(rpath) if x != "README.md"]
 arr2 = [x for x in os.listdir(
     ".") if "migration-features-matrix.md" in x or x == "famq.md"] if EXTRAS else []
 arr = arr + arr2
