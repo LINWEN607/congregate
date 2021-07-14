@@ -265,7 +265,7 @@ test:end-to-end full:
   script:
     - poetry run pytest -s -m e2e_gl_setup congregate/tests/
     - poetry run pytest -s -m e2e --cov-config=.coveragerc --cov=congregate congregate/tests/
-  timeout: 15 minutes
+  timeout: 30 minutes
 
 test:end-to-end single group:
   extends:
@@ -273,7 +273,7 @@ test:end-to-end single group:
   script:
     - poetry run pytest -s -m e2e_gl_setup_2 congregate/tests/
     - poetry run pytest -s -m e2e --cov-config=.coveragerc --cov=congregate congregate/tests/
-  timeout: 15 minutes
+  timeout: 30 minutes
 
 test:GitHub Server end to end:
   extends:

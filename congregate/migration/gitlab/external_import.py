@@ -155,7 +155,7 @@ class ImportClient(BaseClass):
     def get_failed_result(self, path_with_namespace, data=None):
         return {
             path_with_namespace: {
-                "repository": bool(data),
+                "repository": bool(data) if not data.get("error") else False,
                 "response": data
             }
         }

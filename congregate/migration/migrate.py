@@ -585,8 +585,16 @@ class MigrateClient(BaseClass):
 
     def import_bitbucket_project(self, project):
         members = project.pop("members")
-        result = self.ext_import.trigger_import_from_bb_server(
-            project, dry_run=self.dry_run)
+        try:
+            result = self.ext_import.trigger_import_from_bb_server(project, dry_run=self.dry_run)
+        except Exception as ex:
+            project_path = project["path_with_namespace"]
+            project_key, _ = self.ext_import.get_project_repo_from_full_path(project_path)
+            target_namespace = f"{self.config.dstn_parent_group_path or ''}/{project_key}".strip("/")
+            result = self.ext_import.get_failed_result(target_namespace, data={
+                    "error": f"Failed to trigger import with error: {ex}\nProject information follows: {project}"
+                })
+            return result
         path_with_namespace = next(iter(result))
         result_response = result[path_with_namespace]["response"]
         if project_id := result_response.get("id", None):
