@@ -2,15 +2,15 @@
 
 ## GitLab
 
-[Migration features matrix](./gitlab-migration-features-matrix.md)
+[Migration features matrix](./customer/gitlab-migration-features-matrix.md)
 
 ## BitBucket
 
-[Migration features matrix](./bitbucket-migration-features-matrix.md)
+[Migration features matrix](./customer/bitbucket-migration-features-matrix.md)
 
 ## GitHub
 
-[Migration features matrix](./github-migration-features-matrix.md)
+[Migration features matrix](./customer/github-migration-features-matrix.md)
 
 ## SVN
 
