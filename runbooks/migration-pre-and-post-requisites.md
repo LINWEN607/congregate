@@ -22,10 +22,23 @@ This runbook covers the process of preparing and cleaning up after a migration f
 * [ ] Setup the migration VM that will host the Professional Services (PS) migration tool’s (Congregate) Docker container.
   * [ ] It should have minimal port and IP access. See [VM Requirements](#VM) for more detail.
   * **NOTE:** If required the VM might be created, by the customer, within their environment. Make sure this approach is covered in the SoW.
-* [ ] (gitlab.com) Follow the [PS Provisioning Process](https://gitlab.com/gitlab-com/business-technology/team-member-enablement/runbooks/-/blob/master/it_operations/GitLab_com_environment_(PRD,DEV,STG)access_requests.md#provisioning-process) for GitLab.com environments Access Request.
+* [ ] (gitlab.com) Follow the [PS Provisioning Process](https://gitlab.com/gitlab-com/business-technology/team-member-enablement/runbooks/-/blob/master/it_operations/GitLab_com_environment_(PRD,DEV,STG)access_requests.md#provisioning-process) for GitLab.com environments Access Request (AR) i.e. Admin account.
+  * [ ] Create [new AR issue](https://gitlab.com/gitlab-com/team-member-epics/access-requests/-/issues) from the `Access_Change_Request` issue template
+  * [ ] Follow the description to add labels
+    * `AR-Approval::Needs Manager Approval`
+    * `AR::In Queue`
+    * `admin-access`
+    * `IT::to do`
+    * `NewAccessRequest`
+
+    **NOTE:** Labels may change over time
+  * [ ] Assign issue to IT i.e. `/assign @gitlab-com/business-technology/team-member-enablement` (former `@gitlab-com/business-ops/team-member-enablement`)
+
+    **NOTE:** Assignee group may change over time
+  * [ ] (Optional) Post issue in Slack's `[#it_help](https://gitlab.slack.com/archives/CK4EQH50E)` channel
 * [ ] Configure LDAP/SAML (in [identity provider](https://docs.gitlab.com/ee/administration/auth/)) for the Admin user account on the destination instance (as for other users).
-  * This is required for the user-group-project mapping to succeed.
-  * (gitlab.com) Add user to SAML+SSO identity provider destination parent group.
+  * This is required for the user-group-project mapping to succeed
+  * (gitlab.com) Add user to SAML+SSO identity provider destination parent group
     * Another way to add SAML to the migration user profile, that also avoids provisioning a GitLab admin account in an external identity provider, is to spoof the SAML identity. `PUT` the following json body to `https://<hostname>/api/v4/users/<id>` to modify the Admin user:
 
       ```json
