@@ -1,1 +1,1 @@
-../../../../github-migration-features-matrix.md
+../../../../customer/github-migration-features-matrix.md

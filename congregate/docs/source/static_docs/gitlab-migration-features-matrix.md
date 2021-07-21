@@ -1,1 +1,1 @@
-../../../../gitlab-migration-features-matrix.md
+../../../../customer/gitlab-migration-features-matrix.md

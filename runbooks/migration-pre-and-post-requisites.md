@@ -35,7 +35,7 @@ This runbook covers the process of preparing and cleaning up after a migration f
   * [ ] Assign issue to IT i.e. `/assign @gitlab-com/business-technology/team-member-enablement` (former `@gitlab-com/business-ops/team-member-enablement`)
 
     **NOTE:** Assignee group may change over time
-  * [ ] (Optional) Post issue in Slack's `[#it_help](https://gitlab.slack.com/archives/CK4EQH50E)` channel
+  * [ ] (Optional) Post issue in Slack's [**#it_help**](https://gitlab.slack.com/archives/CK4EQH50E) channel
 * [ ] Configure LDAP/SAML (in [identity provider](https://docs.gitlab.com/ee/administration/auth/)) for the Admin user account on the destination instance (as for other users).
   * This is required for the user-group-project mapping to succeed
   * (gitlab.com) Add user to SAML+SSO identity provider destination parent group
