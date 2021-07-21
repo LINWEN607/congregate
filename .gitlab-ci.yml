@@ -446,13 +446,11 @@ docs update:
     - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
     - changes:
         - runbooks/*
-        - gitlab-migration-fatures-matrix.md
-        - bitbucket-migration-fatures-matrix.md
-        - github-migration-fatures-matrix.md
-        - famq.md
+        - customer/*
   artifacts:
     paths:
       - runbooks/*
+      - customer/*
     expire_in: 1 week
 
 mvc:
@@ -463,6 +461,7 @@ mvc:
     - if: "$CI_MERGE_REQUEST_IID || $CI_COMMIT_BRANCH"
       changes:
         - ./**/*.md
+        - ./*.md
         - README.md
         - docker/release/*
         - .gitlab-ci.yml

@@ -5,9 +5,10 @@ import sys
 
 from urllib.parse import quote_plus
 
+
 def traverse_dir(directory):
     files = []
-    for root, dir, filenames in os.walk(directory):
+    for root, _, filenames in os.walk(directory):
         for fn in filenames:
             if root != directory:
                 files.append(f"{''.join(root.split('/')[1:])}/{fn}")
@@ -15,29 +16,27 @@ def traverse_dir(directory):
                 files.append(fn)
     return files
 
+
 PID = sys.argv[1]
 EXTRAS = sys.argv[2] if len(sys.argv) > 2 else None
 T1 = os.getenv("MIGRATION_TEMPLATE_TOKEN")
 T2 = os.getenv("PS_MIGRATION_TOKEN")
+RPATH = 'runbooks'
+CPATH = 'customer'
 
-rpath = 'runbooks'
 conn = http.client.HTTPSConnection("gitlab.com")
-arr = [x for x in traverse_dir(rpath) if x != "README.md"]
-arr2 = [x for x in os.listdir(
-    ".") if "migration-features-matrix.md" in x or x == "famq.md"] if EXTRAS else []
+arr = [x for x in traverse_dir(RPATH) if x != "README.md"]
+arr2 = traverse_dir(CPATH) if EXTRAS else []
 arr = arr + arr2
 arr_length = len(arr)
 for i, x in enumerate(arr):
-    with open(x if x in arr2 else os.path.join(rpath, x), 'r') as f:
-        # Files going to the migration-template root folder
-        if x in arr2 and EXTRAS:
-            file_path = quote_plus(x)
-        else:
-            runbook_path = f".gitlab/issue_templates/{x}"
-            file_path = quote_plus(runbook_path)
+    with open(os.path.join(CPATH, x) if x in arr2 else os.path.join(RPATH, x), 'r') as f:
+        # Files going to the migration-template customer folder
+        file_path = f"customer/{x}" if (
+            x in arr2 and EXTRAS) else f".gitlab/issue_templates/{x}"
 
         data = {
-            "file_path": file_path,
+            "file_path": quote_plus(file_path),
             "branch": "master",
             "content": str(f.read())
         }
@@ -47,7 +46,7 @@ for i, x in enumerate(arr):
         else:
             data["commit_message"] = "Uploading docs files"
 
-        url = f"/api/v4/projects/{PID}/repository/files/{file_path}"
+        url = f"/api/v4/projects/{PID}/repository/files/{quote_plus(file_path)}"
         payload = json.dumps(data)
         headers = {
             'Private-Token': T1 if EXTRAS else T2,
@@ -61,7 +60,8 @@ for i, x in enumerate(arr):
         data = res.read()
         print(f"{res.status} - {data.decode('utf-8')}")
         if res.status == 400:
-            print(f"Updating project {PID} file {file_path} based on changes in {x}")
+            print(
+                f"Updating project {PID} file {file_path} based on changes in {x}")
             conn.request("PUT", url, payload, headers)
             res1 = conn.getresponse()
             data1 = res1.read()
