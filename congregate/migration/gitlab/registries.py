@@ -175,7 +175,7 @@ class RegistryClient(BaseClass):
         self.__clean_local(cleaner, dest_client, "dest")
 
         self.log.info(f"All tags pulled for repo: {repo_loc} project: {old_id}\n")
-        with open(f"{self.app_path}/data/{old_id}_repos.tpls", "w") as tplf:
+        with open(f"{self.app_path}/data/{old_id}_repos.tpls", "a") as tplf:
             for tpl in all_tags:
                 self.log.info(f"{str(tpl)},\n")
                 tplf.write(f"{str(tpl)},\n")
