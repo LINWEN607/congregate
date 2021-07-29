@@ -12,8 +12,7 @@
 
 ### Pre-requisites and considerations
 
-* The GitLab Project export / import API versions need to match between instances. [This documentation](https://docs.gitlab.com/ee/user/project/settings/import_export.html) shows which versions of the API exist in each version of GitLab.
-* The GitLab Group export / import API versions need to match between instances and be at least on **12.8**, but preferebly **13.3**.
+* For the most common questions, prerequisites and other details see our [Frequently Asked Migration Questions](customer/famq.md).
 * GitLab admin Access Token with `api` scope (read and write, until more granular API scopes are available) for both source and destination instance
 * Environment (VM, k8s, etc.) for running Congregate Docker image
   * Minimum environment requirements:

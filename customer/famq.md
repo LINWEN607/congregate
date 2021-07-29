@@ -177,6 +177,14 @@ Not necessarily. Having the source instance align as close as possible with the 
 
 >Imports from a newer version of GitLab are not supported. The Importing GitLab version must be greater than or equal to the Exporting GitLab version.
 
+### Version Requirements
+
+* The GitLab Project export / import API versions need to match between instances and follow the [version history](https://docs.gitlab.com/ee/user/project/settings/import_export.html#version-history) requirements.
+* The GitLab Group export / import API versions need to match between instances and follow the [version history](https://docs.gitlab.com/ee/user/group/settings/import_export.html#version-history) requirements.
+* The source version should not be more than 2 minor versions behind
+  * [Project Import/Export Version History](https://docs.gitlab.com/ee/user/project/settings/import_export.html#130)
+  * [Security Releases](https://docs.gitlab.com/ee/policy/maintenance.html#security-releases)
+
 When it comes to how old can the GitLab source instance be we come to the following milestones to take into account:
 
 * **12.8** - MVC version of GitLab group export which is mandatory for PS migrations

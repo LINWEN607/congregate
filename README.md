@@ -418,10 +418,10 @@ Commands:
 
 #### Important Notes
 
-* The GitLab Project export / import API versions need to match between instances. [This documentation](https://docs.gitlab.com/ee/user/project/settings/import_export.html) shows which versions of the API exist in each version of GitLab.
-* The GitLab Group export / import API versions need to match between instances and be at least on **12.8**, but preferebly **13.3**.
+For the most common questions, prerequisites and other details see our [Frequently Asked Migration Questions](customer/famq.md).
 
 #### Migration steps
+
 For detailed, step-by-step instructions on how to use congregate to migrate with a specific source and destination pairing, check out our [run books](runbooks). Also, we've recently moved this section to our [basic user guide](using-congregate.md).
 
 ### Development Environment Setup
