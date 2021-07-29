@@ -57,4 +57,6 @@ RUN rm -f /usr/bin/python3 && \
     cd /usr/bin && \
     ln -s python3.8 python3
 
+RUN poetry update
+
 EXPOSE 8000

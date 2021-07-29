@@ -57,4 +57,6 @@ RUN curl -sL https://deb.nodesource.com/setup_12.x | bash - && \
 run echo 'if [ -z "$(ps aux | grep mongo | grep -v grep)" ]; then mongod --fork --logpath /var/log/mongodb/mongod.log; fi' >> ~/.bashrc
 RUN echo "alias ll='ls -al'" >> ~/.bashrc
 
+RUN poetry update
+
 EXPOSE 8000
