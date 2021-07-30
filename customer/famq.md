@@ -24,6 +24,10 @@ We require if you are migrating a group, it has to be at the top level due to ho
 
 From an organization perspective, if you have groups set up in GitLab to consist of specific teams, then you are in good shape. Pick the teams you want to migrate in the order that best suits your schedule, and we can accommodate it. If your groups are scattered and the structure is all over the place, find what groups fit best within a wave by use case. We can provide guidance, but you know your organization and structure better than we do.
 
+## What needs to be done in order to prepare for the migration engagement?
+
+The [Migration Readiness Checklist](customer/migration-readiness-checklist.md) provides details about activities that need to be completed before the migration engagement.
+
 ## How do different terms relate across SCM/VCS i.e. development tools?
 
 We have a [blog post](https://about.gitlab.com/blog/2017/09/11/comparing-confusing-terms-in-github-bitbucket-and-gitlab/) from a few years ago describing the different terms between GitHub, BitBucket Cloud, and GitLab, but there is a slight term discrepancy there where BB Cloud uses **Teams** and BB Server uses **Projects**.
