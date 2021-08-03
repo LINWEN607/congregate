@@ -26,9 +26,9 @@ class ImportClient(BaseClass):
             "bitbucket_server_project": project_key,
             "bitbucket_server_repo": repo
         }
-        target_namespace = f"{self.config.dstn_parent_group_path or ''}/{project_key}".strip(
+        tn = f"{self.config.dstn_parent_group_path or ''}/{project_key}".strip(
             "/")
-        data["target_namespace"] = target_namespace
+        data["target_namespace"] = tn
 
         if self.config.lower_case_project_path:
             data["new_name"] = repo.lower()
@@ -39,17 +39,18 @@ class ImportClient(BaseClass):
                     self.config.destination_host, self.config.destination_token, data)
                 if is_error_message_present(resp):
                     error = resp.get("error")
-                    self.log.error(error)
-                    return self.get_failed_result(target_namespace, error)
-                return self.get_result_data(target_namespace, resp)
-            except ValueError as e:
+                    self.log.error(
+                        f"Project {project_path} import to {tn} failed with response {resp} and error {error}")
+                    return self.get_failed_result(tn, error)
+                return self.get_result_data(tn, resp)
+            except ValueError as ve:
                 self.log.error(
-                    f"Failed to import from BitBucket Server due to {e}")
-                return self.get_failed_result(target_namespace)
+                    f"Failed to import project {project_path} to {tn} due to {ve}")
+                return self.get_failed_result(tn)
         else:
             data.pop("personal_access_token", None)
             migration_dry_run("project", data)
-            return self.get_failed_result(target_namespace, data)
+            return self.get_failed_result(tn, data)
 
     def trigger_import_from_ghe(
             self, pid, path_with_namespace, tn, host, token, dry_run=True):
@@ -79,11 +80,13 @@ class ImportClient(BaseClass):
                     self.config.destination_host, self.config.destination_token, data)
                 if is_error_message_present(resp):
                     errors = resp.get("errors")
-                    self.log.error(errors)
+                    self.log.error(
+                        f"Project {path_with_namespace} import to {tn} failed with response {resp} and error {errors}")
                     return self.get_failed_result(path_with_namespace, errors)
                 return self.get_result_data(path_with_namespace, resp)
             except ValueError as ve:
-                self.log.error(f"Failed to import from GitHub due to {ve}")
+                self.log.error(
+                    f"Failed to import project {path_with_namespace} to {tn} due to {ve}")
                 return self.get_failed_result(path_with_namespace)
         else:
             data.pop("personal_access_token", None)
