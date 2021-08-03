@@ -191,12 +191,17 @@ Not necessarily. Having the source instance align as close as possible with the 
 
 When it comes to how old can the GitLab source instance be we come to the following milestones to take into account:
 
-* **12.8** - MVC version of GitLab group export which is mandatory for PS migrations
-* **13.0** - officially introduced version of GitLab group export
+* **12.8** - MVC version of GitLab group export/import API which is mandatory for PS migrations
+* **12.9** - Fixed order of exported group and project relations (e.g. pipelines)
+* **12.10** - Added issue/MR state to project export
+* **13.0**
+  * UI version of GitLab group export/import
   * `NDJSON` introduced on group and project export/import to improve GitLab memory usage
-* **13.3** - most export and major project import bugs resolved
-* **13.7** - several project and group export/import bugs resolved
-* **14.0** - `JSON` format no longer supported for project and group exports, but still supported on import
+* **13.3** - Most export and major project import bugs resolved
+* **13.7** - Several project and group export/import bugs resolved
+* **14.0**
+  * `JSON` format no longer supported for project and group exports, but still supported on import
+  * Group epics labels associations preserved during export/import
 
 ### Importer bugs
 
