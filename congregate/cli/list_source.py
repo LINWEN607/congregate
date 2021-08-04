@@ -41,18 +41,22 @@ def list_gitlab_data(processes=None, partial=False, skip_users=False, skip_group
             mongo.drop_collection("users")
     if not skip_users:
         users = UsersClient()
-        users.retrieve_user_info(b.config.source_host, b.config.source_token, processes=processes)
-        mongo.dump_collection_to_file(f"users-{strip_protocol(b.config.source_host)}", f"{b.app_path}/data/users.json")
+        users.retrieve_user_info(b.config.source_host,
+                                 b.config.source_token, processes=processes)
+        mongo.dump_collection_to_file(
+            f"users-{strip_protocol(b.config.source_host)}", f"{b.app_path}/data/users.json")
     if not skip_groups:
         groups = GroupsClient()
-        groups.retrieve_group_info(b.config.source_host, b.config.source_token, processes=processes)
-        mongo.dump_collection_to_file(f"groups-{strip_protocol(b.config.source_host)}", f"{b.app_path}/data/groups.json")
+        groups.retrieve_group_info(
+            b.config.source_host, b.config.source_token, processes=processes)
+        mongo.dump_collection_to_file(
+            f"groups-{strip_protocol(b.config.source_host)}", f"{b.app_path}/data/groups.json")
     if not skip_projects:
         projects = ProjectsClient()
         projects.retrieve_project_info(
             b.config.source_host, b.config.source_token, processes=processes)
-        mongo.dump_collection_to_file(f"projects-{strip_protocol(b.config.source_host)}", f"{b.app_path}/data/projects.json")
-
+        mongo.dump_collection_to_file(
+            f"projects-{strip_protocol(b.config.source_host)}", f"{b.app_path}/data/projects.json")
 
 
 def list_bitbucket_data(skip_users=False, skip_groups=False, skip_projects=False):
@@ -156,7 +160,7 @@ def write_empty_file(filename):
 
 
 def list_data(processes=None, partial=False, skip_users=False, skip_groups=False, skip_projects=False, skip_ci=False, src_instances=False):
-    src_type = b.config.source_type
+    src_type = b.config.source_type or "unknown"
     staged_files = ["staged_projects", "staged_groups", "staged_users"]
 
     if b.config.list_ci_source_config("jenkins_ci_source") and not skip_ci:
@@ -169,7 +173,8 @@ def list_data(processes=None, partial=False, skip_users=False, skip_groups=False
         list_teamcity_data()
         staged_files.append("teamcity_jobs")
 
-    b.log.info(f"Listing data from {src_type} source")
+    b.log.info(
+        f"Listing data from {src_type} source type - {b.config.source_host}")
     if src_type == "bitbucket server":
         list_bitbucket_data(skip_users=skip_users,
                             skip_projects=skip_projects, skip_groups=skip_groups)
@@ -180,7 +185,8 @@ def list_data(processes=None, partial=False, skip_users=False, skip_groups=False
         list_github_data(processes=processes, partial=partial, skip_users=skip_users,
                          skip_projects=skip_projects, skip_groups=skip_groups, src_instances=src_instances)
     else:
-        b.log.warning(f"Cannot list from source {src_type}")
+        b.log.warning(
+            f"Cannot list from {src_type} source type - {b.config.source_host}")
         sys.exit()
 
     for f in staged_files:
