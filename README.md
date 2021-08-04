@@ -152,7 +152,7 @@ npm install
 
 ### Installing and configuring Congregate (end-user)
 
-From **docker**:
+#### From docker
 
 1. Pull the docker image from the container registry
     * For official versioned releases, `docker pull registry.gitlab.com/gitlab-com/customer-success/professional-services-group/global-practice-development/migration/congregate:<version>`
@@ -181,7 +181,7 @@ docker run \
 ./congregate.sh list
 ```
 
-Additional settings (for private networks behind proxy):
+##### Additional settings (for private networks behind proxy)
 
 * For `docker run`:
   * `-e http_proxy="$http_proxy" -e https_proxy="$https_proxy" -e no_proxy="$no_proxy" -e HTTP_PROXY="$http_proxy" -e HTTPS_PROXY="$https_proxy"`
@@ -201,7 +201,7 @@ docker exec -it <container-id> /bin/bash
 
 `. dev/bin/env`
 
-From **tar.gz**:
+#### From tar.gz
 
 1. Navigate to the project's *Repository -> Files* page
 2. Download the latest tar.gz
@@ -213,7 +213,7 @@ export CONGREGATE_PATH=<path_to_congregate>
 cp congregate.sh /usr/local/bin
 ```
 
-From **source**:
+#### From source
 
 1. Clone this repo
 2. Run the following commands:

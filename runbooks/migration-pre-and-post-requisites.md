@@ -153,14 +153,20 @@ Due to time constraints, ASA costs and scaling limitations it may be necessary t
 * [ ] If required archive all projects on source that have been migrated
 * [ ] If applicable [disable maintenance mode](https://docs.gitlab.com/ee/administration/maintenance_mode/index.html#disable-maintenance-mode) on source
 
-### VM Deprovisioning
+### De-provisioning
 
-* [ ] (gitlab.com) Once the migration is complete follow the [PS Deprovisioning Process](https://gitlab.com/gitlab-com/business-technology/team-member-enablement/runbooks/-/blob/master/it_operations/GitLab_com_environment_(PRD,DEV,STG)access_requests.md#deprovisioning-process) for GitLab.com environments Access Request
+#### Migration VM
+
+* [ ] (Optional) Backup group and project export archive files
 * [ ] (gitlab.com) Deprovision migration VM by informing Infra in the issue ([VM Requirements](#VM)) commenting that the migration is complete
   * [ ] Create an MR, linking to the issue and comment, and delete the `import-<issue_no>.tf` file
   * [ ] Assign an SRE to review, approve and merge the MR
-* [ ] Strip dedicated migration user on destination of Admin rights, PATs and update sign-in credentials
-* [ ] (Optional) Backup group and project export archive files
+
+#### Admin account
+
+* [ ] (gitlab.com) Once the migration is complete follow the [PS De-provisioning Process](https://gitlab.com/gitlab-com/business-technology/team-member-enablement/runbooks/-/blob/master/it_operations/GitLab_com_environment_(PRD,DEV,STG)access_requests.md#deprovisioning-process) for GitLab.com environments Access Request
+* [ ] Revoke/remove PATs used for the migration
+* [ ] Revoke Admin rights
 
 ### Instance checks
 
