@@ -227,7 +227,13 @@ sudo gitlab-rails console
 => "PG::QueryCanceled: ERROR:  canceling statement due to statement timeout\n"
 
 # Trim CI pipelines
-[ gprd ] production> p.ci_pipelines.find_each(batch_size: <number_of_pipelines>, &:destroy)
+[ gprd ] production> p.ci_pipelines.find_each(start: <oldest_pipeline_id>, finish: <latest_pipeline_id>, batch_size: <no_of_pipelines_to_remove_per_batch>, &:destroy)
+=> nil
+[ gprd ] production> p.ci_pipelines.count
+=> <no_of_pipelines_left>
+
+# Remove all pipelines
+[ gprd ] production> p.ci_pipelines.find_each(batch_size: <no_of_pipelines_to_remove_per_batch>, &:destroy)
 => nil
 [ gprd ] production> p.ci_pipelines.count
 => 0
