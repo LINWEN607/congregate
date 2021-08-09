@@ -125,6 +125,14 @@ Copy the following data and add subsequent rows for single group migration
 * [ ] Stage groups or projects based on the wave schedule in the UI
   * [ ] If staging by group make sure to stage all sub-groups as well
 * [ ] Copy all staged data to `/opt/congregate/data/waves/wave_<insert_wave_number>/`
+* [ ] Make sure the group(s) you are migrating to have shared runners enabled
+  * This is to avoid a [group import bug](https://gitlab.com/gitlab-org/gitlab/-/issues/276930)
+  * Originally avoided by fixing [another bug](https://gitlab.com/gitlab-org/gitlab/-/issues/290291)
+* [ ] On the destination instance set the `Default deletion adjourned period` (*Admin Panel -> Settings -> General -> Visibility and access controls*) to 0
+  * This is required in order to have Congregate immediately delete projects that fail to import or import with a failed status
+* [ ] If importing groups (with projects) to root make sure the instance `Default project visibility` (*Admin -> Settings -> General -> Visibility and access controls*) is set to `Private`
+  * This is because groups and therefore projects are imported as `private` by default and this conflicts with a higher instance `Default project visibility`
+  * For more details see [Group Import Important Notes](https://docs.gitlab.com/ee/user/group/settings/import_export.html#important-notes)
 * [ ] Notify in the internal Slack channel dedicated to this migration you have completed preparation for the wave
 
 #### Dry run groups and projects
@@ -142,8 +150,6 @@ Copy the following data and add subsequent rows for single group migration
 
 * [ ] Notify in the internal Slack channel dedicated to this migration you are starting the migration wave
 * [ ] Notify the customer in the customer-facing Slack channel you are starting the migration wave
-* [ ] On the destination instance set the `Default deletion adjourned period` (*Admin Panel -> Settings -> General -> Visibility and access controls*) to 0
-  * This is required in order to have Congregate immediately delete projects that fail to import or import with a failed status
 * [ ] Run the following command `nohup ./congregate.sh migrate --skip-users --commit > data/waves/wave_<insert_wave_number>/wave<insert-wave-here>.log 2>&1 &`
   * [ ] If only sub-groups are staged make sure to add `--subgroups-only`
 * [ ] Monitor the wave periodically by running `tail -f data/waves/wave_<insert_wave_number>/wave<insert-wave-here>.log`

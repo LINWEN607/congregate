@@ -142,6 +142,13 @@ Copy the following data and add subsequent rows for single group migration
 * [ ] Create a directory called "waves" in `/opt/congregate/data` in the container if it doesn't already exist
 * [ ] Create a directory called `wave_<insert_wave_number>` in `/opt/congregate/data/waves` if it doesn't already exist
 * [ ] Copy all staged data to `/opt/congregate/data/waves/wave_<insert_wave_number>/`
+* [ ] Make sure the group(s) you are migrating to have shared runners enabled
+  * This is to avoid a [group import bug](https://gitlab.com/gitlab-org/gitlab/-/issues/276930)
+  * Originally avoided by fixing [another bug](https://gitlab.com/gitlab-org/gitlab/-/issues/290291)
+* [ ] On the destination parent group uncheck `Enable delayed project deletion` (*Settings -> General -> Permissions, LFS, 2FA*)
+  * This is required in order to have Congregate immediately delete projects that fail to import or import with a failed status
+* [ ] If `Restrict membership by email domain` is configured for the top-level group (*Settings -> General -> Permissions, LFS, 2FA*) make sure to add the Admin user's `gitlab.com` email domain
+  * This is to avoid group and project import failures
 * [ ] Notify in the internal Slack channel dedicated to this migration you have completed preparation for the wave
 
 #### Dry run groups and projects
