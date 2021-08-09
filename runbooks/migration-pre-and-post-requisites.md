@@ -188,7 +188,8 @@ Certain GitLab features are migrated but not adapted to the destination instance
   * badges
   * project and group CI/CD variables are migrated, but values that are source specific, e.g. project url or hostname, should be updated to the new values
   * secrets (tokens) that may be present in certain features, e.g. hooks, are not exposed in the API response and therefore not migrated. Those individual features have to be newly created
-* [ ] Update project shared groups (unless the entire group structure is migrated first)
+* [ ] Update project and group shared groups (unless the entire group structure is migrated first)
+  * [ ] (gitlab.com) Update direct group and project membership to allow specific user and group MR approval rules in projects
 * [ ] Update instance and group level (custom) project templates
 * [ ] Update and/or create any features that are not migrated (based on migration features matrix)
 

@@ -175,9 +175,19 @@ Copy the following data and add subsequent rows for single group migration
     * [ ] Repeat [migration](#migrate-group-and-projects)
     * [ ] Once complete, and in case of consistently missing info, discuss and request verbal or written sign-off from customer
       * [ ] Otherwise [rollback](#rollback) the entire wave and reschedule
-* [ ] Inspect [Kibana](https://log.gprd.gitlab.net/app/discover) logs for failed project membership
+* [ ] Inspect [Kibana](https://log.gprd.gitlab.net/app/discover) logs for failed group and project membership
   * Query `pubsub-sidekiq-inf-gprd*` for `json.message: "[Project/Group Import] Member addition failed" AND json.root_namespace_id: <parent-group-id>`
   * Adjust the time frame to the migration period
+  * (optional) Add additional fields to the query .e.g:
+    * `json.message`
+    * `json.importable_type`
+    * `json.user_id`
+    * `json.access_level`
+* [ ] Inspect [Kibana](https://log.gprd.gitlab.net/app/discover) logs for failed group and project imports
+  * Query `pubsub-sidekiq-inf-gprd*` for `json.class: "RepositoryImportWorker" AND json.meta.remote_ip: "<migration-vm-ip>"`
+    * (optional) Add fields `json.meta.project` and `json.job_status`
+  * Query `pubsub-sidekiq-inf-gprd*` for `json.class: "GroupImportWorker" AND json.meta.remote_ip: "<migration-vm-ip>"`
+    * (optional) Add field `json.job_status`
 
 ### Post Migration of Failed Groups and Projects
 
