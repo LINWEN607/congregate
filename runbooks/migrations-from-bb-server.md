@@ -29,8 +29,10 @@ This runbook covers the process of migrating a wave of **groups and projects** f
     For example:
 
     * @leopardm: PSE conducting the migration
-    * @lyle: Support Manager with Rails Console access
-    * @blutz1: Security Manager (Security Incident Response Team - SIRT) in the loop in case anything goes wrong
+    * (gitlab.com) @blutz1: Security Manager (Security Incident Response Team - SIRT) in the loop in case anything goes wrong
+    * (gitlab.com) @gitlab-com/gl-security/security-operations/sirt: SIRT engineers responding to gitlab.com alerts e.g. Admin user impersonations
+    * (gitlab.com) @gitlab-com/gl-infra/managers: Infra managers that are aware of the migration and assigning the SRE during the migration period
+    * (gitlab.com) @lyle: Support Manager with Rails Console access
 -->
 
 ## BitBucket Projects (GitLab Groups) to migrate
