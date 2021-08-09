@@ -81,10 +81,9 @@ Copy the following data and add subsequent rows for single group migration
 * [ ] Check the status of **gitlab.com** (https://status.gitlab.com/)
   * [ ] Confirm you can reach the UI of the instance
   * [ ] Confirm you can reach the API through cURL or a REST client
-  * [ ] Confirm the import (Admin) user is a member of the SAML+SSO enforced group
-  * [ ] If not and late notice, as a workaround:
-    * [ ] Discuss with customer whether it's possible to disable SSO enforced during user migration OR
-    * [ ] Reach out to #support_gitlab-com to spoof adding the user to the SAML+SSO enforced group
+  * [ ] Confirm the import (Admin) user has a spoofed SAML link in *Profile -> Preferences -> Account -> Social sign-in*
+    * It has to be spoofed as we do not want the customer provisioning a gitlab.com Admin account
+    * See GitLab migration prerequisites for details
 * [ ] Create a directory called "waves" in `/opt/congregate/data` in the container if it doesn't already exist
 * [ ] Create a directory called `user_wave` in `/opt/congregate/data/waves` if it doesn't already exist
 * [ ] Run `nohup ./congregate.sh list > data/waves/listing.log 2>&1 &` at the beginning of the migration blackout period
@@ -130,6 +129,8 @@ Copy the following data and add subsequent rows for single group migration
 #### Prepare groups and projects
 
 * [ ] Review migration schedule (see customer migration schedule)
+* [ ] Confirm all users have logged in and linked their SAML accounts (if applicable)
+  * See Customer migration prerequisites for details
 * [ ] Check the status of **gitlab.com** (https://status.gitlab.com/)
   * [ ] Confirm you can reach the UI of the instance
   * [ ] Confirm you can reach the API through cURL or a REST client
@@ -153,7 +154,7 @@ Copy the following data and add subsequent rows for single group migration
 * [ ] Copy `data/results/dry_run_*_migration.json` to `/opt/congregate/data/waves/wave_<insert_wave_number>/` and attach to this issue
 * [ ] Notify in the internal Slack channel dedicated to this migration you have completed dry run for the wave
 
-#### Migrate group and projects
+#### Migrate groups and projects
 
 * [ ] Notify in the internal Slack channel dedicated to this migration you are starting the migration wave
 * [ ] Notify the customer in the customer-facing Slack channel you are starting the migration wave
@@ -174,6 +175,9 @@ Copy the following data and add subsequent rows for single group migration
     * [ ] Repeat [migration](#migrate-group-and-projects)
     * [ ] Once complete, and in case of consistently missing info, discuss and request verbal or written sign-off from customer
       * [ ] Otherwise [rollback](#rollback) the entire wave and reschedule
+* [ ] Inspect [Kibana](https://log.gprd.gitlab.net/app/discover) logs for failed project membership
+  * Query `pubsub-sidekiq-inf-gprd*` for `json.message: "[Project/Group Import] Member addition failed" AND json.root_namespace_id: <parent-group-id>`
+  * Adjust the time frame to the migration period
 
 ### Post Migration of Failed Groups and Projects
 

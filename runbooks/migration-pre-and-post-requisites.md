@@ -70,16 +70,21 @@ This runbook covers the process of preparing and cleaning up after a migration f
   * [ ] If done via Rails console, schedule a meeting between lead PSE and source instance Admin to walk through the process
     * For exact steps see **Trim or remove project CI pipelines** in `migrations-to-*.md` runbook
 * [ ] Create a user-group-project migration schedule (waves).
-  * All users are migrated first.
-  * Consider the option of migrating all groups (w/ sub-groups, w/o projects) next.
+  * [ ] All users are migrated first.
+  * [ ] (gitlab.com) If using a SAML+SSO identity provider (Okta, Azure, etc.) make sure:
+    * All `active` users are provisioned in the identity provider
+    * All users are logged in to gitlab.com
+    * All users have linked their GitLab and SAML accounts by logging in via the identity provider's GitLab SAML app
+
+    **NOTE:** Properly mapped contributions depend on project membership. If a user is added as a project member it gets mapped and is taken into consideration when doing the contribution authorship mapping.
+  * [ ] Consider the option of migrating all groups (w/ sub-groups, w/o projects) next.
     * (gitlab.com) [Notes](https://docs.gitlab.com/ee/api/group_import_export.html#important-notes) around Group import/export when using the GitLab Group Export/Import
     * Consult with your engineer around restrictions for group movement and renaming, as it is dependent on your source system and migration requirements
   * Projects are migrated in waves (with their parent groups if the previous was not done).
   * (gitlab.com) GitLab support requires a 5-day lead on migrations to gitlab.com. Consider this when determining wave schedule.
 * [ ] Create dedicated migration (Admin) user accounts on the source and destination instance.
 * [ ] Configure LDAP/SAML (in [identity provider](https://docs.gitlab.com/ee/administration/auth/)) for the Admin user account on the destination instance (as for other users).
-  * This is required for the user-group-project mapping to succeed.
-  * (gitlab.com) Add user to SAML+SSO identity provider on destination parent group.
+  * [ ] Add user to LDAP identity provider on destination parent group. This is required for the user-group-project mapping to succeed.
 * [ ] Configure source and destination instance (if applicable) rate limits ([configurable as of 13.2](https://docs.gitlab.com/ee/api/README.html#rate-limits))
   * This may also be done temporarily, for the duration of the migration wave
 * [ ] Configure destination instance (if applicable) [immediate group and project deletion permissions](https://about.gitlab.com/handbook/support/workflows/hard_delete_project.html). They are required in case of a rollback scenario, where all staged groups and projects need to be removed on the destination instance.
