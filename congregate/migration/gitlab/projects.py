@@ -91,14 +91,13 @@ class ProjectsClient(BaseClass):
     def add_shared_groups(self, new_id, path, shared_with_groups):
         """Adds the list of groups we share the project with."""
         try:
-            self.log.info(
-                "Migrating project {} shared with groups".format(path))
+            self.log.info(f"Migrating project {path} shared with groups")
             for group in shared_with_groups:
                 dst_full_path = get_full_path_with_parent_namespace(
                     group["group_full_path"])
                 new_gid = self.groups.find_group_id_by_path(
                     self.config.destination_host, self.config.destination_token, dst_full_path)
-                if new_gid is not None:
+                if new_gid:
                     data = {
                         "group_access": group["group_access_level"],
                         "group_id": new_gid,
@@ -108,14 +107,17 @@ class ProjectsClient(BaseClass):
                         self.config.destination_host, self.config.destination_token, new_id, data)
                     if r.status_code == 201:
                         self.log.info(
-                            "Shared project {0} with group {1}".format(path, dst_full_path))
+                            f"Shared project {path} with group {dst_full_path}")
                     else:
-                        self.log.error("Failed to share project {0} with group {1} due to:\n{2}".format(
-                            path, dst_full_path, r.content))
+                        self.log.error(
+                            f"Failed to share project {path} with group {dst_full_path} due to:\n{r.content}")
+                else:
+                    self.log.error(
+                        f"Failed to find group {dst_full_path} on destination using new ID {new_gid}")
             return True
         except RequestException as re:
-            self.log.error("Failed to POST shared group {0} to project {1}, with error:\n{2}".format(
-                dst_full_path, path, re))
+            self.log.error(
+                f"Failed to POST shared group {dst_full_path} to project {path}, with error:\n{re}")
             return False
 
     def find_project_by_path(self, host, token, dst_path_with_namespace):
