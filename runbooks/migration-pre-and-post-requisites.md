@@ -36,21 +36,18 @@ This runbook covers the process of preparing and cleaning up after a migration f
 
     **NOTE:** Assignee group may change over time
   * [ ] (Optional) Post issue in Slack's [**#it_help**](https://gitlab.slack.com/archives/CK4EQH50E) channel
-* [ ] Configure LDAP/SAML (in [identity provider](https://docs.gitlab.com/ee/administration/auth/)) for the Admin user account on the destination instance (as for other users).
-  * This is required for the user-group-project mapping to succeed
-  * (gitlab.com) Add user to SAML+SSO identity provider destination parent group
-    * Another way to add SAML to the migration user profile, that also avoids provisioning a GitLab admin account in an external identity provider, is to spoof the SAML identity. `PUT` the following json body to `https://<hostname>/api/v4/users/<id>` to modify the Admin user:
+* (gitlab.com) To avoid provisioning the (Admin) export/import user in an external identity provider, spoof the SAML identity. `PUT` the following json body to `https://<hostname>/api/v4/users/<id>` to modify the Admin user:
 
-      ```json
-      {
-        "provider": "group_saml",
-        "extern_uid": "<uid>",
-        "group_id_for_saml": <group_id>
-      }
-      ```
+    ```json
+    {
+      "provider": "group_saml",
+      "extern_uid": "<random_uid>",
+      "group_id_for_saml": <parent_group_id>
+    }
+    ```
 
-* [ ] Create a one-off PAT for the Admin user account on the source instance.
-  * The PAT should have an expiry date of the estimated last day (wave) of the migration.
+* [ ] Create one-off Personal Access Tokens (PATs) for the Admin user account on the source and destination instance.
+  * The PATs should have an expiry date of the estimated last day (wave) of the migration.
 * [ ] (gitlab.com) Generate awareness in Support/SRE/Infra teams and identify specific individuals (e.g. with Rails console access) to take tickets from customers during migration. Highlight these people/groups in the migration wave issues.
   * **NOTE**: These issues **must** be created [5 days in advance](https://about.gitlab.com/handbook/support/workflows/importing_projects.html#import-scheduled) of executing the migration wave.
 
@@ -69,22 +66,23 @@ This runbook covers the process of preparing and cleaning up after a migration f
 * [ ] Check whether legacy projects, with 1k+ issues/MRs and/or 10k+ pipelines, could be slimmed down for a more seamless export/import
   * [ ] If done via Rails console, schedule a meeting between lead PSE and source instance Admin to walk through the process
     * For exact steps see **Trim or remove project CI pipelines** in `migrations-to-*.md` runbook
-* [ ] Create a user-group-project migration schedule (waves).
-  * [ ] All users are migrated first.
-  * [ ] (gitlab.com) If using a SAML+SSO identity provider (Okta, Azure, etc.) make sure:
-    * All `active` users are provisioned in the identity provider
-    * All users are logged in to gitlab.com
-    * All users have linked their GitLab and SAML accounts by logging in via the identity provider's GitLab SAML app
-
-    **NOTE:** Properly mapped contributions depend on project membership. If a user is added as a project member it gets mapped and is taken into consideration when doing the contribution authorship mapping.
-  * [ ] Consider the option of migrating all groups (w/ sub-groups, w/o projects) next.
+* [ ] Create a user-group-project migration schedule (waves)
+  * [ ] All users are migrated first
+  * [ ] Entire group structure next
     * (gitlab.com) [Notes](https://docs.gitlab.com/ee/api/group_import_export.html#important-notes) around Group import/export when using the GitLab Group Export/Import
     * Consult with your engineer around restrictions for group movement and renaming, as it is dependent on your source system and migration requirements
-  * Projects are migrated in waves (with their parent groups if the previous was not done).
-  * (gitlab.com) GitLab support requires a 5-day lead on migrations to gitlab.com. Consider this when determining wave schedule.
-* [ ] Create dedicated migration (Admin) user accounts on the source and destination instance.
-* [ ] Configure LDAP/SAML (in [identity provider](https://docs.gitlab.com/ee/administration/auth/)) for the Admin user account on the destination instance (as for other users).
-  * [ ] Add user to LDAP identity provider on destination parent group. This is required for the user-group-project mapping to succeed.
+  * Projects are migrated in waves (with their parent groups if the previous was not done)
+  * (gitlab.com) GitLab support requires a 5-day lead on migrations to gitlab.com. Consider this when determining wave schedule
+* [ ] If needed create dedicated (Admin) export/import user accounts on the source and destination instance.
+  * Otherwise use any existing Admin user accounts
+* [ ] Make sure the (Admin) export/import user(s) (may be different) are provisioned in your source and destination LDAP/SAML [identity provider](https://docs.gitlab.com/ee/administration/auth/), as other users
+  * This is to avoid any permission issues on export/import
+* [ ] (gitlab.com) If using a SAML+SSO identity provider (Okta, Azure, etc.) on the destination instance make sure:
+  * All `active` users are provisioned in the identity provider using the same primary email as on the source instance
+  * All users are logged in to gitlab.com
+  * All users have linked their GitLab and SAML accounts by logging in via the identity provider's GitLab SAML app
+
+  **NOTE:** Properly mapped contributions depend on group/project membership. If a user is added as a group/project member it gets mapped and is taken into consideration when doing the contribution (GitLab features) mapping.
 * [ ] Configure source and destination instance (if applicable) rate limits ([configurable as of 13.2](https://docs.gitlab.com/ee/api/README.html#rate-limits))
   * This may also be done temporarily, for the duration of the migration wave
 * [ ] Configure destination instance (if applicable) [immediate group and project deletion permissions](https://about.gitlab.com/handbook/support/workflows/hard_delete_project.html). They are required in case of a rollback scenario, where all staged groups and projects need to be removed on the destination instance.
