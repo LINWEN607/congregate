@@ -1,4 +1,4 @@
-## Group, Project, and User Conflict Resolution
+# Group, Project, and User Conflict Resolution
 
 Occasionally, during the migration process, project and user conflicts will arise.
 

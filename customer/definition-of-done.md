@@ -5,6 +5,7 @@
 This document provides standard definition of done and acceptance criteria for the migration effort.
 
 ### Migration PS Project Definition of Done
+
 The customer agrees that the PS project has been completed when these criteria are satisfied.  This does not include any customer-specific actions that need to be taken post migration.
 
 - All groups, projects, and users, up to the number defined in the SOW, and identified by the customer during the discovery phase, have been migrated to the destination instance
@@ -17,6 +18,7 @@ The customer agrees that the PS project has been completed when these criteria a
 - GitLab has provided the completed Migration Plan document that details the plan and execution of the migration activities
 
 #### Individual Project Migration Acceptance Criteria
+
 The portfolio stakeholders agree that the automated migration of data for a project has been completed when these criteria are satisfied.
 
 - All project data that should be migrated has been (as identified in the migration)
@@ -25,4 +27,3 @@ The portfolio stakeholders agree that the automated migration of data for a proj
 - If a project conflict occurred, it was resolved as defined in the project resolution document
 - User permissions have been validated in the destination instance
 - Information has been provided to the project team regarding next steps for making any additional adjustments to restore their project to a fully working state
-
