@@ -23,10 +23,11 @@ js-packages
 congregate/tests/cli/data/congregate.conf
 congregate.egg-info/*
 dist/*
-runbooks/*.html
 docker/bitbucket/bitbucket.properties-populated
 test-data
 congregate/tests/data/repos
+customer/*.html
+runbooks/*.html
 
 node_modules
 /dist
