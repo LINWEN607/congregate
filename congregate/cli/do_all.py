@@ -42,7 +42,7 @@ def do_all_users(dry_run=True):
     )
     migrate.migrate()
 
-    # Lookup not found users AFTER - NO dry run
+    # Lookup NOT found users AFTER - NO dry run
     users.search_for_staged_users()
 
 

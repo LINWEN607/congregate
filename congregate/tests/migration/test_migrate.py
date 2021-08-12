@@ -1,11 +1,12 @@
-import base64
 import unittest
+from unittest.mock import patch
 from pytest import mark
-from unittest.mock import patch, mock_open, PropertyMock, MagicMock
 from congregate.migration.migrate import MigrateClient
 # from congregate.tests.mockapi.bitbucket.repos import MockReposApi
 from congregate.migration.gitlab.external_import import ImportClient
 from congregate.tests.mockapi.gitlab.projects import MockProjectsApi
+
+
 @mark.unit_test
 class MigrateClientTests(unittest.TestCase):
     def setUp(self):
@@ -21,7 +22,7 @@ class MigrateClientTests(unittest.TestCase):
         result = self.mc.import_bitbucket_project(project)
         result = dict(result)
         keys = result.keys()
-        self.assertIn(            
+        self.assertIn(
             "Failed to trigger import with error: This came from raise_error!",
             result.get(list(keys)[0]).get("response").get("error")
         )

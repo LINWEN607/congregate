@@ -119,7 +119,7 @@ Commands:
     rollback                                Remove staged users/groups/projects on destination.
     ui                                      Deploy UI to port 8000.
     do-all*                                 Configure system, retrieve all projects, users, and groups, stage all information, and commence migration.
-    search-for-staged-users                 Search for staged users on destination based on email
+    search-for-staged-users                 Search for staged users on destination based on primary email
     update-aws-creds                        Run awscli commands based on the keys stored in the config. Useful for docker updates.
     add-users-to-parent-group               If a parent group is set, all staged users will be added to the parent group with guest permissions.
     remove-inactive-users                   Remove all inactive users from staged projects and groups.

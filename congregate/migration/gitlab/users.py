@@ -1,5 +1,6 @@
 from os import path
 from requests.exceptions import RequestException
+from pandas import DataFrame, Series, set_option
 
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.misc_utils import get_dry_log, get_timedelta, \
@@ -355,38 +356,72 @@ class UsersClient(BaseClass):
 
     def search_for_staged_users(self):
         """
-        Read the information in staged_users.json and dump to new_users.json and users_not_found.json. Does the
-        search based on the email address and *not* username
+        Read the information in staged_users.json and output users that are:
+            - found
+                - NOT logged in
+                - W/O identities
+                - blocked
+            - NOT found
+            - duplicate (emails)
+        Does the search based on the primary email address and *not* username
         :return:
         """
         staged_users = get_staged_users()
-        new_users = []
+        users_found = []
         users_not_found = {}
-        # Duplicate emails
         duplicate_users = [u for u in staged_users if [s["email"]
                                                        for s in staged_users].count(u["email"]) > 1]
         for user in staged_users:
-            email = user.get("email", None)
-            state = user.get("state", None)
+            email = user.get("email")
+            state = user.get("state")
             new_user = find_user_by_email_comparison_without_id(email)
             if new_user:
-                new_users.append({
-                    "id": new_user.get("id", None),
-                    "email": new_user.get("email", None),
-                    "state": new_user.get("state", None)
+                users_found.append({
+                    "id": new_user.get("id"),
+                    "email": new_user.get("email"),
+                    "state": new_user.get("state"),
+                    "last_sign_in_at": new_user.get("last_sign_in_at"),
+                    "identities": new_user.get("identities")
                 })
             else:
-                self.log.warning(
-                    "Could not find user by email {0}. User should have been already migrated".format(email))
-                users_not_found[user.get("id", None)] = {
+                self.log.warning(f"Could NOT find user by email {email}")
+                users_not_found[user.get("id")] = {
                     "email": email, "state": state}
-        self.log.info("Users found ({0}):\n{1}".format(
-            len(new_users), "\n".join(json_pretty(u) for u in new_users)))
-        self.log.info("Users NOT found ({0}):\n{1}".format(
-            len(users_not_found), json_pretty(users_not_found)))
-        self.log.info("Duplicate users ({0}):\n{1}".format(
-            len(duplicate_users), json_pretty(duplicate_users)))
-        return users_not_found, new_users
+        no_login = [u.get("email")
+                    for u in users_found if not u.get("last_sign_in_at")]
+        no_identities = [u.get("email")
+                         for u in users_found if not u.get("identities")]
+        blocked = [u.get("email")
+                   for u in users_found if u.get("state") == "blocked"]
+        found = f"Found ({len(users_found)})"
+        no_log = f"NOT logged in ({len(no_login)})"
+        wo_ids = f"W/O identities ({len(no_identities)})"
+        blkd = f"Blocked ({len(blocked)})"
+        not_found = f"NOT found ({len(users_not_found)})"
+        dupe = f"Duplicate ({len(duplicate_users)})"
+        self.log.debug(f"""
+            {found}:\n{json_pretty(users_found)}
+            {no_log}:\n{json_pretty(no_login)}
+            {wo_ids}:\n{json_pretty(no_identities)}
+            {blkd}:\n{json_pretty(blocked)}
+            {not_found}:\n{json_pretty(users_not_found)}
+            {dupe}:\n{json_pretty(duplicate_users)}
+        """)
+        d = {
+            found: Series([u.get("email") for u in users_found]),
+            no_log: Series(no_login),
+            wo_ids: Series(no_identities),
+            blkd: Series(blocked),
+            not_found: Series([u.get("email") for u in users_not_found]),
+            dupe: Series([u.get("email") for u in duplicate_users])
+        }
+        set_option('display.max_rows', None)
+        set_option('display.max_columns', None)
+        set_option('display.width', None)
+        set_option('display.max_colwidth', None)
+        self.log.info(
+            f"{self.config.destination_host} user stats:\n{DataFrame(d)}")
+        return users_not_found, users_found
 
     def handle_users_not_found(self, data, users, keep=True):
         """
