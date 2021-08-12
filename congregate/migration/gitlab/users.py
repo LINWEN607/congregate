@@ -354,7 +354,7 @@ class UsersClient(BaseClass):
                 f"{self.app_path}/data/{data}.json", staged, log=self.log)
         return staged
 
-    def search_for_staged_users(self):
+    def search_for_staged_users(self, table=False):
         """
         Read the information in staged_users.json and output users that are:
             - found
@@ -399,7 +399,7 @@ class UsersClient(BaseClass):
         blkd = f"Blocked ({len(blocked)})"
         not_found = f"NOT found ({len(users_not_found)})"
         dupe = f"Duplicate ({len(duplicate_users)})"
-        self.log.debug(f"""
+        self.log.info(f"""
             {found}:\n{json_pretty(users_found)}
             {no_log}:\n{json_pretty(no_login)}
             {wo_ids}:\n{json_pretty(no_identities)}
@@ -407,20 +407,22 @@ class UsersClient(BaseClass):
             {not_found}:\n{json_pretty(users_not_found)}
             {dupe}:\n{json_pretty(duplicate_users)}
         """)
-        d = {
-            found: Series([u.get("email") for u in users_found]),
-            no_log: Series(no_login),
-            wo_ids: Series(no_identities),
-            blkd: Series(blocked),
-            not_found: Series([u.get("email") for u in users_not_found]),
-            dupe: Series([u.get("email") for u in duplicate_users])
-        }
-        set_option('display.max_rows', None)
-        set_option('display.max_columns', None)
-        set_option('display.width', None)
-        set_option('display.max_colwidth', None)
-        self.log.info(
-            f"{self.config.destination_host} user stats:\n{DataFrame(d)}")
+        if table:
+            d = {
+                found: Series([u.get("email") for u in users_found], dtype=str),
+                no_log: Series(no_login, dtype=str),
+                wo_ids: Series(no_identities, dtype=str),
+                blkd: Series(blocked, dtype=str),
+                not_found: Series([u.get("email") for u in users_not_found], dtype=str),
+                dupe: Series([u.get("email")
+                             for u in duplicate_users], dtype=str)
+            }
+            set_option('display.max_rows', None)
+            set_option('display.max_columns', None)
+            set_option('display.width', None)
+            set_option('display.max_colwidth', None)
+            self.log.info(
+                f"{self.config.destination_host} user stats:\n{DataFrame(d)}")
         return users_not_found, users_found
 
     def handle_users_not_found(self, data, users, keep=True):

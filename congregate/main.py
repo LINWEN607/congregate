@@ -17,7 +17,7 @@ Usage:
     congregate do-all [--commit]
     congregate do-all-users [--commit]
     congregate do-all-groups-and-projects [--commit]
-    congregate search-for-staged-users
+    congregate search-for-staged-users [--table]
     congregate update-aws-creds
     congregate add-users-to-parent-group [--commit]
     congregate remove-inactive-users [--commit] [--membership]
@@ -358,7 +358,7 @@ def main():
             if arguments["ui"]:
                 spin_up_ui(app_path, config.ui_port)
             if arguments["search-for-staged-users"]:
-                users.search_for_staged_users()
+                users.search_for_staged_users(table=arguments["--table"])
             if arguments["add-users-to-parent-group"]:
                 users.add_users_to_parent_group(dry_run=DRY_RUN)
             if arguments["update-aws-creds"]:
