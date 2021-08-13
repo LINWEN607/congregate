@@ -9,6 +9,8 @@ Users i.e. their entire accounts (with additional GitLab features, e.g. SSH and 
 
 Users are typically migrated in waves of 500 per day.  User accounts might not need to be migrated if LDAP or SSO has been implemented on the destination system.  In that case, however, additional GitLab attributes associated with the user account, such as SSH and GPG keys, will not be migrated and must be manually recreated.
 
+Usernames may not match source system usernames, depending on which SAML JIT/SCIM method was used to provision them. Usernames on SAML JIT/SCIM provisioned accounts can usually be modified to conform to naming standards, but should be done immediately after the provisioning.
+
 When migrating a group, it should be at the top level whenever possible.  With GitLab export/import functionality, a group and its subgroups and projects are migrated together and the group hierarchy and project alignment to those groups is retained. Breaking it apart over multiple waves complicates the process and is a time sink. GL->GL migrations are typically capped at 200 projects per wave.  So it is important to find a group with 200 or fewer projects to migrate.
 
 From an organization perspective, if you have groups set up in GitLab to consist of specific teams, then you are in good shape. Pick the teams you want to migrate in the order that best suits your schedule, and we can accommodate it. If your groups are scattered and the structure is all over the place, find what groups fit best within a wave by use case.

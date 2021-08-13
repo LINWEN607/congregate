@@ -20,11 +20,11 @@ This runbook covers the process of preparing and cleaning up after a migration f
 ### GitLab
 
 * [ ] Setup the migration VM that will host the Professional Services (PS) migration tool’s (Congregate) Docker container.
-  * [ ] It should have minimal port and IP access. See [VM Requirements](#VM) for more detail.
+  * It should have minimal port and IP access. See [VM Requirements](#vm) for more detail.
   * **NOTE:** If required the VM might be created, by the customer, within their environment. Make sure this approach is covered in the SoW.
 * [ ] (gitlab.com) Follow the [PS Provisioning Process](https://gitlab.com/gitlab-com/business-technology/team-member-enablement/runbooks/-/blob/master/it_operations/GitLab_com_environment_(PRD,DEV,STG)access_requests.md#provisioning-process) for GitLab.com environments Access Request (AR) i.e. Admin account.
-  * [ ] Create [new AR issue](https://gitlab.com/gitlab-com/team-member-epics/access-requests/-/issues) from the `Access_Change_Request` issue template
-  * [ ] Follow the description to add labels
+  * Create [new AR issue](https://gitlab.com/gitlab-com/team-member-epics/access-requests/-/issues) from the `Access_Change_Request` issue template
+  * Follow the description to add labels
     * `AR-Approval::Needs Manager Approval`
     * `AR::In Queue`
     * `admin-access`
@@ -32,10 +32,12 @@ This runbook covers the process of preparing and cleaning up after a migration f
     * `NewAccessRequest`
 
     **NOTE:** Labels may change over time
-  * [ ] Assign issue to IT i.e. `/assign @gitlab-com/business-technology/team-member-enablement` (former `@gitlab-com/business-ops/team-member-enablement`)
+  * Assign to Manager for approval
+  * Assign to IT i.e. `/assign @gitlab-com/business-technology/team-member-enablement` (former `@gitlab-com/business-ops/team-member-enablement`) for provisioning
+    * Wait for SIRT for approval
 
     **NOTE:** Assignee group may change over time
-  * [ ] (Optional) Post issue in Slack's [**#it_help**](https://gitlab.slack.com/archives/CK4EQH50E) channel
+  * (Optional) Post issue in Slack's [**#it_help**](https://gitlab.slack.com/archives/CK4EQH50E) channel
 * (gitlab.com) To avoid provisioning the (Admin) export/import user in an external identity provider, spoof the SAML identity. `PUT` the following json body to `https://<hostname>/api/v4/users/<id>` to modify the Admin user:
 
     ```json
@@ -109,12 +111,12 @@ This runbook covers the process of preparing and cleaning up after a migration f
     * 200GB storage - SSD
 -->
 
-* (gitlab.com) Create a [GitLab Infra team issue](https://gitlab.com/groups/gitlab-com/gl-infra/-/issues) with labels `~"team::Core-Infra"` and `~"AssistType::CloudInfra"` and `/assign @gitlab-com/gl-infra/managers` ([example](https://gitlab.com/gitlab-com/gl-infra/infrastructure/-/issues/12813))
-* (gitlab.com) Create an MR in [Transient Imports project](https://gitlab.com/gitlab-com/gl-infra/transient-imports) by following the `README`
+* [ ] (gitlab.com) Create a [GitLab Infra team issue](https://gitlab.com/groups/gitlab-com/gl-infra/-/issues) with labels `~"AssistingTeam::Infrastructure"` and `~"AssistType::CloudInfra"` and `/assign @gitlab-com/gl-infra/managers` ([example](https://gitlab.com/gitlab-com/gl-infra/infrastructure/-/issues/12813))
+* [ ] (gitlab.com) Create an MR in [Transient Imports project](https://gitlab.com/gitlab-com/gl-infra/transient-imports) by following the `README`
   * The lead PSE should add their gitlab.com `.pub` SSH key as `owner_key`
   * Make sure all PSEs running the migration have added their public IP to the `source_ranges_allowed` list (comma separated)
   * Assign yourself and comment `/assign_reviewer @gitlab-com/gl-infra/managers`
-* Once the MR is approved and merged retrieve the IP from the `apply` stage and job
+* [ ] Once the MR is approved and merged retrieve the IP from the `apply` stage and job
 
   ```text
   Apply complete! Resources: 1 added, 0 changed, 0 destroyed.
@@ -162,8 +164,8 @@ Due to time constraints, ASA costs and scaling limitations it may be necessary t
 
 * [ ] (Optional) Backup group and project export archive files
 * [ ] (gitlab.com) Deprovision migration VM by informing Infra in the issue ([VM Requirements](#VM)) commenting that the migration is complete
-  * [ ] Create an MR, linking to the issue and comment, and delete the `import-<issue_no>.tf` file
-  * [ ] Assign an SRE to review, approve and merge the MR
+  * Create an MR, linking to the issue and comment, and delete the `import-<issue_no>.tf` file
+  * Assign an SRE to review, approve and merge the MR
 
 #### Admin account
 
