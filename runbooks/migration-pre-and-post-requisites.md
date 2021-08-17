@@ -170,6 +170,12 @@ Due to time constraints, ASA costs and scaling limitations it may be necessary t
 #### Admin account
 
 * [ ] (gitlab.com) Once the migration is complete follow the [PS De-provisioning Process](https://gitlab.com/gitlab-com/business-technology/team-member-enablement/runbooks/-/blob/master/it_operations/GitLab_com_environment_(PRD,DEV,STG)access_requests.md#deprovisioning-process) for GitLab.com environments Access Request
+  * Remove 2FA and spoofed SAML
+  * If the user account is soft-deleted (w/o user contributions history) their GitLab features mapping will remain intact
+  * If the user account is hard-deleted (w/ user contributions history) their GitLab features will fallback to the `Ghost` user
+  * If the user account is blocked it will completely prevent access to the GitLab instance and [more](https://docs.gitlab.com/ee/user/admin_area/moderate_users.html#block-a-user)
+
+  **NOTE:** Only Support/IT can perform any of the 3 mentioned actions once Admin privileges are stripped from the user account
 * [ ] Revoke/remove PATs used for the migration
 * [ ] Revoke Admin rights
 
