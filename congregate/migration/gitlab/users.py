@@ -387,11 +387,11 @@ class UsersClient(BaseClass):
                 self.log.warning(f"Could NOT find user by email {email}")
                 users_not_found[user.get("id")] = {
                     "email": email, "state": state}
-        no_login = [u.get("email")
+        no_login = [(u.get("email"), u.get("state"))
                     for u in users_found if not u.get("last_sign_in_at")]
-        no_identities = [u.get("email")
+        no_identities = [(u.get("email"), u.get("state"))
                          for u in users_found if not u.get("identities")]
-        blocked = [u.get("email")
+        blocked = [(u.get("email"), u.get("state"))
                    for u in users_found if u.get("state") == "blocked"]
         found = f"Found ({len(users_found)})"
         no_log = f"NOT logged in ({len(no_login)})"
@@ -409,12 +409,12 @@ class UsersClient(BaseClass):
         """)
         if table:
             d = {
-                found: Series([u.get("email") for u in users_found], dtype=str),
+                found: Series([(u.get("email"), u.get("state")) for u in users_found], dtype=str),
                 no_log: Series(no_login, dtype=str),
                 wo_ids: Series(no_identities, dtype=str),
                 blkd: Series(blocked, dtype=str),
-                not_found: Series([u.get("email") for u in users_not_found], dtype=str),
-                dupe: Series([u.get("email")
+                not_found: Series([(u.get("email"), u.get("state")) for u in users_not_found.values()], dtype=str),
+                dupe: Series([(u.get("email"), u.get("state"))
                              for u in duplicate_users], dtype=str)
             }
             set_option('display.max_rows', None)
