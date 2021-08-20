@@ -89,14 +89,13 @@ class UsersClient(BaseClass):
                 token=self.config.destination_token
             ):
                 namespace_check_response.append(group)
-            if namespace_check_response:
-                for z in namespace_check_response:
-                    if is_error_message_present(z):
-                        self.log.warning(
-                            f"Is {username} a group namespace lookup failed on group\n{z}")
-                    elif z.get("path") and str(z["path"]).lower() == username.lower():
-                        # We found a match, so user=group namespace
-                        return True
+            for z in namespace_check_response:
+                if is_error_message_present(z):
+                    self.log.warning(
+                        f"Is {username} a group namespace lookup failed on group\n{z}")
+                elif z.get("path") and str(z["path"]).lower() == username.lower():
+                    # We found a match, so user=group namespace
+                    return True
             return False
         except Exception as e:
             self.log.error(
