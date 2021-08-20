@@ -39,6 +39,12 @@ RUN cd /opt/congregate && \
     git commit -m "Initial commit" && \
     pip install poetry
 
+# The alias takes precendence once you are in an interactive shell (-it)
+# in Docker, so this "fixes" the build steps afterwards, but doesn't seem to
+# break anything else
+RUN echo -e '#!/bin/bash\npython3.8 "$@"' > /usr/local/sbin/python && \
+    chmod +x /usr/local/sbin/python
+
 # RUN export PATH=$PATH:$HOME/.poetry/bin/poetry
 RUN poetry install
 
@@ -58,5 +64,7 @@ RUN rm -f /usr/bin/python3 && \
     ln -s python3.8 python3
 
 RUN poetry update
+
+RUN rm /usr/local/sbin/python
 
 EXPOSE 8000
