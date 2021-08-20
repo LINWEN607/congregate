@@ -21,7 +21,7 @@
     * 20 Gb of disk space (Docker mount volume)
   * Docker installed in order to pull the Congregate image from `registry.gitlab.com` and run a container
 * GitLab source instance numbers and sizes:
-  * Users (active, blocked, deactivated (:heavy_minus_sign:), external)
+  * Users (`active`, `blocked`, `ldap_blocked`, `deactivated`, `banned`)
   * Groups (top-level groups)
   * Projects (LFS, Container Registry Images) - may require breaking up into migration waves
 
@@ -32,11 +32,12 @@
         A(Source considerations) --> |Users| B{Type}
         B --> C(Blocked)
         B --> D(Deactivated)
-        B --> E(External)
-        A --> |Groups| F(Top-level)
-        A --> |Projects| G{Features}
-        G --> H(LFS)
-        G --> I(Container Registry Images)
+        B --> E(LDAP_Blocked)
+        B --> F(Banned)
+        A --> |Groups| G(Top-level)
+        A --> |Projects| H{Features}
+        H --> I(LFS)
+        H --> J(Container Registry Images)
 ```
 
 * GitLab destination instance considerations:
@@ -44,7 +45,7 @@
   * Append project suffix to duplicate project, with the same name (Default: `False`)?
   * Migrate to parent group i.e. new top-level group (parent group ID in **Group -> Settings -> General**)?
   * Append username suffix to avoid username collision (duplicate usernames for users NOT found by email)?
-  * Keep blocked / deactivated (:heavy_minus_sign:) users (Default: `False`)?
+  * Keep inactive (`blocked`, `ldap_blocked`, `deactivated`, `banned`) users (Default: `False`)?
   * Send user password reset link (via email) upon their creation (Default: `True`)?
   * Set newly created user password to a random value (Default: `False`)?
 

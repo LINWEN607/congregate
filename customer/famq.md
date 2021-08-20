@@ -108,8 +108,10 @@ Yes, if an Admin user does the import and on both source and destination:
 
 This user will permanently inherit group/project mentions and contributions of users that do not exist on the destination instance. The missing users were not migrated because on the source instance they are:
 
-* blocked
-* deactivated
+* `blocked`
+* `ldap_blocked`
+* `deactivated`
+* `banned`
 * removed (e.g. ex employee)
 * service accounts (gitlab.com requires user email validation)
 * etc.
