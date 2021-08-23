@@ -100,23 +100,34 @@ Please see [project import API notes](https://docs.gitlab.com/ee/user/project/se
 
 ## <a id="q4">Do user contributions and permissions propagate during migration?</a>
 
-Yes, if an Admin user does the import and on both source and destination:
+Yes, if an Admin user does the import, and on both source and destination the user:
 
-* the user account exists
-* the primary email is publicly exposed (via API)
-* the primary email is matching
+* is a member of the imported group/project
+* account exists and (primary) email is confirmed
+* primary email is publicly exposed (via API)
+* primary email is matching
+* (SSO enforced only) has their SAML account linked
 
-This user will permanently inherit group/project mentions and contributions of users that do not exist on the destination instance. The missing users were not migrated because on the source instance they are:
+Otherwise the (Admin) import user will permanently inherit group/project mentions and contributions of those users.
 
-* blocked
-* deactivated
+The inherited group/project mentions and contributions will show a supplementary comment of the original author (see [project import notes](https://docs.gitlab.com/ee/user/project/settings/import_export.html#important-notes) for more details). If you hard-delete the import user, they are inherited by the GitLab instance default (and public) *Ghost* user.
+
+Please see [project import API notes](https://docs.gitlab.com/ee/user/project/settings/import_export.html#important-notes) for more details.
+
+Users might be deliberately missing because on the source instance they are:
+
+* `blocked`
+* `deactivated`
+* `banned`
 * removed (e.g. ex employee)
 * service accounts (gitlab.com requires user email validation)
 * etc.
 
-The inherited group/project mentions and contributions will show a supplementary comment of the original author (see [project import notes](https://docs.gitlab.com/ee/user/project/settings/import_export.html#important-notes) for more details). If the import user were to be deleted, they would go to the GitLab instance default (and public) *Ghost* user.
+This doesn't mean we shouldn't migrate them, since `blocked`, `deactivated` and `banned` users do NOT consume a license seat. As long as the mapping prerequisites are met upon group/project import we can still preserve their mentions and contributions. It's then a matter of administration whether the accounts are:
 
-Please see [project import API notes](https://docs.gitlab.com/ee/user/project/settings/import_export.html#important-notes) for more details.
+* manually removed from the list of group/project members
+* removed by enforcing SSO
+* (Admin only) soft deleted from the instance
 
 ## Are GitLab Runners migrated and configured as part of the migration?
 
