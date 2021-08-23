@@ -3,7 +3,7 @@ from requests.exceptions import RequestException
 from pandas import DataFrame, Series, set_option
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import get_dry_log, get_timedelta, \
+from congregate.helpers.misc_utils import get_dry_log, get_timedelta, is_error_message_present, \
     safe_json_response, strip_protocol
 from congregate.helpers.json_utils import json_pretty, read_json_file_into_object, write_json_to_file
 from congregate.helpers.migrate_utils import get_staged_users, find_user_by_email_comparison_without_id
@@ -74,11 +74,11 @@ class UsersClient(BaseClass):
 
     def is_username_group_name(self, old_user):
         """
-        Check if a username exists as a group name
+        Check if a username exists as a group namespace
         :param old_user: The source user we are trying to create a new user for
-        :return: True if the username from old_user exists as a group name
-                None this will signifies "we don't know. do what you will."
-                Else False
+        :return: True if the username from old_user exists as a group namespace
+                None signifies "we don't know. do what you will."
+                else False
         """
         try:
             username = str(old_user["username"])
@@ -89,19 +89,17 @@ class UsersClient(BaseClass):
                 token=self.config.destination_token
             ):
                 namespace_check_response.append(group)
-            if namespace_check_response:
-                for z in namespace_check_response:
-                    if z.get("path", None) is not None and str(
-                            z["path"]).lower() == username.lower():
-                        # We found a match, so username is group name. Return
-                        # True
-                        return True
+            for z in namespace_check_response:
+                if is_error_message_present(z):
+                    self.log.warning(
+                        f"Is {username} a group namespace lookup failed on group\n{z}")
+                elif z.get("path") and str(z["path"]).lower() == username.lower():
+                    # We found a match, so user=group namespace
+                    return True
             return False
         except Exception as e:
             self.log.error(
-                "Error checking username is not group name for user {0} with error {1}."
-                    .format(old_user, e)
-            )
+                f"Error checking {username} is not group namespace for user {old_user} with error:\n{e}")
             return None
 
     def user_email_exists(self, old_user):

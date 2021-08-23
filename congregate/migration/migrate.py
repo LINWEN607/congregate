@@ -586,14 +586,17 @@ class MigrateClient(BaseClass):
     def import_bitbucket_project(self, project):
         members = project.pop("members")
         try:
-            result = self.ext_import.trigger_import_from_bb_server(project, dry_run=self.dry_run)
+            result = self.ext_import.trigger_import_from_bb_server(
+                project, dry_run=self.dry_run)
         except Exception as ex:
             project_path = project["path_with_namespace"]
-            project_key, _ = self.ext_import.get_project_repo_from_full_path(project_path)
-            target_namespace = f"{self.config.dstn_parent_group_path or ''}/{project_key}".strip("/")
+            project_key, _ = self.ext_import.get_project_repo_from_full_path(
+                project_path)
+            target_namespace = f"{self.config.dstn_parent_group_path or ''}/{project_key}".strip(
+                "/")
             result = self.ext_import.get_failed_result(target_namespace, data={
-                    "error": f"Failed to trigger import with error: {ex}\nProject information follows: {project}"
-                })
+                "error": f"Failed to trigger import with error: {ex}\nProject information follows: {project}"
+            })
             return result
         path_with_namespace = next(iter(result))
         result_response = result[path_with_namespace]["response"]
@@ -675,10 +678,10 @@ class MigrateClient(BaseClass):
             :return:
         """
         response = None
-        state = user.get("state", None).lower()
-        email = user.get("email", None)
-        name = user.get("name", None)
-        username = user.get("username", None)
+        state = user.get("state").lower()
+        email = user.get("email")
+        name = user.get("name")
+        username = user.get("username")
         new_user = {
             "email": email,
             "id": None
@@ -689,33 +692,31 @@ class MigrateClient(BaseClass):
         }
         try:
             if not self.only_post_migration_info:
-                if state == "active" or \
-                    (state in self.INACTIVE and self.config.keep_inactive_users) or \
-                        all(v is not None for v in [name, username, email]):
+                if (state == "active" or (state in self.INACTIVE and self.config.keep_inactive_users)) and all(v for v in [name, username, email]):
                     user_data = self.users.generate_user_data(user)
-                    self.log.info("{0}Attempting to create user {1}".format(
-                        misc_utils.get_dry_log(self.dry_run), email))
+                    self.log.info(
+                        f"{misc_utils.get_dry_log(self.dry_run)}Attempting to create user {email}")
                     response = self.users_api.create_user(
                         self.config.destination_host,
                         self.config.destination_token,
                         user_data
                     ) if not self.dry_run else None
                 else:
-                    self.log.info("SKIP: Not migrating {0} user:\n{1}".format(
-                        state, json_utils.json_pretty(user)))
+                    self.log.info(
+                        f"SKIP: Not migrating {state} user:\n{json_utils.json_pretty(user)}")
                 if response is not None:
                     # NOTE: Persist 'inactive' user state regardless of domain
                     # and creation status.
-                    if user_data.get("state", None).lower() in self.INACTIVE:
+                    if user_data.get("state").lower() in self.INACTIVE:
                         self.users.block_user(user_data)
                     new_user = self.users.handle_user_creation_status(
                         response, user_data)
             if not self.dry_run and self.config.source_type == "gitlab":
                 if new_user:
                     found_user = new_user if new_user.get(
-                        "id", None) is not None else mig_utils.find_user_by_email_comparison_without_id(email)
+                        "id") is not None else mig_utils.find_user_by_email_comparison_without_id(email)
                     new_user["id"] = found_user.get(
-                        "id", None) if found_user else None
+                        "id") if found_user else None
                     if found_user:
                         # Migrate SSH keys
                         self.keys.migrate_user_ssh_keys(old_user, new_user)
@@ -731,10 +732,9 @@ class MigrateClient(BaseClass):
                     }
         except RequestException as e:
             self.log.error(
-                "Failed to create user {0}, with error:\n{1}".format(user_data, e))
+                f"Failed to create user {user_data}, with error:\n{e}")
         except Exception as e:
-            self.log.error(
-                "Could not get response text/JSON. Error was {0}".format(e))
+            self.log.error(f"Could not get response text/JSON. Error was {e}")
             self.log.error(print_exc(e))
         return new_user
 

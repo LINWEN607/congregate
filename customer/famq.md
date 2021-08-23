@@ -117,6 +117,7 @@ Please see [project import API notes](https://docs.gitlab.com/ee/user/project/se
 Users might be deliberately missing because on the source instance they are:
 
 * `blocked`
+* `ldap_blocked`
 * `deactivated`
 * `banned`
 * removed (e.g. ex employee)
