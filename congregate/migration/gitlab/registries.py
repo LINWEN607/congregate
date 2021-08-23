@@ -7,6 +7,7 @@ from congregate.helpers.misc_utils import is_error_message_present, safe_json_re
 from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
 
+
 class RegistryClient(BaseClass):
     def __init__(self, reg_dry_run=False):
         self.users = UsersApi()
@@ -42,8 +43,8 @@ class RegistryClient(BaseClass):
         try:
             # Login to source registry
             src_client = self.__login_to_registry(
-                self.config.source_host, 
-                self.config.source_token, 
+                self.config.source_host,
+                self.config.source_token,
                 self.config.source_registry
             )
             dest_client = self.__login_to_registry(
@@ -69,7 +70,8 @@ class RegistryClient(BaseClass):
                 tags_response = self.projects_api.get_all_project_registry_repositories_tags(
                     old_id, repo["id"], self.config.source_host, self.config.source_token)
                 tags = iter(tags_response)
-                self.__walk_tags(tags, repo, src_client, dest_client, name, old_id)
+                self.__walk_tags(tags, repo, src_client,
+                                 dest_client, name, old_id)
             return True
         except TypeError as te:
             self.log.error(
@@ -95,7 +97,7 @@ class RegistryClient(BaseClass):
         :param dest_client: Docker client logged into the destination
         :param name: The project name
         :param old_id: The source project id
-        
+
         Slightly modified version of the tagging functionality, that deviates from the original in a couple ways:
         1) Based on the tags as returned by the GitLab API, not by docker pull. This compensates for some issues with pulling where it can fail silently, or not return all images
             when pulling all
@@ -114,11 +116,12 @@ class RegistryClient(BaseClass):
             # The current tag we are working on
             # Eg: latest or rolling-debian, etc
             tag_name = tag["name"]
+            ex = False
 
             if not self.reg_dry_run:
                 self.log.info(
                     f"Pulling images from project {name} (ID: {old_id}). Tagged image {repo_loc}:{tag_name}")
-            
+
                 # Pulling everything at once can lead to disk fill, which apparently fails silently. Pull/tag/push on each tag
                 # Also, the library will *only* pull latest without the tag, or setting all_tags=True
 
@@ -131,19 +134,18 @@ class RegistryClient(BaseClass):
                         if tagged_image:
                             break
                     except NotFound as nf:
-                        self.log.warning(f"Registered a NotFound when attempting to pull {repo_loc}:{tag_name} on attempt {pull_attempt}. Cleaning.")
+                        ex = nf
+                        self.log.warning(
+                            f"Registered a NotFound when attempting to pull {repo_loc}:{tag_name} on attempt {pull_attempt}. Cleaning.")
                         # NotFound or disk full returning NotFound falsely *OR* possibly returning just an empty image
                         # Let's try to clean-up. This could in theory happen twice
                         self.__clean_local(cleaner, src_client, "src")
                         self.__clean_local(cleaner, dest_client, "dest")
                     # Any other exception bubbles up
-                else:
-                    # If we hit two tries, we get here. Break skips this
-                    if nf:
-                        # This tells us we tried clean-up. Otherwise, jusst throw a request exception
-                        raise nf
-                    raise RequestException(
-                        f"Could not pull image after clean-up with: repo_loc {repo_loc} and tag {tag_name}")
+            if ex:
+                self.log.error(
+                    f"Failed to pull {repo_loc}:{tag_name}, skipping due to:\n{ex}")
+                continue
 
             # Retag for the new destination
             new_reg = self.generate_destination_registry_url(
@@ -152,7 +154,7 @@ class RegistryClient(BaseClass):
             all_tags.append(
                 (f"{repo_loc}:{tag_name}", f"{new_reg}:{tag_name}")
             )
-            
+
             if not self.reg_dry_run:
                 tagged_image.tag(new_reg, tag_name)
                 # Push to the new registry
@@ -163,18 +165,19 @@ class RegistryClient(BaseClass):
                     if "errorDetail" in line:
                         self.log.error(
                             f"Failed to push image to {new_reg}:{tag_name}, due to:\n{line}")
-                
+
                 # Clean-up. Slower, possibly, as we have to pull layers, again?
                 # Or, can we just make a loop that goes until fails, cleans, then restarts at the failure point?
                 cleaner["src"].append(
                     {"repo_loc": repo_loc, "tag_name": tag_name})
                 cleaner["dest"].append(
                     {"new_reg": new_reg, "tag_name": tag_name})
-        
+
         self.__clean_local(cleaner, src_client, "src")
         self.__clean_local(cleaner, dest_client, "dest")
 
-        self.log.info(f"All tags pulled for repo: {repo_loc} project: {old_id}\n")
+        self.log.info(
+            f"All tags pulled for repo: {repo_loc} project: {old_id}\n")
         with open(f"{self.app_path}/data/{old_id}_repos.tpls", "a") as tplf:
             for tpl in all_tags:
                 self.log.info(f"{str(tpl)},\n")
@@ -189,7 +192,7 @@ class RegistryClient(BaseClass):
         self.log.info(f"Removing images for key {key} of: {cleaner}\n")
         for s in cleaner.get(key):
             client.images.remove(
-                image=f"{s.get['repo_loc']}:{s.get['tag_name']}",
+                image=f"{s['repo_loc'] if key == 'src' else s['new_reg']}:{s['tag_name']}",
                 force=True
             )
         self.log.info(f"Pruned {client.images.prune()}\n")
@@ -216,4 +219,4 @@ class RegistryClient(BaseClass):
         """
         if self.config.dstn_parent_group_path:
             return f"{self.config.destination_registry}/{self.config.dstn_parent_group_path}/{suffix}"
-        return f"{self.config.destination_registry}/{suffix}"     
+        return f"{self.config.destination_registry}/{suffix}"
