@@ -108,11 +108,11 @@ class RegistryClient(BaseClass):
         # List of tags to clean
         cleaner = {"src": [], "dest": []}
 
+        # The source repo location
+        # Eg: registry.gitlab.com/gitlab-com/customer-success/professional-services-group/global-practice-development/migration/congregate/jenkins-seed
+        repo_loc = repo["location"]
         all_tags = []
         for tag in tags:
-            # The source repo location
-            # Eg: registry.gitlab.com/gitlab-com/customer-success/professional-services-group/global-practice-development/migration/congregate/jenkins-seed
-            repo_loc = repo["location"]
             # The current tag we are working on
             # Eg: latest or rolling-debian, etc
             tag_name = tag["name"]
@@ -177,7 +177,7 @@ class RegistryClient(BaseClass):
         self.__clean_local(cleaner, dest_client, "dest")
 
         self.log.info(
-            f"All tags pulled for repo: {repo_loc} project: {old_id}\n")
+            f"All tags pulled for repo {repo_loc} of project {name} (ID: {old_id})\n")
         with open(f"{self.app_path}/data/{old_id}_repos.tpls", "a") as tplf:
             for tpl in all_tags:
                 self.log.info(f"{str(tpl)},\n")
