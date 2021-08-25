@@ -72,6 +72,7 @@ Copy the following data and add subsequent columns for single project migration
 * [ ] PSE conducting the migration has acquired a BitBucket Server personal access token with admin privileges (top right icon in BB server -> Manage Account -> Personal Access Tokens)
 * [ ] PSE conducting the migration has acquired an admin token for GitLab (top right icon in GitLab -> Settings -> Access Tokens)
 * [ ] PSE has configured congregate to migrate from BitBucket Server to gitlab.com
+  * [ ] Inspect and validate configured values in `data/congregate.conf`
 
 ### User migration
 

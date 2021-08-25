@@ -53,7 +53,7 @@ Usage:
     congregate deobfuscate
     congregate dump-database
     congregate reingest <assets>...
-    congregate clean-database [--commit]
+    congregate clean-database [--commit] [--keys]
     congregate toggle-maintenance-mode [--off] [--dest] [--msg=<multi+word+message>]
     congregate ldap-group-sync <file-path> [--commit]
     congregate -h | --help
@@ -97,6 +97,7 @@ Arguments:
     archived                                Filter out archived projects from the list of staged projects
     membership                              Remove inactive members from staged groups and projects on source
     local                                   Use locally listed data instead of API
+    keys                                    Drop all collections of deploy keys creation, gathered during multiple migration waves. Use when migrating from scratch
 
 Commands:
     list                                    List all projects of a source instance and save it to {CONGREGATE_PATH}/data/projects.json.
@@ -559,7 +560,7 @@ def main():
             if arguments["clean-database"]:
                 if not DRY_RUN:
                     m = MongoConnector()
-                    m.clean_db()
+                    m.clean_db(keys=arguments["--keys"])
                 else:
                     print("\nThis command will drop all collections in the congregate database and then recreate the structure. Please append `--commit` to clean the database")
             if arguments["toggle-maintenance-mode"]:

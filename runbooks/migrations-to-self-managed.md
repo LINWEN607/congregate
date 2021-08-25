@@ -62,6 +62,14 @@ Copy the following data and add subsequent rows for single group migration
 
 ## Professional Services Steps to Complete Migration Wave
 
+### Pre-migration checklist
+
+* [ ] PSE conducting the migration has acquired a GitLab source and destination instance personal access token with admin privileges (top right icon in GitLab -> Settings -> Access Tokens)
+* [ ] PSE has configured Congregate to migrate between two GitLab instances
+  * [ ] Inspect and validate configured values in `data/congregate.conf`
+* [ ] Run `./congregate.sh clean-database --commit` to drop any previous collection(s) of users, groups and projects
+  * [ ] If you are migrating from scratch add `--keys` argument to drop collection(s) of deploy keys as well
+
 ### User migration
 
 #### Prepare users

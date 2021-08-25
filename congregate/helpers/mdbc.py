@@ -99,6 +99,7 @@ class MongoConnector(BaseClass):
             return None
 
     def drop_collection(self, collection):
+        self.log.info(f"Dropping {collection} collection")
         return self.db[collection].drop()
 
     def dump_collection_to_file(self, collection, path):
@@ -186,10 +187,10 @@ class MongoConnector(BaseClass):
                     self.user_collections = self.wildcard_collection_query(
                         "users")
 
-    def clean_db(self):
+    def clean_db(self, keys=False):
         for col in self.db.list_collection_names():
             # In order to preserve list of created deploy keys
-            if not "keys-" in col:
+            if not "keys-" in col or keys:
                 self.drop_collection(col)
         self.__setup_db()
 
