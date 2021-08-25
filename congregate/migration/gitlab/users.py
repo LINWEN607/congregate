@@ -356,6 +356,7 @@ class UsersClient(BaseClass):
         """
         Read the information in staged_users.json and output users that are:
             - found
+                - State mismatch
                 - NOT logged in
                 - W/O identities
                 - blocked
@@ -377,41 +378,46 @@ class UsersClient(BaseClass):
                 users_found.append({
                     "id": new_user.get("id"),
                     "email": new_user.get("email"),
-                    "state": new_user.get("state"),
+                    "src_state": state,
+                    "dest_state": new_user.get("state"),
                     "last_sign_in_at": new_user.get("last_sign_in_at"),
                     "identities": new_user.get("identities")
                 })
             else:
-                self.log.warning(f"Could NOT find user by email {email}")
                 users_not_found[user.get("id")] = {
                     "email": email, "state": state}
-        no_login = [(u.get("email"), u.get("state"))
+        blocked = [u.get("email")
+                   for u in users_found if u.get("dest_state") == "blocked"]
+        state_mismatch = [(u.get("email"), f"{u.get('src_state')} -> {u.get('dest_state')}")
+                          for u in users_found if u.get("src_state") != u.get("dest_state")]
+        no_login = [(u.get("email"), u.get("dest_state"))
                     for u in users_found if not u.get("last_sign_in_at")]
-        no_identities = [(u.get("email"), u.get("state"))
+        no_identities = [(u.get("email"), u.get("dest_state"))
                          for u in users_found if not u.get("identities")]
-        blocked = [(u.get("email"), u.get("state"))
-                   for u in users_found if u.get("state") == "blocked"]
         found = f"Found ({len(users_found)})"
+        blkd = f"Blocked ({len(blocked)})"
+        mismatch = f"State mismatch ({len(state_mismatch)})"
         no_log = f"NOT logged in ({len(no_login)})"
         wo_ids = f"W/O identities ({len(no_identities)})"
-        blkd = f"Blocked ({len(blocked)})"
         not_found = f"NOT found ({len(users_not_found)})"
         dupe = f"Duplicate ({len(duplicate_users)})"
         self.log.info(f"""
             {found}:\n{json_pretty(users_found)}
+            {blkd}:\n{json_pretty(blocked)}
+            {state_mismatch}:\n{json_pretty(state_mismatch)}
             {no_log}:\n{json_pretty(no_login)}
             {wo_ids}:\n{json_pretty(no_identities)}
-            {blkd}:\n{json_pretty(blocked)}
             {not_found}:\n{json_pretty(users_not_found)}
             {dupe}:\n{json_pretty(duplicate_users)}
         """)
         if table:
             d = {
-                found: Series([(u.get("email"), u.get("state")) for u in users_found], dtype=str),
+                found: Series([(u.get("email"), u.get("dest_state")) for u in users_found], dtype=str),
+                blkd: Series(blocked, dtype=str),
+                mismatch: Series(state_mismatch, dtype=str),
                 no_log: Series(no_login, dtype=str),
                 wo_ids: Series(no_identities, dtype=str),
-                blkd: Series(blocked, dtype=str),
-                not_found: Series([(u.get("email"), u.get("state")) for u in users_not_found.values()], dtype=str),
+                not_found: Series([(u.get("email"), u.get("src_state")) for u in users_not_found.values()], dtype=str),
                 dupe: Series([(u.get("email"), u.get("state"))
                              for u in duplicate_users], dtype=str)
             }
@@ -419,8 +425,10 @@ class UsersClient(BaseClass):
             set_option('display.max_columns', None)
             set_option('display.width', None)
             set_option('display.max_colwidth', None)
+            csv = f"{self.app_path}/data/user_stats.csv"
             self.log.info(
-                f"{self.config.destination_host} user stats:\n{DataFrame(d)}")
+                f"Writing {self.config.destination_host} user stats to {csv}:\n{DataFrame(d)}")
+            DataFrame(d).to_csv(csv, sep="\t")
         return users_not_found, users_found
 
     def handle_users_not_found(self, data, users, keep=True):
