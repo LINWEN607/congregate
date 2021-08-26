@@ -228,6 +228,7 @@ def main():
         if arguments["init"]:
             Path("data/logs").mkdir(parents=True, exist_ok=True)
             Path("data/results").mkdir(parents=True, exist_ok=True)
+            Path("data/reg_tuples").mkdir(parents=True, exist_ok=True)
             if not os.path.exists(f"{app_path}/data/logs/congregate.log"):
                 with open(f"{app_path}/data/logs/congregate.log", "w") as f:
                     f.write("")
