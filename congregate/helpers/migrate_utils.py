@@ -2,6 +2,7 @@ import sys
 import os
 import errno
 import json
+from pathlib import Path
 from shutil import copy
 from time import time
 from datetime import timedelta, datetime
@@ -284,44 +285,26 @@ def can_migrate_users(users):
 
 
 def clean_data(dry_run=True, files=None):
-    files_to_delete = [
-        "staged_projects.json",
-        "staged_users.json",
-        "staged_groups.json",
-        "projects.json",
-        "users.json",
-        "groups.json",
-        "results/user_migration_results.json",
-        "results/user_migration_results.html",
-        "results/user_diff.json",
-        "results/group_migration_results.json",
-        "results/group_migration_results.html",
-        "results/group_diff.json",
-        "results/project_migration_results.json",
-        "results/project_migration_results.html",
-        "results/project_diff.json",
-        "results/migration_rollback_results.html",
-        "newer_users.json",
-        "unknown_users.json",
-        "groups_audit.json",
-        "results/dry_run_user_migration.json",
-        "results/dry_run_group_migration.json",
-        "results/dry_run_project_migration.json",
-        "results/import_failed_relations.json"
+    folders = [
+        f"{b.app_path}/data",
+        f"{b.app_path}/data/results",
+        f"{b.app_path}/data/reg_tuples"
     ] if not files else files
 
-    if os.path.isdir("{}/data".format(b.app_path)):
-        for f in files_to_delete:
-            path = f"{b.app_path}/data/{f}"
+    for f in files if files else folders:
+        b.log.info(
+            f"{get_dry_log(dry_run)}Removing {f if files else 'residue files in '}{'' if files else f}")
+        if not dry_run:
             try:
-                print("{0}Removing {1}".format(get_dry_log(dry_run), path))
-                if not dry_run:
-                    os.remove(path)
+                if files:
+                    os.remove(f)
+                else:
+                    for ext in ("*.tpls", "*.json", "*.html"):
+                        for p in Path(f).glob(ext):
+                            p.unlink()
             except OSError as e:
                 if e.errno != errno.ENOENT:
                     raise
-    else:
-        print("Cannot find data directory. CONGREGATE_PATH not set or you are not running this in the Congregate directory.")
 
 
 def add_post_migration_stats(start, log=None):

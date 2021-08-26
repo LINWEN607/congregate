@@ -118,11 +118,11 @@ class MigrateClient(BaseClass):
         # Dry-run and log cleanup
         if self.dry_run:
             mig_utils.clean_data(dry_run=False, files=[
-                "results/dry_run_user_migration.json",
-                "results/dry_run_group_migration.json",
-                "results/dry_run_project_migration.json"])
+                f"{self.app_path}/results/dry_run_user_migration.json",
+                f"{self.app_path}/results/dry_run_group_migration.json",
+                f"{self.app_path}/results/dry_run_project_migration.json"])
         mig_utils.clean_data(dry_run=False, files=[
-            "results/import_failed_relations.json"])
+            f"{self.app_path}/results/import_failed_relations.json"])
         utils.rotate_logs()
 
         if self.config.source_type == "gitlab":
