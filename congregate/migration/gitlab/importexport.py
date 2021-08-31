@@ -66,6 +66,7 @@ class ImportExportClient(BaseClass):
         exported = False
         total_time = 0
         wait_time = self.config.export_import_status_check_time
+        timeout = self.config.export_import_timeout
         export_type = check_is_project_or_group_for_logging(is_project)
         response = self.get_export_response(src_id, is_project)
         while True:
@@ -81,13 +82,13 @@ class ImportExportClient(BaseClass):
                     status_json = safe_json_response(status)
                     state = status_json.get("export_status", None)
                     if state == "finished":
-                        self.log.info("{0} {1} has finished exporting, with response:\n{2}".format(
-                            export_type, name, json_pretty(status_json)))
+                        self.log.info(
+                            f"{export_type} {name} has finished exporting, with response:\n{json_pretty(status_json)}")
                         exported = True
                         break
                     if state == "failed":
-                        self.log.error("{0} {1} export failed{2}, with response:\n{3}".format(
-                            export_type, name, " (re-exporting)" if retry else "", json_pretty(status_json)))
+                        self.log.error(
+                            f"{export_type} {name} export failed{' (re-exporting)' if retry else ''}, with response:\n{json_pretty(status_json)}")
                         if retry:
                             response = self.get_export_response(
                                 src_id, is_project)
@@ -95,14 +96,14 @@ class ImportExportClient(BaseClass):
                             total_time = 0
                         else:
                             break
-                    elif total_time < self.config.export_import_timeout:
+                    elif total_time < timeout:
                         self.log.info(
-                            f"Checking {export_type.lower()} {name} export status ({state}) in {wait_time} seconds")
+                            f"{export_type} {name} export status ({state}) after {total_time}/{timeout} seconds")
                         total_time += wait_time
                         sleep(wait_time)
                     else:
-                        self.log.error("{0} {1} time limit exceeded with export status:\n{2}".format(
-                            export_type, name, json_pretty(status_json)))
+                        self.log.error(
+                            f"{export_type} {name} time limit exceeded with export status:\n{json_pretty(status_json)}")
                         break
             elif retry:
                 self.log.error(
@@ -120,6 +121,7 @@ class ImportExportClient(BaseClass):
         exported = False
         total_time = 0
         wait_time = self.config.export_import_status_check_time
+        timeout = self.config.export_import_timeout
         response = self.get_export_response(gid, is_project=False)
         while True:
             # Wait until rate limit is resolved
@@ -139,9 +141,9 @@ class ImportExportClient(BaseClass):
                     sleep(self.COOL_OFF_MINUTES * 60)
                     exported = True
                     break
-                elif total_time < self.config.export_import_timeout:
+                elif total_time < timeout:
                     self.log.info(
-                        f"Waiting {wait_time} seconds for group {gid} to export")
+                        f"Waited {total_time}/{timeout} seconds for group {gid} to export")
                     total_time += wait_time
                     sleep(wait_time)
                 else:
@@ -164,20 +166,21 @@ class ImportExportClient(BaseClass):
         group = False
         timer = 0
         wait_time = self.config.export_import_status_check_time
+        timeout = self.config.export_import_timeout
         while True:
             group = self.groups.find_group_by_path(
                 self.config.destination_host, self.config.destination_token, path)
             if group:
                 self.log.info(
-                    "Group {0} imported successfully with ID {1}".format(path, group.get("id", None)))
+                    f"Group {path} imported successfully with ID {group.get('id')}")
                 break
             self.log.info(
-                "Waiting {0} seconds for group {1} to import".format(wait_time, path))
+                f"Waited {timer}/{timeout} seconds for group {path} to import")
             sleep(wait_time)
             timer += wait_time
-            if timer > self.config.export_import_timeout:
+            if timer > timeout:
                 self.log.error(
-                    "Time limit exceeded for importing group {}".format(path))
+                    f"Time limit exceeded for importing group {path}")
                 break
         return group
 
@@ -237,15 +240,16 @@ class ImportExportClient(BaseClass):
         members = project["members"]
         override_params = self.get_override_params(project)
         filename = get_export_filename_from_namespace_and_name(namespace, name)
+        dry = get_dry_log(dry_run)
         import_id = None
 
         if is_user_project(project):
-            self.log.info("{0}{1} is a USER project ({2}). Attempting to import into their namespace".format(
-                get_dry_log(dry_run), name, namespace))
+            self.log.info(
+                f"{dry}{name} is a USER project ({namespace}). Attempting to import into their namespace")
             dst_namespace = get_user_project_namespace(project)
         else:
-            self.log.info("{0}{1} is NOT a USER project. Attempting to import into a group namespace".format(
-                get_dry_log(dry_run), name))
+            self.log.info(
+                f"{dry}{name} is NOT a USER project. Attempting to import into a group namespace")
             dst_namespace = get_project_namespace(project)
 
         if not dry_run:
@@ -253,29 +257,30 @@ class ImportExportClient(BaseClass):
                 filename, name, path, dst_namespace, override_params, members)
             # Use until group import status endpoint is available
             if import_response.status_code == 404:
-                timeout = 0
+                total_time = 0
                 wait_time = self.config.export_import_status_check_time
+                timeout = self.COOL_OFF_MINUTES * 60
                 while self.namespaces_api.get_namespace_by_full_path(
                         dst_namespace, self.config.destination_host, self.config.destination_token).status_code != 200:
-                    self.log.info("Waiting {0} seconds to create {1} for project {2}".format(
-                        self.config.export_import_status_check_time, dst_namespace, name))
-                    timeout += wait_time
+                    self.log.info(
+                        f"Waited {total_time}/{timeout} seconds to create {dst_namespace} for project {name}")
+                    total_time += wait_time
                     sleep(wait_time)
-                    if timeout > self.COOL_OFF_MINUTES * 60:
-                        self.log.error("Time limit exceeded waiting for project {0} to import to {1}, with response:\n{2}".format(
-                            name, dst_namespace, import_response))
+                    if total_time > timeout:
+                        self.log.error(
+                            f"Time limit exceeded waiting for project {name} to import to {dst_namespace}, with response:\n{import_response}")
                         return None
                 import_response = self.attempt_import(
                     filename, name, path, dst_namespace, override_params, members)
             elif import_response.status_code == 422:
-                self.log.error("Project {0} failed to import to {1}, due to:\n{2}".format(
-                    name, dst_namespace, import_response.text))
+                self.log.error(
+                    f"Project {name} failed to import to {dst_namespace}, due to:\n{import_response.text}")
                 return None
             import_id = self.get_import_id_from_response(
                 import_response, filename, name, path, dst_namespace, override_params, members)
         else:
             self.log.info(
-                "DRY-RUN: Outputing project {0} (file: {1}) migration data to dry_run_project_migration.json".format(name, filename))
+                f"{dry}Outputing project {name} (file: {filename}) migration data to dry_run_project_migration.json")
             migration_dry_run("project", {
                 "filename": filename,
                 "name": name,
@@ -496,7 +501,7 @@ class ImportExportClient(BaseClass):
                             f"Time limit exceeded waiting for project {name} to delete from {dst_namespace}, with response:\n{text}")
                         return None
                     self.log.info(
-                        f"Waiting {wait_time} seconds for project {name} to delete from {dst_namespace} before re-importing:\n{text}")
+                        f"Waited {total_time}/{timeout} seconds for project {name} to delete from {dst_namespace} before re-importing:\n{text}")
                     total_time += wait_time
                     sleep(wait_time)
                 elif import_response.status_code == 500:
@@ -550,7 +555,7 @@ class ImportExportClient(BaseClass):
                     # wait for it to update
                     elif total_time < timeout:
                         self.log.info(
-                            f"Checking project {name} ({dst_namespace}) import status ({state}) in {wait_time} seconds")
+                            f"Project {name} ({dst_namespace}) import status ({state}) after {total_time}/{timeout} seconds")
                         total_time += wait_time
                         sleep(wait_time)
                     else:
