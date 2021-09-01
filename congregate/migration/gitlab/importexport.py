@@ -81,7 +81,7 @@ class ImportExportClient(BaseClass):
                 if status.status_code == 200:
                     status_json = safe_json_response(status)
                     state = status_json.get("export_status", None)
-                    if state == "finished":
+                    if state in ["finished", "regeneration_in_progress"]:
                         self.log.info(
                             f"{export_type} {name} has finished exporting, with response:\n{json_pretty(status_json)}")
                         exported = True
