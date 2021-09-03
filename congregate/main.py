@@ -54,7 +54,7 @@ Usage:
     congregate dump-database
     congregate reingest <assets>...
     congregate clean-database [--commit] [--keys]
-    congregate toggle-maintenance-mode [--off] [--dest] [--msg=<multi+word+message>]
+    congregate toggle-maintenance-mode [--commit] [--off] [--dest] [--msg=<multi+word+message>]
     congregate ldap-group-sync <file-path> [--commit]
     congregate -h | --help
     congregate -v | --version
@@ -567,9 +567,10 @@ def main():
             if arguments["toggle-maintenance-mode"]:
                 migrate = MigrateClient()
                 migrate.toggle_maintenance_mode(
-                    arguments["--off"],
-                    arguments["--msg"],
-                    arguments["--dest"])
+                    off=arguments["--off"],
+                    msg=arguments["--msg"],
+                    dest=arguments["--dest"],
+                    dry_run=DRY_RUN)
             if arguments["ldap-group-sync"]:
                 if not DRY_RUN:
                     ldap = LdapGroupSync()

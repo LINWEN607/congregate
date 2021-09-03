@@ -230,7 +230,7 @@ class GitLabApi(object):
         """
 
         count = self.get_count(host, token, api)
-        self.log.info(f"Total count for endpoint {api}: {count}")
+        self.log.info(f"Total count for {host} endpoint {api}: {count}")
 
         PER_PAGE = per_page
         start_at = 0

@@ -193,7 +193,7 @@ Copy the following data and add subsequent rows for single group migration
       * [ ] Otherwise [rollback](#rollback) the entire wave and reschedule
 * [ ] Inspect [Kibana](https://log.gprd.gitlab.net/app/discover) logs for failed group and project membership
   * Adjust the time frame to the migration period
-  * Query `pubsub-sidekiq-inf-gprd*` for `json.message: "[Project/Group Import] Member addition failed" AND json.root_namespace_id: <parent-group-id>`
+  * Query `pubsub-sidekiq-inf-gprd*` for `json.message: "[Project/Group Import] Member addition failed" AND json.root_namespace_id: "<parent-group-id>"`
   * (optional) Add additional fields to the query .e.g:
     * `json.message`
     * `json.importable_type`
