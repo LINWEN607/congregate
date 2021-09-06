@@ -387,7 +387,9 @@ class BaseDiffClient(BaseClass):
 
     def generate_cleaned_instance_data(self, instance_data):
         try:
-            return self.ignore_keys(instance_data)
+            if instance_data:
+                instance_data = self.ignore_keys(instance_data)
+            return instance_data
         except TypeError as te:
             self.log.error(
                 f"Unable to generate cleaned instance data. Returning empty list, with error:\n{te}")
