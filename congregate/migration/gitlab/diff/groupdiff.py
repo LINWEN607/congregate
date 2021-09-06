@@ -69,26 +69,16 @@ class GroupDiffClient(BaseDiffClient):
     def generate_single_diff_report(self, group):
         diff_report = {}
         group_path = get_full_path_with_parent_namespace(group["full_path"])
-        if isinstance(self.results.get(group_path),
-                      int) and self.results.get(group_path):
-            return {
-                group_path: {
-                    "info": "group already migrated",
-                    "overall_accuracy": {
-                        "accuracy": 1,
-                        "result": "unknown"
-                    }
-                }
-            }
-        elif self.results.get(group_path) and self.asset_exists(self.groups_api.get_group, self.results[group_path].get("id")):
+        if self.results.get(group_path) and (self.asset_exists(self.groups_api.get_group, self.results[group_path].get("id")) or isinstance(self.results.get(group_path), int)):
             group_diff = self.handle_endpoints(group)
             diff_report[group_path] = group_diff
             try:
                 diff_report[group_path]["overall_accuracy"] = self.calculate_overall_accuracy(
                     diff_report[group_path])
                 return diff_report
-            except Exception:
-                self.log.info("Failed to generate diff for %s" % group_path)
+            except Exception as e:
+                self.log.info(
+                    f"Failed to generate diff for {group_path} with error:\n{e}")
         return {
             group_path: {
                 "error": "group missing",

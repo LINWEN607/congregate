@@ -107,18 +107,7 @@ class RepoDiffClient(BaseDiffClient):
         project_path_replaced = project_path.replace(".", "_")
         group_namespace = "/".join(project_path_replaced.split("/")[:1])
         mongo = self.connect_to_mongo()
-        if isinstance(self.results.get(project_path),
-                      int) and self.results.get(project_path):
-            return {
-                project_path_replaced: {
-                    "info": "project already migrated",
-                    "overall_accuracy": {
-                        "accuracy": 1,
-                        "result": "unknown"
-                    }
-                }
-            }
-        elif (isinstance(self.results.get(project_path), dict)) and (self.asset_exists(self.gl_projects_api.get_project, project_id)):
+        if self.results.get(project_path) and ((self.asset_exists(self.gl_projects_api.get_project, project_id)) or isinstance(self.results.get(project_path), int)):
             project_diff = self.handle_endpoints(project)
             diff_report[project_path_replaced] = project_diff
             try:
@@ -133,7 +122,7 @@ class RepoDiffClient(BaseDiffClient):
                 return diff_report
             except Exception as e:
                 self.log.error(
-                    f"Failed to generate diff for {project_path} with error {e}")
+                    f"Failed to generate diff for {project_path} with error:\n{e}")
         missing_data = {
             project_path_replaced: {
                 "error": "project missing",

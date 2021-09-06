@@ -79,26 +79,16 @@ class ProjectDiffClient(BaseDiffClient):
     def generate_single_diff_report(self, project):
         diff_report = {}
         project_path = get_dst_path_with_namespace(project)
-        if isinstance(self.results.get(project_path),
-                      int) and self.results.get(project_path):
-            return {
-                project_path: {
-                    "info": "project already migrated",
-                    "overall_accuracy": {
-                        "accuracy": 1,
-                        "result": "unknown"
-                    }
-                }
-            }
-        elif self.results.get(project_path) and self.asset_exists(self.projects_api.get_project, self.results[project_path].get("id")):
+        if self.results.get(project_path) and (self.asset_exists(self.projects_api.get_project, self.results[project_path].get("id")) or isinstance(self.results.get(project_path), int)):
             project_diff = self.handle_endpoints(project)
             diff_report[project_path] = project_diff
             try:
                 diff_report[project_path]["overall_accuracy"] = self.calculate_overall_accuracy(
                     diff_report[project_path])
                 return diff_report
-            except Exception:
-                self.log.info("Failed to generate diff for %s" % project_path)
+            except Exception as e:
+                self.log.info(
+                    f"Failed to generate diff for {project_path} with error:\n{e}")
         return {
             project_path: {
                 "error": "project missing",
