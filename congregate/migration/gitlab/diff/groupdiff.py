@@ -76,7 +76,7 @@ class GroupDiffClient(BaseDiffClient):
                     "info": "group already migrated",
                     "overall_accuracy": {
                         "accuracy": 1,
-                        "result": "uknown"
+                        "result": "unknown"
                     }
                 }
             }

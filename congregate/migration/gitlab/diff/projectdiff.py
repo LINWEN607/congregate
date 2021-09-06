@@ -74,7 +74,6 @@ class ProjectDiffClient(BaseDiffClient):
             diff_report.update(result)
         diff_report["project_migration_results"] = self.calculate_overall_stage_accuracy(
             diff_report)
-
         return diff_report
 
     def generate_single_diff_report(self, project):
@@ -87,7 +86,7 @@ class ProjectDiffClient(BaseDiffClient):
                     "info": "project already migrated",
                     "overall_accuracy": {
                         "accuracy": 1,
-                        "result": "uknown"
+                        "result": "unknown"
                     }
                 }
             }

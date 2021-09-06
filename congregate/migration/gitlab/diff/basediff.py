@@ -387,20 +387,10 @@ class BaseDiffClient(BaseClass):
 
     def generate_cleaned_instance_data(self, instance_data):
         try:
-            if instance_data is not None:
-                if isinstance(instance_data, GeneratorType):
-                    new_list = []
-                    for d in instance_data:
-                        new_list.append(d)
-                    instance_data = self.ignore_keys(new_list)
-                elif isinstance(instance_data, list):
-                    instance_data = self.ignore_keys(instance_data)
-                else:
-                    instance_data = self.ignore_keys(instance_data.json())
-            return instance_data
+            return self.ignore_keys(instance_data)
         except TypeError as te:
             self.log.error(
-                "Unable to generate cleaned instance data. Returning empty list, with error:\n{}".format(te))
+                f"Unable to generate cleaned instance data. Returning empty list, with error:\n{te}")
             return []
 
     def generate_empty_data(self, source):
