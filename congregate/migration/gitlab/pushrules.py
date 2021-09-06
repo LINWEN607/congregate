@@ -15,11 +15,12 @@ class PushRulesClient(BaseClass):
         try:
             pr = safe_json_response(self.projects_api.get_all_project_push_rules(
                 old_id, self.config.source_host, self.config.source_token))
+            error, pr = is_error_message_present(pr)
             if pr is None:
                 self.log.info(
                     f"No push rules ({pr}) to migrate for project {name}")
                 return None
-            elif is_error_message_present(pr):
+            elif error:
                 self.log.error(
                     f"Failed to fetch push rules ({pr}) for project {name}")
                 return False

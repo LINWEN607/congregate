@@ -81,7 +81,8 @@ class ConfigurationValidator(Config):
         if pgid is not None:
             group_resp = safe_json_response(self.groups.get_group(
                 pgid, self.destination_host, self.destination_token))
-            if is_error_message_present(group_resp):
+            error, group_resp = is_error_message_present(group_resp)
+            if error:
                 raise ConfigurationException("parent_id")
             return True
         return True
@@ -90,9 +91,10 @@ class ConfigurationValidator(Config):
         if iuid is not None:
             user_resp = safe_json_response(self.users.get_current_user(
                 self.destination_host, self.destination_token))
-            if is_error_message_present(user_resp):
+            error, user_resp = is_error_message_present(user_resp)
+            if error:
                 raise ConfigurationException("import_user_id")
-            elif user_resp.get("error", None) is not None:
+            elif user_resp.get("error") is not None:
                 if user_resp["error"] == "invalid_token":
                     raise ConfigurationException("parent_token")
                 raise Exception
@@ -115,8 +117,8 @@ class ConfigurationValidator(Config):
         if dstn_token is not None:
             user = safe_json_response(self.users.get_current_user(
                 self.destination_host, dstn_token))
-            if is_error_message_present(
-                    user) or not user.get("is_admin", None):
+            error, user = is_error_message_present(user)
+            if error or not user.get("is_admin"):
                 raise ConfigurationException("destination_token", msg=user)
             return True
         return True
@@ -128,7 +130,8 @@ class ConfigurationValidator(Config):
             if self.source_type == "gitlab":
                 user = safe_json_response(
                     self.users.get_current_user(self.source_host, src_token))
-                if not user or is_error_message_present(user) or not user.get("is_admin"):
+                error, user = is_error_message_present(user)
+                if not user or error or not user.get("is_admin"):
                     raise ConfigurationException(
                         "source_token", msg=f"{err_msg}{json_pretty(user)}")
             elif self.source_type == "github":
@@ -141,7 +144,8 @@ class ConfigurationValidator(Config):
                         "Authorization": f"token {src_token}"
                     },
                     verify=self.ssl_verify))
-                if not user or is_error_message_present(user) or (not user.get("site_admin") and not is_github_dot_com(self.source_host)):
+                error, user = is_error_message_present(user)
+                if not user or error or (not user.get("site_admin") and not is_github_dot_com(self.source_host)):
                     raise ConfigurationException(
                         "source_token", msg=f"{err_msg}{json_pretty(user)}")
             elif self.source_type == "bitbucket server":
@@ -153,11 +157,12 @@ class ConfigurationValidator(Config):
                     },
                     auth=HTTPBasicAuth(self.source_username, src_token),
                     verify=self.ssl_verify
-                    )
+                )
                 )
                 not_sys_admin = user["values"][0]["permission"] not in ["SYS_ADMIN", "ADMIN"] if user.get(
                     "values", []) else True
-                if not user or is_error_message_present(user) or not_sys_admin:
+                error, user = is_error_message_present(user)
+                if not user or error or not_sys_admin:
                     raise ConfigurationException(
                         "source_token", msg=f"{err_msg}{json_pretty(user)}")
             return True

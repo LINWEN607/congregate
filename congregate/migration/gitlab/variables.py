@@ -86,7 +86,8 @@ class VariablesClient(BaseClass):
         try:
             variables = iter(var_list)
             for var in variables:
-                if is_error_message_present(var) or not var:
+                error, var = is_error_message_present(var)
+                if error or not var:
                     self.log.error(
                         f"Failed to fetch CI/CD variables ({var}) for {var_type} {name}")
                     return False

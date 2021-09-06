@@ -33,7 +33,8 @@ class HooksClient(BaseClass):
                 for shd in s_hooks_dstn:
                     shd = pop_multiple_keys(shd, ["id", "created_at"])
                 for shc in s_hooks_src:
-                    if is_error_message_present(shc) or not shc:
+                    error, shc = is_error_message_present(shc)
+                    if error or not shc:
                         self.log.error(
                             f"Failed to fetch source instance hooks ({shc})")
                         break
@@ -68,7 +69,8 @@ class HooksClient(BaseClass):
             hooks = iter(resp)
             self.log.info(f"Migrating project {path} (ID: {old_id}) hooks")
             for h in hooks:
-                if is_error_message_present(h) or not h:
+                error, h = is_error_message_present(h)
+                if error or not h:
                     self.log.error(
                         f"Failed to fetch project {path} (ID: {old_id}) hook ({h})")
                     return False
@@ -95,7 +97,8 @@ class HooksClient(BaseClass):
             hooks = iter(resp)
             self.log.info(f"Migrating group {full_path} (ID: {old_id}) hooks")
             for h in hooks:
-                if is_error_message_present(h) or not h:
+                error, h = is_error_message_present(h)
+                if error or not h:
                     self.log.error(
                         f"Failed to fetch hooks ({h}) for group {full_path} (ID: {old_id})")
                     return False

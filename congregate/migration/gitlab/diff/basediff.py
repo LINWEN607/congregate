@@ -105,7 +105,9 @@ class BaseDiffClient(BaseClass):
         diff = None
         accuracy = 1
         if destination_data:
-            if not is_error_message_present(destination_data):
+            error, destination_data = is_error_message_present(
+                destination_data)
+            if not error:
                 if isinstance(source_data, list):
                     if obfuscate:
                         for i, _ in enumerate(source_data):
@@ -132,7 +134,7 @@ class BaseDiffClient(BaseClass):
                                         accuracy += self.calculate_individual_dict_accuracy(
                                             diff[i], source_data[i], destination_data[i], critical_key, parent_group=parent_group)
                                     except IndexError as e:
-                                        self.log.warn(e)
+                                        self.log.warning(e)
                                         accuracy += 0
                             if accuracy != 0:
                                 accuracy = float(accuracy) / \
@@ -227,7 +229,7 @@ class BaseDiffClient(BaseClass):
             src_lines += self.total_number_of_differences(diff)
             original_accuracy = dest_lines / src_lines
         else:
-            original_accuracy = 1
+            original_accuracy = 1.0
 
         return self.critical_key_case_check(diff, critical_key, original_accuracy, parent_group=parent_group)
 
@@ -490,7 +492,8 @@ class BaseDiffClient(BaseClass):
                             data = [
                                 endpoint,
                                 "N/A",
-                                [f"{count_key}: {count_value}" for count_key, count_value in dig(v, endpoint).items()]
+                                [f"{count_key}: {count_value}" for count_key,
+                                    count_value in dig(v, endpoint).items()]
                             ]
 
                         for da in data:
@@ -557,20 +560,20 @@ class BaseDiffClient(BaseClass):
         if identifier:
             resp = endpoint(identifier, self.config.destination_host,
                             self.config.destination_token)
-            if not is_error_message_present(resp):
+            error, resp = is_error_message_present(resp)
+            if not error:
                 return True
         return False
 
     def is_endpoint_valid(self, request):
-        if is_error_message_present(request):
+        error, request = is_error_message_present(request)
+        if error:
             return False, request
-        if isinstance(request, GeneratorType):
-            return True, list(request)
         return True, request
 
     def get_destination_id(self, asset, key, parent_group):
         identifier = "{0}/{1}".format(parent_group,
-                                        asset[key]) if parent_group else asset[key]
+                                      asset[key]) if parent_group else asset[key]
         if self.results.get(identifier) is not None:
             if isinstance(self.results[identifier], dict):
                 if did := dig(self.results, identifier, "id"):

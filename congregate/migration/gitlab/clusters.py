@@ -26,7 +26,8 @@ class ClustersClient(BaseClass):
                     self.config.source_host, self.config.source_token)
                 clusters = iter(resp)
                 for c in clusters:
-                    if is_error_message_present(c) or not c:
+                    error, c = is_error_message_present(c)
+                    if error or not c:
                         self.log.error(
                             f"Failed to fetch source instance clusters ({c['name']})")
                         break
@@ -57,7 +58,8 @@ class ClustersClient(BaseClass):
             self.log.info(
                 f"Migrating group {full_path} (ID: {old_id}) clusters")
             for c in clusters:
-                if is_error_message_present(c) or not c:
+                error, c = is_error_message_present(c)
+                if error or not c:
                     self.log.error(
                         f"Failed to fetch clusters ({c['name']}) for group {full_path} (ID: {old_id})")
                     return False
@@ -85,7 +87,8 @@ class ClustersClient(BaseClass):
                 self.log.info(
                     f"Migrating project {path} (ID: {old_id}) clusters")
                 for c in clusters:
-                    if is_error_message_present(c) or not c:
+                    error, c = is_error_message_present(c)
+                    if error or not c:
                         self.log.error(
                             f"Failed to fetch project {path} (ID: {old_id}) cluster ({c['name']})")
                         return False
@@ -117,11 +120,13 @@ class ClustersClient(BaseClass):
             # Find and retrieve management project ID on destination
             sp = safe_json_response(self.projects_api.get_project(
                 dig(c, 'management_project', 'id'), self.config.source_host, self.config.source_token))
-            if sp and not is_error_message_present(sp):
+            error, sp = is_error_message_present(sp)
+            if sp and not error:
                 path = get_dst_path_with_namespace(sp)
                 mp_id = self.projects.find_project_by_path(
                     self.config.destination_host, self.config.destination_token, path)
-                if mp_id and not is_error_message_present(mp_id):
+                error, mp_id = is_error_message_present(mp_id)
+                if mp_id and not error:
                     data["management_project_id"] = mp_id
                 else:
                     self.log.warning(

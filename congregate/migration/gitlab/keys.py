@@ -36,8 +36,8 @@ class KeysClient(BaseClass):
                     new_id, self.config.destination_host, self.config.destination_token, key)
                 # When a key being migrated already exists somewhere on the
                 # destination instance
-                if resp.status_code == 400 and is_error_message_present(
-                        resp) and isinstance(resp.json().get("message"), dict):
+                error, resp = is_error_message_present(resp)
+                if resp.status_code == 400 and error and isinstance(resp.json().get("message"), dict):
                     if is_dot_com(self.config.destination_host):
                         # Assuming it was created at some point during the migration
                         if last_key := mongo.safe_find_one(coll, query={"key": key["key"]}, sort=[("created_at", mongo.DESCENDING)]):
@@ -77,7 +77,8 @@ class KeysClient(BaseClass):
             ssh_keys = iter(resp.json())
             self.log.info("Migrating user {} SSH keys".format(email))
             for k in ssh_keys:
-                if is_error_message_present(k) or not k:
+                error, k = is_error_message_present(k)
+                if error or not k:
                     self.log.error(
                         "Failed to fetch SSH keys ({0}) for user {1}".format(k, email))
                     return False
@@ -102,7 +103,8 @@ class KeysClient(BaseClass):
             ssh_keys = iter(resp.json())
             self.log.info("Migrating user {} GPG keys".format(email))
             for k in ssh_keys:
-                if is_error_message_present(k) or not k:
+                error, k = is_error_message_present(k)
+                if error or not k:
                     self.log.error(
                         "Failed to fetch GPG keys ({0}) for user {1}".format(k, email))
                     return False

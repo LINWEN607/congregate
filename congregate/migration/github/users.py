@@ -49,7 +49,8 @@ class UsersClient(BaseClass):
             mongo = self.connect_to_mongo()
         single_user = safe_json_response(
             self.users_api.get_user(user["login"]))
-        if not single_user or is_error_message_present(single_user):
+        error, single_user = is_error_message_present(single_user)
+        if error or not single_user:
             self.log.error("Failed to get JSON for user {} ({})".format(
                 user["login"], single_user))
         else:
@@ -64,7 +65,8 @@ class UsersClient(BaseClass):
         for user in users:
             single_user = safe_json_response(
                 self.users_api.get_user(user["login"]))
-            if not single_user or is_error_message_present(single_user):
+            error, single_user = is_error_message_present(single_user)
+            if error or not single_user:
                 self.log.error("Failed to get JSON for user {} ({})".format(
                     user["login"], single_user))
             else:

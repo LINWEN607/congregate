@@ -72,17 +72,17 @@ def is_error_message_present(response):
     if isinstance(response, (GeneratorType, map, filter)):
         response = list(response)
     if isinstance(response, list) and response and response[0] in errors:
-        return True
+        return True, response
     if isinstance(response, dict) and any(r in response for r in errors):
-        return True
+        return True, response
     if isinstance(response, str) and response in errors:
-        return True
-    return False
+        return True, response
+    return False, response
 
 
 def get_timedelta(timestamp):
     """
-    Get timedelta between provided timestampe and current time
+    Get timedelta between provided timestamp and current time
 
         :param timestamp: A timestamp string
         :return: timedelta between provided timestamp and datetime.now() in hours

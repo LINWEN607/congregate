@@ -20,7 +20,8 @@ class GistsClient(BaseClass):
         for gist in gists:
             single_gist = safe_json_response(
                 self.gists_api.get_single_gist(gist["id"]))
-            if not single_gist or is_error_message_present(single_gist):
+            error, single_gist = is_error_message_present(single_gist)
+            if error or not single_gist:
                 self.log.error("Failed to get JSON for gist {} ({})".format(
                     gist["id"], single_gist))
             else:

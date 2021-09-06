@@ -39,7 +39,8 @@ class MergeRequestApprovalsClient(BaseClass):
             # migrate configuration
             conf = safe_json_response(self.projects_api.get_project_level_mr_approval_configuration(
                 old_id, self.config.source_host, self.config.source_token))
-            if is_error_message_present(conf) or not conf:
+            error, conf = is_error_message_present(conf)
+            if error or not conf:
                 self.log.error(
                     "Failed to fetch MR approval configuration ({0}) for project {1}".format(conf, name))
                 return False
@@ -56,7 +57,8 @@ class MergeRequestApprovalsClient(BaseClass):
             self.log.info(
                 "Migrating project-level MR approval rules for {0} (ID: {1})".format(name, old_id))
             for rule in approval_rules:
-                if is_error_message_present(rule) or not rule:
+                error, rule = is_error_message_present(rule)
+                if error or not rule:
                     self.log.error(
                         "Failed to fetch MR approval rules ({0}) for project {1}".format(rule, name))
                     return False

@@ -62,7 +62,8 @@ class RegistryClient(BaseClass):
                 f"Migrating project {name} (ID: {old_id}) container registries")
             # For every registry in the source project
             for repo in repos:
-                if is_error_message_present(repo) or not repo:
+                error, repo = is_error_message_present(repo)
+                if error or not repo:
                     self.log.error(
                         f"Failed to fetch container registries ({repo}) for project {name}")
                     return False

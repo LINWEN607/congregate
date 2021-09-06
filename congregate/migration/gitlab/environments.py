@@ -22,7 +22,8 @@ class EnvironmentsClient(BaseClass):
             envs = iter(resp)
             self.log.info("Migrating project {} environments".format(name))
             for env in envs:
-                if is_error_message_present(env) or not env:
+                error, env = is_error_message_present(env)
+                if error or not env:
                     self.log.error(
                         "Failed to fetch environments ({0}) for project {1}".format(env, name))
                     return False

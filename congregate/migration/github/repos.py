@@ -128,7 +128,8 @@ class ReposClient(BaseClass):
             members = [{"login": owner}]
             user_repo = safe_json_response(
                 self.repos_api.get_repo(owner, repo))
-            if not user_repo or is_error_message_present(user_repo):
+            error, user_repo = is_error_message_present(user_repo)
+            if error or not user_repo:
                 self.log.error(
                     "Failed to get JSON for user {} repo {} ({})".format(
                         owner, repo, user_repo))
@@ -222,7 +223,8 @@ class ReposClient(BaseClass):
                 new_id, default_branch)
         else:
             return False
-        if is_error_message_present(conf) or not conf:
+        error, conf = is_error_message_present(conf)
+        if error or not conf:
             self.log.error(
                 "Failed to fetch GitHub Pull request approval configuration ({0}) for project {1}".format(
                     conf, repo["name"]))
@@ -250,7 +252,8 @@ class ReposClient(BaseClass):
         # rule = self.format_project_level_mr_rule(
         #     new_id, protected_branch_ids, dest_user_ids)
 
-        # if is_error_message_present(rule) or not rule:
+        # error, rule = is_error_message_present(rule)
+        # if error or not rule:
         #     self.log.error(
         #         "Failed to generate MR approval rules ({0}) for project {1}".format(
         #             rule, repo["name"]))

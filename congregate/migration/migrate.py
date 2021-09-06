@@ -283,7 +283,8 @@ class MigrateClient(BaseClass):
                 group["description"] = ""
             result = misc_utils.safe_json_response(self.groups_api.create_group(
                 self.config.destination_host, self.config.destination_token, group))
-            if result and not misc_utils.is_error_message_present(result):
+            error, result = misc_utils.is_error_message_present(result)
+            if result and not error:
                 if group_id := result.get("id"):
                     result["members"] = self.groups.add_members_to_destination_group(
                         self.config.destination_host, self.config.destination_token, group_id, members)
@@ -570,7 +571,8 @@ class MigrateClient(BaseClass):
             if not group_id:
                 result = misc_utils.safe_json_response(self.groups_api.create_group(
                     self.config.destination_host, self.config.destination_token, group))
-                if result and not misc_utils.is_error_message_present(result):
+                error, result = misc_utils.is_error_message_present(result)
+                if result and not error:
                     group_id = result.get("id", None)
                 else:
                     self.log.error(f"Unable to create group due to: {result}")

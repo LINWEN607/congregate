@@ -76,9 +76,9 @@ class ProjectsClient(BaseClass):
         if not mongo:
             mongo = self.connect_to_mongo()
 
-        if is_error_message_present(project):
-            self.log.error(
-                "Failed to list project with response: {}".format(project))
+        error, project = is_error_message_present(project)
+        if error:
+            self.log.error(f"Failed to list project with response:\n{project}")
         else:
             self.log.info(u"[ID: {0}] {1}: {2}".format(
                 project["id"], project["name"], project["description"]))

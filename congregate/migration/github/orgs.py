@@ -62,9 +62,10 @@ class OrgsClient(BaseClass):
 
     def add_org_as_group(self, groups, org_name, mongo):
         org = safe_json_response(self.orgs_api.get_org(org_name))
-        if groups is None or is_error_message_present(org):
+        error, org = is_error_message_present(org)
+        if groups is None or error:
             self.log.error(
-                "Failed to append org {} ({}) to list {}".format(org_name, org, groups))
+                f"Failed to append org {org_name} ({org}) to list {groups}")
         else:
             org_repos = []
             for org_repo, _ in self.orgs_api.get_all_org_repos(
@@ -91,7 +92,8 @@ class OrgsClient(BaseClass):
         return groups
 
     def add_team_as_subgroup(self, org, team, mongo):
-        if is_error_message_present(team):
+        error, team = is_error_message_present(team)
+        if error:
             self.log.error(
                 "Failed to store team {}".format(team))
         else:
@@ -118,7 +120,8 @@ class OrgsClient(BaseClass):
                 full_path.insert(1, dig(team, 'parent', 'slug'))
                 team = safe_json_response(self.orgs_api.get_org_team(
                     org_name, dig(team, 'parent', 'slug')))
-                if not team or is_error_message_present(team):
+                error, team = is_error_message_present(team)
+                if error or not team:
                     self.log.error(
                         "Failed to get full_path for team ({})".format(team))
                     return None
