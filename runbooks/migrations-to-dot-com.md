@@ -158,6 +158,8 @@ Copy the following data and add subsequent rows for single group migration
   * This is required in order to have Congregate immediately delete projects that fail to import or import with a failed status
 * [ ] If `Restrict membership by email domain` is configured for the top-level group (*Settings -> General -> Permissions, LFS, 2FA*) make sure to add the Admin user's `gitlab.com` email domain
   * This is to avoid group and project import failures
+* [ ] (as of **14.2.2**) Set `public_email` field for all staged users on source and destination using command `set-staged-users-public-email`
+  * Skip running command against source instance if version **< 14.2.2** and destination version **>= 14.2.2**
 * [ ] Notify in the internal Slack channel dedicated to this migration you have completed preparation for the wave
 
 #### Dry run groups and projects
