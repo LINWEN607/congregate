@@ -655,3 +655,37 @@ class UsersClient(BaseClass):
             self.log.warning(
                 "SSO pattern is currently set to hash, but no file is specified in congregate.conf")
         return None
+
+    def set_staged_users_public_email(self, dry_run=True, hide=False, dest=False):
+        staged_users = get_staged_users()
+        host = self.config.destination_host if dest else self.config.source_host
+        for su in staged_users:
+            # Assume primary email matches on dest
+            email = su.get("email")
+            set_email = None if hide else email
+            try:
+                # Always look up user
+                user = find_user_by_email_comparison_without_id(
+                    email, src=not dest)
+                if user:
+                    pub_email = user.get("public_email")
+                    name = user.get("name")
+                else:
+                    self.log.warning(
+                        f"Skip user {email} NOT found on {host}")
+                    continue
+                # When to avoid action
+                if (hide and not pub_email) or (not hide and pub_email == email):
+                    continue
+                data = {"public_email": set_email}
+                self.log.info(
+                    f"{get_dry_log(dry_run)}Set {set_email} as public email for user {name} on {host}")
+                if not dry_run:
+                    resp = self.users_api.modify_user(user.get(
+                        "id"), host, self.config.destination_token if dest else self.config.source_token, data)
+                    if resp.status_code != 200:
+                        self.log.error(
+                            f"Failed to set {set_email} as public email for user {name} on {host} with response:\n{resp} - {resp.text}")
+            except RequestException as re:
+                self.log.error(
+                    f"Failed to set {set_email} as public email for user:\n{su}\nwith error:\n{re}")
