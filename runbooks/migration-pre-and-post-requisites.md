@@ -65,6 +65,7 @@ This runbook covers the process of preparing and cleaning up after a migration f
 * [ ] Consolidate users (and their number) that need to be migrated.
   * Determine whether inactive ones should be removed on source, skipped during migration or migrated and inactive on destination.
   * (gitlab.com) Configure valid primary emails for service accounts to avoid issues with [Confirmation Emails](https://about.gitlab.com/handbook/support/workflows/confirmation_emails.html).
+* [ ] (from GitHub) Make sure that all relevant GitHub users have their `public email` field set and matching `email`
 * [ ] Check whether legacy projects, with 1k+ issues/MRs and/or 10k+ pipelines, could be slimmed down for a more seamless export/import
   * [ ] If done via Rails console, schedule a meeting between lead PSE and source instance Admin to walk through the process
     * For exact steps see **Trim or remove project CI pipelines** in `migrations-to-*.md` runbook

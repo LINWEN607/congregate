@@ -1,7 +1,6 @@
 import os
 import unittest
 from unittest import mock
-from uuid import uuid4
 from base64 import b64encode
 from pytest import mark
 from congregate.helpers.misc_utils import input_generator
