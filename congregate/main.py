@@ -54,8 +54,9 @@ Usage:
     congregate dump-database
     congregate reingest <assets>...
     congregate clean-database [--commit] [--keys]
-    congregate toggle-maintenance-mode [--off] [--dest] [--msg=<multi+word+message>]
+    congregate toggle-maintenance-mode [--commit] [--off] [--dest] [--msg=<multi+word+message>]
     congregate ldap-group-sync <file-path> [--commit]
+    congregate set-staged-users-public-email [--commit] [--hide] [--dest]
     congregate -h | --help
     congregate -v | --version
 
@@ -98,6 +99,7 @@ Arguments:
     membership                              Remove inactive members from staged groups and projects on source
     local                                   Use locally listed data instead of API
     keys                                    Drop all collections of deploy keys creation, gathered during multiple migration waves. Use when migrating from scratch
+    hide                                    Unset metadata field i.e. set to None/null
 
 Commands:
     list                                    List all projects of a source instance and save it to {CONGREGATE_PATH}/data/projects.json.
@@ -159,6 +161,7 @@ Commands:
     clean-database                          Drop all collections in the congregate MongoDB database and rebuilds the structure
     toggle-maintenance-mode                 Reduce write operations to a minimum by blocking all external actions that change the internal state. Operational as of GitLab version 13.9
     ldap-group-sync                         Perform LDAP Group sync operations over a pipe-delimited file of group_id|CN
+    set-staged-users-public-email           Set/unset the staged users public_email field on source (default) or destination. Use email on source as reference.
 """
 
 import os
@@ -215,6 +218,7 @@ def main():
         MEMBERSHIP = arguments["--membership"]
         SUBGROUPS_ONLY = arguments["--subgroups-only"]
         REG_DRY_RUN = arguments["--reg-dry-run"]
+        DEST = arguments["--dest"]
 
         if SCM_SOURCE:
             SCM_SOURCE = strip_protocol(SCM_SOURCE)
@@ -567,9 +571,10 @@ def main():
             if arguments["toggle-maintenance-mode"]:
                 migrate = MigrateClient()
                 migrate.toggle_maintenance_mode(
-                    arguments["--off"],
-                    arguments["--msg"],
-                    arguments["--dest"])
+                    off=arguments["--off"],
+                    msg=arguments["--msg"],
+                    dest=DEST,
+                    dry_run=DRY_RUN)
             if arguments["ldap-group-sync"]:
                 if not DRY_RUN:
                     ldap = LdapGroupSync()
@@ -578,6 +583,9 @@ def main():
                 else:
                     print(
                         "\nThis command will setup LDAP group sync based on the file passed in via <file-path>")
+            if arguments["set-staged-users-public-email"]:
+                users.set_staged_users_public_email(
+                    dry_run=DRY_RUN, hide=arguments["--hide"], dest=DEST)
         if arguments["obfuscate"]:
             print(obfuscate("Secret:"))
         if arguments["deobfuscate"]:

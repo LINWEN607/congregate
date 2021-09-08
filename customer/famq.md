@@ -214,6 +214,10 @@ When it comes to how old can the GitLab source instance be we come to the follow
 * **14.0**
   * `JSON` format no longer supported for project and group exports, but still supported on import
   * Group epics labels associations preserved during export/import
+* **14.2.2**
+  * The `public_email` field is used, instead of `email`, for group and project export/import
+  * On import it is backwards compatible i.e. accepting the `email` field if exported
+  * The deprecation version for import is not yet known
 
 ### Importer bugs
 

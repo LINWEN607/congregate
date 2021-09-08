@@ -187,12 +187,10 @@ def find_user_by_email_comparison_without_id(email, src=False):
     :return: The user entity found or None
     """
     if email:
-        b.log.info(
-            f"Searching for user email {email} in {'source' if src else 'destination'} system")
+        host = b.config.source_host if src else b.config.destination_host
+        b.log.info(f"Searching for user email {email} on {host}")
         users = users_api.search_for_user_by_email(
-            b.config.source_host if src else b.config.destination_host,
-            b.config.source_token if src else b.config.destination_token,
-            email)
+            host, b.config.source_token if src else b.config.destination_token, email)
         # Will searching for an explicit email actually return more than one?
         # Probably is just an array of 1
         for user in users:

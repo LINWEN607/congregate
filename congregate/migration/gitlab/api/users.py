@@ -34,6 +34,19 @@ class UsersApi(GitLabApiWrapper):
         """
         return self.api.generate_get_request(host, token, "user")
 
+    def modify_user(self, uid, host, token, data=None):
+        """
+        Modifies an existing user. Only administrators can change attributes of a user.
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/users.html#user-modification
+
+            :param: id: (int) GitLab user ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :return: Response object containing the response to PUT /users/:id
+        """
+        return self.api.generate_put_request(host, token, f"users/{uid}", data=json.dumps(data))
+
     def get_all_users(self, host, token):
         """
         Get a list of users.
