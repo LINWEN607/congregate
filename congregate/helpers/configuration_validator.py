@@ -28,11 +28,11 @@ class ConfigurationValidator(Config):
     @property
     def dstn_parent_id(self):
         dstn_parent_id = self.prop_int("DESTINATION", "dstn_parent_group_id")
-        if self.dstn_parent_id_validated_in_session is True:
+        if self.dstn_parent_id_validated_in_session:
             return dstn_parent_id
         self.dstn_parent_id_validated_in_session = self.validate_dstn_parent_group_id(
             dstn_parent_id)
-        if self.dstn_parent_group_path_validated_in_session is True:
+        if self.dstn_parent_group_path_validated_in_session:
             return dstn_parent_id
         self.dstn_parent_group_path_validated_in_session = self.validate_dstn_parent_group_path(
             self.prop("DESTINATION", "dstn_parent_group_path"))
@@ -41,7 +41,7 @@ class ConfigurationValidator(Config):
     @property
     def import_user_id(self):
         import_user_id = self.prop_int("DESTINATION", "import_user_id")
-        if self.import_user_id_validated_in_session is True:
+        if self.import_user_id_validated_in_session:
             return import_user_id
         self.import_user_id_validated_in_session = self.validate_import_user_id(
             import_user_id)
@@ -51,7 +51,7 @@ class ConfigurationValidator(Config):
     def dstn_parent_group_path(self):
         dstn_parent_group_path = self.prop(
             "DESTINATION", "dstn_parent_group_path")
-        if self.dstn_parent_group_path_validated_in_session is True:
+        if self.dstn_parent_group_path_validated_in_session:
             return dstn_parent_group_path
         self.dstn_parent_group_path_validated_in_session = self.validate_dstn_parent_group_path(
             dstn_parent_group_path)
@@ -61,7 +61,7 @@ class ConfigurationValidator(Config):
     def destination_token(self):
         dstn_token = self.prop(
             "DESTINATION", "dstn_access_token", default=None, obfuscated=True)
-        if self.dstn_token_validated_in_session is True:
+        if self.dstn_token_validated_in_session:
             return dstn_token
         self.dstn_token_validated_in_session = self.validate_dstn_token(
             dstn_token)
@@ -71,7 +71,7 @@ class ConfigurationValidator(Config):
     def source_token(self):
         src_token = self.prop("SOURCE", "src_access_token",
                               default=None, obfuscated=True)
-        if self.src_token_validated_in_session is True:
+        if self.src_token_validated_in_session:
             return src_token
         self.src_token_validated_in_session = self.validate_src_token(
             src_token)
@@ -82,22 +82,23 @@ class ConfigurationValidator(Config):
             group_resp = safe_json_response(self.groups.get_group(
                 pgid, self.destination_host, self.destination_token))
             error, group_resp = is_error_message_present(group_resp)
-            if error:
+            if error or not group_resp:
                 raise ConfigurationException("parent_id")
             return True
         return True
 
     def validate_import_user_id(self, iuid):
         if iuid is not None:
-            user_resp = safe_json_response(self.users.get_current_user(
-                self.destination_host, self.destination_token))
+            user_resp = safe_json_response(self.users.get_user(
+                iuid, self.destination_host, self.destination_token))
             error, user_resp = is_error_message_present(user_resp)
-            if error:
+            if error or not user_resp:
                 raise ConfigurationException("import_user_id")
             elif user_resp.get("error") is not None:
                 if user_resp["error"] == "invalid_token":
-                    raise ConfigurationException("parent_token")
-                raise Exception
+                    raise ConfigurationException(
+                        "parent_token", msg=f"{json_pretty(user_resp)}")
+                raise Exception(user_resp)
             if user_resp["id"] == iuid:
                 return True
         raise ConfigurationException("import_user_id")
@@ -108,9 +109,12 @@ class ConfigurationValidator(Config):
                 self.prop_int("DESTINATION", "dstn_parent_group_id"),
                 self.destination_host,
                 self.destination_token))
-            if group_resp["full_path"] == dstn_parent_group_path:
+            error, group_resp = is_error_message_present(group_resp)
+            if error or not group_resp:
+                raise ConfigurationException(
+                    "dstn_parent_group_path", msg=f"Invalid dest parent group parg:\n{json_pretty(group_resp)}")
+            elif group_resp["full_path"] == dstn_parent_group_path:
                 return True
-            raise ConfigurationException("dstn_parent_group_path")
         return True
 
     def validate_dstn_token(self, dstn_token):
@@ -118,8 +122,9 @@ class ConfigurationValidator(Config):
             user = safe_json_response(self.users.get_current_user(
                 self.destination_host, dstn_token))
             error, user = is_error_message_present(user)
-            if error or not user.get("is_admin"):
-                raise ConfigurationException("destination_token", msg=user)
+            if error or not user or not user.get("is_admin"):
+                raise ConfigurationException(
+                    "destination_token", msg=f"Invalid user and/or token:\n{json_pretty(user)}")
             return True
         return True
 
@@ -145,7 +150,7 @@ class ConfigurationValidator(Config):
                     },
                     verify=self.ssl_verify))
                 error, user = is_error_message_present(user)
-                if not user or error or (not user.get("site_admin") and not is_github_dot_com(self.source_host)):
+                if error or not user or (not user.get("site_admin") and not is_github_dot_com(self.source_host)):
                     raise ConfigurationException(
                         "source_token", msg=f"{err_msg}{json_pretty(user)}")
             elif self.source_type == "bitbucket server":

@@ -63,7 +63,7 @@ class OrgsClient(BaseClass):
     def add_org_as_group(self, groups, org_name, mongo):
         org = safe_json_response(self.orgs_api.get_org(org_name))
         error, org = is_error_message_present(org)
-        if groups is None or error:
+        if groups is None or error or not org:
             self.log.error(
                 f"Failed to append org {org_name} ({org}) to list {groups}")
         else:
