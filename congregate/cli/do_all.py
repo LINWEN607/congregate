@@ -33,6 +33,10 @@ def do_all_users(dry_run=True):
         with open("{}/data/staged_users.json".format(b.app_path), "w") as su:
             json.dump(remove_dupes(json.load(u)), su, indent=4)
 
+    # Set public_email field for all staged users before any group/project export/import
+    users.set_staged_users_public_email(dry_run=False)
+    users.set_staged_users_public_email(dry_run=False, dest=True)
+
     migrate = MigrateClient(
         dry_run=dry_run,
         skip_group_export=True,
