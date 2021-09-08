@@ -141,7 +141,7 @@ Copy the following data and add subsequent rows for single group migration
 * [ ] If importing groups (with projects) to root make sure the instance `Default project visibility` (*Admin -> Settings -> General -> Visibility and access controls*) is set to `Private`
   * This is because groups and therefore projects are imported as `private` by default and this conflicts with a higher instance `Default project visibility`
   * For more details see [Group Import Important Notes](https://docs.gitlab.com/ee/user/group/settings/import_export.html#important-notes)
-* [ ] (as of **14.2.2**) Set `public_email` field for all staged users on source and destination using command `set-staged-users-public-email`
+* [ ] (as of **14.2.2**) Set `public_email` field for all staged users on source and destination (`--dest`) by running `./congregate.sh set-staged-users-public-email`
   * Skip running command against source instance if version **< 14.2.2** and destination version **>= 14.2.2**
 * [ ] Notify in the internal Slack channel dedicated to this migration you have completed preparation for the wave
 
@@ -295,6 +295,8 @@ In that script, you prepopulate all source and destination registry repositories
 
 ### Post Migration
 
+* [ ] Revert back (to `None`), on source and destination (`--dest`), the exposed users' `public_email` field by running `./congregate.sh set-staged-users-public-email --hide`
+  * Make sure all the affected users are staged first
 * [ ] Once all the projects/groups are migrated, stitch together the various migration attempts by running `./congregate.sh stitch-results --result-type=<user|group|project> --no-of-files=<number-of-results-files-to-stitch>`
 * [ ] Once the results have been stitched into a single JSON file, run the diff report on the newly created results file
 * [ ] Notify in the internal Slack channel dedicated to this migration you are running the diff report
@@ -342,7 +344,7 @@ p "Number of Protected Branches import failures: #{protected_branches_import_fai
 * [ ] If accuracy is lower than 90%, review the diff reports again and see if any projects or groups are missing
 * [ ] Attach `data/results/*_results.*` and `data/results/*_diff.json` to this issue
 * [ ] Copy `data/results/*_results.*` and `data/results/*_diff.json` to `/opt/congregate/data/waves/wave_<insert_wave_number>/`
-* [ ] Notify in the internal Slack channel dedicated to this migration the diff report is finished generating with a link to the comment you just posted. If you need to run another small subset of this migration, mention that in the Slack message as well.
+* [ ] Notify in the internal Slack channel dedicated to this migration the diff report is finished generating with a link to the comment you just posted.
 * [ ] Notify the customer in the customer-facing Slack channel the migration wave has finished
 
 ### Archive Staged Projects

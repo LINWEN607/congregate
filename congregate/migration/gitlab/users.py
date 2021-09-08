@@ -689,3 +689,4 @@ class UsersClient(BaseClass):
             except RequestException as re:
                 self.log.error(
                     f"Failed to set {set_email} as public email for user:\n{su}\nwith error:\n{re}")
+                continue
