@@ -244,7 +244,7 @@ def get_results(res):
     for r in res:
         for v in r.values():
             error, v = is_error_message_present(v)
-            if not v or error:
+            if error or not v:
                 c += 1
             repo_present = dig(v, 'repository')
             if repo_present is not None and repo_present is False:

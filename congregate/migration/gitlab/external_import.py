@@ -38,7 +38,7 @@ class ImportClient(BaseClass):
                 resp = self.ext_import.import_from_bitbucket_server(
                     self.config.destination_host, self.config.destination_token, data)
                 error, resp = is_error_message_present(resp)
-                if error:
+                if error or not resp:
                     error = resp.get("error")
                     self.log.error(
                         f"Project {project_path} import to {tn} failed with response {resp} and error {error}")
@@ -80,7 +80,7 @@ class ImportClient(BaseClass):
                 resp = self.ext_import.import_from_github(
                     self.config.destination_host, self.config.destination_token, data)
                 error, resp = is_error_message_present(resp)
-                if error:
+                if error or not resp:
                     errors = resp.get("errors")
                     self.log.error(
                         f"Project {path_with_namespace} import to {tn} failed with response {resp} and error {errors}")

@@ -188,7 +188,7 @@ class CompareClient(BaseClass):
                 user = self.users.get_user(
                     member["id"], self.config.destination_host, self.config.destination_token).json()
                 error, user = misc_utils.is_error_message_present(user)
-                if error:
+                if error or not user:
                     users_map[member["id"]] = {
                         "message": user["message"]
                     }

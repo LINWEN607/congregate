@@ -36,8 +36,7 @@ class KeysClient(BaseClass):
                     new_id, self.config.destination_host, self.config.destination_token, key)
                 # When a key being migrated already exists somewhere on the
                 # destination instance
-                error, resp = is_error_message_present(resp)
-                if resp.status_code == 400 and error and isinstance(resp.json().get("message"), dict):
+                if resp.status_code == 400 and is_error_message_present(resp)[0] and isinstance(resp.json().get("message"), dict):
                     if is_dot_com(self.config.destination_host):
                         # Assuming it was created at some point during the migration
                         if last_key := mongo.safe_find_one(coll, query={"key": key["key"]}, sort=[("created_at", mongo.DESCENDING)]):

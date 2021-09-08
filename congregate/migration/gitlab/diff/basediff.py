@@ -559,7 +559,7 @@ class BaseDiffClient(BaseClass):
 
     def is_endpoint_valid(self, request):
         error, request = is_error_message_present(request)
-        if error:
+        if error or not request:
             return False, request
         return True, request
 

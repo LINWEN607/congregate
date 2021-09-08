@@ -93,7 +93,7 @@ class OrgsClient(BaseClass):
 
     def add_team_as_subgroup(self, org, team, mongo):
         error, team = is_error_message_present(team)
-        if error:
+        if error or not team:
             self.log.error(
                 "Failed to store team {}".format(team))
         else:

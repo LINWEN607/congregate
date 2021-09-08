@@ -91,7 +91,7 @@ class UsersClient(BaseClass):
                 namespace_check_response.append(group)
             for z in namespace_check_response:
                 error, z = is_error_message_present(z)
-                if error:
+                if error or not z:
                     self.log.warning(
                         f"Is {username} a group namespace lookup failed on group\n{z}")
                 elif z.get("path") and str(z["path"]).lower() == username.lower():
