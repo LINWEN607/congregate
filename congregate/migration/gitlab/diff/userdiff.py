@@ -93,8 +93,8 @@ class UserDiffClient(BaseDiffClient):
                 user, self.users_api.get_all_user_emails)
             user_diff["/users/:id/memberships"] = self.generate_user_diff(
                 user, self.users_api.get_all_user_memberships)
-            user_diff["/users/:id/events"] = self.generate_user_diff(
-                user, self.users_api.get_all_user_contribution_events)
+            # user_diff["/users/:id/events"] = self.generate_user_diff(
+            #     user, self.users_api.get_all_user_contribution_events)
             user_diff["/users/:id/custom_attributes"] = self.generate_user_diff(
                 user, self.users_api.get_all_user_custom_attributes)
             user_diff["/users/:id/keys"] = self.generate_user_diff(
