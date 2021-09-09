@@ -32,10 +32,7 @@ def do_all_users(dry_run=True):
     with open("{}/data/users.json".format(b.app_path), "r") as u:
         with open("{}/data/staged_users.json".format(b.app_path), "w") as su:
             json.dump(remove_dupes(json.load(u)), su, indent=4)
-
-    # Set public_email field for all staged users before any group/project export/import
-    users.set_staged_users_public_email(dry_run=False)
-    users.set_staged_users_public_email(dry_run=False, dest=True)
+    set_public_email()
 
     migrate = MigrateClient(
         dry_run=dry_run,
@@ -61,6 +58,7 @@ def do_all_groups_and_projects(dry_run=True):
     # Stage ALL - NO dry run
     gcli = GroupStageCLI()
     gcli.stage_data(["all"], dry_run=False, skip_users=True)
+    set_public_email()
 
     migrate = MigrateClient(dry_run=dry_run, skip_users=True)
     migrate.migrate()
@@ -77,6 +75,7 @@ def do_all(dry_run=True):
     # Stage ALL - NO dry run
     gcli = GroupStageCLI()
     gcli.stage_data(["all"], dry_run=False)
+    set_public_email()
 
     migrate = MigrateClient(dry_run=dry_run)
     migrate.migrate()
@@ -90,3 +89,9 @@ def list_all():
     if not is_recent_file(
             "{}/data/projects.json".format(b.app_path), age=3600):
         list_data()
+
+
+def set_public_email():
+    # Set public_email field for all staged users before any group/project export/import
+    users.set_staged_users_public_email(dry_run=False)
+    users.set_staged_users_public_email(dry_run=False, dest=True)
