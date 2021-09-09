@@ -24,15 +24,12 @@ def do_all_users(dry_run=True):
 
         :param: dry_run (bool) If true, will write POST request payload to JSON files for review. If false, will conduct full user migration
     """
-    list_all()
-
     # Clear staged projects and groups and stage only users
     gcli = GroupStageCLI()
     gcli.stage_data([""], dry_run=False)
     with open("{}/data/users.json".format(b.app_path), "r") as u:
         with open("{}/data/staged_users.json".format(b.app_path), "w") as su:
             json.dump(remove_dupes(json.load(u)), su, indent=4)
-    set_public_email()
 
     migrate = MigrateClient(
         dry_run=dry_run,
@@ -42,6 +39,10 @@ def do_all_users(dry_run=True):
         skip_project_export=True
     )
     migrate.migrate()
+
+    # (14.2.2+) Set public_email field for all staged users on src/dest before group/project export/import
+    users.set_staged_users_public_email(dry_run=False)
+    users.set_staged_users_public_email(dry_run=False, dest=True)
 
     # Lookup NOT found users AFTER - NO dry run
     users.search_for_staged_users()
@@ -53,12 +54,9 @@ def do_all_groups_and_projects(dry_run=True):
 
         :param: dry_run (bool) If true, will write POST request payload to JSON files for review. If false, will conduct full group and project migration
     """
-    list_all()
-
     # Stage ALL - NO dry run
     gcli = GroupStageCLI()
-    gcli.stage_data(["all"], dry_run=False, skip_users=True)
-    set_public_email()
+    gcli.stage_data(["all"], dry_run=False)
 
     migrate = MigrateClient(dry_run=dry_run, skip_users=True)
     migrate.migrate()
@@ -70,12 +68,9 @@ def do_all(dry_run=True):
 
         :param: dry_run (bool) If true, will write POST request payload to JSON files for review. If false, will conduct full migration
     """
-    list_all()
-
     # Stage ALL - NO dry run
     gcli = GroupStageCLI()
     gcli.stage_data(["all"], dry_run=False)
-    set_public_email()
 
     migrate = MigrateClient(dry_run=dry_run)
     migrate.migrate()
@@ -89,9 +84,3 @@ def list_all():
     if not is_recent_file(
             "{}/data/projects.json".format(b.app_path), age=3600):
         list_data()
-
-
-def set_public_email():
-    # Set public_email field for all staged users before any group/project export/import
-    users.set_staged_users_public_email(dry_run=False)
-    users.set_staged_users_public_email(dry_run=False, dest=True)

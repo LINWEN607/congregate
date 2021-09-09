@@ -60,7 +60,7 @@ class SeedDataGenerator(BaseClass):
             "variable_type": "env_var",
             "protected": True,
             "masked": False,
-            "environment_scope": "*"
+            "environment_scope": "staging"
         },
         {
             "key": "NEWER_VARIABLE",

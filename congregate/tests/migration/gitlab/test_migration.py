@@ -18,7 +18,9 @@ class MigrationEndToEndTest(unittest.TestCase):
     def setUpClass(self):
         self.b = BaseClass()
         self.migrate = MigrateClient(dry_run=False, hard_delete=True)
-        do_all.do_all(dry_run=False)
+        do_all.list_all()
+        do_all.do_all_users(dry_run=False)
+        do_all.do_all_groups_and_projects(dry_run=False)
 
     @classmethod
     def tearDownClass(self):
