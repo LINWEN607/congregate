@@ -26,7 +26,7 @@ def do_all_users(dry_run=True):
     """
     # Clear staged projects and groups and stage only users
     gcli = GroupStageCLI()
-    gcli.stage_data([""], dry_run=False)
+    gcli.stage_data([""], dry_run=dry_run)
     with open("{}/data/users.json".format(b.app_path), "r") as u:
         with open("{}/data/staged_users.json".format(b.app_path), "w") as su:
             json.dump(remove_dupes(json.load(u)), su, indent=4)
@@ -41,8 +41,8 @@ def do_all_users(dry_run=True):
     migrate.migrate()
 
     # (14.2.2+) Set public_email field for all staged users on src/dest before group/project export/import
-    users.set_staged_users_public_email(dry_run=False)
-    users.set_staged_users_public_email(dry_run=False, dest=True)
+    users.set_staged_users_public_email(dry_run=dry_run)
+    users.set_staged_users_public_email(dry_run=dry_run, dest=True)
 
     # Lookup NOT found users AFTER - NO dry run
     users.search_for_staged_users()
@@ -56,7 +56,7 @@ def do_all_groups_and_projects(dry_run=True):
     """
     # Stage ALL - NO dry run
     gcli = GroupStageCLI()
-    gcli.stage_data(["all"], dry_run=False)
+    gcli.stage_data(["all"], dry_run=dry_run)
 
     migrate = MigrateClient(dry_run=dry_run, skip_users=True)
     migrate.migrate()

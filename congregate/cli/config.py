@@ -259,7 +259,7 @@ def generate_config():
     # User specific configuration
     config.add_section("USER")
     keep_inactive_users = input(
-        "Keep inactive users in staged users/groups/projects (Default: No)? ")
+        "Keep inactive users (blocked, ldap_blocked, deactivated, banned) in staged users/groups/projects (Default: No)? ")
     config.set("USER", "keep_inactive_users",
                "True" if keep_inactive_users.lower() in ["yes", "y"] else "False")
     reset_pwd = input(

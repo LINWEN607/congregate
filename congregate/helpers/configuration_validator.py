@@ -112,7 +112,7 @@ class ConfigurationValidator(Config):
             error, group_resp = is_error_message_present(group_resp)
             if error or not group_resp:
                 raise ConfigurationException(
-                    "dstn_parent_group_path", msg=f"Invalid dest parent group parg:\n{json_pretty(group_resp)}")
+                    "dstn_parent_group_path", msg=f"Invalid dest parent group param:\n{json_pretty(group_resp)}")
             elif group_resp["full_path"] == dstn_parent_group_path:
                 return True
         return True
