@@ -105,47 +105,43 @@ class BaseDiffClient(BaseClass):
         diff = None
         accuracy = 1
         if destination_data:
-            error, destination_data = is_error_message_present(
-                destination_data)
-            if not error:
+            if isinstance(source_data, list):
+                if obfuscate:
+                    for i, _ in enumerate(source_data):
+                        source_data[i] = self.obfuscate_values(
+                            source_data[i])
+                    for i, _ in enumerate(destination_data):
+                        destination_data[i] = self.obfuscate_values(
+                            destination_data[i])
+                diff = engine._compare_arrays(
+                    source_data, destination_data)
+            else:
+                if obfuscate:
+                    source_data = self.obfuscate_values(source_data)
+                    destination_data = self.obfuscate_values(
+                        destination_data)
+                diff = engine.compare_dicts(source_data, destination_data)
+            if source_data:
                 if isinstance(source_data, list):
-                    if obfuscate:
+                    if diff:
+                        accuracy = 0
                         for i, _ in enumerate(source_data):
-                            source_data[i] = self.obfuscate_values(
-                                source_data[i])
-                        for i, _ in enumerate(destination_data):
-                            destination_data[i] = self.obfuscate_values(
-                                destination_data[i])
-                    diff = engine._compare_arrays(
-                        source_data, destination_data)
-                else:
-                    if obfuscate:
-                        source_data = self.obfuscate_values(source_data)
-                        destination_data = self.obfuscate_values(
-                            destination_data)
-                    diff = engine.compare_dicts(source_data, destination_data)
-                if source_data:
-                    if isinstance(source_data, list):
-                        if diff:
-                            accuracy = 0
-                            for i, _ in enumerate(source_data):
-                                if diff.get(i):
-                                    try:
-                                        accuracy += self.calculate_individual_dict_accuracy(
-                                            diff[i], source_data[i], destination_data[i], critical_key, parent_group=parent_group)
-                                    except IndexError as e:
-                                        self.log.warning(e)
-                                        accuracy += 0
-                            if accuracy != 0:
-                                accuracy = float(accuracy) / \
-                                    float(len(source_data))
-                        else:
-                            accuracy = 1.0
+                            if diff.get(i):
+                                try:
+                                    accuracy += self.calculate_individual_dict_accuracy(
+                                        diff[i], source_data[i], destination_data[i], critical_key, parent_group=parent_group)
+                                except IndexError as e:
+                                    self.log.warning(e)
+                        if accuracy != 0:
+                            accuracy = float(accuracy) / \
+                                float(len(source_data))
                     else:
-                        accuracy = self.calculate_individual_dict_accuracy(
-                            diff, source_data, destination_data, critical_key, parent_group=parent_group)
-                if bool(list(nested_find("error", diff))):
-                    accuracy = 0
+                        accuracy = 1.0
+                else:
+                    accuracy = self.calculate_individual_dict_accuracy(
+                        diff, source_data, destination_data, critical_key, parent_group=parent_group)
+            if bool(list(nested_find("error", diff))):
+                accuracy = 0
         return {
             "diff": diff,
             "accuracy": accuracy

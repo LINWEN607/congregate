@@ -37,8 +37,12 @@ class MigrationEndToEndTestSetup(unittest.TestCase):
             "no",  # destination parent group
             "",  # username suffix
             "no",  # mirror
+            # max_asset_expiration_time
             "no",  # external_src_url
-            os.getenv("GITLAB_SRC"),  # source host
+            # src_type
+            os.getenv("GITLAB_SRC"),  # src_hostname
+            # src_access_token
+            # src_tier
             "no",  # single group migration
             "300",  # export_import_timeout
             "yes",  # migrating registries
@@ -50,16 +54,19 @@ class MigrationEndToEndTestSetup(unittest.TestCase):
             # "us-east-1",    # bucket region
             # "access key",   # access key
             # "secret key",   # secret key
-            "",  # file system path
+            "",  # filesystem_path
             "no",  # CI Source
             "no",  # keep_inactive_users
-            "yes",  # password reset email
-            "no",  # randomized password
-            "5",  # import wait time
+            "yes",  # reset_pwd
+            "no",  # force_rand_pwd
+            "5",  # export_import_status_check_time
             "no",  # wave spreadsheet
-            "",  # slack_url
+            "no",  # slack_url
             "yes",  # external mongo host
-            "mongo"  # mongo host
+            "mongo"  # mongo_host
+            # mongo_port
+            # ui_port
+            # processes
         ]
         tokens = [
             destination_token,

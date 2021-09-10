@@ -53,7 +53,8 @@ class ProjectDiffClient(BaseDiffClient):
             "forked_from_project",   # Temporarily, until we add fork relationship feature
             "parent_id",
             "runners_token",
-            "container_registry_image_prefix"
+            "container_registry_image_prefix",
+            "auto_devops_enabled"   # Because we deliberately disable it on destination
         ]
         if staged:
             self.source_data = read_json_file_into_object(

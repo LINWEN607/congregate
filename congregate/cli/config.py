@@ -45,7 +45,7 @@ def generate_config():
                obfuscate("Destination instance GitLab access token (Settings -> Access Tokens): "))
     migration_user = safe_json_response(users.get_current_user(config.get("DESTINATION", "dstn_hostname"),
                                                                deobfuscate(config.get("DESTINATION", "dstn_access_token"))))
-    if migration_user.get("id", None):
+    if migration_user.get("id"):
         config.set("DESTINATION", "import_user_id", str(migration_user["id"]))
     else:
         config.set("DESTINATION", "import_user_id", "")
@@ -74,7 +74,7 @@ def generate_config():
             config.getint("DESTINATION", "dstn_parent_group_id"),
             config.get("DESTINATION", "dstn_hostname"),
             deobfuscate(config.get("DESTINATION", "dstn_access_token"))))
-        if group and group.get("full_path", None):
+        if group and group.get("full_path"):
             config.set("DESTINATION", "dstn_parent_group_path",
                        group["full_path"])
         else:
@@ -99,7 +99,7 @@ def generate_config():
     mirror = input(
         "Planning a soft cut-over migration by mirroring repos to keep both instances running (Default: No)? ")
     if mirror.lower() in ["yes", "y"]:
-        if migration_user.get("username", None):
+        if migration_user.get("username"):
             config.set("DESTINATION", "mirror_username",
                        migration_user["username"])
         else:
@@ -154,7 +154,7 @@ def generate_config():
                     config.getint("SOURCE", "src_parent_group_id"),
                     config.get("SOURCE", "src_hostname"),
                     deobfuscate(config.get("SOURCE", "src_access_token"))))
-            if src_group and src_group.get("full_path", None):
+            if src_group and src_group.get("full_path"):
                 config.set("SOURCE", "src_parent_group_path",
                            src_group["full_path"])
             else:
@@ -258,10 +258,10 @@ def generate_config():
 
     # User specific configuration
     config.add_section("USER")
-    keep_blocker_users = input(
+    keep_inactive_users = input(
         "Keep inactive users in staged users/groups/projects (Default: No)? ")
     config.set("USER", "keep_inactive_users",
-               "True" if keep_blocker_users.lower() in ["yes", "y"] else "False")
+               "True" if keep_inactive_users.lower() in ["yes", "y"] else "False")
     reset_pwd = input(
         "Should users receive password reset emails (Default: Yes)? ")
     config.set("USER", "reset_pwd", "False" if reset_pwd.lower()
@@ -338,13 +338,14 @@ def write_to_file(config):
             makedirs(f_path)
     with open(config_path, "w") as f:
         print("Writing configuration to file ({})...".format(config_path))
+        print(config.read(config_path))
         config.write(f)
 
 
 def test_registries(token, registry, user):
     try:
         client = from_env()
-        client.login(username=user.get("username", None),
+        client.login(username=user.get("username"),
                      password=token, registry=registry)
     except (APIError, TLSParameterError) as err:
         print("Failed to login to docker registry {0}, with error:\n{1}".format(
