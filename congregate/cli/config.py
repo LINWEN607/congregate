@@ -338,7 +338,6 @@ def write_to_file(config):
             makedirs(f_path)
     with open(config_path, "w") as f:
         print("Writing configuration to file ({})...".format(config_path))
-        print(config.read(config_path))
         config.write(f)
 
 

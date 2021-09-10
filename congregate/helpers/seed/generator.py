@@ -130,7 +130,7 @@ class SeedDataGenerator(BaseClass):
         self.mra = MergeRequestApprovalsClient()
         self.registries = RegistryClient()
         self.keys = KeysClient()
-        super(SeedDataGenerator, self).__init__()
+        super().__init__()
 
     def generate_seed_data(self, dry_run=True):
         users = self.generate_users(dry_run)
@@ -148,6 +148,7 @@ class SeedDataGenerator(BaseClass):
             self.generate_dummy_branches(p["id"], dry_run)
             self.generate_dummy_environment(p["id"], dry_run)
             self.generate_dummy_project_hooks(p["id"], dry_run)
+            self.generate_dummy_project_deploy_keys(p["id"], dry_run)
             self.generate_dummy_project_push_rules(p["id"], dry_run)
             self.generate_dummy_project_variables(p["id"], dry_run)
             self.generate_shared_with_group_data(p["id"], groups, dry_run)
@@ -479,3 +480,20 @@ class SeedDataGenerator(BaseClass):
                 "{0}Creating user {1} GPG key ({2})".format(get_dry_log(dry_run), uid, g))
             self.users_api.create_user_gpg_key(
                 self.config.source_host, self.config.source_token, uid, g)
+
+    def generate_dummy_project_deploy_keys(self, pid, dry_run=True):
+        keys = [
+            {
+                "title": "test_deploy_key_1",
+                "key": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDfZiGd1bXM35/lwUBBCd5HmIaR5oUN+N0eEzyiXiSP7/N/GCI1JeW1I9j2Ugz2ek7nP0QJroD/aNjnVv4evmZfA87fHJejAPmKlgzS34hwPh+vSh0TNxwwMzTdZdWK8OEAMZ9nwpIDrN4E3ly3lw4sqgs0fqvm3mdJOA8wl6p/w4bHv/HZeAwl4M7idFdV3c4UAiAKwWSzyPfuPSYkF/TAloUv28YbjL4pNSNUzX5S2rwyZakPUwQi/5TZB8S8fL8aDwhvvFVLO6Fkd51EOy2MWHuKRjppD63M7kQ3JopeqT8r7P7B9nuG6/Tv6GFda132VH7CU2vDExe7+4dGjV3eFmI6kgYs6+PXc4y58OKr7ey6g+jVwE+BqlueXiqQtsrhhSbSd3IQzlDvN7+PptQLF/tbJCmnNtnFlh/cek9Kvei0R2ym9oQNsaz+lYtniLHwlguv43ZJQtXhDSm+htL45K25Q/56tRr/05XAcA1hNkswFO0n9vC3KXqkpFvKrx8= petarprokic@Petar-MBP.local"
+            },
+            {
+                "title": "test_deploy_key_2",
+                "key": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDQ249uJUE+AsmbrfsKKmGe5NOdaOa1DAwv7GOaoMIC3KqcyCr7/Ud3aAcjxVXTXa30jAPk8P2IOqiQe2XVeR89UUuIeRembYpV+xdHoqrLqHX8OsnCeZroddb2M3XZYSPaV+Yq14CUuBqeucB3iBZO/C3oDRRKgBZUig3Ef0Vdv5nL8zqCCEoKDsEZTuYbvoqMjdrbUb5XYOU2RONvU84qP73JFvCXgbdaskg6yP7uVt7c6Iq/ShrrKq3J1ORYVutfH6PWiE26VB3i3K0UDquEfFJ6lHFM3ZNKp8E/HJ35pMG5nRYQkN3TDrh6q7O7YrUAFdmYdpCFEPekiMAaLgetsQp2NiP9UPlydQIBMBiKxyRnGirIunP1YRKL9c0y7JhAphMaxkrW31t3pPCPvUgvouMma+BhkzaokNHfR/i9qsaVLbyGgSOAJiSW2b0GegmT+xdObjmbheRErnoFohGsB+UFfWpONVK5dZaJLWhDeW9aNRqTnV4kXh4tCj03qiM= petarprokic@Petar-MBP.local"
+            }
+        ]
+        for k in keys:
+            self.log.info(f"{dry_run}Creating project {pid} deploy key ({k})")
+            if not dry_run:
+                self.projects_api.create_new_project_deploy_key(
+                    pid, self.config.source_host, self.config.source_token, k)
