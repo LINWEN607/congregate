@@ -328,13 +328,12 @@ debian rolling release:
   extends:
     - .docker-build
   stage: release
-  rules:
-    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
   variables:
     DISTRO: "debian"
     RELEASE_IMAGE_NAME: "$CI_REGISTRY_IMAGE:rolling-debian"
   rules:
-    - changes:
+    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
+      changes:
         - congregate/**/*.py
         - frontend/**/*
         - congregate.sh
@@ -358,13 +357,12 @@ centos rolling release:
   extends:
     - .docker-build
   stage: release
-  rules:
-    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
   variables:
     DISTRO: "centos"
     RELEASE_IMAGE_NAME: "$CI_REGISTRY_IMAGE:rolling-centos"
   rules:
-    - changes:
+    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
+      changes:
         - congregate/**/*.py
         - frontend/**/*
         - congregate.sh
