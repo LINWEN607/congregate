@@ -57,6 +57,7 @@ Usage:
     congregate toggle-maintenance-mode [--commit] [--off] [--dest] [--msg=<multi+word+message>]
     congregate ldap-group-sync <file-path> [--commit]
     congregate set-staged-users-public-email [--commit] [--hide] [--dest]
+    congregate create-staged-projects-structure [--commit] [--disable-cicd]
     congregate -h | --help
     congregate -v | --version
 
@@ -100,6 +101,7 @@ Arguments:
     local                                   Use locally listed data instead of API
     keys                                    Drop all collections of deploy keys creation, gathered during multiple migration waves. Use when migrating from scratch
     hide                                    Unset metadata field i.e. set to None/null
+    disable-cicd                            Disable CI/CD when creating empty GitLab project structures
 
 Commands:
     list                                    List all projects of a source instance and save it to {CONGREGATE_PATH}/data/projects.json.
@@ -162,6 +164,7 @@ Commands:
     toggle-maintenance-mode                 Reduce write operations to a minimum by blocking all external actions that change the internal state. Operational as of GitLab version 13.9
     ldap-group-sync                         Perform LDAP Group sync operations over a pipe-delimited file of group_id|CN
     set-staged-users-public-email           Set/unset the staged users public_email field on source (default) or destination. Use email on source as reference.
+    create-staged-projects-structure        Create empty project structures on GitLab destination for staged projects. Optionally, disable CI/CD on creation.
 """
 
 import os
@@ -586,6 +589,9 @@ def main():
             if arguments["set-staged-users-public-email"]:
                 users.set_staged_users_public_email(
                     dry_run=DRY_RUN, hide=arguments["--hide"], dest=DEST)
+            if arguments["create-staged-projects-structure"]:
+                projects.create_staged_projects_structure(
+                    dry_run=DRY_RUN, disable_cicd=arguments["--disable-cicd"])
         if arguments["obfuscate"]:
             print(obfuscate("Secret:"))
         if arguments["deobfuscate"]:

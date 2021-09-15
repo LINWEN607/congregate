@@ -1,5 +1,6 @@
 import json
 import base64
+from os.path import dirname
 import datetime
 from time import time
 from requests.exceptions import RequestException
@@ -14,8 +15,8 @@ from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.groups import GroupsClient
 from congregate.migration.gitlab.users import UsersClient
 from congregate.helpers.mdbc import MongoConnector
-from congregate.helpers.migrate_utils import get_dst_path_with_namespace, \
-    get_full_path_with_parent_namespace, dig, get_staged_projects, get_staged_groups, find_user_by_email_comparison_without_id, add_post_migration_stats
+from congregate.helpers.migrate_utils import get_dst_path_with_namespace,  get_full_path_with_parent_namespace, \
+    dig, get_staged_projects, get_staged_groups, find_user_by_email_comparison_without_id, add_post_migration_stats
 from congregate.helpers.utils import rotate_logs
 from congregate.migration.gitlab.api.project_repository import ProjectRepositoryApi
 
@@ -122,8 +123,8 @@ class ProjectsClient(BaseClass):
 
     def find_project_by_path(self, host, token, dst_path_with_namespace):
         """Returns the project ID based on search by path."""
-        self.log.info("Searching on {0} for project {1}".format(
-            host, dst_path_with_namespace))
+        self.log.info(
+            f"Searching on {host} for project {dst_path_with_namespace}")
         resp = self.projects_api.get_project_by_path_with_namespace(
             dst_path_with_namespace, host, token)
         if resp.status_code == 200:
@@ -582,3 +583,40 @@ class ProjectsClient(BaseClass):
 
             # A branch_name reset would need to go here for the multiple
             # branches
+
+    def create_staged_projects_structure(self, dry_run=True, disable_cicd=False):
+        staged_projects = get_staged_projects()
+        host = self.config.destination_host
+        token = self.config.destination_token
+        for s in staged_projects:
+            dst_path = get_dst_path_with_namespace(s)
+            dst_pid = self.find_project_by_path(host, token, dst_path)
+            if dst_pid:
+                self.log.info(
+                    f"SKIP: Project {dst_path} (ID: {dst_pid}) found on {host}")
+                continue
+            self.log.info(
+                f"{get_dry_log(dry_run)}Create {dst_path} empty project structure")
+            dst_grp_full_path = get_full_path_with_parent_namespace(
+                dirname(dst_path))
+            dst_grp = self.groups.find_group_by_path(
+                host, token, dst_grp_full_path)
+            name = s.get("name")
+            if dst_grp:
+                dst_gid = dst_grp.get("id")
+            else:
+                self.log.warning(
+                    f"SKIP: Project {name} parent group {dst_grp_full_path} NOT found")
+                continue
+            data = {
+                "name": name,
+                "path": s.get("path"),
+                "namespace_id": dst_gid
+            }
+            if disable_cicd:
+                data["jobs_enabled"] = False
+                data["shared_runners_enabled"] = False
+                data["auto_devops_enabled"] = False
+            if not dry_run:
+                self.projects_api.create_project(
+                    host, token, s.get("name"), data=data)
