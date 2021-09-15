@@ -105,12 +105,10 @@ def get_project_namespace(p):
     if p_type != "user":
         if b.config.src_parent_id and b.config.src_parent_group_path:
             single_group_name = b.config.src_parent_group_path.split("/")[-1]
-            p_namespace = "{0}{1}".format(single_group_name,
-                                          p_namespace.split(b.config.src_parent_group_path)[-1])
+            p_namespace = f"{single_group_name}{p_namespace.split(b.config.src_parent_group_path)[-1]}"
 
         if b.config.dstn_parent_id is not None:
-            return "{0}/{1}".format(b.config.dstn_parent_group_path,
-                                    p_namespace)
+            return f"{b.config.dstn_parent_group_path}/{p_namespace}"
     return p_namespace
 
 
@@ -124,7 +122,7 @@ def get_full_path_with_parent_namespace(full_path):
     if b.config.src_parent_id and b.config.src_parent_group_path:
         full_path = b.config.src_parent_group_path.split("/")[-1]
     if b.config.dstn_parent_id and b.config.dstn_parent_group_path:
-        return "{0}/{1}".format(b.config.dstn_parent_group_path, full_path)
+        return f"{b.config.dstn_parent_group_path}/{full_path}"
     return full_path
 
 
@@ -218,8 +216,7 @@ def get_dst_path_with_namespace(p):
         :param p: The JSON object representing a GitLab project
         :return: Destination project path with namespace
     """
-    return "{0}/{1}".format(get_user_project_namespace(p)
-                            if is_user_project(p) else get_project_namespace(p), p["path"])
+    return f"{get_user_project_namespace(p) if is_user_project(p) else get_project_namespace(p)}/{p.get('path')}"
 
 
 def get_target_namespace(project):

@@ -840,8 +840,6 @@ class MigrateClient(BaseClass):
         try:
             if isinstance(group, str):
                 group = json.loads(group)
-            self.log.info("Searching on destination for group {}".format(
-                full_path_with_parent_namespace))
             dst_grp = self.groups.find_group_by_path(
                 self.config.destination_host, self.config.destination_token, full_path_with_parent_namespace)
             dst_gid = dst_grp.get("id", None) if dst_grp else None
@@ -1425,6 +1423,8 @@ class MigrateClient(BaseClass):
             if not off and msg:
                 data["maintenance_mode_message"] = msg.replace("+", " ")
             token = self.config.destination_token if dest else self.config.source_token
-            self.log.warning(f"{misc_utils.get_dry_log(dry_run)}Turning maintenance mode {'OFF' if off else 'ON'} on {host}")
+            self.log.warning(
+                f"{misc_utils.get_dry_log(dry_run)}Turning maintenance mode {'OFF' if off else 'ON'} on {host}")
             if not dry_run:
-                self.instance_api.change_application_settings(host, token, data)
+                self.instance_api.change_application_settings(
+                    host, token, data)

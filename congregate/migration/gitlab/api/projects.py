@@ -221,7 +221,7 @@ class ProjectsApi(GitLabApiWrapper):
         else:
             data = {"name": name}
         if not message:
-            message = "Creating project %s with payload %s" % (name, str(data))
+            message = f"Creating project {name} with payload {str(data)}"
         return self.api.generate_post_request(host, token, "projects", json.dumps(data), headers=headers, description=message)
 
     def export_project(self, host, token, pid, data=None, headers=None, message=None):

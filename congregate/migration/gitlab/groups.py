@@ -184,6 +184,8 @@ class GroupsClient(BaseClass):
         """
         Search for an existing group by the full_path
         """
+        self.log.info(
+            f"Searching on destination for group {full_name_with_parent_namespace}")
         group = self.search_for_group_pr_namespace_by_full_name_with_parent_namespace(
             host, token, full_name_with_parent_namespace, True)
         if group is None:
@@ -191,12 +193,12 @@ class GroupsClient(BaseClass):
             namespace = self.search_for_group_pr_namespace_by_full_name_with_parent_namespace(
                 host, token, full_name_with_parent_namespace, False)
             if namespace is not None:
-                self.log.info("Group {} exists (namespace search)".format(
-                    full_name_with_parent_namespace))
+                self.log.info(
+                    f"Group {full_name_with_parent_namespace} exists (namespace search)")
                 return namespace
         else:
-            self.log.info("Group {} exists (group search)".format(
-                full_name_with_parent_namespace))
+            self.log.info(
+                f"Group {full_name_with_parent_namespace} exists (group search)")
             return group
         return None
 

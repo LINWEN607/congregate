@@ -580,8 +580,6 @@ class ImportExportClient(BaseClass):
         namespace = project["namespace"]
         pid = project["id"]
         dst_path_with_namespace = get_dst_path_with_namespace(project)
-        self.log.info("Searching on destination for project {}".format(
-            dst_path_with_namespace))
         dst_pid = self.projects.find_project_by_path(
             self.config.destination_host, self.config.destination_token, dst_path_with_namespace)
         if dst_pid:
