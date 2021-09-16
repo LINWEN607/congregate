@@ -588,35 +588,43 @@ class ProjectsClient(BaseClass):
         staged_projects = get_staged_projects()
         host = self.config.destination_host
         token = self.config.destination_token
+        res = []
         for s in staged_projects:
-            dst_path = get_dst_path_with_namespace(s)
-            dst_pid = self.find_project_by_path(host, token, dst_path)
-            if dst_pid:
+            try:
+                path_with_namespace = s.get("path_with_namespace")
+                dst_grp_full_path = get_full_path_with_parent_namespace(
+                    dirname(path_with_namespace))
+                dst_grp = self.groups.find_group_by_path(
+                    host, token, dst_grp_full_path)
+                if dst_grp:
+                    dst_gid = dst_grp.get("id")
+                else:
+                    self.log.warning(
+                        f"SKIP: Parent group {dst_grp_full_path} NOT found")
+                    continue
+                dst_path = get_dst_path_with_namespace(s)
+                dst_pid = self.find_project_by_path(host, token, dst_path)
+                if dst_pid:
+                    self.log.info(
+                        f"SKIP: Project {dst_path} (ID: {dst_pid}) already exists")
+                    continue
                 self.log.info(
-                    f"SKIP: Project {dst_path} (ID: {dst_pid}) found on {host}")
-                continue
-            self.log.info(
-                f"{get_dry_log(dry_run)}Create {dst_path} empty project structure")
-            dst_grp_full_path = get_full_path_with_parent_namespace(
-                dirname(dst_path))
-            dst_grp = self.groups.find_group_by_path(
-                host, token, dst_grp_full_path)
-            name = s.get("name")
-            if dst_grp:
-                dst_gid = dst_grp.get("id")
-            else:
-                self.log.warning(
-                    f"SKIP: Project {name} parent group {dst_grp_full_path} NOT found")
-                continue
-            data = {
-                "name": name,
-                "path": s.get("path"),
-                "namespace_id": dst_gid
-            }
-            if disable_cicd:
-                data["jobs_enabled"] = False
-                data["shared_runners_enabled"] = False
-                data["auto_devops_enabled"] = False
-            if not dry_run:
-                self.projects_api.create_project(
-                    host, token, s.get("name"), data=data)
+                    f"{get_dry_log(dry_run)}Create {dst_path} empty project structure")
+                name = s.get("name")
+                data = {
+                    "name": name,
+                    "path": s.get("path"),
+                    "namespace_id": dst_gid
+                }
+                if disable_cicd:
+                    data["jobs_enabled"] = False
+                    data["shared_runners_enabled"] = False
+                    data["auto_devops_enabled"] = False
+                if not dry_run:
+                    self.projects_api.create_project(
+                        host, token, name, data=data)
+                res.append(data)
+            except RequestException as re:
+                self.log.error(
+                    f"Failed to create project {path_with_namespace} due to:\n{re}")
+        return res

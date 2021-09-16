@@ -13,7 +13,7 @@ from congregate.helpers.base_class import BaseClass
 
 @mark.e2e
 class MigrationEndToEndTest(unittest.TestCase):
-    DELAY = BaseClass().config.export_import_status_check_time * 20
+    DELAY = BaseClass().config.export_import_status_check_time * 10
 
     @classmethod
     def setUpClass(self):

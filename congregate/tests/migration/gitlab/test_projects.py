@@ -1,6 +1,6 @@
 import warnings
 import unittest
-from unittest import mock
+from unittest.mock import patch, PropertyMock, MagicMock
 from pytest import mark
 
 from congregate.helpers.configuration_validator import ConfigurationValidator
@@ -29,13 +29,13 @@ class ProjectsTests(unittest.TestCase):
         self.projects_api = ProjectsApi()
         self.projects = ProjectsClient()
 
-    @mock.patch("io.TextIOBase")
-    @mock.patch('builtins.open')
-    @mock.patch.object(ProjectsApi, "get_members")
-    @mock.patch.object(GroupsApi, "get_all_group_projects")
-    @mock.patch('congregate.helpers.conf.Config.src_parent_group_path', new_callable=mock.PropertyMock)
-    @mock.patch('congregate.helpers.conf.Config.src_parent_id', new_callable=mock.PropertyMock)
-    @mock.patch.object(MongoConnector, "close_connection")
+    @patch("io.TextIOBase")
+    @patch('builtins.open')
+    @patch.object(ProjectsApi, "get_members")
+    @patch.object(GroupsApi, "get_all_group_projects")
+    @patch('congregate.helpers.conf.Config.src_parent_group_path', new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.src_parent_id', new_callable=PropertyMock)
+    @patch.object(MongoConnector, "close_connection")
     def test_retrieve_project_info_src_parent_group(self, mock_close, mock_src_parent_id, mock_src_parent_group_path, mock_get_all_group_projects, mock_get_members, mock_open, mock_file):
         mock_src_parent_id.return_value = 42
         mock_src_parent_group_path.return_value = "mock_src_parent_group_path"
@@ -57,12 +57,12 @@ class ProjectsTests(unittest.TestCase):
         for i, _ in enumerate(expected_projects):
             self.assertDictEqual(expected_projects[i], actual_projects[i])
 
-    @mock.patch("io.TextIOBase")
-    @mock.patch('builtins.open')
-    @mock.patch.object(ProjectsApi, "get_members")
-    @mock.patch.object(ProjectsApi, "get_all_projects")
-    @mock.patch('congregate.helpers.conf.Config.src_parent_group_path', new_callable=mock.PropertyMock)
-    @mock.patch.object(MongoConnector, "close_connection")
+    @patch("io.TextIOBase")
+    @patch('builtins.open')
+    @patch.object(ProjectsApi, "get_members")
+    @patch.object(ProjectsApi, "get_all_projects")
+    @patch('congregate.helpers.conf.Config.src_parent_group_path', new_callable=PropertyMock)
+    @patch.object(MongoConnector, "close_connection")
     def test_retrieve_project_info(self, mock_close, mock_src_parent_group_path, mock_get_all_projects, mock_get_members, mock_open, mock_file):
         mock_src_parent_group_path.return_value = None
         mock_get_all_projects.return_value = self.mock_projects.get_all_projects()
@@ -83,11 +83,11 @@ class ProjectsTests(unittest.TestCase):
         for i, _ in enumerate(expected_projects):
             self.assertDictEqual(expected_projects[i], actual_projects[i])
 
-    @mock.patch("io.TextIOBase")
-    @mock.patch('builtins.open')
-    @mock.patch.object(ProjectsApi, "get_all_projects")
-    @mock.patch('congregate.helpers.conf.Config.src_parent_group_path', new_callable=mock.PropertyMock)
-    @mock.patch.object(MongoConnector, "close_connection")
+    @patch("io.TextIOBase")
+    @patch('builtins.open')
+    @patch.object(ProjectsApi, "get_all_projects")
+    @patch('congregate.helpers.conf.Config.src_parent_group_path', new_callable=PropertyMock)
+    @patch.object(MongoConnector, "close_connection")
     def test_retrieve_project_info_error_message(self, mock_close, mock_src_parent_group_path, mock_get_all_projects, mock_open, mock_file):
         mock_src_parent_group_path.return_value = None
         mock_get_all_projects.return_value = [{"message": "some error"}]
@@ -103,10 +103,10 @@ class ProjectsTests(unittest.TestCase):
             "gitlab.example.com-host")]
         self.assertEqual(len(actual_projects), 0)
 
-    @mock.patch('congregate.helpers.conf.Config.destination_host', new_callable=mock.PropertyMock)
-    @mock.patch.object(ConfigurationValidator, 'destination_token', new_callable=mock.PropertyMock)
-    @mock.patch.object(ProjectsApi, "add_member")
-    @mock.patch.object(UsersApi, "search_for_user_by_email")
+    @patch('congregate.helpers.conf.Config.destination_host', new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'destination_token', new_callable=PropertyMock)
+    @patch.object(ProjectsApi, "add_member")
+    @patch.object(UsersApi, "search_for_user_by_email")
     def test_add_members_to_destination_group(self, user_search_mock, add_member_mock, mock_token, mock_host):
         mock_host.return_value = "https://gitlabdestination.com"
         mock_token.return_value = "token"
@@ -129,11 +129,11 @@ class ProjectsTests(unittest.TestCase):
             }
         ]
         user_search_mock.side_effect = [[user_data[0]], [user_data[1]]]
-        member1_mock = mock.MagicMock()
-        type(member1_mock).status_code = mock.PropertyMock(return_value=200)
+        member1_mock = MagicMock()
+        type(member1_mock).status_code = PropertyMock(return_value=200)
         member1_mock.json.return_value = user_data[0]
-        member2_mock = mock.MagicMock()
-        type(member2_mock).status_code = mock.PropertyMock(return_value=200)
+        member2_mock = MagicMock()
+        type(member2_mock).status_code = PropertyMock(return_value=200)
         member2_mock.json.return_value = user_data[1]
         add_member_mock.side_effect = [member1_mock, member2_mock]
         expected = {
@@ -144,10 +144,10 @@ class ProjectsTests(unittest.TestCase):
             "", "", 000, members)
         self.assertDictEqual(expected, actual)
 
-    @mock.patch('congregate.helpers.conf.Config.destination_host', new_callable=mock.PropertyMock)
-    @mock.patch.object(ConfigurationValidator, 'destination_token', new_callable=mock.PropertyMock)
-    @mock.patch.object(ProjectsApi, "add_member")
-    @mock.patch.object(UsersApi, "search_for_user_by_email")
+    @patch('congregate.helpers.conf.Config.destination_host', new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'destination_token', new_callable=PropertyMock)
+    @patch.object(ProjectsApi, "add_member")
+    @patch.object(UsersApi, "search_for_user_by_email")
     def test_add_members_to_destination_group_missing_user(self, user_search_mock, add_member_mock, mock_token, mock_host):
         mock_host.return_value = "https://gitlabdestination.com"
         mock_token.return_value = "token"
@@ -167,11 +167,11 @@ class ProjectsTests(unittest.TestCase):
             }
         ]
         user_search_mock.side_effect = [[user_data[0]], [user_data[1]]]
-        member1_mock = mock.MagicMock()
-        type(member1_mock).status_code = mock.PropertyMock(return_value=200)
+        member1_mock = MagicMock()
+        type(member1_mock).status_code = PropertyMock(return_value=200)
         member1_mock.json.return_value = user_data[0]
-        member2_mock = mock.MagicMock()
-        type(member2_mock).status_code = mock.PropertyMock(return_value=404)
+        member2_mock = MagicMock()
+        type(member2_mock).status_code = PropertyMock(return_value=404)
         member2_mock.json.return_value = user_data[1]
         add_member_mock.return_value = member1_mock
         expected = {
@@ -248,13 +248,13 @@ class ProjectsTests(unittest.TestCase):
         )
         self.assertIsNone(resp)
 
-    @mock.patch("congregate.helpers.migrate_utils.read_json_file_into_object")
+    @patch("congregate.helpers.migrate_utils.read_json_file_into_object")
     def test_filter_projects_by_state_archived(self, staged):
         staged.return_value = self.mock_projects.get_staged_projects()
         self.assertEqual(
             self.projects.filter_projects_by_state(archived=True), 1)
 
-    @mock.patch("congregate.helpers.migrate_utils.read_json_file_into_object")
+    @patch("congregate.helpers.migrate_utils.read_json_file_into_object")
     def test_filter_projects_by_state_unarchived(self, staged):
         staged.return_value = self.mock_projects.get_staged_projects()
         self.assertEqual(self.projects.filter_projects_by_state(), 2)
