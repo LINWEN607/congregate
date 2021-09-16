@@ -81,6 +81,5 @@ def list_all():
         Checks if data has been retrieved from source via `congregate list`. If not, run `congregate list`
     """
     # List ALL source instance users/groups/projects if empty or not recent
-    if not is_recent_file(
-            "{}/data/projects.json".format(b.app_path), age=3600):
+    if not is_recent_file(f"{b.app_path}/data/projects.json", age=3600):
         list_data()

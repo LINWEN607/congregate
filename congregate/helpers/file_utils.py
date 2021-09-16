@@ -64,7 +64,7 @@ def is_recent_file(path, age=2592000):
         Check whether a file path exists, is empty and older than 1 month
     """
     return os.path.exists(path) and os.path.getsize(
-        path) > 0 and time() - os.path.getmtime(path) < age
+        path) > 0 and (time() - os.path.getmtime(path) < age)
 
 
 def get_hash_of_dirs(directory, verbose=0):

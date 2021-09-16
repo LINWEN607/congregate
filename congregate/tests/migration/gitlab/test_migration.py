@@ -13,11 +13,13 @@ from congregate.helpers.base_class import BaseClass
 
 @mark.e2e
 class MigrationEndToEndTest(unittest.TestCase):
+    DELAY = BaseClass().config.export_import_status_check_time * 20
 
     @classmethod
     def setUpClass(self):
-        self.b = BaseClass()
         self.migrate = MigrateClient(dry_run=False, hard_delete=True)
+        # Give the instance and seed data time to 'settle'
+        sleep(self.DELAY)
         do_all.list_all()
         do_all.do_all_users(dry_run=False)
         do_all.do_all_groups_and_projects(dry_run=False)
@@ -26,7 +28,7 @@ class MigrationEndToEndTest(unittest.TestCase):
     def tearDownClass(self):
         self.migrate.rollback()
         # Allow users/groups/projects to fully delete
-        sleep(self.b.config.export_import_status_check_time * 6)
+        sleep(self.DELAY)
         rollback_diff()
 
     def test_user_migration_diff(self):

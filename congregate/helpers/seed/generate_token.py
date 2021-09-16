@@ -9,7 +9,7 @@ Example: ./<script> <name-of-token> <expiry>
 ./<script> mytoken 2020-08-27
 ## Requirements :-
 1) Python3
-2) Sript needs below environment variables to be setup:
+2) Script needs below environment variables to be setup:
   - GITLAB_URL='http://<IP>:<port>'
   - GITLAB_ADMIN_USER='root'
   - GITLAB_ADMIN_PASSWD='5iveL!fe'
@@ -28,6 +28,7 @@ import requests
 from bs4 import BeautifulSoup
 from congregate.helpers.decorators import configurable_stable_retry
 from congregate.helpers.logger import myLogger
+
 
 class token_generator():
     def __init__(self):
@@ -50,7 +51,8 @@ class token_generator():
     def obtain_csrf_token(self):
         self.log.info("Obtaining CSRF token")
         r = requests.get(self.__get_root_route())
-        self.log.debug(f"Status code for {self.__get_root_route}: {r.status_code}")
+        self.log.debug(
+            f"Status code for {self.__get_root_route}: {r.status_code}")
         if r.status_code != 200:
             raise Exception
         # self.log.debug(f"r.text: \n{r.text}")
@@ -74,7 +76,8 @@ class token_generator():
         self.log.debug(f"Sign-in password post-data is: \n{data}")
         r = requests.post(self.__get_sign_in_route(),
                           data=data, cookies=cookies)
-        self.log.debug(f"Status code for {self.__get_sign_in_route()}: {r.status_code}")
+        self.log.debug(
+            f"Status code for {self.__get_sign_in_route()}: {r.status_code}")
         token = self.find_csrf_token(r.text)
         self.log.info("Signed in to GitLab instance")
         if len(r.history) > 0:
@@ -92,10 +95,11 @@ class token_generator():
                 "user[reset_password_token]": reset_password_token,
             }
             data.update(csrf)
-            
+
             r = requests.post(self.__get_password_route(),
                               data=data, cookies=cookies)
-            self.log.debug(f"Status code for {self.__get_password_route()}: {r.status_code}")
+            self.log.debug(
+                f"Status code for {self.__get_password_route()}: {r.status_code}")
             token = self.find_csrf_token(r.text)
             if len(r.history) > 0:
                 return token, r.history[0].cookies
@@ -113,12 +117,15 @@ class token_generator():
         data.update(self.scopes)
         data.update(csrf)
         r = requests.post(self.__get_pat_route(), data=data, cookies=cookies)
-        self.log.debug(f"Status code for {self.__get_pat_route()}: {r.status_code}")
+        self.log.debug(
+            f"Status code for {self.__get_pat_route()}: {r.status_code}")
         if r.status_code != 200:
-            r = requests.post(urljoin(self.endpoint, "/profile/personal_access_tokens"), data=data, cookies=cookies)
-            self.log.debug(f"Status code for {self.__get_pat_route()}: {r.status_code}")
+            r = requests.post(urljoin(
+                self.endpoint, "/profile/personal_access_tokens"), data=data, cookies=cookies)
+            self.log.debug(
+                f"Status code for {self.__get_pat_route()}: {r.status_code}")
         soup = BeautifulSoup(r.text, "lxml")
-        # self.log.debug(f"Soup is:\n{soup}")    
+        # self.log.debug(f"Soup is:\n{soup}")
         token = soup.find(
             'input', id='created-personal-access-token').get('value')
         self.log.info("Obtained personal access token for root")
