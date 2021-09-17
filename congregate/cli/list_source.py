@@ -30,62 +30,53 @@ def list_gitlab_data(processes=None, partial=False, skip_users=False, skip_group
     """
         List the projects information, and Retrieve user info, group info from source instance.
     """
-    mongo = MongoConnector()
-    if not partial:
-        b.log.info("Dropping database collections")
-        if not skip_projects:
-            mongo.drop_collection("projects")
-        if not skip_groups:
-            mongo.drop_collection("groups")
-        if not skip_users:
-            mongo.drop_collection("users")
+    mongo, p, g, u = mongo_init()
+
     if not skip_users:
         users = UsersClient()
         users.retrieve_user_info(b.config.source_host,
                                  b.config.source_token, processes=processes)
-        mongo.dump_collection_to_file(
-            f"users-{strip_protocol(b.config.source_host)}", f"{b.app_path}/data/users.json")
+        mongo.dump_collection_to_file(u, f"{b.app_path}/data/users.json")
     if not skip_groups:
         groups = GroupsClient()
         groups.retrieve_group_info(
             b.config.source_host, b.config.source_token, processes=processes)
-        mongo.dump_collection_to_file(
-            f"groups-{strip_protocol(b.config.source_host)}", f"{b.app_path}/data/groups.json")
+        mongo.dump_collection_to_file(g, f"{b.app_path}/data/groups.json")
     if not skip_projects:
         projects = ProjectsClient()
         projects.retrieve_project_info(
             b.config.source_host, b.config.source_token, processes=processes)
-        mongo.dump_collection_to_file(
-            f"projects-{strip_protocol(b.config.source_host)}", f"{b.app_path}/data/projects.json")
+        mongo.dump_collection_to_file(p, f"{b.app_path}/data/projects.json")
+
+    mongo.close_connection()
 
 
-def list_bitbucket_data(skip_users=False, skip_groups=False, skip_projects=False):
+def list_bitbucket_data(processes=None, partial=False, skip_users=False, skip_groups=False, skip_projects=False):
+    mongo, p, g, u = mongo_init()
+
+    groups_client = BitBucketGroups()
+    groups = groups_client.retrieve_group_info()
     if not skip_users:
         users = BitBucketUsers()
-        users.retrieve_user_info()
-    if not skip_groups and not skip_projects:
+        users.retrieve_user_info(processes=processes)
+        mongo.dump_collection_to_file(u, f"{b.app_path}/data/users.json")
+    if not skip_groups:
         projects = BitBucketProjects()
-        groups_client = BitBucketGroups()
+        projects.set_user_groups(groups)
+        projects.retrieve_project_info(processes=processes)
+        mongo.dump_collection_to_file(g, f"{b.app_path}/data/groups.json")
+    if not skip_projects:
         repos = BitBucketRepos()
-        groups = groups_client.retrieve_group_info()
-        projects.retrieve_project_info(groups=groups)
-        repos.retrieve_repo_info(groups=groups)
+        repos.set_user_groups(groups)
+        repos.retrieve_repo_info(processes=processes)
+        mongo.dump_collection_to_file(p, f"{b.app_path}/data/projects.json")
+
+    mongo.close_connection()
 
 
 def list_github_data(processes=None, partial=False, skip_users=False, skip_groups=False, skip_projects=False, src_instances=False):
-    mongo = MongoConnector()
-    src_hostname = strip_protocol(b.config.source_host)
-    p = f"projects-{src_hostname}"
-    g = f"groups-{src_hostname}"
-    u = f"users-{src_hostname}"
-    if not partial:
-        b.log.info("Dropping database collections")
-        if not skip_projects:
-            mongo.drop_collection(p)
-        if not skip_groups:
-            mongo.drop_collection(g)
-        if not skip_users:
-            mongo.drop_collection(u)
+    mongo, p, g, u = mongo_init()
+
     if not src_instances:
         if not skip_users:
             users = GitHubUsers(b.config.source_host, b.config.source_token,
@@ -176,7 +167,7 @@ def list_data(processes=None, partial=False, skip_users=False, skip_groups=False
     b.log.info(
         f"Listing data from {src_type} source type - {b.config.source_host}")
     if src_type == "bitbucket server":
-        list_bitbucket_data(skip_users=skip_users,
+        list_bitbucket_data(processes=processes, partial=partial, skip_users=skip_users,
                             skip_projects=skip_projects, skip_groups=skip_groups)
     elif src_type == "gitlab":
         list_gitlab_data(processes=processes, partial=partial, skip_users=skip_users,
@@ -191,6 +182,22 @@ def list_data(processes=None, partial=False, skip_users=False, skip_groups=False
 
     for f in staged_files:
         write_empty_file(f)
+
+def mongo_init(partial=False, skip_users=False, skip_groups=False, skip_projects=False):
+    mongo = MongoConnector()
+    src_hostname = strip_protocol(b.config.source_host)
+    p = f"projects-{src_hostname}"
+    g = f"groups-{src_hostname}"
+    u = f"users-{src_hostname}"
+    if not partial:
+        b.log.info("Dropping database collections")
+        if not skip_projects:
+            mongo.drop_collection(p)
+        if not skip_groups:
+            mongo.drop_collection(g)
+        if not skip_users:
+            mongo.drop_collection(u)
+    return mongo, p, g, u
 
 
 if __name__ == "__main__":

@@ -103,6 +103,7 @@ class MongoConnector(BaseClass):
         return self.db[collection].drop()
 
     def dump_collection_to_file(self, collection, path):
+        self.log.info(f"Dumping {collection} collection to {path}")
         return stream_json_yield_to_file(
             path, self.stream_collection, collection)
 

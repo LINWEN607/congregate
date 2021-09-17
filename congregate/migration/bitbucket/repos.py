@@ -1,9 +1,8 @@
 from urllib.parse import quote_plus
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import safe_json_response, remove_dupes_but_take_higher_access
-from congregate.helpers.list_utils import remove_dupes
+from congregate.helpers.misc_utils import safe_json_response, remove_dupes_but_take_higher_access, strip_protocol, is_error_message_present
 from congregate.helpers.dict_utils import dig
-from congregate.helpers.json_utils import write_json_to_file
+from congregate.helpers.mdbc import MongoConnector
 from congregate.migration.bitbucket.api.repos import ReposApi
 from congregate.migration.bitbucket.api.users import UsersApi
 from congregate.migration.bitbucket.users import UsersClient
@@ -18,18 +17,34 @@ class ReposClient(BaseClass):
         self.users = UsersClient()
         self.groups_api = GroupsApi()
         self.gl_projects_api = GLProjectsApi()
+        self.user_groups = None
         super().__init__()
+    
+    def connect_to_mongo(self):
+        return MongoConnector()
+    
+    def set_user_groups(self, groups):
+        self.user_groups = groups
 
-    def retrieve_repo_info(self, groups=False):
+    def retrieve_repo_info(self, processes=None):
+        self.multi.start_multi_process_stream_with_args(
+            self.handle_retrieving_repos, self.repos_api.get_all_repos(), processes=processes, nestable=True)
+
+    def handle_retrieving_repos(self, repo, mongo=None):
         # List and reformat all Bitbucket Server repo to GitLab project metadata
-        repos = []
-        for repo in self.repos_api.get_all_repos():
-            repos.append(self.format_repo(repo, groups))
-        write_json_to_file(
-            f"{self.app_path}/data/projects.json", remove_dupes(repos), self.log)
-        return remove_dupes(repos)
+        error, resp = is_error_message_present(repo)
+        if resp and not error:
+            # mongo should be set to None unless this function is being used in a
+            # unit test
+            if not mongo:
+                mongo = self.connect_to_mongo()
+            mongo.insert_data(
+                f"projects-{strip_protocol(self.config.source_host)}", self.format_repo(resp))
+            mongo.close_connection()
+        else:
+            self.log.error(resp)
 
-    def add_repo_users(self, members, project_key, repo_slug, groups):
+    def add_repo_users(self, members, project_key, repo_slug):
         REPO_PERM_MAP = {
             "REPO_ADMIN": 40,  # Maintainer
             "REPO_WRITE": 30,  # Developer
@@ -40,17 +55,17 @@ class ReposClient(BaseClass):
             m["permission"] = REPO_PERM_MAP[member["permission"]]
             members.append(m)
 
-        if groups:
+        if self.user_groups:
             for group in self.repos_api.get_all_repo_groups(project_key, repo_slug):
                 group_name = dig(group, 'group', 'name', default="").lower()
                 permission = REPO_PERM_MAP[group["permission"]]
-                if groups.get(group_name, None):
-                    for user in groups[group_name]:
+                if self.user_groups.get(group_name):
+                    for user in self.user_groups[group_name]:
                         temp_user = user
                         temp_user["permission"] = permission
                         members.append(temp_user)
                 else:
-                    self.log.warning(f"Unable to find group {group_name}")
+                    self.log.warning(f"Unable to find {repo_slug} user group {group_name}")
 
         return remove_dupes_but_take_higher_access(self.users.format_users(members))
 
@@ -137,7 +152,7 @@ class ReposClient(BaseClass):
         self.gl_projects_api.edit_project(
             self.config.destination_host, self.config.destination_token, pid, data=data)
 
-    def format_repo(self, repo, groups=False, project=False):
+    def format_repo(self, repo, project=False):
         """
         Format public and project repos.
         Leave project repo members empty ([]) as they are retrieved during staging.
@@ -157,7 +172,7 @@ class ReposClient(BaseClass):
             "path_with_namespace": repo_path + "/" + repo.get("slug"),
             "visibility": "public" if repo.get("public") else "private",
             "description": repo.get("description", ""),
-            "members": [] if project else self.add_repo_users([], repo_path, repo.get("slug"), groups),
+            "members": [] if project else self.add_repo_users([], repo_path, repo.get("slug")),
             "default_branch": self.get_default_branch(repo_path, repo["slug"]),
             # Assuming http is on index 0
             "http_url_to_repo": dig(repo, 'links', 'clone', default=[{"href": ""}])[0]["href"]
