@@ -588,7 +588,6 @@ class ProjectsClient(BaseClass):
         staged_projects = get_staged_projects()
         host = self.config.destination_host
         token = self.config.destination_token
-        res = []
         for s in staged_projects:
             try:
                 path_with_namespace = s.get("path_with_namespace")
@@ -614,17 +613,21 @@ class ProjectsClient(BaseClass):
                 data = {
                     "name": name,
                     "path": s.get("path"),
-                    "namespace_id": dst_gid
+                    "namespace_id": dst_gid,
+                    "visibility": s.get("visibility"),
+                    "description": s.get("description"),
+                    "default_branch": s.get("default_branch")
                 }
                 if disable_cicd:
                     data["jobs_enabled"] = False
                     data["shared_runners_enabled"] = False
                     data["auto_devops_enabled"] = False
                 if not dry_run:
-                    self.projects_api.create_project(
+                    resp = self.projects_api.create_project(
                         host, token, name, data=data)
-                res.append(data)
+                    if resp.status_code == 201 and s.get("merge_requests_template"):
+                        self.projects_api.edit_project(host, token, safe_json_response(resp).get(
+                            "id"), {"merge_requests_template": s["merge_requests_template"]})
             except RequestException as re:
                 self.log.error(
-                    f"Failed to create project {path_with_namespace} due to:\n{re}")
-        return res
+                    f"Failed to create project {path_with_namespace} with error:\n{re}")

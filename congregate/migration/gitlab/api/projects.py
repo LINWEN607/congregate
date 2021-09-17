@@ -193,7 +193,7 @@ class ProjectsApi(GitLabApiWrapper):
                 pid, data["group_id"])
         return self.api.generate_post_request(host, token, f"projects/{pid}/share", json.dumps(data), description=message)
 
-    def edit_project(self, host, token, pid, data=None):
+    def edit_project(self, host, token, pid, data=None, message=None):
         """
         Edit a project
 
@@ -202,7 +202,9 @@ class ProjectsApi(GitLabApiWrapper):
             :param: id: (int) GitLab project ID
             :return: Response object containing the response to PUT /projects/:id
         """
-        return self.api.generate_put_request(host, token, f"projects/{pid}", data=json.dumps(data))
+        if not message:
+            message = f"Editing project {pid} with payload {str(data)}"
+        return self.api.generate_put_request(host, token, f"projects/{pid}", json.dumps(data), description=message)
 
     def start_pull_mirror(self, host, token, pid, data=None):
         """
@@ -235,7 +237,7 @@ class ProjectsApi(GitLabApiWrapper):
         """
         if not message:
             message = "Exporting project"
-        return self.api.generate_post_request(host, token, f"projects/{pid}/export", data=data, headers=headers, description=message)
+        return self.api.generate_post_request(host, token, f"projects/{pid}/export", data, headers=headers, description=message)
 
     def get_project_export_status(self, id, host, token):
         """
@@ -262,7 +264,7 @@ class ProjectsApi(GitLabApiWrapper):
         """
         if not message:
             message = "Importing project with payload %s" % str(data)
-        return self.api.generate_post_request(host, token, "projects/import", data=data, files=files, headers=headers, description=message)
+        return self.api.generate_post_request(host, token, "projects/import", data, files=files, headers=headers, description=message)
 
     def get_project_import_status(self, host, token, pid):
         """
@@ -494,7 +496,7 @@ class ProjectsApi(GitLabApiWrapper):
         """
         if not message:
             message = f"Protecting repository branch {name} for project {pid}"
-        return self.api.generate_post_request(host, token, f"projects/{pid}/protected_branches", data=json.dumps(data), description=message)
+        return self.api.generate_post_request(host, token, f"projects/{pid}/protected_branches", json.dumps(data), description=message)
 
     def unprotect_repository_branches(self, pid, name, host, token, message=None):
         """
@@ -524,7 +526,7 @@ class ProjectsApi(GitLabApiWrapper):
         """
         if not message:
             message = f"Setting default branch {branch} for project {pid}"
-        return self.api.generate_put_request(host, token, f"projects/{pid}?default_branch={branch}", data=data, description=message)
+        return self.api.generate_put_request(host, token, f"projects/{pid}?default_branch={branch}", data, description=message)
 
     def create_branch(self, host, token, pid, data=None, message=None):
         """
@@ -537,7 +539,7 @@ class ProjectsApi(GitLabApiWrapper):
         """
         if not message:
             message = "Creating branch for project with payload %s" % data
-        return self.api.generate_post_request(host, token, f"projects/{pid}/repository/branches", data=data)
+        return self.api.generate_post_request(host, token, f"projects/{pid}/repository/branches", data)
 
     def get_all_project_protected_environments(self, pid, host, token):
         """
