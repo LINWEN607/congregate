@@ -1,5 +1,6 @@
 from logging import getLogger, FileHandler, StreamHandler, Formatter, Handler, INFO, WARNING
 
+from os.path import exists
 import json
 import requests
 
@@ -8,19 +9,22 @@ log_file_format = \
     "[%(asctime)s][%(levelname)s]|%(module)s.%(funcName)s:%(lineno)d| %(message)s"
 
 
-def myLogger(name, app_path='.', log_name='application', config=None):
+def myLogger(name, app_path='.', log_dir='data/logs', log_name='application', config=None):
     global loggers
     if loggers.get(name):
         return loggers.get(name)
     else:
         logger = getLogger(name)
         logger.setLevel(INFO)
-        file_log_handler = FileHandler(f'{app_path}/data/logs/{log_name}.log')
         stderr_log_handler = StreamHandler()
         formatter = Formatter(log_file_format, datefmt="%d %b %Y %H:%M:%S")
-        file_log_handler.setFormatter(formatter)
+        log_dir = f'{app_path}/{log_dir}'
+        if exists(log_dir):
+            log_path = f'{log_dir}/{log_name}.log'
+            file_log_handler = FileHandler(log_path)
+            file_log_handler.setFormatter(formatter)
+            logger.addHandler(file_log_handler)
         stderr_log_handler.setFormatter(formatter)
-        logger.addHandler(file_log_handler)
         logger.addHandler(stderr_log_handler)
         slack_handler = SlackLogHandler(config=config)
         slack_handler.setLevel(WARNING)

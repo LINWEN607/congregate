@@ -1,6 +1,13 @@
 import unittest
+import warnings
 from unittest.mock import patch, PropertyMock, MagicMock
 from pytest import mark
+# mongomock is using deprecated logic as of Python 3.3
+# This warning suppression is used so tests can pass
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore")
+    import mongomock
+from congregate.helpers.mdbc import MongoConnector
 from congregate.tests.mockapi.bitbucket.projects import MockProjectsApi
 from congregate.migration.bitbucket.projects import ProjectsClient
 from congregate.migration.bitbucket.repos import ReposClient
@@ -16,8 +23,7 @@ class ProjectsTests(unittest.TestCase):
         self.projects = ProjectsClient()
         self.mock_groups = MockGroupsApi()
 
-    @patch("io.TextIOBase")
-    @patch('builtins.open')
+    @patch.object(MongoConnector, "close_connection")
     @patch.object(ProjectsApi, "get_all_project_users")
     @patch.object(ProjectsApi, "get_all_project_repos")
     @patch.object(ProjectsApi, "get_all_projects")
@@ -26,10 +32,9 @@ class ProjectsTests(unittest.TestCase):
     @patch('congregate.helpers.conf.Config.source_host', new_callable=PropertyMock)
     @patch('congregate.helpers.conf.Config.source_token', new_callable=PropertyMock)
     def test_retrieve_project_info(self, mock_ext_user_token, mock_ext_src_url, mock_get_default_branch, mock_add_repo_users,
-                                   mock_get_all_projects, mock_get_all_project_repos, mock_get_all_project_users, mock_open, mock_file):
-        mock_ext_src_url.return_value = "http://localhost:7990"
+                                   mock_get_all_projects, mock_get_all_project_repos, mock_get_all_project_users, mock_close_connection):
+        mock_ext_src_url.return_value = "http://bitbucket.company.com"
         mock_ext_user_token.return_value = "username:password"
-
         mock_resp = MagicMock()
         type(mock_resp).status_code = PropertyMock(return_value=200)
         mock_resp.json.return_value = {"displayId": "main"}
@@ -41,7 +46,6 @@ class ProjectsTests(unittest.TestCase):
         mock_get_all_project_users.side_effect = [
             self.mock_projects.get_all_project_users(), self.mock_projects.get_all_project_users()]
         mock_get_all_projects.return_value = self.mock_projects.get_all_projects()
-        mock_open.return_value = mock_file
         expected_members = [
             {
                 "username": "user2",
@@ -112,13 +116,24 @@ class ProjectsTests(unittest.TestCase):
                 "projects": expected_repos
             }
         ]
-        actual_projects = self.projects.retrieve_project_info()
+
+        mock_close_connection.return_value = None
+
+        listed_project = [self.mock_projects.get_all_projects(
+        )[0], self.mock_projects.get_all_projects()[1]]
+
+        mongo = MongoConnector(client=mongomock.MongoClient)
+        for project in listed_project:
+            self.projects.handle_retrieving_projects(project, mongo=mongo)
+
+        actual_projects = [d for d, _ in mongo.stream_collection(
+            "groups-bitbucket.company.com")]
+
         for i, _ in enumerate(expected_projects):
             self.assertEqual(
                 actual_projects[i].items(), expected_projects[i].items())
-
-    @patch("io.TextIOBase")
-    @patch('builtins.open')
+    
+    @patch.object(MongoConnector, "close_connection")
     @patch.object(ProjectsApi, "get_all_project_groups")
     @patch.object(ProjectsApi, "get_all_project_users")
     @patch.object(ProjectsApi, "get_all_project_repos")
@@ -128,10 +143,9 @@ class ProjectsTests(unittest.TestCase):
     @patch('congregate.helpers.conf.Config.source_host', new_callable=PropertyMock)
     @patch('congregate.helpers.conf.Config.source_token', new_callable=PropertyMock)
     def test_retrieve_project_info_with_groups(self, mock_ext_user_token, mock_ext_src_url, mock_get_default_branch, mock_add_repo_users,
-                                               mock_get_all_projects, mock_get_all_project_repos, mock_get_all_project_users, mock_get_all_project_groups, mock_open, mock_file):
-        mock_ext_src_url.return_value = "http://localhost:7990"
+                                               mock_get_all_projects, mock_get_all_project_repos, mock_get_all_project_users, mock_get_all_project_groups, mock_close_connection):
+        mock_ext_src_url.return_value = "http://bitbucket.company.com"
         mock_ext_user_token.return_value = "username:password"
-
         mock_resp = MagicMock()
         type(mock_resp).status_code = PropertyMock(return_value=204)
         mock_resp.json.return_value = None
@@ -145,7 +159,6 @@ class ProjectsTests(unittest.TestCase):
         mock_get_all_projects.return_value = self.mock_projects.get_all_projects()
         mock_get_all_project_groups.side_effect = [
             self.mock_projects.get_all_project_groups(), []]
-        mock_open.return_value = mock_file
         groups = {
             "test-group": self.mock_groups.get_all_group_members()
         }
@@ -261,7 +274,20 @@ class ProjectsTests(unittest.TestCase):
             }
         ]
 
-        actual_projects = self.projects.retrieve_project_info(groups=groups)
+        mock_close_connection.return_value = None
+
+        self.projects.set_user_groups(groups)
+
+        listed_projects = [self.mock_projects.get_all_projects(
+        )[0], self.mock_projects.get_all_projects()[1]]
+
+        mongo = MongoConnector(client=mongomock.MongoClient)
+        for project in listed_projects:
+            self.projects.handle_retrieving_projects(project, mongo=mongo)
+
+        actual_projects = [d for d, _ in mongo.stream_collection(
+            "groups-bitbucket.company.com")]
+
         for i, _ in enumerate(expected_projects):
             self.assertEqual(
                 actual_projects[i].items(), expected_projects[i].items())
