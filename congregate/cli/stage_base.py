@@ -116,21 +116,23 @@ class BaseStageClass(BaseClass):
             "visibility": project["visibility"],
             "description": project["description"],
             # Will be deprecated in favor of builds_access_level
-            "jobs_enabled": project.get("jobs_enabled", None),
+            "jobs_enabled": project.get("jobs_enabled"),
             "project_type": dig(project, 'namespace', 'kind'),
             # Project members are not listed when listing group projects
-            "members": project["members"] if project.get("members", None) else self.rewritten_projects[project["id"]]["members"],
+            "members": project["members"] if project.get("members") else self.rewritten_projects[project["id"]]["members"],
             "http_url_to_repo": project["http_url_to_repo"]
         }
-        if project.get("ci_sources", None):
+        if project.get("ci_sources"):
             obj["ci_sources"] = project["ci_sources"]
         if self.config.source_type == "gitlab":
             obj["shared_runners_enabled"] = project["shared_runners_enabled"]
             obj["archived"] = project["archived"]
             obj["shared_with_groups"] = project["shared_with_groups"]
+            if project.get("merge_requests_template"):
+                obj["merge_requests_template"] = project["merge_requests_template"]
         if self.config.source_type in ["gitlab", "bitbucket server"]:
             # In case of projects without repos (e.g. Wiki)
-            if "default_branch" in project:
+            if project.get("default_branch"):
                 obj["default_branch"] = project["default_branch"]
         return obj
 
