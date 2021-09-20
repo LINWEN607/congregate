@@ -95,6 +95,16 @@ This runbook covers the process of preparing and cleaning up after a migration f
   * To discourage application activity during migration you may [restrict users from logging into GitLab](https://docs.gitlab.com/omnibus/maintenance/#restrict-users-from-logging-into-gitlab)
   * As of GitLab 13.9 it's also possible to [enable maintenance mode](https://docs.gitlab.com/ee/administration/maintenance_mode/index.html#enable-maintenance-mode) during the migration, which allows most external actions that do not change internal state
 * [ ] (gitlab.com) In case you **Restrict membership by email domain** (on *Settings -> General -> Permissions, LFS, 2FA*) on the parent group, make sure to add `gitlab.com`. This will allow the migration/import user to unpack imported group and project exports.
+* [ ] (Optional) To improve the performance of background jobs (Sidekiq), handling multiple group and project exports, add the following to the GitLab `/etc/gitlab/gitlab.rb` configuration
+
+    ```ruby
+    gitlab_rails['env'] = {
+      'SIDEKIQ_MEMORY_KILLER_MAX_RSS' => "0"
+    }
+    sidekiq['queue_groups'] = [
+      "*"
+    ]
+    ```
 
 ## VM
 
