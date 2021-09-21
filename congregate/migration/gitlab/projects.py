@@ -604,7 +604,7 @@ class ProjectsClient(BaseClass):
                 dst_path = get_dst_path_with_namespace(s)
                 dst_pid = self.find_project_by_path(host, token, dst_path)
                 if dst_pid:
-                    self.log.info(
+                    self.log.warning(
                         f"SKIP: Project {dst_path} (ID: {dst_pid}) already exists")
                     continue
                 self.log.info(
@@ -628,6 +628,10 @@ class ProjectsClient(BaseClass):
                     if resp.status_code == 201 and s.get("merge_requests_template"):
                         self.projects_api.edit_project(host, token, safe_json_response(resp).get(
                             "id"), {"merge_requests_template": s["merge_requests_template"]})
+                    elif resp.status_code != 201:
+                        self.log.error(
+                            f"Failed to create and edit project {dst_path}, with response:\n{resp} - {resp.text}")
             except RequestException as re:
                 self.log.error(
                     f"Failed to create project {path_with_namespace} with error:\n{re}")
+                continue
