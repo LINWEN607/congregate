@@ -138,9 +138,11 @@ build:
   script:
     - /bin/sh ci/build_test_image.sh
   rules:
-    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
-      changes:
+    - changes:
         - docker/test/*
+    # - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
+    #   changes:
+    #     - docker/test/*
     
 
 build bitbucket seed image:
