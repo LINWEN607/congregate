@@ -136,7 +136,9 @@ build:
     - .docker-login
   stage: build
   script:
-    - /bin/sh ci/build_test_image.sh
+    - cp ./docker/test/py38.Dockerfile ./Dockerfile
+    - docker build --tag "$TEST_IMAGE_NAME" .
+    - docker push "$TEST_IMAGE_NAME"
   rules:
     - changes:
         - docker/test/*
