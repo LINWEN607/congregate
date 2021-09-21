@@ -1,4 +1,4 @@
-FROM python:3.8.10-slim-buster
+FROM python:3.8.12-slim-buster
 
 # Define the ENV variable
 ENV CONGREGATE_PATH=/opt/congregate \

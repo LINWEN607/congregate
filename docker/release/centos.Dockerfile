@@ -17,12 +17,25 @@ COPY docker/release/centos/mongo_repo /etc/yum.repos.d/mongodb-org-4.4.repo
 
 RUN mkdir -p /data/db
 
-# Installing some basic utilities and updating apt
+# Installing yum-installable libraries
 RUN yum update -y && \
-    yum install -y less vim jq curl git mongodb-org-4.4.4 mongodb-org-server-4.4.4 mongodb-org-shell-4.4.4 mongodb-org-mongos-4.4.4 mongodb-org-tools-4.4.4 python3.8 epel-release && \
-    yum install -y screen && \
+    yum install -y less vim jq curl git mongodb-org-4.4.4 mongodb-org-server-4.4.4 mongodb-org-shell-4.4.4 mongodb-org-mongos-4.4.4 mongodb-org-tools-4.4.4 \
+    gcc openssl-devel bzip2-devel libffi-devel zlib-devel make epel-release && \
+    yum install -y screen
+
+# Install Python
+RUN cd /opt && \
+    curl https://www.python.org/ftp/python/3.8.12/Python-3.8.12.tgz -o Python-3.8.12.tgz && \
+    tar xzf Python-3.8.12.tgz && \
+    cd Python-3.8.12 && \
+    ./configure --enable-optimizations && \
+    make altinstall && \
+    cd /opt && \
+    rm Python-3.8.12.tgz && \
+    rm -r Python-3.8.12 && \
     curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
-    python3 get-pip.py
+    python3.8 get-pip.py && \
+    rm get-pip.py
 
 run echo 'if [ -z "$(ps aux | grep mongo | grep -v grep)" ]; then mongod --fork --logpath /var/log/mongodb/mongod.log; fi' >> ~/.bashrc
 RUN echo "alias python='python3.8'" >> ~/.bashrc
