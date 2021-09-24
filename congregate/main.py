@@ -168,8 +168,9 @@ Commands:
 """
 
 import os
-from pathlib import Path
 import subprocess
+from sys import platform
+from pathlib import Path
 from json import dump, dumps
 from time import time
 from toml import load as load_toml
@@ -593,12 +594,21 @@ def main():
                 projects.create_staged_projects_structure(
                     dry_run=DRY_RUN, disable_cicd=arguments["--disable-cicd"])
         if arguments["obfuscate"]:
-            print(obfuscate("Secret:"))
+            data = obfuscate("Secret:")
+            if platform == "darwin":
+                subprocess.run("pbcopy", universal_newlines=True,
+                               input=data, check=True)
+                print("Masked secret copied to clipboard (pbcopy)")
+            else:
+                print(f"Masked secret: {data}")
         if arguments["deobfuscate"]:
             data = deobfuscate(input("Masked secret:"))
-            subprocess.run("pbcopy", universal_newlines=True,
-                           input=data, check=True)
-            print("Secret copied to clipboard (pbcopy)")
+            if platform == "darwin":
+                subprocess.run("pbcopy", universal_newlines=True,
+                               input=data, check=True)
+                print("Secret copied to clipboard (pbcopy)")
+            else:
+                print(f"Secret: {data}")
 
 
 if __name__ == "__main__":
