@@ -15,7 +15,7 @@
     "vue": "^2.6.13",
     "vue-good-table": "^2.21.10",
     "vue-router": "^3.5.1",
-    "yargs-parser": "^20.2.7"
+    "yargs-parser": "^20.2.9"
   },
   "optionalDependencies": {
     "fsevents": "^2.1.3"
