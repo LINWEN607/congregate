@@ -267,7 +267,7 @@ Usage:
     congregate stage-groups <groups>... [--skip-users] [--commit] [--scm-source=hostname]
     congregate stage-wave <wave> [--commit] [--scm-source=hostname]
     congregate create-stage-wave-csv [--commit]
-    congregate migrate [--processes=<n>] [--reporting] [--skip-users] [--skip-adding-members] [--skip-group-export] [--skip-group-import] [--skip-project-export] [--skip-project-import] [--only-post-migration-info] [--subgroups-only] [--scm-source=hostname] [--commit] [--reg-dry-run]
+    congregate migrate [--processes=<n>] [--reporting] [--skip-users] [--remove-members] [--skip-group-export] [--skip-group-import] [--skip-project-export] [--skip-project-import] [--only-post-migration-info] [--subgroups-only] [--scm-source=hostname] [--commit] [--reg-dry-run]
     congregate rollback [--hard-delete] [--skip-users] [--skip-groups] [--skip-projects] [--commit]
     congregate ui
     congregate do-all [--commit]
@@ -327,7 +327,7 @@ Arguments:
     src_instances                           Present if there are multiple GH source instances
     scm_source                              Specific SCM source hostname
     skip-users                              Stage: Skip staging users; Migrate: Skip migrating users; Rollback: Remove only groups and projects.
-    skip-adding-members                     Skip adding members from GitHub as source instance
+    remove-members                          Remove all members of created (GitHub) or imported (GitLab) groups. Skip adding any members of BitBucket imported repos.
     hard-delete                             Remove user contributions and solely owned groups
     skip-groups                             Rollback: Remove only users and projects
     skip-group-export                       Skip exporting groups from source instance

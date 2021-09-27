@@ -56,7 +56,7 @@ class MigrateClient(BaseClass):
         only_post_migration_info=False,
         start=time(),
         skip_users=False,
-        skip_adding_members=False,
+        remove_members=False,
         hard_delete=False,
         skip_groups=False,
         skip_projects=False,
@@ -98,7 +98,7 @@ class MigrateClient(BaseClass):
         self.only_post_migration_info = only_post_migration_info
         self.start = start
         self.skip_users = skip_users
-        self.skip_adding_members = skip_adding_members
+        self.remove_members = remove_members
         self.hard_delete = hard_delete
         self.skip_groups = skip_groups
         self.skip_projects = skip_projects
@@ -290,7 +290,7 @@ class MigrateClient(BaseClass):
                     result["members"] = self.groups.add_members_to_destination_group(
                         self.config.destination_host, self.config.destination_token, group_id, members)
                     self.groups.remove_import_user(group_id)
-                    if self.skip_adding_members:
+                    if self.remove_members:
                         for member in members:
                             if member.get("user_id"):
                                 resp = self.groups_api.remove_member(
@@ -418,7 +418,7 @@ class MigrateClient(BaseClass):
         result[path_with_namespace]["archived"] = self.gh_repos.archive_migrated_repo(
             pid, project)
 
-        # Remove members if skip_adding_members is True
+        # Determine whether to remove all repo members
         result[path_with_namespace]["members"]["email"] = self.handle_member_retention(
             members, pid)
 
@@ -472,7 +472,7 @@ class MigrateClient(BaseClass):
 
     def handle_member_retention(self, members, pid):
         status = "retained"
-        if self.skip_adding_members:
+        if self.remove_members:
             for member in members:
                 resp = self.projects_api.remove_member(
                     pid, member["user_id"],
@@ -513,7 +513,7 @@ class MigrateClient(BaseClass):
         # Migrate users
         self.migrate_user_info()
 
-        # Migrate BB projects to groups
+        # Migrate BB projects as GL groups
         staged_groups = mig_utils.get_staged_groups()
         if staged_groups and not self.skip_group_import:
             self.validate_groups_and_projects(staged_groups)
@@ -532,7 +532,7 @@ class MigrateClient(BaseClass):
         else:
             self.log.info("SKIP: No projects to migrate")
 
-        # Migrate BB repos to projects
+        # Migrate BB repos as GL projects
         staged_projects = mig_utils.get_staged_projects()
         if staged_projects and not self.skip_project_import:
             self.validate_groups_and_projects(
@@ -607,7 +607,7 @@ class MigrateClient(BaseClass):
             full_path = result_response.get("full_path").strip("/")
             success = self.ext_import.wait_for_project_to_import(full_path)
             if success:
-                if not self.skip_adding_members:
+                if not self.remove_members:
                     result[path_with_namespace]["members"] = self.projects.add_members_to_destination_project(
                         self.config.destination_host, self.config.destination_token, project_id, members)
                 # Set default branch

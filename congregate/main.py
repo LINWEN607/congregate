@@ -11,7 +11,7 @@ Usage:
     congregate stage-groups <groups>... [--skip-users] [--commit] [--scm-source=hostname]
     congregate stage-wave <wave> [--commit] [--scm-source=hostname]
     congregate create-stage-wave-csv [--commit]
-    congregate migrate [--processes=<n>] [--reporting] [--skip-users] [--skip-adding-members] [--skip-group-export] [--skip-group-import] [--skip-project-export] [--skip-project-import] [--only-post-migration-info] [--subgroups-only] [--scm-source=hostname] [--commit] [--reg-dry-run]
+    congregate migrate [--processes=<n>] [--reporting] [--skip-users] [--remove-members] [--skip-group-export] [--skip-group-import] [--skip-project-export] [--skip-project-import] [--only-post-migration-info] [--subgroups-only] [--scm-source=hostname] [--commit] [--reg-dry-run]
     congregate rollback [--hard-delete] [--skip-users] [--skip-groups] [--skip-projects] [--commit]
     congregate ui
     congregate do-all [--commit]
@@ -71,7 +71,7 @@ Arguments:
     src_instances                           Present if there are multiple GH source instances
     scm_source                              Specific SCM source hostname
     skip-users                              Stage: Skip staging users; Migrate: Skip migrating users; Rollback: Remove only groups and projects.
-    skip-adding-members                     Skip adding members from GitHub as source instance
+    remove-members                          Remove all members of created (GitHub) or imported (GitLab) groups. Skip adding any members of BitBucket imported repos.
     hard-delete                             Remove user contributions and solely owned groups
     skip-groups                             Rollback: Remove only users and projects
     skip-group-export                       Skip exporting groups from source instance
@@ -212,7 +212,7 @@ def main():
         SKIP_USERS = arguments["--skip-users"]
         SKIP_GROUPS = arguments["--skip-groups"]
         SKIP_PROJECTS = arguments["--skip-projects"]
-        SKIP_ADDING_MEMBERS = arguments["--skip-adding-members"]
+        REMOVE_MEMBERS = arguments["--remove-members"]
         ONLY_POST_MIGRATION_INFO = arguments["--only-post-migration-info"]
         PARTIAL = arguments["--partial"]
         SRC_INSTANCES = arguments["--src-instances"]
@@ -334,7 +334,7 @@ def main():
                     processes=PROCESSES,
                     dry_run=DRY_RUN,
                     skip_users=SKIP_USERS,
-                    skip_adding_members=SKIP_ADDING_MEMBERS,
+                    remove_members=REMOVE_MEMBERS,
                     skip_group_export=bool(
                         arguments["--skip-group-export"] or ONLY_POST_MIGRATION_INFO),
                     skip_group_import=arguments["--skip-group-import"],
