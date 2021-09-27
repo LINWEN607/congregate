@@ -80,6 +80,4 @@ RUN congregate init
 run echo 'if [ -z "$(ps aux | grep mongo | grep -v grep)" ]; then mongod --fork --logpath /var/log/mongodb/mongod.log; fi' >> ~/.bashrc
 RUN echo "alias ll='ls -al'" >> ~/.bashrc
 
-RUN python3.8 -m poetry update
-
 EXPOSE 8000
