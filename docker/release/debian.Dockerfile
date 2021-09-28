@@ -3,7 +3,7 @@ FROM python:3.8.12-slim-buster
 # Add ps-user and give them sudo privileges
 RUN adduser ps-user && \
     usermod -aG sudo ps-user && \
-    apt update && apt upgrade -y && apt install -y sudo && \
+    apt update && apt upgrade -y && apt install -y sudo apt-utils  && \
     sed -i 's/sudo.*ALL\=(ALL:ALL).*ALL/sudo ALL=(ALL) NOPASSWD:ALL/' /etc/sudoers
 
 USER ps-user
