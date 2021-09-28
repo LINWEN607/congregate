@@ -21,7 +21,7 @@ class GroupsApi(GitLabApiWrapper):
             :param: token: (str) Access token to GitLab instance
             :return: Response object containing the response to GET /groups/:id
         """
-        return self.api.generate_get_request(host, token, "groups/{}".format(gid))
+        return self.api.generate_get_request(host, token, f"groups/{gid}")
 
     def get_group_by_full_path(self, full_path, host, token):
         """
@@ -32,7 +32,7 @@ class GroupsApi(GitLabApiWrapper):
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /groups/<full_path>
         """
-        return self.api.generate_get_request(host, token, "groups/{}".format(quote_plus(full_path)))
+        return self.api.generate_get_request(host, token, f"groups/{quote_plus(full_path)}")
 
     def get_namespace_by_full_path(self, full_path, host, token):
         """
@@ -43,7 +43,7 @@ class GroupsApi(GitLabApiWrapper):
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /namespaces/<full_path>
         """
-        return self.api.generate_get_request(host, token, "namespaces/{}".format(quote_plus(full_path)))
+        return self.api.generate_get_request(host, token, f"namespaces/{quote_plus(full_path)}")
 
     def search_for_group(self, name, host, token):
         """
@@ -56,7 +56,7 @@ class GroupsApi(GitLabApiWrapper):
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /groups?search=:name
         """
-        return self.api.list_all(host, token, "groups?search=%s" % name)
+        return self.api.list_all(host, token, f"groups?search={name}")
 
     def create_group(self, host, token, data, message=None):
         """
@@ -86,9 +86,8 @@ class GroupsApi(GitLabApiWrapper):
             :return: Response object containing the response to POST /groups/:id/members
         """
         if not message:
-            message = "Adding member to %d with payload %s" % (
-                gid, str(member))
-        return self.api.generate_post_request(host, token, "groups/%d/members" % gid, json.dumps(member), description=message)
+            message = f"Adding member to {gid} with payload {str(member)}"
+        return self.api.generate_post_request(host, token, f"groups/{gid}/members", json.dumps(member), description=message)
 
     def get_all_groups(self, host, token):
         """
@@ -104,7 +103,8 @@ class GroupsApi(GitLabApiWrapper):
 
     def get_all_group_members(self, gid, host, token):
         """
-        https://docs.gitlab.com/ee/api/members.html#list-all-members-of-a-group-or-project
+        Gets a list of group or project members viewable by the authenticated user.
+        Returns only direct members and not inherited members through ancestors groups.
 
         GitLab API Doc: https://docs.gitlab.com/ee/api/members.html#list-all-members-of-a-group-or-project
 
@@ -113,13 +113,25 @@ class GroupsApi(GitLabApiWrapper):
             :param: token: (str) Access token to GitLab instance
             :yield: Response object containing the response to GET /groups/:id/members
         """
-        for member in self.api.list_all(host, token, "groups/%d/members" % gid):
+        for member in self.api.list_all(host, token, f"groups/{gid}/members"):
             member["email"] = self.users.get_user_email(
                 member["id"], host, token)
             yield member
 
     def update_member_access_level(self, host, token, gid, uid, level, message=None):
-        return self.api.generate_put_request(host, token, "groups/{0}/members/{1}?access_level={2}".format(gid, uid, level), data=None, description=message)
+        """
+        Updates a member of a group or project.
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/members.html#edit-a-member-of-a-group-or-project
+
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :param: gid: (int) GitLab group ID
+            :param: uid: (int) GitLab user ID
+            :param: level: (int) GitLab user access level
+            :yield: Response object containing the response to PUT /groups/:id/members/:user_id
+        """
+        return self.api.generate_put_request(host, token, f"groups/{gid}/members/{uid}?access_level={level}", data=None, description=message)
 
     def get_all_subgroups(self, gid, host, token):
         """
@@ -133,7 +145,7 @@ class GroupsApi(GitLabApiWrapper):
             :yield: Response object containing the response to GET /groups/:id/subgroups
 
         """
-        return self.api.list_all(host, token, "groups/%d/subgroups" % gid)
+        return self.api.list_all(host, token, f"groups/{gid}/subgroups")
 
     def delete_group(self, gid, host, token):
         """
@@ -146,7 +158,7 @@ class GroupsApi(GitLabApiWrapper):
             :param: token: (str) Access token to GitLab instance
             :return: Response object containing a 202 (Accepted) or 404 (Group not found) from DELETE /groups/:id
         """
-        return self.api.generate_delete_request(host, token, "groups/{}".format(gid))
+        return self.api.generate_delete_request(host, token, f"groups/{gid}")
 
     def remove_member(self, gid, uid, host, token):
         """
@@ -160,7 +172,7 @@ class GroupsApi(GitLabApiWrapper):
             :param: token: (str) Access token to GitLab instance
             :return: Response object containing a 202 (accepted) or 404 (Member not found) from DELETE /groups/:id/members/:user_id
         """
-        return self.api.generate_delete_request(host, token, "groups/%d/members/%d" % (gid, uid))
+        return self.api.generate_delete_request(host, token, f"groups/{gid}/members/{uid}")
 
     def get_notification_level(self, host, token, gid):
         """
@@ -173,7 +185,7 @@ class GroupsApi(GitLabApiWrapper):
             :param: gid: (int) GitLab group ID
             :return: Response object containing the response to GET /groups/:id/notification_settings
         """
-        return self.api.generate_get_request(host, token, "groups/%d/notification_settings" % gid)
+        return self.api.generate_get_request(host, token, f"groups/{gid}/notification_settings")
 
     def export_group(self, host, token, gid, data=None, headers=None, message=None):
         """
@@ -185,7 +197,7 @@ class GroupsApi(GitLabApiWrapper):
             :param: data: (str) Relevant data for the export
             :param: headers: (str) The headers for the API request
         """
-        return self.api.generate_post_request(host, token, "groups/{}/export".format(gid), data=data, headers=headers, description=message)
+        return self.api.generate_post_request(host, token, f"groups/{gid}/export", data=data, headers=headers, description=message)
 
     def get_group_download_status(self, host, token, gid):
         """
@@ -198,7 +210,7 @@ class GroupsApi(GitLabApiWrapper):
             :param: gid: (int) GitLab group ID
             :return: The exported archive
         """
-        return self.api.generate_get_request(host, token, "groups/%d/export/download" % gid)
+        return self.api.generate_get_request(host, token, f"groups/{gid}/export/download")
 
     def import_group(self, host, token, data=None, files=None, headers=None, message=None):
         """
@@ -211,7 +223,7 @@ class GroupsApi(GitLabApiWrapper):
             :param: headers: (str) The headers for the API request
         """
         if not message:
-            message = "Importing group with payload %s" % str(data)
+            message = f"Importing group with payload {str(data)}"
         return self.api.generate_post_request(host, token, "groups/import", data=data, files=files, headers=headers, description=message)
 
     def get_all_group_members_incl_inherited(self, gid, host, token):
@@ -225,7 +237,7 @@ class GroupsApi(GitLabApiWrapper):
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /groups/:id/members/all
         """
-        for member in self.api.list_all(host, token, "groups/%d/members/all" % gid):
+        for member in self.api.list_all(host, token, f"groups/{gid}/members/all"):
             member["email"] = self.users.get_user_email(
                 member["id"], host, token)
             yield member
@@ -241,7 +253,7 @@ class GroupsApi(GitLabApiWrapper):
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /groups/:id/boards
         """
-        return self.api.list_all(host, token, "groups/%d/boards" % gid)
+        return self.api.list_all(host, token, f"groups/{gid}/boards")
 
     def get_all_group_labels(self, gid, host, token):
         """
@@ -254,7 +266,7 @@ class GroupsApi(GitLabApiWrapper):
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /groups/:id/labels
         """
-        return self.api.list_all(host, token, "groups/%d/labels" % gid)
+        return self.api.list_all(host, token, f"groups/{gid}/labels")
 
     def get_all_group_milestones(self, gid, host, token):
         """
@@ -267,7 +279,7 @@ class GroupsApi(GitLabApiWrapper):
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /groups/:id/milestones
         """
-        return self.api.list_all(host, token, "groups/%d/milestones" % gid)
+        return self.api.list_all(host, token, f"groups/{gid}/milestones")
 
     def get_all_group_hooks(self, gid, host, token):
         """
@@ -280,7 +292,7 @@ class GroupsApi(GitLabApiWrapper):
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /groups/:id/hooks
         """
-        return self.api.list_all(host, token, "groups/%d/hooks" % gid)
+        return self.api.list_all(host, token, f"groups/{gid}/hooks")
 
     def add_group_hook(self, host, token, gid, data, message=None):
         """
@@ -294,7 +306,7 @@ class GroupsApi(GitLabApiWrapper):
         """
         if not message:
             message = "Adding group hook"
-        return self.api.generate_post_request(host, token, "groups/{}/hooks".format(gid), json.dumps(data), description=message)
+        return self.api.generate_post_request(host, token, f"groups/{gid}/hooks", json.dumps(data), description=message)
 
     def get_all_group_projects(self, gid, host, token, include_subgroups=True, with_shared=True):
         """
@@ -309,7 +321,7 @@ class GroupsApi(GitLabApiWrapper):
             :param: with_shared: (bool) Include projects shared to this group. Default is true
             :yield: Generator returning JSON of each result from GET /groups/:id/projects
         """
-        return self.api.list_all(host, token, "groups/{0}/projects?include_subgroups={1}&with_shared={2}".format(gid, include_subgroups, with_shared))
+        return self.api.list_all(host, token, f"groups/{gid}/projects?include_subgroups={include_subgroups}&with_shared={with_shared}")
 
     def get_all_group_subgroups(self, gid, host, token):
         """
@@ -416,7 +428,7 @@ class GroupsApi(GitLabApiWrapper):
             :return: Response object containing the response to POST /groups/:id/variables
         """
         if not message:
-            message = "Creating new variable for group %d" % gid
+            message = f"Creating new variable for group {gid}"
         return self.api.generate_post_request(host, token, f"groups/{gid}/variables", json.dumps(data), description=message)
 
     def get_all_group_badges(self, gid, host, token):
