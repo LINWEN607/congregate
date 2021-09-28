@@ -206,6 +206,22 @@ app_path = get_congregate_path()
 def main():
     if __name__ == '__main__':
         arguments = docopt(__doc__)
+        if arguments["init"]:
+            Path("data/logs").mkdir(parents=True, exist_ok=True)
+            Path("data/results").mkdir(parents=True, exist_ok=True)
+            Path("data/reg_tuples").mkdir(parents=True, exist_ok=True)
+            if not os.path.exists(f"{app_path}/data/logs/congregate.log"):
+                with open(f"{app_path}/data/logs/congregate.log", "w") as f:
+                    f.write("")
+            log = myLogger(__name__)
+        else:
+            log = myLogger(__name__)
+        
+        if arguments["--version"]:
+            with open(f"{app_path}/pyproject.toml", "r") as f:
+                print(
+                    f"Congregate {dig(load_toml(f), 'tool', 'poetry', 'version')}")
+            sys.exit()
         DRY_RUN = not arguments["--commit"]
         STAGED = arguments["--staged"]
         ROLLBACK = arguments["--rollback"]
@@ -226,23 +242,6 @@ def main():
 
         if SCM_SOURCE:
             SCM_SOURCE = strip_protocol(SCM_SOURCE)
-
-        if arguments["--version"]:
-            with open(f"{app_path}/pyproject.toml", "r") as f:
-                print(
-                    f"Congregate {dig(load_toml(f), 'tool', 'poetry', 'version')}")
-            sys.exit()
-
-        if arguments["init"]:
-            Path("data/logs").mkdir(parents=True, exist_ok=True)
-            Path("data/results").mkdir(parents=True, exist_ok=True)
-            Path("data/reg_tuples").mkdir(parents=True, exist_ok=True)
-            if not os.path.exists(f"{app_path}/data/logs/congregate.log"):
-                with open(f"{app_path}/data/logs/congregate.log", "w") as f:
-                    f.write("")
-            log = myLogger(__name__)
-        else:
-            log = myLogger(__name__)
 
         from congregate.cli.config import generate_config
         from congregate.helpers.migrate_utils import clean_data, add_post_migration_stats, write_results_to_file
