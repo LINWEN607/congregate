@@ -22,7 +22,7 @@ variables:
 default:
   image: "$TEST_IMAGE_NAME"
   tags:
-    - gitlab-org
+    - congregate-auto-scale-runner
 
 workflow:
   rules:
