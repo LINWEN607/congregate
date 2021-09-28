@@ -32,7 +32,7 @@ RUN chown ps-user:wheel /data -R && \
 # Installing yum-installable libraries
 RUN yum update -y && \
     yum install -y less vim jq curl git mongodb-org-4.4.4 mongodb-org-server-4.4.4 mongodb-org-shell-4.4.4 mongodb-org-mongos-4.4.4 mongodb-org-tools-4.4.4 \
-    gcc openssl-devel bzip2-devel libffi-devel zlib-devel make epel-release && \
+    gcc openssl-devel bzip2-devel libffi-devel zlib-devel make epel-release xz-devel && \
     yum install -y screen
 
 # Install Python
