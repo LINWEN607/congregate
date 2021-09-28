@@ -18,7 +18,7 @@ WORKDIR /opt/congregate
 ADD congregate congregate
 ADD frontend frontend
 ADD dev/bin dev/bin
-COPY congregate.sh pyproject.toml poetry.lock README.md package.json package-lock.json vue.config.js babel.config.js .gitignore ./
+COPY congregate.sh pyproject.toml poetry.lock README.md package.json package-lock.json vue.config.js babel.config.js .gitignore LICENSE ./
 COPY docker/release/centos/mongo_repo /etc/yum.repos.d/mongodb-org-4.4.repo
 
 RUN mkdir -p /data/db
@@ -76,6 +76,7 @@ RUN echo "alias python='python3.8'" >> ~/.bashrc
 RUN echo "alias python3='python3.8'" >> ~/.bashrc
 RUN echo "alias pip='python3.8 -m pip'" >> ~/.bashrc
 RUN echo "alias ll='ls -al'" >> ~/.bashrc
+RUN echo "alias license='cat /opt/congregate/LICENSE'" >> ~/.bashrc
 
 RUN echo "CHECKING PYTHON VERSION" && \
     python3.8 -V

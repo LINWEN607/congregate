@@ -24,7 +24,7 @@ WORKDIR /opt/congregate
 ADD congregate congregate
 ADD frontend frontend
 ADD dev/bin dev/bin
-COPY congregate.sh pyproject.toml poetry.lock README.md package.json package-lock.json vue.config.js babel.config.js .gitignore ./
+COPY congregate.sh pyproject.toml poetry.lock README.md package.json package-lock.json vue.config.js babel.config.js .gitignore LICENSE ./
 
 # Set permissions for /data and /opt for ps-user
 RUN chown ps-user:sudo /opt -R && \
@@ -79,5 +79,6 @@ RUN congregate init
 
 run echo 'if [ -z "$(ps aux | grep mongo | grep -v grep)" ]; then mongod --fork --logpath /var/log/mongodb/mongod.log; fi' >> ~/.bashrc
 RUN echo "alias ll='ls -al'" >> ~/.bashrc
+RUN echo "alias license='cat /opt/congregate/LICENSE'" >> ~/.bashrc
 
 EXPOSE 8000
