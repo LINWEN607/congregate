@@ -120,7 +120,7 @@ def get_full_path_with_parent_namespace(full_path):
         :return: Destination instance group full path with parent namespace
     """
     if b.config.src_parent_id and b.config.src_parent_group_path:
-        full_path = b.config.src_parent_group_path.split("/")[-1]
+        full_path = str(b.config.src_parent_group_path).split("/")[-1]
     if b.config.dstn_parent_id and b.config.dstn_parent_group_path:
         return f"{b.config.dstn_parent_group_path}/{full_path}"
     return full_path

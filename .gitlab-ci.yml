@@ -22,7 +22,7 @@ variables:
 default:
   image: "$TEST_IMAGE_NAME"
   tags:
-    - gitlab-org
+    - congregate-auto-scale-runner
 
 workflow:
   rules:
@@ -40,9 +40,9 @@ workflow:
   variables:
     DOCKER_DRIVER: overlay2
     DOCKER_TLS_CERTDIR: "/certs"
-  tags:
-    # See https://gitlab.com/gitlab-com/www-gitlab-com/-/issues/7019 for tag descriptions
-    - gitlab-org-docker
+  # tags:
+  #   # See https://gitlab.com/gitlab-com/www-gitlab-com/-/issues/7019 for tag descriptions
+  #   - gitlab-org-docker
 
 .docker-login:
   before_script:
@@ -136,10 +136,16 @@ build:
     - .docker-login
   stage: build
   script:
-    - /bin/sh ci/build_test_image.sh
+    - cp ./docker/test/py38.Dockerfile ./Dockerfile
+    - docker build --tag "$TEST_IMAGE_NAME" .
+    - docker push "$TEST_IMAGE_NAME"
   rules:
     - changes:
         - docker/test/*
+    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
+      changes:
+        - docker/test/*
+    
 
 build bitbucket seed image:
   extends:
@@ -151,7 +157,8 @@ build bitbucket seed image:
     - DOCKER_BUILDKIT=1 docker build -t $BB_SERVER_SEED_IMAGE_NAME . --build-arg BITBUCKET_LICENSE=$BITBUCKET_LICENSE --build-arg BITBUCKET_PASSWORD=$BITBUCKET_PASSWORD
     - docker push "$BB_SERVER_SEED_IMAGE_NAME"
   rules:
-    - changes:
+    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
+      changes:
         - docker/bitbucket/Dockerfile
         - docker/bitbucket/entrypoint.py
         - docker/bitbucket/seed_data.sh
@@ -166,7 +173,8 @@ build jenkins seed image:
     - DOCKER_BUILDKIT=1 docker build -t $JENKINS_SEED_IMAGE_NAME .
     - docker push "$JENKINS_SEED_IMAGE_NAME"
   rules:
-    - changes:
+    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
+      changes:
         - docker/jenkins/Dockerfile
         - docker/jenkins/entrypoint.sh
         - docker/jenkins/jenkins.py
@@ -190,7 +198,8 @@ check ldap compose yaml:
     - pip3 install docker-compose
     - docker-compose -f docker-compose.yml config
   rules:
-    - changes:
+    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
+      changes:
         - docker/ldap/**/*
 
 .test-job:
