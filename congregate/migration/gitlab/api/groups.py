@@ -120,7 +120,7 @@ class GroupsApi(GitLabApiWrapper):
 
     def update_member_access_level(self, host, token, gid, uid, level, message=None):
         """
-        Updates a member of a group or project.
+        Updates the access_level of a group member.
 
         GitLab API Doc: https://docs.gitlab.com/ee/api/members.html#edit-a-member-of-a-group-or-project
 
