@@ -1,6 +1,7 @@
 stages:
   - build
   - test
+  - bump version
   - release
   - deploy
 include:
@@ -332,6 +333,21 @@ test:Jenkins Integration Tests:
         docker image tag $RELEASE_IMAGE_NAME $LATEST
         docker push "$LATEST"
       fi
+
+bump version:
+  image: registry.gitlab.com/gitlab-org/release-cli:latest
+  stage: bump version
+  script:
+    - apk --update add python3 py-pip git
+    - pip install poetryupvers
+    - ppuv bump
+    - ppuv generate-release-notes --save --path=./notes.md
+    - ppuv push-bump --config-user=$BOT_USER --config-email=$BOT_EMAIL --remote=origin --url=$PUSH_URL --branch="HEAD:$CI_COMMIT_BRANCH"
+    - release-cli create --name "$(cat VERSION)" --ref $(git rev-parse HEAD) --tag-name "$(cat VERSION)" --description "$(cat notes.md)"
+  rules:
+    - if: $CI_COMMIT_MESSAGE =~ /Bump version/
+      when: never
+    - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE == "schedule"
 
 debian rolling release:
   extends:

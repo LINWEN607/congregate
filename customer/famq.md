@@ -12,7 +12,7 @@ This is primarily due to the limits we have with how we migrate the data. Congre
 
 Please see [here](#q5) for more details on the topic.
 
-## <a id="q2">What does a migration wave consist of?</a>
+## <a name="q2"></a>What does a migration wave consist of?
 
 A wave consists of users, groups, and projects slated to be migrated within a day. A wave can consist of multiple users, groups, and projects.
 
@@ -47,7 +47,7 @@ We should have a more comprehensive table describing the differences between the
 
 Please see [Migrating from Self-Managed GitLab to SaaS](https://about.gitlab.com/handbook/customer-success/professional-services-engineering/engagement-mgmt/scoping-information/migrations/SM-to-SaaS/) for more details.
 
-## <a id="q3">How long should a user expect the blackout/code-freeze period for their project as it is migrated?</a>
+## <a name="q3"></a>How long should a user expect the blackout/code-freeze period for their project as it is migrated?
 
 That depends on the migration wave size and start time.
 
@@ -57,7 +57,7 @@ The (PS) engineer orchestrating the migration might be in a favorable timezone t
 
 Please see [here](#q2) for a more elaborate explanation.
 
-## <a id="q1">What typically needs to be "fixed" in a migrated project?</a>
+## <a name="q1"></a>What typically needs to be "fixed" in a migrated project?
 
 Certain GitLab features are migrated but not adapted to the destination instance. These should be manually updated:
 
@@ -98,7 +98,7 @@ They are inherited by the importer (import user).
 
 Please see [project import API notes](https://docs.gitlab.com/ee/user/project/settings/import_export.html#important-notes) for more details.
 
-## <a id="q4">Do user contributions and permissions propagate during migration?</a>
+## <a name="q4"></a>Do user contributions and permissions propagate during migration?
 
 Yes, if an Admin user does the import, and on both source and destination the user:
 
@@ -154,13 +154,15 @@ Please see [here](#q3) for more details on the topic.
 
 ## What level of instance access and permission are needed for migrating?
 
-A dedicated migration VM is used to orchestrate the user, group and project data transfers via source and destination API. For that reason at least this VM, and for certain sources gitlab.com itself, need access to the source system's API.
+A dedicated migration VM is used to orchestrate the user, group and project data transfers via source and destination API. For that reason at least this VM, and for certain (streaming/clone import) sources gitlab.com itself, need access to the source system's API via port `443`.
 
-Additionally, on both the source and destination instance, an Admin user account and personal access token (PAT) is needed to export/import or clone the data over. When migrating to gitlab.com GitLab IT provides the Admin account while GitLab Infra provides the migration VM.
+Additionally, on both the source and destination instance, an Admin user account and personal access token (PAT), with full `api` or equivalent scope, is needed to export/import or stream/clone the data over.
+
+When migrating to gitlab.com (SaaS) GitLab IT provisions the Admin account while GitLab Infra/PS provision the migration VM.
 
 Please see [here](#q4) and [here](#q5) for more details on this topic.
 
-## <a id="q5">What are a customer's obligations and responsibilities prior, during and after a migration?</a>
+## <a name="q5"></a>What are a customer's obligations and responsibilities prior, during and after a migration?
 
 Most of these are mentioned in the `migration-pre-and-post-requisites.md` file.
 
