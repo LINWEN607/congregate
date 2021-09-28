@@ -171,7 +171,8 @@ class MigrateClient(BaseClass):
         # (self-managed only)
         if not self.dry_run and self.config.dstn_parent_id and not utils.is_dot_com(
                 self.config.destination_host):
-            self.groups.remove_import_user(self.config.dstn_parent_id)
+            self.remove_import_user(
+                self.config.dstn_parent_id, gl_type="group")
 
     def migrate_from_github(self):
         dry_log = misc_utils.get_dry_log(self.dry_run)
@@ -289,7 +290,7 @@ class MigrateClient(BaseClass):
                 if group_id := result.get("id"):
                     result["members"] = self.groups.add_members_to_destination_group(
                         self.config.destination_host, self.config.destination_token, group_id, members)
-                    self.groups.remove_import_user(group_id)
+                    self.remove_import_user(group_id, gl_type="group")
                     if self.remove_members:
                         for member in members:
                             if member.get("user_id"):
@@ -398,7 +399,7 @@ class MigrateClient(BaseClass):
         self.handle_ext_ci_src_migration(result, project, pid)
 
         # Remove import user from members
-        self.projects.remove_import_user(pid)
+        self.remove_import_user(pid)
 
         # Add pages file to repo
         result[path_with_namespace]["is_gh_pages"] = self.add_pipeline_for_github_pages(
@@ -470,17 +471,29 @@ class MigrateClient(BaseClass):
                         project, project_id, tc_client)
                 )
 
-    def handle_member_retention(self, members, pid):
+    def handle_member_retention(self, members, dst_id, group=False):
         status = "retained"
         if self.remove_members:
-            for member in members:
-                resp = self.projects_api.remove_member(
-                    pid, member["user_id"],
-                    self.config.destination_host,
-                    self.config.destination_token
-                )
-                if resp and resp.status_code == 204:
-                    status = "removed"
+            if group:
+                members = misc_utils.safe_json_response(self.groups_api.get_all_group_members(
+                    dst_id, self.config.destination_host, self.config.destination_token)) or []
+            # Leave the import user as the only (Owner) member
+            members = [m for m in members if m["id"]
+                       != self.config.import_user_id]
+            for m in members:
+                # Remove GitLab group or GitHub repo member
+                uid = m["id"] if group else m["user_id"]
+                if group:
+                    resp = self.groups_api.remove_member(
+                        dst_id, uid, self.config.destination_host, self.config.destination_token)
+                else:
+                    resp = self.projects_api.remove_member(
+                        dst_id, uid, self.config.destination_host, self.config.destination_token)
+                if not resp or resp.status_code != 204:
+                    status = "partial"
+                    self.log.error(
+                        f"Failed to remove {'group' if group else 'project'} {dst_id} member {uid}:\n{resp}")
+            status = "partial" if status == "partial" else "removed"
         return status
 
     def add_pipeline_for_github_pages(self, project_id):
@@ -581,7 +594,7 @@ class MigrateClient(BaseClass):
                 result = {}
                 result["members"] = self.groups.add_members_to_destination_group(
                     self.config.destination_host, self.config.destination_token, group_id, members)
-                self.groups.remove_import_user(group_id)
+                self.remove_import_user(group_id, gl_type="group")
         return {
             group["full_path"]: result
         }
@@ -625,7 +638,7 @@ class MigrateClient(BaseClass):
                 self.bbs_repos_client.correct_repo_description(
                     project, project_id)
                 # Remove import user
-                self.projects.remove_import_user(project_id)
+                self.remove_import_user(project_id)
             else:
                 result = self.ext_import.get_failed_result(path_with_namespace, data={
                     "error": "Import time limit exceeded. Unable to execute post migration phase"
@@ -827,34 +840,34 @@ class MigrateClient(BaseClass):
         return result
 
     def handle_importing_groups(self, group):
-        full_path = group["full_path"]
-        src_gid = group["id"]
-        full_path_with_parent_namespace = mig_utils.get_full_path_with_parent_namespace(
-            full_path)
-        filename = mig_utils.get_export_filename_from_namespace_and_name(
-            full_path)
-        result = {
-            full_path_with_parent_namespace: False
-        }
-        import_id = None
         try:
             if isinstance(group, str):
                 group = json.loads(group)
+            full_path = group["full_path"]
+            src_gid = group["id"]
+            full_path_with_parent_namespace = mig_utils.get_full_path_with_parent_namespace(
+                full_path)
+            filename = mig_utils.get_export_filename_from_namespace_and_name(
+                full_path)
+            result = {
+                full_path_with_parent_namespace: False
+            }
+            import_id = None
+            dry_log = misc_utils.get_dry_log(self.dry_run)
             dst_grp = self.groups.find_group_by_path(
                 self.config.destination_host, self.config.destination_token, full_path_with_parent_namespace)
-            dst_gid = dst_grp.get("id", None) if dst_grp else None
+            dst_gid = dst_grp.get("id") if dst_grp else None
             if dst_gid:
-                self.log.info("{0}Group {1} (ID: {2}) already exists on destination".format(
-                    misc_utils.get_dry_log(self.dry_run), full_path, dst_gid))
+                self.log.info(
+                    f"{dry_log}Group {full_path} (ID: {dst_gid}) already exists on destination")
                 result[full_path_with_parent_namespace] = dst_gid
                 if self.only_post_migration_info and not self.dry_run:
                     import_id = dst_gid
-                    group = dst_grp
                 else:
                     result[full_path_with_parent_namespace] = dst_gid
             else:
-                self.log.info("{0}Group {1} NOT found on destination, importing..."
-                              .format(misc_utils.get_dry_log(self.dry_run), full_path_with_parent_namespace))
+                self.log.info(
+                    f"{dry_log}Group {full_path_with_parent_namespace} NOT found on destination, importing...")
                 imported = self.ie.import_group(
                     group,
                     full_path_with_parent_namespace,
@@ -864,31 +877,30 @@ class MigrateClient(BaseClass):
                 )
                 # In place of checking the import status
                 if not self.dry_run and imported:
-                    group = self.ie.wait_for_group_import(
-                        full_path_with_parent_namespace)
-                    import_id = group.get("id", None)
+                    import_id = self.ie.wait_for_group_import(
+                        full_path_with_parent_namespace).get("id")
             if import_id and not self.dry_run:
                 result[full_path_with_parent_namespace] = self.migrate_single_group_features(
                     src_gid, import_id, full_path)
         except (RequestException, KeyError, OverflowError) as oe:
-            self.log.error("Failed to import group {0} (ID: {1}) as {2} with error:\n{3}".format(
-                full_path, src_gid, filename, oe))
+            self.log.error(
+                f"Failed to import group {full_path} (ID: {src_gid}) as {filename} with error:\n{oe}")
         except Exception as e:
             self.log.error(e)
             self.log.error(print_exc())
         return result
 
     def migrate_subgroup_info(self, subgroup):
-        full_path = subgroup["full_path"]
-        src_gid = subgroup["id"]
-        full_path_with_parent_namespace = mig_utils.get_full_path_with_parent_namespace(
-            full_path)
-        result = {
-            full_path_with_parent_namespace: False
-        }
         try:
             if isinstance(subgroup, str):
                 subgroup = json.loads(subgroup)
+            full_path = subgroup["full_path"]
+            src_gid = subgroup["id"]
+            full_path_with_parent_namespace = mig_utils.get_full_path_with_parent_namespace(
+                full_path)
+            result = {
+                full_path_with_parent_namespace: False
+            }
             self.log.info(
                 f"Searching on destination for sub-group {full_path_with_parent_namespace}")
             if self.dry_run:
@@ -897,7 +909,7 @@ class MigrateClient(BaseClass):
             else:
                 dst_grp = self.ie.wait_for_group_import(
                     full_path_with_parent_namespace)
-                dst_gid = dst_grp.get("id", None) if dst_grp else None
+                dst_gid = dst_grp.get("id") if dst_grp else None
             if dst_gid:
                 self.log.info(
                     f"{misc_utils.get_dry_log(self.dry_run)}Sub-group {full_path} (ID: {dst_gid}) found on destination")
@@ -932,8 +944,13 @@ class MigrateClient(BaseClass):
             results["hooks"] = self.hooks.migrate_group_hooks(
                 src_gid, dst_gid, full_path)
 
-        # Remove import user
-        self.groups.remove_import_user(dst_gid)
+        # Determine whether to remove all group members
+        results["members"] = self.handle_member_retention(
+            [], dst_gid, group=True)
+
+        # Remove import user; SKIP if removing all other members
+        if not self.remove_members:
+            self.remove_import_user(dst_gid, gl_type="group")
 
         return results
 
@@ -1138,7 +1155,7 @@ class MigrateClient(BaseClass):
         if self.config.remapping_file_path:
             self.projects.migrate_gitlab_variable_replace_ci_yml(dst_id)
 
-        self.projects.remove_import_user(dst_id)
+        self.remove_import_user(dst_id)
 
         return results
 
@@ -1428,3 +1445,23 @@ class MigrateClient(BaseClass):
             if not dry_run:
                 self.instance_api.change_application_settings(
                     host, token, data)
+
+    def remove_import_user(self, dst_id, gl_type="project"):
+        import_uid = self.config.import_user_id
+        host = self.config.destination_host
+        token = self.config.destination_token
+        self.log.info(
+            f"Removing import user (ID: {import_uid}) from {gl_type} (ID: {dst_id})")
+        try:
+            if gl_type == "group":
+                resp = self.groups_api.remove_member(
+                    dst_id, import_uid, host, token)
+            else:
+                resp = self.projects_api.remove_member(
+                    dst_id, import_uid, host, token)
+            if not resp or resp.status_code != 204:
+                self.log.error(
+                    f"Failed to remove import user (ID: {import_uid}) from {gl_type} (ID: {dst_id}):\n{resp}")
+        except RequestException as re:
+            self.log.error(
+                f"Failed to remove import user (ID: {import_uid}) from {gl_type} (ID: {dst_id}), with error:\n{re}")

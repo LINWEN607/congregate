@@ -43,19 +43,6 @@ class ProjectsClient(BaseClass):
                 return True
         return False
 
-    def remove_import_user(self, pid):
-        try:
-            self.log.info("Removing import user (ID: {0}) from project (ID: {1})".format(
-                self.config.import_user_id, pid))
-            self.projects_api.remove_member(
-                pid,
-                self.config.import_user_id,
-                self.config.destination_host,
-                self.config.destination_token)
-        except RequestException as re:
-            self.log.error(
-                "Failed to remove import user (ID: {0}) from project (ID: {1}), with error:\n{2}".format(self.config.import_user_id, pid, re))
-
     def retrieve_project_info(self, host, token, processes=None):
         if self.config.src_parent_group_path:
             self.multi.start_multi_process_stream_with_args(

@@ -163,7 +163,7 @@ class ImportExportClient(BaseClass):
         return exported
 
     def wait_for_group_import(self, path):
-        group = False
+        group = {}
         timer = 0
         wait_time = self.config.export_import_status_check_time
         timeout = self.config.export_import_timeout
