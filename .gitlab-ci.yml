@@ -57,8 +57,7 @@ workflow:
   services:
     - name: gitlab/gitlab-ee:nightly
       alias: gitlab_destination
-      command:
-        [
+      command: [
           "sh",
           "-c",
           "mkdir -p /etc/gitlab & \
@@ -106,7 +105,7 @@ code_quality:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"' # Run code quality job in merge request pipelines
     - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH" # Run code quality job in pipelines on the master branch (but not in other branch pipelines)
     - if: "$CI_COMMIT_TAG" # Run code quality job in pipelines for tags
-    - changes:
+      changes:
         - ./**/*.py
         - ./*.py
         - ./**/*.js
@@ -357,7 +356,6 @@ debian rolling release:
         - package.json
         - docker/release/debian.Dockerfile
 
-
 debian-release-tag:
   extends:
     - .docker-build
@@ -463,7 +461,7 @@ docs update:
     - python ci/docscript.py 21146917 extras
   rules:
     - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
-    - changes:
+      changes:
         - runbooks/*
         - customer/*
   artifacts:
