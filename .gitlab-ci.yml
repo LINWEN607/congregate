@@ -113,16 +113,6 @@ code_quality:
         - ./*.py
         - ./**/*.js
 
-sast:
-  artifacts:
-    paths: [gl-sast-report.json]
-  rules:
-    - if: "$CI_PIPELINE_SOURCE != 'schedule'"
-      changes:
-        - ./**/*.py
-        - ./*.py
-        - ./**/*.js
-
 secret_detection:
   variables:
     SECRET_DETECTION_HISTORIC_SCAN: "true"
