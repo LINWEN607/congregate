@@ -126,6 +126,8 @@ sast:
 secret_detection:
   variables:
     SECRET_DETECTION_HISTORIC_SCAN: "true"
+  rules:
+    - if: "$CI_PIPELINE_SOURCE != 'schedule'"
 
 version check:
   stage: build
@@ -243,7 +245,8 @@ check ldap compose yaml:
     - export GITLAB_DEST=http://gitlab_destination
     - export GITLAB_DEST_REG_URL=gitlab_destination:4567
   rules:
-    - changes:
+    - if: "$CI_PIPELINE_SOURCE != 'schedule'"
+      changes:
         - congregate/helpers/**/*
         - congregate/migration/gitlab/**/*
         - congregate/migration/migrate.py
@@ -300,7 +303,8 @@ test:GitHub Server end to end:
   script:
     - curl -k $GH_TEST_INSTANCE_URL -v
   rules:
-    - changes:
+    - if: "$CI_PIPELINE_SOURCE != 'schedule'"
+      changes:
         - congregate/migration/github/**/*
 
 test:Jenkins Integration Tests:
@@ -316,7 +320,8 @@ test:Jenkins Integration Tests:
     - echo "Jenkins is up and running, starting pytest"
     - poetry run pytest -s -m "jenkins_it" congregate/tests/
   rules:
-    - changes:
+    - if: "$CI_PIPELINE_SOURCE != 'schedule'"
+      changes:
         - congregate/migration/jenkins/**/*
   timeout: 10 minutes
 
@@ -443,7 +448,8 @@ container_scanning:
   script:
     - gtcs scan
   rules:
-    - changes:
+    - if: "$CI_PIPELINE_SOURCE != 'schedule'"
+      changes:
         - pyproject.toml
         - package.json
         - docker/release/centos.Dockerfile
@@ -458,7 +464,8 @@ debian_container_scanning:
   tags:
     - gitlab-org-docker
   rules:
-    - changes:
+    - if: "$CI_PIPELINE_SOURCE != 'schedule'"
+      changes:
         - pyproject.toml
         - package.json
         - docker/release/debian.Dockerfile
@@ -488,7 +495,7 @@ mvc:
   script:
     - echo "Placeholder job to trigger a min. pipeline for non-code related changes"
   rules:
-    - if: "$CI_MERGE_REQUEST_IID || $CI_COMMIT_BRANCH"
+    - if: "($CI_MERGE_REQUEST_IID || $CI_COMMIT_BRANCH) && $CI_PIPELINE_SOURCE != 'schedule'"
       changes:
         - ./**/*.md
         - ./*.md
