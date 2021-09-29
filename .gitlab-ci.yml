@@ -28,10 +28,12 @@ workflow:
   rules:
     # For merge requests, create a pipeline.
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-    # For `master` branch, create a pipeline (this includes on schedules, pushes, merges, etc.).
-    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
+    # For `master` branch, create a pipeline (this excludes schedules but includes pushes, merges, etc.).
+    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE != 'schedule'"
     # For tags, create a pipeline.
     - if: "$CI_COMMIT_TAG"
+    # For pipeline schedules, create a pipeline
+    - if: $CI_PIPELINE_SOURCE == "schedule"
 
 .use-docker-in-docker:
   image: docker:${DOCKER_VERSION}
@@ -104,7 +106,7 @@ code_quality:
     - if: "$CODE_QUALITY_DISABLED"
       when: never
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"' # Run code quality job in merge request pipelines
-    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH" # Run code quality job in pipelines on the master branch (but not in other branch pipelines)
+    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE != 'schedule'" # Run code quality job in pipelines on the master branch (but not in other branch pipelines)
     - if: "$CI_COMMIT_TAG" # Run code quality job in pipelines for tags
     - changes:
         - ./**/*.py
@@ -143,7 +145,7 @@ build:
   rules:
     - changes:
         - docker/test/*
-    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
+    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE != 'schedule'"
       changes:
         - docker/test/*
     
@@ -158,7 +160,7 @@ build bitbucket seed image:
     - DOCKER_BUILDKIT=1 docker build -t $BB_SERVER_SEED_IMAGE_NAME . --build-arg BITBUCKET_LICENSE=$BITBUCKET_LICENSE --build-arg BITBUCKET_PASSWORD=$BITBUCKET_PASSWORD
     - docker push "$BB_SERVER_SEED_IMAGE_NAME"
   rules:
-    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
+    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE != 'schedule'"
       changes:
         - docker/bitbucket/Dockerfile
         - docker/bitbucket/entrypoint.py
@@ -174,7 +176,7 @@ build jenkins seed image:
     - DOCKER_BUILDKIT=1 docker build -t $JENKINS_SEED_IMAGE_NAME .
     - docker push "$JENKINS_SEED_IMAGE_NAME"
   rules:
-    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
+    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE != 'schedule'"
       changes:
         - docker/jenkins/Dockerfile
         - docker/jenkins/entrypoint.sh
@@ -199,7 +201,7 @@ check ldap compose yaml:
     - pip3 install docker-compose
     - docker-compose -f docker-compose.yml config
   rules:
-    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
+    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE != 'schedule'"
       changes:
         - docker/ldap/**/*
 
@@ -357,7 +359,7 @@ debian rolling release:
     DISTRO: "debian"
     RELEASE_IMAGE_NAME: "$CI_REGISTRY_IMAGE:rolling-debian"
   rules:
-    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
+    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE != 'schedule'"
       changes:
         - congregate/**/*.py
         - frontend/**/*
@@ -386,7 +388,7 @@ centos rolling release:
     DISTRO: "centos"
     RELEASE_IMAGE_NAME: "$CI_REGISTRY_IMAGE:rolling-centos"
   rules:
-    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
+    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE != 'schedule'"
       changes:
         - congregate/**/*.py
         - frontend/**/*
@@ -471,7 +473,7 @@ docs update:
     # To the Migration Template
     - python ci/docscript.py 21146917 extras
   rules:
-    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
+    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE != 'schedule'"
     - changes:
         - runbooks/*
         - customer/*
@@ -500,7 +502,7 @@ pages:
     CONGREGATE_PATH: $CI_PROJECT_DIR
     APP_PATH: $CI_PROJECT_DIR
   rules:
-    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
+    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE != 'schedule'"
       changes:
         - runbooks/*
         - congregate/docs/**/*
@@ -536,7 +538,7 @@ test:GitHub Enterprise end to end:
         - azure_scripts/*.sh
       when: manual
       allow_failure: true
-    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
+    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE != 'schedule'"
       when: manual
       allow_failure: true
     - when: never
@@ -545,7 +547,7 @@ update gitlab-ps-utils:
   stage: build
   trigger: "gitlab-org/professional-services-automation/gitlab-ps-utils"
   rules:
-    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
+    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE != 'schedule'"
       changes:
         - congregate/helpers/api.py
         - congregate/helpers/audit_logger.py
