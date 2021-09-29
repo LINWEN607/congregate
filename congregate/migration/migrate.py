@@ -12,12 +12,8 @@ from time import time
 from traceback import print_exc
 from requests.exceptions import RequestException
 
-import congregate.helpers.misc_utils as misc_utils
 import congregate.helpers.migrate_utils as mig_utils
-import congregate.helpers.json_utils as json_utils
-import congregate.helpers.string_utils as string_utils
-import congregate.helpers.dict_utils as dict_utils
-import congregate.helpers.utils as utils
+from congregate.helpers import misc_utils, json_utils, string_utils, dict_utils, utils
 from congregate.helpers.reporting import Reporting
 from congregate.helpers.jobtemplategenerator import JobTemplateGenerator
 from congregate.cli.stage_projects import ProjectStageCLI
@@ -187,8 +183,8 @@ class MigrateClient(BaseClass):
             self.validate_groups_and_projects(staged_groups)
             self.log.info(
                 f"{dry_log}Migrating GitHub orgs/teams to GitLab groups/sub-groups")
-            results = [r for r in self.multi.start_multi_process(
-                self.migrate_github_group, staged_groups, processes=self.processes, nestable=True)]
+            results = list(r for r in self.multi.start_multi_process(
+                self.migrate_github_group, staged_groups, processes=self.processes, nestable=True))
             self.are_results(results, "group", "import")
             results.append(mig_utils.get_results(results))
             self.log.info(
@@ -207,8 +203,8 @@ class MigrateClient(BaseClass):
                 self.log.warning("User projects staged:\n{}".format(
                     "\n".join(u for u in user_projects)))
             self.log.info("Importing projects from GitHub")
-            import_results = [ir for ir in self.multi.start_multi_process(
-                self.import_github_project, staged_projects, processes=self.processes, nestable=True)]
+            import_results = list(ir for ir in self.multi.start_multi_process(
+                self.import_github_project, staged_projects, processes=self.processes, nestable=True))
 
             self.are_results(import_results, "project", "import")
             # append Total : Successful count of project imports
@@ -532,8 +528,8 @@ class MigrateClient(BaseClass):
             self.validate_groups_and_projects(staged_groups)
             self.log.info(
                 f"{dry_log}Migrating BitBucket projects to GitLab groups")
-            results = [r for r in self.multi.start_multi_process(
-                self.migrate_bitbucket_group, staged_groups, processes=self.processes, nestable=True)]
+            results = list(r for r in self.multi.start_multi_process(
+                self.migrate_bitbucket_group, staged_groups, processes=self.processes, nestable=True))
 
             self.are_results(results, "group", "import")
 
@@ -555,8 +551,8 @@ class MigrateClient(BaseClass):
                 self.log.warning("User projects staged:\n{}".format(
                     "\n".join(u for u in user_projects)))
             self.log.info("Importing projects from BitBucket Server")
-            import_results = [ir for ir in self.multi.start_multi_process(
-                self.import_bitbucket_project, staged_projects, processes=self.processes, nestable=True)]
+            import_results = list(ir for ir in self.multi.start_multi_process(
+                self.import_bitbucket_project, staged_projects, processes=self.processes, nestable=True))
 
             self.are_results(import_results, "project", "import")
 
@@ -663,8 +659,8 @@ class MigrateClient(BaseClass):
                     self.users.search_for_staged_users()[0],
                     keep=not self.only_post_migration_info
                 )
-                new_users = [nu for nu in self.multi.start_multi_process(
-                    self.handle_user_creation, staged, self.processes)]
+                new_users = list(nu for nu in self.multi.start_multi_process(
+                    self.handle_user_creation, staged, self.processes))
                 self.are_results(new_users, "user", "creation")
                 formatted_users = {}
                 for nu in new_users:
@@ -765,11 +761,11 @@ class MigrateClient(BaseClass):
             self.validate_groups_and_projects(staged_groups)
             if not self.skip_group_export:
                 self.log.info(f"{dry_log}Exporting groups")
-                export_results = [er for er in self.multi.start_multi_process(
+                export_results = list(er for er in self.multi.start_multi_process(
                     self.handle_exporting_groups,
                     staged_subgroups if self.subgroups_only else staged_top_groups,
                     processes=self.processes
-                )]
+                ))
 
                 self.are_results(export_results, "group", "export")
 
@@ -792,16 +788,16 @@ class MigrateClient(BaseClass):
                     "SKIP: Assuming staged groups are already exported")
             if not self.skip_group_import:
                 self.log.info(f"{dry_log}Importing groups")
-                import_results = [ir for ir in self.multi.start_multi_process(
+                import_results = list(ir for ir in self.multi.start_multi_process(
                     self.handle_importing_groups,
                     staged_subgroups if self.subgroups_only else staged_top_groups,
                     processes=self.processes
-                )]
+                ))
 
                 # Migrate sub-group info
                 if staged_subgroups:
-                    import_results += [ir for ir in self.multi.start_multi_process(
-                        self.migrate_subgroup_info, staged_subgroups, processes=self.processes)]
+                    import_results += list(ir for ir in self.multi.start_multi_process(
+                        self.migrate_subgroup_info, staged_subgroups, processes=self.processes))
 
                 self.are_results(import_results, "group", "import")
 
@@ -966,8 +962,8 @@ class MigrateClient(BaseClass):
                     "\n".join(u for u in user_projects)))
             if not self.skip_project_export:
                 self.log.info("{}Exporting projects".format(dry_log))
-                export_results = [er for er in self.multi.start_multi_process(
-                    self.handle_exporting_projects, staged_projects, processes=self.processes)]
+                export_results = list(er for er in self.multi.start_multi_process(
+                    self.handle_exporting_projects, staged_projects, processes=self.processes))
 
                 self.are_results(export_results, "project", "export")
 
@@ -991,8 +987,8 @@ class MigrateClient(BaseClass):
 
             if not self.skip_project_import:
                 self.log.info("{}Importing projects".format(dry_log))
-                import_results = [ir for ir in self.multi.start_multi_process(
-                    self.handle_importing_projects, staged_projects, processes=self.processes)]
+                import_results = list(ir for ir in self.multi.start_multi_process(
+                    self.handle_importing_projects, staged_projects, processes=self.processes))
 
                 self.are_results(import_results, "project", "import")
 

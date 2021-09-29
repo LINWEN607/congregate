@@ -216,7 +216,7 @@ def main():
             log = myLogger(__name__)
         else:
             log = myLogger(__name__)
-        
+
         if arguments["--version"]:
             with open(f"{app_path}/pyproject.toml", "r") as f:
                 print(

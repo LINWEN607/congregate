@@ -4,6 +4,7 @@ stages:
   - bump version
   - release
   - deploy
+
 include:
   - template: Security/SAST.gitlab-ci.yml
   - template: Security/Secret-Detection.gitlab-ci.yml
@@ -105,7 +106,7 @@ code_quality:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"' # Run code quality job in merge request pipelines
     - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH" # Run code quality job in pipelines on the master branch (but not in other branch pipelines)
     - if: "$CI_COMMIT_TAG" # Run code quality job in pipelines for tags
-      changes:
+    - changes:
         - ./**/*.py
         - ./*.py
         - ./**/*.js
@@ -145,7 +146,6 @@ build:
     - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
       changes:
         - docker/test/*
-    
 
 build bitbucket seed image:
   extends:
