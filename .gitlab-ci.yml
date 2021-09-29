@@ -117,7 +117,8 @@ sast:
   artifacts:
     paths: [gl-sast-report.json]
   rules:
-    - changes:
+    - if: "$CI_PIPELINE_SOURCE != 'schedule'"
+      changes:
         - ./**/*.py
         - ./*.py
         - ./**/*.js
@@ -143,8 +144,6 @@ build:
     - docker build --tag "$TEST_IMAGE_NAME" .
     - docker push "$TEST_IMAGE_NAME"
   rules:
-    - changes:
-        - docker/test/*
     - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE != 'schedule'"
       changes:
         - docker/test/*
@@ -215,7 +214,8 @@ check ldap compose yaml:
     - ./congregate.sh init
   retry: 2
   rules:
-    - changes:
+    - if: "$CI_PIPELINE_SOURCE != 'schedule'"
+      changes:
         - congregate/**/*
         - docker/test/*
         - congregate.sh
@@ -416,7 +416,8 @@ container-scan-build:centos:
     DISTRO: "centos"
     RELEASE_IMAGE_NAME: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHA-centos
   rules:
-    - changes:
+    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE != 'schedule'"
+      changes:
         - pyproject.toml
         - package.json
         - docker/release/centos.Dockerfile
@@ -429,7 +430,8 @@ container-scan-build:debian:
     DISTRO: "debian"
     RELEASE_IMAGE_NAME: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHA-debian
   rules:
-    - changes:
+    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE != 'schedule'"
+      changes:
         - pyproject.toml
         - package.json
         - docker/release/debian.Dockerfile
@@ -474,7 +476,7 @@ docs update:
     - python ci/docscript.py 21146917 extras
   rules:
     - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE != 'schedule'"
-    - changes:
+      changes:
         - runbooks/*
         - customer/*
   artifacts:
