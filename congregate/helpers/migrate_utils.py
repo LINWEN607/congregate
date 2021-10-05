@@ -90,7 +90,7 @@ def get_export_filename_from_namespace_and_name(namespace, name=""):
         namespace, "/" + name if name else "").replace("/", "_").lower()
 
 
-def get_project_namespace(p):
+def get_project_namespace(p, custom=None):
     """
     If this is a user project, the namespace == username
 
@@ -106,8 +106,9 @@ def get_project_namespace(p):
         if b.config.src_parent_id and b.config.src_parent_group_path:
             single_group_name = b.config.src_parent_group_path.split("/")[-1]
             p_namespace = f"{single_group_name}{p_namespace.split(b.config.src_parent_group_path)[-1]}"
-
-        if b.config.dstn_parent_id is not None:
+        if custom:
+            return f"{custom}/{p_namespace}"
+        if b.config.dstn_parent_id:
             return f"{b.config.dstn_parent_group_path}/{p_namespace}"
     return p_namespace
 
@@ -209,14 +210,14 @@ def find_user_by_email_comparison_without_id(email, src=False):
     return None
 
 
-def get_dst_path_with_namespace(p):
+def get_dst_path_with_namespace(p, custom=None):
     """
     Determine project path with namespace on destination
 
         :param p: The JSON object representing a GitLab project
         :return: Destination project path with namespace
     """
-    return f"{get_user_project_namespace(p) if is_user_project(p) else get_project_namespace(p)}/{p.get('path')}"
+    return f"{get_user_project_namespace(p) if is_user_project(p) else get_project_namespace(p, custom)}/{p.get('path')}"
 
 
 def get_target_namespace(project):
