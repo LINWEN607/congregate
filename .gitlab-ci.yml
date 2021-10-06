@@ -262,7 +262,7 @@ test:pylint:syntax-errors:
 test:unit:
   extends: .test-job
   script:
-    - poetry run pytest -m 'unit_test' --cov-report html --cov-config=.coveragerc --cov=congregate congregate/tests/
+    - poetry run pytest -m 'unit_test' --cov-report html --cov-report term-missing --cov-config=.coveragerc --cov=congregate congregate/tests/
   timeout: 5 minutes
   artifacts:
     paths:
