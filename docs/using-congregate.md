@@ -1,19 +1,28 @@
 # How to use Congregate
 
-## Overview
-
-Congregate is a migration tool that can move data from many different Source Code Management (SCM) and Continuous Integration (CI) systems into a GitLab Self Managed (SM) instance hosted in the customer data center/cloud or GitLab.com.
-
-In general congregate needs to perform tasks to get data from the source systems, transform it into the format that is expected for API calls to GitLab, allow the migration engineer to review the data, and execute the API calls to initiate migration. Migrations are dependent on the gitlab import/export API and, as such, migrations vary slightly based on the type(s) of source system. For example, GitLab SM to gitlab.com migrations utilize a file export / import process, while migrations from bitbucket server and github enterprise to GitLab use a file streaming approach. For these reasons, we will attempt to list standard migration procedures later in this document based on the most requested types of migration engagements.
-
 ## Quick Start
 
-We are adding an onboarding issue for new employees and contractors with this info, but including it here to get you up to speed with testing and using congregate
+1. Download and install [docker desktop](https://www.docker.com/products/docker-desktop) or make sure `docker` is installed on the machine you will be working from.
+1. Run `git clone git@gitlab.com:gitlab-org/professional-services-automation/tools/migration/congregate.git` to pull the congregate repo to your local environment.
+1. Generate a personal access token from your gitlab.com account that has the read_registry permission by clicking `User Icon (top right) > Settings > Access Tokens > Generate Access Token`.
+1. Then run `docker login registry.gitlab.com` and provide your username and paste the access token when prompted for a password.
+1. Download  `congregate:latest` using `docker pull registry.gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate:latest` :point_left: Fix this url :warning:
+1. Run `docker images -a` to list and copy the `image-id` of the congregate image.
+1. Run `docker run <image-id>` to start the congregate container.
+1. Run `docker ps` to get the `container-id`.
+1. Run `docker exec -it <container-id>` to shell into the congregate container.  
+1. Modify the configuration file in `/opt/congregate/congregate.conf` using the [`congregate.conf.template`](congregate.conf.template) as a guide.
+1. Check out the fundamental [congregate commands](#congregate-commands) below.
 
+## Full Congregate setup with test environment
+
+Follow the steps in [this issue template](./setup-dev-env.md) for a full guide on how to setup a source, destination and congregate system to test congregate functionality.
+
+<!--
 1. download and install [docker desktop](https://www.docker.com/products/docker-desktop) on your machine.
-1. download  `congregate:<version>` using `docker pull registry.gitlab.com/gitlab-com/customer-success/professional-services-group/global-practice-development/migration/congregate:<version>`
-     - create personal access token (I created a file `gl_token.txt` containing the personal access token )
-     - login into registry.gitlab.com with docker, `cat gl_token.txt | docker login --username 'cwolfe@taos.com' --password-stdin registry.gitlab.com`
+1. download  `congregate:<version>` using `docker pull registry.gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate:<version>`
+     - create personal access token and store the token in a file called `gl_token.txt`
+     - login into registry.gitlab.com with docker, `cat gl_token.txt | docker login --username '<email-address>' --password-stdin registry.gitlab.com`
 
 1. navigate to `https://gitlab.com/gitlab-com/customer-success/professional-services-group/global-practice-development/migration/congregate` and clone the repository to your local machine
 1. spin up gitlab, source, and congregate instances with data on them.
@@ -39,10 +48,13 @@ We are adding an onboarding issue for new employees and contractors with this in
 1. then take that group id that you found and run `./congregate.sh stage-groups <id> --commit` where the ids are a space delimited list
 1. now that we have staged data (which you can verify by doing `ll data/staged_*` to see the `staged_groups.json`, etc files), run `./congregate.sh migrate --commit`
 1. validate the migration worked by navigating to the gitlab UI on the destination (`http://localhost:8080`) and going to the admin pane (wrench top middle) and look for the migrated groups.
+-->
 
 ## Congregate commands
 
-During migrations, we generally do the same family of commands every time.
+During migrations, we generally do the same type of commands every time in roughly the same order.
+
+![Congregate Process Flow](/img/process-flow.png)
 
 ### List
 
@@ -70,7 +82,7 @@ This process is very similar to stage-projects, but you need to search for group
 
 ### `stage-wave`
 
-For larger migrations, customers often want to define waves of migration in a spreadsheet that congregate can read in to stage many different groups and projects at once without having to do the initial investigation for project and group ids. To set this up we need to add a few lines to the `data/congregate.conf` that look like the ones from [the template](/congregate.conf.template#L170). This configuration  template refers to the [waves.csv](/waves.csv) file. A more verbose description on how this configuration works is in the [configuration section](#Wave-definition-spreadsheet-ingestion) below.
+For larger migrations, customers often want to define waves of migration in a spreadsheet that congregate can read in to stage many different groups and projects at once without having to do the initial investigation for project and group ids. To set this up we need to add a few lines to the `data/congregate.conf` that look like the ones from [the template](/congregate.conf.template#L170). This configuration  template refers to the [waves.csv](/templates/waves.csv) file. A more verbose description on how this configuration works is in the [configuration section](#Wave-definition-spreadsheet-ingestion) below.
 
 Once we have this in place, you can run `./congregate.sh stage-wave <WaveName> --commit` to stage all projects and groups defined by the spreadsheet.
 
@@ -183,10 +195,8 @@ TODO: Add info on this once we have it more complete.
 
 > This feature was developed for GitHub imports and may not work with other source systems.
 
-The data in the [waves spreadsheet](waves.csv) represents the Repo/Project URLs that are in scope for a wave of migration. The required fields are `Wave Name`, `SCM URL` (can be repo or Org). Option arguments are `Group Path` if your customer wants to migrate the Orgs and Repos to locations in a nested Group Sub-group tree in the destination gitlab instance.
+The data in the [waves spreadsheet](/templates/waves.csv) represents the Repo/Project URLs that are in scope for a wave of migration. The required fields are `Wave Name`, `SCM URL` (can be repo or Org). Option arguments are `Group Path` if your customer wants to migrate the Orgs and Repos to locations in a nested Group Sub-group tree in the destination gitlab instance.
 
 If the [migration reporting](#migration-reporting) feature is configured, there are two additional fields that are optional that will facilitate creating "sign-off" issues and assign them to application owners. The two fields are `Application ID` and `Application Owner Email`. These column names are mapped in the config file to the variable names that congregate expects.
 
 To exercise this configuration, follow steps in the [stage wave](#stage-wave) section.
-
-TODO: finish this once the feature is complete.

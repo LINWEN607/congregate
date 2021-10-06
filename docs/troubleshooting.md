@@ -1,4 +1,4 @@
-# Development Environment Setup Tips
+# Troubleshooting
 
 ## Live reloading for UI development and backend development without a debugger
 
@@ -39,7 +39,7 @@ To reload the app in debugging mode, you will need to click the `refresh` icon i
 
 ## If VS Code doesn't pick up poetry virtualenv
 
-Find virtualenv path
+Find `virtualenv` path
 
 ```bash
 poetry config --list
@@ -60,13 +60,10 @@ You can read more about using pdb [here](https://fuzzyblog.io/blog/python/2019/0
 
 ## Setting up bitbucket server for development
 
-Refer to [this README](./bitbucket-development-setup.md) for details on setting up a BitBucket server for local development
+Refer to [this README](./docker/bitbucket/README.md) for details on setting up a BitBucket server for local development
 
-## Style guide
+## Issues with installing node dependencies
 
-Congregate uses the `autopep8` tool to automatically format Python code conform the PEP 8 style guide.
-If you are using VS Code as your IDE please enable `autopep8` with the following settings:
-
-- *Python > Formatting: Autopep8 Args* - Add item `--max-line-length=79` (this length and setting applies to any other IDE you may be using)
-- *Python > Formatting: Autopep8 Path* - `autopep8`
-- *Python > Formatting: Provider* - `autopep8`
+You can delete the `node_modules` folder and re-run `npm install` if you are experiencing issues with frontend dependencies.
+If you are still having issues with getting the UI to build correctly after re-installing the dependencies and you don't have any linting issues,
+reach out to a maintainer or create an issue pinging `@leopardm` or `@pprokic`.

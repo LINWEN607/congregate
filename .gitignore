@@ -28,6 +28,7 @@ test-data
 congregate/tests/data/repos
 customer/*.html
 runbooks/*.html
+docs/*.html
 README.html
 
 node_modules

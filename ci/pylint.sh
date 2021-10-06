@@ -2,6 +2,8 @@
 
 if [ "$CI_COMMIT_BRANCH" == "$CI_DEFAULT_BRANCH" ]; then
     poetry run pylint congregate -j 4 | tee pylint.txt || poetry run pylint-exit $?
+    export score=$(sed -n 's/^Your code has been rated at \([-0-9.]*\)\/.*/\1/p' pylint.txt)
+    echo "Pylint score was ${score}"
     export json_badge_info=$(curl -H "PRIVATE-TOKEN:$ACCESS_TOKEN" -X GET https://gitlab.com/api/v4/projects/$CI_PROJECT_ID/badges)
     echo ${json_badge_info}
     [[ $json_badge_info =~ \"id\":([0-9]*) ]]
@@ -11,7 +13,11 @@ if [ "$CI_COMMIT_BRANCH" == "$CI_DEFAULT_BRANCH" ]; then
     curl https://gitlab.com/api/v4/projects/$CI_PROJECT_ID/badges/${pylint_badge_id} -X PUT -H "PRIVATE-TOKEN: $ACCESS_TOKEN" -H "Content-Type: application/json" -d '{"image_url": "'"$badge_url"'"}'
 else
     files=$(git diff origin/master --name-only | egrep "(\.py|python)$")
-    poetry run pylint $files | tee pylint.txt || poetry run pylint-exit $?
-    export score=$(sed -n 's/^Your code has been rated at \([-0-9.]*\)\/.*/\1/p' pylint.txt)
-    echo "Pylint score was ${score}"
+    if [ ! -z $files]; then
+        poetry run pylint $files | tee pylint.txt || poetry run pylint-exit $?
+        export score=$(sed -n 's/^Your code has been rated at \([-0-9.]*\)\/.*/\1/p' pylint.txt)
+        echo "Pylint score was ${score}"
+    else
+        echo "No python files found to check score"
+    fi
 fi
