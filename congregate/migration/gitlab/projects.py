@@ -623,7 +623,7 @@ class ProjectsClient(BaseClass):
                     f"Failed to create project {path_with_namespace} with error:\n{re}")
                 continue
 
-    def push_mirror_staged_projects(self, namespace, dry_run=True):
+    def push_mirror_staged_projects(self, namespace, disabled=False, dry_run=True):
         staged_projects = get_staged_projects()
         host = self.config.destination_host
         token = self.config.destination_token
@@ -641,18 +641,19 @@ class ProjectsClient(BaseClass):
                     self.log.error(
                         f"SKIP: Project mirror {mirror_path} NOT found")
                     continue
-                self.log.info(
-                    f"{get_dry_log(dry_run)}Create project {dst_path} push mirror {mirror_path}")
                 data = {
                     "url": mirror_path,
-                    "enabled": True
+                    "enabled": not disabled
                 }
+                state = "disabled" if disabled else "enabled"
+                self.log.info(
+                    f"{get_dry_log(dry_run)}Create project {dst_path} ({state}) push mirror {mirror_path}, with payload {data}")
                 if not dry_run:
                     resp = self.projects_api.create_remote_push_mirror(
                         dst_pid, host, token, data=data)
                     if resp.status_code != 201:
                         self.log.error(
-                            f"Failed to create project {dst_path} push mirror to {mirror_path}, with response:\n{resp} - {resp.text}")
+                            f"Failed to create project {dst_path} ({state}) push mirror to {mirror_path}, with response:\n{resp} - {resp.text}")
             except RequestException as re:
                 self.log.error(
                     f"Failed to create project {dst_path} push mirror, with error:\n{re}")
