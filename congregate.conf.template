@@ -16,7 +16,7 @@
 
 ################################################################################
 ## congregate.conf configuration
-##! Docs: https://gitlab.com/gitlab-com/customer-success/professional-services-group/global-practice-development/migration/congregate/-/blob/master/README.md
+##! Docs: https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/-/blob/master/README.md
 ################################################################################
 
 ##! In general, the values specified here should reflect what the default value of the attribute will be.

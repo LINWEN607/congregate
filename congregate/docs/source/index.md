@@ -34,7 +34,7 @@ Our guidance on some other migrations at this time:
 * [GitHub Development Setup](static_docs/github-development-setup.md)
 * [Migration Workflow](static_docs/workflow.md)
 * [Code Quality Report](static_docs/code-quality.md)
-* [Congregate Wiki](https://gitlab.com/gitlab-com/customer-success/professional-services-group/global-practice-development/migration/congregate/-/wikis/home)
+* [Congregate Wiki](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/-/wikis/home)
 
 ## Indices and tables
 

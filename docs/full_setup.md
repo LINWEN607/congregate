@@ -3,22 +3,22 @@
 ## From docker
 
 1. Pull the docker image from the container registry
-    * :white_check_mark: For official versioned releases, `docker pull registry.gitlab.com/gitlab-com/customer-success/professional-services-group/global-practice-development/migration/congregate:<version>`
-    * :warning: For rolling releases, `docker pull registry.gitlab.com/gitlab-com/customer-success/professional-services-group/global-practice-development/migration/congregate:rolling-debian`
+    * :white_check_mark: For official versioned releases, `docker pull registry.gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate:<version>`
+    * :warning: For rolling releases, `docker pull registry.gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate:rolling-debian`
 2. 
 
 3. Login to the congregate VM using `ssh -L 8000:localhost:8000 <vm_alias_ip_or_hostname>` to expose the Congregate UI outside of the docker container
 4. Run the following command:
 
 ```bash
-docker login registry.gitlab.com/gitlab-com/customer-success/professional-services-group/global-practice-development/migration/congregate -u <user name> -p <personal token>
+docker login registry.gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate -u <user name> -p <personal token>
 docker run \
 --name <name> \
 -v /var/run/docker.sock:/var/run/docker.sock \ # expose docker socket as volume
 -v <path_to_local_data>:/opt/congregate/data \ # expose data directory as volume
 -v <path_to_local_downloads>:/opt/congregate/downloads \ # if migrating from GitLab expose downloads directory as volume
 -p 8000:8000 \ # expose UI port
--it registry.gitlab.com/gitlab-com/customer-success/professional-services-group/global-practice-development/migration/congregate:<version> \
+-it registry.gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate:<version> \
 /bin/bash
 congregate configure
 congregate list
@@ -107,7 +107,7 @@ The following method is supported only for project export / import:
 * **aws** - export and download project exports directly to an S3 bucket and import directly from the S3 bucket.
   * AWS (S3) user attributes are **not yet** available on the Group export / import API.
 
-The following method may be supported in the future ([issue](https://gitlab.com/gitlab-com/customer-success/professional-services-group/global-practice-development/migration/congregate/issues/119)):
+The following method may be supported in the future ([issue](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/issues/119)):
 
 * **filesystem-aws** - export and download data locally, copy it to an S3 bucket for storage, then delete the data locally. Copy the data back from S3, import it and then delete the local data again.
   * This is used to help work with company policies like restricting presigned URLs or in case any of the source instances involved in the migration cannot connect to an S3 bucket while the destination instance can.

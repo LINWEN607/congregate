@@ -11,7 +11,7 @@
 
 :warning: This document assumes you have a working python 3.8.12 installed, you know how to clone a repo in terminal, and switch to its directory.  If you do not have a working python, you will need to take appropriate OS specific steps to install it.
 
-After cloning [this repo](https://gitlab.com/gitlab-com/customer-success/professional-services-group/global-practice-development/migration/congregate) and changing to the directory in terminal, run the following appropriate commands to run your first UT!
+After cloning [this repo](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate) and changing to the directory in terminal, run the following appropriate commands to run your first UT!
 
 1. For Mac users, using `brew`:
    1. `brew update`

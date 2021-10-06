@@ -90,7 +90,7 @@ ui_port = 8000
 
 If you are having trouble building the docker image, you can replace `bitbucket-seed:latest` in `docker-compose.yml` with the bitbucket seed image stored in the container registry:
 
-`registry.gitlab.com/gitlab-com/customer-success/professional-services-group/global-practice-development/migration/congregate/bitbucket-seed:latest`
+`registry.gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/bitbucket-seed:latest`
 
 This will require you to login to the GitLab container registry (`docker login registry.gitlab.com`) before spinning up the containers
 
