@@ -622,3 +622,35 @@ class ProjectsClient(BaseClass):
                 self.log.error(
                     f"Failed to create project {path_with_namespace} with error:\n{re}")
                 continue
+
+    def create_staged_projects_fork_relation(self, dry_run=True):
+        staged_projects = get_staged_projects()
+        host = self.config.destination_host
+        token = self.config.destination_token
+        for s in staged_projects:
+            if fork_path := s.get("forked_from_project"):
+                try:
+                    dst_path = get_dst_path_with_namespace(s)
+                    dst_pid = self.find_project_by_path(host, token, dst_path)
+                    if not dst_pid:
+                        self.log.error(
+                            f"SKIP: Project fork {dst_path} NOT found")
+                        continue
+                    fork_pid = self.find_project_by_path(
+                        host, token, fork_path)
+                    if not fork_pid:
+                        self.log.error(
+                            f"SKIP: Project fork origin {fork_path} of project fork {dst_path} NOT found")
+                        continue
+                    self.log.info(
+                        f"{get_dry_log(dry_run)}Create fork relation from {fork_path} to {dst_path}")
+                    if not dry_run:
+                        resp = self.projects_api.create_project_fork_relation(
+                            dst_pid, fork_pid, host, token)
+                        if resp.status_code != 201:
+                            self.log.error(
+                                f"Failed to create fork relation from {fork_path} to {dst_path}, with response:\n{resp} - {resp.text}")
+                except RequestException as re:
+                    self.log.error(
+                        f"Failed to create fork relation for {dst_path}, with error:\n{re}")
+                    continue

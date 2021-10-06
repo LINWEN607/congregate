@@ -58,6 +58,7 @@ Usage:
     congregate ldap-group-sync <file-path> [--commit]
     congregate set-staged-users-public-email [--commit] [--hide] [--dest]
     congregate create-staged-projects-structure [--commit] [--disable-cicd]
+    congregate create-staged-projects-fork-relation [--commit]
     congregate -h | --help
     congregate -v | --version
 
@@ -165,6 +166,7 @@ Commands:
     ldap-group-sync                         Perform LDAP Group sync operations over a pipe-delimited file of group_id|CN
     set-staged-users-public-email           Set/unset the staged users public_email field on source (default) or destination. Use email on source as reference.
     create-staged-projects-structure        Create empty project structures on GitLab destination for staged projects. Optionally, disable CI/CD on creation.
+    create-staged-projects-fork-relation    Create a forked from/to relation between existing projects on destination, based on staged projects. Assumes fork source and fork destination project have already been migrated.
 """
 
 import os
@@ -592,6 +594,8 @@ def main():
             if arguments["create-staged-projects-structure"]:
                 projects.create_staged_projects_structure(
                     dry_run=DRY_RUN, disable_cicd=arguments["--disable-cicd"])
+            if arguments["create-staged-projects-fork-relation"]:
+                projects.create_staged_projects_fork_relation(dry_run=DRY_RUN)
         if arguments["obfuscate"]:
             data = obfuscate("Secret:")
             if platform == "darwin":
