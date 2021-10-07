@@ -218,6 +218,8 @@ check ldap compose yaml:
         - .pylintrc
         - delete_azure_vm.ps1
         - restore_azure_vm.sh
+    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE != 'schedule'"
+      when: always
 
 .e2e-test-setup:
   image: "${TEST_IMAGE_NAME}"
@@ -240,6 +242,8 @@ check ldap compose yaml:
         - congregate/helpers/**/*
         - congregate/migration/gitlab/**/*
         - congregate/migration/migrate.py
+    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE != 'schedule'"
+      when: always
   timeout: 30 minutes
 
 test:pylint:
