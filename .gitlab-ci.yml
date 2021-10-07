@@ -242,8 +242,6 @@ check ldap compose yaml:
         - congregate/helpers/**/*
         - congregate/migration/gitlab/**/*
         - congregate/migration/migrate.py
-    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE != 'schedule'"
-      when: always
   timeout: 30 minutes
 
 test:pylint:
