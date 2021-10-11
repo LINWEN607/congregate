@@ -1124,5 +1124,35 @@ class ProjectsApi(GitLabApiWrapper):
         """
         if not message:
             message = (
-                f"Enabling project {pid} remote mirror with payload {data}")
+                f"Creating project {pid} remote mirror with payload {data}")
         return self.api.generate_post_request(host, token, f"projects/{pid}/remote_mirrors", json.dumps(data), description=message)
+
+    def get_all_remote_push_mirrors(self, pid, host, token):
+        """
+        Returns an Array of remote mirrors and their statuses
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/remote_mirrors.html#list-a-projects-remote-mirrors
+
+            :param: pid: (int) GitLab project ID
+            :param: host: (str) GitLab mirrored repo URL
+            :param: token: (str) Access token to GitLab instance
+            :return: Response object containing the response to GET /projects/:pid/remote_mirrors
+        """
+        return self.api.list_all(host, token, f"projects/{pid}/remote_mirrors")
+
+    def edit_remote_push_mirror(self, pid, mid, host, token, data=None, message=None):
+        """
+        Toggle a remote mirror on or off, or change which types of branches are mirrored
+
+        GitLab API doc: https://docs.gitlab.com/ee/api/remote_mirrors.html#update-a-remote-mirrors-attributes
+
+            :param: pid: (int) GitLab project ID
+            :param: mid: (int) GitLab project mirror ID
+            :param: host: (str) GitLab mirrored repo URL
+            :param: token: (str) Access token to GitLab instance
+            :param: data: (dict) Object containing the necessary data for remote mirror
+            :return: Response object containing the response to PUT /projects/:pid/remote_mirrors/:mid
+        """
+        if not message:
+            message = f"Editing project {pid} remote push mirror {mid} with payload {str(data)}"
+        return self.api.generate_put_request(host, token, f"projects/{pid}/remote_mirrors/{mid}", json.dumps(data), description=message)

@@ -30,6 +30,7 @@ Usage:
     congregate migrate-variables-in-stage [--commit]
     congregate mirror-staged-projects [--commit]
     congregate push-mirror-staged-projects [--namespace=<parent_group_full_path>] [--disabled] [--commit]
+    congregate toggle-staged-projects-push-mirror [--namespace=<parent_group_full_path>] [--disable] [--commit]
     congregate remove-all-mirrors [--commit]
     # TODO: Add dry-run, potentially remove
     congregate update-projects-visibility
@@ -105,6 +106,7 @@ Arguments:
     disable-cicd                            Disable CI/CD when creating empty GitLab project structures
     namespace                               Enter parent group where the project is push mirrored to
     disabled                                Disable project push mirror when creating it
+    disable                                 Disable staged project push mirror
 
 Commands:
     list                                    List all projects of a source instance and save it to {CONGREGATE_PATH}/data/projects.json.
@@ -140,6 +142,7 @@ Commands:
     mirror-staged-projects                  Set up project mirroring for staged projects.
     push-mirror-staged-projects             Set up and enable (by default) project push mirroring for staged projects, by passing the mirror project parent group namespace.
                                                 Assuming both the mirrored repository and empty project structure for mirroring already exist on destination.
+    toggle-staged-projects-push-mirror      Enable/disable push mirror created via command push-mirror-staged-projects.
     remove-all-mirrors                      Remove all project mirrors for staged projects.
     update-projects-visibility              Return list of all migrated projects' visibility.
     set-default-branch                      Set default branch to master for all projects on destination.
@@ -422,6 +425,14 @@ def main():
                 if namespace:
                     projects.push_mirror_staged_projects(
                         namespace=namespace, disabled=arguments["--disabled"], dry_run=DRY_RUN)
+                else:
+                    log.error(
+                        f"Invalid '--namespace={namespace}' entered for push mirror")
+            if arguments["toggle-staged-projects-push-mirror"]:
+                namespace = arguments["--namespace"]
+                if namespace:
+                    projects.toggle_staged_projects_push_mirror(
+                        namespace=namespace, disable=arguments["--disable"], dry_run=DRY_RUN)
                 else:
                     log.error(
                         f"Invalid '--namespace={namespace}' entered for push mirror")
