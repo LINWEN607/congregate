@@ -697,7 +697,7 @@ class ProjectsClient(BaseClass):
             dst_pid = self.find_project_by_path(host, token, dst_path)
             if not dst_pid:
                 self.log.error(f"SKIP: Project {dst_path} NOT found")
-                return False, False
+                return (False, False)
             mirror_path = get_dst_path_with_namespace(
                 staged_project, custom=namespace)
             mirror_pid = self.find_project_by_path(
@@ -705,8 +705,8 @@ class ProjectsClient(BaseClass):
             if not mirror_pid:
                 self.log.error(
                     f"SKIP: Project mirror {mirror_path} NOT found")
-                return False, False
-            return dst_pid, mirror_path
+                return (dst_pid, False)
+            return (dst_pid, mirror_path)
         except RequestException as re:
             self.log.error(
                 f"Failed to find project {dst_path} and/or push mirror, with error:\n{re}")
