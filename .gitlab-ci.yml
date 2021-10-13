@@ -20,6 +20,8 @@ variables:
   JENKINS_SEED_IMAGE_NAME: "$CI_REGISTRY_IMAGE/jenkins-seed:latest"
   SAST_EXCLUDED_ANALYZERS: "brakeman,flawfinder,gosec,kubesec,mobsf,phpcs-security-audit,pmd-apex,security-code-scan,sobelow,spotbugs"
   SECURE_LOG_LEVEL: "debug"
+  CONGREGATE_PATH: $CI_PROJECT_DIR
+  APP_PATH: $CI_PROJECT_DIR
 
 default:
   image: "$TEST_IMAGE_NAME"
@@ -53,6 +55,7 @@ workflow:
     - docker login ${CI_REGISTRY} -u gitlab-ci-token -p $CI_BUILD_TOKEN
 
 .gitlab-destination:
+  extends: .gitlab-license
   variables:
     GITLAB_LICENSE_PATH: "$GITLAB_LICENSE"
     GITLAB_OMNIBUS_CONFIG: |-
@@ -230,7 +233,7 @@ check ldap compose yaml:
     - .gitlab-destination
     - .e2e-cleanup
     - .aws-creds
-    - .gitlab-creds
+    - .gitlab-api-creds
   tags:
     - congregate-auto-scale-runner
   before_script:
@@ -252,7 +255,7 @@ check ldap compose yaml:
 test:pylint:
   extends: 
     - .test-job
-    - .gitlab-creds
+    - .gitlab-api-creds
   script:
     - ci/pylint.sh
   artifacts:
@@ -292,19 +295,6 @@ test:end-to-end single group:
     - poetry run pytest -s -m e2e_gl_setup_2 congregate/tests/
     - poetry run pytest -s -m e2e --cov-config=.coveragerc --cov=congregate congregate/tests/
   timeout: 30 minutes
-
-test:GitHub Server end to end:
-  extends:
-    - .test-job
-  image: "${TEST_IMAGE_NAME}"
-  tags:
-    - congregate-auto-scale-runner
-  script:
-    - curl -k $GH_TEST_INSTANCE_URL -v
-  rules:
-    - if: "$CI_PIPELINE_SOURCE != 'schedule'"
-      changes:
-        - congregate/migration/github/**/*
 
 test:Jenkins Integration Tests:
   extends:
@@ -508,9 +498,6 @@ mvc:
 
 pages:
   stage: deploy
-  variables:
-    CONGREGATE_PATH: $CI_PROJECT_DIR
-    APP_PATH: $CI_PROJECT_DIR
   rules:
     - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE != 'schedule'"
       changes:

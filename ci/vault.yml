@@ -18,23 +18,32 @@
     AZURE_GHE_VM_CREATOR_SERVICE_PRINCIPAL_APP_ID:
       vault: ci/AZURE_GHE_VM_CREATOR_SERVICE_PRINCIPAL_APP_ID@congregate
       file: false
-    AZURE_GHE_VM_CREATOR_SERVICE_PRINCIPAL_APP_ID:
-      vault: ci/AZURE_GHE_VM_CREATOR_SERVICE_PRINCIPAL_APP_ID@congregate
+    AZURE_GHE_VM_CREATOR_SERVICE_PRINCIPAL_PASSWORD:
+      vault: ci/AZURE_GHE_VM_CREATOR_SERVICE_PRINCIPAL_PASSWORD@congregate
       file: false
     AZURE_GHE_VM_CREATOR_SERVICE_PRINCIPAL_APP_ID:
       vault: ci/AZURE_GHE_VM_CREATOR_SERVICE_PRINCIPAL_APP_ID@congregate
       file: false
-    AZURE_GHE_VM_CREATOR_SERVICE_PRINCIPAL_APP_ID:
-      vault: ci/AZURE_GHE_VM_CREATOR_SERVICE_PRINCIPAL_APP_ID@congregate
+    AZURE_GHE_VM_CREATOR_SERVICE_PRINCIPAL_TENANT_ID:
+      vault: ci/AZURE_GHE_VM_CREATOR_SERVICE_PRINCIPAL_TENANT_ID@congregate
       file: false
-    AZURE_GHE_VM_CREATOR_SERVICE_PRINCIPAL_APP_ID:
-      vault: ci/AZURE_GHE_VM_CREATOR_SERVICE_PRINCIPAL_APP_ID@congregate
+    AZURE_SOURCE_VM_HOST_NAME:
+      vault: ci/AZURE_SOURCE_VM_HOST_NAME@congregate
       file: false
-    AZURE_GHE_VM_CREATOR_SERVICE_PRINCIPAL_APP_ID:
-      vault: ci/AZURE_GHE_VM_CREATOR_SERVICE_PRINCIPAL_APP_ID@congregate
+    AZURE_SUBSCRIPTION_SCOPE_ID:
+      vault: ci/AZURE_SUBSCRIPTION_SCOPE_ID@congregate
       file: false
-    AZURE_GHE_VM_CREATOR_SERVICE_PRINCIPAL_APP_ID:
-      vault: ci/AZURE_GHE_VM_CREATOR_SERVICE_PRINCIPAL_APP_ID@congregate
+    AZURE_VM_RESTORE_TARGET_RESOURCE_GROUP:
+      vault: ci/AZURE_VM_RESTORE_TARGET_RESOURCE_GROUP@congregate
+      file: false
+    AZURE_VM_RESTORE_TARGET_STORAGE_ACCOUNT_SHORT:
+      vault: ci/AZURE_VM_RESTORE_TARGET_STORAGE_ACCOUNT_SHORT@congregate
+      file: false
+    AZURE_VM_SOURCE_RECOVERY_VAULT:
+      vault: ci/AZURE_VM_SOURCE_RECOVERY_VAULT@congregate
+      file: false
+    AZURE_VM_SOURCE_RESOURCE_GROUP:
+      vault: ci/AZURE_VM_SOURCE_RESOURCE_GROUP@congregate
       file: false
 
 .ghe-creds:
@@ -42,11 +51,14 @@
     GHE_SOURCE_PASSWORD:
       vault: ci/GHE_SOURCE_PASSWORD@congregate
       file: false
-    BITBUCKET_PASSWORD:
-      vault: ci/BITBUCKET_PASSWORD@congregate
+    GHE_SOURCE_TOKEN:
+      vault: ci/GHE_SOURCE_TOKEN@congregate
       file: false
-    BITBUCKET_USERNAME:
-      vault: ci/BITBUCKET_USERNAME@congregate
+    GHE_SOURCE_URL:
+      vault: ci/GHE_SOURCE_URL@congregate
+      file: false
+    GHE_SOURCE_USERNAME:
+      vault: ci/GHE_SOURCE_USERNAME@congregate
       file: false
 
 .bbs-creds:
@@ -79,9 +91,14 @@
       vault: ci/UPVERS_TOKEN@congregate
       file: false
 
-.gitlab-creds:
+.gitlab-api-creds:
   secrets:
     ACCESS_TOKEN:
       vault: ci/ACCESS_TOKEN@congregate
       file: false
+
+.gitlab-license:
+  secrets:
+    GITLAB_LICENSE:
+      vault: ci/GITLAB_LICENSE@congregate
 
