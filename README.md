@@ -6,6 +6,7 @@
 
 >>>
 Requires [GitLab Premium](https://about.gitlab.com/pricing/) or above.
+
 Released under the [GitLab EE license](LICENSE).
 >>>
 

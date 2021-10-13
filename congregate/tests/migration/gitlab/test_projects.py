@@ -2,6 +2,7 @@ import warnings
 import unittest
 from unittest.mock import patch, PropertyMock, MagicMock
 from pytest import mark
+from requests.exceptions import RequestException
 
 from congregate.helpers.configuration_validator import ConfigurationValidator
 from congregate.tests.mockapi.gitlab.groups import MockGroupsApi
@@ -258,3 +259,75 @@ class ProjectsTests(unittest.TestCase):
     def test_filter_projects_by_state_unarchived(self, staged):
         staged.return_value = self.mock_projects.get_staged_projects()
         self.assertEqual(self.projects.filter_projects_by_state(), 2)
+
+    @patch("congregate.helpers.migrate_utils.get_dst_path_with_namespace")
+    @patch.object(ProjectsClient, "find_project_by_path")
+    def test_find_mirror_project_double_false(self, mock_find_id, mock_get_path):
+        mock_find_id.return_value = None
+        mock_get_path.return_value = "pmm-demo/spring-app-secure-2"
+        self.assertTupleEqual(self.projects.find_mirror_project(
+            self.mock_projects.get_staged_group_project(), "host", "token", "namespace"), (False, False))
+
+    @patch("congregate.helpers.migrate_utils.get_dst_path_with_namespace")
+    @patch.object(ProjectsClient, "find_project_by_path")
+    def test_find_mirror_project_false(self, mock_find_id, mock_get_path):
+        mock_find_id.side_effect = [1, None]
+        mock_get_path.side_effect = [
+            "pmm-demo/spring-app-secure-2", "namespace/pmm-demo/spring-app-secure-2"]
+        self.assertTupleEqual(self.projects.find_mirror_project(
+            self.mock_projects.get_staged_group_project(), "host", "token", "namespace"), (1, False))
+
+    @patch("congregate.helpers.migrate_utils.get_dst_path_with_namespace")
+    @patch.object(ProjectsClient, "find_project_by_path")
+    def test_find_mirror_project(self, mock_find_id, mock_get_path):
+        mock_find_id.side_effect = [1, 2]
+        mock_get_path.side_effect = [
+            "pmm-demo/spring-app-secure-2", "namespace/pmm-demo/spring-app-secure-2"]
+        self.assertTupleEqual(self.projects.find_mirror_project(
+            self.mock_projects.get_staged_group_project(), "host", "token", "namespace"), (1, "namespace/pmm-demo/spring-app-secure-2"))
+
+    @patch("congregate.helpers.migrate_utils.get_dst_path_with_namespace")
+    @patch.object(ProjectsClient, "find_project_by_path")
+    def test_find_mirror_project_exception(self, mock_find_id, mock_get_path):
+        mock_get_path.return_value = "pmm-demo/spring-app-secure-2"
+        mock_find_id.side_effect = RequestException()
+        with self.assertLogs(self.projects.log, level="ERROR"):
+            self.projects.find_mirror_project(
+                self.mock_projects.get_staged_group_project(), "host", "token", "namespace")
+
+    @patch.object(ProjectsClient, "find_mirror_project")
+    @patch("congregate.helpers.migrate_utils.read_json_file_into_object")
+    @patch('congregate.helpers.conf.Config.destination_host', new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'destination_token', new_callable=PropertyMock)
+    def test_push_mirror_staged_projects_fail(self, mock_token, mock_host, mock_staged, mock_find):
+        mock_host.return_value = "https://gitlabdestination.com"
+        mock_token.return_value = "token"
+        mock_staged.return_value = self.mock_projects.get_staged_projects()
+        mock_find.side_effect = [(False, False), (1, False), (2, False)]
+        self.assertIsNone(
+            self.projects.push_mirror_staged_projects("namespace"))
+
+    @patch.object(ProjectsClient, "find_mirror_project")
+    @patch("congregate.helpers.migrate_utils.read_json_file_into_object")
+    @patch('congregate.helpers.conf.Config.destination_host', new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'destination_token', new_callable=PropertyMock)
+    def test_push_mirror_staged_projects(self, mock_token, mock_host, mock_staged, mock_find):
+        mock_host.return_value = "https://gitlabdestination.com"
+        mock_token.return_value = "token"
+        mock_staged.return_value = self.mock_projects.get_staged_projects()
+        mock_find.side_effect = [
+            (False, False), (1, "namespace/test/path"), (2, False)]
+        with self.assertLogs(self.projects.log, level="INFO"):
+            self.projects.push_mirror_staged_projects("namespace")
+
+    @patch.object(ProjectsClient, "find_mirror_project")
+    @patch("congregate.helpers.migrate_utils.read_json_file_into_object")
+    @patch('congregate.helpers.conf.Config.destination_host', new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'destination_token', new_callable=PropertyMock)
+    def test_toggle_staged_projects_push_mirror_fail(self, mock_token, mock_host, mock_staged, mock_find):
+        mock_host.return_value = "https://gitlabdestination.com"
+        mock_token.return_value = "token"
+        mock_staged.return_value = self.mock_projects.get_staged_projects()
+        mock_find.side_effect = [(False, False), (1, False), (2, False)]
+        self.assertIsNone(
+            self.projects.toggle_staged_projects_push_mirror("namespace"))

@@ -59,7 +59,7 @@ class ProjectsApi(GitLabApiWrapper):
             :yield: Generator containing JSON results from GET /projects
 
         """
-        return self.api.list_all(host, token, "projects{}".format("?statistics=true" if statistics else ""), keyset=False)
+        return self.api.list_all(host, token, f"projects{'?statistics=true' if statistics else ''}", keyset=False)
 
     def get_members(self, pid, host, token):
         """
@@ -108,8 +108,7 @@ class ProjectsApi(GitLabApiWrapper):
 
         """
         if not message:
-            message = ("Adding user {0} to project {1}").format(
-                member["user_id"], id)
+            message = f"Adding user {member['user_id']} to project {pid}"
         return self.api.generate_post_request(host, token, f"projects/{pid}/members", json.dumps(member), description=message)
 
     def create_new_project_deploy_key(self, pid, host, token, key, message=None):
@@ -158,7 +157,7 @@ class ProjectsApi(GitLabApiWrapper):
 
         """
         if not message:
-            message = "Archiving project"
+            message = f"Archiving project {pid}"
         return self.api.generate_post_request(host, token, f"projects/{pid}/archive", {}, description=message)
 
     def unarchive_project(self, host, token, pid, message=None):
@@ -174,7 +173,7 @@ class ProjectsApi(GitLabApiWrapper):
 
         """
         if not message:
-            message = "Unarchiving project"
+            message = f"Unarchiving project {pid}"
         return self.api.generate_post_request(host, token, f"projects/{pid}/unarchive", {}, description=message)
 
     def delete_project(self, host, token, pid):
@@ -188,7 +187,7 @@ class ProjectsApi(GitLabApiWrapper):
             :param: token: (str) Access token to GitLab instance
             :return: Response object containing a 202 (Accepted) or 404 (Project not found) from DELETE /projects/:pid
         """
-        message = "Deleting project"
+        message = f"Deleting project {pid}"
         return self.api.generate_delete_request(host, token, f"projects/{pid}", description=message)
 
     def add_shared_group(self, host, token, pid, data=None, message=None):
@@ -251,7 +250,7 @@ class ProjectsApi(GitLabApiWrapper):
             :return: Response object containing the response to POST /projects/:pid/export
         """
         if not message:
-            message = "Exporting project"
+            message = f"Exporting project {pid}"
         return self.api.generate_post_request(host, token, f"projects/{pid}/export", data, headers=headers, description=message)
 
     def get_project_export_status(self, pid, host, token):
@@ -278,7 +277,7 @@ class ProjectsApi(GitLabApiWrapper):
             :param: headers: (str) The headers for the API request
         """
         if not message:
-            message = "Importing project with payload %s" % str(data)
+            message = f"Importing project with payload {str(data)}"
         return self.api.generate_post_request(host, token, "projects/import", data, files=files, headers=headers, description=message)
 
     def get_project_import_status(self, host, token, pid):
@@ -320,21 +319,21 @@ class ProjectsApi(GitLabApiWrapper):
         """
         return self.api.list_all(host, token, f"projects/{pid}/forks")
 
-    def create_project_fork_relation(self, pid, ffid, host, token, message=None):
+    def create_project_fork_relation(self, pid, fpid, host, token, message=None):
         """
         Create a forked from/to relation between existing projects
 
         GitLab API Doc: https://docs.gitlab.com/ee/api/projects.html#create-a-forked-fromto-relation-between-existing-projects
 
             :param: pid: (int) GitLab fork project ID
-            :param: ffid: (int) GitLab forked from project ID
+            :param: fpid: (int) GitLab forked from project ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
-            :return: Response object containing the response to POST /projects/:pid/fork/:ffid
+            :return: Response object containing the response to POST /projects/:pid/fork/:fpid
         """
         if not message:
-            message = f"Creating fork relation from project {ffid} to {pid}"
-        return self.api.generate_post_request(host, token, f"projects/{pid}/fork/{ffid}", data=None, description=message)
+            message = f"Creating fork relation from project {fpid} to {pid}"
+        return self.api.generate_post_request(host, token, f"projects/{pid}/fork/{fpid}", data=None, description=message)
 
     def get_all_project_starrers(self, pid, host, token):
         """
@@ -466,7 +465,7 @@ class ProjectsApi(GitLabApiWrapper):
             :return: Response object containing the response to POST /projects/:pid/variables
         """
         if not message:
-            message = "Creating project variable"
+            message = f"Creating project {pid} variable"
         return self.api.generate_post_request(host, token, f"projects/{pid}/variables", json.dumps(data), description=message)
 
     def get_all_project_protected_branches(self, pid, host, token):
@@ -553,7 +552,7 @@ class ProjectsApi(GitLabApiWrapper):
             :return: Response object containing the response to PUT /projects/:pid
         """
         if not message:
-            message = "Creating branch for project with payload %s" % data
+            message = f"Creating branch for project {pid} with payload {data}"
         return self.api.generate_post_request(host, token, f"projects/{pid}/repository/branches", data)
 
     def get_all_project_protected_environments(self, pid, host, token):
@@ -686,7 +685,7 @@ class ProjectsApi(GitLabApiWrapper):
             :return: Response object containing the response to POST /projects/:pid/pipeline_schedules
         """
         if not message:
-            message = "Creating new pipeline schedule"
+            message = f"Creating new pipeline schedule for project {pid}"
         return self.api.generate_post_request(host, token, f"projects/{pid}/pipeline_schedules", json.dumps(data), description=message)
 
     def create_new_project_pipeline_schedule_variable(self, pid, psid, host, token, data, message=None):
@@ -701,7 +700,7 @@ class ProjectsApi(GitLabApiWrapper):
             :return: Response object containing the response to POST /projects/:pid/pipeline_schedules/:psid/variables
         """
         if not message:
-            message = "Creating new project pipeline schedule variable"
+            message = f"Creating new variable for project {pid} pipeline schedule {psid}"
         return self.api.generate_post_request(host, token, f"projects/{pid}/pipeline_schedules/{psid}/variables", json.dumps(data), description=message)
 
     def get_all_project_hooks(self, pid, host, token):
@@ -724,7 +723,7 @@ class ProjectsApi(GitLabApiWrapper):
         GitLab API doc: https://docs.gitlab.com/ee/api/projects.html#add-project-hook
 
             :param: pid: (int) GitLab project ID
-            :param: data: (dict) Object containing the various data requried for creating a hook. Refer to the link above for specific examples
+            :param: data: (dict) Object containing the various data required for creating a hook. Refer to the link above for specific examples
             :return: Response object containing the response to POST /projects/:pid/hooks
         """
         if not message:
@@ -757,7 +756,7 @@ class ProjectsApi(GitLabApiWrapper):
             :return: Response object containing the response to POST /projects/:pid/push_rule
         """
         if not message:
-            message = "Creating new push rule"
+            message = f"Creating new push rule for project {pid}"
         return self.api.generate_post_request(host, token, f"projects/{pid}/push_rule", json.dumps(data), description=message)
 
     def get_project_level_mr_approval_configuration(self, pid, host, token):
@@ -786,7 +785,7 @@ class ProjectsApi(GitLabApiWrapper):
             :return: Response object containing the response to PUT /projects/:pid/approvals
         """
         if not message:
-            message = "Changing project merge request approval"
+            message = f"Changing project {pid} merge request approval"
         return self.api.generate_post_request(host, token, f"projects/{pid}/approvals", json.dumps(data), description=message)
 
     def get_all_project_level_mr_approval_rules(self, pid, host, token):
@@ -815,7 +814,7 @@ class ProjectsApi(GitLabApiWrapper):
             :yield: Generator returning JSON of each result from POST /projects/:pid/approval_rules
         """
         if not message:
-            message = f"Creating project level merge request approval rule with payload {data}"
+            message = f"Creating project {pid} level merge request approval rule with payload {data}"
         return self.api.generate_post_request(host, token, f"projects/{pid}/approval_rules", json.dumps(data), description=message)
 
     def get_all_project_registry_repositories(self, pid, host, token):
@@ -1044,7 +1043,7 @@ class ProjectsApi(GitLabApiWrapper):
 
         """
         if not message:
-            message = f"Creating new environment with payload {str(data)}"
+            message = f"Creating new environment for project {pid} with payload {str(data)}"
         return self.api.generate_post_request(host, token, f"projects/{pid}/environments", json.dumps(data), description=message)
 
     def delete_environment(self, pid, eid, host, token):
@@ -1127,3 +1126,50 @@ class ProjectsApi(GitLabApiWrapper):
         if not message:
             message = (f"Enabling deploy key {kid} for project {pid}")
         return self.api.generate_post_request(host, token, f"projects/{pid}/deploy_keys/{kid}/enable", {}, description=message)
+
+    def create_remote_push_mirror(self, pid, host, token, data=None, message=None):
+        """
+        Create a remote mirror for a project. The mirror is disabled by default
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/remote_mirrors.html#create-a-remote-mirror
+
+            :param: pid: (int) GitLab project ID
+            :param: host: (str) GitLab mirrored repo URL
+            :param: token: (str) Access token to GitLab instance
+            :param: data: (dict) Object containing the necessary data for remote mirror
+            :return: Response object containing the response to POST /projects/:id/remote_mirrors
+        """
+        if not message:
+            message = (
+                f"Creating project {pid} remote mirror with payload {data}")
+        return self.api.generate_post_request(host, token, f"projects/{pid}/remote_mirrors", json.dumps(data), description=message)
+
+    def get_all_remote_push_mirrors(self, pid, host, token):
+        """
+        Returns an Array of remote mirrors and their statuses
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/remote_mirrors.html#list-a-projects-remote-mirrors
+
+            :param: pid: (int) GitLab project ID
+            :param: host: (str) GitLab mirrored repo URL
+            :param: token: (str) Access token to GitLab instance
+            :return: Response object containing the response to GET /projects/:pid/remote_mirrors
+        """
+        return self.api.list_all(host, token, f"projects/{pid}/remote_mirrors")
+
+    def edit_remote_push_mirror(self, pid, mid, host, token, data=None, message=None):
+        """
+        Toggle a remote mirror on or off, or change which types of branches are mirrored
+
+        GitLab API doc: https://docs.gitlab.com/ee/api/remote_mirrors.html#update-a-remote-mirrors-attributes
+
+            :param: pid: (int) GitLab project ID
+            :param: mid: (int) GitLab project mirror ID
+            :param: host: (str) GitLab mirrored repo URL
+            :param: token: (str) Access token to GitLab instance
+            :param: data: (dict) Object containing the necessary data for remote mirror
+            :return: Response object containing the response to PUT /projects/:pid/remote_mirrors/:mid
+        """
+        if not message:
+            message = f"Editing project {pid} remote push mirror {mid} with payload {str(data)}"
+        return self.api.generate_put_request(host, token, f"projects/{pid}/remote_mirrors/{mid}", json.dumps(data), description=message)
