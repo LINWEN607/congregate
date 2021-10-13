@@ -131,7 +131,7 @@ class BaseStageClass(BaseClass):
             if mr_template := project.get("merge_requests_template"):
                 obj["merge_requests_template"] = mr_template
             if fork_origin := project.get("forked_from_project"):
-                obj["forked_from_project"] = fork_origin["path_with_namespace"]
+                obj["forked_from_project"] = fork_origin
         if self.config.source_type in ["gitlab", "bitbucket server"]:
             # In case of projects without repos (e.g. Wiki)
             if branch := project.get("default_branch"):

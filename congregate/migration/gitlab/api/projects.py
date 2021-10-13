@@ -319,21 +319,21 @@ class ProjectsApi(GitLabApiWrapper):
         """
         return self.api.list_all(host, token, f"projects/{pid}/forks")
 
-    def create_project_fork_relation(self, pid, fpid, host, token, message=None):
+    def create_project_fork_relation(self, fpid, pid, host, token, message=None):
         """
         Create a forked from/to relation between existing projects
 
         GitLab API Doc: https://docs.gitlab.com/ee/api/projects.html#create-a-forked-fromto-relation-between-existing-projects
 
-            :param: pid: (int) GitLab fork project ID
-            :param: fpid: (int) GitLab forked from project ID
+            :param: fpid: (int) GitLab fork project ID
+            :param: pid: (int) GitLab forked from project ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
-            :return: Response object containing the response to POST /projects/:pid/fork/:fpid
+            :return: Response object containing the response to POST /projects/:fpid/fork/:pid
         """
         if not message:
-            message = f"Creating fork relation from project {fpid} to {pid}"
-        return self.api.generate_post_request(host, token, f"projects/{pid}/fork/{fpid}", data=None, description=message)
+            message = f"Creating forked from {pid} to {fpid} project relation"
+        return self.api.generate_post_request(host, token, f"projects/{fpid}/fork/{pid}", data=None, description=message)
 
     def get_all_project_starrers(self, pid, host, token):
         """

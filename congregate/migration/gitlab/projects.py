@@ -16,7 +16,7 @@ from congregate.migration.gitlab.groups import GroupsClient
 from congregate.migration.gitlab.users import UsersClient
 from congregate.helpers.mdbc import MongoConnector
 from congregate.helpers.migrate_utils import get_dst_path_with_namespace,  get_full_path_with_parent_namespace, \
-    dig, get_staged_projects, get_staged_groups, find_user_by_email_comparison_without_id, add_post_migration_stats
+    dig, get_staged_projects, get_staged_groups, find_user_by_email_comparison_without_id, add_post_migration_stats, is_user_project
 from congregate.helpers.utils import rotate_logs
 from congregate.migration.gitlab.api.project_repository import ProjectRepositoryApi
 
@@ -585,13 +585,13 @@ class ProjectsClient(BaseClass):
                 if dst_grp:
                     dst_gid = dst_grp.get("id")
                 else:
-                    self.log.warning(
+                    self.log.error(
                         f"SKIP: Parent group {dst_grp_full_path} NOT found")
                     continue
                 dst_path = get_dst_path_with_namespace(s)
                 dst_pid = self.find_project_by_path(host, token, dst_path)
                 if dst_pid:
-                    self.log.warning(
+                    self.log.error(
                         f"SKIP: Project {dst_path} (ID: {dst_pid}) already exists")
                     continue
                 self.log.info(
@@ -648,7 +648,7 @@ class ProjectsClient(BaseClass):
                             f"Failed to create project {dst_pid} push mirror to {mirror_path}, with response:\n{resp} - {resp.text}")
             except RequestException as re:
                 self.log.error(
-                    f"Failed to create project {dst_pid} push mirror to {mirror_path}, with error:\n{re}")
+                    f"Failed to create project {s.get('path_with_namespace')} push mirror, with error:\n{re}")
                 continue
 
     def toggle_staged_projects_push_mirror(self, namespace, disable=False, dry_run=True):
@@ -688,15 +688,15 @@ class ProjectsClient(BaseClass):
                             f"Failed to {'disable' if disable else 'enable'} project {dst_pid} push mirror to {mirror_path}, with response:\n{resp} - {resp.text}")
             except RequestException as re:
                 self.log.error(
-                    f"Failed to toggle project {dst_pid} push mirror to {mirror_path}, with error:\n{re}")
+                    f"Failed to toggle project {s.get('path_with_namespace')} push mirror, with error:\n{re}")
                 continue
 
-    def find_mirror_project(self, staged_project, host, token, namespace):
+    def find_mirror_project(self, staged_project, host, token, namespace=None):
         try:
-            dst_path = get_dst_path_with_namespace(staged_project)
-            dst_pid = self.find_project_by_path(host, token, dst_path)
-            if not dst_pid:
-                self.log.error(f"SKIP: Project {dst_path} NOT found")
+            orig_path = get_dst_path_with_namespace(staged_project)
+            orig_pid = self.find_project_by_path(host, token, orig_path)
+            if not orig_pid:
+                self.log.error(f"SKIP: Original project {orig_path} NOT found")
                 return (False, False)
             mirror_path = get_dst_path_with_namespace(
                 staged_project, custom=namespace)
@@ -704,41 +704,45 @@ class ProjectsClient(BaseClass):
                 host, token, mirror_path)
             if not mirror_pid:
                 self.log.error(
-                    f"SKIP: Project mirror {mirror_path} NOT found")
-                return (dst_pid, False)
-            return (dst_pid, mirror_path)
+                    f"SKIP: Mirror project mirror {mirror_path} NOT found")
+                return (orig_pid, False)
+            return (orig_pid, mirror_path)
         except RequestException as re:
             self.log.error(
-                f"Failed to find project {dst_path} and/or push mirror, with error:\n{re}")
+                f"Failed to find project {orig_path} and/or push mirror, with error:\n{re}")
 
     def create_staged_projects_fork_relation(self, dry_run=True):
         staged_projects = get_staged_projects()
         host = self.config.destination_host
         token = self.config.destination_token
         for s in staged_projects:
-            if fork_path := s.get("forked_from_project"):
+            orig_project = s.get("forked_from_project")
+            # Cannot validate destination user namespace without email
+            if orig_project and not is_user_project(orig_project):
                 try:
-                    dst_path = get_dst_path_with_namespace(s)
-                    dst_pid = self.find_project_by_path(host, token, dst_path)
-                    if not dst_pid:
-                        self.log.error(
-                            f"SKIP: Project fork {dst_path} NOT found")
-                        continue
+                    fork_path = get_dst_path_with_namespace(s)
                     fork_pid = self.find_project_by_path(
                         host, token, fork_path)
                     if not fork_pid:
                         self.log.error(
-                            f"SKIP: Project fork origin {fork_path} of project fork {dst_path} NOT found")
+                            f"SKIP: Fork project {fork_path} NOT found")
+                        continue
+                    orig_path = get_dst_path_with_namespace(orig_project)
+                    orig_pid = self.find_project_by_path(
+                        host, token, orig_path)
+                    if not orig_pid:
+                        self.log.error(
+                            f"SKIP: Fork {fork_path} forked from project {orig_path} NOT found")
                         continue
                     self.log.info(
-                        f"{get_dry_log(dry_run)}Create fork relation from {fork_path} to {dst_path}")
+                        f"{get_dry_log(dry_run)}Create forked from {orig_path} to {fork_path} project relation")
                     if not dry_run:
                         resp = self.projects_api.create_project_fork_relation(
-                            dst_pid, fork_pid, host, token)
+                            fork_pid, orig_pid, host, token)
                         if resp.status_code != 201:
                             self.log.error(
-                                f"Failed to create fork relation from {fork_path} to {dst_path}, with response:\n{resp} - {resp.text}")
+                                f"Failed to create forked from {orig_path} to {fork_path} project relation, with response {resp} - {resp.text}")
                 except RequestException as re:
                     self.log.error(
-                        f"Failed to create fork relation for {dst_path}, with error:\n{re}")
+                        f"Failed to create project {s.get('path_with_namespace')} fork relation, with error:\n{re}")
                     continue

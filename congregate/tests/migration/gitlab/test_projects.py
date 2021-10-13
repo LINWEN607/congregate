@@ -324,6 +324,18 @@ class ProjectsTests(unittest.TestCase):
     @patch("congregate.helpers.migrate_utils.read_json_file_into_object")
     @patch('congregate.helpers.conf.Config.destination_host', new_callable=PropertyMock)
     @patch.object(ConfigurationValidator, 'destination_token', new_callable=PropertyMock)
+    def test_push_mirror_staged_projects_exception(self, mock_token, mock_host, mock_staged, mock_find):
+        mock_host.return_value = "https://gitlabdestination.com"
+        mock_token.return_value = "token"
+        mock_staged.return_value = self.mock_projects.get_staged_projects()
+        mock_find.side_effect = RequestException()
+        with self.assertLogs(self.projects.log, level="ERROR"):
+            self.projects.push_mirror_staged_projects("namespace")
+
+    @patch.object(ProjectsClient, "find_mirror_project")
+    @patch("congregate.helpers.migrate_utils.read_json_file_into_object")
+    @patch('congregate.helpers.conf.Config.destination_host', new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'destination_token', new_callable=PropertyMock)
     def test_toggle_staged_projects_push_mirror_fail(self, mock_token, mock_host, mock_staged, mock_find):
         mock_host.return_value = "https://gitlabdestination.com"
         mock_token.return_value = "token"
@@ -331,3 +343,107 @@ class ProjectsTests(unittest.TestCase):
         mock_find.side_effect = [(False, False), (1, False), (2, False)]
         self.assertIsNone(
             self.projects.toggle_staged_projects_push_mirror("namespace"))
+
+    @patch.object(ProjectsApi, "get_all_remote_push_mirrors")
+    @patch.object(ProjectsClient, "find_mirror_project")
+    @patch("congregate.helpers.migrate_utils.read_json_file_into_object")
+    @patch('congregate.helpers.conf.Config.destination_host', new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'destination_token', new_callable=PropertyMock)
+    def test_toggle_staged_projects_push_mirror_exception(self, mock_token, mock_host, mock_staged, mock_find, mock_get_mirrors):
+        mock_host.return_value = "https://gitlabdestination.com"
+        mock_token.return_value = "token"
+        mock_staged.return_value = self.mock_projects.get_staged_projects()
+        mock_find.return_value = (2, "namespace/dictionary-web/darci3")
+        mock_get_mirrors.side_effect = RequestException()
+        with self.assertLogs(self.projects.log, level="ERROR"):
+            self.projects.toggle_staged_projects_push_mirror("namespace")
+
+    @patch.object(ProjectsApi, "get_all_remote_push_mirrors")
+    @patch.object(ProjectsClient, "find_mirror_project")
+    @patch("congregate.helpers.migrate_utils.read_json_file_into_object")
+    @patch('congregate.helpers.conf.Config.destination_host', new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'destination_token', new_callable=PropertyMock)
+    def test_toggle_staged_projects_push_mirror_no_mirror(self, mock_token, mock_host, mock_staged, mock_find, mock_get_mirrors):
+        mock_host.return_value = "https://gitlabdestination.com"
+        mock_token.return_value = "token"
+        mock_staged.return_value = self.mock_projects.get_staged_projects()
+        mock_find.side_effect = [
+            (2, "namespace/dictionary-web/darci3"), (1, False), (2, False)]
+        mock_get_mirrors.return_value = self.mock_projects.get_staged_projects_mirrors()
+        with self.assertLogs(self.projects.log, level="ERROR"):
+            self.projects.toggle_staged_projects_push_mirror("namespace")
+
+    @patch.object(ProjectsApi, "get_all_remote_push_mirrors")
+    @patch.object(ProjectsClient, "find_mirror_project")
+    @patch("congregate.helpers.migrate_utils.read_json_file_into_object")
+    @patch('congregate.helpers.conf.Config.destination_host', new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'destination_token', new_callable=PropertyMock)
+    def test_toggle_staged_projects_push_mirror(self, mock_token, mock_host, mock_staged, mock_find, mock_get_mirrors):
+        mock_host.return_value = "https://gitlabdestination.com"
+        mock_token.return_value = "token"
+        mock_staged.return_value = self.mock_projects.get_staged_projects()
+        mock_find.side_effect = [
+            (2, "namespace/dictionary-web/darci3"), (1, False), (2, False)]
+        mirrors = self.mock_projects.get_staged_projects_mirrors()
+        mirrors[0]["url"] = "https://gitlabdestination.com/namespace/dictionary-web/darci3"
+        mock_get_mirrors.return_value = mirrors
+        self.assertIsNone(
+            self.projects.toggle_staged_projects_push_mirror("namespace"))
+
+    @patch("congregate.helpers.migrate_utils.read_json_file_into_object")
+    @patch('congregate.helpers.conf.Config.destination_host', new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'destination_token', new_callable=PropertyMock)
+    def test_create_staged_projects_fork_relation_none(self, mock_token, mock_host, mock_staged):
+        mock_host.return_value = "https://gitlabdestination.com"
+        mock_token.return_value = "token"
+        mock_staged.return_value = self.mock_projects.get_staged_projects()
+        self.assertIsNone(self.projects.create_staged_projects_fork_relation())
+
+    @patch("congregate.helpers.migrate_utils.get_dst_path_with_namespace")
+    @patch.object(ProjectsClient, "find_project_by_path")
+    @patch("congregate.helpers.migrate_utils.read_json_file_into_object")
+    @patch('congregate.helpers.conf.Config.destination_host', new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'destination_token', new_callable=PropertyMock)
+    def test_create_staged_projects_fork_relation_no_fork(self, mock_token, mock_host, mock_staged, mock_find_id, mock_get_path):
+        mock_host.return_value = "https://gitlabdestination.com"
+        mock_token.return_value = "token"
+        mock_find_id.return_value = None
+        mock_get_path.return_value = "top-level-group/security-reports-fork"
+        mock_staged.return_value = self.mock_projects.get_staged_forked_projects()
+        self.assertIsNone(self.projects.create_staged_projects_fork_relation())
+
+    @patch("congregate.helpers.migrate_utils.get_dst_path_with_namespace")
+    @patch.object(ProjectsClient, "find_project_by_path")
+    @patch("congregate.helpers.migrate_utils.read_json_file_into_object")
+    @patch('congregate.helpers.conf.Config.destination_host', new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'destination_token', new_callable=PropertyMock)
+    def test_create_staged_projects_fork_relation_no_orig(self, mock_token, mock_host, mock_staged, mock_find_id, mock_get_path):
+        mock_host.return_value = "https://gitlabdestination.com"
+        mock_token.return_value = "token"
+        mock_find_id.side_effect = [1, None]
+        mock_get_path.side_effect = [
+            "top-level-group/security-reports-fork", "pmm-demo/security-reports"]
+        mock_staged.return_value = self.mock_projects.get_staged_forked_projects()
+        self.assertIsNone(self.projects.create_staged_projects_fork_relation())
+
+    @patch("congregate.helpers.migrate_utils.get_dst_path_with_namespace")
+    @patch.object(ProjectsClient, "find_project_by_path")
+    @patch("congregate.helpers.migrate_utils.read_json_file_into_object")
+    @patch('congregate.helpers.conf.Config.destination_host', new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'destination_token', new_callable=PropertyMock)
+    def test_create_staged_projects_fork_relation(self, mock_token, mock_host, mock_staged, mock_find_id, mock_get_path):
+        mock_host.return_value = "https://gitlabdestination.com"
+        mock_token.return_value = "token"
+        mock_find_id.side_effect = [1, 2]
+        mock_get_path.side_effect = [
+            "top-level-group/security-reports-fork", "pmm-demo/security-reports"]
+        mock_staged.return_value = self.mock_projects.get_staged_forked_projects()
+        self.assertIsNone(self.projects.create_staged_projects_fork_relation())
+
+    @patch("congregate.helpers.migrate_utils.get_dst_path_with_namespace")
+    @patch.object(ProjectsClient, "find_project_by_path")
+    def test_create_staged_projects_fork_relation_exception(self, mock_find_id, mock_get_path):
+        mock_get_path.return_value = "top-level-group/security-reports-fork"
+        mock_find_id.side_effect = RequestException()
+        with self.assertLogs(self.projects.log, level="ERROR"):
+            self.projects.create_staged_projects_fork_relation()
