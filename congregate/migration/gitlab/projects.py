@@ -539,10 +539,10 @@ class ProjectsClient(BaseClass):
                     self.config.destination_host,
                     self.config.destination_token,
                     project_id,
-                    data=json.dumps(branch_data)
+                    data=branch_data
                 )
                 if not branch_create_resp or (
-                        branch_create_resp and branch_create_resp.status_code not in (200, 201)):
+                        branch_create_resp and branch_create_resp.status_code != 201):
                     self.log.error(
                         f"Could not create branch for regex replace:\nproject: {project_id}\nbranch data: {branch_data}")
                 else:
@@ -623,7 +623,7 @@ class ProjectsClient(BaseClass):
                     f"Failed to create project {path_with_namespace} with error:\n{re}")
                 continue
 
-    def push_mirror_staged_projects(self, namespace, disabled=False, dry_run=True):
+    def push_mirror_staged_projects(self, namespace, disabled=False, overwrite=False, force=False, dry_run=True):
         staged_projects = get_staged_projects()
         host = self.config.destination_host
         token = self.config.destination_token
@@ -634,7 +634,8 @@ class ProjectsClient(BaseClass):
                 if dst_pid and mirror_path:
                     data = {
                         "url": host + "/" + mirror_path,
-                        "enabled": not disabled
+                        "enabled": not disabled,
+                        "keep_divergent_refs": not overwrite
                     }
                 else:
                     continue
@@ -646,6 +647,21 @@ class ProjectsClient(BaseClass):
                     if resp.status_code != 201:
                         self.log.error(
                             f"Failed to create project {dst_pid} push mirror to {mirror_path}, with response:\n{resp} - {resp.text}")
+                    elif force:
+                        branch = "mirroring-trigger"
+                        branch_data = {
+                            "branch": branch,
+                            # retry in case of main (as of 14.0)
+                            "ref": s.get("default_branch", "master")
+                        }
+                        branch_resp = self.projects_api.create_branch(
+                            host, token, dst_pid, data=branch_data)
+                        if branch_resp.status_code != 201:
+                            self.log.error(
+                                f"Failed to create project {dst_pid} branch, with payload {branch_data}")
+                        else:
+                            self.projects_api.delete_branch(
+                                host, token, dst_pid, branch)
             except RequestException as re:
                 self.log.error(
                     f"Failed to create project {s.get('path_with_namespace')} push mirror, with error:\n{re}")

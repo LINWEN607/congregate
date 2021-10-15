@@ -353,7 +353,7 @@ class SeedDataGenerator(BaseClass):
                 f"{get_dry_log(dry_run)}Creating project {pid} branch ({d})")
             if not dry_run:
                 self.projects_api.create_branch(
-                    self.config.source_host, self.config.source_token, pid, data=json.dumps(d))
+                    self.config.source_host, self.config.source_token, pid, data=d)
 
     def generate_dummy_environment(self, pid, dry_run=True):
         data = {

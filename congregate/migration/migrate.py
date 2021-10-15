@@ -1190,7 +1190,7 @@ class MigrateClient(BaseClass):
                         self.config.destination_host,
                         self.config.destination_token,
                         project_id,
-                        data=json.dumps(branch_data)
+                        data=branch_data
                     )
                     content = config_xml.text
                     data = {
@@ -1250,7 +1250,7 @@ class MigrateClient(BaseClass):
                         self.config.destination_host,
                         self.config.destination_token,
                         project_id,
-                        data=json.dumps(branch_data)
+                        data=branch_data
                     )
 
                     dom = xml.dom.minidom.parseString(build_config.text)

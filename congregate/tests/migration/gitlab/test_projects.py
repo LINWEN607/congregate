@@ -442,7 +442,13 @@ class ProjectsTests(unittest.TestCase):
 
     @patch("congregate.helpers.migrate_utils.get_dst_path_with_namespace")
     @patch.object(ProjectsClient, "find_project_by_path")
-    def test_create_staged_projects_fork_relation_exception(self, mock_find_id, mock_get_path):
+    @patch("congregate.helpers.migrate_utils.read_json_file_into_object")
+    @patch('congregate.helpers.conf.Config.destination_host', new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'destination_token', new_callable=PropertyMock)
+    def test_create_staged_projects_fork_relation_exception(self, mock_token, mock_host, mock_staged, mock_find_id, mock_get_path):
+        mock_host.return_value = "https://gitlabdestination.com"
+        mock_token.return_value = "token"
+        mock_staged.return_value = self.mock_projects.get_staged_forked_projects()
         mock_get_path.return_value = "top-level-group/security-reports-fork"
         mock_find_id.side_effect = RequestException()
         with self.assertLogs(self.projects.log, level="ERROR"):

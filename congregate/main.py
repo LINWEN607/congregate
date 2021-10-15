@@ -29,7 +29,7 @@ Usage:
     congregate remove-users-from-parent-group [--commit]
     congregate migrate-variables-in-stage [--commit]
     congregate mirror-staged-projects [--commit]
-    congregate push-mirror-staged-projects [--namespace=<parent_group_full_path>] [--disabled] [--commit]
+    congregate push-mirror-staged-projects [--namespace=<parent_group_full_path>] [--disabled] [--overwrite] [--force] [--commit]
     congregate toggle-staged-projects-push-mirror [--namespace=<parent_group_full_path>] [--disable] [--commit]
     congregate remove-all-mirrors [--commit]
     # TODO: Add dry-run, potentially remove
@@ -108,6 +108,8 @@ Arguments:
     namespace                               Enter parent group where the project is push mirrored to
     disabled                                Disable project push mirror when creating it
     disable                                 Disable staged project push mirror
+    overwrite                               Disable keep_divergent_refs (True by default) and overwrite mirror repo on next push
+    force                                   Immediately trigger push mirroring with a repo change e.g. new branch
 
 Commands:
     list                                    List all projects of a source instance and save it to {CONGREGATE_PATH}/data/projects.json.
@@ -426,7 +428,7 @@ def main():
                 namespace = arguments["--namespace"]
                 if namespace:
                     projects.push_mirror_staged_projects(
-                        namespace=namespace, disabled=arguments["--disabled"], dry_run=DRY_RUN)
+                        namespace=namespace, disabled=arguments["--disabled"], overwrite=arguments["--overwrite"], force=arguments["--force"], dry_run=DRY_RUN)
                 else:
                     log.error(
                         f"Invalid '--namespace={namespace}' entered for push mirror")
