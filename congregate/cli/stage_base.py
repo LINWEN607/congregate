@@ -128,12 +128,14 @@ class BaseStageClass(BaseClass):
             obj["shared_runners_enabled"] = project["shared_runners_enabled"]
             obj["archived"] = project["archived"]
             obj["shared_with_groups"] = project["shared_with_groups"]
-            if project.get("merge_requests_template"):
-                obj["merge_requests_template"] = project["merge_requests_template"]
+            if mr_template := project.get("merge_requests_template"):
+                obj["merge_requests_template"] = mr_template
+            if fork_origin := project.get("forked_from_project"):
+                obj["forked_from_project"] = fork_origin
         if self.config.source_type in ["gitlab", "bitbucket server"]:
             # In case of projects without repos (e.g. Wiki)
-            if project.get("default_branch"):
-                obj["default_branch"] = project["default_branch"]
+            if branch := project.get("default_branch"):
+                obj["default_branch"] = branch
         return obj
 
     def the_number_of_instance(self, scm_source):

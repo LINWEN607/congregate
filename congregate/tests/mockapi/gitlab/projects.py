@@ -695,3 +695,87 @@ class MockProjectsApi():
                 "path_with_namespace": "pmm-demo/spring-app-secure-3"
             }
         ]
+
+    def get_staged_forked_projects(self):
+        return [
+            {
+                "id": 851,
+                "name": "security-reports-fork",
+                "namespace": "top-level-group",
+                "path": "security-reports-fork",
+                "path_with_namespace": "top-level-group/security-reports-fork",
+                "visibility": "private",
+                "description": "",
+                "jobs_enabled": True,
+                "project_type": "group",
+                "members": [],
+                "http_url_to_repo": "https://pse.tanuki.cloud/top-level-group/security-reports-fork.git",
+                "shared_runners_enabled": False,
+                "archived": False,
+                "shared_with_groups": [],
+                "forked_from_project": {
+                    "avatar_url": None,
+                    "created_at": "2019-10-23T15:16:32.391Z",
+                    "default_branch": "master",
+                    "description": "",
+                    "forks_count": 1,
+                    "http_url_to_repo": "https://pse.tanuki.cloud/pmm-demo/security-reports.git",
+                    "id": 286,
+                    "last_activity_at": "2019-10-23T15:16:32.391Z",
+                    "name": "security-reports",
+                    "name_with_namespace": "pmm-demo / security-reports",
+                    "namespace": {
+                        "avatar_url": None,
+                        "full_path": "pmm-demo",
+                        "id": 129,
+                        "kind": "group",
+                        "name": "pmm-demo",
+                        "parent_id": None,
+                        "path": "pmm-demo",
+                        "web_url": "https://pse.tanuki.cloud/groups/pmm-demo"
+                    },
+                    "path": "security-reports",
+                    "path_with_namespace": "pmm-demo/security-reports",
+                    "readme_url": "https://pse.tanuki.cloud/pmm-demo/security-reports/-/blob/master/README.md",
+                    "ssh_url_to_repo": "git@pse.tanuki.cloud:pmm-demo/security-reports.git",
+                    "star_count": 0,
+                    "tag_list": [],
+                    "topics": [],
+                    "web_url": "https://pse.tanuki.cloud/pmm-demo/security-reports"
+                },
+                "default_branch": "master"
+            },
+            {
+                "id": 286,
+                "name": "security-reports",
+                "namespace": "pmm-demo",
+                "path": "security-reports",
+                "path_with_namespace": "pmm-demo/security-reports",
+                "visibility": "public",
+                "description": "",
+                "jobs_enabled": True,
+                "project_type": "group",
+                "members": [],
+                "http_url_to_repo": "https://pse.tanuki.cloud/pmm-demo/security-reports.git",
+                "shared_runners_enabled": False,
+                "archived": False,
+                "shared_with_groups": [],
+                "default_branch": "master"
+            }
+        ]
+
+    def get_staged_projects_mirrors(self):
+        return [
+            {
+                "enabled": True,
+                "id": 101486,
+                "last_error": None,
+                "last_successful_update_at": "2020-01-06T17:32:02.823Z",
+                "last_update_at": "2020-01-06T17:32:02.823Z",
+                "last_update_started_at": "2020-01-06T17:31:55.864Z",
+                "only_protected_branches": True,
+                "keep_divergent_refs": True,
+                "update_status": "finished",
+                "url": "https://gitlab.com/gitlab-org/security/gitlab.git"
+            }
+        ]

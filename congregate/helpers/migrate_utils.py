@@ -97,12 +97,10 @@ def get_project_namespace(p, custom=None):
         :param p: The JSON object representing a GitLab project
         :return: Destination group project namespace
     """
-    p_type = p["project_type"] if p.get(
-        "project_type", None) else dig(p, 'namespace', 'kind')
     p_namespace = dig(p, 'namespace', 'full_path') if isinstance(
-        p.get("namespace", None), dict) else p["namespace"]
+        p.get("namespace"), dict) else p["namespace"]
 
-    if p_type != "user":
+    if not is_user_project(p):
         if b.config.src_parent_id and b.config.src_parent_group_path:
             single_group_name = b.config.src_parent_group_path.split("/")[-1]
             p_namespace = f"{single_group_name}{p_namespace.split(b.config.src_parent_group_path)[-1]}"
@@ -135,7 +133,7 @@ def is_user_project(p):
         :return: True if user project, else False
     """
     p_type = p["project_type"] if p.get(
-        "project_type", None) else dig(p, 'namespace', 'kind')
+        "project_type") else dig(p, 'namespace', 'kind')
     return p_type == "user"
 
 
@@ -163,14 +161,14 @@ def get_user_project_namespace(p):
     p_namespace = dig(p, 'namespace', 'full_path') if isinstance(
         p.get("namespace", None), dict) else p["namespace"]
     if is_dot_com(b.config.destination_host) or p_namespace == "root":
-        b.log.info("User project {0} is assigned to import user id (ID: {1})".format(
-            p["path_with_namespace"], b.config.import_user_id))
+        b.log.info(
+            f"User project {p['path_with_namespace']} is assigned to import user id (ID: {b.config.import_user_id})")
         return users_api.get_user(
             b.config.import_user_id, b.config.destination_host, b.config.destination_token).json()["username"]
     else:
         # Retrieve user username based on email to determine correct
         # destination user namespace
-        if p["members"] and p["members"][0].get("email", None) is not None:
+        if p["members"] and p["members"][0].get("email"):
             user = find_user_by_email_comparison_without_id(
                 p["members"][0]["email"])
             if user:

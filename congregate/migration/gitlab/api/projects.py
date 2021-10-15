@@ -32,7 +32,7 @@ class ProjectsApi(GitLabApiWrapper):
             :param: pid: (int) GitLab project ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
-            :return: Response object containing the response to GET /projects/:id
+            :return: Response object containing the response to GET /projects/:pid
 
         """
         return self.api.generate_get_request(host, token, f"projects/{pid}")
@@ -67,7 +67,7 @@ class ProjectsApi(GitLabApiWrapper):
 
         GitLab API Doc: https://docs.gitlab.com/ee/api/members.html
 
-            :param: id: (int) GitLab project ID
+            :param: pid: (int) GitLab project ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
             :yield: Generator containing JSON results from GET /projects
@@ -84,10 +84,10 @@ class ProjectsApi(GitLabApiWrapper):
 
         GitLab API Doc: GitLab API Doc: https://docs.gitlab.com/ee/api/members.html
 
-            :param: id: (int) GitLab project ID
+            :param: pid: (int) GitLab project ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
-            :yield: Generator returning JSON of each result from GET /projects/:id/members/all
+            :yield: Generator returning JSON of each result from GET /projects/:pid/members/all
         """
         for member in self.api.list_all(host, token, f"projects/{pid}/members/all"):
             member["email"] = self.users.get_user_email(
@@ -100,11 +100,11 @@ class ProjectsApi(GitLabApiWrapper):
 
         GitLab API Doc: https://docs.gitlab.com/ee/api/members.html
 
-            :param: id: (int) GitLab project ID
+            :param: pid: (int) GitLab project ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
             :param: member: (dict) Object containing the member data. Refer to the link above for specific examples
-            :return: Response object containing the response to POST /projects/:id/members
+            :return: Response object containing the response to POST /projects/:pid/members
 
         """
         if not message:
@@ -121,7 +121,7 @@ class ProjectsApi(GitLabApiWrapper):
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
             :param: key: (dict) Object containing the key data. Refer to the link above for specific examples
-            :return: Response object containing the response to POST /projects/:id/deploy_keys
+            :return: Response object containing the response to POST /projects/:pid/deploy_keys
 
         """
         if not message:
@@ -138,7 +138,7 @@ class ProjectsApi(GitLabApiWrapper):
             :param: uid: (int) GitLab user ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
-            :return: Response object containing a 202 (accepted) or 404 (Member not found) from DELETE /projects/:id/members/:user_id
+            :return: Response object containing a 202 (accepted) or 404 (Member not found) from DELETE /projects/:pid/members/:uid
         """
         if not message:
             message = "Deleting member from project"
@@ -153,7 +153,7 @@ class ProjectsApi(GitLabApiWrapper):
             :param: pid: (int) GitLab project ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
-            :return: Response object containing the response to POST /projects/:id/archive
+            :return: Response object containing the response to POST /projects/:pid/archive
 
         """
         if not message:
@@ -166,10 +166,10 @@ class ProjectsApi(GitLabApiWrapper):
 
         GitLab API Doc: https://docs.gitlab.com/ee/api/projects.html#unarchive-a-project
 
-            :param: id: (int) GitLab project ID
+            :param: pid: (int) GitLab project ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
-            :return: Response object containing the response to POST /projects/:id/unarchive
+            :return: Response object containing the response to POST /projects/:pid/unarchive
 
         """
         if not message:
@@ -182,10 +182,10 @@ class ProjectsApi(GitLabApiWrapper):
 
         GitLab API Doc: https://docs.gitlab.com/ee/api/projects.html#remove-project
 
-            :param: id: (int) GitLab project ID
+            :param: pid: (int) GitLab project ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
-            :return: Response object containing a 202 (Accepted) or 404 (Project not found) from DELETE /projects/:id
+            :return: Response object containing a 202 (Accepted) or 404 (Project not found) from DELETE /projects/:pid
         """
         message = f"Deleting project {pid}"
         return self.api.generate_delete_request(host, token, f"projects/{pid}", description=message)
@@ -200,7 +200,7 @@ class ProjectsApi(GitLabApiWrapper):
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
             :param: group: (dict) Object containing the necessary data for the shared group
-            :return: Response object containing the response to POST /projects/:id/share
+            :return: Response object containing the response to POST /projects/:pid/share
 
         """
         if not message:
@@ -213,8 +213,8 @@ class ProjectsApi(GitLabApiWrapper):
 
         GitLab API doc: https://docs.gitlab.com/ee/api/projects.html#edit-project
 
-            :param: id: (int) GitLab project ID
-            :return: Response object containing the response to PUT /projects/:id
+            :param: pid: (int) GitLab project ID
+            :return: Response object containing the response to PUT /projects/:pid
         """
         if not message:
             message = f"Editing project {pid} with payload {str(data)}"
@@ -226,8 +226,8 @@ class ProjectsApi(GitLabApiWrapper):
 
         GitLab API doc: https://docs.gitlab.com/ee/api/projects.html
 
-            :param: id: (int) GitLab project ID
-            :return: Response object containing the response to PUT /projects/:id/mirror/pull
+            :param: pid: (int) GitLab project ID
+            :return: Response object containing the response to PUT /projects/:pid/mirror/pull
         """
         return self.api.generate_post_request(host, token, f"projects/{pid}/mirror/pull", json.dumps(data))
 
@@ -247,7 +247,7 @@ class ProjectsApi(GitLabApiWrapper):
         GitLab API doc: https://docs.gitlab.com/ee/api/project_import_export.html#schedule-an-export
 
             :param: pid: (int) GitLab project ID
-            :return: Response object containing the response to POST /projects/:id/export
+            :return: Response object containing the response to POST /projects/:pid/export
         """
         if not message:
             message = f"Exporting project {pid}"
@@ -259,10 +259,10 @@ class ProjectsApi(GitLabApiWrapper):
 
         GitLab API Doc: https://docs.gitlab.com/ee/api/project_import_export.html#export-status
 
-            :param: id: (int) GitLab project ID
+            :param: pid: (int) GitLab project ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
-            :yield: Response object containing the response to GET /projects/:id/export
+            :yield: Response object containing the response to GET /projects/:pid/export
         """
         return self.api.generate_get_request(host, token, f"projects/{pid}/export")
 
@@ -286,10 +286,10 @@ class ProjectsApi(GitLabApiWrapper):
 
         GitLab API Doc: https://docs.gitlab.com/ee/api/project_import_export.html#import-status
 
-            :param: id: (int) GitLab project ID
+            :param: pid: (int) GitLab project ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
-            :yield: Response object containing the response to GET /projects/:id/import
+            :yield: Response object containing the response to GET /projects/:pid/import
         """
         return self.api.generate_get_request(host, token, f"projects/{pid}/import")
 
@@ -299,10 +299,10 @@ class ProjectsApi(GitLabApiWrapper):
 
         GitLab API Doc: https://docs.gitlab.com/ee/api/projects.html#get-project-users
 
-            :param: id: (int) GitLab project ID
+            :param: pid: (int) GitLab project ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
-            :yield: Generator returning JSON of each result from GET /projects/:id/users
+            :yield: Generator returning JSON of each result from GET /projects/:pid/users
         """
         return self.api.list_all(host, token, f"projects/{pid}/users")
 
@@ -312,12 +312,28 @@ class ProjectsApi(GitLabApiWrapper):
 
         GitLab API Doc: https://docs.gitlab.com/ee/api/projects.html#list-forks-of-a-project
 
-            :param: id: (int) GitLab project ID
+            :param: pid: (int) GitLab project ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
-            :yield: Generator returning JSON of each result from GET /projects/:id/forks
+            :yield: Generator returning JSON of each result from GET /projects/:pid/forks
         """
         return self.api.list_all(host, token, f"projects/{pid}/forks")
+
+    def create_project_fork_relation(self, fpid, pid, host, token, message=None):
+        """
+        Create a forked from/to relation between existing projects
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/projects.html#create-a-forked-fromto-relation-between-existing-projects
+
+            :param: fpid: (int) GitLab fork project ID
+            :param: pid: (int) GitLab forked from project ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :return: Response object containing the response to POST /projects/:fpid/fork/:pid
+        """
+        if not message:
+            message = f"Creating forked from {pid} to {fpid} project relation"
+        return self.api.generate_post_request(host, token, f"projects/{fpid}/fork/{pid}", data=None, description=message)
 
     def get_all_project_starrers(self, pid, host, token):
         """
@@ -325,10 +341,10 @@ class ProjectsApi(GitLabApiWrapper):
 
         GitLab API Doc: https://docs.gitlab.com/ee/api/projects.html#list-starrers-of-a-project
 
-            :param: id: (int) GitLab project ID
+            :param: pid: (int) GitLab project ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
-            :yield: Generator returning JSON of each result from GET /projects/:id/starrers
+            :yield: Generator returning JSON of each result from GET /projects/:pid/starrers
         """
         return self.api.list_all(host, token, f"projects/{pid}/starrers")
 
@@ -341,7 +357,7 @@ class ProjectsApi(GitLabApiWrapper):
             :param: pid: (int) GitLab project ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
-            :yield: Generator returning JSON of each result from GET /projects/:id/badges
+            :yield: Generator returning JSON of each result from GET /projects/:pid/badges
         """
         return self.api.list_all(host, token, f"projects/{pid}/badges")
 
@@ -354,7 +370,7 @@ class ProjectsApi(GitLabApiWrapper):
             :param: pid: (int) GitLab project ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
-            :yield: Generator returning JSON of each result from GET /projects/:id/boards
+            :yield: Generator returning JSON of each result from GET /projects/:pid/boards
         """
         return self.api.list_all(host, token, f"projects/{pid}/boards")
 
@@ -364,10 +380,10 @@ class ProjectsApi(GitLabApiWrapper):
 
         GitLab API Doc: https://docs.gitlab.com/ee/api/labels.html#list-labels
 
-            :param: id: (int) GitLab project ID
+            :param: pid: (int) GitLab project ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
-            :yield: Generator returning JSON of each result from GET /projects/:id/labels
+            :yield: Generator returning JSON of each result from GET /projects/:pid/labels
         """
         return self.api.list_all(host, token, f"projects/{pid}/labels")
 
@@ -377,10 +393,10 @@ class ProjectsApi(GitLabApiWrapper):
 
         GitLab API Doc: https://docs.gitlab.com/ee/api/milestones.html#list-project-milestones
 
-            :param: id: (int) GitLab project ID
+            :param: pid: (int) GitLab project ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
-            :yield: Generator returning JSON of each result from GET /projects/:id/milestones
+            :yield: Generator returning JSON of each result from GET /projects/:pid/milestones
         """
         return self.api.list_all(host, token, f"projects/{pid}/milestones")
 
@@ -390,10 +406,10 @@ class ProjectsApi(GitLabApiWrapper):
 
         GitLab API Doc: https://docs.gitlab.com/ee/api/issues.html#list-project-issues
 
-            :param: id: (int) GitLab project ID
+            :param: pid: (int) GitLab project ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
-            :yield: Generator returning JSON of each result from GET /projects/:id/issues
+            :yield: Generator returning JSON of each result from GET /projects/:pid/issues
         """
         return self.api.list_all(host, token, f"projects/{pid}/issues")
 
@@ -403,10 +419,10 @@ class ProjectsApi(GitLabApiWrapper):
 
         GitLab API Doc: https://docs.gitlab.com/ee/api/releases/#list-releases
 
-            :param: id: (int) GitLab project ID
+            :param: pid: (int) GitLab project ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
-            :yield: Generator returning JSON of each result from GET /projects/:id/releases
+            :yield: Generator returning JSON of each result from GET /projects/:pid/releases
         """
         return self.api.list_all(host, token, f"projects/{pid}/releases")
 
@@ -419,7 +435,7 @@ class ProjectsApi(GitLabApiWrapper):
             :param: pid: (int) GitLab project ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
-            :yield: Generator returning JSON of each result from GET /projects/:project_id/events
+            :yield: Generator returning JSON of each result from GET /projects/:pid/events
         """
         return self.api.list_all(host, token, f"projects/{pid}/events")
 
@@ -432,7 +448,7 @@ class ProjectsApi(GitLabApiWrapper):
             :param: pid: (int) GitLab project ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
-            :yield: Response object containing the response to GET /projects/:id/variables
+            :yield: Response object containing the response to GET /projects/:pid/variables
         """
         return self.api.list_all(host, token, f"projects/{pid}/variables")
 
@@ -442,11 +458,11 @@ class ProjectsApi(GitLabApiWrapper):
 
         GitLab API Doc: https://docs.gitlab.com/ee/api/project_level_variables.html#create-variable
 
-            :param: id: (int) GitLab project ID
+            :param: pid: (int) GitLab project ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
             :param: data: (dict) Object containing the various data required for creating a project variable. Refer to the link above for specific examples
-            :return: Response object containing the response to POST /projects/:id/variables
+            :return: Response object containing the response to POST /projects/:pid/variables
         """
         if not message:
             message = f"Creating project {pid} variable"
@@ -458,10 +474,10 @@ class ProjectsApi(GitLabApiWrapper):
 
         GitLab API Doc: https://docs.gitlab.com/ee/api/protected_branches.html
 
-            :param: id: (int) GitLab project ID
+            :param: pid: (int) GitLab project ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
-            :yield: Generator returning JSON of each result from GET /projects/:id/protected_branches
+            :yield: Generator returning JSON of each result from GET /projects/:pid/protected_branches
         """
         return self.api.list_all(host, token, f"projects/{pid}/protected_branches")
 
@@ -476,7 +492,7 @@ class ProjectsApi(GitLabApiWrapper):
             :param: name: (str) GitLab project branch or wildcard name
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
-            :yield: Generator returning JSON of each result from GET /projects/:id/protected_branches/:name
+            :yield: Generator returning JSON of each result from GET /projects/:pid/protected_branches/:name
         """
         return self.api.generate_get_request(host, token, f"projects/{pid}/protected_branches/{quote_plus(name)}")
 
@@ -490,7 +506,7 @@ class ProjectsApi(GitLabApiWrapper):
             :param: pid: (int) GitLab project ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
-            :return: Response object containing the response to PUT /projects/:id/protected_branches
+            :return: Response object containing the response to PUT /projects/:pid/protected_branches
         """
         if not message:
             message = f"Protecting repository branch {name} for project {pid}"
@@ -506,7 +522,7 @@ class ProjectsApi(GitLabApiWrapper):
             :param: pid: (int) GitLab project ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
-            :return: Response object containing the response to PUT /projects/:id/protected_branches/:name
+            :return: Response object containing the response to PUT /projects/:pid/protected_branches/:name
         """
         if not message:
             message = f"Unprotecting repository branch {name} for project {pid}"
@@ -520,7 +536,7 @@ class ProjectsApi(GitLabApiWrapper):
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
             :param: branch: (str) GitLab project branch name
-            :return: Response object containing the response to PUT /projects/:id
+            :return: Response object containing the response to PUT /projects/:pid
         """
         if not message:
             message = f"Setting default branch {branch} for project {pid}"
@@ -533,7 +549,7 @@ class ProjectsApi(GitLabApiWrapper):
             :param: pid: (int) GitLab project ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
-            :return: Response object containing the response to PUT /projects/:id
+            :return: Response object containing the response to PUT /projects/:pid
         """
         if not message:
             message = f"Creating branch for project {pid} with payload {data}"
@@ -545,10 +561,10 @@ class ProjectsApi(GitLabApiWrapper):
 
         GitLab API Doc: https://docs.gitlab.com/ee/api/protected_environments.html
 
-            :param: id: (int) GitLab project ID
+            :param: pid: (int) GitLab project ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
-            :yield: Generator returning JSON of each result from GET /projects/:id/protected_environments
+            :yield: Generator returning JSON of each result from GET /projects/:pid/protected_environments
         """
         return self.api.list_all(host, token, f"projects/{pid}/protected_environments")
 
@@ -558,10 +574,10 @@ class ProjectsApi(GitLabApiWrapper):
 
         GitLab API Doc: https://docs.gitlab.com/ee/api/protected_tags.html#list-protected-tags
 
-            :param: id: (int) GitLab project ID
+            :param: pid: (int) GitLab project ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
-            :yield: Generator returning JSON of each result from GET /projects/:id/protected_tags
+            :yield: Generator returning JSON of each result from GET /projects/:pid/protected_tags
         """
         return self.api.list_all(host, token, f"projects/{pid}/protected_tags")
 
@@ -574,7 +590,7 @@ class ProjectsApi(GitLabApiWrapper):
             :param: pid: (int) GitLab project ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
-            :yield: Generator returning JSON of each result from GET /projects/:id/deploy_keys
+            :yield: Generator returning JSON of each result from GET /projects/:pid/deploy_keys
         """
         return self.api.list_all(host, token, f"projects/{pid}/deploy_keys")
 
@@ -584,10 +600,10 @@ class ProjectsApi(GitLabApiWrapper):
 
         GitLab API Doc: https://docs.gitlab.com/ee/api/jobs.html#list-project-jobs
 
-            :param: id: (int) GitLab project ID
+            :param: pid: (int) GitLab project ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
-            :yield: Generator returning JSON of each result from GET /projects/:id/jobs
+            :yield: Generator returning JSON of each result from GET /projects/:pid/jobs
         """
         return self.api.list_all(host, token, f"projects/{pid}/jobs")
 
@@ -597,10 +613,10 @@ class ProjectsApi(GitLabApiWrapper):
 
         GitLab API Doc: https://docs.gitlab.com/ee/api/pipelines.html#list-project-pipelines
 
-            :param: id: (int) GitLab project ID
+            :param: pid: (int) GitLab project ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
-            :yield: Generator returning JSON of each result from GET /projects/:id/pipelines
+            :yield: Generator returning JSON of each result from GET /projects/:pid/pipelines
         """
         return self.api.list_all(host, token, f"projects/{pid}/pipelines")
 
@@ -610,10 +626,10 @@ class ProjectsApi(GitLabApiWrapper):
 
         GitLab API Doc: https://docs.gitlab.com/ee/api/pipeline_triggers.html
 
-            :param: id: (int) GitLab project ID
+            :param: pid: (int) GitLab project ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
-            :yield: Generator returning JSON of each result from GET /projects/:id/triggers
+            :yield: Generator returning JSON of each result from GET /projects/:pid/triggers
         """
         return self.api.list_all(host, token, f"projects/{pid}/triggers")
 
@@ -627,7 +643,7 @@ class ProjectsApi(GitLabApiWrapper):
             :param: piid: (int) Pipeline ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
-            :yield: Generator returning JSON of each result from GET /projects/:id/pipelines/:pipeline_id/variables
+            :yield: Generator returning JSON of each result from GET /projects/:prid/pipelines/:piid/variables
         """
         return self.api.list_all(host, token, f"projects/{prid}/pipelines/{piid}/variables")
 
@@ -637,26 +653,26 @@ class ProjectsApi(GitLabApiWrapper):
 
         GitLab API Doc: https://docs.gitlab.com/ee/api/pipeline_schedules.html
 
-            :param: id: (int) GitLab project ID
+            :param: pid: (int) GitLab project ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
-            :yield: Generator returning JSON of each result from GET /projects/:id/pipeline_schedules
+            :yield: Generator returning JSON of each result from GET /projects/:pid/pipeline_schedules
         """
         return self.api.list_all(host, token, f"projects/{pid}/pipeline_schedules")
 
-    def get_single_project_pipeline_schedule(self, pid, sid, host, token):
+    def get_single_project_pipeline_schedule(self, pid, psid, host, token):
         """
         Get the pipeline schedule of a project.
 
         GitLab API Doc: https://docs.gitlab.com/ee/api/pipeline_schedules.html
 
             :param: pid: (int) GitLab project ID
-            :param: sid: (int) Schedule ID
+            :param: psid: (int) GitLab pipeline schedule ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
-            :yield: Generator returning JSON of each result from GET /projects/:id/pipeline_schedules/:pipeline_schedule_id
+            :yield: Generator returning JSON of each result from GET /projects/:pid/pipeline_schedules/:psid
         """
-        return self.api.generate_get_request(host, token, f"projects/{pid}/pipeline_schedules/{sid}")
+        return self.api.generate_get_request(host, token, f"projects/{pid}/pipeline_schedules/{psid}")
 
     def create_new_project_pipeline_schedule(self, host, token, pid, data, message=None):
         """
@@ -666,26 +682,26 @@ class ProjectsApi(GitLabApiWrapper):
 
             :param: pid: (int) GitLab project ID
             :param: data: (dict) Object containing the various data required for creating a pipeline schedule
-            :return: Response object containing the response to POST /projects/:id/pipeline_schedules
+            :return: Response object containing the response to POST /projects/:pid/pipeline_schedules
         """
         if not message:
             message = f"Creating new pipeline schedule for project {pid}"
         return self.api.generate_post_request(host, token, f"projects/{pid}/pipeline_schedules", json.dumps(data), description=message)
 
-    def create_new_project_pipeline_schedule_variable(self, pid, sid, host, token, data, message=None):
+    def create_new_project_pipeline_schedule_variable(self, pid, psid, host, token, data, message=None):
         """
         Create a new variable of a pipeline schedule.
 
         GitLab API doc: https://docs.gitlab.com/ee/api/pipeline_schedules.html
 
             :param: pid: (int) GitLab project ID
-            :param: sid: (int) Schedule ID
+            :param: psid: (int) GitLab pipeline schedule ID
             :param: data: (dict) Object containing the various data required for creating a pipeline schedule variable
-            :return: Response object containing the response to POST /projects/:id/pipeline_schedules/:pipeline_schedule_id/variables
+            :return: Response object containing the response to POST /projects/:pid/pipeline_schedules/:psid/variables
         """
         if not message:
-            message = f"Creating new variable for project {pid} pipeline schedule {sid}"
-        return self.api.generate_post_request(host, token, f"projects/{pid}/pipeline_schedules/{sid}/variables", json.dumps(data), description=message)
+            message = f"Creating new variable for project {pid} pipeline schedule {psid}"
+        return self.api.generate_post_request(host, token, f"projects/{pid}/pipeline_schedules/{psid}/variables", json.dumps(data), description=message)
 
     def get_all_project_hooks(self, pid, host, token):
         """
@@ -696,7 +712,7 @@ class ProjectsApi(GitLabApiWrapper):
             :param: pid: (int) GitLab project ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
-            :yield: Generator returning JSON of each result from GET /projects/:id/hooks
+            :yield: Generator returning JSON of each result from GET /projects/:pid/hooks
         """
         return self.api.list_all(host, token, f"projects/{pid}/hooks")
 
@@ -707,8 +723,8 @@ class ProjectsApi(GitLabApiWrapper):
         GitLab API doc: https://docs.gitlab.com/ee/api/projects.html#add-project-hook
 
             :param: pid: (int) GitLab project ID
-            :param: data: (dict) Object containing the various data requried for creating a hook. Refer to the link above for specific examples
-            :return: Response object containing the response to POST /projects/:id/hooks
+            :param: data: (dict) Object containing the various data required for creating a hook. Refer to the link above for specific examples
+            :return: Response object containing the response to POST /projects/:pid/hooks
         """
         if not message:
             message = "Adding project hook"
@@ -723,7 +739,7 @@ class ProjectsApi(GitLabApiWrapper):
             :param: pid: (int) GitLab project ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
-            :yield: Generator returning JSON of each result from GET /projects/:id/push_rule
+            :yield: Generator returning JSON of each result from GET /projects/:pid/push_rule
         """
         return self.api.generate_get_request(host, token, f"projects/{pid}/push_rule")
 
@@ -737,7 +753,7 @@ class ProjectsApi(GitLabApiWrapper):
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
             :param: data: (str) Relevant data for creating a push rule
-            :return: Response object containing the response to POST /projects/:id/push_rule
+            :return: Response object containing the response to POST /projects/:pid/push_rule
         """
         if not message:
             message = f"Creating new push rule for project {pid}"
@@ -752,7 +768,7 @@ class ProjectsApi(GitLabApiWrapper):
             :param: pid: (int) GitLab project ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
-            :yield: Generator returning JSON of each result from GET /projects/:id/approvals
+            :yield: Generator returning JSON of each result from GET /projects/:pid/approvals
         """
         return self.api.generate_get_request(host, token, f"projects/{pid}/approvals")
 
@@ -766,7 +782,7 @@ class ProjectsApi(GitLabApiWrapper):
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
             :param: data: (str) Relevant data for approval configuration
-            :return: Response object containing the response to PUT /projects/:id/approvals
+            :return: Response object containing the response to PUT /projects/:pid/approvals
         """
         if not message:
             message = f"Changing project {pid} merge request approval"
@@ -781,7 +797,7 @@ class ProjectsApi(GitLabApiWrapper):
             :param: pid: (int) GitLab project ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
-            :yield: Generator returning JSON of each result from GET /projects/:id/approval_rules
+            :yield: Generator returning JSON of each result from GET /projects/:pid/approval_rules
         """
         return self.api.list_all(host, token, f"projects/{pid}/approval_rules")
 
@@ -795,7 +811,7 @@ class ProjectsApi(GitLabApiWrapper):
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
             :param: data: (str) Relevant data for approval rule
-            :yield: Generator returning JSON of each result from POST /projects/:id/approval_rules
+            :yield: Generator returning JSON of each result from POST /projects/:pid/approval_rules
         """
         if not message:
             message = f"Creating project {pid} level merge request approval rule with payload {data}"
@@ -810,7 +826,7 @@ class ProjectsApi(GitLabApiWrapper):
             :param: pid: (int) GitLab project ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
-            :yield: Generator returning JSON of each result from GET /projects/:id/registry/repositories
+            :yield: Generator returning JSON of each result from GET /projects/:pid/registry/repositories
         """
         return self.api.list_all(host, token, f"projects/{pid}/registry/repositories")
 
@@ -821,10 +837,10 @@ class ProjectsApi(GitLabApiWrapper):
         GitLab API Doc: https://docs.gitlab.com/ee/api/container_registry.html
 
             :param: pid: (int) GitLab project ID
-            :param: rid: (int) Repository ID
+            :param: rid: (int) GitLab repository ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
-            :yield: Generator returning JSON of each result from GET /projects/:id/registry/repositories/:repository_id/tags
+            :yield: Generator returning JSON of each result from GET /projects/:pid/registry/repositories/:rid/tags
         """
         return self.api.list_all(host, token, f"projects/{pid}/registry/repositories/{rid}/tags")
 
@@ -835,11 +851,11 @@ class ProjectsApi(GitLabApiWrapper):
         GitLab API Doc: https://docs.gitlab.com/ee/api/container_registry.html
 
             :param: pid: (int) GitLab project ID
-            :param: rid: (int) Repository ID
+            :param: rid: (int) GitLab repository ID
             :param: tag_name: (int) Tag name
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
-            :yield: Response object containing the response to GET /projects/:id/registry/repositories/:repository_id/tags/:tag_name
+            :yield: Response object containing the response to GET /projects/:pid/registry/repositories/:rid/tags/:tag_name
         """
         return self.api.generate_get_request(host, token, f"projects/{pid}/registry/repositories/{rid}/tags/{tag_name}")
 
@@ -849,10 +865,10 @@ class ProjectsApi(GitLabApiWrapper):
 
         GitLab API Doc: https://docs.gitlab.com/ee/api/feature_flags.html
 
-            :param: id: (int) GitLab project ID
+            :param: pid: (int) GitLab project ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
-            :yield: Generator returning JSON of each result from GET /projects/:id/feature_flags
+            :yield: Generator returning JSON of each result from GET /projects/:pid/feature_flags
         """
         return self.api.list_all(host, token, f"projects/{pid}/feature_flags")
 
@@ -862,10 +878,10 @@ class ProjectsApi(GitLabApiWrapper):
 
         GitLab API Doc: https://docs.gitlab.com/ee/api/custom_attributes.html
 
-            :param: id: (int) GitLab project ID
+            :param: pid: (int) GitLab project ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
-            :yield: Generator returning JSON of each result from GET /projects/:id/custom_attributes
+            :yield: Generator returning JSON of each result from GET /projects/:pid/custom_attributes
         """
         return self.api.list_all(host, token, f"projects/{pid}/custom_attributes")
 
@@ -878,7 +894,7 @@ class ProjectsApi(GitLabApiWrapper):
             :param: pid: (int) GitLab project ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
-            :yield: Generator returning JSON of each result from GET /projects/:id/snippets
+            :yield: Generator returning JSON of each result from GET /projects/:pid/snippets
         """
         return self.api.list_all(host, token, f"projects/{pid}/snippets")
 
@@ -888,10 +904,11 @@ class ProjectsApi(GitLabApiWrapper):
 
         GitLab API Doc: https://docs.gitlab.com/ee/api/project_snippets.html#single-snippet
 
-            :param: project_id: (int) GitLab project ID
+            :param: pid: (int) GitLab project ID
+            :param: sid: (int) GitLab snippet ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
-            :yield: Response object containing the response to GET /projects/:id/snippets/:snippet_id
+            :yield: Response object containing the response to GET /projects/:pid/snippets/:sid
         """
         return self.api.generate_get_request(host, token, f"projects/{pid}/snippets/{sid}")
 
@@ -901,11 +918,11 @@ class ProjectsApi(GitLabApiWrapper):
 
         GitLab API Doc: https://docs.gitlab.com/ee/api/award_emoji.html
 
-            :param: project_id: (int) GitLab group ID
-            :param: snippet_id: (int) Snipped ID
+            :param: pid: (int) GitLab project ID
+            :param: sid: (int) GitLab snippet ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
-            :yield: Generator returning JSON of each result from GET /projects/:id/snippets/:snippet_id/award_emoji
+            :yield: Generator returning JSON of each result from GET /projects/:pid/snippets/:sid/award_emoji
         """
         return self.api.generate_get_request(host, token, f"projects/{pid}/snippets/{sid}/award_emoji")
 
@@ -915,12 +932,12 @@ class ProjectsApi(GitLabApiWrapper):
 
         GitLab API Doc: https://docs.gitlab.com/ee/api/award_emoji.html#award-a-new-emoji
 
-            :param: project_id: (int) GitLab project ID
-            :param: snippet_id: (int) Snipped ID
+            :param: pid: (int) GitLab project ID
+            :param: sid: (int) GitLab snippet ID
             :param: name: (int) Name of the award
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
-            :return: Response object containing the response to POST /projects/:id/snippets/:snippet_id/award_emoji
+            :return: Response object containing the response to POST /projects/:pid/snippets/:sid/award_emoji
         """
         return self.api.generate_post_request(host, token, f"projects/{pid}/snippets/{sid}/award_emoji?name={name}", None)
 
@@ -930,12 +947,12 @@ class ProjectsApi(GitLabApiWrapper):
 
         GitLab API Doc: https://docs.gitlab.com/ee/api/award_emoji.html
 
-            :param: project_id: (int) GitLab group ID
-            :param: snippet_id: (int) Snipped ID
-            :param: note_id: (int) Note ID
+            :param: pid: (int) GitLab project ID
+            :param: sid: (int) GitLab snippet ID
+            :param: nid: (int) GitLag note ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
-            :yield: Generator returning JSON of each result from GET /projects/:id/snippets/:snippet_id/notes/:note_id/award_emoji
+            :yield: Generator returning JSON of each result from GET /projects/:pid/snippets/:sid/notes/:nid/award_emoji
         """
         return self.api.generate_get_request(host, token, f"projects/{pid}/snippets/{sid}/notes/{nid}/award_emoji")
 
@@ -945,13 +962,13 @@ class ProjectsApi(GitLabApiWrapper):
 
         GitLab API Doc: https://docs.gitlab.com/ee/api/award_emoji.html
 
-            :param: project_id: (int) GitLab project ID
-            :param: snippet_id: (int) Snipped ID
-            :param: note_id: (int) Note ID
+            :param: pid: (int) GitLab project ID
+            :param: sid: (int) GitLab snippet ID
+            :param: nid: (int) GitLab note ID
             :param: name: (int) Name of the award
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
-            :return: Response object containing the response to POST /projects/:id/snippets/:snippet_id/notes/:note_id/award_emoji
+            :return: Response object containing the response to POST /projects/:pid/snippets/:sid/notes/:nid/award_emoji
         """
         return self.api.generate_post_request(host, token, f"projects/{pid}/snippets/{sid}/notes/{nid}/award_emoji?name={name}", None)
 
@@ -961,11 +978,11 @@ class ProjectsApi(GitLabApiWrapper):
 
         GitLab API Doc: https://docs.gitlab.com/ee/api/notes.html#list-all-snippet-notes
 
-            :param: project_id: (int) GitLab group ID
-            :param: snippet_id: (int) Snipped ID
+            :param: pid: (int) GitLab project ID
+            :param: sid: (int) GitLab snippet ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
-            :yield: Generator returning JSON of each result from GET /projects/:id/snippets/:snippet_id/notes
+            :yield: Generator returning JSON of each result from GET /projects/:pid/snippets/:sid/notes
         """
         return self.api.generate_get_request(host, token, f"projects/{pid}/snippets/{sid}/notes")
 
@@ -975,11 +992,11 @@ class ProjectsApi(GitLabApiWrapper):
 
         GitLab API Doc: https://docs.gitlab.com/ee/api/environments.html
 
-            :param: project_id: (int) GitLab project ID
-            :param: env_id: (int) GitLab project environment ID
+            :param: pid: (int) GitLab project ID
+            :param: eid: (int) GitLab project environment ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
-            :return: Response object containing the response to GET /projects/:id/environments/:environment_id
+            :return: Response object containing the response to GET /projects/:pid/environments/:eid
 
         """
         return self.api.generate_get_request(host, token, f"projects/{pid}/environments/{eid}")
@@ -993,7 +1010,7 @@ class ProjectsApi(GitLabApiWrapper):
             :param: pid: (int) GitLab project ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
-            :yield: RGenerator returning JSON of each result from GET /projects/:id/environments
+            :yield: RGenerator returning JSON of each result from GET /projects/:pid/environments
 
         """
         return self.api.list_all(host, token, f"projects/{pid}/environments")
@@ -1007,7 +1024,7 @@ class ProjectsApi(GitLabApiWrapper):
             :param: pid: (int) GitLab project ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
-            :yield: RGenerator returning JSON of each result from GET /projects/:id/wikis
+            :yield: RGenerator returning JSON of each result from GET /projects/:pid/wikis
 
         """
         return self.api.list_all(host, token, f"projects/{pid}/wikis")
@@ -1020,9 +1037,9 @@ class ProjectsApi(GitLabApiWrapper):
 
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
-            :param: project_id: (str) GitLab project ID
+            :param: pid: (str) GitLab project ID
             :param: data: (dict) Object containing the necessary data for creating an environment. Refer to the link above for specific examples
-            :return: Response object containing the response to POST /projects/:id/environments
+            :return: Response object containing the response to POST /projects/:pid/environments
 
         """
         if not message:
@@ -1035,11 +1052,11 @@ class ProjectsApi(GitLabApiWrapper):
 
         GitLab API Doc: https://docs.gitlab.com/ee/api/environments.html#delete-an-environment
 
-            :param: project_id: (int) GitLab project ID
-            :param: env_id: (int) GitLab project environment ID
+            :param: pid: (int) GitLab project ID
+            :param: eid: (int) GitLab project environment ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
-            :return: Response object containing a 204 (No Content) or 404 (Group not found) from DELETE /projects/:id/environments/:environment_id
+            :return: Response object containing a 204 (No Content) or 404 (Group not found) from DELETE /projects/:pid/environments/:eid
         """
         return self.api.generate_delete_request(host, token, f"projects/{pid}/environments/{eid}")
 
@@ -1071,7 +1088,7 @@ class ProjectsApi(GitLabApiWrapper):
             :param: pid: (int) GitLab project ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
-            :return: Response object containing the response to GET /projects/:id/clusters
+            :return: Response object containing the response to GET /projects/:pid/clusters
 
         """
         return self.api.list_all(host, token, f"projects/{pid}/clusters")
@@ -1086,7 +1103,7 @@ class ProjectsApi(GitLabApiWrapper):
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
             :param: data: (dict) Object containing the necessary data for the added cluster
-            :return: Response object containing the response to POST /projects/:id/clusters/user
+            :return: Response object containing the response to POST /projects/:pid/clusters/user
 
         """
         if not message:
@@ -1100,7 +1117,7 @@ class ProjectsApi(GitLabApiWrapper):
         GitLab API Doc: https://docs.gitlab.com/ee/api/deploy_keys.html#enable-a-deploy-key
 
             :param: pid: (int) GitLab project ID
-            :param: kid: (int) The ID of the deploy key
+            :param: kid: (int) GitLab deploy key ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
             :return: Response object containing the response to POST /projects/:pid/deploy_keys/:kid/enable
