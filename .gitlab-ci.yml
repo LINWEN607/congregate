@@ -11,6 +11,7 @@ include:
   - template: Code-Quality.gitlab-ci.yml
   - template: Security/Container-Scanning.gitlab-ci.yml
   - template: Security/License-Scanning.gitlab-ci.yml
+  - local: ci/vault.yml
 
 variables:
   DOCKER_VERSION: "19.03.1"
@@ -19,6 +20,8 @@ variables:
   JENKINS_SEED_IMAGE_NAME: "$CI_REGISTRY_IMAGE/jenkins-seed:latest"
   SAST_EXCLUDED_ANALYZERS: "brakeman,flawfinder,gosec,kubesec,mobsf,phpcs-security-audit,pmd-apex,security-code-scan,sobelow,spotbugs"
   SECURE_LOG_LEVEL: "debug"
+  CONGREGATE_PATH: $CI_PROJECT_DIR
+  APP_PATH: $CI_PROJECT_DIR
 
 default:
   image: "$TEST_IMAGE_NAME"
@@ -52,6 +55,7 @@ workflow:
     - docker login ${CI_REGISTRY} -u gitlab-ci-token -p $CI_BUILD_TOKEN
 
 .gitlab-destination:
+  extends: .gitlab-license
   variables:
     GITLAB_LICENSE_PATH: "$GITLAB_LICENSE"
     GITLAB_OMNIBUS_CONFIG: |-
@@ -144,6 +148,7 @@ build bitbucket seed image:
   extends:
     - .use-docker-in-docker
     - .docker-login
+    - .bbs-creds
   stage: build
   script:
     - cp docker/bitbucket/Dockerfile ./
@@ -227,6 +232,8 @@ check ldap compose yaml:
     - .use-docker-in-docker
     - .gitlab-destination
     - .e2e-cleanup
+    - .aws-creds
+    - .gitlab-api-creds
   tags:
     - congregate-auto-scale-runner
   before_script:
@@ -239,13 +246,16 @@ check ldap compose yaml:
   rules:
     - if: "$CI_PIPELINE_SOURCE != 'schedule'"
       changes:
+        - .gitlab-ci.yml
         - congregate/helpers/**/*
         - congregate/migration/gitlab/**/*
         - congregate/migration/migrate.py
   timeout: 30 minutes
 
 test:pylint:
-  extends: .test-job
+  extends: 
+    - .test-job
+    - .gitlab-api-creds
   script:
     - ci/pylint.sh
   artifacts:
@@ -286,19 +296,6 @@ test:end-to-end single group:
     - poetry run pytest -s -m e2e --cov-config=.coveragerc --cov=congregate congregate/tests/
   timeout: 30 minutes
 
-test:GitHub Server end to end:
-  extends:
-    - .test-job
-  image: "${TEST_IMAGE_NAME}"
-  tags:
-    - congregate-auto-scale-runner
-  script:
-    - curl -k $GH_TEST_INSTANCE_URL -v
-  rules:
-    - if: "$CI_PIPELINE_SOURCE != 'schedule'"
-      changes:
-        - congregate/migration/github/**/*
-
 test:Jenkins Integration Tests:
   extends:
     - .jenkins-test
@@ -335,6 +332,8 @@ test:Jenkins Integration Tests:
 bump version:
   image: registry.gitlab.com/gitlab-org/release-cli:latest
   stage: bump version
+  extends:
+    - .release-creds
   script:
     - apk --update add python3 py-pip git
     - pip install poetryupvers
@@ -464,6 +463,8 @@ debian_container_scanning:
 
 docs update:
   stage: deploy
+  extends:
+    - .dotcom-creds
   script:
     - echo "This is a placeholder job ran only when runbooks are changed"
     - echo "Storing any changed runbook to artifacts that will expire in 1 week."
@@ -497,9 +498,6 @@ mvc:
 
 pages:
   stage: deploy
-  variables:
-    CONGREGATE_PATH: $CI_PROJECT_DIR
-    APP_PATH: $CI_PROJECT_DIR
   rules:
     - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE != 'schedule'"
       changes:
@@ -527,6 +525,8 @@ test:GitHub Enterprise end to end:
   extends:
     - .test-job
     - .e2e-ghe-cleanup
+    - .azure-creds
+    - .ghe-creds
   script:
     - poetry add azure-cli
     - poetry run ./azure_scripts/restore_azure_vm.sh
