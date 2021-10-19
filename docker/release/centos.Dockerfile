@@ -24,10 +24,10 @@ COPY docker/release/centos/mongo_repo /etc/yum.repos.d/mongodb-org-4.4.repo
 RUN mkdir -p /data/db
 
 # Set permissions for /data and /opt for ps-user
-RUN chown ps-user:wheel /data -R && \
-    chmod 750 -R /data && \
-    chown ps-user:wheel /opt -R && \
-    chmod 750 -R /opt
+RUN chown -R ps-user:wheel /data && \
+    chmod -R 750 /data && \
+    chown -R ps-user:wheel /opt && \
+    chmod -R 750 /opt
 
 # Installing yum-installable libraries
 RUN yum update -y && \
@@ -55,6 +55,10 @@ RUN echo -e '#!/bin/bash\npython3.8 "$@"' > /usr/local/sbin/python && \
 # Install Node
 RUN curl -sL https://rpm.nodesource.com/setup_12.x | bash - && \
     yum install -y nodejs
+
+# Set permissions for dist/ for ps-user
+RUN chown -R ps-user:wheel dist && \
+    chmod -R 750 dist
 
 # Create python symlinks
 RUN rm -f /usr/bin/python3 && \

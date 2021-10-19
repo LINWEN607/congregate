@@ -27,8 +27,10 @@ ADD dev/bin dev/bin
 COPY congregate.sh pyproject.toml poetry.lock README.md package.json package-lock.json vue.config.js babel.config.js .gitignore LICENSE ./
 
 # Set permissions for /data and /opt for ps-user
-RUN chown ps-user:sudo /opt -R && \
-    chmod 750 -R /opt
+RUN chown -R ps-user:sudo /opt && \
+    chmod -R 750 /opt
+RUN chown -R ps-user:sudo /data && \
+    chmod -R 750 /data
 
 # Installing some basic utilities and updating apt
 RUN apt-get update && \
@@ -40,6 +42,10 @@ RUN curl -sL https://deb.nodesource.com/setup_12.x | bash - && \
     apt-get install -y nodejs && \
     npm install --no-optional && \
     npm run build
+
+# Set permissions for dist/ for ps-user
+RUN chown -R ps-user:sudo dist && \
+    chmod -R 750 dist
 
 # Install mongo
 RUN mkdir /opt/mongo-install && \
@@ -68,7 +74,7 @@ RUN cd /opt/congregate && \
     git config --global user.email "migration@gitlab.com" && \
     git config --global user.name "congregate" && \
     git commit -m "Initial commit"
-    
+
 RUN export PATH=$PATH:$HOME/.local/bin && \
     echo "export PATH=$PATH" >> ~/.bashrc
 
@@ -77,7 +83,7 @@ RUN python3.8 -m poetry install
 # Initialize congregate directories
 RUN congregate init
 
-run echo 'if [ -z "$(ps aux | grep mongo | grep -v grep)" ]; then mongod --fork --logpath /var/log/mongodb/mongod.log; fi' >> ~/.bashrc
+RUN echo 'if [ -z "$(ps aux | grep mongo | grep -v grep)" ]; then mongod --fork --logpath /var/log/mongodb/mongod.log; fi' >> ~/.bashrc
 RUN echo "alias ll='ls -al'" >> ~/.bashrc
 RUN echo "alias license='cat /opt/congregate/LICENSE'" >> ~/.bashrc
 
