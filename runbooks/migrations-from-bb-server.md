@@ -75,6 +75,8 @@ Copy the following data and add subsequent columns for single project migration
   * [ ] Inspect and validate configured values in `data/congregate.conf`
 
 ### User migration
+<details>
+<summary>Instructions for user migration collapsed by default.</summary>
 
 #### Prepare users
 
@@ -122,6 +124,8 @@ Copy the following data and add subsequent columns for single project migration
   * `data/logs/audit.log`
   * `data/waves/user_wave/user_wave.log`
 
+</details>
+
 ### Group and project migration
 
 #### Prepare groups and projects
@@ -158,6 +162,8 @@ Copy the following data and add subsequent columns for single project migration
   * `data/waves/wave_<insert_wave_number>/wave<insert-wave-here>.log`
 
 ### Post Migration of Failed Groups and Projects
+<details>
+<summary>Instructions for post migration of failed groups and projects collapsed by default.</summary>
 
 #### Migration of Failed Groups and Projects
 
@@ -244,6 +250,8 @@ p "Number of Protected Branches import failures: #{protected_branches_import_fai
 ### Rollback
 
 If **any** data was migrated incorrectly (i.e. to the wrong namespace), you **must** rollback the migration wave **completely**
+
+</details>
 
 #### Users
 
