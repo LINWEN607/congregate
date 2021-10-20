@@ -90,7 +90,7 @@ def get_export_filename_from_namespace_and_name(namespace, name=""):
         namespace, "/" + name if name else "").replace("/", "_").lower()
 
 
-def get_project_namespace(p, custom=None):
+def get_project_namespace(p, mirror=False):
     """
     If this is a user project, the namespace == username
 
@@ -104,9 +104,7 @@ def get_project_namespace(p, custom=None):
         if b.config.src_parent_id and b.config.src_parent_group_path:
             single_group_name = b.config.src_parent_group_path.split("/")[-1]
             p_namespace = f"{single_group_name}{p_namespace.split(b.config.src_parent_group_path)[-1]}"
-        if custom:
-            return f"{custom}/{p_namespace}"
-        if b.config.dstn_parent_id:
+        if b.config.dstn_parent_id and not mirror:
             return f"{b.config.dstn_parent_group_path}/{p_namespace}"
     return p_namespace
 
@@ -118,8 +116,6 @@ def get_full_path_with_parent_namespace(full_path):
         :param full_path: The full path of a group
         :return: Destination instance group full path with parent namespace
     """
-    if b.config.src_parent_id and b.config.src_parent_group_path:
-        full_path = str(b.config.src_parent_group_path).split("/")[-1]
     if b.config.dstn_parent_id and b.config.dstn_parent_group_path:
         return f"{b.config.dstn_parent_group_path}/{full_path}"
     return full_path
@@ -208,14 +204,14 @@ def find_user_by_email_comparison_without_id(email, src=False):
     return None
 
 
-def get_dst_path_with_namespace(p, custom=None):
+def get_dst_path_with_namespace(p, mirror=False):
     """
     Determine project path with namespace on destination
 
         :param p: The JSON object representing a GitLab project
         :return: Destination project path with namespace
     """
-    return f"{get_user_project_namespace(p) if is_user_project(p) else get_project_namespace(p, custom)}/{p.get('path')}"
+    return f"{get_user_project_namespace(p) if is_user_project(p) else get_project_namespace(p, mirror)}/{p.get('path')}"
 
 
 def get_target_namespace(project):

@@ -3,6 +3,7 @@ import getpass
 import sys
 from re import sub
 
+
 def strip_numbers(s):
     """
         Strip out any numbers from a string
