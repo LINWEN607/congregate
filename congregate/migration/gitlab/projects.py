@@ -12,6 +12,7 @@ from congregate.helpers.misc_utils import get_dry_log, get_timedelta, \
 from congregate.helpers.json_utils import json_pretty, read_json_file_into_object, write_json_to_file
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.groups import GroupsApi
+from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.groups import GroupsClient
 from congregate.migration.gitlab.users import UsersClient
 from congregate.helpers.mdbc import MongoConnector
@@ -25,6 +26,7 @@ class ProjectsClient(BaseClass):
     def __init__(self):
         self.projects_api = ProjectsApi()
         self.groups_api = GroupsApi()
+        self.users_api = UsersApi()
         self.groups = GroupsClient()
         self.users = UsersClient()
         self.project_repository_api = ProjectRepositoryApi()
@@ -572,6 +574,8 @@ class ProjectsClient(BaseClass):
             # branches
 
     def create_staged_projects_structure(self, dry_run=True, disable_cicd=False):
+        start = time()
+        rotate_logs()
         staged_projects = get_staged_projects()
         host = self.config.destination_host
         token = self.config.destination_token
@@ -594,8 +598,6 @@ class ProjectsClient(BaseClass):
                     self.log.error(
                         f"SKIP: Project {dst_path} (ID: {dst_pid}) already exists")
                     continue
-                self.log.info(
-                    f"{get_dry_log(dry_run)}Create {dst_path} empty project structure")
                 name = s.get("name")
                 data = {
                     "name": name,
@@ -609,6 +611,8 @@ class ProjectsClient(BaseClass):
                     data["jobs_enabled"] = False
                     data["shared_runners_enabled"] = False
                     data["auto_devops_enabled"] = False
+                self.log.info(
+                    f"{get_dry_log(dry_run)}Create {dst_path} empty project structure, with payload {data}")
                 if not dry_run:
                     resp = self.projects_api.create_project(
                         host, token, name, data=data)
@@ -622,18 +626,23 @@ class ProjectsClient(BaseClass):
                 self.log.error(
                     f"Failed to create project {path_with_namespace} with error:\n{re}")
                 continue
+        add_post_migration_stats(start, log=self.log)
 
-    def push_mirror_staged_projects(self, namespace, disabled=False, overwrite=False, force=False, dry_run=True):
+    def push_mirror_staged_projects(self, disabled=False, overwrite=False, force=False, dry_run=True):
+        start = time()
+        rotate_logs()
         staged_projects = get_staged_projects()
         host = self.config.destination_host
         token = self.config.destination_token
+        username = safe_json_response(
+            self.users_api.get_current_user(host, token)).get("username", None)
         for s in staged_projects:
             try:
-                dst_pid, mirror_path = self.find_mirror_project(
-                    s, host, token, namespace)
-                if dst_pid and mirror_path:
+                dst_pid, mirror_path = self.find_mirror_project(s, host, token)
+                if dst_pid and mirror_path and username:
                     data = {
-                        "url": host + "/" + mirror_path,
+                        # username:token is SaaS specific. Revoking the token breaks the mirroring
+                        "url": f"https://{username}:{token}@{strip_protocol(host)}/{mirror_path}.git",
                         "enabled": not disabled,
                         "keep_divergent_refs": not overwrite
                     }
@@ -648,34 +657,51 @@ class ProjectsClient(BaseClass):
                         self.log.error(
                             f"Failed to create project {dst_pid} push mirror to {mirror_path}, with response:\n{resp} - {resp.text}")
                     elif force:
-                        branch = "mirroring-trigger"
-                        branch_data = {
-                            "branch": branch,
-                            # retry in case of main (as of 14.0)
-                            "ref": s.get("default_branch", "master")
-                        }
-                        branch_resp = self.projects_api.create_branch(
-                            host, token, dst_pid, data=branch_data)
-                        if branch_resp.status_code != 201:
-                            self.log.error(
-                                f"Failed to create project {dst_pid} branch, with payload {branch_data}")
-                        else:
-                            self.projects_api.delete_branch(
-                                host, token, dst_pid, branch)
+                        self.trigger_mirroring(host, token, s, dst_pid)
             except RequestException as re:
                 self.log.error(
                     f"Failed to create project {s.get('path_with_namespace')} push mirror, with error:\n{re}")
                 continue
+        add_post_migration_stats(start, log=self.log)
 
-    def toggle_staged_projects_push_mirror(self, namespace, disable=False, dry_run=True):
+    def trigger_mirroring(self, host, token, staged_project, pid):
+        branch = "mirroring-trigger"
+        commit_data = {
+            "branch": branch,
+            "commit_message": f"{branch} [skip-ci]",
+            # retry in case of main (as of 14.0)
+            "start_branch": staged_project.get("default_branch", "master"),
+            "actions": [
+                {
+                    "action": "create",
+                    "file_path": f"{branch}.txt",
+                    "content": branch
+                }
+            ]
+        }
+        try:
+            commit_resp = self.project_repository_api.create_commit_with_files_and_actions(
+                host, token, pid, data=commit_data)
+            if commit_resp.status_code != 201:
+                self.log.error(
+                    f"Failed to commit branch {branch} to project {pid}, with payload {commit_data}")
+            else:
+                self.projects_api.delete_branch(
+                    host, token, pid, branch)
+        except RequestException as re:
+            self.log.error(
+                f"Failed to commit branch {branch} payload {commit_data} to project {pid}, with error:\n{re}")
+
+    def toggle_staged_projects_push_mirror(self, disable=False, dry_run=True):
+        start = time()
+        rotate_logs()
         staged_projects = get_staged_projects()
         host = self.config.destination_host
         token = self.config.destination_token
         for s in staged_projects:
             try:
                 # Find the relevant push mirror to toggle
-                dst_pid, mirror_path = self.find_mirror_project(
-                    s, host, token, namespace)
+                dst_pid, mirror_path = self.find_mirror_project(s, host, token)
                 if dst_pid and mirror_path:
                     url = host + "/" + mirror_path
                     mirrors = self.projects_api.get_all_remote_push_mirrors(
@@ -706,21 +732,22 @@ class ProjectsClient(BaseClass):
                 self.log.error(
                     f"Failed to toggle project {s.get('path_with_namespace')} push mirror, with error:\n{re}")
                 continue
+        add_post_migration_stats(start, log=self.log)
 
-    def find_mirror_project(self, staged_project, host, token, namespace=None):
+    def find_mirror_project(self, staged_project, host, token):
         try:
-            orig_path = get_dst_path_with_namespace(staged_project)
+            orig_path = get_dst_path_with_namespace(
+                staged_project, mirror=True)
             orig_pid = self.find_project_by_path(host, token, orig_path)
             if not orig_pid:
                 self.log.error(f"SKIP: Original project {orig_path} NOT found")
                 return (False, False)
-            mirror_path = get_dst_path_with_namespace(
-                staged_project, custom=namespace)
+            mirror_path = get_dst_path_with_namespace(staged_project)
             mirror_pid = self.find_project_by_path(
                 host, token, mirror_path)
             if not mirror_pid:
                 self.log.error(
-                    f"SKIP: Mirror project mirror {mirror_path} NOT found")
+                    f"SKIP: Mirror project {mirror_path} NOT found")
                 return (orig_pid, False)
             return (orig_pid, mirror_path)
         except RequestException as re:
@@ -728,6 +755,8 @@ class ProjectsClient(BaseClass):
                 f"Failed to find project {orig_path} and/or push mirror, with error:\n{re}")
 
     def create_staged_projects_fork_relation(self, dry_run=True):
+        start = time()
+        rotate_logs()
         staged_projects = get_staged_projects()
         host = self.config.destination_host
         token = self.config.destination_token
@@ -762,3 +791,4 @@ class ProjectsClient(BaseClass):
                     self.log.error(
                         f"Failed to create project {s.get('path_with_namespace')} fork relation, with error:\n{re}")
                     continue
+        add_post_migration_stats(start, log=self.log)
