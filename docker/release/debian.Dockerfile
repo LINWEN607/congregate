@@ -43,7 +43,7 @@ RUN curl -sL https://deb.nodesource.com/setup_12.x | bash - && \
     npm install --no-optional && \
     npm run build
 
-# Set permissions for dist/ for ps-user
+# Set dist/ folder permissions for ps-user
 RUN chown -R ps-user:sudo dist && \
     chmod -R 750 dist
 

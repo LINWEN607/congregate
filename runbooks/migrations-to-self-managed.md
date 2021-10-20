@@ -268,7 +268,7 @@ The script is located at `<path_to_congregate>/dev/bin/manually_move_images.sh` 
 The script usage is in the script, but here is a quick example of using the script:
 
 ```bash
-sudo -E /opt/congregate/dev/bin/manually_move_images.sh registry.gitlab.com/gitlab-com/customer-success/professional-services-group/global-practice-development/migration/congregate registry.dest-gitlab.io/path/to/dest/registry/repo
+sudo -E /opt/congregate/dev/bin/manually_move_images.sh registry.gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate registry.dest-gitlab.io/path/to/dest/registry/repo
 ```
 
 This will migrate all containers from a single registry repository to another registry repository.

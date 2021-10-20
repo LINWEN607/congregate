@@ -110,7 +110,7 @@ class RegistryClient(BaseClass):
         cleaner = {"src": [], "dest": []}
 
         # The source repo location
-        # Eg: registry.gitlab.com/gitlab-com/customer-success/professional-services-group/global-practice-development/migration/congregate/jenkins-seed
+        # Eg: registry.gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/jenkins-seed
         repo_loc = repo["location"]
         all_tags = []
         for tag in tags:
@@ -213,7 +213,7 @@ class RegistryClient(BaseClass):
     def generate_destination_registry_url(self, suffix):
         """
         :param suffix: The trailing piece for any sub-repositories. 
-                        As registry.gitlab.com/gitlab-com/customer-success/professional-services-group/global-practice-development/migration/congregate/jenkins-seed, the suffix
+                        As registry.gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/jenkins-seed, the suffix
                         is the jenkins-seed portion
         :returns: New reg should be the path to the project prepended with new registry and parent path information, with the suffix
                     So, customer.registry.com/project/path/suffix -> registry.gitlab.com/parent/project/path/suffix

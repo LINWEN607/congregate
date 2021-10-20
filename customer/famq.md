@@ -140,7 +140,7 @@ Please see [here](#q1) for more details on the topic.
 
 No and/or not entirely.
 
-Please consult the relevant [Congregate](https://gitlab.com/gitlab-com/customer-success/professional-services-group/global-practice-development/migration/congregate) migration features matrix (GitLab PS internal only) for more details.
+Please consult the relevant [Congregate](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate) migration features matrix (GitLab PS internal only) for more details.
 
 ## Whether and how should the migration affected instances be used during migration?
 

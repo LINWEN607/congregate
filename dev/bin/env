@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-function get_latest_master_tag() { git ls-remote git@gitlab.com:gitlab-com/customer-success/professional-services-group/global-practice-development/migration/congregate.git | grep refs/heads/master | cut -f 1; }
+function get_latest_master_tag() { git ls-remote git@gitlab.com:gitlab-org/professional-services-automation/tools/migration/congregate.git | grep refs/heads/master | cut -f 1; }
 
 function get_congregate_pids() { ps aux | grep "congregate" | awk '{print $2}' | grep -v grep; }
 
@@ -15,7 +15,7 @@ alias pt='poetry run pytest \
             --cov-config=.coveragerc \
             --cov=congregate congregate/tests/'
 alias pt_e2e='poetry run pytest -s -m e2e congregate/tests/'
-alias dpull='docker pull registry.gitlab.com/gitlab-com/customer-success/professional-services-group/global-practice-development/migration/congregate:rolling-debian'
+alias dpull='docker pull registry.gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate:rolling-debian'
 alias drun='docker run \
               --name congregate \
               -v /var/run/docker.sock:/var/run/docker.sock \
@@ -23,7 +23,7 @@ alias drun='docker run \
               -v $HOME/congregate_data:/opt/congregate/data \
               -v $HOME/congregate_downloads:/opt/congregate/downloads \
               -p 8000:8000 \
-              -it registry.gitlab.com/gitlab-com/customer-success/professional-services-group/global-practice-development/migration/congregate:rolling-debian \
+              -it registry.gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate:rolling-debian \
               /bin/bash'
 alias pyclean='find ./congregate -name "*.pyc" -delete'
 alias gendocs='./read-docs.sh'

@@ -56,7 +56,7 @@ RUN echo -e '#!/bin/bash\npython3.8 "$@"' > /usr/local/sbin/python && \
 RUN curl -sL https://rpm.nodesource.com/setup_12.x | bash - && \
     yum install -y nodejs
 
-# Set permissions for dist/ for ps-user
+# Set dist/ folder permissions for ps-user
 RUN chown -R ps-user:wheel dist && \
     chmod -R 750 dist
 
