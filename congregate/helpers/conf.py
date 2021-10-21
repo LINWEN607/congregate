@@ -138,7 +138,9 @@ class Config(BaseConfig):
 
     @property
     def source_host(self):
-        return self.prop("SOURCE", "src_hostname")
+        if sh := self.prop("SOURCE", "src_hostname"):
+            return str(sh).rstrip("/")
+        return None
 
     @property
     def source_username(self):
