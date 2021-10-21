@@ -19,7 +19,9 @@ class Config(BaseConfig):
 # DESTINATION
     @property
     def destination_host(self):
-        return self.prop("DESTINATION", "dstn_hostname")
+        if dh := self.prop("DESTINATION", "dstn_hostname"):
+            return str(dh).rstrip("/")
+        return None     
 
     @property
     def destination_token(self):
