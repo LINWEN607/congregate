@@ -6,7 +6,7 @@
 1. Run `git clone git@gitlab.com:gitlab-org/professional-services-automation/tools/migration/congregate.git` to pull the congregate repo to your local environment.
 1. Generate a personal access token from your gitlab.com account that has the read_registry permission by clicking `User Icon (top right) > Settings > Access Tokens > Generate Access Token`.
 1. Then run `docker login registry.gitlab.com` and provide your username and paste the access token when prompted for a password.
-1. Download  `congregate:latest` using `docker pull registry.gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate:latest` :point_left: Fix this url :warning:
+1. Download  `congregate:rolling-debian` using `docker pull registry.gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate:rolling-debian`
 1. Run `docker images -a` to list and copy the `image-id` of the congregate image.
 1. Run `docker run <image-id>` to start the congregate container.
 1. Run `docker ps` to get the `container-id`.
