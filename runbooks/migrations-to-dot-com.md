@@ -82,6 +82,8 @@ Copy the following data and add subsequent rows for single group migration
   * [ ] If you are migrating from scratch add `--keys` argument to drop collection(s) of deploy keys as well
 
 ### User migration
+<details>
+<summary>Instructions for user migration collapsed by default.</summary>
 
 #### Prepare users
 
@@ -132,6 +134,8 @@ Copy the following data and add subsequent rows for single group migration
   * `data/logs/audit.log`
   * `data/results/user_migration_results.json`
   * `data/waves/user_wave/user_wave.log`
+
+</details>
 
 ### Group and project migration
 
@@ -210,6 +214,8 @@ Copy the following data and add subsequent rows for single group migration
   * For more options checkout the [Support workflow for import errors](https://about.gitlab.com/handbook/support/workflows/kibana.html#import-errors)
 
 ### Post Migration of Failed Groups and Projects
+<details>
+<summary>Instructions for post migration of failed groups and projects collapsed by default.</summary>
 
 #### Migration of Failed Groups and Projects
 
@@ -349,6 +355,8 @@ In that script, you prepopulate all source and destination registry repositories
   * [ ] Run `nohup ./congregate.sh migrate --only-post-migration-info --commit > data/waves/wave_<insert_wave_number>/wave<insert-wave-here>_attempt<insert-attempt>_post_migration.log 2>&1 &` to migrate any post-migration data
     * **NOTE:** `--only-post-migration-info` will implicitly skip group and project exports, but not imports and user creation
 
+</details>
+
 ### Post Migration
 
 * [ ] Revert back (to `None`), on source and destination (`--dest`), the exposed users' `public_email` field by running `./congregate.sh set-staged-users-public-email --hide`
@@ -411,8 +419,8 @@ p "Number of Protected Branches import failures: #{protected_branches_import_fai
   * **NOTE:** Make sure to have the correct `data/staged_projects` file present
 
 ### Rollback
-
-If **any** data was migrated incorrectly (i.e. to the wrong namespace), you **must** rollback the migration wave **completely**
+<details>
+<summary>If <b>any</b> data was migrated incorrectly (i.e. to the wrong namespace), you <b>must</b> rollback the migration wave <b>completely</b>. Section collapsed by default.</summary>
 
 #### Users
 
@@ -436,5 +444,7 @@ If **any** data was migrated incorrectly (i.e. to the wrong namespace), you **mu
 * [ ] Copy `data/logs/congregate.log` and `data/logs/audit.log` to `/opt/congregate/data/waves/wave_<insert_wave_number>/`
 * [ ] Post a comment describing the reason for the rollback and attach the rollback log and `data/logs/audit.log`
 * [ ] Follow these [instructions in the handbook](https://about.gitlab.com/handbook/engineering/security/#engaging-the-security-on-call) and link to this issue.
+
+</details>
 
 /confidential

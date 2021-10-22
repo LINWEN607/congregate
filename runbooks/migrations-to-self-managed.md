@@ -71,6 +71,8 @@ Copy the following data and add subsequent rows for single group migration
   * [ ] If you are migrating from scratch add `--keys` argument to drop collection(s) of deploy keys as well
 
 ### User migration
+<details>
+<summary>Instructions for user migration collapsed by default.</summary>
 
 #### Prepare users
 
@@ -118,6 +120,8 @@ Copy the following data and add subsequent rows for single group migration
   * `data/logs/audit.log`
   * `data/results/user_migration_results.json`
   * `data/waves/user_wave/user_wave.log`
+
+</details>
 
 ### Group and project migration
 
@@ -179,6 +183,8 @@ Copy the following data and add subsequent rows for single group migration
       * [ ] Otherwise [rollback](#rollback) the entire wave and reschedule
 
 ### Post Migration of Failed Groups and Projects
+<details>
+<summary>Instructions for post migration of failed groups and projects collapsed by default.</summary>
 
 For each migration attempt check if any project or group imports failed or have imported with a failed status.
 
@@ -292,6 +298,8 @@ In that script, you prepopulate all source and destination registry repositories
   * [ ] Confirm those users/groups/projects are staged
   * [ ] Run `nohup ./congregate.sh migrate --only-post-migration-info --commit > data/waves/wave_<insert_wave_number>/wave<insert-wave-here>_attempt<insert-attempt>_post_migration.log 2>&1 &` to migrate any post-migration data
     * **NOTE:** `--only-post-migration-info` will implicitly skip group and project exports, but not imports and user creation
+
+</details>
 
 ### Post Migration
 
