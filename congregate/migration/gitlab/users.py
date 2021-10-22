@@ -68,8 +68,8 @@ class UsersClient(BaseClass):
                 index += 1
             return False
         else:
-            self.log.info(
-                "Username {0} for user {1} exists as a group name".format(username, old_user))
+            self.log.warning(
+                f"Username {username} for user {old_user} exists as a group name")
             return True
 
     def is_username_group_name(self, old_user):
@@ -82,25 +82,18 @@ class UsersClient(BaseClass):
         """
         try:
             username = str(old_user["username"])
-            namespace_check_response = []
-            for group in self.groups_api.search_for_group(
-                username,
-                host=self.config.destination_host,
-                token=self.config.destination_token
-            ):
-                namespace_check_response.append(group)
-            for z in namespace_check_response:
-                error, z = is_error_message_present(z)
-                if error or not z:
+            for g in self.groups_api.search_for_group(username, host=self.config.destination_host, token=self.config.destination_token):
+                is_error, resp = is_error_message_present(g)
+                if is_error:
                     self.log.warning(
-                        f"Is {username} a group namespace lookup failed on group\n{z}")
-                elif z.get("path") and str(z["path"]).lower() == username.lower():
+                        f"Is '{username}' a group namespace lookup failed for group:\n{resp}")
+                elif resp.get("path") and str(resp["path"]).lower() == username.lower():
                     # We found a match, so user=group namespace
                     return True
             return False
-        except Exception as e:
+        except RequestException as re:
             self.log.error(
-                f"Error checking {username} is not group namespace for user {old_user} with error:\n{e}")
+                f"Error checking `{username}` is not group namespace for user {old_user} with error:\n{re}")
             return None
 
     def user_email_exists(self, old_user):

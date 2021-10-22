@@ -4,6 +4,7 @@ import responses
 import warnings
 from unittest.mock import patch, mock_open, PropertyMock, MagicMock
 from pytest import mark
+from requests.exceptions import RequestException
 
 from congregate.helpers.api import GitLabApi
 from congregate.helpers.configuration_validator import ConfigurationValidator
@@ -681,7 +682,7 @@ class UsersTests(unittest.TestCase):
     @patch.object(GroupsApi, "search_for_group")
     def test_is_username_group_name_error_assumes_none(
             self, group_api, dest_token, dest_host):
-        group_api.side_effect = Exception("THIS HAPPENED")
+        group_api.side_effect = RequestException("API call failed")
         dest_host.return_value = "https://gitlabdestination.com"
         dest_token.return_value = "token"
         response = self.users.is_username_group_name({"username": "abc"})
