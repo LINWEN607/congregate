@@ -80,7 +80,7 @@ def get_project_filename(p):
 
 def get_export_filename_from_namespace_and_name(namespace, name=""):
     """
-    Determine exported filename for project or group (wihout name)
+    Determine exported filename for project or group (without name)
 
         :param namespace: Project or group namespace
         :param name: Project name
@@ -94,7 +94,8 @@ def get_project_namespace(p, mirror=False):
     """
     If this is a user project, the namespace == username
 
-        :param p: The JSON object representing a GitLab project
+        :param p (dict): The JSON object representing a GitLab project
+        :param mirror (bool): Whether we are mirroring a repo on destination
         :return: Destination group project namespace
     """
     p_namespace = dig(p, 'namespace', 'full_path') if isinstance(
@@ -208,7 +209,8 @@ def get_dst_path_with_namespace(p, mirror=False):
     """
     Determine project path with namespace on destination
 
-        :param p: The JSON object representing a GitLab project
+        :param p (dict): The JSON object representing a GitLab project
+        :param mirror (bool): Whether we are mirroring a repo on destination
         :return: Destination project path with namespace
     """
     return f"{get_user_project_namespace(p) if is_user_project(p) else get_project_namespace(p, mirror)}/{p.get('path')}"

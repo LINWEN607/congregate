@@ -164,15 +164,15 @@ class MiscUtilsTests(unittest.TestCase):
         self.assertEqual(expected, actual)
 
     def test_pretty_print_key(self):
-        expected = "Hello World How Are You"
-        actual = misc.pretty_print_key("hello_world_how_are_you")
-
-        self.assertEqual(expected, actual)
+        self.assertEqual("Hello World How Are You",
+                         misc.pretty_print_key("hello_world_how_are_you"))
 
     def test_strip_protocol(self):
-        expected = "test.gitlab.com"
-        actual = misc.strip_protocol("https://test.gitlab.com")
-        self.assertEqual(expected, actual)
+        self.assertEqual("test.gitlab.com", misc.strip_protocol(
+            "https://test.gitlab.com"))
+
+    def test_strip_scheme(self):
+        self.assertEqual("http", misc.strip_scheme("http://test.gitlab.com"))
 
     class MockResponse():
         def __init__(self):

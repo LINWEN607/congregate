@@ -149,6 +149,10 @@ def strip_protocol(s):
     return urlparse(s).netloc
 
 
+def strip_scheme(s):
+    return urlparse(s).scheme
+
+
 def get_decoded_string_from_b64_response_content(response):
     """
         Takes a web response, returns the decoded *string* of the content, not byte object
