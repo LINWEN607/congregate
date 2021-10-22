@@ -26,11 +26,9 @@ ADD frontend frontend
 ADD dev/bin dev/bin
 COPY congregate.sh pyproject.toml poetry.lock README.md package.json package-lock.json vue.config.js babel.config.js .gitignore LICENSE ./
 
-# Set permissions for /data and /opt for ps-user
+# Set /opt folder permissions for ps-user
 RUN chown -R ps-user:sudo /opt && \
     chmod -R 750 /opt
-RUN chown -R ps-user:sudo /data && \
-    chmod -R 750 /data
 
 # Installing some basic utilities and updating apt
 RUN apt-get update && \
@@ -54,7 +52,8 @@ RUN mkdir /opt/mongo-install && \
     mkdir -p /data/db && \
     chown ps-user: /var/lib/mongodb && \
     chown ps-user: /var/log/mongodb && \
-    chown ps-user: /data -R && \
+    chown -R ps-user: /data && \
+    chmod -R 750 /data && \
     cd /opt/mongo-install && \
     wget https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-debian10-4.4.4.tgz && \
     tar -zxvf mongodb-linux-*-4.4.4.tgz && \

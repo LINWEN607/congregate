@@ -23,7 +23,7 @@ COPY docker/release/centos/mongo_repo /etc/yum.repos.d/mongodb-org-4.4.repo
 
 RUN mkdir -p /data/db
 
-# Set permissions for /data and /opt for ps-user
+# Set /data and /opt folder permissions for ps-user
 RUN chown -R ps-user:wheel /data && \
     chmod -R 750 /data && \
     chown -R ps-user:wheel /opt && \
