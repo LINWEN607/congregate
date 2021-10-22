@@ -71,6 +71,10 @@ RUN cd /opt/congregate && \
     chmod +x congregate.sh && \
     ln congregate.sh /usr/bin/congregate 
 
+# Set dist/ folder permissions for ps-user
+RUN chown -R ps-user:wheel dist && \
+    chmod -R 750 dist
+
 # Switch to ps-user for the rest of the installation
 USER ps-user
 
