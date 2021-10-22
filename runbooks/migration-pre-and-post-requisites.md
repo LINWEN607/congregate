@@ -32,9 +32,9 @@ This runbook covers the process of preparing and cleaning up after a migration f
     * `NewAccessRequest`
 
     **NOTE:** Labels may change over time
-  * Assign to Manager for approval
+  * Assign to Manager for review/approval
+  * Assign to SIRT for review/approval i.e. `/assign @gitlab-com/gl-security/security-operations/sirt`
   * Assign to IT i.e. `/assign @gitlab-com/business-technology/team-member-enablement` (former `@gitlab-com/business-ops/team-member-enablement`) for provisioning
-    * Wait for SIRT for approval
 
     **NOTE:** Assignee group may change over time
   * (Optional) Post issue in Slack's [**#it_help**](https://gitlab.slack.com/archives/CK4EQH50E) channel

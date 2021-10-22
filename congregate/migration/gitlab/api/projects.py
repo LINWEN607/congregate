@@ -1156,8 +1156,10 @@ class ProjectsApi(GitLabApiWrapper):
             :return: Response object containing the response to POST /projects/:id/remote_mirrors
         """
         if not message:
+            audit_data = data.copy()
+            audit_data.pop("url", None)
             message = (
-                f"Creating project {pid} remote mirror with payload {data}")
+                f"Creating project {pid} remote mirror with payload {audit_data}")
         return self.api.generate_post_request(host, token, f"projects/{pid}/remote_mirrors", json.dumps(data), description=message)
 
     def get_all_remote_push_mirrors(self, pid, host, token):

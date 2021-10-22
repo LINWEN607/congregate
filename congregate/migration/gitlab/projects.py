@@ -8,7 +8,7 @@ from requests.exceptions import RequestException
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.misc_utils import get_dry_log, get_timedelta, \
     is_error_message_present, safe_json_response, strip_protocol, \
-    get_decoded_string_from_b64_response_content, do_yml_sub
+    get_decoded_string_from_b64_response_content, do_yml_sub, strip_scheme
 from congregate.helpers.json_utils import json_pretty, read_json_file_into_object, write_json_to_file
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.groups import GroupsApi
@@ -642,14 +642,14 @@ class ProjectsClient(BaseClass):
                 if dst_pid and mirror_path and username:
                     data = {
                         # username:token is SaaS specific. Revoking the token breaks the mirroring
-                        "url": f"https://{username}:{token}@{strip_protocol(host)}/{mirror_path}.git",
+                        "url": f"{strip_scheme(host)}://{username}:{token}@{strip_protocol(host)}/{mirror_path}.git",
                         "enabled": not disabled,
                         "keep_divergent_refs": not overwrite
                     }
                 else:
                     continue
                 self.log.info(
-                    f"{get_dry_log(dry_run)}Create project {dst_pid} push mirror {mirror_path}, with payload {data}")
+                    f"{get_dry_log(dry_run)}Create project {dst_pid} push mirror {mirror_path}")
                 if not dry_run:
                     resp = self.projects_api.create_remote_push_mirror(
                         dst_pid, host, token, data=data)
@@ -657,6 +657,7 @@ class ProjectsClient(BaseClass):
                         self.log.error(
                             f"Failed to create project {dst_pid} push mirror to {mirror_path}, with response:\n{resp} - {resp.text}")
                     elif force:
+                        # Push commit (skip-ci) to new branch and delete branch
                         self.trigger_mirroring(host, token, s, dst_pid)
             except RequestException as re:
                 self.log.error(

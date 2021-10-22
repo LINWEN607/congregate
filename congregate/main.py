@@ -143,8 +143,10 @@ Commands:
     migrate-variables-in-stage              Migrate CI variables for staged projects.
     mirror-staged-projects                  Set up project mirroring for staged projects.
     push-mirror-staged-projects             Set up and enable (by default) project push mirroring for staged projects.
-                                                Assuming both the mirrored repository and empty project structure for mirroring already exist on destination.
+                                                Assuming both the mirrored repo and empty project structure (create-staged-projects-structure) for mirroring already exist on destination.
+                                                NOTE: Destination instance only mirroring.
     toggle-staged-projects-push-mirror      Enable/disable push mirror created via command push-mirror-staged-projects.
+                                                NOTE: Destination instance only mirroring.
     remove-all-mirrors                      Remove all project mirrors for staged projects.
     update-projects-visibility              Return list of all migrated projects' visibility.
     set-default-branch                      Set default branch to master for all projects on destination.
