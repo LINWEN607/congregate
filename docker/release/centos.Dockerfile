@@ -56,10 +56,6 @@ RUN echo -e '#!/bin/bash\npython3.8 "$@"' > /usr/local/sbin/python && \
 RUN curl -sL https://rpm.nodesource.com/setup_12.x | bash - && \
     yum install -y nodejs
 
-# Set dist/ folder permissions for ps-user
-RUN chown -R ps-user:wheel dist && \
-    chmod -R 750 dist
-
 # Create python symlinks
 RUN rm -f /usr/bin/python3 && \
     cd /usr/bin && \
@@ -70,10 +66,6 @@ RUN rm -f /usr/bin/python3 && \
 RUN cd /opt/congregate && \
     chmod +x congregate.sh && \
     ln congregate.sh /usr/bin/congregate 
-
-# Set dist/ folder permissions for ps-user
-RUN chown -R ps-user:wheel dist && \
-    chmod -R 750 dist
 
 # Switch to ps-user for the rest of the installation
 USER ps-user
@@ -105,5 +97,10 @@ RUN congregate init
 # Install node dependencies
 RUN npm install --no-optional && \
     npm run build
+
+# Set dist/ folder permissions for ps-user
+RUN cd /opt/congregate && \
+    chown -R ps-user:wheel dist && \
+    chmod -R 750 dist
 
 EXPOSE 8000

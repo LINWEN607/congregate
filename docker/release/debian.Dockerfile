@@ -42,7 +42,8 @@ RUN curl -sL https://deb.nodesource.com/setup_12.x | bash - && \
     npm run build
 
 # Set dist/ folder permissions for ps-user
-RUN chown -R ps-user:sudo dist && \
+RUN cd /opt/congregate && \
+    chown -R ps-user:sudo dist && \
     chmod -R 750 dist
 
 # Install mongo
