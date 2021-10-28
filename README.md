@@ -21,7 +21,7 @@ Congregate gathers (meta)data from source system(s), transforms and down-selects
 - [Using Congregate - Full test environment setup](./docs/full_setup.md)
 - Data Elements supported by source system ([GitHub](./customer/github-migration-features.md), [BitBucket](./customer/bitbucket-migration-features.md), [GitLab](./customer/gitlab-migration-features.md))
 - [Congregate Commands Help Page](./congregate/main.py#L5)
-- [Congregate technical documentation](https://gitlab-org.gitlab.io/professional-services-automation/tools/migration/congregate/docs/)
+- [Congregate technical documentation](https://gitlab-org.gitlab.io/professional-services-automation/tools/migration/congregate/)
 - [Setup Development Environment](./docs/setup-dev-env.md)
 - [Frequently asked question about automated migrations](./customer/famq.md)
 - [Technical Troubleshooting](./docs/troubleshooting.md)
