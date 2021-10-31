@@ -67,8 +67,14 @@ RUN cd /opt/congregate && \
     chmod +x congregate.sh && \
     ln congregate.sh /usr/bin/congregate 
 
+# Install zsh
+RUN yum install zsh && chsh -s /usr/bin/zsh && chsh -s /usr/bin/zsh ps-user
+
 # Switch to ps-user for the rest of the installation
 USER ps-user
+
+# Install oh-my-zsh
+RUN sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 
 # Set up the bashrc
 RUN echo 'if [ -z "$(ps aux | grep mongo | grep -v grep)" ]; then sudo mongod --fork --logpath /var/log/mongodb/mongod.log; fi' >> ~/.bashrc

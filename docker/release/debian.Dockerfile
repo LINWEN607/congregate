@@ -64,8 +64,14 @@ RUN cd /opt/congregate && \
     chmod +x congregate && \
     ln congregate.sh /usr/bin/congregate
 
+# Install zsh. Note: this will still prompt for the default for each user (root and ps-user)
+RUN apt install zsh && chsh -s /usr/bin/zsh && chsh -s /usr/bin/zsh ps-user
+
 # Switch to ps-user
 USER ps-user
+
+# Install oh-my-zsh
+RUN sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 
 # Install congregate
 RUN cd /opt/congregate && \
