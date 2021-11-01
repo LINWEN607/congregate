@@ -65,7 +65,7 @@ RUN cd /opt/congregate && \
     ln congregate.sh /usr/bin/congregate
 
 # Install zsh. Note: this will still prompt for the default for each user (root and ps-user)
-RUN apt install zsh && chsh -s /usr/bin/zsh && chsh -s /usr/bin/zsh ps-user
+RUN apt install -y zsh && chsh -s /usr/bin/zsh && chsh -s /usr/bin/zsh ps-user
 
 # Switch to ps-user
 USER ps-user
@@ -82,15 +82,19 @@ RUN cd /opt/congregate && \
     git commit -m "Initial commit"
 
 RUN export PATH=$PATH:$HOME/.local/bin && \
-    echo "export PATH=$PATH" >> ~/.bashrc
+    echo "export PATH=$PATH" >> ~/.bashrc && \
+    echo "export PATH=$PATH" >> ~/.zshrc
 
 RUN python3.8 -m poetry install
 
 # Initialize congregate directories
 RUN congregate init
 
-RUN echo 'if [ -z "$(ps aux | grep mongo | grep -v grep)" ]; then mongod --fork --logpath /var/log/mongodb/mongod.log; fi' >> ~/.bashrc
-RUN echo "alias ll='ls -al'" >> ~/.bashrc
-RUN echo "alias license='cat /opt/congregate/LICENSE'" >> ~/.bashrc
+RUN echo 'if [ -z "$(ps aux | grep mongo | grep -v grep)" ]; then mongod --fork --logpath /var/log/mongodb/mongod.log; fi' >> ~/.bashrc && \
+    echo 'if [ -z "$(ps aux | grep mongo | grep -v grep)" ]; then mongod --fork --logpath /var/log/mongodb/mongod.log; fi' >> ~/.zshrc
+RUN echo "alias ll='ls -al'" >> ~/.bashrc && \
+    echo "alias ll='ls -al'" >> ~/.zshrc
+RUN echo "alias license='cat /opt/congregate/LICENSE'" >> ~/.bashrc && \
+    echo "alias license='cat /opt/congregate/LICENSE'" >> ~/.zshrc
 
 EXPOSE 8000
