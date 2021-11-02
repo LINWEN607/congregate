@@ -85,10 +85,14 @@ RUN python3.8 -m poetry install
 # Initialize congregate directories
 RUN congregate init
 
+USER root
+
 # Set dist/ folder permissions for ps-user
 RUN cd /opt/congregate && \
     chown -R ps-user:sudo dist && \
     chmod -R 750 dist
+
+USER ps-user
 
 RUN echo 'if [ -z "$(ps aux | grep mongo | grep -v grep)" ]; then mongod --fork --logpath /var/log/mongodb/mongod.log; fi' >> ~/.bashrc && \
     echo 'if [ -z "$(ps aux | grep mongo | grep -v grep)" ]; then mongod --fork --logpath /var/log/mongodb/mongod.log; fi' >> ~/.zshrc
