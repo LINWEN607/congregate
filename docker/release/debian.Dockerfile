@@ -41,11 +41,6 @@ RUN curl -sL https://deb.nodesource.com/setup_12.x | bash - && \
     npm install --no-optional && \
     npm run build
 
-# Set dist/ folder permissions for ps-user
-RUN cd /opt/congregate && \
-    chown -R ps-user:sudo dist && \
-    chmod -R 750 dist
-
 # Install mongo
 RUN mkdir /opt/mongo-install && \
     mkdir -p /var/lib/mongodb && \
@@ -89,6 +84,11 @@ RUN python3.8 -m poetry install
 
 # Initialize congregate directories
 RUN congregate init
+
+# Set dist/ folder permissions for ps-user
+RUN cd /opt/congregate && \
+    chown -R ps-user:sudo dist && \
+    chmod -R 750 dist
 
 RUN echo 'if [ -z "$(ps aux | grep mongo | grep -v grep)" ]; then mongod --fork --logpath /var/log/mongodb/mongod.log; fi' >> ~/.bashrc && \
     echo 'if [ -z "$(ps aux | grep mongo | grep -v grep)" ]; then mongod --fork --logpath /var/log/mongodb/mongod.log; fi' >> ~/.zshrc
