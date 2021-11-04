@@ -32,7 +32,7 @@ RUN chown -R ps-user:wheel /data && \
 # Installing yum-installable libraries
 RUN yum update -y && \
     yum install -y less vim jq curl git mongodb-org-4.4.4 mongodb-org-server-4.4.4 mongodb-org-shell-4.4.4 mongodb-org-mongos-4.4.4 mongodb-org-tools-4.4.4 \
-    gcc openssl-devel bzip2-devel libffi-devel zlib-devel make epel-release xz-devel && \
+    gcc openssl-devel bzip2-devel libffi-devel zlib-devel make epel-release xz-devel util-linux-user && \
     yum install -y screen
 
 # Install Python
@@ -67,17 +67,33 @@ RUN cd /opt/congregate && \
     chmod +x congregate.sh && \
     ln congregate.sh /usr/bin/congregate 
 
+# Install zsh
+RUN yum install -y zsh && chsh -s /usr/bin/zsh && chsh -s /usr/bin/zsh ps-user
+
 # Switch to ps-user for the rest of the installation
 USER ps-user
 
-# Set up the bashrc
-RUN echo 'if [ -z "$(ps aux | grep mongo | grep -v grep)" ]; then sudo mongod --fork --logpath /var/log/mongodb/mongod.log; fi' >> ~/.bashrc
-RUN echo "alias python='python3.8'" >> ~/.bashrc
-RUN echo "alias python3='python3.8'" >> ~/.bashrc
-RUN echo "alias pip='python3.8 -m pip'" >> ~/.bashrc
-RUN echo "alias ll='ls -al'" >> ~/.bashrc
-RUN echo "alias license='cat /opt/congregate/LICENSE'" >> ~/.bashrc
+# Install oh-my-zsh
+RUN sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 
+RUN export PATH=$PATH:$HOME/.local/bin && \
+    echo "export PATH=$PATH" >> ~/.zshrc
+    
+# Set up the bashrc
+RUN echo 'if [ -z "$(ps aux | grep mongo | grep -v grep)" ]; then sudo mongod --fork --logpath /var/log/mongodb/mongod.log; fi' >> ~/.bashrc && \
+    echo 'if [ -z "$(ps aux | grep mongo | grep -v grep)" ]; then sudo mongod --fork --logpath /var/log/mongodb/mongod.log; fi' >> ~/.zshrc
+RUN echo "alias python='python3.8'" >> ~/.bashrc && \
+    echo "alias python='python3.8'" >> ~/.zshrc
+RUN echo "alias python3='python3.8'" >> ~/.bashrc && \
+    echo "alias python3='python3.8'" >> ~/.zshrc
+RUN echo "alias pip='python3.8 -m pip'" >> ~/.bashrc && \
+    echo "alias pip='python3.8 -m pip'" >> ~/.zshrc
+RUN echo "alias ll='ls -al'" >> ~/.bashrc && \
+    echo "alias ll='ls -al'" >> ~/.zshrc
+RUN echo "alias license='cat /opt/congregate/LICENSE'" >> ~/.bashrc && \
+    echo "alias license='cat /opt/congregate/LICENSE'" >> ~/.zshrc
+
+    
 RUN echo "CHECKING PYTHON VERSION" && \
     python3.8 -V
 

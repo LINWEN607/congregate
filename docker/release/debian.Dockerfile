@@ -41,11 +41,6 @@ RUN curl -sL https://deb.nodesource.com/setup_12.x | bash - && \
     npm install --no-optional && \
     npm run build
 
-# Set dist/ folder permissions for ps-user
-RUN cd /opt/congregate && \
-    chown -R ps-user:sudo dist && \
-    chmod -R 750 dist
-
 # Install mongo
 RUN mkdir /opt/mongo-install && \
     mkdir -p /var/lib/mongodb && \
@@ -64,8 +59,14 @@ RUN cd /opt/congregate && \
     chmod +x congregate && \
     ln congregate.sh /usr/bin/congregate
 
+# Install zsh. Note: this will still prompt for the default for each user (root and ps-user)
+RUN apt install -y zsh && chsh -s /usr/bin/zsh && chsh -s /usr/bin/zsh ps-user
+
 # Switch to ps-user
 USER ps-user
+
+# Install oh-my-zsh
+RUN sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 
 # Install congregate
 RUN cd /opt/congregate && \
@@ -76,15 +77,28 @@ RUN cd /opt/congregate && \
     git commit -m "Initial commit"
 
 RUN export PATH=$PATH:$HOME/.local/bin && \
-    echo "export PATH=$PATH" >> ~/.bashrc
+    echo "export PATH=$PATH" >> ~/.bashrc && \
+    echo "export PATH=$PATH" >> ~/.zshrc
 
 RUN python3.8 -m poetry install
 
 # Initialize congregate directories
 RUN congregate init
 
-RUN echo 'if [ -z "$(ps aux | grep mongo | grep -v grep)" ]; then mongod --fork --logpath /var/log/mongodb/mongod.log; fi' >> ~/.bashrc
-RUN echo "alias ll='ls -al'" >> ~/.bashrc
-RUN echo "alias license='cat /opt/congregate/LICENSE'" >> ~/.bashrc
+USER root
+
+# Set dist/ folder permissions for ps-user
+RUN cd /opt/congregate && \
+    chown -R ps-user:sudo dist && \
+    chmod -R 750 dist
+
+USER ps-user
+
+RUN echo 'if [ -z "$(ps aux | grep mongo | grep -v grep)" ]; then mongod --fork --logpath /var/log/mongodb/mongod.log; fi' >> ~/.bashrc && \
+    echo 'if [ -z "$(ps aux | grep mongo | grep -v grep)" ]; then mongod --fork --logpath /var/log/mongodb/mongod.log; fi' >> ~/.zshrc
+RUN echo "alias ll='ls -al'" >> ~/.bashrc && \
+    echo "alias ll='ls -al'" >> ~/.zshrc
+RUN echo "alias license='cat /opt/congregate/LICENSE'" >> ~/.bashrc && \
+    echo "alias license='cat /opt/congregate/LICENSE'" >> ~/.zshrc
 
 EXPOSE 8000
