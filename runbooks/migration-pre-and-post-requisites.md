@@ -11,6 +11,8 @@ This runbook covers the process of preparing and cleaning up after a migration f
 
 ## Migration pre-requisites
 
+<details><summary>GitLab and Customer steps collapsed by default.</summary>
+
 <!--
     Specify the migration period
 
@@ -107,6 +109,8 @@ This runbook covers the process of preparing and cleaning up after a migration f
     ]
     ```
 
+</details>
+
 ## VM
 
 <!--
@@ -167,6 +171,8 @@ Due to time constraints, ASA costs and scaling limitations it may be necessary t
 
 ## Migration post-requisites
 
+<details><summary>GitLab and Customer steps collapsed by default.</summary>
+
 * [ ] If required archive all projects on source that have been migrated
 * [ ] If applicable [disable maintenance mode](https://docs.gitlab.com/ee/administration/maintenance_mode/index.html#disable-maintenance-mode) on source
 
@@ -210,5 +216,7 @@ Certain GitLab features are migrated but not adapted to the destination instance
   * [ ] (gitlab.com) Update direct group and project membership to allow specific user and group MR approval rules in projects
 * [ ] Update instance and group level (custom) project templates
 * [ ] Update and/or create any features that are not migrated (based on migration features matrix)
+
+</details>
 
 /confidential

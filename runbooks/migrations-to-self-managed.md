@@ -71,8 +71,8 @@ Copy the following data and add subsequent rows for single group migration
   * [ ] If you are migrating from scratch add `--keys` argument to drop collection(s) of deploy keys as well
 
 ### User migration
-<details>
-<summary>Instructions for user migration collapsed by default.</summary>
+
+<details><summary>Instructions for user migration collapsed by default.</summary>
 
 #### Prepare users
 
@@ -183,8 +183,8 @@ Copy the following data and add subsequent rows for single group migration
       * [ ] Otherwise [rollback](#rollback) the entire wave and reschedule
 
 ### Post Migration of Failed Groups and Projects
-<details>
-<summary>Instructions for post migration of failed groups and projects collapsed by default.</summary>
+
+<details><summary>Instructions for post migration of failed groups and projects collapsed by default.</summary>
 
 For each migration attempt check if any project or group imports failed or have imported with a failed status.
 
@@ -286,8 +286,8 @@ In that script, you prepopulate all source and destination registry repositories
   * [ ] Confirm container registries failed to migrate and make a comment in this issue describing the failure
   * [ ] (Optional) Prep `docker_brute_force.py` to migrate several registry repositories
   * [ ] Execute the docker migration through one of the following commands:
-      * `nohup sudo ./dev/bin/manually_move_images.sh <source-repo> <destination-repo> > data/waves/wave_<insert_wave_number>/wave<insert-wave-here>_attempt<insert-attempt>_manual_docker_migration.log 2>&1 &`
-      * `nohup sudo ./dev/bin/docker_brute_force.py > data/waves/wave_<insert_wave_number>/wave<insert-wave-here>_attempt<insert-attempt>_manual_docker_migration.log 2>&1 &`
+    * `nohup sudo ./dev/bin/manually_move_images.sh <source-repo> <destination-repo> > data/waves/wave_<insert_wave_number>/wave<insert-wave-here>_attempt<insert-attempt>_manual_docker_migration.log 2>&1 &`
+    * `nohup sudo ./dev/bin/docker_brute_force.py > data/waves/wave_<insert_wave_number>/wave<insert-wave-here>_attempt<insert-attempt>_manual_docker_migration.log 2>&1 &`
   * [ ] Monitor the logs as it runs
   * [ ] Once it finishes, attach the logs to this issue
 
