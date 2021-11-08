@@ -50,6 +50,7 @@ This runbook covers the process of preparing and cleaning up after a migration f
 
 * [ ] Create one-off Personal Access Tokens (PATs) for the Admin user account on the source and destination instance.
   * The PATs should have an expiry date of the estimated last day (wave) of the migration.
+  * [ ] (gitlab.com) Inform SIRT about every Admin token creation and/or user impersonation.
 * [ ] (gitlab.com) Generate awareness in Support/SRE/Infra teams and identify specific individuals (e.g. with Rails console access) to take tickets from customers during migration. Highlight these people/groups in the migration wave issues.
   * **NOTE**: These issues **must** be created [5 days in advance](https://about.gitlab.com/handbook/support/workflows/importing_projects.html#import-scheduled) of executing the migration wave.
 

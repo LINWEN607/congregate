@@ -681,17 +681,25 @@ class ProjectsClient(BaseClass):
             ]
         }
         try:
+            # Unarchive project in order to commit change and trigger mirror
+            if staged_project.get("archived"):
+                self.log.info(f"Unarchiving project {pid}")
+                self.projects_api.unarchive_project(host, token, pid)
             commit_resp = self.project_repository_api.create_commit_with_files_and_actions(
                 host, token, pid, data=commit_data)
             if commit_resp.status_code != 201:
                 self.log.error(
-                    f"Failed to commit branch {branch} to project {pid}, with payload {commit_data}")
+                    f"Failed to commit branch {branch} payload {commit_data} to project {pid}, with response:\n{commit_resp}-{commit_resp.text}")
             else:
                 self.projects_api.delete_branch(
                     host, token, pid, branch)
         except RequestException as re:
             self.log.error(
                 f"Failed to commit branch {branch} payload {commit_data} to project {pid}, with error:\n{re}")
+        finally:
+            if staged_project.get("archived"):
+                self.log.info(f"Archiving back project {pid}")
+                self.projects_api.archive_project(host, token, pid)
 
     def toggle_staged_projects_push_mirror(self, disable=False, dry_run=True):
         start = time()
