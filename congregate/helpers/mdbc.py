@@ -89,13 +89,20 @@ class MongoConnector(BaseClass):
         if isinstance(data, tuple):
             data = data[0]
         data = self.stringify_int_keys_in_dict(data)
+        coll_type = "Group" if "groups-" in collection else "Project" if "projects-" in collection else "Users"
+        did = data.get("id")
         try:
             if isinstance(data, tuple):
                 data = data[0]
             return self.db[collection].insert_one(
                 data, bypass_document_validation=bypass_document_validation).inserted_id
-        except errors.DuplicateKeyError:
-            self.log.debug("Duplicate insert attempted. Aborting operation")
+        except errors.DuplicateKeyError as dke:
+            self.log.debug(
+                f"{coll_type} (ID: {did}) duplicate insert attempt. Aborting operation\n{dke}")
+            return None
+        except errors.DocumentTooLarge as dtl:
+            self.log.error(
+                f"{coll_type} (ID: {did}) document too large. Aborting operation\n{dtl}")
             return None
 
     def drop_collection(self, collection):

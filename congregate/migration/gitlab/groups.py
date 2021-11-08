@@ -8,6 +8,7 @@ from congregate.helpers.misc_utils import get_timedelta, safe_json_response, str
 from congregate.helpers.list_utils import remove_dupes
 from congregate.helpers.migrate_utils import get_full_path_with_parent_namespace, is_top_level_group, get_staged_groups, find_user_by_email_comparison_without_id
 from congregate.helpers.json_utils import json_pretty
+from congregate.helpers.utils import is_dot_com
 from congregate.migration.gitlab.variables import VariablesClient
 from congregate.migration.gitlab.badges import BadgesClient
 from congregate.migration.gitlab.api.groups import GroupsApi
@@ -25,7 +26,7 @@ class GroupsClient(BaseClass):
 
     def traverse_groups(self, host, token, group):
         mongo = MongoConnector()
-        if group_id := group.get("id", None):
+        if group_id := group.get("id"):
             keys_to_ignore = [
                 "web_url",
                 "full_name",
@@ -34,25 +35,26 @@ class GroupsClient(BaseClass):
             ]
             for k in keys_to_ignore:
                 group.pop(k, None)
-            group["members"] = [m for m in self.groups_api.get_all_group_members(
-                group_id, host, token) if m["id"] != 1]
+            # Avoid saving all SaaS parent group members or on-prem user ID 1
+            if is_dot_com(host) and group_id == self.config.src_parent_id:
+                group["members"] = []
+            else:
+                group["members"] = [m for m in self.groups_api.get_all_group_members(
+                    group_id, host, token) if m["id"] != 1]
             group["projects"] = list(self.groups_api.get_all_group_projects(
                 group_id, host, token, with_shared=False))
             for subgroup in self.groups_api.get_all_subgroups(
                     group_id, host, token):
-                self.log.debug("traversing into a subgroup")
+                self.log.debug("Traversing into subgroup")
                 self.traverse_groups(
                     host, token, subgroup)
-            mongo.insert_data(
-                f"groups-{strip_protocol(host)}", group)
+            mongo.insert_data(f"groups-{strip_protocol(host)}", group)
 
         mongo.close_connection()
 
     def retrieve_group_info(
             self, host, token, location="source", processes=None):
-        prefix = ""
-        if location != "source":
-            prefix = location
+        prefix = location if location != "source" else ""
 
         if self.config.src_parent_group_path:
             self.multi.start_multi_process_stream_with_args(self.traverse_groups,
