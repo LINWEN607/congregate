@@ -107,35 +107,40 @@ class BaseStageClass(BaseClass):
             :param project: (str) project information
             :return: obj object
         """
-        obj = {
-            "id": project["id"],
-            "name": validate_name(project["name"], log=self.log),
-            "namespace": dig(project, 'namespace', 'full_path'),
-            "path": project["path"],
-            "path_with_namespace": project["path_with_namespace"],
-            "visibility": project["visibility"],
-            "description": project["description"],
-            # Will be deprecated in favor of builds_access_level
-            "jobs_enabled": project.get("jobs_enabled"),
-            "project_type": dig(project, 'namespace', 'kind'),
-            # Project members are not listed when listing group projects
-            "members": project["members"] if project.get("members") else self.rewritten_projects[project["id"]]["members"],
-            "http_url_to_repo": project["http_url_to_repo"]
-        }
-        if project.get("ci_sources"):
-            obj["ci_sources"] = project["ci_sources"]
-        if self.config.source_type == "gitlab":
-            obj["shared_runners_enabled"] = project["shared_runners_enabled"]
-            obj["archived"] = project["archived"]
-            obj["shared_with_groups"] = project["shared_with_groups"]
-            if mr_template := project.get("merge_requests_template"):
-                obj["merge_requests_template"] = mr_template
-            if fork_origin := project.get("forked_from_project"):
-                obj["forked_from_project"] = fork_origin
-        if self.config.source_type in ["gitlab", "bitbucket server"]:
-            # In case of projects without repos (e.g. Wiki)
-            if branch := project.get("default_branch"):
-                obj["default_branch"] = branch
+        try:
+            obj = {
+                "id": project["id"],
+                "name": validate_name(project["name"], log=self.log),
+                "namespace": dig(project, 'namespace', 'full_path'),
+                "path": project["path"],
+                "path_with_namespace": project["path_with_namespace"],
+                "visibility": project["visibility"],
+                "description": project["description"],
+                # Will be deprecated in favor of builds_access_level
+                "jobs_enabled": project.get("jobs_enabled"),
+                "project_type": dig(project, 'namespace', 'kind'),
+                # Project members are not listed when listing group projects
+                "members": project["members"] if project.get("members") else self.rewritten_projects[project["id"]]["members"],
+                "http_url_to_repo": project["http_url_to_repo"]
+            }
+            if project.get("ci_sources"):
+                obj["ci_sources"] = project["ci_sources"]
+            if self.config.source_type == "gitlab":
+                obj["shared_runners_enabled"] = project["shared_runners_enabled"]
+                obj["archived"] = project["archived"]
+                obj["shared_with_groups"] = project["shared_with_groups"]
+                if mr_template := project.get("merge_requests_template"):
+                    obj["merge_requests_template"] = mr_template
+                if fork_origin := project.get("forked_from_project"):
+                    obj["forked_from_project"] = fork_origin
+            if self.config.source_type in ["gitlab", "bitbucket server"]:
+                # In case of projects without repos (e.g. Wiki)
+                if branch := project.get("default_branch"):
+                    obj["default_branch"] = branch
+        except KeyError as ke:
+            self.log.error(
+                f"Failed to retrieve project details for project {project['path_with_namespace']} (ID: {project['id']}), with key error\n{ke}")
+            return {}
         return obj
 
     def the_number_of_instance(self, scm_source):
