@@ -212,6 +212,15 @@ Copy the following data and add subsequent rows for single group migration
   * Query `pubsub-sidekiq-inf-gprd*` for `json.class: "GroupImportWorker" AND json.meta.remote_ip: "<migration-vm-ip>"`
     * (optional) Add field `json.job_status`
   * For more options checkout the [Support workflow for import errors](https://about.gitlab.com/handbook/support/workflows/kibana.html#import-errors)
+* [ ] Inspect [Kibana](https://log.gprd.gitlab.net/app/discover) logs for other import errors
+  * Adjust the time frame to the migration period
+  * Add `json.severity: ERROR`
+  * Query `pubsub-sidekiq-inf-gprd*` for `json.extra.sidekiq.meta.remote_ip : "<migration-vm-ip>"`
+    * (optional) Add additional fields to the query .e.g:
+      * `json.extra.sidekiq.class`
+      * `json.exception.message`
+      * `json.exception.class`
+      * `json.extra.relation_name`
 
 ### Post Migration of Failed Groups and Projects
 
