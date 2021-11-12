@@ -15,11 +15,11 @@
     ```bash
     docker run \
     --name <name> \
-    -v /var/run/docker.sock:/var/run/docker.sock \ # expose docker socket as volume
-    -v /etc/hosts:/etc/hosts \ # expose DNS mapping
-    -p 8000:8000 \ # expose UI port
+    -v /var/run/docker.sock:/var/run/docker.sock \   # expose docker socket as volume
+    -v /etc/hosts:/etc/hosts \   # expose DNS mapping
+    -p 8000:8000 \   # expose UI port
     -it <image-id> \
-    /bin/bash
+    /bin/bash   # or zsh
     ```
 
 1. Exit (*Ctrl+d*) the container (stops it).
@@ -28,7 +28,7 @@
 
     ```bash
     docker start <container-id>
-    docker exec -it <container-id> /bin/bash
+    docker exec -it <container-id> /bin/bash   # OR -itd (zsh)
     ```
 
 1. Modify the configuration file in `/opt/congregate/congregate.conf` using the [`congregate.conf.template`](congregate.conf.template) as a guide.
