@@ -2,7 +2,8 @@ from congregate.helpers.base_class import BaseClass
 from congregate.migration.bitbucket.api.projects import ProjectsApi
 from congregate.migration.bitbucket.api.users import UsersApi
 from congregate.helpers.mdbc import MongoConnector
-from congregate.helpers.misc_utils import strip_protocol, is_error_message_present
+from congregate.helpers.misc_utils import strip_netloc, is_error_message_present
+
 
 class UsersClient(BaseClass):
     def __init__(self):
@@ -30,11 +31,11 @@ class UsersClient(BaseClass):
                 mongo = self.connect_to_mongo()
             if formatted_user := self.format_user(user):
                 mongo.insert_data(
-                    f"users-{strip_protocol(self.config.source_host)}", formatted_user)
+                    f"users-{strip_netloc(self.config.source_host)}", formatted_user)
             mongo.close_connection()
         else:
             self.log.error(resp)
-    
+
     def format_user(self, user):
         if self.is_user_needed(user) and user.get("emailAddress"):
             return {
@@ -44,13 +45,14 @@ class UsersClient(BaseClass):
                 "email": user["emailAddress"].lower(),
                 "state": "active"
             }
-        self.log.warning(f"User {user['slug']} is either not needed or missing an email address. Skipping")
-    
+        self.log.warning(
+            f"User {user['slug']} is either not needed or missing an email address. Skipping")
+
     def is_user_needed(self, user):
         if user['id'] == 1 or user["slug"].lower() in self.users_to_ignore:
             return False
         return True
-        
+
     def format_users(self, users):
         data = []
         for user in [u for u in users if u["id"] != 1]:

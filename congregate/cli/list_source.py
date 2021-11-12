@@ -20,7 +20,7 @@ from congregate.migration.teamcity.base import TeamcityClient as TeamcityData
 
 from congregate.helpers.mdbc import MongoConnector
 
-from congregate.helpers.misc_utils import strip_protocol
+from congregate.helpers.misc_utils import strip_netloc
 from congregate.helpers.string_utils import deobfuscate
 
 b = BaseClass()
@@ -96,7 +96,7 @@ def list_github_data(processes=None, partial=False, skip_users=False, skip_group
             mongo.dump_collection_to_file(p, f"{app}/data/projects.json")
     else:
         for _, single_source in enumerate(b.config.list_multiple_source_config("github_source")):
-            host = strip_protocol(single_source.get('src_hostname', ""))
+            host = strip_netloc(single_source.get('src_hostname', ""))
             token = deobfuscate(single_source.get('src_access_token', ""))
             app = b.app_path
             if not skip_users:
@@ -184,7 +184,7 @@ def list_data(processes=None, partial=False, skip_users=False, skip_groups=False
 
 def mongo_init(partial=False, skip_users=False, skip_groups=False, skip_projects=False):
     mongo = MongoConnector()
-    src_hostname = strip_protocol(b.config.source_host)
+    src_hostname = strip_netloc(b.config.source_host)
     p = f"projects-{src_hostname}"
     g = f"groups-{src_hostname}"
     u = f"users-{src_hostname}"

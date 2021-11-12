@@ -1,7 +1,7 @@
 import re
 from congregate.helpers.base_class import BaseClass
 from congregate.migration.teamcity.api.base import TeamcityApi
-from congregate.helpers.misc_utils import strip_protocol
+from congregate.helpers.misc_utils import strip_netloc
 from congregate.helpers.dict_utils import dig
 from congregate.helpers.string_utils import convert_to_underscores
 from congregate.helpers.mdbc import MongoConnector
@@ -24,7 +24,7 @@ class TeamcityClient(BaseClass):
         mongo = MongoConnector()
         job_name = job['@id']
         scm_data = self.teamcity_api.get_build_vcs_roots(job_name)
-        tc_host = strip_protocol(self.teamcity_api.host)
+        tc_host = strip_netloc(self.teamcity_api.host)
         if scm_data != "no_scm":
             for property_node in dig(scm_data, 'vcs-root', 'properties', 'property', default=[]):
                 if property_node["@name"] == "url":
@@ -54,7 +54,7 @@ class TeamcityClient(BaseClass):
             "environment_scope": "*"
         }
         """
-        temp_url = strip_protocol(tc_ci_src_hostname).split(":")[0]
+        temp_url = strip_netloc(tc_ci_src_hostname).split(":")[0]
         result_dict = {}
         if isinstance(parameter, dict):
             result_dict = {

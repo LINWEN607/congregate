@@ -197,7 +197,7 @@ if __name__ == '__main__':
     from congregate.helpers import conf
     from congregate.helpers.logger import myLogger
     from congregate.helpers.utils import get_congregate_path, rotate_logs, stitch_json_results
-    from congregate.helpers.misc_utils import strip_protocol
+    from congregate.helpers.misc_utils import strip_netloc
     from congregate.helpers.dict_utils import dig
     from congregate.helpers.string_utils import obfuscate, deobfuscate
     from congregate.helpers.ui_utils import spin_up_ui
@@ -208,7 +208,7 @@ else:
     from congregate.helpers import conf
     from congregate.helpers.logger import myLogger
     from congregate.helpers.utils import get_congregate_path, rotate_logs, stitch_json_results
-    from congregate.helpers.misc_utils import strip_protocol
+    from congregate.helpers.misc_utils import strip_netloc
     from congregate.helpers.dict_utils import dig
     from congregate.helpers.string_utils import obfuscate, deobfuscate
     from congregate.helpers.ui_utils import spin_up_ui
@@ -254,7 +254,7 @@ def main():
         DEST = arguments["--dest"]
 
         if SCM_SOURCE:
-            SCM_SOURCE = strip_protocol(SCM_SOURCE)
+            SCM_SOURCE = strip_netloc(SCM_SOURCE)
 
         from congregate.cli.config import generate_config
         from congregate.helpers.migrate_utils import clean_data, add_post_migration_stats, write_results_to_file
@@ -539,7 +539,7 @@ def main():
                     if SCM_SOURCE is not None:
                         for single_instance in config.list_multiple_source_config(
                                 "github_source"):
-                            if SCM_SOURCE == strip_protocol(
+                            if SCM_SOURCE == strip_netloc(
                                     single_instance.get('src_hostname', '')):
                                 repo_diff = RepoDiffClient(
                                     single_instance['src_hostname'],

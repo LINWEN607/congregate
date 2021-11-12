@@ -4,7 +4,7 @@ from pandas import DataFrame, Series, set_option
 
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.misc_utils import get_dry_log, get_timedelta, is_error_message_present, \
-    safe_json_response, strip_protocol
+    safe_json_response, strip_netloc
 from congregate.helpers.json_utils import json_pretty, read_json_file_into_object, write_json_to_file
 from congregate.helpers.migrate_utils import get_staged_users, find_user_by_email_comparison_without_id
 from congregate.helpers.utils import is_dot_com
@@ -501,7 +501,7 @@ class UsersClient(BaseClass):
             for key in keys_to_delete:
                 user.pop(key, None)
             mongo.insert_data(
-                f"users-{strip_protocol(self.config.source_host)}", user)
+                f"users-{strip_netloc(self.config.source_host)}", user)
 
         mongo.close_connection()
 

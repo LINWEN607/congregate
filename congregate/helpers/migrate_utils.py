@@ -7,7 +7,7 @@ from shutil import copy
 from time import time
 from datetime import timedelta, datetime
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import is_error_message_present, get_dry_log, strip_protocol
+from congregate.helpers.misc_utils import is_error_message_present, get_dry_log, strip_netloc
 from congregate.helpers.utils import is_dot_com, get_congregate_path
 from congregate.helpers.json_utils import read_json_file_into_object, write_json_to_file
 from congregate.helpers.dict_utils import dig
@@ -99,7 +99,7 @@ def get_project_namespace(p, mirror=False):
         :return: Destination group project namespace
     """
     p_namespace = dig(p, 'namespace', 'full_path') if isinstance(
-        p.get("namespace"), dict) else p["namespace"]
+        p.get("namespace"), dict) else p.get("namespace")
 
     if not is_user_project(p):
         if b.config.src_parent_id and b.config.src_parent_group_path:
@@ -218,7 +218,7 @@ def get_dst_path_with_namespace(p, mirror=False):
 
 def get_target_namespace(project):
     if target_namespace := project.get("target_namespace"):
-        if (strip_protocol(target_namespace).lower() == project.get('namespace', '').lower()) or project.get("override_dstn_ns"):
+        if (strip_netloc(target_namespace).lower() == project.get('namespace', '').lower()) or project.get("override_dstn_ns"):
             return target_namespace
         else:
             return f"{target_namespace}/{project.get('namespace')}"

@@ -1,6 +1,6 @@
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.list_utils import remove_dupes
-from congregate.helpers.misc_utils import remove_dupes_but_take_higher_access, strip_protocol, is_error_message_present
+from congregate.helpers.misc_utils import remove_dupes_but_take_higher_access, strip_netloc, is_error_message_present
 from congregate.helpers.dict_utils import dig
 from congregate.helpers.mdbc import MongoConnector
 from congregate.migration.bitbucket.api.projects import ProjectsApi
@@ -18,19 +18,15 @@ class ProjectsClient(BaseClass):
         self.user_groups = None
         super().__init__()
 
-
     def connect_to_mongo(self):
         return MongoConnector()
-    
 
     def set_user_groups(self, groups):
         self.user_groups = groups
 
-
     def retrieve_project_info(self, processes=None):
         self.multi.start_multi_process_stream_with_args(
             self.handle_retrieving_projects, self.projects_api.get_all_projects(), processes=processes, nestable=True)
-
 
     def handle_retrieving_projects(self, project, mongo=None):
         error, resp = is_error_message_present(project)
@@ -40,12 +36,11 @@ class ProjectsClient(BaseClass):
             if not mongo:
                 mongo = self.connect_to_mongo()
             mongo.insert_data(
-                f"groups-{strip_protocol(self.config.source_host)}", self.format_project(resp))
+                f"groups-{strip_netloc(self.config.source_host)}", self.format_project(resp))
             mongo.close_connection()
         else:
             self.log.error(resp)
 
-    
     def format_project(self, project):
         return {
             "name": project["name"],
@@ -57,7 +52,6 @@ class ProjectsClient(BaseClass):
             "members": self.add_project_users([], project["key"], self.user_groups),
             "projects": self.add_project_repos([], project["key"])
         }
-
 
     def add_project_users(self, users, project_key, groups):
         bitbucket_permission_map = {

@@ -167,8 +167,8 @@ class MiscUtilsTests(unittest.TestCase):
         self.assertEqual("Hello World How Are You",
                          misc.pretty_print_key("hello_world_how_are_you"))
 
-    def test_strip_protocol(self):
-        self.assertEqual("test.gitlab.com", misc.strip_protocol(
+    def test_strip_netloc(self):
+        self.assertEqual("test.gitlab.com", misc.strip_netloc(
             "https://test.gitlab.com"))
 
     def test_strip_scheme(self):

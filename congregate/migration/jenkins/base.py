@@ -1,6 +1,6 @@
 from congregate.helpers.base_class import BaseClass
 from congregate.migration.jenkins.api.base import JenkinsApi
-from congregate.helpers.misc_utils import strip_protocol
+from congregate.helpers.misc_utils import strip_netloc
 from congregate.helpers.string_utils import convert_to_underscores
 from congregate.helpers.mdbc import MongoConnector
 
@@ -15,14 +15,14 @@ class JenkinsClient(BaseClass):
         List and assigns jobs to associated SCM
         """
         self.multi.start_multi_process_stream(self.handle_retrieving_jenkins_jobs,
-                                   self.jenkins_api.list_all_jobs(), processes=processes)
+                                              self.jenkins_api.list_all_jobs(), processes=processes)
 
     def handle_retrieving_jenkins_jobs(self, job, mongo=None):
         if mongo is None:
             mongo = MongoConnector()
         job_path = self.jenkins_api.strip_url(job["url"]).rstrip('/')
         scm_url_list = self.jenkins_api.get_scm(job_path)
-        jenkins_host = strip_protocol(self.jenkins_api.host)
+        jenkins_host = strip_netloc(self.jenkins_api.host)
         for scm_url in scm_url_list:
             job_dict = {'name': job_path, 'url': scm_url}
             self.log.info(
@@ -50,7 +50,7 @@ class JenkinsClient(BaseClass):
             "environment_scope": "*"
         }
         """
-        temp_url = strip_protocol(jenkins_ci_src_hostname).split(":")[0]
+        temp_url = strip_netloc(jenkins_ci_src_hostname).split(":")[0]
         result_dict = {
             "protected": False,
             "variable_type": "env_var",

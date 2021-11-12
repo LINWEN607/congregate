@@ -1,6 +1,6 @@
 from urllib.parse import quote_plus
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import safe_json_response, remove_dupes_but_take_higher_access, strip_protocol, is_error_message_present
+from congregate.helpers.misc_utils import safe_json_response, remove_dupes_but_take_higher_access, strip_netloc, is_error_message_present
 from congregate.helpers.dict_utils import dig
 from congregate.helpers.mdbc import MongoConnector
 from congregate.migration.bitbucket.api.repos import ReposApi
@@ -19,10 +19,10 @@ class ReposClient(BaseClass):
         self.gl_projects_api = GLProjectsApi()
         self.user_groups = None
         super().__init__()
-    
+
     def connect_to_mongo(self):
         return MongoConnector()
-    
+
     def set_user_groups(self, groups):
         self.user_groups = groups
 
@@ -39,7 +39,7 @@ class ReposClient(BaseClass):
             if not mongo:
                 mongo = self.connect_to_mongo()
             mongo.insert_data(
-                f"projects-{strip_protocol(self.config.source_host)}", self.format_repo(resp))
+                f"projects-{strip_netloc(self.config.source_host)}", self.format_repo(resp))
             mongo.close_connection()
         else:
             self.log.error(resp)
@@ -65,7 +65,8 @@ class ReposClient(BaseClass):
                         temp_user["permission"] = permission
                         members.append(temp_user)
                 else:
-                    self.log.warning(f"Unable to find {repo_slug} user group {group_name}")
+                    self.log.warning(
+                        f"Unable to find {repo_slug} user group {group_name}")
 
         return remove_dupes_but_take_higher_access(self.users.format_users(members))
 

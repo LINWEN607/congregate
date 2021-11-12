@@ -6,7 +6,7 @@ Copyright (c) 2021 - GitLab
 
 import json
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import get_dry_log, strip_protocol, validate_name
+from congregate.helpers.misc_utils import get_dry_log, strip_netloc, validate_name
 from congregate.helpers.list_utils import remove_dupes_with_keys, remove_dupes
 from congregate.helpers.dict_utils import dig
 
@@ -145,6 +145,6 @@ class BaseStageClass(BaseClass):
 
     def the_number_of_instance(self, scm_source):
         for i, single_source in enumerate(self.config.list_multiple_source_config("github_source")):
-            if scm_source == strip_protocol(single_source.get("src_hostname", "")):
+            if scm_source == strip_netloc(single_source.get("src_hostname", "")):
                 return i
         return -1

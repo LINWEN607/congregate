@@ -7,7 +7,7 @@ from requests.exceptions import RequestException
 
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.misc_utils import get_dry_log, get_timedelta, \
-    is_error_message_present, safe_json_response, strip_protocol, \
+    is_error_message_present, safe_json_response, strip_netloc, \
     get_decoded_string_from_b64_response_content, do_yml_sub, strip_scheme
 from congregate.helpers.json_utils import json_pretty, read_json_file_into_object, write_json_to_file
 from congregate.migration.gitlab.api.projects import ProjectsApi
@@ -75,7 +75,7 @@ class ProjectsClient(BaseClass):
             project["members"] = [m for m in self.projects_api.get_members(
                 project["id"], host, token) if m["id"] != 1]
 
-            mongo.insert_data(f"projects-{strip_protocol(host)}", project)
+            mongo.insert_data(f"projects-{strip_netloc(host)}", project)
         mongo.close_connection()
 
     def add_shared_groups(self, new_id, path, shared_with_groups):
@@ -642,7 +642,7 @@ class ProjectsClient(BaseClass):
                 if dst_pid and mirror_path and username:
                     data = {
                         # username:token is SaaS specific. Revoking the token breaks the mirroring
-                        "url": f"{strip_scheme(host)}://{username}:{token}@{strip_protocol(host)}/{mirror_path}.git",
+                        "url": f"{strip_scheme(host)}://{username}:{token}@{strip_netloc(host)}/{mirror_path}.git",
                         "enabled": not disabled,
                         "keep_divergent_refs": not overwrite
                     }
