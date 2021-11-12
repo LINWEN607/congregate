@@ -2,7 +2,7 @@ import sys
 from re import search
 from pymongo import MongoClient, errors, DESCENDING
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import strip_protocol
+from congregate.helpers.misc_utils import strip_netloc
 from congregate.helpers.json_utils import stream_json_yield_to_file, read_json_file_into_object
 from congregate.helpers.file_utils import find_files_in_folder
 
@@ -39,7 +39,7 @@ class MongoConnector(BaseClass):
     def __generate_collections_list(self):
         collections = []
         if self.config.source_host:
-            src_hostname = strip_protocol(self.config.source_host)
+            src_hostname = strip_netloc(self.config.source_host)
             collections += [
                 f"projects-{src_hostname}",
                 f"groups-{src_hostname}",
@@ -49,7 +49,7 @@ class MongoConnector(BaseClass):
         elif self.config.list_multiple_source_config("github_source"):
             for source in self.config.list_multiple_source_config(
                     "github_source"):
-                src_hostname = strip_protocol(source.get('src_hostname', ""))
+                src_hostname = strip_netloc(source.get('src_hostname', ""))
                 collections += [
                     f"projects-{src_hostname}",
                     f"groups-{src_hostname}",
@@ -89,13 +89,20 @@ class MongoConnector(BaseClass):
         if isinstance(data, tuple):
             data = data[0]
         data = self.stringify_int_keys_in_dict(data)
+        coll_type = collection.split("-")[0].upper()
+        did = data.get("id")
         try:
             if isinstance(data, tuple):
                 data = data[0]
             return self.db[collection].insert_one(
                 data, bypass_document_validation=bypass_document_validation).inserted_id
-        except errors.DuplicateKeyError:
-            self.log.debug("Duplicate insert attempted. Aborting operation")
+        except errors.DuplicateKeyError as dke:
+            self.log.debug(
+                f"{coll_type} (ID: {did}) duplicate insert attempt. Aborting operation\n{dke}")
+            return None
+        except errors.DocumentTooLarge as dtl:
+            self.log.error(
+                f"{coll_type} (ID: {did}) document too large. Aborting operation\n{dtl}")
             return None
 
     def drop_collection(self, collection):

@@ -26,9 +26,9 @@ ADD frontend frontend
 ADD dev/bin dev/bin
 COPY congregate.sh pyproject.toml poetry.lock README.md package.json package-lock.json vue.config.js babel.config.js .gitignore LICENSE ./
 
-# Set permissions for /data and /opt for ps-user
-RUN chown ps-user:sudo /opt -R && \
-    chmod 750 -R /opt
+# Set /opt folder permissions for ps-user
+RUN chown -R ps-user:sudo /opt && \
+    chmod -R 750 /opt
 
 # Installing some basic utilities and updating apt
 RUN apt-get update && \
@@ -48,7 +48,8 @@ RUN mkdir /opt/mongo-install && \
     mkdir -p /data/db && \
     chown ps-user: /var/lib/mongodb && \
     chown ps-user: /var/log/mongodb && \
-    chown ps-user: /data -R && \
+    chown -R ps-user: /data && \
+    chmod -R 750 /data && \
     cd /opt/mongo-install && \
     wget https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-debian10-4.4.4.tgz && \
     tar -zxvf mongodb-linux-*-4.4.4.tgz && \
@@ -58,8 +59,14 @@ RUN cd /opt/congregate && \
     chmod +x congregate && \
     ln congregate.sh /usr/bin/congregate
 
+# Install zsh. Note: this will still prompt for the default for each user (root and ps-user)
+RUN apt install -y zsh && chsh -s /usr/bin/zsh && chsh -s /usr/bin/zsh ps-user
+
 # Switch to ps-user
 USER ps-user
+
+# Install oh-my-zsh
+RUN sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 
 # Install congregate
 RUN cd /opt/congregate && \
@@ -68,17 +75,30 @@ RUN cd /opt/congregate && \
     git config --global user.email "migration@gitlab.com" && \
     git config --global user.name "congregate" && \
     git commit -m "Initial commit"
-    
+
 RUN export PATH=$PATH:$HOME/.local/bin && \
-    echo "export PATH=$PATH" >> ~/.bashrc
+    echo "export PATH=$PATH" >> ~/.bashrc && \
+    echo "export PATH=$PATH" >> ~/.zshrc
 
 RUN python3.8 -m poetry install
 
 # Initialize congregate directories
 RUN congregate init
 
-run echo 'if [ -z "$(ps aux | grep mongo | grep -v grep)" ]; then mongod --fork --logpath /var/log/mongodb/mongod.log; fi' >> ~/.bashrc
-RUN echo "alias ll='ls -al'" >> ~/.bashrc
-RUN echo "alias license='cat /opt/congregate/LICENSE'" >> ~/.bashrc
+USER root
+
+# Set dist/ folder permissions for ps-user
+RUN cd /opt/congregate && \
+    chown -R ps-user:sudo dist && \
+    chmod -R 750 dist
+
+USER ps-user
+
+RUN echo 'if [ -z "$(ps aux | grep mongo | grep -v grep)" ]; then mongod --fork --logpath /var/log/mongodb/mongod.log; fi' >> ~/.bashrc && \
+    echo 'if [ -z "$(ps aux | grep mongo | grep -v grep)" ]; then mongod --fork --logpath /var/log/mongodb/mongod.log; fi' >> ~/.zshrc
+RUN echo "alias ll='ls -al'" >> ~/.bashrc && \
+    echo "alias ll='ls -al'" >> ~/.zshrc
+RUN echo "alias license='cat /opt/congregate/LICENSE'" >> ~/.bashrc && \
+    echo "alias license='cat /opt/congregate/LICENSE'" >> ~/.zshrc
 
 EXPOSE 8000

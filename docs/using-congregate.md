@@ -6,11 +6,31 @@
 1. Run `git clone git@gitlab.com:gitlab-org/professional-services-automation/tools/migration/congregate.git` to pull the congregate repo to your local environment.
 1. Generate a personal access token from your gitlab.com account that has the read_registry permission by clicking `User Icon (top right) > Settings > Access Tokens > Generate Access Token`.
 1. Then run `docker login registry.gitlab.com` and provide your username and paste the access token when prompted for a password.
-1. Download  `congregate:rolling-debian` using `docker pull registry.gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate:rolling-debian`
+1. Pull the docker image from the container registry:
+    * :white_check_mark: For official versioned releases, `docker pull registry.gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate:<version>` (or `:latest`)
+    * :warning: For rolling releases, `docker pull registry.gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate:rolling-debian` (or `:rolling-centos`)
 1. Run `docker images -a` to list and copy the `image-id` of the congregate image.
-1. Run `docker run <image-id>` to start the congregate container.
+1. Create and run the Congregate docker container:
+
+    ```bash
+    docker run \
+    --name <name> \
+    -v /var/run/docker.sock:/var/run/docker.sock \ # expose docker socket as volume
+    -v /etc/hosts:/etc/hosts \ # expose DNS mapping
+    -p 8000:8000 \ # expose UI port
+    -it <image-id> \
+    /bin/bash
+    ```
+
+1. Exit (*Ctrl+d*) the container (stops it).
 1. Run `docker ps` to get the `container-id`.
-1. Run `docker exec -it <container-id>` to shell into the congregate container.  
+1. To resume the container and keep it up:
+
+    ```bash
+    docker start <container-id>
+    docker exec -it <container-id> /bin/bash
+    ```
+
 1. Modify the configuration file in `/opt/congregate/congregate.conf` using the [`congregate.conf.template`](congregate.conf.template) as a guide.
 1. Check out the fundamental [congregate commands](#congregate-commands) below.
 

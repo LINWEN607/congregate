@@ -7,7 +7,7 @@ from shutil import copy
 from time import time
 from datetime import timedelta, datetime
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import is_error_message_present, get_dry_log, strip_protocol
+from congregate.helpers.misc_utils import is_error_message_present, get_dry_log, strip_netloc
 from congregate.helpers.utils import is_dot_com, get_congregate_path
 from congregate.helpers.json_utils import read_json_file_into_object, write_json_to_file
 from congregate.helpers.dict_utils import dig
@@ -80,7 +80,7 @@ def get_project_filename(p):
 
 def get_export_filename_from_namespace_and_name(namespace, name=""):
     """
-    Determine exported filename for project or group (wihout name)
+    Determine exported filename for project or group (without name)
 
         :param namespace: Project or group namespace
         :param name: Project name
@@ -90,23 +90,22 @@ def get_export_filename_from_namespace_and_name(namespace, name=""):
         namespace, "/" + name if name else "").replace("/", "_").lower()
 
 
-def get_project_namespace(p, custom=None):
+def get_project_namespace(p, mirror=False):
     """
     If this is a user project, the namespace == username
 
-        :param p: The JSON object representing a GitLab project
+        :param p (dict): The JSON object representing a GitLab project
+        :param mirror (bool): Whether we are mirroring a repo on destination
         :return: Destination group project namespace
     """
     p_namespace = dig(p, 'namespace', 'full_path') if isinstance(
-        p.get("namespace"), dict) else p["namespace"]
+        p.get("namespace"), dict) else p.get("namespace")
 
     if not is_user_project(p):
         if b.config.src_parent_id and b.config.src_parent_group_path:
             single_group_name = b.config.src_parent_group_path.split("/")[-1]
             p_namespace = f"{single_group_name}{p_namespace.split(b.config.src_parent_group_path)[-1]}"
-        if custom:
-            return f"{custom}/{p_namespace}"
-        if b.config.dstn_parent_id:
+        if b.config.dstn_parent_id and not mirror:
             return f"{b.config.dstn_parent_group_path}/{p_namespace}"
     return p_namespace
 
@@ -118,8 +117,6 @@ def get_full_path_with_parent_namespace(full_path):
         :param full_path: The full path of a group
         :return: Destination instance group full path with parent namespace
     """
-    if b.config.src_parent_id and b.config.src_parent_group_path:
-        full_path = str(b.config.src_parent_group_path).split("/")[-1]
     if b.config.dstn_parent_id and b.config.dstn_parent_group_path:
         return f"{b.config.dstn_parent_group_path}/{full_path}"
     return full_path
@@ -208,19 +205,20 @@ def find_user_by_email_comparison_without_id(email, src=False):
     return None
 
 
-def get_dst_path_with_namespace(p, custom=None):
+def get_dst_path_with_namespace(p, mirror=False):
     """
     Determine project path with namespace on destination
 
-        :param p: The JSON object representing a GitLab project
+        :param p (dict): The JSON object representing a GitLab project
+        :param mirror (bool): Whether we are mirroring a repo on destination
         :return: Destination project path with namespace
     """
-    return f"{get_user_project_namespace(p) if is_user_project(p) else get_project_namespace(p, custom)}/{p.get('path')}"
+    return f"{get_user_project_namespace(p) if is_user_project(p) else get_project_namespace(p, mirror)}/{p.get('path')}"
 
 
 def get_target_namespace(project):
     if target_namespace := project.get("target_namespace"):
-        if (strip_protocol(target_namespace).lower() == project.get('namespace', '').lower()) or project.get("override_dstn_ns"):
+        if (strip_netloc(target_namespace).lower() == project.get('namespace', '').lower()) or project.get("override_dstn_ns"):
             return target_namespace
         else:
             return f"{target_namespace}/{project.get('namespace')}"

@@ -512,7 +512,6 @@ class ImportExportClient(BaseClass):
                     sleep(wait_time)
                 import_response = self.attempt_import(
                     filename, name, path, dst_namespace, override_params, members)
-                total_time = 0
             safe_resp = safe_json_response(import_response)
             import_id = safe_resp.get("id") if safe_resp else None
             if import_id:

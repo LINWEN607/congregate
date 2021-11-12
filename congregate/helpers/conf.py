@@ -19,7 +19,9 @@ class Config(BaseConfig):
 # DESTINATION
     @property
     def destination_host(self):
-        return self.prop("DESTINATION", "dstn_hostname")
+        if dh := self.prop("DESTINATION", "dstn_hostname"):
+            return str(dh).strip().rstrip("/")
+        return None     
 
     @property
     def destination_token(self):
@@ -136,7 +138,9 @@ class Config(BaseConfig):
 
     @property
     def source_host(self):
-        return self.prop("SOURCE", "src_hostname")
+        if sh := self.prop("SOURCE", "src_hostname"):
+            return str(sh).strip().rstrip("/")
+        return None
 
     @property
     def source_username(self):
@@ -200,7 +204,9 @@ class Config(BaseConfig):
 
     @property
     def ci_source_host(self):
-        return self.prop("CI_SOURCE", "ci_src_hostname")
+        if csh := self.prop("CI_SOURCE", "ci_src_hostname"):
+            return str(csh).strip().rstrip("/")
+        return None
 
     @property
     def ci_source_username(self):
@@ -217,7 +223,9 @@ class Config(BaseConfig):
 
     @property
     def jenkins_ci_source_host(self):
-        return self.prop("JENKINS_CI_SOURCE", "jenkins_ci_src_hostname")
+        if jcsh := self.prop("JENKINS_CI_SOURCE", "jenkins_ci_src_hostname"):
+            return str(jcsh).strip().rstrip("/")
+        return None
 
     @property
     def jenkins_ci_source_username(self):
@@ -234,7 +242,9 @@ class Config(BaseConfig):
 
     @property
     def tc_ci_source_host(self):
-        return self.prop("TEAMCITY_CI_SOURCE", "tc_ci_src_hostname")
+        if tcsh := self.prop("TEAMCITY_CI_SOURCE", "tc_ci_src_hostname"):
+            return str(tcsh).strip().rstrip("/")
+        return None
 
     @property
     def tc_ci_source_username(self):

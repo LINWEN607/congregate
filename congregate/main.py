@@ -29,8 +29,8 @@ Usage:
     congregate remove-users-from-parent-group [--commit]
     congregate migrate-variables-in-stage [--commit]
     congregate mirror-staged-projects [--commit]
-    congregate push-mirror-staged-projects [--namespace=<parent_group_full_path>] [--disabled] [--commit]
-    congregate toggle-staged-projects-push-mirror [--namespace=<parent_group_full_path>] [--disable] [--commit]
+    congregate push-mirror-staged-projects [--disabled] [--overwrite] [--force] [--commit]
+    congregate toggle-staged-projects-push-mirror [--disable] [--commit]
     congregate remove-all-mirrors [--commit]
     # TODO: Add dry-run, potentially remove
     congregate update-projects-visibility
@@ -105,9 +105,10 @@ Arguments:
     keys                                    Drop all collections of deploy keys creation, gathered during multiple migration waves. Use when migrating from scratch
     hide                                    Unset metadata field i.e. set to None/null
     disable-cicd                            Disable CI/CD when creating empty GitLab project structures
-    namespace                               Enter parent group where the project is push mirrored to
     disabled                                Disable project push mirror when creating it
     disable                                 Disable staged project push mirror
+    overwrite                               Disable keep_divergent_refs (True by default) and overwrite mirror repo on next push
+    force                                   Immediately trigger push mirroring with a repo change e.g. new branch
 
 Commands:
     list                                    List all projects of a source instance and save it to {CONGREGATE_PATH}/data/projects.json.
@@ -141,9 +142,11 @@ Commands:
     remove-users-from-parent-group          Remove all users with at most reporter access from the parent group.
     migrate-variables-in-stage              Migrate CI variables for staged projects.
     mirror-staged-projects                  Set up project mirroring for staged projects.
-    push-mirror-staged-projects             Set up and enable (by default) project push mirroring for staged projects, by passing the mirror project parent group namespace.
-                                                Assuming both the mirrored repository and empty project structure for mirroring already exist on destination.
+    push-mirror-staged-projects             Set up and enable (by default) project push mirroring for staged projects.
+                                                Assuming both the mirrored repo and empty project structure (create-staged-projects-structure) for mirroring already exist on destination.
+                                                NOTE: Destination instance only mirroring.
     toggle-staged-projects-push-mirror      Enable/disable push mirror created via command push-mirror-staged-projects.
+                                                NOTE: Destination instance only mirroring.
     remove-all-mirrors                      Remove all project mirrors for staged projects.
     update-projects-visibility              Return list of all migrated projects' visibility.
     set-default-branch                      Set default branch to master for all projects on destination.
@@ -194,7 +197,7 @@ if __name__ == '__main__':
     from congregate.helpers import conf
     from congregate.helpers.logger import myLogger
     from congregate.helpers.utils import get_congregate_path, rotate_logs, stitch_json_results
-    from congregate.helpers.misc_utils import strip_protocol
+    from congregate.helpers.misc_utils import strip_netloc
     from congregate.helpers.dict_utils import dig
     from congregate.helpers.string_utils import obfuscate, deobfuscate
     from congregate.helpers.ui_utils import spin_up_ui
@@ -205,7 +208,7 @@ else:
     from congregate.helpers import conf
     from congregate.helpers.logger import myLogger
     from congregate.helpers.utils import get_congregate_path, rotate_logs, stitch_json_results
-    from congregate.helpers.misc_utils import strip_protocol
+    from congregate.helpers.misc_utils import strip_netloc
     from congregate.helpers.dict_utils import dig
     from congregate.helpers.string_utils import obfuscate, deobfuscate
     from congregate.helpers.ui_utils import spin_up_ui
@@ -251,7 +254,7 @@ def main():
         DEST = arguments["--dest"]
 
         if SCM_SOURCE:
-            SCM_SOURCE = strip_protocol(SCM_SOURCE)
+            SCM_SOURCE = strip_netloc(SCM_SOURCE)
 
         from congregate.cli.config import generate_config
         from congregate.helpers.migrate_utils import clean_data, add_post_migration_stats, write_results_to_file
@@ -423,21 +426,11 @@ def main():
                 migrate = MigrateClient(dry_run=DRY_RUN)
                 migrate.mirror_staged_projects()
             if arguments["push-mirror-staged-projects"]:
-                namespace = arguments["--namespace"]
-                if namespace:
-                    projects.push_mirror_staged_projects(
-                        namespace=namespace, disabled=arguments["--disabled"], dry_run=DRY_RUN)
-                else:
-                    log.error(
-                        f"Invalid '--namespace={namespace}' entered for push mirror")
+                projects.push_mirror_staged_projects(
+                    disabled=arguments["--disabled"], overwrite=arguments["--overwrite"], force=arguments["--force"], dry_run=DRY_RUN)
             if arguments["toggle-staged-projects-push-mirror"]:
-                namespace = arguments["--namespace"]
-                if namespace:
-                    projects.toggle_staged_projects_push_mirror(
-                        namespace=namespace, disable=arguments["--disable"], dry_run=DRY_RUN)
-                else:
-                    log.error(
-                        f"Invalid '--namespace={namespace}' entered for push mirror")
+                projects.toggle_staged_projects_push_mirror(
+                    disable=arguments["--disable"], dry_run=DRY_RUN)
             if arguments["set-default-branch"]:
                 branches.set_default_branches_to_master(dry_run=DRY_RUN)
             if arguments["count-unarchived-projects"]:
@@ -546,7 +539,7 @@ def main():
                     if SCM_SOURCE is not None:
                         for single_instance in config.list_multiple_source_config(
                                 "github_source"):
-                            if SCM_SOURCE == strip_protocol(
+                            if SCM_SOURCE == strip_netloc(
                                     single_instance.get('src_hostname', '')):
                                 repo_diff = RepoDiffClient(
                                     single_instance['src_hostname'],

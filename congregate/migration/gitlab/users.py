@@ -4,7 +4,7 @@ from pandas import DataFrame, Series, set_option
 
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.misc_utils import get_dry_log, get_timedelta, is_error_message_present, \
-    safe_json_response, strip_protocol
+    safe_json_response, strip_netloc
 from congregate.helpers.json_utils import json_pretty, read_json_file_into_object, write_json_to_file
 from congregate.helpers.migrate_utils import get_staged_users, find_user_by_email_comparison_without_id
 from congregate.helpers.utils import is_dot_com
@@ -68,8 +68,8 @@ class UsersClient(BaseClass):
                 index += 1
             return False
         else:
-            self.log.info(
-                "Username {0} for user {1} exists as a group name".format(username, old_user))
+            self.log.warning(
+                f"Username {username} for user {old_user} exists as a group name")
             return True
 
     def is_username_group_name(self, old_user):
@@ -82,25 +82,18 @@ class UsersClient(BaseClass):
         """
         try:
             username = str(old_user["username"])
-            namespace_check_response = []
-            for group in self.groups_api.search_for_group(
-                username,
-                host=self.config.destination_host,
-                token=self.config.destination_token
-            ):
-                namespace_check_response.append(group)
-            for z in namespace_check_response:
-                error, z = is_error_message_present(z)
-                if error or not z:
+            for g in self.groups_api.search_for_group(username, host=self.config.destination_host, token=self.config.destination_token):
+                is_error, resp = is_error_message_present(g)
+                if is_error:
                     self.log.warning(
-                        f"Is {username} a group namespace lookup failed on group\n{z}")
-                elif z.get("path") and str(z["path"]).lower() == username.lower():
+                        f"Is '{username}' a group namespace lookup failed for group:\n{resp}")
+                elif resp.get("path") and str(resp["path"]).lower() == username.lower():
                     # We found a match, so user=group namespace
                     return True
             return False
-        except Exception as e:
+        except RequestException as re:
             self.log.error(
-                f"Error checking {username} is not group namespace for user {old_user} with error:\n{e}")
+                f"Error checking `{username}` is not group namespace for user {old_user} with error:\n{re}")
             return None
 
     def user_email_exists(self, old_user):
@@ -508,7 +501,7 @@ class UsersClient(BaseClass):
             for key in keys_to_delete:
                 user.pop(key, None)
             mongo.insert_data(
-                f"users-{strip_protocol(self.config.source_host)}", user)
+                f"users-{strip_netloc(self.config.source_host)}", user)
 
         mongo.close_connection()
 

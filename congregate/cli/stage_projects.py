@@ -109,10 +109,10 @@ class ProjectStageCLI(BaseStageClass):
 
     def append_data(self, project, projects_to_stage, p_range=0, dry_run=True):
         obj = self.get_project_metadata(project)
-        for member in obj["members"]:
+        for member in obj.get("members", []):
             self.append_member_to_members_list([], member, dry_run)
 
-        if obj["project_type"] == "group":
+        if obj.get("project_type") == "group":
             group_to_stage = self.rewritten_groups.get(
                 dig(project, 'namespace', 'id'))
             if group_to_stage:

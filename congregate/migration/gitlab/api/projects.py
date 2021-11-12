@@ -500,8 +500,7 @@ class ProjectsApi(GitLabApiWrapper):
         """
         Protects a single repository branch or several project repository branches using a wildcard protected branch.
 
-        GitLab API Doc:
-            https://docs.gitlab.com/ee/api/protected_branches.html#protect-repository-branches
+        GitLab API Doc: https://docs.gitlab.com/ee/api/protected_branches.html#protect-repository-branches
 
             :param: pid: (int) GitLab project ID
             :param: host: (str) GitLab host URL
@@ -516,8 +515,7 @@ class ProjectsApi(GitLabApiWrapper):
         """
         Unprotects the given protected branch or wildcard protected branch.
 
-        GitLab API Doc:
-            https://docs.gitlab.com/ee/api/protected_branches.html#unprotect-repository-branches
+        GitLab API Doc: https://docs.gitlab.com/ee/api/protected_branches.html#unprotect-repository-branches
 
             :param: pid: (int) GitLab project ID
             :param: host: (str) GitLab host URL
@@ -544,7 +542,9 @@ class ProjectsApi(GitLabApiWrapper):
 
     def create_branch(self, host, token, pid, data=None, message=None):
         """
-        Create branch in project
+        Create a new branch in the repository.
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/branches.html#create-repository-branch
 
             :param: pid: (int) GitLab project ID
             :param: host: (str) GitLab host URL
@@ -553,7 +553,23 @@ class ProjectsApi(GitLabApiWrapper):
         """
         if not message:
             message = f"Creating branch for project {pid} with payload {data}"
-        return self.api.generate_post_request(host, token, f"projects/{pid}/repository/branches", data)
+        return self.api.generate_post_request(host, token, f"projects/{pid}/repository/branches", json.dumps(data))
+
+    def delete_branch(self, host, token, pid, branch, message=None):
+        """
+        Delete a branch from the repository.
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/branches.html#delete-repository-branch
+
+            :param: pid: (int) GitLab project ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :param: branch: (str) Name of the branch
+            :return: Response object containing the response to DELETE /projects/:pid/repository/branches/:branch
+        """
+        if not message:
+            message = f"Deleting project {pid} branch {branch}"
+        return self.api.generate_delete_request(host, token, f"projects/{pid}/repository/branches/{branch}")
 
     def get_all_project_protected_environments(self, pid, host, token):
         """
@@ -1010,7 +1026,7 @@ class ProjectsApi(GitLabApiWrapper):
             :param: pid: (int) GitLab project ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
-            :yield: RGenerator returning JSON of each result from GET /projects/:pid/environments
+            :yield: Generator returning JSON of each result from GET /projects/:pid/environments
 
         """
         return self.api.list_all(host, token, f"projects/{pid}/environments")
@@ -1024,7 +1040,7 @@ class ProjectsApi(GitLabApiWrapper):
             :param: pid: (int) GitLab project ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
-            :yield: RGenerator returning JSON of each result from GET /projects/:pid/wikis
+            :yield: Generator returning JSON of each result from GET /projects/:pid/wikis
 
         """
         return self.api.list_all(host, token, f"projects/{pid}/wikis")
@@ -1140,8 +1156,10 @@ class ProjectsApi(GitLabApiWrapper):
             :return: Response object containing the response to POST /projects/:id/remote_mirrors
         """
         if not message:
+            audit_data = data.copy()
+            audit_data.pop("url", None)
             message = (
-                f"Creating project {pid} remote mirror with payload {data}")
+                f"Creating project {pid} remote mirror with payload {audit_data}")
         return self.api.generate_post_request(host, token, f"projects/{pid}/remote_mirrors", json.dumps(data), description=message)
 
     def get_all_remote_push_mirrors(self, pid, host, token):

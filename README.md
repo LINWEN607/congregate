@@ -1,8 +1,8 @@
 # Congregate
 
-[![lint score](https://user-content.gitlab-static.net/4ea5cdfa13fa28766d712c48e04ee724de3b84aa/68747470733a2f2f696d672e736869656c64732e696f2f62616467652f6c696e7425323073636f72652d382e39382d626c75652e737667)](https://gitlab.com/gitlab-com/customer-success/professional-services-group/global-practice-development/migration/congregate/tree/master)
-[![pipeline status](https://gitlab.com/gitlab-com/customer-success/professional-services-group/global-practice-development/migration/congregate/badges/master/pipeline.svg)](https://gitlab.com/gitlab-com/customer-success/professional-services-group/global-practice-development/migration/congregate/-/commits/master)
-[![coverage](https://gitlab.com/gitlab-com/customer-success/professional-services-group/global-practice-development/migration/congregate/badges/master/coverage.svg)](https://gitlab.com/gitlab-com/customer-success/professional-services-group/global-practice-development/migration/congregate/-/commits/master)
+[![lint score](https://user-content.gitlab-static.net/4ea5cdfa13fa28766d712c48e04ee724de3b84aa/68747470733a2f2f696d672e736869656c64732e696f2f62616467652f6c696e7425323073636f72652d382e39382d626c75652e737667)](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/tree/master)
+[![pipeline status](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/badges/master/pipeline.svg)](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/-/commits/master)
+[![coverage](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/badges/master/coverage.svg)](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/-/commits/master)
 
 >>>
 Requires [GitLab Premium](https://about.gitlab.com/pricing/) or above.
@@ -19,9 +19,9 @@ Congregate gathers (meta)data from source system(s), transforms and down-selects
 - [Contributing Guide](./docs/contributing.md)
 - [Quick-start guide to using congregate](./docs/using-congregate.md#quick-start)
 - [Using Congregate - Full test environment setup](./docs/full_setup.md)
-- Data Elements supported by source system ([GitHub](./customer/github-migration-features.md), [BitBucket](./customer/bitbucket-migration-features.md), [GitLab](./customer/gitlab-migration-features.md))
+- Data Elements supported by source system ([GitHub](./customer/github-migration-features-matrix.md), [BitBucket](./customer/bitbucket-migration-features-matrix.md), [GitLab](./customer/gitlab-migration-features-matrix.md))
 - [Congregate Commands Help Page](./congregate/main.py#L5)
-- [Congregate technical documentation](https://gitlab-org.gitlab.io/professional-services-automation/tools/migration/congregate/docs/)
+- [Congregate technical documentation](https://gitlab-org.gitlab.io/professional-services-automation/tools/migration/congregate/)
 - [Setup Development Environment](./docs/setup-dev-env.md)
 - [Frequently asked question about automated migrations](./customer/famq.md)
 - [Technical Troubleshooting](./docs/troubleshooting.md)

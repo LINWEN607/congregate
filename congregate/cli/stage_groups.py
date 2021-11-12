@@ -108,10 +108,10 @@ class GroupStageCLI(BaseStageClass):
         for project in group["projects"]:
             obj = self.get_project_metadata(project)
             # Append all project members to staged users
-            for project_member in obj["members"]:
+            for project_member in obj.get("members", []):
                 self.append_member_to_members_list([], project_member, dry_run)
             self.log.info("{0}Staging project {1} (ID: {2})".format(
-                get_dry_log(dry_run), obj["path_with_namespace"], obj["id"]))
+                get_dry_log(dry_run), obj.get("path_with_namespace"), obj.get("id")))
             self.staged_projects.append(obj)
 
         self.log.info("{0}Staging group {1} (ID: {2}) [{3}/{4}]".format(get_dry_log(

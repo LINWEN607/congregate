@@ -1,7 +1,7 @@
 from requests.exceptions import RequestException
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import is_error_message_present, strip_protocol
+from congregate.helpers.misc_utils import is_error_message_present, strip_netloc
 from congregate.helpers.dict_utils import pop_multiple_keys
 from congregate.helpers.utils import is_dot_com
 from congregate.migration.gitlab.api.projects import ProjectsApi
@@ -28,7 +28,7 @@ class KeysClient(BaseClass):
                 old_id, self.config.source_host, self.config.source_token))
             if not mongo:
                 mongo = self.connect_to_mongo()
-            coll = f"keys-{strip_protocol(self.config.source_host)}"
+            coll = f"keys-{strip_netloc(self.config.source_host)}"
             for key in d_keys:
                 # Remove unused key-values before posting key
                 key = pop_multiple_keys(key, ["id", "created_at"])

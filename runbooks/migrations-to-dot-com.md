@@ -82,8 +82,8 @@ Copy the following data and add subsequent rows for single group migration
   * [ ] If you are migrating from scratch add `--keys` argument to drop collection(s) of deploy keys as well
 
 ### User migration
-<details>
-<summary>Instructions for user migration collapsed by default.</summary>
+
+<details><summary>Instructions for user migration collapsed by default.</summary>
 
 #### Prepare users
 
@@ -212,10 +212,19 @@ Copy the following data and add subsequent rows for single group migration
   * Query `pubsub-sidekiq-inf-gprd*` for `json.class: "GroupImportWorker" AND json.meta.remote_ip: "<migration-vm-ip>"`
     * (optional) Add field `json.job_status`
   * For more options checkout the [Support workflow for import errors](https://about.gitlab.com/handbook/support/workflows/kibana.html#import-errors)
+* [ ] Inspect [Kibana](https://log.gprd.gitlab.net/app/discover) logs for other import errors
+  * Adjust the time frame to the migration period
+  * Add `json.severity: ERROR`
+  * Query `pubsub-sidekiq-inf-gprd*` for `json.extra.sidekiq.meta.remote_ip : "<migration-vm-ip>"`
+    * (optional) Add additional fields to the query .e.g:
+      * `json.extra.sidekiq.class`
+      * `json.exception.message`
+      * `json.exception.class`
+      * `json.extra.relation_name`
 
 ### Post Migration of Failed Groups and Projects
-<details>
-<summary>Instructions for post migration of failed groups and projects collapsed by default.</summary>
+
+<details><summary>Instructions for post migration of failed groups and projects collapsed by default.</summary>
 
 #### Migration of Failed Groups and Projects
 
@@ -419,8 +428,8 @@ p "Number of Protected Branches import failures: #{protected_branches_import_fai
   * **NOTE:** Make sure to have the correct `data/staged_projects` file present
 
 ### Rollback
-<details>
-<summary>If <b>any</b> data was migrated incorrectly (i.e. to the wrong namespace), you <b>must</b> rollback the migration wave <b>completely</b>. Section collapsed by default.</summary>
+
+<details><summary>If <b>any</b> data was migrated incorrectly (i.e. to the wrong namespace), you <b>must</b> rollback the migration wave <b>completely</b>. Section collapsed by default.</summary>
 
 #### Users
 

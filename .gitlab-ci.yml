@@ -253,7 +253,7 @@ check ldap compose yaml:
   timeout: 30 minutes
 
 test:pylint:
-  extends: 
+  extends:
     - .test-job
     - .gitlab-api-creds
   script:
@@ -410,7 +410,7 @@ container-scan-build:centos:
     DISTRO: "centos"
     RELEASE_IMAGE_NAME: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHA-centos
   rules:
-    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE != 'schedule'"
+    - if: "$CI_PIPELINE_SOURCE != 'schedule'"
       changes:
         - pyproject.toml
         - package.json
@@ -424,7 +424,7 @@ container-scan-build:debian:
     DISTRO: "debian"
     RELEASE_IMAGE_NAME: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHA-debian
   rules:
-    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE != 'schedule'"
+    - if: "$CI_PIPELINE_SOURCE != 'schedule'"
       changes:
         - pyproject.toml
         - package.json

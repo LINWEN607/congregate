@@ -3,7 +3,7 @@ from congregate.helpers.mdbc import MongoConnector
 from congregate.migration.github.api.users import UsersApi
 from congregate.migration.github.api.orgs import OrgsApi
 from congregate.migration.github.meta.github_browser import GitHubBrowser
-from congregate.helpers.misc_utils import safe_json_response, is_error_message_present, strip_protocol
+from congregate.helpers.misc_utils import safe_json_response, is_error_message_present, strip_netloc
 from congregate.helpers.utils import is_github_dot_com
 
 
@@ -57,7 +57,7 @@ class UsersClient(BaseClass):
             if single_user.get("type") != "Organization":
                 formatted_user = self.format_user(single_user, browser, mongo)
                 mongo.insert_data(
-                    f"users-{strip_protocol(self.host)}", formatted_user)
+                    f"users-{strip_netloc(self.host)}", formatted_user)
         mongo.close_connection()
 
     def format_users(self, users, mongo):

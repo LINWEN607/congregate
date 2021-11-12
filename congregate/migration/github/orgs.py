@@ -1,5 +1,5 @@
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import safe_json_response, is_error_message_present, strip_protocol
+from congregate.helpers.misc_utils import safe_json_response, is_error_message_present, strip_netloc
 from congregate.helpers.dict_utils import dig
 from congregate.helpers.utils import is_github_dot_com
 from congregate.helpers.mdbc import MongoConnector
@@ -32,7 +32,7 @@ class OrgsClient(BaseClass):
         self.teams_api = TeamsApi(host, token)
         self.repos = ReposClient(host, token)
         self.users = UsersClient(host, token)
-        self.host = strip_protocol(host)
+        self.host = strip_netloc(host)
 
     def connect_to_mongo(self):
         return MongoConnector()

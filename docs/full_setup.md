@@ -2,27 +2,49 @@
 
 ## From docker
 
+1. From local machine, login to Congregate VM using `ssh -L 8000:localhost:8000 <vm_alias_ip_or_hostname>` to expose the Congregate UI outside of the docker container.
+1. From Congregate VM, login to container registry
+
+    ```bash
+    docker login registry.gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate -u <user name> -p <personal token>
+    ```
+
 1. Pull the docker image from the container registry
-    * :white_check_mark: For official versioned releases, `docker pull registry.gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate:<version>`
-    * :warning: For rolling releases, `docker pull registry.gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate:rolling-debian`
-2. 
+    * :white_check_mark: For official versioned releases, `docker pull registry.gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate:<version>` (or `:latest`)
+    * :warning: For rolling releases, `docker pull registry.gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate:rolling-debian` (or `:rolling-centos`)
+1. Create and run the Congregate docker container:
 
-3. Login to the congregate VM using `ssh -L 8000:localhost:8000 <vm_alias_ip_or_hostname>` to expose the Congregate UI outside of the docker container
-4. Run the following command:
+    ```bash
+    docker run \
+    --name <name> \
+    -v /var/run/docker.sock:/var/run/docker.sock \ # expose docker socket as volume
+    -v <path_to_local_data>:/opt/congregate/data \ # expose data directory as volume
+    -v <path_to_local_downloads>:/opt/congregate/downloads \ # if migrating from GitLab expose downloads directory as volume
+    -p 8000:8000 \ # expose UI port
+    -it registry.gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate:<version> \
+    /bin/bash
+    ```
 
-```bash
-docker login registry.gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate -u <user name> -p <personal token>
-docker run \
---name <name> \
--v /var/run/docker.sock:/var/run/docker.sock \ # expose docker socket as volume
--v <path_to_local_data>:/opt/congregate/data \ # expose data directory as volume
--v <path_to_local_downloads>:/opt/congregate/downloads \ # if migrating from GitLab expose downloads directory as volume
--p 8000:8000 \ # expose UI port
--it registry.gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate:<version> \
-/bin/bash
-congregate configure
-congregate list
-```
+   * To `docker run` in the background use `-d=true` or just `-d` option
+   * In addition, to reattach to a detached container, use `docker attach` command
+
+      ```bash
+      docker ps -a
+      docker attach --name <image_name>   # OR docker attach <container_id>
+      ```
+
+   * Type *Ctrl+p* then *Ctrl+q* to go from interactive to daemon mode
+   * To remove container when it exits add `--rm` option to `docker run`
+
+1. Exit (*Ctrl+d*) the container (stops it)
+1. To resume the container and keep it up:
+
+    ```bash
+    docker start <container-id>
+    docker exec -it <container-id> /bin/bash   # OR -itd
+    ```
+
+**N.B.** To bring up docker and others aliases run `. dev/bin/env` in Congregate.
 
 ### Additional settings (for private networks behind proxy)
 
@@ -32,17 +54,6 @@ congregate list
   * `-v /etc/pki/ca-trust/source/anchors/:/etc/pki/ca-trust/source/anchors/`
   * `-v /etc/hosts:/etc/hosts`
 * Run `update-ca-trust extract` in the docker container once started to load the certificates from `anchors` into `ca-bundle.crt`
-
-To resume the container:
-
-```bash
-docker start <container-id>
-docker exec -it <container-id> /bin/bash
-```
-
-**N.B.** To bring up docker aliases and others run:
-
-`. dev/bin/env`
 
 ## From tar.gz
 

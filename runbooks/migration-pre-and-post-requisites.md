@@ -11,6 +11,8 @@ This runbook covers the process of preparing and cleaning up after a migration f
 
 ## Migration pre-requisites
 
+<details><summary>GitLab and Customer steps collapsed by default.</summary>
+
 <!--
     Specify the migration period
 
@@ -32,9 +34,9 @@ This runbook covers the process of preparing and cleaning up after a migration f
     * `NewAccessRequest`
 
     **NOTE:** Labels may change over time
-  * Assign to Manager for approval
+  * Assign to Manager for review/approval
+  * Assign to SIRT for review/approval i.e. `/assign @gitlab-com/gl-security/security-operations/sirt`
   * Assign to IT i.e. `/assign @gitlab-com/business-technology/team-member-enablement` (former `@gitlab-com/business-ops/team-member-enablement`) for provisioning
-    * Wait for SIRT for approval
 
     **NOTE:** Assignee group may change over time
   * (Optional) Post issue in Slack's [**#it_help**](https://gitlab.slack.com/archives/CK4EQH50E) channel
@@ -50,6 +52,7 @@ This runbook covers the process of preparing and cleaning up after a migration f
 
 * [ ] Create one-off Personal Access Tokens (PATs) for the Admin user account on the source and destination instance.
   * The PATs should have an expiry date of the estimated last day (wave) of the migration.
+  * [ ] (gitlab.com) Inform SIRT about every Admin token creation and/or user impersonation.
 * [ ] (gitlab.com) Generate awareness in Support/SRE/Infra teams and identify specific individuals (e.g. with Rails console access) to take tickets from customers during migration. Highlight these people/groups in the migration wave issues.
   * **NOTE**: These issues **must** be created [5 days in advance](https://about.gitlab.com/handbook/support/workflows/importing_projects.html#import-scheduled) of executing the migration wave.
 
@@ -105,6 +108,8 @@ This runbook covers the process of preparing and cleaning up after a migration f
       "*"
     ]
     ```
+
+</details>
 
 ## VM
 
@@ -166,6 +171,8 @@ Due to time constraints, ASA costs and scaling limitations it may be necessary t
 
 ## Migration post-requisites
 
+<details><summary>GitLab and Customer steps collapsed by default.</summary>
+
 * [ ] If required archive all projects on source that have been migrated
 * [ ] If applicable [disable maintenance mode](https://docs.gitlab.com/ee/administration/maintenance_mode/index.html#disable-maintenance-mode) on source
 
@@ -209,5 +216,7 @@ Certain GitLab features are migrated but not adapted to the destination instance
   * [ ] (gitlab.com) Update direct group and project membership to allow specific user and group MR approval rules in projects
 * [ ] Update instance and group level (custom) project templates
 * [ ] Update and/or create any features that are not migrated (based on migration features matrix)
+
+</details>
 
 /confidential

@@ -105,7 +105,7 @@ def validate_name(name, log=None):
     valid = " ".join(sub(r"[^\U00010000-\U0010ffff\w\_\-\. ]",
                          " ", name.lstrip("-").lstrip(".")).split())
     if name != valid:
-        output = f"Renaming invalid name {name} -> {valid}"
+        output = f"Renaming invalid name '{name}' -> '{valid}'"
         log.warning(output) if log else print(output)
     return valid
 
@@ -117,9 +117,8 @@ def generate_audit_log_message(req_type, message, url, data=None):
             req_type,
             url,
             " with data: {}".format(data) if data else "")
-    except TypeError as e:
-        return "Message formatting ERROR. No specific message generated. Generating {0} request to {1}".format(
-            req_type, url)
+    except TypeError as te:
+        return f"Message formatting ERROR ({te}). No specific message generated. Generating {req_type} request to {url}"
 
 
 def safe_json_response(response):
@@ -145,8 +144,12 @@ def get_duplicate_paths(data, are_projects=True):
     return [i for i, c in Counter(paths).items() if c > 1]
 
 
-def strip_protocol(s):
+def strip_netloc(s):
     return urlparse(s).netloc
+
+
+def strip_scheme(s):
+    return urlparse(s).scheme
 
 
 def get_decoded_string_from_b64_response_content(response):
