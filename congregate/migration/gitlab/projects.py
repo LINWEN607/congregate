@@ -712,12 +712,12 @@ class ProjectsClient(BaseClass):
                 # Find the relevant push mirror to toggle
                 dst_pid, mirror_path = self.find_mirror_project(s, host, token)
                 if dst_pid and mirror_path:
-                    url = host + "/" + mirror_path
+                    url = f"{strip_netloc(host)}/{mirror_path}.git"
                     mirrors = self.projects_api.get_all_remote_push_mirrors(
                         dst_pid, host, token)
                     mirror_id = None
                     for m in mirrors:
-                        if m and m.get("url") == url:
+                        if m and url in m.get("url", ""):
                             mirror_id = m.get("id")
                             data = {
                                 "mirror_id": mirror_id,
@@ -740,6 +740,34 @@ class ProjectsClient(BaseClass):
             except RequestException as re:
                 self.log.error(
                     f"Failed to toggle project {s.get('path_with_namespace')} push mirror, with error:\n{re}")
+                continue
+        add_post_migration_stats(start, log=self.log)
+
+    def verify_staged_projects_remote_mirror(self):
+        start = time()
+        rotate_logs()
+        staged_projects = get_staged_projects()
+        host = self.config.destination_host
+        token = self.config.destination_token
+        for s in staged_projects:
+            try:
+                # Find the relevant push mirror to verify
+                dst_pid, mirror_path = self.find_mirror_project(s, host, token)
+                project = f"project {s.get('path_with_namespace')} (ID: {dst_pid})"
+                if dst_pid and mirror_path:
+                    url = f"{strip_netloc(host)}/{mirror_path}.git"
+                    for m in self.projects_api.get_all_remote_push_mirrors(dst_pid, host, token):
+                        is_error, resp = is_error_message_present(m)
+                        if is_error or not resp:
+                            self.log.error(
+                                f"Invalid {project} remote mirror:\n{json_pretty(resp)}")
+                        elif url in m.get("url", "") and m.get("update_status") == "failed":
+                            self.log.error(
+                                f"Failed {project} remote mirror, with status:\n{json_pretty(m)}")
+                    self.log.error(f"Missing {project} remote mirror {url}")
+            except RequestException as re:
+                self.log.error(
+                    f"Failed to verify {project} remote mirror, with error:\n{re}")
                 continue
         add_post_migration_stats(start, log=self.log)
 

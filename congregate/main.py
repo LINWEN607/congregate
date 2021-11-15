@@ -31,6 +31,7 @@ Usage:
     congregate mirror-staged-projects [--commit]
     congregate push-mirror-staged-projects [--disabled] [--overwrite] [--force] [--commit]
     congregate toggle-staged-projects-push-mirror [--disable] [--commit]
+    congregate verify-staged-projects-remote-mirror
     congregate remove-all-mirrors [--commit]
     # TODO: Add dry-run, potentially remove
     congregate update-projects-visibility
@@ -147,6 +148,7 @@ Commands:
                                                 NOTE: Destination instance only mirroring.
     toggle-staged-projects-push-mirror      Enable/disable push mirror created via command push-mirror-staged-projects.
                                                 NOTE: Destination instance only mirroring.
+    verify-staged-projects-remote-mirror    Verify that each staged project remote mirror is enabled, updated and without errors.
     remove-all-mirrors                      Remove all project mirrors for staged projects.
     update-projects-visibility              Return list of all migrated projects' visibility.
     set-default-branch                      Set default branch to master for all projects on destination.
@@ -431,6 +433,8 @@ def main():
             if arguments["toggle-staged-projects-push-mirror"]:
                 projects.toggle_staged_projects_push_mirror(
                     disable=arguments["--disable"], dry_run=DRY_RUN)
+            if arguments["verify-staged-projects-remote-mirror"]:
+                projects.verify_staged_projects_remote_mirror()
             if arguments["set-default-branch"]:
                 branches.set_default_branches_to_master(dry_run=DRY_RUN)
             if arguments["count-unarchived-projects"]:

@@ -776,6 +776,46 @@ class MockProjectsApi():
                 "only_protected_branches": True,
                 "keep_divergent_refs": True,
                 "update_status": "finished",
-                "url": "https://gitlab.com/gitlab-org/security/gitlab.git"
+                "url": "https://gitlab.example.com/gitlab-org/security/gitlab.git"
+            },
+            {
+                "enabled": True,
+                "id": 101487,
+                "last_error": "2020-01-08T17:32:02.823Z",
+                "last_successful_update_at": "2020-01-06T17:32:02.823Z",
+                "last_update_at": "2020-01-06T17:32:02.823Z",
+                "last_update_started_at": "2020-01-06T17:31:55.864Z",
+                "only_protected_branches": True,
+                "keep_divergent_refs": True,
+                "update_status": "failed",
+                "url": "https://gitlab.example.com/gitlab-org/security/gitlab.git"
+            }
+        ]
+
+    def get_staged_projects_mirrors_failed(self):
+        return [
+            {
+                "enabled": True,
+                "id": 101486,
+                "last_error": "2020-01-08T17:32:02.823Z",
+                "last_successful_update_at": "2020-01-06T17:32:02.823Z",
+                "last_update_at": "2020-01-06T17:32:02.823Z",
+                "last_update_started_at": "2020-01-06T17:31:55.864Z",
+                "only_protected_branches": True,
+                "keep_divergent_refs": True,
+                "update_status": "failed",
+                "url": "https://gitlab.example.com/gitlab-org/security/gitlab.git"
+            },
+            {
+                "enabled": True,
+                "id": 101487,
+                "last_error": "2020-01-08T17:32:02.823Z",
+                "last_successful_update_at": "2020-01-06T17:32:02.823Z",
+                "last_update_at": "2020-01-06T17:32:02.823Z",
+                "last_update_started_at": "2020-01-06T17:31:55.864Z",
+                "only_protected_branches": True,
+                "keep_divergent_refs": True,
+                "update_status": "failed",
+                "url": "https://gitlab.example.com/gitlab-org/security/gitlab.git"
             }
         ]
