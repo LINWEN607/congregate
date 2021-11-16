@@ -148,7 +148,7 @@ Commands:
                                                 NOTE: Destination instance only mirroring.
     toggle-staged-projects-push-mirror      Enable/disable push mirror created via command push-mirror-staged-projects.
                                                 NOTE: Destination instance only mirroring.
-    verify-staged-projects-remote-mirror    Verify that each staged project remote mirror is enabled, updated and without errors.
+    verify-staged-projects-remote-mirror    Verify that each staged project remote push mirror exists and is not failing.
     remove-all-mirrors                      Remove all project mirrors for staged projects.
     update-projects-visibility              Return list of all migrated projects' visibility.
     set-default-branch                      Set default branch to master for all projects on destination.

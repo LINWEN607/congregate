@@ -407,15 +407,28 @@ class ProjectsTests(unittest.TestCase):
     @patch("congregate.helpers.migrate_utils.read_json_file_into_object")
     @patch('congregate.helpers.conf.Config.destination_host', new_callable=PropertyMock)
     @patch.object(ConfigurationValidator, 'destination_token', new_callable=PropertyMock)
-    def test_toggle_staged_projects_push_mirror(self, mock_token, mock_host, mock_staged, mock_find, mock_get_mirrors):
+    def test_toggle_staged_projects_push_mirror_error(self, mock_token, mock_host, mock_staged, mock_find, mock_get_mirrors):
         mock_host.return_value = "https://gitlabdestination.com"
         mock_token.return_value = "token"
         mock_staged.return_value = self.mock_projects.get_staged_projects()
         mock_find.side_effect = [
             (2, "dictionary-web/darci3"), (1, False), (2, False)]
-        mirrors = self.mock_projects.get_staged_projects_mirrors()
-        mirrors[0]["url"] = "https://gitlabdestination.com/dictionary-web/darci3"
-        mock_get_mirrors.return_value = mirrors
+        mock_get_mirrors.return_value = {"message": "Not Found"}
+        with self.assertLogs(self.projects.log, level="ERROR"):
+            self.projects.toggle_staged_projects_push_mirror()
+
+    @patch.object(ProjectsApi, "get_all_remote_push_mirrors")
+    @patch.object(ProjectsClient, "find_mirror_project")
+    @patch("congregate.helpers.migrate_utils.read_json_file_into_object")
+    @patch('congregate.helpers.conf.Config.destination_host', new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'destination_token', new_callable=PropertyMock)
+    def test_toggle_staged_projects_push_mirror(self, mock_token, mock_host, mock_staged, mock_find, mock_get_mirrors):
+        mock_host.return_value = "https://gitlab.example.com"
+        mock_token.return_value = "token"
+        mock_staged.return_value = self.mock_projects.get_staged_projects()
+        mock_find.side_effect = [
+            (2, "gitlab-org/security/gitlab"), (1, False), (2, False)]
+        mock_get_mirrors.return_value = self.mock_projects.get_staged_projects_mirrors()
         self.assertIsNone(
             self.projects.toggle_staged_projects_push_mirror())
 
