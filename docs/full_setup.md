@@ -10,9 +10,9 @@
     ```
 
 1. Pull the docker image from the container registry
-    * :white_check_mark: For official versioned releases, `docker pull registry.gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate:<version>`
+    * :white_check_mark: For official versioned releases, `docker pull registry.gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate:<version>` (or `:latest`)
     * :warning: For rolling releases, `docker pull registry.gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate:rolling-debian` (or `:rolling-centos`)
-1. Run the docker container:
+1. Create and run the Congregate docker container:
 
     ```bash
     docker run \
@@ -22,7 +22,7 @@
     -v <path_to_local_downloads>:/opt/congregate/downloads \ # if migrating from GitLab expose downloads directory as volume
     -p 8000:8000 \ # expose UI port
     -it registry.gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate:<version> \
-    /bin/bash
+    /bin/bash # or zsh
     ```
 
    * To `docker run` in the background use `-d=true` or just `-d` option
@@ -41,7 +41,7 @@
 
     ```bash
     docker start <container-id>
-    docker exec -it <container-id> /bin/bash   # OR -itd
+    docker exec -it <container-id> /bin/bash   # OR -itd (zsh)
     ```
 
 **N.B.** To bring up docker and others aliases run `. dev/bin/env` in Congregate.
