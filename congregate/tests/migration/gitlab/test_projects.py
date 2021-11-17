@@ -469,7 +469,7 @@ class ProjectsTests(unittest.TestCase):
         mock_staged.return_value = self.mock_projects.get_staged_projects()
         mock_find.side_effect = [
             (2, "dictionary-web/darci3"), (1, False), (2, False)]
-        mock_get_mirrors.return_value = []
+        mock_get_mirrors.return_value = self.mock_projects.get_staged_projects_mirrors()
         with self.assertLogs(self.projects.log, level="ERROR"):
             self.projects.verify_staged_projects_remote_mirror()
 

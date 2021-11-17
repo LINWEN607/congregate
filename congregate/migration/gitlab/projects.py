@@ -598,7 +598,7 @@ class ProjectsClient(BaseClass):
                 dst_path = get_dst_path_with_namespace(s)
                 dst_pid = self.find_project_by_path(host, token, dst_path)
                 if dst_pid:
-                    self.log.error(
+                    self.log.info(
                         f"SKIP: Project {dst_path} (ID: {dst_pid}) already exists")
                     continue
                 name = s.get("name")
@@ -762,25 +762,35 @@ class ProjectsClient(BaseClass):
         token = self.config.destination_token
         for s in staged_projects:
             try:
-                dst_pid, mirror_path = self.find_mirror_project(s, host, token)
-                project = f"project {s.get('path_with_namespace')} (ID: {dst_pid})"
-                if dst_pid and mirror_path:
-                    # List all project push mirrors, match based on URL and verify its state
-                    url = f"{strip_netloc(host)}/{mirror_path}.git"
-                    for m in self.projects_api.get_all_remote_push_mirrors(dst_pid, host, token):
-                        is_error, resp = is_error_message_present(m)
-                        if is_error or not resp:
-                            self.log.error(
-                                f"Invalid {project} remote mirror:\n{json_pretty(resp)}")
-                        elif url in m.get("url", "") and m.get("update_status") == "failed":
-                            self.log.error(
-                                f"Failed {project} remote mirror, with status:\n{json_pretty(m)}")
-                    self.log.error(f"Missing {project} remote mirror {url}")
+                self.verify_staged_projects(host, token, s)
             except RequestException as re:
                 self.log.error(
                     f"Failed to verify project {s.get('path_with_namespace')} remote mirror, with error:\n{re}")
                 continue
         add_post_migration_stats(start, log=self.log)
+
+    def verify_staged_projects(self, host, token, s):
+        dst_pid, mirror_path = self.find_mirror_project(s, host, token)
+        project = f"project {s.get('path_with_namespace')} (ID: {dst_pid})"
+        if dst_pid and mirror_path:
+            url = f"{strip_netloc(host)}/{mirror_path}.git"
+            self.verify_remote_mirror(self.projects_api.get_all_remote_push_mirrors(
+                dst_pid, host, token), project, url)
+
+    def verify_remote_mirror(self, mirrors, project, url):
+        """Loop over project push mirrors, match based on URL and verify its state"""
+        for i, m in enumerate(mirrors):
+            is_error, resp = is_error_message_present(m)
+            if is_error or not resp:
+                self.log.error(
+                    f"Invalid {project} remote mirror:\n{json_pretty(resp)}")
+            elif url in m.get("url", "") and m.get("update_status") == "failed":
+                self.log.error(
+                    f"Failed {project} remote mirror, with status:\n{json_pretty(m)}")
+                break
+            elif i == len(mirrors)-1 and url not in m.get("url", ""):
+                self.log.error(
+                    f"Missing {project} remote mirror {url}")
 
     def find_mirror_project(self, staged_project, host, token):
         """Validate push mirror source and destination project"""
