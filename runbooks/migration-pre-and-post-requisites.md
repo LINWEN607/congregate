@@ -127,6 +127,21 @@ This runbook covers the process of preparing and cleaning up after a migration f
     * 200GB storage - SSD
 -->
 
+`Congregate` is run from a migration host jumpbox. Where that box is hosted depends on a few factors:
+
+* As migrations currently require an admin API token, the VM cannot be hosted inside of a customer space if the migration involves SaaS. The VM has to be hosted:
+  * In GitLab GCP infrastructure provisioned using the below process -OR- in another GitLab-controlled web space
+    * This may require work on the customer side to setup access (VPN, firewall, WireGuard, etc) if their source system is not internet-facing
+* If the migration does *not* involve SaaS, it can be hosted in any space that has access to the source and destination system. 
+  * Generally, inside the more "walled" system
+* Special Case: Multi-Hop to/from SaaS
+  * If the customer will not/can not open ports or provide a VPN connection, we can do the following:
+    * Migrate (using Congregate) to an internet-exposed interim instance in a cloud space using an admin token from the source system (say SaaS) and an admin token for the interim instance
+    * Remove the admin token from the source system (say SaaS)
+    * Customer can now migrate from the interim to their internal instance by pulling the Congregate container to a machine inside their wall, using an admin token for their target system, and an admin token from the interim instance
+
+### Requisitioning a Migration VM (GitLab GCP Hosted)
+
 * [ ] (gitlab.com) Create a [GitLab Infra team issue](https://gitlab.com/groups/gitlab-com/gl-infra/-/issues) with labels `~"AssistingTeam::Infrastructure"` and `~"AssistType::CloudInfra"` and `/assign @gitlab-com/gl-infra/managers` ([example](https://gitlab.com/gitlab-com/gl-infra/infrastructure/-/issues/12813))
 * [ ] (gitlab.com) Create an MR in [Transient Imports project](https://gitlab.com/gitlab-com/gl-infra/transient-imports) by following the `README`
   * The lead PSE should add their gitlab.com `.pub` SSH key as `owner_key`
