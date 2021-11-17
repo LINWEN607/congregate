@@ -122,7 +122,7 @@ class ProjectStageCLI(BaseStageClass):
                 self.staged_groups.append(group_to_stage)
 
                 # Append all group members to staged users
-                for member in group_to_stage["members"]:
+                for member in group_to_stage.get("members", []):
                     self.append_member_to_members_list([], member, dry_run)
             else:
                 self.log.warning(
