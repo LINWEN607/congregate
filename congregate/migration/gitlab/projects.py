@@ -779,18 +779,21 @@ class ProjectsClient(BaseClass):
 
     def verify_remote_mirror(self, mirrors, project, url):
         """Loop over project push mirrors, match based on URL and verify its state"""
-        for i, m in enumerate(mirrors):
+        missing = True
+        for m in mirrors:
             is_error, resp = is_error_message_present(m)
             if is_error or not resp:
                 self.log.error(
                     f"Invalid {project} remote mirror:\n{json_pretty(resp)}")
-            elif url in m.get("url", "") and m.get("update_status") == "failed":
-                self.log.error(
-                    f"Failed {project} remote mirror, with status:\n{json_pretty(m)}")
                 break
-            elif i == len(mirrors)-1 and url not in m.get("url", ""):
-                self.log.error(
-                    f"Missing {project} remote mirror {url}")
+            if url in m.get("url", ""):
+                missing = False
+                if m.get("update_status") == "failed":
+                    self.log.error(
+                        f"Failed {project} remote mirror, with status:\n{json_pretty(m)}")
+                break
+        if missing:
+            self.log.error(f"Missing {project} remote mirror {url}")
 
     def find_mirror_project(self, staged_project, host, token):
         """Validate push mirror source and destination project"""
@@ -806,7 +809,7 @@ class ProjectsClient(BaseClass):
                 host, token, mirror_path)
             if not mirror_pid:
                 self.log.error(
-                    f"SKIP: Mirror project {mirror_path} NOT found")
+                    f"SKIP: Mirror project {mirror_path} (source ID: {orig_pid}) NOT found")
                 return (orig_pid, False)
             return (orig_pid, mirror_path)
         except RequestException as re:
