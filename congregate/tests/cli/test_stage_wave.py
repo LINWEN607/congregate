@@ -26,12 +26,14 @@ class StageWaveTests(unittest.TestCase):
     @mock.patch('congregate.helpers.conf.Config.source_type', new_callable=mock.PropertyMock)
     @mock.patch.object(WaveSpreadsheetHandler, "read_file_as_json")
     @mock.patch.object(BaseStageClass, "open_projects_file")
-    def test_stage_wave(self, projects, read_as_json, mock_source_type, spreadsheet_path, column_mapping, columns_to_use, mock_groups, mock_users):
+    @mock.patch('os.path.isfile', new_callable=mock.PropertyMock)
+    def test_stage_wave(self, mock_isfile, projects, read_as_json, mock_source_type, spreadsheet_path, column_mapping, columns_to_use, mock_groups, mock_users):
         mock_source_type.return_value = "gitlab"
         mock_users.return_value = self.users_api.get_all_users_list()
         mock_groups.return_value = self.groups_api.get_all_groups_list()
         projects.return_value = self.projects_api.get_all_projects()
         spreadsheet_path.return_value = "test.xls"
+        mock_isfile.return_value = True
         column_mapping.return_value = {
             "Wave name": "Wave name",
             "Wave date": "Wave date",
@@ -132,13 +134,15 @@ class StageWaveTests(unittest.TestCase):
     @mock.patch('congregate.helpers.conf.Config.source_host', new_callable=mock.PropertyMock)
     @mock.patch.object(WaveSpreadsheetHandler, "read_file_as_json")
     @mock.patch.object(BaseStageClass, "open_projects_file")
-    def test_stage_wave_mixed_project(self, projects, read_as_json, mock_source_host, mock_source_type, spreadsheet_path, column_mapping, columns_to_use, mock_groups, mock_users):
+    @mock.patch('os.path.isfile', new_callable=mock.PropertyMock)
+    def test_stage_wave_mixed_project(self, mock_isfile, projects, read_as_json, mock_source_host, mock_source_type, spreadsheet_path, column_mapping, columns_to_use, mock_groups, mock_users):
         mock_source_type.return_value = "gitlab"
         mock_users.return_value = self.users_api.get_all_users_list()
         mock_groups.return_value = self.groups_api.get_all_groups_list()
         projects.return_value = self.projects_api.get_all_projects()
         mock_source_host.return_value = "http://example.com/"
         spreadsheet_path.return_value = "test.xls"
+        mock_isfile.return_value = True
         column_mapping.return_value = {
             "Wave name": "Wave name",
             "Wave date": "Wave date",
@@ -239,13 +243,15 @@ class StageWaveTests(unittest.TestCase):
     @mock.patch('congregate.helpers.conf.Config.source_host', new_callable=mock.PropertyMock)
     @mock.patch.object(WaveSpreadsheetHandler, "read_file_as_json")
     @mock.patch.object(BaseStageClass, "open_projects_file")
-    def test_stage_wave_mixed_project_and_group(self, projects, read_as_json, mock_source_host, mock_source_type, spreadsheet_path, column_mapping, columns_to_use, mock_groups, mock_users):
+    @mock.patch('os.path.isfile', new_callable=mock.PropertyMock)
+    def test_stage_wave_mixed_project_and_group(self, mock_isfile, projects, read_as_json, mock_source_host, mock_source_type, spreadsheet_path, column_mapping, columns_to_use, mock_groups, mock_users):
         mock_source_type.return_value = "gitlab"
         mock_users.return_value = self.users_api.get_all_users_list()
         mock_groups.return_value = self.groups_api.get_all_groups_list()
         projects.return_value = self.projects_api.get_all_projects()
         mock_source_host.return_value = "http://example.com/"
         spreadsheet_path.return_value = "test.xls"
+        mock_isfile.return_value = True
         column_mapping.return_value = {
             "Wave name": "Wave name",
             "Wave date": "Wave date",
@@ -346,12 +352,14 @@ class StageWaveTests(unittest.TestCase):
     @mock.patch('congregate.helpers.conf.Config.source_type', new_callable=mock.PropertyMock)
     @mock.patch.object(WaveSpreadsheetHandler, "read_file_as_json")
     @mock.patch.object(BaseStageClass, "open_projects_file")
-    def test_stage_wave_with_parent_group(self, projects, read_as_json, mock_source_type, spreadsheet_path, column_mapping, columns_to_use, mock_groups, mock_users, mock_parent_id):
+    @mock.patch('os.path.isfile', new_callable=mock.PropertyMock)
+    def test_stage_wave_with_parent_group(self, mock_isfile, projects, read_as_json, mock_source_type, spreadsheet_path, column_mapping, columns_to_use, mock_groups, mock_users, mock_parent_id):
         mock_source_type.return_value = "gitlab"
         mock_users.return_value = self.users_api.get_all_users_list()
         mock_groups.return_value = self.groups_api.get_all_groups_list()
         projects.return_value = self.projects_api.get_all_projects()
         spreadsheet_path.return_value = "test.xls"
+        mock_isfile.return_value = True
         column_mapping.return_value = {
             "Wave name": "Wave name",
             "Wave date": "Wave date",
@@ -482,11 +490,15 @@ class StageWaveTests(unittest.TestCase):
     @mock.patch('congregate.helpers.conf.Config.wave_spreadsheet_path', new_callable=mock.PropertyMock)
     @mock.patch.object(WaveSpreadsheetHandler, "read_file_as_json")
     @mock.patch.object(BaseStageClass, "open_projects_file")
-    def test_get_ids_to_stage_wave_no_waves(self, projects, read_as_json, spreadsheet_path, column_mapping, columns_to_use, mock_groups, mock_users):
+    @mock.patch('os.path.isfile', new_callable=mock.PropertyMock)
+    @mock.patch('sys.exit', new_callable=mock.PropertyMock)
+    def test_get_ids_to_stage_wave_no_waves(self, mock_sysExit, mock_isFile, projects, read_as_json, spreadsheet_path, column_mapping, columns_to_use, mock_groups, mock_users):
         mock_users.return_value = self.users_api.get_all_users_list()
         mock_groups.return_value = self.groups_api.get_all_groups_list()
         projects.return_value = self.projects_api.get_all_projects()
         spreadsheet_path.return_value = "test.xls"
+        mock_isFile.return_value = True
+        mock_sysExit.return_value = True
         column_mapping.return_value = {
             "Wave name": "Wave name",
             "Wave date": "Wave date",
