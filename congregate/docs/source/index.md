@@ -24,13 +24,12 @@ Our guidance on some other migrations at this time:
 * [Getting Started](static_docs/setup-dev-env.md)
 * [README](static_docs/readme.md)
 * [Roadmap](static_docs/roadmap.md)
-* Migration features matrixes:
+* **Migration features matrixes**
   * [GitLab](static_docs/gitlab-migration-features-matrix.md)
   * [Bitbucket](static_docs/bitbucket-migration-features-matrix.md)
   * [GitHub](static_docs/github-migration-features-matrix.md)
 * [Migration Metrics](static_docs/migration-metrics.md)
 * [Writing Tests in Congregate](static_docs/writing-tests.md)
-* [Bitbucket Development Setup](static_docs/bitbucket-development-setup.md)
 * [GitHub Development Setup](static_docs/github-development-setup.md)
 * [Migration Workflow](static_docs/workflow.md)
 * [Code Quality Report](static_docs/code-quality.md)

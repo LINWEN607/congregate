@@ -73,10 +73,9 @@ class VariablesClient(BaseClass):
                                     self.projects_api.create_new_project_pipeline_schedule_variable(
                                         new_id, dps["id"], self.config.destination_host, self.config.destination_token, v)
                 return True
-            else:
-                self.log.info(
-                    f"Pipeline schedule variables are disabled ({enabled}) for project {name}")
-                return None
+            self.log.info(
+                f"Pipeline schedule variables are disabled ({enabled}) for project {name}")
+            return None
         except Exception as e:
             self.log.error(
                 f"Failed to migrate project {name} pipeline schedule variables, with error:\n{e}")
