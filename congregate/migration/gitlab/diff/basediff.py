@@ -253,7 +253,7 @@ class BaseDiffClient(BaseClass):
                     count += self.total_number_of_differences(d[k])
         else:
             for k, v in d.items():
-                if k == "+++" or k == "---":
+                if k in ["+++", "---"]:
                     if not isinstance(v, dict):
                         count += 1
         return count

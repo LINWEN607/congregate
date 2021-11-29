@@ -304,9 +304,9 @@ sudo gitlab-rails console
 
 ```ruby
 # Assign project and user
-[ gprd ] production> p=Project.find_by_full_path(‘<full_path>’)
+[ gprd ] production> p=Project.find_by_full_path('<full_path>')
 => #<Project id:<PID> <full_path>
-[ gprd ] production> u=User.find_by(username: “<admin_or_owner_username>”)
+[ gprd ] production> u=User.find_by(username: '<admin_or_owner_username>')
 => #<User id:UID @<admin_or_owner_username>>
 
 # Find out delete error

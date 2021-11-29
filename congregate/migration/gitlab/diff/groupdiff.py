@@ -34,7 +34,8 @@ class GroupDiffClient(BaseDiffClient):
             "marked_for_deletion_on",
             "prevent_forking_outside_group",
             "shared_with_groups",   # Temporarily, until we add shared_with_groups feature
-            "file_template_project_id"
+            "file_template_project_id",
+            "visibility"   # Private on import, unless imported into a parent group
         ]
         if is_dot_com(self.config.destination_host) or is_dot_com(
                 self.config.source_host):

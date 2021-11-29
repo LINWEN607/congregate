@@ -3,7 +3,8 @@ Congregate - GitLab instance migration utility
 
 Copyright (c) 2021 - GitLab
 """
-import os,sys
+import os
+import sys
 
 from congregate.helpers.misc_utils import get_dry_log, safe_json_response
 from congregate.helpers.dict_utils import rewrite_list_into_dict
@@ -55,7 +56,7 @@ class WaveStageCLI(BaseStageClass):
         self.project_paths = rewrite_list_into_dict(
             self.open_projects_file(scm_source), "path_with_namespace", lowercase=True)
         unable_to_find = []
-        
+
         if not os.path.isfile(self.config.wave_spreadsheet_path):
             sys.exit(
                 f"The spreadsheet {self.config.wave_spreadsheet_path} does not exist. Please create a spreasheet with the projects scheduled for migration")
@@ -77,19 +78,19 @@ class WaveStageCLI(BaseStageClass):
         )
         if not wave_data:
             sys.exit(
-                    f"Wave name is empty in {self.config.wave_spreadsheet_path} spreadsheet or the spreadsheet is empty.")
-            
+                f"Wave name is empty in {self.config.wave_spreadsheet_path} spreadsheet or the spreadsheet is empty.")
+
         # Some basic sanity checks for reading in spreadsheet data
         self.check_spreadsheet_data()
         # Iterating over a spreadsheet row
         for row in wave_data:
             url_key = column_mapping["Source Url"]
             repo_url = row.get(url_key, "").lower()
-            if project := (self.project_urls.get(repo_url, None) or (self.project_urls.get(repo_url + 'git', None))
-                        or self.project_paths.get(self.sanitize_project_path(repo_url, host=scm_source))):
+            if project := (self.project_urls.get(repo_url) or (self.project_urls.get(repo_url + 'git')) or self.project_paths.get(self.sanitize_project_path(repo_url, host=scm_source))):
                 obj = self.get_project_metadata(project)
                 if parent_path := column_mapping.get("Parent Path"):
-                    obj["target_namespace"] = row[parent_path].strip("/")
+                    obj["target_namespace"] = row.get(
+                        parent_path, "").strip("/")
                     obj["override_dstn_ns"] = bool(row.get("Override"))
                     if row.get("SWC AA ID"):
                         obj['swc_manager_name'] = row.get('SWC Manager Name')
@@ -99,7 +100,8 @@ class WaveStageCLI(BaseStageClass):
                         self.log.warning(
                             f"No SWC_ID for {obj['target_namespace']}")
                 else:
-                    self.log.warning("The parent path doesn't exist or the parent path name has been misspelled.")
+                    self.log.warning(
+                        "The parent path doesn't exist or the parent path name has been misspelled.")
                 self.append_project_data(
                     obj, wave_data, row, dry_run=dry_run)
             elif group := self.find_group(repo_url):

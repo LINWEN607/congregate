@@ -5,10 +5,11 @@ from functools import wraps
 from congregate.helpers.logger import myLogger
 from congregate.helpers.exceptions import ConfigurationException
 
-log = myLogger(__name__, app_path=getenv('APP_PATH', '.'), log_name=getenv('APP_NAME', 'application'))
+log = myLogger(__name__, app_path=getenv('APP_PATH', '.'),
+               log_name=getenv('APP_NAME', 'application'))
 
 
-def stable_retry(function, ExceptionType=Exception, delay=5, backoff=1.20, sleep_delay=1.5):
+def stable_retry(function, ExceptionType=Exception, delay=5, backoff=1.20):
     @wraps(function)
     def f_retry(*args, **kwargs):
         retries = 3
@@ -50,6 +51,7 @@ def configurable_stable_retry(ExceptionType=Exception, retries=3, delay=5, backo
         return f_retry
     return stable_retry
 
+
 def token_rotate(function):
     """
         Decorator used to rotate token used from a list
@@ -61,12 +63,11 @@ def token_rotate(function):
     @wraps(function)
     def f_rotate(*args, **kwargs):
         if args[0].token_array:
+            log.info("Rotating token")
             args[0].index += 1
-            index = args[0].index%len(args[0].token_array)
-            #log.info(f"index: {index}")
+            index = args[0].index % len(args[0].token_array)
             args[0].token = args[0].token_array[index]
-            #log.info(f"token f_rotate: {args[0].token}")
         else:
-            log.info(f"No tokens provided")
+            log.info("No tokens provided")
         return function(*args, **kwargs)
     return f_rotate
