@@ -178,6 +178,7 @@ Commands:
     toggle-maintenance-mode                 Reduce write operations to a minimum by blocking all external actions that change the internal state. Operational as of GitLab version 13.9
     ldap-group-sync                         Perform LDAP Group sync operations over a pipe-delimited file of group_id|CN
     set-staged-users-public-email           Set/unset the staged users public_email field on source (default) or destination. Use email on source as reference.
+                                                Mandatory for migrations from GitLab 14.0.9+, 14.1.4+, 14.2.2+ and 14.3.0+.
     create-staged-projects-structure        Create empty project structures on GitLab destination for staged projects. Optionally, disable CI/CD on creation.
     create-staged-projects-fork-relation    Create a forked from/to relation between (group) projects on destination, based on staged projects. Assumes fork and forked project have already been migrated.
 """
