@@ -54,11 +54,14 @@ def do_all_groups_and_projects(dry_run=True):
     gcli = GroupStageCLI()
     gcli.stage_data(["all"], dry_run=dry_run)
 
-    # (14.2.2+) Set public_email field for all staged users on src before group/project export
+    # Set public_email field for all staged users on src before group/project export
     users.set_staged_users_public_email(dry_run=dry_run)
 
     migrate = MigrateClient(dry_run=dry_run, skip_users=True)
     migrate.migrate()
+
+    # Reset public_email field after migration
+    users.set_staged_users_public_email(dry_run=dry_run, hide=True)
 
 
 def do_all(dry_run=True):
@@ -76,6 +79,9 @@ def do_all(dry_run=True):
 
     migrate = MigrateClient(dry_run=dry_run)
     migrate.migrate()
+
+    # Reset public_email field after migration
+    users.set_staged_users_public_email(dry_run=dry_run, hide=True)
 
 
 def list_all():

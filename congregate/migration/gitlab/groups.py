@@ -41,7 +41,7 @@ class GroupsClient(BaseClass):
                 group["members"] = []
             else:
                 group["members"] = [m for m in self.groups_api.get_all_group_members(
-                    group_id, host, token) if m["id"] != 1]
+                    group_id, host, token) if m["id"] not in [0, 1]]
             group["projects"] = list(self.groups_api.get_all_group_projects(
                 group_id, host, token, with_shared=False))
             for subgroup in self.groups_api.get_all_subgroups(

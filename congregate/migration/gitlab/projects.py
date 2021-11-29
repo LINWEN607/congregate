@@ -73,7 +73,7 @@ class ProjectsClient(BaseClass):
             self.log.info(u"[ID: {0}] {1}: {2}".format(
                 project["id"], project["name"], project["description"]))
             project["members"] = [m for m in self.projects_api.get_members(
-                project["id"], host, token) if m["id"] != 1]
+                project["id"], host, token) if m["id"] not in [0, 1]]
 
             mongo.insert_data(f"projects-{strip_netloc(host)}", project)
         mongo.close_connection()

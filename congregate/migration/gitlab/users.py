@@ -478,7 +478,7 @@ class UsersClient(BaseClass):
         # unit test
         if not mongo:
             mongo = self.connect_to_mongo()
-        if user["id"] != 1:
+        if user["id"] not in [0, 1]:
             user["email"] = user["email"].lower()
             if self.config.projects_limit:
                 user["projects_limit"] = self.config.projects_limit
