@@ -100,7 +100,7 @@ class ProjectsClient(BaseClass):
                             f"Shared project {path} with group {dst_full_path}")
                     else:
                         self.log.error(
-                            f"Failed to share project {path} with group {dst_full_path} due to:\n{r.content}")
+                            f"Failed to share project {path} with group {dst_full_path}, using payload\n{data}\ndue to:\n{r} - {r.text}")
                 else:
                     self.log.error(
                         f"Failed to find group {dst_full_path} on destination using new ID {new_gid}")

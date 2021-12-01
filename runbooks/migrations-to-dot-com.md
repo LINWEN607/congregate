@@ -162,8 +162,8 @@ Copy the following data and add subsequent rows for single group migration
   * This is required in order to have Congregate immediately delete projects that fail to import or import with a failed status
 * [ ] If `Restrict membership by email domain` is configured for the top-level group (*Settings -> General -> Permissions, LFS, 2FA*) make sure to add the Admin user's `gitlab.com` email domain
   * This is to avoid group and project import failures
-* [ ] (as of **14.2.2**) Set `public_email` field for all staged users on source and destination (`--dest`) by running `./congregate.sh set-staged-users-public-email`
-  * Skip running command against source instance if version **< 14.2.2** and destination version **>= 14.2.2**
+* [ ] (as of **14.0**) Set `public_email` field for all staged users on source by running `./congregate.sh set-staged-users-public-email`
+  * Skip running command if source version is **< 14.0** and destination version is **>= 14.0**
 * [ ] Notify in the internal Slack channel dedicated to this migration you have completed preparation for the wave
 
 #### Dry run groups and projects
@@ -368,7 +368,7 @@ In that script, you prepopulate all source and destination registry repositories
 
 ### Post Migration
 
-* [ ] Revert back (to `None`), on source and destination (`--dest`), the exposed users' `public_email` field by running `./congregate.sh set-staged-users-public-email --hide`
+* [ ] Revert back on source the exposed users' `public_email` field by running `./congregate.sh set-staged-users-public-email --hide`
   * Make sure all the affected users are staged first
 * [ ] Once all the projects/groups are migrated, stitch together the various migration attempts by running `./congregate.sh stitch-results --result-type=<user|group|project> --no-of-files=<number-of-results-files-to-stitch>`
 * [ ] Once the results have been stitched into a single JSON file, run the diff report on the newly created results file

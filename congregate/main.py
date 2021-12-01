@@ -59,7 +59,7 @@ Usage:
     congregate clean-database [--commit] [--keys]
     congregate toggle-maintenance-mode [--commit] [--off] [--dest] [--msg=<multi+word+message>]
     congregate ldap-group-sync <file-path> [--commit]
-    congregate set-staged-users-public-email [--commit] [--hide] [--dest]
+    congregate set-staged-users-public-email [--commit] [--hide]
     congregate create-staged-projects-structure [--commit] [--disable-cicd]
     congregate create-staged-projects-fork-relation [--commit]
     congregate -h | --help
@@ -177,8 +177,7 @@ Commands:
     clean-database                          Drop all collections in the congregate MongoDB database and rebuilds the structure
     toggle-maintenance-mode                 Reduce write operations to a minimum by blocking all external actions that change the internal state. Operational as of GitLab version 13.9
     ldap-group-sync                         Perform LDAP Group sync operations over a pipe-delimited file of group_id|CN
-    set-staged-users-public-email           Set/unset the staged users public_email field on source (default) or destination. Use email on source as reference.
-                                                Mandatory for migrations from GitLab 14.0.9+, 14.1.4+, 14.2.2+ and 14.3.0+.
+    set-staged-users-public-email           Set/unset the staged users public_email field on source. Mandatory for migrations from GitLab 14.0+.
     create-staged-projects-structure        Create empty project structures on GitLab destination for staged projects. Optionally, disable CI/CD on creation.
     create-staged-projects-fork-relation    Create a forked from/to relation between (group) projects on destination, based on staged projects. Assumes fork and forked project have already been migrated.
 """
@@ -612,7 +611,7 @@ def main():
                         "\nThis command will setup LDAP group sync based on the file passed in via <file-path>")
             if arguments["set-staged-users-public-email"]:
                 users.set_staged_users_public_email(
-                    dry_run=DRY_RUN, hide=arguments["--hide"], dest=DEST)
+                    dry_run=DRY_RUN, hide=arguments["--hide"])
             if arguments["create-staged-projects-structure"]:
                 projects.create_staged_projects_structure(
                     dry_run=DRY_RUN, disable_cicd=arguments["--disable-cicd"])

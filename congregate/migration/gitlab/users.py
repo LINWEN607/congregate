@@ -652,19 +652,20 @@ class UsersClient(BaseClass):
                 "SSO pattern is currently set to hash, but no file is specified in congregate.conf")
         return None
 
-    def set_staged_users_public_email(self, dry_run=True, hide=False, dest=False):
+    def set_staged_users_public_email(self, dry_run=True, hide=False):
         start = time()
         rotate_logs()
         staged_users = get_staged_users()
-        host = self.config.destination_host if dest else self.config.source_host
+        host = self.config.source_host
         for su in staged_users:
             # Assume primary email matches on dest
             email = su.get("email")
-            set_email = None if hide else email
+            su_pub_email = su.get("public_email")
+            set_email = su_pub_email if hide else email
             try:
-                # Always look up user
+                # Look up user on source
                 user = find_user_by_email_comparison_without_id(
-                    email, src=not dest)
+                    email, src=True)
                 if user:
                     pub_email = user.get("public_email")
                     name = user.get("name")
@@ -675,17 +676,22 @@ class UsersClient(BaseClass):
                 # When to avoid action
                 if (hide and not pub_email) or (not hide and pub_email == email):
                     continue
+                # When to warn of overwrite
+                if not hide and pub_email and pub_email != email:
+                    self.log.warning(
+                        f"Overwrite user {name} public email {pub_email} with {email}")
+                msg = " back" if hide else ""
                 data = {"public_email": set_email}
                 self.log.info(
-                    f"{get_dry_log(dry_run)}Set {set_email} as public email for user {name} on {host}")
+                    f"{get_dry_log(dry_run)}Set{msg} user {name} public email {set_email} on {host}")
                 if not dry_run:
-                    resp = self.users_api.modify_user(user.get(
-                        "id"), host, self.config.destination_token if dest else self.config.source_token, data)
+                    resp = self.users_api.modify_user(
+                        user.get("id"), host, self.config.source_token, data)
                     if resp.status_code != 200:
                         self.log.error(
-                            f"Failed to set {set_email} as public email for user {name} on {host} with response:\n{resp} - {resp.text}")
+                            f"Failed to set{msg} user {name} public email {set_email} on {host} with response:\n{resp} - {resp.text}")
             except RequestException as re:
                 self.log.error(
-                    f"Failed to set {set_email} as public email for user:\n{su}\nwith error:\n{re}")
+                    f"Failed to set{msg} public email {set_email} for user:\n{su}\nwith error:\n{re}")
                 continue
         add_post_migration_stats(start, log=self.log)
