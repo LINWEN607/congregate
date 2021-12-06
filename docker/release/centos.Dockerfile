@@ -23,11 +23,12 @@ COPY docker/release/centos/mongo_repo /etc/yum.repos.d/mongodb-org-4.4.repo
 
 RUN mkdir -p /data/db
 
-# Set /data and /opt folder permissions for ps-user
+# Set /data and /opt folder and /var/run/docker.sock file permissions for ps-user
 RUN chown -R ps-user:wheel /data && \
     chmod -R 750 /data && \
     chown -R ps-user:wheel /opt && \
-    chmod -R 750 /opt
+    chmod -R 750 /opt && \
+    chmod 644 /var/run/docker.sock
 
 # Installing yum-installable libraries
 RUN yum update -y && \
@@ -78,7 +79,7 @@ RUN sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/inst
 
 RUN export PATH=$PATH:$HOME/.local/bin && \
     echo "export PATH=$PATH" >> ~/.zshrc
-    
+
 # Set up the bashrc
 RUN echo 'if [ -z "$(ps aux | grep mongo | grep -v grep)" ]; then sudo mongod --fork --logpath /var/log/mongodb/mongod.log; fi' >> ~/.bashrc && \
     echo 'if [ -z "$(ps aux | grep mongo | grep -v grep)" ]; then sudo mongod --fork --logpath /var/log/mongodb/mongod.log; fi' >> ~/.zshrc
@@ -93,7 +94,7 @@ RUN echo "alias ll='ls -al'" >> ~/.bashrc && \
 RUN echo "alias license='cat /opt/congregate/LICENSE'" >> ~/.bashrc && \
     echo "alias license='cat /opt/congregate/LICENSE'" >> ~/.zshrc
 
-    
+
 RUN echo "CHECKING PYTHON VERSION" && \
     python3.8 -V
 

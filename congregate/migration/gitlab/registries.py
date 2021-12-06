@@ -219,5 +219,6 @@ class RegistryClient(BaseClass):
                     So, customer.registry.com/project/path/suffix -> registry.gitlab.com/parent/project/path/suffix
         """
         if self.config.dstn_parent_group_path:
-            return f"{self.config.destination_registry}/{self.config.dstn_parent_group_path}/{suffix}"
+            # Docker repo/tag requires lower-case
+            return f"{self.config.destination_registry}/{self.config.dstn_parent_group_path.lower()}/{suffix}"
         return f"{self.config.destination_registry}/{suffix}"
