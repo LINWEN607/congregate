@@ -23,12 +23,11 @@ COPY docker/release/centos/mongo_repo /etc/yum.repos.d/mongodb-org-4.4.repo
 
 RUN mkdir -p /data/db
 
-# Set /data and /opt folder and /var/run/docker.sock file permissions for ps-user
+# Set /data and /opt folder permissions for ps-user
 RUN chown -R ps-user:wheel /data && \
     chmod -R 750 /data && \
     chown -R ps-user:wheel /opt && \
-    chmod -R 750 /opt && \
-    chmod 644 /var/run/docker.sock
+    chmod -R 750 /opt
 
 # Installing yum-installable libraries
 RUN yum update -y && \

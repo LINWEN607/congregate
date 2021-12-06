@@ -26,10 +26,9 @@ ADD frontend frontend
 ADD dev/bin dev/bin
 COPY congregate.sh pyproject.toml poetry.lock README.md package.json package-lock.json vue.config.js babel.config.js .gitignore LICENSE ./
 
-# Set /opt folder and /var/run/docker.sock file permissions for ps-user
+# Set /opt folder permissions for ps-user
 RUN chown -R ps-user:sudo /opt && \
-    chmod -R 750 /opt && \
-    chmod 644 /var/run/docker.sock
+    chmod -R 750 /opt
 
 # Installing some basic utilities and updating apt
 RUN apt-get update && \
