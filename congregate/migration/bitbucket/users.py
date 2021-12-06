@@ -55,7 +55,7 @@ class UsersClient(BaseClass):
 
     def format_users(self, users):
         data = []
-        for user in [u for u in users if u["id"] not in [0, 1]]:
+        for user in users:
             formatted_user = self.format_user(user)
             if not formatted_user:
                 continue

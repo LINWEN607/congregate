@@ -478,33 +478,31 @@ class UsersClient(BaseClass):
         # unit test
         if not mongo:
             mongo = self.connect_to_mongo()
-        if user["id"] not in [0, 1]:
-            user["email"] = user["email"].lower()
-            if self.config.projects_limit:
-                user["projects_limit"] = self.config.projects_limit
-            keys_to_delete = [
-                "web_url",
-                "last_sign_in_at",
-                "last_activity_at",
-                "current_sign_in_at",
-                "created_at",
-                "confirmed_at",
-                "last_activity_on",
-                "bio",
-                "bio_html",
-                # SSO causes issues with the avatar URL due to the
-                # authentication
-                "avatar_url" if self.config.group_sso_provider else "",
-                # Avoid propagating field when creating users on gitlab.com
-                # with no config value set
-                "projects_limit" if is_dot_com(
-                    self.config.destination_host) and not self.config.projects_limit else ""
-            ]
-            for key in keys_to_delete:
-                user.pop(key, None)
-            mongo.insert_data(
-                f"users-{strip_netloc(self.config.source_host)}", user)
-
+        user["email"] = user["email"].lower()
+        if self.config.projects_limit:
+            user["projects_limit"] = self.config.projects_limit
+        keys_to_delete = [
+            "web_url",
+            "last_sign_in_at",
+            "last_activity_at",
+            "current_sign_in_at",
+            "created_at",
+            "confirmed_at",
+            "last_activity_on",
+            "bio",
+            "bio_html",
+            # SSO causes issues with the avatar URL due to the
+            # authentication
+            "avatar_url" if self.config.group_sso_provider else "",
+            # Avoid propagating field when creating users on gitlab.com
+            # with no config value set
+            "projects_limit" if is_dot_com(
+                self.config.destination_host) and not self.config.projects_limit else ""
+        ]
+        for key in keys_to_delete:
+            user.pop(key, None)
+        mongo.insert_data(
+            f"users-{strip_netloc(self.config.source_host)}", user)
         mongo.close_connection()
 
     def generate_user_data(self, user):

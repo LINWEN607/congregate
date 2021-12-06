@@ -36,12 +36,12 @@ class GroupsClient(BaseClass):
             ]
             for k in keys_to_ignore:
                 group.pop(k, None)
-            # Avoid saving all SaaS parent group members or on-prem user ID 1
+            # Avoid saving all SaaS parent group members
             if is_dot_com(host) and group_id == self.config.src_parent_id:
                 group["members"] = []
             else:
-                group["members"] = [m for m in self.groups_api.get_all_group_members(
-                    group_id, host, token) if m["id"] not in [0, 1]]
+                group["members"] = list(self.groups_api.get_all_group_members(
+                    group_id, host, token))
             group["projects"] = list(self.groups_api.get_all_group_projects(
                 group_id, host, token, with_shared=False))
             for subgroup in self.groups_api.get_all_subgroups(

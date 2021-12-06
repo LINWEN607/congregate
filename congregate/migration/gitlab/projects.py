@@ -70,10 +70,10 @@ class ProjectsClient(BaseClass):
         if error or not project:
             self.log.error(f"Failed to list project with response:\n{project}")
         else:
-            self.log.info(u"[ID: {0}] {1}: {2}".format(
-                project["id"], project["name"], project["description"]))
-            project["members"] = [m for m in self.projects_api.get_members(
-                project["id"], host, token) if m["id"] not in [0, 1]]
+            self.log.info(
+                f"[ID: {project['id']}] {project['name']}: {project['description']}")
+            project["members"] = list(self.projects_api.get_members(
+                project["id"], host, token))
 
             mongo.insert_data(f"projects-{strip_netloc(host)}", project)
         mongo.close_connection()
@@ -100,7 +100,7 @@ class ProjectsClient(BaseClass):
                             f"Shared project {path} with group {dst_full_path}")
                     else:
                         self.log.error(
-                            f"Failed to share project {path} with group {dst_full_path}, using payload\n{data}\ndue to:\n{r} - {r.text}")
+                            f"Failed to share project {path} with group {dst_full_path}, using payload\n{data} due to:\n{r} - {r.text}")
                 else:
                     self.log.error(
                         f"Failed to find group {dst_full_path} on destination using new ID {new_gid}")
