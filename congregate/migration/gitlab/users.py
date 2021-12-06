@@ -678,18 +678,18 @@ class UsersClient(BaseClass):
                 if not hide and pub_email and pub_email != email:
                     self.log.warning(
                         f"Overwrite user {name} public email {pub_email} with {email}")
-                msg = " back" if hide else ""
+                msg = "back to " if hide else ""
                 data = {"public_email": set_email}
                 self.log.info(
-                    f"{get_dry_log(dry_run)}Set{msg} user {name} public email {set_email} on {host}")
+                    f"{get_dry_log(dry_run)}Set user {name} public email {msg}{set_email} on {host}")
                 if not dry_run:
                     resp = self.users_api.modify_user(
                         user.get("id"), host, self.config.source_token, data)
                     if resp.status_code != 200:
                         self.log.error(
-                            f"Failed to set{msg} user {name} public email {set_email} on {host} with response:\n{resp} - {resp.text}")
+                            f"Failed to set user {name} public email {msg}{set_email} on {host} with response:\n{resp} - {resp.text}")
             except RequestException as re:
                 self.log.error(
-                    f"Failed to set{msg} public email {set_email} for user:\n{su}\nwith error:\n{re}")
+                    f"Failed to set public email {msg}{set_email} for user:\n{su} with error:\n{re}")
                 continue
         add_post_migration_stats(start, log=self.log)
