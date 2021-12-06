@@ -7,7 +7,7 @@ from shutil import copy
 from time import time
 from datetime import timedelta, datetime
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import is_error_message_present, get_dry_log, strip_netloc
+from congregate.helpers.misc_utils import is_error_message_present, get_dry_log, safe_json_response, strip_netloc
 from congregate.helpers.utils import is_dot_com, get_congregate_path
 from congregate.helpers.json_utils import read_json_file_into_object, write_json_to_file
 from congregate.helpers.dict_utils import dig
@@ -156,20 +156,21 @@ def get_user_project_namespace(p):
         :return: Destination user project namespace
     """
     p_namespace = dig(p, 'namespace', 'full_path') if isinstance(
-        p.get("namespace", None), dict) else p["namespace"]
+        p.get("namespace"), dict) else p["namespace"]
     if is_dot_com(b.config.destination_host) or p_namespace == "root":
         b.log.info(
-            f"User project {p['path_with_namespace']} is assigned to import user id (ID: {b.config.import_user_id})")
-        return users_api.get_user(
-            b.config.import_user_id, b.config.destination_host, b.config.destination_token).json()["username"]
-    else:
-        # Retrieve user username based on email to determine correct
-        # destination user namespace
-        if p["members"] and p["members"][0].get("email"):
-            user = find_user_by_email_comparison_without_id(
-                p["members"][0]["email"])
-            if user:
-                return user["username"]
+            f"User project {p['path_with_namespace']} is assigned to import user (ID: {b.config.import_user_id})")
+        user = safe_json_response(users_api.get_user(
+            b.config.import_user_id, b.config.destination_host, b.config.destination_token))
+        if user:
+            return user.get("username")
+    # Retrieve user username based on email to determine correct
+    # destination user namespace
+    if p.get("members") and p["members"][0].get("email"):
+        user = find_user_by_email_comparison_without_id(
+            p["members"][0]["email"])
+        if user:
+            return user.get("username")
     return p_namespace
 
 
@@ -188,13 +189,12 @@ def find_user_by_email_comparison_without_id(email, src=False):
         # Will searching for an explicit email actually return more than one?
         # Probably is just an array of 1
         for user in users:
-            if user and user.get(
-                    "email", None) and user["email"].lower() == email.lower():
+            if user and user.get("email") and user["email"].lower() == email.lower():
                 b.log.info(
                     f"Found user by matching primary email {email}")
                 return user
             # Allow secondary emails in user search (as of 13.7)
-            elif user and user.get("email", None):
+            elif user and user.get("email"):
                 b.log.warning(
                     f"Found user by email {email}, with primary set to {user['email']}")
             else:
