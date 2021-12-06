@@ -6,6 +6,8 @@
 
 :x: = not supported
 
+NOTE: Features not listed in the matrix should be presumed to be not yet supported.
+
 | Main                      | Feature                                                 | Sub-feature                                                                                                                                                       | GitLab             | Congregate         | Introduced | Min. Tier                                    | Min. Permission     |
 | ------------------------- | ------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ | ------------------ | ---------- | -------------------------------------------- | ------------------- |
 | **Group**                 |
@@ -82,6 +84,7 @@
 |                           | Services                                                |                                                                                                                                                                   | :x:                | :x:                | `NK`       | Core/Free                                    | Maintainer          |
 |                           | Runners                                                 |                                                                                                                                                                   | :x:                | :x:                | 13.2       | Core/Free                                    | Maintainer          |
 |                           | Templates (built-in and custom)                         |                                                                                                                                                                   | :x:                | :x:                | 11.2       | Premium/Silver                               | Maintainer          |
+|                           | Topics    |                                                                                                                                                                   | :x:                | :x:                | `NK`       | Core/Free                                    | Maintainer          |
 | **User**                  |
 |                           | Avatars                                                 |                                                                                                                                                                   | :x:                | :white_check_mark: | `NK`       | Core/Free                                    | Guest               |
 |                           | Profile (API)                                           |                                                                                                                                                                   | :x:                | :white_check_mark: | `NK`       | Core/Free                                    | Admin               |

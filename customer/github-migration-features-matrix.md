@@ -6,6 +6,8 @@
 
 :x: = not supported
 
+NOTE: Features not listed in the matrix should be presumed to be not yet supported.
+
 | Main             | Feature                   | Sub-feature                                                      | GitLab             | Congregate         |
 | ---------------- | ------------------------- | ---------------------------------------------------------------- | ------------------ | ------------------ |
 | **Organization** |
