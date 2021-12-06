@@ -22,6 +22,7 @@
     /bin/bash   # or zsh
     ```
 
+1. Set `/var/run/docker.sock` permissions for `ps-user` by running `sudo chmod 666 /var/run/docker.sock`.
 1. Exit (*Ctrl+d*) the container (stops it).
 1. Run `docker ps` to get the `container-id`.
 1. To resume the container and keep it up:

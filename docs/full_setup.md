@@ -25,6 +25,7 @@
     /bin/bash # or zsh
     ```
 
+   **NOTE:** Set `/var/run/docker.sock` permissions for `ps-user` by running `sudo chmod 666 /var/run/docker.sock`.
    * To `docker run` in the background use `-d=true` or just `-d` option
    * In addition, to reattach to a detached container, use `docker attach` command
 
