@@ -315,7 +315,6 @@ class ConfigurationValidationTests(unittest.TestCase):
         host.return_value = "https://bitbucket.server.com"
         self.config.src_token_validated_in_session = False
         url_value = "https://bitbucket.server.com/rest/api/1.0/admin/permissions/users?filter=admin"
-        # url.return_value = url_value
         self.config.as_obj().set("SOURCE", "source_token", obfuscate("Enter secret: "))
         # pylint: disable=no-member
         responses.add(responses.GET, url_value,
@@ -330,15 +329,19 @@ class ConfigurationValidationTests(unittest.TestCase):
     @mock.patch.object(ConfigurationValidator, 'source_host', new_callable=mock.PropertyMock)
     @mock.patch.object(ConfigurationValidator, 'source_username', new_callable=mock.PropertyMock)
     @mock.patch("getpass.getpass")
-    def test_validate_bbs_src_token_user_invalid(self, secret, username, host, src_type):
+    def test_validate_bbs_src_token_user_invalid_group_invalid(self, secret, username, host, src_type):
         secret.return_value = "test"
         src_type.return_value = "bitbucket server"
         username.return_value = "non-user"
         host.return_value = "https://bitbucket.server.com"
         self.config.src_token_validated_in_session = False
         url_value = "https://bitbucket.server.com/rest/api/1.0/admin/permissions/users?filter=non-user"
-        # url.return_value = url_value
         self.config.as_obj().set("SOURCE", "source_token", obfuscate("Enter secret: "))
+        # pylint: disable=no-member
+        responses.add(responses.GET, url_value,
+                      json=self.bbs_users.get_user_invalid(), status=200, content_type='text/json', match_querystring=True)
+        # pylint: enable=no-member
+        url_value = "https://bitbucket.server.com/rest/api/1.0/admin/users/more-members?context=non-user"
         # pylint: disable=no-member
         responses.add(responses.GET, url_value,
                       json=self.bbs_users.get_user_invalid(), status=200, content_type='text/json', match_querystring=True)
@@ -359,7 +362,6 @@ class ConfigurationValidationTests(unittest.TestCase):
         host.return_value = "https://bitbucket.server.com"
         self.config.src_token_validated_in_session = False
         url_value = "https://bitbucket.server.com/rest/api/1.0/admin/permissions/users?filter=non-admin"
-        # url.return_value = url_value
         self.config.as_obj().set("SOURCE", "source_token", obfuscate("Enter secret: "))
         # pylint: disable=no-member
         responses.add(responses.GET, url_value,
@@ -386,6 +388,36 @@ class ConfigurationValidationTests(unittest.TestCase):
         # pylint: disable=no-member
         responses.add(responses.GET, url_value,
                       json=self.bbs_users.get_sys_admin_user(), status=200, content_type='text/json', match_querystring=True)
+        # pylint: enable=no-member
+        self.assertTrue(self.config.source_token, "test")
+
+    @responses.activate
+    # pylint: enable=no-member
+    @mock.patch.object(ConfigurationValidator, 'source_type', new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, 'source_host', new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, 'source_username', new_callable=mock.PropertyMock)
+    @mock.patch("getpass.getpass")
+    def test_validate_bbs_src_token_user_invalid_group_valid_success(self, secret, username, host, src_type):
+        secret.return_value = "test"
+        src_type.return_value = "bitbucket server"
+        username.return_value = "non-user"
+        host.return_value = "https://bitbucket.server.com"
+        self.config.src_token_validated_in_session = False
+        url_value = "https://bitbucket.server.com/rest/api/1.0/admin/permissions/users?filter=non-user"
+        self.config.as_obj().set("SOURCE", "source_token", obfuscate("Enter secret: "))
+        # pylint: disable=no-member
+        responses.add(responses.GET, url_value,
+                      json=self.bbs_users.get_user_invalid(), status=200, content_type='text/json', match_querystring=True)
+        # pylint: enable=no-member
+        url_value = "https://bitbucket.server.com/rest/api/1.0/admin/users/more-members?context=non-user"
+        # pylint: disable=no-member
+        responses.add(responses.GET, url_value,
+                      json=self.bbs_users.get_user_group(), status=200, content_type='text/json', match_querystring=True)
+        # pylint: enable=no-member
+        url_value = "https://bitbucket.server.com/rest/api/1.0/admin/permissions/groups?filter=admin-group"
+        # pylint: disable=no-member
+        responses.add(responses.GET, url_value,
+                      json=self.bbs_users.get_admin_group(), status=200, content_type='text/json', match_querystring=True)
         # pylint: enable=no-member
         self.assertTrue(self.config.source_token, "test")
 

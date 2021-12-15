@@ -35,6 +35,13 @@ class UsersTests(unittest.TestCase):
         mock_close_connection.return_value = None
         expected_users = [
             {
+                "username": "admin",
+                "email": "sysadmin@yourcompany.com",
+                "id": 1,
+                "name": "John Doe",
+                "state": "active"
+            },
+            {
                 "username": "user1",
                 "email": "user1@example.com",
                 "id": 2,
@@ -54,7 +61,8 @@ class UsersTests(unittest.TestCase):
 
         for user in self.mock_users.get_all_users():
             users.handle_retrieving_users(user, mongo=mongo)
-        actual_users = [d for d, _ in mongo.stream_collection("users-bitbucket.company.com")]
+        actual_users = [d for d, _ in mongo.stream_collection(
+            "users-bitbucket.company.com")]
 
         self.assertEqual(len(actual_users), len(expected_users))
 
@@ -79,6 +87,13 @@ class UsersTests(unittest.TestCase):
         users = UsersClient()
         expected_users = [
             {
+                "username": "admin",
+                "email": "sysadmin@yourcompany.com",
+                "id": 1,
+                "name": "John Doe",
+                "state": "active"
+            },
+            {
                 "username": "user2",
                 "email": "user2@example.com",
                 "id": 3,
@@ -86,27 +101,20 @@ class UsersTests(unittest.TestCase):
                 "state": "active"
             }
         ]
-        
+
         mongo = MongoConnector(client=mongomock.MongoClient)
 
         for user in self.mock_users.get_all_users():
             users.handle_retrieving_users(user, mongo=mongo)
-        actual_users = [d for d, _ in mongo.stream_collection("users-bitbucket.company.com")]
+        actual_users = [d for d, _ in mongo.stream_collection(
+            "users-bitbucket.company.com")]
 
         self.assertEqual(len(actual_users), len(expected_users))
 
         for i, _ in enumerate(expected_users):
             self.assertDictEqual(expected_users[i], actual_users[i])
 
-    def test_is_user_needed_admin(self):
-        users = UsersClient()
-        user = {
-            "id": 1
-        }
-        self.assertFalse(users.is_user_needed(user))
-
-    @patch('congregate.helpers.conf.Config.users_to_ignore',
-           new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.users_to_ignore', new_callable=PropertyMock)
     def test_is_user_needed_ignored_false(self, mock_ignore):
         mock_ignore.return_value = ['user1']
         users = UsersClient()
@@ -116,8 +124,7 @@ class UsersTests(unittest.TestCase):
         }
         self.assertFalse(users.is_user_needed(user))
 
-    @patch('congregate.helpers.conf.Config.users_to_ignore',
-           new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.users_to_ignore', new_callable=PropertyMock)
     def test_is_user_needed_ignored_true(self, mock_ignore):
         mock_ignore.return_value = ['user1']
         users = UsersClient()
