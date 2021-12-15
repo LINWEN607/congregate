@@ -90,13 +90,11 @@
 # src_username = username
 # src_hostname = some_external_source
 # src_access_token = *****
-# repo_path = ./repo_path
  
 ### Consider below changes when the source is a GitHub server, rest all other configuration remains same
 # src_type = GitHub
 # src_hostname = some_external_source
 # src_access_token = *****
-# repo_path = ./repo_path
 ### src_password is only used by the GitHubBrowser class. Use an access token for any API requests.
 # src_password = ****
 ### src_parent_org is used when migrating a single organization e.g. from github.com

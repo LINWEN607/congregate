@@ -93,7 +93,6 @@ class MigrationE2EGHETestSetup(unittest.TestCase):
             "GitHub",                               # Src type
             # source host external_src_url
             os.getenv("GHE_SOURCE_URL", "HOST_ENV_VAR_NOT_FOUND"),
-            "repo_path",                            # Repo path
             "no",                                   # CI Source
             "no",                                   # keep_inactive_users
             "yes",                                  # password reset email
