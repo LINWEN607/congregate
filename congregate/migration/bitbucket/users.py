@@ -46,12 +46,10 @@ class UsersClient(BaseClass):
                 "state": "active"
             }
         self.log.warning(
-            f"User {user['slug']} is either not needed or missing an email address. Skipping")
+            f"User {user['slug']} is either not needed or missing the email address. Skipping")
 
     def is_user_needed(self, user):
-        if user['id'] == 1 or user["slug"].lower() in self.users_to_ignore:
-            return False
-        return True
+        return user.get("slug", "").lower() not in self.users_to_ignore
 
     def format_users(self, users):
         data = []

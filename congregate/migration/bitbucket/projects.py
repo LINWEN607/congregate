@@ -68,7 +68,7 @@ class ProjectsClient(BaseClass):
             for group in self.projects_api.get_all_project_groups(project_key):
                 group_name = dig(group, 'group', 'name', default="").lower()
                 permission = bitbucket_permission_map[group["permission"]]
-                if groups.get(group_name, None):
+                if groups.get(group_name):
                     for user in groups[group_name]:
                         temp_user = user
                         temp_user["permission"] = permission
