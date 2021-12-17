@@ -37,6 +37,7 @@ from congregate.migration.gitlab.keys import KeysClient
 from congregate.migration.gitlab.hooks import HooksClient
 from congregate.migration.gitlab.clusters import ClustersClient
 from congregate.migration.gitlab.environments import EnvironmentsClient
+from congregate.migration.gitlab.branches import BranchesClient
 from congregate.migration.gitlab.external_import import ImportClient
 from congregate.migration.jenkins.base import JenkinsClient
 from congregate.migration.teamcity.base import TeamcityClient
@@ -85,6 +86,7 @@ class MigrateClient(BaseClass):
         self.hooks = HooksClient()
         self.clusters = ClustersClient()
         self.environments = EnvironmentsClient()
+        self.branches = BranchesClient()
         self.ext_import = ImportClient()
         super().__init__()
         self.bbs_repos_client = BBSReposClient()
@@ -620,19 +622,18 @@ class MigrateClient(BaseClass):
                     result[path_with_namespace]["members"] = self.projects.add_members_to_destination_project(
                         self.config.destination_host, self.config.destination_token, project_id, members)
                 # Set default branch
-                self.projects_api.set_default_project_branch(
-                    project_id,
-                    self.config.destination_host,
-                    self.config.destination_token,
-                    project.get("default_branch", "master")
-                )
+                self.branches.set_branch(
+                    path_with_namespace, project_id, project.get("default_branch", "master"))
+
                 # Set branch permissions
                 self.bbs_repos_client.migrate_permissions(
                     project, project_id)
+
                 # Correcting bug where group's description is persisted to
                 # project's description
                 self.bbs_repos_client.correct_repo_description(
                     project, project_id)
+
                 # Remove import user
                 self.remove_import_user(project_id)
             else:
@@ -1105,6 +1106,10 @@ class MigrateClient(BaseClass):
         results = {}
 
         results["id"] = dst_id
+
+        # Set default branch
+        self.branches.set_branch(
+            path_with_namespace, dst_id, project.get("default_branch", "master"))
 
         # Shared with groups
         results["shared_with_groups"] = self.projects.add_shared_groups(
