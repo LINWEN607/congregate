@@ -138,8 +138,8 @@ Copy the following data and add subsequent rows for single group migration
   * [ ] If staging by group make sure to stage all sub-groups as well
 * [ ] Copy all staged data to `/opt/congregate/data/waves/wave_<insert_wave_number>/`
 * [ ] Make sure the group(s) you are migrating to have shared runners enabled
-  * This is to avoid a [group import bug](https://gitlab.com/gitlab-org/gitlab/-/issues/276930)
-  * Originally avoided by fixing [another bug](https://gitlab.com/gitlab-org/gitlab/-/issues/290291)
+  * This is to avoid a group import bug : GitLab issue 276930 (Not linked to avoid mention)
+  * Originally avoided by fixing another bug : GitLab issue 290291 (Not linked to avoid mention)
 * [ ] On the destination instance set the `Default deletion adjourned period` (*Admin Panel -> Settings -> General -> Visibility and access controls*) to 0
   * This is required in order to have Congregate immediately delete projects that fail to import or import with a failed status
 * [ ] If importing groups (with projects) to root make sure the instance `Default project visibility` (*Admin -> Settings -> General -> Visibility and access controls*) is set to `Private`

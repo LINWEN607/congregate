@@ -54,6 +54,14 @@ class ProjectsTests(unittest.TestCase):
                 "id": 3,
                 "email": "user2@example.com",
                 "state": "active",
+            },
+            {
+                "username": "user1",
+                "name": "user1",
+                "access_level": 20,
+                "id": 1,
+                "email": "user1@example.com",
+                "state": "active",
             }
         ]
         expected_repos = [
@@ -132,7 +140,7 @@ class ProjectsTests(unittest.TestCase):
         for i, _ in enumerate(expected_projects):
             self.assertEqual(
                 actual_projects[i].items(), expected_projects[i].items())
-    
+
     @patch.object(MongoConnector, "close_connection")
     @patch.object(ProjectsApi, "get_all_project_groups")
     @patch.object(ProjectsApi, "get_all_project_users")
@@ -219,6 +227,15 @@ class ProjectsTests(unittest.TestCase):
                         "index": 0
                     },
                     {
+                        "id": 1,
+                        "username": "admin",
+                        "name": "John Doe",
+                        "email": "sysadmin@yourcompany.com",
+                        "state": "active",
+                        "access_level": 30,
+                        "index": 1
+                    },
+                    {
                         "id": 2,
                         "username": "user1",
                         "name": "user1",
@@ -266,6 +283,14 @@ class ProjectsTests(unittest.TestCase):
                         "username": "user2",
                         "name": "user2",
                         "email": "user2@example.com",
+                        "state": "active",
+                        "access_level": 20
+                    },
+                    {
+                        "id": 1,
+                        "username": "user1",
+                        "name": "user1",
+                        "email": "user1@example.com",
                         "state": "active",
                         "access_level": 20
                     }

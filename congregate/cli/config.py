@@ -129,10 +129,6 @@ def generate_config():
             "Source instance ({}) URL: ".format(config.get("SOURCE", "src_type"))))
         config.set("SOURCE", "src_access_token", obfuscate(
             "Source instance ({}) Personal Access Token: ".format(config.get("SOURCE", "src_type"))))
-        repo_path = input(
-            "Absolute path to JSON file containing repo information: ")
-        config.set("SOURCE", "repo_path", "{0}{1}"
-                   .format("" if repo_path.startswith("/") else path.join(app_path, ""), repo_path))
     else:
         # Non-external source instance configuration
         config.set("SOURCE", "src_type", "GitLab")

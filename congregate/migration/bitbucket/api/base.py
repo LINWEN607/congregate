@@ -1,6 +1,6 @@
 from time import sleep
+from base64 import b64encode
 import requests
-from requests.auth import HTTPBasicAuth
 
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.decorators import stable_retry
@@ -14,12 +14,12 @@ class BitBucketServerApi(BaseClass):
         return f"{self.config.source_host}/rest/api/1.0/{api}"
 
     def generate_v4_request_headers(self):
+        auth = f"{self.config.source_username}:{self.config.source_token}".encode(
+            "ascii")
         return {
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            "Authorization": f"Basic {b64encode(auth).decode('ascii')}"
         }
-
-    def get_authorization(self):
-        return HTTPBasicAuth(self.config.source_username, self.config.source_token)
 
     @stable_retry
     def generate_get_request(self, api, url=None, params=None, branch_permissions=False):
@@ -43,8 +43,7 @@ class BitBucketServerApi(BaseClass):
         if params is None:
             params = {}
 
-        auth = self.get_authorization()
-        return requests.get(url, params=params, headers=headers, auth=auth, verify=self.config.ssl_verify)
+        return requests.get(url, params=params, headers=headers, verify=self.config.ssl_verify)
 
     def list_all(self, api, params=None, limit=1000, branch_permissions=False):
         isLastPage = False

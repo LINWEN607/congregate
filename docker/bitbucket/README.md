@@ -72,7 +72,6 @@ src_type = Bitbucket Server
 src_username = admin
 src_hostname = http://bitbucket:7990 # The service name for bitbucket created by docker-compose
 src_access_token = <bitbucket token here>
-repo_path = /opt/congregate/
 
 [USER]
 keep_inactive_users = False

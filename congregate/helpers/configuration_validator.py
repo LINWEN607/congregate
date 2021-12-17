@@ -1,5 +1,5 @@
+from base64 import b64encode
 import requests
-from requests.auth import HTTPBasicAuth
 
 from congregate.helpers.exceptions import ConfigurationException
 from congregate.helpers.conf import Config
@@ -133,45 +133,78 @@ class ConfigurationValidator(Config):
             user = None
             err_msg = "Invalid user and/or token:\n"
             if self.source_type == "gitlab":
-                user = safe_json_response(
-                    self.users.get_current_user(self.source_host, src_token))
-                error, user = is_error_message_present(user)
-                if not user or error or not user.get("is_admin"):
-                    raise ConfigurationException(
-                        "source_token", msg=f"{err_msg}{json_pretty(user)}")
+                self.validate_src_token_gitlab(user, err_msg, src_token)
             elif self.source_type == "github":
-                user = safe_json_response(requests.get(
-                    f"{self.source_host.rstrip('/')}/user" if is_github_dot_com(
-                        self.source_host) else f"{self.source_host}/api/v3/user",
-                    params={},
-                    headers={
-                        "Accept": "application/vnd.github.v3+json",
-                        "Authorization": f"token {src_token}"
-                    },
-                    verify=self.ssl_verify))
-                error, user = is_error_message_present(user)
-                if error or not user or (not user.get("site_admin") and not is_github_dot_com(self.source_host)):
-                    raise ConfigurationException(
-                        "source_token", msg=f"{err_msg}{json_pretty(user)}")
+                self.validate_src_token_github(user, err_msg, src_token)
             elif self.source_type == "bitbucket server":
-                user = safe_json_response(requests.get(
-                    f"{self.source_host}/rest/api/1.0/admin/permissions/users?filter={self.source_username}",
-                    params={},
-                    headers={
-                        "Content-Type": "application/json"
-                    },
-                    auth=HTTPBasicAuth(self.source_username, src_token),
-                    verify=self.ssl_verify
-                )
-                )
-                not_sys_admin = user["values"][0]["permission"] not in ["SYS_ADMIN", "ADMIN"] if user.get(
-                    "values", []) else True
-                error, user = is_error_message_present(user)
-                if not user or error or not_sys_admin:
-                    raise ConfigurationException(
-                        "source_token", msg=f"{err_msg}{json_pretty(user)}")
+                self.validate_src_token_bitbucket(user, err_msg, src_token)
             return True
         return True
+
+    def validate_src_token_gitlab(self, user, msg, token):
+        user = safe_json_response(
+            self.users.get_current_user(self.source_host, token))
+        is_error, user = is_error_message_present(user)
+        if not user or is_error or not user.get("is_admin"):
+            raise ConfigurationException(
+                "source_token", msg=f"{msg}{json_pretty(user)}")
+
+    def validate_src_token_github(self, user, msg, token):
+        user = safe_json_response(requests.get(
+            f"{self.source_host.rstrip('/')}/user" if is_github_dot_com(
+                self.source_host) else f"{self.source_host}/api/v3/user",
+            params={},
+            headers={
+                "Accept": "application/vnd.github.v3+json",
+                "Authorization": f"token {token}"
+            },
+            verify=self.ssl_verify))
+        is_error, user = is_error_message_present(user)
+        if not user or is_error or (not user.get("site_admin") and not is_github_dot_com(self.source_host)):
+            raise ConfigurationException(
+                "source_token", msg=f"{msg}{json_pretty(user)}")
+
+    def validate_src_token_bitbucket(self, user, msg, token):
+        username = self.source_username
+        host = self.source_host
+        auth = f"{username}:{token}".encode("ascii")
+        ssl = self.ssl_verify
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Basic {b64encode(auth).decode('ascii')}"
+        }
+        # Lookup User access rights
+        user = safe_json_response(requests.get(
+            f"{host}/rest/api/1.0/admin/permissions/users?filter={username}",
+            params={},
+            headers=headers,
+            verify=ssl)
+        )
+        is_admin = user["values"][0]["permission"] in [
+            "SYS_ADMIN", "ADMIN"] if (user and user.get("values")) else False
+        if not is_admin and user and user.get("values") == []:
+            # Lookup Group access rights
+            user = safe_json_response(requests.get(
+                f"{host}/rest/api/1.0/admin/users/more-members?context={username}",
+                params={},
+                headers=headers,
+                verify=ssl)
+            )
+            group_name = user["values"][0]["name"] if (
+                user and user.get("values", [])) else None
+            if group_name:
+                group = safe_json_response(requests.get(
+                    f"{host}/rest/api/1.0/admin/permissions/groups?filter={group_name}",
+                    params={},
+                    headers=headers,
+                    verify=ssl)
+                )
+                is_admin = group["values"][0]["permission"] in ["SYS_ADMIN", "ADMIN"] if (
+                    group and group.get("values", [])) else False
+        is_error, user = is_error_message_present(user)
+        if not user or is_error or not is_admin:
+            raise ConfigurationException(
+                "source_token", msg=f"{msg}{json_pretty(user)}")
 
     @property
     def dstn_parent_id_validated_in_session(self):

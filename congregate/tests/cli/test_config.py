@@ -42,7 +42,6 @@ class ConfigTests(unittest.TestCase):
             "some_external_source",  # external_src_url
             # "password",  # ext_src_pwd
             # "token",  # ext_src_token
-            "repo_path",  # ext_src_repo
             "no",   # CI Source
             "no",    # keep_inactive_users
             "yes",  # password reset email
@@ -99,7 +98,6 @@ class ConfigTests(unittest.TestCase):
             "some_external_source",  # external_src_url
             # "password",  # ext_src_pwd
             # "token",  # ext_src_token
-            "repo_path",  # ext_src_repo
             "yes",   # CI SOURCE
             "Jenkins",  # ci_source
             "ci_some_external_url",  # ci_ext_src_hostname

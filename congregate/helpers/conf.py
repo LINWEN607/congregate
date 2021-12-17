@@ -21,7 +21,7 @@ class Config(BaseConfig):
     def destination_host(self):
         if dh := self.prop("DESTINATION", "dstn_hostname"):
             return str(dh).strip().rstrip("/")
-        return None     
+        return None
 
     @property
     def destination_token(self):
@@ -166,10 +166,6 @@ class Config(BaseConfig):
     @property
     def src_parent_org(self):
         return self.prop("SOURCE", "src_parent_org")
-
-    @property
-    def repo_list(self):
-        return self.prop("SOURCE", "repo_path")
 
     @property
     def source_registry(self):

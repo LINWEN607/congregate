@@ -93,6 +93,36 @@ class MockUsersApi():
             "start": 0
         }
 
+    def get_user_group(self):
+        return {
+            "size": 1,
+            "limit": 25,
+            "isLastPage": True,
+            "values": [
+                {
+                    "name": "admin-group",
+                    "deletable": True
+                }
+            ],
+            "start": 0
+        }
+
+    def get_admin_group(self):
+        return {
+            "size": 1,
+            "limit": 25,
+            "isLastPage": True,
+            "values": [
+                {
+                    "group": {
+                        "name": "admin-group"
+                    },
+                    "permission": "ADMIN"
+                }
+            ],
+            "start": 0
+        }
+
     def get_non_admin_user(self):
         return {
             "size": 1,

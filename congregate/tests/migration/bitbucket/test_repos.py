@@ -156,14 +156,19 @@ class ReposTests(unittest.TestCase):
         mock_get_all_repos.return_value = self.mock_repos.get_all_repos()
         expected_repos = [
             {
+                "id": 6,
+                "path": "android",
                 "name": "android",
                 "namespace": {
-                    "kind": "group",
-                    "name": "test-group",
-                    "path": "TGP",
                     "id": 1,
+                    "path": "TGP",
+                    "name": "test-group",
+                    "kind": "group",
                     "full_path": "TGP"
                 },
+                "path_with_namespace": "TGP/android",
+                "visibility": "private",
+                "description": "",
                 "members": [
                     {
                         "id": 3,
@@ -178,6 +183,14 @@ class ReposTests(unittest.TestCase):
                         "username": "user4",
                         "name": "user4",
                         "email": "user4@example.com",
+                        "state": "active",
+                        "access_level": 20
+                    },
+                    {
+                        "id": 1,
+                        "username": "admin",
+                        "name": "John Doe",
+                        "email": "sysadmin@yourcompany.com",
                         "state": "active",
                         "access_level": 20
                     },
@@ -207,22 +220,22 @@ class ReposTests(unittest.TestCase):
                     }
                 ],
                 "default_branch": "develop",
-                "path": "android",
-                "path_with_namespace": "TGP/android",
-                "visibility": "private",
-                "description": "",
-                "id": 6,
                 "http_url_to_repo": "http://localhost:7990/scm/tgp/android.git"
             },
             {
+                "id": 13,
+                "path": "another-test-repo",
                 "name": "Another-Test-Repo",
                 "namespace": {
-                    "kind": "group",
-                    "name": "Another-Test-Project",
-                    "path": "ATP",
                     "id": 22,
+                    "path": "ATP",
+                    "name": "Another-Test-Project",
+                    "kind": "group",
                     "full_path": "ATP"
                 },
+                "path_with_namespace": "ATP/another-test-repo",
+                "visibility": "private",
+                "description": "Just another test repo",
                 "members": [
                     {
                         "username": "user2",
@@ -242,11 +255,6 @@ class ReposTests(unittest.TestCase):
                     }
                 ],
                 "default_branch": "master",
-                "path": "another-test-repo",
-                "path_with_namespace": "ATP/another-test-repo",
-                "visibility": "private",
-                "description": "Just another test repo",
-                "id": 13,
                 "http_url_to_repo": "http://localhost:7990/scm/atp/another-test-repo.git"
             }
         ]
