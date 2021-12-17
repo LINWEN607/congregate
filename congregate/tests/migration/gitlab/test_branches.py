@@ -15,6 +15,16 @@ class BranchesTests(unittest.TestCase):
         self.branches = BranchesClient()
         self.mock_projects = MockProjectsApi()
 
+    @patch("congregate.helpers.migrate_utils.read_json_file_into_object")
+    @patch('congregate.helpers.conf.Config.destination_host', new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'destination_token', new_callable=PropertyMock)
+    def test_set_default_branch_no_default_branch(self, mock_host, mock_token, mock_staged):
+        mock_host.return_value = "https://gitlabdestination.com"
+        mock_token.return_value = "token"
+        mock_staged.return_value = self.mock_projects.get_staged_project_no_default_branch()
+        with self.assertLogs(self.branches.log, level="WARNING"):
+            self.branches.set_default_branch(dry_run=False)
+
     @patch.object(ProjectsApi, "set_default_project_branch")
     @patch("congregate.helpers.migrate_utils.read_json_file_into_object")
     @patch('congregate.helpers.conf.Config.destination_host', new_callable=PropertyMock)

@@ -623,7 +623,7 @@ class MigrateClient(BaseClass):
                         self.config.destination_host, self.config.destination_token, project_id, members)
                 # Set default branch
                 self.branches.set_branch(
-                    path_with_namespace, project_id, project.get("default_branch", "master"))
+                    path_with_namespace, project_id, project.get("default_branch"))
 
                 # Set branch permissions
                 self.bbs_repos_client.migrate_permissions(
@@ -1109,7 +1109,7 @@ class MigrateClient(BaseClass):
 
         # Set default branch
         self.branches.set_branch(
-            path_with_namespace, dst_id, project.get("default_branch", "master"))
+            path_with_namespace, dst_id, project.get("default_branch"))
 
         # Shared with groups
         results["shared_with_groups"] = self.projects.add_shared_groups(

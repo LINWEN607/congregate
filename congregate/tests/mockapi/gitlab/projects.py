@@ -623,6 +623,30 @@ class MockProjectsApi():
             }
         ]
 
+    def get_staged_project_no_default_branch(self):
+        return [
+            {
+                "archived": False,
+                "builds_access_level": "enabled",
+                "description": "",
+                "http_url_to_repo": "https://dictionary.githost.io/dictionary-web/darci.git",
+                "id": 132,
+                "issues_access_level": "enabled",
+                "members": [],
+                "merge_requests_access_level": "enabled",
+                "name": "darci1",
+                "namespace": "dictionary-web",
+                "project_type": "group",
+                "repository_access_level": "enabled",
+                "shared_runners_enabled": False,
+                "snippets_access_level": "disabled",
+                "visibility": "private",
+                "wiki_access_level": "enabled",
+                "forking_access_level": "enabled",
+                "pages_access_level": "private"
+            }
+        ]
+
     def get_mix_staged_projects(self):
         return [
             {
