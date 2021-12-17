@@ -35,7 +35,7 @@ Usage:
     congregate remove-all-mirrors [--commit]
     # TODO: Add dry-run, potentially remove
     congregate update-projects-visibility
-    congregate set-default-branch [--commit]
+    congregate set-default-branch [--name=<name>] [--commit]
     congregate enable-mirroring [--commit] # TODO: Find a use for it or remove
     congregate count-unarchived-projects [--local]
     congregate archive-staged-projects [--commit] [--scm-source=hostname]
@@ -110,6 +110,7 @@ Arguments:
     disable                                 Disable staged project push mirror
     overwrite                               Disable keep_divergent_refs (True by default) and overwrite mirror repo on next push
     force                                   Immediately trigger push mirroring with a repo change e.g. new branch
+    name                                    Project branch name
 
 Commands:
     list                                    List all projects of a source instance and save it to {CONGREGATE_PATH}/data/projects.json.
@@ -151,7 +152,7 @@ Commands:
     verify-staged-projects-remote-mirror    Verify that each staged project remote push mirror exists and is not failing.
     remove-all-mirrors                      Remove all project mirrors for staged projects.
     update-projects-visibility              Return list of all migrated projects' visibility.
-    set-default-branch                      Set default branch to master for all projects on destination.
+    set-default-branch                      Set default branch for staged projects on destination.
     enable-mirroring                        Start pull mirror process for all projects on destination.
     count-unarchived-projects               Return total number and list of all unarchived projects on source.
     find-empty-repos                        Inspect project repo sizes between source and destination instance in search for empty repos.
@@ -436,7 +437,8 @@ def main():
             if arguments["verify-staged-projects-remote-mirror"]:
                 projects.verify_staged_projects_remote_mirror()
             if arguments["set-default-branch"]:
-                branches.set_default_branches_to_master(dry_run=DRY_RUN)
+                branches.set_default_branch(
+                    name=arguments["--name"], dry_run=DRY_RUN)
             if arguments["count-unarchived-projects"]:
                 projects.count_unarchived_projects(local=arguments["--local"])
             if arguments["archive-staged-projects"]:

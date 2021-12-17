@@ -1,33 +1,36 @@
 from requests.exceptions import RequestException
 
 from congregate.helpers.base_class import BaseClass
-from congregate.migration.gitlab.api.groups import GroupsApi
-from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
-from congregate.helpers.misc_utils import get_dry_log
+from congregate.helpers.migrate_utils import get_staged_projects
+from congregate.helpers.misc_utils import get_dry_log, is_error_message_present
 
 
 class BranchesClient(BaseClass):
     def __init__(self):
-        self.users = UsersApi()
-        self.groups = GroupsApi()
-        self.projects = ProjectsApi()
-        super(BranchesClient, self).__init__()
+        self.projects_api = ProjectsApi()
+        super().__init__()
 
-    def set_default_branches_to_master(self, dry_run=True):
-        for project in self.projects.get_all_projects(self.config.destination_host, self.config.destination_token):
-            if project.get("default_branch", None) == "master":
-                path = project["path_with_namespace"]
-                self.log.info(f"{get_dry_log(dry_run)}Setting project {path} default branch to master")
-                if not dry_run:
-                    try:
-                        resp = self.projects.set_default_project_branch(
-                            project["id"],
-                            self.config.destination_host,
-                            self.config.destination_token,
-                            "master")
-                        self.log.info(
-                            "Project {0} default branch set to master ({1})".format(path, resp))
-                    except RequestException as e:
-                        self.log.error(
-                            "Failed to set project {0} default branch to master, with error:\n{1}".format(path, e))
+    def set_default_branch(self, name=None, dry_run=True):
+        for p in get_staged_projects():
+            path = p.get("path_with_namespace")
+            branch = name or p.get("default_branch", "master")
+            self.log.info(
+                f"{get_dry_log(dry_run)}Set project {path} default branch to {branch}")
+            if not dry_run:
+                self.set_branch(path, p.get("id"), branch)
+
+    def set_branch(self, path, pid, branch):
+        try:
+            resp = self.projects_api.set_default_project_branch(
+                pid,
+                self.config.destination_host,
+                self.config.destination_token,
+                branch)
+            is_error, _ = is_error_message_present(resp)
+            if is_error or resp.status_code not in [200, 201]:
+                self.log.error(
+                    f"Failed to set project {path} default branch to {branch}, due to:\n{resp} - {resp.text}")
+        except RequestException as e:
+            self.log.error(
+                f"Failed to set project {path} default branch to {branch}, with error:\n{e}")
