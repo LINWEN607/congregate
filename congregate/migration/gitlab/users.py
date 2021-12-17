@@ -31,18 +31,14 @@ class UsersClient(BaseClass):
 
     def find_user_by_email_comparison_with_id(self, old_user_id):
         self.log.info(f"Searching for user email by ID {old_user_id}")
-        old_user = self.users_api.get_user(
-            old_user_id,
-            self.config.source_host,
-            self.config.source_token).json()
-        if old_user is not None and old_user and old_user.get(
-                "email", None) is not None:
+        old_user = safe_json_response(self.users_api.get_user(
+            old_user_id, self.config.source_host, self.config.source_token))
+        if old_user and old_user.get("email") is not None:
             self.log.info(
-                f"Found by OLD user ID email {old_user.get('email', None)} and user:\n{json_pretty(old_user)}")
+                f"Found by OLD user ID email {old_user.get('email')} and user:\n{json_pretty(old_user)}")
             return find_user_by_email_comparison_without_id(old_user["email"])
-        else:
-            self.log.error(
-                f"Could NOT find by OLD user ID {old_user_id} email of user:\n{json_pretty(old_user)}")
+        self.log.error(
+            f"Could NOT find by OLD user ID {old_user_id} email of user:\n{json_pretty(old_user)}")
         return None
 
     def username_exists(self, old_user):
