@@ -12,8 +12,16 @@ from congregate.helpers.misc_utils import get_dry_log, validate_name
 from congregate.helpers.list_utils import remove_dupes
 from congregate.helpers.dict_utils import rewrite_list_into_dict
 
+# from congregate.migration.gitlab.api.groups import GroupsApi
+# from congregate.helpers.base_class import BaseClass
 
 class GroupStageCLI(BaseStageClass):
+    # def __init__(self, BaseClass):
+    #     super().__init__()
+    #     self.groupsApi = GroupsApi()
+    #     self.host = self.config.source_host
+    #     self.token = self.config.source_token
+
 
     def stage_data(self, groups_to_stage, dry_run=True, skip_users=False, scm_source=None):
         """
@@ -82,13 +90,21 @@ class GroupStageCLI(BaseStageClass):
                         start, end), dry_run=dry_run)
             # Random selection
             else:
+                #print("Random Selection")
                 for i, d in enumerate(groups_to_stage):
                     # Hacky check for id or project name by explicitly checking
                     # variable type
+                    #print("the group id: {0}".format(groups_to_stage[i]))
                     try:
                         # Retrieve group object from groups.json
                         group = self.rewritten_groups[int(
                             re.sub("[^0-9]", "", groups_to_stage[i]))]
+                        # descendat_groups = self.groupsApi.get_all_descendat_groups(groups_to_stage[i], self.host, self.token)
+                        # for group in descendat_groups:
+                        #     # Retrieve group object from groups.json
+                        #     group = self.rewritten_groups[int(
+                        #         re.sub("[^0-9]", "", group["id"]))]
+                        #     print("the rewritten group: {0}".format(group))
                     except ValueError:
                         self.log.error(
                             f"Please use a space delimited list of integers (group IDs), NOT {d}")
