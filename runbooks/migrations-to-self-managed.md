@@ -86,9 +86,11 @@ Copy the following data and add subsequent rows for single group migration
 * [ ] Run `nohup ./congregate.sh list > data/waves/listing.log 2>&1 &` at the beginning of the migration blackout period
 * [ ] Stage ALL users
   * **NOTE:** Make sure no groups and projects are staged
+  * Determine (with customer) whether user ID 1 is a regular user that should be migrated
 * [ ] Copy `data/staged_users.json` to `/opt/congregate/data/waves/user_wave`
 * [ ] Lookup whether the staged users (emails) already exist on the destination by running `./congregate.sh search-for-staged-users`
-  * This will output a list of FOUND, NOT FOUND and DUPLICATE user `email`, along with their `id` and `state`
+  * This will output a list of user metadata, based on `email`, along with other stats
+  * Add argument `--table` to command to save this output to `data/user_stats.csv`
 * [ ] Determine with customer whether to (configure):
   * `keep_inactive_users` (`False` by default),
   * `reset_pwd` (`True` by default),

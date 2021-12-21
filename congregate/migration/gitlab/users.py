@@ -354,7 +354,7 @@ class UsersClient(BaseClass):
                 - blocked
             - NOT found
             - duplicate (emails)
-        Does the search based on the primary email address and *not* username
+        Does the search based on the primary email address and *NOT* username
         :return:
         """
         staged_users = get_staged_users()
