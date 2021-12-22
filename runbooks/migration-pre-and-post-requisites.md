@@ -75,7 +75,7 @@ This runbook covers the process of preparing and cleaning up after a migration f
 * [ ] Create a user-group-project migration schedule (waves)
   * [ ] All users are migrated first
   * [ ] Entire group structure next
-    * (gitlab.com) [Notes](https://docs.gitlab.com/ee/api/group_import_export.html#important-notes) around Group import/export when using the GitLab Group Export/Import
+    * (gitlab.com) [Notes](https://docs.gitlab.com/ee/user/group/settings/import_export.html#important-notes) around Group import/export when using the GitLab Group Export/Import
     * Consult with your engineer around restrictions for group movement and renaming, as it is dependent on your source system and migration requirements
   * Projects are migrated in waves (with their parent groups if the previous was not done)
   * (gitlab.com) GitLab support requires a 5-day lead on migrations to gitlab.com. Consider this when determining wave schedule
