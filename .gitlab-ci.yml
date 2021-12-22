@@ -346,6 +346,7 @@ bump version:
     - if: $CI_COMMIT_MESSAGE =~ /Bump version/ || "$E2E_NIGHTLY"
       when: never
     - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE == "schedule"
+      when: manual
 
 debian rolling release:
   extends:
