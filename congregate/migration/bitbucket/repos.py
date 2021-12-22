@@ -1,4 +1,5 @@
 from urllib.parse import quote_plus
+
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.misc_utils import safe_json_response, remove_dupes_but_take_higher_access, strip_netloc, is_error_message_present
 from congregate.helpers.dict_utils import dig
@@ -66,7 +67,7 @@ class ReposClient(BaseClass):
                         members.append(temp_user)
                 else:
                     self.log.warning(
-                        f"Unable to find {repo_slug} user group {group_name}")
+                        f"Unable to find repo {repo_slug} user group {group_name} or the group is empty")
 
         return remove_dupes_but_take_higher_access(self.users.format_users(members))
 
@@ -81,16 +82,12 @@ class ReposClient(BaseClass):
         for p in perms:
             scope_type = dig(p, 'scope', 'type')
             if scope_type == "PROJECT":
-                self.migrate_project_permissions(
-                    p, [perm for perm in perms if dig(perm, 'scope', 'type') == "PROJECT"], pid)
+                # Too granular to map to GL group default_branch_protection
+                self.log.warning(
+                    f"Skipping group level permission {p['type']} for branch {dig(p, 'matcher', 'displayId')} of project {pid}")
             elif scope_type == "REPOSITORY":
                 self.filter_branch_permissions(
                     p, [perm for perm in perms if dig(perm, 'scope', 'type') == "REPOSITORY"], pid)
-
-    def migrate_project_permissions(self, p, perms, pid):
-        # TODO: Should take precedence over project-level branch permissions
-        self.log.warning(
-            f"Skipping group level permission {p['type']} for branch {dig(p, 'matcher', 'displayId')} of project {pid}")
 
     def filter_branch_permissions(self, p, perms, pid):
         branch = dig(p, 'matcher', 'displayId', default="")
@@ -108,10 +105,12 @@ class ReposClient(BaseClass):
 
     def migrate_branch_permissions(self, p, branch, pid):
         """
+        Map BB permissions to GL roles, skip BB user and group restriction exceptions
+        GL access level mapping:
             0  => No access
             30 => Developer access
             40 => Maintainer access
-            50 => Admin access
+            60 => Admin access
         """
         # MODEL_BRANCH cannot be mapped
         PERM_MATCHER_TYPES = ["PATTERN", "BRANCH"]
@@ -121,17 +120,16 @@ class ReposClient(BaseClass):
             "fast-forward-only": [40, 30, 40],
             "pull-request-only": [30, 30, 40]
         }
-        access_level = PERM_TYPES[p["type"]]
+        access_levels = PERM_TYPES[p["type"]]
         data = {
             "name": branch if dig(p, 'matcher', 'type', 'id') in PERM_MATCHER_TYPES else None,
-            "push_access_level": access_level[0],
-            "merge_access_level": access_level[1],
-            "unprotect_access_level": access_level[2]
+            "push_access_level": access_levels[0],
+            "merge_access_level": access_levels[1],
+            "unprotect_access_level": access_levels[2]
         }
 
         if data["name"]:
-            # Branch master is protected by default
-            # if branch == "master":
+            # Branch master/main is protected by default
             self.gl_projects_api.unprotect_repository_branches(
                 pid, quote_plus(branch), self.config.destination_host, self.config.destination_token)
             status = self.gl_projects_api.protect_repository_branches(

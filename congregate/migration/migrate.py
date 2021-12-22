@@ -194,7 +194,7 @@ class MigrateClient(BaseClass):
             mig_utils.write_results_to_file(
                 results, result_type="group", log=self.log)
         else:
-            self.log.info("SKIP: No groups to migrate")
+            self.log.info("SKIP: No groups staged for migration")
         # Migrate GH repos to projects
         staged_projects = mig_utils.get_staged_projects()
         if staged_projects and not self.skip_project_import:
@@ -215,7 +215,7 @@ class MigrateClient(BaseClass):
                 f"### {dry_log}Project import results ###\n{json_utils.json_pretty(import_results)}")
             mig_utils.write_results_to_file(import_results, log=self.log)
         else:
-            self.log.info("SKIP: No projects to migrate")
+            self.log.info("SKIP: No projects staged for migration")
 
         # After all is said and done, run our reporting with the
         # staged_projects and results
@@ -541,7 +541,7 @@ class MigrateClient(BaseClass):
             mig_utils.write_results_to_file(
                 results, result_type="group", log=self.log)
         else:
-            self.log.info("SKIP: No projects to migrate")
+            self.log.info("SKIP: No groups staged for migration")
 
         # Migrate BB repos as GL projects
         staged_projects = mig_utils.get_staged_projects()
@@ -564,14 +564,14 @@ class MigrateClient(BaseClass):
                           .format(dry_log, json_utils.json_pretty(import_results)))
             mig_utils.write_results_to_file(import_results, log=self.log)
         else:
-            self.log.info("SKIP: No projects to migrate")
+            self.log.info("SKIP: No projects staged for migration")
 
     def migrate_bitbucket_group(self, group):
         result = False
         members = group.pop("members")
         group["full_path"] = mig_utils.get_full_path_with_parent_namespace(
             group["full_path"]).lower()
-        if group.get("path", None) is not None:
+        if group.get("path") is not None:
             group["path"] = group["path"].lower()
         group["parent_id"] = self.config.dstn_parent_id
         group_id = None
@@ -680,7 +680,7 @@ class MigrateClient(BaseClass):
                 self.log.info(
                     "SKIP: Assuming staged users are already migrated")
         else:
-            self.log.info("SKIP: No users to migrate")
+            self.log.info("SKIP: No users staged for migration")
 
     def handle_user_creation(self, user):
         """
@@ -812,7 +812,7 @@ class MigrateClient(BaseClass):
                 self.log.info(
                     "SKIP: Assuming staged groups will be later imported")
         else:
-            self.log.info("SKIP: No groups to migrate")
+            self.log.info("SKIP: No groups staged for migration")
 
     def handle_exporting_groups(self, group):
         full_path = group["full_path"]
@@ -1002,7 +1002,7 @@ class MigrateClient(BaseClass):
                 self.log.info(
                     "SKIP: Assuming staged projects will be later imported")
         else:
-            self.log.info("SKIP: No projects to migrate")
+            self.log.info("SKIP: No projects staged for migration")
 
     def handle_exporting_projects(self, project):
         name = project["name"]
