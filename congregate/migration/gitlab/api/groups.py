@@ -187,7 +187,7 @@ class GroupsApi(GitLabApiWrapper):
         """
         return self.api.generate_get_request(host, token, f"groups/{gid}/notification_settings")
 
-    def export_group(self, host, token, gid, data=None, headers=None, message=None):
+    def export_group(self, host, token, gid, data=None, message=None):
         """
         Export a group using the groups api
 
@@ -195,9 +195,8 @@ class GroupsApi(GitLabApiWrapper):
             :param: token: (str) A token that can access the source host with export permissions
             :param: gid: (int) The group id on the source system
             :param: data: (str) Relevant data for the export
-            :param: headers: (str) The headers for the API request
         """
-        return self.api.generate_post_request(host, token, f"groups/{gid}/export", data=data, headers=headers, description=message)
+        return self.api.generate_post_request(host, token, f"groups/{gid}/export", data=json.dumps(data), description=message)
 
     def get_group_download_status(self, host, token, gid):
         """
@@ -212,7 +211,7 @@ class GroupsApi(GitLabApiWrapper):
         """
         return self.api.generate_get_request(host, token, f"groups/{gid}/export/download")
 
-    def import_group(self, host, token, data=None, files=None, headers=None, message=None):
+    def import_group(self, host, token, data=None, files=None, message=None):
         """
         Import a group using the groups api
 
@@ -220,11 +219,52 @@ class GroupsApi(GitLabApiWrapper):
             :param: token: (str) A token that can access the destination host with import permissions
             :param: files: (str) The group filename as it was exported
             :param: data: (str) Relevant data for the export
-            :param: headers: (str) The headers for the API request
         """
         if not message:
             message = f"Importing group with payload {str(data)}"
-        return self.api.generate_post_request(host, token, "groups/import", data=data, files=files, headers=headers, description=message)
+        return self.api.generate_post_request(host, token, "groups/import", data=json.dumps(data), files=files, description=message)
+
+    def bulk_group_import(self, host, token, data=None, message=None):
+        """
+        Start a new GitLab migration
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/bulk_imports.html#start-a-new-gitlab-migration
+
+            :param: host: (str) The destination host
+            :param: token: (str) A token that can access the destination host with import permissions
+            :param: data: (str) Relevant data for the import
+        """
+        if not message:
+            clean_data = data.copy()
+            clean_data.pop("configuration")
+            message = f"Importing groups in bulk with payload {str(clean_data)}"
+        return self.api.generate_post_request(host, token, "bulk_imports", data=json.dumps(data), description=message)
+
+    def get_bulk_group_import_status(self, host, token, bid):
+        """
+        Get GitLab migration details
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/bulk_imports.html#get-gitlab-migration-details
+
+            :param: bid: (int) GitLab bulk import ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Response object containing the response to GET /bulk_imports/:id
+        """
+        return self.api.generate_get_request(host, token, f"bulk_imports/{bid}")
+
+    def get_all_bulk_group_import_entities(self, host, token, bid):
+        """
+        List GitLab migration entities
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/bulk_imports.html#list-gitlab-migration-entities
+
+            :param: bid: (int) GitLab bulk import ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Response object containing the response to GET /bulk_imports/:bid/entities
+        """
+        return self.api.list_all(host, token, f"bulk_imports/{bid}/entities")
 
     def get_all_group_members_incl_inherited(self, gid, host, token):
         """

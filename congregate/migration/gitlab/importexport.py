@@ -184,26 +184,19 @@ class ImportExportClient(BaseClass):
                 break
         return group
 
-    def get_export_response(self, source_id, is_project,
-                            data=None, headers=None):
+    def get_export_response(self, source_id, is_project, headers=None, data=None):
         """
         Gets the export response for both project and group exports
         """
         response = None
+        host = self.config.source_host
+        token = self.config.source_token
         if is_project:
             response = self.projects_api.export_project(
-                self.config.source_host,
-                self.config.source_token,
-                source_id,
-                data=data,
-                headers=headers)
+                host, token, source_id, data=data, headers=headers)
         else:
             response = self.groups_api.export_group(
-                self.config.source_host,
-                self.config.source_token,
-                source_id,
-                data=data,
-                headers=headers)
+                host, token, source_id, data=data)
         return response
 
     def export_to_aws(self, source_id, filename, is_project=True):
@@ -452,13 +445,10 @@ class ImportExportClient(BaseClass):
                 files = {
                     "file": (filename, f)
                 }
-                headers = {
-                    "Private-Token": self.config.destination_token
-                }
                 message = "Importing group %s with payload %s and members %s" % (
                     path, data, members)
                 resp = self.groups_api.import_group(
-                    self.config.destination_host, self.config.destination_token, data=data, files=files, headers=headers, message=message)
+                    self.config.destination_host, self.config.destination_token, data=data, files=files, message=message)
         return resp
 
     def get_override_params(self, project):
@@ -711,3 +701,31 @@ class ImportExportClient(BaseClass):
         else:
             return True
         return exported
+
+    def wait_for_bulk_group_import(self, resp, iid):
+        imported = False
+        total_time = 0
+        wait_time = self.config.export_import_status_check_time
+        timeout = self.config.export_import_timeout
+        while True:
+            details = safe_json_response(resp)
+            state = details.get("status")
+            if state == "finished":
+                self.log.info("Bulk group import finished")
+                imported = True
+                break
+            if state == "failed":
+                self.log.error("Bulk group import failed")
+                break
+            if total_time < timeout:
+                self.log.info(
+                    f"Bulk group import status after {total_time}/{timeout} seconds: {state}")
+                total_time += wait_time
+                sleep(wait_time)
+                resp = self.groups_api.get_bulk_group_import_status(
+                    self.config.destination_host, self.config.destination_token, iid)
+            else:
+                self.log.error(
+                    f"Bulk group import time limit exceeded with status:\n{json_pretty(details)}")
+                break
+        return imported

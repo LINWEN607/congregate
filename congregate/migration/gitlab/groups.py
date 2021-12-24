@@ -1,13 +1,14 @@
 import json
 from time import sleep
 from requests.exceptions import RequestException
+from traceback import print_exc
 
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.mdbc import MongoConnector
-from congregate.helpers.misc_utils import get_timedelta, safe_json_response, strip_netloc
+from congregate.helpers.misc_utils import get_timedelta, safe_json_response, strip_netloc, get_dry_log
 from congregate.helpers.list_utils import remove_dupes
 from congregate.helpers.migrate_utils import get_full_path_with_parent_namespace, is_top_level_group, get_staged_groups, \
-    find_user_by_email_comparison_without_id
+    find_user_by_email_comparison_without_id, get_full_path_with_parent_namespace
 from congregate.helpers.json_utils import json_pretty
 from congregate.helpers.utils import is_dot_com
 from congregate.migration.gitlab.variables import VariablesClient
@@ -249,3 +250,26 @@ class GroupsClient(BaseClass):
             pnamespace = self.namespaces_api.get_namespace_by_full_path(
                 ppath, self.config.destination_host, self.config.destination_token)
         return pnamespace
+
+    def find_and_stage_group_bulk_entities(self, groups):
+        entities, result = [], []
+        namespace = self.config.dstn_parent_group_path or ""
+        for g in groups:
+            full_path = g["full_path"]
+            full_path_with_parent_namespace = get_full_path_with_parent_namespace(
+                full_path)
+            dst_grp = self.find_group_by_path(
+                self.config.destination_host, self.config.destination_token, full_path_with_parent_namespace)
+            dst_gid = dst_grp.get("id") if dst_grp else None
+            if dst_gid:
+                self.log.info(
+                    f"Group {full_path} (ID: {dst_gid}) already exists on destination")
+                result.append({full_path_with_parent_namespace: dst_gid})
+            else:
+                result.append({full_path_with_parent_namespace: False})
+                entities.append({
+                    "source_full_path": full_path,
+                    "source_type": "group_entity",
+                    "destination_name": g["name"],
+                    "destination_namespace": namespace})
+        return entities, result

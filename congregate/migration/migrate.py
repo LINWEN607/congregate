@@ -55,6 +55,7 @@ class MigrateClient(BaseClass):
         skip_users=False,
         remove_members=False,
         hard_delete=False,
+        stream_groups=False,
         skip_groups=False,
         skip_projects=False,
         skip_group_export=False,
@@ -96,6 +97,7 @@ class MigrateClient(BaseClass):
         self.only_post_migration_info = only_post_migration_info
         self.start = start
         self.skip_users = skip_users
+        self.stream_groups = stream_groups
         self.remove_members = remove_members
         self.hard_delete = hard_delete
         self.skip_groups = skip_groups
@@ -760,59 +762,128 @@ class MigrateClient(BaseClass):
         dry_log = misc_utils.get_dry_log(self.dry_run)
         if staged_groups:
             self.validate_groups_and_projects(staged_groups)
-            if not self.skip_group_export:
-                self.log.info(f"{dry_log}Exporting groups")
-                export_results = list(er for er in self.multi.start_multi_process(
-                    self.handle_exporting_groups,
-                    staged_subgroups if self.subgroups_only else staged_top_groups,
-                    processes=self.processes
-                ))
-
-                self.are_results(export_results, "group", "export")
-
-                # Create list of groups that failed export
-                if failed := mig_utils.get_failed_export_from_results(
-                        export_results):
-                    self.log.warning(
-                        f"SKIP: Groups that failed to export or already exist on destination:\n{json_utils.json_pretty(failed)}")
-
-                # Append total count of groups exported
-                export_results.append(mig_utils.get_results(export_results))
-                self.log.info(
-                    f"### {dry_log}Group export results ###\n{json_utils.json_pretty(export_results)}")
-
-                # Filter out the failed ones
-                staged_top_groups = mig_utils.get_staged_groups_without_failed_export(
-                    staged_top_groups, failed)
+            if self.stream_groups:
+                self.stream_import_groups(
+                    staged_top_groups, staged_subgroups, dry_log)
             else:
-                self.log.info(
-                    "SKIP: Assuming staged groups are already exported")
-            if not self.skip_group_import:
-                self.log.info(f"{dry_log}Importing groups")
-                import_results = list(ir for ir in self.multi.start_multi_process(
-                    self.handle_importing_groups,
-                    staged_subgroups if self.subgroups_only else staged_top_groups,
-                    processes=self.processes
-                ))
-
-                # Migrate sub-group info
-                if staged_subgroups:
-                    import_results += list(ir for ir in self.multi.start_multi_process(
-                        self.migrate_subgroup_info, staged_subgroups, processes=self.processes))
-
-                self.are_results(import_results, "group", "import")
-
-                # Append Total : Successful count of group migrations
-                import_results.append(mig_utils.get_results(import_results))
-                self.log.info(
-                    f"### {dry_log}Group import results ###\n{json_utils.json_pretty(import_results)}")
-                mig_utils.write_results_to_file(
-                    import_results, result_type="group", log=self.log)
-            else:
-                self.log.info(
-                    "SKIP: Assuming staged groups will be later imported")
+                self.export_import_groups(
+                    staged_top_groups, staged_subgroups, dry_log)
         else:
             self.log.info("SKIP: No groups staged for migration")
+
+    def export_import_groups(self, staged_top_groups, staged_subgroups, dry_log):
+        if not self.skip_group_export:
+            self.log.info(f"{dry_log}Exporting groups")
+            export_results = list(er for er in self.multi.start_multi_process(
+                self.handle_exporting_groups,
+                staged_subgroups if self.subgroups_only else staged_top_groups,
+                processes=self.processes
+            ))
+
+            self.are_results(export_results, "group", "export")
+
+            # Create list of groups that failed export
+            if failed := mig_utils.get_failed_export_from_results(
+                    export_results):
+                self.log.warning(
+                    f"SKIP: Groups that failed to export or already exist on destination:\n{json_utils.json_pretty(failed)}")
+
+            # Append total count of groups exported
+            export_results.append(mig_utils.get_results(export_results))
+            self.log.info(
+                f"### {dry_log}Group export results ###\n{json_utils.json_pretty(export_results)}")
+
+            # Filter out the failed ones
+            staged_top_groups = mig_utils.get_staged_groups_without_failed_export(
+                staged_top_groups, failed)
+        else:
+            self.log.info(
+                "SKIP: Assuming staged groups are already exported")
+        if not self.skip_group_import:
+            self.log.info(f"{dry_log}Importing groups")
+            import_results = list(ir for ir in self.multi.start_multi_process(
+                self.handle_importing_groups,
+                staged_subgroups if self.subgroups_only else staged_top_groups,
+                processes=self.processes
+            ))
+
+            # Migrate sub-group info
+            if staged_subgroups:
+                import_results += list(ir for ir in self.multi.start_multi_process(
+                    self.migrate_subgroup_info, staged_subgroups, processes=self.processes))
+
+            self.are_results(import_results, "group", "import")
+
+            # Append Total : Successful count of group migrations
+            import_results.append(mig_utils.get_results(import_results))
+            self.log.info(
+                f"### {dry_log}Group import results ###\n{json_utils.json_pretty(import_results)}")
+            mig_utils.write_results_to_file(
+                import_results, result_type="group", log=self.log)
+        else:
+            self.log.info(
+                "SKIP: Assuming staged groups will be later imported")
+
+    def stream_import_groups(self, staged_top_groups, staged_subgroups, dry_log):
+        self.log.info(f"{dry_log}Importing groups in bulk")
+        import_results = self.import_groups(
+            staged_subgroups if self.subgroups_only else staged_top_groups, dry_log)
+
+        # Migrate sub-group info
+        if staged_subgroups:
+            import_results += list(ir for ir in self.multi.start_multi_process(
+                self.migrate_subgroup_info, staged_subgroups, processes=self.processes))
+
+        self.are_results(import_results, "group", "import")
+
+        # Append Total : Successful count of group migrations
+        import_results.append(mig_utils.get_results(import_results))
+        self.log.info(
+            f"### {dry_log}Group bulk import results ###\n{json_utils.json_pretty(import_results)}")
+        mig_utils.write_results_to_file(
+            import_results, result_type="group", log=self.log)
+
+    def import_groups(self, groups, dry_log):
+        data = {
+            "configuration": {
+                "url": self.config.source_host,
+                "access_token": self.config.source_token
+            },
+            "entities": []
+        }
+        host = self.config.destination_host
+        token = self.config.destination_token
+        imported = False
+        try:
+            # Prepare group entities and current result for destination
+            data["entities"], result = self.groups.find_and_stage_group_bulk_entities(
+                groups)
+            self.log.info(
+                f"{dry_log}Start bulk group import, with payload:\n{json_utils.json_pretty(data['entities'])} and destination state:\n{json_utils.json_pretty(result)}")
+
+            if data["entities"] and not self.dry_run:
+                bulk_import_resp = self.groups_api.bulk_group_import(
+                    host, token, data=data)
+                if bulk_import_resp.status_code != 201:
+                    self.log.error(
+                        f"Failed to trigger group bulk import, with response:\n{bulk_import_resp} - {bulk_import_resp.text}")
+                else:
+                    bid = misc_utils.safe_json_response(
+                        bulk_import_resp).get("id")
+                    imported = self.ie.wait_for_bulk_group_import(
+                        bulk_import_resp, bid)
+            if (imported and not self.dry_run) or self.only_post_migration_info:
+                result = list(self.groups_api.get_all_bulk_group_import_entities(
+                    host, token, bid))
+                # self.migrate_single_group_features(
+                #     src_gid, import_id, full_path)
+        except (RequestException, KeyError, OverflowError) as oe:
+            self.log.error(
+                f"Failed to import bulk group groups with error:\n{oe}")
+        except Exception as e:
+            self.log.error(e)
+            self.log.error(print_exc())
+        return result
 
     def handle_exporting_groups(self, group):
         full_path = group["full_path"]
