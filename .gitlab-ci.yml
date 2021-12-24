@@ -253,6 +253,16 @@ check ldap compose yaml:
     - if: "$CI_PIPELINE_SOURCE == 'schedule' && $E2E_NIGHTLY"
   timeout: 30 minutes
 
+.fallback-e2e-cleanup:
+  image: "${TEST_IMAGE_NAME}"
+  when: on_failure
+  before_script:
+    - !reference [.test-job, before_script]
+  script:
+    - poetry run aws ec2 terminate-instances --instance-ids $(cat $INSTANCE_ID_FILE)
+  tags:
+    - congregate-auto-scale-runner
+
 test:pylint:
   extends:
     - .test-job
@@ -285,17 +295,56 @@ test:end-to-end full:
   extends:
     - .e2e-test-setup
   script:
+    - cp instance_id full_instance_id
     - poetry run pytest -s -m e2e_gl_setup congregate/tests/
     - poetry run pytest -s -m e2e --cov-config=.coveragerc --cov=congregate congregate/tests/
   timeout: 30 minutes
+  cache:
+    key: "$CI_COMMIT_SHA-full"
+    paths:
+      - full_instance_id
+    when: always
 
 test:end-to-end single group:
   extends:
     - .e2e-test-setup
   script:
+    - cp instance_id sg_instance_id
     - poetry run pytest -s -m e2e_gl_setup_2 congregate/tests/
     - poetry run pytest -s -m e2e --cov-config=.coveragerc --cov=congregate congregate/tests/
   timeout: 30 minutes
+  cache:
+    key: "$CI_COMMIT_SHA-sg"
+    paths:
+      - sg_instance_id
+    when: always
+
+test:failed-e2e-full-cleanup:
+  variables:
+    INSTANCE_ID_FILE: full_instance_id
+  needs: ["test:end-to-end full"]
+  extends: 
+    - .fallback-e2e-cleanup
+    - .aws-creds
+  when: on_failure
+  cache:
+    key: "$CI_COMMIT_SHA-full"
+    paths:
+      - full_instance_id
+    policy: pull
+
+test:failed-e2e-single-group-cleanup:
+  variables:
+    INSTANCE_ID_FILE: sg_instance_id
+  needs: ["test:end-to-end single group"]
+  extends: 
+    - .fallback-e2e-cleanup
+    - .aws-creds
+  cache:
+    key: "$CI_COMMIT_SHA-sg"
+    paths:
+      - sg_instance_id
+    policy: pull
 
 test:Jenkins Integration Tests:
   extends:
@@ -343,9 +392,10 @@ bump version:
     - ppuv push-bump --config-user=$BOT_USER --config-email=$BOT_EMAIL --remote=origin --url=$PUSH_URL --branch="HEAD:$CI_COMMIT_BRANCH"
     - release-cli create --name "$(cat VERSION)" --ref $(git rev-parse HEAD) --tag-name "$(cat VERSION)" --description "$(cat notes.md)"
   rules:
-    - if: $CI_COMMIT_MESSAGE =~ /Bump version/ || "$E2E_NIGHTLY"
+    - if: $CI_COMMIT_MESSAGE =~ /Bump version/
       when: never
     - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE == "schedule"
+      when: manual
 
 debian rolling release:
   extends:

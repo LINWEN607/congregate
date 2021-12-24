@@ -120,7 +120,7 @@ class ProjectsClient(BaseClass):
             project = safe_json_response(resp)
             if project and (project.get("path_with_namespace",
                                         '').lower() == dst_path_with_namespace.lower()):
-                return project.get("id", None)
+                return project.get("id")
         return None
 
     def delete_projects(self, dry_run=True):
@@ -168,45 +168,33 @@ class ProjectsClient(BaseClass):
         self.log.info("Unarchived group projects ({0}):\n{1}".format(
             len(unarchived_group_projects), "\n".join(up for up in unarchived_group_projects)))
 
-    def archive_staged_projects(self, dry_run=True):
+    def update_staged_projects_archive_state(self, archive=True, dest=False, dry_run=True):
         start = time()
         rotate_logs()
         staged_projects = get_staged_projects()
-        self.log.info("Project count is: {}".format(len(staged_projects)))
+        host = self.config.destination_host if dest else self.config.source_host
+        token = self.config.destination_token if dest else self.config.source_token
+        host_type = "destination" if dest else "source"
+        action_type = "Archive" if archive else "Unarchive"
+        self.log.info(f"Project count: {len(staged_projects)}")
         try:
-            for project in staged_projects:
-                self.log.info("{0}Archiving source project {1}".format(
-                    get_dry_log(dry_run),
-                    project["path_with_namespace"]))
+            for sp in staged_projects:
+                # Get source/destination project full path and ID
+                path = get_dst_path_with_namespace(
+                    sp) if dest else sp["path_with_namespace"]
+                pid = self.find_project_by_path(
+                    host, token, path) if dest else sp["id"]
+                self.log.info(
+                    f"{get_dry_log(dry_run)}{action_type} {host_type} ({host}) project {path}")
                 if not dry_run:
-                    self.projects_api.archive_project(
-                        self.config.source_host,
-                        self.config.source_token,
-                        project["id"])
+                    resp = self.projects_api.archive_project(
+                        host, token, pid) if archive else self.projects_api.unarchive_project(host, token, pid)
+                    if resp.status_code != 201:
+                        self.log.error(
+                            f"Failed to {action_type.lower()} {host_type} ({host}) project {path}, with response:\n{resp} - {resp.text}")
         except RequestException as re:
             self.log.error(
-                "Failed to archive staged projects, with error:\n{}".format(re))
-        finally:
-            add_post_migration_stats(start, log=self.log)
-
-    def unarchive_staged_projects(self, dry_run=True):
-        start = time()
-        rotate_logs()
-        staged_projects = get_staged_projects()
-        self.log.info("Project count is: {}".format(len(staged_projects)))
-        try:
-            for project in staged_projects:
-                self.log.info("{0}Unarchiving source project {1}".format(
-                    get_dry_log(dry_run),
-                    project["path_with_namespace"]))
-                if not dry_run:
-                    self.projects_api.unarchive_project(
-                        self.config.source_host,
-                        self.config.source_token,
-                        project["id"])
-        except RequestException as re:
-            self.log.error(
-                "Failed to unarchive staged projects, with error:\n{}".format(re))
+                f"Failed to {action_type.lower()} {host_type} ({host}) projects, with error:\n{re}")
         finally:
             add_post_migration_stats(start, log=self.log)
 

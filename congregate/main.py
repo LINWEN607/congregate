@@ -38,8 +38,8 @@ Usage:
     congregate set-default-branch [--name=<name>] [--commit]
     congregate enable-mirroring [--commit] # TODO: Find a use for it or remove
     congregate count-unarchived-projects [--local]
-    congregate archive-staged-projects [--commit] [--scm-source=hostname]
-    congregate unarchive-staged-projects [--commit] [--scm-source=hostname]
+    congregate archive-staged-projects [--commit] [--dest] [--scm-source=hostname]
+    congregate unarchive-staged-projects [--commit] [--dest] [--scm-source=hostname]
     congregate filter-projects-by-state [--commit] [--archived]
     congregate find-empty-repos
     congregate compare-groups [--staged]
@@ -442,8 +442,9 @@ def main():
             if arguments["count-unarchived-projects"]:
                 projects.count_unarchived_projects(local=arguments["--local"])
             if arguments["archive-staged-projects"]:
-                if config.source_type == "gitlab":
-                    projects.archive_staged_projects(dry_run=DRY_RUN)
+                if config.source_type == "gitlab" or (config.source_type == "bitbucket server" and DEST):
+                    projects.update_staged_projects_archive_state(
+                        dest=DEST, dry_run=DRY_RUN)
                 elif config.source_type == "github" or config.list_multiple_source_config("github_source") is not None:
                     if SCM_SOURCE is not None:
                         for single_source in config.list_multiple_source_config(
@@ -458,13 +459,14 @@ def main():
                     gh_repos.archive_staged_repos(dry_run=DRY_RUN)
                 else:
                     log.warning(
-                        f"We do not have mass archiving available for {config.source_type}")
+                        f"Bulk archive not available for {config.source_type}. Did you mean to add '--dest'?")
             if arguments["unarchive-staged-projects"]:
-                if config.source_type == "gitlab":
-                    projects.unarchive_staged_projects(dry_run=DRY_RUN)
+                if config.source_type == "gitlab" or (config.source_type == "bitbucket server" and DEST):
+                    projects.update_staged_projects_archive_state(
+                        archive=False, dest=DEST, dry_run=DRY_RUN)
                 else:
                     log.warning(
-                        f"We do not have mass unarchiving available for {config.source_type}")
+                        f"Bulk unarchive not available for {config.source_type}. Did you mean to add '--dest'?")
             if arguments["filter-projects-by-state"]:
                 if config.source_type == "gitlab":
                     projects.filter_projects_by_state(
