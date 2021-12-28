@@ -3,7 +3,7 @@ from unittest import mock
 from pytest import mark
 import congregate.helpers.utils as utils
 from congregate.tests.helpers.mock_data.results import MockProjectResults
-from congregate.helpers.dict_utils import xml_to_dict
+from gitlab_ps_utils.dict_utils import xml_to_dict
 from congregate.tests.mockapi.jenkins.jobs import JenkinsJobsApi
 
 

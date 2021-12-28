@@ -3,11 +3,11 @@ from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.issues import IssuesApi
 from congregate.migration.gitlab.api.merge_requests import MergeRequestsApi
 from congregate.migration.gitlab.groups import GroupsClient
-from congregate.helpers.misc_utils import get_rollback_log
-from congregate.helpers.dict_utils import rewrite_json_list_into_dict
+from gitlab_ps_utils.misc_utils import get_rollback_log
+from gitlab_ps_utils.dict_utils import rewrite_json_list_into_dict
 from congregate.helpers.migrate_utils import get_full_path_with_parent_namespace, is_top_level_group
 from congregate.helpers.utils import is_dot_com
-from congregate.helpers.json_utils import read_json_file_into_object
+from gitlab_ps_utils.json_utils import read_json_file_into_object
 
 
 class GroupDiffClient(BaseDiffClient):

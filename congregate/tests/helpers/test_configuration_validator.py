@@ -9,9 +9,9 @@ from congregate.tests.mockapi.github.users import MockUsersApi as GHMockUsers
 from congregate.tests.mockapi.bitbucket.users import MockUsersApi as BBSUsers
 from congregate.tests.mockapi.gitlab.token import invalid_token
 from congregate.tests.mockapi.gitlab.error import other_error
-from congregate.helpers.exceptions import ConfigurationException
-from congregate.helpers.string_utils import obfuscate
-from congregate.helpers.api import GitLabApi
+from gitlab_ps_utils.exceptions import ConfigurationException
+from gitlab_ps_utils.string_utils import obfuscate
+from gitlab_ps_utils.api import GitLabApi
 
 
 @mark.unit_test

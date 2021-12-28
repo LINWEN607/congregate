@@ -2,7 +2,7 @@ import sys
 import time
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.processes import MultiProcessing
+from gitlab_ps_utils.processes import MultiProcessing
 from congregate.helpers.seed.git import Manage_Repos
 from congregate.migration.github.api.orgs import OrgsApi
 from congregate.migration.github.api.repos import ReposApi

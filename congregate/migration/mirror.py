@@ -2,8 +2,8 @@ import json
 import requests
 from requests.exceptions import RequestException
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.decorators import stable_retry
-from congregate.helpers.dict_utils import pop_multiple_keys
+from gitlab_ps_utils.decorators import stable_retry
+from gitlab_ps_utils.dict_utils import pop_multiple_keys
 from congregate.migration.gitlab.projects import ProjectsApi
 
 

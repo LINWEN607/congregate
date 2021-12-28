@@ -4,13 +4,13 @@ from requests.exceptions import RequestException
 from pandas import DataFrame, Series, set_option
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import get_dry_log, get_timedelta, is_error_message_present, \
+from gitlab_ps_utils.misc_utils import get_dry_log, get_timedelta, is_error_message_present, \
     safe_json_response, strip_netloc
-from congregate.helpers.json_utils import json_pretty, read_json_file_into_object, write_json_to_file
+from gitlab_ps_utils.json_utils import json_pretty, read_json_file_into_object, write_json_to_file
 from congregate.helpers.migrate_utils import get_staged_users, find_user_by_email_comparison_without_id, add_post_migration_stats
 from congregate.helpers.utils import is_dot_com
-from congregate.helpers.dict_utils import rewrite_list_into_dict
-from congregate.helpers.list_utils import remove_dupes
+from gitlab_ps_utils.dict_utils import rewrite_list_into_dict
+from gitlab_ps_utils.list_utils import remove_dupes
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.users import UsersApi

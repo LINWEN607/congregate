@@ -4,7 +4,7 @@ Congregate - GitLab instance migration utility
 Copyright (c) 2021 - GitLab
 """
 
-from congregate.helpers.base_config import BaseConfig
+from gitlab_ps_utils.base_config import BaseConfig
 from congregate.helpers.utils import get_congregate_path
 
 

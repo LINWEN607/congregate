@@ -1,7 +1,7 @@
-from congregate.helpers.logger import myLogger
-from congregate.helpers.audit_logger import audit_logger
+from gitlab_ps_utils.logger import myLogger
+from gitlab_ps_utils.audit_logger import audit_logger
 from congregate.helpers.utils import get_congregate_path
-from congregate.helpers.api import GitLabApi
+from gitlab_ps_utils.api import GitLabApi
 from congregate.helpers.conf import Config
 
 class GitLabApiWrapper():

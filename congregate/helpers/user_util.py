@@ -2,7 +2,7 @@ import json
 from csv import reader
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.string_utils import strip_numbers
+from gitlab_ps_utils.string_utils import strip_numbers
 
 
 '''
@@ -11,7 +11,7 @@ Usage:
 
 1. Add "user_map_csv" to config file containing path to user map in CSV form
 2. Open up a python shell with poetry (potery run python)
-3. Import this function (from congregate.helpers.misc_utils import map_users)
+3. Import this function (from congregate.user_utils import map_users)
 4. Execute this function (map_users())
 
 '''

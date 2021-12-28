@@ -2,9 +2,9 @@ import sys
 from re import search
 from pymongo import MongoClient, errors, DESCENDING
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import strip_netloc
-from congregate.helpers.json_utils import stream_json_yield_to_file, read_json_file_into_object
-from congregate.helpers.file_utils import find_files_in_folder
+from gitlab_ps_utils.misc_utils import strip_netloc
+from gitlab_ps_utils.json_utils import stream_json_yield_to_file, read_json_file_into_object
+from gitlab_ps_utils.file_utils import find_files_in_folder
 
 
 class MongoConnector(BaseClass):

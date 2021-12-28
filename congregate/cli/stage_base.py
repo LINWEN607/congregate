@@ -6,9 +6,9 @@ Copyright (c) 2021 - GitLab
 
 import json
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import get_dry_log, strip_netloc, validate_name
-from congregate.helpers.list_utils import remove_dupes_with_keys, remove_dupes
-from congregate.helpers.dict_utils import dig
+from gitlab_ps_utils.misc_utils import get_dry_log, strip_netloc, validate_name
+from gitlab_ps_utils.list_utils import remove_dupes_with_keys, remove_dupes
+from gitlab_ps_utils.dict_utils import dig
 
 
 class BaseStageClass(BaseClass):

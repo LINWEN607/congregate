@@ -8,7 +8,7 @@ from congregate.migration.gitlab.groups import GroupsClient
 from congregate.tests.mockapi.gitlab.groups import MockGroupsApi
 from congregate.migration.gitlab.groups import GroupsApi
 from congregate.migration.gitlab.users import UsersApi
-from congregate.helpers.api import GitLabApi
+from gitlab_ps_utils.api import GitLabApi
 
 
 @mark.unit_test

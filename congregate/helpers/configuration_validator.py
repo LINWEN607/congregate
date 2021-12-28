@@ -1,13 +1,13 @@
 from base64 import b64encode
 import requests
 
-from congregate.helpers.exceptions import ConfigurationException
+from gitlab_ps_utils.exceptions import ConfigurationException
 from congregate.helpers.conf import Config
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.users import UsersApi
-from congregate.helpers.misc_utils import is_error_message_present, safe_json_response
+from gitlab_ps_utils.misc_utils import is_error_message_present, safe_json_response
 from congregate.helpers.utils import is_github_dot_com
-from congregate.helpers.json_utils import json_pretty
+from gitlab_ps_utils.json_utils import json_pretty
 
 
 class ConfigurationValidator(Config):

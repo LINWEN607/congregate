@@ -1,9 +1,9 @@
 
 import json
 from os import path
+from gitlab_ps_utils.dict_utils import rewrite_list_into_dict
+from gitlab_ps_utils import api, misc_utils
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers import api, misc_utils
-from congregate.helpers.dict_utils import rewrite_list_into_dict
 from congregate.migration.gitlab.groups import GroupsClient
 from congregate.migration.gitlab.api.users import UsersApi
 from requests.exceptions import RequestException

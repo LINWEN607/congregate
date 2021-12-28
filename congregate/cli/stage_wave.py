@@ -6,9 +6,9 @@ Copyright (c) 2021 - GitLab
 import os
 import sys
 
-from congregate.helpers.misc_utils import get_dry_log, safe_json_response
-from congregate.helpers.dict_utils import rewrite_list_into_dict
-from congregate.helpers.string_utils import clean_split
+from gitlab_ps_utils.misc_utils import get_dry_log, safe_json_response
+from gitlab_ps_utils.dict_utils import rewrite_list_into_dict
+from gitlab_ps_utils.string_utils import clean_split
 from congregate.migration.meta.etl import WaveSpreadsheetHandler
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.cli.stage_base import BaseStageClass

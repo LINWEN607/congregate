@@ -10,7 +10,7 @@ from congregate.tests.mockapi.gitlab.projects import MockProjectsApi
 from congregate.helpers.configuration_validator import ConfigurationValidator
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.tests.helpers.mock_data.results import MockProjectResults
-from congregate.helpers.api import GitLabApi
+from gitlab_ps_utils.api import GitLabApi
 
 
 @mark.unit_test

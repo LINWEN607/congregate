@@ -3,7 +3,7 @@ from base64 import b64encode
 import requests
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.decorators import stable_retry
+from gitlab_ps_utils.decorators import stable_retry
 
 
 class BitBucketServerApi(BaseClass):

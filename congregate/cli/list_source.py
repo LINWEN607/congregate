@@ -20,8 +20,8 @@ from congregate.migration.teamcity.base import TeamcityClient as TeamcityData
 
 from congregate.helpers.mdbc import MongoConnector
 
-from congregate.helpers.misc_utils import strip_netloc
-from congregate.helpers.string_utils import deobfuscate
+from gitlab_ps_utils.misc_utils import strip_netloc
+from gitlab_ps_utils.string_utils import deobfuscate
 
 b = BaseClass()
 

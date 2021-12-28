@@ -3,7 +3,7 @@ from requests.exceptions import RequestException
 from congregate.helpers.base_class import BaseClass
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.helpers.migrate_utils import get_staged_projects
-from congregate.helpers.misc_utils import get_dry_log, is_error_message_present
+from gitlab_ps_utils.misc_utils import get_dry_log, is_error_message_present
 
 
 class BranchesClient(BaseClass):

@@ -5,7 +5,7 @@ import re
 import sys
 import subprocess
 import uuid
-from congregate.helpers.processes import MultiProcessing
+from gitlab_ps_utils.processes import MultiProcessing
 
 class Manage_Repos():
     '''

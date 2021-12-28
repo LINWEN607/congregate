@@ -4,11 +4,11 @@ from requests.exceptions import RequestException
 
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.mdbc import MongoConnector
-from congregate.helpers.misc_utils import get_timedelta, safe_json_response, strip_netloc
-from congregate.helpers.list_utils import remove_dupes
+from gitlab_ps_utils.misc_utils import get_timedelta, safe_json_response, strip_netloc
+from gitlab_ps_utils.list_utils import remove_dupes
 from congregate.helpers.migrate_utils import get_full_path_with_parent_namespace, is_top_level_group, get_staged_groups, \
     find_user_by_email_comparison_without_id
-from congregate.helpers.json_utils import json_pretty
+from gitlab_ps_utils.json_utils import json_pretty
 from congregate.helpers.utils import is_dot_com
 from congregate.migration.gitlab.variables import VariablesClient
 from congregate.migration.gitlab.badges import BadgesClient

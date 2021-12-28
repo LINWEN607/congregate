@@ -3,7 +3,7 @@ import json
 from uuid import uuid4
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import get_dry_log
+from gitlab_ps_utils.misc_utils import get_dry_log
 from congregate.migration.gitlab.importexport import ImportExportClient
 from congregate.migration.gitlab.variables import VariablesClient
 from congregate.migration.gitlab.users import UsersClient

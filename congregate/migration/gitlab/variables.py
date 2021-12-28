@@ -2,7 +2,7 @@ import json
 
 from requests.exceptions import RequestException
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import get_dry_log, is_error_message_present, safe_json_response
+from gitlab_ps_utils.misc_utils import get_dry_log, is_error_message_present, safe_json_response
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.groups import GroupsApi
 

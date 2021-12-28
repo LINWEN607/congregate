@@ -1,9 +1,9 @@
 import requests
 
-from congregate.helpers.decorators import stable_retry, token_rotate
-from congregate.helpers.audit_logger import audit_logger
-from congregate.helpers.logger import myLogger
-from congregate.helpers.misc_utils import generate_audit_log_message, safe_json_response
+from gitlab_ps_utils.decorators import stable_retry, token_rotate
+from gitlab_ps_utils.audit_logger import audit_logger
+from gitlab_ps_utils.logger import myLogger
+from gitlab_ps_utils.misc_utils import generate_audit_log_message, safe_json_response
 from congregate.helpers.utils import is_github_dot_com
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.conf import Config

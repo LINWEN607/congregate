@@ -1,8 +1,8 @@
 from urllib.parse import quote_plus
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import safe_json_response, remove_dupes_but_take_higher_access, strip_netloc, is_error_message_present
-from congregate.helpers.dict_utils import dig
+from gitlab_ps_utils.misc_utils import safe_json_response, remove_dupes_but_take_higher_access, strip_netloc, is_error_message_present
+from gitlab_ps_utils.dict_utils import dig
 from congregate.helpers.mdbc import MongoConnector
 from congregate.migration.bitbucket.api.repos import ReposApi
 from congregate.migration.bitbucket.api.users import UsersApi

@@ -1,7 +1,7 @@
 from congregate.migration.gitlab.diff.basediff import BaseDiffClient
 from congregate.migration.gitlab.api.users import UsersApi
-from congregate.helpers.misc_utils import get_rollback_log
-from congregate.helpers.json_utils import read_json_file_into_object
+from gitlab_ps_utils.misc_utils import get_rollback_log
+from gitlab_ps_utils.json_utils import read_json_file_into_object
 
 
 class UserDiffClient(BaseDiffClient):

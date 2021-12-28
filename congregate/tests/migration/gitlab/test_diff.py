@@ -1,6 +1,6 @@
 import unittest
 from pytest import mark
-from congregate.helpers.jsondiff import Comparator
+from gitlab_ps_utils.jsondiff import Comparator
 
 
 @mark.unit_test

@@ -3,7 +3,7 @@ from requests.exceptions import RequestException
 from docker import from_env
 from docker.errors import APIError, TLSParameterError, NotFound
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import is_error_message_present, safe_json_response
+from gitlab_ps_utils.misc_utils import is_error_message_present, safe_json_response
 from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
 

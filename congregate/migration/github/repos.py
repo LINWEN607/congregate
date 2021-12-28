@@ -7,11 +7,11 @@ from congregate.migration.github.users import UsersClient
 from congregate.migration.github.api.users import UsersApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.projects import ProjectsClient
-from congregate.helpers.misc_utils import get_dry_log, is_error_message_present, safe_json_response, strip_netloc
+from gitlab_ps_utils.misc_utils import get_dry_log, is_error_message_present, safe_json_response, strip_netloc
 from congregate.helpers.migrate_utils import get_staged_projects, add_post_migration_stats
 from congregate.helpers.utils import is_github_dot_com, rotate_logs
-from congregate.helpers.json_utils import json_pretty
-from congregate.helpers.dict_utils import dig
+from gitlab_ps_utils.json_utils import json_pretty
+from gitlab_ps_utils.dict_utils import dig
 
 
 class ReposClient(BaseClass):

@@ -8,9 +8,9 @@ import re
 import sys
 
 from congregate.cli.stage_base import BaseStageClass
-from congregate.helpers.misc_utils import get_dry_log, validate_name
-from congregate.helpers.list_utils import remove_dupes
-from congregate.helpers.dict_utils import rewrite_list_into_dict
+from gitlab_ps_utils.misc_utils import get_dry_log, validate_name
+from gitlab_ps_utils.list_utils import remove_dupes
+from gitlab_ps_utils.dict_utils import rewrite_list_into_dict
 
 
 class GroupStageCLI(BaseStageClass):

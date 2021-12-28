@@ -12,8 +12,9 @@ from time import time
 from traceback import print_exc
 from requests.exceptions import RequestException
 
+from gitlab_ps_utils import json_utils, string_utils, dict_utils
 import congregate.helpers.migrate_utils as mig_utils
-from congregate.helpers import misc_utils, json_utils, string_utils, dict_utils, utils
+from congregate.helpers import misc_utils, utils
 from congregate.helpers.reporting import Reporting
 from congregate.helpers.jobtemplategenerator import JobTemplateGenerator
 from congregate.cli.stage_projects import ProjectStageCLI

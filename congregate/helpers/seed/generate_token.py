@@ -26,8 +26,8 @@ import sys
 from urllib.parse import urljoin
 import requests
 from bs4 import BeautifulSoup
-from congregate.helpers.decorators import configurable_stable_retry
-from congregate.helpers.logger import myLogger
+from gitlab_ps_utils.decorators import configurable_stable_retry
+from gitlab_ps_utils.logger import myLogger
 
 
 class token_generator():

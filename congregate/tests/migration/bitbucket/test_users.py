@@ -12,7 +12,7 @@ from congregate.helpers.mdbc import MongoConnector
 from congregate.tests.mockapi.bitbucket.users import MockUsersApi
 from congregate.migration.bitbucket.api.users import UsersApi
 from congregate.migration.bitbucket.users import UsersClient
-from congregate.helpers.json_utils import json_pretty
+from gitlab_ps_utils.json_utils import json_pretty
 
 
 @mark.unit_test

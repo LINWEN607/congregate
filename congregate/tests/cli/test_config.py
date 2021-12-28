@@ -2,7 +2,7 @@ import unittest
 from unittest.mock import patch, MagicMock, PropertyMock
 from pytest import mark
 from congregate.cli import config
-from congregate.helpers.misc_utils import input_generator
+from gitlab_ps_utils.misc_utils import input_generator
 from congregate.tests.mockapi.gitlab.users import MockUsersApi
 from congregate.tests.mockapi.gitlab.groups import MockGroupsApi
 from congregate.migration.gitlab.api.users import UsersApi

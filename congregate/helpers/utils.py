@@ -3,7 +3,7 @@ import glob
 import errno
 from shutil import copy
 from datetime import datetime
-from congregate.helpers.json_utils import read_json_file_into_object
+from gitlab_ps_utils.json_utils import read_json_file_into_object
 
 def get_congregate_path():
     app_path = os.getenv("CONGREGATE_PATH")

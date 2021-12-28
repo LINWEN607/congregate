@@ -2,9 +2,9 @@ from re import search
 import xml.etree.ElementTree as ET
 import requests
 from requests.auth import HTTPBasicAuth
-from congregate.helpers.decorators import stable_retry
+from gitlab_ps_utils.decorators import stable_retry
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import safe_json_response
+from gitlab_ps_utils.misc_utils import safe_json_response
 
 
 class JenkinsApi(BaseClass):

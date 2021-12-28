@@ -1,8 +1,8 @@
 import re
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import safe_json_response
-from congregate.helpers.dict_utils import dig
+from gitlab_ps_utils.misc_utils import safe_json_response
+from gitlab_ps_utils.dict_utils import dig
 from congregate.helpers.migrate_utils import find_user_by_email_comparison_without_id
 from congregate.migration.gitlab.api.issues import IssuesApi
 

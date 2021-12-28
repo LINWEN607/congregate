@@ -1,9 +1,9 @@
 import requests
 
 from bs4 import BeautifulSoup as bs
-from congregate.helpers.dict_utils import xml_to_dict, dig
-from congregate.helpers.decorators import stable_retry
-from congregate.helpers.logger import myLogger
+from gitlab_ps_utils.dict_utils import xml_to_dict, dig
+from gitlab_ps_utils.decorators import stable_retry
+from gitlab_ps_utils.logger import myLogger
 from congregate.helpers.conf import Config
 
 

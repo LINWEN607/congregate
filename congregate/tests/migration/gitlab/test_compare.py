@@ -5,9 +5,9 @@ from unittest import mock
 from congregate.migration.gitlab.compare import CompareClient
 from congregate.tests.mockapi.gitlab.groups import MockGroupsApi
 from congregate.tests.mockapi.gitlab.users import MockUsersApi
-from congregate.helpers.dict_utils import rewrite_list_into_dict
+from gitlab_ps_utils.dict_utils import rewrite_list_into_dict
 from congregate.helpers.configuration_validator import ConfigurationValidator
-from congregate.helpers.api import GitLabApi
+from gitlab_ps_utils.api import GitLabApi
 
 
 @mark.unit_test

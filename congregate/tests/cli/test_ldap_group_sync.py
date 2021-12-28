@@ -4,7 +4,7 @@ from pytest import mark
 from congregate.cli.ldap_group_sync import LdapGroupSync
 from congregate.helpers.conf import Config
 from congregate.helpers.configuration_validator import ConfigurationValidator
-from congregate.helpers.api import GitLabApi
+from gitlab_ps_utils.api import GitLabApi
 
 
 class MockPostResponseObject():

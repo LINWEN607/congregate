@@ -9,7 +9,7 @@ from congregate.migration.gitlab.importexport import ImportExportClient
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.tests.mockapi.gitlab.groups import MockGroupsApi
-from congregate.helpers.api import GitLabApi
+from gitlab_ps_utils.api import GitLabApi
 
 
 @mark.unit_test

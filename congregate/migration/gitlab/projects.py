@@ -6,10 +6,10 @@ from time import time
 from requests.exceptions import RequestException
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import get_dry_log, get_timedelta, \
+from gitlab_ps_utils.misc_utils import get_dry_log, get_timedelta, \
     is_error_message_present, safe_json_response, strip_netloc, \
     get_decoded_string_from_b64_response_content, do_yml_sub, strip_scheme
-from congregate.helpers.json_utils import json_pretty, read_json_file_into_object, write_json_to_file
+from gitlab_ps_utils.json_utils import json_pretty, read_json_file_into_object, write_json_to_file
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.users import UsersApi
