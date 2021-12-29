@@ -4,12 +4,12 @@ from pytest import mark
 from unittest.mock import MagicMock, PropertyMock, patch
 from requests.models import Response
 
+from gitlab_ps_utils.api import GitLabApi
 from congregate.helpers.configuration_validator import ConfigurationValidator
 from congregate.migration.gitlab.importexport import ImportExportClient
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.tests.mockapi.gitlab.groups import MockGroupsApi
-from gitlab_ps_utils.api import GitLabApi
 
 
 @mark.unit_test
@@ -66,11 +66,16 @@ class ImportExportClientTests(unittest.TestCase):
             }
         ]
 
-    @patch('congregate.helpers.conf.Config.export_import_status_check_time', new_callable=PropertyMock)
-    @patch('congregate.helpers.conf.Config.destination_host', new_callable=PropertyMock)
-    @patch.object(ConfigurationValidator, 'destination_token', new_callable=PropertyMock)
-    @patch('congregate.helpers.conf.Config.export_import_timeout', new_callable=PropertyMock)
-    def test_get_import_id_from_response_import_id_none(self, mock_max_wait, mock_token, mock_host, mock_wait):
+    @patch('congregate.helpers.conf.Config.export_import_status_check_time',
+           new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.destination_host',
+           new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'destination_token',
+                  new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.export_import_timeout',
+           new_callable=PropertyMock)
+    def test_get_import_id_from_response_import_id_none(
+            self, mock_max_wait, mock_token, mock_host, mock_wait):
         mock_host.return_value = "https//gitlab.example.com"
         mock_token.return_value = "token"
         mock_wait.return_value = 0.01
@@ -84,12 +89,17 @@ class ImportExportClientTests(unittest.TestCase):
                                                         self.original_project_path, self.original_namespace_path, self.original_project_override_params, self.members)
         self.assertEqual(import_id, None)
 
-    @patch('congregate.helpers.conf.Config.export_import_status_check_time', new_callable=PropertyMock)
-    @patch('congregate.helpers.conf.Config.destination_host', new_callable=PropertyMock)
-    @patch.object(ConfigurationValidator, 'destination_token', new_callable=PropertyMock)
-    @patch('congregate.helpers.conf.Config.export_import_timeout', new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.export_import_status_check_time',
+           new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.destination_host',
+           new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'destination_token',
+                  new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.export_import_timeout',
+           new_callable=PropertyMock)
     @patch.object(ProjectsApi, "get_project_import_status")
-    def test_get_import_id_from_response_status_code_400(self, mock_status, mock_max_wait, mock_token, mock_host, mock_wait):
+    def test_get_import_id_from_response_status_code_400(
+            self, mock_status, mock_max_wait, mock_token, mock_host, mock_wait):
         mock_host.return_value = "https//gitlab.example.com"
         mock_token.return_value = "token"
         mock_wait.return_value = 0.01
@@ -106,12 +116,17 @@ class ImportExportClientTests(unittest.TestCase):
                                                         self.original_project_path, self.original_namespace_path, self.original_project_override_params, self.members)
         self.assertEqual(import_id, None)
 
-    @patch('congregate.helpers.conf.Config.export_import_status_check_time', new_callable=PropertyMock)
-    @patch('congregate.helpers.conf.Config.destination_host', new_callable=PropertyMock)
-    @patch.object(ConfigurationValidator, 'destination_token', new_callable=PropertyMock)
-    @patch('congregate.helpers.conf.Config.export_import_timeout', new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.export_import_status_check_time',
+           new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.destination_host',
+           new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'destination_token',
+                  new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.export_import_timeout',
+           new_callable=PropertyMock)
     @patch.object(ProjectsApi, "get_project_import_status")
-    def test_get_import_id_from_response_finished(self, mock_status, mock_max_wait, mock_token, mock_host, mock_wait):
+    def test_get_import_id_from_response_finished(
+            self, mock_status, mock_max_wait, mock_token, mock_host, mock_wait):
         mock_host.return_value = "https//gitlab.example.com"
         mock_token.return_value = "token"
         mock_wait.return_value = 0.01
@@ -127,14 +142,19 @@ class ImportExportClientTests(unittest.TestCase):
                                                         self.original_project_path, self.original_namespace_path, self.original_project_override_params, self.members)
         self.assertEqual(import_id, 12345)
 
-    @patch('congregate.helpers.conf.Config.export_import_status_check_time', new_callable=PropertyMock)
-    @patch('congregate.helpers.conf.Config.destination_host', new_callable=PropertyMock)
-    @patch.object(ConfigurationValidator, 'destination_token', new_callable=PropertyMock)
-    @patch('congregate.helpers.conf.Config.export_import_timeout', new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.export_import_status_check_time',
+           new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.destination_host',
+           new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'destination_token',
+                  new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.export_import_timeout',
+           new_callable=PropertyMock)
     @patch.object(ProjectsApi, "get_project_import_status")
     @patch.object(ImportExportClient, "attempt_import")
     @patch.object(ProjectsApi, "delete_project")
-    def test_get_import_id_from_response_retry_finished(self, mock_delete, mock_import, mock_status, mock_max_wait, mock_token, mock_host, mock_wait):
+    def test_get_import_id_from_response_retry_finished(
+            self, mock_delete, mock_import, mock_status, mock_max_wait, mock_token, mock_host, mock_wait):
         mock_host.return_value = "https//gitlab.example.com"
         mock_token.return_value = "token"
         mock_wait.return_value = 0.01
@@ -159,12 +179,17 @@ class ImportExportClientTests(unittest.TestCase):
                                                         self.original_project_path, self.original_namespace_path, self.original_project_override_params, [])
         self.assertEqual(import_id, 12345)
 
-    @patch('congregate.helpers.conf.Config.export_import_status_check_time', new_callable=PropertyMock)
-    @patch('congregate.helpers.conf.Config.destination_host', new_callable=PropertyMock)
-    @patch.object(ConfigurationValidator, 'destination_token', new_callable=PropertyMock)
-    @patch('congregate.helpers.conf.Config.export_import_timeout', new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.export_import_status_check_time',
+           new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.destination_host',
+           new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'destination_token',
+                  new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.export_import_timeout',
+           new_callable=PropertyMock)
     @patch.object(ProjectsApi, "get_project_import_status")
-    def test_get_import_id_from_response_timeout(self, mock_status, mock_max_wait, mock_token, mock_host, mock_wait):
+    def test_get_import_id_from_response_timeout(
+            self, mock_status, mock_max_wait, mock_token, mock_host, mock_wait):
         mock_host.return_value = "https//gitlab.example.com"
         mock_token.return_value = "token"
         mock_wait.return_value = 0.05
@@ -181,14 +206,20 @@ class ImportExportClientTests(unittest.TestCase):
                                                         self.original_project_path, self.original_namespace_path, self.original_project_override_params, self.members)
         self.assertEqual(import_id, None)
 
-    @patch('congregate.helpers.conf.Config.export_import_status_check_time', new_callable=PropertyMock)
-    @patch('congregate.helpers.conf.Config.export_import_timeout', new_callable=PropertyMock)
-    @patch('congregate.helpers.conf.Config.source_type', new_callable=PropertyMock)
-    @patch('congregate.helpers.conf.Config.source_host', new_callable=PropertyMock)
-    @patch.object(ConfigurationValidator, 'source_token', new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.export_import_status_check_time',
+           new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.export_import_timeout',
+           new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.source_type',
+           new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.source_host',
+           new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'source_token',
+                  new_callable=PropertyMock)
     @patch.object(ProjectsApi, "export_project")
     @patch.object(ProjectsApi, "get_project_export_status")
-    def test_wait_for_export_to_finish_project_202_200_finished(self, mock_get_project_export_status, mock_export_project, mock_token, mock_host, mock_type, max_wait, wait):
+    def test_wait_for_export_to_finish_project_202_200_finished(
+            self, mock_get_project_export_status, mock_export_project, mock_token, mock_host, mock_type, max_wait, wait):
         wait.return_value = 0.01
         max_wait.return_value = 0.1
         mock_token.return_value = "token"
@@ -207,14 +238,20 @@ class ImportExportClientTests(unittest.TestCase):
         mock_get_project_export_status.return_value = ok_status_mock
         self.assertTrue(self.ie.wait_for_export_to_finish(1, "test"))
 
-    @patch('congregate.helpers.conf.Config.export_import_status_check_time', new_callable=PropertyMock)
-    @patch('congregate.helpers.conf.Config.export_import_timeout', new_callable=PropertyMock)
-    @patch('congregate.helpers.conf.Config.source_type', new_callable=PropertyMock)
-    @patch('congregate.helpers.conf.Config.source_host', new_callable=PropertyMock)
-    @patch.object(ConfigurationValidator, 'source_token', new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.export_import_status_check_time',
+           new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.export_import_timeout',
+           new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.source_type',
+           new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.source_host',
+           new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'source_token',
+                  new_callable=PropertyMock)
     @patch.object(ProjectsApi, "export_project")
     @patch.object(ProjectsApi, "get_project_export_status")
-    def test_wait_for_export_to_finish_project_202_200_none_timeout(self, mock_get_project_export_status, mock_export_project, mock_token, mock_host, mock_type, max_wait, wait):
+    def test_wait_for_export_to_finish_project_202_200_none_timeout(
+            self, mock_get_project_export_status, mock_export_project, mock_token, mock_host, mock_type, max_wait, wait):
         wait.return_value = 0.01
         max_wait.return_value = 0.1
         mock_token.return_value = "token"
@@ -233,13 +270,19 @@ class ImportExportClientTests(unittest.TestCase):
         mock_get_project_export_status.return_value = ok_status_mock
         self.assertFalse(self.ie.wait_for_export_to_finish(1, "test"))
 
-    @patch('congregate.helpers.conf.Config.export_import_status_check_time', new_callable=PropertyMock)
-    @patch('congregate.helpers.conf.Config.export_import_timeout', new_callable=PropertyMock)
-    @patch('congregate.helpers.conf.Config.source_type', new_callable=PropertyMock)
-    @patch('congregate.helpers.conf.Config.source_host', new_callable=PropertyMock)
-    @patch.object(ConfigurationValidator, 'source_token', new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.export_import_status_check_time',
+           new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.export_import_timeout',
+           new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.source_type',
+           new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.source_host',
+           new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'source_token',
+                  new_callable=PropertyMock)
     @patch.object(ProjectsApi, "export_project")
-    def test_wait_for_export_to_finish_project_404(self, mock_export_project, mock_token, mock_host, mock_type, max_wait, wait):
+    def test_wait_for_export_to_finish_project_404(
+            self, mock_export_project, mock_token, mock_host, mock_type, max_wait, wait):
         wait.return_value = 0.01
         max_wait.return_value = 0.1
         mock_token.return_value = "token"
@@ -254,14 +297,19 @@ class ImportExportClientTests(unittest.TestCase):
         self.assertFalse(self.ie.wait_for_export_to_finish(
             1, "test", retry=False))
 
-    @patch('congregate.helpers.conf.Config.source_host', new_callable=PropertyMock)
-    @patch.object(ConfigurationValidator, 'source_token', new_callable=PropertyMock)
-    @patch('congregate.helpers.conf.Config.export_import_status_check_time', new_callable=PropertyMock)
-    @patch('congregate.helpers.conf.Config.export_import_timeout', new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.source_host',
+           new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'source_token',
+                  new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.export_import_status_check_time',
+           new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.export_import_timeout',
+           new_callable=PropertyMock)
     @patch.object(ImportExportClient, "COOL_OFF_MINUTES")
     @patch.object(GroupsApi, "export_group")
     @patch.object(GroupsApi, "get_group_download_status")
-    def test_wait_for_group_download_202_200(self, mock_get_group_download_status, mock_export_group, mock_cool_off, max_wait, wait, mock_token, mock_host):
+    def test_wait_for_group_download_202_200(
+            self, mock_get_group_download_status, mock_export_group, mock_cool_off, max_wait, wait, mock_token, mock_host):
         mock_cool_off.return_value = 0.01
         mock_token.return_value = "token"
         mock_host.return_value = "https//gitlab.example.com"
@@ -279,13 +327,18 @@ class ImportExportClientTests(unittest.TestCase):
         mock_get_group_download_status.return_value = ok_status_mock
         self.assertTrue(self.ie.wait_for_group_download(1))
 
-    @patch('congregate.helpers.conf.Config.source_host', new_callable=PropertyMock)
-    @patch.object(ConfigurationValidator, 'source_token', new_callable=PropertyMock)
-    @patch('congregate.helpers.conf.Config.export_import_status_check_time', new_callable=PropertyMock)
-    @patch('congregate.helpers.conf.Config.export_import_timeout', new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.source_host',
+           new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'source_token',
+                  new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.export_import_status_check_time',
+           new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.export_import_timeout',
+           new_callable=PropertyMock)
     @patch.object(GroupsApi, "export_group")
     @patch.object(GroupsApi, "get_group_download_status")
-    def test_wait_for_group_download_202_404_timeout(self, mock_get_group_download_status, mock_export_group, max_wait, wait, mock_token, mock_host):
+    def test_wait_for_group_download_202_404_timeout(
+            self, mock_get_group_download_status, mock_export_group, max_wait, wait, mock_token, mock_host):
         mock_token.return_value = "token"
         mock_host.return_value = "https//gitlab.example.com"
         wait.return_value = 0.01
@@ -302,13 +355,18 @@ class ImportExportClientTests(unittest.TestCase):
         mock_get_group_download_status.return_value = nok_status_mock
         self.assertFalse(self.ie.wait_for_group_download(1))
 
-    @patch('congregate.helpers.conf.Config.source_host', new_callable=PropertyMock)
-    @patch.object(ConfigurationValidator, 'source_token', new_callable=PropertyMock)
-    @patch('congregate.helpers.conf.Config.export_import_status_check_time', new_callable=PropertyMock)
-    @patch('congregate.helpers.conf.Config.export_import_timeout', new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.source_host',
+           new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'source_token',
+                  new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.export_import_status_check_time',
+           new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.export_import_timeout',
+           new_callable=PropertyMock)
     @patch.object(GroupsApi, "export_group")
     @patch.object(GroupsApi, "get_group_download_status")
-    def test_wait_for_group_download_404(self, mock_get_group_download_status, mock_export_group, max_wait, wait, mock_token, mock_host):
+    def test_wait_for_group_download_404(
+            self, mock_get_group_download_status, mock_export_group, max_wait, wait, mock_token, mock_host):
         mock_token.return_value = "token"
         mock_host.return_value = "https//gitlab.example.com"
         wait.return_value = 0.01
@@ -326,8 +384,10 @@ class ImportExportClientTests(unittest.TestCase):
     # pylint: enable=no-member
     @patch.object(GitLabApi, "generate_v4_request_url")
     @patch('congregate.migration.gitlab.groups.GroupsClient.find_group_by_path')
-    @patch.object(ConfigurationValidator, 'destination_token', new_callable=PropertyMock)
-    def test_wait_for_group_import_200(self, mock_token, mock_find_group_by_path, url):
+    @patch.object(ConfigurationValidator, 'destination_token',
+                  new_callable=PropertyMock)
+    def test_wait_for_group_import_200(
+            self, mock_token, mock_find_group_by_path, url):
         mock_token.return_value = "token"
         mock_find_group_by_path.return_value = self.mock_groups.get_group()
         url_value = "https://gitlabdestination.com/api/v4/groups/1"
@@ -339,10 +399,14 @@ class ImportExportClientTests(unittest.TestCase):
         self.assertTrue(self.ie.wait_for_group_import("mock"))
 
     @patch('congregate.migration.gitlab.groups.GroupsClient.find_group_by_path')
-    @patch('congregate.helpers.conf.Config.export_import_status_check_time', new_callable=PropertyMock)
-    @patch('congregate.helpers.conf.Config.export_import_timeout', new_callable=PropertyMock)
-    @patch.object(ConfigurationValidator, 'destination_token', new_callable=PropertyMock)
-    def test_wait_for_group_import_404(self, mock_token, max_wait, wait, mock_find_group_by_path):
+    @patch('congregate.helpers.conf.Config.export_import_status_check_time',
+           new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.export_import_timeout',
+           new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'destination_token',
+                  new_callable=PropertyMock)
+    def test_wait_for_group_import_404(
+            self, mock_token, max_wait, wait, mock_find_group_by_path):
         mock_token.return_value = "token"
         max_wait.return_value = 0.1
         wait.return_value = 0.01

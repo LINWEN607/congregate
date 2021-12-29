@@ -2,8 +2,8 @@ from requests.exceptions import RequestException
 
 from docker import from_env
 from docker.errors import APIError, TLSParameterError, NotFound
-from congregate.helpers.base_class import BaseClass
 from gitlab_ps_utils.misc_utils import is_error_message_present, safe_json_response
+from congregate.helpers.base_class import BaseClass
 from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
 
@@ -25,7 +25,8 @@ class RegistryClient(BaseClass):
     def is_enabled(self, host, token, pid):
         project = safe_json_response(
             self.projects_api.get_project(pid, host, token))
-        return project.get("container_registry_enabled", False) if project else False
+        return project.get("container_registry_enabled",
+                           False) if project else False
 
     def migrate_registries(self, old_id, new_id, name):
         try:
@@ -124,7 +125,8 @@ class RegistryClient(BaseClass):
                     f"Pulling images from project {name} (ID: {old_id}). Tagged image {repo_loc}:{tag_name}")
 
                 # Pulling everything at once can lead to disk fill, which apparently fails silently. Pull/tag/push on each tag
-                # Also, the library will *only* pull latest without the tag, or setting all_tags=True
+                # Also, the library will *only* pull latest without the tag, or
+                # setting all_tags=True
 
                 for pull_attempt in range(2):
                     try:
@@ -139,7 +141,8 @@ class RegistryClient(BaseClass):
                         self.log.warning(
                             f"Registered a NotFound when attempting to pull {repo_loc}:{tag_name} on attempt {pull_attempt}. Cleaning.")
                         # NotFound or disk full returning NotFound falsely *OR* possibly returning just an empty image
-                        # Let's try to clean-up. This could in theory happen twice
+                        # Let's try to clean-up. This could in theory happen
+                        # twice
                         self.__clean_local(cleaner, src_client, "src")
                         self.__clean_local(cleaner, dest_client, "dest")
                     # Any other exception bubbles up
@@ -161,14 +164,16 @@ class RegistryClient(BaseClass):
                 # Push to the new registry
                 self.log.info(f"Pushing image {new_reg}:{tag_name}")
 
-                for line in dest_client.images.push(new_reg, tag_name, stream=True, decode=True):
+                for line in dest_client.images.push(
+                        new_reg, tag_name, stream=True, decode=True):
                     print(line)
                     if "errorDetail" in line:
                         self.log.error(
                             f"Failed to push image to {new_reg}:{tag_name}, due to:\n{line}")
 
                 # Clean-up. Slower, possibly, as we have to pull layers, again?
-                # Or, can we just make a loop that goes until fails, cleans, then restarts at the failure point?
+                # Or, can we just make a loop that goes until fails, cleans,
+                # then restarts at the failure point?
                 cleaner["src"].append(
                     {"repo_loc": repo_loc, "tag_name": tag_name})
                 cleaner["dest"].append(
@@ -212,7 +217,7 @@ class RegistryClient(BaseClass):
 
     def generate_destination_registry_url(self, suffix):
         """
-        :param suffix: The trailing piece for any sub-repositories. 
+        :param suffix: The trailing piece for any sub-repositories.
                         As registry.gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/jenkins-seed, the suffix
                         is the jenkins-seed portion
         :returns: New reg should be the path to the project prepended with new registry and parent path information, with the suffix

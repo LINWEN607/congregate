@@ -7,10 +7,12 @@ import subprocess
 import uuid
 from gitlab_ps_utils.processes import MultiProcessing
 
+
 class Manage_Repos():
     '''
     This module should be all about managing our source repo data.  Getting Repos, Cloning, changing remotes, etc...
     '''
+
     def __init__(
         self,
         remote_name='new-origin',
@@ -48,7 +50,9 @@ class Manage_Repos():
         }
         self.multi = MultiProcessing()
 
-        if sys.path[0]:  # Doing this to deal with self.multi.start_multi_process() and commands that require a different cwd.
+        # Doing this to deal with self.multi.start_multi_process() and commands
+        # that require a different cwd.
+        if sys.path[0]:
             self.cwd = sys.path[0]
         else:
             self.cwd = "."
@@ -62,7 +66,8 @@ class Manage_Repos():
             )
             raise Exception(message)
 
-        os.path.join(self.temp_dir, '')  # Better way of making sure I have a slash, Blame Petar
+        # Better way of making sure I have a slash, Blame Petar
+        os.path.join(self.temp_dir, '')
 
         if "bare" in self.__dict__:
             self.from_bare()
@@ -76,10 +81,13 @@ class Manage_Repos():
         #     self.multi.start_multi_process(self.add_origin, self.repos)
 
         if 'clone' in self.__dict__:  # pull the repos down
-            self.multi.start_multi_process(self.clone_single_repo, self.repos)  # clone the repos
+            self.multi.start_multi_process(
+                self.clone_single_repo,
+                self.repos)  # clone the repos
 
         if 'push' in self.__dict__:  # push the repos up
-            self.multi.start_multi_process(self.push_single_repo, self.repos)  # push the repos
+            self.multi.start_multi_process(
+                self.push_single_repo, self.repos)  # push the repos
 
         if 'test_all' in self.__dict__:  # This should be used for basic testing, will clone, change origin, and push
             self.multi.start_multi_process(self.clone_single_repo, self.repos)
@@ -115,10 +123,14 @@ class Manage_Repos():
         '''
         For a given repo, clone them to their own self.seed_path directory
         '''
-        print(f"{self.colors['green']}INFO{self.colors['clear']}: Cloning the {repo} repo.")
+        print(
+            f"{self.colors['green']}INFO{self.colors['clear']}: Cloning the {repo} repo.")
         dir_name = self.rebuild_dir(repo)
         self.cwd = self.temp_dir
-        cmd = ['git', 'clone', self.repo_map[self.rebuild_dir(repo)]['remote'], dir_name]
+        cmd = ['git',
+               'clone',
+               self.repo_map[self.rebuild_dir(repo)]['remote'],
+               dir_name]
         rc = self.execute_cmd(cmd)
         if rc.returncode:
             print(
@@ -128,7 +140,8 @@ class Manage_Repos():
                 f"Our current working directory: \n{os.getcwd()}\n"
             )
         else:
-            print(f"{self.colors['green']}INFO{self.colors['clear']}: Successfully cloned the repo: {rc}")
+            print(
+                f"{self.colors['green']}INFO{self.colors['clear']}: Successfully cloned the repo: {rc}")
 
     def push_single_repo(self, repo):
         '''
@@ -139,11 +152,24 @@ class Manage_Repos():
             f"{self.colors['green']}INFO{self.colors['clear']}: "
             f"Attempting to push {repo} to {self.repo_map[dir_name]['remote']}"
         )
-        full_remote = self.remote_url + repo  # the remote should provide whatever GH ORG we should be pushing to.
+        # the remote should provide whatever GH ORG we should be pushing to.
+        full_remote = self.remote_url + repo
         self.cwd = self.temp_dir + dir_name
-        cmd = ['git', '-c', f'http.sslVerify={self.verify}', 'push', '--all', full_remote]
+        cmd = [
+            'git',
+            '-c',
+            f'http.sslVerify={self.verify}',
+            'push',
+            '--all',
+            full_remote]
         rc_push = self.execute_cmd(cmd)
-        cmd = ['git', '-c', f'http.sslVerify={self.verify}', 'push', '--tags', full_remote]
+        cmd = [
+            'git',
+            '-c',
+            f'http.sslVerify={self.verify}',
+            'push',
+            '--tags',
+            full_remote]
         rc_tags = self.execute_cmd(cmd)
         self.cwd = "."
         if rc_push.returncode != 0:
@@ -165,8 +191,11 @@ class Manage_Repos():
         will probably only be used for local workstation testing.  This will always assume all.
         '''
         self.get_new_seeds()
-        self.multi.start_multi_process(self.clone_single_repo, self.seed_repos)   # clone the repos
-        self.repo_map = self.create_repo_data()  # TODO Clone or check for the existence of repos.
+        self.multi.start_multi_process(
+            self.clone_single_repo,
+            self.seed_repos)   # clone the repos
+        # TODO Clone or check for the existence of repos.
+        self.repo_map = self.create_repo_data()
         self.write_config()
 
     def read_config(self):
@@ -224,7 +253,8 @@ class Manage_Repos():
         for repo in self.repos:
             for url in self.seed_repos:
                 if repo in url:
-                    data[repo].update({'name': repo, 'original_remote_url': url})
+                    data[repo].update(
+                        {'name': repo, 'original_remote_url': url})
         return data
 
     def get_size(self, repo):
@@ -234,8 +264,8 @@ class Manage_Repos():
         # small < 10780 ; medium < 1255976 ; large > 1255976 (anything left)
         '''
         dir_name = self.rebuild_dir_for_bare(repo)
-        cmd = ['du', '-s', self.temp_dir + dir_name]        
-        cmd_result = self.execute_cmd(cmd)        
+        cmd = ['du', '-s', self.temp_dir + dir_name]
+        cmd_result = self.execute_cmd(cmd)
         stdout = cmd_result.stdout
         return {repo: stdout.split()[0].decode('utf-8')}
 
@@ -259,7 +289,8 @@ class Manage_Repos():
         ]
         self.cwd = self.temp_dir + self.rebuild_dir(repo)
         rc_ao = self.execute_cmd(cmd)
-        if rc_ao.returncode and 'fatal: remote new-origin already exists.' in str(rc_ao.stderr):
+        if rc_ao.returncode and 'fatal: remote new-origin already exists.' in str(
+                rc_ao.stderr):
             cmd[2] = 'set-url'
             rc_so = self.execute_cmd(cmd)
             if rc_so.returncode:
@@ -267,7 +298,8 @@ class Manage_Repos():
                     f"{self.colors['red']}ERROR{self.colors['clear']}: We were unable to add "
                     f"or change the remote because;\nr{rc_so.stderr}"
                 )
-        # If we made it this far, we should probably make sure all the branches are checked out as well
+        # If we made it this far, we should probably make sure all the branches
+        # are checked out as well
         cmd = 'for remote in `git branch -r | grep -v master `; do git checkout --track $remote ; done'
         rc_branch = subprocess.call(cmd, cwd=self.cwd, shell=True)
         print(rc_branch)
@@ -293,7 +325,8 @@ class Manage_Repos():
                     dirs_list.append(dir)
             return dirs_list
         except Exception as e:
-            print(f"There was a problem getting the repos.  Problem reported was:\n{e}")
+            print(
+                f"There was a problem getting the repos.  Problem reported was:\n{e}")
 
     def execute_cmd(self, cmd):
         '''
@@ -308,7 +341,8 @@ class Manage_Repos():
         .gitignored
         '''
         try:
-            self.create_directory(self.temp_dir)  # Create the directory if it doesn't exist
+            # Create the directory if it doesn't exist
+            self.create_directory(self.temp_dir)
             r = requests.get(url)  # Get the file from url
             with open(seed_path, 'wb') as f:  # Save the file
                 f.write(r.content)
@@ -352,38 +386,44 @@ class Manage_Repos():
         """
         Modified rebuild, as the other wasn't processing properly, and I didn't want to muck
         with it if there were any other hooksdatetime A combination of a date and a time. Attributes: ()
-        
+
         Doesn't handle looping at all, so no appending.
         """
-        
+
         self.seed_url = "https://gitlab.com/gitlab-com/support/toolbox/replication/-/raw/master/gitlab/data/seed.rb?inline=false"
         self.seed_path = self.temp_dir + 'seed.rb'
-            
+
         if not skip_pull:
             # Get the seed info
-            print(f"{self.colors['green']}INFO{self.colors['clear']}: Getting new seeds.")
+            print(
+                f"{self.colors['green']}INFO{self.colors['clear']}: Getting new seeds.")
 
-            print(f"{self.colors['green']}INFO{self.colors['clear']}: Getting gemfile from {self.seed_url} and {self.seed_path}.")
+            print(
+                f"{self.colors['green']}INFO{self.colors['clear']}: Getting gemfile from {self.seed_url} and {self.seed_path}.")
             self.get_gemfile(self.seed_url, self.seed_path)
 
-            print(f"{self.colors['green']}INFO{self.colors['clear']}: Setting seed_repos with seed_path of {self.seed_path}.")
+            print(
+                f"{self.colors['green']}INFO{self.colors['clear']}: Setting seed_repos with seed_path of {self.seed_path}.")
         else:
-            print(f"{self.colors['green']}INFO{self.colors['clear']}: Skipping seed file pull")
+            print(
+                f"{self.colors['green']}INFO{self.colors['clear']}: Skipping seed file pull")
 
         # Set the total repos list to everything in the rb file
         self.repos = self.get_repos(self.seed_path)
-        
-        # Set seed_repos
-        self.seed_repos = self.get_seed_repos(self.seed_path)       
 
-        print(f"{self.colors['green']}INFO{self.colors['clear']}: Seed_repos are {self.seed_repos}.")
-        
+        # Set seed_repos
+        self.seed_repos = self.get_seed_repos(self.seed_path)
+
+        print(
+            f"{self.colors['green']}INFO{self.colors['clear']}: Seed_repos are {self.seed_repos}.")
+
         if not skip_clone:
             # Clone the seed info
             for sr in self.seed_repos:
                 self.clone_single_repo_for_bare(sr)
         else:
-            print(f"{self.colors['green']}INFO{self.colors['clear']}: Skipping clone")
+            print(
+                f"{self.colors['green']}INFO{self.colors['clear']}: Skipping clone")
 
         # Reset repos to only be the cloned set of seeds
         self.repos = self.get_repos_from_dir()
@@ -395,30 +435,34 @@ class Manage_Repos():
         for repo in self.repos:
             for url in self.seed_repos:
                 if repo in url:
-                    data[repo].update({'name': repo, 'original_remote_url': url})
+                    data[repo].update(
+                        {'name': repo, 'original_remote_url': url})
         self.repo_map = data
         self.write_config()
-        
+
     def rebuild_dir_for_bare(self, repo):
         '''
         Given our expanded repo names, rebuild the original name so we can find the path.
         This is very fragile as it requires the repo names to have a '-' in them. Our
         seed script should be doing this, but be forewarned.
         '''
-        print(f"{self.colors['green']}INFO{self.colors['clear']}: Rebuilding {repo} dir")
+        print(
+            f"{self.colors['green']}INFO{self.colors['clear']}: Rebuilding {repo} dir")
         last_match = re.match(r".*/(.*).git", repo)
-        if last_match:            
-           dir_name = last_match[1]
+        if last_match:
+            dir_name = last_match[1]
         else:
             dir_name = str(uuid.uuid4())
-        print(f"{self.colors['green']}INFO{self.colors['clear']}: Result {dir_name}")
+        print(
+            f"{self.colors['green']}INFO{self.colors['clear']}: Result {dir_name}")
         return dir_name
-    
+
     def clone_single_repo_for_bare(self, repo):
         '''
         For a given repo, clone them to their own self.seed_path directory
         '''
-        print(f"{self.colors['green']}INFO{self.colors['clear']}: Cloning the {repo} repo.")
+        print(
+            f"{self.colors['green']}INFO{self.colors['clear']}: Cloning the {repo} repo.")
         dir_name = self.rebuild_dir_for_bare(repo)
         self.cwd = self.temp_dir
         # cmd = ['git', 'clone', self.repo_map[self.rebuild_dir(repo)]['remote'], dir_name]
@@ -432,4 +476,5 @@ class Manage_Repos():
                 f"Our current working directory: \n{os.getcwd()}\n"
             )
         else:
-            print(f"{self.colors['green']}INFO{self.colors['clear']}: Successfully cloned the repo: {rc}")
+            print(
+                f"{self.colors['green']}INFO{self.colors['clear']}: Successfully cloned the repo: {rc}")

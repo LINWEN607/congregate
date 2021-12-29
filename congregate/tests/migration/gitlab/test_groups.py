@@ -3,12 +3,12 @@ import responses
 from unittest import mock
 from pytest import mark
 
+from gitlab_ps_utils.api import GitLabApi
 from congregate.helpers.configuration_validator import ConfigurationValidator
 from congregate.migration.gitlab.groups import GroupsClient
 from congregate.tests.mockapi.gitlab.groups import MockGroupsApi
 from congregate.migration.gitlab.groups import GroupsApi
 from congregate.migration.gitlab.users import UsersApi
-from gitlab_ps_utils.api import GitLabApi
 
 
 @mark.unit_test
@@ -32,9 +32,11 @@ class GroupsTests(unittest.TestCase):
         group = self.mock_groups.get_group()
         self.assertTrue(self.groups.is_group_non_empty(group))
 
-    @mock.patch.object(ConfigurationValidator, 'destination_token', new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator,
+                       'destination_token', new_callable=mock.PropertyMock)
     @mock.patch.object(GitLabApi, "list_all")
-    def test_is_group_non_empty_false_no_subgroups(self, mock_list_all, mock_token):
+    def test_is_group_non_empty_false_no_subgroups(
+            self, mock_list_all, mock_token):
         mock_token.return_value = "test"
         group = self.mock_groups.get_group()
         group["projects"] = []
@@ -43,11 +45,14 @@ class GroupsTests(unittest.TestCase):
 
     # pylint: disable=no-member
     @responses.activate
-    @mock.patch('congregate.helpers.conf.Config.destination_host', new_callable=mock.PropertyMock)
-    @mock.patch.object(ConfigurationValidator, 'destination_token', new_callable=mock.PropertyMock)
+    @mock.patch('congregate.helpers.conf.Config.destination_host',
+                new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator,
+                       'destination_token', new_callable=mock.PropertyMock)
     @mock.patch.object(GitLabApi, "list_all")
     @mock.patch.object(GitLabApi, "generate_get_request")
-    def test_is_group_non_empty_true_subgroups(self, mock_get_group, mock_list_all, mock_token, mock_host):
+    def test_is_group_non_empty_true_subgroups(
+            self, mock_get_group, mock_list_all, mock_token, mock_host):
         mock_host.return_value = "https://gitlabdestination.com"
         mock_token.return_value = "token"
         url_value = "https://gitlab.com/api/v4/groups"
@@ -65,7 +70,8 @@ class GroupsTests(unittest.TestCase):
         self.assertTrue(self.groups.is_group_non_empty(group))
 
     @mock.patch("congregate.migration.gitlab.api.groups.GroupsApi.get_group_by_full_path")
-    def test_find_group_id_by_path_returns_true_and_id_when_found(self, mock_get_group_by_full_path):
+    def test_find_group_id_by_path_returns_true_and_id_when_found(
+            self, mock_get_group_by_full_path):
         mock_get_group_by_full_path.return_value = self.MockReturn({
                                                                    "id": 123}, 200)
         group_id = self.groups.find_group_id_by_path(
@@ -74,7 +80,8 @@ class GroupsTests(unittest.TestCase):
 
     @mock.patch("congregate.migration.gitlab.api.groups.GroupsApi.get_group_by_full_path")
     @mock.patch("congregate.migration.gitlab.api.namespaces.NamespacesApi.get_namespace_by_full_path")
-    def test_find_group_id_by_path_calls_find_by_namespace_when_not_found_as_group(self, mock_get_namespace_by_full_path, mock_get_group_by_full_path):
+    def test_find_group_id_by_path_calls_find_by_namespace_when_not_found_as_group(
+            self, mock_get_namespace_by_full_path, mock_get_group_by_full_path):
         mock_get_group_by_full_path.return_value = self.MockReturn({
                                                                    "id": 123}, 500)
         mock_get_namespace_by_full_path.return_value = self.MockReturn({
@@ -85,7 +92,8 @@ class GroupsTests(unittest.TestCase):
 
     @mock.patch("congregate.migration.gitlab.api.groups.GroupsApi.get_group_by_full_path")
     @mock.patch("congregate.migration.gitlab.api.namespaces.NamespacesApi.get_namespace_by_full_path")
-    def test_find_group_id_by_path_returns_false_none_if_not_found(self, mock_get_namespace_by_full_path, mock_get_group_by_full_path):
+    def test_find_group_id_by_path_returns_false_none_if_not_found(
+            self, mock_get_namespace_by_full_path, mock_get_group_by_full_path):
         mock_get_group_by_full_path.return_value = self.MockReturn({
                                                                    "id": 123}, 500)
         mock_get_namespace_by_full_path.return_value = self.MockReturn({
@@ -94,11 +102,14 @@ class GroupsTests(unittest.TestCase):
             "host", "token", "some_full_path")
         self.assertIsNone(group_id)
 
-    @mock.patch('congregate.helpers.conf.Config.destination_host', new_callable=mock.PropertyMock)
-    @mock.patch.object(ConfigurationValidator, 'destination_token', new_callable=mock.PropertyMock)
+    @mock.patch('congregate.helpers.conf.Config.destination_host',
+                new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator,
+                       'destination_token', new_callable=mock.PropertyMock)
     @mock.patch.object(GroupsApi, "add_member_to_group")
     @mock.patch.object(UsersApi, "search_for_user_by_email")
-    def test_add_members_to_destination_group(self, user_search_mock, add_member_mock, mock_token, mock_host):
+    def test_add_members_to_destination_group(
+            self, user_search_mock, add_member_mock, mock_token, mock_host):
         mock_host.return_value = "https://gitlabdestination.com"
         mock_token.return_value = "token"
         user_data = [
@@ -135,11 +146,14 @@ class GroupsTests(unittest.TestCase):
             "", "", 000, members)
         self.assertDictEqual(expected, actual)
 
-    @mock.patch('congregate.helpers.conf.Config.destination_host', new_callable=mock.PropertyMock)
-    @mock.patch.object(ConfigurationValidator, 'destination_token', new_callable=mock.PropertyMock)
+    @mock.patch('congregate.helpers.conf.Config.destination_host',
+                new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator,
+                       'destination_token', new_callable=mock.PropertyMock)
     @mock.patch.object(GroupsApi, "add_member_to_group")
     @mock.patch.object(UsersApi, "search_for_user_by_email")
-    def test_add_members_to_destination_group_missing_user(self, user_search_mock, add_member_mock, mock_token, mock_host):
+    def test_add_members_to_destination_group_missing_user(
+            self, user_search_mock, add_member_mock, mock_token, mock_host):
         mock_host.return_value = "https://gitlabdestination.com"
         mock_token.return_value = "token"
         user_data = [

@@ -2,12 +2,12 @@ import unittest
 import responses
 from pytest import mark
 from unittest import mock
+from gitlab_ps_utils.api import GitLabApi
 from congregate.migration.gitlab.compare import CompareClient
 from congregate.tests.mockapi.gitlab.groups import MockGroupsApi
 from congregate.tests.mockapi.gitlab.users import MockUsersApi
 from gitlab_ps_utils.dict_utils import rewrite_list_into_dict
 from congregate.helpers.configuration_validator import ConfigurationValidator
-from gitlab_ps_utils.api import GitLabApi
 
 
 @mark.unit_test
@@ -18,10 +18,14 @@ class CompareTests(unittest.TestCase):
         self.users = MockUsersApi()
 
     @mock.patch.object(CompareClient, "load_group_data")
-    @mock.patch.object(ConfigurationValidator, 'dstn_parent_id', new_callable=mock.PropertyMock)
-    @mock.patch.object(ConfigurationValidator, 'source_token', new_callable=mock.PropertyMock)
-    @mock.patch.object(ConfigurationValidator, 'destination_token', new_callable=mock.PropertyMock)
-    def test_compare_groups(self, dest_token, src_token, parent_id, group_data):
+    @mock.patch.object(ConfigurationValidator,
+                       'dstn_parent_id', new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, 'source_token',
+                       new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator,
+                       'destination_token', new_callable=mock.PropertyMock)
+    def test_compare_groups(self, dest_token, src_token,
+                            parent_id, group_data):
         dest_token.return_value = "test"
         src_token.return_value = "test"
         parent_id.return_value = None
@@ -86,7 +90,8 @@ class CompareTests(unittest.TestCase):
         expected = True
         self.assertEqual(expected, actual)
 
-    @mock.patch.object(ConfigurationValidator, 'dstn_parent_id', new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator,
+                       'dstn_parent_id', new_callable=mock.PropertyMock)
     def test_compare_members_different_usernames_same_ids(self, parent_id):
         parent_id.return_value = None
         source_groups = self.groups.get_all_groups_list()
@@ -252,7 +257,8 @@ class CompareTests(unittest.TestCase):
 
     @responses.activate
     # pylint: enable=no-member
-    @mock.patch.object(ConfigurationValidator, 'destination_token', new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator,
+                       'destination_token', new_callable=mock.PropertyMock)
     @mock.patch.object(GitLabApi, "generate_v4_request_url")
     def test_unknown_user_snapshot(self, url, dest_token):
         dest_token.return_value = "test"

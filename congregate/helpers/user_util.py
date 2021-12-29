@@ -18,6 +18,7 @@ Usage:
 
 bm = BaseClass()
 
+
 def map_users(dry_run=True):
     total_matches = 0
     users_dict = {}
@@ -123,9 +124,11 @@ def map_and_stage_users_by_email_match(dry_run=True):
     bm.log.info(f"{dry}Found {total_matches} users to remap:\n{joined}")
 
     joined = "\n".join(json.dumps(icns) for icns in in_csv_not_staged)
-    bm.log.info(f"{dry}Found {len(in_csv_not_staged)} users in the CSV not in staged_users: \n{joined}")
+    bm.log.info(
+        f"{dry}Found {len(in_csv_not_staged)} users in the CSV not in staged_users: \n{joined}")
 
-    bm.log.info(f"{dry}{len(users_dict) - len(rewritten_users)} users will be removed from staging, and only the mapped will be staged")
+    bm.log.info(
+        f"{dry}{len(users_dict) - len(rewritten_users)} users will be removed from staging, and only the mapped will be staged")
 
     if not dry_run:
         with open("%s/data/staged_users.json" % bm.app_path, "w") as f:

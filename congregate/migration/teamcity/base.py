@@ -1,9 +1,9 @@
 import re
-from congregate.helpers.base_class import BaseClass
-from congregate.migration.teamcity.api.base import TeamcityApi
 from gitlab_ps_utils.misc_utils import strip_netloc
 from gitlab_ps_utils.dict_utils import dig
 from gitlab_ps_utils.string_utils import convert_to_underscores
+from congregate.helpers.base_class import BaseClass
+from congregate.migration.teamcity.api.base import TeamcityApi
 from congregate.helpers.mdbc import MongoConnector
 
 
@@ -26,7 +26,8 @@ class TeamcityClient(BaseClass):
         scm_data = self.teamcity_api.get_build_vcs_roots(job_name)
         tc_host = strip_netloc(self.teamcity_api.host)
         if scm_data != "no_scm":
-            for property_node in dig(scm_data, 'vcs-root', 'properties', 'property', default=[]):
+            for property_node in dig(
+                    scm_data, 'vcs-root', 'properties', 'property', default=[]):
                 if property_node["@name"] == "url":
                     # Regex replaces URL where '#refs' is found and trims it.
                     scm_url = re.sub("([#]refs.*)", "",

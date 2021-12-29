@@ -5,18 +5,18 @@ import datetime
 from time import time
 from requests.exceptions import RequestException
 
-from congregate.helpers.base_class import BaseClass
 from gitlab_ps_utils.misc_utils import get_dry_log, get_timedelta, \
     is_error_message_present, safe_json_response, strip_netloc, \
     get_decoded_string_from_b64_response_content, do_yml_sub, strip_scheme
 from gitlab_ps_utils.json_utils import json_pretty, read_json_file_into_object, write_json_to_file
+from congregate.helpers.base_class import BaseClass
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.groups import GroupsClient
 from congregate.migration.gitlab.users import UsersClient
 from congregate.helpers.mdbc import MongoConnector
-from congregate.helpers.migrate_utils import get_dst_path_with_namespace,  get_full_path_with_parent_namespace, \
+from congregate.helpers.migrate_utils import get_dst_path_with_namespace, get_full_path_with_parent_namespace, \
     dig, get_staged_projects, get_staged_groups, find_user_by_email_comparison_without_id, add_post_migration_stats, is_user_project
 from congregate.helpers.utils import rotate_logs
 from congregate.migration.gitlab.api.project_repository import ProjectRepositoryApi
@@ -159,7 +159,8 @@ class ProjectsClient(BaseClass):
     def count_unarchived_projects(self, local=False):
         unarchived_user_projects = []
         unarchived_group_projects = []
-        for project in (self.get_projects() if local else self.projects_api.get_all_projects(self.config.source_host, self.config.source_token)):
+        for project in (self.get_projects() if local else self.projects_api.get_all_projects(
+                self.config.source_host, self.config.source_token)):
             if not project.get("archived", True):
                 unarchived_user_projects.append(project["path_with_namespace"]) if project["namespace"][
                     "kind"] == "user" else unarchived_group_projects.append(project["path_with_namespace"])
@@ -168,7 +169,8 @@ class ProjectsClient(BaseClass):
         self.log.info("Unarchived group projects ({0}):\n{1}".format(
             len(unarchived_group_projects), "\n".join(up for up in unarchived_group_projects)))
 
-    def update_staged_projects_archive_state(self, archive=True, dest=False, dry_run=True):
+    def update_staged_projects_archive_state(
+            self, archive=True, dest=False, dry_run=True):
         start = time()
         rotate_logs()
         staged_projects = get_staged_projects()
@@ -561,7 +563,8 @@ class ProjectsClient(BaseClass):
             # A branch_name reset would need to go here for the multiple
             # branches
 
-    def create_staged_projects_structure(self, dry_run=True, disable_cicd=False):
+    def create_staged_projects_structure(
+            self, dry_run=True, disable_cicd=False):
         """Create new empty project structures for staged projects"""
         start = time()
         rotate_logs()
@@ -608,7 +611,8 @@ class ProjectsClient(BaseClass):
                 if not dry_run:
                     resp = self.projects_api.create_project(
                         host, token, name, data=data)
-                    if resp.status_code == 201 and s.get("merge_requests_template"):
+                    if resp.status_code == 201 and s.get(
+                            "merge_requests_template"):
                         self.projects_api.edit_project(host, token, safe_json_response(resp).get(
                             "id"), {"merge_requests_template": s["merge_requests_template"]})
                     elif resp.status_code != 201:
@@ -620,7 +624,8 @@ class ProjectsClient(BaseClass):
                 continue
         add_post_migration_stats(start, log=self.log)
 
-    def push_mirror_staged_projects(self, disabled=False, overwrite=False, force=False, dry_run=True):
+    def push_mirror_staged_projects(
+            self, disabled=False, overwrite=False, force=False, dry_run=True):
         """Create remote push mirror for staged projects"""
         start = time()
         rotate_logs()
@@ -634,7 +639,8 @@ class ProjectsClient(BaseClass):
                 dst_pid, mirror_path = self.find_mirror_project(s, host, token)
                 if dst_pid and mirror_path and username:
                     data = {
-                        # username:token is SaaS specific. Revoking the token breaks the mirroring
+                        # username:token is SaaS specific. Revoking the token
+                        # breaks the mirroring
                         "url": f"{strip_scheme(host)}://{username}:{token}@{strip_netloc(host)}/{mirror_path}.git",
                         "enabled": not disabled,
                         "keep_divergent_refs": not overwrite
@@ -710,7 +716,8 @@ class ProjectsClient(BaseClass):
                     # Match mirror based on URL and get ID
                     url = f"{strip_netloc(host)}/{mirror_path}.git"
                     mirror_id = None
-                    for m in self.projects_api.get_all_remote_push_mirrors(dst_pid, host, token):
+                    for m in self.projects_api.get_all_remote_push_mirrors(
+                            dst_pid, host, token):
                         is_error, resp = is_error_message_present(m)
                         if is_error or not resp:
                             self.log.error(

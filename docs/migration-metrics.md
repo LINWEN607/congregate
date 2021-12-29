@@ -18,7 +18,7 @@ Various migration metrics are generated while running congregate. These are the 
 - dry_run_project_migration.json
   - Contains all POST, PUT, and DELETE requests to be made before a project migration
 
-When a dry run finishes, congregate calls [add_post_migration_stats](../congregate.helpers.html#gitlab_ps_utils.misc_utils.add_post_migration_stats) to generate a quick summary of all POST/PUT/DELETE requests to be made during a migration and the total number of POST/PUT/DELETE requests.
+When a dry run finishes, congregate calls [add_post_migration_stats](../congregate.helpers.html#congregate.helpers.migrate_utils.add_post_migration_stats) to generate a quick summary of all POST/PUT/DELETE requests to be made during a migration and the total number of POST/PUT/DELETE requests.
 
 ## After migration
 

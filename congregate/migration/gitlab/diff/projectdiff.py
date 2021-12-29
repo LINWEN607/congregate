@@ -1,14 +1,14 @@
 from copy import deepcopy
+from gitlab_ps_utils.misc_utils import get_rollback_log
+from gitlab_ps_utils.dict_utils import rewrite_json_list_into_dict
+from gitlab_ps_utils.json_utils import read_json_file_into_object
+from gitlab_ps_utils.api import GitLabApi
 from congregate.migration.gitlab.diff.basediff import BaseDiffClient
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.issues import IssuesApi
 from congregate.migration.gitlab.api.merge_requests import MergeRequestsApi
 from congregate.migration.gitlab.api.project_repository import ProjectRepositoryApi
-from gitlab_ps_utils.misc_utils import get_rollback_log
-from gitlab_ps_utils.dict_utils import rewrite_json_list_into_dict
-from gitlab_ps_utils.json_utils import read_json_file_into_object
 from congregate.helpers.migrate_utils import get_dst_path_with_namespace
-from gitlab_ps_utils.api import GitLabApi
 
 
 class ProjectDiffClient(BaseDiffClient):
@@ -80,7 +80,8 @@ class ProjectDiffClient(BaseDiffClient):
     def generate_single_diff_report(self, project):
         diff_report = {}
         project_path = get_dst_path_with_namespace(project)
-        if self.results.get(project_path) and (self.asset_exists(self.projects_api.get_project, self.results[project_path].get("id")) or isinstance(self.results.get(project_path), int)):
+        if self.results.get(project_path) and (self.asset_exists(self.projects_api.get_project,
+                                                                 self.results[project_path].get("id")) or isinstance(self.results.get(project_path), int)):
             project_diff = self.handle_endpoints(project)
             diff_report[project_path] = project_diff
             try:

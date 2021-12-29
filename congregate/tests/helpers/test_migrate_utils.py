@@ -3,6 +3,7 @@ from pytest import mark
 import responses
 from unittest.mock import patch, PropertyMock
 
+from gitlab_ps_utils.api import GitLabApi
 import congregate.helpers.migrate_utils as mutils
 from congregate.tests.mockapi.gitlab.users import MockUsersApi
 from congregate.tests.mockapi.gitlab.groups import MockGroupsApi
@@ -10,7 +11,6 @@ from congregate.tests.mockapi.gitlab.projects import MockProjectsApi
 from congregate.helpers.configuration_validator import ConfigurationValidator
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.tests.helpers.mock_data.results import MockProjectResults
-from gitlab_ps_utils.api import GitLabApi
 
 
 @mark.unit_test
@@ -596,7 +596,8 @@ class MigrateTests(unittest.TestCase):
                   new_callable=PropertyMock)
     @patch.object(ConfigurationValidator,
                   "dstn_parent_group_path", new_callable=PropertyMock)
-    def test_get_full_path_with_parent_namespace_with_parent_and_src(self, dstn_parent_group_path, dstn_parent_id):
+    def test_get_full_path_with_parent_namespace_with_parent_and_src(
+            self, dstn_parent_group_path, dstn_parent_id):
         dstn_parent_group_path.return_value = "test-parent-group-path"
         dstn_parent_id.return_value = 1
         self.assertEqual(mutils.get_full_path_with_parent_namespace(

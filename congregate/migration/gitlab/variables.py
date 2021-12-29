@@ -1,8 +1,8 @@
 import json
 
 from requests.exceptions import RequestException
-from congregate.helpers.base_class import BaseClass
 from gitlab_ps_utils.misc_utils import get_dry_log, is_error_message_present, safe_json_response
+from congregate.helpers.base_class import BaseClass
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.groups import GroupsApi
 
@@ -15,15 +15,18 @@ class VariablesClient(BaseClass):
 
     def get_ci_variables(self, id, host, token, var_type="projects"):
         if var_type == "group":
-            return list(self.groups_api.get_all_group_variables(id, host, token))
+            return list(
+                self.groups_api.get_all_group_variables(id, host, token))
         else:
-            return list(self.projects_api.get_all_project_variables(id, host, token))
+            return list(
+                self.projects_api.get_all_project_variables(id, host, token))
 
     def set_variables(self, id, data, host, token, var_type="projects"):
         if var_type == "group":
             return self.groups_api.create_group_variable(id, host, token, data)
         else:
-            return self.projects_api.create_project_variable(id, host, token, data)
+            return self.projects_api.create_project_variable(
+                id, host, token, data)
 
     def safe_add_variables(self, pid, param):
         result = False
@@ -45,7 +48,8 @@ class VariablesClient(BaseClass):
                 var_list = self.get_ci_variables(
                     old_id, self.config.source_host, self.config.source_token, var_type=var_type)
                 if var_list:
-                    return self.migrate_variables(new_id, name, var_list, var_type)
+                    return self.migrate_variables(
+                        new_id, name, var_list, var_type)
                 return True
             else:
                 self.log.info(
@@ -56,7 +60,8 @@ class VariablesClient(BaseClass):
                 f"Failed to migrate {var_type} {name} CI/CD variables, with error:\n{e}")
             return False
 
-    def migrate_pipeline_schedule_variables(self, old_id, new_id, name, enabled):
+    def migrate_pipeline_schedule_variables(
+            self, old_id, new_id, name, enabled):
         try:
             if enabled:
                 src_schedules = list(self.projects_api.get_all_project_pipeline_schedules(
@@ -69,7 +74,8 @@ class VariablesClient(BaseClass):
                             if sps["description"] == dps["description"] and sps["ref"] == dps["ref"] and sps["cron"] == dps["cron"]:
                                 self.log.info("Migrating project {} pipeline schedule ({}) variables".format(
                                     name, sps["description"]))
-                                for v in safe_json_response(self.projects_api.get_single_project_pipeline_schedule(old_id, sps["id"], self.config.source_host, self.config.source_token)).get("variables", None):
+                                for v in safe_json_response(self.projects_api.get_single_project_pipeline_schedule(
+                                        old_id, sps["id"], self.config.source_host, self.config.source_token)).get("variables", None):
                                     self.projects_api.create_new_project_pipeline_schedule_variable(
                                         new_id, dps["id"], self.config.destination_host, self.config.destination_token, v)
                 return True
@@ -121,7 +127,8 @@ class VariablesClient(BaseClass):
                             self.config.destination_token,
                             project["name"]):
                         if proj["name"] == project["name"]:
-                            if "%s" % project["namespace"].lower() in project_name.lower():
+                            if "%s" % project["namespace"].lower(
+                            ) in project_name.lower():
                                 self.log.info("{0}Migrating variables for {1}"
                                               .format(get_dry_log(dry_run), proj["name"]))
                                 project_id = proj["id"]

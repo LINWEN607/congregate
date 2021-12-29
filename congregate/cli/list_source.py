@@ -1,6 +1,9 @@
 import os
 import sys
 
+from gitlab_ps_utils.misc_utils import strip_netloc
+from gitlab_ps_utils.string_utils import deobfuscate
+
 from congregate.helpers.base_class import BaseClass
 from congregate.migration.gitlab.groups import GroupsClient
 from congregate.migration.gitlab.users import UsersClient
@@ -20,13 +23,11 @@ from congregate.migration.teamcity.base import TeamcityClient as TeamcityData
 
 from congregate.helpers.mdbc import MongoConnector
 
-from gitlab_ps_utils.misc_utils import strip_netloc
-from gitlab_ps_utils.string_utils import deobfuscate
-
 b = BaseClass()
 
 
-def list_gitlab_data(processes=None, partial=False, skip_users=False, skip_groups=False, skip_projects=False):
+def list_gitlab_data(processes=None, partial=False,
+                     skip_users=False, skip_groups=False, skip_projects=False):
     """
         List the projects information, and Retrieve user info, group info from source instance.
     """
@@ -51,7 +52,8 @@ def list_gitlab_data(processes=None, partial=False, skip_users=False, skip_group
     mongo.close_connection()
 
 
-def list_bitbucket_data(processes=None, partial=False, skip_users=False, skip_groups=False, skip_projects=False):
+def list_bitbucket_data(processes=None, partial=False,
+                        skip_users=False, skip_groups=False, skip_projects=False):
     mongo, p, g, u = mongo_init(partial=partial)
 
     groups_client = BitBucketGroups()
@@ -74,7 +76,8 @@ def list_bitbucket_data(processes=None, partial=False, skip_users=False, skip_gr
     mongo.close_connection()
 
 
-def list_github_data(processes=None, partial=False, skip_users=False, skip_groups=False, skip_projects=False, src_instances=False):
+def list_github_data(processes=None, partial=False, skip_users=False,
+                     skip_groups=False, skip_projects=False, src_instances=False):
     mongo, p, g, u = mongo_init(partial=partial)
 
     if not src_instances:
@@ -95,7 +98,8 @@ def list_github_data(processes=None, partial=False, skip_users=False, skip_group
             repos.retrieve_repo_info(processes=processes)
             mongo.dump_collection_to_file(p, f"{app}/data/projects.json")
     else:
-        for _, single_source in enumerate(b.config.list_multiple_source_config("github_source")):
+        for _, single_source in enumerate(
+                b.config.list_multiple_source_config("github_source")):
             host = strip_netloc(single_source.get('src_hostname', ""))
             token = deobfuscate(single_source.get('src_access_token', ""))
             app = b.app_path
@@ -117,7 +121,8 @@ def list_github_data(processes=None, partial=False, skip_users=False, skip_group
 
 def list_jenkins_data():
     mongo = MongoConnector()
-    for i, single_jenkins_ci_source in enumerate(b.config.list_ci_source_config("jenkins_ci_source")):
+    for i, single_jenkins_ci_source in enumerate(
+            b.config.list_ci_source_config("jenkins_ci_source")):
         collection_name = f"jenkins-{single_jenkins_ci_source.get('jenkins_ci_src_hostname').split('//')[-1]}"
         data = JenkinsData(single_jenkins_ci_source.get("jenkins_ci_src_hostname"), single_jenkins_ci_source.get(
             "jenkins_ci_src_username"), deobfuscate(single_jenkins_ci_source.get("jenkins_ci_src_access_token")))
@@ -128,7 +133,8 @@ def list_jenkins_data():
 
 def list_teamcity_data():
     mongo = MongoConnector()
-    for i, single_teamcity_ci_source in enumerate(b.config.list_ci_source_config("teamcity_ci_source")):
+    for i, single_teamcity_ci_source in enumerate(
+            b.config.list_ci_source_config("teamcity_ci_source")):
         collection_name = f"teamcity-{single_teamcity_ci_source.get('tc_ci_src_hostname').split('//')[-1]}"
         data = TeamcityData(single_teamcity_ci_source.get("tc_ci_src_hostname"), single_teamcity_ci_source.get(
             "tc_ci_src_username"), deobfuscate(single_teamcity_ci_source.get("tc_ci_src_access_token")))
@@ -148,7 +154,8 @@ def write_empty_file(filename):
             f.write("[]")
 
 
-def list_data(processes=None, partial=False, skip_users=False, skip_groups=False, skip_projects=False, skip_ci=False, src_instances=False):
+def list_data(processes=None, partial=False, skip_users=False,
+              skip_groups=False, skip_projects=False, skip_ci=False, src_instances=False):
     src_type = b.config.source_type or "unknown"
     staged_files = ["staged_projects", "staged_groups", "staged_users"]
 
@@ -182,7 +189,8 @@ def list_data(processes=None, partial=False, skip_users=False, skip_groups=False
         write_empty_file(f)
 
 
-def mongo_init(partial=False, skip_users=False, skip_groups=False, skip_projects=False):
+def mongo_init(partial=False, skip_users=False,
+               skip_groups=False, skip_projects=False):
     mongo = MongoConnector()
     src_hostname = strip_netloc(b.config.source_host)
     p = f"projects-{src_hostname}"

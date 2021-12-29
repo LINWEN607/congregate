@@ -6,16 +6,17 @@ Copyright (c) 2021 - GitLab
 
 import re
 import sys
-from congregate.helpers.migrate_utils import get_staged_user_projects
 from gitlab_ps_utils.misc_utils import get_dry_log
 from gitlab_ps_utils.list_utils import remove_dupes
 from gitlab_ps_utils.dict_utils import rewrite_list_into_dict, dig
+from congregate.helpers.migrate_utils import get_staged_user_projects
 from congregate.cli.stage_base import BaseStageClass
 
 
 class ProjectStageCLI(BaseStageClass):
 
-    def stage_data(self, projects_to_stage, dry_run=True, skip_users=False, scm_source=None):
+    def stage_data(self, projects_to_stage, dry_run=True,
+                   skip_users=False, scm_source=None):
         """
             Stage data based on selected projects on source instance
 
@@ -24,13 +25,15 @@ class ProjectStageCLI(BaseStageClass):
             :param: skip_users (bool) If true will skip writing staged users to file
         """
         self.build_staging_data(projects_to_stage, dry_run, scm_source)
-        if user_projects := get_staged_user_projects(remove_dupes(self.staged_projects)):
+        if user_projects := get_staged_user_projects(
+                remove_dupes(self.staged_projects)):
             self.log.warning("User projects staged:\n{}".format(
                 "\n".join(u for u in user_projects)))
         if not dry_run:
             self.write_staging_files(skip_users=skip_users)
 
-    def build_staging_data(self, projects_to_stage, dry_run=True, scm_source=None):
+    def build_staging_data(self, projects_to_stage,
+                           dry_run=True, scm_source=None):
         """
             Build data up from project level, including groups and users (members)
 
@@ -56,7 +59,8 @@ class ProjectStageCLI(BaseStageClass):
         # If there is CLI or UI input
         if list(filter(None, projects_to_stage)):
             # Stage ALL
-            if projects_to_stage[0] in ["all", "."] or len(projects_to_stage) == len(projects):
+            if projects_to_stage[0] in ["all", "."] or len(
+                    projects_to_stage) == len(projects):
                 for p in projects:
                     self.log.info("{0}Staging project {1} (ID: {2})".format(
                         get_dry_log(dry_run), p["path_with_namespace"], p["id"]))

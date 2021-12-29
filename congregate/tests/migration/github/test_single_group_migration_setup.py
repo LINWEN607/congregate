@@ -1,8 +1,8 @@
 import sys
 import time
 
-from congregate.helpers.base_class import BaseClass
 from gitlab_ps_utils.processes import MultiProcessing
+from congregate.helpers.base_class import BaseClass
 from congregate.helpers.seed.git import Manage_Repos
 from congregate.migration.github.api.orgs import OrgsApi
 from congregate.migration.github.api.repos import ReposApi
@@ -13,11 +13,17 @@ class Seed_GHE(BaseClass):
     Basic Seed Class, will walk through the various class pieces, and push repos up to the specified GHE.
     Currently, it assumes you have the repos already cloned.
     '''
-    def __init__(self, seeds_count=20, size_ratio=.9, organization="Mike-Test", owner="mlindsay"):
+
+    def __init__(self, seeds_count=20, size_ratio=.9,
+                 organization="Mike-Test", owner="mlindsay"):
         super(Seed_GHE, self).__init__()
         self.manage_repos = Manage_Repos(size='small')
-        self.orgs_api = OrgsApi(self.config.source_host, self.config.source_token)
-        self.repos_api = ReposApi(self.config.source_host, self.config.source_token)
+        self.orgs_api = OrgsApi(
+            self.config.source_host,
+            self.config.source_token)
+        self.repos_api = ReposApi(
+            self.config.source_host,
+            self.config.source_token)
         self.seeds_count = seeds_count
 
         self.repos = self.manage_repos.repos
@@ -51,7 +57,8 @@ class Seed_GHE(BaseClass):
         orgs = self._get_remote_orgs()
 
         if self._check_org_exists(self.organization, orgs):
-            print(f"ERROR: Wouldn't be prudent. Org '{self.organization}' already exists")
+            print(
+                f"ERROR: Wouldn't be prudent. Org '{self.organization}' already exists")
             sys.exit()
         else:
             data = {
@@ -70,7 +77,8 @@ class Seed_GHE(BaseClass):
         data = {
             'name': repo,
         }
-        r = self.repos_api.create_org_repo(org_name=self.organization, data=data)
+        r = self.repos_api.create_org_repo(
+            org_name=self.organization, data=data)
         if r.status_code != 201:
             print(
                 f"Encountered an error creating Org Repo: '{repo}'.\nA {r.status_code}"

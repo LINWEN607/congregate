@@ -1094,7 +1094,8 @@ class UsersTests(unittest.TestCase):
 
         self.assertDictEqual(expected, actual)
 
-    @patch.object(ConfigurationValidator, 'dstn_parent_id', new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'dstn_parent_id',
+                  new_callable=PropertyMock)
     @patch('congregate.helpers.conf.Config.reset_password',
            new_callable=PropertyMock)
     @patch('congregate.helpers.conf.Config.force_random_password',
@@ -1156,7 +1157,8 @@ class UsersTests(unittest.TestCase):
 
         self.assertDictEqual(expected, actual)
 
-    @patch.object(ConfigurationValidator, 'dstn_parent_id', new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'dstn_parent_id',
+                  new_callable=PropertyMock)
     @patch('congregate.helpers.conf.Config.reset_password',
            new_callable=PropertyMock)
     @patch('congregate.helpers.conf.Config.force_random_password',

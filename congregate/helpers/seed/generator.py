@@ -2,8 +2,8 @@ from datetime import timedelta, date
 import json
 from uuid import uuid4
 
-from congregate.helpers.base_class import BaseClass
 from gitlab_ps_utils.misc_utils import get_dry_log
+from congregate.helpers.base_class import BaseClass
 from congregate.migration.gitlab.importexport import ImportExportClient
 from congregate.migration.gitlab.variables import VariablesClient
 from congregate.migration.gitlab.users import UsersClient
@@ -363,7 +363,8 @@ class SeedDataGenerator(BaseClass):
         self.log.info(
             "{0}Creating project {1} environment ({2})".format(get_dry_log(dry_run), pid, data))
         if not dry_run:
-            return self.projects.projects_api.create_environment(self.config.source_host, self.config.source_token, pid, data)
+            return self.projects.projects_api.create_environment(
+                self.config.source_host, self.config.source_token, pid, data)
 
     def generate_dummy_project_hooks(self, pid, dry_run=True):
         for d in self.HOOKS_DATA:

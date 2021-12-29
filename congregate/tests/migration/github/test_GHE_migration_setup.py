@@ -11,7 +11,7 @@ Relevant environment variables:
     GHE_SOURCE_PASSWORD : Admin password for the GHE source. Only needed if doing token generation via the authorizations endpoint
     GHE_SOURCE_USERNAME : Admin username for the GHE source. Only needed if doing token generation via the authorizations endpoint
     GHE_SOURCE_TOKEN : (Admin) Token for doing auth against the GHE instance
-    
+
     GITLAB_DESTINATION_URL : The URL for the destination GitLab instance. Eg: "http://gitlab.example.com"
     GITLAB_DESTINATION_TOKEN : (Admin) Token for doing auth against the destination GitLab instance
 

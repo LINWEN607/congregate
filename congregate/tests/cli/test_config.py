@@ -1,8 +1,8 @@
 import unittest
 from unittest.mock import patch, MagicMock, PropertyMock
 from pytest import mark
-from congregate.cli import config
 from gitlab_ps_utils.misc_utils import input_generator
+from congregate.cli import config
 from congregate.tests.mockapi.gitlab.users import MockUsersApi
 from congregate.tests.mockapi.gitlab.groups import MockGroupsApi
 from congregate.migration.gitlab.api.users import UsersApi
@@ -139,7 +139,8 @@ class ConfigTests(unittest.TestCase):
     @patch.object(GroupsApi, "get_group")
     @patch.object(UsersApi, "get_current_user")
     @patch.object(InstanceApi, "get_current_license")
-    def test_not_ext_src_src_parent_group_path_mirror_name_filesystem_skeleton(self, mock_get_license, mock_get_current_user, mock_get_group):
+    def test_not_ext_src_src_parent_group_path_mirror_name_filesystem_skeleton(
+            self, mock_get_license, mock_get_current_user, mock_get_group):
         """
             Not external source
             source parent group
@@ -224,7 +225,8 @@ class ConfigTests(unittest.TestCase):
     @patch.object(GroupsApi, "get_group")
     @patch.object(UsersApi, "get_current_user")
     @patch.object(InstanceApi, "get_current_license")
-    def test_not_ext_src_parent_group_path_no_mirror_name_aws_default(self, mock_get_license, mock_get, mock_get_group):
+    def test_not_ext_src_parent_group_path_no_mirror_name_aws_default(
+            self, mock_get_license, mock_get, mock_get_group):
         """
             Not external source
             parent group found (first if)
@@ -317,7 +319,8 @@ class ConfigTests(unittest.TestCase):
     @patch.object(GroupsApi, "get_group")
     @patch.object(UsersApi, "get_current_user")
     @patch.object(InstanceApi, "get_current_license")
-    def test_not_ext_src_parent_group_path_no_mirror_name_aws_default_hash_map_sso(self, mock_get_license, mock_get, mock_get_group):
+    def test_not_ext_src_parent_group_path_no_mirror_name_aws_default_hash_map_sso(
+            self, mock_get_license, mock_get, mock_get_group):
         """
             Not external source
             parent group found (first if)
@@ -411,7 +414,8 @@ class ConfigTests(unittest.TestCase):
     @patch.object(GroupsApi, "get_group")
     @patch.object(UsersApi, "get_current_user")
     @patch.object(InstanceApi, "get_current_license")
-    def test_not_ext_src_parent_group_path_no_mirror_name_aws(self, mock_get_license, mock_get, mock_get_group):
+    def test_not_ext_src_parent_group_path_no_mirror_name_aws(
+            self, mock_get_license, mock_get, mock_get_group):
         """
             Not external source
             No import user ID or username
@@ -502,7 +506,8 @@ class ConfigTests(unittest.TestCase):
     @patch.object(GroupsApi, "get_group")
     @patch.object(UsersApi, "get_current_user")
     @patch.object(InstanceApi, "get_current_license")
-    def test_not_ext_src_no_parent_group_path_mirror_name_filesystem_skeleton(self, mock_get_license, mock_get_current_user, mock_get_group):
+    def test_not_ext_src_no_parent_group_path_mirror_name_filesystem_skeleton(
+            self, mock_get_license, mock_get_current_user, mock_get_group):
         """
             Not external source
             no parent group

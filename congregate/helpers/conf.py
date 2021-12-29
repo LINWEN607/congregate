@@ -25,7 +25,8 @@ class Config(BaseConfig):
 
     @property
     def destination_token(self):
-        return self.prop("DESTINATION", "dstn_access_token", default=None, obfuscated=True)
+        return self.prop("DESTINATION", "dstn_access_token",
+                         default=None, obfuscated=True)
 
     @property
     def destination_registry(self):
@@ -41,7 +42,8 @@ class Config(BaseConfig):
 
     @property
     def shared_runners_enabled(self):
-        return self.prop_bool("DESTINATION", "shared_runners_enabled", default=True)
+        return self.prop_bool(
+            "DESTINATION", "shared_runners_enabled", default=True)
 
     @property
     def append_project_suffix_on_existing_found(self):
@@ -96,7 +98,8 @@ class Config(BaseConfig):
         The maximum number of hours to rollback users, groups, and projects
         :return: The set config value or 24 hours as default
         """
-        return self.prop_int("DESTINATION", "max_asset_expiration_time", default=24)
+        return self.prop_int(
+            "DESTINATION", "max_asset_expiration_time", default=24)
 
     @property
     def pmi_project_id(self):
@@ -108,7 +111,7 @@ class Config(BaseConfig):
     # LDAP Info
     def ldap_group_link_provider(self):
         """
-        The LDAP server label from the instance configuration. 
+        The LDAP server label from the instance configuration.
         In gitlab.rb: gitlab_rails['ldap_servers'].label
         On the UI: Visible in the LDAP synchonizations page for a group
         """
@@ -119,14 +122,16 @@ class Config(BaseConfig):
         The minimum access to give users via the sync. This maps directly to the values at https://docs.gitlab.com/ee/api/members.html#valid-access-levels
         Defaults to no access
         """
-        return self.prop_int("DESTINATION", "ldap_group_link_group_access", default=0)
+        return self.prop_int(
+            "DESTINATION", "ldap_group_link_group_access", default=0)
 
 # SOURCE
     def list_multiple_source_config(self, source_options):
         """
             Returns list of multiple SCM source config dictionarty including hostname and token
         """
-        return self.prop_dict("MULTIPLE_SOURCE", "sources", default={}).get(source_options, [])
+        return self.prop_dict("MULTIPLE_SOURCE", "sources",
+                              default={}).get(source_options, [])
 
     @property
     def source_type(self):
@@ -148,11 +153,13 @@ class Config(BaseConfig):
 
     @property
     def source_password(self):
-        return self.prop("SOURCE", "src_password", default=None, obfuscated=True)
+        return self.prop("SOURCE", "src_password",
+                         default=None, obfuscated=True)
 
     @property
     def source_token(self):
-        return self.prop("SOURCE", "src_access_token", default=None, obfuscated=True)
+        return self.prop("SOURCE", "src_access_token",
+                         default=None, obfuscated=True)
 
     @property
     def src_parent_id(self):
@@ -210,7 +217,8 @@ class Config(BaseConfig):
 
     @property
     def ci_source_token(self):
-        return self.prop("CI_SOURCE", "ci_src_access_token", default=None, obfuscated=True)
+        return self.prop("CI_SOURCE", "ci_src_access_token",
+                         default=None, obfuscated=True)
 
 # JENKINS_CI_SOURCE
     @property
@@ -229,7 +237,8 @@ class Config(BaseConfig):
 
     @property
     def jenkins_ci_source_token(self):
-        return self.prop("JENKINS_CI_SOURCE", "jenkins_ci_src_access_token", default=None, obfuscated=True)
+        return self.prop(
+            "JENKINS_CI_SOURCE", "jenkins_ci_src_access_token", default=None, obfuscated=True)
 
 # TEAMCITY_CI_SOURCE
     @property
@@ -248,7 +257,8 @@ class Config(BaseConfig):
 
     @property
     def tc_ci_source_token(self):
-        return self.prop("TEAMCITY_CI_SOURCE", "tc_ci_src_access_token", default=None, obfuscated=True)
+        return self.prop("TEAMCITY_CI_SOURCE",
+                         "tc_ci_src_access_token", default=None, obfuscated=True)
 
 # EXPORT
     @property
@@ -265,11 +275,13 @@ class Config(BaseConfig):
 
     @property
     def s3_access_key(self):
-        return self.prop("EXPORT", "s3_access_key_id", default=None, obfuscated=True)
+        return self.prop("EXPORT", "s3_access_key_id",
+                         default=None, obfuscated=True)
 
     @property
     def s3_secret_key(self):
-        return self.prop("EXPORT", "s3_secret_access_key", default=None, obfuscated=True)
+        return self.prop("EXPORT", "s3_secret_access_key",
+                         default=None, obfuscated=True)
 
     @property
     def filesystem_path(self):
@@ -310,7 +322,8 @@ class Config(BaseConfig):
         In general it should be increased when using multiple processes i.e. when the API cannot handle all the requests.
         :return: The set config value or 10 (seconds) as default.
         """
-        return self.prop_int("APP", "export_import_status_check_time", default=10)
+        return self.prop_int(
+            "APP", "export_import_status_check_time", default=10)
 
     @property
     def slack_url(self):
@@ -362,7 +375,7 @@ class Config(BaseConfig):
     @property
     def wave_spreadsheet_column_to_project_property_mapping(self):
         """
-        Similar to wave_spreadsheet_column_mapping, this defines how our headers map to properties in the project object 
+        Similar to wave_spreadsheet_column_mapping, this defines how our headers map to properties in the project object
         for when we generate the stage wave CSV file
 
         Example output:
@@ -370,7 +383,8 @@ class Config(BaseConfig):
             "Source Url": "http_url_to_repo"
         }
         """
-        return self.prop_dict("APP", "wave_spreadsheet_column_to_project_property_mapping")
+        return self.prop_dict(
+            "APP", "wave_spreadsheet_column_to_project_property_mapping")
 
     @property
     def mongo_host(self):
@@ -412,14 +426,16 @@ class Config(BaseConfig):
         """
         If all groups need to be converted to lowercase during a migration
         """
-        return self.prop_bool("DESTINATION", "lower_case_group_path", default=False)
+        return self.prop_bool(
+            "DESTINATION", "lower_case_group_path", default=False)
 
     @property
     def lower_case_project_path(self):
         """
         If all projects need to be converted to lowercase during a migration
         """
-        return self.prop_bool("DESTINATION", "lower_case_project_path", default=False)
+        return self.prop_bool(
+            "DESTINATION", "lower_case_project_path", default=False)
 
     @property
     def users_to_ignore(self):
@@ -461,7 +477,7 @@ class Config(BaseConfig):
                         },
                         {...}
                     ]
-                }      
+                }
         which allows for multiple files with multiple changes.
         """
         return self.prop("APP", "remapping_file")

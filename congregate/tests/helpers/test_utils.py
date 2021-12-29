@@ -1,9 +1,9 @@
 import unittest
 from unittest import mock
 from pytest import mark
+from gitlab_ps_utils.dict_utils import xml_to_dict
 import congregate.helpers.utils as utils
 from congregate.tests.helpers.mock_data.results import MockProjectResults
-from gitlab_ps_utils.dict_utils import xml_to_dict
 from congregate.tests.mockapi.jenkins.jobs import JenkinsJobsApi
 
 
@@ -79,7 +79,7 @@ class UtilsTests(unittest.TestCase):
         actual = utils.stitch_json_results(steps=6)
 
         self.assertEqual(expected, actual)
-    
+
     def test_xml_to_dict_complex(self):
         j = JenkinsJobsApi()
         test_xml = j.get_test_job_config_xml()

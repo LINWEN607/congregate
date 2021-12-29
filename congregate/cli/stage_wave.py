@@ -86,7 +86,8 @@ class WaveStageCLI(BaseStageClass):
         for row in wave_data:
             url_key = column_mapping["Source Url"]
             repo_url = row.get(url_key, "").lower()
-            if project := (self.project_urls.get(repo_url) or (self.project_urls.get(repo_url + 'git')) or self.project_paths.get(self.sanitize_project_path(repo_url, host=scm_source))):
+            if project := (self.project_urls.get(repo_url) or (self.project_urls.get(
+                    repo_url + 'git')) or self.project_paths.get(self.sanitize_project_path(repo_url, host=scm_source))):
                 obj = self.get_project_metadata(project)
                 if parent_path := column_mapping.get("Parent Path"):
                     obj["target_namespace"] = row.get(

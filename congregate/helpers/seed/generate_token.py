@@ -131,7 +131,8 @@ class token_generator():
         self.log.info("Obtained personal access token for root")
         return token
 
-    def generate_token(self, name, expires_at, url=None, username=None, pword=None):
+    def generate_token(self, name, expires_at, url=None,
+                       username=None, pword=None):
         if url is not None:
             self.__set_endpoint(url)
         if username is not None:

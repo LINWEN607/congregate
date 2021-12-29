@@ -12,7 +12,6 @@ from congregate.helpers.mdbc import MongoConnector
 from congregate.tests.mockapi.bitbucket.users import MockUsersApi
 from congregate.migration.bitbucket.api.users import UsersApi
 from congregate.migration.bitbucket.users import UsersClient
-from gitlab_ps_utils.json_utils import json_pretty
 
 
 @mark.unit_test
@@ -114,7 +113,8 @@ class UsersTests(unittest.TestCase):
         for i, _ in enumerate(expected_users):
             self.assertDictEqual(expected_users[i], actual_users[i])
 
-    @patch('congregate.helpers.conf.Config.users_to_ignore', new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.users_to_ignore',
+           new_callable=PropertyMock)
     def test_is_user_needed_ignored_false(self, mock_ignore):
         mock_ignore.return_value = ['user1']
         users = UsersClient()
@@ -124,7 +124,8 @@ class UsersTests(unittest.TestCase):
         }
         self.assertFalse(users.is_user_needed(user))
 
-    @patch('congregate.helpers.conf.Config.users_to_ignore', new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.users_to_ignore',
+           new_callable=PropertyMock)
     def test_is_user_needed_ignored_true(self, mock_ignore):
         mock_ignore.return_value = ['user1']
         users = UsersClient()

@@ -1,8 +1,8 @@
 import re
 
-from congregate.helpers.base_class import BaseClass
 from gitlab_ps_utils.misc_utils import safe_json_response
 from gitlab_ps_utils.dict_utils import dig
+from congregate.helpers.base_class import BaseClass
 from congregate.helpers.migrate_utils import find_user_by_email_comparison_without_id
 from congregate.migration.gitlab.api.issues import IssuesApi
 
@@ -120,7 +120,8 @@ class Reporting(BaseClass):
             if issue in exst_data:
                 new_data[issue]['status']['exists'] = exst_data[issue]['iid']
                 if not new_data[issue]['assignees'] == exst_data[issue]['assignees']:
-                    # stupid hack so I can goto bed. Equality on a list of dicts only works if the list is in the same order.
+                    # stupid hack so I can goto bed. Equality on a list of
+                    # dicts only works if the list is in the same order.
                     nusers = []
                     for new_user in new_data[issue]['assignees']:
                         nusers.append(new_user['name'])
@@ -131,11 +132,13 @@ class Reporting(BaseClass):
                         # Readability Simplification
                         new = new_data[issue]['assignees']
                         old = exst_data[issue]['assignees']
-                        # replacing our new assignees list with users that aren't in existing assignees
+                        # replacing our new assignees list with users that
+                        # aren't in existing assignees
                         new = [user for user in new if user not in old]
                         new_data[issue]['status']['changed'] = True
                 else:
-                    # No changes to make, so we empty the list, I feel like this should be handled differently
+                    # No changes to make, so we empty the list, I feel like
+                    # this should be handled differently
                     new_data[issue]['assignees'] = []
                 # Get the required tasks
                 new_data[issue]['tasks'] = self.check_existing_tasks(
@@ -145,7 +148,8 @@ class Reporting(BaseClass):
                 # Use the existing description
                 new_data[issue]['description'] = exst_data[issue]['description']
 
-        # Now that our data is all munged up, lets go ahead and change descriptions if needed
+        # Now that our data is all munged up, lets go ahead and change
+        # descriptions if needed
         for issue in new_data:
             # Tasks first
             for task in new_data[issue]['tasks']:
@@ -185,7 +189,8 @@ class Reporting(BaseClass):
         clean_data = {}
         # Raw projects
         clean_data['projects'] = self.check_import_results(import_results)
-        # Combine with successful projects.  This limits us to only successful projects
+        # Combine with successful projects.  This limits us to only successful
+        # projects
         clean_data['projects'] = self.check_staged_projects(
             staged_projects, clean_data['projects'])
         # Create the email to username map
@@ -228,14 +233,17 @@ class Reporting(BaseClass):
                         project['swc_id'] = "BAD-SWC-ID"
                     cur_title = f"{project['swc_id']} | {issue['title']}"
                     cur_desc = issue['description']
-                    # Does our issue already exist in the dataset, if not create it with current assignee and task
+                    # Does our issue already exist in the dataset, if not
+                    # create it with current assignee and task
                     if cur_title not in req_issues:
                         req_issues[cur_title] = {'assignees': [
                             {'name': uname}], 'tasks': [task], 'description': cur_desc}
                     else:
                         req_issues[cur_title]['tasks'].append(task)
-                        # Making sure username exists, and its not already in the list of assignees, add it
-                        if (uname) and not any(u['name'] == uname for u in req_issues[cur_title]['assignees']):
+                        # Making sure username exists, and its not already in
+                        # the list of assignees, add it
+                        if (uname) and not any(
+                                u['name'] == uname for u in req_issues[cur_title]['assignees']):
                             req_issues[cur_title]['assignees'].append(
                                 {'name': uname})
             else:
@@ -258,10 +266,12 @@ class Reporting(BaseClass):
         for project in projects.values():
             if isinstance(project, dict):
                 email = project.get('swc_manager_email')
-                # Did the staged project have a customer defined email and is it already mapped?
+                # Did the staged project have a customer defined email and is
+                # it already mapped?
                 if email and email not in users_map:
                     # Did we get a username back from the GitLab instance?
-                    if uname := find_user_by_email_comparison_without_id(email):
+                    if uname := find_user_by_email_comparison_without_id(
+                            email):
                         users_map[email] = uname['username']
                         progress['current'] += 1
                         self.log.info(
@@ -269,7 +279,8 @@ class Reporting(BaseClass):
                             f"[ {progress['current']} / {progress['total']} ]"
                         )
                     else:
-                        # No username for a given user, still adding it, so we don't repeat an API call
+                        # No username for a given user, still adding it, so we
+                        # don't repeat an API call
                         users_map[email] = None
                         progress['current'] += 1
                         self.log.warning(
@@ -289,7 +300,7 @@ class Reporting(BaseClass):
                     )
             else:
                 self.log.warning("""
-                    Unable to add user to map due to malformed project found. 
+                    Unable to add user to map due to malformed project found.
                     Check project_migration_results.json or staged_projects.json
                 """)
 
@@ -351,8 +362,10 @@ class Reporting(BaseClass):
 
         tasks = []
         # REGEX Explainer: 1st Capture Group(): status. 2nd Capture Group(): repo name. 3rd Capture Group(): repo url.
-        # re.findall returns a list of tuples. Using a python (r)aw string to help with some of the character escaping.
-        if issue_tasks := re.findall(r"^- \[(.)\] \[(.+)\]\((.+)\)", description, flags=re.MULTILINE):
+        # re.findall returns a list of tuples. Using a python (r)aw string to
+        # help with some of the character escaping.
+        if issue_tasks := re.findall(
+                r"^- \[(.)\] \[(.+)\]\((.+)\)", description, flags=re.MULTILINE):
             for task in issue_tasks:
                 tasks.append({
                     'repo_name': task[1],
@@ -457,7 +470,8 @@ class Reporting(BaseClass):
         :param assignees: (list) issue api call for assignees.
         return users: (list) stripped down dict to just gitlab username
         '''
-        # I should probably do something else here. This is so basic. Maybe something with pop, or list comprehension.
+        # I should probably do something else here. This is so basic. Maybe
+        # something with pop, or list comprehension.
         users = []
         for assignee in assignees:
             users.append({'name': assignee['username']})
@@ -493,7 +507,8 @@ class Reporting(BaseClass):
         '''
         with open(f'{self.app_path}/data/issue_templates/{issue_filename}') as f:
             data = f.readlines()
-        return {'title': data[0].replace('#', '').strip(), 'description': ''.join(data[1:])}
+        return {'title': data[0].replace(
+            '#', '').strip(), 'description': ''.join(data[1:])}
 
     def get_project_issues(self):
         '''
