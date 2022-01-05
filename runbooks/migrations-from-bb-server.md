@@ -75,8 +75,8 @@ Copy the following data and add subsequent columns for single project migration
   * [ ] Inspect and validate configured values in `data/congregate.conf`
 
 ### User migration
-<details>
-<summary>Instructions for user migration collapsed by default.</summary>
+
+<details><summary>Instructions for user migration collapsed by default.</summary>
 
 #### Prepare users
 
@@ -86,12 +86,14 @@ Copy the following data and add subsequent columns for single project migration
   * [ ] Confirm you can reach the API through cURL or a REST client
 * [ ] Run `congregate list` at the beginning of the migration blackout period
 * [ ] Stage ALL users
-  * [ ] **Make sure no groups and projects are staged**
+  * **NOTE:** Make sure no groups and projects are staged
+  * Determine (with customer) whether user ID 1 is a regular user that should be migrated
 * [ ] Create a directory called "waves" in `/opt/congregate/data` in the container if it doesn't already exist
 * [ ] Create a directory called `user_wave` in `/opt/congregate/data/waves` if it doesn't already exist
 * [ ] Copy `data/staged_users.json` to `/opt/congregate/data/waves/user_wave`
 * [ ] Lookup whether the staged users (emails) already exist on the destination by running `./congregate.sh search-for-staged-users`
-  * This will output a list of FOUND, NOT FOUND and DUPLICATE user `email`, along with their `id` and `state`
+  * This will output a list of user metadata, based on `email`, along with other stats
+  * Add argument `--table` to command to save this output to `data/user_stats.csv`
 * [ ] Determine with customer how to configure:
   * `group_sso_provider` and `group_sso_provider_pattern`, if they are using SSO
   * `keep_inactive_users` (`False` by default),
@@ -162,8 +164,8 @@ Copy the following data and add subsequent columns for single project migration
   * `data/waves/wave_<insert_wave_number>/wave<insert-wave-here>.log`
 
 ### Post Migration of Failed Groups and Projects
-<details>
-<summary>Instructions for post migration of failed groups and projects collapsed by default.</summary>
+
+<details><summary>Instructions for post migration of failed groups and projects collapsed by default.</summary>
 
 #### Migration of Failed Groups and Projects
 

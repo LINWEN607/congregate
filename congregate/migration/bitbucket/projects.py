@@ -74,7 +74,8 @@ class ProjectsClient(BaseClass):
                         temp_user["permission"] = permission
                         users.append(temp_user)
                 else:
-                    self.log.warning(f"Unable to find group {group_name}")
+                    self.log.warning(
+                        f"Unable to find project {project_key} user group {group_name} or the group is empty")
 
         return remove_dupes_but_take_higher_access(self.users.format_users(users))
 

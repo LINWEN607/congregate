@@ -63,7 +63,7 @@ class BitBucketServerApi(BaseClass):
             try:
                 data = r.json()
                 self.log.info("Retrieved {0} {1}".format(
-                    data.get("size", None), api))
+                    data.get("size"), api))
                 if r.status_code != 200:
                     if r.status_code == 404 or r.status_code == 500:
                         self.log.error('\nERROR: HTTP Response was {}\n\nBody Text: {}\n'.format(
@@ -71,7 +71,7 @@ class BitBucketServerApi(BaseClass):
                         break
                     raise ValueError('ERROR HTTP Response was NOT 200, which implies something wrong. The actual return code was {}\n{}\n'.format(
                         r.status_code, r.text))
-                if data.get("values", None) is not None:
+                if data.get("values") is not None:
                     for value in data["values"]:
                         yield value
                     isLastPage = data['isLastPage']

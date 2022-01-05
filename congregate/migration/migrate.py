@@ -37,6 +37,7 @@ from congregate.migration.gitlab.keys import KeysClient
 from congregate.migration.gitlab.hooks import HooksClient
 from congregate.migration.gitlab.clusters import ClustersClient
 from congregate.migration.gitlab.environments import EnvironmentsClient
+from congregate.migration.gitlab.branches import BranchesClient
 from congregate.migration.gitlab.external_import import ImportClient
 from congregate.migration.jenkins.base import JenkinsClient
 from congregate.migration.teamcity.base import TeamcityClient
@@ -85,6 +86,7 @@ class MigrateClient(BaseClass):
         self.hooks = HooksClient()
         self.clusters = ClustersClient()
         self.environments = EnvironmentsClient()
+        self.branches = BranchesClient()
         self.ext_import = ImportClient()
         super().__init__()
         self.bbs_repos_client = BBSReposClient()
@@ -192,7 +194,7 @@ class MigrateClient(BaseClass):
             mig_utils.write_results_to_file(
                 results, result_type="group", log=self.log)
         else:
-            self.log.info("SKIP: No groups to migrate")
+            self.log.info("SKIP: No groups staged for migration")
         # Migrate GH repos to projects
         staged_projects = mig_utils.get_staged_projects()
         if staged_projects and not self.skip_project_import:
@@ -213,7 +215,7 @@ class MigrateClient(BaseClass):
                 f"### {dry_log}Project import results ###\n{json_utils.json_pretty(import_results)}")
             mig_utils.write_results_to_file(import_results, log=self.log)
         else:
-            self.log.info("SKIP: No projects to migrate")
+            self.log.info("SKIP: No projects staged for migration")
 
         # After all is said and done, run our reporting with the
         # staged_projects and results
@@ -539,7 +541,7 @@ class MigrateClient(BaseClass):
             mig_utils.write_results_to_file(
                 results, result_type="group", log=self.log)
         else:
-            self.log.info("SKIP: No projects to migrate")
+            self.log.info("SKIP: No groups staged for migration")
 
         # Migrate BB repos as GL projects
         staged_projects = mig_utils.get_staged_projects()
@@ -562,14 +564,14 @@ class MigrateClient(BaseClass):
                           .format(dry_log, json_utils.json_pretty(import_results)))
             mig_utils.write_results_to_file(import_results, log=self.log)
         else:
-            self.log.info("SKIP: No projects to migrate")
+            self.log.info("SKIP: No projects staged for migration")
 
     def migrate_bitbucket_group(self, group):
         result = False
         members = group.pop("members")
         group["full_path"] = mig_utils.get_full_path_with_parent_namespace(
             group["full_path"]).lower()
-        if group.get("path", None) is not None:
+        if group.get("path") is not None:
             group["path"] = group["path"].lower()
         group["parent_id"] = self.config.dstn_parent_id
         group_id = None
@@ -620,19 +622,18 @@ class MigrateClient(BaseClass):
                     result[path_with_namespace]["members"] = self.projects.add_members_to_destination_project(
                         self.config.destination_host, self.config.destination_token, project_id, members)
                 # Set default branch
-                self.projects_api.set_default_project_branch(
-                    project_id,
-                    self.config.destination_host,
-                    self.config.destination_token,
-                    project.get("default_branch", "master")
-                )
+                self.branches.set_branch(
+                    path_with_namespace, project_id, project.get("default_branch"))
+
                 # Set branch permissions
                 self.bbs_repos_client.migrate_permissions(
                     project, project_id)
+
                 # Correcting bug where group's description is persisted to
                 # project's description
                 self.bbs_repos_client.correct_repo_description(
                     project, project_id)
+
                 # Remove import user
                 self.remove_import_user(project_id)
             else:
@@ -679,7 +680,7 @@ class MigrateClient(BaseClass):
                 self.log.info(
                     "SKIP: Assuming staged users are already migrated")
         else:
-            self.log.info("SKIP: No users to migrate")
+            self.log.info("SKIP: No users staged for migration")
 
     def handle_user_creation(self, user):
         """
@@ -811,7 +812,7 @@ class MigrateClient(BaseClass):
                 self.log.info(
                     "SKIP: Assuming staged groups will be later imported")
         else:
-            self.log.info("SKIP: No groups to migrate")
+            self.log.info("SKIP: No groups staged for migration")
 
     def handle_exporting_groups(self, group):
         full_path = group["full_path"]
@@ -1001,7 +1002,7 @@ class MigrateClient(BaseClass):
                 self.log.info(
                     "SKIP: Assuming staged projects will be later imported")
         else:
-            self.log.info("SKIP: No projects to migrate")
+            self.log.info("SKIP: No projects staged for migration")
 
     def handle_exporting_projects(self, project):
         name = project["name"]
@@ -1105,6 +1106,10 @@ class MigrateClient(BaseClass):
         results = {}
 
         results["id"] = dst_id
+
+        # Set default branch
+        self.branches.set_branch(
+            path_with_namespace, dst_id, project.get("default_branch"))
 
         # Shared with groups
         results["shared_with_groups"] = self.projects.add_shared_groups(
