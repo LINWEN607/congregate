@@ -12,15 +12,15 @@ from congregate.helpers.misc_utils import get_dry_log, validate_name
 from congregate.helpers.list_utils import remove_dupes
 from congregate.helpers.dict_utils import rewrite_list_into_dict
 
-# from congregate.migration.gitlab.api.groups import GroupsApi
-# from congregate.helpers.base_class import BaseClass
+from congregate.migration.gitlab.api.groups import GroupsApi
+from congregate.helpers.base_class import BaseClass
 
-class GroupStageCLI(BaseStageClass):
-    # def __init__(self, BaseClass):
-    #     super().__init__()
-    #     self.groupsApi = GroupsApi()
-    #     self.host = self.config.source_host
-    #     self.token = self.config.source_token
+class GroupStageCLI(BaseStageClass, BaseClass):
+    def __init__(self):
+        super().__init__()
+        self.groupsApi = GroupsApi()
+        self.host = self.config.source_host
+        self.token = self.config.source_token
 
 
     def stage_data(self, groups_to_stage, dry_run=True, skip_users=False, scm_source=None):
@@ -90,21 +90,13 @@ class GroupStageCLI(BaseStageClass):
                         start, end), dry_run=dry_run)
             # Random selection
             else:
-                #print("Random Selection")
                 for i, d in enumerate(groups_to_stage):
                     # Hacky check for id or project name by explicitly checking
                     # variable type
-                    #print("the group id: {0}".format(groups_to_stage[i]))
                     try:
                         # Retrieve group object from groups.json
                         group = self.rewritten_groups[int(
                             re.sub("[^0-9]", "", groups_to_stage[i]))]
-                        # descendat_groups = self.groupsApi.get_all_descendat_groups(groups_to_stage[i], self.host, self.token)
-                        # for group in descendat_groups:
-                        #     # Retrieve group object from groups.json
-                        #     group = self.rewritten_groups[int(
-                        #         re.sub("[^0-9]", "", group["id"]))]
-                        #     print("the rewritten group: {0}".format(group))
                     except ValueError:
                         self.log.error(
                             f"Please use a space delimited list of integers (group IDs), NOT {d}")
@@ -131,11 +123,20 @@ class GroupStageCLI(BaseStageClass):
             self.staged_projects.append(obj)
 
         self.log.info("{0}Staging group {1} (ID: {2}) [{3}/{4}]".format(get_dry_log(
-            dry_run), group["full_path"], group["id"], len(self.staged_groups) + 1, len(p_range) if p_range else len(groups_to_stage)))
+            dry_run), group["full_path"], group["id"], len(self.staged_groups) + 1, len(p_range) if p_range else len(self.staged_groups)+1))
         group.pop("projects", None)
         group["name"] = validate_name(group["name"], log=self.log)
         self.staged_groups.append(group)
-
+        # Append all the descendat groups
+        descendat_groups = self.groupsApi.get_all_descendat_groups(group["id"], self.host, self.token)
+        if descendat_groups:
+            for single_group in descendat_groups:
+                print(f"**** single group: {single_group}")
+                self.log.info("{0}Staging group {1} (ID: {2}) [{3}/{4}]".format(get_dry_log(
+                    dry_run), single_group["full_path"], single_group["id"], len(self.staged_groups) + 1, len(p_range) if p_range else len(self.staged_groups)+1))
+                single_group.pop("projects", None)
+                single_group["name"] = validate_name(single_group["name"], log=self.log)
+                self.staged_groups.append(single_group)
         # Append all group members to staged users
         for member in group.get("members", []):
             self.append_member_to_members_list([], member, dry_run)
