@@ -131,7 +131,6 @@ class GroupStageCLI(BaseStageClass, BaseClass):
         descendat_groups = self.groupsApi.get_all_descendat_groups(group["id"], self.host, self.token)
         if descendat_groups:
             for single_group in descendat_groups:
-                print(f"**** single group: {single_group}")
                 self.log.info("{0}Staging group {1} (ID: {2}) [{3}/{4}]".format(get_dry_log(
                     dry_run), single_group["full_path"], single_group["id"], len(self.staged_groups) + 1, len(p_range) if p_range else len(self.staged_groups)+1))
                 single_group.pop("projects", None)
