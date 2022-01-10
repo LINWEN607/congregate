@@ -262,9 +262,6 @@ check ldap compose yaml:
     - poetry run aws ec2 terminate-instances --instance-ids $(cat $INSTANCE_ID_FILE)
   tags:
     - congregate-auto-scale-runner
-  rules:
-    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
-      when: never
 
 test:pylint:
   extends:

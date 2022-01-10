@@ -43,4 +43,4 @@ When a dry run finishes, congregate calls [add_post_migration_stats](../congrega
 - migration_rollback_results.html
   - Diff report containing an expected accuracy of 0 since all data was rolled back. If this is not showing an accuracy of 0, not all data was successfully removed
 
-When a migration finishes, congregate calls [add_post_migration_stats](../congregate.helpers.html#gitlab_ps_utils.misc_utils.add_post_migration_stats) to generate a quick summary of all POST/PUT/DELETE requests made during a migration and the total number of POST/PUT/DELETE requests.
+When a migration finishes, congregate calls [add_post_migration_stats](../congregate.helpers.html#congregate.helpers.migrate_utils.add_post_migration_stats) to generate a quick summary of all POST/PUT/DELETE requests made during a migration and the total number of POST/PUT/DELETE requests.
