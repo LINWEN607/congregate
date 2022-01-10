@@ -126,6 +126,7 @@ class GroupStageCLI(BaseStageClass, BaseClass):
             dry_run), group["full_path"], group["id"], len(self.staged_groups) + 1, len(p_range) if p_range else len(self.staged_groups)+1))
         group.pop("projects", None)
         group["name"] = validate_name(group["name"], log=self.log)
+        print(f"the group adding to be staged: {group}")
         self.staged_groups.append(group)
         # Append all the descendat groups
         descendat_groups = self.groupsApi.get_all_descendat_groups(group["id"], self.host, self.token)
@@ -135,6 +136,7 @@ class GroupStageCLI(BaseStageClass, BaseClass):
                     dry_run), single_group["full_path"], single_group["id"], len(self.staged_groups) + 1, len(p_range) if p_range else len(self.staged_groups)+1))
                 single_group.pop("projects", None)
                 single_group["name"] = validate_name(single_group["name"], log=self.log)
+                print(f"the group adding to be staged: {single_group}")
                 self.staged_groups.append(single_group)
         # Append all group members to staged users
         for member in group.get("members", []):
