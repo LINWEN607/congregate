@@ -188,7 +188,7 @@ This runbook covers the process of preparing and cleaning up after a migration f
 ### Authentication (for gitlab.com)
 
 If possible, the VM should be setup with Okta Advanced Server Access (ASA).
-Due to time constraints, ASA costs and scaling limitations it may be necessary to provision only SSH key authenticaton.
+Due to time constraints, ASA costs and scaling limitations it may be necessary to provision only SSH key authentication.
 
 ## Migration post-requisites
 
